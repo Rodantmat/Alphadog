@@ -66,7 +66,7 @@ async function run(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
 }
-async function batch(db, statements, size = 40) {
+async function batch(db, statements, size = 200) {
   for (let i = 0; i < statements.length; i += size) await db.batch(statements.slice(i, i + size));
 }
 
