@@ -358,6 +358,12 @@ async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
         SELECT MIN(s.estimated_hit_probability_0_100) FROM hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
           AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+      ),
+      probability_confidence_0_100 = (
+        SELECT s.probability_confidence_0_100 FROM hp_board_current s
+        WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+        ORDER BY s.estimated_hit_probability_0_100 ASC LIMIT 1
       )
       WHERE h.hp_board_batch_id = ? AND h.canonical_prop_key = ? AND h.line_value = ? AND h.selected_side = ?
         AND h.estimated_hit_probability_0_100 > (
@@ -365,7 +371,7 @@ async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
             AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
         )`,
-      supProp, supLine, supSide, hpBatchId, subProp, subLine, subSide, supProp, supLine, supSide);
+      supProp, supLine, supSide, supProp, supLine, supSide, hpBatchId, subProp, subLine, subSide, supProp, supLine, supSide);
     const changed = Number(res && res.meta && res.meta.changes || 0);
     totalClamped += changed;
     results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
