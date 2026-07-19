@@ -1157,7 +1157,7 @@ async function apiDossier(env, url) {
       hp_display_notes_json: null
     },
     dossier_context: {
-      source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null,
+      source_table: "SCORE_DB.score_final_board_current",
       weather: weatherRow,
       stadium: stadiumRow,
       park_factors: parkRow,
