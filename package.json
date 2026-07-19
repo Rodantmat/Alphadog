@@ -7,6 +7,7 @@
   "dependencies": {
     "agents": "*",
     "@modelcontextprotocol/sdk": "*",
-    "zod": "*"
+    "zod": "*",
+    "postgres": "*"
   }
 }
