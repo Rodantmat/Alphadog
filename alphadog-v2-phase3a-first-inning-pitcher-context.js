@@ -6564,6 +6564,7 @@ async function ensureSavantQualitySchema(env) {
     barrel_batted_rate REAL, hard_hit_percent REAL, solidcontact_percent REAL,
     pull_percent REAL, flareburner_percent REAL, poorly_topped_percent REAL, poorly_under_percent REAL,
     whiff_percent REAL, k_percent REAL, bb_percent REAL,
+    ba REAL, slg REAL, ba_minus_xba_diff REAL, slg_minus_xslg_diff REAL, woba_minus_xwoba_diff REAL,
     active INTEGER DEFAULT 1,
     source_key TEXT,
     raw_json TEXT,
