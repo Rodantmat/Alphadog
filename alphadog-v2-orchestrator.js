@@ -14464,7 +14464,7 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, "prop_matrix_builder");
+    }, "prop_matrix_builder", PROP_MATRIX_BUILDER_WORKER_TIMEOUT_MS);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
