@@ -2168,6 +2168,18 @@ function arsenalTable(rows){if(!rows||!rows.length)return '<div class="small">No
 function aggregateHitterGames(games){let ab=0,hits=0,tb=0,pa=0,walks=0;for(const g of games){ab+=Number(g.ab||0);hits+=Number(g.hits||0);tb+=Number(g.total_bases||0);pa+=Number(g.pa||0);walks+=Number(g.walks||0)}return {avg:ab?hits/ab:null,slg:ab?tb/ab:null,obp:pa?(hits+walks)/pa:null}}
 function aggregatePitcherGames(games){let ip=0,er=0,bb=0,h=0,k=0;for(const g of games){ip+=Number(g.innings_pitched_decimal||g.innings_pitched||0);er+=Number(g.earned_runs||0);bb+=Number(g.walks_allowed||0);h+=Number(g.hits_allowed||0);k+=Number(g.strikeouts||0)}return {era:ip?(9*er)/ip:null,whip:ip?(bb+h)/ip:null,k}}
 function homeAwayBlock(homeGames,awayGames,isP){if(!homeGames.length&&!awayGames.length)return '';const h=isP?aggregatePitcherGames(homeGames):aggregateHitterGames(homeGames);const a=isP?aggregatePitcherGames(awayGames):aggregateHitterGames(awayGames);const statsFor=x=>isP?[['ERA',avgFmt(x.era)],['WHIP',avgFmt(x.whip)],['K',x.k]]:[['AVG',avgFmt(x.avg)],['OBP',avgFmt(x.obp)],['SLG',avgFmt(x.slg)]];const side=(lbl,x,n)=>'<div class="splitSide"><div class="splitSideLbl">'+lbl+' ('+n+'G)</div><div class="splitSideStats">'+statsFor(x).map(([k,v])=>'<div class="splitStat"><div class="v">'+(v==null?'—':v)+'</div><div class="k">'+k+'</div></div>').join('')+'</div></div>';return '<div class="dSection wide"><h3>Home / Away Split (recent games)</h3><div class="splitCompare">'+side('Home',h,homeGames.length)+'<div class="splitVs">VS</div>'+side('Away',a,awayGames.length)+'</div></div>'}
+function qualityOfContactBlock(qoc){if(!qoc)return '';
+  const diff=qoc.woba_minus_xwoba_diff;
+  let signal='';
+  if(diff!=null){
+    const d=Number(diff);
+    if(d<=-0.02)signal='<div class="regenSignal regenUp">▲ Underperforming its quality — actual wOBA is '+Math.abs(d).toFixed(3)+' below what the contact quality supports. Classic buy-low signal; regression toward the better number is the likely path.</div>';
+    else if(d>=0.02)signal='<div class="regenSignal regenDown">▼ Overperforming its quality — actual wOBA is '+d.toFixed(3)+' above what the contact quality supports. Some of this production has been noise; don\'t be surprised by a cooldown.</div>';
+    else signal='<div class="regenSignal regenFlat">● Actual production matches the quality of contact closely — this is a true-talent read, not a lucky or unlucky stretch.</div>';
+  }
+  const cells=[['xBA',avgFmt(qoc.xba)],['xSLG',avgFmt(qoc.xslg)],['xwOBA',avgFmt(qoc.xwoba)],['Exit Velo',qoc.exit_velocity_avg!=null?qoc.exit_velocity_avg+' mph':'—'],['Barrel%',pctNum(qoc.barrel_batted_rate)],['Hard-Hit%',pctNum(qoc.hard_hit_percent)],['Sweet Spot%',pctNum(qoc.sweet_spot_percent)],['Launch Angle',qoc.launch_angle_avg!=null?qoc.launch_angle_avg+'°':'—']];
+  return '<div class="qocCard"><div class="qocTitle">⚡ Quality of Contact <span class="qocSub">Statcast '+(qoc.season_year||'')+'</span></div>'+signal+'<div class="snapStrip" style="margin-top:10px">'+cells.map(([k,v])=>'<div class="snapCell"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>').join('')+'</div></div>';
+}
 function advancedMetricsBlock(adv,isP){adv=adv||{};const items=[];
   if(!isP){
     if(adv.sprint_speed)items.push(['Speed & Baserunning',[['Sprint Speed',adv.sprint_speed.sprint_speed_ft_per_sec!=null?adv.sprint_speed.sprint_speed_ft_per_sec+' ft/sec':null],['Competitive Runs',adv.sprint_speed.competitive_runs]]]);
