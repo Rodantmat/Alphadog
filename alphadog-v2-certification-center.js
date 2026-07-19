@@ -1307,7 +1307,7 @@ async function apiFilters(env) {
     const source = row.source_key || "unknown";
     const lineType = normalizeLineType(row);
     const sourceId = `${source}|${lineType}`;
-    if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, { source_key: source, line_type: lineType, line_type_label: displayLineTypeLabel(lineType), app_line_label: `${displaySourceLabel(row.source_key)} • ${displayLineTypeLabel(lineType)}`, payout_variant: row.payout_variant, side_mode: row.side_mode, label: displayLineTypeLabel(lineType), rows: 0, documented: false });
+    if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, { source_key: source, line_type: lineType, line_type_label: displayLineTypeLabel(lineType, row.source_key), app_line_label: `${displaySourceLabel(row.source_key)} • ${displayLineTypeLabel(lineType, row.source_key)}`, payout_variant: row.payout_variant, side_mode: row.side_mode, label: displayLineTypeLabel(lineType, row.source_key), rows: 0, documented: false });
     sourceMap.get(sourceId).rows += Number(row.rows || 0);
     if (row.probability_band) bands.set(row.probability_band, (bands.get(row.probability_band) || 0) + Number(row.rows || 0));
     if (row.board_tier) tiers.set(row.board_tier, (tiers.get(row.board_tier) || 0) + Number(row.rows || 0));
