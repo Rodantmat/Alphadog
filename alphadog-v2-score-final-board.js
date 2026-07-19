@@ -75,6 +75,12 @@ function effectiveWarningCountFromBoardRow(row, evidenceInfo = null) {
   }
   return rawWarnings;
 }
+// CONFIRMED DEAD CODE (verified 2026-07-19, see larger marker below at
+// calibrateScoreAndConfidence): effectiveWarningCountFromBoardRow,
+// contextScoreCapFor, sideSymmetryRisk have zero call sites outside the
+// dead calibrateScoreAndConfidence/applyCutoffVolatilityTrim block. Also
+// reference columns that don't exist in the schema (matrix_status,
+// warning_count, more_score_0_100, less_score_0_100).
 function contextScoreCapFor(row, evidenceInfo = null) {
   const warnings = effectiveWarningCountFromBoardRow(row, evidenceInfo);
   if (norm(row.matrix_status) !== "matrix_partial_context") return 100;
