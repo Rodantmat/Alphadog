@@ -7719,7 +7719,7 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
 
 async function runClassificationV6DeltaDaily(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 18000;
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
   let currentInput = input;
   let lastOutput = null;
   while (Date.now() - startMs < timeBudgetMs) {
