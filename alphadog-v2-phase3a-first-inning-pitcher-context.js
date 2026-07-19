@@ -7912,10 +7912,10 @@ async function runReminePitcherRunningGameToPostgres(env, input) {
     const rows = data.rows.filter(r => r.entity_id || r.pitcher_id).map(r => ({
       running_game_id: `savant_running_${year}_${r.entity_id || r.pitcher_id}`,
       mlb_player_id: Number(r.entity_id || r.pitcher_id), player_name: r.entity_name || r.pitcher_name || null, season_year: year,
-      sb_opportunities: r.n_sb_opps != null ? Number(r.n_sb_opps) : (r.n != null ? Number(r.n) : null),
-      advances_prevented: num(r.pitcher_advances_prevented ?? r.advances_prevented),
-      stealing_runs: num(r.pitcher_stealing_runs ?? r.stealing_runs),
-      lead_distance_gained: num(r.lead_distance_gained),
+      sb_opportunities: r.n_init != null ? Number(r.n_init) : null,
+      advances_prevented: num(r.simple_prevented_on_running_attr),
+      stealing_runs: num(r.runs_prevented_on_running_attr),
+      lead_distance_gained: num(r.r_sec_minus_prim_lead),
       source_key: "baseball_savant_pitcher_running_game_html_regex", raw_json: r
     })).filter(r => r.mlb_player_id);
     if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_pitcher_running_game_to_postgres", error: "no_valid_rows", sample_raw_row: data.rows[0] || null }; }
