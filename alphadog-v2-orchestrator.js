@@ -15546,7 +15546,7 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, "score_final_board");
+    }, "score_final_board", SCORE_FINAL_BOARD_WORKER_TIMEOUT_MS);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
