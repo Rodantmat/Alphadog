@@ -315,7 +315,7 @@ function factorFamilyForProp(propKey) {
 async function loadRealLegContexts(env, matrixRows) {
   const gamePks = [...new Set(matrixRows.map(r => r.game_pk).filter(Boolean))];
   const playerIds = [...new Set(matrixRows.map(r => r.mlb_player_id).filter(Boolean))];
-  const empty = { weatherByGame: new Map(), lineupByGamePlayer: new Map(), starterByGameTeam: new Map(), bullpenByGameTeam: new Map(), catcherByGameTeam: new Map(), availByGamePlayer: new Map(), marketByGame: new Map() };
+  const empty = { weatherByGame: new Map(), lineupByGamePlayer: new Map(), starterByGameTeam: new Map(), bullpenByGameTeam: new Map(), catcherByGameTeam: new Map(), availByGamePlayer: new Map(), marketByGame: new Map(), scheduleSpotByGameTeam: new Map() };
   if (!gamePks.length) return empty;
   const gph = gamePks.map(() => "?").join(",");
   const pph = playerIds.map(() => "?").join(",");
