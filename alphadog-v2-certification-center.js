@@ -2044,12 +2044,10 @@ function propTrendCard(propKey,games,legsForProp,isP){
   if(l5==null&&l10==null&&l20==null)return '';
   const cls=p=>p==null?'':(p>=70?'hi':(p>=50?'mid':'lo'));
   const lineBadges=legsForProp.length?legsForProp.map(l=>'<span class="propLineBadge">'+esc(appLabel(l.source_key))+' '+esc(String(l.selected_side||'').toUpperCase())+' '+esc(l.line_value)+'</span>').join(''):'<span class="propLineBadge">Line '+esc(line)+' (est.)</span>';
-  const streak=streakText(games,propKey,line,isP);
   return '<div class="propCard"><div class="propHead"><div><div class="propTitle">'+esc(displayPropLabel(propKey))+'</div><div class="propLines">'+lineBadges+'</div></div></div>'
     +'<div class="hrRow"><div class="hrBox"><div class="pct '+cls(l5)+'">'+(l5==null?'—':l5+'%')+'</div><div class="lbl">L5</div></div><div class="hrBox"><div class="pct '+cls(l10)+'">'+(l10==null?'—':l10+'%')+'</div><div class="lbl">L10</div></div><div class="hrBox"><div class="pct '+cls(l20)+'">'+(l20==null?'—':l20+'%')+'</div><div class="lbl">L20</div></div></div>'
     +gameBars(games,propKey,line,isP)
-    +'<div class="gameBarsCaption"><span>Oldest</span><span>Newest</span></div>'
-    +(streak?'<div class="streakBadge">'+esc(streak)+'</div>':'')+'</div>';
+    +'<div class="gameBarsCaption"><span>Oldest</span><span>Newest</span></div>'+'</div>';
 }
 function seasonSnapStrip(snapshots,isP){const season=snapshots.find(s=>s.metric_window==='season_to_date');if(!season)return '';const cells=isP
   ?[['G',season.games_count],['IP',avgFmt(season.innings_pitched_sum)],['ERA',avgFmt(season.era_calculated)],['WHIP',avgFmt(season.whip_calculated)],['K',season.strikeouts_sum],['K%',pctNum(Number(season.k_rate_calculated||0)*100)]]
