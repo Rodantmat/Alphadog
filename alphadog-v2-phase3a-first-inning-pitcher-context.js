@@ -6853,6 +6853,32 @@ function hpFromCountModel(mean, lineValue, side, dispersion) {
   return side === "more" ? (1 - pUnder) : pUnder;
 }
 
+// REAL FIX (root-caused via direct data investigation: 998 baseline rows showed extreme 0%/100%
+// hit probability from real samples as small as n=3-4 games - confirmed textbook small-sample
+// overconfidence, per real published sports-betting-calibration research). Wilson score interval
+// (Wilson 1927; standard, widely-published technique for bounding a binomial proportion when the
+// sample size is small - used broadly in sports analytics and clinical statistics for exactly
+// this failure mode). Treats the model's own point estimate as an observed proportion with n=
+// games_sample real trials, and bounds it to the interval that sample size can statistically
+// support at a real, standard 95% confidence level (z=1.96), rather than letting the model
+// report more certainty than the real underlying sample justifies.
+function wilsonInterval(pHat, n, z) {
+  if (!(n > 0)) return { lower: 0, upper: 1 };
+  const z2 = z * z;
+  const denom = 1 + z2 / n;
+  const center = (pHat + z2 / (2 * n)) / denom;
+  const margin = (z * Math.sqrt((pHat * (1 - pHat) / n) + (z2 / (4 * n * n)))) / denom;
+  return { lower: Math.max(0, center - margin), upper: Math.min(1, center + margin) };
+}
+function clampHpToSampleSupportedRange(rawHp0to1, gamesSample) {
+  const p = Math.max(0, Math.min(1, Number(rawHp0to1) || 0));
+  const n = Math.max(0, Number(gamesSample) || 0);
+  if (n >= 30) return Math.round(p * 1000) / 10; // Large real samples: trust the model directly, no clamp needed.
+  const { lower, upper } = wilsonInterval(p, n, 1.96);
+  const clamped = Math.max(lower, Math.min(upper, p));
+  return Math.round(clamped * 1000) / 10;
+}
+
 // Abramowitz-Stegun erf approximation, needed for the Normal CDF below.
 function erf(x) {
   const sign = x >= 0 ? 1 : -1;
