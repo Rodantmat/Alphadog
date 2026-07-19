@@ -6782,6 +6782,21 @@ async function runPostgresMigrateTable(env, input) {
   }
 }
 
+async function runPostgresVerifyCount(env, input) {
+  const table = String(input.pg_table || "");
+  if (!table || !table.includes(".")) return { ok: false, mode: "postgres_verify_count", error: "pass input.pg_table as schema.table" };
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const [schema, tbl] = table.split(".");
+    const res = await sql`SELECT COUNT(*)::int AS cnt FROM ${sql(schema)}.${sql(tbl)}`;
+    const sample = await sql`SELECT * FROM ${sql(schema)}.${sql(tbl)} LIMIT 2`;
+    await sql.end();
+    return { ok: true, mode: "postgres_verify_count", table, row_count: res[0]?.cnt ?? null, sample_rows: sample };
+  } catch (err) {
+    return { ok: false, mode: "postgres_verify_count", table, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -6789,6 +6804,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_health_check") return runPostgresHealthCheck(env,input);
   if(mode==="postgres_apply_schema") return runPostgresApplySchema(env,input);
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
+  if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
