@@ -6630,12 +6630,18 @@ async function runSavantQualityOfContactMining(env, input = {}) {
     const whiff = firstNum(r, ["whiff_percent"]);
     const kpct = firstNum(r, ["k_percent"]);
     const bbpct = firstNum(r, ["bb_percent"]);
+    const baVal = firstNum(r, ["ba"]);
+    const slgVal = firstNum(r, ["slg"]);
+    const baDiff = firstNum(r, ["ba_minus_est_ba_diff"]) ?? ((baVal != null && xba != null) ? (baVal - xba) : null);
+    const slgDiff = firstNum(r, ["slg_minus_est_slg_diff"]) ?? ((slgVal != null && xslg != null) ? (slgVal - xslg) : null);
+    const wobaDiff = firstNum(r, ["woba_minus_est_woba_diff"]) ?? ((woba != null && xwoba != null) ? (woba - xwoba) : null);
     statements.push(env.REF_DB.prepare(`INSERT INTO ref_batter_quality_of_contact
       (qoc_id, mlb_player_id, player_name, season_year, xba, xslg, xwoba, woba, xobp, xiso, xwobacon, wobacon,
        exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, solidcontact_percent,
        pull_percent, flareburner_percent, poorly_topped_percent, poorly_under_percent, whiff_percent, k_percent, bb_percent,
+       ba, slg, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff,
        active, source_key, raw_json, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)
       ON CONFLICT(qoc_id) DO UPDATE SET
         player_name=excluded.player_name, xba=excluded.xba, xslg=excluded.xslg, xwoba=excluded.xwoba, woba=excluded.woba,
         xobp=excluded.xobp, xiso=excluded.xiso, xwobacon=excluded.xwobacon, wobacon=excluded.wobacon,
@@ -6643,9 +6649,11 @@ async function runSavantQualityOfContactMining(env, input = {}) {
         barrel_batted_rate=excluded.barrel_batted_rate, hard_hit_percent=excluded.hard_hit_percent, solidcontact_percent=excluded.solidcontact_percent,
         pull_percent=excluded.pull_percent, flareburner_percent=excluded.flareburner_percent, poorly_topped_percent=excluded.poorly_topped_percent,
         poorly_under_percent=excluded.poorly_under_percent, whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, bb_percent=excluded.bb_percent,
+        ba=excluded.ba, slg=excluded.slg, ba_minus_xba_diff=excluded.ba_minus_xba_diff, slg_minus_xslg_diff=excluded.slg_minus_xslg_diff, woba_minus_xwoba_diff=excluded.woba_minus_xwoba_diff,
         active=1, raw_json=excluded.raw_json, updated_at=CURRENT_TIMESTAMP`
     ).bind(qocId, pid, r.player_name || null, year, xba, xslg, xwoba, woba, xobp, xiso, xwobacon, wobacon,
       ev, la, sweetSpot, barrelRate, hardHit, solid, pull, flare, topped, under, whiff, kpct, bbpct,
+      baVal, slgVal, baDiff, slgDiff, wobaDiff,
       "baseball_savant_quality_of_contact_html_regex", JSON.stringify({ expected: r._expected_raw || null, statcast: r._statcast_raw || null })));
     written++;
   }
