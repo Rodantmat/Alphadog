@@ -7323,9 +7323,12 @@ async function runRemineTeamGameLogsToPostgres(env, input) {
     if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_team_game_logs_to_postgres", error: "no_final_games_found", date_range: [startDate, endDate] }; }
 
     const cols = ["log_id","team_id","game_pk","game_date","opponent_team_id","is_home","runs_scored","runs_allowed","raw_json"];
+    const dedupMap = new Map();
+    for (const r of rows) dedupMap.set(r.log_id, r);
+    const dedupedRows = Array.from(dedupMap.values());
     const WRITE_CHUNK = 300;
-    for (let i = 0; i < rows.length; i += WRITE_CHUNK) {
-      const chunk = rows.slice(i, i + WRITE_CHUNK);
+    for (let i = 0; i < dedupedRows.length; i += WRITE_CHUNK) {
+      const chunk = dedupedRows.slice(i, i + WRITE_CHUNK);
       await sql`
         INSERT INTO team.game_logs ${sql(chunk, ...cols)}
         ON CONFLICT (log_id) DO UPDATE SET
@@ -7333,7 +7336,7 @@ async function runRemineTeamGameLogsToPostgres(env, input) {
       `;
     }
     await sql.end();
-    return { ok: true, mode: "remine_team_game_logs_to_postgres", date_range: [startDate, endDate], games_written: rows.length };
+    return { ok: true, mode: "remine_team_game_logs_to_postgres", date_range: [startDate, endDate], games_written: dedupedRows.length };
   } catch (err) {
     return { ok: false, mode: "remine_team_game_logs_to_postgres", error: String(err && err.message ? err.message : err) };
   }
