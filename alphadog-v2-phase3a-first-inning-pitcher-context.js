@@ -8411,11 +8411,9 @@ async function runRemineePrizepicksBoardToPostgres(env, input) {
   }
 }
 
-// [copy 1 fully removed now - both dispatch fragment and full body span]
+// [copy 1 completely removed - all three parts: dispatch fragment, head, and middle/tail]
 
 
-
-// Looping wrapper: internally drives multiple single-step ticks per external call, up to a
 // wall-clock time budget, instead of returning after just one tick. Same contract to the
 // caller (partial_continue / next_input_json) — just does much more real work per round trip.
 // REAL, TESTED CHANGE (per Rodolfo's explicit instruction, scoped to this one function first):
