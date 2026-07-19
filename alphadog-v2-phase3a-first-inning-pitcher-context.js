@@ -8411,16 +8411,9 @@ async function runRemineePrizepicksBoardToPostgres(env, input) {
   }
 }
 
-async function runDeriveBoardPreparedFromPostgres(env, input) {
-  const officialDate = String(input.official_date || new Date().toISOString().slice(0, 10));
-  try {
-    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
-    // Normalize: lowercase, strip periods/accents-ish punctuation, collapse whitespace, drop common suffixes.
-    const res = await sql.unsafe(`
-      WITH norm_players AS (
-        SELECT
-          player_id, mlb_player_id, full_name, current_team_id, current_mlb_team_id,
-          regexp_replace(lower(trim(regexp_replace(full_name, '\\s+(jr\\.?|sr\\.?|ii|iii|iv)
+// [removed: broken spliced function fragment from mis-applied patch]
+
+
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
