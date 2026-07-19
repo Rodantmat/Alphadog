@@ -343,6 +343,15 @@ export default {
         return jsonResponse({ ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
       }
     }
-    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run"] }, 404);
+    if (request.method === "POST" && path === "/reconcile-subset-constraints") {
+      const input = await readJsonSafe(request);
+      try {
+        const result = await reconcileHpBoardSubsetConstraints(env, input.hp_board_batch_id);
+        return jsonResponse(result, result.ok ? 200 : 400);
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      }
+    }
+    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /reconcile-subset-constraints"] }, 404);
   },
 };
