@@ -379,5 +379,32 @@ export default {
       try {
         const result = await reconcileHpBoardSubsetConstraints(env, input.hp_board_batch_id);
         return jsonResponse(result, result.ok ? 200 : 400);
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      }
+    }
+    if (request.method === "POST" && path === "/run-fast-loop-test") {
+      const input = await readJsonSafe(request);
+      const startMs = Date.now();
+      const timeBudgetMs = Math.min(Number(input.time_budget_ms) || 20000, 25000);
+      const ticks = [];
+      let currentInput = input;
+      try {
+        while (Date.now() - startMs < timeBudgetMs) {
+          const sourceMatrixBatchId = currentInput.source_matrix_batch_id || currentInput.source_engine_batch_id || (currentInput.chain_id ? `scoring_engine_batch_${currentInput.chain_id}` : null);
+          const tickStart = Date.now();
+          const output = await runHitProbabilityBoard(env, currentInput, sourceMatrixBatchId);
+          ticks.push({ tick_elapsed_ms: Date.now() - tickStart, rows_written: output.board_rows_written, status: output.status, subset_constraint_reconcile: output.subset_constraint_reconcile || null });
+          if (!output.continuation_required) {
+            return jsonResponse({ ok: true, done: true, total_wall_ms: Date.now() - startMs, tick_count: ticks.length, ticks, final_output: output }, 200);
+          }
+          currentInput = { mode: "hit_probability_current_estimate", chain_id: input.chain_id, hp_board_batch_id: output.hp_board_batch_id, source_matrix_batch_id: sourceMatrixBatchId };
+        }
+        return jsonResponse({ ok: true, done: false, total_wall_ms: Date.now() - startMs, tick_count: ticks.length, ticks, note: "Time budget reached, more ticks needed." }, 200);
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err), ticks_completed_before_error: ticks.length, ticks }, 500);
+      }
+    }
+    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /reconcile-subset-constraints", "POST /run-fast-loop-test"] }, 404);
   },
 };
