@@ -8033,6 +8033,29 @@ async function runDailyMorningDeltaFullRun(env, input) {
   return { ok: true, mode: "daily_morning_delta_full_run", partial: false, complete: true, completed_steps: results };
 }
 
+async function runDiagnoseSavantCsvExport(env, input) {
+  const path = String(input.path || "/leaderboard/pitcher-arm-angles");
+  const year = Number(input.season_year || 2026);
+  const extraParams = input.extra_params || {};
+  try {
+    const u = new URL(`https://baseballsavant.mlb.com${path}`);
+    u.searchParams.set("year", String(year));
+    u.searchParams.set("csv", "true");
+    for (const [k, v] of Object.entries(extraParams)) u.searchParams.set(k, String(v));
+    const resp = await fetch(u.toString(), {
+      method: "GET",
+      headers: {
+        "accept": "text/csv,application/csv,text/plain,*/*",
+        "user-agent": "AlphaDogV2SavantDiagnostic/0.1"
+      }
+    });
+    const text = await resp.text();
+    return { ok: true, mode: "diagnose_savant_csv_export", url: u.toString(), http_status: resp.status, content_type: resp.headers.get("content-type"), text_length: text.length, text_sample: text.slice(0, 2000) };
+  } catch (err) {
+    return { ok: false, mode: "diagnose_savant_csv_export", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -8042,6 +8065,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
+  if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
   if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
   if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
