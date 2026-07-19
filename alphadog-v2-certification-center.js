@@ -730,6 +730,7 @@ function buildCurrentSql(url) {
   if (minScore !== null && minScore !== "") { where.push("f.score_0_100 >= ?"); params.push(Number(minScore)); }
   if (date) { where.push("f.official_date = ?"); params.push(date); }
   const quotaLineTypeExpr = `CASE WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='demon' THEN 'demon' WHEN LOWER(COALESCE(f.source_key,''))='sleeper' AND LOWER(COALESCE(f.payout_variant,''))='more_only' THEN 'more_only' ELSE 'regular' END`;
+  const UNDERDOG_SOURCE_KEYS = "'parlay_underdog','underdog'";
   const baseSelect = `
       f.final_board_row_id AS final_board_row_id,
       f.final_board_batch_id AS final_board_batch_id,
