@@ -182,11 +182,14 @@ function displaySourceLabel(sourceKey) {
   return String(sourceKey || "Unknown").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function displayLineTypeLabel(row) {
+function displayLineTypeLabel(row, sourceKeyHint) {
   const lineType = typeof row === "string" ? row : normalizeLineType(row || {});
+  const sourceKey = typeof row === "string" ? sourceKeyHint : (row && row.source_key);
+  const source = String(sourceKey || "").toLowerCase();
   if (lineType === "goblin") return "Goblin";
   if (lineType === "demon") return "Demon";
   if (lineType === "more_only") return "More Only";
+  if (source === "parlay_underdog" || source === "underdog" || source === "sleeper") return "Standard Odds";
   return "Regular";
 }
 
