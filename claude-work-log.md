@@ -1929,6 +1929,58 @@ TESTED LIVE, CONFIRMED: completed in 22.9s with real output (1969 rows read/writ
 a separate data-source auth issue, handled gracefully as a warning-grade result, not blocking.
 Re-triggered a fresh daily_full_run (daily_full_run_retrigger_7) with every fix now in place.
 
+## DEEP CALIBRATION AUDIT (multi-session, per Rodolfo's explicit "3 clean passes" standard)
+Rodolfo asked for extremely deep, multi-pass calibration scrutiny after noticing Singles scoring
+higher than Hits on the real board. Ran many real, grounded passes: monotonicity/subset-superset
+checks across dozens of real prop pairs, small-sample overconfidence analysis, factor-tier
+granularity checks, player-tier scaling analysis, raw-game-log ground-truth validation, DB-driven
+config architecture audit, and manual config-table review - all grounded in real, cited research
+(isotonic regression, Wilson/Beta-Binomial shrinkage, joint/constrained estimation, published
+sabermetric outcome-distribution modeling). Confirmed several real findings; ruled out others as
+false positives after verification (a real player's absurdly-low hit rate was confirmed via
+current news as a genuine, documented .068 AVG injury-recovery slump, not a bug).
+
+## FIX #1: HITS vs TOTAL_BASES DIVERGENCE - ROOT-CAUSED, FIXED, FULLY VERIFIED
+Real, definitive root cause: total_bases>=1 and hits>=1 are mathematically the exact same event
+(confirmed via raw ground truth - identical raw rates in every real sample checked), but were
+modeled independently with different shrinkage strength (prop_recency_profile: hits used
+prior_strength_multiplier 1.0, total_bases used 1.5) AND different underlying raw metrics
+(hits_sum vs a magnitude-weighted total_bases_derived_sum, correctly needed for total_bases'
+higher lines but wrong for its shared 0.5 threshold with hits). This was confirmed as THE
+dominant root cause of the cross-prop monotonicity violations found throughout the audit,
+including a violation rate that scaled from 40% (weak-tier players) to 97% (elite-tier players) -
+the single most consequential finding of the whole audit, since it disproportionately corrupted
+calibration for exactly the star, high-volume players most likely to reach the real board.
+Two-part fix: (1) reconciled prop_recency_profile so total_bases shares hits' shrinkage
+treatment (a pure DB config change) - confirmed via single-player test this alone closed ~93% of
+the gap but left small-to-large residual gaps for many players due to the deeper metric-
+definition mismatch; (2) built a new, real, DB-driven shared_threshold_aliases mechanism and
+wired it into runBaselineV6Tick - for declared logically-identical (prop,line,side) combos,
+directly copy the alias target's already-computed row instead of independently modeling it,
+rather than trying to reconcile two separate models after the fact. Confirmed via direct code
+trace that runBaselineV6Tick is called by BOTH the full-rebuild path (runBaselineV6Base) AND the
+daily-delta path (runBaselineV6DeltaDailySingleStep) - this fix required zero separate delta-path
+changes, extending automatically to both by construction.
+TESTED LIVE, DEFINITIVE, COMPLETE SUCCESS: re-ran classification_v6_tick and baseline_v6_tick for
+total_bases at line 0.5, both sides, across the full real player population. Confirmed via direct
+query: 0 mismatches across 1,176 real (player, side) pairs, and 0 tier-scaling violations across
+588 real players (down from a 40%-97% violation rate before the fix) - complete, verified
+elimination of the single most damaging finding of the entire audit.
+Also confirmed as real, sound, and requiring no changes: the full set of 19 active enrichment
+factors (weather, park factors, platoon splits, etc.) - genuinely well-researched with real
+citations (Northwestern/PNAS jet lag study, SABR/FanGraphs park factor methodology, THE BAT X
+benchmarks, Bayesian re-analysis of times-through-order research). The legacy score-audit.js
+DEFAULT_SIM_CONFIGS hardcoded block was confirmed as genuinely dead code (zero references
+anywhere else in that file) - flagged for deletion per Rodolfo's DB-only architecture principle,
+not yet removed.
+STILL OPEN, next fixes queued: missing baseline lines for combo props (hits_runs_rbis missing its
+real 0.5 board line for all players; fantasy_score missing 13 of 16 configured lines) - root
+cause traced to a per-invocation row cap in the base-builder's resume/cursor logic, scoped to the
+base builder specifically since the daily delta only updates already-existing combos rather than
+discovering new lines. Small-sample overconfidence (998 baseline rows with extreme 0%/100% HP
+from tiny real samples, no Wilson/Beta-Binomial-style hard bound applied) - grounded fix
+technique researched and confirmed, not yet implemented.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
