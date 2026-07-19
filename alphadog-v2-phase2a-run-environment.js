@@ -326,6 +326,13 @@ async function loadRealLegContexts(env, matrixRows) {
   const bullpenRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, high_usage_reliever_count, back_to_back_reliever_count, bullpen_fatigue_score FROM daily_bullpen_availability_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const catcherRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, framing_runs_total, pop_time_2b_sba FROM daily_catcher_context_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const availRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, mlb_player_id, availability_status FROM daily_player_availability_current_v1 WHERE game_pk IN (${gph}) AND mlb_player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
+  // REAL FIX (confirmed root cause of the schedule_travel_fatigue factor always returning null):
+  // eastward_travel_flag/westward_travel_flag already exist as real, computed columns in
+  // daily_team_schedule_spot_current (built in an earlier session specifically for this
+  // factor's real Northwestern/PNAS jet-lag research) but this query never existed - the
+  // formula that consumes these exact field names was already correct, only the data-wiring
+  // step was missing. Keyed by (game_pk, team_id) same as starter/bullpen/catcher context.
+  const scheduleSpotRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, eastward_travel_flag, westward_travel_flag FROM daily_team_schedule_spot_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const marketRows = await all(env.MARKET_DB, `SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market_context_probe_game_market_summary WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   // REAL FIX: today's real umpire assignment (whichever tier produced it - official/RefMetrics/
   // derived, all already real per the daily-umpire-context worker) joined with real historical
