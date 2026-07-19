@@ -7880,10 +7880,10 @@ async function runRemineBattedBallProfileToPostgres(env, input) {
     if (!data.rows.length) return { ok: false, mode: "remine_batted_ball_profile_to_postgres", error: "no_data_extracted", html_sample: data.html_sample };
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
     const num = (v) => v != null && v !== "" ? Number(v) : null;
-    const rows = data.rows.filter(r => r.entity_id).map(r => ({
-      profile_id: `savant_bbp_${year}_${r.entity_id}`, mlb_player_id: Number(r.entity_id), player_name: r.entity_name || null, season_year: year,
-      ground_ball_pct: num(r.gb_percent), air_pct: num(r.air_percent), pulled_air_pct: num(r.pull_air_percent),
-      batted_ball_events: r.bip != null ? Number(r.bip) : null,
+    const rows = data.rows.filter(r => r.savant_batter_id || r.id).map(r => ({
+      profile_id: `savant_bbp_${year}_${r.savant_batter_id || r.id}`, mlb_player_id: Number(r.savant_batter_id || r.id), player_name: r.name || r.b_name_display_first_last || null, season_year: year,
+      ground_ball_pct: num(r.gb_rate), air_pct: num(r.air_rate), pulled_air_pct: num(r.pull_air_rate),
+      batted_ball_events: r.num_bbe != null ? Number(r.num_bbe) : null,
       source_key: "baseball_savant_batted_ball_html_regex", raw_json: r
     })).filter(r => r.mlb_player_id);
     if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_batted_ball_profile_to_postgres", error: "no_valid_rows", sample_raw_row: data.rows[0] || null }; }
