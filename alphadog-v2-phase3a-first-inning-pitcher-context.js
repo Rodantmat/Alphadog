@@ -6676,17 +6676,18 @@ async function runSavantQualityOfContactMining(env, input = {}) {
 const PG_TABLE_PLAN = {
   market_historical_props_2025: {
     d1_binding: "MARKET_DB", d1_table: "market_historical_props_2025", pg_table: "market.historical_props_2025",
-    order_by: "prop_id",
-    columns: ["prop_id","game_pk","player_name","canonical_prop_key","line_value","side","price","bookmaker","official_date","raw_json","created_at"]
+    order_by: "row_id",
+    columns: ["row_id","batch_id","official_date","odds_api_event_id","home_team","away_team","commence_time_utc","bookmaker_key","market_key","player_name","outcome_name","line_point","price_american","snapshot_timestamp","raw_json","created_at"]
   },
   archive_board_leg_history: {
     d1_binding: "ARCHIVE_DB", d1_table: "archive_board_leg_history", pg_table: "archive.board_leg_history",
-    order_by: "history_id",
-    columns: ["history_id","final_board_row_id","mlb_player_id","canonical_prop_key","line_value","selected_side","estimated_hit_probability_0_100","score_0_100","outcome_result","official_date","archived_at"]
+    order_by: "prepared_row_id",
+    columns: ["prepared_row_id","official_date","source_key","source_row_id","player_name","resolved_mlb_player_id","team","opponent","canonical_prop_key","source_prop_name","line_value","official_game_pk","official_game_time_utc","pickable_safe","prep_status","raw_source_json","captured_at"]
   },
   archive_player_availability_history: {
     d1_binding: "ARCHIVE_DB", d1_table: "archive_player_availability_history", pg_table: "archive.player_availability_history",
-    order_by: "history_id", columns: ["history_id","mlb_player_id","official_date","availability_status","archived_at"]
+    order_by: "availability_key",
+    columns: ["availability_key","official_date","game_pk","mlb_player_id","player_name","team_abbreviation","team_mlb_id","availability_status","roster_status","availability_confidence","active_roster_flag","injured_list_flag","transaction_summary","reason","data_source_level","captured_at"]
   },
   config_system_settings: {
     d1_binding: "CONFIG_DB", d1_table: "config_system_settings", pg_table: "config.system_settings",
