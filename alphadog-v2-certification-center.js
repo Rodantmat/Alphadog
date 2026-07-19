@@ -151,6 +151,18 @@ function clampLimit(value) {
   return Math.max(1, Math.min(1000, Math.floor(n)));
 }
 
+function safeJsonParse(str) {
+  if (str === undefined || str === null || str === "") return null;
+  if (typeof str === "object") return str;
+  try { return JSON.parse(String(str)); } catch (e) { return null; }
+}
+
+function trimSnapshot(str, maxLen = 8000) {
+  const s = String(str || "");
+  if (s.length <= maxLen) return s;
+  return s.slice(0, maxLen);
+}
+
 function normalizeLineType(row) {
   const source = String(row.source_key || "").toLowerCase();
   const payout = String(row.payout_variant || "").toLowerCase();
