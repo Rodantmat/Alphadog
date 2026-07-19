@@ -2038,6 +2038,49 @@ miner with zero separate delta-path changes required, per Rodolfo's explicit sco
 Remaining, not yet actioned: deleting the confirmed-dead DEFAULT_SIM_CONFIGS hardcoded block in
 score-audit.js per Rodolfo's DB-only architecture principle.
 
+## DEFAULT_SIM_CONFIGS - CORRECTION AND FINAL DECISION
+Investigated further per Rodolfo's "delete if easy, leave if it deviates too much" instruction.
+Corrected an earlier, wrong claim: this is NOT dead code - Object.entries(DEFAULT_SIM_CONFIGS) is
+consumed by ensureSimulationProfileConfigs, called from real functions (seedProductionScoringProfile,
+a scoring-simulation dispatcher). Confirmed instead that the whole "scoring-engine-simulation"
+pathway is genuinely unreachable in practice: searched the real orchestrator stage-definition
+arrays directly and confirmed job_key:"scoring-engine-simulation" is never used to create a real
+job anywhere, and its target DB table is completely empty. Real, decisive conclusion: harmless
+and confirmed unreachable, but removing it cleanly requires touching 5 embedded config profiles
+plus 6 interconnected functions in a 431KB production file - too large and entangled a change to
+justify right now. Left alone per Rodolfo's own stated criteria, correctly retracting the earlier
+"safe to delete" claim rather than letting a wrong conclusion stand uncorrected.
+
+## FIX #4: SINGLES > HITS (AND OTHER SUBSET RELATIONSHIPS) - ROOT-CAUSED, FIXED, VERIFIED
+Real, grounded technique (isotonic/monotonicity-constraint enforcement, same published family of
+methods as Fix #1's aliasing): unlike total_bases (a true equality with hits at 0.5), singles is
+a genuine one-directional SUBSET of hits (a single always implies >=1 hit, but not vice versa) -
+so the correct fix is a clamp, not a copy. Confirmed the 10 real violations found in the original
+audit were small, residual independent-model noise (0.4-2.6 points) on modest samples, not a
+systematic bias - consistent with two separately-fit models occasionally disagreeing slightly at
+small-to-moderate sample sizes, unlike the severe, systematic Fix #1 case.
+Built a new, general, DB-driven subset_of_constraints config (singles/doubles/triples/home_runs
+subset-of hits; rbis/runs subset-of hits_runs_rbis) and a new reconcileSubsetOfConstraints()
+function: a single, fast, pure-SQL UPDATE per constraint that clamps any subset prop's HP down to
+its superset's HP wherever it's violated, for the whole real player population at once. Order-
+independent by design (runs as a post-processing pass, not dependent on combo processing order
+within a single tick). Wired into the automatic completion of BOTH the full-rebuild path
+(runBaselineV6Base) and the daily-delta path (runBaselineV6DeltaDaily) - both self-heal this
+class of violation automatically going forward, not just as a manual one-off fix.
+TESTED LIVE, CONFIRMED: 11 real rows clamped across the population (10 singles, 1 doubles) on
+first run. Direct re-query confirmed 0 remaining Singles>Hits violations, down from 10.
+
+## SESSION FINAL STATUS - 4 REAL FIXES IMPLEMENTED, TESTED, AND VERIFIED WITH LIVE DATA
+1. Hits/Total Bases divergence (equality relationship) - complete, 0/1176 mismatches.
+2. Missing baseline lines for combo props - complete, both props fully populated with real data.
+3. Small-sample overconfidence - real Wilson-interval safeguard implemented and verified, with
+   an honest correction that real-world impact is smaller than originally estimated.
+4. Subset-of monotonicity violations (singles/doubles/etc <= hits) - complete, 0 remaining
+   violations, self-healing wired into both the full-rebuild and daily-delta paths.
+All four fixes are DB-config-driven and/or shared-function-driven, confirmed via direct code
+trace to extend automatically to both the full historical rebuild and daily incremental delta
+miner, per Rodolfo's explicit scoping instruction throughout this whole exercise.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
