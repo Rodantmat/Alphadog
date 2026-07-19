@@ -15349,7 +15349,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, isShadowV2Job ? "v2_v3_shadow_score_audit" : (isEnrichmentJob ? "score_enrichment_v1" : "scoring_engine"), isShadowV2Job ? 45000 : (isEnrichmentJob ? 12000 : EXACT_WORKER_SERVICE_TIMEOUT_MS));
+    }, isShadowV2Job ? "v2_v3_shadow_score_audit" : (isEnrichmentJob ? "score_enrichment_v1" : "scoring_engine"), isShadowV2Job ? 45000 : (isEnrichmentJob ? 12000 : SCORING_ENGINE_DEFAULT_WORKER_TIMEOUT_MS));
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
