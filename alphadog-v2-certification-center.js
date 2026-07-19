@@ -1822,7 +1822,8 @@ async function apiPlayerProfile(env, url) {
       pitcher_arsenal: arsenalRows,
       arm_angle: armAngleRow,
       pitcher_running_game: runningGameRow,
-      catcher_framing_poptime: catcherRow
+      catcher_framing_poptime: catcherRow,
+      quality_of_contact: qocRow
     },
     next_game: nextGame,
     next_game_context: nextGame ? {
