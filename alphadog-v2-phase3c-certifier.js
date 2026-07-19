@@ -379,10 +379,5 @@ export default {
       try {
         const result = await reconcileHpBoardSubsetConstraints(env, input.hp_board_batch_id);
         return jsonResponse(result, result.ok ? 200 : 400);
-      } catch (err) {
-        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
-      }
-    }
-    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /reconcile-subset-constraints"] }, 404);
   },
 };
