@@ -7943,8 +7943,8 @@ async function runRemineParkFactorsToPostgres(env, input) {
     const num = (v) => v != null && v !== "" ? Number(v) : null;
     const teamRows = await sql`SELECT mlb_team_id, team_id FROM ref.teams WHERE active=1`;
     const teamById = new Map(teamRows.map(t => [Number(t.mlb_team_id), t.team_id]));
-    const rows = data.rows.filter(r => r.team_id || r.venue_id).map(r => {
-      const mlbTeamId = Number(r.team_id);
+    const rows = data.rows.filter(r => r.main_team_id || r.venue_id).map(r => {
+      const mlbTeamId = Number(r.main_team_id);
       return {
         park_factor_id: `savant_park_${year}_${r.venue_id || mlbTeamId}`,
         stadium_id: r.venue_id != null ? String(r.venue_id) : null,
