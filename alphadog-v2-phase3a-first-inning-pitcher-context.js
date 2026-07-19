@@ -7704,6 +7704,60 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
   }
 }
 
+async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const windows = [
+      { key: "last_5", limitClause: "5" }, { key: "last_10", limitClause: "10" },
+      { key: "last_20", limitClause: "20" }, { key: "season_to_date", limitClause: "9999" }
+    ];
+    for (const w of windows) {
+      await sql.unsafe(`
+        WITH ranked AS (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC, game_pk DESC) AS rn
+          FROM stats_pitcher.game_logs WHERE season = ${season}
+        ), windowed AS (
+          SELECT * FROM ranked WHERE rn <= ${w.limitClause}
+        ), agg AS (
+          SELECT
+            player_id, COUNT(*) AS games_count,
+            SUM(COALESCE(innings_pitched_decimal,0)) AS innings_pitched_sum,
+            SUM(COALESCE(batters_faced,0)) AS batters_faced_sum, SUM(COALESCE(hits_allowed,0)) AS hits_allowed_sum,
+            SUM(COALESCE(earned_runs,0)) AS earned_runs_sum, SUM(COALESCE(walks_allowed,0)) AS walks_allowed_sum,
+            SUM(COALESCE(strikeouts,0)) AS strikeouts_sum, SUM(COALESCE(home_runs_allowed,0)) AS home_runs_allowed_sum
+          FROM windowed GROUP BY player_id
+        )
+        INSERT INTO stats_pitcher.metric_snapshots
+          (snapshot_id, player_id, season, metric_window, games_count, innings_pitched_sum, batters_faced_sum,
+           hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+           era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated)
+        SELECT
+          player_id || '_' || ${season} || '_' || '${w.key}', player_id, ${season}, '${w.key}',
+          games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum,
+          walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+          CASE WHEN innings_pitched_sum > 0 THEN (9.0 * earned_runs_sum) / innings_pitched_sum ELSE NULL END,
+          CASE WHEN innings_pitched_sum > 0 THEN (walks_allowed_sum + hits_allowed_sum)::float / innings_pitched_sum ELSE NULL END,
+          CASE WHEN batters_faced_sum > 0 THEN strikeouts_sum::float / batters_faced_sum ELSE NULL END,
+          CASE WHEN batters_faced_sum > 0 THEN walks_allowed_sum::float / batters_faced_sum ELSE NULL END
+        FROM agg
+        ON CONFLICT (snapshot_id) DO UPDATE SET
+          games_count=excluded.games_count, innings_pitched_sum=excluded.innings_pitched_sum,
+          batters_faced_sum=excluded.batters_faced_sum, hits_allowed_sum=excluded.hits_allowed_sum,
+          earned_runs_sum=excluded.earned_runs_sum, walks_allowed_sum=excluded.walks_allowed_sum,
+          strikeouts_sum=excluded.strikeouts_sum, home_runs_allowed_sum=excluded.home_runs_allowed_sum,
+          era_calculated=excluded.era_calculated, whip_calculated=excluded.whip_calculated,
+          k_rate_calculated=excluded.k_rate_calculated, bb_rate_calculated=excluded.bb_rate_calculated, updated_at=now()
+      `);
+    }
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM stats_pitcher.metric_snapshots`;
+    await sql.end();
+    return { ok: true, mode: "derive_pitcher_metric_snapshots_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_pitcher_metric_snapshots_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7717,6 +7771,7 @@ async function runMode(env,input={}){
   if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
   if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
   if(mode==="derive_hitter_metric_snapshots_from_postgres") return runDeriveHitterMetricSnapshotsFromPostgres(env,input);
+  if(mode==="derive_pitcher_metric_snapshots_from_postgres") return runDerivePitcherMetricSnapshotsFromPostgres(env,input);
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
   if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
