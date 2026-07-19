@@ -10,8 +10,8 @@ const HITTER_PACKET_FLUSH_SIZE = 100;
 const PITCHER_PACKET_FLUSH_SIZE = 250;
 const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 350; // Increased from 180: real observed timing confirmed 180 rows took ~17s, and the orchestrator dispatch uses a generous 75s default timeout with zero cooldown delay - real headroom to process more per tick, directly reducing the number of ~60s cron-interval gaps needed to clear a real batch.
 const PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION = 900;
-const HITTER_SOFT_TIMEBOX_MS = 60000; // was 12000: real observed timing showed 180 rows takes ~17s, already exceeding the old 12s box before the raised 350-row cap could ever be reached. Orchestrator dispatch allows a 75s window with zero cooldown; 60s leaves safety margin for response marshaling.
-const PITCHER_SOFT_TIMEBOX_MS = 60000; // same fix as hitter: old 12s box was the real binding constraint, not the row-count cap.
+const HITTER_SOFT_TIMEBOX_MS = 30000; // was 12000: real observed timing showed 180 rows takes ~17s, already exceeding the old 12s box before the raised 350-row cap could ever be reached. Kept within the range already proven safe for dispatch timeouts elsewhere in the orchestrator (see PROP_FACTOR_MINER_WORKER_TIMEOUT_MS=40000) rather than pushing past it.
+const PITCHER_SOFT_TIMEBOX_MS = 30000; // same fix as hitter: old 12s box was the real binding constraint, not the row-count cap.
 
 const HITTER_PROPS = new Set([
   "hits", "total_bases", "runs", "rbis", "singles", "doubles", "home_runs", "walks",
