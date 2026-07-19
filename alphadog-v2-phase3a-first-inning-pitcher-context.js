@@ -6976,6 +6976,84 @@ async function runRemineRefStadiumsToPostgres(env, input) {
   }
 }
 
+async function runRemineHitterGameLogsToPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  const PLAYERS_PER_INVOCATION = 15;
+  const startOffset = Number(input.offset || 0);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const playerRows = await sql`SELECT mlb_player_id, full_name, current_team_id FROM ref.players WHERE active=1 ORDER BY mlb_player_id LIMIT ${PLAYERS_PER_INVOCATION} OFFSET ${startOffset}`;
+    if (!playerRows.length) { await sql.end(); return { ok: true, mode: "remine_hitter_game_logs_to_postgres", complete: true, note: "no more players at this offset" }; }
+
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+    const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
+    const allRows = [];
+    const perPlayer = [];
+    for (const p of playerRows) {
+      const url = `${base}/people/${p.mlb_player_id}/stats?stats=gameLog&group=hitting&season=${season}`;
+      const resp = await fetch(url, { headers });
+      const json = await resp.json().catch(() => null);
+      const splits = (json && Array.isArray(json.stats) && json.stats[0] && Array.isArray(json.stats[0].splits)) ? json.stats[0].splits : [];
+      let count = 0;
+      for (const split of splits) {
+        const stat = split.stat || {}, game = split.game || {}, team = split.team || {}, opponent = split.opponent || {};
+        const gamePk = game.gamePk || game.pk || null;
+        const gameDate = game.gameDate || split.date || null;
+        if (!gamePk || !gameDate) continue;
+        const hits = Number(stat.hits || 0), doubles = Number(stat.doubles || 0), triples = Number(stat.triples || 0), hr = Number(stat.homeRuns || 0);
+        allRows.push({
+          log_id: `${p.mlb_player_id}_${gamePk}_hitting`,
+          player_id: Number(p.mlb_player_id), game_pk: Number(gamePk), season,
+          game_date: String(gameDate).slice(0, 10),
+          team_id: team.id != null ? String(team.id) : p.current_team_id,
+          opponent_team_id: opponent.id != null ? String(opponent.id) : null,
+          opponent_abbr: null,
+          is_home: split.isHome != null ? (split.isHome ? 1 : 0) : null,
+          batting_order: split.battingOrder != null ? Number(split.battingOrder) : null,
+          pa: stat.plateAppearances != null ? Number(stat.plateAppearances) : null,
+          ab: stat.atBats != null ? Number(stat.atBats) : null,
+          hits, singles: Math.max(0, hits - doubles - triples - hr), doubles, triples, home_runs: hr,
+          runs: stat.runs != null ? Number(stat.runs) : null,
+          rbi: stat.rbi != null ? Number(stat.rbi) : null,
+          walks: stat.baseOnBalls != null ? Number(stat.baseOnBalls) : null,
+          strikeouts: stat.strikeOuts != null ? Number(stat.strikeOuts) : null,
+          stolen_bases: stat.stolenBases != null ? Number(stat.stolenBases) : null,
+          total_bases: stat.totalBases != null ? Number(stat.totalBases) : null,
+          primary_position_played: null, played_catcher_flag: 0,
+          source_key: "mlb_statsapi_gamelog", raw_json: JSON.stringify(split)
+        });
+        count++;
+      }
+      perPlayer.push({ mlb_player_id: p.mlb_player_id, full_name: p.full_name, games: count });
+    }
+
+    if (allRows.length) {
+      const cols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","batting_order","pa","ab","hits","singles","doubles","triples","home_runs","runs","rbi","walks","strikeouts","stolen_bases","total_bases","primary_position_played","played_catcher_flag","source_key","raw_json"];
+      const WRITE_CHUNK = 200;
+      for (let i = 0; i < allRows.length; i += WRITE_CHUNK) {
+        const chunk = allRows.slice(i, i + WRITE_CHUNK);
+        await sql`
+          INSERT INTO stats_hitter.game_logs ${sql(chunk, ...cols)}
+          ON CONFLICT (log_id) DO UPDATE SET
+            hits=excluded.hits, singles=excluded.singles, doubles=excluded.doubles, triples=excluded.triples,
+            home_runs=excluded.home_runs, runs=excluded.runs, rbi=excluded.rbi, walks=excluded.walks,
+            strikeouts=excluded.strikeouts, stolen_bases=excluded.stolen_bases, total_bases=excluded.total_bases,
+            pa=excluded.pa, ab=excluded.ab, raw_json=excluded.raw_json, updated_at=now()
+        `;
+      }
+    }
+    await sql.end();
+    return {
+      ok: true, mode: "remine_hitter_game_logs_to_postgres", season,
+      players_processed_this_invocation: playerRows.length, next_offset: startOffset + playerRows.length,
+      games_written_this_invocation: allRows.length, per_player: perPlayer,
+      complete: false, note: `call again with offset=${startOffset + playerRows.length} to continue`
+    };
+  } catch (err) {
+    return { ok: false, mode: "remine_hitter_game_logs_to_postgres", offset: startOffset, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -6987,6 +7065,7 @@ async function runMode(env,input={}){
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
   if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
+  if(mode==="remine_hitter_game_logs_to_postgres") return runRemineHitterGameLogsToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
