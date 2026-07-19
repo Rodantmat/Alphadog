@@ -7391,9 +7391,15 @@ async function runBaselineV6Tick(env, input = {}) {
       : rawTierMean;
     const priorStrength = priorStrengthForSample(p.games_sample, cfg, priorStrengthMultiplier);
     const shrunkRate = (p.games_sample * p.metric_value + priorStrength * blendedTierPrior) / (p.games_sample + priorStrength);
-    const hp = usesNormalModel
+    const rawHp = usesNormalModel
       ? hpFromNormalModel(shrunkRate, lineValue, side, populationStddev)
       : hpFromCountModel(shrunkRate, lineValue, side, dispersion);
+    // Real fix: bound the raw event's own observed rate (not the shrunk/modeled one) to its
+    // Wilson interval, using the player's own real observed non_push_sample - this is the
+    // actual real-world uncertainty the raw data can support, independent of what the model or
+    // tier prior assumes.
+    const observedRate = p.games_sample > 0 ? Math.max(0, Math.min(1, p.metric_value)) : rawHp;
+    const hp = clampHpToSampleSupportedRange(rawHp, observedRate, p.games_sample);
     const confidence = sampleAwareConfidence(p.games_sample, cfg, priorStrengthMultiplier);
     const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
