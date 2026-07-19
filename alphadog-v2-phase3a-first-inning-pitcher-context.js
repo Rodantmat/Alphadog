@@ -6873,10 +6873,9 @@ function wilsonInterval(pHat, n, z) {
 function clampHpToSampleSupportedRange(rawHp0to1, gamesSample) {
   const p = Math.max(0, Math.min(1, Number(rawHp0to1) || 0));
   const n = Math.max(0, Number(gamesSample) || 0);
-  if (n >= 30) return Math.round(p * 1000) / 10; // Large real samples: trust the model directly, no clamp needed.
+  if (n >= 30) return p; // Large real samples: trust the model directly, no clamp needed.
   const { lower, upper } = wilsonInterval(p, n, 1.96);
-  const clamped = Math.max(lower, Math.min(upper, p));
-  return Math.round(clamped * 1000) / 10;
+  return Math.max(lower, Math.min(upper, p));
 }
 
 // Abramowitz-Stegun erf approximation, needed for the Normal CDF below.
