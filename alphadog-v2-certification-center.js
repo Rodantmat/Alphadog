@@ -1164,6 +1164,8 @@ async function apiDossier(env, url) {
     for (const g of (recentGames || [])) g.opponent_abbr = abbrByIdD.get(String(g.opponent_team_id)) || null;
   }
 
+  const qocRowD = !isPitcher ? (await safeQuery(env.REF_DB, `SELECT xba, xslg, xwoba, woba, ba, slg, xiso, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref_batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]))[0] || null : null;
+
   return jsonResponse({
     ok: true,
     data_ok: true,
