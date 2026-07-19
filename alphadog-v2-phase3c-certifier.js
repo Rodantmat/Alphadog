@@ -293,19 +293,23 @@ async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
     const [subProp, subLineRaw, subSide] = subsetKey.split("|");
     const [supProp, supLineRaw, supSide] = supersetKey.split("|");
     const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
+    // REAL FIX (found via live debugging): matched by source_key too, since hp_board_current
+    // legitimately has one row per real data source (prizepicks/parlay_underdog/sleeper) for
+    // the same player+prop+line - comparing across sources produced wrong results. Explicit
+    // table alias "h" throughout to avoid an unqualified-column SQLite scoping bug that
+    // silently made the original correlated EXISTS clause always evaluate false.
     const res = await run(env.SCORE_DB, `
-      UPDATE hp_board_current
+      UPDATE hp_board_current AS h
       SET estimated_hit_probability_0_100 = (
-        SELECT s.estimated_hit_probability_0_100 FROM hp_board_current s
-        WHERE s.mlb_player_id = hp_board_current.mlb_player_id AND s.hp_board_batch_id = hp_board_current.hp_board_batch_id
-          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        SELECT MIN(s.estimated_hit_probability_0_100) FROM hp_board_current s
+        WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
       )
-      WHERE hp_board_batch_id = ? AND canonical_prop_key = ? AND line_value = ? AND selected_side = ?
-        AND EXISTS (
-          SELECT 1 FROM hp_board_current s
-          WHERE s.mlb_player_id = hp_board_current.mlb_player_id AND s.hp_board_batch_id = hp_board_current.hp_board_batch_id
-            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
-            AND estimated_hit_probability_0_100 > s.estimated_hit_probability_0_100
+      WHERE h.hp_board_batch_id = ? AND h.canonical_prop_key = ? AND h.line_value = ? AND h.selected_side = ?
+        AND h.estimated_hit_probability_0_100 > (
+          SELECT MIN(s.estimated_hit_probability_0_100) FROM hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
         )`,
       supProp, supLine, supSide, hpBatchId, subProp, subLine, subSide, supProp, supLine, supSide);
     const changed = Number(res && res.meta && res.meta.changes || 0);
