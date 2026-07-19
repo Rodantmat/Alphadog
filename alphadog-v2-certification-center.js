@@ -1783,7 +1783,8 @@ async function apiPlayerProfile(env, url) {
     isPitcher ? safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba, run_value_per_100 FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 8`, [mlbId, mlbId]) : Promise.resolve([]),
     isPitcher ? safeOne(env.REF_DB, `SELECT arm_angle_degrees, pitches_tracked FROM ref_arm_angle WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
     isPitcher ? safeOne(env.REF_DB, `SELECT sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained FROM ref_pitcher_running_game WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
-    String(p.primary_position || "").toUpperCase() === "C" ? safeOne(env.REF_DB, `SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref_catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
+    String(p.primary_position || "").toUpperCase() === "C" ? safeOne(env.REF_DB, `SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref_catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    !isPitcher ? safeOne(env.REF_DB, `SELECT xba, xslg, xwoba, woba, ba, slg, xiso, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref_batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
   ]);
 
   // Next-game specific opponent detail: opposing starter's arsenal (for hitters facing them), opposing catcher's framing/poptime
