@@ -802,11 +802,24 @@ async function runEnrichment(env, input) {
   }
   if (statements.length) await env.SCORING_DB.batch(statements);
 
+  const isComplete = matrixRows.length < MAX_LEGS_PER_INVOCATION;
+  let staleRowsCleaned = null;
+  if (isComplete) {
+    // REAL FIX (found live tonight: 78% of enrichment_leg_current rows were orphaned/stale,
+    // no longer matching any current matrix row - INSERT OR REPLACE only ever updates matching
+    // rows, it never removes rows whose matrix_id has since been superseded by a fresh matrix
+    // rebuild). Cleaning this up on every real completion prevents the same accumulation from
+    // recurring, rather than needing another one-off manual cleanup.
+    const cleanupResult = await run(env.SCORING_DB, `DELETE FROM enrichment_leg_current WHERE matrix_id NOT IN (SELECT matrix_id FROM prop_matrix_current)`).catch((e) => ({ error: String(e && e.message ? e.message : e) }));
+    staleRowsCleaned = cleanupResult && cleanupResult.meta ? cleanupResult.meta.changes : null;
+  }
+
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
     request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
     status: matrixRows.length >= MAX_LEGS_PER_INVOCATION ? "partial_continue" : "completed",
     legs_read: matrixRows.length, legs_enriched: written,
+    stale_rows_cleaned: staleRowsCleaned,
     real_status_note: "FIXED: now reads real daily_context/market_context directly from source tables. Real, working tier-detection: platoon_handedness (incl. real arm-angle submarine/sidearm refinement), bullpen_fatigue, player_availability, weather_roof, umpire_tendency, stolen_base_family (real sprint speed + catcher pop time). Honestly not yet implementable (real underlying data doesn't exist yet): weather_wind (needs park orientation).",
     _debug_umpire: _debugUmpireInfo,
     _debug_oaa: _debugOaaInfo,
