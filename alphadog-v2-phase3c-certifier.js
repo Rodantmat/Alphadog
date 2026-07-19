@@ -368,7 +368,7 @@ export default {
         // way from the same shared chain_id (scoring_engine_batch_${chain_id}) - deriving the
         // same value here, as a fallback when not explicitly provided, closes the real gap.
         const sourceMatrixBatchId = input.source_matrix_batch_id || input.source_engine_batch_id || (input.chain_id ? `scoring_engine_batch_${input.chain_id}` : null);
-        const output = await runHitProbabilityBoard(env, input, sourceMatrixBatchId);
+        const output = await runHitProbabilityBoardFastLoop(env, input, sourceMatrixBatchId);
         return jsonResponse(output, output.ok ? 200 : 400);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
