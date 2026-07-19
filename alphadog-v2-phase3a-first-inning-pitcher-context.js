@@ -7646,6 +7646,64 @@ async function runRemineCatcherFramingToPostgres(env, input) {
   }
 }
 
+async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const windows = [
+      { key: "last_5", limitClause: "5" }, { key: "last_10", limitClause: "10" },
+      { key: "last_20", limitClause: "20" }, { key: "season_to_date", limitClause: "9999" }
+    ];
+    let totalWritten = 0;
+    for (const w of windows) {
+      const res = await sql.unsafe(`
+        WITH ranked AS (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC, game_pk DESC) AS rn
+          FROM stats_hitter.game_logs WHERE season = ${season}
+        ), windowed AS (
+          SELECT * FROM ranked WHERE rn <= ${w.limitClause}
+        ), agg AS (
+          SELECT
+            player_id, COUNT(*) AS games_count,
+            SUM(COALESCE(pa,0)) AS pa_sum, SUM(COALESCE(ab,0)) AS ab_sum, SUM(COALESCE(hits,0)) AS hits_sum,
+            SUM(COALESCE(doubles,0)) AS doubles_sum, SUM(COALESCE(triples,0)) AS triples_sum, SUM(COALESCE(home_runs,0)) AS home_runs_sum,
+            SUM(COALESCE(runs,0)) AS runs_sum, SUM(COALESCE(rbi,0)) AS rbi_sum, SUM(COALESCE(walks,0)) AS walks_sum,
+            SUM(COALESCE(strikeouts,0)) AS strikeouts_sum, SUM(COALESCE(stolen_bases,0)) AS stolen_bases_sum,
+            SUM(COALESCE(total_bases,0)) AS total_bases_derived_sum
+          FROM windowed GROUP BY player_id
+        )
+        INSERT INTO stats_hitter.metric_snapshots
+          (snapshot_id, player_id, season, metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum,
+           home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum,
+           batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate)
+        SELECT
+          player_id || '_' || ${season} || '_' || '${w.key}', player_id, ${season}, '${w.key}',
+          games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum,
+          walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum,
+          CASE WHEN ab_sum > 0 THEN hits_sum::float / ab_sum ELSE NULL END,
+          CASE WHEN ab_sum > 0 THEN total_bases_derived_sum::float / ab_sum ELSE NULL END,
+          CASE WHEN pa_sum > 0 THEN strikeouts_sum::float / pa_sum ELSE NULL END,
+          CASE WHEN pa_sum > 0 THEN walks_sum::float / pa_sum ELSE NULL END,
+          CASE WHEN pa_sum > 0 THEN home_runs_sum::float / pa_sum ELSE NULL END
+        FROM agg
+        ON CONFLICT (snapshot_id) DO UPDATE SET
+          games_count=excluded.games_count, pa_sum=excluded.pa_sum, ab_sum=excluded.ab_sum, hits_sum=excluded.hits_sum,
+          doubles_sum=excluded.doubles_sum, triples_sum=excluded.triples_sum, home_runs_sum=excluded.home_runs_sum,
+          runs_sum=excluded.runs_sum, rbi_sum=excluded.rbi_sum, walks_sum=excluded.walks_sum, strikeouts_sum=excluded.strikeouts_sum,
+          stolen_bases_sum=excluded.stolen_bases_sum, total_bases_derived_sum=excluded.total_bases_derived_sum,
+          batting_average=excluded.batting_average, slugging_percentage=excluded.slugging_percentage,
+          strikeout_rate=excluded.strikeout_rate, walk_rate=excluded.walk_rate, hr_rate=excluded.hr_rate, updated_at=now()
+      `);
+      totalWritten += res.count || 0;
+    }
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM stats_hitter.metric_snapshots`;
+    await sql.end();
+    return { ok: true, mode: "derive_hitter_metric_snapshots_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_hitter_metric_snapshots_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7658,6 +7716,7 @@ async function runMode(env,input={}){
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
   if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
   if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
+  if(mode==="derive_hitter_metric_snapshots_from_postgres") return runDeriveHitterMetricSnapshotsFromPostgres(env,input);
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
   if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
