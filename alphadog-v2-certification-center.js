@@ -1055,6 +1055,31 @@ async function apiDossier(env, url) {
     ORDER BY COALESCE(f.rank_order,999999) ASC
     LIMIT 60
   `, [selectedRaw.player_name]);
+
+  const gamePk = selectedRaw.game_pk;
+  const mlbPlayerId = selectedRaw.mlb_player_id;
+  const officialDate = selectedRaw.official_date;
+  const safeQuery = async (db, sql, params) => { try { return db ? await queryAll(db, sql, params) : []; } catch (e) { return []; } };
+  const [weatherRows2, umpireRows2, marketRows2, playerRows2, preparedLineRows] = await Promise.all([
+    safeQuery(env.DAILY_DB, `SELECT * FROM daily_game_weather_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
+    safeQuery(env.DAILY_DB, `SELECT * FROM daily_umpire_context_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
+    safeQuery(env.MARKET_DB, `SELECT * FROM market_context_probe_game_market_summary WHERE game_pk=? ORDER BY datetime(created_at) DESC LIMIT 1`, [gamePk]),
+    safeQuery(env.REF_DB, `SELECT * FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [mlbPlayerId]),
+    safeQuery(env.SCORE_DB, `SELECT source_key, canonical_prop_key, source_prop_name, line_value, source_pickable, pickable_safe, prep_status, source_start_time AS start_time FROM score_board_prepared_current WHERE resolved_mlb_player_id=? AND official_date=?`, [mlbPlayerId, officialDate])
+  ]);
+  const weatherRow = weatherRows2[0] || {};
+  const umpireRow = umpireRows2[0] || {};
+  const marketRow = marketRows2[0] || {};
+  const playerRow = playerRows2[0] || {};
+  const venueKey = weatherRow.venue_id || umpireRow.venue_id;
+  const homeTeamKey = weatherRow.home_team_id || umpireRow.home_team_id;
+  const [stadiumRows2, parkRows2] = await Promise.all([
+    safeQuery(env.REF_DB, `SELECT * FROM ref_stadiums WHERE stadium_id=? OR mlb_venue_id=? LIMIT 1`, [venueKey, venueKey]),
+    safeQuery(env.REF_DB, `SELECT * FROM ref_park_factors WHERE team_id=? ORDER BY season_year DESC LIMIT 1`, [homeTeamKey])
+  ]);
+  const stadiumRow = stadiumRows2[0] || {};
+  const parkRow = parkRows2[0] || {};
+
   return jsonResponse({
     ok: true,
     data_ok: true,
@@ -1072,8 +1097,22 @@ async function apiDossier(env, url) {
       matrix_payload_json_snapshot: null,
       hp_display_notes_json: null
     },
-    dossier_context: { source_table: "SCORE_DB.score_final_board_current", source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null },
-    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs"],
+    dossier_context: {
+      source_table: "SCORE_DB.score_final_board_current",
+      source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null,
+      weather: weatherRow,
+      stadium: stadiumRow,
+      park_factors: parkRow,
+      market_summary: marketRow,
+      umpire: umpireRow,
+      player_profile: playerRow,
+      prepared_lines: preparedLineRows,
+      prizepicks_lines: [],
+      sleeper_lines: [],
+      prop_market_current_lines: [],
+      prop_market_evidence: []
+    },
+    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile"],
     writes_performed: 0,
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
