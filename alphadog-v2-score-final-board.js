@@ -473,6 +473,21 @@ function isHitterProp(propKey) {
   return HITTER_PROP_KEYS.has(norm(propKey));
 }
 
+// ============================================================================
+// CONFIRMED DEAD CODE (verified 2026-07-19): calibrateScoreAndConfidence,
+// applyCalibration, applyCutoffVolatilityTrim, sideSymmetryRisk,
+// contextScoreCapFor, effectiveWarningCountFromBoardRow,
+// applyPrimarySanityHpAdvisory, hpAdvisoryIsRobust - this entire function
+// family has ZERO call sites anywhere in this file outside their own
+// definitions and each other. The real, live board_tier/score assignment is
+// mapHpCurrentRowToFinalBoardRow's direct hp_primary_playable pass-through
+// (see that function below). Several of these also reference columns that
+// don't exist in score_final_board_current at all (matrix_status,
+// warning_count, blocker_count, more_score_0_100, less_score_0_100),
+// confirming this is legacy carryover from a pre-ENRICHMENT_V1_REAL_SKELETON
+// architecture, not active logic. Do not spend time "fixing" bugs found
+// inside this block - verify call sites first if revisiting.
+// ============================================================================
 function calibrateScoreAndConfidence(rawRow) {
   const sourceKey = norm(rawRow.source_key);
   const propKey = norm(rawRow.canonical_prop_key);
