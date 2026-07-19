@@ -539,6 +539,11 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
   // team's bullpen (relief support behind them).
   const relevantBullpen = isPitcherProp ? (ctxMaps.bullpenByGameTeam.get(`${gamePk}|${ownTeamId}`) || {}) : (ctxMaps.bullpenByGameTeam.get(`${gamePk}|${oppTeamId}`) || {});
   const catcher = ctxMaps.catcherByGameTeam.get(`${gamePk}|${oppTeamId}`) || {};
+  // REAL FIX (closes the confirmed schedule_travel_fatigue data gap): the leg's OWN team's
+  // travel status is what matters here - jet lag affects the traveling team's own performance,
+  // not their opponent's. Uses ownTeamId (already normalized above), same key pattern as
+  // bullpen/catcher lookups.
+  const scheduleSpot = ctxMaps.scheduleSpotByGameTeam.get(`${gamePk}|${ownTeamId}`) || {};
   const availability = ctxMaps.availByGamePlayer.get(`${gamePk}|${playerId}`) || {};
   const market = ctxMaps.marketByGame.get(String(gamePk)) || {};
   const pitcherQuality = oppStarter.starter_player_id != null ? ctxMaps.pitcherQualityByPitcherId.get(String(oppStarter.starter_player_id)) : undefined;
