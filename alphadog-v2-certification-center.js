@@ -2119,9 +2119,10 @@ function renderPlayerProfileDream(j){
     html+='<div class="dossierNote" style="margin-top:14px">No next scheduled game found for this player right now — micro-factor context will appear once a game is on the board.</div>';
   }
   if(legs.length){
-    html+='<div class="sectionLabel" style="margin-top:16px">Current Board Lines</div><div class="pillRow">'+legs.map(l=>'<button class="legBtn" data-leg-id="'+esc(l.final_board_row_id)+'"><b>'+pct(l.estimated_hit_probability_0_100)+'</b><br>'+esc(appLabel(l.source_key))+' • '+esc(cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+' '+esc(l.line_value)+'</button>').join('')+'</div>';
+    html+='<div class="sectionLabel" style="margin-top:16px">Available Legs On The Board</div><div class="miniLegGrid">'+legs.map(l=>miniLegCard(l)).join('')+'</div>';
   }
   $('playerProfileBody').innerHTML=html;
+  document.querySelectorAll('#playerProfileBody .miniLegCard[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.dataset.legId));
   document.querySelectorAll('.legBtn[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.dataset.legId));
 }
 
