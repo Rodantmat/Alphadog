@@ -1245,7 +1245,7 @@ async function apiFilters(env) {
     quota_contract: { enabled: true, min_per_prop_line: 5, min_goblin: 20, min_demon: 10, min_prizepicks_regular: 20, min_sleeper_regular: 20, min_less: 15, min_more: 20, legs_can_satisfy_multiple_quotas: true, availability_based: true },
     summary,
     prop_groups: { hitter: props.filter(p => p.prop_family === "hitter"), pitcher: props.filter(p => p.prop_family === "pitcher"), other: props.filter(p => p.prop_family !== "hitter" && p.prop_family !== "pitcher") },
-    source_groups: { prizepicks: lineTypes.filter(l => l.source_key === "prizepicks"), sleeper: lineTypes.filter(l => l.source_key === "sleeper"), other: lineTypes.filter(l => l.source_key !== "prizepicks" && l.source_key !== "sleeper") },
+    source_groups: { prizepicks: lineTypes.filter(l => l.source_key === "prizepicks"), sleeper: lineTypes.filter(l => l.source_key === "sleeper"), underdog: lineTypes.filter(l => l.source_key === "parlay_underdog" || l.source_key === "underdog"), other: lineTypes.filter(l => !["prizepicks","sleeper","parlay_underdog","underdog"].includes(l.source_key)) },
     probability_bands: Array.from(bands, ([value, rows]) => ({ value, rows })),
     probability_grades: [],
     board_tiers: Array.from(tiers, ([value, rows]) => ({ value, rows })),
