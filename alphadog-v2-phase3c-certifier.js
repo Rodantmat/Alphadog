@@ -284,7 +284,8 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
 }
 
 async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
-  const cfgRow = await first(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`);
+  const cfgRows = await all(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`);
+  const cfgRow = cfgRows[0] || null;
   const constraints = cfgRow ? safeJsonParse(cfgRow.config_json, {}) : {};
   let totalClamped = 0;
   const results = [];
