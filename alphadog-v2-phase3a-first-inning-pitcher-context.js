@@ -7384,6 +7384,70 @@ async function runDeriveBullpenHistoryFromPostgres(env, input) {
   }
 }
 
+async function runRemineSprintSpeedToPostgres(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantLeaderboardHtml("/leaderboard/sprint_speed", { year, position: "", team: "", min: "10" });
+    const data = extractSavantVarData(fetched.html);
+    if (!data.rows.length) return { ok: false, mode: "remine_sprint_speed_to_postgres", error: "no_data_extracted", html_sample: data.html_sample, pattern_used: data.pattern_used };
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const rows = data.rows.filter(r => r.entity_id || r.player_id).map(r => ({
+      sprint_id: `savant_sprint_${year}_${r.entity_id || r.player_id}`,
+      mlb_player_id: Number(r.entity_id || r.player_id),
+      player_name: r.entity_name || r.name || null,
+      season_year: year,
+      sprint_speed_ft_per_sec: r.hp_to_1b != null ? null : (Number(r.sprint_speed) || null),
+      competitive_runs: r.competitive_runs != null ? Number(r.competitive_runs) : null,
+      active: 1, source_key: "baseball_savant_sprint_speed_html_regex", raw_json: JSON.stringify(r)
+    })).filter(r => r.mlb_player_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_sprint_speed_to_postgres", error: "no_valid_rows_after_mapping", sample_raw_row: data.rows[0] || null }; }
+    const cols = ["sprint_id","mlb_player_id","player_name","season_year","sprint_speed_ft_per_sec","competitive_runs","active","source_key","raw_json"];
+    await sql`
+      INSERT INTO ref.sprint_speed ${sql(rows, ...cols)}
+      ON CONFLICT (sprint_id) DO UPDATE SET
+        player_name=excluded.player_name, sprint_speed_ft_per_sec=excluded.sprint_speed_ft_per_sec,
+        competitive_runs=excluded.competitive_runs, active=1, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_sprint_speed_to_postgres", players_written: rows.length, sample_raw_row: data.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_sprint_speed_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runRemineArmAngleToPostgres(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantLeaderboardHtml("/leaderboard/pitcher-arm-angles", { year });
+    const data = extractSavantVarData(fetched.html);
+    if (!data.rows.length) return { ok: false, mode: "remine_arm_angle_to_postgres", error: "no_data_extracted", html_sample: data.html_sample, pattern_used: data.pattern_used };
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const rows = data.rows.filter(r => r.entity_id || r.pitcher).map(r => ({
+      arm_angle_id: `savant_arm_${year}_${r.entity_id || r.pitcher}`,
+      mlb_player_id: Number(r.entity_id || r.pitcher),
+      player_name: r.entity_name || r.pitcher_name || null,
+      season_year: year,
+      arm_angle_degrees: r.ball_angle != null ? Number(r.ball_angle) : (r.arm_angle != null ? Number(r.arm_angle) : null),
+      pitches_tracked: r.n_pitches != null ? Number(r.n_pitches) : (r.pitches != null ? Number(r.pitches) : null),
+      active: 1, source_key: "baseball_savant_arm_angle_html_regex", raw_json: JSON.stringify(r)
+    })).filter(r => r.mlb_player_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_arm_angle_to_postgres", error: "no_valid_rows_after_mapping", sample_raw_row: data.rows[0] || null }; }
+    const cols = ["arm_angle_id","mlb_player_id","player_name","season_year","arm_angle_degrees","pitches_tracked","active","source_key","raw_json"];
+    await sql`
+      INSERT INTO ref.arm_angle ${sql(rows, ...cols)}
+      ON CONFLICT (arm_angle_id) DO UPDATE SET
+        player_name=excluded.player_name, arm_angle_degrees=excluded.arm_angle_degrees,
+        pitches_tracked=excluded.pitches_tracked, active=1, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_arm_angle_to_postgres", pitchers_written: rows.length, sample_raw_row: data.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_arm_angle_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7402,6 +7466,8 @@ async function runMode(env,input={}){
   if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
   if(mode==="derive_starter_history_from_postgres") return runDeriveStarterHistoryFromPostgres(env,input);
   if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
+  if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
+  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
