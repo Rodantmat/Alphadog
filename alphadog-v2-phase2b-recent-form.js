@@ -969,7 +969,7 @@ async function insertCoverageRows(env, batchId, coverageRows) {
   const covStmts = coverageRows.map(c => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_factor_coverage_current (coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     c.coverage_key, c.factor_family, c.prepared_row_id, c.game_pk, c.mlb_player_id, c.canonical_prop_key, c.normalized_factor_lane, c.factor_status, c.factor_grade, c.packet_id || null, batchId, nowIso(), c.blocking_for_matrix ? 1 : 0, c.missing_reason || null, JSON.stringify(c.details || {}), c.official_date
   ));
-  await batch(env.SCORING_DB, covStmts, 25);
+  await batch(env.SCORING_DB, covStmts, 200);
 }
 
 async function insertRows(env, family, batchId, packets, issues, coverageRows) {
