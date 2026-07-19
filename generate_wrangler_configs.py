@@ -58,11 +58,14 @@ def make_config(worker_name, include_services=False):
         cfg["migrations"] = [
             {"tag": "v1", "new_sqlite_classes": ["AlphadogMcp"]}
         ]
-    if worker_name == "alphadog-v2-postgres-migration":
+    if worker_name == "alphadog-v2-phase3a-first-inning-pitcher-context":
         # Hyperdrive binding for the DigitalOcean managed Postgres instance
-        # (config name "alphadog-postgres"). Same reason as control-room/admin-sql
-        # above: this must live in the generator or it gets wiped on every deploy
-        # before Wrangler even runs.
+        # (config name "alphadog-postgres"). Placed here (not on the standalone
+        # alphadog-v2-postgres-migration worker) because this worker is the one
+        # actually invocable via the existing PHASE3A_WORKER run_job routing -
+        # same reason the Savant quality-of-contact miner mode lives here too.
+        # Must live in the generator or it gets wiped on every deploy before
+        # Wrangler even runs.
         cfg["hyperdrive"] = [
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
