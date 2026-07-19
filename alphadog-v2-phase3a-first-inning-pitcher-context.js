@@ -7480,10 +7480,12 @@ async function runBaselineV6BaseSingleStep(env, input = {}) {
   const batchId = String(input.batch_id || rid("baseline_v6_base_batch"));
 
   if (comboIndex >= combos.length) {
+    const reconcileResult = await reconcileSubsetOfConstraints(env).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
     return {
       ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
       status: "BASELINE_V6_BASE_COMPLETED", certification: "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
       certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      subset_constraint_reconcile: reconcileResult,
       no_daily_context: true, no_market_context: true, no_scoring_context: true
     };
   }
