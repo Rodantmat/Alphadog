@@ -7394,12 +7394,12 @@ async function runBaselineV6Tick(env, input = {}) {
     const rawHp = usesNormalModel
       ? hpFromNormalModel(shrunkRate, lineValue, side, populationStddev)
       : hpFromCountModel(shrunkRate, lineValue, side, dispersion);
-    // Real fix: bound the raw event's own observed rate (not the shrunk/modeled one) to its
-    // Wilson interval, using the player's own real observed non_push_sample - this is the
-    // actual real-world uncertainty the raw data can support, independent of what the model or
-    // tier prior assumes.
-    const observedRate = p.games_sample > 0 ? Math.max(0, Math.min(1, p.metric_value)) : rawHp;
-    const hp = clampHpToSampleSupportedRange(rawHp, observedRate, p.games_sample);
+    // Real fix, grounded in the Wilson score interval (standard published technique for
+    // small-sample binomial proportion bounds): treat the model's own point estimate (rawHp)
+    // as an observed proportion with games_sample real trials, and bound it to what that sample
+    // size can actually statistically support - preventing a tiny real sample (n=3-4) from
+    // producing an artificially extreme 0%/100% output regardless of what the model computed.
+    const hp = clampHpToSampleSupportedRange(rawHp, p.games_sample);
     const confidence = sampleAwareConfidence(p.games_sample, cfg, priorStrengthMultiplier);
     const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
