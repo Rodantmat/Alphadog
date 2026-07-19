@@ -1126,7 +1126,11 @@ async function apiDossier(env, url) {
       { team_name: (homeTeamRows[0] || {}).full_name || 'Home', is_home: 1, starter_name: hp.full_name || String(starterRow.home_pitcher_id), starter_hand: hp.throw_side, starter_status: starterRow.confidence, starter_confidence: starterRow.confidence },
       { team_name: (awayTeamRows[0] || {}).full_name || 'Away', is_home: 0, starter_name: ap.full_name || String(starterRow.away_pitcher_id), starter_hand: ap.throw_side, starter_status: starterRow.confidence, starter_confidence: starterRow.confidence }
     ];
-    pitcherForm = [homeForm5, homeForm10, homeFormSeason, awayForm5, awayForm10, awayFormSeason].filter(Boolean);
+    const [homeSnaps, awaySnaps] = await Promise.all([
+      safeQuery(env.STATS_PITCHER_DB, `SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM pitcher_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [starterRow.home_pitcher_id]),
+      safeQuery(env.STATS_PITCHER_DB, `SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM pitcher_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [starterRow.away_pitcher_id])
+    ]);
+    pitcherForm = (homeSnaps.length || awaySnaps.length) ? [...homeSnaps, ...awaySnaps] : [homeForm5, homeForm10, homeFormSeason, awayForm5, awayForm10, awayFormSeason].filter(Boolean);
     pitcherSplits = [...homeSplits, ...awaySplits];
   }
   const [bullpen, scheduleSpot, marketOdds] = await Promise.all([
