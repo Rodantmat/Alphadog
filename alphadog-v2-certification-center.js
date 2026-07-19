@@ -1139,6 +1139,15 @@ async function apiDossier(env, url) {
     safeQuery(env.MARKET_DB, `SELECT * FROM market_context_probe_game_odds WHERE game_pk=? AND market_key IN ('h2h','spreads','totals')`, [gamePk])
   ]);
 
+  const oppTeamIdsD = [...new Set((recentGames || []).map(g => g.opponent_team_id).filter(v => v != null))];
+  if (oppTeamIdsD.length) {
+    const phD = oppTeamIdsD.map(() => "?").join(",");
+    const oppTeamRowsD = await safeQuery(env.REF_DB, `SELECT team_id, mlb_team_id, abbreviation FROM ref_teams WHERE team_id IN (${phD}) OR mlb_team_id IN (${phD})`, [...oppTeamIdsD, ...oppTeamIdsD]);
+    const abbrByIdD = new Map();
+    for (const t of oppTeamRowsD) { if (t.team_id != null) abbrByIdD.set(String(t.team_id), t.abbreviation); if (t.mlb_team_id != null) abbrByIdD.set(String(t.mlb_team_id), t.abbreviation); }
+    for (const g of (recentGames || [])) g.opponent_abbr = abbrByIdD.get(String(g.opponent_team_id)) || null;
+  }
+
   return jsonResponse({
     ok: true,
     data_ok: true,
