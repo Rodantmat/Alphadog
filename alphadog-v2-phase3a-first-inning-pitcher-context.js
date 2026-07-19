@@ -6698,7 +6698,8 @@ const PG_TABLE_PLAN = {
   },
   config_worker_definitions: {
     d1_binding: "CONFIG_DB", d1_table: "config_worker_definitions", pg_table: "config.worker_definitions",
-    order_by: "worker_name", columns: ["worker_name","definition_json","updated_at"]
+    order_by: "worker_name",
+    columns: ["worker_name","job_key","worker_group","phase_key","display_name","enabled","owns_db_binding","schedule_profile_key","max_tick_ms","max_api_calls_per_tick","max_rows_per_tick","retry_limit","stale_minutes","downstream_policy","notes","updated_at"]
   },
   config_worker_schedules: {
     d1_binding: "CONFIG_DB", d1_table: "config_worker_schedules", pg_table: "config.worker_schedules",
