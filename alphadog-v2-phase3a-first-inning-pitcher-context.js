@@ -7798,6 +7798,44 @@ async function runBaselineV6DeltaDailySingleStep(env, input = {}) {
   return output;
 }
 
+// REAL FIX: post-processing monotonicity enforcement for known real subset relationships (e.g.
+// singles<=hits, doubles<=hits, rbis<=hits_runs_rbis - a single/double/etc always implies at
+// least 1 hit, a run/RBI always implies hits_runs_rbis>=1). Unlike shared_threshold_aliases
+// (for true equalities), this is for real one-directional subset relationships, where two
+// independently-fit models can produce small residual noise (confirmed live: singles exceeding
+// hits by 0.4-2.6 points for 10 real players, consistent with independent-model noise on modest
+// samples, not a systematic bias). Order-independent by design - runs as a separate reconcile
+// pass after all combos are computed, rather than depending on combo processing order.
+async function reconcileSubsetOfConstraints(env) {
+  const constraints = await getCalibrationValue(env, "global", "subset_of_constraints", {});
+  let totalClamped = 0;
+  const results = [];
+  for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
+    const [subProp, subLineRaw, subSide] = subsetKey.split("|");
+    const [supProp, supLineRaw, supSide] = supersetKey.split("|");
+    const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
+    const res = await run(env.ARCHIVE_DB, `
+      UPDATE baseline_v6_current
+      SET hit_probability_0_100 = (
+        SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+        WHERE s.player_id = baseline_v6_current.player_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+      ),
+      formula_version = formula_version || '+subset_clamped'
+      WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+        AND hit_probability_0_100 > (
+          SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+          WHERE s.player_id = baseline_v6_current.player_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        )`,
+      supProp, supLine, supSide, subProp, subLine, subSide, supProp, supLine, supSide);
+    const changed = Number(res && res.meta && res.meta.changes || 0);
+    totalClamped += changed;
+    results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+  }
+  return { ok: true, total_clamped: totalClamped, per_constraint: results };
+}
+
 async function runBaselineV6DeltaDaily(env, input = {}) {
   const startMs = Date.now();
   const timeBudgetMs = 18000;
