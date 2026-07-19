@@ -6936,6 +6936,46 @@ async function runRemineRefPlayersToPostgres(env, input) {
   }
 }
 
+async function runRemineRefStadiumsToPostgres(env, input) {
+  try {
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/+$/, "");
+    const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
+    const teamsResp = await fetch(`${base}/teams?sportId=1&activeStatus=Y&hydrate=venue(location)`, { headers });
+    const teamsJson = await teamsResp.json();
+    const rawTeams = Array.isArray(teamsJson.teams) ? teamsJson.teams : [];
+    const venueIds = [...new Set(rawTeams.map(t => t.venue && t.venue.id).filter(Boolean))];
+    if (!venueIds.length) return { ok: false, mode: "remine_ref_stadiums_to_postgres", error: "no_venue_ids_found" };
+
+    const venueResp = await fetch(`${base}/venues?venueIds=${encodeURIComponent(venueIds.join(","))}&hydrate=location`, { headers });
+    const venueJson = await venueResp.json();
+    const venues = Array.isArray(venueJson.venues) ? venueJson.venues : [];
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const rows = venues.filter(v => v && v.id).map(v => ({
+      stadium_id: String(v.id),
+      mlb_venue_id: Number(v.id),
+      stadium_name: String(v.name || "").trim(),
+      city: (v.location && v.location.city) || null,
+      state: (v.location && v.location.state) || null,
+      roof_type: (v.fieldInfo && v.fieldInfo.roofType) || null,
+      turf_type: (v.fieldInfo && v.fieldInfo.turfType) || null,
+      raw_json: JSON.stringify(v)
+    }));
+    const cols = ["stadium_id","mlb_venue_id","stadium_name","city","state","roof_type","turf_type","raw_json"];
+    await sql`
+      INSERT INTO ref.stadiums ${sql(rows, ...cols)}
+      ON CONFLICT (stadium_id) DO UPDATE SET
+        mlb_venue_id=excluded.mlb_venue_id, stadium_name=excluded.stadium_name, city=excluded.city,
+        state=excluded.state, roof_type=excluded.roof_type, turf_type=excluded.turf_type,
+        raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_ref_stadiums_to_postgres", venues_written: rows.length };
+  } catch (err) {
+    return { ok: false, mode: "remine_ref_stadiums_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -6946,6 +6986,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
+  if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
