@@ -1749,6 +1749,26 @@ async function apiPlayerProfile(env, url) {
     nextGame = { game_pk: gamePk, game_time_utc: nextTeamGame.game_time_utc, is_home: isHomeNext ? 1 : 0, opponent_team_id: opponentTeamId, opponent_team_name: opposingTeamRow ? opposingTeamRow.full_name : null };
   }
 
+  // Advanced Statcast-tier metrics (season-long, player identity — not game-specific)
+  const [availabilityRow, sprintRow, battedBallRow, defQualRow, arsenalRows, armAngleRow, runningGameRow, catcherRow] = await Promise.all([
+    safeOne(env.DAILY_DB, `SELECT availability_status, roster_status_description, confidence_label FROM daily_player_availability_current WHERE player_id=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [mlbId]),
+    safeOne(env.REF_DB, `SELECT sprint_speed_ft_per_sec, competitive_runs FROM ref_sprint_speed WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    safeOne(env.REF_DB, `SELECT ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events FROM ref_batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    safeOne(env.REF_DB, `SELECT primary_position, outs_above_average, fielding_runs_prevented, oaa_vs_rhh, oaa_vs_lhh FROM ref_defensive_quality WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    isPitcher ? safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba, run_value_per_100 FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC, pitch_usage DESC LIMIT 8`, [mlbId]) : Promise.resolve([]),
+    isPitcher ? safeOne(env.REF_DB, `SELECT arm_angle_degrees, pitches_tracked FROM ref_arm_angle WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    isPitcher ? safeOne(env.REF_DB, `SELECT sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained FROM ref_pitcher_running_game WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    String(p.primary_position || "").toUpperCase() === "C" ? safeOne(env.REF_DB, `SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref_catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
+  ]);
+
+  // Next-game specific opponent detail: opposing starter's arsenal (for hitters facing them), opposing catcher's framing/poptime
+  let opposingStarterArsenal = [], opposingCatcherRow = null;
+  if (nextGame && opposingStarter && !isPitcher) {
+    opposingStarterArsenal = await safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC, pitch_usage DESC LIMIT 6`, [opposingStarter.player_id]);
+  }
+  const homeGames = recentGames.filter(g => Number(g.is_home) === 1);
+  const awayGames = recentGames.filter(g => Number(g.is_home) === 0);
+
   return jsonResponse({
     ok:true, data_ok:true, version:VERSION, route:"/api/player-profile",
     player: p,
@@ -1756,15 +1776,28 @@ async function apiPlayerProfile(env, url) {
     is_pitcher: isPitcher,
     current_legs: Array.isArray(legs) ? legs : [],
     recent_games: recentGames,
+    home_games: homeGames,
+    away_games: awayGames,
     metric_snapshots: snapshots,
     splits: splits,
+    availability: availabilityRow,
+    advanced: {
+      sprint_speed: sprintRow,
+      batted_ball_profile: battedBallRow,
+      defensive_quality: defQualRow,
+      pitcher_arsenal: arsenalRows,
+      arm_angle: armAngleRow,
+      pitcher_running_game: runningGameRow,
+      catcher_framing_poptime: catcherRow
+    },
     next_game: nextGame,
     next_game_context: nextGame ? {
       weather: weatherRow, umpire: umpireRow, market_summary: marketRow,
       bullpen: bullpenRows, schedule_spot: scheduleRows,
-      opposing_starter: opposingStarter, opposing_team: opposingTeamRow
+      opposing_starter: opposingStarter, opposing_team: opposingTeamRow,
+      opposing_starter_arsenal: opposingStarterArsenal
     } : null,
-    note: "Full player profile: identity, current board lines, last-20 game log, L5/L10/L20/season snapshots, platoon splits, and next-game micro-factor context when available."
+    note: "Full player profile: identity, current board lines, last-20 game log with home/away split, L5/L10/L20/season snapshots, platoon splits, Statcast-tier advanced metrics (sprint speed, batted-ball profile, defensive quality, pitch arsenal, arm angle, running-game control, catcher framing/pop-time), availability status, and next-game micro-factor context including opposing starter arsenal."
   });
 }
 
