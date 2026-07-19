@@ -1764,7 +1764,7 @@ async function apiPlayerProfile(env, url) {
   // Next-game specific opponent detail: opposing starter's arsenal (for hitters facing them), opposing catcher's framing/poptime
   let opposingStarterArsenal = [], opposingCatcherRow = null;
   if (nextGame && opposingStarter && !isPitcher) {
-    opposingStarterArsenal = await safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC, pitch_usage DESC LIMIT 6`, [opposingStarter.player_id]);
+    opposingStarterArsenal = await safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 6`, [opposingStarter.player_id, opposingStarter.player_id]);
   }
   const homeGames = recentGames.filter(g => Number(g.is_home) === 1);
   const awayGames = recentGames.filter(g => Number(g.is_home) === 0);
