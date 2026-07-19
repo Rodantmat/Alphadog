@@ -7448,6 +7448,75 @@ async function runRemineArmAngleToPostgres(env, input) {
   }
 }
 
+async function runRemineQualityOfContactToPostgres(env, input) {
+  const year = Number(input.season_year || 2026);
+  const minPA = input.min_pa || "50";
+  try {
+    const expected = await fetchSavantLeaderboardHtml("/leaderboard/expected_statistics", { type: "batter", year, min: minPA });
+    const expectedData = extractSavantVarData(expected.html);
+    const statcast = await fetchSavantLeaderboardHtml("/leaderboard/statcast", { type: "batter", year, min: minPA });
+    const statcastData = extractSavantVarData(statcast.html);
+    if (!expectedData.rows.length && !statcastData.rows.length) {
+      return { ok: false, mode: "remine_quality_of_contact_to_postgres", error: "no_data_extracted" };
+    }
+
+    const byPlayer = new Map();
+    for (const r of expectedData.rows) {
+      const pid = Number(r.entity_id); if (!pid) continue;
+      byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: r.entity_name || null, ...r });
+    }
+    for (const r of statcastData.rows) {
+      const pid = Number(r.entity_id); if (!pid) continue;
+      byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: (byPlayer.get(pid) || {}).player_name || r.entity_name || null, ...r });
+    }
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const rows = Array.from(byPlayer.values()).map(r => {
+      const num = (v) => v != null && v !== "" ? Number(v) : null;
+      const xba = num(r.est_ba), xslg = num(r.est_slg), xwoba = num(r.est_woba), woba = num(r.woba);
+      const ba = num(r.ba), slg = num(r.slg);
+      return {
+        qoc_id: `savant_qoc_${year}_${r.player_id}`, mlb_player_id: r.player_id, player_name: r.player_name, season_year: year,
+        xba, xslg, xwoba, woba, xobp: num(r.est_obp), xiso: num(r.est_iso), xwobacon: num(r.est_wobacon), wobacon: num(r.wobacon),
+        exit_velocity_avg: num(r.exit_velocity_avg), launch_angle_avg: num(r.launch_angle_avg), sweet_spot_percent: num(r.sweet_spot_percent),
+        barrel_batted_rate: num(r.barrels_per_bip), hard_hit_percent: num(r.hard_hit_percent), solidcontact_percent: num(r.solidcontact_percent),
+        pull_percent: num(r.pull_percent), flareburner_percent: num(r.flareburner_percent),
+        poorly_topped_percent: num(r.topped_percent), poorly_under_percent: num(r.under_percent),
+        whiff_percent: num(r.whiff_percent), k_percent: num(r.k_percent), bb_percent: num(r.bb_percent),
+        ba, slg,
+        ba_minus_xba_diff: num(r.ba_minus_est_ba_diff) ?? ((ba != null && xba != null) ? ba - xba : null),
+        slg_minus_xslg_diff: num(r.slg_minus_est_slg_diff) ?? ((slg != null && xslg != null) ? slg - xslg : null),
+        woba_minus_xwoba_diff: num(r.woba_minus_est_woba_diff) ?? ((woba != null && xwoba != null) ? woba - xwoba : null),
+        active: 1, source_key: "baseball_savant_quality_of_contact_html_regex", raw_json: JSON.stringify(r)
+      };
+    }).filter(r => r.mlb_player_id);
+
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_quality_of_contact_to_postgres", error: "no_valid_rows" }; }
+    const cols = ["qoc_id","mlb_player_id","player_name","season_year","xba","xslg","xwoba","woba","xobp","xiso","xwobacon","wobacon","exit_velocity_avg","launch_angle_avg","sweet_spot_percent","barrel_batted_rate","hard_hit_percent","solidcontact_percent","pull_percent","flareburner_percent","poorly_topped_percent","poorly_under_percent","whiff_percent","k_percent","bb_percent","ba","slg","ba_minus_xba_diff","slg_minus_xslg_diff","woba_minus_xwoba_diff","active","source_key","raw_json"];
+    const WRITE_CHUNK = 200;
+    for (let i = 0; i < rows.length; i += WRITE_CHUNK) {
+      const chunk = rows.slice(i, i + WRITE_CHUNK);
+      await sql`
+        INSERT INTO ref.batter_quality_of_contact ${sql(chunk, ...cols)}
+        ON CONFLICT (qoc_id) DO UPDATE SET
+          player_name=excluded.player_name, xba=excluded.xba, xslg=excluded.xslg, xwoba=excluded.xwoba, woba=excluded.woba,
+          xobp=excluded.xobp, xiso=excluded.xiso, xwobacon=excluded.xwobacon, wobacon=excluded.wobacon,
+          exit_velocity_avg=excluded.exit_velocity_avg, launch_angle_avg=excluded.launch_angle_avg, sweet_spot_percent=excluded.sweet_spot_percent,
+          barrel_batted_rate=excluded.barrel_batted_rate, hard_hit_percent=excluded.hard_hit_percent, solidcontact_percent=excluded.solidcontact_percent,
+          pull_percent=excluded.pull_percent, flareburner_percent=excluded.flareburner_percent,
+          poorly_topped_percent=excluded.poorly_topped_percent, poorly_under_percent=excluded.poorly_under_percent,
+          whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, bb_percent=excluded.bb_percent,
+          ba=excluded.ba, slg=excluded.slg, ba_minus_xba_diff=excluded.ba_minus_xba_diff, slg_minus_xslg_diff=excluded.slg_minus_xslg_diff,
+          woba_minus_xwoba_diff=excluded.woba_minus_xwoba_diff, active=1, raw_json=excluded.raw_json, updated_at=now()
+      `;
+    }
+    await sql.end();
+    return { ok: true, mode: "remine_quality_of_contact_to_postgres", players_written: rows.length };
+  } catch (err) {
+    return { ok: false, mode: "remine_quality_of_contact_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7468,6 +7537,7 @@ async function runMode(env,input={}){
   if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
   if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
+  if(mode==="remine_quality_of_contact_to_postgres") return runRemineQualityOfContactToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
