@@ -10130,42 +10130,8 @@ async function runClassificationV6Tick(env, input = {}) {
   };
 }
 
-export default {
-  async scheduled(event, env, ctx) {
-    // event.cron matches one of the two triggers configured in the generator:
-    // "0 3 * * 1" (Monday 3am) = weekly static differential
-    // "45 8 * * *" (daily 8:45am) = daily morning delta full run
-    const cron = String(event.cron || "");
-    let mode = null;
-    if (cron === "0 3 * * 1") mode = "weekly_static_differential_full_run";
-    else if (cron === "45 8 * * *") mode = "daily_morning_delta_full_run";
-    if (!mode) return;
-    ctx.waitUntil((async () => {
-      let resumeFrom = 0;
-      let guard = 0;
-      while (guard < 15) {
-        guard++;
-        const res = await runMode(env, { mode, resume_from_step: resumeFrom });
-        if (!res || res.partial !== true) break;
-        resumeFrom = res.next_resume_from_step || 0;
-      }
-    })());
-  },
-  async fetch(request, env, ctx){
-    const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
-    if(method==="GET" && path==="/") return jsonResponse(baseIdentity(env));
-    if(method==="GET" && path==="/health") return jsonResponse({...baseIdentity(env),route:"/health"});
-    if(method==="POST" && path==="/diagnostic") return jsonResponse({...baseIdentity(env),route:"/diagnostic",input_echo_safe:await readJsonSafe(request)});
-    if(method==="POST" && path==="/run"){
-      const input=await readJsonSafe(request);
-      try { return jsonResponse(await runMode(env,input)); }
-      catch(err){ return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,status:"EXPANSION_BASELINE_WORKER_FAILED",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true},500); }
-    }
-    return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /diagnostic","POST /run"]},404);
-  }
-};
-, '', 'i'))), '[^a-z ]', '', 'g') AS norm_name
-        FROM ref.players WHERE active = 1
+// [removed: duplicate export-default block, copy A]
+
       ),
       board_rows AS (
         SELECT current_row_id, source_key, slate_date, player_id AS source_player_id, player_name, team, opponent,
