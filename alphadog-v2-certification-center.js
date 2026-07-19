@@ -1097,14 +1097,14 @@ async function apiDossier(env, url) {
     return { player_id: pid, metric_window: n === 999 ? 'season' : ('last' + n), games_count: gl.length, innings_pitched_sum: ip, batters_faced_sum: bf, hits_allowed_sum: h, earned_runs_sum: er, walks_allowed_sum: bb, strikeouts_sum: k, home_runs_allowed_sum: sum('home_runs_allowed'), era_calculated: ip > 0 ? (9 * er) / ip : null, whip_calculated: ip > 0 ? (bb + h) / ip : null, k_rate_calculated: bf > 0 ? k / bf : null, bb_rate_calculated: bf > 0 ? bb / bf : null };
   };
 
-  const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, homeTeamName, awayTeamName] = await Promise.all([
+  const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, hitterSnapshotRows] = await Promise.all([
     safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 15`, [mlbPlayerId]),
     safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE player_id=? ORDER BY season DESC`, [mlbPlayerId]),
     formWindow(5), formWindow(10), formWindow(20), formWindow(999),
     safeQuery(env.DAILY_DB, `SELECT * FROM daily_probable_pitchers WHERE game_key=? OR CAST(game_key AS INTEGER)=?`, [String(gamePk), gamePk]),
-    Promise.resolve(null), Promise.resolve(null)
+    safeQuery(env.STATS_HITTER_DB, `SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage FROM hitter_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
   ]);
-  const recentForm = [form5, form10, form20, formSeason].filter(Boolean);
+  const recentForm = hitterSnapshotRows.length ? hitterSnapshotRows : [form5, form10, form20, formSeason].filter(Boolean);
   const starterRow = starterRows[0] || null;
   let starters = [], pitcherForm = [], pitcherSplits = [], pitcherProfiles = [];
   if (starterRow) {
