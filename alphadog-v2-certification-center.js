@@ -2221,7 +2221,7 @@ function renderPlayerProfileDream(j){
   html+='<div class="sectionLabel" style="margin-top:16px">Prop Trends — Last 5 / 10 / 20</div>'+(propCards.length?'<div class="cards">'+propCards.join('')+'</div>':'<div class="small">No recent game log or current lines available for this player yet.</div>');
   html+=splitsBlock(splits,isP);
   html+=homeAwayBlock(homeGames,awayGames,isP);
-  html+=qualityOfContactBlock(j.advanced&&j.advanced.quality_of_contact);
+  html+=qualityOfContactBlock(advanced.quality_of_contact);
   html+=advancedMetricsBlock(advanced,isP);
   if(nextGame&&nextCtx){
     html+='<div class="sectionLabel" style="margin-top:16px">Next Game — Micro Factors</div><div class="microFactors">';
