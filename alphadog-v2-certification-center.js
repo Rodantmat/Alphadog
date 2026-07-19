@@ -1158,6 +1158,7 @@ async function apiDossier(env, url) {
     },
     dossier_context: {
       source_table: "SCORE_DB.score_final_board_current",
+      source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null,
       weather: weatherRow,
       stadium: stadiumRow,
       park_factors: parkRow,
