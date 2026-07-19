@@ -46,6 +46,7 @@ const PRIZEPICKS_ALIASES = [
   { source_market_name: "Hits Allowed", prop_key: "hits_allowed" },
   { source_market_name: "Hits+Runs+RBIs", prop_key: "hits_runs_rbis" },
   { source_market_name: "Hitter Fantasy Score", prop_key: "fantasy_score" },
+  { source_market_name: "Pitcher Fantasy Score", prop_key: "pitcher_fantasy_score" },
   { source_market_name: "Hitter Strikeouts", prop_key: "hitter_strikeouts" },
   { source_market_name: "Home Runs", prop_key: "home_runs" },
   { source_market_name: "Pitcher Strikeouts", prop_key: "pitcher_strikeouts" },
