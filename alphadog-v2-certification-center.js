@@ -1697,23 +1697,75 @@ async function apiPlayerProfile(env, url) {
   const p = (await queryAll(env.REF_DB, `SELECT * FROM ref_players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]))[0] || null;
   if (!p) return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404);
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
-  const q = ids.map(()=>"?").join(",");
-  const legs = q ? await queryAll(env.SCORE_DB, `
-    SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, NULL AS team_id, NULL AS opponent_team_id, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
+  const idPlaceholders = ids.map(()=>"?").join(",");
+  const mlbId = p.mlb_player_id || p.player_id;
+  const isPitcher = String(p.primary_position || p.primary_role || "").toUpperCase() === "P" || String(p.primary_position || "").toUpperCase() === "TWP";
+  const safeQuery = async (db, sql, params) => { try { return db ? await queryAll(db, sql, params) : []; } catch (e) { return []; } };
+  const safeOne = async (db, sql, params) => { const r = await safeQuery(db, sql, params); return r[0] || null; };
+
+  const legs = idPlaceholders ? await safeQuery(env.SCORE_DB, `
+    SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
     FROM score_final_board_current
     WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
-      AND mlb_player_id IN (${q})
+      AND mlb_player_id IN (${idPlaceholders})
     ORDER BY rank_order ASC
     LIMIT 80
   `, ids) : [];
-  const lineup = q ? await queryAll(env.DAILY_DB, `
-    SELECT game_pk, official_date, game_time_utc, team_name, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, fetched_at_utc
-    FROM daily_lineups_current
-    WHERE player_id IN (${q})
-    ORDER BY datetime(updated_at) DESC
-    LIMIT 20
-  `, ids) : [];
-  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-profile", player:p, current_legs: Array.isArray(legs) ? legs : [], lineup_rows: Array.isArray(lineup) ? lineup : [], note:"Player profile alpha uses static identity, current board legs, and current lineup rows only; deeper stat-table profile will be added after stat schemas are verified." });
+
+  const [teamRow, recentGames, snapshots, splits, nextTeamGame] = await Promise.all([
+    safeOne(env.REF_DB, `SELECT team_id, full_name, abbreviation, league, division FROM ref_teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]),
+    isPitcher
+      ? safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId])
+      : safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId]),
+    isPitcher
+      ? safeQuery(env.STATS_PITCHER_DB, `SELECT metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM pitcher_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId])
+      : safeQuery(env.STATS_HITTER_DB, `SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate FROM hitter_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId]),
+    isPitcher
+      ? safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [mlbId])
+      : safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE player_id=? ORDER BY season DESC`, [mlbId]),
+    safeOne(env.DAILY_DB, `SELECT game_pk, official_date:="" , game_time_utc, home_team_id, away_team_id FROM daily_slate_games WHERE (home_team_id=? OR away_team_id=?) AND datetime(game_time_utc) >= datetime('now','-4 hours') ORDER BY datetime(game_time_utc) ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null)
+  ]);
+
+  let nextGame = null, weatherRow = null, umpireRow = null, marketRow = null, bullpenRows = [], scheduleRows = [], opposingStarter = null, opposingTeamRow = null;
+  if (nextTeamGame && nextTeamGame.game_pk) {
+    const gamePk = nextTeamGame.game_pk;
+    const isHomeNext = String(nextTeamGame.home_team_id) === String(p.current_mlb_team_id || p.current_team_id);
+    const opponentTeamId = isHomeNext ? nextTeamGame.away_team_id : nextTeamGame.home_team_id;
+    const [w, u, m, bp, sched, starters, oppTeam] = await Promise.all([
+      safeOne(env.DAILY_DB, `SELECT * FROM daily_game_weather_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
+      safeOne(env.DAILY_DB, `SELECT * FROM daily_umpire_context_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
+      safeOne(env.MARKET_DB, `SELECT * FROM market_context_probe_game_market_summary WHERE game_pk=? ORDER BY datetime(created_at) DESC LIMIT 1`, [gamePk]),
+      safeQuery(env.DAILY_DB, `SELECT * FROM daily_bullpen_availability_current WHERE game_pk=?`, [gamePk]),
+      safeQuery(env.DAILY_DB, `SELECT * FROM daily_team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
+      safeOne(env.DAILY_DB, `SELECT * FROM daily_probable_pitchers WHERE game_key=? OR CAST(game_key AS INTEGER)=?`, [String(gamePk), gamePk]),
+      safeOne(env.REF_DB, `SELECT team_id, full_name, abbreviation FROM ref_teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [opponentTeamId, opponentTeamId])
+    ]);
+    weatherRow = w; umpireRow = u; marketRow = m; bullpenRows = bp; scheduleRows = sched; opposingTeamRow = oppTeam;
+    if (starters) {
+      const oppPitcherId = isHomeNext ? starters.away_pitcher_id : starters.home_pitcher_id;
+      const oppPitcherRow = await safeOne(env.REF_DB, `SELECT full_name, throw_side FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [oppPitcherId]);
+      opposingStarter = oppPitcherRow ? { player_id: oppPitcherId, full_name: oppPitcherRow.full_name, throw_side: oppPitcherRow.throw_side, confidence: starters.confidence } : null;
+    }
+    nextGame = { game_pk: gamePk, game_time_utc: nextTeamGame.game_time_utc, is_home: isHomeNext ? 1 : 0, opponent_team_id: opponentTeamId, opponent_team_name: opposingTeamRow ? opposingTeamRow.full_name : null };
+  }
+
+  return jsonResponse({
+    ok:true, data_ok:true, version:VERSION, route:"/api/player-profile",
+    player: p,
+    team: teamRow,
+    is_pitcher: isPitcher,
+    current_legs: Array.isArray(legs) ? legs : [],
+    recent_games: recentGames,
+    metric_snapshots: snapshots,
+    splits: splits,
+    next_game: nextGame,
+    next_game_context: nextGame ? {
+      weather: weatherRow, umpire: umpireRow, market_summary: marketRow,
+      bullpen: bullpenRows, schedule_spot: scheduleRows,
+      opposing_starter: opposingStarter, opposing_team: opposingTeamRow
+    } : null,
+    note: "Full player profile: identity, current board lines, last-20 game log, L5/L10/L20/season snapshots, platoon splits, and next-game micro-factor context when available."
+  });
 }
 
 const MAIN_HTML = `<!doctype html>
