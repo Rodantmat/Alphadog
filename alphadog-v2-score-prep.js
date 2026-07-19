@@ -1913,7 +1913,7 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       const input = await readJsonSafe(request);
       try {
-        const output = await runBoardPrepFastLoop(env, input);
+        const output = await runBoardPrep(env, input);
         return jsonResponse(output);
       } catch (err) {
         await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
