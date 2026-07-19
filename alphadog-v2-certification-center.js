@@ -1098,7 +1098,7 @@ async function apiDossier(env, url) {
   };
 
   const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, hitterSnapshotRows] = await Promise.all([
-    safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 15`, [mlbPlayerId]),
+    safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbPlayerId]),
     safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE player_id=? ORDER BY season DESC`, [mlbPlayerId]),
     formWindow(5), formWindow(10), formWindow(20), formWindow(999),
     safeQuery(env.DAILY_DB, `SELECT * FROM daily_probable_pitchers WHERE game_key=? OR CAST(game_key AS INTEGER)=?`, [String(gamePk), gamePk]),
