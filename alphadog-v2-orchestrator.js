@@ -5911,7 +5911,7 @@ async function processEnrichmentEngineJob(env, row, runId, trigger) {
   const started = Date.now();
   let output; let httpStatus = null;
   try {
-    const resp = await serviceBindingFetch(env.PHASE2A_RUN_ENVIRONMENT_WORKER, "https://internal.alphadog-v2-phase2a-run-environment/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "enrichment_engine", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    const resp = await serviceBindingFetch(env.PHASE2A_RUN_ENVIRONMENT_WORKER, "https://internal.alphadog-v2-phase2a-run-environment/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "enrichment_engine", ENRICHMENT_ENGINE_WORKER_TIMEOUT_MS);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
