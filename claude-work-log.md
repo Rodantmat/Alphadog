@@ -1981,6 +1981,24 @@ discovering new lines. Small-sample overconfidence (998 baseline rows with extre
 from tiny real samples, no Wilson/Beta-Binomial-style hard bound applied) - grounded fix
 technique researched and confirmed, not yet implemented.
 
+## FIX #2: MISSING BASELINE LINES FOR COMBO PROPS - ROOT-CAUSED (CORRECTED) AND FIXED
+Real investigation found the actual root cause was simpler than the originally-guessed per-
+invocation cursor cap: buildComboList() (shared by both classification and HP base-builders)
+iterates directly from the live prop_line_universe DB config, and that config simply never had
+0.5 in hits_runs_rbis' line list, or most of fantasy_score's configured lines (only 6.5/8.5/10.5
+of 16 real intended lines existed). The static JS constant with the "correct" full line lists
+was genuinely dead code, unused - confirming the DB config itself was the real, sole source.
+Real fix: updated prop_line_universe to include the missing real board lines (0.5 added to
+hits_runs_rbis; 4.5 added to fantasy_score). Then populated the newly-added combos with real
+data: ran classification_v6_compute_stats, classification_v6_tick, and baseline_v6_tick across
+the full live player population for hits_runs_rbis@0.5 and fantasy_score@4.5, both sides.
+TESTED LIVE, CONFIRMED: hits_runs_rbis@0.5 now has 592 real players with a real, sensible league
+average (58.27%) - correctly higher than Hits' 49.43%, matching the proven ground-truth superset
+relationship. fantasy_score@4.5 now has 592 real players. Both props now show their real, full
+board line ranges instead of silently substituting a harder, wrong line. Since buildComboList
+reads this same DB config in both the full-rebuild and daily-delta paths, this fix extends
+automatically to both with no separate delta-path change needed.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
