@@ -1082,7 +1082,58 @@ async function apiDossier(env, url) {
   const stadiumRow = stadiumRows2[0] || {};
   const parkRow = parkRows2[0] || {};
 
-  return jsonResponse({
+  const formWindow = async (n) => {
+    const gl = await safeQuery(env.STATS_HITTER_DB, `SELECT pa,ab,hits,doubles,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases FROM (SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT ${n})`, [mlbPlayerId]);
+    if (!gl.length) return null;
+    const sum = (k) => gl.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+    const ab = sum('ab'), hits = sum('hits'), tb = sum('total_bases');
+    return { metric_window: n === 999 ? 'season' : ('last' + n), games_count: gl.length, pa_sum: sum('pa'), ab_sum: ab, hits_sum: hits, doubles_sum: sum('doubles'), home_runs_sum: sum('home_runs'), runs_sum: sum('runs'), rbi_sum: sum('rbi'), walks_sum: sum('walks'), strikeouts_sum: sum('strikeouts'), stolen_bases_sum: sum('stolen_bases'), total_bases_derived_sum: tb, batting_average: ab > 0 ? hits / ab : null, slugging_percentage: ab > 0 ? tb / ab : null };
+  };
+  const pitcherFormWindow = async (pid, n) => {
+    const gl = await safeQuery(env.STATS_PITCHER_DB, `SELECT innings_pitched_decimal,batters_faced,hits_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed FROM (SELECT * FROM pitcher_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT ${n})`, [pid]);
+    if (!gl.length) return null;
+    const sum = (k) => gl.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+    const ip = sum('innings_pitched_decimal'), bf = sum('batters_faced'), er = sum('earned_runs'), bb = sum('walks_allowed'), h = sum('hits_allowed'), k = sum('strikeouts');
+    return { player_id: pid, metric_window: n === 999 ? 'season' : ('last' + n), games_count: gl.length, innings_pitched_sum: ip, batters_faced_sum: bf, hits_allowed_sum: h, earned_runs_sum: er, walks_allowed_sum: bb, strikeouts_sum: k, home_runs_allowed_sum: sum('home_runs_allowed'), era_calculated: ip > 0 ? (9 * er) / ip : null, whip_calculated: ip > 0 ? (bb + h) / ip : null, k_rate_calculated: bf > 0 ? k / bf : null, bb_rate_calculated: bf > 0 ? bb / bf : null };
+  };
+
+  const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, homeTeamName, awayTeamName] = await Promise.all([
+    safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 15`, [mlbPlayerId]),
+    safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE player_id=? ORDER BY season DESC`, [mlbPlayerId]),
+    formWindow(5), formWindow(10), formWindow(20), formWindow(999),
+    safeQuery(env.DAILY_DB, `SELECT * FROM daily_probable_pitchers WHERE game_key=? OR CAST(game_key AS INTEGER)=?`, [String(gamePk), gamePk]),
+    Promise.resolve(null), Promise.resolve(null)
+  ]);
+  const recentForm = [form5, form10, form20, formSeason].filter(Boolean);
+  const starterRow = starterRows[0] || null;
+  let starters = [], pitcherForm = [], pitcherSplits = [], pitcherProfiles = [];
+  if (starterRow) {
+    const homeId = weatherRow.home_team_id || umpireRow.home_team_id;
+    const awayId = weatherRow.away_team_id || umpireRow.away_team_id;
+    const [homePitcher, awayPitcher, homeForm5, homeForm10, homeFormSeason, awayForm5, awayForm10, awayFormSeason, homeSplits, awaySplits, homeTeamRows, awayTeamRows] = await Promise.all([
+      safeQuery(env.REF_DB, `SELECT * FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [starterRow.home_pitcher_id]),
+      safeQuery(env.REF_DB, `SELECT * FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [starterRow.away_pitcher_id]),
+      pitcherFormWindow(starterRow.home_pitcher_id, 5), pitcherFormWindow(starterRow.home_pitcher_id, 10), pitcherFormWindow(starterRow.home_pitcher_id, 999),
+      pitcherFormWindow(starterRow.away_pitcher_id, 5), pitcherFormWindow(starterRow.away_pitcher_id, 10), pitcherFormWindow(starterRow.away_pitcher_id, 999),
+      safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [starterRow.home_pitcher_id]),
+      safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [starterRow.away_pitcher_id]),
+      safeQuery(env.REF_DB, `SELECT full_name FROM ref_teams WHERE team_id=? LIMIT 1`, [homeId]),
+      safeQuery(env.REF_DB, `SELECT full_name FROM ref_teams WHERE team_id=? LIMIT 1`, [awayId])
+    ]);
+    const hp = homePitcher[0] || {}, ap = awayPitcher[0] || {};
+    pitcherProfiles = [hp, ap].map(p => ({ player_id: p.mlb_player_id, mlb_player_id: p.mlb_player_id, full_name: p.full_name, player_name: p.full_name }));
+    starters = [
+      { team_name: (homeTeamRows[0] || {}).full_name || 'Home', is_home: 1, starter_name: hp.full_name || String(starterRow.home_pitcher_id), starter_hand: hp.throw_side, starter_status: starterRow.confidence, starter_confidence: starterRow.confidence },
+      { team_name: (awayTeamRows[0] || {}).full_name || 'Away', is_home: 0, starter_name: ap.full_name || String(starterRow.away_pitcher_id), starter_hand: ap.throw_side, starter_status: starterRow.confidence, starter_confidence: starterRow.confidence }
+    ];
+    pitcherForm = [homeForm5, homeForm10, homeFormSeason, awayForm5, awayForm10, awayFormSeason].filter(Boolean);
+    pitcherSplits = [...homeSplits, ...awaySplits];
+  }
+  const [bullpen, scheduleSpot, marketOdds] = await Promise.all([
+    safeQuery(env.DAILY_DB, `SELECT * FROM daily_bullpen_availability_current WHERE game_pk=?`, [gamePk]),
+    safeQuery(env.DAILY_DB, `SELECT * FROM daily_team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
+    safeQuery(env.MARKET_DB, `SELECT * FROM market_context_probe_game_odds WHERE game_pk=? AND market_key IN ('h2h','spreads','totals')`, [gamePk])
+  ]);
     ok: true,
     data_ok: true,
     version: VERSION,
