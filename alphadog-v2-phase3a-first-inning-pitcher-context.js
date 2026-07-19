@@ -6978,7 +6978,9 @@ async function runRemineRefStadiumsToPostgres(env, input) {
 
 async function runRemineHitterGameLogsToPostgres(env, input) {
   const season = Number(input.season || 2026);
-  const PLAYERS_PER_INVOCATION = 15;
+  const PLAYERS_PER_INVOCATION = 60;
+  const TIME_BUDGET_MS = 22000;
+  const startedAt = Date.now();
   const startOffset = Number(input.offset || 0);
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
@@ -6988,13 +6990,13 @@ async function runRemineHitterGameLogsToPostgres(env, input) {
     const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
     const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
     const allRows = [];
-    const perPlayer = [];
+    let playersActuallyProcessed = 0;
     for (const p of playerRows) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) break;
       const url = `${base}/people/${p.mlb_player_id}/stats?stats=gameLog&group=hitting&season=${season}`;
       const resp = await fetch(url, { headers });
       const json = await resp.json().catch(() => null);
       const splits = (json && Array.isArray(json.stats) && json.stats[0] && Array.isArray(json.stats[0].splits)) ? json.stats[0].splits : [];
-      let count = 0;
       for (const split of splits) {
         const stat = split.stat || {}, game = split.game || {}, team = split.team || {}, opponent = split.opponent || {};
         const gamePk = game.gamePk || game.pk || null;
@@ -7022,14 +7024,13 @@ async function runRemineHitterGameLogsToPostgres(env, input) {
           primary_position_played: null, played_catcher_flag: 0,
           source_key: "mlb_statsapi_gamelog", raw_json: JSON.stringify(split)
         });
-        count++;
       }
-      perPlayer.push({ mlb_player_id: p.mlb_player_id, full_name: p.full_name, games: count });
+      playersActuallyProcessed++;
     }
 
     if (allRows.length) {
       const cols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","batting_order","pa","ab","hits","singles","doubles","triples","home_runs","runs","rbi","walks","strikeouts","stolen_bases","total_bases","primary_position_played","played_catcher_flag","source_key","raw_json"];
-      const WRITE_CHUNK = 200;
+      const WRITE_CHUNK = 300;
       for (let i = 0; i < allRows.length; i += WRITE_CHUNK) {
         const chunk = allRows.slice(i, i + WRITE_CHUNK);
         await sql`
@@ -7043,11 +7044,12 @@ async function runRemineHitterGameLogsToPostgres(env, input) {
       }
     }
     await sql.end();
+    const nextOffset = startOffset + playersActuallyProcessed;
     return {
       ok: true, mode: "remine_hitter_game_logs_to_postgres", season,
-      players_processed_this_invocation: playerRows.length, next_offset: startOffset + playerRows.length,
-      games_written_this_invocation: allRows.length, per_player: perPlayer,
-      complete: false, note: `call again with offset=${startOffset + playerRows.length} to continue`
+      players_processed_this_invocation: playersActuallyProcessed, next_offset: nextOffset,
+      games_written_this_invocation: allRows.length,
+      complete: false, note: `call again with offset=${nextOffset} to continue`
     };
   } catch (err) {
     return { ok: false, mode: "remine_hitter_game_logs_to_postgres", offset: startOffset, error: String(err && err.message ? err.message : err) };
