@@ -488,6 +488,7 @@ async function loadRealLegContexts(env, matrixRows) {
     starterByGameTeam: new Map(starterRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
     bullpenByGameTeam: new Map(bullpenRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
     catcherByGameTeam: new Map(catcherRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
+    scheduleSpotByGameTeam: new Map(scheduleSpotRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
     availByGamePlayer: new Map(availRows.map(r => [`${r.game_pk}|${r.mlb_player_id}`, r])),
     marketByGame: new Map(marketRows.map(r => [String(r.game_pk), r])),
     pitcherQualityByPitcherId,
