@@ -9745,7 +9745,7 @@ function propCanGoNegative(propConfig) {
   return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0));
 }
 
-const FETCH_TIMEOUT_MS_REF = 5000;
+const FETCH_TIMEOUT_MS_REF_COPY1 = 5000;
 function intOrNull(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
