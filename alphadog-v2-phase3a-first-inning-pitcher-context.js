@@ -7888,6 +7888,17 @@ async function runWeeklyStaticDifferentialFullRunPostgres(env, input = {}) {
   return { ok: true, mode: "weekly_static_differential_full_run_postgres", season, steps_completed: results.length, results, partial: false };
 }
 
+async function runDiagnosticSelect(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false });
+    const rows = await sql.unsafe(String(input.query || "SELECT 1"));
+    await sql.end();
+    return { ok: true, mode: "diagnostic_select", row_count: rows.length, rows: rows.slice(0, 50) };
+  } catch (err) {
+    return { ok: false, mode: "diagnostic_select", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runExpansionMiningToPostgres(env, input) {
   const season = Number(input.season || 2026);
   const GAMES_PER_INVOCATION = 20;
