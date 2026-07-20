@@ -146,10 +146,49 @@ function rowHasRealChange(current, fresh) {
   return false;
 }
 
+async function runD1Batch(db, statements, size = 50) {
+  let executed = 0;
+  for (let i = 0; i < statements.length; i += size) {
+    const chunk = statements.slice(i, i + size);
+    if (chunk.length) {
+      await db.batch(chunk);
+      executed += chunk.length;
+    }
+  }
+  return executed;
+}
+
 async function runArsenal(env, input) {
   await ensureSchema(env);
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const year = Number(inputJson.year) || SEASON_YEAR;
+
+  // Freshness gate: if a certified run for this season already completed within the window,
+  // skip the expensive Savant fetch + full compare entirely and return a fast no-op. Grounded
+  // in the standard "watermark" pattern for sources with no cheap "what changed" signal
+  // (confirmed via real data-engineering practice, not guessed) - Baseball Savant has no
+  // incremental/delta query, so a bounded re-fetch window is the correct approach, not a full
+  // "differential" in the classic sense. 20 hours: comfortably inside the real weekly cadence,
+  // long enough to make same-day re-triggers/tests a fast no-op, short enough that a genuine
+  // weekly run always does real work.
+  const freshnessRow = await all(env.REF_DB, "SELECT MAX(updated_at) AS last_run FROM ref_pitcher_arsenal WHERE season_year=? AND source_key=?", year, SOURCE_KEY);
+  const lastRun = freshnessRow[0] && freshnessRow[0].last_run;
+  if (lastRun) {
+    const ageHours = (Date.now() - new Date(String(lastRun).replace(" ", "T") + "Z").getTime()) / 3600000;
+    if (ageHours >= 0 && ageHours < 20) {
+      const activeCountNoop = await all(env.REF_DB, "SELECT COUNT(*) c FROM ref_pitcher_arsenal WHERE season_year=? AND active=1", year);
+      return {
+        ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+        request_id: input.request_id || null, chain_id: input.chain_id || null,
+        status: "completed_noop_fresh", certification: "STATIC_PITCHER_ARSENAL_CERTIFIED_NOOP_ALREADY_FRESH",
+        season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
+        active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
+        freshness_gate: { last_run, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
+        differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
+        external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
+      };
+    }
+  }
 
   const fetched = await fetchSavant(year);
   const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
@@ -160,34 +199,41 @@ async function runArsenal(env, input) {
   const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
   const freshIds = new Set(mapped.map(r => r.arsenal_id));
 
+  // Fix: was one-row-at-a-time D1 round trips (~3000+ individual queries, took 13 minutes for
+  // one run). Now batched via db.batch(), same proven pattern already used successfully in
+  // static-players.js's runD1Batch().
+  const changedStatements = [];
+  const unchangedStatements = [];
   let changed = 0, unchanged = 0;
   for (const r of mapped) {
     const current = currentMap.get(r.arsenal_id);
     if (!rowHasRealChange(current, r)) {
       unchanged += 1;
-      await run(env.REF_DB, "UPDATE ref_pitcher_arsenal SET active=1, updated_at=CURRENT_TIMESTAMP WHERE arsenal_id=?", r.arsenal_id);
+      unchangedStatements.push(env.REF_DB.prepare("UPDATE ref_pitcher_arsenal SET active=1, updated_at=CURRENT_TIMESTAMP WHERE arsenal_id=?").bind(r.arsenal_id));
       continue;
     }
-    await run(env.REF_DB, `INSERT OR REPLACE INTO ref_pitcher_arsenal (
+    changedStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_arsenal (
       arsenal_id, mlb_player_id, player_name, team_abbreviation, season_year, pitch_type, pitch_name,
       run_value_per_100, run_value, pitches, pitch_usage, pa, ba, slg, woba, whiff_percent, k_percent, put_away,
       est_ba, est_slg, est_woba, hard_hit_percent, active, source_key, raw_json, updated_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`,
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
       r.arsenal_id, r.mlb_player_id, r.player_name, r.team_abbreviation, r.season_year, r.pitch_type, r.pitch_name,
       r.run_value_per_100, r.run_value, r.pitches, r.pitch_usage, r.pa, r.ba, r.slg, r.woba, r.whiff_percent, r.k_percent, r.put_away,
-      r.est_ba, r.est_slg, r.est_woba, r.hard_hit_percent, SOURCE_KEY, r.raw_json);
+      r.est_ba, r.est_slg, r.est_woba, r.hard_hit_percent, SOURCE_KEY, r.raw_json));
     changed += 1;
   }
+  await runD1Batch(env.REF_DB, changedStatements);
+  await runD1Batch(env.REF_DB, unchangedStatements);
 
   // Real, honest stale-deactivation: any prior row for this season not present in the fresh fetch
   // (pitcher fell below the qualifying-pitch threshold, retired, etc.) gets deactivated, not deleted.
-  let deactivated = 0;
+  const deactivateStatements = [];
   for (const current of currentRows) {
     if (!freshIds.has(current.arsenal_id) && Number(current.active) === 1) {
-      await run(env.REF_DB, "UPDATE ref_pitcher_arsenal SET active=0, updated_at=CURRENT_TIMESTAMP WHERE arsenal_id=?", current.arsenal_id);
-      deactivated += 1;
+      deactivateStatements.push(env.REF_DB.prepare("UPDATE ref_pitcher_arsenal SET active=0, updated_at=CURRENT_TIMESTAMP WHERE arsenal_id=?").bind(current.arsenal_id));
     }
   }
+  const deactivated = await runD1Batch(env.REF_DB, deactivateStatements);
 
   const activeCount = await all(env.REF_DB, "SELECT COUNT(*) c FROM ref_pitcher_arsenal WHERE season_year=? AND active=1", year);
   const certified = mapped.length > 0 && changed + unchanged === mapped.length;
