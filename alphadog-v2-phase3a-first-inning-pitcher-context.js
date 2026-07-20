@@ -7796,7 +7796,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       `;
     }
     await sql.end();
-    return { ok: true, mode: "classification_baseline_v6_to_postgres", canonical_prop_key: propKey, line_value: lineValue, selected_side: side, population_mean: popMean, population_stddev: popStddev, population_n: rates.length, dispersion: isFinite(dispersion) ? dispersion : null, dispersion_error: dispersionError, dispersion_debug: dispersionDebug, rows_written: baselineRows.length };
+    return { ok: true, mode: "classification_baseline_v6_to_postgres", canonical_prop_key: propKey, line_value: lineValue, selected_side: side, population_mean: popMean, population_stddev: popStddev, population_n: rates.length, dispersion: isFinite(dispersion) ? dispersion : null, rows_written: baselineRows.length };
   } catch (err) {
     return { ok: false, mode: "classification_baseline_v6_to_postgres", error: String(err && err.message ? err.message : err) };
   }
