@@ -7072,7 +7072,9 @@ async function runReminePitcherGameLogsToPostgres(env, input) {
   const startOffset = Number(input.offset || 0);
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
-    const playerRows = await sql`SELECT mlb_player_id, full_name, current_team_id FROM ref.players WHERE active=1 ORDER BY mlb_player_id LIMIT ${PLAYERS_PER_INVOCATION} OFFSET ${startOffset}`;
+    // BUG FIX (mirrors hitter-side fix): restrict to pitchers only, instead of iterating all
+    // active players and wasting budget on position players who have no pitching game logs.
+    const playerRows = await sql`SELECT mlb_player_id, full_name, current_team_id FROM ref.players WHERE active=1 AND UPPER(COALESCE(primary_position,'')) = 'P' ORDER BY mlb_player_id LIMIT ${PLAYERS_PER_INVOCATION} OFFSET ${startOffset}`;
     if (!playerRows.length) { await sql.end(); return { ok: true, mode: "remine_pitcher_game_logs_to_postgres", complete: true, note: "no more players at this offset" }; }
 
     const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
