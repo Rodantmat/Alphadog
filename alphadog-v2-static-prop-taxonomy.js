@@ -6,12 +6,12 @@ const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "MARKET_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 
 const PRIZEPICKS_SOURCE_KEY = "prizepicks_github";
-const EXPECTED_TAXONOMY_COUNT = 21;
-// Bug fix: this was 20, but the real PRIZEPICKS_ALIASES array below has always had 21 entries
-// (including "1st Inning Runs Allowed" -> rfi_nrfi). A prior session added that alias without
-// updating this constant, causing every run since to fail certification on this one check even
-// though the actual data (21 taxonomy rows, 21 aliases) was correct. Confirmed by counting the
-// real array below and cross-checking against real CONFIG_DB/REF_DB row counts before this fix.
+const EXPECTED_TAXONOMY_COUNT = 22;
+// Bug fix #2: was 21. The alias "Pitcher Fantasy Score" -> pitcher_fantasy_score has always
+// existed in PRIZEPICKS_ALIASES below, but config_prop_taxonomy never had a matching row for
+// it (confirmed against real D1 data before this fix - genuinely missing, not a guess). Added
+// the row and bumped this count to match. pitcher_fantasy_score is a real, already-used prop
+// (confirmed live in ARCHIVE_DB.baseline_v6_current from earlier classification work), not new.
 const EXPECTED_PRIZEPICKS_ALIAS_COUNT = 21;
 
 const TAXONOMY_ADDITIONS = [
