@@ -1,7 +1,195 @@
 # ALPHADOG HANDOFF — MASTER SUMMARY (read this first, then LIVING_LOG.md for full history)
 **NOTE (2026-07-14): `LIVING_LOG.md` is referenced throughout this document as the "full history" companion file, but it does not currently exist in the repo root (confirmed via a direct fetch attempt, 404). Either it was never committed or was removed at some point. Don't waste time trying to fetch it — if you need history this document doesn't have, check `deploy_log.txt` and `github_list_workflow_runs` for real commit/deploy history instead, or ask Rodolfo directly whether it exists somewhere else.**
 
-PLACEHOLDER_FOR_NEW_SECTION
+## 2026-07-19/20 SESSION — WHAT HAPPENED (supersedes everything below for current state)
+
+**Read this first. This session found and fixed real production bugs, did real grounded
+research, and — most importantly — corrected a major false assumption about system state
+that the next session must not repeat.**
+
+### CRITICAL CORRECTION — READ THIS BEFORE TOUCHING DATABASES
+It was believed the system had migrated off Cloudflare D1 onto Postgres (DigitalOcean, via
+Hyperdrive). **This is false.** Verified directly against live `wrangler.jsonc` configs:
+- `score-audit`, `score-prep`, `phase3a-first-inning-pitcher-context`, and every other
+  production worker checked are wired with **11 D1 database bindings** (`CONTROL_DB`,
+  `CONFIG_DB`, `REF_DB`, `STATS_HITTER_DB`, `STATS_PITCHER_DB`, `TEAM_DB`, `DAILY_DB`,
+  `MARKET_DB`, `CONTEXT_DB`, `SCORE_DB`, `ARCHIVE_DB`) and **zero** Hyperdrive/Postgres
+  bindings, with one single exception below.
+- Only `alphadog-v2-phase3a-first-inning-pitcher-context` has a `HYPERDRIVE` binding
+  (id `f6c6e778ebfe4dfa8e17d7effbeaff8b`), and it's *in addition to* the same 11 D1
+  databases, not instead of them.
+- The actual migration tool, `alphadog-v2-postgres-migration.js`, is a **dormant, manual,
+  on-demand ETL scaffold**. It only knows about 8 archive/config tables
+  (`market_historical_props_2025`, `archive_board_leg_history`,
+  `archive_player_availability_history`, `config_system_settings`, `calibration_config`,
+  `config_worker_definitions`, `config_worker_schedules`, `config_prop_taxonomy`). It has
+  never been run to completion. **No production worker reads from Postgres for anything.**
+- There is also a `SCORING_DB` D1 binding (distinct from `SCORE_DB`) — confirmed via direct
+  query it is ALSO SQLite/D1, not Postgres. It holds `prop_factor_*`, `prop_matrix_*`,
+  `enrichment_leg_current`, `scoring_full_run_tally_current` tables — looks like a prior,
+  separate, incomplete attempt at solving this same scoring-speed problem. Not wired into
+  any worker config checked. Needs investigation: is this newer/older than the current live
+  `SCORE_DB` tables? Does anything reference it? Don't assume — check.
+
+**Bottom line: the Postgres migration is ~0% functionally complete.** Rodolfo has made this
+a hard priority: full migration, every live code path moves to Postgres, D1 remains only for
+genuinely dead/unreferenced code, no exceptions. This is real, large scope — 11 databases,
+~140 worker files, a full SQL-dialect rewrite (SQLite `?` positional binds + `.prepare()` /
+`.bind()` / `.all()` / `.run()` → Postgres tagged-template `sql\`...\`` calls, `$1` binds,
+different upsert/JSON syntax) in every file that touches D1. Not a config change. Data
+migration itself doesn't matter (Rodolfo confirmed) — this is about correct wiring, not
+preserving history.
+
+**Recommended migration order** (highest daily-impact chain first, since this is also the
+"2-hour scoring run" performance complaint):
+1. `score-prep.js` (board prep — entry point of the daily chain)
+2. `market-normalizer.js` + `market-line-shape-classifier.js` (market context)
+3. `phase2b-recent-form.js` (prop factor miner) + `phase2b-certifier.js` (matrix builder)
+4. `score-audit.js` (scoring engine, enrichment, hit probability, final board — the file
+   most heavily edited tonight, see below)
+5. `orchestrator.js` (job dispatch/control-plane — `control_job_queue`, `control_locks` —
+   large file, 1.4MB, touched last since everything else depends on its dispatch pattern)
+6. Everything else (base/delta workers, daily-context workers, static reference workers)
+
+For each worker: add `hyperdrive` binding + `"compatibility_flags": ["nodejs_compat"]` +
+`postgres` npm import to its wrangler config (see `wrangler.alphadog-v2-phase3a-first-inning-pitcher-context.jsonc`
+for the working reference pattern), design/create the Postgres schema for its tables, rewrite
+every D1 query, redeploy, verify independently before moving to the next worker.
+
+### PERFORMANCE RESEARCH (grounded, done tonight — still valid regardless of D1 vs Postgres)
+Real, cited findings on why the 2-hour scoring runs are slow, from Cloudflare's own docs:
+- **Workers CPU time**: default 30s/invocation, raisable to **5 minutes (300,000ms)** via
+  `limits.cpu_ms` in wrangler config. CPU time excludes network/DB wait — only compute counts.
+  Every worker checked tonight has `MAX_TICK_MS: "20000"` and `MAX_ROWS_PER_TICK: "250"`
+  hardcoded as **environment variables** (not JS constants) in its wrangler `vars` block —
+  this is very likely the dominant cause of the slow runs: workers are self-throttling to the
+  *old* default instead of using the raised ceiling. This fix applies whether the backing
+  store is D1 or Postgres, and is a near-zero-risk config change.
+- Subrequests per invocation raised from 1,000 to 10,000 default as of Feb 2026, configurable
+  to 10M via `limits.subrequests`.
+- D1 specifics (relevant only if any D1 code remains post-migration): single-threaded per
+  database (each DB = 1 Durable Object, serializes queries within itself), but separate D1
+  bindings are independent Durable Objects — cross-database calls can run in parallel via
+  `Promise.all`. Max 100 bound params/query (matches the existing CHUNK≤90 convention). D1
+  Read Replication + Sessions API exists for read-heavy throughput, unused anywhere in this
+  codebase.
+- Hyperdrive: ~100 concurrent pooled connections to origin Postgres (paid), NOT
+  single-threaded like D1 — genuinely parallel query execution is possible on the Postgres
+  side. Max query duration 60s (vs D1's 30s). Caveat from Cloudflare's own docs: don't wrap
+  multi-step work in one long transaction, it defeats connection pooling.
+- The `GLOBAL_ORCHESTRATOR` lock + manual `orchestrator_tick` poll pattern (observed live
+  tonight: `lock_busy` blocking unrelated jobs, 5-min lock TTL, one job processed per cycle)
+  is itself a real structural cost. **Cloudflare Queues** (producer/consumer, automatic
+  batching via `max_batch_size`/`max_batch_timeout`, automatic retries, dead-letter queues)
+  would replace this whole poll-and-lock pattern with push-based invocation. Worth doing
+  as part of the control-plane migration (item 5 above), not before.
+
+### REDUNDANCY / FACTOR-CORRELATION WORK — DONE AND DEPLOYED (D1, pre-migration)
+Rodolfo asked for: (1) new factor profiles for recently-added Statcast metrics, (2) a real,
+research-grounded way to stop correlated factors from double-counting on the same leg, (3)
+verify the whole enrichment/scoring wiring end-to-end.
+
+**Grounded methodology** — three converging literatures, not guessed:
+- Forecast combination theory (Wang & Hyndman, arXiv:2205.04216): correlated-error signals
+  create redundancy, standard fix is shrinkage/orthogonalization not naive stacking.
+- Actuarial risk aggregation (copula literature): naive independent-assumption stacking of
+  correlated risk factors overestimates combined effect ("diversification benefit" shrinks
+  as correlation rises).
+- Opinion pooling (Heskes 1998, NeurIPS): "m dependent experts are worth the same as k
+  independent experts where k ≤ m" — direct basis for the formula used:
+  `k_effective = m / (1 + (m-1) × ρ_avg)`. When correlated factors fire together, their
+  combined effect is scaled by `k_effective/m` instead of applied in full.
+
+**What's built and live in CONFIG_DB (D1 — will need migrating along with everything else)**:
+- `config_factor_correlations` — new table, 14 rows, full pairwise correlation map across
+  all 19 existing enrichment factors plus the new one, each row grounded in real mechanism
+  (e.g. `lineup_slot` × `lineup_surrounding_quality` ρ=0.45 because managers construct
+  lineups that way, not incidentally; `weather_roof` as a hard gate not a correlation to
+  dampen, since a closed roof deterministically zeroes other weather factors).
+- `batter_quality_of_contact` — new factor in `config_enrichment_factors` +
+  `config_enrichment_profile_cells` (4 cells: home_runs, total_bases, doubles,
+  hits_runs_rbis). This fills a real gap: all 19 prior factors are *context* (matchup/park/
+  weather/lineup/bullpen), none described the batter's own skill/quality-of-contact profile.
+  Sourced from Baseball Savant: SwStr%, SweetSpot%, HR/FB%, HardHit%, Launch Angle,
+  Barrel rates, ISO, xwOBA, xwOBAcon — the screenshots/prior-chat doc Rodolfo referenced.
+  Its correlations with park factors and carry-physics weather are flagged as
+  `interaction_term` (real amplification effects, e.g. a pull-heavy high-launch-angle
+  hitter in a short porch), not redundancy to dampen — this distinction matters for future
+  implementation and was kept separate in the combiner logic.
+
+**Real bug found and fixed in the live scoring path**: `score-audit.js`'s
+`hitterDailyContextScore()` function was naively summing correlated signals with zero
+dampening — specifically weather (temp + precip, ρ=0.15) and fatigue (bullpen + schedule,
+ρ=0.30). Refactored: every existing threshold/magnitude preserved exactly, only the final
+combination step now runs through the grounded `combineFactorEffects()` formula. Locally
+verified before deploy: single-factor case unaffected (returns exactly 0.6), correlated pair
+now correctly dampened (0.174 vs naive 0.2, matches `2/(1.15) / 2 = 0.8696` ratio exactly).
+Deployed clean, zero errors in `control_worker_run_log` since deploy.
+
+**Also deployed**: `computeCorrelationAwareEnrichment()` and supporting functions in
+`score-audit.js` — a clean, fully isolated combiner (reads `config_enrichment_factors` +
+`config_enrichment_profile_cells` + `config_factor_correlations`, applies hard gates, then
+`k_effective` dampening) added as dead code (not yet called by the main scoring loop) so it
+could be deployed with zero risk while the exact call-site wiring (mapping the 5 broad
+`factorLayers` categories — `baseline_anchor`, `factor_packet_context`, `daily_game_context`,
+`market_context`, `matrix_quality` — down to the 19+1 granular config-driven factors) gets
+finished. **This mapping work is still open** — only the `hitterDailyContextScore` piece
+(inside `daily_game_context`) got the real fix; `factor_packet_context` and `market_context`
+have their own separate scoring functions (`hitterPacketScore`, `marketLayerFromPayload`)
+that were not touched and may have the same naive-stacking pattern — check before assuming
+they're fine. Pitcher-side equivalent of `hitterDailyContextScore` was also not checked/fixed
+tonight — same audit needed.
+
+### OTHER FIXES CONFIRMED WORKING LIVE TONIGHT
+- Deploy corruption (from a prior session's bad large-file patches) fully resolved,
+  `alphadog-v2-phase3a-first-inning-pitcher-context.js` deploys clean.
+- `score-prep.js` (D1-based board prep) confirmed genuinely working: real player/matchup
+  resolution (Baseball Savant alias tables, calendar matching), self-continues correctly via
+  chunked writes, zero unresolved rows on a real slate.
+- Root-caused a real "board data stale" situation (all rows showing `pickable_safe=0`,
+  `started_rows=7489`) — was NOT a bug, was literally correct (today's games had already
+  started by evening). The system's own self-healing (dispatches a real GitHub Actions
+  scrape via `repository_dispatch` when the board JSON has zero future-pickable rows, then
+  polls) worked exactly as designed once triggered.
+- `MARKET > Full Run` confirmed working end-to-end with fresh, real, live data: real
+  sportsbook odds (FanDuel/DraftKings/etc via Odds API, 336 real game-odds rows for a real
+  14-game slate), real player-prop coverage evidence. All 5 chain stages passed
+  (`market_certifier_first_pass` → `market_teams` → `market_hitters` → `market_pitchers` →
+  `market_certifier_last_pass`), certification `PASS_WITH_WARNINGS`.
+- Confirmed `derive_board_prepared_from_postgres` (the Postgres-side board-prep stub from a
+  prior session) was never actually the blocker — `score-prep.js` on D1 already does that
+  job completely, with a fuller schema. This function can likely be deleted once the
+  migration replaces it with a real Postgres equivalent, rather than resurrected as-is.
+
+### OPEN ITEMS FOR NEXT SESSION, IN PRIORITY ORDER
+1. **Full Postgres migration**, starting with `score-prep.js` per the order above. This is
+   the explicit, non-negotiable priority. Design schema, add Hyperdrive binding + nodejs_compat
+   + postgres driver, rewrite every D1 query in the file, deploy, verify independently.
+2. Investigate `SCORING_DB` (the D1 database with `prop_factor_*`/`prop_matrix_*`/
+   `enrichment_leg_current` tables, unwired from any known worker config) — is it live,
+   dead, or a partial migration target? Don't guess, check for real references first.
+3. Raise `limits.cpu_ms` and correspondingly `MAX_TICK_MS`/`MAX_ROWS_PER_TICK` per worker as
+   part of the migration (do it once, on the Postgres version, not twice).
+4. Finish the enrichment/scoring wiring: map `factor_packet_context` and `market_context`
+   layers to their granular factors the same way `daily_game_context` got done tonight, and
+   check the pitcher-side equivalent of `hitterDailyContextScore` for the same naive-stacking
+   bug.
+5. Once the core chain (score-prep → market → factors → matrix → score-audit) is fully on
+   Postgres and verified, continue migrating the rest of the ~140 workers in the same
+   pattern: base/delta workers, daily-context workers, static reference workers.
+6. Consider Cloudflare Queues to replace the `GLOBAL_ORCHESTRATOR` poll-and-lock pattern —
+   do this as part of the control-plane (orchestrator.js) migration step, not as a separate
+   detour.
+
+### KEY REFERENCE PATTERN
+`wrangler.alphadog-v2-phase3a-first-inning-pitcher-context.jsonc` is the only file in the repo
+with a working Hyperdrive binding + `nodejs_compat` flag — use it as the template for adding
+Postgres access to every other worker's wrangler config.
+`alphadog-v2-postgres-migration.js` is the only file with a working `postgres` npm driver
+call pattern (`postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false })`) —
+use it as the template for query syntax, but note its `TABLE_PLAN` covers only 8 archive/
+config tables and needs to be extended to every hot-path table, not treated as complete.
+
 
 ## 2026-07-18 SESSION — WHAT HAPPENED (supersedes everything below for current state)
 This was an extremely long, deep session covering: (1) comprehensive real, sourced research
