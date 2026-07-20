@@ -1,5 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"
+    }
+  ],
   "name": "alphadog-v2-phase3a-first-inning-pitcher-context",
   "main": "./alphadog-v2-phase3a-first-inning-pitcher-context.js",
   "compatibility_date": "2026-05-18",
