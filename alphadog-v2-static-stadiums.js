@@ -94,7 +94,7 @@ function pg(env) {
 async function ensureSchema(env) {
   const sql = pg(env);
   const applied = [];
-  const additions = ["mlb_venue_id INT", "timezone TEXT", "active INT DEFAULT 1", "source_key TEXT", "raw_json JSONB", "latitude DOUBLE PRECISION", "longitude DOUBLE PRECISION", "park_json JSONB"];
+  const additions = ["team_id TEXT", "mlb_venue_id INT", "timezone TEXT", "active INT DEFAULT 1", "source_key TEXT", "raw_json JSONB", "latitude DOUBLE PRECISION", "longitude DOUBLE PRECISION", "park_json JSONB"];
   for (const clause of additions) {
     const colName = clause.split(" ")[0];
     try {
