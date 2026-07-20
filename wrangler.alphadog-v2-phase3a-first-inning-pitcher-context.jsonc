@@ -3,6 +3,7 @@
   "name": "alphadog-v2-phase3a-first-inning-pitcher-context",
   "main": "./alphadog-v2-phase3a-first-inning-pitcher-context.js",
   "compatibility_date": "2026-05-18",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
