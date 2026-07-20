@@ -4677,22 +4677,56 @@ function hitterDailyContextScore(packet, profileKey) {
     else if (profileKey === "hitter_contact" || profileKey === "hitter_power" || profileKey === "hitter_walk_obp" || profileKey === "hitter_strikeout") { if (lineupSlot <= 3) score += 0.7; else if (lineupSlot >= 8) score -= 0.8; }
     else if (profileKey.startsWith("stolen")) { if (lineupSlot <= 2) score += 0.7; else if (lineupSlot >= 8) score -= 0.5; }
   }
+  // --- Correlation-aware combination for weather_temp_altitude_pressure x weather_precip ---
+  // GROUNDED: real but correlated (rho=0.15, config_factor_correlations row weather_temp_x_precip -
+  // see combineFactorEffects / Heskes 1998 k_effective methodology). All thresholds/magnitudes below
+  // are UNCHANGED from the prior heuristic - only the final combination replaces naive += with
+  // correlation-aware dampened sum.
+  const weatherFiring = [];
   const temp = firstNum(weather, ["temperature_f"]);
   if ((profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact") && temp != null) {
-    if (temp >= 82) score += 0.6; else if (temp >= 76) score += 0.3; else if (temp <= 50) score -= 0.5;
+    let tempEffect = 0;
+    if (temp >= 82) tempEffect = 0.6; else if (temp >= 76) tempEffect = 0.3; else if (temp <= 50) tempEffect = -0.5;
+    if (tempEffect !== 0) weatherFiring.push({ factor_key: "weather_temp_altitude_pressure", raw_log_effect: tempEffect });
   }
+  const rain = firstNum(weather, ["rain_risk_flag"]);
+  const delay = firstNum(weather, ["delay_risk_flag"]);
+  if (rain === 1 || delay === 1) weatherFiring.push({ factor_key: "weather_precip", raw_log_effect: -0.4 });
+  if (weatherFiring.length) {
+    const weatherCorrelation = new Map([
+      ["weather_temp_altitude_pressure|weather_precip", { relationship_type: "redundancy_dampen", correlation_estimate: 0.15 }],
+      ["weather_precip|weather_temp_altitude_pressure", { relationship_type: "redundancy_dampen", correlation_estimate: 0.15 }]
+    ]);
+    score += combineFactorEffects(weatherFiring, weatherCorrelation).combined_log_effect;
+  }
+  // Park factors are component-specific (HR factor != run factor, per the original research_notes
+  // on park_factors) - genuinely non-redundant components of the same factor, left as direct
+  // additive combination, unchanged from the prior heuristic.
   const parkNotes = firstText(weather, ["park_weather_notes"]);
   const runPf = parseParkNotesNum(parkNotes, "run");
   const hrPf = parseParkNotesNum(parkNotes, "hr");
   if (profileKey === "hitter_power" && hrPf != null) { if (hrPf >= 110) score += 1.1; else if (hrPf >= 104) score += 0.5; else if (hrPf <= 90) score -= 1.1; else if (hrPf <= 96) score -= 0.5; }
   if ((profileKey === "hitter_contact" || profileKey === "hitter_run_rbi") && runPf != null) { if (runPf >= 106) score += 0.7; else if (runPf <= 94) score -= 0.7; }
-  const rain = firstNum(weather, ["rain_risk_flag"]);
-  const delay = firstNum(weather, ["delay_risk_flag"]);
-  if (rain === 1 || delay === 1) score -= 0.4;
+  // --- Correlation-aware combination for bullpen_fatigue x schedule_travel_fatigue ---
+  // GROUNDED: rho=0.30, config_factor_correlations row bullpen_x_schedule_fatigue - different
+  // entities (specific reliever workload vs whole-team travel burden) but correlated occurrence on
+  // condensed schedules. Thresholds/magnitudes unchanged from the prior heuristic.
+  const fatigueFiring = [];
   const bpText = `${firstText(readiness, ["bullpen_context_status"])} ${firstText(oppBp, ["bullpen_context_status", "availability_grade", "bullpen_risk_level", "fatigue_status"])} ${firstText(teamBp, ["bullpen_context_status", "availability_grade", "bullpen_risk_level", "fatigue_status"])}`;
-  if ((profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact" || profileKey === "hitter_walk_obp") && (bpText.includes("taxed") || bpText.includes("fatigue") || bpText.includes("thin") || bpText.includes("high"))) score += 0.6;
+  if ((profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact" || profileKey === "hitter_walk_obp") && (bpText.includes("taxed") || bpText.includes("fatigue") || bpText.includes("thin") || bpText.includes("high"))) {
+    fatigueFiring.push({ factor_key: "bullpen_fatigue", raw_log_effect: 0.6 });
+  }
   const schedText = `${firstText(readiness, ["schedule_spot_context_status"])} ${JSON.stringify(teamSched||{})} ${JSON.stringify(oppSched||{})}`.toLowerCase();
-  if (schedText.includes("travel_risk") || schedText.includes("three_in_four") || schedText.includes("four_in_six")) score -= 0.3;
+  if (schedText.includes("travel_risk") || schedText.includes("three_in_four") || schedText.includes("four_in_six")) {
+    fatigueFiring.push({ factor_key: "schedule_travel_fatigue", raw_log_effect: -0.3 });
+  }
+  if (fatigueFiring.length) {
+    const fatigueCorrelation = new Map([
+      ["bullpen_fatigue|schedule_travel_fatigue", { relationship_type: "redundancy_dampen", correlation_estimate: 0.30 }],
+      ["schedule_travel_fatigue|bullpen_fatigue", { relationship_type: "redundancy_dampen", correlation_estimate: 0.30 }]
+    ]);
+    score += combineFactorEffects(fatigueFiring, fatigueCorrelation).combined_log_effect;
+  }
   return score;
 }
 function hitterPacketScore(packet, profileKey, selectedSide) {
