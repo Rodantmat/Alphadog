@@ -11036,34 +11036,17 @@ async function runClassificationV6Tick(env, input = {}) {
   };
 }
 
-// [removed: duplicate export-default block, copy B]
-
-      ),
-      matched AS (
-        SELECT b.*, p.mlb_player_id AS resolved_mlb_player_id,
-               ROW_NUMBER() OVER (PARTITION BY b.current_row_id ORDER BY (CASE WHEN p.full_name = b.player_name THEN 0 ELSE 1 END)) AS rn
-        FROM board_norm b
-        LEFT JOIN norm_players p ON p.norm_name = b.norm_name
-      )
-      INSERT INTO score.board_prepared_current
-        (prepared_row_id, source_key, resolved_mlb_player_id, official_date, source_start_time, canonical_prop_key,
-         line_value, source_prop_name, prep_status, pickable_safe)
-      SELECT
-        current_row_id, source_key, resolved_mlb_player_id, '${officialDate}'::date, start_time,
-        lower(regexp_replace(stat_type, '\\s+', '_', 'g')), line_score, stat_type,
-        CASE WHEN resolved_mlb_player_id IS NOT NULL THEN 'prepared_pickable_safe' ELSE 'prepared_blocked_unresolved_player' END,
-        CASE WHEN resolved_mlb_player_id IS NOT NULL AND pickable_flag = 1 THEN 1 ELSE 0 END
-      FROM matched WHERE rn = 1
-      ON CONFLICT (prepared_row_id) DO UPDATE SET
-        resolved_mlb_player_id=excluded.resolved_mlb_player_id, line_value=excluded.line_value,
-        prep_status=excluded.prep_status, pickable_safe=excluded.pickable_safe, updated_at=now()
-    `);
-    const totalRes = await sql`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE resolved_mlb_player_id IS NOT NULL)::int AS resolved FROM score.board_prepared_current WHERE official_date = ${officialDate}::date`;
-    await sql.end();
-    return { ok: true, mode: "derive_board_prepared_from_postgres", official_date: officialDate, rows_written: res.count, total_for_date: totalRes[0]?.total, resolved_for_date: totalRes[0]?.resolved };
-  } catch (err) {
-    return { ok: false, mode: "derive_board_prepared_from_postgres", error: String(err && err.message ? err.message : err) };
-  }
+// REAL FIX: this function's original SQL body was lost to the same corruption that
+// triplicated the classification_v6/baseline_v6 block (the "norm_players" CTE definition
+// was never recovered - it doesn't exist anywhere else in this file). Rather than guess at
+// lost matching logic and risk silently wrong player resolution, this is a clean, honest
+// stub until the real name-matching implementation is rebuilt with verified logic.
+async function runDeriveBoardPreparedFromPostgres(env, input) {
+  return {
+    ok: false, mode: "derive_board_prepared_from_postgres",
+    error: "not_yet_implemented: original SQL body lost to corruption, needs rebuild",
+    official_date: String(input && input.official_date || "")
+  };
 }
 
 async function runMode(env,input={}){
