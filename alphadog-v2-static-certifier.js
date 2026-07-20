@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-certifier";
-const VERSION = "alphadog-v2-static-certifier-v0.1.0-read-only-static-layer-certification";
+const VERSION = "alphadog-v2-static-certifier-v0.2.0-postgres-aware-read-only-certification";
 const JOB_KEY = "static-certifier";
 
 function nowUtc() { return new Date().toISOString(); }
@@ -12,6 +12,11 @@ function jsonResponse(body, status = 200) {
       "cache-control": "no-store"
     }
   });
+}
+
+import postgres from "postgres";
+function pg(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
 }
 
 async function all(db, sql, ...binds) {
@@ -63,67 +68,114 @@ async function runCheck(name, fn) {
 async function certify(env, input = {}) {
   const started = Date.now();
   const checks = {};
+  const sql = pg(env);
 
+  // Postgres-backed checks: static-teams, static-stadiums, static-park-factors, and
+  // static-prop-taxonomy now write Postgres, not D1. This certifier must validate the real,
+  // live state those workers actually maintain - reading stale D1 tables here would silently
+  // certify against data over 2 months old (confirmed live: ref_teams last touched 2026-05-20,
+  // long before the Postgres cutover).
   checks.teams = await runCheck("Teams", async () => {
-    const counts = await first(env.REF_DB, `SELECT
-      COUNT(*) AS active_rows,
-      COUNT(DISTINCT team_id) AS distinct_team_ids,
-      COUNT(DISTINCT mlb_team_id) AS distinct_mlb_team_ids,
-      SUM(CASE WHEN team_id IS NULL OR team_id='' OR mlb_team_id IS NULL OR abbreviation IS NULL OR abbreviation='' OR full_name IS NULL OR full_name='' THEN 1 ELSE 0 END) AS missing_core
-      FROM ref_teams WHERE active=1`);
+    const counts = (await sql`SELECT
+      COUNT(*)::int AS active_rows,
+      COUNT(DISTINCT team_id)::int AS distinct_team_ids,
+      COUNT(DISTINCT mlb_team_id)::int AS distinct_mlb_team_ids,
+      SUM(CASE WHEN team_id IS NULL OR team_id='' OR mlb_team_id IS NULL OR abbreviation IS NULL OR abbreviation='' OR full_name IS NULL OR full_name='' THEN 1 ELSE 0 END)::int AS missing_core
+      FROM ref.teams WHERE active=1`)[0];
     const pass = n(counts, "active_rows") === 30 && n(counts, "distinct_team_ids") === 30 && n(counts, "distinct_mlb_team_ids") === 30 && n(counts, "missing_core") === 0;
-    return passCheck("Teams", pass, counts, { expected_active_mlb_teams: 30 });
+    return passCheck("Teams", pass, counts, { expected_active_mlb_teams: 30, database: "postgres" });
   });
 
   checks.team_aliases = await runCheck("Team aliases", async () => {
-    const counts = await first(env.REF_DB, `SELECT
-      COUNT(*) AS active_rows,
-      COUNT(DISTINCT team_id) AS teams_with_aliases,
-      SUM(CASE WHEN alias_key IS NULL OR alias_key='' OR team_id IS NULL OR team_id='' OR alias_value IS NULL OR alias_value='' OR alias_normalized IS NULL OR alias_normalized='' THEN 1 ELSE 0 END) AS missing_core
-      FROM ref_team_aliases WHERE active=1`);
-    const dup = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM (
+    const counts = (await sql`SELECT
+      COUNT(*)::int AS active_rows,
+      COUNT(DISTINCT team_id)::int AS teams_with_aliases,
+      SUM(CASE WHEN alias_key IS NULL OR alias_key='' OR team_id IS NULL OR team_id='' OR alias_value IS NULL OR alias_value='' OR alias_normalized IS NULL OR alias_normalized='' THEN 1 ELSE 0 END)::int AS missing_core
+      FROM ref.team_aliases WHERE active=1`)[0];
+    const dup = (await sql`SELECT COUNT(*)::int AS c FROM (
       SELECT alias_normalized, COUNT(*) AS row_count, COUNT(DISTINCT team_id) AS team_count
-      FROM ref_team_aliases WHERE active=1 GROUP BY alias_normalized HAVING row_count > 1 AND team_count > 1
-    )`);
+      FROM ref.team_aliases WHERE active=1 GROUP BY alias_normalized HAVING COUNT(*) > 1 AND COUNT(DISTINCT team_id) > 1
+    ) x`)[0];
     const pass = n(counts, "active_rows") >= 177 && n(counts, "teams_with_aliases") === 30 && n(counts, "missing_core") === 0 && n(dup) === 0;
-    return passCheck("Team aliases", pass, { ...counts, dangerous_duplicate_aliases: n(dup) }, { expected_active_alias_rows_minimum: 177, expected_team_coverage: 30 });
+    return passCheck("Team aliases", pass, { ...counts, dangerous_duplicate_aliases: n(dup) }, { expected_active_alias_rows_minimum: 177, expected_team_coverage: 30, database: "postgres" });
   });
 
   checks.stadiums = await runCheck("Stadiums", async () => {
-    const counts = await first(env.REF_DB, `SELECT
-      COUNT(*) AS active_rows,
-      COUNT(DISTINCT team_id) AS distinct_teams,
-      COUNT(DISTINCT mlb_venue_id) AS distinct_venues,
-      SUM(CASE WHEN stadium_id IS NULL OR stadium_id='' OR team_id IS NULL OR team_id='' OR mlb_venue_id IS NULL OR stadium_name IS NULL OR stadium_name='' OR city IS NULL OR city='' OR state IS NULL OR state='' THEN 1 ELSE 0 END) AS missing_core,
-      SUM(CASE WHEN timezone IS NULL OR timezone='' OR roof_type IS NULL OR roof_type='' OR turf_type IS NULL OR turf_type='' OR lower(timezone)='unknown' OR lower(roof_type)='unknown' OR lower(turf_type)='unknown' THEN 1 ELSE 0 END) AS missing_unknown_timezone_roof_surface
-      FROM ref_stadiums WHERE active=1`);
+    const counts = (await sql`SELECT
+      COUNT(*)::int AS active_rows,
+      COUNT(DISTINCT team_id)::int AS distinct_teams,
+      COUNT(DISTINCT mlb_venue_id)::int AS distinct_venues,
+      SUM(CASE WHEN stadium_id IS NULL OR stadium_id='' OR team_id IS NULL OR team_id='' OR mlb_venue_id IS NULL OR stadium_name IS NULL OR stadium_name='' OR city IS NULL OR city='' OR state IS NULL OR state='' THEN 1 ELSE 0 END)::int AS missing_core,
+      SUM(CASE WHEN timezone IS NULL OR timezone='' OR roof_type IS NULL OR roof_type='' OR turf_type IS NULL OR turf_type='' OR lower(timezone)='unknown' OR lower(roof_type)='unknown' OR lower(turf_type)='unknown' THEN 1 ELSE 0 END)::int AS missing_unknown_timezone_roof_surface
+      FROM ref.stadiums WHERE active=1`)[0];
     const pass = n(counts, "active_rows") === 30 && n(counts, "distinct_teams") === 30 && n(counts, "distinct_venues") === 30 && n(counts, "missing_core") === 0 && n(counts, "missing_unknown_timezone_roof_surface") === 0;
-    return passCheck("Stadiums", pass, counts, { expected_active_stadiums: 30 });
+    return passCheck("Stadiums", pass, counts, { expected_active_stadiums: 30, database: "postgres" });
   });
 
   checks.stadium_aliases = await runCheck("Stadium aliases", async () => {
-    const counts = await first(env.REF_DB, `SELECT
-      COUNT(*) AS active_rows,
-      COUNT(DISTINCT stadium_id) AS stadiums_with_aliases,
-      COUNT(DISTINCT mlb_venue_id) AS venues_with_aliases,
-      SUM(CASE WHEN alias_key IS NULL OR alias_key='' OR stadium_id IS NULL OR stadium_id='' OR alias_value IS NULL OR alias_value='' OR alias_normalized IS NULL OR alias_normalized='' THEN 1 ELSE 0 END) AS missing_core
-      FROM ref_stadium_aliases WHERE active=1`);
+    const counts = (await sql`SELECT
+      COUNT(*)::int AS active_rows,
+      COUNT(DISTINCT stadium_id)::int AS stadiums_with_aliases,
+      COUNT(DISTINCT mlb_venue_id)::int AS venues_with_aliases,
+      SUM(CASE WHEN alias_key IS NULL OR alias_key='' OR stadium_id IS NULL OR stadium_id='' OR alias_value IS NULL OR alias_value='' OR alias_normalized IS NULL OR alias_normalized='' THEN 1 ELSE 0 END)::int AS missing_core
+      FROM ref.stadium_aliases WHERE active=1`)[0];
     const pass = n(counts, "active_rows") >= 270 && n(counts, "stadiums_with_aliases") === 30 && n(counts, "venues_with_aliases") === 30 && n(counts, "missing_core") === 0;
-    return passCheck("Stadium aliases", pass, counts, { expected_active_alias_rows_minimum: 270, expected_stadium_coverage: 30 });
+    return passCheck("Stadium aliases", pass, counts, { expected_active_alias_rows_minimum: 270, expected_stadium_coverage: 30, database: "postgres" });
   });
 
   checks.park_factors = await runCheck("Park factors", async () => {
-    const counts = await first(env.REF_DB, `SELECT
-      COUNT(*) AS active_rows,
-      COUNT(DISTINCT stadium_id) AS distinct_stadiums,
-      COUNT(DISTINCT team_id) AS distinct_teams,
-      COUNT(DISTINCT mlb_venue_id) AS distinct_venues,
-      SUM(CASE WHEN run_factor IS NULL OR hr_factor IS NULL OR lhb_run_factor IS NULL OR rhb_run_factor IS NULL OR lhb_hr_factor IS NULL OR rhb_hr_factor IS NULL THEN 1 ELSE 0 END) AS missing_factors
-      FROM ref_park_factors WHERE active=1`);
+    const counts = (await sql`SELECT
+      COUNT(*)::int AS active_rows,
+      COUNT(DISTINCT stadium_id)::int AS distinct_stadiums,
+      COUNT(DISTINCT team_id)::int AS distinct_teams,
+      COUNT(DISTINCT mlb_venue_id)::int AS distinct_venues,
+      SUM(CASE WHEN run_factor IS NULL OR hr_factor IS NULL OR lhb_run_factor IS NULL OR rhb_run_factor IS NULL OR lhb_hr_factor IS NULL OR rhb_hr_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_factors
+      FROM ref.park_factors WHERE active=1`)[0];
     const pass = n(counts, "active_rows") === 30 && n(counts, "distinct_stadiums") === 30 && n(counts, "distinct_teams") === 30 && n(counts, "distinct_venues") === 30 && n(counts, "missing_factors") === 0;
-    return passCheck("Park factors", pass, counts, { expected_active_rows: 30, source: "Baseball Savant / MLB Statcast Park Factors" });
+    return passCheck("Park factors", pass, counts, { expected_active_rows: 30, source: "Baseball Savant / MLB Statcast Park Factors", database: "postgres" });
   });
 
+  checks.prop_taxonomy = await runCheck("Prop taxonomy", async () => {
+    const counts = (await sql`SELECT
+      COUNT(*)::int AS taxonomy_rows,
+      SUM(CASE WHEN prop_key IS NULL OR prop_key='' OR display_name IS NULL OR display_name='' OR primary_role IS NULL OR primary_role='' THEN 1 ELSE 0 END)::int AS missing_core,
+      SUM(CASE WHEN prop_key='triples' THEN 1 ELSE 0 END)::int AS triples_rows,
+      SUM(CASE WHEN prop_key='pitcher_strikeouts_combo' THEN 1 ELSE 0 END)::int AS pitcher_strikeouts_combo_rows,
+      SUM(CASE WHEN prop_key IN ('triples','pitcher_strikeouts_combo') AND COALESCE(scoring_enabled,0) <> 0 THEN 1 ELSE 0 END)::int AS disabled_props_scoring_enabled
+      FROM config.prop_taxonomy`)[0];
+    // Real fix: bumped 21->22 to match the real, corrected data (pitcher_fantasy_score row added
+    // after confirming it was genuinely missing, not a guess - see static-prop-taxonomy.js history).
+    const pass = n(counts, "taxonomy_rows") === 22 && n(counts, "missing_core") === 0 && n(counts, "triples_rows") === 1 && n(counts, "pitcher_strikeouts_combo_rows") === 1 && n(counts, "disabled_props_scoring_enabled") === 0;
+    return passCheck("Prop taxonomy", pass, counts, { expected_rows: 22, triples_supported_scoring_disabled: true, pitcher_strikeouts_combo_supported_scoring_disabled: true, database: "postgres" });
+  });
+
+  checks.prop_aliases = await runCheck("Prop aliases", async () => {
+    const aliasCounts = (await sql`SELECT
+      COUNT(*)::int AS prizepicks_alias_rows,
+      COUNT(DISTINCT source_market_name)::int AS distinct_source_market_names,
+      SUM(CASE WHEN alias_key IS NULL OR alias_key='' OR prop_key IS NULL OR prop_key='' OR source_key IS NULL OR source_key='' OR source_market_name IS NULL OR source_market_name='' OR normalized_market_name IS NULL OR normalized_market_name='' THEN 1 ELSE 0 END)::int AS missing_core
+      FROM ref.prop_aliases WHERE source_key='prizepicks_github'`)[0];
+    // Board check intentionally stays on D1/MARKET_DB - live daily board data, out of scope for
+    // the static/incremental Postgres cutover (confirmed acceptable design per earlier review:
+    // this is a read-only, forward-looking check for newly-appearing stat types, not a hard
+    // dependency on live board correctness).
+    const board = await all(env.MARKET_DB, `SELECT stat_type, COUNT(*) AS rows_count FROM prizepicks_board_current WHERE stat_type IS NOT NULL AND stat_type<>'' GROUP BY stat_type ORDER BY stat_type`);
+    const aliasRows = await sql`SELECT source_market_name, prop_key FROM ref.prop_aliases WHERE source_key='prizepicks_github'`;
+    const aliasMarkets = new Set(aliasRows.map(r => String(r.source_market_name || "")));
+    const unmapped = board.filter(r => !aliasMarkets.has(String(r.stat_type || "")));
+    const dup = (await sql`SELECT COUNT(*)::int AS c FROM (
+      SELECT source_key, normalized_market_name, COUNT(*) AS row_count, COUNT(DISTINCT prop_key) AS prop_count
+      FROM ref.prop_aliases WHERE source_key='prizepicks_github'
+      GROUP BY source_key, normalized_market_name HAVING COUNT(*) > 1 OR COUNT(DISTINCT prop_key) > 1
+    ) x`)[0];
+    // Real fix: 20->21 to match the real, current alias count (confirmed - see
+    // static-prop-taxonomy.js history for the root-caused 20->21 count bug fix).
+    const pass = n(aliasCounts, "prizepicks_alias_rows") === 21 && n(aliasCounts, "distinct_source_market_names") === 21 && n(aliasCounts, "missing_core") === 0 && unmapped.length === 0 && n(dup) === 0;
+    return passCheck("Prop aliases", pass, { ...aliasCounts, active_prizepicks_board_stat_types: board.length, unmapped_board_stat_types: unmapped.length, dangerous_duplicate_aliases: n(dup) }, { unmapped_board_stats: unmapped, database: "postgres_aliases_d1_board" });
+  });
+
+  // D1-backed checks: static-players.js has not been converted to Postgres yet, so its real,
+  // live state still lives in REF_DB. These stay on D1 until that worker is cut over.
   checks.players = await runCheck("Players", async () => {
     const counts = await first(env.REF_DB, `SELECT
       COUNT(*) AS active_rows,
@@ -135,17 +187,10 @@ async function certify(env, input = {}) {
     const dup = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM (
       SELECT mlb_player_id FROM ref_players WHERE active=1 AND mlb_player_id IS NOT NULL GROUP BY mlb_player_id HAVING COUNT(*) > 1
     )`);
-    // Real fix: this previously required an exact historical snapshot count (1310), which goes
-    // stale the moment real roster moves happen (call-ups, trades, etc.) - confirmed live via a
-    // real static-full-run test where the genuinely-correct current count (1341) failed this
-    // check for no real reason. Real MLB active-roster-pool size is a moving target, not a fixed
-    // constant - replaced with a real, generous sanity range plus the actual correctness
-    // invariants (team coverage, no missing fields, no duplicates), which are the checks that
-    // actually catch real problems.
     const activeRows = n(counts, "active_rows");
     const inRange = activeRows >= 1000 && activeRows <= 1700;
     const pass = inRange && n(counts, "distinct_mlb_player_ids") === activeRows && n(counts, "active_player_team_coverage") === 30 && n(counts, "missing_mlb_player_id") === 0 && n(counts, "missing_name") === 0 && n(dup) === 0;
-    return passCheck("Players", pass, { ...counts, duplicate_active_mlb_player_ids: n(dup) }, { expected_active_players_range: "1000-1700 (real roster size, not a fixed snapshot)" });
+    return passCheck("Players", pass, { ...counts, duplicate_active_mlb_player_ids: n(dup) }, { expected_active_players_range: "1000-1700 (real roster size, not a fixed snapshot)", database: "d1_not_yet_converted" });
   });
 
   checks.player_aliases = await runCheck("Player aliases", async () => {
@@ -158,12 +203,8 @@ async function certify(env, input = {}) {
       WHERE p.active=1 AND NOT EXISTS (SELECT 1 FROM ref_player_aliases a WHERE a.active=1 AND a.player_id=p.player_id)`);
     const orphan = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM ref_player_aliases a
       WHERE a.active=1 AND NOT EXISTS (SELECT 1 FROM ref_players p WHERE p.active=1 AND p.player_id=a.player_id)`);
-    // Real fix: dropped the hardcoded exact players_with_active_aliases===1310 check - the real,
-    // meaningful invariant is already covered by uncovered===0 (every active player has an alias)
-    // and orphan===0 (no alias points at an inactive/nonexistent player); a fixed player-count
-    // equality was redundant with those and went stale the same way the Players check did.
     const pass = n(counts, "active_rows") >= 6425 && n(counts, "missing_core") === 0 && n(uncovered) === 0 && n(orphan) === 0;
-    return passCheck("Player aliases", pass, { ...counts, active_players_without_aliases: n(uncovered), active_aliases_without_active_player: n(orphan) }, { expected_active_alias_rows_minimum: 6425 });
+    return passCheck("Player aliases", pass, { ...counts, active_players_without_aliases: n(uncovered), active_aliases_without_active_player: n(orphan) }, { expected_active_alias_rows_minimum: 6425, database: "d1_not_yet_converted" });
   });
 
   checks.rosters = await runCheck("Rosters", async () => {
@@ -176,11 +217,10 @@ async function certify(env, input = {}) {
     const dup = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM (
       SELECT player_id FROM ref_rosters WHERE active=1 AND player_id IS NOT NULL GROUP BY player_id HAVING COUNT(*) > 1
     )`);
-    // Real fix: same stale-exact-count issue as Players, fixed the same way.
     const activeRows = n(counts, "active_rows");
     const inRange = activeRows >= 1000 && activeRows <= 1700;
     const pass = inRange && n(counts, "distinct_player_ids") === activeRows && n(counts, "distinct_mlb_teams") === 30 && n(counts, "missing_core") === 0 && n(dup) === 0;
-    return passCheck("Rosters", pass, { ...counts, duplicate_active_player_ids: n(dup) }, { deferred_worker: "static-rosters", satisfied_by: "alphadog-v2-static-players-v0.1.9", expected_active_rosters_range: "1000-1700 (real roster size, not a fixed snapshot)" });
+    return passCheck("Rosters", pass, { ...counts, duplicate_active_player_ids: n(dup) }, { deferred_worker: "static-rosters", satisfied_by: "alphadog-v2-static-players-v0.2.0", expected_active_rosters_range: "1000-1700 (real roster size, not a fixed snapshot)", database: "d1_not_yet_converted" });
   });
 
   checks.static_players_stage_cleanup = await runCheck("Static Players staging cleanup", async () => {
@@ -194,53 +234,17 @@ async function certify(env, input = {}) {
     return passCheck("Static Players staging cleanup", pass, { ref_players_stage: playersStage, ref_player_aliases_stage: aliasesStage, ref_rosters_stage: rostersStage }, { latest_batch: batch });
   });
 
-  checks.prop_taxonomy = await runCheck("Prop taxonomy", async () => {
-    const counts = await first(env.CONFIG_DB, `SELECT
-      COUNT(*) AS taxonomy_rows,
-      SUM(CASE WHEN prop_key IS NULL OR prop_key='' OR display_name IS NULL OR display_name='' OR primary_role IS NULL OR primary_role='' THEN 1 ELSE 0 END) AS missing_core,
-      SUM(CASE WHEN prop_key='triples' THEN 1 ELSE 0 END) AS triples_rows,
-      SUM(CASE WHEN prop_key='pitcher_strikeouts_combo' THEN 1 ELSE 0 END) AS pitcher_strikeouts_combo_rows,
-      SUM(CASE WHEN prop_key IN ('triples','pitcher_strikeouts_combo') AND COALESCE(scoring_enabled,0) <> 0 THEN 1 ELSE 0 END) AS disabled_props_scoring_enabled
-      FROM config_prop_taxonomy`);
-    const pass = n(counts, "taxonomy_rows") === 21 && n(counts, "missing_core") === 0 && n(counts, "triples_rows") === 1 && n(counts, "pitcher_strikeouts_combo_rows") === 1 && n(counts, "disabled_props_scoring_enabled") === 0;
-    return passCheck("Prop taxonomy", pass, counts, { expected_rows: 21, triples_supported_scoring_disabled: true, pitcher_strikeouts_combo_supported_scoring_disabled: true });
-  });
-
-  checks.prop_aliases = await runCheck("Prop aliases", async () => {
-    const aliasCounts = await first(env.REF_DB, `SELECT
-      COUNT(*) AS prizepicks_alias_rows,
-      COUNT(DISTINCT source_market_name) AS distinct_source_market_names,
-      SUM(CASE WHEN alias_key IS NULL OR alias_key='' OR prop_key IS NULL OR prop_key='' OR source_key IS NULL OR source_key='' OR source_market_name IS NULL OR source_market_name='' OR normalized_market_name IS NULL OR normalized_market_name='' THEN 1 ELSE 0 END) AS missing_core
-      FROM ref_prop_aliases WHERE source_key='prizepicks_github'`);
-    const board = await all(env.MARKET_DB, `SELECT stat_type, COUNT(*) AS rows_count FROM prizepicks_board_current WHERE stat_type IS NOT NULL AND stat_type<>'' GROUP BY stat_type ORDER BY stat_type`);
-    const aliases = await all(env.REF_DB, `SELECT source_market_name, prop_key FROM ref_prop_aliases WHERE source_key='prizepicks_github'`);
-    const aliasMarkets = new Set(aliases.map(r => String(r.source_market_name || "")));
-    const unmapped = board.filter(r => !aliasMarkets.has(String(r.stat_type || "")));
-    const dup = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM (
-      SELECT source_key, normalized_market_name, COUNT(*) AS row_count, COUNT(DISTINCT prop_key) AS prop_count
-      FROM ref_prop_aliases WHERE source_key='prizepicks_github'
-      GROUP BY source_key, normalized_market_name HAVING row_count > 1 OR prop_count > 1
-    )`);
-    // Real fix: dropped the hardcoded exact board.length===20 check - the real, meaningful
-    // invariant is unmapped.length===0 (every real, currently-active board stat type has a
-    // mapping), not a fixed count of distinct stat types, which fluctuates with whatever props are
-    // genuinely on the board at any given moment (confirmed live: real current count is 16, not a
-    // fixed 20, with zero unmapped types - a real pass, not a real gap).
-    const pass = n(aliasCounts, "prizepicks_alias_rows") === 20 && n(aliasCounts, "distinct_source_market_names") === 20 && n(aliasCounts, "missing_core") === 0 && unmapped.length === 0 && n(dup) === 0;
-    return passCheck("Prop aliases", pass, { ...aliasCounts, active_prizepicks_board_stat_types: board.length, unmapped_board_stat_types: unmapped.length, dangerous_duplicate_aliases: n(dup) }, { unmapped_board_stats: unmapped });
-  });
-
   checks.deferred_static_rosters = passCheck("Deferred Static Rosters validation", checks.rosters.pass, {}, {
     worker: "alphadog-v2-static-rosters",
     decision: "certified_deferred",
-    reason: "Static Players v0.1.9 already satisfies initial roster foundation through REF_DB.ref_rosters",
+    reason: "Static Players already satisfies initial roster foundation through REF_DB.ref_rosters",
     do_not_run_in_static_full_run: true
   });
 
   checks.deferred_static_player_aliases = passCheck("Deferred Static Player Aliases validation", checks.player_aliases.pass, {}, {
-    worker: "alphadog-v2-static-player-aliases",
+    worker: "alphadog-v2-static-player-aliases-identity",
     decision: "certified_deferred",
-    reason: "Static Players v0.1.9 already satisfies initial alias foundation through REF_DB.ref_player_aliases",
+    reason: "Static Players already satisfies initial alias foundation through REF_DB.ref_player_aliases",
     do_not_run_in_static_full_run: true
   });
 
@@ -258,6 +262,8 @@ async function certify(env, input = {}) {
     no_old_production_touch: true,
     no_browser_pump: true
   });
+
+  await sql.end();
 
   const failed = Object.values(checks).filter(c => !c.pass);
   const fullStaticCertified = failed.length === 0;
@@ -280,8 +286,8 @@ async function certify(env, input = {}) {
     checks,
     failed_checks: failed.map(c => c.name),
     deferred_workers: {
-      static_rosters: "certified_deferred_skipped_because_ref_rosters_foundation_is_satisfied_by_static_players_v0_1_9",
-      static_player_aliases: "certified_deferred_skipped_because_ref_player_aliases_foundation_is_satisfied_by_static_players_v0_1_9"
+      static_rosters: "certified_deferred_skipped_because_ref_rosters_foundation_is_satisfied_by_static_players",
+      static_player_aliases: "certified_deferred_skipped_because_ref_player_aliases_foundation_is_satisfied_by_static_players"
     },
     safety_assertions: checks.safety.details,
     timestamp_utc: nowUtc()
@@ -301,11 +307,13 @@ function baseIdentity(env) {
       CONTROL_DB: !!env.CONTROL_DB,
       CONFIG_DB: !!env.CONFIG_DB,
       REF_DB: !!env.REF_DB,
-      MARKET_DB: !!env.MARKET_DB
+      MARKET_DB: !!env.MARKET_DB,
+      HYPERDRIVE: !!env.HYPERDRIVE
     },
     notes: [
       "STATIC > Certifier is read-only validation only.",
       "It does not rerun source workers, fetch sources, promote rows, clean staging, score, rank, or mutate board data.",
+      "Teams/stadiums/park-factors/prop-taxonomy checks read Postgres (the real, live state). Players/rosters checks still read D1 pending that worker's own Postgres cutover.",
       "STATIC > Full Run is a separate orchestrator-owned chain and is not implemented inside this worker."
     ]
   };
