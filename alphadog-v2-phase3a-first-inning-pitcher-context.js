@@ -7713,11 +7713,8 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       ? rawFields.map((f, i) => `COALESCE(${f},0)*${Number(propConfig.weights[propConfig.numerator_fields[i]] || 1)}`).join("+")
       : rawFields.map(f => `COALESCE(${f},0)`).join("+");
     let dispersion = Infinity;
-    let dispersionError = null;
-    let dispersionDebug = null;
     try {
       const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
-      dispersionDebug = { row_count: gRows.length, expr: exprRaw, sample: gRows[0] || null };
       let sumGames=0, sumMeanW=0, sumVarW=0;
       for (const g of gRows) {
         const gm = Number(g.games), mi = Number(g.mean_i), msq = Number(g.meansq_i);
@@ -7727,9 +7724,8 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       if (sumGames > 0) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
         dispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
-        dispersionDebug.pooled = { sumGames, sumMeanW, sumVarW, pooledMean, pooledVar, dispersion: isFinite(dispersion) ? dispersion : "Infinity" };
       }
-    } catch (err) { dispersion = Infinity; dispersionError = String(err && err.message ? err.message : err); }
+    } catch (err) { dispersion = Infinity; }
 
     const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
     await sql`
