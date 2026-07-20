@@ -7093,8 +7093,12 @@ async function runReminePitcherGameLogsToPostgres(env, input) {
     for (const p of playerRows) {
       if (Date.now() - startedAt > TIME_BUDGET_MS) break;
       const url = `${base}/people/${p.mlb_player_id}/stats?stats=gameLog&group=pitching&season=${season}`;
-      const resp = await fetch(url, { headers });
-      const json = await resp.json().catch(() => null);
+      let json = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const resp = await fetch(url, { headers });
+        if (resp.ok) { json = await resp.json().catch(() => null); if (json) break; }
+        if (attempt === 0) await new Promise(r => setTimeout(r, 350));
+      }
       const splits = (json && Array.isArray(json.stats) && json.stats[0] && Array.isArray(json.stats[0].splits)) ? json.stats[0].splits : [];
       for (const split of splits) {
         const stat = split.stat || {}, game = split.game || {}, team = split.team || {}, opponent = split.opponent || {};
