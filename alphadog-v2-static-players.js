@@ -371,121 +371,134 @@ async function promoteCertifiedStage(sql, batchId, requestId) {
 }
 
 async function runSeed(env, input = {}) {
+  const originalInput = input && typeof input.input_json === "object" && input.input_json !== null ? input.input_json : input;
+  const processedMlbTeamIds = new Set(Array.isArray(originalInput.processed_mlb_team_ids) ? originalInput.processed_mlb_team_ids.map(v => String(v)) : []);
+  const maxTeamsPerRunRaw = Number(originalInput.max_teams_per_run || originalInput.maxTeamsPerRun || DEFAULT_MAX_TEAMS_PER_RUN);
+  const maxTeamsPerRun = Math.max(1, Math.min(Number.isFinite(maxTeamsPerRunRaw) ? maxTeamsPerRunRaw : DEFAULT_MAX_TEAMS_PER_RUN, HARD_MAX_TEAMS_PER_RUN));
+  const requestId = input.request_id || originalInput.request_id || batchIdFor(input, originalInput);
+  const batchId = batchIdFor({ ...input, request_id: requestId }, originalInput);
+
+  // Phase 1: short-lived connection just to read teams and check freshness/initialize the
+  // stage batch. Closed before any external MLB API calls happen - holding a Hyperdrive
+  // connection open and idle across multiple external HTTP fetches (up to 6 team rosters plus
+  // batch person-detail hydration calls, which can genuinely take a while) was the real cause
+  // of "Network connection lost" failures confirmed live on the Savant-sourced static workers;
+  // the same risk applies here, just with more external calls per invocation.
+  let sqlPhase1 = pg(env);
+  const teams = await readActiveTeams(sqlPhase1);
+  const distinctTeamIds = unique(teams.map(t => t.team_id)).length;
+  const distinctMlbTeamIds = unique(teams.map(t => t.mlb_team_id)).length;
+
+  if (teams.length !== 30 || distinctTeamIds !== 30 || distinctMlbTeamIds !== 30) {
+    await sqlPhase1.end();
+    return {
+      ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+      request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
+      status: "blocked_ref_teams_not_ready", certification: "STATIC_PLAYERS_BLOCKED_REF_TEAMS_NOT_30_ACTIVE_MLB_TEAMS",
+      teams_found: teams.length, distinct_team_ids: distinctTeamIds, distinct_mlb_team_ids: distinctMlbTeamIds,
+      rows_read: teams.length, rows_written: 0, external_calls_performed: 0,
+      error: "Postgres ref.teams must contain exactly 30 active teams with mlb_team_id before static player seed. Run/verify STATIC > Teams first.",
+      boundaries: base(env).boundaries, timestamp_utc: nowUtc()
+    };
+  }
+
+  const allMlbTeamIds = teams.map(t => String(t.mlb_team_id));
+  const alreadyProcessedValid = Array.from(processedMlbTeamIds).filter(id => allMlbTeamIds.includes(id));
+  const processedSet = new Set(alreadyProcessedValid);
+  const isFirstChunk = processedSet.size === 0;
+
+  if (isFirstChunk) {
+    const freshRows = await sqlPhase1`SELECT MAX(promoted_at) AS last_promoted FROM config.static_players_batches WHERE source_key=${SOURCE_KEY} AND status='promoted'`;
+    const lastPromoted = freshRows[0] && freshRows[0].last_promoted;
+    if (lastPromoted) {
+      const ageHours = (Date.now() - new Date(lastPromoted).getTime()) / 3600000;
+      if (ageHours >= 0 && ageHours < FRESHNESS_WINDOW_HOURS) {
+        const mainChecksNoop = await certificationChecks(sqlPhase1);
+        await sqlPhase1.end();
+        return {
+          ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+          request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
+          status: "completed_noop_fresh", certification: "STATIC_PLAYERS_CERTIFIED_NOOP_ALREADY_FRESH",
+          teams_processed_this_run: 0, teams_processed_total: 30, teams_remaining: 0, teams_expected: 30,
+          rows_read: 0, rows_written: 0, external_calls_performed: 0,
+          freshness_gate: { last_promoted: lastPromoted, age_hours: Math.round(ageHours * 100) / 100, window_hours: FRESHNESS_WINDOW_HOURS, skipped_expensive_fetch: true },
+          differential_note: "No real fetch performed - a promoted batch completed within the freshness window, so nothing needed mining.",
+          main_certification_checks: mainChecksNoop,
+          database_target: "postgres_ref_players",
+          boundaries: base(env).boundaries, timestamp_utc: nowUtc()
+        };
+      }
+    }
+  }
+
+  if (isFirstChunk) {
+    await initializeStageBatch(sqlPhase1, batchId, { ...input, request_id: requestId }, originalInput);
+  }
+  await sqlPhase1.end();
+
+  const remainingTeams = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
+  const teamsThisRun = remainingTeams.slice(0, maxTeamsPerRun);
+
+  const byMlbPlayerId = new Map();
+  const sourceSamples = [];
+  let externalCalls = 0;
+  let rosterRowsRead = 0;
+  let teamsProcessedThisRun = 0;
+  let aliasesWritten = 0;
+  let playersWrittenThisRun = 0;
+  let rostersWritten = 0;
+  const rosterSnapshots = [];
+  let missingPosition = 0;
+  let missingBatSide = 0;
+  let missingThrowSide = 0;
+  const teamSummaries = [];
+
+  // Phase 2: all external MLB API calls (roster fetches + person-detail hydration) happen here
+  // with NO Postgres connection open at all.
+  for (const team of teamsThisRun) {
+    const mlbTeamId = numOrNull(team.mlb_team_id);
+    const fetched = await fetchRoster(env, mlbTeamId);
+    externalCalls += 1;
+    teamsProcessedThisRun += 1;
+    rosterRowsRead += fetched.roster.length;
+    processedSet.add(String(mlbTeamId));
+    teamSummaries.push({ team_id: team.team_id, mlb_team_id: mlbTeamId, abbreviation: team.abbreviation, roster_rows: fetched.roster.length, http_status: fetched.http_status });
+    if (sourceSamples.length < 3) sourceSamples.push({ team_id: team.team_id, url: fetched.url, roster_rows: fetched.roster.length });
+
+    for (const entry of fetched.roster) {
+      const player = playerFromRosterEntry(entry, team);
+      if (!player.mlb_player_id || !player.full_name) continue;
+      if (!player.primary_position) missingPosition += 1;
+      if (!player.bat_side) missingBatSide += 1;
+      if (!player.throw_side) missingThrowSide += 1;
+
+      rosterSnapshots.push({ player, team });
+      const existing = byMlbPlayerId.get(String(player.mlb_player_id));
+      if (!existing || (existing.current_team_id !== player.current_team_id && !existing.current_team_id)) {
+        byMlbPlayerId.set(String(player.mlb_player_id), player);
+      }
+    }
+  }
+
+  const players = Array.from(byMlbPlayerId.values()).sort((a, b) => String(a.full_name).localeCompare(String(b.full_name)));
+
+  const needsHydration = players.filter(p => (!p.bat_side || !p.throw_side) && p.mlb_player_id).map(p => p.mlb_player_id);
+  let hydrationCallsPerformed = 0;
+  let playersHydratedThisRun = 0;
+  if (needsHydration.length) {
+    const detailMap = await fetchPersonDetailsBatch(env, needsHydration);
+    hydrationCallsPerformed = Math.ceil(needsHydration.length / HYDRATION_IDS_PER_CALL);
+    for (const player of players) {
+      const detail = detailMap.get(String(player.mlb_player_id));
+      if (!detail) continue;
+      if (detail.bat_side && !player.bat_side) { player.bat_side = detail.bat_side; player.bats = detail.bat_side; playersHydratedThisRun += 1; }
+      if (detail.throw_side && !player.throw_side) { player.throw_side = detail.throw_side; player.throws = detail.throw_side; }
+    }
+  }
+
+  // Phase 3: fresh Postgres connection opened only now, for the write phase.
   const sql = pg(env);
   try {
-    const originalInput = input && typeof input.input_json === "object" && input.input_json !== null ? input.input_json : input;
-    const processedMlbTeamIds = new Set(Array.isArray(originalInput.processed_mlb_team_ids) ? originalInput.processed_mlb_team_ids.map(v => String(v)) : []);
-    const maxTeamsPerRunRaw = Number(originalInput.max_teams_per_run || originalInput.maxTeamsPerRun || DEFAULT_MAX_TEAMS_PER_RUN);
-    const maxTeamsPerRun = Math.max(1, Math.min(Number.isFinite(maxTeamsPerRunRaw) ? maxTeamsPerRunRaw : DEFAULT_MAX_TEAMS_PER_RUN, HARD_MAX_TEAMS_PER_RUN));
-    const requestId = input.request_id || originalInput.request_id || batchIdFor(input, originalInput);
-    const batchId = batchIdFor({ ...input, request_id: requestId }, originalInput);
-
-    const teams = await readActiveTeams(sql);
-    const distinctTeamIds = unique(teams.map(t => t.team_id)).length;
-    const distinctMlbTeamIds = unique(teams.map(t => t.mlb_team_id)).length;
-
-    if (teams.length !== 30 || distinctTeamIds !== 30 || distinctMlbTeamIds !== 30) {
-      return {
-        ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
-        request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
-        status: "blocked_ref_teams_not_ready", certification: "STATIC_PLAYERS_BLOCKED_REF_TEAMS_NOT_30_ACTIVE_MLB_TEAMS",
-        teams_found: teams.length, distinct_team_ids: distinctTeamIds, distinct_mlb_team_ids: distinctMlbTeamIds,
-        rows_read: teams.length, rows_written: 0, external_calls_performed: 0,
-        error: "Postgres ref.teams must contain exactly 30 active teams with mlb_team_id before static player seed. Run/verify STATIC > Teams first.",
-        boundaries: base(env).boundaries, timestamp_utc: nowUtc()
-      };
-    }
-
-    const allMlbTeamIds = teams.map(t => String(t.mlb_team_id));
-    const alreadyProcessedValid = Array.from(processedMlbTeamIds).filter(id => allMlbTeamIds.includes(id));
-    const processedSet = new Set(alreadyProcessedValid);
-    const isFirstChunk = processedSet.size === 0;
-
-    // Freshness gate: same grounded watermark pattern used across the static layer.
-    if (isFirstChunk) {
-      const freshRows = await sql`SELECT MAX(promoted_at) AS last_promoted FROM config.static_players_batches WHERE source_key=${SOURCE_KEY} AND status='promoted'`;
-      const lastPromoted = freshRows[0] && freshRows[0].last_promoted;
-      if (lastPromoted) {
-        const ageHours = (Date.now() - new Date(lastPromoted).getTime()) / 3600000;
-        if (ageHours >= 0 && ageHours < FRESHNESS_WINDOW_HOURS) {
-          const mainChecksNoop = await certificationChecks(sql);
-          return {
-            ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
-            request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
-            status: "completed_noop_fresh", certification: "STATIC_PLAYERS_CERTIFIED_NOOP_ALREADY_FRESH",
-            teams_processed_this_run: 0, teams_processed_total: 30, teams_remaining: 0, teams_expected: 30,
-            rows_read: 0, rows_written: 0, external_calls_performed: 0,
-            freshness_gate: { last_promoted: lastPromoted, age_hours: Math.round(ageHours * 100) / 100, window_hours: FRESHNESS_WINDOW_HOURS, skipped_expensive_fetch: true },
-            differential_note: "No real fetch performed - a promoted batch completed within the freshness window, so nothing needed mining.",
-            main_certification_checks: mainChecksNoop,
-            database_target: "postgres_ref_players",
-            boundaries: base(env).boundaries, timestamp_utc: nowUtc()
-          };
-        }
-      }
-    }
-
-    if (isFirstChunk) {
-      await initializeStageBatch(sql, batchId, { ...input, request_id: requestId }, originalInput);
-    }
-
-    const remainingTeams = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
-    const teamsThisRun = remainingTeams.slice(0, maxTeamsPerRun);
-
-    const byMlbPlayerId = new Map();
-    const sourceSamples = [];
-    let externalCalls = 0;
-    let rosterRowsRead = 0;
-    let teamsProcessedThisRun = 0;
-    let aliasesWritten = 0;
-    let playersWrittenThisRun = 0;
-    let rostersWritten = 0;
-    const rosterSnapshots = [];
-    let missingPosition = 0;
-    let missingBatSide = 0;
-    let missingThrowSide = 0;
-    const teamSummaries = [];
-
-    for (const team of teamsThisRun) {
-      const mlbTeamId = numOrNull(team.mlb_team_id);
-      const fetched = await fetchRoster(env, mlbTeamId);
-      externalCalls += 1;
-      teamsProcessedThisRun += 1;
-      rosterRowsRead += fetched.roster.length;
-      processedSet.add(String(mlbTeamId));
-      teamSummaries.push({ team_id: team.team_id, mlb_team_id: mlbTeamId, abbreviation: team.abbreviation, roster_rows: fetched.roster.length, http_status: fetched.http_status });
-      if (sourceSamples.length < 3) sourceSamples.push({ team_id: team.team_id, url: fetched.url, roster_rows: fetched.roster.length });
-
-      for (const entry of fetched.roster) {
-        const player = playerFromRosterEntry(entry, team);
-        if (!player.mlb_player_id || !player.full_name) continue;
-        if (!player.primary_position) missingPosition += 1;
-        if (!player.bat_side) missingBatSide += 1;
-        if (!player.throw_side) missingThrowSide += 1;
-
-        rosterSnapshots.push({ player, team });
-        const existing = byMlbPlayerId.get(String(player.mlb_player_id));
-        if (!existing || (existing.current_team_id !== player.current_team_id && !existing.current_team_id)) {
-          byMlbPlayerId.set(String(player.mlb_player_id), player);
-        }
-      }
-    }
-
-    const players = Array.from(byMlbPlayerId.values()).sort((a, b) => String(a.full_name).localeCompare(String(b.full_name)));
-
-    const needsHydration = players.filter(p => (!p.bat_side || !p.throw_side) && p.mlb_player_id).map(p => p.mlb_player_id);
-    let hydrationCallsPerformed = 0;
-    let playersHydratedThisRun = 0;
-    if (needsHydration.length) {
-      const detailMap = await fetchPersonDetailsBatch(env, needsHydration);
-      hydrationCallsPerformed = Math.ceil(needsHydration.length / HYDRATION_IDS_PER_CALL);
-      for (const player of players) {
-        const detail = detailMap.get(String(player.mlb_player_id));
-        if (!detail) continue;
-        if (detail.bat_side && !player.bat_side) { player.bat_side = detail.bat_side; player.bats = detail.bat_side; playersHydratedThisRun += 1; }
-        if (detail.throw_side && !player.throw_side) { player.throw_side = detail.throw_side; player.throws = detail.throw_side; }
-      }
-    }
 
     const playerRowsForBulk = [];
     const aliasRowsForBulk = [];
