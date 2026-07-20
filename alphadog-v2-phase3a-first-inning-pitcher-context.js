@@ -7407,6 +7407,78 @@ async function runDeriveBullpenHistoryFromPostgres(env, input) {
   }
 }
 
+// New: derive rosters, player_aliases, team_aliases purely from data already in Postgres
+// (ref.players / ref.teams, both sourced directly from MLB StatsAPI) - zero external fetches,
+// zero D1 reads. Mirrors the alias-generation logic in the D1 static-players.js base worker
+// (full_name, last_first, mlb_player_id variants) since that logic is a deterministic
+// transform of the player's own name, not something that needs re-fetching.
+async function runDeriveRostersFromPostgres(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    await sql`
+      INSERT INTO ref.rosters (roster_key, slate_date, team_id, player_id, roster_status, role, source_key, snapshot_type, mlb_team_id, player_name, position_abbreviation, roster_date, active)
+      SELECT
+        team_id || '_' || player_id || '_' || to_char(now(), 'YYYY-MM-DD'),
+        now()::date, team_id, player_id, '40Man', primary_role, 'derived_from_ref_players',
+        'current', current_mlb_team_id, full_name, primary_position, now()::date, 1
+      FROM ref.players WHERE active=1 AND team_id IS NOT NULL
+      ON CONFLICT (roster_key) DO UPDATE SET
+        roster_status=excluded.roster_status, player_name=excluded.player_name,
+        position_abbreviation=excluded.position_abbreviation, active=1, updated_at=now()
+    `;
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM ref.rosters`;
+    await sql.end();
+    return { ok: true, mode: "derive_rosters_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_rosters_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runDerivePlayerAliasesFromPostgres(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    await sql`
+      INSERT INTO ref.player_aliases (alias_key, player_id, alias_name, alias_type, alias_normalized, source_key, confidence, active)
+      SELECT player_id || '|full_name|' || lower(trim(full_name)), player_id, full_name, 'full_name', lower(trim(full_name)), 'derived_from_ref_players', 'HIGH', 1
+      FROM ref.players WHERE active=1 AND full_name IS NOT NULL
+      UNION ALL
+      SELECT player_id || '|last_first|' || lower(trim(last_name || ', ' || first_name)), player_id, last_name || ', ' || first_name, 'last_first', lower(trim(last_name || ', ' || first_name)), 'derived_from_ref_players', 'HIGH', 1
+      FROM ref.players WHERE active=1 AND first_name IS NOT NULL AND last_name IS NOT NULL
+      UNION ALL
+      SELECT player_id || '|mlb_player_id|' || mlb_player_id, player_id, mlb_player_id, 'mlb_player_id', mlb_player_id, 'derived_from_ref_players', 'HIGH', 1
+      FROM ref.players WHERE active=1 AND mlb_player_id IS NOT NULL
+      ON CONFLICT (alias_key) DO NOTHING
+    `;
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM ref.player_aliases`;
+    await sql.end();
+    return { ok: true, mode: "derive_player_aliases_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_player_aliases_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runDeriveTeamAliasesFromPostgres(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    await sql`
+      INSERT INTO ref.team_aliases (alias_key, team_id, mlb_team_id, alias_value, alias_normalized, alias_type, source_key, confidence, active)
+      SELECT team_id || '|full_name|' || lower(trim(full_name)), team_id, mlb_team_id, full_name, lower(trim(full_name)), 'full_name', 'derived_from_ref_teams', 'HIGH', 1
+      FROM ref.teams WHERE active=1 AND full_name IS NOT NULL
+      UNION ALL
+      SELECT team_id || '|abbreviation|' || lower(trim(abbreviation)), team_id, mlb_team_id, abbreviation, lower(trim(abbreviation)), 'abbreviation', 'derived_from_ref_teams', 'HIGH', 1
+      FROM ref.teams WHERE active=1 AND abbreviation IS NOT NULL
+      ON CONFLICT (alias_key) DO NOTHING
+    `;
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM ref.team_aliases`;
+    await sql.end();
+    return { ok: true, mode: "derive_team_aliases_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_team_aliases_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+
+
 async function runRemineSprintSpeedToPostgres(env, input) {
   const year = Number(input.season_year || 2026);
   try {
