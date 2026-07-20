@@ -7593,21 +7593,11 @@ async function runExpansionMiningToPostgres(env, input) {
       WITH starters AS (
         SELECT *, ((raw_json->'stat'->>'gamesStarted')::int = 1) AS is_start
         FROM stats_pitcher.game_logs WHERE season = ${season}
-      )
-      SELECT game_pk, MAX(game_date) AS game_date,
-        MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id,
-        MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id
-      FROM starters WHERE is_start ORDER BY game_pk
-      OFFSET ${startOffset} LIMIT ${GAMES_PER_INVOCATION}
-    `.then(r => sql`
-      WITH starters AS (
-        SELECT *, ((raw_json->'stat'->>'gamesStarted')::int = 1) AS is_start
-        FROM stats_pitcher.game_logs WHERE season = ${season}
       ), gp AS (
         SELECT game_pk, MAX(game_date) AS game_date FROM starters WHERE is_start GROUP BY game_pk ORDER BY game_pk OFFSET ${startOffset} LIMIT ${GAMES_PER_INVOCATION}
       )
       SELECT gp.game_pk, gp.game_date FROM gp
-    `);
+    `;
     if (!games.length) { await sql.end(); return { ok: true, mode: "expansion_mining_to_postgres", complete: true, note: "no more games at this offset" }; }
     const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
     const headers = { accept: "application/json", "user-agent": "AlphaDogExpansionBaseline/0.1" };
