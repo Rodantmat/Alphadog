@@ -7727,6 +7727,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       if (sumGames > 0) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
         dispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
+        dispersionDebug.pooled = { sumGames, sumMeanW, sumVarW, pooledMean, pooledVar, dispersion: isFinite(dispersion) ? dispersion : "Infinity" };
       }
     } catch (err) { dispersion = Infinity; dispersionError = String(err && err.message ? err.message : err); }
 
