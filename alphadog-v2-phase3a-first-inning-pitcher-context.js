@@ -7802,6 +7802,17 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
   }
 }
 
+async function runPostgresDebugSelect(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false });
+    const rows = await sql.unsafe(String(input.query || "SELECT 1"));
+    await sql.end();
+    return { ok: true, mode: "postgres_debug_select", row_count: rows.length, rows: rows.slice(0, 100) };
+  } catch (err) {
+    return { ok: false, mode: "postgres_debug_select", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runDeriveRfiMetricToPostgres(env, input) {
   const season = Number(input.season || 2026);
   try {
