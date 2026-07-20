@@ -88,6 +88,23 @@ def make_config(worker_name, include_services=False):
         cfg["vars"]["PARLAY_API_AUTH_HEADER_NAME"] = "X-API-Key"
         cfg["vars"]["PARLAY_API_AUTH_HEADER_PREFIX"] = ""
         cfg["vars"]["UNDERDOG_PROVIDER"] = "PARLAY_API"
+    if worker_name in (
+        "alphadog-v2-static-teams",
+        "alphadog-v2-static-stadiums",
+        "alphadog-v2-static-park-factors",
+        "alphadog-v2-static-prop-taxonomy",
+    ):
+        # Postgres cutover (static-full-run chain, stages 1-4 so far): these workers now read/
+        # write DigitalOcean Postgres via Hyperdrive instead of their old D1 tables. Same reason
+        # as every other special case above - this MUST live in the generator or it gets wiped
+        # on every deploy before Wrangler even runs. Root-caused live: earlier manual edits to
+        # the wrangler.*.jsonc files directly were silently erased by this exact script on the
+        # very next deploy, which is why production kept serving the old D1 code despite the
+        # repo's .js files already being correctly rewritten.
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
