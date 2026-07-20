@@ -7477,6 +7477,25 @@ async function runDeriveTeamAliasesFromPostgres(env, input) {
   }
 }
 
+async function runDeriveStadiumAliasesFromPostgres(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    await sql`
+      INSERT INTO ref.stadium_aliases (alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active)
+      SELECT stadium_id || '|stadium_name|' || lower(trim(stadium_name)), stadium_id, mlb_venue_id, stadium_name, lower(trim(stadium_name)), 'stadium_name', 'derived_from_ref_stadiums', 'HIGH', 1
+      FROM ref.stadiums WHERE stadium_name IS NOT NULL
+      ON CONFLICT (alias_key) DO NOTHING
+    `;
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM ref.stadium_aliases`;
+    await sql.end();
+    return { ok: true, mode: "derive_stadium_aliases_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_stadium_aliases_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+
+
 
 
 async function runRemineSprintSpeedToPostgres(env, input) {
