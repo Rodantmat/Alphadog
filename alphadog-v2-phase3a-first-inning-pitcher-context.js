@@ -7802,6 +7802,40 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
   }
 }
 
+async function runDeriveRfiMetricToPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const windows = [
+      { key: "last_3_games", limitClause: "3" }, { key: "last_5_games", limitClause: "5" },
+      { key: "last_10_games", limitClause: "10" }, { key: "last_20_games", limitClause: "20" },
+      { key: "season_to_date", limitClause: "9999" }
+    ];
+    let totalUpdated = 0;
+    for (const w of windows) {
+      const res = await sql.unsafe(`
+        WITH ranked AS (
+          SELECT pitcher_id, first_frame_runs_allowed,
+            ROW_NUMBER() OVER (PARTITION BY pitcher_id ORDER BY game_date DESC, game_pk DESC) AS rn
+          FROM context.first_inning_pitcher WHERE EXTRACT(YEAR FROM game_date) = ${season}
+        ), windowed AS (SELECT * FROM ranked WHERE rn <= ${w.limitClause}),
+        agg AS (
+          SELECT pitcher_id, SUM(CASE WHEN first_frame_runs_allowed >= 1 THEN 1 ELSE 0 END) AS rfi_count
+          FROM windowed GROUP BY pitcher_id
+        )
+        UPDATE stats_pitcher.metric_snapshots ms
+        SET rfi_hit_count_sum = agg.rfi_count
+        FROM agg WHERE ms.player_id = agg.pitcher_id AND ms.season = ${season} AND ms.metric_window = '${w.key}'
+      `);
+      totalUpdated += res.count || 0;
+    }
+    await sql.end();
+    return { ok: true, mode: "derive_rfi_metric_to_postgres", rows_updated: totalUpdated };
+  } catch (err) {
+    return { ok: false, mode: "derive_rfi_metric_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runExpansionMiningToPostgres(env, input) {
   const season = Number(input.season || 2026);
   const GAMES_PER_INVOCATION = 20;
