@@ -354,7 +354,7 @@ async function promoteCertifiedStage(sql, batchId, requestId) {
 
   if (!mainOk) {
     await sql`UPDATE config.static_players_batches
-      SET status='promotion_failed', certification_status='STATIC_PLAYERS_MAIN_CERTIFICATION_FAILED_AFTER_PROMOTION', error_json=${JSON.stringify({ mainChecks }).slice(0, RAW_JSON_LIMIT)}, updated_at=now()
+      SET status='promotion_failed', certification_status='STATIC_PLAYERS_MAIN_CERTIFICATION_FAILED_AFTER_PROMOTION', error_json=${JSON.stringify({ mainChecks })}, updated_at=now()
       WHERE batch_id=${batchId}`;
     return { promoted: false, mainChecks, real_rows_changed_this_run: diffPromote.count || 0 };
   }
