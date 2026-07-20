@@ -7577,6 +7577,93 @@ async function runDeriveTeamAliasesFromPostgres(env, input) {
   }
 }
 
+async function runExpansionMiningToPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  const GAMES_PER_INVOCATION = 20;
+  const TIME_BUDGET_MS = 20000;
+  const startedAt = Date.now();
+  const startOffset = Number(input.offset || 0);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    // Exact port of mineFirstInningContext: driven by starters (gamesStarted=1), fetches
+    // /game/{gamePk}/linescore fresh from MLB (not derivable from existing data), computes
+    // top/bottom 1st inning runs, yrfi/nrfi flags, and per-starter first-frame runs-allowed
+    // (home starter faces top-1st visitors; away starter faces bottom-1st home team).
+    const games = await sql`
+      WITH starters AS (
+        SELECT *, ((raw_json->'stat'->>'gamesStarted')::int = 1) AS is_start
+        FROM stats_pitcher.game_logs WHERE season = ${season}
+      )
+      SELECT game_pk, MAX(game_date) AS game_date,
+        MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id,
+        MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id
+      FROM starters WHERE is_start ORDER BY game_pk
+      OFFSET ${startOffset} LIMIT ${GAMES_PER_INVOCATION}
+    `.then(r => sql`
+      WITH starters AS (
+        SELECT *, ((raw_json->'stat'->>'gamesStarted')::int = 1) AS is_start
+        FROM stats_pitcher.game_logs WHERE season = ${season}
+      ), gp AS (
+        SELECT game_pk, MAX(game_date) AS game_date FROM starters WHERE is_start GROUP BY game_pk ORDER BY game_pk OFFSET ${startOffset} LIMIT ${GAMES_PER_INVOCATION}
+      )
+      SELECT gp.game_pk, gp.game_date FROM gp
+    `);
+    if (!games.length) { await sql.end(); return { ok: true, mode: "expansion_mining_to_postgres", complete: true, note: "no more games at this offset" }; }
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+    const headers = { accept: "application/json", "user-agent": "AlphaDogExpansionBaseline/0.1" };
+    let gamesWritten = 0, pitcherRows = 0, issues = 0;
+    for (const g of games) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) break;
+      try {
+        const resp = await fetch(`${base}/game/${g.game_pk}/linescore`, { headers });
+        if (!resp.ok) { issues++; continue; }
+        const json = await resp.json();
+        const innings = json && json.innings;
+        if (!Array.isArray(innings) || !innings.length) { issues++; continue; }
+        const top = Number(innings[0].away && innings[0].away.runs);
+        const bottom = Number(innings[0].home && innings[0].home.runs);
+        if (!Number.isFinite(top) || !Number.isFinite(bottom)) { issues++; continue; }
+        const total = top + bottom;
+        const yrfi = total >= 1 ? 1 : 0, nrfi = total === 0 ? 1 : 0;
+        const homeTeamName = json.teams && json.teams.home && json.teams.home.team && json.teams.home.team.name || null;
+        const awayTeamName = json.teams && json.teams.away && json.teams.away.team && json.teams.away.team.name || null;
+        const contextRowId = `exp_first_game|${g.game_pk}`;
+        const starters = await sql`
+          SELECT player_id, team_id, opponent_team_id, is_home
+          FROM stats_pitcher.game_logs
+          WHERE game_pk = ${String(g.game_pk)} AND ((raw_json->'stat'->>'gamesStarted')::int = 1)
+        `;
+        const homeRow = starters.find(s => s.is_home);
+        const awayRow = starters.find(s => !s.is_home);
+        await sql`
+          INSERT INTO context.first_inning_game (context_row_id, batch_id, game_pk, game_date, home_team_id, away_team_id, home_team_name, away_team_name, top_1st_runs, bottom_1st_runs, first_inning_total_runs, yrfi_flag, nrfi_flag, source_endpoint, source_confidence)
+          VALUES (${contextRowId}, ${input.batch_id || "pg_backfill"}, ${g.game_pk}, ${g.game_date}, ${homeRow ? homeRow.team_id : null}, ${awayRow ? awayRow.team_id : null}, ${homeTeamName}, ${awayTeamName}, ${top}, ${bottom}, ${total}, ${yrfi}, ${nrfi}, ${`${base}/game/${g.game_pk}/linescore`}, 'MLB_LINESCORE_FIRST_INNING')
+          ON CONFLICT (context_row_id) DO UPDATE SET top_1st_runs=excluded.top_1st_runs, bottom_1st_runs=excluded.bottom_1st_runs,
+            first_inning_total_runs=excluded.first_inning_total_runs, yrfi_flag=excluded.yrfi_flag, nrfi_flag=excluded.nrfi_flag, updated_at=now()
+        `;
+        gamesWritten++;
+        for (const s of starters) {
+          const isHome = !!s.is_home;
+          const runsAllowed = isHome ? top : bottom;
+          const half = isHome ? "top_1st" : "bottom_1st";
+          await sql`
+            INSERT INTO context.first_inning_pitcher (pitcher_context_row_id, batch_id, game_pk, game_date, pitcher_id, team_id, opponent_team_id, is_home, started_game, first_frame_half, first_frame_runs_allowed, rfi_sl_more_hit, rfi_sl_less_hit, source_game_context_row_id, source_confidence)
+            VALUES (${`exp_first_pitcher|${g.game_pk}|${s.player_id}`}, ${input.batch_id || "pg_backfill"}, ${g.game_pk}, ${g.game_date}, ${s.player_id}, ${s.team_id}, ${s.opponent_team_id}, ${isHome ? 1 : 0}, 1, ${half}, ${runsAllowed}, ${runsAllowed >= 1 ? 1 : 0}, ${runsAllowed === 0 ? 1 : 0}, ${contextRowId}, 'MLB_LINESCORE_PLUS_STARTER_HISTORY')
+            ON CONFLICT (pitcher_context_row_id) DO UPDATE SET first_frame_runs_allowed=excluded.first_frame_runs_allowed,
+              rfi_sl_more_hit=excluded.rfi_sl_more_hit, rfi_sl_less_hit=excluded.rfi_sl_less_hit, updated_at=now()
+          `;
+          pitcherRows++;
+        }
+      } catch (err) { issues++; }
+    }
+    const nextOffset = startOffset + games.length;
+    await sql.end();
+    return { ok: true, mode: "expansion_mining_to_postgres", games_processed: games.length, games_written: gamesWritten, pitcher_rows_written: pitcherRows, issues, next_offset: nextOffset, complete: false, note: `call again with offset=${nextOffset}` };
+  } catch (err) {
+    return { ok: false, mode: "expansion_mining_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runDeriveStadiumAliasesFromPostgres(env, input) {
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
