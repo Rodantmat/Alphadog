@@ -10723,7 +10723,13 @@ export default {
     // "45 8 * * *" (daily 8:45am) = daily morning delta full run
     const cron = String(event.cron || "");
     let mode = null;
-    if (cron === "0 3 * * 1") mode = "weekly_static_differential_full_run";
+    // CUTOVER: weekly static differential now writes Postgres only (D1 write path removed
+    // from production as of this change; D1 remains readable as a reference/fallback but is
+    // no longer written to by this cron). Daily incremental cron intentionally left on D1 for
+    // now - true incremental (not full-repull) Postgres delta functions aren't built yet;
+    // cutting it over before that exists would either create a real data gap or silently
+    // re-burn full-refresh cost every day, defeating the point of the migration.
+    if (cron === "0 3 * * 1") mode = "weekly_static_differential_full_run_postgres";
     else if (cron === "45 8 * * *") mode = "daily_morning_delta_full_run";
     if (!mode) return;
     ctx.waitUntil((async () => {
