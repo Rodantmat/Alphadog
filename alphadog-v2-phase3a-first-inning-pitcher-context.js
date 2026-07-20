@@ -10694,6 +10694,7 @@ async function runMode(env,input={}){
   if(mode==="classification_baseline_v6_to_postgres") return runClassificationBaselineV6ToPostgres(env,input);
   if(mode==="derive_rfi_metric_to_postgres") return runDeriveRfiMetricToPostgres(env,input);
   if(mode==="weekly_static_differential_full_run_postgres") return runWeeklyStaticDifferentialFullRunPostgres(env,input);
+  if(mode==="postgres_debug_select") return runPostgresDebugSelect(env,input);
   if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
   if(mode==="remine_quality_of_contact_to_postgres") return runRemineQualityOfContactToPostgres(env,input);
