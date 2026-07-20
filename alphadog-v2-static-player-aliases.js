@@ -111,7 +111,7 @@ function mapRow(r, year) {
     est_slg: numOrNull(r.est_slg),
     est_woba: numOrNull(r.est_woba),
     hard_hit_percent: numOrNull(r.hard_hit_percent),
-    raw_json: JSON.stringify(r).slice(0, 1500)
+    raw_json: JSON.stringify(r)
   };
 }
 
