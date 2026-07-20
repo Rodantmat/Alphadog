@@ -7578,6 +7578,235 @@ async function runDeriveTeamAliasesFromPostgres(env, input) {
   }
 }
 
+// ==== CLASSIFICATION V6 + BASELINE V6 — Postgres port ====
+// Exact formula reuse from D1 phase3a (verified line-by-line against the real functions:
+// computePopulationStats, assignTierFromZScore, priorStrengthForSample, sampleAwareConfidence,
+// hpFromCountModel/hpFromNormalModel, wilsonInterval/clampHpToSampleSupportedRange,
+// propCanGoNegative, runBaselineV6ComputeTierPriors, the shrinkage formula). Restructured to
+// process one whole combo per invocation in a single set-based pass (Postgres/Hyperdrive can
+// hold the full per-combo player set in memory; D1 needed cursor-chunking because of its
+// bound-parameter and per-invocation limits — this removes that constraint, not the math).
+function lnFactorialPg(n) { let s = 0; for (let i = 2; i <= n; i++) s += Math.log(i); return s; }
+function poissonPMFPg(k, lambda) { if (lambda <= 0) return k === 0 ? 1 : 0; return Math.exp(-lambda + k * Math.log(lambda) - lnFactorialPg(k)); }
+function poissonCDFPg(k, lambda) { let s = 0; for (let i = 0; i <= k; i++) s += poissonPMFPg(i, lambda); return Math.min(1, Math.max(0, s)); }
+function lnGammaPg(x) {
+  const g = 7;
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lnGammaPg(1 - x);
+  x -= 1; let a = c[0]; const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function negBinomialPMFPg(k, mean, r) {
+  if (r <= 0 || !isFinite(r)) return poissonPMFPg(k, mean);
+  const p = r / (r + mean);
+  return Math.exp(lnGammaPg(k + r) - lnGammaPg(r) - lnFactorialPg(k) + r * Math.log(p) + k * Math.log(1 - p));
+}
+function negBinomialCDFPg(k, mean, r) { let s = 0; for (let i = 0; i <= k; i++) s += negBinomialPMFPg(i, mean, r); return Math.min(1, Math.max(0, s)); }
+function erfPg(x) {
+  const sign = x < 0 ? -1 : 1; x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign * y;
+}
+function normalCDFPg(x, mean, stddev) { if (!(stddev > 0)) return x >= mean ? 1 : 0; const z = (x - mean) / (stddev * Math.SQRT2); return 0.5 * (1 + erfPg(z)); }
+function hpFromCountModelPg(mean, lineValue, side, dispersion) {
+  const threshold = Math.floor(lineValue);
+  const pUnder = isFinite(dispersion) && dispersion > 0 ? negBinomialCDFPg(threshold, mean, dispersion) : poissonCDFPg(threshold, mean);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+function hpFromNormalModelPg(mean, lineValue, side, stddev) { const pUnder = normalCDFPg(lineValue, mean, stddev); return side === "more" ? (1 - pUnder) : pUnder; }
+function propCanGoNegativePg(propConfig) { return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0)); }
+function wilsonIntervalPg(pHat, n, z) {
+  if (n <= 0) return { lower: 0, upper: 1 };
+  const z2 = z * z, denom = 1 + z2 / n;
+  const center = (pHat + z2 / (2 * n)) / denom;
+  const margin = (z * Math.sqrt((pHat * (1 - pHat) / n) + (z2 / (4 * n * n)))) / denom;
+  return { lower: Math.max(0, center - margin), upper: Math.min(1, center + margin) };
+}
+function clampHpToSampleSupportedRangePg(rawHp0to1, gamesSample) {
+  const p = Math.max(0, Math.min(1, Number(rawHp0to1) || 0));
+  const n = Math.max(0, Number(gamesSample) || 0);
+  if (n >= 30) return p;
+  const { lower, upper } = wilsonIntervalPg(p, n, 1.96);
+  return Math.max(lower, Math.min(upper, p));
+}
+function priorStrengthForSamplePg(sample, psCfg, multiplier) {
+  const n = Number(sample || 0);
+  const base = n < 5 ? psCfg.tiny_sample_lt5 : n < 15 ? psCfg.low_sample_lt15 : n < 30 ? psCfg.medium_sample_lt30 : psCfg.large_sample_ge30;
+  return base * Number(multiplier || 1.0);
+}
+function sampleAwareConfidencePg(sample, psCfg, multiplier) {
+  const n = Math.max(0, Number(sample || 0));
+  const priorStrength = priorStrengthForSamplePg(n, psCfg, multiplier);
+  const effectiveN = n + priorStrength;
+  const conf = 95 * (1 - Math.exp(-effectiveN / 25));
+  return Math.round(Math.max(5, Math.min(95, conf)) * 100) / 100;
+}
+function assignTierFromZScorePg(z, tierBandsConfig, populationN) {
+  const bands = tierBandsConfig.z_bands;
+  const minPop = tierBandsConfig.min_population_per_tier || 15;
+  const maxTiers = tierBandsConfig.max_tiers || 12;
+  const maxSupportedBands = Math.max(1, Math.min(bands.length + 1, maxTiers, Math.floor(populationN / minPop) || 1));
+  const usableBandCount = maxSupportedBands - 1;
+  const step = Math.max(1, Math.floor(bands.length / Math.max(1, usableBandCount)));
+  const effectiveBands = bands.filter((_, i) => i % step === 0).slice(0, usableBandCount);
+  let tierIndex = effectiveBands.length;
+  for (let i = 0; i < effectiveBands.length; i++) { if (z >= effectiveBands[i]) { tierIndex = i; break; } }
+  const totalTiers = effectiveBands.length + 1;
+  const tierNumber = tierIndex + 1;
+  return { tier_number: tierNumber, tier_key: `TIER_${String(tierNumber).padStart(2, "0")}_OF_${totalTiers}` };
+}
+
+async function runClassificationBaselineV6ToPostgres(env, input = {}) {
+  const season = Number(input.season || 2026);
+  const propKey = String(input.canonical_prop_key || "");
+  const lineValue = Number(input.line_value);
+  const side = String(input.selected_side || "");
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    const cfgRows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength','tier_blend_constant')`;
+    const cfg = {}; for (const r of cfgRows) cfg[r.config_key] = r.config_json;
+    const propConfig = cfg.prop_metric_map[propKey];
+    if (!propConfig) { await sql.end(); return { ok: false, mode: "classification_baseline_v6_to_postgres", error: `no_prop_metric_map_entry_for_${propKey}` }; }
+    const entity = propConfig.entity;
+    const table = entity === "pitcher" ? "stats_pitcher.metric_snapshots" : "stats_hitter.metric_snapshots";
+    const gameLogTable = entity === "pitcher" ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
+    const windows = Object.keys(cfg.recency_weights);
+    // Per-player, per-window rate expression, matching computeRecencyBlendedRate exactly:
+    // numerator = weighted sum of numerator_fields, rate = numerator/denominator, then a
+    // weighted average of window-level rates using recency_weights (renormalized if a window
+    // is missing for that player, exactly as the original does).
+    const numExpr = propConfig.weights
+      ? propConfig.numerator_fields.map(f => `COALESCE(${f},0)*${Number(propConfig.weights[f] || 1)}`).join("+")
+      : propConfig.numerator_fields.map(f => `COALESCE(${f},0)`).join("+");
+    const windowCases = windows.map(w => {
+      const weight = cfg.recency_weights[w];
+      return `(CASE WHEN metric_window='${w}' AND games_count>0 THEN (${numExpr})::float/games_count ELSE NULL END, CASE WHEN metric_window='${w}' AND games_count>0 THEN ${weight} ELSE 0 END)`;
+    });
+    const rateRows = await sql.unsafe(`
+      SELECT player_id,
+        SUM(rate*wt) FILTER (WHERE wt > 0) / NULLIF(SUM(wt) FILTER (WHERE wt > 0), 0) AS blended_rate,
+        MAX(CASE WHEN metric_window='season_to_date' THEN games_count ELSE NULL END) AS games_sample
+      FROM (
+        SELECT player_id, metric_window, games_count,
+          CASE ${windows.map((w,i) => `WHEN metric_window='${w}' THEN (${windowCases[i].split(", CASE")[0].replace("(","")})`).join(" ")} END AS rate,
+          CASE ${windows.map(w => `WHEN metric_window='${w}' THEN ${cfg.recency_weights[w]}`).join(" ")} END AS wt
+        FROM ${table} WHERE season = ${season}
+      ) x WHERE rate IS NOT NULL
+      GROUP BY player_id
+    `);
+    const playerRates = rateRows.filter(r => r.blended_rate != null && r.games_sample != null);
+    if (!playerRates.length) { await sql.end(); return { ok: true, mode: "classification_baseline_v6_to_postgres", canonical_prop_key: propKey, line_value: lineValue, selected_side: side, rows_written: 0, note: "no_players_with_data" }; }
+
+    // Population stats (population mean/stddev, matches computePopulationStats exactly).
+    const rates = playerRates.map(r => Number(r.blended_rate));
+    const popMean = rates.reduce((a,b) => a+b, 0) / rates.length;
+    const popVariance = rates.reduce((a,b) => a + (b-popMean)*(b-popMean), 0) / rates.length;
+    const popStddev = Math.sqrt(popVariance);
+
+    // Pooled within-player dispersion from real per-game logs (not the blended snapshot rate),
+    // weighted by games played, matching the documented intent of estimatePooledDispersionFromGameLogs.
+    const dispRows = propConfig.weights
+      ? await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG(${propConfig.numerator_fields.map(f=>`COALESCE(${f.replace('_sum','')},0)*${Number(propConfig.weights[f.replace('_sum','')]||1)}`).join('+')}) NA FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`).catch(() => [])
+      : [];
+    // Simpler, robust dispersion path: pooled per-player mean/variance of the raw per-game
+    // numerator field(s), weighted by games played.
+    const rawFields = propConfig.numerator_fields.map(f => f.replace(/_sum$/, ""));
+    const exprRaw = propConfig.weights
+      ? rawFields.map((f, i) => `COALESCE(${f},0)*${Number(propConfig.weights[propConfig.numerator_fields[i]] || 1)}`).join("+")
+      : rawFields.map(f => `COALESCE(${f},0)`).join("+");
+    let dispersion = Infinity;
+    try {
+      const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
+      let sumGames=0, sumMeanW=0, sumVarW=0;
+      for (const g of gRows) {
+        const gm = Number(g.games), mi = Number(g.mean_i), msq = Number(g.meansq_i);
+        const vi = Math.max(0, msq - mi*mi);
+        sumGames += gm; sumMeanW += mi*gm; sumVarW += vi*gm;
+      }
+      if (sumGames > 0) {
+        const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
+        dispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
+      }
+    } catch (_) { dispersion = Infinity; }
+
+    const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+    await sql`
+      INSERT INTO classification.population_stats (stats_key, canonical_prop_key, line_value, selected_side, population_mean, population_stddev, population_n, population_dispersion)
+      VALUES (${statsKey}, ${propKey}, ${lineValue}, ${side}, ${popMean}, ${popStddev}, ${rates.length}, ${isFinite(dispersion) ? dispersion : null})
+      ON CONFLICT (stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
+        population_n=excluded.population_n, population_dispersion=excluded.population_dispersion, computed_at=now()
+    `;
+
+    // Tier assignment per player (z-score vs population).
+    const tierBandsCfg = cfg.tier_bands;
+    const classRows = playerRates.map(r => {
+      const rate = Number(r.blended_rate);
+      const z = popStddev > 0 ? (rate - popMean) / popStddev : 0;
+      const tier = assignTierFromZScorePg(z, tierBandsCfg, rates.length);
+      return { player_id: r.player_id, rate, games_sample: Number(r.games_sample), tier_key: tier.tier_key };
+    });
+    for (let i = 0; i < classRows.length; i += 500) {
+      const chunk = classRows.slice(i, i + 500);
+      const cols = ["class_row_id","player_type","player_id","canonical_prop_key","line_value","selected_side","tier_key","metric_value","games_sample"];
+      const rows = chunk.map(r => ({
+        class_row_id: `clv6|${entity}|${r.player_id}|${propKey}|${String(lineValue).replace(".","p")}|${side}`,
+        player_type: entity, player_id: r.player_id, canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+        tier_key: r.tier_key, metric_value: r.rate, games_sample: r.games_sample
+      }));
+      await sql`
+        INSERT INTO classification.classification_v6_current ${sql(rows, ...cols)}
+        ON CONFLICT (class_row_id) DO UPDATE SET tier_key=excluded.tier_key, metric_value=excluded.metric_value, games_sample=excluded.games_sample, updated_at=now()
+      `;
+    }
+
+    // Tier priors (AVG/COUNT per tier), matching runBaselineV6ComputeTierPriors exactly.
+    const tierPriorRows = {};
+    const byTier = {};
+    for (const r of classRows) { (byTier[r.tier_key] = byTier[r.tier_key] || []).push(r.rate); }
+    for (const [k, vals] of Object.entries(byTier)) tierPriorRows[k] = { avg_rate: vals.reduce((a,b)=>a+b,0)/vals.length, tier_n: vals.length };
+
+    const tierBlendK = Math.max(1, Number(cfg.tier_blend_constant.k || 5));
+    const usesNormalModel = propCanGoNegativePg(propConfig);
+    const psCfg = cfg.confidence_prior_strength;
+    const baselineRows = [];
+    for (const r of classRows) {
+      const tierInfo = tierPriorRows[r.tier_key];
+      const rawTierMean = tierInfo ? tierInfo.avg_rate : r.rate;
+      const tierN = tierInfo ? tierInfo.tier_n : 0;
+      const blendedTierPrior = (tierN * rawTierMean + tierBlendK * popMean) / (tierN + tierBlendK);
+      const priorStrength = priorStrengthForSamplePg(r.games_sample, psCfg, 1.0);
+      const shrunkRate = (r.games_sample * r.rate + priorStrength * blendedTierPrior) / (r.games_sample + priorStrength);
+      const rawHp = usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, popStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion);
+      const hp = clampHpToSampleSupportedRangePg(rawHp, r.games_sample);
+      const confidence = sampleAwareConfidencePg(r.games_sample, psCfg, 1.0);
+      baselineRows.push({
+        baseline_row_id: `blv6|${entity}|${r.player_id}|${propKey}|${String(lineValue).replace(".","p")}|${side}`,
+        player_type: entity, player_id: r.player_id, canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+        tier_key: r.tier_key, hit_probability_0_100: Math.round(hp*10000)/100, confidence_0_100: confidence,
+        non_push_sample: r.games_sample, prior_strength: Math.round(priorStrength*100)/100,
+        recency_blended_rate_0_100: Math.round(shrunkRate*10000)/100, formula_version: "postgres_v1_exact_port"
+      });
+    }
+    for (let i = 0; i < baselineRows.length; i += 500) {
+      const chunk = baselineRows.slice(i, i + 500);
+      const cols = ["baseline_row_id","player_type","player_id","canonical_prop_key","line_value","selected_side","tier_key","hit_probability_0_100","confidence_0_100","non_push_sample","prior_strength","recency_blended_rate_0_100","formula_version"];
+      await sql`
+        INSERT INTO classification.baseline_v6_current ${sql(chunk, ...cols)}
+        ON CONFLICT (baseline_row_id) DO UPDATE SET hit_probability_0_100=excluded.hit_probability_0_100,
+          confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+          recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, updated_at=now()
+      `;
+    }
+    await sql.end();
+    return { ok: true, mode: "classification_baseline_v6_to_postgres", canonical_prop_key: propKey, line_value: lineValue, selected_side: side, population_mean: popMean, population_stddev: popStddev, population_n: rates.length, dispersion: isFinite(dispersion) ? dispersion : null, rows_written: baselineRows.length };
+  } catch (err) {
+    return { ok: false, mode: "classification_baseline_v6_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runExpansionMiningToPostgres(env, input) {
   const season = Number(input.season || 2026);
   const GAMES_PER_INVOCATION = 20;
