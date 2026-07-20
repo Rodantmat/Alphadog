@@ -10693,6 +10693,15 @@ async function runMode(env,input={}){
   if(mode==="expansion_mining_to_postgres") return runExpansionMiningToPostgres(env,input);
   if(mode==="classification_baseline_v6_to_postgres") return runClassificationBaselineV6ToPostgres(env,input);
   if(mode==="derive_rfi_metric_to_postgres") return runDeriveRfiMetricToPostgres(env,input);
+  if(mode==="diagnostic_prop_aliases_breakdown") return (async () => {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false });
+    try {
+      const bysource = await sql`SELECT source_key, COUNT(*)::int c FROM ref.prop_aliases GROUP BY source_key ORDER BY source_key`;
+      const pkRows = await sql`SELECT alias_key, prop_key, source_market_name FROM ref.prop_aliases WHERE source_key='prizepicks_github' ORDER BY source_market_name`;
+      await sql.end();
+      return { ok: true, by_source: bysource, prizepicks_github_rows: pkRows, prizepicks_github_count: pkRows.length };
+    } catch (err) { await sql.end(); return { ok: false, error: String(err && err.message ? err.message : err) }; }
+  })();
   if(mode==="weekly_static_differential_full_run_postgres") return runWeeklyStaticDifferentialFullRunPostgres(env,input);
   if(mode==="postgres_debug_select") return runPostgresDebugSelect(env,input);
   if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
