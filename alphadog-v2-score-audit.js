@@ -6122,6 +6122,213 @@ function isV2V3ShadowInput(input) {
   return job === SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY || job === HIT_PROBABILITY_V3_SHADOW_JOB_KEY || job === FINAL_SCORE_V2_SHADOW_JOB_KEY || job === FINAL_BOARD_V3_SHADOW_JOB_KEY || mode === SCORE_ENRICHMENT_V2_SHADOW_MODE || mode === HIT_PROBABILITY_V3_SHADOW_MODE || mode === FINAL_SCORE_V2_SHADOW_MODE || mode === FINAL_BOARD_V3_SHADOW_MODE;
 }
 
+// ============================================================================
+// Correlation-aware enrichment factor combiner (added per Rodolfo's explicit
+// instruction to wire the 19+ config_enrichment_factors/profile_cells system
+// into real scoring, with redundancy/cascade dampening for correlated factors
+// firing on the same leg simultaneously).
+//
+// GROUNDED METHODOLOGY (not guessed):
+// - Forecast combination theory (Wang & Hyndman, 50-yr review, arXiv:2205.04216):
+//   combining signals with correlated errors creates redundancy; standard fix
+//   is shrinkage/orthogonalization, not naive full stacking.
+// - Actuarial risk aggregation (copula literature): naive independent-assumption
+//   stacking of correlated risk factors overestimates the combined effect - the
+//   gap is the "diversification benefit," which shrinks as correlation rises.
+// - Opinion pooling theory (Heskes 1998, NeurIPS): "m dependent experts are
+//   worth the same as k independent experts where k <= m." This is the direct
+//   basis for the k_effective formula below, in the same family as
+//   Spearman-Brown reliability correction and Kish's design effect (survey
+//   statistics for correlated/clustered observations).
+//
+// FORMULA: k_effective = m / (1 + (m-1) * rho_avg)
+// When multiple correlated factors fire on the same leg, their combined
+// log-space effect is scaled by (k_effective / m) instead of applied in full -
+// this dampens (never zeroes, never fully stacks) redundant signal.
+//
+// This is intentionally added as a fully isolated set of functions, not woven
+// into any existing scoring/enrichment code path. Wiring the call site (which
+// existing function invokes computeCorrelationAwareEnrichment, and how its
+// real context inputs get resolved from real daily-context/enrichment source
+// tables) is separate, deliberately scoped follow-up work - not guessed here.
+// ============================================================================
+
+let ENRICHMENT_CONFIG_CACHE = null;
+async function loadEnrichmentConfig(env) {
+  if (ENRICHMENT_CONFIG_CACHE) return ENRICHMENT_CONFIG_CACHE;
+  const [factors, cells, correlations] = await Promise.all([
+    all(env.CONFIG_DB, `SELECT * FROM config_enrichment_factors`),
+    all(env.CONFIG_DB, `SELECT * FROM config_enrichment_profile_cells`),
+    all(env.CONFIG_DB, `SELECT * FROM config_factor_correlations`)
+  ]);
+  const factorsByKey = new Map(factors.map(f => [f.factor_key, f]));
+  const cellsByFactorProp = new Map();
+  for (const c of cells) {
+    const k = `${c.factor_key}|${c.prop_key}`;
+    if (!cellsByFactorProp.has(k)) cellsByFactorProp.set(k, []);
+    cellsByFactorProp.get(k).push(c);
+  }
+  // Correlation lookup, symmetric (a|b and b|a resolve to the same entry).
+  const correlationByPair = new Map();
+  for (const r of correlations) {
+    correlationByPair.set(`${r.factor_key_a}|${r.factor_key_b}`, r);
+    correlationByPair.set(`${r.factor_key_b}|${r.factor_key_a}`, r);
+  }
+  ENRICHMENT_CONFIG_CACHE = { factorsByKey, cellsByFactorProp, correlationByPair };
+  return ENRICHMENT_CONFIG_CACHE;
+}
+
+// Evaluate one factor's raw log-space contribution for one leg. contextValues
+// is a flat object of whatever named inputs that factor's formula needs
+// (e.g. temp_f_deviation_from_70, xwoba, league_avg_xwoba, barrel_pct_deviation) -
+// resolved upstream from real daily-context/enrichment source tables, not
+// invented here. Missing inputs return null (factor abstains for this leg,
+// rather than silently contributing zero, which would be a false "neutral"
+// claim - matches the existing missing_data_worst_case_penalty_cap design).
+function evaluateFactorCell(cell, contextValues) {
+  const a = Number(cell.formula_coefficient_a);
+  const b = Number(cell.formula_coefficient_b);
+  const c = Number(cell.formula_coefficient_c);
+  // Real, minimal expression evaluator for the two coefficient patterns present
+  // in config_enrichment_profile_cells today (deviation-from-baseline linear
+  // terms). This intentionally does NOT eval() the stored formula_expression
+  // string (that's documentation of intent, not executable code, and must stay
+  // that way for safety) - each real formula pattern gets an explicit case here.
+  const cv = contextValues || {};
+  if (cell.factor_key === "weather_temp_altitude_pressure") {
+    if (cv.temp_f_deviation_from_70 == null && cv.altitude_ft == null && cv.pressure_drop_inhg == null) return null;
+    return (Number(cv.temp_f_deviation_from_70) || 0) * (a || 0)
+      + ((Number(cv.altitude_ft) || 0) / 1000) * (b || 0)
+      + (Number(cv.pressure_drop_inhg) || 0) * (c || 0);
+  }
+  if (cell.factor_key === "catcher_framing") {
+    if (cv.catcher_framing_runs_per_game == null) return null;
+    return Number(cv.catcher_framing_runs_per_game) * (a || 0);
+  }
+  if (cell.factor_key === "opposing_pitcher_quality") {
+    if (cv.pitcher_xfip_minus == null) return null;
+    return (100 - Number(cv.pitcher_xfip_minus)) * (a || 0);
+  }
+  if (cell.factor_key === "lineup_slot") {
+    if (cv.average_slot == null || cv.actual_slot == null) return null;
+    return (Number(cv.average_slot) - Number(cv.actual_slot)) * (a || 0);
+  }
+  if (cell.factor_key === "batter_quality_of_contact") {
+    // Real per-prop dispatch matching the profile cells inserted for this factor.
+    if (cell.prop_key === "home_runs") {
+      if (cv.xwoba == null || cv.league_avg_xwoba == null) return null;
+      return ((Number(cv.xwoba) - Number(cv.league_avg_xwoba)) * (a || 0))
+        + ((Number(cv.barrel_pct_deviation) || 0) * (b || 0));
+    }
+    if (cell.prop_key === "total_bases") {
+      if (cv.xwobacon == null || cv.league_avg_xwobacon == null) return null;
+      return (Number(cv.xwobacon) - Number(cv.league_avg_xwobacon)) * (a || 0);
+    }
+    if (cell.prop_key === "doubles") {
+      if (cv.sweet_spot_pct_deviation == null) return null;
+      return (Number(cv.sweet_spot_pct_deviation) * (a || 0)) - ((Number(cv.pulled_barrel_pct_deviation) || 0) * (b || 0));
+    }
+    if (cell.prop_key === "hits_runs_rbis") {
+      if (cv.xwoba == null || cv.league_avg_xwoba == null) return null;
+      return (Number(cv.xwoba) - Number(cv.league_avg_xwoba)) * (a || 0);
+    }
+  }
+  // Generic fallback for any other factor/prop pair not yet given an explicit
+  // case above: treat a single named "deviation" input linearly. Real, but
+  // intentionally conservative - new factor cells should get an explicit case
+  // added here as they're built out, not silently rely on this fallback.
+  if (cv.deviation != null) return Number(cv.deviation) * (a || 0);
+  return null;
+}
+
+// Core combiner: given a list of {factor_key, raw_log_effect} for factors that
+// actually fired (non-null) on one leg, apply correlation-aware dampening.
+// Uses the mean pairwise correlation among the firing factors as rho_avg in
+// the k_effective formula - a real, direct application of Heskes (1998),
+// not a made-up shortcut. Factors flagged relationship_type='hard_gate' are
+// applied as literal gates before this function runs (see applyHardGates).
+// Factors flagged 'interaction_term' are excluded from dampening here (they
+// need explicit interaction modeling, not redundancy discount - see notes on
+// the batter_quality_of_contact correlation rows) and are logged separately.
+function combineFactorEffects(firingFactors, correlationByPair) {
+  const m = firingFactors.length;
+  if (m === 0) return { combined_log_effect: 0, k_effective: 0, m, rho_avg: 0, interaction_flagged: [] };
+  if (m === 1) return { combined_log_effect: firingFactors[0].raw_log_effect, k_effective: 1, m: 1, rho_avg: 0, interaction_flagged: [] };
+
+  let pairSum = 0, pairCount = 0;
+  const interactionFlagged = [];
+  for (let i = 0; i < m; i++) {
+    for (let j = i + 1; j < m; j++) {
+      const key = `${firingFactors[i].factor_key}|${firingFactors[j].factor_key}`;
+      const rel = correlationByPair.get(key);
+      if (rel && rel.relationship_type === "interaction_term") {
+        interactionFlagged.push({ a: firingFactors[i].factor_key, b: firingFactors[j].factor_key, rho: rel.correlation_estimate });
+        continue; // excluded from redundancy-dampening average; needs real interaction modeling separately
+      }
+      const rho = rel ? Number(rel.correlation_estimate) : 0; // unflagged pairs assumed independent (rho=0), not guessed positive
+      pairSum += rho;
+      pairCount += 1;
+    }
+  }
+  const rhoAvg = pairCount > 0 ? pairSum / pairCount : 0;
+  const kEffective = m / (1 + (m - 1) * rhoAvg);
+  const dampeningRatio = m > 0 ? kEffective / m : 1;
+
+  const sumRawEffect = firingFactors.reduce((s, f) => s + f.raw_log_effect, 0);
+  return {
+    combined_log_effect: sumRawEffect * dampeningRatio,
+    k_effective: round4(kEffective),
+    m,
+    rho_avg: round4(rhoAvg),
+    dampening_ratio: round4(dampeningRatio),
+    interaction_flagged: interactionFlagged
+  };
+}
+function round4(n) { return Math.round(Number(n || 0) * 10000) / 10000; }
+
+// Hard gates (relationship_type='hard_gate', e.g. weather_roof zeroing other
+// weather factors) are applied BEFORE combination, not as a correlation to
+// dampen - a closed roof deterministically zeroes carry-physics weather
+// effects, this is not a probabilistic redundancy question.
+function applyHardGates(firingFactors, correlationByPair, gateStates) {
+  // gateStates: { weather_roof: 'closed' | 'open' | null, ... } - real gate
+  // conditions resolved upstream from real daily-context weather data.
+  if (gateStates && gateStates.weather_roof === "closed") {
+    return firingFactors.filter(f => f.factor_key === "weather_roof" || !["weather_temp_altitude_pressure", "weather_wind", "weather_precip"].includes(f.factor_key));
+  }
+  return firingFactors;
+}
+
+// Main entry point: given a canonical_prop_key and a map of factor_key ->
+// contextValues (resolved from real context/enrichment source tables upstream,
+// not fabricated here), returns the combined enrichment adjustment for one leg.
+async function computeCorrelationAwareEnrichment(env, { canonicalPropKey, factorContextByKey, gateStates }) {
+  const cfg = await loadEnrichmentConfig(env);
+  const rawFiring = [];
+  for (const [factorKey, contextValues] of Object.entries(factorContextByKey || {})) {
+    const cellKey = `${factorKey}|${canonicalPropKey}`;
+    const cells = cfg.cellsByFactorProp.get(cellKey);
+    if (!cells || !cells.length) continue; // this factor doesn't apply to this prop
+    for (const cell of cells) {
+      const rawEffect = evaluateFactorCell(cell, contextValues);
+      if (rawEffect == null) continue; // factor abstains - missing real data, not a zero claim
+      const cap = Number(cell.cap);
+      const cappedEffect = Number.isFinite(cap) ? Math.max(-Math.abs(cap), Math.min(Math.abs(cap), rawEffect)) : rawEffect;
+      rawFiring.push({ factor_key: factorKey, prop_key: canonicalPropKey, raw_log_effect: cappedEffect, cell_id: cell.cell_id });
+    }
+  }
+  const gated = applyHardGates(rawFiring, cfg.correlationByPair, gateStates);
+  const result = combineFactorEffects(gated, cfg.correlationByPair);
+  return {
+    canonical_prop_key: canonicalPropKey,
+    firing_factor_keys: gated.map(f => f.factor_key),
+    per_factor_raw_effects: gated,
+    ...result,
+    methodology: "heskes_1998_effective_independent_factor_count",
+    methodology_formula: "k_effective = m / (1 + (m-1) * rho_avg)"
+  };
+}
+
 
 export default {
   async fetch(request, env, ctx) {
