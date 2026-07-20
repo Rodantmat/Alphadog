@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-static-park-factors";
-const VERSION = "alphadog-v2-static-park-factors-v0.1.3-temporary-venue-name-fallback";
+const VERSION = "alphadog-v2-static-park-factors-v0.2.0-postgres-cutover";
 const JOB_KEY = "static-park-factors";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -49,15 +51,8 @@ async function readJsonSafe(request) {
   try { return await request.json(); } catch { return {}; }
 }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res.results || [];
-}
-
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+function pg(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
 }
 
 function base(env, extra = {}) {
@@ -72,7 +67,7 @@ function base(env, extra = {}) {
     source_name: SOURCE_NAME,
     source_url: SOURCE_BASE_URL,
     boundaries: {
-      writes_only: ["REF_DB.ref_park_factors"],
+      writes_only: ["POSTGRES.ref.park_factors"],
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
       no_scoring: true,
@@ -90,37 +85,20 @@ function base(env, extra = {}) {
 }
 
 async function ensureSchema(env) {
-  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_park_factors (
-    park_factor_id TEXT PRIMARY KEY,
-    stadium_id TEXT NOT NULL,
-    mlb_venue_id INTEGER,
-    team_id TEXT,
-    park_name TEXT NOT NULL,
-    season_year INTEGER NOT NULL,
-    run_factor REAL,
-    hr_factor REAL,
-    lhb_run_factor REAL,
-    rhb_run_factor REAL,
-    lhb_hr_factor REAL,
-    rhb_hr_factor REAL,
-    factor_scale TEXT DEFAULT '100_NEUTRAL',
-    source_key TEXT NOT NULL,
-    source_name TEXT,
-    source_confidence TEXT,
-    active INTEGER DEFAULT 1,
-    raw_json TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_park_factors_stadium_active ON ref_park_factors(stadium_id, active)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_park_factors_team_season_active ON ref_park_factors(team_id, season_year, active)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_park_factors_venue_season_active ON ref_park_factors(mlb_venue_id, season_year, active)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_park_factors_source_active ON ref_park_factors(source_key, active)");
-
-  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_schema_migrations
-    (migration_key, package_version, applied_at, notes)
-    VALUES ('schema_ref_db_static_park_factors_v0_1', ?, CURRENT_TIMESTAMP, 'Additive REF_DB static park factors table for real sourced Baseball Savant run/HR environment; no scoring, no board mutation')`, VERSION);
+  const sql = pg(env);
+  try {
+    await sql.unsafe(`CREATE TABLE IF NOT EXISTS ref.park_factors (
+      park_factor_id TEXT PRIMARY KEY, stadium_id TEXT NOT NULL, mlb_venue_id INT, team_id TEXT, park_name TEXT NOT NULL,
+      season_year INT NOT NULL, run_factor DOUBLE PRECISION, hr_factor DOUBLE PRECISION, lhb_run_factor DOUBLE PRECISION,
+      rhb_run_factor DOUBLE PRECISION, lhb_hr_factor DOUBLE PRECISION, rhb_hr_factor DOUBLE PRECISION,
+      factor_scale TEXT DEFAULT '100_NEUTRAL', source_key TEXT NOT NULL, source_name TEXT, source_confidence TEXT,
+      active INT DEFAULT 1, raw_json JSONB, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
+    )`);
+    await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_ref_park_factors_stadium_active ON ref.park_factors(stadium_id, active)`);
+    await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_ref_park_factors_team_season_active ON ref.park_factors(team_id, season_year, active)`);
+    await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_ref_park_factors_venue_season_active ON ref.park_factors(mlb_venue_id, season_year, active)`);
+    await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_ref_park_factors_source_active ON ref.park_factors(source_key, active)`);
+  } finally { await sql.end(); }
 }
 
 function savantUrl({ batSide = "", rolling = PRIMARY_ROLLING }) {
@@ -174,22 +152,14 @@ async function fetchSavant({ batSide = "", rolling = PRIMARY_ROLLING }) {
   return { url, http_status: resp.status, rows, row_count: rows.length };
 }
 
-async function readActiveStadiums(env) {
-  const rows = await all(env.REF_DB, `SELECT
-      s.stadium_id,
-      s.team_id,
-      s.stadium_name,
-      s.mlb_venue_id,
-      s.active AS stadium_active,
-      t.abbreviation,
-      t.full_name,
-      t.nickname,
-      t.active AS team_active
-    FROM ref_stadiums s
-    LEFT JOIN ref_teams t ON t.team_id = s.team_id
-    WHERE COALESCE(s.active,1)=1
-      AND COALESCE(t.active,1)=1
-    ORDER BY t.abbreviation, s.stadium_name`);
+async function readActiveStadiums(sql) {
+  const rows = await sql`SELECT
+      s.stadium_id, s.team_id, s.stadium_name, s.mlb_venue_id, s.active AS stadium_active,
+      t.abbreviation, t.full_name, t.nickname, t.active AS team_active
+    FROM ref.stadiums s
+    LEFT JOIN ref.teams t ON t.team_id = s.team_id
+    WHERE COALESCE(s.active,1)=1 AND COALESCE(t.active,1)=1
+    ORDER BY t.abbreviation, s.stadium_name`;
   return rows;
 }
 
@@ -453,38 +423,38 @@ function parkFactorHasRealChange(current, r) {
     || Number(current.active || 0) !== 1;
 }
 
-async function loadCurrentParkFactorSnapshot(env) {
-  const rows = await all(env.REF_DB, "SELECT park_factor_id, stadium_id, team_id, run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor, active FROM ref_park_factors");
+async function loadCurrentParkFactorSnapshot(sql) {
+  const rows = await sql`SELECT park_factor_id, stadium_id, team_id, run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor, active FROM ref.park_factors`;
   const map = new Map();
   for (const row of rows) map.set(String(row.park_factor_id), row);
   return map;
 }
 
-async function writeRows(env, rows) {
-  // Real differential redesign: same pattern as static-teams/static-stadiums. Park factors are
-  // real Statcast-derived numbers that can legitimately drift a little as more games are played
-  // (unlike team/stadium identity, which is nearly static) - so some real writes here are
-  // expected, but a still-identical refresh should not force a full rewrite either.
-  const currentSnapshot = await loadCurrentParkFactorSnapshot(env);
+async function writeRows(sql, rows) {
+  const currentSnapshot = await loadCurrentParkFactorSnapshot(sql);
   let unchanged = 0;
-  await run(env.REF_DB, "UPDATE ref_park_factors SET active=0, updated_at=CURRENT_TIMESTAMP WHERE season_year=? AND source_key LIKE 'baseball_savant_statcast_park_factors_2025%'", SEASON_YEAR);
+  await sql`UPDATE ref.park_factors SET active=0, updated_at=now() WHERE season_year=${SEASON_YEAR} AND source_key LIKE 'baseball_savant_statcast_park_factors_2025%'`;
   let written = 0;
   for (const r of rows) {
     const current = currentSnapshot.get(String(r.park_factor_id));
     if (!parkFactorHasRealChange(current, r)) {
       unchanged += 1;
-      await run(env.REF_DB, "UPDATE ref_park_factors SET active=1, updated_at=CURRENT_TIMESTAMP WHERE park_factor_id=?", r.park_factor_id);
+      await sql`UPDATE ref.park_factors SET active=1, updated_at=now() WHERE park_factor_id=${r.park_factor_id}`;
       continue;
     }
-    await run(env.REF_DB, `INSERT OR REPLACE INTO ref_park_factors (
-      park_factor_id, stadium_id, mlb_venue_id, team_id, park_name, season_year,
-      run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor,
-      factor_scale, source_key, source_name, source_confidence, active, raw_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, COALESCE((SELECT created_at FROM ref_park_factors WHERE park_factor_id=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
-      r.park_factor_id, r.stadium_id, r.mlb_venue_id, r.team_id, r.park_name, r.season_year,
-      r.run_factor, r.hr_factor, r.lhb_run_factor, r.rhb_run_factor, r.lhb_hr_factor, r.rhb_hr_factor,
-      r.factor_scale, r.source_key, r.source_name, r.source_confidence, r.raw_json, r.park_factor_id
-    );
+    await sql`
+      INSERT INTO ref.park_factors (park_factor_id, stadium_id, mlb_venue_id, team_id, park_name, season_year,
+        run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor,
+        factor_scale, source_key, source_name, source_confidence, active, raw_json, updated_at)
+      VALUES (${r.park_factor_id}, ${r.stadium_id}, ${r.mlb_venue_id}, ${r.team_id}, ${r.park_name}, ${r.season_year},
+        ${r.run_factor}, ${r.hr_factor}, ${r.lhb_run_factor}, ${r.rhb_run_factor}, ${r.lhb_hr_factor}, ${r.rhb_hr_factor},
+        ${r.factor_scale}, ${r.source_key}, ${r.source_name}, ${r.source_confidence}, 1, ${r.raw_json}, now())
+      ON CONFLICT (park_factor_id) DO UPDATE SET stadium_id=excluded.stadium_id, mlb_venue_id=excluded.mlb_venue_id,
+        team_id=excluded.team_id, park_name=excluded.park_name, run_factor=excluded.run_factor, hr_factor=excluded.hr_factor,
+        lhb_run_factor=excluded.lhb_run_factor, rhb_run_factor=excluded.rhb_run_factor, lhb_hr_factor=excluded.lhb_hr_factor,
+        rhb_hr_factor=excluded.rhb_hr_factor, factor_scale=excluded.factor_scale, source_key=excluded.source_key,
+        source_name=excluded.source_name, source_confidence=excluded.source_confidence, active=1, raw_json=excluded.raw_json, updated_at=now()
+    `;
     written++;
   }
   return { written, unchanged };
@@ -493,9 +463,11 @@ async function writeRows(env, rows) {
 async function runStaticParkFactors(env, input = {}) {
   const started = Date.now();
   await ensureSchema(env);
+  const sql = pg(env);
 
-  const activeStadiums = await readActiveStadiums(env);
+  const activeStadiums = await readActiveStadiums(sql);
   if (activeStadiums.length !== 30) {
+    await sql.end();
     return base(env, {
       ok: false,
       data_ok: false,
@@ -574,6 +546,7 @@ async function runStaticParkFactors(env, input = {}) {
 
   const validation = validateRows(finalRows, activeStadiums);
   if (missing.length > 0 || !validation.ok) {
+    await sql.end();
     return base(env, {
       ok: false,
       data_ok: false,
@@ -589,24 +562,25 @@ async function runStaticParkFactors(env, input = {}) {
     });
   }
 
-  const rowsWritten = await writeRows(env, finalRows);
+  const rowsWritten = await writeRows(sql, finalRows);
   const totalProcessed = rowsWritten.written + rowsWritten.unchanged;
-  const activeAfter = await all(env.REF_DB, `SELECT
-      COUNT(*) AS active_rows,
-      COUNT(DISTINCT stadium_id) AS distinct_stadiums,
-      COUNT(DISTINCT team_id) AS distinct_teams,
-      COUNT(DISTINCT mlb_venue_id) AS distinct_venues,
-      SUM(CASE WHEN run_factor IS NULL THEN 1 ELSE 0 END) AS missing_run_factor,
-      SUM(CASE WHEN hr_factor IS NULL THEN 1 ELSE 0 END) AS missing_hr_factor,
-      SUM(CASE WHEN lhb_run_factor IS NULL THEN 1 ELSE 0 END) AS missing_lhb_run_factor,
-      SUM(CASE WHEN rhb_run_factor IS NULL THEN 1 ELSE 0 END) AS missing_rhb_run_factor,
-      SUM(CASE WHEN lhb_hr_factor IS NULL THEN 1 ELSE 0 END) AS missing_lhb_hr_factor,
-      SUM(CASE WHEN rhb_hr_factor IS NULL THEN 1 ELSE 0 END) AS missing_rhb_hr_factor
-    FROM ref_park_factors
-    WHERE season_year=? AND active=1 AND source_key LIKE 'baseball_savant_statcast_park_factors_2025%'`, SEASON_YEAR);
+  const activeAfterRows = await sql`SELECT
+      COUNT(*)::int AS active_rows,
+      COUNT(DISTINCT stadium_id)::int AS distinct_stadiums,
+      COUNT(DISTINCT team_id)::int AS distinct_teams,
+      COUNT(DISTINCT mlb_venue_id)::int AS distinct_venues,
+      SUM(CASE WHEN run_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_run_factor,
+      SUM(CASE WHEN hr_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_hr_factor,
+      SUM(CASE WHEN lhb_run_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_lhb_run_factor,
+      SUM(CASE WHEN rhb_run_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_rhb_run_factor,
+      SUM(CASE WHEN lhb_hr_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_lhb_hr_factor,
+      SUM(CASE WHEN rhb_hr_factor IS NULL THEN 1 ELSE 0 END)::int AS missing_rhb_hr_factor
+    FROM ref.park_factors
+    WHERE season_year=${SEASON_YEAR} AND active=1 AND source_key LIKE 'baseball_savant_statcast_park_factors_2025%'`;
+  await sql.end();
 
   const rollingSplit = finalRows.reduce((acc, r) => { acc[r.rolling_window] = (acc[r.rolling_window] || 0) + 1; return acc; }, {});
-  const certified = totalProcessed === 30 && activeAfter[0] && Number(activeAfter[0].active_rows) === 30 && Number(activeAfter[0].distinct_stadiums) === 30 && Number(activeAfter[0].distinct_teams) === 30 && Number(activeAfter[0].distinct_venues) === 30;
+  const certified = totalProcessed === 30 && activeAfterRows[0] && Number(activeAfterRows[0].active_rows) === 30 && Number(activeAfterRows[0].distinct_stadiums) === 30 && Number(activeAfterRows[0].distinct_teams) === 30 && Number(activeAfterRows[0].distinct_venues) === 30;
 
   return base(env, {
     ok: certified,
@@ -626,8 +600,9 @@ async function runStaticParkFactors(env, input = {}) {
     external_calls_performed: fetches.length + fallbackFetches.length,
     elapsed_ms: Date.now() - started,
     fetch_summary: fetches.concat(fallbackFetches).map(f => ({ label: f.label, url: f.url, http_status: f.http_status, row_count: f.row_count })),
-    active_after: activeAfter[0] || null,
+    active_after: activeAfterRows[0] || null,
     validation,
+    database_target: "postgres_ref_park_factors",
     sample_written_rows: finalRows.slice(0, 5).map(r => ({ team_abbreviation: r.team_abbreviation, park_name: r.park_name, mlb_venue_id: r.mlb_venue_id, run_factor: r.run_factor, hr_factor: r.hr_factor, lhb_run_factor: r.lhb_run_factor, rhb_run_factor: r.rhb_run_factor, lhb_hr_factor: r.lhb_hr_factor, rhb_hr_factor: r.rhb_hr_factor, rolling_window: r.rolling_window, match_mode: r.match_mode, source_key: r.source_key }))
   });
 }
@@ -641,14 +616,13 @@ export default {
       return jsonResponse(base(env, {
         route: url.pathname,
         bindings_ok: allTrue(bindingPresence(env, REQUIRED_DB_BINDINGS)),
-        vars_ok: allTrue(varPresence(env, EXPECTED_VARS))
+        vars_ok: allTrue(varPresence(env, EXPECTED_VARS)),
+        hyperdrive_bound: !!env.HYPERDRIVE
       }));
     }
 
     if (request.method === "GET" && url.pathname === "/diagnostic") {
-      let tableInfo = [];
-      try { tableInfo = await all(env.REF_DB, "PRAGMA table_info(ref_park_factors)"); } catch (_) { tableInfo = []; }
-      return jsonResponse(base(env, { route: "/diagnostic", ref_park_factors_columns: tableInfo }));
+      return jsonResponse(base(env, { route: "/diagnostic", hyperdrive_bound: !!env.HYPERDRIVE }));
     }
 
     if (request.method === "POST" && (url.pathname === "/run" || url.pathname === "/tasks/run")) {
