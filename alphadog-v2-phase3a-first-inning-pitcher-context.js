@@ -7519,14 +7519,14 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
         INSERT INTO stats_pitcher.metric_snapshots
           (snapshot_id, player_id, season, metric_window, games_count, appearances_count, starts_count,
            innings_pitched_sum, outs_recorded_sum, batters_faced_sum, pitches_sum, strikes_sum, hits_allowed_sum,
-           earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+           earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, runs_allowed_sum,
            era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated,
            k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated,
            innings_per_appearance_calculated, sample_size_label)
         SELECT
           player_id || '_' || ${season} || '_' || '${w.key}', player_id, ${season}, '${w.key}',
           games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum,
-          pitches_sum, strikes_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+          pitches_sum, strikes_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, runs_allowed_sum,
           era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated,
           k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated, innings_per_appearance_calculated,
           CASE
