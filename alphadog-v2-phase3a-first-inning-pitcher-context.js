@@ -7825,7 +7825,7 @@ async function runDeriveRfiMetricToPostgres(env, input) {
         )
         UPDATE stats_pitcher.metric_snapshots ms
         SET rfi_hit_count_sum = agg.rfi_count
-        FROM agg WHERE ms.player_id = agg.pitcher_id AND ms.season = ${season} AND ms.metric_window = '${w.key}'
+        FROM agg WHERE ms.player_id::text = agg.pitcher_id::text AND ms.season = ${season} AND ms.metric_window = '${w.key}'
       `);
       totalUpdated += res.count || 0;
     }
