@@ -202,27 +202,33 @@ async function runArsenal(env, input) {
     // not. This is the real fix, not a syntax workaround.
     step = "write_upserts";
     let changed = 0, unchanged = 0;
+    let failedRowDebug = null;
     for (const r of sliceRows) {
-      const current = currentMap.get(r.arsenal_id);
-      if (!rowHasRealChange(current, r)) {
-        unchanged += 1;
-        await sql`UPDATE ref.pitcher_arsenal SET active=1, updated_at=now() WHERE arsenal_id=${r.arsenal_id}`;
-        continue;
+      try {
+        const current = currentMap.get(r.arsenal_id);
+        if (!rowHasRealChange(current, r)) {
+          unchanged += 1;
+          await sql`UPDATE ref.pitcher_arsenal SET active=1, updated_at=now() WHERE arsenal_id=${r.arsenal_id}`;
+          continue;
+        }
+        await sql`
+          INSERT INTO ref.pitcher_arsenal (arsenal_id, mlb_player_id, player_name, team_abbreviation, season_year, pitch_type, pitch_name,
+            run_value_per_100, run_value, pitches, pitch_usage, pa, ba, slg, woba, whiff_percent, k_percent, put_away,
+            est_ba, est_slg, est_woba, hard_hit_percent, active, source_key, raw_json, updated_at)
+          VALUES (${r.arsenal_id}, ${r.mlb_player_id}, ${r.player_name}, ${r.team_abbreviation}, ${r.season_year}, ${r.pitch_type}, ${r.pitch_name},
+            ${r.run_value_per_100}, ${r.run_value}, ${r.pitches}, ${r.pitch_usage}, ${r.pa}, ${r.ba}, ${r.slg}, ${r.woba}, ${r.whiff_percent}, ${r.k_percent}, ${r.put_away},
+            ${r.est_ba}, ${r.est_slg}, ${r.est_woba}, ${r.hard_hit_percent}, 1, ${SOURCE_KEY}, ${r.raw_json}, now())
+          ON CONFLICT (arsenal_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_abbreviation=excluded.team_abbreviation,
+            season_year=excluded.season_year, pitch_type=excluded.pitch_type, pitch_name=excluded.pitch_name, run_value_per_100=excluded.run_value_per_100,
+            run_value=excluded.run_value, pitches=excluded.pitches, pitch_usage=excluded.pitch_usage, pa=excluded.pa, ba=excluded.ba, slg=excluded.slg, woba=excluded.woba,
+            whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, put_away=excluded.put_away, est_ba=excluded.est_ba, est_slg=excluded.est_slg,
+            est_woba=excluded.est_woba, hard_hit_percent=excluded.hard_hit_percent, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
+        `;
+        changed += 1;
+      } catch (rowErr) {
+        failedRowDebug = { row_index_in_slice: changed + unchanged, row_data: r, row_error: String(rowErr && rowErr.message ? rowErr.message : rowErr) };
+        throw new Error(`row_level_failure: ${JSON.stringify(failedRowDebug)}`);
       }
-      await sql`
-        INSERT INTO ref.pitcher_arsenal (arsenal_id, mlb_player_id, player_name, team_abbreviation, season_year, pitch_type, pitch_name,
-          run_value_per_100, run_value, pitches, pitch_usage, pa, ba, slg, woba, whiff_percent, k_percent, put_away,
-          est_ba, est_slg, est_woba, hard_hit_percent, active, source_key, raw_json, updated_at)
-        VALUES (${r.arsenal_id}, ${r.mlb_player_id}, ${r.player_name}, ${r.team_abbreviation}, ${r.season_year}, ${r.pitch_type}, ${r.pitch_name},
-          ${r.run_value_per_100}, ${r.run_value}, ${r.pitches}, ${r.pitch_usage}, ${r.pa}, ${r.ba}, ${r.slg}, ${r.woba}, ${r.whiff_percent}, ${r.k_percent}, ${r.put_away},
-          ${r.est_ba}, ${r.est_slg}, ${r.est_woba}, ${r.hard_hit_percent}, 1, ${SOURCE_KEY}, ${r.raw_json}, now())
-        ON CONFLICT (arsenal_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_abbreviation=excluded.team_abbreviation,
-          season_year=excluded.season_year, pitch_type=excluded.pitch_type, pitch_name=excluded.pitch_name, run_value_per_100=excluded.run_value_per_100,
-          run_value=excluded.run_value, pitches=excluded.pitches, pitch_usage=excluded.pitch_usage, pa=excluded.pa, ba=excluded.ba, slg=excluded.slg, woba=excluded.woba,
-          whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, put_away=excluded.put_away, est_ba=excluded.est_ba, est_slg=excluded.est_slg,
-          est_woba=excluded.est_woba, hard_hit_percent=excluded.hard_hit_percent, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
-      `;
-      changed += 1;
     }
 
     let deactivated = 0;
