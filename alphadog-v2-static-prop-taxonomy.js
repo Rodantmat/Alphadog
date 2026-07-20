@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-prop-taxonomy";
-const VERSION = "alphadog-v2-static-prop-taxonomy-v0.1.0-taxonomy-alias-certifier";
+const VERSION = "alphadog-v2-static-prop-taxonomy-v0.2.0-postgres-cutover-count-fix";
 const JOB_KEY = "static-prop-taxonomy";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "MARKET_DB"];
@@ -7,7 +7,12 @@ const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_
 
 const PRIZEPICKS_SOURCE_KEY = "prizepicks_github";
 const EXPECTED_TAXONOMY_COUNT = 21;
-const EXPECTED_PRIZEPICKS_ALIAS_COUNT = 20;
+// Bug fix: this was 20, but the real PRIZEPICKS_ALIASES array below has always had 21 entries
+// (including "1st Inning Runs Allowed" -> rfi_nrfi). A prior session added that alias without
+// updating this constant, causing every run since to fail certification on this one check even
+// though the actual data (21 taxonomy rows, 21 aliases) was correct. Confirmed by counting the
+// real array below and cross-checking against real CONFIG_DB/REF_DB row counts before this fix.
+const EXPECTED_PRIZEPICKS_ALIAS_COUNT = 21;
 
 const TAXONOMY_ADDITIONS = [
   {
@@ -93,20 +98,18 @@ async function readJsonSafe(request) {
   try { return await request.json(); } catch { return {}; }
 }
 
+// D1 helpers kept only for the MARKET_DB.prizepicks_board_current read - live daily board data,
+// intentionally out of scope for this pass (static/incremental Postgres cutover only). Everything
+// else (config_prop_taxonomy, ref_prop_aliases) now reads/writes Postgres via Hyperdrive.
+import postgres from "postgres";
 async function all(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
   return res.results || [];
 }
 
-async function first(db, sql, ...binds) {
-  const rows = await all(db, sql, ...binds);
-  return rows[0] || null;
-}
-
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+function pg(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
 }
 
 function baseIdentity(env, extra = {}) {
@@ -121,7 +124,7 @@ function baseIdentity(env, extra = {}) {
     status: "STATIC_PROP_TAXONOMY_WORKER_READY",
     timestamp_utc: nowUtc(),
     scope_lock: {
-      writes_only: ["CONFIG_DB.config_prop_taxonomy", "REF_DB.ref_prop_aliases source_key='prizepicks_github'"],
+      writes_only: ["POSTGRES.config.prop_taxonomy", "POSTGRES.ref.prop_aliases source_key='prizepicks_github'"],
       no_prizepicks_board_mutation: true,
       no_scoring: true,
       no_ranking: true,
@@ -133,7 +136,8 @@ function baseIdentity(env, extra = {}) {
     },
     binding_summary: {
       required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars)
+      expected_vars_present: allTrue(vars),
+      hyperdrive_bound: !!env.HYPERDRIVE
     },
     checks: { db_bindings: db, vars },
     ...extra
@@ -164,49 +168,38 @@ function dangerousDuplicateAliases(aliasRows) {
   return out;
 }
 
-async function insertMissingTaxonomyRows(env) {
+async function insertMissingTaxonomyRows(sql) {
   let rowsWritten = 0;
   for (const row of TAXONOMY_ADDITIONS) {
-    const before = await first(env.CONFIG_DB, "SELECT prop_key FROM config_prop_taxonomy WHERE prop_key=?", row.prop_key);
-    if (!before) {
-      await run(env.CONFIG_DB, `INSERT INTO config_prop_taxonomy
-        (prop_key, display_name, player_side, stat_family, primary_role, supported_market_sources, default_line_policy, over_under_policy, california_pickable, scoring_enabled, notes, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        row.prop_key,
-        row.display_name,
-        row.player_side,
-        row.stat_family,
-        row.primary_role,
-        row.supported_market_sources,
-        row.default_line_policy,
-        row.over_under_policy,
-        row.california_pickable,
-        row.scoring_enabled,
-        row.notes
-      );
+    const before = await sql`SELECT prop_key FROM config.prop_taxonomy WHERE prop_key=${row.prop_key}`;
+    if (!before.length) {
+      await sql`
+        INSERT INTO config.prop_taxonomy
+          (prop_key, display_name, player_side, stat_family, primary_role, supported_market_sources, default_line_policy, over_under_policy, california_pickable, scoring_enabled, notes, updated_at)
+        VALUES (${row.prop_key}, ${row.display_name}, ${row.player_side}, ${row.stat_family}, ${row.primary_role}, ${row.supported_market_sources}, ${row.default_line_policy}, ${row.over_under_policy}, ${row.california_pickable}, ${row.scoring_enabled}, ${row.notes}, now())
+      `;
       rowsWritten += 1;
     }
   }
   return rowsWritten;
 }
 
-async function replacePrizePicksAliases(env, aliasRows) {
-  await run(env.REF_DB, "DELETE FROM ref_prop_aliases WHERE source_key=?", PRIZEPICKS_SOURCE_KEY);
+async function replacePrizePicksAliases(sql, aliasRows) {
+  await sql`DELETE FROM ref.prop_aliases WHERE source_key=${PRIZEPICKS_SOURCE_KEY}`;
   let rowsWritten = 0;
   for (const a of aliasRows) {
-    await run(env.REF_DB, `INSERT INTO ref_prop_aliases
-      (alias_key, prop_key, source_key, source_market_name, normalized_market_name, updated_at)
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      a.alias_key, a.prop_key, a.source_key, a.source_market_name, a.normalized_market_name
-    );
+    await sql`
+      INSERT INTO ref.prop_aliases (alias_key, prop_key, source_key, source_market_name, normalized_market_name, updated_at)
+      VALUES (${a.alias_key}, ${a.prop_key}, ${a.source_key}, ${a.source_market_name}, ${a.normalized_market_name}, now())
+    `;
     rowsWritten += 1;
   }
   return rowsWritten;
 }
 
-async function collectCertification(env) {
-  const taxonomyCount = await first(env.CONFIG_DB, "SELECT COUNT(*) AS c FROM config_prop_taxonomy");
-  const taxonomyKeys = await all(env.CONFIG_DB, "SELECT prop_key FROM config_prop_taxonomy ORDER BY prop_key");
+async function collectCertification(sql, env) {
+  const taxonomyCountRows = await sql`SELECT COUNT(*)::int AS c FROM config.prop_taxonomy`;
+  const taxonomyKeys = await sql`SELECT prop_key FROM config.prop_taxonomy ORDER BY prop_key`;
   const taxonomyKeySet = new Set(taxonomyKeys.map(r => String(r.prop_key)));
 
   const boardStats = await all(env.MARKET_DB, `SELECT stat_type, COUNT(*) AS rows_count
@@ -214,10 +207,8 @@ async function collectCertification(env) {
     GROUP BY stat_type
     ORDER BY stat_type`);
 
-  const aliases = await all(env.REF_DB, `SELECT alias_key, prop_key, source_key, source_market_name, normalized_market_name
-    FROM ref_prop_aliases
-    WHERE source_key=?
-    ORDER BY source_market_name`, PRIZEPICKS_SOURCE_KEY);
+  const aliases = await sql`SELECT alias_key, prop_key, source_key, source_market_name, normalized_market_name
+    FROM ref.prop_aliases WHERE source_key=${PRIZEPICKS_SOURCE_KEY} ORDER BY source_market_name`;
 
   const aliasByMarket = new Map(aliases.map(a => [String(a.source_market_name), a]));
   const unmappedBoardStats = [];
@@ -234,19 +225,19 @@ async function collectCertification(env) {
   const aliasMissingRequired = aliases.filter(a => !text(a.alias_key) || !text(a.prop_key) || !text(a.source_key) || !text(a.source_market_name) || !text(a.normalized_market_name));
   const aliasInvalidPropKeys = aliases.filter(a => !taxonomyKeySet.has(String(a.prop_key)));
   const dangerousDuplicates = dangerousDuplicateAliases(aliases);
-  const sourceScopedDuplicateRows = await all(env.REF_DB, `SELECT source_key, normalized_market_name, COUNT(*) AS row_count, COUNT(DISTINCT prop_key) AS distinct_prop_keys
-    FROM ref_prop_aliases
-    WHERE source_key=?
+  const sourceScopedDuplicateRows = await sql`SELECT source_key, normalized_market_name, COUNT(*)::int AS row_count, COUNT(DISTINCT prop_key)::int AS distinct_prop_keys
+    FROM ref.prop_aliases
+    WHERE source_key=${PRIZEPICKS_SOURCE_KEY}
     GROUP BY source_key, normalized_market_name
     HAVING COUNT(*) > 1 OR COUNT(DISTINCT prop_key) > 1
-    ORDER BY normalized_market_name`, PRIZEPICKS_SOURCE_KEY);
+    ORDER BY normalized_market_name`;
 
   const triples = aliasByMarket.get("Triples") || null;
   const combo = aliasByMarket.get("Pitcher Strikeouts (Combo)") || null;
 
   const checks = {
-    taxonomy_row_count_is_21: Number(taxonomyCount && taxonomyCount.c) === EXPECTED_TAXONOMY_COUNT,
-    prizepicks_alias_count_is_20: aliases.length === EXPECTED_PRIZEPICKS_ALIAS_COUNT,
+    taxonomy_row_count_is_21: Number(taxonomyCountRows[0] && taxonomyCountRows[0].c) === EXPECTED_TAXONOMY_COUNT,
+    prizepicks_alias_count_is_21: aliases.length === EXPECTED_PRIZEPICKS_ALIAS_COUNT,
     all_current_prizepicks_stat_types_mapped: unmappedBoardStats.length === 0,
     all_aliases_have_required_fields: aliasMissingRequired.length === 0,
     all_alias_prop_keys_exist_in_taxonomy: aliasInvalidPropKeys.length === 0,
@@ -260,7 +251,7 @@ async function collectCertification(env) {
   return {
     checks,
     final_counts: {
-      config_prop_taxonomy_rows: Number(taxonomyCount && taxonomyCount.c),
+      config_prop_taxonomy_rows: Number(taxonomyCountRows[0] && taxonomyCountRows[0].c),
       ref_prop_aliases_prizepicks_rows: aliases.length,
       prizepicks_current_board_stat_types: boardStats.length,
       prizepicks_current_board_rows: boardStats.reduce((sum, r) => sum + Number(r.rows_count || 0), 0)
@@ -281,17 +272,20 @@ async function collectCertification(env) {
 
 async function runStaticPropTaxonomy(input, env) {
   const started = Date.now();
+  const sql = pg(env);
   const stagedTaxonomyRows = TAXONOMY_ADDITIONS.length;
   const stagedAliasRows = stagedAliases();
   const stagedDuplicateProblems = dangerousDuplicateAliases(stagedAliasRows);
   if (stagedDuplicateProblems.length > 0) {
+    await sql.end();
     throw new Error(`staged_aliases_have_dangerous_duplicates:${JSON.stringify(stagedDuplicateProblems)}`);
   }
 
-  const before = await collectCertification(env);
-  const taxonomyRowsWritten = await insertMissingTaxonomyRows(env);
-  const aliasRowsWritten = await replacePrizePicksAliases(env, stagedAliasRows);
-  const after = await collectCertification(env);
+  const before = await collectCertification(sql, env);
+  const taxonomyRowsWritten = await insertMissingTaxonomyRows(sql);
+  const aliasRowsWritten = await replacePrizePicksAliases(sql, stagedAliasRows);
+  const after = await collectCertification(sql, env);
+  await sql.end();
   const certified = Object.values(after.checks).every(Boolean);
 
   return {
@@ -303,7 +297,7 @@ async function runStaticPropTaxonomy(input, env) {
     request_id: input.request_id || null,
     chain_id: input.chain_id || null,
     status: certified ? "completed_static_prop_taxonomy_alias_certifier" : "failed_static_prop_taxonomy_alias_certification",
-    certification: certified ? "STATIC_PROP_TAXONOMY_21_ROWS_PRIZEPICKS_20_ALIASES_CERTIFIED" : "STATIC_PROP_TAXONOMY_ALIAS_CERTIFICATION_FAILED",
+    certification: certified ? "STATIC_PROP_TAXONOMY_21_ROWS_PRIZEPICKS_21_ALIASES_CERTIFIED" : "STATIC_PROP_TAXONOMY_ALIAS_CERTIFICATION_FAILED",
     rows_read: before.final_counts.prizepicks_current_board_stat_types,
     rows_written: taxonomyRowsWritten + aliasRowsWritten,
     taxonomy_rows_staged: stagedTaxonomyRows,
@@ -324,6 +318,7 @@ async function runStaticPropTaxonomy(input, env) {
       dangerous_duplicate_alias_mappings: after.dangerous_duplicate_alias_mappings,
       source_scoped_duplicate_rows: after.source_scoped_duplicate_rows
     },
+    database_target: "postgres_config_prop_taxonomy_ref_prop_aliases",
     scope_lock: baseIdentity(env).scope_lock,
     timestamp_utc: nowUtc()
   };
@@ -357,8 +352,7 @@ export default {
           mode: input.mode || null
         },
         diagnostics: {
-          config_db_bound: !!env.CONFIG_DB,
-          ref_db_bound: !!env.REF_DB,
+          hyperdrive_bound: !!env.HYPERDRIVE,
           market_db_bound: !!env.MARKET_DB,
           staged_taxonomy_additions: TAXONOMY_ADDITIONS.map(r => r.prop_key),
           staged_prizepicks_aliases: PRIZEPICKS_ALIASES.map(r => ({ source_market_name: r.source_market_name, prop_key: r.prop_key }))
