@@ -7836,6 +7836,44 @@ async function runDeriveRfiMetricToPostgres(env, input) {
   }
 }
 
+async function runWeeklyStaticDifferentialFullRunPostgres(env, input = {}) {
+  const season = Number(input.season || 2026);
+  const resumeFrom = Number(input.resume_from_step || 0);
+  // Postgres-only replacement for the D1 weekly_static_differential_full_run cron.
+  // Order matters and is deliberate: reference/roster data first (teams/players/stadiums),
+  // then everything derived from it (rosters/aliases), then Statcast leaderboard factors last
+  // (they depend on nothing else here, but keeping them last matches the D1 step order).
+  const steps = [
+    { name: "teams", fn: () => runRemineRefTeamsToPostgres(env, {}) },
+    { name: "players", fn: () => runRemineRefPlayersToPostgres(env, {}) },
+    { name: "stadiums", fn: () => runRemineRefStadiumsToPostgres(env, {}) },
+    { name: "rosters", fn: () => runDeriveRostersFromPostgres(env, {}) },
+    { name: "player_aliases", fn: () => runDerivePlayerAliasesFromPostgres(env, {}) },
+    { name: "team_aliases", fn: () => runDeriveTeamAliasesFromPostgres(env, {}) },
+    { name: "stadium_aliases", fn: () => runDeriveStadiumAliasesFromPostgres(env, {}) },
+    { name: "park_factors", fn: () => runRemineParkFactorsToPostgres(env, { season_year: season }) },
+    { name: "sprint_speed", fn: () => runRemineSprintSpeedToPostgres(env, { season_year: season }) },
+    { name: "quality_of_contact", fn: () => runRemineQualityOfContactToPostgres(env, { season_year: season }) },
+    { name: "batted_ball_profile", fn: () => runRemineBattedBallProfileToPostgres(env, { season_year: season }) },
+    { name: "defensive_quality", fn: () => runRemineDefensiveQualityToPostgres(env, { season_year: season }) },
+    { name: "catcher_framing", fn: () => runRemineCatcherFramingToPostgres(env, { season_year: season }) },
+    { name: "pitcher_running_game", fn: () => runReminePitcherRunningGameToPostgres(env, { season_year: season }) },
+    { name: "arm_angle", fn: () => runRemineArmAngleToPostgresV2(env, { season_year: season }) },
+    { name: "pitcher_arsenal", fn: () => runReminePitcherArsenalToPostgresV2(env, { season_year: season }) }
+  ];
+  const results = [];
+  for (let i = resumeFrom; i < steps.length; i++) {
+    try {
+      const r = await steps[i].fn();
+      results.push({ step: steps[i].name, ok: r && r.ok !== false, result: r });
+      if (r && r.ok === false) return { ok: false, mode: "weekly_static_differential_full_run_postgres", failed_at_step: steps[i].name, step_index: i, results, resume_from_step: i };
+    } catch (err) {
+      return { ok: false, mode: "weekly_static_differential_full_run_postgres", failed_at_step: steps[i].name, step_index: i, error: String(err && err.message ? err.message : err), results, resume_from_step: i };
+    }
+  }
+  return { ok: true, mode: "weekly_static_differential_full_run_postgres", season, steps_completed: results.length, results };
+}
+
 async function runExpansionMiningToPostgres(env, input) {
   const season = Number(input.season || 2026);
   const GAMES_PER_INVOCATION = 20;
