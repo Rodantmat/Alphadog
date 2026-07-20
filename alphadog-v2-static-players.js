@@ -19,7 +19,7 @@ function nowUtc() { return new Date().toISOString(); }
 function text(value) { return String(value === undefined || value === null ? "" : value).trim(); }
 function numOrNull(value) { const n = Number(value); return Number.isFinite(n) ? n : null; }
 function normalize(value) { return text(value).toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " "); }
-function compactJson(value, limit = RAW_JSON_LIMIT) { return JSON.stringify(value || {}).slice(0, limit); }
+function compactJson(value) { return JSON.stringify(value || {}); }
 function unique(values) { return Array.from(new Set(values.filter(v => v !== null && v !== undefined && String(v).length > 0).map(v => String(v)))); }
 
 function jsonResponse(body, status = 200) {
