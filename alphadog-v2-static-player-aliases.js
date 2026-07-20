@@ -2,7 +2,7 @@ import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-static-player-aliases";
 const LOGICAL_WORKER_NAME = "alphadog-v2-static-pitcher-arsenal";
-const VERSION = "alphadog-v2-static-pitcher-arsenal-v0.3.0-postgres-cutover";
+const VERSION = "alphadog-v2-static-pitcher-arsenal-v0.4.0-chunked-ticks";
 const JOB_KEY = "static-pitcher-arsenal";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -72,7 +72,7 @@ async function fetchSavant(year) {
       accept: "text/csv,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "accept-language": "en-US,en;q=0.9",
       "cache-control": "no-cache",
-      "user-agent": "AlphaDogV2StaticPitcherArsenal/0.3 (+controlled-reference-refresh)"
+      "user-agent": "AlphaDogV2StaticPitcherArsenal/0.4 (+controlled-reference-refresh)"
     }
   });
   const text = await resp.text();
@@ -141,59 +141,68 @@ function rowHasRealChange(current, fresh) {
   return false;
 }
 
+const TICK_CHUNK_SIZE = 150;
+
 async function runArsenal(env, input) {
   let step = "ensureSchema";
   try {
     await ensureSchema(env);
     const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
     const year = Number(inputJson.year) || SEASON_YEAR;
+    const offset = Number(inputJson.arsenal_offset) || 0;
 
     step = "freshness_check_open";
     let sqlCheck = pg(env);
-    step = "freshness_check_query";
-    const freshnessRows = await sqlCheck`SELECT MAX(updated_at) AS last_run FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
-    const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
-    if (lastRun) {
-      const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
-      if (ageHours >= 0 && ageHours < 20) {
-        step = "freshness_noop_count";
-        const activeCountNoop = await sqlCheck`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
-        await sqlCheck.end();
-        return {
-          ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
-          request_id: input.request_id || null, chain_id: input.chain_id || null,
-          status: "completed_noop_fresh", certification: "STATIC_PITCHER_ARSENAL_CERTIFIED_NOOP_ALREADY_FRESH",
-          season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
-          active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
-          freshness_gate: { last_run: lastRun, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
-          differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
-          database_target: "postgres_ref_pitcher_arsenal",
-          external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
-        };
+    if (offset === 0) {
+      step = "freshness_check_query";
+      const freshnessRows = await sqlCheck`SELECT MAX(updated_at) AS last_run FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
+      const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
+      if (lastRun) {
+        const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
+        if (ageHours >= 0 && ageHours < 20) {
+          step = "freshness_noop_count";
+          const activeCountNoop = await sqlCheck`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
+          await sqlCheck.end();
+          return {
+            ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+            request_id: input.request_id || null, chain_id: input.chain_id || null,
+            status: "completed_noop_fresh", certification: "STATIC_PITCHER_ARSENAL_CERTIFIED_NOOP_ALREADY_FRESH",
+            season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
+            active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
+            freshness_gate: { last_run: lastRun, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
+            differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
+            database_target: "postgres_ref_pitcher_arsenal",
+            external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
+          };
+        }
       }
     }
     step = "freshness_check_close";
     await sqlCheck.end();
 
+    // Re-fetched every tick (cheap HTTP GET, data doesn't meaningfully change within a few
+    // minutes) so there's no need to persist the CSV between ticks - just slice by offset.
     step = "external_fetch";
     const fetched = await fetchSavant(year);
     const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
+    const totalRows = mapped.length;
+    const sliceRows = mapped.slice(offset, offset + TICK_CHUNK_SIZE);
+    const isLastTick = offset + TICK_CHUNK_SIZE >= totalRows;
 
     step = "write_connection_open";
     const sql = pg(env);
     step = "write_current_rows_select";
     const currentRows = await sql`SELECT * FROM ref.pitcher_arsenal WHERE season_year=${year}`;
     const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
-    const freshIds = new Set(mapped.map(r => r.arsenal_id));
 
-    // Plain individual-row upserts - the exact same proven pattern already working reliably in
-    // static-teams/static-stadiums/static-park-factors. The dynamic sql(array, columns) bulk-insert
-    // helper was confirmed, live, to be the actual point of failure (repeatable "Network connection
-    // lost" even at 50 rows across 2 tiny chunks) - this abandons that approach entirely rather than
-    // continuing to chase it, since reliability matters more than speed here.
+    // Bounded per-tick write: only this slice's rows, individual upserts (the proven-reliable
+    // pattern from static-teams/stadiums/park-factors). Confirmed live that BOTH the bulk-helper
+    // syntax AND an unbounded individual-row loop over the full ~3000-row dataset in a single
+    // invocation eventually drop the Hyperdrive connection; a small bounded slice per tick does
+    // not. This is the real fix, not a syntax workaround.
     step = "write_upserts";
     let changed = 0, unchanged = 0;
-    for (const r of mapped) {
+    for (const r of sliceRows) {
       const current = currentMap.get(r.arsenal_id);
       if (!rowHasRealChange(current, r)) {
         unchanged += 1;
@@ -216,29 +225,48 @@ async function runArsenal(env, input) {
       changed += 1;
     }
 
-    step = "write_deactivate_stale";
     let deactivated = 0;
-    for (const current of currentRows) {
-      if (!freshIds.has(current.arsenal_id) && Number(current.active) === 1) {
-        await sql`UPDATE ref.pitcher_arsenal SET active=0, updated_at=now() WHERE arsenal_id=${current.arsenal_id}`;
-        deactivated += 1;
+    if (isLastTick) {
+      step = "write_deactivate_stale";
+      const freshIds = new Set(mapped.map(r => r.arsenal_id));
+      for (const current of currentRows) {
+        if (!freshIds.has(current.arsenal_id) && Number(current.active) === 1) {
+          await sql`UPDATE ref.pitcher_arsenal SET active=0, updated_at=now() WHERE arsenal_id=${current.arsenal_id}`;
+          deactivated += 1;
+        }
       }
     }
 
     step = "final_count_and_close";
     const activeCount = await sql`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
     await sql.end();
-    const certified = mapped.length > 0 && changed + unchanged === mapped.length;
 
+    if (!isLastTick) {
+      return {
+        ok: true, data_ok: false, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+        request_id: input.request_id || null, chain_id: input.chain_id || null,
+        status: "partial_continue", certification: "STATIC_PITCHER_ARSENAL_PARTIAL_CONTINUE",
+        season_year: year, rows_read: fetched.row_count, rows_mapped: totalRows,
+        rows_processed_this_tick: sliceRows.length, rows_written: changed, rows_unchanged_skipped: unchanged,
+        offset_processed_through: offset + sliceRows.length, rows_remaining: totalRows - (offset + sliceRows.length),
+        continuation_input_json: { ...inputJson, year, arsenal_offset: offset + TICK_CHUNK_SIZE },
+        active_rows_after: Number(activeCount[0] && activeCount[0].c || 0),
+        differential_note: "Bounded per-tick write (150 rows/tick) to keep each invocation's connection duration short - confirmed live that unbounded single-invocation writes over the full ~3000-row dataset eventually drop the connection.",
+        database_target: "postgres_ref_pitcher_arsenal",
+        external_calls_performed: 1, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
+      };
+    }
+
+    const certified = totalRows > 0;
     return {
       ok: certified, data_ok: certified, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
       request_id: input.request_id || null, chain_id: input.chain_id || null,
       status: certified ? "completed" : "failed_no_real_rows_parsed",
       certification: certified ? "STATIC_PITCHER_ARSENAL_CERTIFIED" : "STATIC_PITCHER_ARSENAL_CERTIFICATION_FAILED",
-      season_year: year, source_url: fetched.url, rows_read: fetched.row_count, rows_mapped: mapped.length,
-      rows_written: changed, rows_unchanged_skipped: unchanged, rows_deactivated: deactivated,
+      season_year: year, source_url: fetched.url, rows_read: fetched.row_count, rows_mapped: totalRows,
+      rows_processed_this_tick: sliceRows.length, rows_written: changed, rows_unchanged_skipped: unchanged, rows_deactivated: deactivated,
       active_rows_after: Number(activeCount[0] && activeCount[0].c || 0),
-      differential_note: "rows_written is the honest count of pitcher-pitch-type rows whose real Statcast values actually changed; rows_unchanged_skipped got a cheap active/updated_at touch only.",
+      differential_note: "Final tick of a bounded multi-tick run - rows_written/rows_unchanged_skipped reflect only this tick's slice, not the full dataset.",
       database_target: "postgres_ref_pitcher_arsenal",
       external_calls_performed: 1,
       no_scoring: true, no_ranking: true, no_final_board: true,
@@ -256,7 +284,7 @@ function baseIdentity(env) {
     ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
     status: "STATIC_PITCHER_ARSENAL_READY", timestamp_utc: nowUtc(),
     notes: [
-      "Real, differential-aware pitcher arsenal reference refresh (season-level, Baseball Savant CSV export). Now Postgres-backed.",
+      "Real, differential-aware pitcher arsenal reference refresh (season-level, Baseball Savant CSV export). Postgres-backed, chunked across ticks.",
       "POST /run with input_json: { year: 2026 (optional, defaults to current season) }"
     ],
     binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars), hyperdrive_bound: !!env.HYPERDRIVE }
