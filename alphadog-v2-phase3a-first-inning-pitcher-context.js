@@ -7002,8 +7002,17 @@ async function runRemineHitterGameLogsToPostgres(env, input) {
     for (const p of playerRows) {
       if (Date.now() - startedAt > TIME_BUDGET_MS) break;
       const url = `${base}/people/${p.mlb_player_id}/stats?stats=gameLog&group=hitting&season=${season}`;
-      const resp = await fetch(url, { headers });
-      const json = await resp.json().catch(() => null);
+      // BUG FIX: previously this fetch never checked resp.ok and silently swallowed any
+      // parse failure into 0 rows (no retry, no rate-limit handling), which is the likely
+      // cause of the uniform ~41% shortfall vs D1 across both hitter and pitcher game logs.
+      // 60 rapid sequential fetches per invocation with zero stagger/backoff is a classic
+      // rate-limit trigger. Add resp.ok check + one retry with short backoff.
+      let json = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const resp = await fetch(url, { headers });
+        if (resp.ok) { json = await resp.json().catch(() => null); if (json) break; }
+        if (attempt === 0) await new Promise(r => setTimeout(r, 350));
+      }
       const splits = (json && Array.isArray(json.stats) && json.stats[0] && Array.isArray(json.stats[0].splits)) ? json.stats[0].splits : [];
       for (const split of splits) {
         const stat = split.stat || {}, game = split.game || {}, team = split.team || {}, opponent = split.opponent || {};
