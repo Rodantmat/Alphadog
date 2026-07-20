@@ -143,20 +143,24 @@ function rowHasRealChange(current, fresh) {
 
 async function runArsenal(env, input) {
   await ensureSchema(env);
-  const sql = pg(env);
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const year = Number(inputJson.year) || SEASON_YEAR;
 
   // Freshness gate: same grounded watermark pattern used across the static layer. Baseball
   // Savant has no incremental "what changed" query, so a bounded re-fetch window is the correct
   // pattern, not a full classic differential.
-  const freshnessRows = await sql`SELECT MAX(updated_at) AS last_run FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
+  // Uses its own short-lived connection, closed before the external fetch below - holding a
+  // Hyperdrive connection open and idle across a long external HTTP fetch was the real cause of
+  // the "Network connection lost" failures confirmed live (the connection went stale while
+  // waiting on the Savant CSV download, then died on the next query after the fetch returned).
+  let sqlCheck = pg(env);
+  const freshnessRows = await sqlCheck`SELECT MAX(updated_at) AS last_run FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
   const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
   if (lastRun) {
     const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
     if (ageHours >= 0 && ageHours < 20) {
-      const activeCountNoop = await sql`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
-      await sql.end();
+      const activeCountNoop = await sqlCheck`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
+      await sqlCheck.end();
       return {
         ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
         request_id: input.request_id || null, chain_id: input.chain_id || null,
@@ -170,10 +174,15 @@ async function runArsenal(env, input) {
       };
     }
   }
+  await sqlCheck.end();
 
+  // External fetch happens with NO Postgres connection open - this can genuinely take a while
+  // (large CSV download) and must not hold a database connection idle while it runs.
   const fetched = await fetchSavant(year);
   const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
 
+  // Fresh connection for the write phase, opened only now that we actually need it.
+  const sql = pg(env);
   const currentRows = await sql`SELECT * FROM ref.pitcher_arsenal WHERE season_year=${year}`;
   const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
   const freshIds = new Set(mapped.map(r => r.arsenal_id));
