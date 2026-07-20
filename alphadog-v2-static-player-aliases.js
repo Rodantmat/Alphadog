@@ -177,7 +177,7 @@ async function runArsenal(env, input) {
 
     step = "external_fetch";
     const fetched = await fetchSavant(year);
-    const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
+    const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean).slice(0, 50);
 
     step = "write_connection_open";
     const sql = pg(env);
