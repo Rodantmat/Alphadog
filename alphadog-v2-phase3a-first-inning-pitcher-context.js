@@ -9384,35 +9384,7 @@ async function runClassificationV6Tick(env, input = {}) {
   };
 }
 
-// [broken orphaned SQL fragment removed]
-  if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
-  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
-  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
-  if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
-  if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
-  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
-  if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
-  if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
-  if(mode==="derive_hitter_metric_snapshots_from_postgres") return runDeriveHitterMetricSnapshotsFromPostgres(env,input);
-  if(mode==="derive_pitcher_metric_snapshots_from_postgres") return runDerivePitcherMetricSnapshotsFromPostgres(env,input);
-  if(mode==="daily_delta_game_logs_to_postgres") return runDailyDeltaGameLogsToPostgres(env,input);
-  if(mode==="remine_batted_ball_profile_to_postgres") return runRemineBattedBallProfileToPostgres(env,input);
-  if(mode==="remine_pitcher_running_game_to_postgres") return runReminePitcherRunningGameToPostgres(env,input);
-  if(mode==="remine_park_factors_to_postgres") return runRemineParkFactorsToPostgres(env,input);
-  if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
-  if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
-  if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
-  if(mode==="remine_hitter_game_logs_to_postgres") return runRemineHitterGameLogsToPostgres(env,input);
-  if(mode==="remine_pitcher_game_logs_to_postgres") return runReminePitcherGameLogsToPostgres(env,input);
-  if(mode==="remine_hitter_splits_to_postgres") return runRemineHitterSplitsToPostgres(env,input);
-  if(mode==="remine_pitcher_splits_to_postgres") return runReminePitcherSplitsToPostgres(env,input);
-  if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
-  if(mode==="derive_starter_history_from_postgres") return runDeriveStarterHistoryFromPostgres(env,input);
-  if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
-  if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
-  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
-  if(mode==="remine_quality_of_contact_to_postgres") return runRemineQualityOfContactToPostgres(env,input);
-  if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
+// [orphaned dispatch remnant part 1 removed]
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
   if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
