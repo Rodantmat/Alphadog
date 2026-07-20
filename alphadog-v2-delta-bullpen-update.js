@@ -133,10 +133,45 @@ function rowHasRealChange(current, fresh) {
   return false;
 }
 
+async function runD1Batch(db, statements, size = 50) {
+  let executed = 0;
+  for (let i = 0; i < statements.length; i += size) {
+    const chunk = statements.slice(i, i + size);
+    if (chunk.length) {
+      await db.batch(chunk);
+      executed += chunk.length;
+    }
+  }
+  return executed;
+}
+
 async function runDefensiveQuality(env, input) {
   await ensureSchema(env);
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const year = Number(inputJson.year) || SEASON_YEAR;
+
+  // Freshness gate (same grounded watermark pattern as static-pitcher-arsenal): skip the
+  // expensive Savant fetch + full compare if a certified run for this season completed within
+  // the window. Baseball Savant has no incremental "what changed" query, so a bounded re-fetch
+  // window is the correct pattern, not a full classic differential.
+  const freshnessRow = await all(env.REF_DB, "SELECT MAX(updated_at) AS last_run FROM ref_defensive_quality WHERE season_year=? AND source_key=?", year, SOURCE_KEY);
+  const lastRun = freshnessRow[0] && freshnessRow[0].last_run;
+  if (lastRun) {
+    const ageHours = (Date.now() - new Date(String(lastRun).replace(" ", "T") + "Z").getTime()) / 3600000;
+    if (ageHours >= 0 && ageHours < 20) {
+      const activeCountNoop = await all(env.REF_DB, "SELECT COUNT(*) c FROM ref_defensive_quality WHERE season_year=? AND active=1", year);
+      return {
+        ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+        request_id: input.request_id || null, chain_id: input.chain_id || null,
+        status: "completed_noop_fresh", certification: "STATIC_DEFENSIVE_QUALITY_CERTIFIED_NOOP_ALREADY_FRESH",
+        season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
+        active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
+        freshness_gate: { last_run, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
+        differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
+        external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
+      };
+    }
+  }
 
   const fetched = await fetchSavant(year);
   const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
@@ -145,32 +180,36 @@ async function runDefensiveQuality(env, input) {
   const currentMap = new Map(currentRows.map(r => [r.quality_id, r]));
   const freshIds = new Set(mapped.map(r => r.quality_id));
 
+  const changedStatements = [];
+  const unchangedStatements = [];
   let changed = 0, unchanged = 0;
   for (const r of mapped) {
     const current = currentMap.get(r.quality_id);
     if (!rowHasRealChange(current, r)) {
       unchanged += 1;
-      await run(env.REF_DB, "UPDATE ref_defensive_quality SET active=1, updated_at=CURRENT_TIMESTAMP WHERE quality_id=?", r.quality_id);
+      unchangedStatements.push(env.REF_DB.prepare("UPDATE ref_defensive_quality SET active=1, updated_at=CURRENT_TIMESTAMP WHERE quality_id=?").bind(r.quality_id));
       continue;
     }
-    await run(env.REF_DB, `INSERT OR REPLACE INTO ref_defensive_quality (
+    changedStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (
       quality_id, mlb_player_id, player_name, team_name, season_year, primary_position, fielding_runs_prevented,
       outs_above_average, oaa_infront, oaa_lateral_toward_3b, oaa_lateral_toward_1b, oaa_behind, oaa_vs_rhh, oaa_vs_lhh,
       actual_success_rate_pct, adj_estimated_success_rate_pct, diff_success_rate_pct, active, source_key, raw_json, updated_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`,
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
       r.quality_id, r.mlb_player_id, r.player_name, r.team_name, r.season_year, r.primary_position, r.fielding_runs_prevented,
       r.outs_above_average, r.oaa_infront, r.oaa_lateral_toward_3b, r.oaa_lateral_toward_1b, r.oaa_behind, r.oaa_vs_rhh, r.oaa_vs_lhh,
-      r.actual_success_rate_pct, r.adj_estimated_success_rate_pct, r.diff_success_rate_pct, SOURCE_KEY, r.raw_json);
+      r.actual_success_rate_pct, r.adj_estimated_success_rate_pct, r.diff_success_rate_pct, SOURCE_KEY, r.raw_json));
     changed += 1;
   }
+  await runD1Batch(env.REF_DB, changedStatements);
+  await runD1Batch(env.REF_DB, unchangedStatements);
 
-  let deactivated = 0;
+  const deactivateStatements = [];
   for (const current of currentRows) {
     if (!freshIds.has(current.quality_id) && Number(current.active) === 1) {
-      await run(env.REF_DB, "UPDATE ref_defensive_quality SET active=0, updated_at=CURRENT_TIMESTAMP WHERE quality_id=?", current.quality_id);
-      deactivated += 1;
+      deactivateStatements.push(env.REF_DB.prepare("UPDATE ref_defensive_quality SET active=0, updated_at=CURRENT_TIMESTAMP WHERE quality_id=?").bind(current.quality_id));
     }
   }
+  const deactivated = await runD1Batch(env.REF_DB, deactivateStatements);
 
   const activeCount = await all(env.REF_DB, "SELECT COUNT(*) c FROM ref_defensive_quality WHERE season_year=? AND active=1", year);
   const certified = mapped.length > 0 && changed + unchanged === mapped.length;
