@@ -7866,12 +7866,15 @@ async function runWeeklyStaticDifferentialFullRunPostgres(env, input = {}) {
     try {
       const r = await steps[i].fn();
       results.push({ step: steps[i].name, ok: r && r.ok !== false, result: r });
-      if (r && r.ok === false) return { ok: false, mode: "weekly_static_differential_full_run_postgres", failed_at_step: steps[i].name, step_index: i, results, resume_from_step: i };
+      if (r && r.ok === false) return { ok: false, mode: "weekly_static_differential_full_run_postgres", failed_at_step: steps[i].name, step_index: i, results, partial: true, next_resume_from_step: i };
+      // One step per invocation, matching the scheduled() harness's resume contract - keeps
+      // each invocation well inside Worker execution limits even as more steps get added.
+      if (i < steps.length - 1) return { ok: true, mode: "weekly_static_differential_full_run_postgres", step_completed: steps[i].name, step_index: i, partial: true, next_resume_from_step: i + 1 };
     } catch (err) {
-      return { ok: false, mode: "weekly_static_differential_full_run_postgres", failed_at_step: steps[i].name, step_index: i, error: String(err && err.message ? err.message : err), results, resume_from_step: i };
+      return { ok: false, mode: "weekly_static_differential_full_run_postgres", failed_at_step: steps[i].name, step_index: i, error: String(err && err.message ? err.message : err), results, partial: true, next_resume_from_step: i };
     }
   }
-  return { ok: true, mode: "weekly_static_differential_full_run_postgres", season, steps_completed: results.length, results };
+  return { ok: true, mode: "weekly_static_differential_full_run_postgres", season, steps_completed: results.length, results, partial: false };
 }
 
 async function runExpansionMiningToPostgres(env, input) {
