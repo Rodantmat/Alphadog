@@ -7718,6 +7718,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       ? rawFields.map((f, i) => `COALESCE(${f},0)*${Number(propConfig.weights[propConfig.numerator_fields[i]] || 1)}`).join("+")
       : rawFields.map(f => `COALESCE(${f},0)`).join("+");
     let dispersion = Infinity;
+    let dispersionError = null;
     try {
       const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
       let sumGames=0, sumMeanW=0, sumVarW=0;
@@ -7730,7 +7731,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
         dispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
       }
-    } catch (_) { dispersion = Infinity; }
+    } catch (err) { dispersion = Infinity; dispersionError = String(err && err.message ? err.message : err); }
 
     const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
     await sql`
