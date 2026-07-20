@@ -134,17 +134,17 @@ function rowHasRealChange(current, fresh) {
 
 async function runDefensiveQuality(env, input) {
   await ensureSchema(env);
-  const sql = pg(env);
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const year = Number(inputJson.year) || SEASON_YEAR;
 
-  const freshnessRows = await sql`SELECT MAX(updated_at) AS last_run FROM ref.defensive_quality WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
+  let sqlCheck = pg(env);
+  const freshnessRows = await sqlCheck`SELECT MAX(updated_at) AS last_run FROM ref.defensive_quality WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
   const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
   if (lastRun) {
     const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
     if (ageHours >= 0 && ageHours < 20) {
-      const activeCountNoop = await sql`SELECT COUNT(*)::int c FROM ref.defensive_quality WHERE season_year=${year} AND active=1`;
-      await sql.end();
+      const activeCountNoop = await sqlCheck`SELECT COUNT(*)::int c FROM ref.defensive_quality WHERE season_year=${year} AND active=1`;
+      await sqlCheck.end();
       return {
         ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
         request_id: input.request_id || null, chain_id: input.chain_id || null,
@@ -158,10 +158,13 @@ async function runDefensiveQuality(env, input) {
       };
     }
   }
+  await sqlCheck.end();
 
+  // External fetch with no Postgres connection held open (same fix as static-pitcher-arsenal).
   const fetched = await fetchSavant(year);
   const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
 
+  const sql = pg(env);
   const currentRows = await sql`SELECT * FROM ref.defensive_quality WHERE season_year=${year}`;
   const currentMap = new Map(currentRows.map(r => [r.quality_id, r]));
   const freshIds = new Set(mapped.map(r => r.quality_id));
