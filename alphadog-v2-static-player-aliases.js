@@ -177,7 +177,7 @@ async function runArsenal(env, input) {
 
     step = "external_fetch";
     const fetched = await fetchSavant(year);
-    const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean).slice(0, 50);
+    const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
 
     step = "write_connection_open";
     const sql = pg(env);
@@ -186,53 +186,43 @@ async function runArsenal(env, input) {
     const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
     const freshIds = new Set(mapped.map(r => r.arsenal_id));
 
-    const toInsert = [];
-    const unchangedIds = [];
+    // Plain individual-row upserts - the exact same proven pattern already working reliably in
+    // static-teams/static-stadiums/static-park-factors. The dynamic sql(array, columns) bulk-insert
+    // helper was confirmed, live, to be the actual point of failure (repeatable "Network connection
+    // lost" even at 50 rows across 2 tiny chunks) - this abandons that approach entirely rather than
+    // continuing to chase it, since reliability matters more than speed here.
+    step = "write_upserts";
+    let changed = 0, unchanged = 0;
     for (const r of mapped) {
       const current = currentMap.get(r.arsenal_id);
       if (!rowHasRealChange(current, r)) {
-        unchangedIds.push(r.arsenal_id);
+        unchanged += 1;
+        await sql`UPDATE ref.pitcher_arsenal SET active=1, updated_at=now() WHERE arsenal_id=${r.arsenal_id}`;
         continue;
       }
-      toInsert.push(r);
-    }
-    const changed = toInsert.length;
-    const unchanged = unchangedIds.length;
-
-    const CHUNK = 25;
-    step = "write_bulk_insert";
-    for (let i = 0; i < toInsert.length; i += CHUNK) {
-      const chunk = toInsert.slice(i, i + CHUNK).map(r => ({
-        arsenal_id: r.arsenal_id, mlb_player_id: r.mlb_player_id, player_name: r.player_name, team_abbreviation: r.team_abbreviation,
-        season_year: r.season_year, pitch_type: r.pitch_type, pitch_name: r.pitch_name, run_value_per_100: r.run_value_per_100,
-        run_value: r.run_value, pitches: r.pitches, pitch_usage: r.pitch_usage, pa: r.pa, ba: r.ba, slg: r.slg, woba: r.woba,
-        whiff_percent: r.whiff_percent, k_percent: r.k_percent, put_away: r.put_away, est_ba: r.est_ba, est_slg: r.est_slg,
-        est_woba: r.est_woba, hard_hit_percent: r.hard_hit_percent, active: 1, source_key: SOURCE_KEY, raw_json: r.raw_json
-      }));
       await sql`
-        INSERT INTO ref.pitcher_arsenal ${sql(chunk, "arsenal_id", "mlb_player_id", "player_name", "team_abbreviation", "season_year", "pitch_type", "pitch_name",
-          "run_value_per_100", "run_value", "pitches", "pitch_usage", "pa", "ba", "slg", "woba", "whiff_percent", "k_percent", "put_away",
-          "est_ba", "est_slg", "est_woba", "hard_hit_percent", "active", "source_key", "raw_json")}
+        INSERT INTO ref.pitcher_arsenal (arsenal_id, mlb_player_id, player_name, team_abbreviation, season_year, pitch_type, pitch_name,
+          run_value_per_100, run_value, pitches, pitch_usage, pa, ba, slg, woba, whiff_percent, k_percent, put_away,
+          est_ba, est_slg, est_woba, hard_hit_percent, active, source_key, raw_json, updated_at)
+        VALUES (${r.arsenal_id}, ${r.mlb_player_id}, ${r.player_name}, ${r.team_abbreviation}, ${r.season_year}, ${r.pitch_type}, ${r.pitch_name},
+          ${r.run_value_per_100}, ${r.run_value}, ${r.pitches}, ${r.pitch_usage}, ${r.pa}, ${r.ba}, ${r.slg}, ${r.woba}, ${r.whiff_percent}, ${r.k_percent}, ${r.put_away},
+          ${r.est_ba}, ${r.est_slg}, ${r.est_woba}, ${r.hard_hit_percent}, 1, ${SOURCE_KEY}, ${r.raw_json}, now())
         ON CONFLICT (arsenal_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_abbreviation=excluded.team_abbreviation,
           season_year=excluded.season_year, pitch_type=excluded.pitch_type, pitch_name=excluded.pitch_name, run_value_per_100=excluded.run_value_per_100,
           run_value=excluded.run_value, pitches=excluded.pitches, pitch_usage=excluded.pitch_usage, pa=excluded.pa, ba=excluded.ba, slg=excluded.slg, woba=excluded.woba,
           whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, put_away=excluded.put_away, est_ba=excluded.est_ba, est_slg=excluded.est_slg,
           est_woba=excluded.est_woba, hard_hit_percent=excluded.hard_hit_percent, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
       `;
-    }
-    step = "write_unchanged_touch";
-    for (let i = 0; i < unchangedIds.length; i += CHUNK) {
-      const chunk = unchangedIds.slice(i, i + CHUNK);
-      await sql`UPDATE ref.pitcher_arsenal SET active=1, updated_at=now() WHERE arsenal_id IN ${sql(chunk)}`;
+      changed += 1;
     }
 
     step = "write_deactivate_stale";
-    const staleIds = currentRows.filter(current => !freshIds.has(current.arsenal_id) && Number(current.active) === 1).map(c => c.arsenal_id);
     let deactivated = 0;
-    for (let i = 0; i < staleIds.length; i += CHUNK) {
-      const chunk = staleIds.slice(i, i + CHUNK);
-      await sql`UPDATE ref.pitcher_arsenal SET active=0, updated_at=now() WHERE arsenal_id IN ${sql(chunk)}`;
-      deactivated += chunk.length;
+    for (const current of currentRows) {
+      if (!freshIds.has(current.arsenal_id) && Number(current.active) === 1) {
+        await sql`UPDATE ref.pitcher_arsenal SET active=0, updated_at=now() WHERE arsenal_id=${current.arsenal_id}`;
+        deactivated += 1;
+      }
     }
 
     step = "final_count_and_close";
