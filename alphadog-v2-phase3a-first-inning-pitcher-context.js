@@ -6988,7 +6988,11 @@ async function runRemineHitterGameLogsToPostgres(env, input) {
   const startOffset = Number(input.offset || 0);
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
-    const playerRows = await sql`SELECT mlb_player_id, full_name, current_team_id FROM ref.players WHERE active=1 ORDER BY mlb_player_id LIMIT ${PLAYERS_PER_INVOCATION} OFFSET ${startOffset}`;
+    // BUG FIX (matches D1 base-hitter-game-logs.js hitter-position filter): without this,
+    // this query iterated ALL active players including pitchers, who almost never bat under
+    // universal DH, wasting the per-invocation budget and producing far fewer real hitter
+    // rows than D1 (30,707 vs D1's 75,088 on first full pass). Restrict to hitter positions.
+    const playerRows = await sql`SELECT mlb_player_id, full_name, current_team_id FROM ref.players WHERE active=1 AND UPPER(COALESCE(primary_position,'')) IN ('C','1B','2B','3B','SS','LF','CF','RF','OF','DH') ORDER BY mlb_player_id LIMIT ${PLAYERS_PER_INVOCATION} OFFSET ${startOffset}`;
     if (!playerRows.length) { await sql.end(); return { ok: true, mode: "remine_hitter_game_logs_to_postgres", complete: true, note: "no more players at this offset" }; }
 
     const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
