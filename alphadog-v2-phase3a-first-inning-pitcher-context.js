@@ -7764,9 +7764,15 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
   const season = Number(input.season || 2026);
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    // Ported from D1 base-hitter-metrics.js / config_metric_windows / config_metric_thresholds
+    // (config_profile hitter_metrics_neutral_v0_1_0), verified against real D1 rows before writing.
+    // Windows: last_3/5/10/20 games + season_to_date. sample_size_label thresholds (games_count):
+    // 0=sample_none,1-2=sample_tiny,3-4=sample_thin,5-9=sample_usable,>=10=sample_strong.
+    // split_sample_label thresholds (split PA): <10=split_none,10-24=split_tiny,25-49=split_usable,>=50=split_strong.
     const windows = [
-      { key: "last_5", limitClause: "5" }, { key: "last_10", limitClause: "10" },
-      { key: "last_20", limitClause: "20" }, { key: "season_to_date", limitClause: "9999" }
+      { key: "last_3_games", limitClause: "3" }, { key: "last_5_games", limitClause: "5" },
+      { key: "last_10_games", limitClause: "10" }, { key: "last_20_games", limitClause: "20" },
+      { key: "season_to_date", limitClause: "9999" }
     ];
     let totalWritten = 0;
     for (const w of windows) {
@@ -7780,26 +7786,45 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
           SELECT
             player_id, COUNT(*) AS games_count,
             SUM(COALESCE(pa,0)) AS pa_sum, SUM(COALESCE(ab,0)) AS ab_sum, SUM(COALESCE(hits,0)) AS hits_sum,
-            SUM(COALESCE(doubles,0)) AS doubles_sum, SUM(COALESCE(triples,0)) AS triples_sum, SUM(COALESCE(home_runs,0)) AS home_runs_sum,
-            SUM(COALESCE(runs,0)) AS runs_sum, SUM(COALESCE(rbi,0)) AS rbi_sum, SUM(COALESCE(walks,0)) AS walks_sum,
-            SUM(COALESCE(strikeouts,0)) AS strikeouts_sum, SUM(COALESCE(stolen_bases,0)) AS stolen_bases_sum,
+            SUM(COALESCE(singles,0)) AS singles_sum, SUM(COALESCE(doubles,0)) AS doubles_sum, SUM(COALESCE(triples,0)) AS triples_sum,
+            SUM(COALESCE(home_runs,0)) AS home_runs_sum, SUM(COALESCE(runs,0)) AS runs_sum, SUM(COALESCE(rbi,0)) AS rbi_sum,
+            SUM(COALESCE(walks,0)) AS walks_sum, SUM(COALESCE(strikeouts,0)) AS strikeouts_sum, SUM(COALESCE(stolen_bases,0)) AS stolen_bases_sum,
             SUM(COALESCE(total_bases,0)) AS total_bases_derived_sum
           FROM windowed GROUP BY player_id
+        ), vs_left AS (
+          SELECT player_id, pa AS split_pa, ab AS split_ab, hits AS split_hits, home_runs AS split_home_runs,
+            walks AS split_walks, strikeouts AS split_strikeouts, avg AS split_avg, obp AS split_obp, slg AS split_slg,
+            ops AS split_ops, babip AS split_babip,
+            CASE WHEN COALESCE(pa,0) < 10 THEN 'split_none' WHEN pa < 25 THEN 'split_tiny' WHEN pa < 50 THEN 'split_usable' ELSE 'split_strong' END AS split_sample_label
+          FROM stats_hitter.splits WHERE season = ${season} AND split_key = 'vl'
+        ), vs_right AS (
+          SELECT player_id, pa AS split_pa, ab AS split_ab, hits AS split_hits, home_runs AS split_home_runs,
+            walks AS split_walks, strikeouts AS split_strikeouts, avg AS split_avg, obp AS split_obp, slg AS split_slg,
+            ops AS split_ops, babip AS split_babip,
+            CASE WHEN COALESCE(pa,0) < 10 THEN 'split_none' WHEN pa < 25 THEN 'split_tiny' WHEN pa < 50 THEN 'split_usable' ELSE 'split_strong' END AS split_sample_label
+          FROM stats_hitter.splits WHERE season = ${season} AND split_key = 'vr'
         )
         INSERT INTO stats_hitter.metric_snapshots
-          (snapshot_id, player_id, season, metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum,
+          (snapshot_id, player_id, season, metric_window, games_count, pa_sum, ab_sum, hits_sum, singles_sum, doubles_sum, triples_sum,
            home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum,
-           batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate)
+           batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate, tb_per_pa, h_per_ab, sample_size_label,
+           vs_left_json, vs_right_json)
         SELECT
-          player_id || '_' || ${season} || '_' || '${w.key}', player_id, ${season}, '${w.key}',
-          games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum,
+          agg.player_id || '_' || ${season} || '_' || '${w.key}', agg.player_id, ${season}, '${w.key}',
+          games_count, pa_sum, ab_sum, hits_sum, singles_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum,
           walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum,
-          CASE WHEN ab_sum > 0 THEN hits_sum::float / ab_sum ELSE NULL END,
-          CASE WHEN ab_sum > 0 THEN total_bases_derived_sum::float / ab_sum ELSE NULL END,
-          CASE WHEN pa_sum > 0 THEN strikeouts_sum::float / pa_sum ELSE NULL END,
-          CASE WHEN pa_sum > 0 THEN walks_sum::float / pa_sum ELSE NULL END,
-          CASE WHEN pa_sum > 0 THEN home_runs_sum::float / pa_sum ELSE NULL END
+          CASE WHEN ab_sum >= 1 THEN hits_sum::float / ab_sum ELSE NULL END,
+          CASE WHEN ab_sum >= 1 THEN total_bases_derived_sum::float / ab_sum ELSE NULL END,
+          CASE WHEN pa_sum >= 1 THEN strikeouts_sum::float / pa_sum ELSE NULL END,
+          CASE WHEN pa_sum >= 1 THEN walks_sum::float / pa_sum ELSE NULL END,
+          CASE WHEN pa_sum >= 1 THEN home_runs_sum::float / pa_sum ELSE NULL END,
+          CASE WHEN pa_sum >= 1 THEN total_bases_derived_sum::float / pa_sum ELSE NULL END,
+          CASE WHEN ab_sum >= 1 THEN hits_sum::float / ab_sum ELSE NULL END,
+          CASE WHEN games_count = 0 THEN 'sample_none' WHEN games_count < 3 THEN 'sample_tiny' WHEN games_count < 5 THEN 'sample_thin' WHEN games_count < 10 THEN 'sample_usable' ELSE 'sample_strong' END,
+          to_jsonb(vs_left.*) - 'player_id', to_jsonb(vs_right.*) - 'player_id'
         FROM agg
+        LEFT JOIN vs_left ON vs_left.player_id = agg.player_id
+        LEFT JOIN vs_right ON vs_right.player_id = agg.player_id
         ON CONFLICT (snapshot_id) DO UPDATE SET
           games_count=excluded.games_count, pa_sum=excluded.pa_sum, ab_sum=excluded.ab_sum, hits_sum=excluded.hits_sum,
           doubles_sum=excluded.doubles_sum, triples_sum=excluded.triples_sum, home_runs_sum=excluded.home_runs_sum,
