@@ -7457,6 +7457,106 @@ async function runDerivePlayerAliasesFromPostgres(env, input) {
   }
 }
 
+async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    // Exact port of D1 base-pitcher-metrics.js formulas (pitcher_metrics_neutral_v0_3_0_base_stage
+    // profile - confirmed the only profile with real data in D1). Thresholds verified from
+    // config_metric_thresholds: outsTh=81, bfTh=100, pitchTh=100, appTh=5.
+    // era = earned_runs*27/outs_recorded. whip=(walks_allowed+hits_allowed)/(outs_recorded/3).
+    // k_rate/bb_rate/hr_rate/k_minus_bb_rate use batters_faced denominator.
+    // pitches_per_out uses outs_recorded denom. strikes_per_pitch uses pitches denom.
+    // innings_per_appearance = innings_pitched_sum/appearances_count.
+    // sample_size_label: 9 rate metrics each READY (denom>=threshold) or review; ready>0&&review=0=>strong,
+    // ready>review=>usable, ready>0=>thin, else review_only. pitches/strikes pulled from raw_json (no
+    // dedicated columns); starts_count from raw_json gamesStarted flag (matches D1 role-string detection).
+    const windows = [
+      { key: "last_3_games", limitClause: "3" }, { key: "last_5_games", limitClause: "5" },
+      { key: "last_10_games", limitClause: "10" }, { key: "last_20_games", limitClause: "20" },
+      { key: "season_to_date", limitClause: "9999" }
+    ];
+    let totalWritten = 0;
+    for (const w of windows) {
+      const res = await sql.unsafe(`
+        WITH ranked AS (
+          SELECT *,
+            ((raw_json->'stat'->>'numberOfPitches')::int) AS pitches,
+            ((raw_json->'stat'->>'strikes')::int) AS strikes,
+            (((raw_json->'stat'->>'gamesStarted')::int) = 1) AS is_start,
+            ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC, game_pk DESC) AS rn
+          FROM stats_pitcher.game_logs WHERE season = ${season}
+        ), windowed AS (
+          SELECT * FROM ranked WHERE rn <= ${w.limitClause}
+        ), agg AS (
+          SELECT
+            player_id, COUNT(*) AS games_count, COUNT(*) AS appearances_count,
+            SUM(CASE WHEN is_start THEN 1 ELSE 0 END) AS starts_count,
+            SUM(COALESCE(outs_recorded,0)) AS outs_recorded_sum,
+            SUM(COALESCE(outs_recorded,0))/3.0 AS innings_pitched_sum,
+            SUM(COALESCE(batters_faced,0)) AS batters_faced_sum,
+            SUM(COALESCE(pitches,0)) AS pitches_sum, SUM(COALESCE(strikes,0)) AS strikes_sum,
+            SUM(COALESCE(hits_allowed,0)) AS hits_allowed_sum, SUM(COALESCE(earned_runs,0)) AS earned_runs_sum,
+            SUM(COALESCE(walks_allowed,0)) AS walks_allowed_sum, SUM(COALESCE(strikeouts,0)) AS strikeouts_sum,
+            SUM(COALESCE(home_runs_allowed,0)) AS home_runs_allowed_sum
+          FROM windowed GROUP BY player_id
+        ), calc AS (
+          SELECT *,
+            CASE WHEN outs_recorded_sum > 0 THEN (earned_runs_sum*27.0)/outs_recorded_sum ELSE NULL END AS era_calculated,
+            CASE WHEN outs_recorded_sum > 0 THEN (walks_allowed_sum+hits_allowed_sum)/(outs_recorded_sum/3.0) ELSE NULL END AS whip_calculated,
+            CASE WHEN batters_faced_sum > 0 THEN strikeouts_sum::float/batters_faced_sum ELSE NULL END AS k_rate_calculated,
+            CASE WHEN batters_faced_sum > 0 THEN walks_allowed_sum::float/batters_faced_sum ELSE NULL END AS bb_rate_calculated,
+            CASE WHEN batters_faced_sum > 0 THEN home_runs_allowed_sum::float/batters_faced_sum ELSE NULL END AS hr_rate_calculated,
+            CASE WHEN batters_faced_sum > 0 THEN (strikeouts_sum-walks_allowed_sum)::float/batters_faced_sum ELSE NULL END AS k_minus_bb_rate_calculated,
+            CASE WHEN outs_recorded_sum > 0 THEN pitches_sum::float/outs_recorded_sum ELSE NULL END AS pitches_per_out_calculated,
+            CASE WHEN pitches_sum > 0 THEN strikes_sum::float/pitches_sum ELSE NULL END AS strikes_per_pitch_calculated,
+            CASE WHEN appearances_count > 0 THEN (outs_recorded_sum/3.0)/appearances_count ELSE NULL END AS innings_per_appearance_calculated,
+            (CASE WHEN outs_recorded_sum >= 81 THEN 1 ELSE 0 END * 3) + (CASE WHEN batters_faced_sum >= 100 THEN 1 ELSE 0 END * 4)
+              + (CASE WHEN pitches_sum >= 100 THEN 1 ELSE 0 END) + (CASE WHEN appearances_count >= 5 THEN 1 ELSE 0 END) AS ready_count
+          FROM agg
+        )
+        INSERT INTO stats_pitcher.metric_snapshots
+          (snapshot_id, player_id, season, metric_window, games_count, appearances_count, starts_count,
+           innings_pitched_sum, outs_recorded_sum, batters_faced_sum, pitches_sum, strikes_sum, hits_allowed_sum,
+           earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+           era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated,
+           k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated,
+           innings_per_appearance_calculated, sample_size_label)
+        SELECT
+          player_id || '_' || ${season} || '_' || '${w.key}', player_id, ${season}, '${w.key}',
+          games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum,
+          pitches_sum, strikes_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+          era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated,
+          k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated, innings_per_appearance_calculated,
+          CASE
+            WHEN ready_count = 9 THEN 'sample_strong'
+            WHEN ready_count > (9 - ready_count) THEN 'sample_usable'
+            WHEN ready_count > 0 THEN 'sample_thin'
+            ELSE 'review_only'
+          END
+        FROM calc
+        ON CONFLICT (snapshot_id) DO UPDATE SET
+          games_count=excluded.games_count, appearances_count=excluded.appearances_count, starts_count=excluded.starts_count,
+          innings_pitched_sum=excluded.innings_pitched_sum, outs_recorded_sum=excluded.outs_recorded_sum,
+          batters_faced_sum=excluded.batters_faced_sum, pitches_sum=excluded.pitches_sum, strikes_sum=excluded.strikes_sum,
+          hits_allowed_sum=excluded.hits_allowed_sum, earned_runs_sum=excluded.earned_runs_sum, walks_allowed_sum=excluded.walks_allowed_sum,
+          strikeouts_sum=excluded.strikeouts_sum, home_runs_allowed_sum=excluded.home_runs_allowed_sum,
+          era_calculated=excluded.era_calculated, whip_calculated=excluded.whip_calculated, k_rate_calculated=excluded.k_rate_calculated,
+          bb_rate_calculated=excluded.bb_rate_calculated, hr_rate_calculated=excluded.hr_rate_calculated,
+          k_minus_bb_rate_calculated=excluded.k_minus_bb_rate_calculated, pitches_per_out_calculated=excluded.pitches_per_out_calculated,
+          strikes_per_pitch_calculated=excluded.strikes_per_pitch_calculated, innings_per_appearance_calculated=excluded.innings_per_appearance_calculated,
+          sample_size_label=excluded.sample_size_label, updated_at=now()
+      `);
+      totalWritten += res.count || 0;
+    }
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM stats_pitcher.metric_snapshots`;
+    await sql.end();
+    return { ok: true, mode: "derive_pitcher_metric_snapshots_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_pitcher_metric_snapshots_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runDeriveTeamAliasesFromPostgres(env, input) {
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
