@@ -169,32 +169,25 @@ async function runDefensiveQuality(env, input) {
   const currentMap = new Map(currentRows.map(r => [r.quality_id, r]));
   const freshIds = new Set(mapped.map(r => r.quality_id));
 
-  const toInsert = [];
-  const unchangedIds = [];
+  // Plain individual-row upserts - the same proven pattern used in static-teams/stadiums/
+  // park-factors and reverted to in static-pitcher-arsenal after the dynamic sql(array, columns)
+  // bulk-insert helper was confirmed live to be the actual point of "Network connection lost"
+  // failures. Reliability over speed.
+  let changed = 0, unchanged = 0;
   for (const r of mapped) {
     const current = currentMap.get(r.quality_id);
     if (!rowHasRealChange(current, r)) {
-      unchangedIds.push(r.quality_id);
+      unchanged += 1;
+      await sql`UPDATE ref.defensive_quality SET active=1, updated_at=now() WHERE quality_id=${r.quality_id}`;
       continue;
     }
-    toInsert.push(r);
-  }
-  const changed = toInsert.length;
-  const unchanged = unchangedIds.length;
-
-  const CHUNK = 200;
-  for (let i = 0; i < toInsert.length; i += CHUNK) {
-    const chunk = toInsert.slice(i, i + CHUNK).map(r => ({
-      quality_id: r.quality_id, mlb_player_id: r.mlb_player_id, player_name: r.player_name, team_name: r.team_name, season_year: r.season_year,
-      primary_position: r.primary_position, fielding_runs_prevented: r.fielding_runs_prevented, outs_above_average: r.outs_above_average,
-      oaa_infront: r.oaa_infront, oaa_lateral_toward_3b: r.oaa_lateral_toward_3b, oaa_lateral_toward_1b: r.oaa_lateral_toward_1b, oaa_behind: r.oaa_behind,
-      oaa_vs_rhh: r.oaa_vs_rhh, oaa_vs_lhh: r.oaa_vs_lhh, actual_success_rate_pct: r.actual_success_rate_pct, adj_estimated_success_rate_pct: r.adj_estimated_success_rate_pct,
-      diff_success_rate_pct: r.diff_success_rate_pct, active: 1, source_key: SOURCE_KEY, raw_json: r.raw_json
-    }));
     await sql`
-      INSERT INTO ref.defensive_quality ${sql(chunk, "quality_id", "mlb_player_id", "player_name", "team_name", "season_year", "primary_position",
-        "fielding_runs_prevented", "outs_above_average", "oaa_infront", "oaa_lateral_toward_3b", "oaa_lateral_toward_1b", "oaa_behind", "oaa_vs_rhh", "oaa_vs_lhh",
-        "actual_success_rate_pct", "adj_estimated_success_rate_pct", "diff_success_rate_pct", "active", "source_key", "raw_json")}
+      INSERT INTO ref.defensive_quality (quality_id, mlb_player_id, player_name, team_name, season_year, primary_position, fielding_runs_prevented,
+        outs_above_average, oaa_infront, oaa_lateral_toward_3b, oaa_lateral_toward_1b, oaa_behind, oaa_vs_rhh, oaa_vs_lhh,
+        actual_success_rate_pct, adj_estimated_success_rate_pct, diff_success_rate_pct, active, source_key, raw_json, updated_at)
+      VALUES (${r.quality_id}, ${r.mlb_player_id}, ${r.player_name}, ${r.team_name}, ${r.season_year}, ${r.primary_position}, ${r.fielding_runs_prevented},
+        ${r.outs_above_average}, ${r.oaa_infront}, ${r.oaa_lateral_toward_3b}, ${r.oaa_lateral_toward_1b}, ${r.oaa_behind}, ${r.oaa_vs_rhh}, ${r.oaa_vs_lhh},
+        ${r.actual_success_rate_pct}, ${r.adj_estimated_success_rate_pct}, ${r.diff_success_rate_pct}, 1, ${SOURCE_KEY}, ${r.raw_json}, now())
       ON CONFLICT (quality_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_name=excluded.team_name,
         season_year=excluded.season_year, primary_position=excluded.primary_position, fielding_runs_prevented=excluded.fielding_runs_prevented,
         outs_above_average=excluded.outs_above_average, oaa_infront=excluded.oaa_infront, oaa_lateral_toward_3b=excluded.oaa_lateral_toward_3b,
@@ -202,18 +195,15 @@ async function runDefensiveQuality(env, input) {
         actual_success_rate_pct=excluded.actual_success_rate_pct, adj_estimated_success_rate_pct=excluded.adj_estimated_success_rate_pct,
         diff_success_rate_pct=excluded.diff_success_rate_pct, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
     `;
-  }
-  for (let i = 0; i < unchangedIds.length; i += CHUNK) {
-    const chunk = unchangedIds.slice(i, i + CHUNK);
-    await sql`UPDATE ref.defensive_quality SET active=1, updated_at=now() WHERE quality_id IN ${sql(chunk)}`;
+    changed += 1;
   }
 
-  const staleIds = currentRows.filter(current => !freshIds.has(current.quality_id) && Number(current.active) === 1).map(c => c.quality_id);
   let deactivated = 0;
-  for (let i = 0; i < staleIds.length; i += CHUNK) {
-    const chunk = staleIds.slice(i, i + CHUNK);
-    await sql`UPDATE ref.defensive_quality SET active=0, updated_at=now() WHERE quality_id IN ${sql(chunk)}`;
-    deactivated += chunk.length;
+  for (const current of currentRows) {
+    if (!freshIds.has(current.quality_id) && Number(current.active) === 1) {
+      await sql`UPDATE ref.defensive_quality SET active=0, updated_at=now() WHERE quality_id=${current.quality_id}`;
+      deactivated += 1;
+    }
   }
 
   const activeCount = await sql`SELECT COUNT(*)::int c FROM ref.defensive_quality WHERE season_year=${year} AND active=1`;
