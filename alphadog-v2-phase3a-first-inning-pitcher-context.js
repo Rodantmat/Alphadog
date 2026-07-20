@@ -7498,7 +7498,7 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
             SUM(COALESCE(pitches,0)) AS pitches_sum, SUM(COALESCE(strikes,0)) AS strikes_sum,
             SUM(COALESCE(hits_allowed,0)) AS hits_allowed_sum, SUM(COALESCE(earned_runs,0)) AS earned_runs_sum,
             SUM(COALESCE(walks_allowed,0)) AS walks_allowed_sum, SUM(COALESCE(strikeouts,0)) AS strikeouts_sum,
-            SUM(COALESCE(home_runs_allowed,0)) AS home_runs_allowed_sum
+            SUM(COALESCE(home_runs_allowed,0)) AS home_runs_allowed_sum, SUM(COALESCE(runs_allowed,0)) AS runs_allowed_sum
           FROM windowed GROUP BY player_id
         ), calc AS (
           SELECT *,
