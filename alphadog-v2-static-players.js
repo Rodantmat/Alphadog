@@ -759,6 +759,36 @@ async function runSeed(env, input = {}) {
   const processedSet = new Set(alreadyProcessedValid);
   const isFirstChunk = processedSet.size === 0;
 
+  // Freshness gate (only checked on the very first chunk of a fresh run, never mid-continuation):
+  // if a batch already promoted successfully within the window, skip the entire expensive
+  // multi-tick 30-team fetch and return a fast no-op. Grounded in the standard "watermark" gate
+  // for sources with no cheap "what changed" signal (MLB's roster endpoint has none - confirmed
+  // in this file's own existing comments). 20 hours: comfortably inside the real weekly cadence,
+  // long enough that same-day re-triggers/tests are a fast no-op, short enough that a genuine
+  // weekly run always does real work.
+  if (isFirstChunk) {
+    const freshRow = await first(env.REF_DB, `SELECT MAX(promoted_at) AS last_promoted FROM static_players_batches WHERE source_key=? AND status='promoted'`, SOURCE_KEY);
+    const lastPromoted = freshRow && freshRow.last_promoted;
+    if (lastPromoted) {
+      const ageHours = (Date.now() - new Date(String(lastPromoted).replace(" ", "T") + "Z").getTime()) / 3600000;
+      if (ageHours >= 0 && ageHours < 20) {
+        const mainChecksNoop = await certificationChecks(env);
+        return {
+          ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+          request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
+          status: "completed_noop_fresh", certification: "STATIC_PLAYERS_CERTIFIED_NOOP_ALREADY_FRESH",
+          teams_processed_this_run: 0, teams_processed_total: 30, teams_remaining: 0, teams_expected: 30,
+          rows_read: 0, rows_written: 0, external_calls_performed: 0,
+          freshness_gate: { last_promoted: lastPromoted, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
+          differential_note: "No real fetch performed - a promoted batch completed within the freshness window, so nothing needed mining.",
+          main_certification_checks: mainChecksNoop,
+          boundaries: base(env).boundaries,
+          timestamp_utc: nowUtc()
+        };
+      }
+    }
+  }
+
   if (isFirstChunk) {
     await initializeStageBatch(env, batchId, { ...input, request_id: requestId }, originalInput);
   }
