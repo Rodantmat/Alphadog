@@ -487,38 +487,85 @@ async function runSeed(env, input = {}) {
       }
     }
 
+    const playerRowsForBulk = [];
+    const aliasRowsForBulk = [];
     for (const player of players) {
-      await sql`INSERT INTO ref.players_stage
-        (batch_id, player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, active, source_key, raw_json, updated_at, last_seen_request_id, last_seen_at)
-        VALUES (${batchId}, ${player.player_id}, ${player.mlb_player_id}, ${player.player_name}, ${player.full_name}, ${player.first_name}, ${player.last_name},
-          ${player.primary_team_id}, ${player.current_team_id}, ${player.current_mlb_team_id}, ${player.primary_role}, ${player.primary_position},
-          ${player.bats}, ${player.throws}, ${player.bat_side}, ${player.throw_side}, ${player.active}, ${player.source_key}, ${player.raw_json}, now(), ${requestId}, now())
-        ON CONFLICT (batch_id, player_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, full_name=excluded.full_name,
-          first_name=excluded.first_name, last_name=excluded.last_name, primary_team_id=excluded.primary_team_id, current_team_id=excluded.current_team_id,
-          current_mlb_team_id=excluded.current_mlb_team_id, primary_role=excluded.primary_role, primary_position=excluded.primary_position, bats=excluded.bats,
-          throws=excluded.throws, bat_side=excluded.bat_side, throw_side=excluded.throw_side, active=excluded.active, raw_json=excluded.raw_json, updated_at=now(), last_seen_request_id=excluded.last_seen_request_id, last_seen_at=now()`;
+      playerRowsForBulk.push({
+        batch_id: batchId, player_id: player.player_id, mlb_player_id: player.mlb_player_id, player_name: player.player_name, full_name: player.full_name,
+        first_name: player.first_name, last_name: player.last_name, primary_team_id: player.primary_team_id, current_team_id: player.current_team_id,
+        current_mlb_team_id: player.current_mlb_team_id, primary_role: player.primary_role, primary_position: player.primary_position,
+        bats: player.bats, throws: player.throws, bat_side: player.bat_side, throw_side: player.throw_side, active: player.active,
+        source_key: player.source_key, raw_json: player.raw_json, last_seen_request_id: requestId
+      });
       playersWrittenThisRun += 1;
       const aliases = buildAliases(player);
       for (const alias of aliases) {
-        await sql`INSERT INTO ref.player_aliases_stage
-          (batch_id, alias_key, player_id, alias_name, alias_type, alias_normalized, team_id, mlb_team_id, source_key, confidence, active, raw_json, updated_at, last_seen_request_id, last_seen_at)
-          VALUES (${batchId}, ${alias.alias_key}, ${alias.player_id}, ${alias.alias_name}, ${alias.alias_type}, ${alias.alias_normalized}, ${alias.team_id}, ${alias.mlb_team_id}, ${alias.source_key}, ${alias.confidence}, ${alias.active}, ${alias.raw_json}, now(), ${requestId}, now())
-          ON CONFLICT (batch_id, alias_key) DO UPDATE SET player_id=excluded.player_id, alias_name=excluded.alias_name, alias_type=excluded.alias_type,
-            alias_normalized=excluded.alias_normalized, team_id=excluded.team_id, mlb_team_id=excluded.mlb_team_id, confidence=excluded.confidence, active=excluded.active,
-            raw_json=excluded.raw_json, updated_at=now(), last_seen_request_id=excluded.last_seen_request_id, last_seen_at=now()`;
+        aliasRowsForBulk.push({
+          batch_id: batchId, alias_key: alias.alias_key, player_id: alias.player_id, alias_name: alias.alias_name, alias_type: alias.alias_type,
+          alias_normalized: alias.alias_normalized, team_id: alias.team_id, mlb_team_id: alias.mlb_team_id, source_key: alias.source_key,
+          confidence: alias.confidence, active: alias.active, raw_json: alias.raw_json, last_seen_request_id: requestId
+        });
         aliasesWritten += 1;
       }
     }
 
-    for (const snapshot of rosterSnapshots) {
-      const rosterKey = `${SOURCE_KEY}|${snapshot.team.team_id}|${snapshot.player.player_id}`.slice(0, 240);
-      await sql`INSERT INTO ref.rosters_stage
-        (batch_id, roster_key, slate_date, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, active, raw_json, updated_at, last_seen_request_id, last_seen_at)
-        VALUES (${batchId}, ${rosterKey}, NULL, current_date::text, 'STATIC_40MAN_SNAPSHOT', ${snapshot.team.team_id}, ${numOrNull(snapshot.team.mlb_team_id)}, ${snapshot.player.player_id}, ${snapshot.player.full_name}, ${snapshot.player.roster_status}, ${snapshot.player.primary_position}, ${snapshot.player.position_abbreviation}, ${SOURCE_KEY}, 1, ${snapshot.player.raw_json}, now(), ${requestId}, now())
+    // Bulk writes instead of one-row-at-a-time round trips (same class of bug fixed for the
+    // Savant-sourced static workers - a Hyperdrive connection doing 1000+ sequential queries in
+    // a tick risks dropping mid-run). postgres.js's sql() helper builds one multi-row statement
+    // per chunk.
+    const CHUNK = 200;
+    for (let i = 0; i < playerRowsForBulk.length; i += CHUNK) {
+      const chunk = playerRowsForBulk.slice(i, i + CHUNK);
+      await sql`
+        INSERT INTO ref.players_stage ${sql(chunk, "batch_id", "player_id", "mlb_player_id", "player_name", "full_name", "first_name", "last_name",
+          "primary_team_id", "current_team_id", "current_mlb_team_id", "primary_role", "primary_position", "bats", "throws", "bat_side", "throw_side",
+          "active", "source_key", "raw_json", "last_seen_request_id")}
+        ON CONFLICT (batch_id, player_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, full_name=excluded.full_name,
+          first_name=excluded.first_name, last_name=excluded.last_name, primary_team_id=excluded.primary_team_id, current_team_id=excluded.current_team_id,
+          current_mlb_team_id=excluded.current_mlb_team_id, primary_role=excluded.primary_role, primary_position=excluded.primary_position, bats=excluded.bats,
+          throws=excluded.throws, bat_side=excluded.bat_side, throw_side=excluded.throw_side, active=excluded.active, raw_json=excluded.raw_json,
+          updated_at=now(), last_seen_request_id=excluded.last_seen_request_id, last_seen_at=now()
+      `;
+    }
+    for (let i = 0; i < aliasRowsForBulk.length; i += CHUNK) {
+      const chunk = aliasRowsForBulk.slice(i, i + CHUNK);
+      await sql`
+        INSERT INTO ref.player_aliases_stage ${sql(chunk, "batch_id", "alias_key", "player_id", "alias_name", "alias_type", "alias_normalized",
+          "team_id", "mlb_team_id", "source_key", "confidence", "active", "raw_json", "last_seen_request_id")}
+        ON CONFLICT (batch_id, alias_key) DO UPDATE SET player_id=excluded.player_id, alias_name=excluded.alias_name, alias_type=excluded.alias_type,
+          alias_normalized=excluded.alias_normalized, team_id=excluded.team_id, mlb_team_id=excluded.mlb_team_id, confidence=excluded.confidence,
+          active=excluded.active, raw_json=excluded.raw_json, updated_at=now(), last_seen_request_id=excluded.last_seen_request_id, last_seen_at=now()
+      `;
+    }
+
+    const rosterRowsForBulk = rosterSnapshots.map(snapshot => ({
+      batch_id: batchId,
+      roster_key: `${SOURCE_KEY}|${snapshot.team.team_id}|${snapshot.player.player_id}`.slice(0, 240),
+      roster_date: new Date().toISOString().slice(0, 10),
+      snapshot_type: "STATIC_40MAN_SNAPSHOT",
+      team_id: snapshot.team.team_id,
+      mlb_team_id: numOrNull(snapshot.team.mlb_team_id),
+      player_id: snapshot.player.player_id,
+      player_name: snapshot.player.full_name,
+      roster_status: snapshot.player.roster_status,
+      role: snapshot.player.primary_position,
+      position_abbreviation: snapshot.player.position_abbreviation,
+      source_key: SOURCE_KEY,
+      active: 1,
+      raw_json: snapshot.player.raw_json,
+      last_seen_request_id: requestId
+    }));
+    for (let i = 0; i < rosterRowsForBulk.length; i += CHUNK) {
+      const chunk = rosterRowsForBulk.slice(i, i + CHUNK);
+      await sql`
+        INSERT INTO ref.rosters_stage ${sql(chunk, "batch_id", "roster_key", "roster_date", "snapshot_type", "team_id", "mlb_team_id", "player_id",
+          "player_name", "roster_status", "role", "position_abbreviation", "source_key", "active", "raw_json", "last_seen_request_id")}
         ON CONFLICT (batch_id, roster_key) DO UPDATE SET roster_date=excluded.roster_date, snapshot_type=excluded.snapshot_type, team_id=excluded.team_id,
-          mlb_team_id=excluded.mlb_team_id, player_id=excluded.player_id, player_name=excluded.player_name, roster_status=excluded.roster_status, role=excluded.role,
-          position_abbreviation=excluded.position_abbreviation, active=1, raw_json=excluded.raw_json, updated_at=now(), last_seen_request_id=excluded.last_seen_request_id, last_seen_at=now()`;
-      rostersWritten += 1;
+          mlb_team_id=excluded.mlb_team_id, player_id=excluded.player_id, player_name=excluded.player_name, roster_status=excluded.roster_status,
+          role=excluded.role, position_abbreviation=excluded.position_abbreviation, active=1, raw_json=excluded.raw_json,
+          updated_at=now(), last_seen_request_id=excluded.last_seen_request_id, last_seen_at=now()
+      `;
+      rostersWritten += chunk.length;
     }
 
     externalCalls += hydrationCallsPerformed;
