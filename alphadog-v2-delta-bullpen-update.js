@@ -1,6 +1,8 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-delta-bullpen-update";
 const LOGICAL_WORKER_NAME = "alphadog-v2-static-defensive-quality";
-const VERSION = "alphadog-v2-static-defensive-quality-v0.2.0-real-writer";
+const VERSION = "alphadog-v2-static-defensive-quality-v0.3.0-postgres-cutover";
 const JOB_KEY = "static-defensive-quality";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -20,14 +22,8 @@ function varPresence(env, names) { const out = {}; for (const n of names) out[n]
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res && res.results ? res.results : [];
-}
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+function pg(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
 }
 
 function savantUrl(year) {
@@ -74,7 +70,7 @@ async function fetchSavant(year) {
       accept: "text/csv,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "accept-language": "en-US,en;q=0.9",
       "cache-control": "no-cache",
-      "user-agent": "AlphaDogV2StaticDefensiveQuality/0.2 (+controlled-reference-refresh)"
+      "user-agent": "AlphaDogV2StaticDefensiveQuality/0.3 (+controlled-reference-refresh)"
     }
   });
   const text = await resp.text();
@@ -111,14 +107,17 @@ function mapRow(r, year) {
 }
 
 async function ensureSchema(env) {
-  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_defensive_quality (
-    quality_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, team_name TEXT, season_year INTEGER,
-    primary_position TEXT, fielding_runs_prevented INTEGER, outs_above_average INTEGER, oaa_infront INTEGER,
-    oaa_lateral_toward_3b INTEGER, oaa_lateral_toward_1b INTEGER, oaa_behind INTEGER, oaa_vs_rhh INTEGER, oaa_vs_lhh INTEGER,
-    actual_success_rate_pct REAL, adj_estimated_success_rate_pct REAL, diff_success_rate_pct REAL,
-    active INTEGER DEFAULT 1, source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_defensive_quality_player ON ref_defensive_quality(mlb_player_id, season_year)");
+  const sql = pg(env);
+  try {
+    await sql.unsafe(`CREATE TABLE IF NOT EXISTS ref.defensive_quality (
+      quality_id TEXT PRIMARY KEY, mlb_player_id INT, player_name TEXT, team_name TEXT, season_year INT,
+      primary_position TEXT, fielding_runs_prevented INT, outs_above_average INT, oaa_infront INT,
+      oaa_lateral_toward_3b INT, oaa_lateral_toward_1b INT, oaa_behind INT, oaa_vs_rhh INT, oaa_vs_lhh INT,
+      actual_success_rate_pct DOUBLE PRECISION, adj_estimated_success_rate_pct DOUBLE PRECISION, diff_success_rate_pct DOUBLE PRECISION,
+      active INT DEFAULT 1, source_key TEXT, raw_json JSONB, updated_at TIMESTAMPTZ DEFAULT now()
+    )`);
+    await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_ref_defensive_quality_player ON ref.defensive_quality(mlb_player_id, season_year)`);
+  } finally { await sql.end(); }
 }
 
 function rowHasRealChange(current, fresh) {
@@ -133,33 +132,19 @@ function rowHasRealChange(current, fresh) {
   return false;
 }
 
-async function runD1Batch(db, statements, size = 50) {
-  let executed = 0;
-  for (let i = 0; i < statements.length; i += size) {
-    const chunk = statements.slice(i, i + size);
-    if (chunk.length) {
-      await db.batch(chunk);
-      executed += chunk.length;
-    }
-  }
-  return executed;
-}
-
 async function runDefensiveQuality(env, input) {
   await ensureSchema(env);
+  const sql = pg(env);
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const year = Number(inputJson.year) || SEASON_YEAR;
 
-  // Freshness gate (same grounded watermark pattern as static-pitcher-arsenal): skip the
-  // expensive Savant fetch + full compare if a certified run for this season completed within
-  // the window. Baseball Savant has no incremental "what changed" query, so a bounded re-fetch
-  // window is the correct pattern, not a full classic differential.
-  const freshnessRow = await all(env.REF_DB, "SELECT MAX(updated_at) AS last_run FROM ref_defensive_quality WHERE season_year=? AND source_key=?", year, SOURCE_KEY);
-  const lastRun = freshnessRow[0] && freshnessRow[0].last_run;
+  const freshnessRows = await sql`SELECT MAX(updated_at) AS last_run FROM ref.defensive_quality WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
+  const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
   if (lastRun) {
-    const ageHours = (Date.now() - new Date(String(lastRun).replace(" ", "T") + "Z").getTime()) / 3600000;
+    const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
     if (ageHours >= 0 && ageHours < 20) {
-      const activeCountNoop = await all(env.REF_DB, "SELECT COUNT(*) c FROM ref_defensive_quality WHERE season_year=? AND active=1", year);
+      const activeCountNoop = await sql`SELECT COUNT(*)::int c FROM ref.defensive_quality WHERE season_year=${year} AND active=1`;
+      await sql.end();
       return {
         ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
         request_id: input.request_id || null, chain_id: input.chain_id || null,
@@ -168,6 +153,7 @@ async function runDefensiveQuality(env, input) {
         active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
         freshness_gate: { last_run: lastRun, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
         differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
+        database_target: "postgres_ref_defensive_quality",
         external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
       };
     }
@@ -176,42 +162,45 @@ async function runDefensiveQuality(env, input) {
   const fetched = await fetchSavant(year);
   const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
 
-  const currentRows = await all(env.REF_DB, "SELECT * FROM ref_defensive_quality WHERE season_year=?", year);
+  const currentRows = await sql`SELECT * FROM ref.defensive_quality WHERE season_year=${year}`;
   const currentMap = new Map(currentRows.map(r => [r.quality_id, r]));
   const freshIds = new Set(mapped.map(r => r.quality_id));
 
-  const changedStatements = [];
-  const unchangedStatements = [];
   let changed = 0, unchanged = 0;
   for (const r of mapped) {
     const current = currentMap.get(r.quality_id);
     if (!rowHasRealChange(current, r)) {
       unchanged += 1;
-      unchangedStatements.push(env.REF_DB.prepare("UPDATE ref_defensive_quality SET active=1, updated_at=CURRENT_TIMESTAMP WHERE quality_id=?").bind(r.quality_id));
+      await sql`UPDATE ref.defensive_quality SET active=1, updated_at=now() WHERE quality_id=${r.quality_id}`;
       continue;
     }
-    changedStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (
-      quality_id, mlb_player_id, player_name, team_name, season_year, primary_position, fielding_runs_prevented,
-      outs_above_average, oaa_infront, oaa_lateral_toward_3b, oaa_lateral_toward_1b, oaa_behind, oaa_vs_rhh, oaa_vs_lhh,
-      actual_success_rate_pct, adj_estimated_success_rate_pct, diff_success_rate_pct, active, source_key, raw_json, updated_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
-      r.quality_id, r.mlb_player_id, r.player_name, r.team_name, r.season_year, r.primary_position, r.fielding_runs_prevented,
-      r.outs_above_average, r.oaa_infront, r.oaa_lateral_toward_3b, r.oaa_lateral_toward_1b, r.oaa_behind, r.oaa_vs_rhh, r.oaa_vs_lhh,
-      r.actual_success_rate_pct, r.adj_estimated_success_rate_pct, r.diff_success_rate_pct, SOURCE_KEY, r.raw_json));
+    await sql`
+      INSERT INTO ref.defensive_quality (quality_id, mlb_player_id, player_name, team_name, season_year, primary_position, fielding_runs_prevented,
+        outs_above_average, oaa_infront, oaa_lateral_toward_3b, oaa_lateral_toward_1b, oaa_behind, oaa_vs_rhh, oaa_vs_lhh,
+        actual_success_rate_pct, adj_estimated_success_rate_pct, diff_success_rate_pct, active, source_key, raw_json, updated_at)
+      VALUES (${r.quality_id}, ${r.mlb_player_id}, ${r.player_name}, ${r.team_name}, ${r.season_year}, ${r.primary_position}, ${r.fielding_runs_prevented},
+        ${r.outs_above_average}, ${r.oaa_infront}, ${r.oaa_lateral_toward_3b}, ${r.oaa_lateral_toward_1b}, ${r.oaa_behind}, ${r.oaa_vs_rhh}, ${r.oaa_vs_lhh},
+        ${r.actual_success_rate_pct}, ${r.adj_estimated_success_rate_pct}, ${r.diff_success_rate_pct}, 1, ${SOURCE_KEY}, ${r.raw_json}, now())
+      ON CONFLICT (quality_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_name=excluded.team_name,
+        season_year=excluded.season_year, primary_position=excluded.primary_position, fielding_runs_prevented=excluded.fielding_runs_prevented,
+        outs_above_average=excluded.outs_above_average, oaa_infront=excluded.oaa_infront, oaa_lateral_toward_3b=excluded.oaa_lateral_toward_3b,
+        oaa_lateral_toward_1b=excluded.oaa_lateral_toward_1b, oaa_behind=excluded.oaa_behind, oaa_vs_rhh=excluded.oaa_vs_rhh, oaa_vs_lhh=excluded.oaa_vs_lhh,
+        actual_success_rate_pct=excluded.actual_success_rate_pct, adj_estimated_success_rate_pct=excluded.adj_estimated_success_rate_pct,
+        diff_success_rate_pct=excluded.diff_success_rate_pct, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
+    `;
     changed += 1;
   }
-  await runD1Batch(env.REF_DB, changedStatements);
-  await runD1Batch(env.REF_DB, unchangedStatements);
 
-  const deactivateStatements = [];
+  let deactivated = 0;
   for (const current of currentRows) {
     if (!freshIds.has(current.quality_id) && Number(current.active) === 1) {
-      deactivateStatements.push(env.REF_DB.prepare("UPDATE ref_defensive_quality SET active=0, updated_at=CURRENT_TIMESTAMP WHERE quality_id=?").bind(current.quality_id));
+      await sql`UPDATE ref.defensive_quality SET active=0, updated_at=now() WHERE quality_id=${current.quality_id}`;
+      deactivated += 1;
     }
   }
-  const deactivated = await runD1Batch(env.REF_DB, deactivateStatements);
 
-  const activeCount = await all(env.REF_DB, "SELECT COUNT(*) c FROM ref_defensive_quality WHERE season_year=? AND active=1", year);
+  const activeCount = await sql`SELECT COUNT(*)::int c FROM ref.defensive_quality WHERE season_year=${year} AND active=1`;
+  await sql.end();
   const certified = mapped.length > 0 && changed + unchanged === mapped.length;
 
   return {
@@ -222,6 +211,7 @@ async function runDefensiveQuality(env, input) {
     season_year: year, source_url: fetched.url, rows_read: fetched.row_count, rows_mapped: mapped.length,
     rows_written: changed, rows_unchanged_skipped: unchanged, rows_deactivated: deactivated,
     active_rows_after: Number(activeCount[0] && activeCount[0].c || 0),
+    database_target: "postgres_ref_defensive_quality",
     external_calls_performed: 1,
     no_scoring: true, no_ranking: true, no_final_board: true,
     timestamp_utc: nowUtc()
@@ -235,10 +225,10 @@ function baseIdentity(env) {
     ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
     status: "STATIC_DEFENSIVE_QUALITY_READY", timestamp_utc: nowUtc(),
     notes: [
-      "Real, differential-aware defensive quality (Outs Above Average) reference refresh (season-level, Baseball Savant CSV export).",
+      "Real, differential-aware defensive quality (Outs Above Average) reference refresh (season-level, Baseball Savant CSV export). Now Postgres-backed.",
       "POST /run with input_json: { year: 2026 (optional, defaults to current season) }"
     ],
-    binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }
+    binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars), hyperdrive_bound: !!env.HYPERDRIVE }
   };
 }
 
