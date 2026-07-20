@@ -278,7 +278,7 @@ async function updateStageBatchMetrics(sql, batchId, processedMlbTeamIds, status
         missing_name=${Number(checks.missing_full_name_or_player_name || 0)},
         certification_status=${certificationStatus},
         processed_mlb_team_ids_json=${JSON.stringify(processedMlbTeamIds || [])},
-        error_json=${errorJson ? JSON.stringify(errorJson).slice(0, RAW_JSON_LIMIT) : null},
+        error_json=${errorJson ? JSON.stringify(errorJson) : null},
         updated_at=now()
     WHERE batch_id=${batchId}`;
   return checks;
