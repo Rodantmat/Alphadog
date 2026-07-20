@@ -183,7 +183,7 @@ async function runArsenal(env, input) {
         status: "completed_noop_fresh", certification: "STATIC_PITCHER_ARSENAL_CERTIFIED_NOOP_ALREADY_FRESH",
         season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
         active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
-        freshness_gate: { last_run, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
+        freshness_gate: { last_run: lastRun, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
         differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
         external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
       };
