@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-static-teams";
-const VERSION = "alphadog-v2-static-teams-v0.1.0-team-dictionary-seed";
+const VERSION = "alphadog-v2-static-teams-v0.2.0-postgres-cutover";
 const JOB_KEY = "static-teams";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -49,7 +51,7 @@ const EXTRA_ALIASES = {
   MIA: ["Marlins", "Florida Marlins"],
   NYM: ["Mets", "NY Mets"],
   NYY: ["Yankees", "NY Yankees"],
-  ATH: ["Athletics", "A's", "A’s", "Oakland Athletics", "OAK", "Sacramento Athletics"],
+  ATH: ["Athletics", "A's", "A\u2019s", "Oakland Athletics", "OAK", "Sacramento Athletics"],
   SD: ["Padres", "SDP"],
   SF: ["Giants", "SFG"],
   STL: ["Cardinals", "St Louis Cardinals", "St. Louis Cardinals"],
@@ -93,66 +95,26 @@ async function readJsonSafe(request) {
   try { return await request.json(); } catch { return {}; }
 }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res.results || [];
+function pg(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
 }
 
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
-}
-
+// Postgres cutover: D1 (REF_DB.ref_teams / REF_DB.ref_team_aliases) is no longer written by
+// this worker. All reads/writes now go to ref.teams / ref.team_aliases via Hyperdrive. D1
+// remains readable elsewhere as a reference if ever needed, but this worker never writes it.
 async function ensureSchema(env) {
-  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_teams (
-    team_id TEXT PRIMARY KEY,
-    mlb_team_id INTEGER,
-    abbreviation TEXT,
-    full_name TEXT,
-    league TEXT,
-    division TEXT,
-    active INTEGER DEFAULT 1,
-    raw_json TEXT,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  const columns = await all(env.REF_DB, "PRAGMA table_info(ref_teams)");
-  const have = new Set(columns.map(c => String(c.name || "")));
-  const additions = [
-    ["nickname", "TEXT"],
-    ["location_name", "TEXT"],
-    ["short_name", "TEXT"],
-    ["team_code", "TEXT"],
-    ["file_code", "TEXT"],
-    ["source_key", "TEXT"]
-  ];
+  const sql = pg(env);
   const applied = [];
-  for (const [name, type] of additions) {
-    if (!have.has(name)) {
-      await run(env.REF_DB, `ALTER TABLE ref_teams ADD COLUMN ${name} ${type}`);
-      applied.push(name);
-    }
+  const additions = ["nickname TEXT", "location_name TEXT", "short_name TEXT", "team_code TEXT", "file_code TEXT", "source_key TEXT"];
+  for (const clause of additions) {
+    const colName = clause.split(" ")[0];
+    try {
+      await sql.unsafe(`ALTER TABLE ref.teams ADD COLUMN IF NOT EXISTS ${clause}`);
+      applied.push(colName);
+    } catch (_) { /* column already present or table managed elsewhere - non-fatal */ }
   }
-
-  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_team_aliases (
-    alias_key TEXT PRIMARY KEY,
-    team_id TEXT,
-    mlb_team_id INTEGER,
-    alias_value TEXT,
-    alias_normalized TEXT,
-    alias_type TEXT,
-    source_key TEXT,
-    confidence TEXT,
-    active INTEGER DEFAULT 1,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_teams_mlb ON ref_teams(mlb_team_id)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_teams_abbr ON ref_teams(abbreviation)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_team_aliases_lookup ON ref_team_aliases(alias_normalized, active)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_team_aliases_team ON ref_team_aliases(team_id, active)");
-
-  return { ref_teams_columns_added: applied, ref_team_aliases_ready: true };
+  await sql.end();
+  return { ref_teams_columns_checked: applied, ref_team_aliases_ready: true };
 }
 
 function fromMlbTeam(t) {
@@ -236,8 +198,8 @@ function buildAliases(team, sourceKey) {
   return aliases;
 }
 
-async function loadCurrentTeamsSnapshot(env) {
-  const rows = await all(env.REF_DB, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, league, division, active FROM ref_teams");
+async function loadCurrentTeamsSnapshot(sql) {
+  const rows = await sql`SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, league, division, active FROM ref.teams`;
   const map = new Map();
   for (const r of rows) map.set(String(r.team_id), r);
   return map;
@@ -258,15 +220,13 @@ function teamHasRealChange(current, teamId, team) {
     || Number(current.active || 0) !== 1;
 }
 
-async function upsertTeams(env, teams, sourceKey) {
+async function upsertTeams(sql, teams, sourceKey) {
   let teamRowsWritten = 0;
   let aliasesWritten = 0;
   let teamRowsUnchanged = 0;
-  // Real differential redesign: load the current ref_teams snapshot once and skip the actual
-  // UPSERT for any team whose real, meaningful fields haven't changed since last run. Teams data
-  // is close to fully static (rebrands/relocations are rare, real events), so on a normal week
-  // this should skip all 30 writes rather than blindly re-writing an identical row every time.
-  const currentSnapshot = await loadCurrentTeamsSnapshot(env);
+  // Same real differential logic as before: skip the UPSERT for any team whose meaningful
+  // fields haven't actually changed since last run. Teams data is close to fully static.
+  const currentSnapshot = await loadCurrentTeamsSnapshot(sql);
 
   for (const team of teams) {
     const teamId = `mlb_${team.id}`;
@@ -274,89 +234,38 @@ async function upsertTeams(env, teams, sourceKey) {
     if (!teamHasRealChange(current, teamId, team)) {
       teamRowsUnchanged += 1;
       for (const alias of buildAliases(team, sourceKey)) {
-        await run(env.REF_DB, `INSERT INTO ref_team_aliases (
-          alias_key, team_id, mlb_team_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
-        ON CONFLICT(alias_key) DO UPDATE SET
-          team_id=excluded.team_id,
-          mlb_team_id=excluded.mlb_team_id,
-          alias_value=excluded.alias_value,
-          alias_normalized=excluded.alias_normalized,
-          alias_type=excluded.alias_type,
-          source_key=excluded.source_key,
-          confidence=excluded.confidence,
-          active=1,
-          updated_at=CURRENT_TIMESTAMP`,
-          alias.alias_key,
-          alias.team_id,
-          alias.mlb_team_id,
-          alias.alias_value,
-          alias.alias_normalized,
-          alias.alias_type,
-          alias.source_key,
-          alias.confidence
-        );
+        await sql`
+          INSERT INTO ref.team_aliases (alias_key, team_id, mlb_team_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at)
+          VALUES (${alias.alias_key}, ${alias.team_id}, ${alias.mlb_team_id}, ${alias.alias_value}, ${alias.alias_normalized}, ${alias.alias_type}, ${alias.source_key}, ${alias.confidence}, 1, now())
+          ON CONFLICT (alias_key) DO UPDATE SET
+            team_id=excluded.team_id, mlb_team_id=excluded.mlb_team_id, alias_value=excluded.alias_value,
+            alias_normalized=excluded.alias_normalized, alias_type=excluded.alias_type, source_key=excluded.source_key,
+            confidence=excluded.confidence, active=1, updated_at=now()
+        `;
         aliasesWritten += 1;
       }
       continue;
     }
-    await run(env.REF_DB, `INSERT INTO ref_teams (
-      team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, league, division, active, source_key, raw_json, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(team_id) DO UPDATE SET
-      mlb_team_id=excluded.mlb_team_id,
-      abbreviation=excluded.abbreviation,
-      full_name=excluded.full_name,
-      nickname=excluded.nickname,
-      location_name=excluded.location_name,
-      short_name=excluded.short_name,
-      team_code=excluded.team_code,
-      file_code=excluded.file_code,
-      league=excluded.league,
-      division=excluded.division,
-      active=1,
-      source_key=excluded.source_key,
-      raw_json=excluded.raw_json,
-      updated_at=CURRENT_TIMESTAMP`,
-      teamId,
-      team.id,
-      team.abbreviation,
-      team.name,
-      team.teamName,
-      team.locationName,
-      team.shortName,
-      team.teamCode,
-      team.fileCode,
-      team.league,
-      team.division,
-      sourceKey,
-      JSON.stringify(team.raw || team).slice(0, 5000)
-    );
+    await sql`
+      INSERT INTO ref.teams (team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, league, division, active, source_key, raw_json, updated_at)
+      VALUES (${teamId}, ${team.id}, ${team.abbreviation}, ${team.name}, ${team.teamName}, ${team.locationName}, ${team.shortName}, ${team.teamCode}, ${team.fileCode}, ${team.league}, ${team.division}, 1, ${sourceKey}, ${JSON.stringify(team.raw || team).slice(0, 5000)}, now())
+      ON CONFLICT (team_id) DO UPDATE SET
+        mlb_team_id=excluded.mlb_team_id, abbreviation=excluded.abbreviation, full_name=excluded.full_name,
+        nickname=excluded.nickname, location_name=excluded.location_name, short_name=excluded.short_name,
+        team_code=excluded.team_code, file_code=excluded.file_code, league=excluded.league, division=excluded.division,
+        active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
+    `;
     teamRowsWritten += 1;
 
     for (const alias of buildAliases(team, sourceKey)) {
-      await run(env.REF_DB, `INSERT INTO ref_team_aliases (
-        alias_key, team_id, mlb_team_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
-      ON CONFLICT(alias_key) DO UPDATE SET
-        team_id=excluded.team_id,
-        mlb_team_id=excluded.mlb_team_id,
-        alias_value=excluded.alias_value,
-        alias_normalized=excluded.alias_normalized,
-        alias_type=excluded.alias_type,
-        source_key=excluded.source_key,
-        confidence=excluded.confidence,
-        active=1,
-        updated_at=CURRENT_TIMESTAMP`,
-        alias.alias_key,
-        alias.team_id,
-        alias.mlb_team_id,
-        alias.alias_value,
-        alias.alias_normalized,
-        alias.alias_type,
-        alias.source_key,
-        alias.confidence
-      );
+      await sql`
+        INSERT INTO ref.team_aliases (alias_key, team_id, mlb_team_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at)
+        VALUES (${alias.alias_key}, ${alias.team_id}, ${alias.mlb_team_id}, ${alias.alias_value}, ${alias.alias_normalized}, ${alias.alias_type}, ${alias.source_key}, ${alias.confidence}, 1, now())
+        ON CONFLICT (alias_key) DO UPDATE SET
+          team_id=excluded.team_id, mlb_team_id=excluded.mlb_team_id, alias_value=excluded.alias_value,
+          alias_normalized=excluded.alias_normalized, alias_type=excluded.alias_type, source_key=excluded.source_key,
+          confidence=excluded.confidence, active=1, updated_at=now()
+      `;
       aliasesWritten += 1;
     }
   }
@@ -364,11 +273,11 @@ async function upsertTeams(env, teams, sourceKey) {
   return { team_rows_written: teamRowsWritten, alias_rows_written: aliasesWritten, team_rows_unchanged_skipped: teamRowsUnchanged };
 }
 
-async function counts(env) {
-  const active = await all(env.REF_DB, "SELECT COUNT(*) AS c FROM ref_teams WHERE active=1");
-  const teams = await all(env.REF_DB, "SELECT COUNT(*) AS c FROM ref_teams");
-  const aliases = await all(env.REF_DB, "SELECT COUNT(*) AS c FROM ref_team_aliases WHERE active=1");
-  const sample = await all(env.REF_DB, "SELECT abbreviation, full_name, nickname, location_name, league, division FROM ref_teams WHERE active=1 ORDER BY abbreviation LIMIT 30");
+async function counts(sql) {
+  const active = await sql`SELECT COUNT(*)::int AS c FROM ref.teams WHERE active=1`;
+  const teams = await sql`SELECT COUNT(*)::int AS c FROM ref.teams`;
+  const aliases = await sql`SELECT COUNT(*)::int AS c FROM ref.team_aliases WHERE active=1`;
+  const sample = await sql`SELECT abbreviation, full_name, nickname, location_name, league, division FROM ref.teams WHERE active=1 ORDER BY abbreviation LIMIT 30`;
   return {
     ref_teams_rows: Number(teams[0] && teams[0].c ? teams[0].c : 0),
     active_mlb_teams: Number(active[0] && active[0].c ? active[0].c : 0),
@@ -389,7 +298,7 @@ function baseIdentity(env) {
     status: "STATIC_TEAM_DICTIONARY_READY",
     timestamp_utc: nowUtc(),
     scope_lock: {
-      writes_only: ["REF_DB.ref_teams", "REF_DB.ref_team_aliases"],
+      writes_only: ["POSTGRES.ref.teams", "POSTGRES.ref.team_aliases"],
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
       no_scoring: true,
@@ -398,7 +307,8 @@ function baseIdentity(env) {
     },
     binding_summary: {
       required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars)
+      expected_vars_present: allTrue(vars),
+      hyperdrive_bound: !!env.HYPERDRIVE
     }
   };
 }
@@ -406,6 +316,7 @@ function baseIdentity(env) {
 async function runStaticTeams(input, env) {
   const started = Date.now();
   const schema = await ensureSchema(env);
+  const sql = pg(env);
   let sourceKey = "MLB_STATSAPI";
   let fetchInfo = null;
   let teams = [];
@@ -424,8 +335,9 @@ async function runStaticTeams(input, env) {
   }
 
   teams = teams.slice().sort((a, b) => String(a.abbreviation).localeCompare(String(b.abbreviation)));
-  const writes = await upsertTeams(env, teams, sourceKey);
-  const finalCounts = await counts(env);
+  const writes = await upsertTeams(sql, teams, sourceKey);
+  const finalCounts = await counts(sql);
+  await sql.end();
   const certified = finalCounts.active_mlb_teams === 30 && finalCounts.ref_team_aliases_active_rows >= 150;
 
   return {
@@ -453,7 +365,8 @@ async function runStaticTeams(input, env) {
     final_counts: finalCounts,
     output_cap: { sample_rows_limit: 30, raw_json_per_team_cap_chars: 5000 },
     scope_lock: baseIdentity(env).scope_lock,
-    next_allowed_use: "Future worker may use REF_DB.ref_teams and REF_DB.ref_team_aliases for team/opponent/game mapping. This build does not backfill PrizePicks opponent values.",
+    database_target: "postgres_ref_teams_ref_team_aliases",
+    next_allowed_use: "Future worker may use Postgres ref.teams and ref.team_aliases for team/opponent/game mapping. This build does not backfill PrizePicks opponent values.",
     timestamp_utc: nowUtc()
   };
 }
@@ -489,7 +402,7 @@ export default {
           mode: input.mode || null
         },
         diagnostics: {
-          ref_db_bound: !!env.REF_DB,
+          hyperdrive_bound: !!env.HYPERDRIVE,
           mlb_api_base_url_present: !!env.MLB_API_BASE_URL,
           worker_safe_mode: env.WORKER_SAFE_MODE || null
         }
