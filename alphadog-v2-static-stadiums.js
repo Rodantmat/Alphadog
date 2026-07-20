@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-static-stadiums";
-const VERSION = "alphadog-v2-static-stadiums-v0.1.2-chase-field-override";
+const VERSION = "alphadog-v2-static-stadiums-v0.2.0-postgres-cutover";
 const JOB_KEY = "static-stadiums";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -7,9 +9,6 @@ const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_
 
 const CONTROLLED_PARK_CONTEXT = {
   ARI: { city: "Phoenix", state: "AZ", timezone: "America/Phoenix", roof_type: "retractable", turf_type: "artificial", aliases: ["Chase Field", "The Bob"] },
-  // MLB StatsAPI currently emits the Diamondbacks abbreviation as AZ in this feed.
-  // Keep ARI for internal/common aliases, and add AZ so Chase Field receives the
-  // same static override when venue metadata lacks timezone/roof/surface fields.
   AZ: { city: "Phoenix", state: "AZ", timezone: "America/Phoenix", roof_type: "retractable", turf_type: "artificial", aliases: ["Chase Field", "The Bob"] },
   ATL: { city: "Atlanta", state: "GA", timezone: "America/New_York", roof_type: "outdoor", turf_type: "grass", aliases: ["Truist Park", "SunTrust Park"] },
   BAL: { city: "Baltimore", state: "MD", timezone: "America/New_York", roof_type: "outdoor", turf_type: "grass", aliases: ["Oriole Park at Camden Yards", "Camden Yards"] },
@@ -88,67 +87,23 @@ async function readJsonSafe(request) {
   try { return await request.json(); } catch { return {}; }
 }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res.results || [];
-}
-
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+function pg(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
 }
 
 async function ensureSchema(env) {
-  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_stadiums (
-    stadium_id TEXT PRIMARY KEY,
-    team_id TEXT,
-    stadium_name TEXT,
-    city TEXT,
-    state TEXT,
-    latitude REAL,
-    longitude REAL,
-    roof_type TEXT,
-    turf_type TEXT,
-    park_json TEXT,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  const columns = await all(env.REF_DB, "PRAGMA table_info(ref_stadiums)");
-  const have = new Set(columns.map(c => String(c.name || "")));
-  const additions = [
-    ["mlb_venue_id", "INTEGER"],
-    ["timezone", "TEXT"],
-    ["active", "INTEGER DEFAULT 1"],
-    ["source_key", "TEXT"],
-    ["raw_json", "TEXT"]
-  ];
+  const sql = pg(env);
   const applied = [];
-  for (const [name, type] of additions) {
-    if (!have.has(name)) {
-      await run(env.REF_DB, `ALTER TABLE ref_stadiums ADD COLUMN ${name} ${type}`);
-      applied.push(name);
-    }
+  const additions = ["mlb_venue_id INT", "timezone TEXT", "active INT DEFAULT 1", "source_key TEXT", "raw_json JSONB", "latitude DOUBLE PRECISION", "longitude DOUBLE PRECISION", "park_json JSONB"];
+  for (const clause of additions) {
+    const colName = clause.split(" ")[0];
+    try {
+      await sql.unsafe(`ALTER TABLE ref.stadiums ADD COLUMN IF NOT EXISTS ${clause}`);
+      applied.push(colName);
+    } catch (_) { /* non-fatal */ }
   }
-
-  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_stadium_aliases (
-    alias_key TEXT PRIMARY KEY,
-    stadium_id TEXT,
-    mlb_venue_id INTEGER,
-    alias_value TEXT,
-    alias_normalized TEXT,
-    alias_type TEXT,
-    source_key TEXT,
-    confidence TEXT,
-    active INTEGER DEFAULT 1,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_stadiums_mlb_venue ON ref_stadiums(mlb_venue_id)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_stadiums_team ON ref_stadiums(team_id, active)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_stadium_aliases_lookup ON ref_stadium_aliases(alias_normalized, active)");
-  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_stadium_aliases_stadium ON ref_stadium_aliases(stadium_id, active)");
-
-  return { ref_stadiums_columns_added: applied, ref_stadium_aliases_ready: true };
+  await sql.end();
+  return { ref_stadiums_columns_checked: applied, ref_stadium_aliases_ready: true };
 }
 
 function extractVenueLocation(venue, team, controlled) {
@@ -326,130 +281,58 @@ function stadiumHasRealChange(current, stadium) {
     || Number(current.active || 0) !== 1;
 }
 
-async function loadCurrentStadiumSnapshot(env) {
-  const rows = await all(env.REF_DB, "SELECT stadium_id, team_id, stadium_name, city, state, roof_type, turf_type, timezone, mlb_venue_id, active FROM ref_stadiums");
+async function loadCurrentStadiumSnapshot(sql) {
+  const rows = await sql`SELECT stadium_id, team_id, stadium_name, city, state, roof_type, turf_type, timezone, mlb_venue_id, active FROM ref.stadiums`;
   const map = new Map();
   for (const r of rows) map.set(String(r.stadium_id), r);
   return map;
 }
 
-async function upsertStadiums(env, stadiums, sourceKey) {
+async function upsertStadiums(sql, stadiums, sourceKey) {
   let stadiumRowsWritten = 0;
   let aliasesWritten = 0;
   let stadiumRowsUnchanged = 0;
 
-  // Real differential redesign: this worker previously did an unconditional "deactivate every
-  // row, then re-upsert every row back to active" cycle on every single run - two full writes per
-  // stadium every time, regardless of whether anything changed. Stadium data is close to fully
-  // static (new venues are real, rare events), so load the current snapshot first and only pay
-  // the deactivate+full-rewrite cost for stadiums that are genuinely new/changed; unchanged
-  // stadiums get a cheap active/updated_at touch instead of a full field rewrite.
-  const currentSnapshot = await loadCurrentStadiumSnapshot(env);
+  const currentSnapshot = await loadCurrentStadiumSnapshot(sql);
 
-  await run(env.REF_DB, "UPDATE ref_stadiums SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
-  await run(env.REF_DB, "UPDATE ref_stadium_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
+  await sql`UPDATE ref.stadiums SET active=0, updated_at=now() WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')`;
+  await sql`UPDATE ref.stadium_aliases SET active=0, updated_at=now() WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')`;
 
   for (const stadium of stadiums) {
     const current = currentSnapshot.get(String(stadium.stadium_id));
     if (!stadiumHasRealChange(current, stadium)) {
       stadiumRowsUnchanged += 1;
-      // Cheap reactivation touch only - no full field rewrite for a real-verified-unchanged row.
-      await run(env.REF_DB, "UPDATE ref_stadiums SET active=1, updated_at=CURRENT_TIMESTAMP WHERE stadium_id=?", stadium.stadium_id);
+      await sql`UPDATE ref.stadiums SET active=1, updated_at=now() WHERE stadium_id=${stadium.stadium_id}`;
       for (const alias of buildAliases(stadium, sourceKey)) {
-        await run(env.REF_DB, `INSERT INTO ref_stadium_aliases (
-          alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
-        ON CONFLICT(alias_key) DO UPDATE SET
-          stadium_id=excluded.stadium_id,
-          mlb_venue_id=excluded.mlb_venue_id,
-          alias_value=excluded.alias_value,
-          alias_normalized=excluded.alias_normalized,
-          alias_type=excluded.alias_type,
-          source_key=excluded.source_key,
-          confidence=excluded.confidence,
-          active=1,
-          updated_at=CURRENT_TIMESTAMP`,
-          alias.alias_key, alias.stadium_id, alias.mlb_venue_id, alias.alias_value, alias.alias_normalized, alias.alias_type, alias.source_key, alias.confidence
-        );
+        await sql`
+          INSERT INTO ref.stadium_aliases (alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at)
+          VALUES (${alias.alias_key}, ${alias.stadium_id}, ${alias.mlb_venue_id}, ${alias.alias_value}, ${alias.alias_normalized}, ${alias.alias_type}, ${alias.source_key}, ${alias.confidence}, 1, now())
+          ON CONFLICT (alias_key) DO UPDATE SET stadium_id=excluded.stadium_id, mlb_venue_id=excluded.mlb_venue_id, alias_value=excluded.alias_value,
+            alias_normalized=excluded.alias_normalized, alias_type=excluded.alias_type, source_key=excluded.source_key, confidence=excluded.confidence, active=1, updated_at=now()
+        `;
         aliasesWritten += 1;
       }
       continue;
     }
-    const parkJson = {
-      abbreviation: stadium.abbreviation,
-      mlb_team_id: stadium.mlb_team_id,
-      team_name: stadium.team_name,
-      source_kind: stadium.source_kind,
-      roof_type: stadium.roof_type,
-      turf_type: stadium.turf_type,
-      timezone: stadium.timezone,
-      source_key: sourceKey
-    };
-    const rawJson = {
-      source_team_raw: stadium.source_team_raw,
-      source_venue_raw: stadium.source_venue_raw,
-      controlled_context: stadium.controlled_context
-    };
+    const parkJson = { abbreviation: stadium.abbreviation, mlb_team_id: stadium.mlb_team_id, team_name: stadium.team_name, source_kind: stadium.source_kind, roof_type: stadium.roof_type, turf_type: stadium.turf_type, timezone: stadium.timezone, source_key: sourceKey };
+    const rawJson = { source_team_raw: stadium.source_team_raw, source_venue_raw: stadium.source_venue_raw, controlled_context: stadium.controlled_context };
 
-    await run(env.REF_DB, `INSERT INTO ref_stadiums (
-      stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type, park_json, mlb_venue_id, timezone, active, source_key, raw_json, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(stadium_id) DO UPDATE SET
-      team_id=excluded.team_id,
-      stadium_name=excluded.stadium_name,
-      city=excluded.city,
-      state=excluded.state,
-      latitude=excluded.latitude,
-      longitude=excluded.longitude,
-      roof_type=excluded.roof_type,
-      turf_type=excluded.turf_type,
-      park_json=excluded.park_json,
-      mlb_venue_id=excluded.mlb_venue_id,
-      timezone=excluded.timezone,
-      active=1,
-      source_key=excluded.source_key,
-      raw_json=excluded.raw_json,
-      updated_at=CURRENT_TIMESTAMP`,
-      stadium.stadium_id,
-      stadium.team_id,
-      stadium.stadium_name,
-      stadium.city,
-      stadium.state,
-      stadium.latitude,
-      stadium.longitude,
-      stadium.roof_type,
-      stadium.turf_type,
-      JSON.stringify(parkJson).slice(0, 3000),
-      stadium.mlb_venue_id,
-      stadium.timezone,
-      sourceKey,
-      JSON.stringify(rawJson).slice(0, 7000)
-    );
+    await sql`
+      INSERT INTO ref.stadiums (stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type, park_json, mlb_venue_id, timezone, active, source_key, raw_json, updated_at)
+      VALUES (${stadium.stadium_id}, ${stadium.team_id}, ${stadium.stadium_name}, ${stadium.city}, ${stadium.state}, ${stadium.latitude}, ${stadium.longitude}, ${stadium.roof_type}, ${stadium.turf_type}, ${JSON.stringify(parkJson)}, ${stadium.mlb_venue_id}, ${stadium.timezone}, 1, ${sourceKey}, ${JSON.stringify(rawJson)}, now())
+      ON CONFLICT (stadium_id) DO UPDATE SET team_id=excluded.team_id, stadium_name=excluded.stadium_name, city=excluded.city, state=excluded.state,
+        latitude=excluded.latitude, longitude=excluded.longitude, roof_type=excluded.roof_type, turf_type=excluded.turf_type, park_json=excluded.park_json,
+        mlb_venue_id=excluded.mlb_venue_id, timezone=excluded.timezone, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
+    `;
     stadiumRowsWritten += 1;
 
     for (const alias of buildAliases(stadium, sourceKey)) {
-      await run(env.REF_DB, `INSERT INTO ref_stadium_aliases (
-        alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
-      ON CONFLICT(alias_key) DO UPDATE SET
-        stadium_id=excluded.stadium_id,
-        mlb_venue_id=excluded.mlb_venue_id,
-        alias_value=excluded.alias_value,
-        alias_normalized=excluded.alias_normalized,
-        alias_type=excluded.alias_type,
-        source_key=excluded.source_key,
-        confidence=excluded.confidence,
-        active=1,
-        updated_at=CURRENT_TIMESTAMP`,
-        alias.alias_key,
-        alias.stadium_id,
-        alias.mlb_venue_id,
-        alias.alias_value,
-        alias.alias_normalized,
-        alias.alias_type,
-        alias.source_key,
-        alias.confidence
-      );
+      await sql`
+        INSERT INTO ref.stadium_aliases (alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at)
+        VALUES (${alias.alias_key}, ${alias.stadium_id}, ${alias.mlb_venue_id}, ${alias.alias_value}, ${alias.alias_normalized}, ${alias.alias_type}, ${alias.source_key}, ${alias.confidence}, 1, now())
+        ON CONFLICT (alias_key) DO UPDATE SET stadium_id=excluded.stadium_id, mlb_venue_id=excluded.mlb_venue_id, alias_value=excluded.alias_value,
+          alias_normalized=excluded.alias_normalized, alias_type=excluded.alias_type, source_key=excluded.source_key, confidence=excluded.confidence, active=1, updated_at=now()
+      `;
       aliasesWritten += 1;
     }
   }
@@ -457,12 +340,12 @@ async function upsertStadiums(env, stadiums, sourceKey) {
   return { stadium_rows_written: stadiumRowsWritten, alias_rows_written: aliasesWritten, stadium_rows_unchanged_skipped: stadiumRowsUnchanged, stale_deactivation_mode: "deactivate_source_then_reactivate_current_rows" };
 }
 
-async function counts(env) {
-  const activeRows = await all(env.REF_DB, "SELECT COUNT(*) AS c FROM ref_stadiums WHERE active=1");
-  const activeTeams = await all(env.REF_DB, "SELECT COUNT(DISTINCT team_id) AS c FROM ref_stadiums WHERE active=1 AND team_id IS NOT NULL AND team_id <> ''");
-  const activeVenueIds = await all(env.REF_DB, "SELECT COUNT(*) AS c FROM ref_stadiums WHERE active=1 AND mlb_venue_id IS NOT NULL");
-  const aliases = await all(env.REF_DB, "SELECT COUNT(*) AS c FROM ref_stadium_aliases WHERE active=1");
-  const sample = await all(env.REF_DB, "SELECT team_id, mlb_venue_id, stadium_name, city, state, timezone, roof_type, turf_type, active FROM ref_stadiums WHERE active=1 ORDER BY team_id LIMIT 30");
+async function counts(sql) {
+  const activeRows = await sql`SELECT COUNT(*)::int AS c FROM ref.stadiums WHERE active=1`;
+  const activeTeams = await sql`SELECT COUNT(DISTINCT team_id)::int AS c FROM ref.stadiums WHERE active=1 AND team_id IS NOT NULL AND team_id <> ''`;
+  const activeVenueIds = await sql`SELECT COUNT(*)::int AS c FROM ref.stadiums WHERE active=1 AND mlb_venue_id IS NOT NULL`;
+  const aliases = await sql`SELECT COUNT(*)::int AS c FROM ref.stadium_aliases WHERE active=1`;
+  const sample = await sql`SELECT team_id, mlb_venue_id, stadium_name, city, state, timezone, roof_type, turf_type, active FROM ref.stadiums WHERE active=1 ORDER BY team_id LIMIT 30`;
   return {
     ref_stadiums_active_rows: Number(activeRows[0] && activeRows[0].c ? activeRows[0].c : 0),
     active_mlb_team_stadium_mappings: Number(activeTeams[0] && activeTeams[0].c ? activeTeams[0].c : 0),
@@ -484,7 +367,7 @@ function baseIdentity(env) {
     status: "STATIC_STADIUM_DICTIONARY_READY",
     timestamp_utc: nowUtc(),
     scope_lock: {
-      writes_only: ["REF_DB.ref_stadiums", "REF_DB.ref_stadium_aliases"],
+      writes_only: ["POSTGRES.ref.stadiums", "POSTGRES.ref.stadium_aliases"],
       no_team_db_writes: true,
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
@@ -495,7 +378,8 @@ function baseIdentity(env) {
     },
     binding_summary: {
       required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars)
+      expected_vars_present: allTrue(vars),
+      hyperdrive_bound: !!env.HYPERDRIVE
     }
   };
 }
@@ -503,6 +387,7 @@ function baseIdentity(env) {
 async function runStaticStadiums(input, env) {
   const started = Date.now();
   const schema = await ensureSchema(env);
+  const sql = pg(env);
   let fetchInfo = null;
   let sourceKey = "MLB_STATSAPI_TEAMS_AND_VENUES";
   let stadiums = [];
@@ -523,8 +408,9 @@ async function runStaticStadiums(input, env) {
   }
 
   stadiums = stadiums.slice().sort((a, b) => String(a.abbreviation).localeCompare(String(b.abbreviation)));
-  const writes = await upsertStadiums(env, stadiums, sourceKey);
-  const finalCounts = await counts(env);
+  const writes = await upsertStadiums(sql, stadiums, sourceKey);
+  const finalCounts = await counts(sql);
+  await sql.end();
 
   const apiSource = sourceKey === "MLB_STATSAPI_TEAMS_AND_VENUES";
   const certified = apiSource &&
@@ -568,8 +454,9 @@ async function runStaticStadiums(input, env) {
     final_counts: finalCounts,
     output_cap: { sample_rows_limit: 30, raw_json_per_stadium_cap_chars: 7000 },
     scope_lock: baseIdentity(env).scope_lock,
+    database_target: "postgres_ref_stadiums_ref_stadium_aliases",
     downstream_block_reason: certified ? null : "Static stadium dictionary must certify 30 active MLB team/stadium mappings from MLB StatsAPI before downstream park/weather/scoring context can depend on it.",
-    next_allowed_use: "Future workers may use REF_DB.ref_stadiums and REF_DB.ref_stadium_aliases for park, roof, weather, and game/stadium mapping. This worker does not backfill PrizePicks opponents or score candidates.",
+    next_allowed_use: "Future workers may use Postgres ref.stadiums and ref.stadium_aliases for park, roof, weather, and game/stadium mapping. This worker does not backfill PrizePicks opponents or score candidates.",
     timestamp_utc: nowUtc()
   };
 }
@@ -605,7 +492,7 @@ export default {
           mode: input.mode || null
         },
         diagnostics: {
-          ref_db_bound: !!env.REF_DB,
+          hyperdrive_bound: !!env.HYPERDRIVE,
           mlb_api_base_url_present: !!env.MLB_API_BASE_URL,
           worker_safe_mode: env.WORKER_SAFE_MODE || null
         }
