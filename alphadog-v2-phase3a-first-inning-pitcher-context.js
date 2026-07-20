@@ -10206,6 +10206,9 @@ async function runMode(env,input={}){
   if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
   if(mode==="derive_starter_history_from_postgres") return runDeriveStarterHistoryFromPostgres(env,input);
   if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
+  if(mode==="derive_rosters_from_postgres") return runDeriveRostersFromPostgres(env,input);
+  if(mode==="derive_player_aliases_from_postgres") return runDerivePlayerAliasesFromPostgres(env,input);
+  if(mode==="derive_team_aliases_from_postgres") return runDeriveTeamAliasesFromPostgres(env,input);
   if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
   if(mode==="remine_quality_of_contact_to_postgres") return runRemineQualityOfContactToPostgres(env,input);
