@@ -9384,23 +9384,7 @@ async function runClassificationV6Tick(env, input = {}) {
   };
 }
 
-// [orphaned dispatch remnant part 1 removed]
-  if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
-  if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
-  if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
-  if(mode==="expansion_delta_mining" || mode==="expansion-delta-mining") return runDeltaMining(env,input);
-  if(mode==="expansion_delta_sanity" || mode==="expansion-delta-sanity") return runDeltaSanity(env,input);
-  if(mode==="expansion_delta_hp" || mode==="expansion-delta-hp") return runDeltaHp(env,input);
-  if(mode==="expansion_delta_full_run" || mode==="expansion-delta-full-run") return deltaFullRun(env,input);
-  if(mode==="expansion_line_inventory" || mode==="expansion-baseline-line-inventory") return runLineInventory(env,input);
-  if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
-  if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
-  if(mode==="baseline_v5_state_hydrate") return runBaselineV5StateHydrate(env,input);
-  if(mode==="baseline_v5_classification_daily_delta") return runClassificationV6DeltaDaily(env,input);
-  if(mode==="baseline_v5_hp_daily_delta") return runBaselineV6DeltaDaily(env,input);
-  if(mode==="baseline_v5_stateful_delta") return runBaselineV5StatefulDelta(env,input);
-  if(mode==="baseline_v5_classification_rescue") return runBaselineV5ClassificationRescue(env,input);
-  if(mode==="baseline_v5_base_rescue") return runBaselineV5BaseRescue(env,input);
+// [orphaned dispatch remnant part 2a removed]
   if(mode==="baseline_v5_classification_delta" || mode==="baseline_v5_delta") return baseOutput(input,{request_id:String(input.request_id||rid("baseline_v5_old_delta_blocked")),run_id:String(input.run_id||rid("run")),mode,status:"BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED",certification:"BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED",certification_grade:"BLOCKED",data_ok:false,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:true,blocked_reason:"Old Baseline/Classfication V5 delta reloads cumulative player history and is banned. Use baseline_v5_state_hydrate then baseline_v5_stateful_delta shadow/parity path.",no_daily_context:true,no_market_context:true,no_scoring_context:true,no_final_board_context:true});
   if(mode==="classification_v6_compute_stats") return runClassificationV6ComputeStats(env,input);
   if(mode==="classification_v6_tick" || mode==="classification_v6") return runClassificationV6Tick(env,input);
