@@ -142,119 +142,121 @@ function rowHasRealChange(current, fresh) {
 }
 
 async function runArsenal(env, input) {
-  await ensureSchema(env);
-  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
-  const year = Number(inputJson.year) || SEASON_YEAR;
+  let step = "ensureSchema";
+  try {
+    await ensureSchema(env);
+    const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+    const year = Number(inputJson.year) || SEASON_YEAR;
 
-  // Freshness gate: same grounded watermark pattern used across the static layer. Baseball
-  // Savant has no incremental "what changed" query, so a bounded re-fetch window is the correct
-  // pattern, not a full classic differential.
-  // Uses its own short-lived connection, closed before the external fetch below - holding a
-  // Hyperdrive connection open and idle across a long external HTTP fetch was the real cause of
-  // the "Network connection lost" failures confirmed live (the connection went stale while
-  // waiting on the Savant CSV download, then died on the next query after the fetch returned).
-  let sqlCheck = pg(env);
-  const freshnessRows = await sqlCheck`SELECT MAX(updated_at) AS last_run FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
-  const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
-  if (lastRun) {
-    const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
-    if (ageHours >= 0 && ageHours < 20) {
-      const activeCountNoop = await sqlCheck`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
-      await sqlCheck.end();
-      return {
-        ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
-        request_id: input.request_id || null, chain_id: input.chain_id || null,
-        status: "completed_noop_fresh", certification: "STATIC_PITCHER_ARSENAL_CERTIFIED_NOOP_ALREADY_FRESH",
-        season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
-        active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
-        freshness_gate: { last_run: lastRun, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
-        differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
-        database_target: "postgres_ref_pitcher_arsenal",
-        external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
-      };
+    step = "freshness_check_open";
+    let sqlCheck = pg(env);
+    step = "freshness_check_query";
+    const freshnessRows = await sqlCheck`SELECT MAX(updated_at) AS last_run FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
+    const lastRun = freshnessRows[0] && freshnessRows[0].last_run;
+    if (lastRun) {
+      const ageHours = (Date.now() - new Date(lastRun).getTime()) / 3600000;
+      if (ageHours >= 0 && ageHours < 20) {
+        step = "freshness_noop_count";
+        const activeCountNoop = await sqlCheck`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
+        await sqlCheck.end();
+        return {
+          ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+          request_id: input.request_id || null, chain_id: input.chain_id || null,
+          status: "completed_noop_fresh", certification: "STATIC_PITCHER_ARSENAL_CERTIFIED_NOOP_ALREADY_FRESH",
+          season_year: year, rows_read: 0, rows_mapped: 0, rows_written: 0, rows_unchanged_skipped: 0, rows_deactivated: 0,
+          active_rows_after: Number(activeCountNoop[0] && activeCountNoop[0].c || 0),
+          freshness_gate: { last_run: lastRun, age_hours: Math.round(ageHours * 100) / 100, window_hours: 20, skipped_expensive_fetch: true },
+          differential_note: "No real fetch performed - a certified run for this season completed within the freshness window, so nothing needed mining.",
+          database_target: "postgres_ref_pitcher_arsenal",
+          external_calls_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc()
+        };
+      }
     }
-  }
-  await sqlCheck.end();
+    step = "freshness_check_close";
+    await sqlCheck.end();
 
-  // External fetch happens with NO Postgres connection open - this can genuinely take a while
-  // (large CSV download) and must not hold a database connection idle while it runs.
-  const fetched = await fetchSavant(year);
-  const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
+    step = "external_fetch";
+    const fetched = await fetchSavant(year);
+    const mapped = fetched.rows.map(r => mapRow(r, year)).filter(Boolean);
 
-  // Fresh connection for the write phase, opened only now that we actually need it.
-  const sql = pg(env);
-  const currentRows = await sql`SELECT * FROM ref.pitcher_arsenal WHERE season_year=${year}`;
-  const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
-  const freshIds = new Set(mapped.map(r => r.arsenal_id));
+    step = "write_connection_open";
+    const sql = pg(env);
+    step = "write_current_rows_select";
+    const currentRows = await sql`SELECT * FROM ref.pitcher_arsenal WHERE season_year=${year}`;
+    const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
+    const freshIds = new Set(mapped.map(r => r.arsenal_id));
 
-  const toInsert = [];
-  const unchangedIds = [];
-  for (const r of mapped) {
-    const current = currentMap.get(r.arsenal_id);
-    if (!rowHasRealChange(current, r)) {
-      unchangedIds.push(r.arsenal_id);
-      continue;
+    const toInsert = [];
+    const unchangedIds = [];
+    for (const r of mapped) {
+      const current = currentMap.get(r.arsenal_id);
+      if (!rowHasRealChange(current, r)) {
+        unchangedIds.push(r.arsenal_id);
+        continue;
+      }
+      toInsert.push(r);
     }
-    toInsert.push(r);
-  }
-  const changed = toInsert.length;
-  const unchanged = unchangedIds.length;
+    const changed = toInsert.length;
+    const unchanged = unchangedIds.length;
 
-  // Bulk writes instead of one-row-at-a-time round trips (the same class of bug fixed for D1
-  // elsewhere in this static layer - Hyperdrive connections dropped under the load of 3000+
-  // sequential queries, confirmed live via a real "Network connection lost" failure before this
-  // fix). postgres.js's sql() helper builds one multi-row statement per chunk.
-  const CHUNK = 200;
-  for (let i = 0; i < toInsert.length; i += CHUNK) {
-    const chunk = toInsert.slice(i, i + CHUNK).map(r => ({
-      arsenal_id: r.arsenal_id, mlb_player_id: r.mlb_player_id, player_name: r.player_name, team_abbreviation: r.team_abbreviation,
-      season_year: r.season_year, pitch_type: r.pitch_type, pitch_name: r.pitch_name, run_value_per_100: r.run_value_per_100,
-      run_value: r.run_value, pitches: r.pitches, pitch_usage: r.pitch_usage, pa: r.pa, ba: r.ba, slg: r.slg, woba: r.woba,
-      whiff_percent: r.whiff_percent, k_percent: r.k_percent, put_away: r.put_away, est_ba: r.est_ba, est_slg: r.est_slg,
-      est_woba: r.est_woba, hard_hit_percent: r.hard_hit_percent, active: 1, source_key: SOURCE_KEY, raw_json: r.raw_json
-    }));
-    await sql`
-      INSERT INTO ref.pitcher_arsenal ${sql(chunk, "arsenal_id", "mlb_player_id", "player_name", "team_abbreviation", "season_year", "pitch_type", "pitch_name",
-        "run_value_per_100", "run_value", "pitches", "pitch_usage", "pa", "ba", "slg", "woba", "whiff_percent", "k_percent", "put_away",
-        "est_ba", "est_slg", "est_woba", "hard_hit_percent", "active", "source_key", "raw_json")}
-      ON CONFLICT (arsenal_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_abbreviation=excluded.team_abbreviation,
-        season_year=excluded.season_year, pitch_type=excluded.pitch_type, pitch_name=excluded.pitch_name, run_value_per_100=excluded.run_value_per_100,
-        run_value=excluded.run_value, pitches=excluded.pitches, pitch_usage=excluded.pitch_usage, pa=excluded.pa, ba=excluded.ba, slg=excluded.slg, woba=excluded.woba,
-        whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, put_away=excluded.put_away, est_ba=excluded.est_ba, est_slg=excluded.est_slg,
-        est_woba=excluded.est_woba, hard_hit_percent=excluded.hard_hit_percent, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
-    `;
-  }
-  for (let i = 0; i < unchangedIds.length; i += CHUNK) {
-    const chunk = unchangedIds.slice(i, i + CHUNK);
-    await sql`UPDATE ref.pitcher_arsenal SET active=1, updated_at=now() WHERE arsenal_id IN ${sql(chunk)}`;
-  }
+    const CHUNK = 200;
+    step = "write_bulk_insert";
+    for (let i = 0; i < toInsert.length; i += CHUNK) {
+      const chunk = toInsert.slice(i, i + CHUNK).map(r => ({
+        arsenal_id: r.arsenal_id, mlb_player_id: r.mlb_player_id, player_name: r.player_name, team_abbreviation: r.team_abbreviation,
+        season_year: r.season_year, pitch_type: r.pitch_type, pitch_name: r.pitch_name, run_value_per_100: r.run_value_per_100,
+        run_value: r.run_value, pitches: r.pitches, pitch_usage: r.pitch_usage, pa: r.pa, ba: r.ba, slg: r.slg, woba: r.woba,
+        whiff_percent: r.whiff_percent, k_percent: r.k_percent, put_away: r.put_away, est_ba: r.est_ba, est_slg: r.est_slg,
+        est_woba: r.est_woba, hard_hit_percent: r.hard_hit_percent, active: 1, source_key: SOURCE_KEY, raw_json: r.raw_json
+      }));
+      await sql`
+        INSERT INTO ref.pitcher_arsenal ${sql(chunk, "arsenal_id", "mlb_player_id", "player_name", "team_abbreviation", "season_year", "pitch_type", "pitch_name",
+          "run_value_per_100", "run_value", "pitches", "pitch_usage", "pa", "ba", "slg", "woba", "whiff_percent", "k_percent", "put_away",
+          "est_ba", "est_slg", "est_woba", "hard_hit_percent", "active", "source_key", "raw_json")}
+        ON CONFLICT (arsenal_id) DO UPDATE SET mlb_player_id=excluded.mlb_player_id, player_name=excluded.player_name, team_abbreviation=excluded.team_abbreviation,
+          season_year=excluded.season_year, pitch_type=excluded.pitch_type, pitch_name=excluded.pitch_name, run_value_per_100=excluded.run_value_per_100,
+          run_value=excluded.run_value, pitches=excluded.pitches, pitch_usage=excluded.pitch_usage, pa=excluded.pa, ba=excluded.ba, slg=excluded.slg, woba=excluded.woba,
+          whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, put_away=excluded.put_away, est_ba=excluded.est_ba, est_slg=excluded.est_slg,
+          est_woba=excluded.est_woba, hard_hit_percent=excluded.hard_hit_percent, active=1, source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
+      `;
+    }
+    step = "write_unchanged_touch";
+    for (let i = 0; i < unchangedIds.length; i += CHUNK) {
+      const chunk = unchangedIds.slice(i, i + CHUNK);
+      await sql`UPDATE ref.pitcher_arsenal SET active=1, updated_at=now() WHERE arsenal_id IN ${sql(chunk)}`;
+    }
 
-  const staleIds = currentRows.filter(current => !freshIds.has(current.arsenal_id) && Number(current.active) === 1).map(c => c.arsenal_id);
-  let deactivated = 0;
-  for (let i = 0; i < staleIds.length; i += CHUNK) {
-    const chunk = staleIds.slice(i, i + CHUNK);
-    await sql`UPDATE ref.pitcher_arsenal SET active=0, updated_at=now() WHERE arsenal_id IN ${sql(chunk)}`;
-    deactivated += chunk.length;
+    step = "write_deactivate_stale";
+    const staleIds = currentRows.filter(current => !freshIds.has(current.arsenal_id) && Number(current.active) === 1).map(c => c.arsenal_id);
+    let deactivated = 0;
+    for (let i = 0; i < staleIds.length; i += CHUNK) {
+      const chunk = staleIds.slice(i, i + CHUNK);
+      await sql`UPDATE ref.pitcher_arsenal SET active=0, updated_at=now() WHERE arsenal_id IN ${sql(chunk)}`;
+      deactivated += chunk.length;
+    }
+
+    step = "final_count_and_close";
+    const activeCount = await sql`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
+    await sql.end();
+    const certified = mapped.length > 0 && changed + unchanged === mapped.length;
+
+    return {
+      ok: certified, data_ok: certified, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+      request_id: input.request_id || null, chain_id: input.chain_id || null,
+      status: certified ? "completed" : "failed_no_real_rows_parsed",
+      certification: certified ? "STATIC_PITCHER_ARSENAL_CERTIFIED" : "STATIC_PITCHER_ARSENAL_CERTIFICATION_FAILED",
+      season_year: year, source_url: fetched.url, rows_read: fetched.row_count, rows_mapped: mapped.length,
+      rows_written: changed, rows_unchanged_skipped: unchanged, rows_deactivated: deactivated,
+      active_rows_after: Number(activeCount[0] && activeCount[0].c || 0),
+      differential_note: "rows_written is the honest count of pitcher-pitch-type rows whose real Statcast values actually changed; rows_unchanged_skipped got a cheap active/updated_at touch only.",
+      database_target: "postgres_ref_pitcher_arsenal",
+      external_calls_performed: 1,
+      no_scoring: true, no_ranking: true, no_final_board: true,
+      timestamp_utc: nowUtc()
+    };
+  } catch (err) {
+    throw new Error(`failed_at_step:${step}: ${String(err && err.message ? err.message : err)}`);
   }
-
-  const activeCount = await sql`SELECT COUNT(*)::int c FROM ref.pitcher_arsenal WHERE season_year=${year} AND active=1`;
-  await sql.end();
-  const certified = mapped.length > 0 && changed + unchanged === mapped.length;
-
-  return {
-    ok: certified, data_ok: certified, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
-    request_id: input.request_id || null, chain_id: input.chain_id || null,
-    status: certified ? "completed" : "failed_no_real_rows_parsed",
-    certification: certified ? "STATIC_PITCHER_ARSENAL_CERTIFIED" : "STATIC_PITCHER_ARSENAL_CERTIFICATION_FAILED",
-    season_year: year, source_url: fetched.url, rows_read: fetched.row_count, rows_mapped: mapped.length,
-    rows_written: changed, rows_unchanged_skipped: unchanged, rows_deactivated: deactivated,
-    active_rows_after: Number(activeCount[0] && activeCount[0].c || 0),
-    differential_note: "rows_written is the honest count of pitcher-pitch-type rows whose real Statcast values actually changed; rows_unchanged_skipped got a cheap active/updated_at touch only.",
-    database_target: "postgres_ref_pitcher_arsenal",
-    external_calls_performed: 1,
-    no_scoring: true, no_ranking: true, no_final_board: true,
-    timestamp_utc: nowUtc()
-  };
 }
 
 function baseIdentity(env) {
