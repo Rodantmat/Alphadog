@@ -7483,6 +7483,7 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
           SELECT *,
             ((raw_json->'stat'->>'numberOfPitches')::int) AS pitches,
             ((raw_json->'stat'->>'strikes')::int) AS strikes,
+            ((raw_json->'stat'->>'runs')::int) AS runs_allowed,
             (((raw_json->'stat'->>'gamesStarted')::int) = 1) AS is_start,
             ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC, game_pk DESC) AS rn
           FROM stats_pitcher.game_logs WHERE season = ${season}
