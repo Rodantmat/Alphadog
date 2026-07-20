@@ -199,7 +199,7 @@ async function runArsenal(env, input) {
     const changed = toInsert.length;
     const unchanged = unchangedIds.length;
 
-    const CHUNK = 200;
+    const CHUNK = 25;
     step = "write_bulk_insert";
     for (let i = 0; i < toInsert.length; i += CHUNK) {
       const chunk = toInsert.slice(i, i + CHUNK).map(r => ({
