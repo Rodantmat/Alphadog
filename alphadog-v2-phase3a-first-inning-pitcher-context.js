@@ -7445,7 +7445,7 @@ async function runDerivePlayerAliasesFromPostgres(env, input) {
       SELECT player_id || '|last_first|' || lower(trim(last_name || ', ' || first_name)), player_id, last_name || ', ' || first_name, 'last_first', lower(trim(last_name || ', ' || first_name)), 'derived_from_ref_players', 'HIGH', 1
       FROM ref.players WHERE active=1 AND first_name IS NOT NULL AND last_name IS NOT NULL
       UNION ALL
-      SELECT player_id || '|mlb_player_id|' || mlb_player_id, player_id, mlb_player_id, 'mlb_player_id', mlb_player_id, 'derived_from_ref_players', 'HIGH', 1
+      SELECT player_id || '|mlb_player_id|' || mlb_player_id::text, player_id, mlb_player_id::text, 'mlb_player_id', mlb_player_id::text, 'derived_from_ref_players', 'HIGH', 1
       FROM ref.players WHERE active=1 AND mlb_player_id IS NOT NULL
       ON CONFLICT (alias_key) DO NOTHING
     `;
