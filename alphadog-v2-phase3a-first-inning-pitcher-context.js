@@ -7827,11 +7827,13 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
         LEFT JOIN vs_right ON vs_right.player_id = agg.player_id
         ON CONFLICT (snapshot_id) DO UPDATE SET
           games_count=excluded.games_count, pa_sum=excluded.pa_sum, ab_sum=excluded.ab_sum, hits_sum=excluded.hits_sum,
-          doubles_sum=excluded.doubles_sum, triples_sum=excluded.triples_sum, home_runs_sum=excluded.home_runs_sum,
+          singles_sum=excluded.singles_sum, doubles_sum=excluded.doubles_sum, triples_sum=excluded.triples_sum, home_runs_sum=excluded.home_runs_sum,
           runs_sum=excluded.runs_sum, rbi_sum=excluded.rbi_sum, walks_sum=excluded.walks_sum, strikeouts_sum=excluded.strikeouts_sum,
           stolen_bases_sum=excluded.stolen_bases_sum, total_bases_derived_sum=excluded.total_bases_derived_sum,
           batting_average=excluded.batting_average, slugging_percentage=excluded.slugging_percentage,
-          strikeout_rate=excluded.strikeout_rate, walk_rate=excluded.walk_rate, hr_rate=excluded.hr_rate, updated_at=now()
+          strikeout_rate=excluded.strikeout_rate, walk_rate=excluded.walk_rate, hr_rate=excluded.hr_rate,
+          tb_per_pa=excluded.tb_per_pa, h_per_ab=excluded.h_per_ab, sample_size_label=excluded.sample_size_label,
+          vs_left_json=excluded.vs_left_json, vs_right_json=excluded.vs_right_json, updated_at=now()
       `);
       totalWritten += res.count || 0;
     }
