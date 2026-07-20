@@ -7708,11 +7708,6 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
 
     // Pooled within-player dispersion from real per-game logs (not the blended snapshot rate),
     // weighted by games played, matching the documented intent of estimatePooledDispersionFromGameLogs.
-    const dispRows = propConfig.weights
-      ? await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG(${propConfig.numerator_fields.map(f=>`COALESCE(${f.replace('_sum','')},0)*${Number(propConfig.weights[f.replace('_sum','')]||1)}`).join('+')}) NA FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`).catch(() => [])
-      : [];
-    // Simpler, robust dispersion path: pooled per-player mean/variance of the raw per-game
-    // numerator field(s), weighted by games played.
     const rawFields = propConfig.numerator_fields.map(f => f.replace(/_sum$/, ""));
     const exprRaw = propConfig.weights
       ? rawFields.map((f, i) => `COALESCE(${f},0)*${Number(propConfig.weights[propConfig.numerator_fields[i]] || 1)}`).join("+")
