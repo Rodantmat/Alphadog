@@ -7418,10 +7418,10 @@ async function runDeriveRostersFromPostgres(env, input) {
     await sql`
       INSERT INTO ref.rosters (roster_key, slate_date, team_id, player_id, roster_status, role, source_key, snapshot_type, mlb_team_id, player_name, position_abbreviation, roster_date, active)
       SELECT
-        team_id || '_' || player_id || '_' || to_char(now(), 'YYYY-MM-DD'),
-        now()::date, team_id, player_id, '40Man', primary_role, 'derived_from_ref_players',
+        current_team_id || '_' || player_id || '_' || to_char(now(), 'YYYY-MM-DD'),
+        now()::date, current_team_id, player_id, '40Man', primary_role, 'derived_from_ref_players',
         'current', current_mlb_team_id, full_name, primary_position, now()::date, 1
-      FROM ref.players WHERE active=1 AND team_id IS NOT NULL
+      FROM ref.players WHERE active=1 AND current_team_id IS NOT NULL
       ON CONFLICT (roster_key) DO UPDATE SET
         roster_status=excluded.roster_status, player_name=excluded.player_name,
         position_abbreviation=excluded.position_abbreviation, active=1, updated_at=now()
