@@ -102,7 +102,7 @@ function mapRow(r, year) {
     actual_success_rate_pct: numOrNull(r.actual_success_rate_formatted),
     adj_estimated_success_rate_pct: numOrNull(r.adj_estimated_success_rate_formatted),
     diff_success_rate_pct: numOrNull(r.diff_success_rate_formatted),
-    raw_json: JSON.stringify(r).slice(0, 1500)
+    raw_json: JSON.stringify(r)
   };
 }
 
