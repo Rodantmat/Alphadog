@@ -9384,16 +9384,7 @@ async function runClassificationV6Tick(env, input = {}) {
   };
 }
 
-// [removed: duplicate export-default block, copy A]
-
-      ),
-      board_rows AS (
-        SELECT current_row_id, source_key, slate_date, player_id AS source_player_id, player_name, team, opponent,
-               stat_type, line_score, source_line_type, game_id, start_time, pickable_flag, raw_projection_json
-        FROM market.prizepicks_board_current WHERE slate_date::date = '${officialDate}'::date
-      ),
-      board_norm AS (
-        SELECT *, regexp_replace(lower(trim(regexp_replace(player_name, '\\s+(jr\\.?|sr\\.?|ii|iii|iv)
+// [broken orphaned SQL fragment removed]
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
