@@ -257,6 +257,28 @@ Working copy of the file is being edited locally (`/home/claude/hitter_original.
 
 **Next up: `getOrCreateBaseBackfillState`, `getOrCreateDeltaState`, `runBaseBackfillTick`, `runDeltaUpdateTick`** — the outer tick functions that tie everything converted so far together. Once these are done, base_backfill can be deployed and run for real for the first time.
 
+**✅ `getOrCreateBaseBackfillState`, `runBaseBackfillTick`, route handlers: ALL CONVERTED, REPLAYED DIRECTLY ONTO THE REAL REPO FILE, AND DEPLOYED.**
+
+**Method note (important for next session/context freeze):** All ~17 conversions this session were applied as real `github_patch_file` calls directly against `alphadog-v2-base-hitter-game-logs.js` in the repo — old_str extracted from the pristine original D1 file (confirmed byte-exact match before every single patch), new_str from the locally-verified Postgres conversion. No giant file reconstruction/push was needed. This is the correct method going forward for large files: never try to push a full reconstructed blob; replay real, verified patches one function at a time, even for a full-file port.
+
+**🎉 MILESTONE: `base_backfill` deployed and run for real, live, for the first time.**
+
+Two real bugs found and fixed via actual failed live invocations (not caught by local testing, only surfaced once real MLB data flowed through the real worker):
+1. `= ANY(${hitterPositions})` — postgres.js did not correctly bind the plain JS array as a Postgres array literal in this environment (`malformed array literal: "C,1B,2B,..."`). 
+2. `sql.array(hitterPositions)` wrapped in `ANY(...)` — still failed (`op ANY/ALL (array) requires array on right side`).
+3. **Real fix**: switched to the standard postgres.js `IN ${sql(array)}` list-expansion idiom instead of `ANY(array)` — this is the reliable, well-documented pattern for dynamic value lists in this driver. Fixed, deployed, confirmed working.
+
+**Dispatch method note**: `run_job` with a raw job_key ("base-hitter-game-logs") hits Control Room's allow-list-but-unimplemented-route guard. The real dispatch path (matching the "BASE > Hitter Game Logs" UI button) is `orchestrator_enqueue_base_hitter_game_logs` via Control Room — but that specific bridge route also has no implementation branch yet (`ORCHESTRATOR_BRIDGE_ROUTE_NOT_IMPLEMENTED`, a real, pre-existing gap). **Working method used instead** (matches the established "insert directly into `control_job_queue`, then tick" pattern from prior static-worker testing): inserted a real row into `CONTROL_DB.control_job_queue` (job_key `base-hitter-game-logs`, worker_name `alphadog-v2-base-hitter-game-logs`, input_json `{"mode":"base_backfill"}`), then called `orchestrator_tick` — the real orchestrator's own service-bound dispatch (`BASE_HITTER_GAME_LOGS_WORKER` binding, confirmed present) picked it up and ran it for real.
+
+**Confirmed real result** (verified two ways — the job's own `output_json` in `control_job_queue`, AND a direct Postgres query against `stats_hitter.game_logs_stage`):
+- Batch `hitter_base_backfill_batch_mru8ril1_9t6nfv` created, real players processed (Jo Adell, Jorge Soler, Jose Siri, confirmed via real MLB StatsAPI calls with real row/split counts returned).
+- Self-continuation is genuinely working: the real per-minute cron (`trigger: "cron:* * * * *:direct_waituntil_hot_continue_1:pump_cycle_2"`) is picking up and continuing the batch on its own, exactly as designed — went from 161 staged rows to 218 staged rows (7 distinct players) between two direct Postgres checks a couple minutes apart, with zero manual intervention in between.
+- `players_total: 588`, confirming the real hitter population count matches what was found earlier via `ref.players`.
+
+**Current real state**: `base_backfill` is actively running in production via the real cron loop, real batch id `hitter_base_backfill_batch_mru8ril1_9t6nfv`, status `PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS`. It will self-continue (3 players/tick, ~1/minute via cron) until all 588 players are processed, then automatically move through certify → promote → clean per the real state machine. This is a real, live, unattended process now — not a one-off manual test.
+
+**Next steps**: let this batch run to completion (self-continuing, no action needed), then verify final state (rows_promoted, certification pass, stage cleaned) once done. After that: update `getLockedBaseIntegrity`'s hardcoded `LOCKED_BASE_BATCH_ID`/counts to this real batch's real final numbers (flagged earlier as a required follow-up, not fabricated). Only then does `delta_update` conversion become unblocked (it needs a locked, certified base batch to exist first) — `delta_update` conversion has NOT started yet, remains fully D1, exactly as designed for this session.
+
 **✅ `getOrCreateBaseBackfillState`: CONVERTED AND VERIFIED FOR REAL.**
 - Replaced the earlier temporary "scoped connection just for chooseAllHitterPlayers" workaround (from the first conversion round) with the real single `sql` connection now used throughout the whole function, since it's now fully converted.
 - `INSERT OR REPLACE` → `INSERT ... ON CONFLICT (batch_id) DO UPDATE` / `ON CONFLICT (cursor_key) DO UPDATE` for the batch and cursor creation. Tested for real: inserted a full test batch row and test cursor row through the exact converted INSERT/ON CONFLICT statements, confirmed both landed correctly (status, players_total returned correctly), cleaned up after.
