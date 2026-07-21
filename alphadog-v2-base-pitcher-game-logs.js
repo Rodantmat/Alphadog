@@ -692,7 +692,130 @@ async function isFinalizationOnlyReady(sql, batchId, expectedPlayers) {
   return { ready: (cursorDone && outcomesDone && unresolved === 0) || finalizationStatuses.has(status), status, players_total: total, cursor_done: cursorDone, outcomes_done: outcomesDone, unresolved_players: unresolved };
 }
 
-// STUB_MARKER_PREPROMOTE_NEXT
+async function buildPrePromotionChecks(sql, batchId, runId, cutoffDate) {
+  const summaryRows = await sql`
+    SELECT COUNT(*)::int AS rows_staged, COUNT(DISTINCT player_id)::int AS distinct_players, COUNT(DISTINCT game_pk)::int AS distinct_games,
+      MIN(game_date) AS min_game_date, MAX(game_date) AS max_game_date,
+      SUM(CASE WHEN player_id IS NULL OR game_pk IS NULL OR season IS NULL OR game_date IS NULL OR source_key IS NULL OR source_endpoint IS NULL THEN 1 ELSE 0 END)::int AS missing_required,
+      SUM(CASE WHEN group_type!='pitching' THEN 1 ELSE 0 END)::int AS non_pitching_rows,
+      SUM(CASE WHEN game_date > ${cutoffDate} THEN 1 ELSE 0 END)::int AS after_cutoff_rows,
+      SUM(CASE WHEN COALESCE(strikeouts,0)<0 OR COALESCE(walks_allowed,0)<0 OR COALESCE(hits_allowed,0)<0 OR COALESCE(runs_allowed,0)<0 OR COALESCE(earned_runs,0)<0 OR COALESCE(home_runs_allowed,0)<0 OR COALESCE(outs_recorded,0)<0 OR COALESCE(batters_faced,0)<0 OR (earned_runs>runs_allowed AND earned_runs IS NOT NULL AND runs_allowed IS NOT NULL) THEN 1 ELSE 0 END)::int AS bad_math_rows
+    FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId}
+  `;
+  const summary = summaryRows[0] || {};
+  const dupRows = await sql`SELECT COUNT(*)::int AS duplicate_count FROM (SELECT player_id, game_pk, group_type, COUNT(*) AS c FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId} GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1) sub`;
+  const dup = dupRows[0] || {};
+  const outcomeSummary = await certifyPlayerOutcomeUniverse(sql, batchId, runId, cutoffDate);
+  const sourceTruth = await freezeSourceCountersFromOutcomes(sql, batchId);
+  const rowsStaged = asInt(summary.rows_staged, 0);
+  const duplicateCount = asInt(dup.duplicate_count, 0);
+  const stageMatchesOutcomeRows = rowsStaged === asInt(outcomeSummary.rows_before_cutoff, 0);
+  const pass = rowsStaged > 0 && asInt(sourceTruth.source_request_count, 0) === asInt(outcomeSummary.players_total, 0) && asInt(sourceTruth.source_success_count, 0) > 0 && asInt(sourceTruth.source_error_count, 0) === 0 && duplicateCount === 0 && asInt(summary.missing_required, 0) === 0 && asInt(summary.non_pitching_rows, 0) === 0 && asInt(summary.after_cutoff_rows, 0) === 0 && asInt(summary.bad_math_rows, 0) === 0 && stageMatchesOutcomeRows && outcomeSummary.pass === true;
+  const grade = pass ? "BASE_PASS" : "BASE_FAIL";
+  const certification = pass ? "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED" : "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFICATION_FAILED";
+  const checks = { version: VERSION, cutoff_date: cutoffDate, rows_staged: rowsStaged, duplicate_count: duplicateCount, missing_required: asInt(summary.missing_required, 0), non_pitching_rows: asInt(summary.non_pitching_rows, 0), after_cutoff_rows: asInt(summary.after_cutoff_rows, 0), bad_math_rows: asInt(summary.bad_math_rows, 0), stage_matches_outcome_rows: stageMatchesOutcomeRows, player_outcome_universe: outcomeSummary, pass, no_scoring: true, no_ranking: true, no_board_mutation: true };
+  return { pass, certification, grade, checks, duplicateCount, rowsStaged, sourceTruth };
+}
+
+async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options = {}) {
+  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 800);
+  const cleanLimit = cap(options.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
+  const batchRows = await sql`SELECT * FROM stats_pitcher.game_log_batches WHERE batch_id=${batchId}`;
+  let batch = batchRows[0] || null;
+  let status = batch && batch.status ? String(batch.status) : "";
+  let stageCountCached = null;
+  async function getStageCount() { if (stageCountCached !== null) return stageCountCached; const rows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId}`; stageCountCached = asInt(rows[0] && rows[0].c, 0); return stageCountCached; }
+
+  if (status === "COMPLETED_PROMOTED_CLEANED") {
+    const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
+    const sourceTruth = await freezeSourceCountersFromOutcomes(sql, batchId);
+    return { pass: true, done: true, continuation_required: false, status, certification: batch.certification_status || "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED", grade: batch.certification_grade || "BASE_PASS", checks: { version: VERSION, already_completed: true, source_counters_from_outcomes: sourceTruth }, rows_promoted: asInt(liveRows[0] && liveRows[0].c, 0), stage_rows_after_clean: await getStageCount() };
+  }
+  if (status === "CERTIFICATION_FAILED" && (asInt(batch && batch.rows_staged, 0) > 0 || await getStageCount() > 0)) {
+    await sql`UPDATE stats_pitcher.game_log_batches SET status='BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION', certification_status='pending_batch_certification', certification_grade=NULL, locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status='BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION', last_error=NULL, next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+    status = "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION";
+  }
+
+  const liveRowsEarlyRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
+  const rowsPromotedEarly = asInt(liveRowsEarlyRows[0] && liveRowsEarlyRows[0].c, 0);
+  const expectedRowsEarly = asInt(batch && batch.rows_staged, 0) || await getStageCount();
+  if (expectedRowsEarly > 0 && rowsPromotedEarly >= expectedRowsEarly) {
+    const grade = batch.certification_grade || "BASE_PASS";
+    const cleaned = await cleanStageRowsChunk(sql, batchId, cleanLimit);
+    if (cleaned.cleanup_done !== true) {
+      await sql`UPDATE stats_pitcher.game_log_batches SET status='BASE_BACKFILL_CLEANING', rows_promoted=${rowsPromotedEarly}, promoted_at=COALESCE(promoted_at,now()), updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "BASE_BACKFILL_CLEANING", certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CLEAN_MICROPHASE", grade, checks: { cleaned }, rows_promoted: rowsPromotedEarly, stage_rows_after_clean: cleaned.stage_rows_after_clean };
+    }
+    const sourceTruth = await deriveSourceCountersFromOutcomes(sql, batchId);
+    const unresolved = asInt(sourceTruth.source_error_players, 0) + asInt(sourceTruth.repair_required_players, 0) + asInt(sourceTruth.unclear_players, 0);
+    const finalPass = rowsPromotedEarly >= expectedRowsEarly && sourceTruth.outcome_total > 0 && sourceTruth.outcome_total === sourceTruth.distinct_outcome_players && unresolved === 0;
+    const cert = finalPass ? "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED" : "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFICATION_FAILED";
+    const finalChecks = { version: VERSION, rows_promoted: rowsPromotedEarly, expected_promoted_rows: expectedRowsEarly, source_counters_from_outcomes: sourceTruth, pass: finalPass };
+    await sql`UPDATE stats_pitcher.game_log_batches SET status=CASE WHEN ${finalPass} THEN 'COMPLETED_PROMOTED_CLEANED' ELSE 'CERTIFICATION_FAILED' END, rows_promoted=${rowsPromotedEarly}, certification_status=${cert}, certification_grade=CASE WHEN ${finalPass} THEN ${grade} ELSE 'BASE_FAIL' END, certification_json=${JSON.stringify(finalChecks)}, finished_at=now(), promoted_at=COALESCE(promoted_at,now()), cleaned_at=CASE WHEN ${finalPass} THEN now() ELSE cleaned_at END, locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status=${finalPass ? "COMPLETED_PROMOTED_CLEANED" : "CERTIFICATION_FAILED"}, players_processed=players_total, next_run_after=NULL, updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+    return { pass: finalPass, done: true, continuation_required: false, status: finalPass ? "COMPLETED_PROMOTED_CLEANED" : "CERTIFICATION_FAILED", certification: cert, grade: finalPass ? grade : "BASE_FAIL", checks: finalChecks, rows_promoted: rowsPromotedEarly, stage_rows_after_clean: 0 };
+  }
+
+  if (status === "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION" || status === "BASE_BACKFILL_RUNNING" || status === "PARTIAL_CONTINUE_BASE_PITCHER_GAME_LOGS") {
+    const pre = await buildPrePromotionChecks(sql, batchId, runId, cutoffDate);
+    const checksJson = JSON.stringify(pre.checks);
+    await sql`
+      INSERT INTO stats_pitcher.game_log_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,created_at)
+      VALUES (${`cert_${batchId}`}, ${batchId}, ${runId}, 'base_backfill', ${pre.certification}, ${pre.grade}, ${checksJson}, ${pre.rowsStaged}, 0, ${pre.duplicateCount}, ${asInt(pre.sourceTruth.source_no_data_count,0)}, ${asInt(pre.sourceTruth.source_error_count,0)}, now())
+      ON CONFLICT (certification_id) DO UPDATE SET certification_status=excluded.certification_status, certification_grade=excluded.certification_grade, checks_json=excluded.checks_json, rows_staged=excluded.rows_staged
+    `;
+    if (!pre.pass) {
+      await sql`UPDATE stats_pitcher.game_log_batches SET status='CERTIFICATION_FAILED', certification_status=${pre.certification}, certification_grade=${pre.grade}, certification_json=${checksJson}, duplicate_count=${pre.duplicateCount}, finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+      await sql`UPDATE stats_pitcher.game_log_cursor SET status='CERTIFICATION_FAILED', last_error='base backfill certification failed', next_run_after=NULL, updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+      return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: pre.certification, grade: pre.grade, checks: pre.checks, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+    }
+    await sql`UPDATE stats_pitcher.game_log_batches SET status='BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE', certification_status=${pre.certification}, certification_grade=${pre.grade}, certification_json=${checksJson}, duplicate_count=${pre.duplicateCount}, certified_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status='BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE', next_run_after=now(), last_error=NULL, updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+    return { pass: true, done: false, continuation_required: true, status: "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE", certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE", grade: pre.grade, checks: pre.checks, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+  }
+
+  if (status === "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE" || status === "BASE_BACKFILL_PROMOTING") {
+    const grade = batch.certification_grade || "BASE_PASS";
+    const promoted = await promoteStageRowsChunk(sql, batchId, grade, promoteLimit);
+    const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
+    const rowsPromoted = asInt(liveRows[0] && liveRows[0].c, 0);
+    const expectedPromotedRows = asInt(batch && batch.rows_staged, 0) || await getStageCount();
+    const promotionComplete = promoted.remaining_unpromoted === 0 && rowsPromoted >= expectedPromotedRows;
+    const nextStatus = promotionComplete ? "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN" : "BASE_BACKFILL_PROMOTING";
+    await sql`UPDATE stats_pitcher.game_log_batches SET status=${nextStatus}, rows_promoted=${rowsPromoted}, updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status=${nextStatus}, next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+    return { pass: true, done: false, continuation_required: true, status: nextStatus, certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_PROMOTE_MICROPHASE", grade, checks: { promoted, rows_promoted: rowsPromoted, expected_promoted_rows: expectedPromotedRows, promotion_complete: promotionComplete }, rows_promoted: rowsPromoted, stage_rows_after_clean: await getStageCount() };
+  }
+
+  if (status === "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN" || status === "BASE_BACKFILL_CLEANING") {
+    const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
+    const rowsPromoted = asInt(liveRows[0] && liveRows[0].c, 0);
+    const expectedRowsBeforeClean = asInt(batch && batch.rows_staged, 0) || await getStageCount();
+    if (rowsPromoted < expectedRowsBeforeClean) {
+      await sql`UPDATE stats_pitcher.game_log_batches SET status='BASE_BACKFILL_PROMOTING', rows_promoted=${rowsPromoted}, updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "BASE_BACKFILL_PROMOTING", certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_PROMOTION_COUNT_GUARD", grade: batch.certification_grade || "BASE_PASS", checks: { rows_promoted: rowsPromoted, expected_promoted_rows: expectedRowsBeforeClean }, rows_promoted: rowsPromoted, stage_rows_after_clean: await getStageCount() };
+    }
+    const cleaned = await cleanStageRowsChunk(sql, batchId, cleanLimit);
+    if (cleaned.cleanup_done !== true) {
+      await sql`UPDATE stats_pitcher.game_log_batches SET status='BASE_BACKFILL_CLEANING', rows_promoted=${rowsPromoted}, updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "BASE_BACKFILL_CLEANING", certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CLEAN_MICROPHASE", grade: batch.certification_grade || "BASE_PASS", checks: { cleaned }, rows_promoted: rowsPromoted, stage_rows_after_clean: cleaned.stage_rows_after_clean };
+    }
+    const outcomeSummary = await certifyPlayerOutcomeUniverse(sql, batchId, runId, cutoffDate);
+    const sourceTruth = await freezeSourceCountersFromOutcomes(sql, batchId);
+    const expectedPromotedRows = asInt(batch && batch.rows_staged, 0) || asInt(outcomeSummary && outcomeSummary.rows_before_cutoff, 0);
+    const cert = batch.certification_status || "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED";
+    const grade = batch.certification_grade || "BASE_PASS";
+    const finalPass = outcomeSummary.pass === true && rowsPromoted > 0 && rowsPromoted >= expectedPromotedRows;
+    const finalChecks = { version: VERSION, rows_promoted: rowsPromoted, expected_promoted_rows: expectedPromotedRows, source_counters_from_outcomes: sourceTruth, player_outcome_universe: outcomeSummary, pass: finalPass };
+    await sql`UPDATE stats_pitcher.game_log_batches SET status=CASE WHEN ${finalPass} THEN 'COMPLETED_PROMOTED_CLEANED' ELSE 'CERTIFICATION_FAILED' END, rows_promoted=${rowsPromoted}, certification_status=CASE WHEN ${finalPass} THEN ${cert} ELSE 'BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFICATION_FAILED' END, certification_grade=CASE WHEN ${finalPass} THEN ${grade} ELSE 'BASE_FAIL' END, certification_json=${JSON.stringify(finalChecks)}, finished_at=now(), promoted_at=CASE WHEN ${finalPass} THEN COALESCE(promoted_at,now()) ELSE promoted_at END, cleaned_at=CASE WHEN ${finalPass} THEN now() ELSE cleaned_at END, updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status=${finalPass ? "COMPLETED_PROMOTED_CLEANED" : "CERTIFICATION_FAILED"}, players_processed=players_total, next_run_after=NULL, updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+    return { pass: finalPass, done: true, continuation_required: false, status: finalPass ? "COMPLETED_PROMOTED_CLEANED" : "CERTIFICATION_FAILED", certification: finalPass ? cert : "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFICATION_FAILED", grade: finalPass ? grade : "BASE_FAIL", checks: finalChecks, rows_promoted: rowsPromoted, stage_rows_after_clean: 0 };
+  }
+  return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "BASE_PITCHER_GAME_LOGS_UNKNOWN_FINALIZATION_STATUS", grade: "BASE_FAIL", checks: { status, batch_id: batchId }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+}
+
+// STUB_MARKER_BASESTATE_NEXT
 
 export default {
   async fetch(request, env) {
