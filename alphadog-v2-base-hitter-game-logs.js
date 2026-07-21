@@ -1152,10 +1152,7 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
       s.raw_json,s.source_key,s.source_confidence,s.group_type,s.data_feed_key,s.source_endpoint,s.source_season,s.source_game_type,s.ingestion_mode,s.batch_id,s.run_id
     FROM stats_hitter.game_logs_stage s
     WHERE s.batch_id=${batchId}
-      AND NOT EXISTS (
-        SELECT 1 FROM stats_hitter.game_logs h
-        WHERE h.batch_id=s.batch_id AND h.player_id=s.player_id AND h.game_pk=s.game_pk AND h.group_type=s.group_type
-      )
+      AND s.row_status != 'promoted'
     ORDER BY s.stage_id
     LIMIT ${safeLimit}
   `;
