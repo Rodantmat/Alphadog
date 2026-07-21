@@ -23,7 +23,7 @@ function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
 
 function pg(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
 }
 
 function savantUrl(year) {
