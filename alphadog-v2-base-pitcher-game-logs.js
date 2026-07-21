@@ -1109,7 +1109,7 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
     return { pass: true, done: true, continuation_required: false, status, certification: batch.certification_status || "DELTA_PITCHER_GAME_LOGS_CERTIFIED", grade: batch.certification_grade || "DELTA_PASS", checks: { version: VERSION, already_completed: true, source_counters_from_outcomes: sourceTruth }, rows_promoted: asInt(batch.rows_promoted, 0), stage_rows_after_clean: await getStageCount() };
   }
 
-  if (status === "DELTA_RUNNING" || status === "PARTIAL_CONTINUE_DELTA_PITCHER_GAME_LOGS") {
+  if (status === "DELTA_STAGED_READY_FOR_CERTIFICATION" || status === "DELTA_RUNNING" || status === "PARTIAL_CONTINUE_DELTA_PITCHER_GAME_LOGS") {
     const pre = await buildDeltaPrePromotionChecks(sql, batchId, runId, windowInfo, playersTotal, baseGate);
     if (!pre.pass) {
       return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "DELTA_PITCHER_GAME_LOGS_CERTIFICATION_FAILED", grade: "DELTA_FAIL", checks: pre.checks, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
