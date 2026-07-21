@@ -1814,13 +1814,14 @@ async function getOrCreateDeltaState(env, sql, input, inputJson, windowInfo) {
     schedule_endpoint: windowInfo.schedule_endpoint,
     players
   };
+  const tickConfigAtDeltaCreate = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS);
   await sql`
     INSERT INTO stats_hitter.game_log_batches (
       batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_endpoint,source_season,source_game_type,
       base_backfill_cutoff_date,delta_start_date,cursor_offset,cursor_state_json,chunk_size_players,max_requests_per_tick,max_rows_per_tick,certification_status,notes,updated_at
     ) VALUES (
       ${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'delta_update', 'DELTA_RUNNING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${LOCKED_SOURCE_ENDPOINT_PATTERN}, ${sourceSeason}, 'R',
-      ${DEFAULT_BASE_BACKFILL_CUTOFF_DATE}, ${windowInfo.delta_start_date}, 0, ${JSON.stringify(cursorJson)}, ${DEFAULT_CHUNK_SIZE_PLAYERS}, ${DEFAULT_MAX_REQUESTS_PER_TICK}, ${DEFAULT_MAX_ROWS_PER_TICK}, 'not_certified',
+      ${DEFAULT_BASE_BACKFILL_CUTOFF_DATE}, ${windowInfo.delta_start_date}, 0, ${JSON.stringify(cursorJson)}, ${tickConfigAtDeltaCreate.chunk_size_players}, ${tickConfigAtDeltaCreate.chunk_size_players}, ${DEFAULT_MAX_ROWS_PER_TICK}, 'not_certified',
       ${`delta_update certifying repair/update window ${windowInfo.delta_start_date} through ${windowInfo.delta_end_date}; base batch ${LOCKED_BASE_BATCH_ID} gate required`}, now()
     )
     ON CONFLICT (batch_id) DO UPDATE SET run_id=excluded.run_id, status=excluded.status, cursor_state_json=excluded.cursor_state_json, updated_at=now()
