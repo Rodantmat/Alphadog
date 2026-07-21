@@ -1019,6 +1019,7 @@ async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDa
   let beforeCutoff = 0;
   let filteredAfterCutoff = 0;
   let invalidBeforeCutoff = 0;
+  const stagedDates = [];
   for (const split of splits) {
     if (inserted >= maxRowsRemaining) break;
     const gameDate = splitGameDate(split);
@@ -1032,7 +1033,7 @@ async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDa
       invalidBeforeCutoff++;
       continue;
     }
-    await insertStageRow(env, row);
+    await insertStageRow(sql, row);
     stagedDates.push(row.game_date);
     inserted++;
   }
