@@ -502,7 +502,7 @@ async function chooseAllHitterPlayers(sql, inputJson) {
     FROM ref.players
     WHERE COALESCE(active,1)=1
       AND mlb_player_id IS NOT NULL
-      AND UPPER(COALESCE(primary_position, primary_role, '')) = ANY(${hitterPositions})
+      AND UPPER(COALESCE(primary_position, primary_role, '')) = ANY(${sql.array(hitterPositions)})
     ORDER BY current_team_id IS NULL, current_team_id, full_name
   `;
 
