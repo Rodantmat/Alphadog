@@ -233,3 +233,10 @@ Working copy of the file is being edited locally (`/home/claude/hitter_original.
 - **Tested for real**: inserted a test batch + cursor + 2 outcome rows (1 promoted, 1 no-data) reproducing a "fully finalized" state, ran the exact converted `isFinalizationOnlyReady` query, confirmed it returns the right shape to make `ready:true` (cursor_offset=2≥total, outcome_total=2=total, unresolved=0). Test rows cleaned up after (3 tables).
 
 **Next up: `buildPrePromotionChecks` and `certifyAndPromoteIfClean`** — the certification/promotion orchestration itself.
+
+**✅ `buildPrePromotionChecks`: CONVERTED AND VERIFIED FOR REAL.**
+- Direct edits: table qualification, `?`→`${}`, aggregates cast `::int`.
+- **Real behavioral confirmation, not just syntax**: tried to insert a genuine duplicate (batch_id, player_id, game_pk, group_type) pair with different stage_ids — Postgres correctly rejected it via the table's own `UNIQUE` constraint (same constraint the original D1 schema has), confirming the schema-level dedup guarantee holds and the code's duplicate_count check is a correct defensive belt-and-suspenders layer, not covering for a schema gap. Confirmed the whole multi-row insert failed atomically (0 rows leaked).
+- Then inserted one valid (but deliberately inconsistent) stage row and ran the real summary aggregate query: it correctly flagged `bad_math_rows=1` for a genuine total_bases inconsistency in the test data — proof the validity math check works as intended, not just that it runs without erroring. Cleaned up after.
+
+**Next up: `certifyAndPromoteIfClean`** — the actual state-machine function that decides certify → promote → clean transitions, and where the delta-retention-forever fix (flagged early this session) will land when its sibling `finalizeDeltaIfReady` gets converted.
