@@ -3008,18 +3008,19 @@ async function ensureConfigScheduledJobsTable(env) {
 
 async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown") {
   await ensureSchema(env);
-  await ensureConfigScheduledJobsTable(env);
 
   const pt = pacificNowParts(new Date());
-  const scheduleRows = await all(env.CONFIG_DB,
-    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
-     FROM config_scheduled_jobs
-     WHERE enabled=1
-       AND job_key='board-full-run'
-       AND schedule_type='daily'
-       AND timezone='America/Los_Angeles'
-     ORDER BY local_time`
-  );
+  let sqlSched3 = pgSchedule(env);
+  const scheduleRows = await sqlSched3`
+    SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json::text AS input_json, notes
+    FROM config.scheduled_jobs
+    WHERE enabled=1
+      AND job_key='board-full-run'
+      AND schedule_type='daily'
+      AND timezone='America/Los_Angeles'
+    ORDER BY local_time
+  `;
+  await sqlSched3.end();
 
   const results = [];
   for (const schedule of scheduleRows) {
