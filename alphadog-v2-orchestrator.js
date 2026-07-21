@@ -2569,7 +2569,6 @@ function isApprovedIncrementalMorningFullRunScheduleWindow(pt) {
 
 async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression = "unknown") {
   await ensureSchema(env);
-  await ensureConfigScheduledJobsTable(env);
 
   const pt = pacificNowParts(new Date());
   let sqlSched1 = pgSchedule(env);
