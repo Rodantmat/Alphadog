@@ -1336,7 +1336,8 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
   // so the original used `finalPass ? 1 : 0` passed into CASE WHEN ? THEN clauses everywhere.
   // Postgres has real booleans, so these became CASE WHEN ${finalPass} THEN directly - tested
   // for real against live Postgres (CASE WHEN true/false THEN confirmed working).
-  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 300);
+  const tickConfigForPromote = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+  const promoteLimit = cap(options.promote_rows_per_tick || tickConfigForPromote.promote_rows_per_tick, 1, 2000);
   const cleanLimit = cap(options.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
   const batchRows = await sql`SELECT * FROM stats_hitter.game_log_batches WHERE batch_id=${batchId}`;
   let batch = batchRows[0] || null;
