@@ -1207,7 +1207,7 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
   const remainingRows = await sql`
     SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage s
     WHERE s.batch_id=${batchId}
-      AND NOT EXISTS (SELECT 1 FROM stats_hitter.game_logs h WHERE h.batch_id=s.batch_id AND h.player_id=s.player_id AND h.game_pk=s.game_pk AND h.group_type=s.group_type)
+      AND s.row_status != 'promoted'
   `;
   const remaining = remainingRows[0];
   return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remaining && remaining.c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_log_id" };
