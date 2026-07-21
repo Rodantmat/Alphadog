@@ -1451,19 +1451,34 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
 }
 
 
-async function getLockedBaseIntegrity(env) {
-  const batch = await first(env.STATS_HITTER_DB, `SELECT batch_id,status,rows_promoted,certification_status,certification_grade,cleaned_at
-    FROM hitter_game_log_batches WHERE batch_id=? LIMIT 1`, LOCKED_BASE_BATCH_ID);
-  const live = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM hitter_game_logs WHERE batch_id=?`, LOCKED_BASE_BATCH_ID);
-  const outcomes = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM hitter_game_log_player_outcomes WHERE batch_id=?`, LOCKED_BASE_BATCH_ID);
-  const dup = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM (
+async function getLockedBaseIntegrity(sql) {
+  // DIRECT PORT - IMPORTANT CAVEAT NOT SILENTLY GLOSSED OVER:
+  // The D1 version hardcodes LOCKED_BASE_BATCH_ID + exact expected counts (rows_promoted=14717,
+  // outcome rows=569) tied to ONE SPECIFIC historical D1 base_backfill run. Those exact numbers
+  // are artifacts of that run's real player population and are NOT being carried over as fact -
+  // they will not match whatever Postgres's own fresh base_backfill produces (different real
+  // hitter population count already confirmed: 588 active hitter-position players today vs
+  // whatever existed at that D1 run's time). This function is intentionally left pointing at the
+  // OLD LOCKED_BASE_BATCH_ID/counts for now and WILL correctly report pass:false until Rodolfo
+  // runs a real base_backfill on Postgres and this gate is updated with the real resulting
+  // batch_id + real counts. Not fabricating new numbers - flagging this as a required follow-up.
+  const batchRows = await sql`SELECT batch_id,status,rows_promoted,certification_status,certification_grade,cleaned_at
+    FROM stats_hitter.game_log_batches WHERE batch_id=${LOCKED_BASE_BATCH_ID} LIMIT 1`;
+  const batch = batchRows[0] || null;
+  const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${LOCKED_BASE_BATCH_ID}`;
+  const outcomeRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_log_player_outcomes WHERE batch_id=${LOCKED_BASE_BATCH_ID}`;
+  const dupRows = await sql`SELECT COUNT(*)::int AS c FROM (
       SELECT player_id, game_pk, group_type, COUNT(*) AS n
-      FROM hitter_game_logs
-      WHERE batch_id=?
+      FROM stats_hitter.game_logs
+      WHERE batch_id=${LOCKED_BASE_BATCH_ID}
       GROUP BY player_id, game_pk, group_type
       HAVING COUNT(*) > 1
-    )`, LOCKED_BASE_BATCH_ID);
-  const after = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM hitter_game_logs WHERE batch_id=? AND date(game_date) > date(?)`, LOCKED_BASE_BATCH_ID, DEFAULT_BASE_BACKFILL_CUTOFF_DATE);
+    ) sub`;
+  const afterRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${LOCKED_BASE_BATCH_ID} AND game_date::date > ${DEFAULT_BASE_BACKFILL_CUTOFF_DATE}::date`;
+  const live = liveRows[0] || {};
+  const outcomes = outcomeRows[0] || {};
+  const dup = dupRows[0] || {};
+  const after = afterRows[0] || {};
   const pass = !!batch
     && String(batch.status) === "COMPLETED_PROMOTED_CLEANED"
     && asInt(batch.rows_promoted, 0) === 14717
@@ -1481,7 +1496,8 @@ async function getLockedBaseIntegrity(env) {
     duplicate_base_live_keys: asInt(dup && dup.c, 0),
     base_rows_after_cutoff: asInt(after && after.c, 0),
     cutoff_date: DEFAULT_BASE_BACKFILL_CUTOFF_DATE,
-    cleaned_at: batch ? batch.cleaned_at : null
+    cleaned_at: batch ? batch.cleaned_at : null,
+    postgres_gate_needs_real_batch_update_after_first_real_base_backfill: true
   };
 }
 
