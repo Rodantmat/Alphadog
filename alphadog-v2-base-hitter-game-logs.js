@@ -1576,7 +1576,7 @@ async function getLockedBaseIntegrity(sql) {
     base_rows_after_cutoff: asInt(after && after.c, 0),
     cutoff_date: DEFAULT_BASE_BACKFILL_CUTOFF_DATE,
     cleaned_at: batch ? batch.cleaned_at : null,
-    postgres_gate_needs_real_batch_update_after_first_real_base_backfill: true
+    postgres_gate_updated_to_real_batch: true
   };
 }
 
