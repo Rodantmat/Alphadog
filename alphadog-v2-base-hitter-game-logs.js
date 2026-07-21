@@ -1214,7 +1214,7 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
 async function cleanStageRowsChunk(sql, batchId, limit) {
   // DIRECT PORT: SQLite rowid -> Postgres ctid (same "bounded delete without a full count"
   // pattern, just the Postgres physical-row-identifier equivalent).
-  const safeLimit = cap(limit || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 500);
+  const safeLimit = cap(limit || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
   const res = await sql`
     DELETE FROM stats_hitter.game_logs_stage
     WHERE ctid IN (
