@@ -20,10 +20,13 @@ followed exactly, without exception:
    any fact you're not certain of, either (a) ask him directly with a short, specific question, or
    (b) do real, deep online research from reliable sources before proceeding. Never fabricate,
    never assume, never present a hypothesis as a confirmed fact.
-3. **Do not test or touch anything on the old D1 database.** If a worker or table is not 100%
-   wired to Postgres, do not test it, do not run it, do not "just check" it against D1. If it's
-   not fully migrated, leave it alone until it is. This was explicit and is treated as a hard
-   rule, not a preference.
+3. **D1 is completely off limits. We only wire the new (Postgres) database.** Not "off limits
+   until wired" — there is no waiting-period exception. Do not test, run, or touch anything
+   against D1, at any stage. If a worker or table isn't ready on Postgres, leave it alone until it
+   is. The single narrow exception: calculated/derived layers (classification, baseline,
+   expansion) may use D1 read-only, for comparison only, to verify new logic is correct — never as
+   a save target. See Section 4 for the full rule and Section 5 for the calculated-layer
+   exception.
 4. **Own your mistakes plainly.** If something breaks or a fix doesn't work, say so honestly and
    directly, then fix it — don't over-apologize, don't spiral, and don't claim something is fixed
    until it's actually verified against real data.
