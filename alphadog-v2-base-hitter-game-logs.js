@@ -3055,17 +3055,10 @@ async function runBaseBackfillTick(env, input) {
     const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
     const requestedMode = asText(inputJson.mode || input.mode, "base_backfill");
     if (requestedMode === "delta_update") {
-      // delta_update's own function (runDeltaUpdateTick) and its many repair-path helpers are
-      // not yet converted - explicitly not dispatching to it from here to avoid any accidental
-      // D1 touch through an unconverted call chain. Real, honest "not ready yet" response
-      // instead of silently routing into D1 code.
+      // Now wired to the real, converted runDeltaUpdateTick using the same open connection.
+      const deltaOutput = await runDeltaUpdateTick(env, sql, input, inputJson);
       await sql.end();
-      return {
-        ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
-        request_id: input.request_id || null, mode: "delta_update", status: "DELTA_UPDATE_NOT_YET_PORTED",
-        error: "delta_update mode is not yet converted to Postgres in this worker - base_backfill only, for now.",
-        rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: false
-      };
+      return deltaOutput;
     }
 
     const state = await getOrCreateBaseBackfillState(env, sql, input);
