@@ -3164,11 +3164,12 @@ async function runBaseBackfillTick(env, input) {
     const cutoffDate = batch.base_backfill_cutoff_date || DEFAULT_BASE_BACKFILL_CUTOFF_DATE;
     const sourceSeason = asInt(batch.source_season, DEFAULT_SOURCE_SEASON);
     const requestedMaxRequests = inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK;
-    const requestedChunkSize = inputJson.chunk_size_players || batch.chunk_size_players || requestedMaxRequests || DEFAULT_CHUNK_SIZE_PLAYERS;
-    const maxRequests = cap(requestedMaxRequests, 1, 100);
-    const chunkSize = cap(requestedChunkSize, 1, 100);
+    const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS);
+    const requestedChunkSize = inputJson.chunk_size_players || batch.chunk_size_players || tickConfig.chunk_size_players;
+    const maxRequests = cap(requestedMaxRequests, 1, 2000);
+    const chunkSize = cap(requestedChunkSize, 1, 2000);
     const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
-    const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 8000, 30000);
+    const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || tickConfig.max_tick_runtime_ms, 8000, 120000);
     const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
     const tickStartedAtMs = Date.now();
     let cursorJsonObj = {};
