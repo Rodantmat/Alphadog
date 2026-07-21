@@ -1608,7 +1608,8 @@ function parseHitterSplitForWindow(split, playerId, playerName, season, batchId,
   return row;
 }
 
-async function processPlayerDelta(env, p, sourceSeason, batchId, runId, windowStart, windowEnd, maxRowsRemaining, fetchTimeoutMs) {
+async function processPlayerDelta(env, sql, p, sourceSeason, batchId, runId, windowStart, windowEnd, maxRowsRemaining, fetchTimeoutMs) {
+  // DIRECT PORT: added `sql` param for the Postgres stage insert (same pattern as processPlayer).
   const endpoint = endpointFor(env, p.player_id, sourceSeason);
   const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.10") } }, fetchTimeoutMs);
   if (!fetched.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true };
