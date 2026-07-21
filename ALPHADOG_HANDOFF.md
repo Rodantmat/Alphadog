@@ -125,6 +125,18 @@ into `control_job_queue`. The row itself (`schedule_id: static_full_run_weekly_m
 an incremental worker later, follow this exact same DB-driven pattern — add a row to
 `config_scheduled_jobs`, do not add or rely on a cron-file trigger.
 
+**UPDATE — scheduled jobs are now on Postgres too, D1 fully removed for this concern.** The
+paragraph above describes the pattern; the underlying storage has since moved. All 9 real
+schedule rows were migrated from `CONFIG_DB.config_scheduled_jobs` (D1) to `config.scheduled_jobs`
+(Postgres) with identical data. All 6 places in `alphadog-v2-orchestrator.js` that read schedules
+(`incremental-morning-full-run`, `daily-full-run`, `board-full-run`, `scoring-full-run`,
+`context-history-full-run`, `static-full-run` weekly) now query Postgres via Hyperdrive
+(`prepare: false`, same as every other Postgres worker). The old D1-touching schema-ensure
+function (`ensureConfigScheduledJobsTable`) has zero callers left and was neutered to a real
+no-op rather than deleted. Deployed and confirmed clean across real cron cycles. `CONFIG_DB` in
+D1 still exists and still holds the old, now-unused `config_scheduled_jobs` table — that table is
+dead, do not read from or write to it going forward.
+
 ---
 
 ## 3. WHAT'S NOT DONE — EVERYTHING ELSE (this is the incremental/delta phase's job)
