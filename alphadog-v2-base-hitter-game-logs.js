@@ -678,37 +678,49 @@ function outcomeReason(result, category) {
   return "Source returned data but no rows were staged inside the base cutoff; transformation/cutoff parsing must be repaired before delta opens.";
 }
 
-async function upsertPlayerOutcome(env, batchId, runId, p, cursorOffset, result, endpoint) {
+async function upsertPlayerOutcome(sql, batchId, runId, p, cursorOffset, result, endpoint) {
+  // DIRECT PORT: INSERT OR REPLACE (composite key batch_id+player_id) -> INSERT ... ON CONFLICT (batch_id, player_id) DO UPDATE.
   const category = classifyPlayerOutcome(result);
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_player_outcomes (
-    batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_endpoint,source_http_status,source_ok,
-    raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,
-    first_raw_game_date,last_raw_game_date,first_promoted_game_date,last_promoted_game_date,certification_status,certification_grade,updated_at
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-    batchId,
-    runId,
-    asInt(p && p.player_id, 0),
-    asText((p && p.player_name) || (result && result.player_name), null),
-    asText(p && p.primary_position, null),
-    asInt(cursorOffset, 0),
-    endpoint || (result && result.source_endpoint) || null,
-    result && result.http_status !== undefined ? asInt(result.http_status, null) : null,
-    category === "SOURCE_ERROR" ? 0 : 1,
-    asInt(result && result.raw_payload_split_count, 0),
-    asInt(result && result.rows_before_cutoff, 0),
-    asInt(result && result.rows_filtered_after_cutoff, 0),
-    asInt(result && result.rows_staged, 0),
-    0,
-    category,
-    outcomeReason(result, category),
-    result && result.error ? String(result.error).slice(0, 900) : null,
-    result && result.first_raw_game_date ? result.first_raw_game_date : null,
-    result && result.last_raw_game_date ? result.last_raw_game_date : null,
-    result && result.first_promoted_game_date ? result.first_promoted_game_date : null,
-    result && result.last_promoted_game_date ? result.last_promoted_game_date : null,
-    "player_outcome_unverified",
-    null
-  );
+  await sql`
+    INSERT INTO stats_hitter.game_log_player_outcomes (
+      batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_endpoint,source_http_status,source_ok,
+      raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,
+      first_raw_game_date,last_raw_game_date,first_promoted_game_date,last_promoted_game_date,certification_status,certification_grade,updated_at
+    ) VALUES (
+      ${batchId},
+      ${runId},
+      ${asInt(p && p.player_id, 0)},
+      ${asText((p && p.player_name) || (result && result.player_name), null)},
+      ${asText(p && p.primary_position, null)},
+      ${asInt(cursorOffset, 0)},
+      ${endpoint || (result && result.source_endpoint) || null},
+      ${result && result.http_status !== undefined ? asInt(result.http_status, null) : null},
+      ${category === "SOURCE_ERROR" ? 0 : 1},
+      ${asInt(result && result.raw_payload_split_count, 0)},
+      ${asInt(result && result.rows_before_cutoff, 0)},
+      ${asInt(result && result.rows_filtered_after_cutoff, 0)},
+      ${asInt(result && result.rows_staged, 0)},
+      0,
+      ${category},
+      ${outcomeReason(result, category)},
+      ${result && result.error ? String(result.error).slice(0, 900) : null},
+      ${result && result.first_raw_game_date ? result.first_raw_game_date : null},
+      ${result && result.last_raw_game_date ? result.last_raw_game_date : null},
+      ${result && result.first_promoted_game_date ? result.first_promoted_game_date : null},
+      ${result && result.last_promoted_game_date ? result.last_promoted_game_date : null},
+      'player_outcome_unverified',
+      NULL,
+      now()
+    )
+    ON CONFLICT (batch_id, player_id) DO UPDATE SET
+      run_id=excluded.run_id, player_name=excluded.player_name, primary_position=excluded.primary_position, cursor_offset=excluded.cursor_offset,
+      source_endpoint=excluded.source_endpoint, source_http_status=excluded.source_http_status, source_ok=excluded.source_ok,
+      raw_payload_split_count=excluded.raw_payload_split_count, rows_before_cutoff=excluded.rows_before_cutoff, rows_filtered_after_cutoff=excluded.rows_filtered_after_cutoff,
+      rows_staged=excluded.rows_staged, promoted_row_count=excluded.promoted_row_count, terminal_category=excluded.terminal_category,
+      category_reason=excluded.category_reason, source_error=excluded.source_error, first_raw_game_date=excluded.first_raw_game_date,
+      last_raw_game_date=excluded.last_raw_game_date, first_promoted_game_date=excluded.first_promoted_game_date, last_promoted_game_date=excluded.last_promoted_game_date,
+      certification_status=excluded.certification_status, certification_grade=excluded.certification_grade, updated_at=now()
+  `;
   return category;
 }
 
