@@ -192,7 +192,7 @@ async function runArsenal(env, input) {
     step = "write_connection_open";
     const sql = pg(env);
     step = "write_current_rows_select";
-    const currentRows = await sql`SELECT * FROM ref.pitcher_arsenal WHERE season_year=${year}`;
+    const currentRows = await sql`SELECT * FROM ref.pitcher_arsenal WHERE season_year=${year} AND source_key=${SOURCE_KEY}`;
     const currentMap = new Map(currentRows.map(r => [r.arsenal_id, r]));
 
     // Bounded per-tick write: only this slice's rows, individual upserts (the proven-reliable
