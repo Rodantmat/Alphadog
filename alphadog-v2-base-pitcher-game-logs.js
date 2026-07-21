@@ -275,7 +275,116 @@ async function schemaStatus(sql) {
   return { tables: tables.map(r => r.name), pitcher_game_logs_columns: liveCols.map(r => r.name) };
 }
 
-// STUB_MARKER_MINING_NEXT
+function endpointFor(env, playerId, season) {
+  const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+  return `${base}/people/${encodeURIComponent(playerId)}/stats?stats=gameLog&group=pitching&season=${encodeURIComponent(season)}`;
+}
+
+function statVal(stat, keys) { for (const k of keys) { if (stat && stat[k] !== undefined && stat[k] !== null && stat[k] !== "") return stat[k]; } return null; }
+function toInt(value) { if (value === null || value === undefined || value === "") return null; const n = Number(value); return Number.isFinite(n) ? Math.trunc(n) : null; }
+function parseOuts(innings) {
+  if (innings === null || innings === undefined || innings === "") return null;
+  const s = String(innings);
+  const [wholeRaw, fracRaw = "0"] = s.split(".");
+  const whole = Number(wholeRaw), frac = Number(fracRaw);
+  if (!Number.isFinite(whole)) return null;
+  if (frac === 0) return whole * 3;
+  if (frac === 1 || frac === 2) return whole * 3 + frac;
+  const decimal = Number(s);
+  return Number.isFinite(decimal) ? Math.round(decimal * 3) : null;
+}
+function inningsDecimal(innings) { const outs = parseOuts(innings); return outs === null ? null : outs / 3; }
+function splitGameDate(split) { const game = split && split.game ? split.game : {}; return asText(game.gameDate || split.date || split.gameDate, null); }
+
+function parsePitcherSplit(split, playerId, playerName, season, batchId, runId, mode, endpoint, cutoffDate) {
+  const stat = split && split.stat ? split.stat : {};
+  const game = split && split.game ? split.game : {};
+  const team = split && split.team ? split.team : {};
+  const opponent = split && split.opponent ? split.opponent : {};
+  const gamePk = asInt(game.gamePk || game.pk || split.gamePk, 0);
+  const gameDate = splitGameDate(split);
+  if (!gamePk || !gameDate) return null;
+  if (cutoffDate && gameDate > cutoffDate) return null;
+  const innings = statVal(stat, ["inningsPitched"]);
+  return {
+    stage_id: `${batchId}_${playerId}_${gamePk}_pitching`,
+    batch_id: batchId, run_id: runId, player_id: asInt(playerId), player_name: playerName || null,
+    game_pk: gamePk, season: asInt(season), game_date: gameDate,
+    team_id: team && team.id !== undefined ? String(team.id) : null,
+    opponent_team_id: opponent && opponent.id !== undefined ? String(opponent.id) : null,
+    opponent_abbr: statVal(opponent, ["abbreviation", "name"]),
+    is_home: split && split.isHome !== undefined ? (split.isHome ? 1 : 0) : null,
+    role: "P",
+    innings_pitched_decimal: inningsDecimal(innings),
+    outs_recorded: parseOuts(innings),
+    batters_faced: toInt(statVal(stat, ["battersFaced"])),
+    hits_allowed: toInt(statVal(stat, ["hits"])),
+    runs_allowed: toInt(statVal(stat, ["runs"])),
+    earned_runs: toInt(statVal(stat, ["earnedRuns"])),
+    walks_allowed: toInt(statVal(stat, ["baseOnBalls", "walks"])),
+    strikeouts: toInt(statVal(stat, ["strikeOuts", "strikeouts"])),
+    home_runs_allowed: toInt(statVal(stat, ["homeRuns"])),
+    pitches: toInt(statVal(stat, ["numberOfPitches", "pitches"])),
+    balls: toInt(statVal(stat, ["balls"])),
+    strikes: toInt(statVal(stat, ["strikes"])),
+    wins: toInt(statVal(stat, ["wins"])),
+    losses: toInt(statVal(stat, ["losses"])),
+    saves: toInt(statVal(stat, ["saves"])),
+    holds: toInt(statVal(stat, ["holds"])),
+    blown_saves: toInt(statVal(stat, ["blownSaves"])),
+    group_type: GROUP_TYPE, data_feed_key: DATA_FEED_KEY, source_key: SOURCE_KEY, source_endpoint: endpoint,
+    source_season: asInt(season), source_game_type: asText(split && split.gameType, null), ingestion_mode: mode,
+    certification_status: "base_backfill_staged_unverified", certification_grade: null,
+    source_confidence: "SOURCE_LOCKED_STATSAPI_GAMELOG_PITCHING", raw_json: JSON.stringify(split)
+  };
+}
+
+async function insertStageRow(sql, row) {
+  await sql`
+    INSERT INTO stats_pitcher.game_logs_stage (
+      stage_id,batch_id,run_id,player_id,player_name,game_pk,season,game_date,team_id,opponent_team_id,opponent_abbr,is_home,role,
+      innings_pitched_decimal,outs_recorded,batters_faced,hits_allowed,runs_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed,
+      pitches,balls,strikes,wins,losses,saves,holds,blown_saves,
+      group_type,data_feed_key,source_key,source_endpoint,source_season,source_game_type,ingestion_mode,certification_status,certification_grade,source_confidence,raw_json,updated_at
+    ) VALUES (
+      ${row.stage_id},${row.batch_id},${row.run_id},${row.player_id},${row.player_name},${row.game_pk},${row.season},${row.game_date},${row.team_id},${row.opponent_team_id},${row.opponent_abbr},${row.is_home},${row.role},
+      ${row.innings_pitched_decimal},${row.outs_recorded},${row.batters_faced},${row.hits_allowed},${row.runs_allowed},${row.earned_runs},${row.walks_allowed},${row.strikeouts},${row.home_runs_allowed},
+      ${row.pitches},${row.balls},${row.strikes},${row.wins},${row.losses},${row.saves},${row.holds},${row.blown_saves},
+      ${row.group_type},${row.data_feed_key},${row.source_key},${row.source_endpoint},${row.source_season},${row.source_game_type},${row.ingestion_mode},${row.certification_status},${row.certification_grade},${row.source_confidence},${row.raw_json}, now()
+    )
+    ON CONFLICT (stage_id) DO UPDATE SET
+      batch_id=excluded.batch_id, run_id=excluded.run_id, player_id=excluded.player_id, player_name=excluded.player_name,
+      game_pk=excluded.game_pk, season=excluded.season, game_date=excluded.game_date, team_id=excluded.team_id, opponent_team_id=excluded.opponent_team_id, opponent_abbr=excluded.opponent_abbr,
+      is_home=excluded.is_home, role=excluded.role, innings_pitched_decimal=excluded.innings_pitched_decimal, outs_recorded=excluded.outs_recorded,
+      batters_faced=excluded.batters_faced, hits_allowed=excluded.hits_allowed, runs_allowed=excluded.runs_allowed, earned_runs=excluded.earned_runs,
+      walks_allowed=excluded.walks_allowed, strikeouts=excluded.strikeouts, home_runs_allowed=excluded.home_runs_allowed,
+      pitches=excluded.pitches, balls=excluded.balls, strikes=excluded.strikes, wins=excluded.wins, losses=excluded.losses, saves=excluded.saves, holds=excluded.holds, blown_saves=excluded.blown_saves,
+      group_type=excluded.group_type, data_feed_key=excluded.data_feed_key, source_key=excluded.source_key, source_endpoint=excluded.source_endpoint, source_season=excluded.source_season,
+      source_game_type=excluded.source_game_type, ingestion_mode=excluded.ingestion_mode, certification_status=excluded.certification_status,
+      certification_grade=excluded.certification_grade, source_confidence=excluded.source_confidence, raw_json=excluded.raw_json, updated_at=now()
+  `;
+}
+
+async function chooseAllPitcherPlayers(sql, inputJson) {
+  const explicit = inputJson && Array.isArray(inputJson.player_ids) ? inputJson.player_ids.map(x => asInt(x, 0)).filter(Boolean) : [];
+  if (explicit.length) return explicit.map(player_id => ({ player_id, player_name: null, primary_position: null, source: "input_json.player_ids" }));
+
+  const pitcherRoles = ["P", "SP", "RP", "CP", "LHP", "RHP"];
+  const rows = await sql`
+    SELECT mlb_player_id AS player_id, full_name AS player_name, primary_position, current_team_id
+    FROM ref.players
+    WHERE COALESCE(active,1)=1
+      AND mlb_player_id IS NOT NULL
+      AND UPPER(COALESCE(primary_position, primary_role, '')) IN ${sql(pitcherRoles)}
+    ORDER BY current_team_id IS NULL, current_team_id, full_name
+  `;
+  return rows.map(r => ({
+    player_id: asInt(r.player_id, 0), player_name: r.player_name || null, primary_position: r.primary_position || null,
+    source: "ref.players_pitcher_role_filter"
+  })).filter(r => r.player_id);
+}
+
+// STUB_MARKER_LOCKS_MINING_NEXT
 
 export default {
   async fetch(request, env) {
