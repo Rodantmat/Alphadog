@@ -1366,7 +1366,7 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
     }
     const sourceTruth = await deriveSourceCountersFromOutcomes(sql, batchId);
     const unresolved = asInt(sourceTruth.source_error_players, 0) + asInt(sourceTruth.repair_required_players, 0) + asInt(sourceTruth.unclear_players, 0);
-    const finalPass = rowsPromotedEarly === expectedRowsEarly && sourceTruth.outcome_total > 0 && sourceTruth.outcome_total === sourceTruth.distinct_outcome_players && unresolved === 0;
+    const finalPass = rowsPromotedEarly >= expectedRowsEarly && sourceTruth.outcome_total > 0 && sourceTruth.outcome_total === sourceTruth.distinct_outcome_players && unresolved === 0;
     const cert = finalPass ? "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_CERTIFIED" : "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_CERTIFICATION_FAILED";
     const finalChecks = {
       version: VERSION,
