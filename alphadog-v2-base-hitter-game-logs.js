@@ -2052,11 +2052,16 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
     }
 
     const dupLiveRows = await sql`SELECT COUNT(*)::int AS c FROM (SELECT player_id, game_pk, group_type, COUNT(*) AS n FROM stats_hitter.game_logs GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1) sub`;
-    const afterWindowRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${batchId} AND (game_date::date < ${windowInfo.delta_start_date}::date OR game_date::date > ${windowInfo.delta_end_date}::date)`;
     const sourceTruth = await deriveDeltaSourceCounters(sql, batchId);
     const dupLive = dupLiveRows[0] || {};
-    const afterWindow = afterWindowRows[0] || {};
-    const finalPass = baseGate.pass === true && liveRows > 0 && asInt(dupLive && dupLive.c, 0) === 0 && asInt(afterWindow && afterWindow.c, 0) === 0;
+    // GROUNDED FIX: liveRows/afterWindow were both batch_id-scoped and unreliable now that row
+    // ownership is sticky (many genuinely-processed rows stay owned by whichever batch first
+    // claimed them, not this delta batch). Window validity was already reliably checked in
+    // buildDeltaPrePromotionChecks (outside_window_rows), while stage still held the rows scoped
+    // by batch_id - no need to re-derive it here from the live table. Use the outcome table's
+    // own request count (created fresh per batch, unaffected by live sticky ownership) as the
+    // "did this batch genuinely process real work" signal instead of a live row count.
+    const finalPass = baseGate.pass === true && sourceTruth.source_request_count > 0 && asInt(dupLive && dupLive.c, 0) === 0;
     const checks = {
       version: VERSION,
       lifecycle: "delta_update_final_verify_stage_drained",
