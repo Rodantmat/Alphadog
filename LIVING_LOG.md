@@ -97,5 +97,20 @@ Rodolfo confirmed: follow this REAL order (splits before metrics, expansion mini
 - D1 is reference-only, no exception, restated plainly — consistent with read-only verification approach already in use.
 - **The new delta system must NOT replicate the old full-duplicate staging pattern.** `hitter_game_logs_stage` (16,490 rows, ~22% of main) is exactly the kind of thing that needs re-architecting on port — genuinely in-flight rows only, not a growing shadow copy.
 - **Any backfill needed to populate empty Postgres tables must come directly from MLB (or the real external source), never copied/migrated from D1 rows.** D1's 75,427 hitter_game_logs rows do NOT get transferred — Postgres starts empty and mines fresh from the real MLB StatsAPI, same as the static layer did.
-- No more open questions at this point. Proceeding to read `alphadog-v2-base-hitter-game-logs.js` in full to plan the actual port (all 3 ingestion modes: historical_backfill, base_backfill, delta_update — since backfill must now run against Postgres directly, likely all 3 modes need porting, to be confirmed by reading the code's actual mode-routing logic).
+**Base-hitter-game-logs.js — full architecture understood (via targeted structural reads, not full 3374-line dump):**
+- Real, production-grade stage→certify→promote→clean lifecycle, shared by both `base_backfill` and `delta_update` modes in the same file.
+- Tables: `hitter_game_logs` (live), `hitter_game_logs_stage` (staged, batch-scoped), `hitter_game_log_batches` (batch/lock tracking), `hitter_game_log_cursor` (resumable player-list cursor for chunked ticks), `hitter_game_log_certifications`, `hitter_game_log_player_outcomes` (per-player-per-batch outcome classification: PROMOTED_ROWS/TRUE_NO_DATA/SOURCE_ERROR/REPAIR_REQUIRED/etc), `hitter_game_log_repair_registry`, `hitter_schema_migrations`.
+- Stage table growth explained: rows are meant to be deleted by `cleanStageRowsChunk` after promotion, batch-scoped — not an intentional full duplicate like the certifier's calendar_stage. The 16,490 lingering rows suggest incomplete cleanup across historical batches, not a designed permanent duplicate. For the Postgres port: keep the batch-scoped stage design (it's legitimate, bounded per batch) but make cleanup stricter/more reliable so it doesn't accumulate — this satisfies Rodolfo's "no full duplicate tables" instruction without abandoning the real certify/promote safety mechanism.
+- **CRITICAL dependency found**: `runDeltaUpdateTick` calls `getLockedBaseIntegrity(env)` first and REFUSES to run unless a locked, certified, promoted base-backfill batch already exists (`LOCKED_BASE_BATCH_ID`). Since D1 data is NOT being copied to Postgres (backfill must come from MLB directly per Rodolfo), this means: **base_backfill must be ported, run to completion, certified, promoted, and locked on Postgres BEFORE delta_update can be tested at all.** This isn't optional scope creep — it's a hard functional dependency already in the existing, working D1 logic. Surgical port = port both modes, same as D1 does.
+- Mode routing: single `/run` POST route always calls `runBaseBackfillTick`, which internally checks `inputJson.mode || input.mode` and redirects to `runDeltaUpdateTick` if `"delta_update"`. Real, existing routing pattern — will preserve exactly.
+
+**Plan for hitter_game_logs Postgres port (proceeding now, no further questions needed):**
+1. `ensureSchema` → Postgres equivalent tables in `stats_hitter.*` schema, `prepare:false`, bulk inserts.
+2. Port `base_backfill` full lifecycle (mine fresh from MLB StatsAPI — never copy D1 rows) — cursor/lock/stage/certify/promote/clean, same logic, Postgres syntax.
+3. Deploy, run base_backfill to real completion (multi-tick, chunked per existing MAX_API_CALLS_PER_TICK/MAX_ROWS_PER_TICK pattern) until certified+promoted+locked.
+4. Port `delta_update` lifecycle (depends on the lock from step 3).
+5. Run delta_update 3 successive times, confirm stable/correct real results before moving to pitcher game logs.
+6. Tighten stage-table cleanup so it doesn't accumulate across batches (Rodolfo's no-duplicate-tables instruction) while keeping the legitimate batch-scoped stage/certify/promote safety mechanism.
+
+Beginning implementation now.
 
