@@ -3039,7 +3039,7 @@ async function runDeltaUpdateTick(env, sql, input, inputJson) {
   const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
   if (!lock.ok) return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_BATCH_LOCK_BUSY_RETRY", batch_id: batchId, run_id: runId, rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: true, orchestrator_should_self_continue: true, lock };
 
-  const maxRequests = cap(inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
+  const maxRequests = cap(inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, 100);
   const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
   const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 8000, 30000);
   const tickStartedAtMs = Date.now();
