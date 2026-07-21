@@ -2037,9 +2037,13 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
   if (status === "DELTA_PROMOTED_READY_TO_CLEAN" || status === "DELTA_CLEANING") {
     const liveRows = await getLiveCount();
     const stageRowsBefore = await getStageCount();
-    if (liveRows < stageRowsBefore) {
+    const unpromotedRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId} AND row_status != 'promoted'`;
+    const stillUnpromoted = asInt(unpromotedRows[0] && unpromotedRows[0].c, 0);
+    // GROUNDED FIX: same sticky-ownership issue as the promote branch above - liveRows (batch_id
+    // scoped) legitimately undercounts now. Use the stage table's own row_status directly instead.
+    if (stillUnpromoted > 0) {
       await sql`UPDATE stats_hitter.game_log_batches SET status='DELTA_PROMOTING', rows_promoted=${liveRows}, updated_at=now() WHERE batch_id=${batchId}`;
-      return { pass: true, done: false, continuation_required: true, status: "DELTA_PROMOTING", certification: "DELTA_HITTER_GAME_LOGS_PROMOTION_COUNT_GUARD", grade, checks: { liveRows, stageRowsBefore }, rows_promoted: liveRows, stage_rows_after_clean: stageRowsBefore };
+      return { pass: true, done: false, continuation_required: true, status: "DELTA_PROMOTING", certification: "DELTA_HITTER_GAME_LOGS_PROMOTION_COUNT_GUARD", grade, checks: { liveRows, stageRowsBefore, stillUnpromoted }, rows_promoted: liveRows, stage_rows_after_clean: stageRowsBefore };
     }
     const cleaned = await cleanStageRowsChunk(sql, batchId, cap(opts.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000));
     if (cleaned.cleanup_done !== true) {
