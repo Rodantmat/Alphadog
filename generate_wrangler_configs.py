@@ -55,7 +55,8 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "CONTROL_ROOM", "service": "alphadog-v2-control-room"},
             {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
-            {"binding": "ORCHESTRATOR_WORKER", "service": "alphadog-v2-orchestrator"}
+            {"binding": "ORCHESTRATOR_WORKER", "service": "alphadog-v2-orchestrator"},
+            {"binding": "BASE_HITTER_GAME_LOGS_WORKER", "service": "alphadog-v2-base-hitter-game-logs"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
