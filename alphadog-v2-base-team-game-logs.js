@@ -119,6 +119,77 @@ async function ensureSchema(sql) {
   return { ok: true };
 }
 // STUB_MARKER_FETCH_HELPERS_NEXT
+async function fetchTextWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("fetch_timeout"), Math.max(1000, Number(timeoutMs || DEFAULT_FETCH_TIMEOUT_MS)));
+  try {
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: true, resp, text, timed_out: false };
+  } catch (err) {
+    return { ok: false, resp: null, text: "", timed_out: String(err && err.name ? err.name : err).includes("Abort"), error: String(err && err.message ? err.message : err) };
+  } finally { clearTimeout(timer); }
+}
+function isFinalMlbGame(g) { return String(g && g.status && g.status.abstractGameState) === "Final" || String(g && g.status && g.status.detailedState) === "Final"; }
+async function fetchScheduleRange(env, startDate, endDate, fetchTimeoutMs) {
+  const baseUrl = asText(env.MLB_API_BASE_URL, "https://statsapi.mlb.com").replace(/\/$/, "");
+  const endpoint = `${baseUrl}/api/v1/schedule?sportId=1&gameTypes=R&startDate=${startDate}&endDate=${endDate}&hydrate=linescore`;
+  const r = await fetchTextWithTimeout(endpoint, { headers: { "User-Agent": asText(env.MLB_API_USER_AGENT, "AlphaDogV2/1.0") } }, fetchTimeoutMs);
+  if (!r.ok || !r.resp || !r.resp.ok) return { ok: false, endpoint, http_status: r.resp ? r.resp.status : null, error: r.error || "fetch_failed" };
+  let json;
+  try { json = JSON.parse(r.text); } catch (_) { return { ok: false, endpoint, error: "json_parse_failed" }; }
+  const dates = Array.isArray(json.dates) ? json.dates : [];
+  const rows = [];
+  let finalGameCount = 0;
+  for (const d of dates) {
+    const games = Array.isArray(d.games) ? d.games : [];
+    for (const g of games) {
+      if (!isFinalMlbGame(g)) continue;
+      finalGameCount += 1;
+      const gamePk = asInt(g.gamePk, 0);
+      const gameDate = asText(d.date, null);
+      const home = g.teams && g.teams.home;
+      const away = g.teams && g.teams.away;
+      if (!home || !away || !gamePk || !gameDate) continue;
+      const homeTeamId = asText(home.team && home.team.id, null);
+      const awayTeamId = asText(away.team && away.team.id, null);
+      const homeScore = asInt(home.score, null);
+      const awayScore = asInt(away.score, null);
+      if (!homeTeamId || !awayTeamId) continue;
+      rows.push({ team_id: homeTeamId, opponent_team_id: awayTeamId, game_pk: gamePk, game_date: gameDate, is_home: 1, runs_scored: homeScore, runs_allowed: awayScore, raw_json: g });
+      rows.push({ team_id: awayTeamId, opponent_team_id: homeTeamId, game_pk: gamePk, game_date: gameDate, is_home: 0, runs_scored: awayScore, runs_allowed: homeScore, raw_json: g });
+    }
+  }
+  return { ok: true, endpoint, rows, final_game_count: finalGameCount, dates_seen: dates.length };
+}
+async function insertStageRowsBulk(sql, batchId, runId, mode, sourceSeason, rows) {
+  if (!rows.length) return { inserted: 0 };
+  const values = rows.map(r => ({
+    stage_id: `${batchId}_${r.team_id}_${r.game_pk}_team`,
+    batch_id: batchId, run_id: runId,
+    team_id: r.team_id, game_pk: r.game_pk, game_date: r.game_date,
+    opponent_team_id: r.opponent_team_id, is_home: r.is_home,
+    runs_scored: r.runs_scored, runs_allowed: r.runs_allowed,
+    raw_json: JSON.stringify(r.raw_json),
+    ingestion_mode: mode, source_key: SOURCE_KEY, source_confidence: "SOURCE_LOCKED_STATSAPI_SCHEDULE_TEAM_TOTALS",
+    source_endpoint: LOCKED_SOURCE_ENDPOINT_PATTERN, source_season: sourceSeason, source_game_type: "R",
+    row_status: "staged"
+  }));
+  const CHUNK = 200;
+  let inserted = 0;
+  for (let i = 0; i < values.length; i += CHUNK) {
+    const slice = values.slice(i, i + CHUNK);
+    await sql`
+      INSERT INTO team.game_logs_stage ${sql(slice, "stage_id","batch_id","run_id","team_id","game_pk","game_date","opponent_team_id","is_home","runs_scored","runs_allowed","raw_json","ingestion_mode","source_key","source_confidence","source_endpoint","source_season","source_game_type","row_status")}
+      ON CONFLICT (stage_id) DO UPDATE SET
+        runs_scored=excluded.runs_scored, runs_allowed=excluded.runs_allowed, raw_json=excluded.raw_json,
+        row_status='staged', updated_at=now()
+    `;
+    inserted += slice.length;
+  }
+  return { inserted };
+}
+// STUB_MARKER_PROMOTE_CLEAN_NEXT
 export default {
   async fetch(request, env) {
     return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
