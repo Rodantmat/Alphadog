@@ -32,7 +32,7 @@ const FINALIZATION_STATUSES = new Set([
 ]);
 const ACTIVE_CURSOR_KEY = "base_hitter_game_logs_active_cursor";
 const DELTA_CURSOR_KEY = "delta_hitter_game_logs_active_cursor";
-const LOCKED_BASE_BATCH_ID = "hitter_base_backfill_batch_mpelpq0t_akyyu3";
+const LOCKED_BASE_BATCH_ID = "hitter_base_backfill_batch_mru8ril1_9t6nfv";
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
 const DELTA_STATUSES = new Set([
   "DELTA_RUNNING",
