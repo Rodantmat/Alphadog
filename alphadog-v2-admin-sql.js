@@ -323,7 +323,7 @@ async function toolRunJob(env, args) {
       return { ok: false, error: String(err && err.message ? err.message : err), elapsed_ms: Date.now() - started };
     }
   }
-  const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER };
+  const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER, BASE_HITTER_GAME_LOGS_WORKER: env.BASE_HITTER_GAME_LOGS_WORKER };
   const bindingName = target && bindingMap[target] !== undefined ? target : "CONTROL_ROOM";
   const binding = bindingMap[bindingName];
   if (!binding) {
@@ -337,6 +337,12 @@ async function toolRunJob(env, args) {
   } else if (bindingName === "ORCHESTRATOR_WORKER") {
     body = { max_jobs: 5, ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal/tick";
+  } else if (bindingName === "BASE_HITTER_GAME_LOGS_WORKER") {
+    // Direct call, bypasses control_job_queue + orchestrator entirely - no shared lock
+    // contention with other real production jobs. For one-time base/mining workers only;
+    // delta_update-style periodic jobs should keep going through the orchestrator.
+    body = { mode: job, ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal/run";
   } else {
     body = {
       job,
