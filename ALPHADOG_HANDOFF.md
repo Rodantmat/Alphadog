@@ -307,3 +307,10 @@ fill in gaps, the new chat should ask you to share them rather than guessing.
   path, don't resurrect it as-is).
 - `alphadog-v2-certification-center.js` is the live production main UI worker — reads D1
   currently, treat as a sensitive, live production surface when its turn comes.
+- **Scheduling is always DB-driven, never a cron file.** A cron tick (already existing) "wakes"
+  the orchestrator every minute; the orchestrator checks `CONFIG_DB.config_scheduled_jobs` for
+  anything due and enqueues it into `control_job_queue`. If any incremental/delta worker ever
+  needs a new recurring schedule, add a row to `config_scheduled_jobs` following the existing
+  pattern (see the `static-full-run` weekly row for a working weekly example, or the
+  `incremental-morning-full-run`/`daily-full-run` rows for working daily examples) — never add or
+  rely on a wrangler cron trigger for this.
