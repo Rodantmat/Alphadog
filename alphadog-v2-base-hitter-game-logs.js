@@ -579,12 +579,16 @@ function parseSqliteUtcMs(value) {
   return new Date(String(value).replace(" ", "T") + "Z").getTime();
 }
 
-async function acquireBatchLock(env, batchId, owner, staleSeconds) {
-  const row = await first(env.STATS_HITTER_DB, "SELECT locked_by, lock_acquired_at, lock_expires_at FROM hitter_game_log_batches WHERE batch_id=?", batchId);
+async function acquireBatchLock(sql, batchId, owner, staleSeconds) {
+  // DIRECT PORT: D1 stored lock timestamps as TEXT and parsed them by hand (parseSqliteUtcMs).
+  // Postgres columns are real TIMESTAMPTZ now (converted in ensureSchema) - postgres.js already
+  // returns JS Date objects for these, so no manual string parsing is needed anymore.
+  const rows = await sql`SELECT locked_by, lock_acquired_at, lock_expires_at FROM stats_hitter.game_log_batches WHERE batch_id=${batchId}`;
+  const row = rows[0] || null;
   const nowMs = Date.now();
   const lockedBy = row && row.locked_by ? String(row.locked_by) : null;
-  const lockAcquiredMs = row && row.lock_acquired_at ? parseSqliteUtcMs(row.lock_acquired_at) : NaN;
-  const lockExpiresMs = row && row.lock_expires_at ? parseSqliteUtcMs(row.lock_expires_at) : NaN;
+  const lockAcquiredMs = row && row.lock_acquired_at ? new Date(row.lock_acquired_at).getTime() : NaN;
+  const lockExpiresMs = row && row.lock_expires_at ? new Date(row.lock_expires_at).getTime() : NaN;
   const sameOwner = !!(lockedBy && lockedBy === owner);
   const expired = !Number.isFinite(lockExpiresMs) || lockExpiresMs <= nowMs;
   const staleByAge = Number.isFinite(lockAcquiredMs) && (nowMs - lockAcquiredMs >= staleSeconds * 1000);
@@ -602,7 +606,15 @@ async function acquireBatchLock(env, batchId, owner, staleSeconds) {
     };
   }
 
-  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET locked_by=?, lock_acquired_at=CURRENT_TIMESTAMP, lock_expires_at=datetime('now', ?), stale_recovery_count=CASE WHEN locked_by IS NOT NULL THEN COALESCE(stale_recovery_count,0)+1 ELSE COALESCE(stale_recovery_count,0) END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", owner, `+${staleSeconds} seconds`, batchId);
+  await sql`
+    UPDATE stats_hitter.game_log_batches
+    SET locked_by=${owner},
+        lock_acquired_at=now(),
+        lock_expires_at=now() + make_interval(secs => ${staleSeconds}),
+        stale_recovery_count=CASE WHEN locked_by IS NOT NULL THEN COALESCE(stale_recovery_count,0)+1 ELSE COALESCE(stale_recovery_count,0) END,
+        updated_at=now()
+    WHERE batch_id=${batchId}
+  `;
   return {
     ok: true,
     owner,
@@ -615,8 +627,8 @@ async function acquireBatchLock(env, batchId, owner, staleSeconds) {
   };
 }
 
-async function releaseBatchLock(env, batchId, owner) {
-  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND locked_by=?", batchId, owner);
+async function releaseBatchLock(sql, batchId, owner) {
+  await sql`UPDATE stats_hitter.game_log_batches SET locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId} AND locked_by=${owner}`;
 }
 
 async function fetchTextWithTimeout(url, options, timeoutMs) {
