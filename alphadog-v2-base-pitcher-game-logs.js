@@ -1247,7 +1247,8 @@ async function runDeltaUpdateTick(env, sql, input, startedAtMs) {
     const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
     if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, run_id: runId, lock };
     try {
-      const result = await finalizeDeltaIfReady(sql, batchId, runId, windowInfo, state.players.length, baseGate, { promote_rows_per_tick: DEFAULT_PROMOTE_ROWS_PER_TICK, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
+      const tickConfigFinalize = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+      const result = await finalizeDeltaIfReady(sql, batchId, runId, windowInfo, state.players.length, baseGate, { promote_rows_per_tick: tickConfigFinalize.promote_rows_per_tick, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
       return { ok: true, data_ok: result.pass, mode: "delta_update", phase: "finalization", batch_id: batchId, run_id: runId, delta_window: windowInfo, ...result };
     } finally { await releaseBatchLock(sql, batchId, owner); }
   }
