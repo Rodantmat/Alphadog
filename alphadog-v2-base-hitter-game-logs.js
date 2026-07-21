@@ -747,31 +747,35 @@ async function rebuildMissingOutcomeRowsFromCursor(sql, batchId, runId) {
   }
 }
 
-async function certifyPlayerOutcomeUniverse(env, batchId, runId, cutoffDate) {
-  await rebuildMissingOutcomeRowsFromCursor(env, batchId, runId);
+async function certifyPlayerOutcomeUniverse(sql, batchId, runId, cutoffDate) {
+  await rebuildMissingOutcomeRowsFromCursor(sql, batchId, runId);
 
-  const cursorRow = await first(env.STATS_HITTER_DB, "SELECT players_total FROM hitter_game_log_cursor WHERE batch_id=? OR cursor_key=? ORDER BY updated_at DESC LIMIT 1", batchId, ACTIVE_CURSOR_KEY);
+  const cursorRows = await sql`SELECT players_total FROM stats_hitter.game_log_cursor WHERE batch_id=${batchId} OR cursor_key=${ACTIVE_CURSOR_KEY} ORDER BY updated_at DESC LIMIT 1`;
+  const cursorRow = cursorRows[0] || null;
   const playersTotal = asInt(cursorRow && cursorRow.players_total, 0);
-  const totals = await first(env.STATS_HITTER_DB, `SELECT
-      COUNT(*) AS outcome_total,
-      COUNT(DISTINCT player_id) AS distinct_outcome_players,
-      COUNT(*) - COUNT(DISTINCT player_id) AS duplicate_outcome_rows,
-      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END) AS promoted_players,
-      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END) AS true_no_data_players,
-      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END) AS filtered_after_cutoff_players,
-      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END) AS source_error_players,
-      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END) AS repair_required_players,
-      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END) AS unclear_players,
-      SUM(CASE WHEN terminal_category NOT IN ('PROMOTED_ROWS','TRUE_NO_DATA','FILTERED_AFTER_CUTOFF','SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR') THEN 1 ELSE 0 END) AS invalid_category_players,
-      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' AND COALESCE(rows_staged,0) <= 0 AND COALESCE(promoted_row_count,0) <= 0 THEN 1 ELSE 0 END) AS promoted_without_rows,
-      SUM(CASE WHEN terminal_category!='PROMOTED_ROWS' AND (COALESCE(rows_staged,0) > 0 OR COALESCE(promoted_row_count,0) > 0) THEN 1 ELSE 0 END) AS non_promoted_with_rows,
-      SUM(COALESCE(raw_payload_split_count,0)) AS raw_payload_split_count,
-      SUM(COALESCE(rows_before_cutoff,0)) AS rows_before_cutoff,
-      SUM(COALESCE(rows_filtered_after_cutoff,0)) AS rows_filtered_after_cutoff,
-      SUM(COALESCE(rows_staged,0)) AS rows_staged,
-      SUM(COALESCE(promoted_row_count,0)) AS promoted_row_count
-    FROM hitter_game_log_player_outcomes
-    WHERE batch_id=?`, batchId);
+  const totalsRows = await sql`
+    SELECT
+      COUNT(*)::int AS outcome_total,
+      COUNT(DISTINCT player_id)::int AS distinct_outcome_players,
+      (COUNT(*) - COUNT(DISTINCT player_id))::int AS duplicate_outcome_rows,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END)::int AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END)::int AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END)::int AS filtered_after_cutoff_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players,
+      SUM(CASE WHEN terminal_category NOT IN ('PROMOTED_ROWS','TRUE_NO_DATA','FILTERED_AFTER_CUTOFF','SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR') THEN 1 ELSE 0 END)::int AS invalid_category_players,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' AND COALESCE(rows_staged,0) <= 0 AND COALESCE(promoted_row_count,0) <= 0 THEN 1 ELSE 0 END)::int AS promoted_without_rows,
+      SUM(CASE WHEN terminal_category!='PROMOTED_ROWS' AND (COALESCE(rows_staged,0) > 0 OR COALESCE(promoted_row_count,0) > 0) THEN 1 ELSE 0 END)::int AS non_promoted_with_rows,
+      SUM(COALESCE(raw_payload_split_count,0))::int AS raw_payload_split_count,
+      SUM(COALESCE(rows_before_cutoff,0))::int AS rows_before_cutoff,
+      SUM(COALESCE(rows_filtered_after_cutoff,0))::int AS rows_filtered_after_cutoff,
+      SUM(COALESCE(rows_staged,0))::int AS rows_staged,
+      SUM(COALESCE(promoted_row_count,0))::int AS promoted_row_count
+    FROM stats_hitter.game_log_player_outcomes
+    WHERE batch_id=${batchId}
+  `;
+  const totals = totalsRows[0] || {};
 
   const categoryTotal = asInt(totals && totals.promoted_players, 0)
     + asInt(totals && totals.true_no_data_players, 0)
@@ -819,8 +823,7 @@ async function certifyPlayerOutcomeUniverse(env, batchId, runId, cutoffDate) {
     delta_gate_open: pass
   };
 
-  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_player_outcomes SET certification_status=?, certification_grade=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
-    pass ? "player_outcome_certified" : "player_outcome_certification_failed", pass ? "BASE_PASS" : "BASE_FAIL", batchId);
+  await sql`UPDATE stats_hitter.game_log_player_outcomes SET certification_status=${pass ? "player_outcome_certified" : "player_outcome_certification_failed"}, certification_grade=${pass ? "BASE_PASS" : "BASE_FAIL"}, updated_at=now() WHERE batch_id=${batchId}`;
 
   return summary;
 }
