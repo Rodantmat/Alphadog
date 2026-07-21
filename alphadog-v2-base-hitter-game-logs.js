@@ -2000,7 +2000,7 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
   }
 
   if (status === "DELTA_CERTIFIED_READY_TO_PROMOTE" || status === "DELTA_PROMOTING") {
-    const promoted = await promoteStageRowsChunk(sql, batchId, grade, cap(opts.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25));
+    const promoted = await promoteStageRowsChunk(sql, batchId, grade, cap(opts.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 800));
     const liveRows = await getLiveCount();
     const stageRows = await getStageCount();
     const complete = liveRows >= stageRows && promoted.remaining_unpromoted === 0;
