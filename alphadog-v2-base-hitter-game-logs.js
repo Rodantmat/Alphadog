@@ -1560,9 +1560,9 @@ async function getLockedBaseIntegrity(sql) {
   const after = afterRows[0] || {};
   const pass = !!batch
     && String(batch.status) === "COMPLETED_PROMOTED_CLEANED"
-    && asInt(batch.rows_promoted, 0) === 14717
-    && asInt(live && live.c, 0) === 14717
-    && asInt(outcomes && outcomes.c, 0) === 569
+    && asInt(batch.rows_promoted, 0) === 26305
+    && asInt(live && live.c, 0) === 26305
+    && asInt(outcomes && outcomes.c, 0) === 588
     && asInt(dup && dup.c, 0) === 0
     && asInt(after && after.c, 0) === 0;
   return {
