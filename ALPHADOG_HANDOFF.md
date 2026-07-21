@@ -275,14 +275,10 @@ not just reference it.
    (distinct from `SCORE_DB`) is live, dead, or a partial migration attempt? If not, the new chat
    will investigate via direct reference-checking before assuming either way — just flagging that
    this is still open.
-3. **Weekly Monday 2am schedule** for `static-full-run` — was this ever set up? (It was raised as
-   a pending item in this session but not completed before the session moved to incremental work.)
-   If not done, should the new chat set this up as part of finishing the static layer's loose
-   ends, or fold it into the incremental work?
-4. **Scope of the correlation-aware enrichment wiring** (`factor_packet_context`,
+3. **Scope of the correlation-aware enrichment wiring** (`factor_packet_context`,
    `market_context`, pitcher-side equivalent — see Section 3) — is finishing this real, partially
    done wiring part of the incremental migration scope, or a separate future task?
-5. Any other explicit priority order or constraints you have in mind that aren't captured above —
+4. Any other explicit priority order or constraints you have in mind that aren't captured above —
    please state them directly so the new chat doesn't have to guess.
 
 If you have old chat transcripts (especially this one) that would help answer any of the above or
