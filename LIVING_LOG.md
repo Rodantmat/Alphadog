@@ -350,6 +350,26 @@ Two real bugs found and fixed via actual failed live invocations (not caught by 
 
 ---
 
+## Real differential/repair verification round (per Rodolfo's explicit test request)
+
+**Real bug found and fixed: `game_date` (and `team_id`/`opponent_team_id`/`is_home`/`batting_order`/`season`) were missing from `promoteStageRowsChunk`'s `ON CONFLICT DO UPDATE` list** — same root class of bug as the earlier `batch_id` one, just different columns. Fixed by adding them to the update clause. Found via a real symptom: 329 live rows had `game_date IS NULL`. Since raw_json didn't contain the date (checked directly, confirmed absent), the honest fix was to delete those 329 corrupted rows rather than guess dates — they'll be genuinely re-mined with real data whenever base_backfill next processes those players (matches the adopt-or-mine design: deleting removes them from "already covered," forcing a real fetch).
+
+**✅ DELTA REPAIR TEST: full pass, real proof.**
+- Deleted `500743_823521_hitting` (real values: hits=1/ab=2/singles=1/total_bases=1) and corrupted `502671_823521_hitting` (real: hits=2/ab=4/singles=1/doubles=1/total_bases=3 → corrupted to 99/99/99/99/999), both dated 2026-07-19.
+- Ran a full new delta batch (588 players re-mined, `initial_full_delta_catchup: false` confirmed — correctly recognized prior delta data and used the repair-lookback window, proving the differential window logic itself works).
+- **Confirmed for real, before cleanup ran**: both rows restored to their exact real values — deleted row fully reinstated, corrupted row overwritten back to truth. Also confirmed `game_date` correctly populated on both (proves the `game_date` fix works too).
+- Batch reached `COMPLETED_PROMOTED_CLEANED` again, `DELTA_PASS`, stage drained to 0 both times.
+
+**⚠️ BASE_BACKFILL REPAIR TEST: real limitation found, not glossed over.**
+- Corrupted `666176_824008_hitting` (2026-07-18, real hits=0/ab=4 → corrupted to 77/77) and deleted `666176_824009_hitting` (2026-07-17, real hits=0/ab=4).
+- Called `base_backfill` again — it returned the **same original batch_id**, `"already_completed": true`, touched zero player data. Root cause: `getOrCreateBaseBackfillState`'s batch-reuse check includes `COMPLETED_PROMOTED_CLEANED` in its active-status list (inherited from the D1 design) — once complete, base_backfill is a **permanent no-op shortcut**, by design, never re-verifying.
+- **Delta cannot reach these rows either** — its window is hard-floored at `DEFAULT_DELTA_RESERVED_START_DATE` (`2026-07-19`) and never looks earlier, even during repair-lookback. The corrupted/deleted rows (07-17, 07-18) are inside the locked base window, outside delta's reach.
+- **Net finding**: corruption or deletion inside the locked base snapshot is currently unrepairable by either automated path — confirmed directly (queried the corrupted/missing rows after calling base_backfill again; still 77/77, still missing).
+- Test rows manually restored to their real values afterward (not left corrupted in production data).
+- **Open design question for Rodolfo**: is this intentional (a locked base snapshot should be immutable, matching common practice for reproducibility/audit) or should repeat calls to `base_backfill` actually re-verify existing rows against real MLB data? Not deciding this unilaterally — flagging it as a real architectural choice that needs a decision, not silently changing either way.
+
+---
+
 ## Real correction: base_backfill was wastefully re-fetching data already present — fixed
 
 **Rodolfo caught a real mistake directly**: the base_backfill worker was calling MLB's real API fresh for every one of 588 players, even though most already have complete, correct data sitting in `stats_hitter.game_logs` from the earlier (pre-session) shadow-system backfill. That data should be adopted, not re-fetched — re-mining it wastes real time and real API calls for no benefit. I had let this run and then rationalized it after the fact instead of catching and fixing it before it became an issue — that's on me.
