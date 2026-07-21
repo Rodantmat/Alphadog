@@ -1,5 +1,22 @@
 # ALPHADOG HANDOFF — MASTER SUMMARY (read this first, then LIVING_LOG.md for full history)
-**NOTE (2026-07-14): `LIVING_LOG.md` is referenced throughout this document as the "full history" companion file, but it does not currently exist in the repo root (confirmed via a direct fetch attempt, 404). Either it was never committed or was removed at some point. Don't waste time trying to fetch it — if you need history this document doesn't have, check `deploy_log.txt` and `github_list_workflow_runs` for real commit/deploy history instead, or ask Rodolfo directly whether it exists somewhere else.**
+**CORRECTION (2026-07-21): the note below claiming `LIVING_LOG.md` doesn't exist is STALE and WRONG — it exists, is actively maintained, and is now the primary real-time history file. Read it in full. Do not skip it based on the outdated note that follows.**
+
+## 2026-07-21 SESSION — WHAT HAPPENED (supersedes everything below for current state)
+
+**Read this first.** Full detail is in `LIVING_LOG.md`'s final section (search for "NEW SESSION — `alphadog-v2-base-pitcher-game-logs`") — this is a compressed pointer, not a replacement for reading it.
+
+**Where things stand, honestly, right now:**
+- Hitter game logs (`alphadog-v2-base-hitter-game-logs`) is fully DONE — both `base_backfill` and `delta_update` proven end-to-end on Postgres, including corruption/repair tests, widened rolling repair window, sticky-ownership fix, no-op steady-state verification. This is the reference implementation every future worker should copy from day one.
+- Pitcher game logs (`alphadog-v2-base-pitcher-game-logs`) was built FROM SCRATCH this session (not a line-by-line D1 port — the real D1 file was judged too architecturally different; rebuilt using hitter's proven, simpler pattern instead, reasoned through explicitly). All of hitter's hard-won fixes (sticky ownership, widened delta window, adoption logic, full `ON CONFLICT` column coverage) were built in from day one this time, not retrofitted painfully like hitter needed.
+- **Real deploy failure hit and root-caused**: `Uncaught Error: No such module "node:events"`. Root cause was NOT a bug in the new worker's code — `generate_wrangler_configs.py` has a hardcoded tuple of worker names that get the `hyperdrive` binding + `nodejs_compat` flag, and the new pitcher worker wasn't in it yet, so every deploy silently regenerated its config as D1-only. Fixed by adding it to the same tuple hitter is already in. **This is now a standing rule for every future Postgres worker — add its name to that tuple in the SAME session it's created, before the first deploy attempt, or expect this exact confusing failure.**
+- **New MCP tool built and deployed this session: `github_get_workflow_run_log`**, added directly to `alphadog-v2-admin-sql.js` (this MCP bridge's own source). Given a `run_id` from `github_list_workflow_runs`, it fetches the REAL plain-text GitHub Actions log via GitHub's own API and returns per-step status plus the tail (or grep-matched lines). **Use this FIRST on any future deploy failure — do not ask Rodolfo to paste logs unless this tool itself errors.** Full usage details in `ALPHADOG_DOS_AND_DONTS.md` PART 3.
+- **Pitcher worker is deployed successfully but has NOT been run even once yet.** No `base_backfill` tick has been triggered. `LOCKED_BASE_BATCH_ID` is still a placeholder. This is the very next step for whoever picks this up.
+- **Per Rodolfo's explicit, standing instruction for every remaining worker**: mine `base_backfill` manually, tick by tick, until reaching the delta cutoff window (`2026-07-18`), then STOP — leave delta untouched for a deliberate later test pass. Do not auto-run delta on any worker without being asked.
+- **D1 restated, in the strongest possible terms, per Rodolfo's direct words this session**: D1 is reference-only, read-only, used only when genuinely needed for a lookup that has no Postgres equivalent yet. Every worker from here forward writes ONLY to Postgres. No exceptions, no drift, and this instruction must not need restating again after this.
+
+**Real next steps, in order**: (1) run `/schema` + drive `base_backfill` to completion on the pitcher worker via real ticks; (2) update `LOCKED_BASE_BATCH_ID` to the real resulting batch id once complete; (3) leave `delta_update` untested until explicitly asked; (4) move to `base-team-game-logs` next, applying this exact same method from line one — including registering it in the generator's hyperdrive tuple in the SAME session, before deploying.
+
+---
 
 ## 2026-07-19/20 SESSION — WHAT HAPPENED (supersedes everything below for current state)
 
