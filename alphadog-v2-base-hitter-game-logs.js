@@ -1061,95 +1061,95 @@ async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDa
   };
 }
 
-async function promoteStageRowsChunk(env, batchId, grade, limit) {
+async function promoteStageRowsChunk(sql, batchId, grade, limit) {
+  // DIRECT PORT: hitter_game_logs_stage -> stats_hitter.game_logs_stage, hitter_game_logs ->
+  // stats_hitter.game_logs. Live table's real PK is log_id (deterministic from player_id+
+  // game_pk+group_type, matching the convention already used by the real Postgres mining
+  // functions) - staged rows don't carry log_id (D1 stage table never did either), so it's
+  // computed here at promotion time. INSERT OR REPLACE -> INSERT ... ON CONFLICT (log_id) DO UPDATE.
   const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25);
-  const rows = await all(env.STATS_HITTER_DB, `SELECT
+  const rows = await sql`
+    SELECT
       s.stage_id,
       s.player_id,s.game_pk,s.season,s.game_date,s.team_id,s.opponent_team_id,s.is_home,s.batting_order,
       s.pa,s.ab,s.hits,s.singles,s.doubles,s.triples,s.home_runs,s.runs,s.rbi,s.walks,s.strikeouts,s.stolen_bases,s.total_bases,
       s.raw_json,s.source_key,s.source_confidence,s.group_type,s.data_feed_key,s.source_endpoint,s.source_season,s.source_game_type,s.ingestion_mode,s.batch_id,s.run_id
-    FROM hitter_game_logs_stage s
-    WHERE s.batch_id=?
+    FROM stats_hitter.game_logs_stage s
+    WHERE s.batch_id=${batchId}
       AND NOT EXISTS (
-        SELECT 1
-        FROM hitter_game_logs h
-        WHERE h.batch_id=s.batch_id
-          AND h.player_id=s.player_id
-          AND h.game_pk=s.game_pk
-          AND h.group_type=s.group_type
+        SELECT 1 FROM stats_hitter.game_logs h
+        WHERE h.batch_id=s.batch_id AND h.player_id=s.player_id AND h.game_pk=s.game_pk AND h.group_type=s.group_type
       )
     ORDER BY s.stage_id
-    LIMIT ${safeLimit}`, batchId);
+    LIMIT ${safeLimit}
+  `;
 
   if (!rows.length) {
-    const remainingNone = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c
-      FROM hitter_game_logs_stage s
-      WHERE s.batch_id=?
-        AND NOT EXISTS (
-          SELECT 1
-          FROM hitter_game_logs h
-          WHERE h.batch_id=s.batch_id
-            AND h.player_id=s.player_id
-            AND h.game_pk=s.game_pk
-            AND h.group_type=s.group_type
-        )`, batchId);
-    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNone && remainingNone.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_column_aligned_variable_clamp" };
+    const remainingNoneRows = await sql`
+      SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage s
+      WHERE s.batch_id=${batchId}
+        AND NOT EXISTS (SELECT 1 FROM stats_hitter.game_logs h WHERE h.batch_id=s.batch_id AND h.player_id=s.player_id AND h.game_pk=s.game_pk AND h.group_type=s.group_type)
+    `;
+    const remainingNone = remainingNoneRows[0];
+    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNone && remainingNone.c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_log_id" };
   }
 
   let promotedThisTick = 0;
   for (const r of rows) {
-    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_logs (
-      player_id,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
-      pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
-      raw_json,source_key,source_confidence,updated_at,group_type,data_feed_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,certification_status,certification_grade,certified_at,promoted_at,created_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-      r.player_id, r.game_pk, r.season, r.game_date, r.team_id, r.opponent_team_id, r.is_home, r.batting_order,
-      r.pa, r.ab, r.hits, r.singles, r.doubles, r.triples, r.home_runs, r.runs, r.rbi, r.walks, r.strikeouts, r.stolen_bases, r.total_bases,
-      r.raw_json, r.source_key, r.source_confidence, r.group_type, r.data_feed_key, r.source_endpoint, r.source_season, r.source_game_type, r.ingestion_mode, r.batch_id, r.run_id, r.ingestion_mode === 'delta_update' ? 'delta_update_certified_promoted' : 'base_backfill_certified_promoted', grade
-    );
-    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_logs_stage
-      SET row_status='promoted', certification_status='base_backfill_certified', certification_grade=?, promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-      WHERE stage_id=? AND batch_id=?`, grade, r.stage_id, batchId);
+    const logId = `${r.player_id}_${r.game_pk}_hitting`;
+    await sql`
+      INSERT INTO stats_hitter.game_logs (
+        log_id,player_id,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
+        pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
+        raw_json,source_key,source_confidence,updated_at,group_type,data_feed_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,certification_status,certification_grade,certified_at,promoted_at,created_at
+      ) VALUES (
+        ${logId},${r.player_id},${r.game_pk},${r.season},${r.game_date},${r.team_id},${r.opponent_team_id},${r.is_home},${r.batting_order},
+        ${r.pa},${r.ab},${r.hits},${r.singles},${r.doubles},${r.triples},${r.home_runs},${r.runs},${r.rbi},${r.walks},${r.strikeouts},${r.stolen_bases},${r.total_bases},
+        ${r.raw_json},${r.source_key},${r.source_confidence}, now(), ${r.group_type},${r.data_feed_key},${r.source_endpoint},${r.source_season},${r.source_game_type},${r.ingestion_mode},${r.batch_id},${r.run_id},
+        ${r.ingestion_mode === 'delta_update' ? 'delta_update_certified_promoted' : 'base_backfill_certified_promoted'}, ${grade}, now(), now(), now()
+      )
+      ON CONFLICT (log_id) DO UPDATE SET
+        hits=excluded.hits, singles=excluded.singles, doubles=excluded.doubles, triples=excluded.triples, home_runs=excluded.home_runs,
+        runs=excluded.runs, rbi=excluded.rbi, walks=excluded.walks, strikeouts=excluded.strikeouts, stolen_bases=excluded.stolen_bases,
+        total_bases=excluded.total_bases, pa=excluded.pa, ab=excluded.ab, raw_json=excluded.raw_json,
+        certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
+        promoted_at=now(), updated_at=now()
+    `;
+    await sql`
+      UPDATE stats_hitter.game_logs_stage
+      SET row_status='promoted', certification_status='base_backfill_certified', certification_grade=${grade}, promoted_at=now(), updated_at=now()
+      WHERE stage_id=${r.stage_id} AND batch_id=${batchId}
+    `;
     promotedThisTick += 1;
   }
 
-  const remaining = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c
-    FROM hitter_game_logs_stage s
-    WHERE s.batch_id=?
-      AND NOT EXISTS (
-        SELECT 1
-        FROM hitter_game_logs h
-        WHERE h.batch_id=s.batch_id
-          AND h.player_id=s.player_id
-          AND h.game_pk=s.game_pk
-          AND h.group_type=s.group_type
-      )`, batchId);
-  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remaining && remaining.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_column_aligned_variable_clamp", max_bound_variables_per_insert: 34 };
+  const remainingRows = await sql`
+    SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage s
+    WHERE s.batch_id=${batchId}
+      AND NOT EXISTS (SELECT 1 FROM stats_hitter.game_logs h WHERE h.batch_id=s.batch_id AND h.player_id=s.player_id AND h.game_pk=s.game_pk AND h.group_type=s.group_type)
+  `;
+  const remaining = remainingRows[0];
+  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remaining && remaining.c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_log_id" };
 }
 
-async function cleanStageRowsChunk(env, batchId, limit) {
-  // v1.5.31: cleanup must be autonomous and D1-safe.
-  // No full COUNT after every chunk, no stage_id VALUES list, no browser/manual ticking architecture.
-  // Delete a bounded batch using rowid selected inside SQLite, then infer continuation from changes.
+async function cleanStageRowsChunk(sql, batchId, limit) {
+  // DIRECT PORT: SQLite rowid -> Postgres ctid (same "bounded delete without a full count"
+  // pattern, just the Postgres physical-row-identifier equivalent).
   const safeLimit = cap(limit || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 500);
-  const res = await run(env.STATS_HITTER_DB, `DELETE FROM hitter_game_logs_stage
-    WHERE rowid IN (
-      SELECT rowid
-      FROM hitter_game_logs_stage
-      WHERE batch_id=?
-      LIMIT ${safeLimit}
-    )`, batchId);
-  const rawChanges = res && res.meta && Number.isFinite(Number(res.meta.changes)) ? Number(res.meta.changes) : null;
-  const cleaned = rawChanges === null ? 0 : Math.max(0, Math.trunc(rawChanges));
-  const probablyDone = rawChanges !== null && cleaned < safeLimit;
+  const res = await sql`
+    DELETE FROM stats_hitter.game_logs_stage
+    WHERE ctid IN (
+      SELECT ctid FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId} LIMIT ${safeLimit}
+    )
+  `;
+  const cleaned = Number(res.count || 0);
+  const probablyDone = cleaned < safeLimit;
   return {
     cleaned_this_tick: cleaned,
     stage_rows_after_clean: probablyDone ? 0 : null,
     cleanup_done: probablyDone,
-    sql_variable_safe: true,
     clean_limit: safeLimit,
-    delete_mode: "rowid_subquery_limit_no_count",
-    bound_variables: 1,
+    delete_mode: "ctid_subquery_limit_no_count",
     no_full_stage_count_after_chunk: true
   };
 }
