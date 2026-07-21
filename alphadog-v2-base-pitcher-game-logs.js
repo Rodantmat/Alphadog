@@ -31,14 +31,14 @@ const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_T
 const EXPECTED_SECRETS = ["MLB_API_USER_AGENT"];
 
 function nowUtc() { return new Date().toISOString(); }
-async function getWorkerTickConfig(sql, workerName, fallbackChunk, fallbackTickMs) {
+async function getWorkerTickConfig(sql, workerName, fallbackChunk, fallbackTickMs, fallbackPromote) {
   try {
-    const rows = await sql`SELECT chunk_size_players, max_tick_runtime_ms FROM config.worker_tick_settings WHERE worker_name=${workerName} LIMIT 1`;
+    const rows = await sql`SELECT chunk_size_players, max_tick_runtime_ms, promote_rows_per_tick FROM config.worker_tick_settings WHERE worker_name=${workerName} LIMIT 1`;
     const row = rows[0];
-    if (!row) return { chunk_size_players: fallbackChunk, max_tick_runtime_ms: fallbackTickMs };
-    return { chunk_size_players: asInt(row.chunk_size_players, fallbackChunk), max_tick_runtime_ms: asInt(row.max_tick_runtime_ms, fallbackTickMs) };
+    if (!row) return { chunk_size_players: fallbackChunk, max_tick_runtime_ms: fallbackTickMs, promote_rows_per_tick: fallbackPromote };
+    return { chunk_size_players: asInt(row.chunk_size_players, fallbackChunk), max_tick_runtime_ms: asInt(row.max_tick_runtime_ms, fallbackTickMs), promote_rows_per_tick: asInt(row.promote_rows_per_tick, fallbackPromote) };
   } catch (_) {
-    return { chunk_size_players: fallbackChunk, max_tick_runtime_ms: fallbackTickMs };
+    return { chunk_size_players: fallbackChunk, max_tick_runtime_ms: fallbackTickMs, promote_rows_per_tick: fallbackPromote };
   }
 }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
