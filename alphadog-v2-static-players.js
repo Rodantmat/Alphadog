@@ -713,8 +713,8 @@ async function certificationChecks(sql) {
       (SELECT COUNT(*)::int FROM (SELECT current_team_id FROM ref.players WHERE source_key=${SOURCE_KEY} AND COALESCE(active,1)=1 GROUP BY current_team_id) x) AS active_player_team_count,
       (SELECT COUNT(*)::int FROM (SELECT team_id FROM ref.rosters WHERE source_key=${SOURCE_KEY} AND snapshot_type='STATIC_40MAN_SNAPSHOT' AND COALESCE(active,1)=1 GROUP BY team_id) x) AS active_roster_team_count,
       (SELECT COUNT(*)::int FROM ref.players WHERE source_key=${SOURCE_KEY} AND COALESCE(active,1)=1 AND COALESCE(primary_position, primary_role, '')='') AS missing_primary_position,
-      (SELECT COUNT(*)::int FROM ref.players WHERE source_key=${SOURCE_KEY} AND COALESCE(active,1)=1 AND COALESCE(bat_side, bats, '')='') AS missing_bat_side,
-      (SELECT COUNT(*)::int FROM ref.players WHERE source_key=${SOURCE_KEY} AND COALESCE(active,1)=1 AND COALESCE(throw_side, throws, '')='') AS missing_throw_side
+      (SELECT COUNT(*)::int FROM ref.players WHERE source_key=${SOURCE_KEY} AND COALESCE(active,1)=1 AND COALESCE(bat_side, '')='') AS missing_bat_side,
+      (SELECT COUNT(*)::int FROM ref.players WHERE source_key=${SOURCE_KEY} AND COALESCE(active,1)=1 AND COALESCE(throw_side, '')='') AS missing_throw_side
   `;
   return rows[0] || {};
 }
