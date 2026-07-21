@@ -300,6 +300,7 @@ async function promoteCertifiedStage(sql, batchId, requestId) {
       AND NOT EXISTS (
         SELECT 1 FROM ref.players p
         WHERE p.mlb_player_id = s.mlb_player_id
+          AND p.source_key = s.source_key
           AND COALESCE(p.current_team_id,'') = COALESCE(s.current_team_id,'')
           AND COALESCE(p.current_mlb_team_id::text,'') = COALESCE(s.current_mlb_team_id::text,'')
           AND COALESCE(p.primary_position,'') = COALESCE(s.primary_position,'')
