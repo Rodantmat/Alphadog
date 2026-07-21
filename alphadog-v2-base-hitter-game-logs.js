@@ -1631,6 +1631,11 @@ async function processPlayerDelta(env, sql, p, sourceSeason, batchId, runId, win
     const row = parseHitterSplitForWindow(split, p.player_id, p.player_name, sourceSeason, batchId, runId, "delta_update", endpoint, windowStart, windowEnd);
     if (!row) { invalidInWindow++; continue; }
     await insertStageRow(sql, row);
+    stagedDates.push(row.game_date);
+    inserted++;
+  }
+  let status = "success";
+  if (inserted <= 0 && inWindow === 0 && outsideWindow > 0) status = "filtered_outside_window";
   else if (inserted <= 0 && inWindow > 0) status = "repair_required";
   return {
     player_id: p.player_id,
