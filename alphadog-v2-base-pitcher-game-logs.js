@@ -65,7 +65,217 @@ function baseIdentity(env, extra = {}) {
 
 async function parseJson(request) { try { return await request.json(); } catch (_) { return {}; } }
 
-// STUB_MARKER_SCHEMA_NEXT
+async function ensureSchema(sql) {
+  const results = [];
+  const exec = async (label, ddl) => {
+    try { await sql.unsafe(ddl); results.push({ label, ok: true, error: null }); return { ok: true }; }
+    catch (err) { const error = String(err && err.message ? err.message : err); results.push({ label, ok: false, error }); return { ok: false, error }; }
+  };
+
+  await exec("create_stats_pitcher_schema_migrations", `CREATE TABLE IF NOT EXISTS stats_pitcher.schema_migrations (
+    migration_key TEXT PRIMARY KEY, package_version TEXT, applied_at TIMESTAMPTZ DEFAULT now(), notes TEXT
+  )`);
+
+  await exec("create_stats_pitcher_game_logs_stage", `CREATE TABLE IF NOT EXISTS stats_pitcher.game_logs_stage (
+    stage_id TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    player_id BIGINT NOT NULL,
+    player_name TEXT,
+    game_pk BIGINT,
+    season INTEGER NOT NULL,
+    game_date TEXT,
+    team_id TEXT,
+    opponent_team_id TEXT,
+    opponent_abbr TEXT,
+    is_home INTEGER,
+    role TEXT,
+    innings_pitched_decimal DOUBLE PRECISION,
+    outs_recorded INTEGER,
+    batters_faced INTEGER,
+    hits_allowed INTEGER,
+    runs_allowed INTEGER,
+    earned_runs INTEGER,
+    walks_allowed INTEGER,
+    strikeouts INTEGER,
+    home_runs_allowed INTEGER,
+    pitches INTEGER,
+    balls INTEGER,
+    strikes INTEGER,
+    wins INTEGER,
+    losses INTEGER,
+    saves INTEGER,
+    holds INTEGER,
+    blown_saves INTEGER,
+    group_type TEXT NOT NULL DEFAULT 'pitching',
+    data_feed_key TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    source_endpoint TEXT NOT NULL,
+    source_season INTEGER NOT NULL,
+    source_game_type TEXT,
+    ingestion_mode TEXT NOT NULL,
+    certification_status TEXT DEFAULT 'staged_unverified',
+    certification_grade TEXT,
+    source_confidence TEXT DEFAULT 'SOURCE_LOCKED_STATSAPI_GAMELOG_PITCHING',
+    certified_at TIMESTAMPTZ,
+    promoted_at TIMESTAMPTZ,
+    raw_json TEXT,
+    row_status TEXT DEFAULT 'staged',
+    row_error TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(batch_id, player_id, game_pk, group_type)
+  )`);
+
+  await exec("create_stats_pitcher_game_log_batches", `CREATE TABLE IF NOT EXISTS stats_pitcher.game_log_batches (
+    batch_id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    worker_name TEXT NOT NULL,
+    worker_version TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    status TEXT NOT NULL,
+    data_feed_key TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    source_endpoint TEXT NOT NULL,
+    source_season INTEGER,
+    source_game_type TEXT,
+    base_backfill_cutoff_date TEXT,
+    delta_start_date TEXT,
+    cursor_player_id BIGINT,
+    cursor_season INTEGER,
+    cursor_offset INTEGER DEFAULT 0,
+    cursor_state_json TEXT,
+    chunk_size_players INTEGER DEFAULT 12,
+    max_requests_per_tick INTEGER DEFAULT 12,
+    max_rows_per_tick INTEGER DEFAULT 1200,
+    source_request_count INTEGER DEFAULT 0,
+    source_success_count INTEGER DEFAULT 0,
+    source_no_data_count INTEGER DEFAULT 0,
+    source_error_count INTEGER DEFAULT 0,
+    rows_staged INTEGER DEFAULT 0,
+    rows_promoted INTEGER DEFAULT 0,
+    duplicate_count INTEGER DEFAULT 0,
+    certification_status TEXT DEFAULT 'not_certified',
+    certification_grade TEXT,
+    certification_json TEXT,
+    source_confidence TEXT DEFAULT 'SOURCE_LOCKED_STATSAPI_GAMELOG_PITCHING',
+    locked_by TEXT,
+    lock_acquired_at TIMESTAMPTZ,
+    lock_expires_at TIMESTAMPTZ,
+    stale_recovery_count INTEGER DEFAULT 0,
+    started_at TIMESTAMPTZ DEFAULT now(),
+    finished_at TIMESTAMPTZ,
+    certified_at TIMESTAMPTZ,
+    promoted_at TIMESTAMPTZ,
+    cleaned_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    notes TEXT
+  )`);
+
+  await exec("create_stats_pitcher_game_log_cursor", `CREATE TABLE IF NOT EXISTS stats_pitcher.game_log_cursor (
+    cursor_key TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    status TEXT NOT NULL,
+    source_season INTEGER,
+    base_backfill_cutoff_date TEXT,
+    delta_start_date TEXT,
+    current_player_id BIGINT,
+    current_player_offset INTEGER DEFAULT 0,
+    players_total INTEGER DEFAULT 0,
+    players_processed INTEGER DEFAULT 0,
+    requests_done INTEGER DEFAULT 0,
+    next_run_after TIMESTAMPTZ,
+    last_error TEXT,
+    cursor_json TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  )`);
+
+  await exec("create_stats_pitcher_game_log_certifications", `CREATE TABLE IF NOT EXISTS stats_pitcher.game_log_certifications (
+    certification_id TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    certification_status TEXT NOT NULL,
+    certification_grade TEXT,
+    checks_json TEXT NOT NULL,
+    rows_staged INTEGER DEFAULT 0,
+    rows_promoted INTEGER DEFAULT 0,
+    duplicate_count INTEGER DEFAULT 0,
+    no_data_count INTEGER DEFAULT 0,
+    error_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+  )`);
+
+  await exec("create_stats_pitcher_game_log_player_outcomes", `CREATE TABLE IF NOT EXISTS stats_pitcher.game_log_player_outcomes (
+    batch_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    player_id BIGINT NOT NULL,
+    player_name TEXT,
+    primary_position TEXT,
+    cursor_offset INTEGER,
+    source_endpoint TEXT,
+    source_http_status INTEGER,
+    source_ok INTEGER DEFAULT 0,
+    raw_payload_split_count INTEGER DEFAULT 0,
+    rows_before_cutoff INTEGER DEFAULT 0,
+    rows_filtered_after_cutoff INTEGER DEFAULT 0,
+    rows_staged INTEGER DEFAULT 0,
+    promoted_row_count INTEGER DEFAULT 0,
+    terminal_category TEXT NOT NULL,
+    category_reason TEXT,
+    source_error TEXT,
+    first_raw_game_date TEXT,
+    last_raw_game_date TEXT,
+    first_promoted_game_date TEXT,
+    last_promoted_game_date TEXT,
+    certification_status TEXT DEFAULT 'player_outcome_unverified',
+    certification_grade TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (batch_id, player_id)
+  )`);
+
+  const liveAdds = [
+    ["group_type", "TEXT DEFAULT 'pitching'"], ["data_feed_key", "TEXT"], ["source_endpoint", "TEXT"],
+    ["source_season", "INTEGER"], ["source_game_type", "TEXT"], ["ingestion_mode", "TEXT"],
+    ["batch_id", "TEXT"], ["run_id", "TEXT"], ["certification_status", "TEXT"], ["certification_grade", "TEXT"],
+    ["certified_at", "TIMESTAMPTZ"], ["promoted_at", "TIMESTAMPTZ"], ["source_confidence", "TEXT"],
+    ["player_name", "TEXT"], ["role", "TEXT"], ["runs_allowed", "INTEGER"], ["pitches", "INTEGER"],
+    ["balls", "INTEGER"], ["strikes", "INTEGER"], ["wins", "INTEGER"], ["losses", "INTEGER"],
+    ["saves", "INTEGER"], ["holds", "INTEGER"], ["blown_saves", "INTEGER"]
+  ];
+  for (const [col, def] of liveAdds) {
+    await exec(`alter_stats_pitcher_game_logs_add_${col}`, `ALTER TABLE stats_pitcher.game_logs ADD COLUMN IF NOT EXISTS ${col} ${def}`);
+  }
+
+  const indexes = [
+    ["idx_pitcher_stage_batch", "CREATE INDEX IF NOT EXISTS idx_pitcher_stage_batch ON stats_pitcher.game_logs_stage(batch_id, row_status)"],
+    ["idx_pitcher_stage_player_season", "CREATE INDEX IF NOT EXISTS idx_pitcher_stage_player_season ON stats_pitcher.game_logs_stage(player_id, season, game_date)"],
+    ["idx_pitcher_batches_status", "CREATE INDEX IF NOT EXISTS idx_pitcher_batches_status ON stats_pitcher.game_log_batches(status, mode, updated_at)"],
+    ["idx_pitcher_batches_lock", "CREATE INDEX IF NOT EXISTS idx_pitcher_batches_lock ON stats_pitcher.game_log_batches(locked_by, lock_expires_at)"],
+    ["idx_pitcher_cursor_status", "CREATE INDEX IF NOT EXISTS idx_pitcher_cursor_status ON stats_pitcher.game_log_cursor(status, mode, updated_at)"],
+    ["idx_pitcher_logs_batch", "CREATE INDEX IF NOT EXISTS idx_pitcher_logs_batch ON stats_pitcher.game_logs(batch_id, certification_status)"],
+    ["idx_pitcher_logs_source", "CREATE INDEX IF NOT EXISTS idx_pitcher_logs_source ON stats_pitcher.game_logs(source_key, source_season, game_date)"],
+    ["idx_pitcher_outcomes_batch_category", "CREATE INDEX IF NOT EXISTS idx_pitcher_outcomes_batch_category ON stats_pitcher.game_log_player_outcomes(batch_id, terminal_category)"]
+  ];
+  for (const [label, ddl] of indexes) await exec(label, ddl);
+
+  await exec("record_schema_migration", `INSERT INTO stats_pitcher.schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_game_logs_postgres_v1_0_0_direct_build', '${VERSION}', now(), 'Built directly for Postgres from the start.') ON CONFLICT (migration_key) DO UPDATE SET package_version=excluded.package_version, applied_at=now(), notes=excluded.notes`);
+
+  return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
+}
+
+async function schemaStatus(sql) {
+  const tables = await sql`SELECT table_name AS name FROM information_schema.tables WHERE table_schema='stats_pitcher' AND (table_name LIKE 'game_log%' OR table_name='game_logs') ORDER BY table_name`;
+  const liveCols = await sql`SELECT column_name AS name FROM information_schema.columns WHERE table_schema='stats_pitcher' AND table_name='game_logs' ORDER BY ordinal_position`;
+  return { tables: tables.map(r => r.name), pitcher_game_logs_columns: liveCols.map(r => r.name) };
+}
+
+// STUB_MARKER_MINING_NEXT
 
 export default {
   async fetch(request, env) {
