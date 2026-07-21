@@ -551,7 +551,68 @@ async function cleanStageRowsChunk(sql, batchId, limit) {
   return { cleaned_this_tick: cleaned, stage_rows_after_clean: probablyDone ? 0 : null, cleanup_done: probablyDone, clean_limit: safeLimit, delete_mode: "ctid_subquery_limit_no_count" };
 }
 
-// STUB_MARKER_OUTCOMES_NEXT
+function classifyPlayerOutcome(result) {
+  if (!result || result.status === "source_error") return "SOURCE_ERROR";
+  if (asInt(result.raw_payload_split_count, 0) === 0) return "TRUE_NO_DATA";
+  if (asInt(result.rows_staged, 0) > 0) return "PROMOTED_ROWS";
+  if (asInt(result.rows_filtered_after_cutoff, 0) > 0 && asInt(result.rows_before_cutoff, 0) === 0) return "FILTERED_AFTER_CUTOFF";
+  return "REPAIR_REQUIRED";
+}
+function outcomeReason(result, category) {
+  if (category === "PROMOTED_ROWS") return "Source returned regular-season pitching rows within the base cutoff and rows were staged for promotion.";
+  if (category === "TRUE_NO_DATA") return "MLB StatsAPI returned zero pitching game-log splits for this player and season.";
+  if (category === "FILTERED_AFTER_CUTOFF") return "MLB StatsAPI returned pitching game-log splits, but every split was after the base cutoff date and belongs to delta.";
+  if (category === "SOURCE_ERROR") return result && result.error_type ? `Source request failed: ${result.error_type}` : "Source request failed.";
+  return "Source returned data but no rows were staged inside the base cutoff; transformation/cutoff parsing must be repaired before delta opens.";
+}
+
+async function upsertPlayerOutcome(sql, batchId, runId, p, cursorOffset, result, endpoint) {
+  const category = classifyPlayerOutcome(result);
+  await sql`
+    INSERT INTO stats_pitcher.game_log_player_outcomes (
+      batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_endpoint,source_http_status,source_ok,
+      raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,
+      first_raw_game_date,last_raw_game_date,first_promoted_game_date,last_promoted_game_date,certification_status,certification_grade,updated_at
+    ) VALUES (
+      ${batchId}, ${runId}, ${asInt(p && p.player_id, 0)}, ${asText((p && p.player_name) || (result && result.player_name), null)}, ${asText(p && p.primary_position, null)},
+      ${asInt(cursorOffset, 0)}, ${endpoint || (result && result.source_endpoint) || null},
+      ${result && result.http_status !== undefined ? asInt(result.http_status, null) : null}, ${category === "SOURCE_ERROR" ? 0 : 1},
+      ${asInt(result && result.raw_payload_split_count, 0)}, ${asInt(result && result.rows_before_cutoff, 0)}, ${asInt(result && result.rows_filtered_after_cutoff, 0)}, ${asInt(result && result.rows_staged, 0)}, 0,
+      ${category}, ${outcomeReason(result, category)}, ${result && result.error ? String(result.error).slice(0, 900) : null},
+      ${result && result.first_raw_game_date ? result.first_raw_game_date : null}, ${result && result.last_raw_game_date ? result.last_raw_game_date : null},
+      ${result && result.first_promoted_game_date ? result.first_promoted_game_date : null}, ${result && result.last_promoted_game_date ? result.last_promoted_game_date : null},
+      'player_outcome_unverified', NULL, now()
+    )
+    ON CONFLICT (batch_id, player_id) DO UPDATE SET
+      run_id=excluded.run_id, player_name=excluded.player_name, primary_position=excluded.primary_position, cursor_offset=excluded.cursor_offset,
+      source_endpoint=excluded.source_endpoint, source_http_status=excluded.source_http_status, source_ok=excluded.source_ok,
+      raw_payload_split_count=excluded.raw_payload_split_count, rows_before_cutoff=excluded.rows_before_cutoff, rows_filtered_after_cutoff=excluded.rows_filtered_after_cutoff,
+      rows_staged=excluded.rows_staged, promoted_row_count=excluded.promoted_row_count, terminal_category=excluded.terminal_category,
+      category_reason=excluded.category_reason, source_error=excluded.source_error, first_raw_game_date=excluded.first_raw_game_date,
+      last_raw_game_date=excluded.last_raw_game_date, first_promoted_game_date=excluded.first_promoted_game_date, last_promoted_game_date=excluded.last_promoted_game_date,
+      certification_status=excluded.certification_status, certification_grade=excluded.certification_grade, updated_at=now()
+  `;
+  return category;
+}
+
+async function rebuildMissingOutcomeRowsFromCursor(sql, batchId, runId) {
+  const cursorRows = await sql`SELECT cursor_json FROM stats_pitcher.game_log_cursor WHERE batch_id=${batchId} OR cursor_key=${ACTIVE_CURSOR_KEY} ORDER BY updated_at DESC LIMIT 1`;
+  const cursor = cursorRows[0] || null;
+  let players = [];
+  try { players = JSON.parse((cursor && cursor.cursor_json) || "{}").players || []; } catch (_) { players = []; }
+  for (let i = 0; i < players.length; i++) {
+    const p = players[i];
+    const existingRows = await sql`SELECT player_id FROM stats_pitcher.game_log_player_outcomes WHERE batch_id=${batchId} AND player_id=${asInt(p.player_id, 0)}`;
+    if (existingRows[0]) continue;
+    await sql`
+      INSERT INTO stats_pitcher.game_log_player_outcomes (batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_ok,raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,certification_status,updated_at)
+      VALUES (${batchId}, ${runId}, ${asInt(p.player_id, 0)}, ${asText(p.player_name, null)}, ${asText(p.primary_position, null)}, ${i}, 0, 0, 0, 0, 0, 0, 'UNCLEAR', 'Player existed in cursor but no per-player source outcome was recorded; rerun/repair required before delta.', 'player_outcome_unverified', now())
+      ON CONFLICT (batch_id, player_id) DO UPDATE SET run_id=excluded.run_id, player_name=excluded.player_name, primary_position=excluded.primary_position, cursor_offset=excluded.cursor_offset, terminal_category=excluded.terminal_category, category_reason=excluded.category_reason, certification_status=excluded.certification_status, updated_at=now()
+    `;
+  }
+}
+
+// STUB_MARKER_CERTIFY_NEXT
 
 export default {
   async fetch(request, env) {
