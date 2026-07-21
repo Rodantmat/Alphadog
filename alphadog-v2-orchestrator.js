@@ -6181,14 +6181,15 @@ async function processScoringFullRunJob(env, row, runId, trigger) {
 
 
 async function enqueueScheduledScoringFullRunIfDue(env, cronExpression = "unknown") {
-  await ensureConfigScheduledJobsTable(env);
   const pt = pacificNowParts(new Date());
-  const scheduleRows = await all(env.CONFIG_DB,
-    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type
-     FROM config_scheduled_jobs
-     WHERE enabled=1 AND job_key='scoring-full-run' AND schedule_type='daily' AND timezone='America/Los_Angeles'
-     ORDER BY local_time, schedule_id`
-  );
+  let sqlSched4 = pgSchedule(env);
+  const scheduleRows = await sqlSched4`
+    SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type
+    FROM config.scheduled_jobs
+    WHERE enabled=1 AND job_key='scoring-full-run' AND schedule_type='daily' AND timezone='America/Los_Angeles'
+    ORDER BY local_time, schedule_id
+  `;
+  await sqlSched4.end();
   const results = [];
   for (const schedule of scheduleRows) {
     const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
