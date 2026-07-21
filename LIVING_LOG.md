@@ -84,5 +84,14 @@ Continuously updated. Last real state always at the bottom of the current sessio
 
 Rodolfo confirmed: follow this REAL order (splits before metrics, expansion mining interleaved), not the earlier stated list. Certifier stays last for our migration purposes regardless (its 3 modes get ported once everything they depend on is on Postgres) — but note the certifier is invoked 3 TIMES within a single incremental-morning-full-run (precheck/source_repair_check/final_check), so once ported it must handle all 3 calendar_tally_stage variants.
 
-**Status: proceeding with hitter game logs port — deep D1 verification + structural read of base-hitter-game-logs.js next.**
+**D1 verification for hitter_game_logs — DEEP CHECK RESULTS (real, not assumed):**
+- Schema (PRAGMA): 40 columns, PK (player_id, game_pk). Has ingestion_mode, batch_id, run_id, certification_status/grade, promoted_at — a real stage→certify→promote lifecycle, not a simple upsert.
+- team_id/opponent_team_id are BARE numeric ("108"), NOT "mlb_"-prefixed. Verified this is correct/expected, not the known ID-mismatch bug: Postgres ref.teams already has a bridge column `mlb_team_id` (bare integer) alongside the mlb_-prefixed `team_id` PK — confirmed via static-teams.js source. Bare numeric team_id in hitter_game_logs maps to ref.teams.mlb_team_id. Do NOT "fix" this to mlb_ prefix — it would break the real convention.
+- raw_json: real native JSON (`{"...`), NOT double-encoded. Clean.
+- source_key: 3 distinct real values (mlb_statsapi_game_feed_live_hitting_repair_v0_1_0 / mlb_statsapi_people_gameLog_hitting_historical_backfill_v0_1_0 / mlb_statsapi_people_gameLog_hitting_v0_1_0), crossed with ingestion_mode (historical_backfill/base_backfill/delta_update). Differential/dedupe logic in the ported version must stay scoped by source_key, not just player_id+game_pk.
+- primary_position_played distribution: real hitter positions dominate (CF/SS/C/3B/2B/LF/RF/1B/DH all ~7-8k rows), only 75 rows tagged "P" (pinch-hit pitchers, negligible, legitimate) — position filter is CORRECT here, no repeat of the known bug.
+- Row count: 75,427 total, 651 players, 3,920 games, 2025-03-18 to 2026-07-19.
+- Found FULL sibling table set: `hitter_game_logs_stage` (16,490 rows — a real, sizeable staging table, ~22% of main table's size, not trivial), `hitter_game_log_batches` (6 rows), `hitter_game_log_cursor` (2 rows), `hitter_game_log_certifications`, `hitter_game_log_player_outcomes`, `hitter_game_log_repair_registry`. Need to read the actual worker code to determine whether `_stage` is genuinely bounded in-flight data (fine) or an accumulating full-history duplicate (violates no-duplicate-staging rule, needs fixing on port) — not yet determined, D1 data alone can't answer this, must read code logic next.
+
+**Conclusion: D1 data for hitter_game_logs is real, correct, and complete. No known-bug-pattern issues found. Cleared to proceed to reading the worker's actual code (delta_update handler + stage table usage) and planning the Postgres port.**
 
