@@ -1905,90 +1905,87 @@ async function reconcileHitterGameLogCoverageFromLive(env, batchId, runId, opts 
   };
 }
 
-async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTotal, baseGate, opts = {}) {
-  const batch = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_log_batches WHERE batch_id=?", batchId);
+async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTotal, baseGate, opts = {}) {
+  // DIRECT PORT + REQUIRED FIX: the D1 version deliberately retained ALL delta stage rows
+  // forever ("intentionally retained as the certified 2026 repair-refresh snapshot"), never
+  // calling cleanStageRowsChunk for delta batches. This is the exact no-duplicate-staging
+  // violation flagged and confirmed with Rodolfo earlier this session. Fixed here: delta now
+  // drains stage after successful promotion, exactly like base_backfill's own lifecycle -
+  // same promote -> clean -> COMPLETED_PROMOTED_CLEANED shape, just with DELTA_* status names.
+  const batchRows = await sql`SELECT * FROM stats_hitter.game_log_batches WHERE batch_id=${batchId}`;
+  const batch = batchRows[0] || null;
   const status = String((batch && batch.status) || "");
   const grade = batch && batch.certification_grade ? batch.certification_grade : "DELTA_PASS";
-  const getStageCount = async () => asInt((await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", batchId))?.c, 0);
-  const getLiveCount = async () => asInt((await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs WHERE batch_id=?", batchId))?.c, 0);
+  const getStageCount = async () => { const r = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId}`; return asInt(r[0] && r[0].c, 0); };
+  const getLiveCount = async () => { const r = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${batchId}`; return asInt(r[0] && r[0].c, 0); };
+
+  if (status === "COMPLETED_PROMOTED_CLEANED") {
+    const liveRows = await getLiveCount();
+    return { pass: true, done: true, continuation_required: false, status, certification: batch.certification_status || "DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_CLEANED", grade: batch.certification_grade || "DELTA_PASS", checks: { version: VERSION, finalization_only: true, already_completed: true }, rows_promoted: liveRows, stage_rows_after_clean: await getStageCount() };
+  }
 
   if (status === "DELTA_RUNNING" || status === "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS" || status === "DELTA_STAGED_READY_FOR_CERTIFICATION") {
-    const pre = await buildDeltaPrePromotionChecks(env, batchId, runId, windowInfo, playersTotal, baseGate);
+    const pre = await buildDeltaPrePromotionChecks(sql, batchId, runId, windowInfo, playersTotal, baseGate);
     return {
       pass: pre.pass,
-      done: false,
+      done: !pre.pass,
       continuation_required: pre.pass,
       status: pre.pass ? "DELTA_CERTIFIED_READY_TO_PROMOTE" : "CERTIFICATION_FAILED",
       certification: pre.pass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED",
       grade: pre.grade,
       checks: pre.checks,
       rows_promoted: 0,
-      stage_rows_after_clean: await getStageCount(),
-      stage_rows_retained: await getStageCount()
+      stage_rows_after_clean: await getStageCount()
     };
   }
 
   if (status === "DELTA_CERTIFIED_READY_TO_PROMOTE" || status === "DELTA_PROMOTING") {
-    const promoted = await promoteStageRowsChunk(env, batchId, grade, cap(opts.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25));
+    const promoted = await promoteStageRowsChunk(sql, batchId, grade, cap(opts.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25));
     const liveRows = await getLiveCount();
     const stageRows = await getStageCount();
     const complete = liveRows >= stageRows && promoted.remaining_unpromoted === 0;
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET status=?, rows_promoted=?, promoted_at=CASE WHEN ? THEN COALESCE(promoted_at,CURRENT_TIMESTAMP) ELSE promoted_at END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", complete ? "DELTA_PROMOTED_STAGE_READY_TO_RETAIN" : "DELTA_PROMOTING", liveRows, complete ? 1 : 0, batchId);
+    const nextStatus = complete ? "DELTA_PROMOTED_READY_TO_CLEAN" : "DELTA_PROMOTING";
+    await sql`UPDATE stats_hitter.game_log_batches SET status=${nextStatus}, rows_promoted=${liveRows}, promoted_at=CASE WHEN ${complete} THEN COALESCE(promoted_at,now()) ELSE promoted_at END, updated_at=now() WHERE batch_id=${batchId}`;
     return {
       pass: true,
       done: false,
       continuation_required: true,
-      status: complete ? "DELTA_PROMOTED_STAGE_READY_TO_RETAIN" : "DELTA_PROMOTING",
+      status: nextStatus,
       certification: "DELTA_HITTER_GAME_LOGS_PROMOTE_MICROPHASE",
       grade,
-      checks: {
-        promoted,
-        live_rows_for_delta_batch: liveRows,
-        stage_rows: stageRows,
-        promotion_complete: complete,
-        no_cleanup_until_live_count_matches_stage: true,
-        delta_stage_retention_enabled: true
-      },
+      checks: { promoted, live_rows_for_delta_batch: liveRows, stage_rows: stageRows, promotion_complete: complete, no_cleanup_until_live_count_matches_stage: true },
       rows_promoted: liveRows,
-      stage_rows_after_clean: stageRows,
-      stage_rows_retained: stageRows
+      stage_rows_after_clean: stageRows
     };
   }
 
-  if (status === "DELTA_PROMOTED_READY_TO_CLEAN" || status === "DELTA_CLEANING" || status === "DELTA_PROMOTED_STAGE_READY_TO_RETAIN" || status === "COMPLETED_PROMOTED_STAGE_RETAINED") {
-    // v1.6.4: DELTA staging rows are intentionally retained as the certified 2026 repair-refresh snapshot.
-    // Do NOT call cleanStageRowsChunk for delta batches. Base backfill cleanup remains unchanged.
+  if (status === "DELTA_PROMOTED_READY_TO_CLEAN" || status === "DELTA_CLEANING") {
     const liveRows = await getLiveCount();
-    const retainedStageRows = await getStageCount();
-    if (liveRows < retainedStageRows) {
-      await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET status='DELTA_PROMOTING', rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", liveRows, batchId);
-      return {
-        pass: true,
-        done: false,
-        continuation_required: true,
-        status: "DELTA_PROMOTING",
-        certification: "DELTA_HITTER_GAME_LOGS_PROMOTION_COUNT_GUARD",
-        grade,
-        checks: { liveRows, retainedStageRows, delta_stage_retention_enabled: true },
-        rows_promoted: liveRows,
-        stage_rows_after_clean: retainedStageRows,
-        stage_rows_retained: retainedStageRows
-      };
+    const stageRowsBefore = await getStageCount();
+    if (liveRows < stageRowsBefore) {
+      await sql`UPDATE stats_hitter.game_log_batches SET status='DELTA_PROMOTING', rows_promoted=${liveRows}, updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "DELTA_PROMOTING", certification: "DELTA_HITTER_GAME_LOGS_PROMOTION_COUNT_GUARD", grade, checks: { liveRows, stageRowsBefore }, rows_promoted: liveRows, stage_rows_after_clean: stageRowsBefore };
     }
-    const dupLive = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM (SELECT player_id, game_pk, group_type, COUNT(*) AS n FROM hitter_game_logs GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1)`);
-    const afterWindow = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs WHERE batch_id=? AND (date(game_date) < date(?) OR date(game_date) > date(?))", batchId, windowInfo.delta_start_date, windowInfo.delta_end_date);
-    const sourceTruth = await deriveDeltaSourceCounters(env, batchId);
-    const finalPass = baseGate.pass === true && retainedStageRows > 0 && liveRows >= retainedStageRows && asInt(dupLive && dupLive.c, 0) === 0 && asInt(afterWindow && afterWindow.c, 0) === 0;
+    const cleaned = await cleanStageRowsChunk(sql, batchId, cap(opts.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 500));
+    if (cleaned.cleanup_done !== true) {
+      await sql`UPDATE stats_hitter.game_log_batches SET status='DELTA_CLEANING', rows_promoted=${liveRows}, updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "DELTA_CLEANING", certification: "DELTA_HITTER_GAME_LOGS_CLEAN_MICROPHASE", grade, checks: { cleaned, rows_promoted: liveRows }, rows_promoted: liveRows, stage_rows_after_clean: cleaned.stage_rows_after_clean };
+    }
+
+    const dupLiveRows = await sql`SELECT COUNT(*)::int AS c FROM (SELECT player_id, game_pk, group_type, COUNT(*) AS n FROM stats_hitter.game_logs GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1) sub`;
+    const afterWindowRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${batchId} AND (game_date::date < ${windowInfo.delta_start_date}::date OR game_date::date > ${windowInfo.delta_end_date}::date)`;
+    const sourceTruth = await deriveDeltaSourceCounters(sql, batchId);
+    const dupLive = dupLiveRows[0] || {};
+    const afterWindow = afterWindowRows[0] || {};
+    const finalPass = baseGate.pass === true && liveRows > 0 && asInt(dupLive && dupLive.c, 0) === 0 && asInt(afterWindow && afterWindow.c, 0) === 0;
     const checks = {
       version: VERSION,
-      lifecycle: "delta_update_final_verify_stage_retained",
+      lifecycle: "delta_update_final_verify_stage_drained",
       base_integrity_gate: baseGate,
       delta_window: windowInfo,
       live_rows_for_delta_batch: liveRows,
-      stage_rows_retained: retainedStageRows,
-      stage_rows_after_clean: retainedStageRows,
-      stage_retained_as_2026_repair_refresh_snapshot: true,
-      cleanup_skipped_intentionally: true,
+      stage_rows_after_clean: 0,
+      stage_drained_no_retention: true,
       duplicate_live_keys: asInt(dupLive && dupLive.c, 0),
       delta_rows_outside_window: asInt(afterWindow && afterWindow.c, 0),
       source_counters_from_outcomes: sourceTruth,
@@ -1997,42 +1994,34 @@ async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTota
       no_ranking: true,
       no_board_mutation: true
     };
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_certifications SET rows_promoted=?, checks_json=? WHERE certification_id=?", liveRows, JSON.stringify(checks), `cert_${batchId}`);
-    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches SET
-      status=CASE WHEN ? THEN 'COMPLETED_PROMOTED_STAGE_RETAINED' ELSE 'CERTIFICATION_FAILED' END,
-      rows_staged=?,
-      rows_promoted=?,
-      source_request_count=?,
-      source_success_count=?,
-      source_no_data_count=?,
-      source_error_count=?,
-      certification_status=CASE WHEN ? THEN 'DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED' ELSE 'DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED' END,
-      certification_grade=CASE WHEN ? THEN 'DELTA_PASS' ELSE 'DELTA_FAIL' END,
-      certification_json=?,
-      finished_at=CURRENT_TIMESTAMP,
-      cleaned_at=cleaned_at,
-      updated_at=CURRENT_TIMESTAMP
-      WHERE batch_id=?`, finalPass ? 1 : 0, retainedStageRows, liveRows, sourceTruth.source_request_count, sourceTruth.source_success_count, sourceTruth.source_no_data_count, sourceTruth.source_error_count, finalPass ? 1 : 0, finalPass ? 1 : 0, JSON.stringify(checks), batchId);
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET status=?, next_run_after=NULL, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", finalPass ? "COMPLETED_PROMOTED_STAGE_RETAINED" : "CERTIFICATION_FAILED", DELTA_CURSOR_KEY);
-    checks.coverage_reconcile = {
-      skipped: true,
-      disabled: true,
-      reason: "coverage_owned_by_delta_certifier_only",
-      note: "Run delta-certifier/calendar after hitter mining to reconcile TEAM_DB coverage and gaps."
-    };
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_certifications SET checks_json=? WHERE certification_id=?", JSON.stringify(checks), `cert_${batchId}`);
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", JSON.stringify(checks), batchId);
+    await sql`UPDATE stats_hitter.game_log_certifications SET rows_promoted=${liveRows}, checks_json=${JSON.stringify(checks)} WHERE certification_id=${`cert_${batchId}`}`;
+    await sql`
+      UPDATE stats_hitter.game_log_batches SET
+        status=CASE WHEN ${finalPass} THEN 'COMPLETED_PROMOTED_CLEANED' ELSE 'CERTIFICATION_FAILED' END,
+        rows_promoted=${liveRows},
+        source_request_count=${sourceTruth.source_request_count},
+        source_success_count=${sourceTruth.source_success_count},
+        source_no_data_count=${sourceTruth.source_no_data_count},
+        source_error_count=${sourceTruth.source_error_count},
+        certification_status=CASE WHEN ${finalPass} THEN 'DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_CLEANED' ELSE 'DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED' END,
+        certification_grade=CASE WHEN ${finalPass} THEN 'DELTA_PASS' ELSE 'DELTA_FAIL' END,
+        certification_json=${JSON.stringify(checks)},
+        finished_at=now(),
+        cleaned_at=now(),
+        updated_at=now()
+      WHERE batch_id=${batchId}
+    `;
+    await sql`UPDATE stats_hitter.game_log_cursor SET status=${finalPass ? "COMPLETED_PROMOTED_CLEANED" : "CERTIFICATION_FAILED"}, next_run_after=NULL, updated_at=now() WHERE cursor_key=${DELTA_CURSOR_KEY}`;
     return {
       pass: finalPass,
       done: true,
       continuation_required: false,
-      status: finalPass ? "COMPLETED_PROMOTED_STAGE_RETAINED" : "CERTIFICATION_FAILED",
-      certification: finalPass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED",
+      status: finalPass ? "COMPLETED_PROMOTED_CLEANED" : "CERTIFICATION_FAILED",
+      certification: finalPass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_CLEANED" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED",
       grade: finalPass ? "DELTA_PASS" : "DELTA_FAIL",
       checks,
       rows_promoted: liveRows,
-      stage_rows_after_clean: retainedStageRows,
-      stage_rows_retained: retainedStageRows
+      stage_rows_after_clean: 0
     };
   }
   return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "DELTA_HITTER_GAME_LOGS_UNKNOWN_STATUS", grade: "DELTA_FAIL", checks: { status, batchId }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
