@@ -467,45 +467,49 @@ async function insertStageRow(env, row) {
   );
 }
 
-async function chooseAllHitterPlayers(env, inputJson) {
+async function chooseAllHitterPlayers(sql, inputJson) {
+  // DIRECT PORT (no shim): was env.REF_DB (D1, table ref_players). Now Postgres ref.players,
+  // same table verified live: mlb_player_id, full_name, primary_position, primary_role,
+  // current_team_id, active all present with identical semantics.
   const explicit = inputJson && Array.isArray(inputJson.player_ids) ? inputJson.player_ids.map(x => asInt(x, 0)).filter(Boolean) : [];
   if (explicit.length) {
     return explicit.map(player_id => ({ player_id, player_name: null, primary_position: null, source: "input_json.player_ids" }));
   }
 
   const hitterPositions = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "OF", "DH"];
-  const placeholders = hitterPositions.map(() => "?").join(",");
-  let rows = await all(env.REF_DB, `
+  let rows = await sql`
     SELECT
-      COALESCE(mlb_player_id, player_id) AS player_id,
-      COALESCE(full_name, player_name) AS player_name,
+      mlb_player_id AS player_id,
+      full_name AS player_name,
       primary_position,
       current_team_id
-    FROM ref_players
+    FROM ref.players
     WHERE COALESCE(active,1)=1
-      AND COALESCE(mlb_player_id, player_id) IS NOT NULL
-      AND UPPER(COALESCE(primary_position, primary_role, '')) IN (${placeholders})
-    ORDER BY current_team_id IS NULL, current_team_id, player_name`, ...hitterPositions);
+      AND mlb_player_id IS NOT NULL
+      AND UPPER(COALESCE(primary_position, primary_role, '')) = ANY(${hitterPositions})
+    ORDER BY current_team_id IS NULL, current_team_id, full_name
+  `;
 
   if (!rows.length) {
-    rows = await all(env.REF_DB, `
+    rows = await sql`
       SELECT
-        COALESCE(mlb_player_id, player_id) AS player_id,
-        COALESCE(full_name, player_name) AS player_name,
+        mlb_player_id AS player_id,
+        full_name AS player_name,
         primary_position,
         current_team_id
-      FROM ref_players
+      FROM ref.players
       WHERE COALESCE(active,1)=1
-        AND COALESCE(mlb_player_id, player_id) IS NOT NULL
+        AND mlb_player_id IS NOT NULL
         AND UPPER(COALESCE(primary_position, primary_role, '')) NOT IN ('P', 'SP', 'RP', 'LHP', 'RHP', 'PITCHER')
-      ORDER BY current_team_id IS NULL, current_team_id, player_name`);
+      ORDER BY current_team_id IS NULL, current_team_id, full_name
+    `;
   }
 
   return rows.map(r => ({
     player_id: asInt(r.player_id, 0),
     player_name: r.player_name || null,
     primary_position: r.primary_position || null,
-    source: "REF_DB.ref_players_hitter_position_filter"
+    source: "ref.players_hitter_position_filter"
   })).filter(r => r.player_id);
 }
 
