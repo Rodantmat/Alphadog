@@ -1108,7 +1108,7 @@ async function deriveDeltaSourceCounters(sql, batchId) {
 }
 
 async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTotal, baseGate, options = {}) {
-  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 800);
+  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 2000);
   const cleanLimit = cap(options.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
   const batchRows = await sql`SELECT * FROM stats_pitcher.game_log_batches WHERE batch_id=${batchId}`;
   const batch = batchRows[0] || null;
