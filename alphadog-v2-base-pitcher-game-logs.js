@@ -495,7 +495,7 @@ async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDa
 }
 
 async function promoteStageRowsChunk(sql, batchId, grade, limit) {
-  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 300);
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 2000);
   const rows = await sql`
     SELECT
       s.stage_id,s.player_id,s.game_pk,s.season,s.game_date,s.team_id,s.opponent_team_id,s.opponent_abbr,s.is_home,s.role,
