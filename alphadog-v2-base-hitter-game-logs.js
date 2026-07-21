@@ -1636,7 +1636,15 @@ async function getDeltaWindow(env, sql, inputJson, fetchTimeoutMs) {
   const hasPriorDeltaLive = !!(maxDeltaGameDate && maxDeltaGameDate >= deltaFloor);
 
   const lookbackStart = addDays(latest, -(DEFAULT_DELTA_LOOKBACK_DAYS - 1));
-  let start = hasPriorDeltaLive ? (lookbackStart < deltaFloor ? deltaFloor : lookbackStart) : deltaFloor;
+  // GROUNDED FIX (real research: MLB's own scoring-changes page shows multi-day corrections;
+  // sportsdata.io's integration guide recommends a 3-4 day, up to a week, rolling correction
+  // window; general idempotent-pipeline practice calls a hard-floored reprocessing window a
+  // real gap). Once prior delta history exists, the rolling repair window genuinely extends
+  // DEFAULT_DELTA_LOOKBACK_DAYS back - no longer artificially clamped to the reserved start
+  // date - so it can catch real MLB corrections issued days after a game, even for games that
+  // fall on the "base" side of the one-time cutoff. The FIRST-ever delta run still only covers
+  // the immediate post-base gap (narrow, deliberate) - only the ongoing rolling runs widen.
+  let start = hasPriorDeltaLive ? lookbackStart : deltaFloor;
 
   const failedRows = await sql`
     SELECT MIN(delta_start_date) AS min_start
