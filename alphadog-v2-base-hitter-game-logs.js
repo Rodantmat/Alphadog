@@ -1761,20 +1761,23 @@ async function getOrCreateDeltaState(env, sql, input, inputJson, windowInfo) {
   return { is_new: true, cursor: cursorRows[0] || null, batch: batchRows[0] || null, players, input_json: inputJson };
 }
 
-async function certifyDeltaOutcomeUniverse(env, batchId, expectedPlayers) {
-  const totals = await first(env.STATS_HITTER_DB, `SELECT
-      COUNT(*) AS outcome_total,
-      COUNT(DISTINCT player_id) AS distinct_outcome_players,
-      COUNT(*) - COUNT(DISTINCT player_id) AS duplicate_outcome_rows,
-      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END) AS promoted_players,
-      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END) AS true_no_data_players,
-      SUM(CASE WHEN terminal_category='FILTERED_OUTSIDE_WINDOW' THEN 1 ELSE 0 END) AS filtered_outside_window_players,
-      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END) AS source_error_players,
-      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END) AS repair_required_players,
-      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END) AS unclear_players,
-      SUM(CASE WHEN terminal_category NOT IN ('PROMOTED_ROWS','TRUE_NO_DATA','FILTERED_OUTSIDE_WINDOW','SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR') THEN 1 ELSE 0 END) AS invalid_category_players,
-      SUM(COALESCE(rows_staged,0)) AS rows_staged
-    FROM hitter_game_log_player_outcomes WHERE batch_id=?`, batchId);
+async function certifyDeltaOutcomeUniverse(sql, batchId, expectedPlayers) {
+  const totalsRows = await sql`
+    SELECT
+      COUNT(*)::int AS outcome_total,
+      COUNT(DISTINCT player_id)::int AS distinct_outcome_players,
+      (COUNT(*) - COUNT(DISTINCT player_id))::int AS duplicate_outcome_rows,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END)::int AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END)::int AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_OUTSIDE_WINDOW' THEN 1 ELSE 0 END)::int AS filtered_outside_window_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players,
+      SUM(CASE WHEN terminal_category NOT IN ('PROMOTED_ROWS','TRUE_NO_DATA','FILTERED_OUTSIDE_WINDOW','SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR') THEN 1 ELSE 0 END)::int AS invalid_category_players,
+      SUM(COALESCE(rows_staged,0))::int AS rows_staged
+    FROM stats_hitter.game_log_player_outcomes WHERE batch_id=${batchId}
+  `;
+  const totals = totalsRows[0] || {};
   const pass = asInt(totals && totals.outcome_total, 0) === expectedPlayers
     && asInt(totals && totals.distinct_outcome_players, 0) === expectedPlayers
     && asInt(totals && totals.duplicate_outcome_rows, 0) === 0
@@ -1782,26 +1785,32 @@ async function certifyDeltaOutcomeUniverse(env, batchId, expectedPlayers) {
     && asInt(totals && totals.repair_required_players, 0) === 0
     && asInt(totals && totals.unclear_players, 0) === 0
     && asInt(totals && totals.invalid_category_players, 0) === 0;
-  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_player_outcomes SET certification_status=?, certification_grade=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", pass ? "delta_player_outcome_certified" : "delta_player_outcome_certification_failed", pass ? "DELTA_PASS" : "DELTA_FAIL", batchId);
+  await sql`UPDATE stats_hitter.game_log_player_outcomes SET certification_status=${pass ? "delta_player_outcome_certified" : "delta_player_outcome_certification_failed"}, certification_grade=${pass ? "DELTA_PASS" : "DELTA_FAIL"}, updated_at=now() WHERE batch_id=${batchId}`;
   return { version: VERSION, pass, players_total: expectedPlayers, ...totals };
 }
 
-async function buildDeltaPrePromotionChecks(env, batchId, runId, windowInfo, playersTotal, baseGate) {
-  const summary = await first(env.STATS_HITTER_DB, `SELECT
-      COUNT(*) AS rows_staged,
-      COUNT(DISTINCT player_id) AS distinct_players,
-      COUNT(DISTINCT game_pk) AS distinct_games,
+async function buildDeltaPrePromotionChecks(sql, batchId, runId, windowInfo, playersTotal, baseGate) {
+  const summaryRows = await sql`
+    SELECT
+      COUNT(*)::int AS rows_staged,
+      COUNT(DISTINCT player_id)::int AS distinct_players,
+      COUNT(DISTINCT game_pk)::int AS distinct_games,
       MIN(game_date) AS min_game_date,
       MAX(game_date) AS max_game_date,
-      SUM(CASE WHEN player_id IS NULL OR game_pk IS NULL OR season IS NULL OR game_date IS NULL OR source_key IS NULL OR source_endpoint IS NULL THEN 1 ELSE 0 END) AS missing_required,
-      SUM(CASE WHEN group_type!='hitting' THEN 1 ELSE 0 END) AS non_hitting_rows,
-      SUM(CASE WHEN date(game_date) < date(?) OR date(game_date) > date(?) THEN 1 ELSE 0 END) AS outside_window_rows,
-      SUM(CASE WHEN hits < 0 OR doubles < 0 OR triples < 0 OR home_runs < 0 OR singles < 0 OR total_bases < 0 OR ab < 0 OR pa < 0 OR hits > ab OR singles != hits - doubles - triples - home_runs OR total_bases != singles + (2*doubles) + (3*triples) + (4*home_runs) THEN 1 ELSE 0 END) AS bad_math_rows
-    FROM hitter_game_logs_stage WHERE batch_id=?`, windowInfo.delta_start_date, windowInfo.delta_end_date, batchId);
-  const dup = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS duplicate_count FROM (
-      SELECT player_id, game_pk, group_type, COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=? GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1
-    )`, batchId);
-  const outcomeSummary = await certifyDeltaOutcomeUniverse(env, batchId, playersTotal);
+      SUM(CASE WHEN player_id IS NULL OR game_pk IS NULL OR season IS NULL OR game_date IS NULL OR source_key IS NULL OR source_endpoint IS NULL THEN 1 ELSE 0 END)::int AS missing_required,
+      SUM(CASE WHEN group_type!='hitting' THEN 1 ELSE 0 END)::int AS non_hitting_rows,
+      SUM(CASE WHEN game_date::date < ${windowInfo.delta_start_date}::date OR game_date::date > ${windowInfo.delta_end_date}::date THEN 1 ELSE 0 END)::int AS outside_window_rows,
+      SUM(CASE WHEN hits < 0 OR doubles < 0 OR triples < 0 OR home_runs < 0 OR singles < 0 OR total_bases < 0 OR ab < 0 OR pa < 0 OR hits > ab OR singles != hits - doubles - triples - home_runs OR total_bases != singles + (2*doubles) + (3*triples) + (4*home_runs) THEN 1 ELSE 0 END)::int AS bad_math_rows
+    FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId}
+  `;
+  const summary = summaryRows[0] || {};
+  const dupRows = await sql`
+    SELECT COUNT(*)::int AS duplicate_count FROM (
+      SELECT player_id, game_pk, group_type, COUNT(*) AS c FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId} GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1
+    ) sub
+  `;
+  const dup = dupRows[0] || {};
+  const outcomeSummary = await certifyDeltaOutcomeUniverse(sql, batchId, playersTotal);
   const rowsStaged = asInt(summary && summary.rows_staged, 0);
   const pass = baseGate.pass === true
     && outcomeSummary.pass === true
@@ -1812,7 +1821,10 @@ async function buildDeltaPrePromotionChecks(env, batchId, runId, windowInfo, pla
     && asInt(summary && summary.bad_math_rows, 0) === 0;
   const checks = {
     version: VERSION,
-    lifecycle: "delta_update_stage_player_outcomes_certify_promote_stage_retained",
+    // DIRECT PORT + REQUIRED FIX: lifecycle label updated from "..._stage_retained" to
+    // "..._promote_clean" - reflects the real fix (stage drains after promotion, matching
+    // base_backfill; the D1 permanent-retention design is not carried forward, per instruction).
+    lifecycle: "delta_update_stage_player_outcomes_certify_promote_clean",
     base_integrity_gate: baseGate,
     delta_window: windowInfo,
     rows_staged: rowsStaged,
@@ -1831,20 +1843,39 @@ async function buildDeltaPrePromotionChecks(env, batchId, runId, windowInfo, pla
     no_ranking: true,
     no_board_mutation: true
   };
-  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_logs_stage SET certification_status=?, certification_grade=?, certified_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, pass ? "delta_update_certified" : "delta_update_certification_failed", pass ? "DELTA_PASS" : "DELTA_FAIL", batchId);
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, `cert_${batchId}`, batchId, runId, "delta_update", pass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED", pass ? "DELTA_PASS" : "DELTA_FAIL", JSON.stringify(checks), rowsStaged, 0, asInt(dup && dup.duplicate_count, 0), asInt(outcomeSummary.true_no_data_players, 0), asInt(outcomeSummary.source_error_players, 0));
-  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches SET rows_staged=?, duplicate_count=?, certification_status=?, certification_grade=?, certification_json=?, certified_at=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE certified_at END, status=CASE WHEN ? THEN 'DELTA_CERTIFIED_READY_TO_PROMOTE' ELSE 'CERTIFICATION_FAILED' END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, rowsStaged, asInt(dup && dup.duplicate_count, 0), pass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED", pass ? "DELTA_PASS" : "DELTA_FAIL", JSON.stringify(checks), pass ? 1 : 0, pass ? 1 : 0, batchId);
+  await sql`UPDATE stats_hitter.game_logs_stage SET certification_status=${pass ? "delta_update_certified" : "delta_update_certification_failed"}, certification_grade=${pass ? "DELTA_PASS" : "DELTA_FAIL"}, certified_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+  await sql`
+    INSERT INTO stats_hitter.game_log_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,created_at)
+    VALUES (${`cert_${batchId}`}, ${batchId}, ${runId}, 'delta_update', ${pass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED"}, ${pass ? "DELTA_PASS" : "DELTA_FAIL"}, ${JSON.stringify(checks)}, ${rowsStaged}, 0, ${asInt(dup && dup.duplicate_count, 0)}, ${asInt(outcomeSummary.true_no_data_players, 0)}, ${asInt(outcomeSummary.source_error_players, 0)}, now())
+    ON CONFLICT (certification_id) DO UPDATE SET
+      batch_id=excluded.batch_id, run_id=excluded.run_id, mode=excluded.mode, certification_status=excluded.certification_status,
+      certification_grade=excluded.certification_grade, checks_json=excluded.checks_json, rows_staged=excluded.rows_staged,
+      rows_promoted=excluded.rows_promoted, duplicate_count=excluded.duplicate_count, no_data_count=excluded.no_data_count, error_count=excluded.error_count
+  `;
+  await sql`
+    UPDATE stats_hitter.game_log_batches SET
+      rows_staged=${rowsStaged}, duplicate_count=${asInt(dup && dup.duplicate_count, 0)},
+      certification_status=${pass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED"},
+      certification_grade=${pass ? "DELTA_PASS" : "DELTA_FAIL"}, certification_json=${JSON.stringify(checks)},
+      certified_at=CASE WHEN ${pass} THEN now() ELSE certified_at END,
+      status=CASE WHEN ${pass} THEN 'DELTA_CERTIFIED_READY_TO_PROMOTE' ELSE 'CERTIFICATION_FAILED' END,
+      updated_at=now()
+    WHERE batch_id=${batchId}
+  `;
   return { pass, grade: pass ? "DELTA_PASS" : "DELTA_FAIL", checks, rows_staged: rowsStaged };
 }
 
-async function deriveDeltaSourceCounters(env, batchId) {
-  const row = await first(env.STATS_HITTER_DB, `SELECT
-      COUNT(*) AS outcome_total,
-      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END) AS promoted_players,
-      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END) AS true_no_data_players,
-      SUM(CASE WHEN terminal_category='FILTERED_OUTSIDE_WINDOW' THEN 1 ELSE 0 END) AS filtered_outside_window_players,
-      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END) AS source_error_players
-    FROM hitter_game_log_player_outcomes WHERE batch_id=?`, batchId);
+async function deriveDeltaSourceCounters(sql, batchId) {
+  const rows = await sql`
+    SELECT
+      COUNT(*)::int AS outcome_total,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END)::int AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END)::int AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_OUTSIDE_WINDOW' THEN 1 ELSE 0 END)::int AS filtered_outside_window_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players
+    FROM stats_hitter.game_log_player_outcomes WHERE batch_id=${batchId}
+  `;
+  const row = rows[0] || {};
   return {
     source_request_count: asInt(row && row.outcome_total, 0),
     source_success_count: asInt(row && row.promoted_players, 0) + asInt(row && row.filtered_outside_window_players, 0),
