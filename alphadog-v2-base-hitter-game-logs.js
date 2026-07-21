@@ -1554,30 +1554,35 @@ async function determineLatestCompleteGameDate(env, deltaFloorDate, fetchTimeout
   return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today };
 }
 
-async function getDeltaWindow(env, inputJson, fetchTimeoutMs) {
+async function getDeltaWindow(env, sql, inputJson, fetchTimeoutMs) {
+  // DIRECT PORT: freshness-gate logic preserved exactly - only the two D1 lookups converted.
   const deltaFloor = asText(inputJson.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE);
   const schedule = await determineLatestCompleteGameDate(env, deltaFloor, fetchTimeoutMs);
   if (!schedule.ok) return { ok: false, ...schedule, delta_start_date: deltaFloor };
   const latest = schedule.latest_complete_game_date;
 
-  // v1.6.2: first delta after locked base must not be capped to only the last 7 days.
-  // It must catch up the full post-base window from 2026-05-19 through latest finalized MLB date.
-  // After at least one certified/promoted/cleaned delta exists, normal repair-aware lookback applies.
-  const existingDeltaLive = await first(env.STATS_HITTER_DB, `SELECT MAX(game_date) AS max_delta_game_date
-    FROM hitter_game_logs
-    WHERE ingestion_mode='delta_update'
-      AND date(game_date) >= date(?)`, deltaFloor);
-  const maxDeltaGameDate = asText(existingDeltaLive && existingDeltaLive.max_delta_game_date, null);
+  // v1.6.2 (preserved): first delta after locked base must not be capped to only the last 7 days.
+  // It must catch up the full post-base window from the reserved start date through the latest
+  // finalized MLB date. After at least one certified/promoted/cleaned delta exists, normal
+  // repair-aware lookback applies.
+  const existingDeltaLiveRows = await sql`
+    SELECT MAX(game_date) AS max_delta_game_date
+    FROM stats_hitter.game_logs
+    WHERE ingestion_mode='delta_update' AND game_date::date >= ${deltaFloor}::date
+  `;
+  const maxDeltaGameDate = asText(existingDeltaLiveRows[0] && existingDeltaLiveRows[0].max_delta_game_date, null);
   const hasPriorDeltaLive = !!(maxDeltaGameDate && maxDeltaGameDate >= deltaFloor);
 
   const lookbackStart = addDays(latest, -(DEFAULT_DELTA_LOOKBACK_DAYS - 1));
   let start = hasPriorDeltaLive ? (lookbackStart < deltaFloor ? deltaFloor : lookbackStart) : deltaFloor;
 
-  const failed = await first(env.STATS_HITTER_DB, `SELECT MIN(delta_start_date) AS min_start
-    FROM hitter_game_log_batches
+  const failedRows = await sql`
+    SELECT MIN(delta_start_date) AS min_start
+    FROM stats_hitter.game_log_batches
     WHERE mode='delta_update' AND status IN ('CERTIFICATION_FAILED','DELTA_FAILED','PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS','DELTA_RUNNING','DELTA_STAGED_READY_FOR_CERTIFICATION','DELTA_CERTIFIED_READY_TO_PROMOTE','DELTA_PROMOTING','DELTA_PROMOTED_READY_TO_CLEAN','DELTA_CLEANING')
-      AND delta_start_date IS NOT NULL`);
-  const failedStart = asText(failed && failed.min_start, null);
+      AND delta_start_date IS NOT NULL
+  `;
+  const failedStart = asText(failedRows[0] && failedRows[0].min_start, null);
   if (failedStart && failedStart >= deltaFloor && failedStart < start) start = failedStart;
   return {
     ok: true,
