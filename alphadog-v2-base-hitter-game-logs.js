@@ -8,8 +8,8 @@ const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&g
 const SOURCE_KEY = "mlb_statsapi_people_gameLog_hitting_v0_1_0";
 const DATA_FEED_KEY = "base_hitter_game_logs";
 const GROUP_TYPE = "hitting";
-const DEFAULT_BASE_BACKFILL_CUTOFF_DATE = "2026-05-18";
-const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
+const DEFAULT_BASE_BACKFILL_CUTOFF_DATE = "2026-07-18";
+const DEFAULT_DELTA_RESERVED_START_DATE = "2026-07-19";
 const DEFAULT_SOURCE_SEASON = 2026;
 const DEFAULT_CHUNK_SIZE_PLAYERS = 3;
 const DEFAULT_MAX_REQUESTS_PER_TICK = 3;
