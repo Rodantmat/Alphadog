@@ -1154,29 +1154,35 @@ async function cleanStageRowsChunk(sql, batchId, limit) {
   };
 }
 
-async function buildPrePromotionChecks(env, batchId, runId, cutoffDate) {
-  const summary = await first(env.STATS_HITTER_DB, `SELECT
-      COUNT(*) AS rows_staged,
-      COUNT(DISTINCT player_id) AS distinct_players,
-      COUNT(DISTINCT game_pk) AS distinct_games,
+async function buildPrePromotionChecks(sql, batchId, runId, cutoffDate) {
+  const summaryRows = await sql`
+    SELECT
+      COUNT(*)::int AS rows_staged,
+      COUNT(DISTINCT player_id)::int AS distinct_players,
+      COUNT(DISTINCT game_pk)::int AS distinct_games,
       MIN(game_date) AS min_game_date,
       MAX(game_date) AS max_game_date,
-      SUM(CASE WHEN player_id IS NULL OR game_pk IS NULL OR season IS NULL OR game_date IS NULL OR source_key IS NULL OR source_endpoint IS NULL THEN 1 ELSE 0 END) AS missing_required,
-      SUM(CASE WHEN group_type!='hitting' THEN 1 ELSE 0 END) AS non_hitting_rows,
-      SUM(CASE WHEN game_date > ? THEN 1 ELSE 0 END) AS after_cutoff_rows,
-      SUM(CASE WHEN hits < 0 OR doubles < 0 OR triples < 0 OR home_runs < 0 OR singles < 0 OR total_bases < 0 OR ab < 0 OR pa < 0 OR hits > ab OR singles != hits - doubles - triples - home_runs OR total_bases != singles + (2*doubles) + (3*triples) + (4*home_runs) THEN 1 ELSE 0 END) AS bad_math_rows
-    FROM hitter_game_logs_stage WHERE batch_id=?`, cutoffDate, batchId);
+      SUM(CASE WHEN player_id IS NULL OR game_pk IS NULL OR season IS NULL OR game_date IS NULL OR source_key IS NULL OR source_endpoint IS NULL THEN 1 ELSE 0 END)::int AS missing_required,
+      SUM(CASE WHEN group_type!='hitting' THEN 1 ELSE 0 END)::int AS non_hitting_rows,
+      SUM(CASE WHEN game_date > ${cutoffDate} THEN 1 ELSE 0 END)::int AS after_cutoff_rows,
+      SUM(CASE WHEN hits < 0 OR doubles < 0 OR triples < 0 OR home_runs < 0 OR singles < 0 OR total_bases < 0 OR ab < 0 OR pa < 0 OR hits > ab OR singles != hits - doubles - triples - home_runs OR total_bases != singles + (2*doubles) + (3*triples) + (4*home_runs) THEN 1 ELSE 0 END)::int AS bad_math_rows
+    FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId}
+  `;
+  const summary = summaryRows[0] || {};
 
-  const dup = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS duplicate_count FROM (
+  const dupRows = await sql`
+    SELECT COUNT(*)::int AS duplicate_count FROM (
       SELECT player_id, game_pk, group_type, COUNT(*) AS c
-      FROM hitter_game_logs_stage
-      WHERE batch_id=?
+      FROM stats_hitter.game_logs_stage
+      WHERE batch_id=${batchId}
       GROUP BY player_id, game_pk, group_type
       HAVING COUNT(*) > 1
-    )`, batchId);
+    ) sub
+  `;
+  const dup = dupRows[0] || {};
 
-  const outcomeSummary = await certifyPlayerOutcomeUniverse(env, batchId, runId, cutoffDate);
-  const sourceTruth = await freezeSourceCountersFromOutcomes(env, batchId);
+  const outcomeSummary = await certifyPlayerOutcomeUniverse(sql, batchId, runId, cutoffDate);
+  const sourceTruth = await freezeSourceCountersFromOutcomes(sql, batchId);
   const rowsStaged = asInt(summary && summary.rows_staged, 0);
   const duplicateCount = asInt(dup && dup.duplicate_count, 0);
   const sourceErrors = asInt(sourceTruth && sourceTruth.source_error_count, 0);
