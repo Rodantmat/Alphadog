@@ -1140,7 +1140,10 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
   // game_pk+group_type, matching the convention already used by the real Postgres mining
   // functions) - staged rows don't carry log_id (D1 stage table never did either), so it's
   // computed here at promotion time. INSERT OR REPLACE -> INSERT ... ON CONFLICT (log_id) DO UPDATE.
-  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25);
+  // 25-row cap was a D1 bound-parameter-limit safety leftover - doesn't apply on Postgres.
+  // Raised for direct-call driving of one-time base backfills (per-row insert loop, no giant
+  // multi-value statement, so this is just more loop iterations per invocation, not riskier SQL).
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 300);
   const rows = await sql`
     SELECT
       s.stage_id,
