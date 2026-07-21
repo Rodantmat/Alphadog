@@ -44,6 +44,13 @@ def make_config(worker_name, include_services=False):
         # This worker doubles as the Claude MCP bridge (agents/MCP SDK).
         # Same reason as control-room above: this must live in the generator
         # or it gets wiped on every deploy before Wrangler even runs.
+        # Hyperdrive added so the bridge can offer a read-only Postgres query tool
+        # (run_sql_postgres) for verifying what's already migrated/backfilled on the
+        # new database, mirroring the existing D1 run_sql tool. Same Hyperdrive id
+        # used by every other Postgres-cutover worker.
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
         cfg["services"] = [
             {"binding": "CONTROL_ROOM", "service": "alphadog-v2-control-room"},
