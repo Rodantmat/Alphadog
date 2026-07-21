@@ -16486,18 +16486,18 @@ async function enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression = 
 const STATIC_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
 
 async function enqueueScheduledStaticFullRunIfDue(env, cronExpression = "unknown") {
-  await ensureConfigScheduledJobsTable(env);
-
   const pt = pacificNowParts(new Date());
-  const scheduleRows = await all(env.CONFIG_DB,
-    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, day_of_week, dedupe_scope, input_json, notes
-     FROM config_scheduled_jobs
-     WHERE enabled=1
-       AND job_key='static-full-run'
-       AND schedule_type='weekly'
-       AND timezone='America/Los_Angeles'
-     ORDER BY local_time, schedule_id`
-  );
+  let sqlSched6 = pgSchedule(env);
+  const scheduleRows = await sqlSched6`
+    SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, day_of_week, dedupe_scope, input_json::text AS input_json, notes
+    FROM config.scheduled_jobs
+    WHERE enabled=1
+      AND job_key='static-full-run'
+      AND schedule_type='weekly'
+      AND timezone='America/Los_Angeles'
+    ORDER BY local_time, schedule_id
+  `;
+  await sqlSched6.end();
 
   const results = [];
   for (const schedule of scheduleRows) {
