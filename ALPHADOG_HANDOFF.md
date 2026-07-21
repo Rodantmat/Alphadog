@@ -108,6 +108,20 @@ orchestrator priority-starvation bug (parent job always winning over its own chi
 other full-run chain types** (`board-full-run`, `daily-full-run`, `incremental-morning-full-run`)
 — confirmed present via grep, NOT yet fixed, out of scope until told otherwise.
 
+**Weekly Monday 2am schedule — already built and confirmed live, nothing further needed.**
+Scheduling in this system is DB-driven, never a cron file: a lightweight cron tick (already
+existing, "wakes" the orchestrator every minute) causes the orchestrator to check
+`CONFIG_DB.config_scheduled_jobs` for anything due, and enqueue it into `control_job_queue` if
+so. Real, Pacific-timezone-aware, DST-safe weekly dispatch logic for `static-full-run` already
+exists in `alphadog-v2-orchestrator.js` (~line 16478 onward): queries `config_scheduled_jobs
+WHERE enabled=1 AND job_key='static-full-run' AND schedule_type='weekly' AND
+timezone='America/Los_Angeles'`, matches against the real Pacific weekday via `Intl`, and inserts
+into `control_job_queue`. The row itself (`schedule_id: static_full_run_weekly_monday_2am_pt`,
+`day_of_week: 'Mon'`, `local_time: '02:00'`, `enabled: 1`) is present and enabled in
+`CONFIG_DB.config_scheduled_jobs`, confirmed directly. If a NEW scheduled job is ever needed for
+an incremental worker later, follow this exact same DB-driven pattern — add a row to
+`config_scheduled_jobs`, do not add or rely on a cron-file trigger.
+
 ---
 
 ## 3. WHAT'S NOT DONE — EVERYTHING ELSE (this is the incremental/delta phase's job)
