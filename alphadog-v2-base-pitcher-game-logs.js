@@ -867,7 +867,59 @@ async function getOrCreateBaseBackfillState(env, sql, input) {
   return { is_new: true, cursor: cursorRows[0] || null, batch: batchRows[0] || null, players, input_json: inputJson };
 }
 
-// STUB_MARKER_DELTAWINDOW_NEXT
+function isoDateOnly(d) { return new Date(d).toISOString().slice(0, 10); }
+function addDays(dateStr, days) { const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days); return isoDateOnly(d); }
+function todayUtcDate() { return isoDateOnly(Date.now()); }
+function isFinalMlbGame(game) {
+  const status = game && game.status ? game.status : {};
+  const abstractState = String(status.abstractGameState || "").toLowerCase();
+  const detailed = String(status.detailedState || "").toLowerCase();
+  const coded = String(status.codedGameState || "").toUpperCase();
+  return abstractState === "final" || coded === "F" || detailed === "final" || detailed === "game over" || detailed === "completed early";
+}
+async function determineLatestCompleteGameDate(env, deltaFloorDate, fetchTimeoutMs) {
+  const today = todayUtcDate();
+  const endpoint = `${String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "")}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(deltaFloorDate)}&endDate=${encodeURIComponent(today)}`;
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-pitcher-game-logs/1.0.0") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
+  if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, endpoint, error: fetched.error || (fetched.resp ? `HTTP_${fetched.resp.status}` : "schedule_fetch_failed") };
+  let body;
+  try { body = JSON.parse(fetched.text || "{}"); } catch (err) { return { ok: false, endpoint, error: `schedule_json_parse_failed:${String(err && err.message ? err.message : err)}` }; }
+  const dates = Array.isArray(body.dates) ? body.dates : [];
+  let latest = null;
+  for (const d of dates) {
+    const dateStr = asText(d && d.date, null);
+    const games = Array.isArray(d && d.games) ? d.games : [];
+    if (!dateStr || !games.length) continue;
+    if (games.every(isFinalMlbGame) && (!latest || dateStr > latest)) latest = dateStr;
+  }
+  if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_DELTA_RANGE", today_utc: today };
+  return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today };
+}
+
+async function getDeltaWindow(env, sql, inputJson, fetchTimeoutMs) {
+  // GROUNDED FROM THE START (same real research as hitter's fix - not rediscovered here): real
+  // MLB corrections land days after a game; the rolling repair window genuinely extends
+  // DEFAULT_DELTA_LOOKBACK_DAYS back once prior delta history exists - no artificial floor at
+  // the reserved start date. First-ever delta run stays narrow (only the immediate post-base gap).
+  const deltaFloor = asText(inputJson.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE);
+  const schedule = await determineLatestCompleteGameDate(env, deltaFloor, fetchTimeoutMs);
+  if (!schedule.ok) return { ok: false, ...schedule, delta_start_date: deltaFloor };
+  const latest = schedule.latest_complete_game_date;
+  const existingDeltaLiveRows = await sql`SELECT MAX(game_date) AS max_delta_game_date FROM stats_pitcher.game_logs WHERE ingestion_mode='delta_update' AND game_date::date >= ${deltaFloor}::date`;
+  const maxDeltaGameDate = asText(existingDeltaLiveRows[0] && existingDeltaLiveRows[0].max_delta_game_date, null);
+  const hasPriorDeltaLive = !!(maxDeltaGameDate && maxDeltaGameDate >= deltaFloor);
+  const lookbackStart = addDays(latest, -(DEFAULT_DELTA_LOOKBACK_DAYS - 1));
+  let start = hasPriorDeltaLive ? lookbackStart : deltaFloor;
+  const failedRows = await sql`
+    SELECT MIN(delta_start_date) AS min_start FROM stats_pitcher.game_log_batches
+    WHERE mode='delta_update' AND status IN ('CERTIFICATION_FAILED','PARTIAL_CONTINUE_DELTA_PITCHER_GAME_LOGS','DELTA_RUNNING','DELTA_STAGED_READY_FOR_CERTIFICATION','DELTA_CERTIFIED_READY_TO_PROMOTE','DELTA_PROMOTING','DELTA_PROMOTED_READY_TO_CLEAN','DELTA_CLEANING') AND delta_start_date IS NOT NULL
+  `;
+  const failedStart = asText(failedRows[0] && failedRows[0].min_start, null);
+  if (failedStart && failedStart >= deltaFloor && failedStart < start) start = failedStart;
+  return { ok: true, delta_start_date: start, delta_end_date: latest, delta_floor_date: deltaFloor, latest_complete_game_date: latest, repair_lookback_days: DEFAULT_DELTA_LOOKBACK_DAYS, initial_full_delta_catchup: !hasPriorDeltaLive, prior_delta_live_max_game_date: maxDeltaGameDate, schedule_endpoint: schedule.endpoint };
+}
+
+// STUB_MARKER_DELTAMINING_NEXT
 
 export default {
   async fetch(request, env) {
