@@ -123,5 +123,13 @@ Beginning implementation now.
 - Zero changes to any existing tool's behavior. Version bumped v2.7 → v2.8-postgres-readonly-tool.
 - Pushed in 3 commits; deploy workflow triggered (scope="changed" per workflow yml, confirmed only admin-sql should redeploy).
 - **Caveat flagged for Rodolfo:** even once deployed, this new tool may not be callable within the CURRENT chat session (MCP tool list is fixed at session start, may not hot-reload mid-conversation). May need a fresh conversation to actually use it.
-- Deploy status as of this entry: still "pending" after ~7+ minutes of waiting — standing by rather than repeatedly polling, will check again and report.
+**Deploy CONFIRMED successful** (commit 62ebe19, both "AlphaDog v2 Mobile Auto Deploy" and "pages build and deployment" green). `run_sql_postgres` tool is live server-side on the Bridge worker.
+
+**BLOCKER for current session: cannot call the new tool.** Claude's MCP tool list is fixed at conversation start; `run_sql_postgres` didn't exist yet then, so it's not available to invoke in THIS chat even though the worker now serves it. Told Rodolfo directly — he needs to start a fresh conversation for the tool to appear as callable. Once available: query `information_schema.schemata`/`information_schema.tables` (+ row counts) across the Postgres instance to see everything already backfilled by prior sessions, BEFORE touching hitter_game_logs or any other worker, per Rodolfo's explicit instruction not to redo existing work.
+
+**Session paused here pending a fresh conversation with the new tool available.** State for next session to pick up:
+- Real chain order confirmed (INCREMENTAL_MORNING_FULL_RUN_STAGES), certifier goes last, hitter_game_logs is the first real worker to port (base-hitter-game-logs.js, both base_backfill AND delta_update modes needed since delta_update hard-depends on a locked base_backfill batch).
+- D1 verification for hitter_game_logs already done and clean (see above) — do NOT re-verify D1 unless something changed.
+- Do NOT assume Postgres stats_hitter schema is empty — check via run_sql_postgres first thing next session.
+- No code written yet for hitter_game_logs port itself — only the admin-sql Bridge tool addition happened this session.
 
