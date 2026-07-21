@@ -672,11 +672,11 @@ export class AlphadogMcp extends McpAgent {
 
     this.server.tool(
       "run_job",
-      "Enqueue a job on the AlphaDog orchestrator via the Control Room, the same way its dashboard buttons do. Set target='PHASE3A_WORKER' to call the phase3a-first-inning-pitcher-context worker directly instead (useful for testing modes not yet registered in Control Room's job registry). Returns the immediate response, not the finished job result — use run_sql afterward to check status/output tables.",
+      "Enqueue a job on the AlphaDog orchestrator via the Control Room, the same way its dashboard buttons do. Set target='PHASE3A_WORKER' to call the phase3a-first-inning-pitcher-context worker directly instead (useful for testing modes not yet registered in Control Room's job registry). Set target='BASE_HITTER_GAME_LOGS_WORKER' to call alphadog-v2-base-hitter-game-logs directly, bypassing control_job_queue and the shared orchestrator lock entirely - use this for one-time base/mining work; keep delta_update-style periodic jobs on the orchestrator. Returns the immediate response, not the finished job result — use run_sql afterward to check status/output tables.",
       {
         job: z.string().describe("The job key (Control Room) or mode string (direct worker call)."),
         extra: z.record(z.any()).optional().describe("Optional extra fields merged into the request body."),
-        target: z.enum(["CONTROL_ROOM", "PHASE3A_WORKER", "ORCHESTRATOR_WORKER"]).optional().describe("Which service to call. Defaults to CONTROL_ROOM.")
+        target: z.enum(["CONTROL_ROOM", "PHASE3A_WORKER", "ORCHESTRATOR_WORKER", "BASE_HITTER_GAME_LOGS_WORKER"]).optional().describe("Which service to call. Defaults to CONTROL_ROOM.")
       },
       async (args) => {
         const result = await toolRunJob(this.env, args);
