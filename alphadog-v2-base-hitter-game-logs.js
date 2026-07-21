@@ -3194,6 +3194,10 @@ async function runBaseBackfillTick(env, input) {
       for (const p of slice) {
         if (rowsStagedThisTick >= maxRows) break;
         if (Date.now() - tickStartedAtMs >= maxTickRuntimeMs) { stoppedByRuntimeBudget = true; break; }
+        const adopted = await adoptExistingCoverageIfPresent(sql, batchId, runId, "BASE_PASS", p, cutoffDate);
+        if (adopted) {
+          sourceSuccessCount++; processedPlayers.push(adopted); nextOffset++; continue;
+        }
         sourceRequestCount++;
         didFetchThisTick = true;
         let result;
