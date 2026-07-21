@@ -139,6 +139,44 @@ async function toolRunSql(env, args) {
   }
 }
 
+async function toolRunPostgres(env, args) {
+  // Read-only-by-default Postgres query tool via Hyperdrive, mirroring toolRunSql's D1 safety
+  // pattern exactly (SELECT/WITH always allowed, anything else needs allow_write:true).
+  // prepare:false is mandatory here - see ALPHADOG_DOS_AND_DONTS.md - without it, postgres.js's
+  // prepared-statement mode silently masks real Postgres errors as generic "connection lost".
+  const { sql: sqlText, params, max_rows, allow_write } = args || {};
+  if (!env.HYPERDRIVE) {
+    return { ok: false, error: "HYPERDRIVE binding is not present on this worker." };
+  }
+  if (!sqlText || typeof sqlText !== "string") {
+    return { ok: false, error: "Missing sql string." };
+  }
+  if (isWriteStatement(sqlText) && !allow_write) {
+    return { ok: false, error: "This looks like a write statement (not SELECT/WITH). Re-call with allow_write:true if that's intended." };
+  }
+
+  const cap = Math.min(Number(max_rows) > 0 ? Number(max_rows) : HARD_MAX_ROWS, HARD_MAX_ROWS);
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const rows = Array.isArray(params) && params.length
+      ? await sql.unsafe(sqlText, params)
+      : await sql.unsafe(sqlText);
+    const list = Array.from(rows || []);
+    const trimmed = list.slice(0, cap);
+    return {
+      ok: true,
+      row_count_returned: trimmed.length,
+      row_count_total_from_driver: list.length,
+      truncated: list.length > trimmed.length,
+      rows: trimmed
+    };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  } finally {
+    try { await sql.end({ timeout: 5 }); } catch (_) { /* best-effort close */ }
+  }
+}
+
 async function toolRunJob(env, args) {
   const { job, extra, target } = args || {};
   if (!job || typeof job !== "string") {
