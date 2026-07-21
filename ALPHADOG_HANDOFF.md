@@ -148,25 +148,34 @@ is known — VERIFY DIRECTLY, do not assume.**
 
 ---
 
-## 4. HARD RULE — D1 IS OFF LIMITS UNTIL 100% WIRED TO POSTGRES
+## 4. HARD RULE — D1 IS COMPLETELY OFF LIMITS. WE ONLY WIRE THE NEW DATABASE.
 
-This is explicit and non-negotiable, stated directly by Rodolfo:
+This is explicit and non-negotiable, stated directly by Rodolfo, and restated even more plainly
+after an earlier draft of this document phrased it too conditionally:
 
-- **Do not test, run, or touch any worker against the old D1 database as part of this migration
-  work.** If a worker is not fully, 100% rewired to Postgres — schema created, every D1 query
-  rewritten, every read and write going through Hyperdrive — do not run it, do not "just check
-  current behavior" against D1 first, do not use D1 as a stopgap while Postgres code is
-  incomplete.
-- The only sanctioned exception: the calculated layers' comparison-only use of D1 as ground
-  truth for validating logic correctness — see Section 5, which is narrow and read-only, never
-  a save target.
-- If you're unsure whether something is "100% wired," grep the file directly for any D1 binding
-  usage (`.prepare(`, `.batch(`, D1 binding names like `REF_DB.`, `STATS_HITTER_DB.`, etc.) the
-  same way it was verified for the static layer this session. Don't rely on a version string or
-  a comment claiming it's done — verify the actual code.
+- **D1 is off limits, full stop.** Not "off limits until wired" as if there's a waiting period
+  where D1 use is acceptable — D1 is simply not touched. We only wire workers to the new
+  (Postgres) database. There is no intermediate state where D1 is an acceptable stand-in, a
+  fallback, or a thing to "just check" while Postgres code is incomplete.
+- **Do not test, run, or touch any worker against D1 as part of this migration work**, for any
+  reason, at any stage of a worker's migration — not before it's converted, not while it's
+  partially converted, not to "verify current behavior" as a baseline. If a worker isn't ready to
+  run on Postgres, it doesn't run. Leave it alone until the Postgres path is real and complete,
+  then run it on Postgres only.
+- **The one narrow, explicit exception**: calculated/derived layers (classification, baseline,
+  expansion — the layers the system computes internally from other data) may use D1 as a
+  READ-ONLY reference for comparison, solely to verify that the new Postgres-based calculation
+  logic produces the correct result. D1 is never a save target here either — see Section 5 for
+  exactly how this narrow exception works. Outside of this one comparison use, D1 is unwired,
+  untouched, off limits.
+- If you're unsure whether something is "ready" to move to Postgres, grep the file directly for
+  any D1 binding usage (`.prepare(`, `.batch(`, D1 binding names like `REF_DB.`,
+  `STATS_HITTER_DB.`, etc.) the same way it was verified for the static layer this session. Don't
+  rely on a version string or a comment claiming it's done — verify the actual code, and don't run
+  anything against D1 in the meantime.
 - We accept that new Postgres code may have real, undiscovered bugs (as the static layer did,
-  extensively) — that's fine and expected. What's not acceptable is spending time debugging or
-  working around the OLD D1 path instead of just fixing the Postgres path forward.
+  extensively) — that's fine and expected. What's not acceptable is reaching for D1, in any form,
+  as a way to sidestep or work around that.
 
 ---
 
