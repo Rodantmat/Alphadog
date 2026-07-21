@@ -647,6 +647,24 @@ export class AlphadogMcp extends McpAgent {
     );
 
     this.server.tool(
+      "run_sql_postgres",
+      "Read-only-by-default query against the new DigitalOcean Postgres database via Hyperdrive (the Postgres migration target). SELECT/WITH always allowed; anything else requires allow_write=true. Use this to check what tables/schemas/rows already exist on Postgres before porting or backfilling a worker, so existing work isn't redone.",
+      {
+        sql: z.string().describe("The SQL statement to run against Postgres. One statement at a time."),
+        params: z.array(z.any()).optional().describe("Optional positional bind parameters ($1, $2, ...)."),
+        max_rows: z.number().optional().describe(`Max rows to return (capped at ${HARD_MAX_ROWS}).`),
+        allow_write: z.boolean().optional().describe("Must be true to run anything other than a SELECT/WITH statement.")
+      },
+      async (args) => {
+        const result = await toolRunPostgres(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
       "run_job",
       "Enqueue a job on the AlphaDog orchestrator via the Control Room, the same way its dashboard buttons do. Set target='PHASE3A_WORKER' to call the phase3a-first-inning-pitcher-context worker directly instead (useful for testing modes not yet registered in Control Room's job registry). Returns the immediate response, not the finished job result — use run_sql afterward to check status/output tables.",
       {
