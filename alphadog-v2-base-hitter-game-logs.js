@@ -2071,7 +2071,7 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
       stage_rows_after_clean: 0,
       stage_drained_no_retention: true,
       duplicate_live_keys: asInt(dupLive && dupLive.c, 0),
-      delta_rows_outside_window: asInt(afterWindow && afterWindow.c, 0),
+      delta_rows_outside_window_check: "validated_pre_promotion_in_buildDeltaPrePromotionChecks",
       source_counters_from_outcomes: sourceTruth,
       pass: finalPass,
       no_scoring: true,
