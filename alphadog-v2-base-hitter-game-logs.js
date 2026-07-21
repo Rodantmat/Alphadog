@@ -1190,10 +1190,13 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
         total_bases=excluded.total_bases, pa=excluded.pa, ab=excluded.ab, raw_json=excluded.raw_json,
         game_date=excluded.game_date, team_id=excluded.team_id, opponent_team_id=excluded.opponent_team_id, is_home=excluded.is_home,
         batting_order=excluded.batting_order, season=excluded.season,
-        batch_id=excluded.batch_id, run_id=excluded.run_id, group_type=excluded.group_type, data_feed_key=excluded.data_feed_key,
+        batch_id=COALESCE(stats_hitter.game_logs.batch_id, excluded.batch_id),
+        run_id=COALESCE(stats_hitter.game_logs.run_id, excluded.run_id),
+        group_type=excluded.group_type, data_feed_key=excluded.data_feed_key,
         source_endpoint=excluded.source_endpoint, source_season=excluded.source_season, source_game_type=excluded.source_game_type,
-        ingestion_mode=excluded.ingestion_mode, source_key=excluded.source_key, source_confidence=excluded.source_confidence,
-        certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
+        ingestion_mode=COALESCE(stats_hitter.game_logs.ingestion_mode, excluded.ingestion_mode), source_key=excluded.source_key, source_confidence=excluded.source_confidence,
+        certification_status=COALESCE(stats_hitter.game_logs.certification_status, excluded.certification_status),
+        certification_grade=COALESCE(stats_hitter.game_logs.certification_grade, excluded.certification_grade),
         promoted_at=now(), updated_at=now()
     `;
     await sql`
