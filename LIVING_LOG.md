@@ -226,3 +226,10 @@ Working copy of the file is being edited locally (`/home/claude/hitter_original.
 - Note: the delta-retention-forever bug fix isn't inside these two functions themselves (they're generic utilities used by both modes) — the actual fix is that the delta finalization path (`finalizeDeltaIfReady`) will now be converted to actually CALL `cleanStageRowsChunk` after promotion, instead of skipping it the way the D1 version deliberately does. That's the next real piece.
 
 **Next up: `getOrCreateBaseBackfillState` and `buildPrePromotionChecks`/`certifyAndPromoteIfClean`** (the state-machine orchestration that ties lock/stage/promote/clean together for `base_backfill`).
+
+**✅ `rebuildMissingOutcomeRowsFromCursor`, `certifyPlayerOutcomeUniverse`, `deriveSourceCountersFromOutcomes`, `freezeSourceCountersFromOutcomes`, `syncOutcomePromotedCountsFromLive`, `isFinalizationOnlyReady`: ALL CONVERTED AND VERIFIED.**
+- All direct edits: table qualification (`stats_hitter.*`), `?`→`${}`, `INSERT OR REPLACE`→`ON CONFLICT`, aggregate columns cast `::int` (Postgres `SUM`/`COUNT` return bigint by default, cast to match expected JS number handling).
+- **Real Postgres-strictness fix required and applied**: `isFinalizationOnlyReady`'s JOIN+GROUP BY query selects `b.status`, `b.cursor_offset`, `c.current_player_offset`, `c.players_total` alongside aggregates — SQLite allows this without listing them in GROUP BY, Postgres does not. Added them to the `GROUP BY` clause. This is a real, necessary SQL-dialect fix, not optional.
+- **Tested for real**: inserted a test batch + cursor + 2 outcome rows (1 promoted, 1 no-data) reproducing a "fully finalized" state, ran the exact converted `isFinalizationOnlyReady` query, confirmed it returns the right shape to make `ready:true` (cursor_offset=2≥total, outcome_total=2=total, unresolved=0). Test rows cleaned up after (3 tables).
+
+**Next up: `buildPrePromotionChecks` and `certifyAndPromoteIfClean`** — the certification/promotion orchestration itself.
