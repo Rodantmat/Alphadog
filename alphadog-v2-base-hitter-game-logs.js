@@ -2013,7 +2013,12 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
     const promoted = await promoteStageRowsChunk(sql, batchId, grade, cap(opts.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 800));
     const liveRows = await getLiveCount();
     const stageRows = await getStageCount();
-    const complete = liveRows >= stageRows && promoted.remaining_unpromoted === 0;
+    // GROUNDED FIX: liveRows is batch_id-scoped and will legitimately undercount now that row
+    // ownership is sticky (a promoted row keeps whichever batch first claimed it, even when a
+    // later batch corrects its data - see the sticky-ownership fix in promoteStageRowsChunk).
+    // remaining_unpromoted (driven by stage row_status, not batch_id) is the reliable signal for
+    // "every staged row has been pushed to live" - that alone determines completion now.
+    const complete = promoted.remaining_unpromoted === 0;
     const nextStatus = complete ? "DELTA_PROMOTED_READY_TO_CLEAN" : "DELTA_PROMOTING";
     await sql`UPDATE stats_hitter.game_log_batches SET status=${nextStatus}, rows_promoted=${liveRows}, promoted_at=CASE WHEN ${complete} THEN COALESCE(promoted_at,now()) ELSE promoted_at END, updated_at=now() WHERE batch_id=${batchId}`;
     return {
