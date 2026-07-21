@@ -147,27 +147,29 @@ function baseIdentity(env, extra = {}) {
 
 async function parseJson(request) { try { return await request.json(); } catch (_) { return {}; } }
 
-async function ensureSchema(env) {
-  const db = env.STATS_HITTER_DB;
+async function ensureSchema(sql) {
+  // DIRECT PORT (no shim): every CREATE/ALTER here targets Postgres stats_hitter.* directly.
+  // Table names schema-qualified (stats_hitter.*). stats_hitter.game_logs already exists live
+  // with 30,707 real rows (verified before writing this) - only ALTER TABLE ADD COLUMN IF NOT
+  // EXISTS is used against it, never dropped/recreated.
   const results = [];
-  const exec = async (label, sql, ...binds) => {
-    const r = await tryRun(db, sql, ...binds);
-    results.push({ label, ok: r.ok, error: r.ok ? null : r.error });
-    return r;
+  const exec = async (label, ddl) => {
+    try { await sql.unsafe(ddl); results.push({ label, ok: true, error: null }); return { ok: true }; }
+    catch (err) { const error = String(err && err.message ? err.message : err); results.push({ label, ok: false, error }); return { ok: false, error }; }
   };
 
-  await exec("create_hitter_schema_migrations", `CREATE TABLE IF NOT EXISTS hitter_schema_migrations (
+  await exec("create_stats_hitter_schema_migrations", `CREATE TABLE IF NOT EXISTS stats_hitter.schema_migrations (
     migration_key TEXT PRIMARY KEY,
     package_version TEXT,
-    applied_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    applied_at TIMESTAMPTZ DEFAULT now(),
     notes TEXT
   )`);
 
-  await exec("create_hitter_game_log_repair_registry", `CREATE TABLE IF NOT EXISTS hitter_game_log_repair_registry (
+  await exec("create_stats_hitter_game_log_repair_registry", `CREATE TABLE IF NOT EXISTS stats_hitter.game_log_repair_registry (
     registry_key TEXT PRIMARY KEY,
     target_batch_id TEXT NOT NULL,
-    player_id INTEGER NOT NULL,
-    game_pk INTEGER NOT NULL,
+    player_id BIGINT NOT NULL,
+    game_pk BIGINT NOT NULL,
     season INTEGER NOT NULL,
     group_type TEXT NOT NULL DEFAULT 'hitting',
     game_date TEXT,
@@ -175,19 +177,23 @@ async function ensureSchema(env) {
     status TEXT,
     created_by_version TEXT,
     notes TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
   )`);
 
-  await exec("idx_hitter_game_log_repair_registry_target", "CREATE INDEX IF NOT EXISTS idx_hitter_game_log_repair_registry_target ON hitter_game_log_repair_registry(target_batch_id, player_id, game_pk, group_type)");
+  await exec("idx_hitter_game_log_repair_registry_target", "CREATE INDEX IF NOT EXISTS idx_hitter_game_log_repair_registry_target ON stats_hitter.game_log_repair_registry(target_batch_id, player_id, game_pk, group_type)");
 
-  await exec("create_hitter_game_logs_stage", `CREATE TABLE IF NOT EXISTS hitter_game_logs_stage (
+  // NOTE: staging is batch-scoped and drained after promotion for BOTH modes going forward -
+  // the D1 version's "retain delta stage forever" behavior is a real no-duplicate-staging
+  // violation (flagged, confirmed with Rodolfo) and will NOT be carried forward when
+  // promoteStageRowsChunk/cleanStageRowsChunk/finalizeDeltaIfReady are converted.
+  await exec("create_stats_hitter_game_logs_stage", `CREATE TABLE IF NOT EXISTS stats_hitter.game_logs_stage (
     stage_id TEXT PRIMARY KEY,
     batch_id TEXT NOT NULL,
     run_id TEXT NOT NULL,
-    player_id INTEGER NOT NULL,
+    player_id BIGINT NOT NULL,
     player_name TEXT,
-    game_pk INTEGER,
+    game_pk BIGINT,
     season INTEGER NOT NULL,
     game_date TEXT,
     team_id TEXT,
@@ -217,17 +223,17 @@ async function ensureSchema(env) {
     certification_status TEXT DEFAULT 'staged_unverified',
     certification_grade TEXT,
     source_confidence TEXT DEFAULT 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING',
-    certified_at TEXT,
-    promoted_at TEXT,
+    certified_at TIMESTAMPTZ,
+    promoted_at TIMESTAMPTZ,
     raw_json TEXT,
     row_status TEXT DEFAULT 'staged',
     row_error TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(batch_id, player_id, game_pk, group_type)
   )`);
 
-  await exec("create_hitter_game_log_batches", `CREATE TABLE IF NOT EXISTS hitter_game_log_batches (
+  await exec("create_stats_hitter_game_log_batches", `CREATE TABLE IF NOT EXISTS stats_hitter.game_log_batches (
     batch_id TEXT PRIMARY KEY,
     run_id TEXT NOT NULL,
     worker_name TEXT NOT NULL,
@@ -241,7 +247,7 @@ async function ensureSchema(env) {
     source_game_type TEXT,
     base_backfill_cutoff_date TEXT,
     delta_start_date TEXT,
-    cursor_player_id INTEGER,
+    cursor_player_id BIGINT,
     cursor_season INTEGER,
     cursor_offset INTEGER DEFAULT 0,
     cursor_state_json TEXT,
@@ -260,20 +266,20 @@ async function ensureSchema(env) {
     certification_json TEXT,
     source_confidence TEXT DEFAULT 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING',
     locked_by TEXT,
-    lock_acquired_at TEXT,
-    lock_expires_at TEXT,
+    lock_acquired_at TIMESTAMPTZ,
+    lock_expires_at TIMESTAMPTZ,
     stale_recovery_count INTEGER DEFAULT 0,
-    started_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    finished_at TEXT,
-    certified_at TEXT,
-    promoted_at TEXT,
-    cleaned_at TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMPTZ DEFAULT now(),
+    finished_at TIMESTAMPTZ,
+    certified_at TIMESTAMPTZ,
+    promoted_at TIMESTAMPTZ,
+    cleaned_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
     notes TEXT
   )`);
 
-  await exec("create_hitter_game_log_cursor", `CREATE TABLE IF NOT EXISTS hitter_game_log_cursor (
+  await exec("create_stats_hitter_game_log_cursor", `CREATE TABLE IF NOT EXISTS stats_hitter.game_log_cursor (
     cursor_key TEXT PRIMARY KEY,
     batch_id TEXT NOT NULL,
     run_id TEXT NOT NULL,
@@ -282,19 +288,19 @@ async function ensureSchema(env) {
     source_season INTEGER,
     base_backfill_cutoff_date TEXT,
     delta_start_date TEXT,
-    current_player_id INTEGER,
+    current_player_id BIGINT,
     current_player_offset INTEGER DEFAULT 0,
     players_total INTEGER DEFAULT 0,
     players_processed INTEGER DEFAULT 0,
     requests_done INTEGER DEFAULT 0,
-    next_run_after TEXT,
+    next_run_after TIMESTAMPTZ,
     last_error TEXT,
     cursor_json TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
   )`);
 
-  await exec("create_hitter_game_log_certifications", `CREATE TABLE IF NOT EXISTS hitter_game_log_certifications (
+  await exec("create_stats_hitter_game_log_certifications", `CREATE TABLE IF NOT EXISTS stats_hitter.game_log_certifications (
     certification_id TEXT PRIMARY KEY,
     batch_id TEXT NOT NULL,
     run_id TEXT NOT NULL,
@@ -307,14 +313,13 @@ async function ensureSchema(env) {
     duplicate_count INTEGER DEFAULT 0,
     no_data_count INTEGER DEFAULT 0,
     error_count INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT now()
   )`);
 
-
-  await exec("create_hitter_game_log_player_outcomes", `CREATE TABLE IF NOT EXISTS hitter_game_log_player_outcomes (
+  await exec("create_stats_hitter_game_log_player_outcomes", `CREATE TABLE IF NOT EXISTS stats_hitter.game_log_player_outcomes (
     batch_id TEXT NOT NULL,
     run_id TEXT NOT NULL,
-    player_id INTEGER NOT NULL,
+    player_id BIGINT NOT NULL,
     player_name TEXT,
     primary_position TEXT,
     cursor_offset INTEGER,
@@ -335,8 +340,8 @@ async function ensureSchema(env) {
     last_promoted_game_date TEXT,
     certification_status TEXT DEFAULT 'player_outcome_unverified',
     certification_grade TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (batch_id, player_id)
   )`);
 
@@ -351,42 +356,41 @@ async function ensureSchema(env) {
     ["run_id", "TEXT"],
     ["certification_status", "TEXT"],
     ["certification_grade", "TEXT"],
-    ["certified_at", "TEXT"],
-    ["promoted_at", "TEXT"],
-    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+    ["certified_at", "TIMESTAMPTZ"],
+    ["promoted_at", "TIMESTAMPTZ"],
+    ["source_confidence", "TEXT"]
   ];
   for (const [col, def] of liveAdds) {
-    const r = await tryRun(db, `ALTER TABLE hitter_game_logs ADD COLUMN ${col} ${def}`);
-    results.push({ label: `alter_hitter_game_logs_add_${col}`, ok: r.ok || /duplicate column name/i.test(r.error || ""), error: r.ok ? null : r.error });
+    await exec(`alter_stats_hitter_game_logs_add_${col}`, `ALTER TABLE stats_hitter.game_logs ADD COLUMN IF NOT EXISTS ${col} ${def}`);
   }
 
   const indexes = [
-    ["idx_hitter_stage_batch", "CREATE INDEX IF NOT EXISTS idx_hitter_stage_batch ON hitter_game_logs_stage(batch_id, row_status)"],
-    ["idx_hitter_stage_player_season", "CREATE INDEX IF NOT EXISTS idx_hitter_stage_player_season ON hitter_game_logs_stage(player_id, season, game_date)"],
-    ["idx_hitter_stage_cert", "CREATE INDEX IF NOT EXISTS idx_hitter_stage_cert ON hitter_game_logs_stage(certification_status, batch_id)"],
-    ["idx_hitter_batches_status", "CREATE INDEX IF NOT EXISTS idx_hitter_batches_status ON hitter_game_log_batches(status, mode, updated_at)"],
-    ["idx_hitter_batches_lock", "CREATE INDEX IF NOT EXISTS idx_hitter_batches_lock ON hitter_game_log_batches(locked_by, lock_expires_at)"],
-    ["idx_hitter_cursor_status", "CREATE INDEX IF NOT EXISTS idx_hitter_cursor_status ON hitter_game_log_cursor(status, mode, updated_at)"],
-    ["idx_hitter_logs_identity", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_identity ON hitter_game_logs(player_id, game_pk, group_type)"],
-    ["idx_hitter_logs_batch", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_batch ON hitter_game_logs(batch_id, certification_status)"],
-    ["idx_hitter_logs_source", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_source ON hitter_game_logs(source_key, source_season, game_date)"],
-    ["idx_hitter_outcomes_batch_category", "CREATE INDEX IF NOT EXISTS idx_hitter_outcomes_batch_category ON hitter_game_log_player_outcomes(batch_id, terminal_category)"],
-    ["idx_hitter_outcomes_player", "CREATE INDEX IF NOT EXISTS idx_hitter_outcomes_player ON hitter_game_log_player_outcomes(player_id, batch_id)"]
+    ["idx_hitter_stage_batch", "CREATE INDEX IF NOT EXISTS idx_hitter_stage_batch ON stats_hitter.game_logs_stage(batch_id, row_status)"],
+    ["idx_hitter_stage_player_season", "CREATE INDEX IF NOT EXISTS idx_hitter_stage_player_season ON stats_hitter.game_logs_stage(player_id, season, game_date)"],
+    ["idx_hitter_stage_cert", "CREATE INDEX IF NOT EXISTS idx_hitter_stage_cert ON stats_hitter.game_logs_stage(certification_status, batch_id)"],
+    ["idx_hitter_batches_status", "CREATE INDEX IF NOT EXISTS idx_hitter_batches_status ON stats_hitter.game_log_batches(status, mode, updated_at)"],
+    ["idx_hitter_batches_lock", "CREATE INDEX IF NOT EXISTS idx_hitter_batches_lock ON stats_hitter.game_log_batches(locked_by, lock_expires_at)"],
+    ["idx_hitter_cursor_status", "CREATE INDEX IF NOT EXISTS idx_hitter_cursor_status ON stats_hitter.game_log_cursor(status, mode, updated_at)"],
+    ["idx_hitter_logs_batch", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_batch ON stats_hitter.game_logs(batch_id, certification_status)"],
+    ["idx_hitter_logs_source", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_source ON stats_hitter.game_logs(source_key, source_season, game_date)"],
+    ["idx_hitter_outcomes_batch_category", "CREATE INDEX IF NOT EXISTS idx_hitter_outcomes_batch_category ON stats_hitter.game_log_player_outcomes(batch_id, terminal_category)"],
+    ["idx_hitter_outcomes_player", "CREATE INDEX IF NOT EXISTS idx_hitter_outcomes_player ON stats_hitter.game_log_player_outcomes(player_id, batch_id)"]
   ];
-  for (const [label, sql] of indexes) await exec(label, sql);
+  for (const [label, ddl] of indexes) await exec(label, ddl);
 
-  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v1_6_0_delta_certifying_repair_engine', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs v1.6.0: delta_update certifying repair engine with locked base integrity gate, stage-certify-promote-clean lifecycle, SQL-safe microchunks, no scoring/no board mutation')", VERSION);
+  await exec("record_schema_migration", `INSERT INTO stats_hitter.schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_postgres_v1_0_0_direct_port', '${VERSION}', now(), 'Base Hitter Game Logs Postgres direct port: delta_update certifying repair engine with locked base integrity gate, stage-certify-promote-clean lifecycle, direct-edit port (no shim), delta staging now drains after promotion (no permanent retention)') ON CONFLICT (migration_key) DO UPDATE SET package_version=excluded.package_version, applied_at=now(), notes=excluded.notes`);
 
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
-async function schemaStatus(env) {
-  const tables = await all(env.STATS_HITTER_DB, "SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE 'hitter_game_log%' OR name='hitter_game_logs') ORDER BY name");
-  const liveCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_logs)");
-  const stageCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_logs_stage)");
-  const batchCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_log_batches)");
-  const cursorCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_log_cursor)");
-  const outcomeCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_log_player_outcomes)");
+async function schemaStatus(sql) {
+  // DIRECT PORT: PRAGMA table_info / sqlite_master -> information_schema.columns/tables.
+  const tables = await sql`SELECT table_name AS name FROM information_schema.tables WHERE table_schema='stats_hitter' AND (table_name LIKE 'game_log%' OR table_name='game_logs') ORDER BY table_name`;
+  const liveCols = await sql`SELECT column_name AS name FROM information_schema.columns WHERE table_schema='stats_hitter' AND table_name='game_logs' ORDER BY ordinal_position`;
+  const stageCols = await sql`SELECT column_name AS name FROM information_schema.columns WHERE table_schema='stats_hitter' AND table_name='game_logs_stage' ORDER BY ordinal_position`;
+  const batchCols = await sql`SELECT column_name AS name FROM information_schema.columns WHERE table_schema='stats_hitter' AND table_name='game_log_batches' ORDER BY ordinal_position`;
+  const cursorCols = await sql`SELECT column_name AS name FROM information_schema.columns WHERE table_schema='stats_hitter' AND table_name='game_log_cursor' ORDER BY ordinal_position`;
+  const outcomeCols = await sql`SELECT column_name AS name FROM information_schema.columns WHERE table_schema='stats_hitter' AND table_name='game_log_player_outcomes' ORDER BY ordinal_position`;
   return {
     tables: tables.map(r => r.name),
     hitter_game_logs_columns: liveCols.map(r => r.name),
