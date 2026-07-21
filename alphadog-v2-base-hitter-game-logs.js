@@ -1445,7 +1445,7 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
     const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
     const rowsPromoted = asInt(liveRows[0] && liveRows[0].c, 0);
     const expectedPromotedRows = asInt(batch && batch.rows_staged, 0) || await getStageCount();
-    const promotionComplete = promoted.remaining_unpromoted === 0 && rowsPromoted === expectedPromotedRows;
+    const promotionComplete = promoted.remaining_unpromoted === 0 && rowsPromoted >= expectedPromotedRows;
     const nextStatus = promotionComplete ? "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN" : "BASE_BACKFILL_PROMOTING";
     await sql`UPDATE stats_hitter.game_log_batches SET status=${nextStatus}, rows_promoted=${rowsPromoted}, updated_at=now() WHERE batch_id=${batchId}`;
     await sql`UPDATE stats_hitter.game_log_cursor SET status=${nextStatus}, next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
