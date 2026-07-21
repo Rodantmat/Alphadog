@@ -484,7 +484,74 @@ async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDa
   return { player_id: p.player_id, player_name: p.player_name, status, http_status: resp.status, split_count: rawSplitCount, raw_payload_split_count: rawSplitCount, rows_before_cutoff: beforeCutoff, rows_filtered_after_cutoff: filteredAfterCutoff, invalid_before_cutoff_rows: invalidBeforeCutoff, rows_staged: inserted, source_endpoint: endpoint, first_raw_game_date: rawDates[0] || null, last_raw_game_date: rawDates[rawDates.length - 1] || null, first_promoted_game_date: stagedDates[0] || null, last_promoted_game_date: stagedDates[stagedDates.length - 1] || null };
 }
 
-// STUB_MARKER_PROMOTE_NEXT
+async function promoteStageRowsChunk(sql, batchId, grade, limit) {
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 300);
+  const rows = await sql`
+    SELECT
+      s.stage_id,s.player_id,s.game_pk,s.season,s.game_date,s.team_id,s.opponent_team_id,s.opponent_abbr,s.is_home,s.role,
+      s.innings_pitched_decimal,s.outs_recorded,s.batters_faced,s.hits_allowed,s.runs_allowed,s.earned_runs,s.walks_allowed,s.strikeouts,s.home_runs_allowed,
+      s.pitches,s.balls,s.strikes,s.wins,s.losses,s.saves,s.holds,s.blown_saves,
+      s.raw_json,s.source_key,s.source_confidence,s.group_type,s.data_feed_key,s.source_endpoint,s.source_season,s.source_game_type,s.ingestion_mode,s.batch_id,s.run_id
+    FROM stats_pitcher.game_logs_stage s
+    WHERE s.batch_id=${batchId} AND s.row_status != 'promoted'
+    ORDER BY s.stage_id
+    LIMIT ${safeLimit}
+  `;
+  if (!rows.length) {
+    const remainingNoneRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs_stage s WHERE s.batch_id=${batchId} AND s.row_status != 'promoted'`;
+    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNoneRows[0] && remainingNoneRows[0].c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_log_id" };
+  }
+  let promotedThisTick = 0;
+  for (const r of rows) {
+    const logId = `${r.player_id}_${r.game_pk}_pitching`;
+    // Sticky-ownership pattern applied from the start (same grounded fix as hitter): real DATA
+    // always overwrites with fresh truth; batch OWNERSHIP/certification lineage stays with
+    // whichever batch first claimed the row, via COALESCE(existing, new) instead of blind excluded.col.
+    await sql`
+      INSERT INTO stats_pitcher.game_logs (
+        log_id,player_id,game_pk,season,game_date,team_id,opponent_team_id,opponent_abbr,is_home,
+        innings_pitched_decimal,outs_recorded,batters_faced,hits_allowed,runs_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed,
+        pitches,balls,strikes,wins,losses,saves,holds,blown_saves,
+        raw_json,source_key,source_confidence,updated_at,group_type,data_feed_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,
+        certification_status,certification_grade,certified_at,promoted_at,created_at,role,player_name
+      ) VALUES (
+        ${logId},${r.player_id},${r.game_pk},${r.season},${r.game_date},${r.team_id},${r.opponent_team_id},${r.opponent_abbr},${r.is_home},
+        ${r.innings_pitched_decimal},${r.outs_recorded},${r.batters_faced},${r.hits_allowed},${r.runs_allowed},${r.earned_runs},${r.walks_allowed},${r.strikeouts},${r.home_runs_allowed},
+        ${r.pitches},${r.balls},${r.strikes},${r.wins},${r.losses},${r.saves},${r.holds},${r.blown_saves},
+        ${r.raw_json},${r.source_key},${r.source_confidence}, now(), ${r.group_type},${r.data_feed_key},${r.source_endpoint},${r.source_season},${r.source_game_type},${r.ingestion_mode},${r.batch_id},${r.run_id},
+        ${r.ingestion_mode === 'delta_update' ? 'delta_update_certified_promoted' : 'base_backfill_certified_promoted'}, ${grade}, now(), now(), now(), ${r.role}, NULL
+      )
+      ON CONFLICT (log_id) DO UPDATE SET
+        game_date=excluded.game_date, team_id=excluded.team_id, opponent_team_id=excluded.opponent_team_id, opponent_abbr=excluded.opponent_abbr, is_home=excluded.is_home,
+        innings_pitched_decimal=excluded.innings_pitched_decimal, outs_recorded=excluded.outs_recorded, batters_faced=excluded.batters_faced, hits_allowed=excluded.hits_allowed,
+        runs_allowed=excluded.runs_allowed, earned_runs=excluded.earned_runs, walks_allowed=excluded.walks_allowed, strikeouts=excluded.strikeouts, home_runs_allowed=excluded.home_runs_allowed,
+        pitches=excluded.pitches, balls=excluded.balls, strikes=excluded.strikes, wins=excluded.wins, losses=excluded.losses, saves=excluded.saves, holds=excluded.holds, blown_saves=excluded.blown_saves,
+        raw_json=excluded.raw_json, role=excluded.role, season=excluded.season,
+        batch_id=COALESCE(stats_pitcher.game_logs.batch_id, excluded.batch_id),
+        run_id=COALESCE(stats_pitcher.game_logs.run_id, excluded.run_id),
+        group_type=excluded.group_type, data_feed_key=excluded.data_feed_key, source_endpoint=excluded.source_endpoint,
+        source_season=excluded.source_season, source_game_type=excluded.source_game_type,
+        ingestion_mode=COALESCE(stats_pitcher.game_logs.ingestion_mode, excluded.ingestion_mode), source_key=excluded.source_key, source_confidence=excluded.source_confidence,
+        certification_status=COALESCE(stats_pitcher.game_logs.certification_status, excluded.certification_status),
+        certification_grade=COALESCE(stats_pitcher.game_logs.certification_grade, excluded.certification_grade),
+        promoted_at=now(), updated_at=now()
+    `;
+    await sql`UPDATE stats_pitcher.game_logs_stage SET row_status='promoted', certification_status='base_backfill_certified', certification_grade=${grade}, promoted_at=now(), updated_at=now() WHERE stage_id=${r.stage_id} AND batch_id=${batchId}`;
+    promotedThisTick += 1;
+  }
+  const remainingRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs_stage s WHERE s.batch_id=${batchId} AND s.row_status != 'promoted'`;
+  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remainingRows[0] && remainingRows[0].c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_log_id" };
+}
+
+async function cleanStageRowsChunk(sql, batchId, limit) {
+  const safeLimit = cap(limit || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
+  const res = await sql`DELETE FROM stats_pitcher.game_logs_stage WHERE ctid IN (SELECT ctid FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId} LIMIT ${safeLimit})`;
+  const cleaned = Number(res.count || 0);
+  const probablyDone = cleaned < safeLimit;
+  return { cleaned_this_tick: cleaned, stage_rows_after_clean: probablyDone ? 0 : null, cleanup_done: probablyDone, clean_limit: safeLimit, delete_mode: "ctid_subquery_limit_no_count" };
+}
+
+// STUB_MARKER_OUTCOMES_NEXT
 
 export default {
   async fetch(request, env) {
