@@ -3060,357 +3060,245 @@ async function runDeltaUpdateTick(env, input, inputJson) {
 }
 
 async function runBaseBackfillTick(env, input) {
-  await ensureSchema(env);
-  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
-  const requestedMode = asText(inputJson.mode || input.mode, "base_backfill");
-  if (requestedMode === "delta_update") {
-    return await runDeltaUpdateTick(env, input, inputJson);
-  }
-
-  const state = await getOrCreateBaseBackfillState(env, input);
-  const cursor = state.cursor;
-  const batch = state.batch;
-  const players = state.players;
-  const batchId = batch.batch_id;
-  const runId = batch.run_id;
-  const cutoffDate = batch.base_backfill_cutoff_date || DEFAULT_BASE_BACKFILL_CUTOFF_DATE;
-  const sourceSeason = asInt(batch.source_season, DEFAULT_SOURCE_SEASON);
-  const requestedMaxRequests = inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK;
-  const requestedChunkSize = inputJson.chunk_size_players || batch.chunk_size_players || requestedMaxRequests || DEFAULT_CHUNK_SIZE_PLAYERS;
-  const maxRequests = cap(requestedMaxRequests, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
-  const chunkSize = cap(requestedChunkSize, 1, DEFAULT_CHUNK_SIZE_PLAYERS);
-  const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
-  const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 8000, 30000);
-  const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
-  const tickStartedAtMs = Date.now();
-  let cursorJsonObj = {};
-  try { cursorJsonObj = JSON.parse(cursor.cursor_json || "{}"); } catch (_) { cursorJsonObj = {}; }
-  const perTickPlayers = Math.min(maxRequests, chunkSize);
-  const offset = asInt(cursor.current_player_offset, 0);
-  const total = players.length;
-  const owner = asText(input.request_id, rid("base_hitter_owner"));
-  const staleSeconds = cap(inputJson.lock_stale_seconds || env.LOCK_STALE_SECONDS || DEFAULT_LOCK_STALE_SECONDS, 20, 90);
-  const lock = await acquireBatchLock(env, batchId, owner, staleSeconds);
-  if (!lock.ok) {
-    return {
-      ok: true,
-      data_ok: true,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
-      certification: "BASE_HITTER_GAME_LOGS_BATCH_LOCK_BUSY_RETRY",
-      batch_id: batchId,
-      run_id: runId,
-      rows_read: 0,
-      rows_written: 0,
-      external_calls_performed: 0,
-      continuation_required: true,
-      lock
-    };
-  }
-
-  let sourceRequestCount = 0;
-  let sourceSuccessCount = 0;
-  let sourceNoDataCount = 0;
-  let sourceErrorCount = 0;
-  let rowsStagedThisTick = 0;
-  const processedPlayers = [];
-  let nextOffset = offset;
-  let stoppedByRuntimeBudget = false;
-  let stoppedBySourceError = false;
-  let didFetchThisTick = false;
-  let finalizationOnlyMode = false;
-
+  // DIRECT PORT: single Postgres connection opened here and threaded through every converted
+  // function for the whole tick (matches the "one sql connection per invocation" pattern used
+  // throughout this codebase's already-working Postgres workers).
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
-    const finalizationReady = await isFinalizationOnlyReady(env, batchId, total);
-    if (finalizationReady.ready) {
-      finalizationOnlyMode = true;
-      const cert = await certifyAndPromoteIfClean(env, batchId, runId, cutoffDate, {
-        promote_rows_per_tick: inputJson.promote_rows_per_tick,
-        clean_rows_per_tick: inputJson.clean_rows_per_tick
-      });
-      const sourceTruth = await deriveSourceCountersFromOutcomes(env, batchId);
-      await releaseBatchLock(env, batchId, owner);
+    await ensureSchema(sql);
+    const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+    const requestedMode = asText(inputJson.mode || input.mode, "base_backfill");
+    if (requestedMode === "delta_update") {
+      // delta_update's own function (runDeltaUpdateTick) and its many repair-path helpers are
+      // not yet converted - explicitly not dispatching to it from here to avoid any accidental
+      // D1 touch through an unconverted call chain. Real, honest "not ready yet" response
+      // instead of silently routing into D1 code.
+      await sql.end();
       return {
-        ok: cert.pass,
-        data_ok: cert.pass,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: cert.done ? cert.status : "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
-        finalization_status: cert.status,
-        certification: cert.certification,
-        certification_grade: cert.grade,
-        batch_id: batchId,
-        run_id: runId,
-        rows_read: 0,
-        rows_written: cert.rows_promoted || 0,
-        rows_staged_this_tick: 0,
-        rows_promoted: cert.rows_promoted || 0,
-        stage_rows_after_clean: cert.stage_rows_after_clean,
-        external_calls_performed: 0,
-        source_request_count: sourceTruth.source_request_count,
-        source_success_count: sourceTruth.source_success_count,
-        source_no_data_count: sourceTruth.source_no_data_count,
-        source_error_count: sourceTruth.source_error_count,
-        source_success_definition: sourceTruth.source_success_definition,
-        current_player_offset: finalizationReady.players_total || total,
-        players_total: finalizationReady.players_total || total,
-        players_remaining: 0,
-        base_backfill_cutoff_date: cutoffDate,
-        delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE,
-        continuation_required: !cert.done,
-        orchestrator_should_self_continue: !cert.done,
-        manual_wake_required: false,
-        fast_bounded_tick: true,
-        finalization_only: true,
-        finalization_only_gate: finalizationReady,
-        finalization_microphase: true,
-        no_browser_pump: true,
-        no_scoring: true,
-        no_ranking: true,
-        no_final_board: true,
-        no_prizepicks_board_mutation: true,
-        no_sleeper_board_mutation: true,
-        final_checks: cert.checks,
-        timestamp_utc: nowUtc()
+        ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+        request_id: input.request_id || null, mode: "delta_update", status: "DELTA_UPDATE_NOT_YET_PORTED",
+        error: "delta_update mode is not yet converted to Postgres in this worker - base_backfill only, for now.",
+        rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: false
       };
     }
-    const slice = players.slice(offset, Math.min(offset + perTickPlayers, total));
-    for (const p of slice) {
-      if (rowsStagedThisTick >= maxRows) break;
-      if (Date.now() - tickStartedAtMs >= maxTickRuntimeMs) {
-        stoppedByRuntimeBudget = true;
-        break;
+
+    const state = await getOrCreateBaseBackfillState(env, sql, input);
+    const cursor = state.cursor;
+    const batch = state.batch;
+    const players = state.players;
+    const batchId = batch.batch_id;
+    const runId = batch.run_id;
+    const cutoffDate = batch.base_backfill_cutoff_date || DEFAULT_BASE_BACKFILL_CUTOFF_DATE;
+    const sourceSeason = asInt(batch.source_season, DEFAULT_SOURCE_SEASON);
+    const requestedMaxRequests = inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK;
+    const requestedChunkSize = inputJson.chunk_size_players || batch.chunk_size_players || requestedMaxRequests || DEFAULT_CHUNK_SIZE_PLAYERS;
+    const maxRequests = cap(requestedMaxRequests, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
+    const chunkSize = cap(requestedChunkSize, 1, DEFAULT_CHUNK_SIZE_PLAYERS);
+    const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
+    const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 8000, 30000);
+    const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
+    const tickStartedAtMs = Date.now();
+    let cursorJsonObj = {};
+    try { cursorJsonObj = JSON.parse(cursor.cursor_json || "{}"); } catch (_) { cursorJsonObj = {}; }
+    const perTickPlayers = Math.min(maxRequests, chunkSize);
+    const offset = asInt(cursor.current_player_offset, 0);
+    const total = players.length;
+    const owner = asText(input.request_id, rid("base_hitter_owner"));
+    const staleSeconds = cap(inputJson.lock_stale_seconds || env.LOCK_STALE_SECONDS || DEFAULT_LOCK_STALE_SECONDS, 20, 90);
+    const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
+    if (!lock.ok) {
+      await sql.end();
+      return {
+        ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+        status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS", certification: "BASE_HITTER_GAME_LOGS_BATCH_LOCK_BUSY_RETRY",
+        batch_id: batchId, run_id: runId, rows_read: 0, rows_written: 0, external_calls_performed: 0,
+        continuation_required: true, lock
+      };
+    }
+
+    let sourceRequestCount = 0;
+    let sourceSuccessCount = 0;
+    let sourceNoDataCount = 0;
+    let sourceErrorCount = 0;
+    let rowsStagedThisTick = 0;
+    const processedPlayers = [];
+    let nextOffset = offset;
+    let stoppedByRuntimeBudget = false;
+    let stoppedBySourceError = false;
+    let didFetchThisTick = false;
+    let finalizationOnlyMode = false;
+
+    try {
+      const finalizationReady = await isFinalizationOnlyReady(sql, batchId, total);
+      if (finalizationReady.ready) {
+        finalizationOnlyMode = true;
+        const cert = await certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, {
+          promote_rows_per_tick: inputJson.promote_rows_per_tick,
+          clean_rows_per_tick: inputJson.clean_rows_per_tick
+        });
+        const sourceTruth = await deriveSourceCountersFromOutcomes(sql, batchId);
+        await releaseBatchLock(sql, batchId, owner);
+        await sql.end();
+        return {
+          ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+          request_id: input.request_id || null, chain_id: input.chain_id || null,
+          status: cert.done ? cert.status : "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
+          finalization_status: cert.status, certification: cert.certification, certification_grade: cert.grade,
+          batch_id: batchId, run_id: runId, rows_read: 0, rows_written: cert.rows_promoted || 0,
+          rows_staged_this_tick: 0, rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean,
+          external_calls_performed: 0, source_request_count: sourceTruth.source_request_count,
+          source_success_count: sourceTruth.source_success_count, source_no_data_count: sourceTruth.source_no_data_count,
+          source_error_count: sourceTruth.source_error_count, source_success_definition: sourceTruth.source_success_definition,
+          current_player_offset: finalizationReady.players_total || total, players_total: finalizationReady.players_total || total,
+          players_remaining: 0, base_backfill_cutoff_date: cutoffDate, delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE,
+          continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false,
+          fast_bounded_tick: true, finalization_only: true, finalization_only_gate: finalizationReady, finalization_microphase: true,
+          no_browser_pump: true, no_scoring: true, no_ranking: true, no_final_board: true, no_prizepicks_board_mutation: true,
+          no_sleeper_board_mutation: true, final_checks: cert.checks, timestamp_utc: nowUtc()
+        };
       }
-      sourceRequestCount++;
-      didFetchThisTick = true;
-      let result;
-      try {
-        result = await processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, Math.max(1, maxRows - rowsStagedThisTick), fetchTimeoutMs);
-      } catch (err) {
-        result = { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "process_player_exception", rows_staged: 0, error: String(err && err.message ? err.message : err), retry_same_player: true };
+      const slice = players.slice(offset, Math.min(offset + perTickPlayers, total));
+      for (const p of slice) {
+        if (rowsStagedThisTick >= maxRows) break;
+        if (Date.now() - tickStartedAtMs >= maxTickRuntimeMs) { stoppedByRuntimeBudget = true; break; }
+        sourceRequestCount++;
+        didFetchThisTick = true;
+        let result;
+        try {
+          result = await processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDate, Math.max(1, maxRows - rowsStagedThisTick), fetchTimeoutMs);
+        } catch (err) {
+          result = { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "process_player_exception", rows_staged: 0, error: String(err && err.message ? err.message : err), retry_same_player: true };
+        }
+        const category = await upsertPlayerOutcome(sql, batchId, runId, p, nextOffset, result, result.source_endpoint || endpointFor(env, p.player_id, sourceSeason));
+        result.terminal_category = category;
+        if (result.status === "success" || result.status === "filtered_after_cutoff") {
+          sourceSuccessCount++; rowsStagedThisTick += asInt(result.rows_staged, 0); processedPlayers.push(result); nextOffset++;
+        } else if (result.status === "no_data") {
+          sourceNoDataCount++; rowsStagedThisTick += asInt(result.rows_staged, 0); processedPlayers.push(result); nextOffset++;
+        } else if (result.status === "repair_required") {
+          sourceSuccessCount++; rowsStagedThisTick += asInt(result.rows_staged, 0); stoppedBySourceError = true; processedPlayers.push(result); nextOffset++; break;
+        } else {
+          sourceErrorCount++; stoppedBySourceError = true; processedPlayers.push(result); break;
+        }
       }
-      const category = await upsertPlayerOutcome(env, batchId, runId, p, nextOffset, result, result.source_endpoint || endpointFor(env, p.player_id, sourceSeason));
-      result.terminal_category = category;
-      if (result.status === "success" || result.status === "filtered_after_cutoff") {
-        sourceSuccessCount++;
-        rowsStagedThisTick += asInt(result.rows_staged, 0);
-        processedPlayers.push(result);
-        nextOffset++;
-      } else if (result.status === "no_data") {
-        sourceNoDataCount++;
-        rowsStagedThisTick += asInt(result.rows_staged, 0);
-        processedPlayers.push(result);
-        nextOffset++;
-      } else if (result.status === "repair_required") {
-        sourceSuccessCount++;
-        rowsStagedThisTick += asInt(result.rows_staged, 0);
-        stoppedBySourceError = true;
-        processedPlayers.push(result);
-        nextOffset++;
-        break;
+
+      const stageCountRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId}`;
+      const totalStageRows = asInt(stageCountRows[0] && stageCountRows[0].c, 0);
+      const currentPlayer = nextOffset > 0 && players[nextOffset - 1] ? players[nextOffset - 1].player_id : null;
+      const partial = nextOffset < total;
+      const nextStatus = partial ? "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS" : "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION";
+
+      await sql`
+        UPDATE stats_hitter.game_log_batches SET
+          status=${nextStatus}, cursor_player_id=${currentPlayer}, cursor_season=${sourceSeason}, cursor_offset=${nextOffset},
+          source_request_count=COALESCE(source_request_count,0)+${sourceRequestCount},
+          source_success_count=COALESCE(source_success_count,0)+${sourceSuccessCount},
+          source_no_data_count=COALESCE(source_no_data_count,0)+${sourceNoDataCount},
+          source_error_count=COALESCE(source_error_count,0)+${sourceErrorCount},
+          rows_staged=${totalStageRows}, certification_status=${partial ? "not_certified" : "pending_batch_certification"},
+          certification_grade=NULL, updated_at=now()
+        WHERE batch_id=${batchId}
+      `;
+
+      cursorJsonObj.last_tick_at = nowUtc();
+      cursorJsonObj.last_tick_processed_players = processedPlayers.slice(0, 20);
+      cursorJsonObj.last_tick_rows_staged = rowsStagedThisTick;
+      cursorJsonObj.last_tick_elapsed_ms = Date.now() - tickStartedAtMs;
+      cursorJsonObj.last_tick_runtime_budget_ms = maxTickRuntimeMs;
+      cursorJsonObj.last_tick_stopped_by_runtime_budget = stoppedByRuntimeBudget;
+      cursorJsonObj.last_tick_stopped_by_source_error = stoppedBySourceError;
+      cursorJsonObj.last_tick_fetch_timeout_ms = fetchTimeoutMs;
+      cursorJsonObj.last_tick_max_requests = maxRequests;
+      cursorJsonObj.current_player_offset = nextOffset;
+      await sql`
+        UPDATE stats_hitter.game_log_cursor SET
+          status=${nextStatus}, current_player_id=${currentPlayer}, current_player_offset=${nextOffset}, players_total=${total},
+          players_processed=${nextOffset}, requests_done=COALESCE(requests_done,0)+${sourceRequestCount},
+          next_run_after=CASE WHEN ${partial} THEN now() ELSE NULL END,
+          cursor_json=${JSON.stringify(cursorJsonObj)}, updated_at=now()
+        WHERE cursor_key=${ACTIVE_CURSOR_KEY}
+      `;
+
+      if (partial) {
+        await releaseBatchLock(sql, batchId, owner);
+        await sql.end();
+        return {
+          ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+          request_id: input.request_id || null, chain_id: input.chain_id || null,
+          status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS", certification: "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_PARTIAL_CONTINUE",
+          batch_id: batchId, run_id: runId, is_new_batch: state.is_new, rows_read: sourceRequestCount, rows_written: rowsStagedThisTick,
+          rows_staged_this_tick: rowsStagedThisTick, rows_staged_total: totalStageRows, rows_promoted: 0,
+          external_calls_performed: sourceRequestCount, source_request_count: sourceRequestCount, source_success_count: sourceSuccessCount,
+          source_no_data_count: sourceNoDataCount, source_error_count: sourceErrorCount, current_player_offset: nextOffset,
+          players_total: total, players_remaining: Math.max(0, total - nextOffset), base_backfill_cutoff_date: cutoffDate,
+          delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE, continuation_required: true, orchestrator_should_self_continue: true,
+          cron_role: "rescue_fallback_only", manual_wake_required: false, fast_bounded_tick: true, self_owned_lock_recovery: true, lock,
+          tick_elapsed_ms: Date.now() - tickStartedAtMs, tick_runtime_budget_ms: maxTickRuntimeMs, tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+          tick_stopped_by_source_error: stoppedBySourceError, fetch_timeout_ms: fetchTimeoutMs, effective_max_requests_per_tick: maxRequests,
+          no_browser_pump: true, no_scoring: true, no_ranking: true, no_final_board: true, no_prizepicks_board_mutation: true,
+          no_sleeper_board_mutation: true, processed_players: processedPlayers.slice(0, 20), timestamp_utc: nowUtc()
+        };
+      }
+
+      const cert = await certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate);
+      await releaseBatchLock(sql, batchId, owner);
+      await sql.end();
+      return {
+        ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+        request_id: input.request_id || null, chain_id: input.chain_id || null,
+        status: cert.done ? cert.status : "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS", finalization_status: cert.status,
+        certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, run_id: runId,
+        rows_read: sourceRequestCount, rows_written: rowsStagedThisTick + cert.rows_promoted, rows_staged_this_tick: rowsStagedThisTick,
+        rows_staged_total: totalStageRows, rows_promoted: cert.rows_promoted, stage_rows_after_clean: cert.stage_rows_after_clean,
+        external_calls_performed: sourceRequestCount, source_request_count: sourceRequestCount, source_success_count: sourceSuccessCount,
+        source_no_data_count: sourceNoDataCount, source_error_count: sourceErrorCount, current_player_offset: nextOffset, players_total: total,
+        players_remaining: 0, base_backfill_cutoff_date: cutoffDate, delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE,
+        continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, cron_role: "rescue_fallback_only", manual_wake_required: false,
+        fast_bounded_tick: true, finalization_microphase: true, tick_elapsed_ms: Date.now() - tickStartedAtMs, tick_runtime_budget_ms: maxTickRuntimeMs,
+        tick_stopped_by_runtime_budget: stoppedByRuntimeBudget, tick_stopped_by_source_error: stoppedBySourceError, fetch_timeout_ms: fetchTimeoutMs,
+        effective_max_requests_per_tick: maxRequests, no_browser_pump: true, no_scoring: true, no_ranking: true, no_final_board: true,
+        no_prizepicks_board_mutation: true, no_sleeper_board_mutation: true, final_checks: cert.checks, timestamp_utc: nowUtc()
+      };
+    } catch (err) {
+      const errText = String(err && err.message ? err.message : err).slice(0, 900);
+      if (finalizationOnlyMode || !didFetchThisTick) {
+        await freezeSourceCountersFromOutcomes(sql, batchId);
+        let recoveryStatus = "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION";
+        try {
+          const bRows = await sql`SELECT status, rows_staged, rows_promoted, certification_status FROM stats_hitter.game_log_batches WHERE batch_id=${batchId}`;
+          const b = bRows[0] || null;
+          const promoted = asInt(b && b.rows_promoted, 0);
+          const staged = asInt(b && b.rows_staged, 0);
+          const bs = String((b && b.status) || "");
+          if (bs === "BASE_BACKFILL_CLEANING" || (staged > 0 && promoted >= staged)) recoveryStatus = "BASE_BACKFILL_CLEANING";
+          else if (bs === "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN") recoveryStatus = "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN";
+          else if (bs === "BASE_BACKFILL_PROMOTING") recoveryStatus = "BASE_BACKFILL_PROMOTING";
+          else if (String((b && b.certification_status) || "").includes("CERTIFIED")) recoveryStatus = "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE";
+        } catch (_) {}
+        await sql`UPDATE stats_hitter.game_log_cursor SET status=${recoveryStatus}, last_error=${errText}, next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+        await sql`UPDATE stats_hitter.game_log_batches SET status=${recoveryStatus}, locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId}`;
       } else {
-        sourceErrorCount++;
-        stoppedBySourceError = true;
-        processedPlayers.push(result);
-        break;
+        await sql`UPDATE stats_hitter.game_log_cursor SET status='PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS', last_error=${errText}, next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+        await sql`UPDATE stats_hitter.game_log_batches SET status='PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS', source_error_count=COALESCE(source_error_count,0)+1, updated_at=now() WHERE batch_id=${batchId}`;
       }
-    }
-
-    const stageCount = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
-    const totalStageRows = asInt(stageCount && stageCount.c, 0);
-    const currentPlayer = nextOffset > 0 && players[nextOffset - 1] ? players[nextOffset - 1].player_id : null;
-    const partial = nextOffset < total;
-
-    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches SET
-      status=?, cursor_player_id=?, cursor_season=?, cursor_offset=?, source_request_count=COALESCE(source_request_count,0)+?,
-      source_success_count=COALESCE(source_success_count,0)+?, source_no_data_count=COALESCE(source_no_data_count,0)+?, source_error_count=COALESCE(source_error_count,0)+?,
-      rows_staged=?, certification_status=?, certification_grade=NULL, updated_at=CURRENT_TIMESTAMP
-      WHERE batch_id=?`,
-      partial ? "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS" : "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION",
-      currentPlayer, sourceSeason, nextOffset, sourceRequestCount, sourceSuccessCount, sourceNoDataCount, sourceErrorCount,
-      totalStageRows, partial ? "not_certified" : "pending_batch_certification", batchId
-    );
-
-    cursorJsonObj.last_tick_at = nowUtc();
-    cursorJsonObj.last_tick_processed_players = processedPlayers.slice(0, 20);
-    cursorJsonObj.last_tick_rows_staged = rowsStagedThisTick;
-    cursorJsonObj.last_tick_elapsed_ms = Date.now() - tickStartedAtMs;
-    cursorJsonObj.last_tick_runtime_budget_ms = maxTickRuntimeMs;
-    cursorJsonObj.last_tick_stopped_by_runtime_budget = stoppedByRuntimeBudget;
-    cursorJsonObj.last_tick_stopped_by_source_error = stoppedBySourceError;
-    cursorJsonObj.last_tick_fetch_timeout_ms = fetchTimeoutMs;
-    cursorJsonObj.last_tick_max_requests = maxRequests;
-    cursorJsonObj.current_player_offset = nextOffset;
-    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_cursor SET
-      status=?, current_player_id=?, current_player_offset=?, players_total=?, players_processed=?, requests_done=COALESCE(requests_done,0)+?,
-      next_run_after=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END,
-      cursor_json=?,
-      updated_at=CURRENT_TIMESTAMP
-      WHERE cursor_key=?`,
-      partial ? "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS" : "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION",
-      currentPlayer, nextOffset, total, nextOffset, sourceRequestCount, partial ? 1 : 0, JSON.stringify(cursorJsonObj), ACTIVE_CURSOR_KEY
-    );
-
-    if (partial) {
-      await releaseBatchLock(env, batchId, owner);
+      await releaseBatchLock(sql, batchId, owner);
+      await sql.end();
       return {
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
-        certification: "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_PARTIAL_CONTINUE",
-        batch_id: batchId,
-        run_id: runId,
-        is_new_batch: state.is_new,
-        rows_read: sourceRequestCount,
-        rows_written: rowsStagedThisTick,
-        rows_staged_this_tick: rowsStagedThisTick,
-        rows_staged_total: totalStageRows,
-        rows_promoted: 0,
-        external_calls_performed: sourceRequestCount,
-        source_request_count: sourceRequestCount,
-        source_success_count: sourceSuccessCount,
-        source_no_data_count: sourceNoDataCount,
-        source_error_count: sourceErrorCount,
-        current_player_offset: nextOffset,
-        players_total: total,
-        players_remaining: Math.max(0, total - nextOffset),
-        base_backfill_cutoff_date: cutoffDate,
-        delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE,
-        continuation_required: true,
-        orchestrator_should_self_continue: true,
-        cron_role: "rescue_fallback_only",
-        manual_wake_required: false,
-        fast_bounded_tick: true,
-        self_owned_lock_recovery: true,
-        lock,
-        tick_elapsed_ms: Date.now() - tickStartedAtMs,
-        tick_runtime_budget_ms: maxTickRuntimeMs,
-        tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
-        tick_stopped_by_source_error: stoppedBySourceError,
-        fetch_timeout_ms: fetchTimeoutMs,
-        effective_max_requests_per_tick: maxRequests,
-        no_browser_pump: true,
-        no_scoring: true,
-        no_ranking: true,
-        no_final_board: true,
-        no_prizepicks_board_mutation: true,
-        no_sleeper_board_mutation: true,
-        processed_players: processedPlayers.slice(0, 20),
-        timestamp_utc: nowUtc()
+        ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+        status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS", certification: "BASE_HITTER_GAME_LOGS_TICK_ERROR_RETRYABLE",
+        batch_id: batchId, run_id: runId, error: errText, finalization_only: finalizationOnlyMode || !didFetchThisTick,
+        external_calls_performed: didFetchThisTick ? sourceRequestCount : 0, continuation_required: true, orchestrator_should_self_continue: true,
+        manual_wake_required: false, fast_bounded_tick: true, tick_elapsed_ms: Date.now() - tickStartedAtMs, tick_runtime_budget_ms: maxTickRuntimeMs,
+        tick_stopped_by_runtime_budget: stoppedByRuntimeBudget, tick_stopped_by_source_error: stoppedBySourceError, fetch_timeout_ms: fetchTimeoutMs,
+        effective_max_requests_per_tick: maxRequests, no_browser_pump: true, rows_read: didFetchThisTick ? sourceRequestCount : 0, rows_written: rowsStagedThisTick
       };
     }
-
-    const cert = await certifyAndPromoteIfClean(env, batchId, runId, cutoffDate);
-    await releaseBatchLock(env, batchId, owner);
+  } catch (outerErr) {
+    try { await sql.end(); } catch (_) {}
     return {
-      ok: cert.pass,
-      data_ok: cert.pass,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      request_id: input.request_id || null,
-      chain_id: input.chain_id || null,
-      status: cert.done ? cert.status : "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
-      finalization_status: cert.status,
-      certification: cert.certification,
-      certification_grade: cert.grade,
-      batch_id: batchId,
-      run_id: runId,
-      rows_read: sourceRequestCount,
-      rows_written: rowsStagedThisTick + cert.rows_promoted,
-      rows_staged_this_tick: rowsStagedThisTick,
-      rows_staged_total: totalStageRows,
-      rows_promoted: cert.rows_promoted,
-      stage_rows_after_clean: cert.stage_rows_after_clean,
-      external_calls_performed: sourceRequestCount,
-      source_request_count: sourceRequestCount,
-      source_success_count: sourceSuccessCount,
-      source_no_data_count: sourceNoDataCount,
-      source_error_count: sourceErrorCount,
-      current_player_offset: nextOffset,
-      players_total: total,
-      players_remaining: 0,
-      base_backfill_cutoff_date: cutoffDate,
-      delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE,
-      continuation_required: !cert.done,
-      orchestrator_should_self_continue: !cert.done,
-      cron_role: "rescue_fallback_only",
-      manual_wake_required: false,
-      fast_bounded_tick: true,
-      finalization_microphase: true,
-      tick_elapsed_ms: Date.now() - tickStartedAtMs,
-      tick_runtime_budget_ms: maxTickRuntimeMs,
-      tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
-      tick_stopped_by_source_error: stoppedBySourceError,
-      fetch_timeout_ms: fetchTimeoutMs,
-      effective_max_requests_per_tick: maxRequests,
-      no_browser_pump: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_prizepicks_board_mutation: true,
-      no_sleeper_board_mutation: true,
-      final_checks: cert.checks,
-      timestamp_utc: nowUtc()
-    };
-  } catch (err) {
-    const errText = String(err && err.message ? err.message : err).slice(0, 900);
-    if (finalizationOnlyMode || !didFetchThisTick) {
-      await freezeSourceCountersFromOutcomes(env, batchId);
-      let recoveryStatus = 'BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION';
-      try {
-        const b = await first(env.STATS_HITTER_DB, "SELECT status, rows_staged, rows_promoted, certification_status FROM hitter_game_log_batches WHERE batch_id=?", batchId);
-        const promoted = asInt(b && b.rows_promoted, 0);
-        const staged = asInt(b && b.rows_staged, 0);
-        const bs = String((b && b.status) || '');
-        if (bs === 'BASE_BACKFILL_CLEANING' || (staged > 0 && promoted >= staged)) recoveryStatus = 'BASE_BACKFILL_CLEANING';
-        else if (bs === 'BASE_BACKFILL_PROMOTED_READY_TO_CLEAN') recoveryStatus = 'BASE_BACKFILL_PROMOTED_READY_TO_CLEAN';
-        else if (bs === 'BASE_BACKFILL_PROMOTING') recoveryStatus = 'BASE_BACKFILL_PROMOTING';
-        else if (String((b && b.certification_status) || '').includes('CERTIFIED')) recoveryStatus = 'BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE';
-      } catch (_) {}
-      await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET status=?, last_error=?, next_run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", recoveryStatus, errText, ACTIVE_CURSOR_KEY);
-      await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET status=?, locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", recoveryStatus, batchId);
-    } else {
-      await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET status='PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS', last_error=?, next_run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", errText, ACTIVE_CURSOR_KEY);
-      await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET status='PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS', source_error_count=COALESCE(source_error_count,0)+1, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", batchId);
-    }
-    await releaseBatchLock(env, batchId, owner);
-    return {
-      ok: true,
-      data_ok: true,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
-      certification: "BASE_HITTER_GAME_LOGS_TICK_ERROR_RETRYABLE",
-      batch_id: batchId,
-      run_id: runId,
-      error: String(err && err.message ? err.message : err),
-      finalization_only: finalizationOnlyMode || !didFetchThisTick,
-      external_calls_performed: didFetchThisTick ? sourceRequestCount : 0,
-      continuation_required: true,
-      orchestrator_should_self_continue: true,
-      manual_wake_required: false,
-      fast_bounded_tick: true,
-      tick_elapsed_ms: Date.now() - tickStartedAtMs,
-      tick_runtime_budget_ms: maxTickRuntimeMs,
-      tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
-      tick_stopped_by_source_error: stoppedBySourceError,
-      fetch_timeout_ms: fetchTimeoutMs,
-      effective_max_requests_per_tick: maxRequests,
-      no_browser_pump: true,
-      rows_read: didFetchThisTick ? sourceRequestCount : 0,
-      rows_written: rowsStagedThisTick
+      ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+      status: "BASE_BACKFILL_UNHANDLED_ERROR", error: String(outerErr && outerErr.message ? outerErr.message : outerErr),
+      rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: true
     };
   }
 }
