@@ -815,7 +815,59 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
   return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "BASE_PITCHER_GAME_LOGS_UNKNOWN_FINALIZATION_STATUS", grade: "BASE_FAIL", checks: { status, batch_id: batchId }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
 }
 
-// STUB_MARKER_BASESTATE_NEXT
+async function getLockedBaseIntegrity(sql) {
+  const batchRows = await sql`SELECT batch_id,status,rows_promoted,certification_status,certification_grade,cleaned_at FROM stats_pitcher.game_log_batches WHERE batch_id=${LOCKED_BASE_BATCH_ID} LIMIT 1`;
+  const batch = batchRows[0] || null;
+  const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs WHERE batch_id=${LOCKED_BASE_BATCH_ID}`;
+  const outcomeRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_log_player_outcomes WHERE batch_id=${LOCKED_BASE_BATCH_ID}`;
+  const dupRows = await sql`SELECT COUNT(*)::int AS c FROM (SELECT player_id, game_pk, group_type, COUNT(*) AS n FROM stats_pitcher.game_logs WHERE batch_id=${LOCKED_BASE_BATCH_ID} GROUP BY player_id, game_pk, group_type HAVING COUNT(*) > 1) sub`;
+  const afterRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs WHERE batch_id=${LOCKED_BASE_BATCH_ID} AND game_date::date > ${DEFAULT_BASE_BACKFILL_CUTOFF_DATE}::date`;
+  const live = liveRows[0] || {}, outcomes = outcomeRows[0] || {}, dup = dupRows[0] || {}, after = afterRows[0] || {};
+  const pass = !!batch && String(batch.status) === "COMPLETED_PROMOTED_CLEANED" && asInt(dup.c, 0) === 0 && asInt(after.c, 0) === 0 && asInt(live.c, 0) > 0 && asInt(live.c, 0) === asInt(batch.rows_promoted, 0) && asInt(outcomes.c, 0) > 0;
+  return { pass, required_base_batch_id: LOCKED_BASE_BATCH_ID, status: batch ? batch.status : null, rows_promoted: batch ? asInt(batch.rows_promoted, 0) : 0, live_base_rows: asInt(live.c, 0), base_outcome_rows: asInt(outcomes.c, 0), duplicate_base_live_keys: asInt(dup.c, 0), base_rows_after_cutoff: asInt(after.c, 0), cutoff_date: DEFAULT_BASE_BACKFILL_CUTOFF_DATE, cleaned_at: batch ? batch.cleaned_at : null };
+}
+
+async function getOrCreateBaseBackfillState(env, sql, input) {
+  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const existingRows = await sql`
+    SELECT * FROM stats_pitcher.game_log_cursor
+    WHERE cursor_key=${ACTIVE_CURSOR_KEY} AND mode='base_backfill'
+      AND status IN ('BASE_BACKFILL_RUNNING','PARTIAL_CONTINUE_BASE_PITCHER_GAME_LOGS','BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION','BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE','BASE_BACKFILL_PROMOTING','BASE_BACKFILL_PROMOTED_READY_TO_CLEAN','BASE_BACKFILL_CLEANING','CERTIFICATION_FAILED','COMPLETED_PROMOTED_CLEANED')
+  `;
+  const existing = existingRows[0] || null;
+  if (existing) {
+    const batchRows = await sql`SELECT * FROM stats_pitcher.game_log_batches WHERE batch_id=${existing.batch_id}`;
+    const batch = batchRows[0] || null;
+    let players = [];
+    try { players = JSON.parse(existing.cursor_json || "{}").players || []; } catch (_) { players = []; }
+    if (batch && players.length) return { is_new: false, cursor: existing, batch, players, input_json: inputJson };
+  }
+  const runId = asText(input.run_id, rid("run_base_pitcher_backfill"));
+  const batchId = asText(inputJson.batch_id, rid("pitcher_base_backfill_batch"));
+  const cutoffDate = asText(inputJson.base_backfill_cutoff_date, DEFAULT_BASE_BACKFILL_CUTOFF_DATE);
+  const sourceSeason = asInt(inputJson.source_season || env.ACTIVE_SEASON, DEFAULT_SOURCE_SEASON);
+  const chunkSize = cap(inputJson.chunk_size_players || inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_CHUNK_SIZE_PLAYERS, 1, 100);
+  const maxRequests = cap(inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, 100);
+  const maxRows = cap(inputJson.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
+  const players = await chooseAllPitcherPlayers(sql, inputJson);
+  await sql`DELETE FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId}`;
+  const cursorJson = JSON.stringify({ version: VERSION, mode: "base_backfill", players, source_season: sourceSeason, base_backfill_cutoff_date: cutoffDate, delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE });
+  await sql`
+    INSERT INTO stats_pitcher.game_log_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_endpoint, source_season, base_backfill_cutoff_date, delta_start_date, cursor_offset, cursor_state_json, chunk_size_players, max_requests_per_tick, max_rows_per_tick, certification_status, source_confidence, notes, updated_at)
+    VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'base_backfill', 'BASE_BACKFILL_RUNNING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${LOCKED_SOURCE_ENDPOINT_PATTERN}, ${sourceSeason}, ${cutoffDate}, ${DEFAULT_DELTA_RESERVED_START_DATE}, 0, ${cursorJson}, ${chunkSize}, ${maxRequests}, ${maxRows}, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_PITCHING', ${"Postgres-native build, base fills only through " + cutoffDate}, now())
+    ON CONFLICT (batch_id) DO UPDATE SET run_id=excluded.run_id, status=excluded.status, cursor_state_json=excluded.cursor_state_json, updated_at=now()
+  `;
+  await sql`
+    INSERT INTO stats_pitcher.game_log_cursor (cursor_key,batch_id,run_id,mode,status,source_season,base_backfill_cutoff_date,delta_start_date,current_player_offset,players_total,players_processed,requests_done,next_run_after,cursor_json,updated_at)
+    VALUES (${ACTIVE_CURSOR_KEY}, ${batchId}, ${runId}, 'base_backfill', 'BASE_BACKFILL_RUNNING', ${sourceSeason}, ${cutoffDate}, ${DEFAULT_DELTA_RESERVED_START_DATE}, 0, ${players.length}, 0, 0, now(), ${cursorJson}, now())
+    ON CONFLICT (cursor_key) DO UPDATE SET batch_id=excluded.batch_id, run_id=excluded.run_id, mode=excluded.mode, status=excluded.status, source_season=excluded.source_season, base_backfill_cutoff_date=excluded.base_backfill_cutoff_date, delta_start_date=excluded.delta_start_date, current_player_offset=excluded.current_player_offset, players_total=excluded.players_total, players_processed=excluded.players_processed, requests_done=excluded.requests_done, next_run_after=excluded.next_run_after, cursor_json=excluded.cursor_json, updated_at=now()
+  `;
+  const cursorRows = await sql`SELECT * FROM stats_pitcher.game_log_cursor WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+  const batchRows = await sql`SELECT * FROM stats_pitcher.game_log_batches WHERE batch_id=${batchId}`;
+  return { is_new: true, cursor: cursorRows[0] || null, batch: batchRows[0] || null, players, input_json: inputJson };
+}
+
+// STUB_MARKER_DELTAWINDOW_NEXT
 
 export default {
   async fetch(request, env) {
