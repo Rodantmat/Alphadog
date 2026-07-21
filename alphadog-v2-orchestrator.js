@@ -1,7 +1,17 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.351-player-availability-chunking";
+import postgres from "postgres";
+
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.352-scheduled-jobs-postgres-cutover";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
+
+// Postgres cutover (scheduled jobs only): config_scheduled_jobs (D1) is no longer read/written.
+// All scheduled-job checks now go through Postgres config.scheduled_jobs via Hyperdrive. This is
+// a narrow, surgical cutover - control_job_queue/control_job_runs and everything else in this
+// file remain on D1 (control plane), unchanged.
+function pgSchedule(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+}
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
