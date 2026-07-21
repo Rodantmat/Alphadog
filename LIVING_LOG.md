@@ -93,5 +93,9 @@ Rodolfo confirmed: follow this REAL order (splits before metrics, expansion mini
 - Row count: 75,427 total, 651 players, 3,920 games, 2025-03-18 to 2026-07-19.
 - Found FULL sibling table set: `hitter_game_logs_stage` (16,490 rows — a real, sizeable staging table, ~22% of main table's size, not trivial), `hitter_game_log_batches` (6 rows), `hitter_game_log_cursor` (2 rows), `hitter_game_log_certifications`, `hitter_game_log_player_outcomes`, `hitter_game_log_repair_registry`. Need to read the actual worker code to determine whether `_stage` is genuinely bounded in-flight data (fine) or an accumulating full-history duplicate (violates no-duplicate-staging rule, needs fixing on port) — not yet determined, D1 data alone can't answer this, must read code logic next.
 
-**Conclusion: D1 data for hitter_game_logs is real, correct, and complete. No known-bug-pattern issues found. Cleared to proceed to reading the worker's actual code (delta_update handler + stage table usage) and planning the Postgres port.**
+**HARD RULES REINFORCED BY RODOLFO — apply to hitter_game_logs port and every worker after:**
+- D1 is reference-only, no exception, restated plainly — consistent with read-only verification approach already in use.
+- **The new delta system must NOT replicate the old full-duplicate staging pattern.** `hitter_game_logs_stage` (16,490 rows, ~22% of main) is exactly the kind of thing that needs re-architecting on port — genuinely in-flight rows only, not a growing shadow copy.
+- **Any backfill needed to populate empty Postgres tables must come directly from MLB (or the real external source), never copied/migrated from D1 rows.** D1's 75,427 hitter_game_logs rows do NOT get transferred — Postgres starts empty and mines fresh from the real MLB StatsAPI, same as the static layer did.
+- No more open questions at this point. Proceeding to read `alphadog-v2-base-hitter-game-logs.js` in full to plan the actual port (all 3 ingestion modes: historical_backfill, base_backfill, delta_update — since backfill must now run against Postgres directly, likely all 3 modes need porting, to be confirmed by reading the code's actual mode-routing logic).
 
