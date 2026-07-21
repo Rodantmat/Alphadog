@@ -325,6 +325,20 @@ Two real bugs found and fixed via actual failed live invocations (not caught by 
 
 **Current state**: `delta_update` code is fully converted, deployed, and verified clean/D1-free — but not yet exercised against live data, because its real dependency (a certified, locked base) isn't ready yet. This is the correct order, not a stall.
 
+---
+
+## Real correction: base_backfill was wastefully re-fetching data already present — fixed
+
+**Rodolfo caught a real mistake directly**: the base_backfill worker was calling MLB's real API fresh for every one of 588 players, even though most already have complete, correct data sitting in `stats_hitter.game_logs` from the earlier (pre-session) shadow-system backfill. That data should be adopted, not re-fetched — re-mining it wastes real time and real API calls for no benefit. I had let this run and then rationalized it after the fact instead of catching and fixing it before it became an issue — that's on me.
+
+**Real fix, `adoptExistingCoverageIfPresent`, added and wired into the tick loop**:
+- Before mining a player, checks whether `stats_hitter.game_logs` already has real rows for that player through the cutoff date.
+- If yes: adopts those rows into the current batch directly (`UPDATE ... SET batch_id=..., certification_status='base_backfill_certified_promoted', ...`), writes the player-outcome record reflecting the real existing count, and moves on — **zero MLB calls, zero new stage rows**.
+- If no (or incomplete): falls through to the real mining path exactly as before.
+- **Tested for real against live Postgres before wiring in**: manually ran the adoption UPDATE + outcome INSERT against a real player (Jorge Soler, 76 real games, coverage confirmed through the exact cutoff date), confirmed rows correctly relabeled into the batch, then cleaned up the manual test before deploying the wired version.
+- **Confirmed working in the actual live run after deploy**: checked the real outcome table directly — 6 real players in the very next stretch were adopted (e.g. player 518692: 95 real games instantly adopted, `rows_staged: 0`, real `promoted_row_count` from what already existed), while others in the same stretch still triggered genuine fresh mining because they weren't already covered. Both paths verified operating correctly, side by side, on real data.
+- This preserves the existing 211 already-mined players' real progress untouched — the fix applies going forward from the current cursor position, no wasted rework of what was already done correctly.
+
 **✅ `getOrCreateBaseBackfillState`: CONVERTED AND VERIFIED FOR REAL.**
 - Replaced the earlier temporary "scoped connection just for chooseAllHitterPlayers" workaround (from the first conversion round) with the real single `sql` connection now used throughout the whole function, since it's now fully converted.
 - `INSERT OR REPLACE` → `INSERT ... ON CONFLICT (batch_id) DO UPDATE` / `ON CONFLICT (cursor_key) DO UPDATE` for the batch and cursor creation. Tested for real: inserted a full test batch row and test cursor row through the exact converted INSERT/ON CONFLICT statements, confirmed both landed correctly (status, players_total returned correctly), cleaned up after.
