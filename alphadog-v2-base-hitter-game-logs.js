@@ -1353,7 +1353,7 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
   const liveRowsEarlyRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
   const rowsPromotedEarly = asInt(liveRowsEarlyRows[0] && liveRowsEarlyRows[0].c, 0);
   const expectedRowsEarly = asInt(batch && batch.rows_staged, 0) || await getStageCount();
-  if (expectedRowsEarly > 0 && rowsPromotedEarly === expectedRowsEarly) {
+  if (expectedRowsEarly > 0 && rowsPromotedEarly >= expectedRowsEarly) {
     const grade = batch.certification_grade || "BASE_PASS";
     {
       const cleaned = await cleanStageRowsChunk(sql, batchId, cleanLimit);
