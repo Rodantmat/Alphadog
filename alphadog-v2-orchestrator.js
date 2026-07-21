@@ -16413,18 +16413,18 @@ function pacificDateAddDays(pt, days) {
 }
 
 async function enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression = "unknown") {
-  await ensureConfigScheduledJobsTable(env);
-
   const pt = pacificNowParts(new Date());
-  const scheduleRows = await all(env.CONFIG_DB,
-    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
-     FROM config_scheduled_jobs
-     WHERE enabled=1
-       AND job_key='context-history-full-run'
-       AND schedule_type='daily'
-       AND timezone='America/Los_Angeles'
-     ORDER BY local_time, schedule_id`
-  );
+  let sqlSched5 = pgSchedule(env);
+  const scheduleRows = await sqlSched5`
+    SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json::text AS input_json, notes
+    FROM config.scheduled_jobs
+    WHERE enabled=1
+      AND job_key='context-history-full-run'
+      AND schedule_type='daily'
+      AND timezone='America/Los_Angeles'
+    ORDER BY local_time, schedule_id
+  `;
+  await sqlSched5.end();
 
   const results = [];
   for (const schedule of scheduleRows) {
