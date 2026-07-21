@@ -724,20 +724,26 @@ async function upsertPlayerOutcome(sql, batchId, runId, p, cursorOffset, result,
   return category;
 }
 
-async function rebuildMissingOutcomeRowsFromCursor(env, batchId, runId) {
-  const cursor = await first(env.STATS_HITTER_DB, "SELECT cursor_json FROM hitter_game_log_cursor WHERE batch_id=? OR cursor_key=? ORDER BY updated_at DESC LIMIT 1", batchId, ACTIVE_CURSOR_KEY);
+async function rebuildMissingOutcomeRowsFromCursor(sql, batchId, runId) {
+  const cursorRows = await sql`SELECT cursor_json FROM stats_hitter.game_log_cursor WHERE batch_id=${batchId} OR cursor_key=${ACTIVE_CURSOR_KEY} ORDER BY updated_at DESC LIMIT 1`;
+  const cursor = cursorRows[0] || null;
   let players = [];
   try { players = JSON.parse((cursor && cursor.cursor_json) || "{}").players || []; } catch (_) { players = []; }
   for (let i = 0; i < players.length; i++) {
     const p = players[i];
-    const existing = await first(env.STATS_HITTER_DB, "SELECT player_id FROM hitter_game_log_player_outcomes WHERE batch_id=? AND player_id=?", batchId, asInt(p.player_id, 0));
-    if (existing) continue;
-    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_player_outcomes (
-      batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_ok,raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,certification_status,updated_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-      batchId, runId, asInt(p.player_id, 0), asText(p.player_name, null), asText(p.primary_position, null), i, 0, 0, 0, 0, 0, 0, "UNCLEAR",
-      "Player existed in cursor but no per-player source outcome was recorded; rerun/repair required before delta.", "player_outcome_unverified"
-    );
+    const existingRows = await sql`SELECT player_id FROM stats_hitter.game_log_player_outcomes WHERE batch_id=${batchId} AND player_id=${asInt(p.player_id, 0)}`;
+    if (existingRows[0]) continue;
+    await sql`
+      INSERT INTO stats_hitter.game_log_player_outcomes (
+        batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_ok,raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,certification_status,updated_at
+      ) VALUES (
+        ${batchId}, ${runId}, ${asInt(p.player_id, 0)}, ${asText(p.player_name, null)}, ${asText(p.primary_position, null)}, ${i}, 0, 0, 0, 0, 0, 0, 'UNCLEAR',
+        'Player existed in cursor but no per-player source outcome was recorded; rerun/repair required before delta.', 'player_outcome_unverified', now()
+      )
+      ON CONFLICT (batch_id, player_id) DO UPDATE SET
+        run_id=excluded.run_id, player_name=excluded.player_name, primary_position=excluded.primary_position, cursor_offset=excluded.cursor_offset,
+        terminal_category=excluded.terminal_category, category_reason=excluded.category_reason, certification_status=excluded.certification_status, updated_at=now()
+    `;
   }
 }
 
