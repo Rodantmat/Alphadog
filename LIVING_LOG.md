@@ -41,6 +41,16 @@ Continuously updated. Last real state always at the bottom of the current sessio
 - Correlation-aware enrichment wiring: explicitly OUT of scope for this phase.
 - D1 fully off limits except calculated-layer read-only comparison (Section 5 of HANDOFF.md) — not relevant yet since we're starting with certifier + raw delta layers.
 
-**Status: STARTING — "the certifier" first.**
-- Assuming this means `alphadog-v2-delta-certifier.js` (the delta-layer certifier, analogous to static-certifier for the static layer) — about to open the file to confirm this is correct before doing anything else.
+**Status update — certifier investigated, sequence revised with Rodolfo.**
+
+- Confirmed target: `alphadog-v2-delta-certifier.js` (job_key `delta-certifier`, v0.2.15-v6-state-validated-clean, 2021 lines). Read in full.
+- Structure: TWO independent halves.
+  1. Game calendar (`mlb_game_calendar` + `mlb_game_calendar_stage` + `mlb_game_calendar_diff_changes`) — pulls MLB schedule API directly, no dependency on any other delta layer. Fully portable standalone.
+  2. Coverage matrix (`mlb_game_data_coverage`) — for every game_pk, checks 9 source layers (hitter_game_logs, pitcher_game_logs, team_game_logs, starter_history, bullpen_history, hitter_splits, pitcher_splits, hitter_metrics, pitcher_metrics) + 2 baseline_v5 layers, by querying those tables directly in STATS_HITTER_DB/STATS_PITCHER_DB/TEAM_DB/ARCHIVE_DB (D1). This inherently depends on every other delta layer already existing.
+- Also found: `mlb_game_calendar_stage` currently duplicates the FULL calendar snapshot per batch (not just in-flight rows) — violates no-duplicate-staging rule, must fix when ported.
+- Flagged the dependency conflict to Rodolfo directly rather than guess. Decision: **certifier is LAST, not first.** Coverage matrix can't be real on Postgres until all 9 source layers are already there. Go worker-by-worker per original priority list, port the certifier (both calendar half AND coverage-matrix half, fully, all 9 layer checks pointed at Postgres) only once everything it depends on is done.
+- Hard instruction repeated by Rodolfo, restated for clarity: **fully unwire D1 for each worker as it's ported — nothing left half-wired to D1 for a worker that's supposedly "done." No exceptions.**
+
+**Status: STARTING — hitter game logs (first real delta worker).**
+- Need to confirm exact file(s): `alphadog-v2-delta-hitter-logs.js` (8.4KB, likely the delta/incremental entrypoint) vs `alphadog-v2-base-hitter-game-logs.js` (223KB, likely full mining logic reused by the delta worker). About to read both to understand the real relationship before touching anything.
 
