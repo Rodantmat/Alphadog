@@ -829,18 +829,21 @@ async function certifyPlayerOutcomeUniverse(sql, batchId, runId, cutoffDate) {
 }
 
 
-async function deriveSourceCountersFromOutcomes(env, batchId) {
-  const row = await first(env.STATS_HITTER_DB, `SELECT
-      COUNT(*) AS outcome_total,
-      COUNT(DISTINCT player_id) AS distinct_outcome_players,
-      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END) AS promoted_players,
-      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END) AS true_no_data_players,
-      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END) AS filtered_after_cutoff_players,
-      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END) AS source_error_players,
-      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END) AS repair_required_players,
-      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END) AS unclear_players
-    FROM hitter_game_log_player_outcomes
-    WHERE batch_id=?`, batchId);
+async function deriveSourceCountersFromOutcomes(sql, batchId) {
+  const rows = await sql`
+    SELECT
+      COUNT(*)::int AS outcome_total,
+      COUNT(DISTINCT player_id)::int AS distinct_outcome_players,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END)::int AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END)::int AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END)::int AS filtered_after_cutoff_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players
+    FROM stats_hitter.game_log_player_outcomes
+    WHERE batch_id=${batchId}
+  `;
+  const row = rows[0] || {};
   const promotedPlayers = asInt(row && row.promoted_players, 0);
   const trueNoDataPlayers = asInt(row && row.true_no_data_players, 0);
   const filteredAfterCutoffPlayers = asInt(row && row.filtered_after_cutoff_players, 0);
@@ -866,69 +869,61 @@ async function deriveSourceCountersFromOutcomes(env, batchId) {
   };
 }
 
-async function freezeSourceCountersFromOutcomes(env, batchId) {
-  const c = await deriveSourceCountersFromOutcomes(env, batchId);
-  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches
-    SET source_request_count=?,
-        source_success_count=?,
-        source_no_data_count=?,
-        source_error_count=?,
-        updated_at=CURRENT_TIMESTAMP
-    WHERE batch_id=?`,
-    c.source_request_count,
-    c.source_success_count,
-    c.source_no_data_count,
-    c.source_error_count,
-    batchId
-  );
+async function freezeSourceCountersFromOutcomes(sql, batchId) {
+  const c = await deriveSourceCountersFromOutcomes(sql, batchId);
+  await sql`
+    UPDATE stats_hitter.game_log_batches
+    SET source_request_count=${c.source_request_count},
+        source_success_count=${c.source_success_count},
+        source_no_data_count=${c.source_no_data_count},
+        source_error_count=${c.source_error_count},
+        updated_at=now()
+    WHERE batch_id=${batchId}
+  `;
   return c;
 }
 
-async function syncOutcomePromotedCountsFromLive(env, batchId) {
-  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_player_outcomes
+async function syncOutcomePromotedCountsFromLive(sql, batchId) {
+  await sql`
+    UPDATE stats_hitter.game_log_player_outcomes o
     SET promoted_row_count=(
-          SELECT COUNT(*)
-          FROM hitter_game_logs h
-          WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id
-            AND h.player_id=hitter_game_log_player_outcomes.player_id
-            AND h.certification_status='base_backfill_certified_promoted'
+          SELECT COUNT(*) FROM stats_hitter.game_logs h
+          WHERE h.batch_id=o.batch_id AND h.player_id=o.player_id AND h.certification_status='base_backfill_certified_promoted'
         ),
         first_promoted_game_date=(
-          SELECT MIN(game_date)
-          FROM hitter_game_logs h
-          WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id
-            AND h.player_id=hitter_game_log_player_outcomes.player_id
-            AND h.certification_status='base_backfill_certified_promoted'
+          SELECT MIN(game_date) FROM stats_hitter.game_logs h
+          WHERE h.batch_id=o.batch_id AND h.player_id=o.player_id AND h.certification_status='base_backfill_certified_promoted'
         ),
         last_promoted_game_date=(
-          SELECT MAX(game_date)
-          FROM hitter_game_logs h
-          WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id
-            AND h.player_id=hitter_game_log_player_outcomes.player_id
-            AND h.certification_status='base_backfill_certified_promoted'
+          SELECT MAX(game_date) FROM stats_hitter.game_logs h
+          WHERE h.batch_id=o.batch_id AND h.player_id=o.player_id AND h.certification_status='base_backfill_certified_promoted'
         ),
-        updated_at=CURRENT_TIMESTAMP
-    WHERE batch_id=? AND terminal_category='PROMOTED_ROWS'`, batchId);
+        updated_at=now()
+    WHERE o.batch_id=${batchId} AND o.terminal_category='PROMOTED_ROWS'
+  `;
 }
 
-async function isFinalizationOnlyReady(env, batchId, expectedPlayers) {
-  const row = await first(env.STATS_HITTER_DB, `SELECT
+async function isFinalizationOnlyReady(sql, batchId, expectedPlayers) {
+  const rows = await sql`
+    SELECT
       b.status,
       b.cursor_offset,
       c.current_player_offset,
       c.players_total,
-      COUNT(o.player_id) AS outcome_total,
-      COUNT(DISTINCT o.player_id) AS distinct_outcome_players,
-      SUM(CASE WHEN o.terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END) AS source_error_players,
-      SUM(CASE WHEN o.terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END) AS repair_required_players,
-      SUM(CASE WHEN o.terminal_category='UNCLEAR' THEN 1 ELSE 0 END) AS unclear_players,
-      (SELECT COUNT(*) FROM hitter_game_logs_stage s WHERE s.batch_id=b.batch_id) AS stage_rows,
-      (SELECT COUNT(*) FROM hitter_game_logs h WHERE h.batch_id=b.batch_id AND h.certification_status='base_backfill_certified_promoted') AS live_rows
-    FROM hitter_game_log_batches b
-    LEFT JOIN hitter_game_log_cursor c ON c.batch_id=b.batch_id
-    LEFT JOIN hitter_game_log_player_outcomes o ON o.batch_id=b.batch_id
-    WHERE b.batch_id=?
-    GROUP BY b.batch_id`, batchId);
+      COUNT(o.player_id)::int AS outcome_total,
+      COUNT(DISTINCT o.player_id)::int AS distinct_outcome_players,
+      SUM(CASE WHEN o.terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN o.terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN o.terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players,
+      (SELECT COUNT(*) FROM stats_hitter.game_logs_stage s WHERE s.batch_id=b.batch_id)::int AS stage_rows,
+      (SELECT COUNT(*) FROM stats_hitter.game_logs h WHERE h.batch_id=b.batch_id AND h.certification_status='base_backfill_certified_promoted')::int AS live_rows
+    FROM stats_hitter.game_log_batches b
+    LEFT JOIN stats_hitter.game_log_cursor c ON c.batch_id=b.batch_id
+    LEFT JOIN stats_hitter.game_log_player_outcomes o ON o.batch_id=b.batch_id
+    WHERE b.batch_id=${batchId}
+    GROUP BY b.batch_id, b.status, b.cursor_offset, c.current_player_offset, c.players_total
+  `;
+  const row = rows[0] || null;
   const total = asInt((row && row.players_total) || expectedPlayers, 0);
   const cursorDone = total > 0 && asInt(row && row.cursor_offset, 0) >= total && asInt(row && row.current_player_offset, 0) >= total;
   const outcomesDone = total > 0 && asInt(row && row.outcome_total, 0) === total && asInt(row && row.distinct_outcome_players, 0) === total;
