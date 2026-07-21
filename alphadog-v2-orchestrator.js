@@ -2756,18 +2756,19 @@ async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpressio
 
 async function enqueueScheduledDailyFullRunIfDue(env, cronExpression = "unknown") {
   await ensureSchema(env);
-  await ensureConfigScheduledJobsTable(env);
 
   const pt = pacificNowParts(new Date());
-  const scheduleRows = await all(env.CONFIG_DB,
-    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
-     FROM config_scheduled_jobs
-     WHERE enabled=1
-       AND job_key='daily-full-run'
-       AND schedule_type='daily'
-       AND timezone='America/Los_Angeles'
-     ORDER BY local_time, schedule_id`
-  );
+  let sqlSched2 = pgSchedule(env);
+  const scheduleRows = await sqlSched2`
+    SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json::text AS input_json, notes
+    FROM config.scheduled_jobs
+    WHERE enabled=1
+      AND job_key='daily-full-run'
+      AND schedule_type='daily'
+      AND timezone='America/Los_Angeles'
+    ORDER BY local_time, schedule_id
+  `;
+  await sqlSched2.end();
 
   const results = [];
   for (const schedule of scheduleRows) {
