@@ -24,7 +24,7 @@ const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
 
 const ACTIVE_CURSOR_KEY = "base_pitcher_game_logs_active_cursor";
 const DELTA_CURSOR_KEY = "delta_pitcher_game_logs_active_cursor";
-let LOCKED_BASE_BATCH_ID = "PENDING_FIRST_REAL_BASE_BACKFILL_COMPLETION";
+let LOCKED_BASE_BATCH_ID = "pitcher_base_backfill_batch_mrv613iv_jjwjxq";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_PITCHER_DB"];
 const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_SECONDS", "MAX_TICK_RUNTIME_MS", "FETCH_TIMEOUT_MS"];
