@@ -1185,6 +1185,9 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
         hits=excluded.hits, singles=excluded.singles, doubles=excluded.doubles, triples=excluded.triples, home_runs=excluded.home_runs,
         runs=excluded.runs, rbi=excluded.rbi, walks=excluded.walks, strikeouts=excluded.strikeouts, stolen_bases=excluded.stolen_bases,
         total_bases=excluded.total_bases, pa=excluded.pa, ab=excluded.ab, raw_json=excluded.raw_json,
+        batch_id=excluded.batch_id, run_id=excluded.run_id, group_type=excluded.group_type, data_feed_key=excluded.data_feed_key,
+        source_endpoint=excluded.source_endpoint, source_season=excluded.source_season, source_game_type=excluded.source_game_type,
+        ingestion_mode=excluded.ingestion_mode, source_key=excluded.source_key, source_confidence=excluded.source_confidence,
         certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
         promoted_at=now(), updated_at=now()
     `;
