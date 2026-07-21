@@ -2023,7 +2023,8 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
   }
 
   if (status === "DELTA_CERTIFIED_READY_TO_PROMOTE" || status === "DELTA_PROMOTING") {
-    const promoted = await promoteStageRowsChunk(sql, batchId, grade, cap(opts.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 800));
+    const tickConfigForDeltaPromote = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+    const promoted = await promoteStageRowsChunk(sql, batchId, grade, cap(opts.promote_rows_per_tick || tickConfigForDeltaPromote.promote_rows_per_tick, 1, 2000));
     const liveRows = await getLiveCount();
     const stageRows = await getStageCount();
     // GROUNDED FIX: liveRows is batch_id-scoped and will legitimately undercount now that row
