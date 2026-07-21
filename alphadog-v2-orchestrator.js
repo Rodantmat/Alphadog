@@ -2992,17 +2992,11 @@ function isPacificScheduleWindowDue(pt, parsedLocalTime, windowMinutes = BOARD_F
 }
 
 async function ensureConfigScheduledJobsTable(env) {
-  await run(env.CONFIG_DB,
-    "CREATE TABLE IF NOT EXISTS config_scheduled_jobs (schedule_id TEXT PRIMARY KEY, job_key TEXT NOT NULL, job_name TEXT, enabled INTEGER NOT NULL DEFAULT 1, timezone TEXT NOT NULL, local_time TEXT NOT NULL, schedule_type TEXT NOT NULL, dedupe_scope TEXT NOT NULL, input_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, notes TEXT)"
-  );
-  // Additive column for real weekly scheduling support (static-full-run): only used when
-  // schedule_type='weekly', holding the real Pacific weekday short-name ('Mon','Tue',...) to
-  // match against pacificNowParts().weekday - existing 'daily' schedules are unaffected.
-  const cols = await all(env.CONFIG_DB, "PRAGMA table_info(config_scheduled_jobs)");
-  const haveDayOfWeek = cols.some(c => String(c.name || "").toLowerCase() === "day_of_week");
-  if (!haveDayOfWeek) {
-    await run(env.CONFIG_DB, "ALTER TABLE config_scheduled_jobs ADD COLUMN day_of_week TEXT");
-  }
+  // Dead / retired: scheduled-job config now lives in Postgres config.scheduled_jobs (created
+  // once via migration, not ensured per-call). This function has zero callers left after the
+  // scheduled-jobs Postgres cutover; kept as a real no-op rather than deleted outright, so any
+  // stray reference elsewhere fails safe instead of touching D1.
+  return;
 }
 
 async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown") {
