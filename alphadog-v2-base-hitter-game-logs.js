@@ -459,16 +459,28 @@ function parseHitterSplit(split, playerId, playerName, season, batchId, runId, m
   };
 }
 
-async function insertStageRow(env, row) {
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_logs_stage (
-    stage_id,batch_id,run_id,player_id,player_name,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
-    pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
-    group_type,data_feed_key,source_key,source_endpoint,source_season,source_game_type,ingestion_mode,certification_status,certification_grade,source_confidence,raw_json,updated_at
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-    row.stage_id,row.batch_id,row.run_id,row.player_id,row.player_name,row.game_pk,row.season,row.game_date,row.team_id,row.opponent_team_id,row.is_home,row.batting_order,
-    row.pa,row.ab,row.hits,row.singles,row.doubles,row.triples,row.home_runs,row.runs,row.rbi,row.walks,row.strikeouts,row.stolen_bases,row.total_bases,
-    row.group_type,row.data_feed_key,row.source_key,row.source_endpoint,row.source_season,row.source_game_type,row.ingestion_mode,row.certification_status,row.certification_grade,row.source_confidence,row.raw_json
-  );
+async function insertStageRow(sql, row) {
+  // DIRECT PORT: INSERT OR REPLACE (keyed on PK stage_id in SQLite) -> INSERT ... ON CONFLICT (stage_id) DO UPDATE.
+  await sql`
+    INSERT INTO stats_hitter.game_logs_stage (
+      stage_id,batch_id,run_id,player_id,player_name,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
+      pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
+      group_type,data_feed_key,source_key,source_endpoint,source_season,source_game_type,ingestion_mode,certification_status,certification_grade,source_confidence,raw_json,updated_at
+    ) VALUES (
+      ${row.stage_id},${row.batch_id},${row.run_id},${row.player_id},${row.player_name},${row.game_pk},${row.season},${row.game_date},${row.team_id},${row.opponent_team_id},${row.is_home},${row.batting_order},
+      ${row.pa},${row.ab},${row.hits},${row.singles},${row.doubles},${row.triples},${row.home_runs},${row.runs},${row.rbi},${row.walks},${row.strikeouts},${row.stolen_bases},${row.total_bases},
+      ${row.group_type},${row.data_feed_key},${row.source_key},${row.source_endpoint},${row.source_season},${row.source_game_type},${row.ingestion_mode},${row.certification_status},${row.certification_grade},${row.source_confidence},${row.raw_json}, now()
+    )
+    ON CONFLICT (stage_id) DO UPDATE SET
+      batch_id=excluded.batch_id, run_id=excluded.run_id, player_id=excluded.player_id, player_name=excluded.player_name,
+      game_pk=excluded.game_pk, season=excluded.season, game_date=excluded.game_date, team_id=excluded.team_id, opponent_team_id=excluded.opponent_team_id,
+      is_home=excluded.is_home, batting_order=excluded.batting_order, pa=excluded.pa, ab=excluded.ab, hits=excluded.hits, singles=excluded.singles,
+      doubles=excluded.doubles, triples=excluded.triples, home_runs=excluded.home_runs, runs=excluded.runs, rbi=excluded.rbi, walks=excluded.walks,
+      strikeouts=excluded.strikeouts, stolen_bases=excluded.stolen_bases, total_bases=excluded.total_bases, group_type=excluded.group_type,
+      data_feed_key=excluded.data_feed_key, source_key=excluded.source_key, source_endpoint=excluded.source_endpoint, source_season=excluded.source_season,
+      source_game_type=excluded.source_game_type, ingestion_mode=excluded.ingestion_mode, certification_status=excluded.certification_status,
+      certification_grade=excluded.certification_grade, source_confidence=excluded.source_confidence, raw_json=excluded.raw_json, updated_at=now()
+  `;
 }
 
 async function chooseAllHitterPlayers(sql, inputJson) {
