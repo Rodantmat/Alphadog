@@ -612,7 +612,87 @@ async function rebuildMissingOutcomeRowsFromCursor(sql, batchId, runId) {
   }
 }
 
-// STUB_MARKER_CERTIFY_NEXT
+async function certifyPlayerOutcomeUniverse(sql, batchId, runId, cutoffDate) {
+  await rebuildMissingOutcomeRowsFromCursor(sql, batchId, runId);
+  const cursorRows = await sql`SELECT players_total FROM stats_pitcher.game_log_cursor WHERE batch_id=${batchId} OR cursor_key=${ACTIVE_CURSOR_KEY} ORDER BY updated_at DESC LIMIT 1`;
+  const playersTotal = asInt(cursorRows[0] && cursorRows[0].players_total, 0);
+  const totalsRows = await sql`
+    SELECT
+      COUNT(*)::int AS outcome_total, COUNT(DISTINCT player_id)::int AS distinct_outcome_players,
+      (COUNT(*) - COUNT(DISTINCT player_id))::int AS duplicate_outcome_rows,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END)::int AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END)::int AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END)::int AS filtered_after_cutoff_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players,
+      SUM(CASE WHEN terminal_category NOT IN ('PROMOTED_ROWS','TRUE_NO_DATA','FILTERED_AFTER_CUTOFF','SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR') THEN 1 ELSE 0 END)::int AS invalid_category_players,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' AND COALESCE(rows_staged,0) <= 0 AND COALESCE(promoted_row_count,0) <= 0 THEN 1 ELSE 0 END)::int AS promoted_without_rows,
+      SUM(CASE WHEN terminal_category!='PROMOTED_ROWS' AND (COALESCE(rows_staged,0) > 0 OR COALESCE(promoted_row_count,0) > 0) THEN 1 ELSE 0 END)::int AS non_promoted_with_rows,
+      SUM(COALESCE(rows_before_cutoff,0))::int AS rows_before_cutoff, SUM(COALESCE(rows_staged,0))::int AS rows_staged
+    FROM stats_pitcher.game_log_player_outcomes WHERE batch_id=${batchId}
+  `;
+  const totals = totalsRows[0] || {};
+  const categoryTotal = asInt(totals.promoted_players, 0) + asInt(totals.true_no_data_players, 0) + asInt(totals.filtered_after_cutoff_players, 0) + asInt(totals.source_error_players, 0) + asInt(totals.repair_required_players, 0) + asInt(totals.unclear_players, 0);
+  const pass = playersTotal > 0 && asInt(totals.outcome_total, 0) === playersTotal && asInt(totals.distinct_outcome_players, 0) === playersTotal && asInt(totals.duplicate_outcome_rows, 0) === 0 && categoryTotal === playersTotal && asInt(totals.source_error_players, 0) === 0 && asInt(totals.repair_required_players, 0) === 0 && asInt(totals.unclear_players, 0) === 0 && asInt(totals.invalid_category_players, 0) === 0 && asInt(totals.promoted_without_rows, 0) === 0 && asInt(totals.non_promoted_with_rows, 0) === 0;
+  const summary = { version: VERSION, batch_id: batchId, run_id: runId, cutoff_date: cutoffDate, players_total: playersTotal, category_total: categoryTotal, pass, delta_gate_open: pass, ...totals };
+  await sql`UPDATE stats_pitcher.game_log_player_outcomes SET certification_status=${pass ? "player_outcome_certified" : "player_outcome_certification_failed"}, certification_grade=${pass ? "BASE_PASS" : "BASE_FAIL"}, updated_at=now() WHERE batch_id=${batchId}`;
+  return summary;
+}
+
+async function deriveSourceCountersFromOutcomes(sql, batchId) {
+  const rows = await sql`
+    SELECT COUNT(*)::int AS outcome_total, COUNT(DISTINCT player_id)::int AS distinct_outcome_players,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END)::int AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END)::int AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END)::int AS filtered_after_cutoff_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players
+    FROM stats_pitcher.game_log_player_outcomes WHERE batch_id=${batchId}
+  `;
+  const row = rows[0] || {};
+  const promotedPlayers = asInt(row.promoted_players, 0), filteredAfterCutoffPlayers = asInt(row.filtered_after_cutoff_players, 0);
+  return {
+    outcome_total: asInt(row.outcome_total, 0), distinct_outcome_players: asInt(row.distinct_outcome_players, 0),
+    promoted_players: promotedPlayers, true_no_data_players: asInt(row.true_no_data_players, 0),
+    filtered_after_cutoff_players: filteredAfterCutoffPlayers, source_error_players: asInt(row.source_error_players, 0),
+    repair_required_players: asInt(row.repair_required_players, 0), unclear_players: asInt(row.unclear_players, 0),
+    source_request_count: asInt(row.outcome_total, 0), source_success_count: promotedPlayers + filteredAfterCutoffPlayers,
+    source_no_data_count: asInt(row.true_no_data_players, 0), source_error_count: asInt(row.source_error_players, 0),
+    source_success_definition: "PROMOTED_ROWS + FILTERED_AFTER_CUTOFF; both are successful 200/source payload terminal outcomes. TRUE_NO_DATA is a terminal empty source outcome, not success."
+  };
+}
+async function freezeSourceCountersFromOutcomes(sql, batchId) {
+  const c = await deriveSourceCountersFromOutcomes(sql, batchId);
+  await sql`UPDATE stats_pitcher.game_log_batches SET source_request_count=${c.source_request_count}, source_success_count=${c.source_success_count}, source_no_data_count=${c.source_no_data_count}, source_error_count=${c.source_error_count}, updated_at=now() WHERE batch_id=${batchId}`;
+  return c;
+}
+
+async function isFinalizationOnlyReady(sql, batchId, expectedPlayers) {
+  const rows = await sql`
+    SELECT b.status, b.cursor_offset, c.current_player_offset, c.players_total,
+      COUNT(o.player_id)::int AS outcome_total, COUNT(DISTINCT o.player_id)::int AS distinct_outcome_players,
+      SUM(CASE WHEN o.terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END)::int AS source_error_players,
+      SUM(CASE WHEN o.terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END)::int AS repair_required_players,
+      SUM(CASE WHEN o.terminal_category='UNCLEAR' THEN 1 ELSE 0 END)::int AS unclear_players
+    FROM stats_pitcher.game_log_batches b
+    LEFT JOIN stats_pitcher.game_log_cursor c ON c.batch_id=b.batch_id
+    LEFT JOIN stats_pitcher.game_log_player_outcomes o ON o.batch_id=b.batch_id
+    WHERE b.batch_id=${batchId}
+    GROUP BY b.batch_id, b.status, b.cursor_offset, c.current_player_offset, c.players_total
+  `;
+  const row = rows[0] || null;
+  const total = asInt((row && row.players_total) || expectedPlayers, 0);
+  const cursorDone = total > 0 && asInt(row && row.cursor_offset, 0) >= total && asInt(row && row.current_player_offset, 0) >= total;
+  const outcomesDone = total > 0 && asInt(row && row.outcome_total, 0) === total && asInt(row && row.distinct_outcome_players, 0) === total;
+  const unresolved = asInt(row && row.source_error_players, 0) + asInt(row && row.repair_required_players, 0) + asInt(row && row.unclear_players, 0);
+  const status = String((row && row.status) || "");
+  const finalizationStatuses = new Set(["BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION", "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE", "BASE_BACKFILL_PROMOTING", "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN", "BASE_BACKFILL_CLEANING", "CERTIFICATION_FAILED", "COMPLETED_PROMOTED_CLEANED"]);
+  return { ready: (cursorDone && outcomesDone && unresolved === 0) || finalizationStatuses.has(status), status, players_total: total, cursor_done: cursorDone, outcomes_done: outcomesDone, unresolved_players: unresolved };
+}
+
+// STUB_MARKER_PREPROMOTE_NEXT
 
 export default {
   async fetch(request, env) {
