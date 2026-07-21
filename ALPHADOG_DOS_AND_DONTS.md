@@ -284,3 +284,98 @@ architecture context.
   wrong theory.
 - Don't produce long, verbose explanations when the person has explicitly asked for brevity and
   assertiveness — this cost real conversational budget and patience throughout the session.
+
+---
+
+## PART 3 — Session: `base-pitcher-game-logs` built from scratch, deploy failure root-caused, new tool added
+
+### D1 IS READ-ONLY REFERENCE ONLY — RESTATED IN THE STRONGEST POSSIBLE TERMS, NO EXCEPTIONS
+- **Every single worker, from this point forward, writes ONLY to the new Postgres database.**
+  D1 (`CONTROL_DB`, `CONFIG_DB`, `REF_DB`, `STATS_HITTER_DB`, `STATS_PITCHER_DB`, `TEAM_DB`,
+  `DAILY_DB`, `MARKET_DB`, `CONTEXT_DB`, `SCORE_DB`, `ARCHIVE_DB`) is READ-ONLY REFERENCE, used
+  ONLY when genuinely needed to look up something not yet on Postgres — NEVER as a write target,
+  NEVER as a source of truth for validation, NEVER copied from wholesale. This was already the
+  rule; it is restated here because it must never drift, and every future session must re-read
+  this line before writing a single line of code.
+- Practical consequence for every worker still to be ported (team-game-logs, starter-history,
+  bullpen-history, hitter-splits, pitcher-splits, then the calculation layer): if the D1 version
+  of a function reads FROM a D1 table for reference data (e.g. roster/position lookups), and an
+  equivalent Postgres table already exists (`ref.players`, `ref.teams`, etc.), read from
+  Postgres instead — do not fall back to D1 "just to get it working." If no Postgres equivalent
+  exists yet, flag it and ask, don't silently wire in a D1 read.
+
+### Building a brand-new worker file from scratch on Postgres, when the D1 original is too
+### architecturally different to port line-by-line (as opposed to hitter's direct in-place port)
+- For `base-pitcher-game-logs`, the real D1 file (144KB, source-probe mode, two-stage base with
+  a separate promotion microphase, complex REF_DB role-based discovery) was judged NOT worth
+  porting line-by-line — instead, rebuilt clean using hitter's already-proven, simpler
+  architecture (single dual-mode file, `base_backfill` + `delta_update`, full-roster re-mining
+  for delta). **This is a legitimate exception to the "surgical port only" rule, but only when
+  explicitly reasoned through and only by reusing an already-proven pattern (hitter's), never by
+  inventing a new architecture from scratch.**
+- **Real, proven method for pushing a large new file to the repo via this MCP bridge, when the
+  file is too big/complex to reliably round-trip as a single `github_put_file` call:**
+  1. Push a small, syntactically-valid STUB file first via `github_put_file` (constants,
+     minimal `fetch` handler, one `// STUB_MARKER_X_NEXT` comment marking where more code goes).
+  2. Build the file up section by section via repeated `github_patch_file` calls, each one
+     replacing the current stub marker comment with real code ending in a NEW stub marker
+     comment — the file is always syntactically valid at every single step.
+  3. This is the exact same method already proven for the hitter conversion (patch-by-patch
+     against a real file) — the only difference for a from-scratch build is that the "real
+     file" starts as a deliberate stub instead of an existing D1 file.
+- **Real lesson about `github_put_file`/`create_file` "aborted, no result returned" errors**:
+  in this session, two consecutive attempts to push a fully-reconstructed large file via
+  `github_put_file` (and `create_file` for a local sandbox copy) both came back as empty/aborted
+  tool calls. **The root cause was NOT a size limit or a real tool failure — it was calling the
+  tool with no parameters at all** (an assistant-side mistake, not a platform limit). The very
+  next call, with real `path`/`content`/`message` parameters filled in, succeeded immediately at
+  a comparable size. **Before concluding a tool call is broken or hitting a limit, verify the
+  call itself actually included its required parameters.**
+
+### Deploy pipeline gotcha #2 — the SAME `generate_wrangler_configs.py` whitelist trap, in a new form
+- PART 1 already documents that hand-editing `wrangler.*.jsonc` is wiped by the generator script.
+  This session hit the SAME root mechanism in a new shape: **`generate_wrangler_configs.py`'s
+  `make_config()` function has a hardcoded tuple of worker names that receive the `hyperdrive`
+  binding + `"compatibility_flags": ["nodejs_compat"]`.** A brand-new Postgres-native worker
+  (`alphadog-v2-base-pitcher-game-logs`) was fully built, correctly using the `postgres` npm
+  package — but was NOT yet in that hardcoded tuple. Every deploy silently regenerated its
+  `wrangler.*.jsonc` as a plain D1-only config (no Hyperdrive, no nodejs_compat), and the
+  Cloudflare deploy failed at build time with `Uncaught Error: No such module "node:events"`
+  (the `postgres` package needs Node compat that wasn't declared).
+- **Real fix**: add the new worker's exact name to the SAME tuple in
+  `generate_wrangler_configs.py` that already contains `alphadog-v2-base-hitter-game-logs` (and
+  `alphadog-v2-orchestrator`, `alphadog-v2-static-teams`, etc.). This is the ONLY correct fix —
+  editing the `.jsonc` file directly, or trying to patch around the symptom in the worker's own
+  `.js` file, does nothing, because the generator always runs first and overwrites the config.
+- **Standing rule for every future worker that writes to Postgres**: the moment a new worker's
+  `.js` file is created and imports the `postgres` package, ALSO add its exact worker name to
+  `generate_wrangler_configs.py`'s hyperdrive/nodejs_compat tuple, in the SAME session, before
+  ever attempting a deploy. Do not treat this as a separate, later step — a deploy without this
+  will fail with a confusing Node-module error that has nothing obviously to do with wrangler
+  config, costing real debugging time if not immediately recognized as this exact known pattern.
+
+### New tool added this session: `github_get_workflow_run_log` — READ THIS BEFORE ASKING THE USER TO PASTE A DEPLOY ERROR
+- Added directly to `alphadog-v2-admin-sql.js` (this MCP bridge worker's own source file) since
+  that file already contains every other `github_*` tool (`github_list_workflow_runs`,
+  `github_patch_file`, etc.) — same pattern, same `githubRequest()` auth helper, same
+  `GITHUB_TOKEN` secret (already has sufficient scope, confirmed by `github_list_workflow_runs`
+  already working — no new secret was needed).
+- **What it does**: given a `run_id` (from `github_list_workflow_runs`), calls GitHub's real
+  Actions API — `GET /actions/runs/{run_id}/jobs` to find the job, then
+  `GET /actions/jobs/{job_id}/logs` (which 302-redirects to the raw plain-text log; `fetch()`
+  follows redirects by default so the existing `githubRequest()` helper needed ZERO changes to
+  work here) — and returns the job's real per-step status plus the tail of the real log text.
+- **How to use it going forward, instead of ever asking Rodolfo to paste a deploy error again**:
+  1. `github_list_workflow_runs` → find the failed run's `id`.
+  2. `github_get_workflow_run_log` with that `run_id`. Optionally pass
+     `grep: "ERROR|Uncaught|Error:"` to jump straight to the failure instead of reading a full
+     log tail, and/or `tail_lines` to control how much text comes back.
+  3. Read the real error directly — do not guess, do not ask the user to paste it, unless this
+     tool itself errors (e.g., log genuinely expired — GitHub's redirect link is only valid for
+     ~1 minute from generation, but the tool fetches it fresh each call so this should be rare).
+- **Important for whoever reads this next**: this tool was added and deployed successfully in
+  THIS session, but due to how the MCP tool list is fixed at conversation start, it was NOT
+  callable within the same session it was built in — confirm it now appears in your own tool
+  list before relying on it; if it doesn't, the admin-sql worker may need a fresh deploy check
+  via `github_list_workflow_runs` first.
+
