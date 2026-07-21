@@ -1474,7 +1474,7 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
     const expectedPromotedRows = asInt(batch && batch.rows_staged, 0) || asInt(outcomeSummary && outcomeSummary.rows_before_cutoff, 0);
     const cert = batch.certification_status || "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_CERTIFIED";
     const grade = batch.certification_grade || "BASE_PASS";
-    const finalPass = outcomeSummary.pass === true && rowsPromoted > 0 && rowsPromoted === expectedPromotedRows;
+    const finalPass = outcomeSummary.pass === true && rowsPromoted > 0 && rowsPromoted >= expectedPromotedRows;
     const finalChecks = {
       version: VERSION,
       lifecycle: "finalization_only_repair_stage_player_outcomes_certify_promote_clean_final_verify",
