@@ -529,11 +529,18 @@ async function chooseAllHitterPlayers(sql, inputJson) {
   })).filter(r => r.player_id);
 }
 
-async function getOrCreateBaseBackfillState(env, input) {
+async function getOrCreateBaseBackfillState(env, sql, input) {
+  // DIRECT PORT: single Postgres connection used throughout (replaces the earlier D1 binding).
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
-  const existing = await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_log_cursor WHERE cursor_key=? AND mode='base_backfill' AND status IN ('BASE_BACKFILL_RUNNING','PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS','BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION','BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE','BASE_BACKFILL_PROMOTING','BASE_BACKFILL_PROMOTED_READY_TO_CLEAN','BASE_BACKFILL_CLEANING','CERTIFICATION_FAILED','COMPLETED_PROMOTED_CLEANED')`, ACTIVE_CURSOR_KEY);
+  const existingRows = await sql`
+    SELECT * FROM stats_hitter.game_log_cursor
+    WHERE cursor_key=${ACTIVE_CURSOR_KEY} AND mode='base_backfill'
+      AND status IN ('BASE_BACKFILL_RUNNING','PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS','BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION','BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE','BASE_BACKFILL_PROMOTING','BASE_BACKFILL_PROMOTED_READY_TO_CLEAN','BASE_BACKFILL_CLEANING','CERTIFICATION_FAILED','COMPLETED_PROMOTED_CLEANED')
+  `;
+  const existing = existingRows[0] || null;
   if (existing) {
-    const batch = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_log_batches WHERE batch_id=?", existing.batch_id);
+    const batchRows = await sql`SELECT * FROM stats_hitter.game_log_batches WHERE batch_id=${existing.batch_id}`;
+    const batch = batchRows[0] || null;
     let players = [];
     try { players = JSON.parse(existing.cursor_json || "{}").players || []; } catch (_) { players = []; }
     if (batch && players.length) return { is_new: false, cursor: existing, batch, players, input_json: inputJson };
@@ -546,10 +553,10 @@ async function getOrCreateBaseBackfillState(env, input) {
   const chunkSize = cap(inputJson.chunk_size_players || inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_CHUNK_SIZE_PLAYERS, 1, DEFAULT_CHUNK_SIZE_PLAYERS);
   const maxRequests = cap(inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
   const maxRows = cap(inputJson.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
-  const players = await chooseAllHitterPlayers(env, inputJson);
+  const players = await chooseAllHitterPlayers(sql, inputJson);
 
-  await run(env.STATS_HITTER_DB, "DELETE FROM hitter_game_logs_stage WHERE batch_id LIKE 'hitter_base_probe_batch_%' OR certification_status='source_shape_probe_staged'");
-  await run(env.STATS_HITTER_DB, "DELETE FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
+  await sql`DELETE FROM stats_hitter.game_logs_stage WHERE batch_id LIKE 'hitter_base_probe_batch_%' OR certification_status='source_shape_probe_staged'`;
+  await sql`DELETE FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId}`;
 
   const cursorJson = JSON.stringify({
     version: VERSION,
@@ -564,26 +571,38 @@ async function getOrCreateBaseBackfillState(env, input) {
     backend_self_continuation_required: true
   });
 
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_batches (
-    batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_endpoint, source_season,
-    base_backfill_cutoff_date, delta_start_date, cursor_player_id, cursor_season, cursor_offset, cursor_state_json,
-    chunk_size_players, max_requests_per_tick, max_rows_per_tick, certification_status, source_confidence, notes, updated_at
-  ) VALUES (?, ?, ?, ?, 'base_backfill', 'BASE_BACKFILL_RUNNING', ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING', ?, CURRENT_TIMESTAMP)`,
-    batchId, runId, WORKER_NAME, VERSION, DATA_FEED_KEY, SOURCE_KEY, LOCKED_SOURCE_ENDPOINT_PATTERN, sourceSeason,
-    cutoffDate, DEFAULT_DELTA_RESERVED_START_DATE, sourceSeason, cursorJson, chunkSize, maxRequests, maxRows,
-    "v0.2.8 finalization microphases. Base fills only through 2026-05-18, then certifies/promotes/cleans in D1-safe microticks. Delta remains blocked until every cursor player has one certified terminal category. No scoring/ranking/board mutation."
-  );
+  await sql`
+    INSERT INTO stats_hitter.game_log_batches (
+      batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_endpoint, source_season,
+      base_backfill_cutoff_date, delta_start_date, cursor_player_id, cursor_season, cursor_offset, cursor_state_json,
+      chunk_size_players, max_requests_per_tick, max_rows_per_tick, certification_status, source_confidence, notes, updated_at
+    ) VALUES (
+      ${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'base_backfill', 'BASE_BACKFILL_RUNNING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${LOCKED_SOURCE_ENDPOINT_PATTERN}, ${sourceSeason},
+      ${cutoffDate}, ${DEFAULT_DELTA_RESERVED_START_DATE}, NULL, ${sourceSeason}, 0, ${cursorJson}, ${chunkSize}, ${maxRequests}, ${maxRows}, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING',
+      ${"Postgres direct port. Base fills only through " + cutoffDate + ", then certifies/promotes/cleans in bounded microticks. Delta remains blocked until every cursor player has one certified terminal category. No scoring/ranking/board mutation."}, now()
+    )
+    ON CONFLICT (batch_id) DO UPDATE SET
+      run_id=excluded.run_id, status=excluded.status, cursor_state_json=excluded.cursor_state_json, updated_at=now()
+  `;
 
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor (
-    cursor_key,batch_id,run_id,mode,status,source_season,base_backfill_cutoff_date,delta_start_date,current_player_id,current_player_offset,
-    players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at
-  ) VALUES (?, ?, ?, 'base_backfill', 'BASE_BACKFILL_RUNNING', ?, ?, ?, NULL, 0, ?, 0, 0, CURRENT_TIMESTAMP, NULL, ?, CURRENT_TIMESTAMP)`,
-    ACTIVE_CURSOR_KEY, batchId, runId, sourceSeason, cutoffDate, DEFAULT_DELTA_RESERVED_START_DATE, players.length, cursorJson
-  );
+  await sql`
+    INSERT INTO stats_hitter.game_log_cursor (
+      cursor_key,batch_id,run_id,mode,status,source_season,base_backfill_cutoff_date,delta_start_date,current_player_id,current_player_offset,
+      players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at
+    ) VALUES (
+      ${ACTIVE_CURSOR_KEY}, ${batchId}, ${runId}, 'base_backfill', 'BASE_BACKFILL_RUNNING', ${sourceSeason}, ${cutoffDate}, ${DEFAULT_DELTA_RESERVED_START_DATE}, NULL, 0,
+      ${players.length}, 0, 0, now(), NULL, ${cursorJson}, now()
+    )
+    ON CONFLICT (cursor_key) DO UPDATE SET
+      batch_id=excluded.batch_id, run_id=excluded.run_id, mode=excluded.mode, status=excluded.status, source_season=excluded.source_season,
+      base_backfill_cutoff_date=excluded.base_backfill_cutoff_date, delta_start_date=excluded.delta_start_date, current_player_id=excluded.current_player_id,
+      current_player_offset=excluded.current_player_offset, players_total=excluded.players_total, players_processed=excluded.players_processed,
+      requests_done=excluded.requests_done, next_run_after=excluded.next_run_after, last_error=excluded.last_error, cursor_json=excluded.cursor_json, updated_at=now()
+  `;
 
-  const cursor = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_log_cursor WHERE cursor_key=?", ACTIVE_CURSOR_KEY);
-  const batch = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_log_batches WHERE batch_id=?", batchId);
-  return { is_new: true, cursor, batch, players, input_json: inputJson };
+  const cursorRows = await sql`SELECT * FROM stats_hitter.game_log_cursor WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+  const batchRows = await sql`SELECT * FROM stats_hitter.game_log_batches WHERE batch_id=${batchId}`;
+  return { is_new: true, cursor: cursorRows[0] || null, batch: batchRows[0] || null, players, input_json: inputJson };
 }
 
 function parseSqliteUtcMs(value) {
