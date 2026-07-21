@@ -56,3 +56,13 @@ Continuously updated. Last real state always at the bottom of the current sessio
 - The REAL hitter game logs worker (base + delta both) is `alphadog-v2-base-hitter-game-logs.js` — job_key `base-hitter-game-logs`, version v1.6.22-gap-contract-drain-verify, 3374 lines. Confirmed via grep: has an `ingestion_mode` field distinguishing `'delta_update'` vs base backfill within the same file/same table writes. D1 bindings: CONTROL_DB, CONFIG_DB, REF_DB, STATS_HITTER_DB.
 - This is the real port target for "hitter game logs." Next: verify current D1 data (STATS_HITTER_DB.hitter_game_logs, real row counts/completeness) before any Postgres code, per mandated per-worker process. Have NOT yet read the full file body (only structural grep so far) — need full read before planning the port.
 
+**D1 verification (read-only, per mandated process step 1):**
+- STATS_HITTER_DB.hitter_game_logs: 75,427 rows, 651 distinct players, 3,920 distinct games, date range 2025-03-18 to 2026-07-19. Real, populated table.
+
+**CRITICAL METHOD CORRECTION FROM RODOLFO — applies for rest of migration:**
+- Worker/table names are mislabeled in MANY places (delta-hitter-logs.js being a red herring is a live fresh example, not a one-off). **Never trust a filename, worker_name string, or table name as ground truth — trust code logic/behavior only.**
+- **Correct source of truth for "what worker does what, in what order": the Control Room's full-run buttons** (e.g. "Delta Full Run"). These trigger the orchestrator, which dispatches the real, correct job_key sequence. Use this as the canonical map, not filename guessing.
+- System is explicitly "a big Frankenstein" per Rodolfo — many versions built on top of each other, lots of dead code, some HALF dead (looks unused but isn't, or vice versa) — extra caution before assuming any code path is dead or live.
+- **New method going forward:** before touching a layer, find its Control Room button → find what job/chain it enqueues in the orchestrator → follow the real job_key sequence actually dispatched → that's the real worker file(s) and order.
+- Next: grep `alphadog-v2-orchestrator.js` for the delta-full-run (or equivalent) chain definition to get the real job_key sequence, cross-check against `alphadog-v2-control-room.js` for the actual button → job dispatch mapping.
+
