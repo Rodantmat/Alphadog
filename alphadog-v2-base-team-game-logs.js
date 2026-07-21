@@ -438,6 +438,31 @@ async function runDeltaUpdateTick(env, sql, input) {
 // STUB_MARKER_HANDLER_NEXT
 export default {
   async fetch(request, env) {
-    return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
+    const url = new URL(request.url);
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+    try {
+      if (url.pathname === "/" || url.pathname === "/health") {
+        return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, job_key: JOB_KEY, timestamp_utc: nowUtc() }), { headers: { "content-type": "application/json" } });
+      }
+      if (url.pathname === "/schema") {
+        const result = await ensureSchema(sql);
+        return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, schema: result }), { headers: { "content-type": "application/json" } });
+      }
+      if (url.pathname === "/run" && request.method === "POST") {
+        await ensureSchema(sql);
+        let input = {};
+        try { input = await request.json(); } catch (_) { input = {}; }
+        const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+        const mode = asText(inputJson.mode || input.mode, "base_backfill");
+        const result = mode === "delta_update" ? await runDeltaUpdateTick(env, sql, input) : await runBaseBackfillTick(env, sql, input);
+        return new Response(JSON.stringify(result), { headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ ok: false, error: "not_found", path: url.pathname }), { status: 404, headers: { "content-type": "application/json" } });
+    } catch (err) {
+      return new Response(JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err), stack: String(err && err.stack ? err.stack : "") }), { status: 500, headers: { "content-type": "application/json" } });
+    } finally {
+      try { await sql.end(); } catch (_) {}
+    }
   }
 };
+
