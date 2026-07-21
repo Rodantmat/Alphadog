@@ -1095,7 +1095,64 @@ async function deriveDeltaSourceCounters(sql, batchId) {
   return { source_request_count: asInt(row.outcome_total, 0), source_success_count: asInt(row.promoted_players, 0) + asInt(row.filtered_outside_window_players, 0), source_no_data_count: asInt(row.true_no_data_players, 0), source_error_count: asInt(row.source_error_players, 0), source_success_definition: "PROMOTED_ROWS + FILTERED_OUTSIDE_WINDOW; both are successful source responses. TRUE_NO_DATA is a terminal empty source outcome." };
 }
 
-// STUB_MARKER_FINALIZEDELTA_NEXT
+async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTotal, baseGate, options = {}) {
+  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 800);
+  const cleanLimit = cap(options.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
+  const batchRows = await sql`SELECT * FROM stats_pitcher.game_log_batches WHERE batch_id=${batchId}`;
+  const batch = batchRows[0] || null;
+  let status = batch && batch.status ? String(batch.status) : "";
+  let stageCountCached = null;
+  async function getStageCount() { if (stageCountCached !== null) return stageCountCached; const rows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId}`; stageCountCached = asInt(rows[0] && rows[0].c, 0); return stageCountCached; }
+
+  if (status === "COMPLETED_PROMOTED_CLEANED") {
+    const sourceTruth = await deriveDeltaSourceCounters(sql, batchId);
+    return { pass: true, done: true, continuation_required: false, status, certification: batch.certification_status || "DELTA_PITCHER_GAME_LOGS_CERTIFIED", grade: batch.certification_grade || "DELTA_PASS", checks: { version: VERSION, already_completed: true, source_counters_from_outcomes: sourceTruth }, rows_promoted: asInt(batch.rows_promoted, 0), stage_rows_after_clean: await getStageCount() };
+  }
+
+  if (status === "DELTA_RUNNING" || status === "PARTIAL_CONTINUE_DELTA_PITCHER_GAME_LOGS") {
+    const pre = await buildDeltaPrePromotionChecks(sql, batchId, runId, windowInfo, playersTotal, baseGate);
+    if (!pre.pass) {
+      return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "DELTA_PITCHER_GAME_LOGS_CERTIFICATION_FAILED", grade: "DELTA_FAIL", checks: pre.checks, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+    }
+    return { pass: true, done: false, continuation_required: true, status: "DELTA_CERTIFIED_READY_TO_PROMOTE", certification: "DELTA_PITCHER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE", grade: "DELTA_PASS", checks: pre.checks, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+  }
+
+  if (status === "DELTA_CERTIFIED_READY_TO_PROMOTE" || status === "DELTA_PROMOTING") {
+    const grade = batch.certification_grade || "DELTA_PASS";
+    // Sticky-ownership aware: rely on remaining_unpromoted / stage row_status (the exact fix
+    // already grounded and proven for hitter), never on a batch-scoped live-row COUNT that
+    // sticky ownership can legitimately leave lower than rows_staged.
+    const promoted = await promoteStageRowsChunk(sql, batchId, grade, promoteLimit);
+    const nextStatus = promoted.remaining_unpromoted === 0 ? "DELTA_PROMOTED_READY_TO_CLEAN" : "DELTA_PROMOTING";
+    await sql`UPDATE stats_pitcher.game_log_batches SET status=${nextStatus}, rows_promoted=rows_promoted + ${promoted.promoted_this_tick}, updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status=${nextStatus}, next_run_after=now(), updated_at=now() WHERE cursor_key=${DELTA_CURSOR_KEY}`;
+    return { pass: true, done: false, continuation_required: true, status: nextStatus, certification: "DELTA_PITCHER_GAME_LOGS_PROMOTE_MICROPHASE", grade, checks: { promoted }, rows_promoted: promoted.promoted_this_tick, stage_rows_after_clean: await getStageCount() };
+  }
+
+  if (status === "DELTA_PROMOTED_READY_TO_CLEAN" || status === "DELTA_CLEANING") {
+    const remainingRows = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId} AND row_status != 'promoted'`;
+    if (asInt(remainingRows[0] && remainingRows[0].c, 0) > 0) {
+      await sql`UPDATE stats_pitcher.game_log_batches SET status='DELTA_PROMOTING', updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "DELTA_PROMOTING", certification: "DELTA_PITCHER_GAME_LOGS_PROMOTION_COUNT_GUARD", grade: batch.certification_grade || "DELTA_PASS", checks: { remaining_unpromoted: asInt(remainingRows[0] && remainingRows[0].c, 0) }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+    }
+    const cleaned = await cleanStageRowsChunk(sql, batchId, cleanLimit);
+    if (cleaned.cleanup_done !== true) {
+      await sql`UPDATE stats_pitcher.game_log_batches SET status='DELTA_CLEANING', updated_at=now() WHERE batch_id=${batchId}`;
+      return { pass: true, done: false, continuation_required: true, status: "DELTA_CLEANING", certification: "DELTA_PITCHER_GAME_LOGS_CLEAN_MICROPHASE", grade: batch.certification_grade || "DELTA_PASS", checks: { cleaned }, rows_promoted: 0, stage_rows_after_clean: cleaned.stage_rows_after_clean };
+    }
+    const sourceTruth = await deriveDeltaSourceCounters(sql, batchId);
+    const cert = batch.certification_status || "DELTA_PITCHER_GAME_LOGS_CERTIFIED";
+    const grade = batch.certification_grade || "DELTA_PASS";
+    const finalChecks = { version: VERSION, source_counters_from_outcomes: sourceTruth, pass: true };
+    await sql`UPDATE stats_pitcher.game_log_batches SET status='COMPLETED_PROMOTED_CLEANED', certification_status=${cert}, certification_grade=${grade}, certification_json=${JSON.stringify(finalChecks)}, finished_at=now(), cleaned_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status='COMPLETED_PROMOTED_CLEANED', players_processed=players_total, next_run_after=NULL, updated_at=now() WHERE cursor_key=${DELTA_CURSOR_KEY}`;
+    return { pass: true, done: true, continuation_required: false, status: "COMPLETED_PROMOTED_CLEANED", certification: cert, grade, checks: finalChecks, rows_promoted: asInt(batch.rows_promoted, 0), stage_rows_after_clean: 0 };
+  }
+
+  return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "DELTA_PITCHER_GAME_LOGS_UNKNOWN_FINALIZATION_STATUS", grade: "DELTA_FAIL", checks: { status, batch_id: batchId }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
+}
+
+// STUB_MARKER_TICKS_NEXT
 
 export default {
   async fetch(request, env) {
