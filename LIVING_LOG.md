@@ -193,3 +193,10 @@ Beginning implementation now.
 Working copy of the file is being edited locally (`/home/claude/hitter_original.js`) and NOT yet pushed to the repo or deployed — still mid-conversion (remaining ~90+ D1 call sites in the lock/stage/promote/certify/tick functions). Will push once a full mode's path is completely off D1, per the "no deploy until clean" rule.
 
 **Next up: `acquireBatchLock` / `releaseBatchLock`** (simple UPDATE-based lock rows in `stats_hitter.game_log_batches`, direct next step).
+
+**✅ `acquireBatchLock` / `releaseBatchLock`: CONVERTED AND VERIFIED FOR REAL.**
+- D1 stored lock timestamps as TEXT and hand-parsed them (`parseSqliteUtcMs`). Postgres columns are real `TIMESTAMPTZ` (from the `ensureSchema` port) — `postgres.js` returns native JS `Date` objects, so the manual string-parsing step is gone entirely (real simplification, not a design change — same logic, native types).
+- `datetime('now', '+N seconds')` → `now() + make_interval(secs => N)`. Tested for real: inserted a test batch row, ran the exact converted UPDATE, confirmed `lock_expires_at` was exactly 60s after `lock_acquired_at` (real timestamps returned: `04:58:59.811` → `04:59:59.811`). Tested release (locked_by correctly nulled), then deleted the test row — no test residue left in Postgres.
+- Both functions now take a `sql` (Postgres connection) parameter instead of `env`.
+
+**Next up: `fetchTextWithTimeout` (pure external-fetch helper, no DB — likely no change needed, just confirm), then `insertStageRow`.**
