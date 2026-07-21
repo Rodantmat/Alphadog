@@ -805,6 +805,24 @@ export class AlphadogMcp extends McpAgent {
     );
 
     this.server.tool(
+      "github_get_workflow_run_log",
+      "Fetch the actual plain-text log for a failed (or any) GitHub Actions workflow run, using the run_id from github_list_workflow_runs. Use this instead of asking the user to paste deploy errors. Returns per-step status plus the tail of the log text (or, if 'grep' is given, only the matching lines with context) - use grep for something like 'ERROR|Uncaught|Error:' to jump straight to the failure instead of reading the whole log.",
+      {
+        run_id: z.number().describe("The workflow run ID, from github_list_workflow_runs."),
+        job_index: z.number().optional().describe("Which job within the run to fetch, 0-indexed. Defaults to 0 (most workflows here have a single job)."),
+        tail_lines: z.number().optional().describe("How many lines from the end (or from the grep matches) to return. Defaults to 200."),
+        grep: z.string().optional().describe("Optional case-insensitive regex. If given, only lines matching it (plus 3 lines of surrounding context) are returned, instead of the plain tail.")
+      },
+      async (args) => {
+        const result = await toolGithubGetWorkflowRunLog(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
       "github_patch_file",
       "Find-and-replace inside a repo file entirely server-side (the old and new content never pass through the calling context). Use this instead of github_get_file + github_put_file for files too large to round-trip through a chat context. old_str must match exactly once in the current file.",
       {
