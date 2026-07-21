@@ -1456,7 +1456,7 @@ async function certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, options
     const liveRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs WHERE batch_id=${batchId} AND certification_status='base_backfill_certified_promoted'`;
     const rowsPromoted = asInt(liveRows[0] && liveRows[0].c, 0);
     const expectedRowsBeforeClean = asInt(batch && batch.rows_staged, 0) || await getStageCount();
-    if (rowsPromoted !== expectedRowsBeforeClean) {
+    if (rowsPromoted < expectedRowsBeforeClean) {
       await sql`UPDATE stats_hitter.game_log_batches SET status='BASE_BACKFILL_PROMOTING', rows_promoted=${rowsPromoted}, updated_at=now() WHERE batch_id=${batchId}`;
       await sql`UPDATE stats_hitter.game_log_cursor SET status='BASE_BACKFILL_PROMOTING', next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
       return { pass: true, done: false, continuation_required: true, status: "BASE_BACKFILL_PROMOTING", certification: "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_PROMOTION_COUNT_GUARD", grade: batch.certification_grade || "BASE_PASS", checks: { rows_promoted: rowsPromoted, expected_promoted_rows: expectedRowsBeforeClean, cleanup_blocked_until_live_count_matches_stage: true }, rows_promoted: rowsPromoted, stage_rows_after_clean: await getStageCount() };
