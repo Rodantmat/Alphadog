@@ -1152,7 +1152,129 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
   return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "DELTA_PITCHER_GAME_LOGS_UNKNOWN_FINALIZATION_STATUS", grade: "DELTA_FAIL", checks: { status, batch_id: batchId }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
 }
 
-// STUB_MARKER_TICKS_NEXT
+async function runBaseBackfillTick(env, sql, input, startedAtMs) {
+  const state = await getOrCreateBaseBackfillState(env, sql, input);
+  const batchId = state.batch.batch_id;
+  const runId = state.batch.run_id;
+  const cutoffDate = state.batch.base_backfill_cutoff_date;
+  const owner = asText(input.owner, rid("owner"));
+  const staleSeconds = asInt(env.LOCK_STALE_SECONDS, DEFAULT_LOCK_STALE_SECONDS);
+  const status = String(state.batch.status || "");
+
+  const finalizationOnlyStatuses = new Set(["BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION", "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE", "BASE_BACKFILL_PROMOTING", "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN", "BASE_BACKFILL_CLEANING", "CERTIFICATION_FAILED", "COMPLETED_PROMOTED_CLEANED"]);
+  if (finalizationOnlyStatuses.has(status)) {
+    const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
+    if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, run_id: runId, lock };
+    try {
+      const result = await certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, { promote_rows_per_tick: env.MAX_ROWS_PER_TICK ? cap(env.MAX_ROWS_PER_TICK, 1, 800) : DEFAULT_PROMOTE_ROWS_PER_TICK, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
+      return { ok: true, data_ok: result.pass, mode: "base_backfill", phase: "finalization", batch_id: batchId, run_id: runId, ...result };
+    } finally { await releaseBatchLock(sql, batchId, owner); }
+  }
+
+  const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
+  if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, run_id: runId, lock };
+  try {
+    const players = state.players;
+    const cursorOffset = asInt(state.cursor.current_player_offset, 0);
+    const chunkSize = asInt(state.batch.chunk_size_players, DEFAULT_CHUNK_SIZE_PLAYERS);
+    const maxRows = asInt(state.batch.max_rows_per_tick, DEFAULT_MAX_ROWS_PER_TICK);
+    const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
+    const maxTickRuntimeMs = asInt(env.MAX_TICK_RUNTIME_MS, DEFAULT_MAX_TICK_RUNTIME_MS);
+    const grade = "BASE_PASS";
+
+    let offset = cursorOffset, rowsThisTick = 0, processedThisTick = 0;
+    const perPlayerResults = [];
+    while (offset < players.length && processedThisTick < chunkSize && rowsThisTick < maxRows && (Date.now() - startedAtMs) < maxTickRuntimeMs) {
+      const p = players[offset];
+      const adopted = await adoptExistingCoverageIfPresent(sql, batchId, runId, grade, p, cutoffDate);
+      if (adopted) {
+        perPlayerResults.push(adopted);
+      } else {
+        const result = await processPlayer(env, sql, p, state.batch.source_season, batchId, runId, cutoffDate, maxRows - rowsThisTick, fetchTimeoutMs);
+        await upsertPlayerOutcome(sql, batchId, runId, p, offset, result, result.source_endpoint);
+        rowsThisTick += asInt(result.rows_staged, 0);
+        perPlayerResults.push(result);
+      }
+      offset += 1;
+      processedThisTick += 1;
+    }
+
+    const cursorJson = JSON.stringify({ version: VERSION, mode: "base_backfill", players, source_season: state.batch.source_season, base_backfill_cutoff_date: cutoffDate, delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE });
+    const doneScanning = offset >= players.length;
+    const nextStatus = doneScanning ? "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION" : "BASE_BACKFILL_RUNNING";
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status=${nextStatus}, current_player_offset=${offset}, players_processed=${offset}, requests_done=requests_done + ${processedThisTick}, cursor_json=${cursorJson}, next_run_after=now(), updated_at=now() WHERE cursor_key=${ACTIVE_CURSOR_KEY}`;
+    await sql`UPDATE stats_pitcher.game_log_batches SET status=${nextStatus}, cursor_offset=${offset}, updated_at=now() WHERE batch_id=${batchId}`;
+
+    let finalization = null;
+    if (doneScanning) {
+      finalization = await certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, { promote_rows_per_tick: DEFAULT_PROMOTE_ROWS_PER_TICK, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
+    }
+    return { ok: true, data_ok: true, mode: "base_backfill", phase: doneScanning ? "mining_complete_finalization_started" : "mining", batch_id: batchId, run_id: runId, status: finalization ? finalization.status : nextStatus, players_total: players.length, players_processed: offset, processed_this_tick: processedThisTick, rows_staged_this_tick: rowsThisTick, per_player_results: perPlayerResults, finalization };
+  } finally { await releaseBatchLock(sql, batchId, owner); }
+}
+
+async function runDeltaUpdateTick(env, sql, input, startedAtMs) {
+  const baseGate = await getLockedBaseIntegrity(sql);
+  if (!baseGate.pass) return { ok: true, data_ok: false, mode: "delta_update", status: "BASE_INTEGRITY_GATE_CLOSED", base_integrity_gate: baseGate };
+
+  const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
+  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const windowInfo = await getDeltaWindow(env, sql, inputJson, fetchTimeoutMs);
+  if (!windowInfo.ok) return { ok: true, data_ok: false, mode: "delta_update", status: "DELTA_WINDOW_UNAVAILABLE", window_error: windowInfo };
+
+  const state = await getOrCreateDeltaState(env, sql, input, inputJson, windowInfo);
+  const batchId = state.batch.batch_id;
+  const runId = state.batch.run_id;
+  const owner = asText(input.owner, rid("owner"));
+  const staleSeconds = asInt(env.LOCK_STALE_SECONDS, DEFAULT_LOCK_STALE_SECONDS);
+  const status = String(state.batch.status || "");
+
+  const finalizationOnlyStatuses = new Set(["DELTA_STAGED_READY_FOR_CERTIFICATION", "DELTA_CERTIFIED_READY_TO_PROMOTE", "DELTA_PROMOTING", "DELTA_PROMOTED_READY_TO_CLEAN", "DELTA_CLEANING", "CERTIFICATION_FAILED", "COMPLETED_PROMOTED_CLEANED"]);
+  if (finalizationOnlyStatuses.has(status)) {
+    const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
+    if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, run_id: runId, lock };
+    try {
+      const result = await finalizeDeltaIfReady(sql, batchId, runId, windowInfo, state.players.length, baseGate, { promote_rows_per_tick: DEFAULT_PROMOTE_ROWS_PER_TICK, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
+      return { ok: true, data_ok: result.pass, mode: "delta_update", phase: "finalization", batch_id: batchId, run_id: runId, delta_window: windowInfo, ...result };
+    } finally { await releaseBatchLock(sql, batchId, owner); }
+  }
+
+  const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
+  if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, run_id: runId, lock };
+  try {
+    const players = state.players;
+    const cursorOffset = asInt(state.cursor.current_player_offset, 0);
+    const chunkSize = asInt(state.batch.chunk_size_players, DEFAULT_CHUNK_SIZE_PLAYERS);
+    const maxRows = asInt(state.batch.max_rows_per_tick, DEFAULT_MAX_ROWS_PER_TICK);
+    const maxTickRuntimeMs = asInt(env.MAX_TICK_RUNTIME_MS, DEFAULT_MAX_TICK_RUNTIME_MS);
+
+    let offset = cursorOffset, rowsThisTick = 0, processedThisTick = 0;
+    const perPlayerResults = [];
+    while (offset < players.length && processedThisTick < chunkSize && rowsThisTick < maxRows && (Date.now() - startedAtMs) < maxTickRuntimeMs) {
+      const p = players[offset];
+      const result = await processPlayerDelta(env, sql, p, state.batch.source_season, batchId, runId, windowInfo.delta_start_date, windowInfo.delta_end_date, maxRows - rowsThisTick, fetchTimeoutMs);
+      await upsertDeltaPlayerOutcome(sql, batchId, runId, p, offset, result, result.source_endpoint, windowInfo.delta_start_date, windowInfo.delta_end_date);
+      rowsThisTick += asInt(result.rows_staged, 0);
+      perPlayerResults.push(result);
+      offset += 1;
+      processedThisTick += 1;
+    }
+
+    const cursorJson = { version: VERSION, mode: "delta_update", source_season: state.batch.source_season, delta_start_date: windowInfo.delta_start_date, delta_end_date: windowInfo.delta_end_date, players };
+    const doneScanning = offset >= players.length;
+    const nextStatus = doneScanning ? "DELTA_STAGED_READY_FOR_CERTIFICATION" : "DELTA_RUNNING";
+    await sql`UPDATE stats_pitcher.game_log_cursor SET status=${nextStatus}, current_player_offset=${offset}, players_processed=${offset}, requests_done=requests_done + ${processedThisTick}, cursor_json=${JSON.stringify(cursorJson)}, next_run_after=now(), updated_at=now() WHERE cursor_key=${DELTA_CURSOR_KEY}`;
+    await sql`UPDATE stats_pitcher.game_log_batches SET status=${nextStatus}, cursor_offset=${offset}, updated_at=now() WHERE batch_id=${batchId}`;
+
+    let finalization = null;
+    if (doneScanning) {
+      finalization = await finalizeDeltaIfReady(sql, batchId, runId, windowInfo, players.length, baseGate, { promote_rows_per_tick: DEFAULT_PROMOTE_ROWS_PER_TICK, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
+    }
+    return { ok: true, data_ok: true, mode: "delta_update", phase: doneScanning ? "mining_complete_finalization_started" : "mining", batch_id: batchId, run_id: runId, status: finalization ? finalization.status : nextStatus, delta_window: windowInfo, players_total: players.length, players_processed: offset, processed_this_tick: processedThisTick, rows_staged_this_tick: rowsThisTick, per_player_results: perPlayerResults, finalization };
+  } finally { await releaseBatchLock(sql, batchId, owner); }
+}
+
+// STUB_MARKER_FETCHHANDLER_NEXT
 
 export default {
   async fetch(request, env) {
