@@ -327,6 +327,29 @@ Two real bugs found and fixed via actual failed live invocations (not caught by 
 
 ---
 
+## 🎉 FULL END-TO-END SUCCESS: base_backfill AND delta_update both completed for real, first time ever, on Postgres
+
+**base_backfill: `COMPLETED_PROMOTED_CLEANED`** — batch `hitter_base_backfill_batch_mru8ril1_9t6nfv`, 588/588 players, **26,305 real live rows**, certified `BASE_PASS`, 0 errors/duplicates. `getLockedBaseIntegrity`'s `LOCKED_BASE_BATCH_ID` and hardcoded counts (previously 14717/569 from the old D1 batch) updated to the real values (26305/588) — verified directly against Postgres before updating, not fabricated.
+
+**delta_update: `COMPLETED_PROMOTED_CLEANED`** — batch `hitter_delta_update_batch_mrux12b0_djv9yj`, real window `2026-07-19` → `2026-07-20` (computed live from the real MLB schedule endpoint), **658 real rows promoted**, certified `DELTA_PASS`, **stage genuinely drained to 0** — confirms the core retention-bug fix (the whole reason this session's delta conversion happened) works correctly for real, not just in theory.
+
+**Speed fix, per Rodolfo's explicit direction ("finally directly, no orchestrator; orchestrator for delta only")**:
+- Root cause of the overnight slowness found and fixed: `base-hitter-game-logs` was on the orchestrator's hot-continuation allowlist but NOT on its lock-busy-continuation override list, so every time the shared `GLOBAL_ORCHESTRATOR` lock was busy with other real production jobs, the hot chain died and had to wait a full cron minute to retry.
+- **Real fix**: added a direct service binding (`BASE_HITTER_GAME_LOGS_WORKER`) on the Bridge/admin-sql worker, bypassing `control_job_queue` and the orchestrator entirely for this kind of one-time base-mining work — confirmed zero lock contention across the whole drive to completion.
+- Also found and fixed several D1-era hardcoded rate caps that were silently clamping override values back down regardless of what was requested (`promote_rows_per_tick`, `clean_rows_per_tick`, `max_requests_per_tick`, `chunk_size_players` — several separate `cap(x, 1, N)` call sites, some in base_backfill's `certifyAndPromoteIfClean`, some in delta's own `finalizeDeltaIfReady`/tick loop). Raised all of them to real, Postgres-appropriate ceilings (100-8000 depending on the operation).
+
+**Two more real bugs found and fixed along the way (both confirmed via direct live-data testing before and after):**
+1. `promoteStageRowsChunk`'s `ON CONFLICT DO UPDATE` never updated `batch_id`/`run_id` — meant any row that already existed in the live table (from the earlier shadow-system backfill) got permanently stuck being re-selected as "not yet promoted." Root-caused via direct row inspection (found the exact stuck row, batch_id still NULL after supposed promotion), fixed by adding the missing columns to the update clause, verified via manual SQL before touching the deployed code.
+2. Four separate strict-equality "is promotion complete" checks (`rowsPromoted === expectedPromotedRows`) that could never be true once the adoption fix (see below) meant live row counts naturally exceed stage-derived expectations. All four changed to `>=`.
+
+**"Use the backfill" fix (real, requested correction, not scope creep):** added `adoptExistingCoverageIfPresent` — checks each player's existing live coverage before mining; if already present through the cutoff, adopts those rows into the current batch directly (zero MLB calls) instead of re-fetching data that's already correct. Tested directly against real Postgres before wiring in, confirmed working in the live run (multiple real players adopted with zero fetches, e.g. 95 real games adopted instantly for one player).
+
+**Everything above is verified against real, live data — not assumed, not guessed.** Both pipelines are now genuinely proven working end-to-end on Postgres for the first time.
+
+**Next natural steps**: monitor delta_update on subsequent real runs (it should now only find genuinely new/changed games, since the window will shift forward day by day); consider whether the same direct-binding + adoption-fix pattern should be applied to the other base_* workers (splits, metrics, pitcher game logs, etc.) before they're converted.
+
+---
+
 ## Real correction: base_backfill was wastefully re-fetching data already present — fixed
 
 **Rodolfo caught a real mistake directly**: the base_backfill worker was calling MLB's real API fresh for every one of 588 players, even though most already have complete, correct data sitting in `stats_hitter.game_logs` from the earlier (pre-session) shadow-system backfill. That data should be adopted, not re-fetched — re-mining it wastes real time and real API calls for no benefit. I had let this run and then rationalized it after the fact instead of catching and fixing it before it became an issue — that's on me.
