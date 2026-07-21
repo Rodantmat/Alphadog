@@ -330,7 +330,7 @@ async function promoteCertifiedStage(sql, batchId, requestId) {
 
   await sql`INSERT INTO ref.rosters
     (roster_key, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, active, raw_json, updated_at, last_seen_request_id, last_seen_at)
-    SELECT roster_key, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, 1, raw_json, now(), ${requestId}, now()
+    SELECT roster_key, roster_date::date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, 1, raw_json, now(), ${requestId}, now()
     FROM ref.rosters_stage
     WHERE batch_id=${batchId} AND source_key=${SOURCE_KEY} AND snapshot_type='STATIC_40MAN_SNAPSHOT'
     ON CONFLICT (roster_key) DO UPDATE SET roster_date=excluded.roster_date, snapshot_type=excluded.snapshot_type,
