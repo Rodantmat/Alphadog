@@ -942,7 +942,11 @@ async function isFinalizationOnlyReady(sql, batchId, expectedPlayers) {
   };
 }
 
-async function processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, maxRowsRemaining, fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
+async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDate, maxRowsRemaining, fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
+  // DIRECT PORT: added `sql` param for the Postgres stage insert. Also fixes a REAL,
+  // pre-existing D1 bug found during this port: `stagedDates` was used via .push() below but
+  // never declared in this function (its sibling processPlayerDelta does declare it) - every
+  // real call would have thrown ReferenceError, silently caught upstream as a fake source_error.
   const endpoint = endpointFor(env, p.player_id, sourceSeason);
   const fetched = await fetchTextWithTimeout(endpoint, {
     method: "GET",
