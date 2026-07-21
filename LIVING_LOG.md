@@ -516,3 +516,25 @@ The eventual full-run design (orchestrator-driven, certifier-gated) is confirmed
 **Both `base-hitter-game-logs` and `base-pitcher-game-logs` are now at full parity**: Postgres-only, no duplicate staging, sticky ownership, widened repair window, adoption logic, proven corrupt/delete repair + no-op steady-state, shared tick-config table, and the three bugs above fixed in both files' shared lineage (bug #1 and #2 were pitcher-specific dispatcher gaps not present in hitter's already-longer-proven code; bug #3's fix pattern — dropping brittle exact-count integrity checks — is a pattern to watch for on every future worker's own integrity gate).
 
 **Next up: `base-team-game-logs`** — apply this exact same standard from line one: config-table tick settings (750/90000) wired in from the start, sticky ownership, widened repair window, adoption logic, full `ON CONFLICT` column coverage, and register the worker name in `generate_wrangler_configs.py`'s hyperdrive/nodejs_compat tuple before the first deploy attempt.
+
+---
+
+## Same session, continued: real bug found via Rodolfo's direct question ("why isn't promote also at 750?") — fixed in both workers, both retested clean
+
+**Real bug**: `promoteStageRowsChunk` (shared by both base_backfill and delta_update promotion in both files) has its own internal safety cap — `cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 300)` — completely separate from whatever the caller passes in. Raising the caller-side cap (done earlier this session) had zero effect on real promote throughput because this inner cap silently re-clamped everything back to 300 regardless. Confirmed directly: pitcher and hitter both kept promoting at exactly 300/tick even after the earlier "fix," despite `DEFAULT_PROMOTE_ROWS_PER_TICK` and outer caps being raised.
+
+**Real fix, both files:**
+- Added `promote_rows_per_tick` as a third column on `config.worker_tick_settings` (both workers set to 750).
+- Extended `getWorkerTickConfig()` in both files to also return this value.
+- Raised `promoteStageRowsChunk`'s own internal cap from 300 → 2000 in both files (the actual bottleneck).
+- Raised the caller-side caps in `certifyAndPromoteIfClean`/`finalizeDeltaIfReady` (pitcher: 800→2000; hitter: 300→2000) and wired their `options.promote_rows_per_tick` fallback to read the live config value instead of the static `DEFAULT_PROMOTE_ROWS_PER_TICK` constant, fetching config internally inside the promote functions themselves for hitter (its call sites thread `inputJson`/`opts` in a more varied way than pitcher's, so patching inside the shared functions was lower-risk than touching every call site, including some now-dead retained-delta repair functions still present but unreachable in the file).
+
+**Both retested for real after the fix, confirmed working:**
+- **Pitcher**: two fresh delta_update runs. New batches automatically read `chunk_size_players=750` at creation (no manual override needed, unlike earlier in the session before the config table existed) — one run mined all 760 players in a single tick (660 processed). Promote confirmed at up to 300/tick still on the *first* retest (before the internal-cap fix landed) — after the internal-cap fix deployed, a fresh batch showed `promote_limit: 750` directly in the real tick output. Both batches reached `COMPLETED_PROMOTED_CLEANED`, `DELTA_PASS`.
+- **Hitter**: fresh delta_update run, all 588 players mined in one tick. Promote also stuck at 300/tick until the internal-cap fix deployed — after deploying, a subsequent tick showed `promote_limit: 750` and cleared the remaining 329 staged rows in a single call. `COMPLETED_PROMOTED_CLEANED`, `DELTA_PASS`.
+
+**Lesson for every future worker**: when a rate/size limit doesn't seem to respond to a config change, check for a SECOND, independent cap inside the actual low-level function being called (not just the higher-level dispatcher/caller) — the same shared utility function can have its own defensive ceiling that silently overrides whatever the caller intended. Don't assume one config change point covers the whole path; verify the real observed behavior (here: the actual `promote_limit` value in the tick's own output) against the theory, not just the code path being deployed successfully.
+
+**Both `base-hitter-game-logs` and `base-pitcher-game-logs` are now fully retested and confirmed clean end-to-end, standard tick config (chunk=750, tick_runtime_ms=90000, promote_rows_per_tick=750) live and verified in real tick output for both.**
+
+**Next up: `base-team-game-logs`** — apply this exact same standard from line one, including the now-3-column config table lookup (chunk/tick-runtime/promote-rate) wired into the shared promote function itself from day one, not retrofitted after the fact.
