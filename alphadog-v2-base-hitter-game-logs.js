@@ -1154,7 +1154,7 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
   // 25-row cap was a D1 bound-parameter-limit safety leftover - doesn't apply on Postgres.
   // Raised for direct-call driving of one-time base backfills (per-row insert loop, no giant
   // multi-value statement, so this is just more loop iterations per invocation, not riskier SQL).
-  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 300);
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 2000);
   const rows = await sql`
     SELECT
       s.stage_id,
