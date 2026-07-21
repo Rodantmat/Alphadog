@@ -919,7 +919,92 @@ async function getDeltaWindow(env, sql, inputJson, fetchTimeoutMs) {
   return { ok: true, delta_start_date: start, delta_end_date: latest, delta_floor_date: deltaFloor, latest_complete_game_date: latest, repair_lookback_days: DEFAULT_DELTA_LOOKBACK_DAYS, initial_full_delta_catchup: !hasPriorDeltaLive, prior_delta_live_max_game_date: maxDeltaGameDate, schedule_endpoint: schedule.endpoint };
 }
 
-// STUB_MARKER_DELTAMINING_NEXT
+function parsePitcherSplitForWindow(split, playerId, playerName, season, batchId, runId, mode, endpoint, windowStart, windowEnd) {
+  const gameDate = splitGameDate(split);
+  if (!gameDate || gameDate < windowStart || gameDate > windowEnd) return null;
+  const row = parsePitcherSplit(split, playerId, playerName, season, batchId, runId, mode, endpoint, null);
+  if (!row) return null;
+  row.stage_id = `${batchId}_${playerId}_${row.game_pk}_pitching_delta`;
+  row.ingestion_mode = "delta_update";
+  row.certification_status = "delta_update_staged_unverified";
+  return row;
+}
+
+async function processPlayerDelta(env, sql, p, sourceSeason, batchId, runId, windowStart, windowEnd, maxRowsRemaining, fetchTimeoutMs) {
+  const endpoint = endpointFor(env, p.player_id, sourceSeason);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-pitcher-game-logs/1.0.0") } }, fetchTimeoutMs);
+  if (!fetched.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true };
+  const resp = fetched.resp, text = fetched.text || "";
+  if (!resp.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "http_error", http_status: resp.status, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, preview: text.slice(0, 240), retry_same_player: true };
+  let body;
+  try { body = JSON.parse(text); } catch (err) { return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "json_parse_error", error: String(err && err.message ? err.message : err), rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true }; }
+  const splits = body && body.stats && body.stats[0] && Array.isArray(body.stats[0].splits) ? body.stats[0].splits : [];
+  const rawDates = splits.map(splitGameDate).filter(Boolean).sort();
+  if (!splits.length) return { player_id: p.player_id, player_name: p.player_name, status: "no_data", http_status: resp.status, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, rows_staged: 0, source_endpoint: endpoint };
+  let inserted = 0, inWindow = 0, outsideWindow = 0, invalidInWindow = 0;
+  const stagedDates = [];
+  for (const split of splits) {
+    if (inserted >= maxRowsRemaining) break;
+    const gameDate = splitGameDate(split);
+    if (!gameDate || gameDate < windowStart || gameDate > windowEnd) { outsideWindow++; continue; }
+    inWindow++;
+    const row = parsePitcherSplitForWindow(split, p.player_id, p.player_name, sourceSeason, batchId, runId, "delta_update", endpoint, windowStart, windowEnd);
+    if (!row) { invalidInWindow++; continue; }
+    await insertStageRow(sql, row);
+    stagedDates.push(row.game_date);
+    inserted++;
+  }
+  let status = "success";
+  if (inserted <= 0 && inWindow === 0 && outsideWindow > 0) status = "filtered_outside_window";
+  else if (inserted <= 0 && inWindow > 0) status = "repair_required";
+  return { player_id: p.player_id, player_name: p.player_name, status, http_status: resp.status, raw_payload_split_count: splits.length, rows_before_cutoff: inWindow, rows_filtered_after_cutoff: outsideWindow, rows_staged: inserted, invalid_before_cutoff_rows: invalidInWindow, source_endpoint: endpoint, first_raw_game_date: rawDates[0] || null, last_raw_game_date: rawDates[rawDates.length - 1] || null, first_promoted_game_date: stagedDates[0] || null, last_promoted_game_date: stagedDates[stagedDates.length - 1] || null };
+}
+
+function classifyDeltaOutcome(result) {
+  if (!result || result.status === "source_error") return "SOURCE_ERROR";
+  if (asInt(result.raw_payload_split_count, 0) === 0) return "TRUE_NO_DATA";
+  if (asInt(result.rows_staged, 0) > 0) return "PROMOTED_ROWS";
+  if (result.status === "filtered_outside_window") return "FILTERED_OUTSIDE_WINDOW";
+  return "REPAIR_REQUIRED";
+}
+function deltaOutcomeReason(result, category, windowStart, windowEnd) {
+  if (category === "PROMOTED_ROWS") return `Source returned regular-season pitching rows inside certified delta window ${windowStart} through ${windowEnd}, and rows were staged for promotion.`;
+  if (category === "TRUE_NO_DATA") return `MLB StatsAPI returned zero 2026 pitching game-log splits for this player during delta certification.`;
+  if (category === "FILTERED_OUTSIDE_WINDOW") return `MLB StatsAPI returned pitching game-log splits, but none were inside certified delta window ${windowStart} through ${windowEnd}.`;
+  if (category === "SOURCE_ERROR") return result && result.error_type ? `Source request failed: ${result.error_type}` : "Source request failed.";
+  return `Source indicated in-window data but no rows were staged; repair required before delta can certify.`;
+}
+
+async function upsertDeltaPlayerOutcome(sql, batchId, runId, p, cursorOffset, result, endpoint, windowStart, windowEnd) {
+  const category = classifyDeltaOutcome(result);
+  await sql`
+    INSERT INTO stats_pitcher.game_log_player_outcomes (
+      batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_endpoint,source_http_status,source_ok,
+      raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,
+      first_raw_game_date,last_raw_game_date,first_promoted_game_date,last_promoted_game_date,certification_status,certification_grade,updated_at
+    ) VALUES (
+      ${batchId}, ${runId}, ${asInt(p && p.player_id, 0)}, ${asText((p && p.player_name) || (result && result.player_name), null)}, ${asText(p && p.primary_position, null)},
+      ${asInt(cursorOffset, 0)}, ${endpoint || (result && result.source_endpoint) || null},
+      ${result && result.http_status !== undefined ? asInt(result.http_status, null) : null}, ${category === "SOURCE_ERROR" ? 0 : 1},
+      ${asInt(result && result.raw_payload_split_count, 0)}, ${asInt(result && result.rows_before_cutoff, 0)}, ${asInt(result && result.rows_filtered_after_cutoff, 0)}, ${asInt(result && result.rows_staged, 0)}, 0,
+      ${category}, ${deltaOutcomeReason(result, category, windowStart, windowEnd)}, ${result && result.error ? String(result.error).slice(0, 900) : null},
+      ${result && result.first_raw_game_date ? result.first_raw_game_date : null}, ${result && result.last_raw_game_date ? result.last_raw_game_date : null},
+      ${result && result.first_promoted_game_date ? result.first_promoted_game_date : null}, ${result && result.last_promoted_game_date ? result.last_promoted_game_date : null},
+      'player_outcome_unverified', NULL, now()
+    )
+    ON CONFLICT (batch_id, player_id) DO UPDATE SET
+      run_id=excluded.run_id, player_name=excluded.player_name, primary_position=excluded.primary_position, cursor_offset=excluded.cursor_offset,
+      source_endpoint=excluded.source_endpoint, source_http_status=excluded.source_http_status, source_ok=excluded.source_ok,
+      raw_payload_split_count=excluded.raw_payload_split_count, rows_before_cutoff=excluded.rows_before_cutoff, rows_filtered_after_cutoff=excluded.rows_filtered_after_cutoff,
+      rows_staged=excluded.rows_staged, promoted_row_count=excluded.promoted_row_count, terminal_category=excluded.terminal_category,
+      category_reason=excluded.category_reason, source_error=excluded.source_error, first_raw_game_date=excluded.first_raw_game_date,
+      last_raw_game_date=excluded.last_raw_game_date, first_promoted_game_date=excluded.first_promoted_game_date, last_promoted_game_date=excluded.last_promoted_game_date,
+      certification_status=excluded.certification_status, certification_grade=excluded.certification_grade, updated_at=now()
+  `;
+  return category;
+}
+
+// STUB_MARKER_DELTASTATE_NEXT
 
 export default {
   async fetch(request, env) {
