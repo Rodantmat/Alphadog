@@ -200,3 +200,9 @@ Working copy of the file is being edited locally (`/home/claude/hitter_original.
 - Both functions now take a `sql` (Postgres connection) parameter instead of `env`.
 
 **Next up: `fetchTextWithTimeout` (pure external-fetch helper, no DB — likely no change needed, just confirm), then `insertStageRow`.**
+
+**✅ `insertStageRow`: CONVERTED AND VERIFIED FOR REAL.**
+- `INSERT OR REPLACE` (SQLite, keyed on PK `stage_id`) → `INSERT ... ON CONFLICT (stage_id) DO UPDATE SET <all columns>=excluded.<column>`. Direct edit, tagged-template, all 37 columns.
+- Tested for real: inserted a test stage row, confirmed insert worked (hits=2 returned), re-ran with a changed value (hits=3) through the exact same ON CONFLICT clause, confirmed it updated the same row in place (not a duplicate) — real proof the dedup/upsert behavior matches the original D1 semantics. Test row deleted after, no residue.
+
+**Next up: `processPlayer`** (fetches MLB gameLog API per player, calls `insertStageRow` per split — mostly external-fetch logic + one D1 call for the outcome upsert, which lives in a separate function `upsertPlayerOutcome` I'll hit right after).
