@@ -614,6 +614,60 @@ async function toolGithubListWorkflowRuns(env, args) {
   return { ok: true, runs };
 }
 
+async function toolGithubGetWorkflowRunLog(env, args) {
+  const runId = args && args.run_id;
+  if (!runId) return { ok: false, error: "Missing run_id. Get one from github_list_workflow_runs." };
+
+  const jobsResp = await githubRequest(env, "GET", `/actions/runs/${encodeURIComponent(runId)}/jobs`);
+  if (!jobsResp.ok) return { ok: false, status: jobsResp.status, error: jobsResp.data };
+  const jobs = jobsResp.data.jobs || [];
+  if (!jobs.length) return { ok: false, error: "No jobs found for this run_id.", run_id: runId };
+
+  const jobIndex = Number.isInteger(args && args.job_index) ? args.job_index : 0;
+  const job = jobs[jobIndex] || jobs[0];
+
+  // GitHub's /logs endpoint 302-redirects to a plain-text blob URL; fetch() follows
+  // redirects by default, so githubRequest's existing fetch already lands on the raw text.
+  const logResp = await githubRequest(env, "GET", `/actions/jobs/${encodeURIComponent(job.id)}/logs`);
+  if (!logResp.ok) {
+    return { ok: false, status: logResp.status, error: "Could not fetch log text (link may have expired, or run is too old).", job: { id: job.id, name: job.name, conclusion: job.conclusion } };
+  }
+  const logText = typeof logResp.data === "string" ? logResp.data : JSON.stringify(logResp.data);
+  const allLines = logText.split("\n");
+
+  let selectedLines = allLines;
+  const pattern = args && args.grep;
+  if (pattern) {
+    try {
+      const re = new RegExp(pattern, "i");
+      const matched = [];
+      allLines.forEach((line, i) => {
+        if (re.test(line)) matched.push(...allLines.slice(Math.max(0, i - 3), i + 4), "---");
+      });
+      if (matched.length) selectedLines = matched;
+    } catch (_) { /* invalid regex: fall through to tail behavior */ }
+  }
+
+  const tailLines = (args && args.tail_lines) || 200;
+  const finalLines = selectedLines.slice(-tailLines);
+
+  return {
+    ok: true,
+    run_id: runId,
+    job: {
+      id: job.id,
+      name: job.name,
+      status: job.status,
+      conclusion: job.conclusion,
+      steps: (job.steps || []).map((s) => ({ name: s.name, status: s.status, conclusion: s.conclusion }))
+    },
+    total_log_lines: allLines.length,
+    returned_lines: finalLines.length,
+    grep_applied: pattern || null,
+    log_text: finalLines.join("\n")
+  };
+}
+
 // ---- The actual MCP server, built on Cloudflare's official SDK ----------
 
 export class AlphadogMcp extends McpAgent {
