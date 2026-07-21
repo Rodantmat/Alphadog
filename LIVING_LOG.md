@@ -240,3 +240,12 @@ Working copy of the file is being edited locally (`/home/claude/hitter_original.
 - Then inserted one valid (but deliberately inconsistent) stage row and ran the real summary aggregate query: it correctly flagged `bad_math_rows=1` for a genuine total_bases inconsistency in the test data — proof the validity math check works as intended, not just that it runs without erroring. Cleaned up after.
 
 **Next up: `certifyAndPromoteIfClean`** — the actual state-machine function that decides certify → promote → clean transitions, and where the delta-retention-forever fix (flagged early this session) will land when its sibling `finalizeDeltaIfReady` gets converted.
+
+**✅ `certifyAndPromoteIfClean`: CONVERTED (large function, ~230 lines, all 5 state branches).**
+- Direct edits throughout: table qualification, `?`→`${}`, `CURRENT_TIMESTAMP`→`now()`.
+- **Real, deliberate simplification (not a design change)**: D1/SQLite has no real boolean type, so the original used `finalPass ? 1 : 0` passed into `CASE WHEN ? THEN...` clauses everywhere. Postgres has real booleans, so these became `CASE WHEN ${finalPass} THEN...` directly — tested for real (`CASE WHEN true/false THEN...` confirmed working against live Postgres).
+- `INSERT OR REPLACE` on `game_log_certifications` → `INSERT ... ON CONFLICT (certification_id) DO UPDATE` — tested for real (insert + conflict-update in one call, confirmed `rows_staged` updated correctly), then cleaned up.
+- This function is base_backfill-only (its sibling `finalizeDeltaIfReady`, not yet converted, is where delta's retained-forever staging bug actually lives and gets fixed).
+- Not yet end-to-end tested as a full running state machine (that requires `runBaseBackfillTick` to be converted so real ticks can drive it) — individual new SQL constructs it introduces (ON CONFLICT certification upsert, boolean CASE WHEN) have been verified directly against Postgres.
+
+**Next up: `getLockedBaseIntegrity`** (the base-batch integrity gate `delta_update` checks before running), **then `getOrCreateBaseBackfillState`/`getOrCreateDeltaState`** to finish wiring the remaining pieces, **then `runBaseBackfillTick`/`runDeltaUpdateTick`** themselves — at which point base_backfill can be deployed and run for real for the first time.
