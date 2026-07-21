@@ -1274,10 +1274,63 @@ async function runDeltaUpdateTick(env, sql, input, startedAtMs) {
   } finally { await releaseBatchLock(sql, batchId, owner); }
 }
 
-// STUB_MARKER_FETCHHANDLER_NEXT
-
 export default {
   async fetch(request, env) {
-    return new Response(JSON.stringify({ ok: true, status: "STUB_UNDER_CONSTRUCTION", worker_name: WORKER_NAME, version: VERSION, timestamp_utc: nowUtc() }), { status: 200, headers: { "content-type": "application/json" } });
+    const startedAtMs = Date.now();
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/+$/, "") || "/";
+
+    if (request.method === "OPTIONS") return jsonResponse({ ok: true });
+
+    if (path === "/" && request.method === "GET") {
+      return jsonResponse(baseIdentity(env));
+    }
+
+    if (path === "/health" && request.method === "GET") {
+      return jsonResponse(baseIdentity(env, { health: "ok" }));
+    }
+
+    if (!env.HYPERDRIVE || !env.HYPERDRIVE.connectionString) {
+      return jsonResponse({ ok: false, data_ok: false, error: "HYPERDRIVE binding missing or has no connectionString" }, 500);
+    }
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+
+    try {
+      if (path === "/schema" && request.method === "GET") {
+        const ensured = await ensureSchema(sql);
+        const status = await schemaStatus(sql);
+        return jsonResponse({ ok: true, data_ok: ensured.failed === 0, ensure_schema: ensured, schema_status: status });
+      }
+
+      if (path === "/diagnostic" && request.method === "POST") {
+        const body = await parseJson(request);
+        const ensured = await ensureSchema(sql);
+        const baseGate = await getLockedBaseIntegrity(sql);
+        const status = await schemaStatus(sql);
+        return jsonResponse({ ok: true, data_ok: ensured.failed === 0, mode: "diagnostic", ensure_schema: ensured, base_integrity_gate: baseGate, schema_status: status, received_input: body });
+      }
+
+      if (path === "/run" && request.method === "POST") {
+        await ensureSchema(sql);
+        const input = await parseJson(request);
+        const mode = asText(input.mode, "base_backfill");
+        if (mode === "base_backfill") {
+          const result = await runBaseBackfillTick(env, sql, input, startedAtMs);
+          return jsonResponse(result);
+        }
+        if (mode === "delta_update") {
+          const result = await runDeltaUpdateTick(env, sql, input, startedAtMs);
+          return jsonResponse(result);
+        }
+        return jsonResponse({ ok: false, data_ok: false, error: `unknown mode: ${mode}`, expected_modes: ["base_backfill", "delta_update"] }, 400);
+      }
+
+      return jsonResponse({ ok: false, data_ok: false, error: "not_found", path, method: request.method }, 404);
+    } catch (err) {
+      return jsonResponse({ ok: false, data_ok: false, error: String(err && err.message ? err.message : err), stack: err && err.stack ? String(err.stack).slice(0, 2000) : null }, 500);
+    } finally {
+      try { await sql.end({ timeout: 1 }); } catch (_) {}
+    }
   }
 };
