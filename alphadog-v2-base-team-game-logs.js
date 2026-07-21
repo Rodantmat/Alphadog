@@ -133,7 +133,7 @@ async function fetchTextWithTimeout(url, options, timeoutMs) {
 function isFinalMlbGame(g) { return String(g && g.status && g.status.abstractGameState) === "Final" || String(g && g.status && g.status.detailedState) === "Final"; }
 async function fetchScheduleRange(env, startDate, endDate, fetchTimeoutMs) {
   const baseUrl = asText(env.MLB_API_BASE_URL, "https://statsapi.mlb.com").replace(/\/$/, "");
-  const endpoint = `${baseUrl}/api/v1/schedule?sportId=1&gameTypes=R&startDate=${startDate}&endDate=${endDate}&hydrate=linescore`;
+  const endpoint = `${baseUrl}/schedule?sportId=1&gameTypes=R&startDate=${startDate}&endDate=${endDate}&hydrate=linescore`;
   const r = await fetchTextWithTimeout(endpoint, { headers: { "User-Agent": asText(env.MLB_API_USER_AGENT, "AlphaDogV2/1.0") } }, fetchTimeoutMs);
   if (!r.ok || !r.resp || !r.resp.ok) return { ok: false, endpoint, http_status: r.resp ? r.resp.status : null, error: r.error || "fetch_failed" };
   let json;
