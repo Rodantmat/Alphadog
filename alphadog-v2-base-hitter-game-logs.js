@@ -2026,7 +2026,7 @@ async function finalizeDeltaIfReady(sql, batchId, runId, windowInfo, playersTota
       await sql`UPDATE stats_hitter.game_log_batches SET status='DELTA_PROMOTING', rows_promoted=${liveRows}, updated_at=now() WHERE batch_id=${batchId}`;
       return { pass: true, done: false, continuation_required: true, status: "DELTA_PROMOTING", certification: "DELTA_HITTER_GAME_LOGS_PROMOTION_COUNT_GUARD", grade, checks: { liveRows, stageRowsBefore }, rows_promoted: liveRows, stage_rows_after_clean: stageRowsBefore };
     }
-    const cleaned = await cleanStageRowsChunk(sql, batchId, cap(opts.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 500));
+    const cleaned = await cleanStageRowsChunk(sql, batchId, cap(opts.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000));
     if (cleaned.cleanup_done !== true) {
       await sql`UPDATE stats_hitter.game_log_batches SET status='DELTA_CLEANING', rows_promoted=${liveRows}, updated_at=now() WHERE batch_id=${batchId}`;
       return { pass: true, done: false, continuation_required: true, status: "DELTA_CLEANING", certification: "DELTA_HITTER_GAME_LOGS_CLEAN_MICROPHASE", grade, checks: { cleaned, rows_promoted: liveRows }, rows_promoted: liveRows, stage_rows_after_clean: cleaned.stage_rows_after_clean };
