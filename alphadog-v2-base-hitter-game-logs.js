@@ -2937,123 +2937,33 @@ async function runHitterGameLogsGoldRepairGate(env, input, inputJson, baseGate) 
   return { handled: false, reason: "retained_delta_not_clean_or_no_registry", retained_delta_guard: latestGuard };
 }
 
-async function runDeltaUpdateTick(env, input, inputJson) {
-  const baseGate = await getLockedBaseIntegrity(env);
+async function runDeltaUpdateTick(env, sql, input, inputJson) {
+  // DIRECT PORT, SUBSTANTIALLY SIMPLIFIED AS A DIRECT, REQUIRED CONSEQUENCE OF FIXING THE
+  // STAGE-RETENTION BUG (confirmed with Rodolfo earlier this session):
+  // The D1 version's real complexity here was almost entirely in service of managing a
+  // PERMANENTLY RETAINED stage table - "retained delta guard", "closeout candidate", "surgical
+  // repair from retained stage", "repair anchor" noop/restore logic, etc. Since delta now drains
+  // stage after promotion (same as base_backfill), none of that retained-stage machinery has
+  // anything to manage anymore. This function now follows the exact same shape as
+  // runBaseBackfillTick: check base-integrity gate -> get delta window (freshness gate) ->
+  // get-or-create delta batch state -> if in finalization-only status, finalize; otherwise mine
+  // players for this tick -> update progress -> finalize when done.
+  //
+  // Also NOT ported (real, current, honest gaps - not glossed over):
+  // - runCalendarTallyScopedHitterRepairIfNeeded / getParentFullRunHitterGameLogGapPressure read
+  //   env.TEAM_DB (D1) for calendar-tally coverage-gap data. That data doesn't exist for this
+  //   layer until the certifier is ported (certifier is last, by design, in this migration).
+  //   Not calling these - matches the already-disabled getCalendarTallyHitterGapScope pattern.
+  const baseGate = await getLockedBaseIntegrity(sql);
   if (!baseGate.pass) {
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_INTEGRITY_FAIL", certification: "DELTA_BLOCKED_BASE_INTEGRITY_FAIL", base_integrity_gate: baseGate, rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: false, no_live_mutation: true };
   }
-  const allowRepeatFullRefresh = inputJson.force_full_delta_refresh === true || inputJson.allow_repeat_full_delta_refresh === true;
-  if (!allowRepeatFullRefresh) {
-    const preAnchorRetainedDeltaGuard = await getCompletedRetainedDeltaGuard(env);
-    if (preAnchorRetainedDeltaGuard.latest_delta && ["REPAIR_FROM_RETAINED_STAGE_ONLY","REPAIR_STAGE_FROM_FINAL_GAME_FEED_WINDOW"].includes(preAnchorRetainedDeltaGuard.repair_plan)) {
-      const repaired = await runRetainedDeltaSurgicalRepairIfNeeded(env, preAnchorRetainedDeltaGuard, input, inputJson, baseGate);
-      if (repaired) {
-        return {
-          ...repaired,
-          retained_stage_promotion_before_anchor_noop_v1_6_15: true,
-          anchor_noop_blocked_until_retained_stage_live_parity: true
-        };
-      }
-    }
-    if (preAnchorRetainedDeltaGuard.latest_delta && preAnchorRetainedDeltaGuard.repair_plan === "BLOCK_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW") {
-      return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_RETAINED_GAP_REPAIR_BLOCKED", certification: "DELTA_HITTER_GAME_LOGS_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW", mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: preAnchorRetainedDeltaGuard, no_new_batch: true, no_mlb_calls: true, no_live_mutation: true, anchor_noop_blocked_until_retained_stage_live_parity: true, continuation_required: false };
-    }
-  }
-  if (!allowRepeatFullRefresh) {
-    const calendarScopedRepair = await runCalendarTallyScopedHitterRepairIfNeeded(env, input, inputJson || {}, baseGate);
-    if (calendarScopedRepair) return calendarScopedRepair;
-  }
-  const goldGate = await runHitterGameLogsGoldRepairGate(env, input, inputJson || {}, baseGate);
-  if (goldGate && goldGate.handled) return goldGate.output;
-  if (!allowRepeatFullRefresh) {
-    const retainedGapGuard = await getCompletedRetainedDeltaGuard(env);
-    const retainedMax = retainedGapGuard && retainedGapGuard.pass
-      ? [retainedGapGuard.stage_max_game_date, retainedGapGuard.live_max_game_date].map(v => asText(v, null)).filter(Boolean).sort().pop()
-      : null;
-    const parentGapPressure = await getParentFullRunHitterGameLogGapPressure(env, inputJson || {}, retainedMax);
-    if (retainedGapGuard && retainedGapGuard.pass && parentGapPressure.force_increment && parentGapPressure.max_blocking_official_date) {
-      const gapIncrement = await runRetainedDeltaNewFinalDateIncrement(env, retainedGapGuard, parentGapPressure.max_blocking_official_date, input, { ...(inputJson || {}), parent_gap_pressure: parentGapPressure, force_parent_gap_increment: true }, baseGate);
-      return { ...gapIncrement, parent_full_run_gap_contract_increment_guard_v1_6_20: true, parent_gap_pressure: parentGapPressure };
-    }
-    const closeoutCandidate = await getRetainedDeltaCloseoutCandidate(env);
-    if (closeoutCandidate.found) {
-      const latest = closeoutCandidate.latest_delta;
-      const owner = asText(input.request_id, rid("delta_closeout_owner"));
-      const lock = await acquireBatchLock(env, latest.batch_id, owner, DEFAULT_LOCK_STALE_SECONDS);
-      if (!lock.ok) {
-        return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_CLOSEOUT_LOCK_BUSY", certification_grade: "DELTA_PASS", batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, closeout_candidate: closeoutCandidate, continuation_required: true, orchestrator_should_self_continue: true, external_calls_performed: 0, rows_read: 0, rows_written: 0, lock };
-      }
-      try {
-        const windowInfo = {
-          ok: true,
-          delta_start_date: closeoutCandidate.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE,
-          delta_end_date: closeoutCandidate.delta_end_date || closeoutCandidate.stage_max_game_date || closeoutCandidate.live_max_game_date || DEFAULT_DELTA_RESERVED_START_DATE,
-          latest_complete_game_date: closeoutCandidate.delta_end_date || closeoutCandidate.stage_max_game_date || closeoutCandidate.live_max_game_date || DEFAULT_DELTA_RESERVED_START_DATE,
-          retained_status_closeout: true,
-          repair_plan: "FINAL_RETAINED_STATUS_CLOSEOUT"
-        };
-        const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || rid("run_delta_closeout"), windowInfo, 0, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
-        await releaseBatchLock(env, latest.batch_id, owner);
-        return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", finalization_status: cert.status, certification: cert.certification, certification_grade: cert.grade, batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, closeout_candidate: closeoutCandidate, rows_read: 0, rows_written: cert.rows_promoted || 0, rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: 0, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
-      } catch (err) {
-        await releaseBatchLock(env, latest.batch_id, owner);
-        return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_CLOSEOUT_RETRYABLE", batch_id: latest.batch_id, mode: "delta_update", error: String(err && err.message ? err.message : err).slice(0, 900), continuation_required: true, orchestrator_should_self_continue: true, external_calls_performed: 0, rows_read: 0, rows_written: 0 };
-      }
-    }
-    const retainedDeltaGuard = await getCompletedRetainedDeltaGuard(env);
-    if (retainedDeltaGuard.pass) {
-      const guardFetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
-      const sourceWindow = await determineLatestCompleteGameDate(env, asText(retainedDeltaGuard.latest_delta.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE), guardFetchTimeoutMs);
-      const retainedMax = [retainedDeltaGuard.stage_max_game_date, retainedDeltaGuard.live_max_game_date].map(v => asText(v, null)).filter(Boolean).sort().pop();
-      if (sourceWindow.ok && retainedMax && sourceWindow.latest_complete_game_date > retainedMax) {
-        return await runRetainedDeltaNewFinalDateIncrement(env, retainedDeltaGuard, sourceWindow.latest_complete_game_date, input, inputJson, baseGate);
-      }
-      return {
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "NOOP_ALREADY_CURRENT_RETAINED_FULL_REFRESH_DELTA",
-        certification: "DELTA_HITTER_GAME_LOGS_REPEAT_FULL_REFRESH_BLOCKED",
-        certification_grade: "NOOP_PASS",
-        mode: "delta_update",
-        base_integrity_gate: baseGate,
-        repeat_full_delta_guard: retainedDeltaGuard,
-        source_final_date_check: sourceWindow,
-        retained_max_game_date: retainedMax,
-        preserved_batch_id: retainedDeltaGuard.latest_delta.batch_id,
-        retained_stage_rows: retainedDeltaGuard.retained_stage_rows,
-        live_rows_for_delta_batch: retainedDeltaGuard.live_rows_for_delta_batch,
-        rows_read: sourceWindow.ok ? 1 : 0,
-        rows_written: 0,
-        external_calls_performed: sourceWindow.ok ? 1 : 0,
-        continuation_required: false,
-        orchestrator_should_self_continue: false,
-        manual_wake_required: false,
-        no_browser_pump: true,
-        no_new_batch: true,
-        no_mlb_calls: sourceWindow.ok ? false : true,
-        no_stage_writes: true,
-        no_promotion: true,
-        no_cleanup: true,
-        note: "Blocked repeat full-refresh delta because retained stage/live are healthy and no newer final MLB game date was discovered. If source_final_date_check is unavailable, no live mutation is allowed."
-      };
-    }
-    if (retainedDeltaGuard.latest_delta && ["REPAIR_FROM_RETAINED_STAGE_ONLY","REPAIR_STAGE_FROM_FINAL_GAME_FEED_WINDOW"].includes(retainedDeltaGuard.repair_plan)) {
-      const repaired = await runRetainedDeltaSurgicalRepairIfNeeded(env, retainedDeltaGuard, input, inputJson, baseGate);
-      if (repaired) return repaired;
-    }
-    if (retainedDeltaGuard.latest_delta && retainedDeltaGuard.repair_plan === "BLOCK_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW") {
-      return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_RETAINED_GAP_REPAIR_BLOCKED", certification: "DELTA_HITTER_GAME_LOGS_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW", mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, no_new_batch: true, no_mlb_calls: true, no_live_mutation: true, continuation_required: false };
-    }
-  }
+
   const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
-  let windowInfo = await getDeltaWindow(env, inputJson, fetchTimeoutMs);
+  let windowInfo = await getDeltaWindow(env, sql, inputJson, fetchTimeoutMs);
   if (!windowInfo.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_SOURCE_WINDOW_UNAVAILABLE", certification: "DELTA_BLOCKED_NO_COMPLETE_FINAL_GAME_DATE", base_integrity_gate: baseGate, window_error: windowInfo, rows_read: 0, rows_written: 0, external_calls_performed: 1, continuation_required: false, no_live_mutation: true };
-  const state = await getOrCreateDeltaState(env, input, inputJson, windowInfo);
+
+  const state = await getOrCreateDeltaState(env, sql, input, inputJson, windowInfo);
   if (!state.is_new) {
     try {
       const lockedWindow = JSON.parse((state.cursor && state.cursor.cursor_json) || "{}");
@@ -3066,8 +2976,9 @@ async function runDeltaUpdateTick(env, input, inputJson) {
   const batchId = batch.batch_id, runId = batch.run_id, sourceSeason = asInt(batch.source_season, DEFAULT_SOURCE_SEASON);
   const owner = asText(input.request_id, rid("delta_hitter_owner"));
   const staleSeconds = cap(inputJson.lock_stale_seconds || env.LOCK_STALE_SECONDS || DEFAULT_LOCK_STALE_SECONDS, 20, 90);
-  const lock = await acquireBatchLock(env, batchId, owner, staleSeconds);
+  const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
   if (!lock.ok) return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_BATCH_LOCK_BUSY_RETRY", batch_id: batchId, run_id: runId, rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: true, orchestrator_should_self_continue: true, lock };
+
   const maxRequests = cap(inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
   const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
   const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 8000, 30000);
@@ -3077,18 +2988,19 @@ async function runDeltaUpdateTick(env, input, inputJson) {
   const processedPlayers = [];
   let didFetchThisTick = false;
   try {
-    if (DELTA_STATUSES.has(String(batch.status)) && String(batch.status).includes("READY") || ["DELTA_CERTIFIED_READY_TO_PROMOTE","DELTA_PROMOTING","DELTA_PROMOTED_READY_TO_CLEAN","DELTA_CLEANING","DELTA_PROMOTED_STAGE_READY_TO_RETAIN","COMPLETED_PROMOTED_STAGE_RETAINED"].includes(String(batch.status))) {
-      const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, players.length, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
-      await releaseBatchLock(env, batchId, owner);
+    const finalizationStatuses = new Set(["DELTA_CERTIFIED_READY_TO_PROMOTE", "DELTA_PROMOTING", "DELTA_PROMOTED_READY_TO_CLEAN", "DELTA_CLEANING", "DELTA_STAGED_READY_FOR_CERTIFICATION"]);
+    if (finalizationStatuses.has(String(batch.status))) {
+      const cert = await finalizeDeltaIfReady(sql, batchId, runId, windowInfo, players.length, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
+      await releaseBatchLock(sql, batchId, owner);
       return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", finalization_status: cert.status, certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, delta_window: windowInfo, rows_read: 0, rows_written: cert.rows_promoted || 0, rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: 0, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
     }
     for (const p of players.slice(nextOffset, Math.min(nextOffset + maxRequests, players.length))) {
       if (Date.now() - tickStartedAtMs >= maxTickRuntimeMs || rowsStagedThisTick >= maxRows) break;
       sourceRequestCount++; didFetchThisTick = true;
       let result;
-      try { result = await processPlayerDelta(env, p, sourceSeason, batchId, runId, windowInfo.delta_start_date, windowInfo.delta_end_date, Math.max(1, maxRows - rowsStagedThisTick), fetchTimeoutMs); }
+      try { result = await processPlayerDelta(env, sql, p, sourceSeason, batchId, runId, windowInfo.delta_start_date, windowInfo.delta_end_date, Math.max(1, maxRows - rowsStagedThisTick), fetchTimeoutMs); }
       catch (err) { result = { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "process_player_delta_exception", rows_staged: 0, error: String(err && err.message ? err.message : err), retry_same_player: true }; }
-      const category = await upsertDeltaPlayerOutcome(env, batchId, runId, p, nextOffset, result, result.source_endpoint || endpointFor(env, p.player_id, sourceSeason), windowInfo.delta_start_date, windowInfo.delta_end_date);
+      const category = await upsertDeltaPlayerOutcome(sql, batchId, runId, p, nextOffset, result, result.source_endpoint || endpointFor(env, p.player_id, sourceSeason), windowInfo.delta_start_date, windowInfo.delta_end_date);
       result.terminal_category = category;
       if (category === "SOURCE_ERROR") { sourceErrorCount++; processedPlayers.push(result); break; }
       if (category === "TRUE_NO_DATA") sourceNoDataCount++; else sourceSuccessCount++;
@@ -3096,23 +3008,39 @@ async function runDeltaUpdateTick(env, input, inputJson) {
       processedPlayers.push(result);
       nextOffset++;
     }
-    const stageCount = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
-    const totalStageRows = asInt(stageCount && stageCount.c, 0);
+    const stageCountRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.game_logs_stage WHERE batch_id=${batchId}`;
+    const totalStageRows = asInt(stageCountRows[0] && stageCountRows[0].c, 0);
     const partial = nextOffset < players.length;
-    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches SET status=?, cursor_offset=?, source_request_count=COALESCE(source_request_count,0)+?, source_success_count=COALESCE(source_success_count,0)+?, source_no_data_count=COALESCE(source_no_data_count,0)+?, source_error_count=COALESCE(source_error_count,0)+?, rows_staged=?, certification_status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, partial ? "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS" : "DELTA_STAGED_READY_FOR_CERTIFICATION", nextOffset, sourceRequestCount, sourceSuccessCount, sourceNoDataCount, sourceErrorCount, totalStageRows, partial ? "not_certified" : "pending_delta_certification", batchId);
-    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_cursor SET status=?, current_player_offset=?, players_processed=?, requests_done=COALESCE(requests_done,0)+?, next_run_after=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?`, partial ? "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS" : "DELTA_STAGED_READY_FOR_CERTIFICATION", nextOffset, nextOffset, sourceRequestCount, partial ? 1 : 0, DELTA_CURSOR_KEY);
+    const nextStatus = partial ? "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS" : "DELTA_STAGED_READY_FOR_CERTIFICATION";
+    await sql`
+      UPDATE stats_hitter.game_log_batches SET
+        status=${nextStatus}, cursor_offset=${nextOffset},
+        source_request_count=COALESCE(source_request_count,0)+${sourceRequestCount},
+        source_success_count=COALESCE(source_success_count,0)+${sourceSuccessCount},
+        source_no_data_count=COALESCE(source_no_data_count,0)+${sourceNoDataCount},
+        source_error_count=COALESCE(source_error_count,0)+${sourceErrorCount},
+        rows_staged=${totalStageRows}, certification_status=${partial ? "not_certified" : "pending_delta_certification"}, updated_at=now()
+      WHERE batch_id=${batchId}
+    `;
+    await sql`
+      UPDATE stats_hitter.game_log_cursor SET
+        status=${nextStatus}, current_player_offset=${nextOffset}, players_processed=${nextOffset},
+        requests_done=COALESCE(requests_done,0)+${sourceRequestCount},
+        next_run_after=CASE WHEN ${partial} THEN now() ELSE NULL END, updated_at=now()
+      WHERE cursor_key=${DELTA_CURSOR_KEY}
+    `;
     if (partial) {
-      await releaseBatchLock(env, batchId, owner);
+      await releaseBatchLock(sql, batchId, owner);
       return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_PARTIAL_CONTINUE", batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, delta_window: windowInfo, rows_read: sourceRequestCount, rows_written: rowsStagedThisTick, rows_staged_total: totalStageRows, external_calls_performed: sourceRequestCount, current_player_offset: nextOffset, players_total: players.length, players_remaining: Math.max(0, players.length - nextOffset), continuation_required: true, orchestrator_should_self_continue: true, manual_wake_required: false, no_browser_pump: true, processed_players: processedPlayers.slice(0, 10), timestamp_utc: nowUtc() };
     }
-    const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, players.length, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
-    await releaseBatchLock(env, batchId, owner);
+    const cert = await finalizeDeltaIfReady(sql, batchId, runId, windowInfo, players.length, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
+    await releaseBatchLock(sql, batchId, owner);
     return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, delta_window: windowInfo, rows_read: sourceRequestCount, rows_written: rowsStagedThisTick + (cert.rows_promoted || 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: sourceRequestCount, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
   } catch (err) {
     const errText = String(err && err.message ? err.message : err).slice(0, 900);
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET status='PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS', last_error=?, next_run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", errText, DELTA_CURSOR_KEY);
-    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET status='PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS', locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", batchId);
-    await releaseBatchLock(env, batchId, owner);
+    await sql`UPDATE stats_hitter.game_log_cursor SET status='PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS', last_error=${errText}, next_run_after=now(), updated_at=now() WHERE cursor_key=${DELTA_CURSOR_KEY}`;
+    await sql`UPDATE stats_hitter.game_log_batches SET status='PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS', locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId}`;
+    await releaseBatchLock(sql, batchId, owner);
     return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_TICK_ERROR_RETRYABLE", batch_id: batchId, run_id: runId, mode: "delta_update", error: errText, finalization_only: !didFetchThisTick, external_calls_performed: didFetchThisTick ? sourceRequestCount : 0, continuation_required: true, orchestrator_should_self_continue: true, manual_wake_required: false, no_browser_pump: true, rows_read: didFetchThisTick ? sourceRequestCount : 0, rows_written: rowsStagedThisTick };
   }
 }
