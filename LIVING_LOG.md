@@ -64,5 +64,25 @@ Continuously updated. Last real state always at the bottom of the current sessio
 - **Correct source of truth for "what worker does what, in what order": the Control Room's full-run buttons** (e.g. "Delta Full Run"). These trigger the orchestrator, which dispatches the real, correct job_key sequence. Use this as the canonical map, not filename guessing.
 - System is explicitly "a big Frankenstein" per Rodolfo — many versions built on top of each other, lots of dead code, some HALF dead (looks unused but isn't, or vice versa) — extra caution before assuming any code path is dead or live.
 - **New method going forward:** before touching a layer, find its Control Room button → find what job/chain it enqueues in the orchestrator → follow the real job_key sequence actually dispatched → that's the real worker file(s) and order.
-- Next: grep `alphadog-v2-orchestrator.js` for the delta-full-run (or equivalent) chain definition to get the real job_key sequence, cross-check against `alphadog-v2-control-room.js` for the actual button → job dispatch mapping.
+**REAL CHAIN CONFIRMED — `INCREMENTAL_MORNING_FULL_RUN_STAGES` in alphadog-v2-orchestrator.js (Control Room "DELTA >" buttons). This is now the canonical source of truth for order/worker/mode, replacing the earlier assumed list:**
+
+1. `calendar_tally_precheck` → delta-certifier (precheck)
+2. `hitter_game_logs_delta` → **base-hitter-game-logs**, mode `delta_update`
+3. `pitcher_game_logs_delta` → base-pitcher-game-logs, mode `delta_update`
+4. `team_game_logs_delta` → base-team-game-logs, mode `delta_update`
+5. `starter_history_delta` → base-starter-history, mode `delta_coverage_gap_scoped_repair` (different mode shape than the rest — flagged, verify separately when its turn comes)
+6. `bullpen_history_delta` → base-bullpen-history, mode `delta_update`
+7. `hitter_splits_delta` → base-hitter-splits, mode `delta_update`
+8. `pitcher_splits_delta` → base-pitcher-splits, mode `delta_update`
+9. `calendar_tally_source_repair_check` → delta-certifier (requires zero blocking gaps)
+10. `expansion_delta_mining` → expansion-baseline-full-run (real file: alphadog-v2-phase3a-first-inning-pitcher-context.js)
+11. `hitter_metrics_affected_delta` → base-hitter-metrics, mode `delta_recalculate_affected_players`
+12. `pitcher_metrics_affected_delta` → base-pitcher-metrics, same mode
+13-15. expansion line-inventory/sanity/HP (same expansion-baseline-full-run worker)
+16-17. baseline_v5 classification + HP daily delta (job_key `expansion-baseline-v2`, same underlying worker file)
+18. `calendar_tally_final_check` → delta-certifier (final, zero blocking gaps + baseline_v5 coverage required)
+
+Rodolfo confirmed: follow this REAL order (splits before metrics, expansion mining interleaved), not the earlier stated list. Certifier stays last for our migration purposes regardless (its 3 modes get ported once everything they depend on is on Postgres) — but note the certifier is invoked 3 TIMES within a single incremental-morning-full-run (precheck/source_repair_check/final_check), so once ported it must handle all 3 calendar_tally_stage variants.
+
+**Status: proceeding with hitter game logs port — deep D1 verification + structural read of base-hitter-game-logs.js next.**
 
