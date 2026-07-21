@@ -50,6 +50,16 @@ const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_T
 const EXPECTED_SECRETS = ["MLB_API_USER_AGENT"];
 
 function nowUtc() { return new Date().toISOString(); }
+async function getWorkerTickConfig(sql, workerName, fallbackChunk, fallbackTickMs) {
+  try {
+    const rows = await sql`SELECT chunk_size_players, max_tick_runtime_ms FROM config.worker_tick_settings WHERE worker_name=${workerName} LIMIT 1`;
+    const row = rows[0];
+    if (!row) return { chunk_size_players: fallbackChunk, max_tick_runtime_ms: fallbackTickMs };
+    return { chunk_size_players: asInt(row.chunk_size_players, fallbackChunk), max_tick_runtime_ms: asInt(row.max_tick_runtime_ms, fallbackTickMs) };
+  } catch (_) {
+    return { chunk_size_players: fallbackChunk, max_tick_runtime_ms: fallbackTickMs };
+  }
+}
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function asInt(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : fallback; }
 function asText(v, fallback = null) { if (v === undefined || v === null || String(v).trim() === "") return fallback; return String(v).trim(); }
