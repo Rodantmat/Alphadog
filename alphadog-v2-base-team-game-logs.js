@@ -164,7 +164,15 @@ async function fetchScheduleRange(env, startDate, endDate, fetchTimeoutMs) {
 }
 async function insertStageRowsBulk(sql, batchId, runId, mode, sourceSeason, rows) {
   if (!rows.length) return { inserted: 0 };
-  const values = rows.map(r => ({
+  const seen = new Set();
+  const dedupedRows = [];
+  for (const r of rows) {
+    const key = `${r.team_id}_${r.game_pk}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    dedupedRows.push(r);
+  }
+  const values = dedupedRows.map(r => ({
     stage_id: `${batchId}_${r.team_id}_${r.game_pk}_team`,
     batch_id: batchId, run_id: runId,
     team_id: r.team_id, game_pk: r.game_pk, game_date: r.game_date,
