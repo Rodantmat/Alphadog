@@ -3314,14 +3314,18 @@ export default {
     if (method === "GET" && path === "/health") return jsonResponse(baseIdentity(env, { route: "/health" }));
 
     if (method === "GET" && path === "/schema") {
-      const schema = await schemaStatus(env).catch(err => ({ error: String(err && err.message ? err.message : err) }));
+      const diagSql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+      const schema = await schemaStatus(diagSql).catch(err => ({ error: String(err && err.message ? err.message : err) }));
+      await diagSql.end();
       return jsonResponse(baseIdentity(env, { route: "/schema", schema }));
     }
 
     if (method === "POST" && path === "/diagnostic") {
       const input = await parseJson(request);
-      const ensured = await ensureSchema(env);
-      const schema = await schemaStatus(env);
+      const diagSql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+      const ensured = await ensureSchema(diagSql);
+      const schema = await schemaStatus(diagSql);
+      await diagSql.end();
       return jsonResponse(baseIdentity(env, {
         route: "/diagnostic",
         input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null },
