@@ -256,3 +256,9 @@ Working copy of the file is being edited locally (`/home/claude/hitter_original.
 - **Flagged clearly as a required follow-up**: once the first real Postgres base_backfill completes, this function's `LOCKED_BASE_BATCH_ID` constant and the two hardcoded counts need updating to the real resulting values — not before, and not guessed now.
 
 **Next up: `getOrCreateBaseBackfillState`, `getOrCreateDeltaState`, `runBaseBackfillTick`, `runDeltaUpdateTick`** — the outer tick functions that tie everything converted so far together. Once these are done, base_backfill can be deployed and run for real for the first time.
+
+**✅ `getOrCreateBaseBackfillState`: CONVERTED AND VERIFIED FOR REAL.**
+- Replaced the earlier temporary "scoped connection just for chooseAllHitterPlayers" workaround (from the first conversion round) with the real single `sql` connection now used throughout the whole function, since it's now fully converted.
+- `INSERT OR REPLACE` → `INSERT ... ON CONFLICT (batch_id) DO UPDATE` / `ON CONFLICT (cursor_key) DO UPDATE` for the batch and cursor creation. Tested for real: inserted a full test batch row and test cursor row through the exact converted INSERT/ON CONFLICT statements, confirmed both landed correctly (status, players_total returned correctly), cleaned up after.
+
+**Next up: `runBaseBackfillTick`** (the actual `/run` entrypoint's default-mode handler — ties `ensureSchema` → `getOrCreateBaseBackfillState` → lock → `processPlayer` loop → `certifyAndPromoteIfClean` together). Converting this next means **base_backfill will be ready for its first real, deployed, end-to-end run.**
