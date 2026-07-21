@@ -1257,7 +1257,8 @@ async function runDeltaUpdateTick(env, sql, input, startedAtMs) {
     const cursorOffset = asInt(state.cursor.current_player_offset, 0);
     const chunkSize = asInt(state.batch.chunk_size_players, DEFAULT_CHUNK_SIZE_PLAYERS);
     const maxRows = asInt(state.batch.max_rows_per_tick, DEFAULT_MAX_ROWS_PER_TICK);
-    const maxTickRuntimeMs = asInt(env.MAX_TICK_RUNTIME_MS, DEFAULT_MAX_TICK_RUNTIME_MS);
+    const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS);
+    const maxTickRuntimeMs = tickConfig.max_tick_runtime_ms;
 
     let offset = cursorOffset, rowsThisTick = 0, processedThisTick = 0;
     const perPlayerResults = [];
