@@ -384,7 +384,107 @@ async function chooseAllPitcherPlayers(sql, inputJson) {
   })).filter(r => r.player_id);
 }
 
-// STUB_MARKER_LOCKS_MINING_NEXT
+async function acquireBatchLock(sql, batchId, owner, staleSeconds) {
+  const rows = await sql`SELECT locked_by, lock_acquired_at, lock_expires_at FROM stats_pitcher.game_log_batches WHERE batch_id=${batchId}`;
+  const row = rows[0] || null;
+  const nowMs = Date.now();
+  const lockedBy = row && row.locked_by ? String(row.locked_by) : null;
+  const lockAcquiredMs = row && row.lock_acquired_at ? new Date(row.lock_acquired_at).getTime() : NaN;
+  const lockExpiresMs = row && row.lock_expires_at ? new Date(row.lock_expires_at).getTime() : NaN;
+  const sameOwner = !!(lockedBy && lockedBy === owner);
+  const expired = !Number.isFinite(lockExpiresMs) || lockExpiresMs <= nowMs;
+  const staleByAge = Number.isFinite(lockAcquiredMs) && (nowMs - lockAcquiredMs >= staleSeconds * 1000);
+  if (lockedBy && !expired && !(sameOwner && staleByAge)) {
+    return { ok: false, reason: sameOwner ? "same_owner_lock_not_stale_yet" : "batch_lock_busy", locked_by: lockedBy, lock_acquired_at: row.lock_acquired_at || null, lock_expires_at: row.lock_expires_at || null, same_owner: sameOwner, stale_seconds: staleSeconds, retry_after_seconds: sameOwner ? 20 : Math.max(15, Math.min(90, Math.ceil((lockExpiresMs - nowMs) / 1000))) };
+  }
+  await sql`UPDATE stats_pitcher.game_log_batches SET locked_by=${owner}, lock_acquired_at=now(), lock_expires_at=now() + make_interval(secs => ${staleSeconds}), stale_recovery_count=CASE WHEN locked_by IS NOT NULL THEN COALESCE(stale_recovery_count,0)+1 ELSE COALESCE(stale_recovery_count,0) END, updated_at=now() WHERE batch_id=${batchId}`;
+  return { ok: true, owner, stale_seconds: staleSeconds, recovered_previous_lock: !!lockedBy };
+}
+async function releaseBatchLock(sql, batchId, owner) {
+  await sql`UPDATE stats_pitcher.game_log_batches SET locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId} AND locked_by=${owner}`;
+}
+
+async function fetchTextWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("fetch_timeout"), Math.max(1000, Number(timeoutMs || DEFAULT_FETCH_TIMEOUT_MS)));
+  try {
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: true, resp, text, timed_out: false };
+  } catch (err) {
+    return { ok: false, resp: null, text: "", timed_out: String(err && err.name ? err.name : err).includes("Abort") || String(err).includes("timeout"), error: String(err && err.message ? err.message : err) };
+  } finally { clearTimeout(timer); }
+}
+
+async function adoptExistingCoverageIfPresent(sql, batchId, runId, grade, p, cutoffDate) {
+  const existingRows = await sql`
+    SELECT COUNT(*)::int AS c, MIN(game_date) AS first_date, MAX(game_date) AS last_date
+    FROM stats_pitcher.game_logs
+    WHERE player_id=${p.player_id} AND game_date::date <= ${cutoffDate}::date
+  `;
+  const existing = existingRows[0] || {};
+  const count = asInt(existing.c, 0);
+  if (count <= 0) return null;
+  await sql`
+    UPDATE stats_pitcher.game_logs
+    SET batch_id=${batchId}, run_id=${runId}, ingestion_mode='base_backfill',
+        certification_status='base_backfill_certified_promoted', certification_grade=${grade},
+        source_key=COALESCE(source_key, ${SOURCE_KEY}), certified_at=now(), promoted_at=now(), updated_at=now()
+    WHERE player_id=${p.player_id} AND game_date::date <= ${cutoffDate}::date
+  `;
+  await sql`
+    INSERT INTO stats_pitcher.game_log_player_outcomes (
+      batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_endpoint,source_http_status,source_ok,
+      raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,
+      first_raw_game_date,last_raw_game_date,first_promoted_game_date,last_promoted_game_date,certification_status,certification_grade,updated_at
+    ) VALUES (
+      ${batchId}, ${runId}, ${asInt(p.player_id, 0)}, ${asText(p.player_name, null)}, ${asText(p.primary_position, null)}, 0, 'adopted_from_existing_backfill', NULL, 1,
+      0, 0, 0, 0, ${count}, 'PROMOTED_ROWS',
+      'Adopted real, already-mined rows from prior backfill into this batch - no new MLB fetch needed, no duplication.', NULL,
+      ${existing.first_date}, ${existing.last_date}, ${existing.first_date}, ${existing.last_date},
+      'player_outcome_unverified', NULL, now()
+    )
+    ON CONFLICT (batch_id, player_id) DO UPDATE SET
+      run_id=excluded.run_id, promoted_row_count=excluded.promoted_row_count, terminal_category=excluded.terminal_category,
+      category_reason=excluded.category_reason, first_promoted_game_date=excluded.first_promoted_game_date,
+      last_promoted_game_date=excluded.last_promoted_game_date, updated_at=now()
+  `;
+  return { player_id: p.player_id, player_name: p.player_name, status: "adopted", adopted_row_count: count, first_promoted_game_date: existing.first_date, last_promoted_game_date: existing.last_date, terminal_category: "PROMOTED_ROWS" };
+}
+
+async function processPlayer(env, sql, p, sourceSeason, batchId, runId, cutoffDate, maxRowsRemaining, fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
+  const endpoint = endpointFor(env, p.player_id, sourceSeason);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-pitcher-game-logs/1.0.0") } }, fetchTimeoutMs);
+  if (!fetched.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true };
+  const resp = fetched.resp, text = fetched.text || "";
+  if (!resp.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "http_error", http_status: resp.status, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, preview: text.slice(0, 240), retry_same_player: true };
+  let body;
+  try { body = JSON.parse(text); }
+  catch (err) { return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "json_parse_error", error: String(err && err.message ? err.message : err), rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true }; }
+  const splits = body && body.stats && body.stats[0] && Array.isArray(body.stats[0].splits) ? body.stats[0].splits : [];
+  const rawDates = splits.map(splitGameDate).filter(Boolean).sort();
+  const rawSplitCount = splits.length;
+  if (!rawSplitCount) return { player_id: p.player_id, player_name: p.player_name, status: "no_data", http_status: resp.status, split_count: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, rows_staged: 0, source_endpoint: endpoint };
+  let inserted = 0, beforeCutoff = 0, filteredAfterCutoff = 0, invalidBeforeCutoff = 0;
+  const stagedDates = [];
+  for (const split of splits) {
+    if (inserted >= maxRowsRemaining) break;
+    const gameDate = splitGameDate(split);
+    if (cutoffDate && gameDate && gameDate > cutoffDate) { filteredAfterCutoff++; continue; }
+    beforeCutoff++;
+    const row = parsePitcherSplit(split, p.player_id, p.player_name, sourceSeason, batchId, runId, "base_backfill", endpoint, cutoffDate);
+    if (!row) { invalidBeforeCutoff++; continue; }
+    await insertStageRow(sql, row);
+    stagedDates.push(row.game_date);
+    inserted++;
+  }
+  let status = "success";
+  if (inserted <= 0 && filteredAfterCutoff > 0 && beforeCutoff === 0) status = "filtered_after_cutoff";
+  else if (inserted <= 0) status = "repair_required";
+  return { player_id: p.player_id, player_name: p.player_name, status, http_status: resp.status, split_count: rawSplitCount, raw_payload_split_count: rawSplitCount, rows_before_cutoff: beforeCutoff, rows_filtered_after_cutoff: filteredAfterCutoff, invalid_before_cutoff_rows: invalidBeforeCutoff, rows_staged: inserted, source_endpoint: endpoint, first_raw_game_date: rawDates[0] || null, last_raw_game_date: rawDates[rawDates.length - 1] || null, first_promoted_game_date: stagedDates[0] || null, last_promoted_game_date: stagedDates[stagedDates.length - 1] || null };
+}
+
+// STUB_MARKER_PROMOTE_NEXT
 
 export default {
   async fetch(request, env) {
