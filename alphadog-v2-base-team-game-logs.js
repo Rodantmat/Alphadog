@@ -38,6 +38,87 @@ function asText(v, fallback = null) { if (v === undefined || v === null || Strin
 function cap(n, min, max) { return Math.max(min, Math.min(max, Number(n || 0))); }
 
 // STUB_MARKER_SCHEMA_NEXT
+async function ensureSchema(sql) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS team.game_logs_stage (
+      stage_id TEXT PRIMARY KEY,
+      batch_id TEXT,
+      run_id TEXT,
+      team_id TEXT,
+      game_pk BIGINT,
+      game_date DATE,
+      opponent_team_id TEXT,
+      is_home INTEGER,
+      runs_scored INTEGER,
+      runs_allowed INTEGER,
+      raw_json JSONB,
+      ingestion_mode TEXT,
+      source_key TEXT,
+      source_confidence TEXT,
+      source_endpoint TEXT,
+      source_season INTEGER,
+      source_game_type TEXT,
+      row_status TEXT DEFAULT 'staged',
+      certification_status TEXT,
+      certification_grade TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS team.game_log_batches (
+      batch_id TEXT PRIMARY KEY,
+      run_id TEXT,
+      worker_name TEXT,
+      worker_version TEXT,
+      mode TEXT,
+      status TEXT,
+      data_feed_key TEXT,
+      source_key TEXT,
+      source_endpoint TEXT,
+      source_season INTEGER,
+      source_game_type TEXT,
+      base_backfill_cutoff_date TEXT,
+      delta_start_date TEXT,
+      chunk_size_games INTEGER DEFAULT 3,
+      max_tick_runtime_ms INTEGER DEFAULT 20000,
+      promote_rows_per_tick INTEGER DEFAULT 25,
+      rows_staged INTEGER DEFAULT 0,
+      rows_promoted INTEGER DEFAULT 0,
+      certification_status TEXT DEFAULT 'not_certified',
+      certification_grade TEXT,
+      certification_json JSONB,
+      source_confidence TEXT,
+      locked_by TEXT,
+      lock_acquired_at TIMESTAMPTZ,
+      lock_expires_at TIMESTAMPTZ,
+      notes TEXT,
+      started_at TIMESTAMPTZ DEFAULT now(),
+      finished_at TIMESTAMPTZ,
+      certified_at TIMESTAMPTZ,
+      promoted_at TIMESTAMPTZ,
+      cleaned_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS team.game_log_cursor (
+      cursor_key TEXT PRIMARY KEY,
+      mode TEXT,
+      batch_id TEXT,
+      status TEXT,
+      next_run_after TIMESTAMPTZ,
+      last_error TEXT,
+      updated_at TIMESTAMPTZ DEFAULT now()
+    )
+  `;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_game_logs_pk ON team.game_logs (log_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_team_game_logs_batch ON team.game_logs (batch_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_team_game_logs_stage_batch ON team.game_logs_stage (batch_id)`;
+  return { ok: true };
+}
+// STUB_MARKER_FETCH_HELPERS_NEXT
 export default {
   async fetch(request, env) {
     return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
