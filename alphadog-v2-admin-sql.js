@@ -1,9 +1,10 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.7-scoring-db-binding-sync";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.8-postgres-readonly-tool";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB", "SCORING_DB"];
