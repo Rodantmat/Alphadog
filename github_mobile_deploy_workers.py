@@ -10,10 +10,17 @@ WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["
 SECRETS_FILE = Path(".alphadog_worker_secrets.json")
 
 GLOBAL_REDEPLOY_FILES = {
-    "generate_wrangler_configs.py",
     "github_mobile_deploy_workers.py",
     "github_write_worker_secrets_file.py",
 }
+
+# generate_wrangler_configs.py is intentionally NOT in GLOBAL_REDEPLOY_FILES. It gets
+# edited routinely just to register a single new worker (e.g. adding it to the
+# Postgres/Hyperdrive special-case list below) and that should only redeploy the
+# worker(s) actually affected - not force a full-fleet redeploy of 140+ workers every
+# time. worker_manifest.json changes (which always accompany a new worker's own .js
+# file in the same commit) already correctly trigger a targeted deploy of that new
+# worker plus the orchestrator via TARGETED_EXTRA_FILES below.
 
 # These change routinely (e.g. registering a single new worker) and must NOT force
 # a full-fleet redeploy. A change here only pulls in a small, targeted set of extra
