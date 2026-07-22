@@ -220,8 +220,11 @@ async function runBaseRebuild(sql, input) {
   const comboIndex = batch.combo_index || 0;
   if (comboIndex >= combos.length) {
     const totalRows = await sql`SELECT COUNT(*)::int AS c FROM classification.player_classification_current`;
-    await sql`UPDATE classification.classification_batches SET status='completed', rows_written=${totalRows[0].c}, certification='CLASSIFICATION_BASE_CERTIFIED', certification_grade='PASS', finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
-    return { ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId, status: "COMPLETED_CLASSIFICATION_BASE", total_combos: combos.length, continuation_required: false };
+    const hd = await sql`SELECT delta_watermark_date FROM stats_hitter.metric_batches WHERE batch_id='hitter_metrics_base_backfill_singleton' LIMIT 1`;
+    const pd = await sql`SELECT delta_watermark_date FROM stats_pitcher.metric_batches WHERE batch_id='pitcher_metrics_base_backfill_singleton' LIMIT 1`;
+    const seedDate = [hd[0]?.delta_watermark_date, pd[0]?.delta_watermark_date].filter(Boolean).map(d => String(d).slice(0, 10)).sort().shift() || null;
+    await sql`UPDATE classification.classification_batches SET status='completed', rows_written=${totalRows[0].c}, delta_watermark_date=${seedDate}, certification='CLASSIFICATION_BASE_CERTIFIED', certification_grade='PASS', finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+    return { ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId, status: "COMPLETED_CLASSIFICATION_BASE", total_combos: combos.length, delta_watermark_seeded_to: seedDate, continuation_required: false };
   }
   const COMBOS_PER_TICK = Math.max(1, Math.min(asInt(input.combos_per_tick, 10), 15));
   const comboSlice = combos.slice(comboIndex, comboIndex + COMBOS_PER_TICK);
