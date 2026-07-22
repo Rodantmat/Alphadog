@@ -507,11 +507,12 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
     `;
     snapshotWritten += slice.length;
   }
+  const colsCsv = LIVE_COLS.join(", ");
   const selectCols = LIVE_COLS.map(c => "s." + c).join(", ");
-  const promoted = await sql`
-    INSERT INTO stats_pitcher.metric_snapshots (snapshot_id, ${sql(LIVE_COLS)}, certification_status, certification_grade, promoted_at, created_at, updated_at)
-    SELECT s.snapshot_id, ${sql.unsafe(selectCols)}, 'delta_recalculated_affected_player', 'DELTA_RECALC_PROMOTED_RETAINED_STAGE', now(), now(), now()
-    FROM stats_pitcher.metric_snapshot_stage s WHERE s.snapshot_batch_id=${snapshotBatchId}
+  const promoted = await sql.unsafe(`
+    INSERT INTO stats_pitcher.metric_snapshots (snapshot_id, ${colsCsv}, certification_status, certification_grade, promoted_at, created_at, updated_at)
+    SELECT s.snapshot_id, ${selectCols}, 'delta_recalculated_affected_player', 'DELTA_RECALC_PROMOTED_RETAINED_STAGE', now(), now(), now()
+    FROM stats_pitcher.metric_snapshot_stage s WHERE s.snapshot_batch_id=$1
     ON CONFLICT (player_id, season, metric_window, config_profile_id, formula_version) DO UPDATE SET
       games_count=excluded.games_count, era_calculated=excluded.era_calculated, whip_calculated=excluded.whip_calculated,
       k_rate_calculated=excluded.k_rate_calculated, bb_rate_calculated=excluded.bb_rate_calculated, hr_rate_calculated=excluded.hr_rate_calculated,
@@ -519,7 +520,7 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
       metrics_json=excluded.metrics_json, review_flags_json=excluded.review_flags_json, certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
       promoted_at=now(), updated_at=now()
     RETURNING 1
-  `;
+  `, [snapshotBatchId]);
   await sql`UPDATE stats_pitcher.metric_snapshot_stage SET promoted_at=COALESCE(promoted_at, now()) WHERE snapshot_batch_id=${snapshotBatchId}`;
   await sql`UPDATE stats_pitcher.metric_snapshot_batches SET status='COMPLETED_DELTA_PITCHER_METRICS_AFFECTED_RECALC', snapshot_rows=${snapshotWritten}, rows_promoted=${promoted.length}, finished_at=now(), promoted_at=now(), updated_at=now() WHERE snapshot_batch_id=${snapshotBatchId}`;
   await sql`UPDATE stats_pitcher.metric_batches SET status='COMPLETED_DELTA_PITCHER_METRICS_AFFECTED_RECALC', rows_staged=${staged}, rows_promoted=${promoted.length}, finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
