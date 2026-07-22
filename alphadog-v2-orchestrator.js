@@ -530,6 +530,13 @@ function isBaseCertifierPostgresJob(row) {
 // sequencing, matching the validated "self-healing incremental pipeline" ETL pattern.
 const POSTGRES_FULL_RUN_STAGES = [
   { job_key: "base-game-calendar", worker_name: "alphadog-v2-base-game-calendar", input_json: { mode: "refresh_calendar" } },
+  { job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", input_json: { mode: "delta_update" } },
+  { job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", input_json: { mode: "delta_update" } },
+  { job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", input_json: { mode: "delta_update" } },
+  { job_key: "base-starter-history", worker_name: "alphadog-v2-base-starter-history", input_json: { mode: "delta_coverage_gap_scoped_repair" } },
+  { job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", input_json: { mode: "delta_update" } },
+  { job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", input_json: { mode: "delta_update" } },
+  { job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", input_json: { mode: "delta_update" } },
   { job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", input_json: { mode: "delta_recalculate_affected_players" } },
   { job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", input_json: { mode: "delta_recalculate_affected_players" } },
   { job_key: "base-classification-v5", worker_name: "alphadog-v2-base-classification-v5", input_json: { mode: "delta_recalculate_affected_players" } },
