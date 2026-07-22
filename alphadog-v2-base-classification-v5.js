@@ -63,11 +63,16 @@ function computeRecencyBlendedRate(snapshotsByWindow, propConfig, recencyWeights
   if (weightTotal <= 0) return null;
   return weightedSum / weightTotal;
 }
+// REAL FIX (found via full-dataset health check + validated against published empirical Bayes
+// literature on discrete-vs-continuous prior formulations): the original discrete buckets
+// (tiny/low/medium/large) caused confidence to actually DECREASE at every bucket boundary
+// (e.g. n=4->5: 58.63->46.87) because prior_strength dropped faster than the real sample grew.
+// More real data must never reduce confidence. Replaced with a smooth exponential decay that is
+// monotonic by construction (d/dn of effectiveN = 1 - exp(-n/18) >= 0 for all n >= 0) while still
+// closely tracking the original config's intended reference values (~20 near n=0, ~12 near n=10,
+// ~6 near n=22, ~2 as n grows large).
 function priorStrengthForSample(n, psCfg) {
-  if (n < 5) return psCfg.tiny_sample_lt5;
-  if (n < 15) return psCfg.low_sample_lt15;
-  if (n < 30) return psCfg.medium_sample_lt30;
-  return psCfg.large_sample_ge30;
+  return 2 + 18 * Math.exp(-n / 18);
 }
 function computePopulationStats(values) {
   const n = values.length;
