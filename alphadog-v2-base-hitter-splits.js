@@ -149,7 +149,15 @@ async function getAffectedPlayerUniverse(sql) {
 
 async function insertStageRowsBulk(sql, batchId, runId, mode, sourceSeason, rows) {
   if (!rows.length) return { inserted: 0 };
-  const values = rows.map(r => ({
+  const seen = new Set();
+  const dedupedRows = [];
+  for (const r of rows) {
+    const key = `${r.player_id}_${r.season}_${r.split_key}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    dedupedRows.push(r);
+  }
+  const values = dedupedRows.map(r => ({
     stage_id: `${batchId}_${r.player_id}_${r.season}_${r.split_key}`,
     batch_id: batchId, run_id: runId,
     player_id: r.player_id, season: r.season, split_key: r.split_key,
