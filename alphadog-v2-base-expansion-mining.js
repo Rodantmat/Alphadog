@@ -69,10 +69,10 @@ async function runDeltaMining(sql, input) {
   const requestId = asText(input.request_id, rid("expansion_delta_mining"));
   const runId = asText(input.run_id, rid("run"));
   const batchId = asText(input.delta_mining_batch_id || input.batch_id, "expansion_first_inning_delta_batch_singleton");
-  const chunkSize = Math.max(10, Math.min(asInt(input.delta_game_chunk_size, 200), 300));
+  const chunkSize = Math.max(10, Math.min(asInt(input.delta_game_chunk_size, 500), 900));
   const timeoutMs = Math.max(1500, Math.min(asInt(input.mlb_linescore_timeout_ms, 8000), 15000));
   const maxGames = Math.max(1, Math.min(asInt(input.delta_game_limit, 2500), 2500));
-  const concurrency = Math.max(5, Math.min(asInt(input.fetch_concurrency, 25), 40));
+  const concurrency = Math.max(5, Math.min(asInt(input.fetch_concurrency, 60), 90));
 
   await sql`
     INSERT INTO context.expansion_first_inning_context_batches (batch_id, request_id, run_id, mode, status, worker_version, cursor_offset)
