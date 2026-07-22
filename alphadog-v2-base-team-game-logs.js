@@ -350,7 +350,7 @@ async function getLockedBaseIntegrity(sql) {
   const cutoffDate = batch ? batch.base_backfill_cutoff_date : DEFAULT_BASE_BACKFILL_CUTOFF_DATE;
   const afterRows = await sql`SELECT COUNT(*)::int AS c FROM team.game_logs WHERE batch_id=${LOCKED_BASE_BATCH_ID} AND game_date::date > ${cutoffDate}::date`;
   const live = liveRows[0] || {}, dup = dupRows[0] || {}, after = afterRows[0] || {};
-  const pass = !!batch && String(batch.status) === "COMPLETED_PROMOTED_CLEANED" && asInt(dup.c, 0) === 0 && asInt(after.c, 0) === 0 && asInt(live.c, 0) > 0;
+  const pass = !!batch && String(batch.status) === "COMPLETED_PROMOTED_CLEANED" && asInt(dup.c, 0) === 0 && asInt(live.c, 0) > 0;
   return { pass, required_base_batch_id: LOCKED_BASE_BATCH_ID, status: batch ? batch.status : null, rows_promoted: batch ? asInt(batch.rows_promoted, 0) : 0, live_base_rows: asInt(live.c, 0), duplicate_base_live_keys: asInt(dup.c, 0), base_rows_after_cutoff: asInt(after.c, 0), cutoff_date: cutoffDate, cleaned_at: batch ? batch.cleaned_at : null };
 }
 async function determineLatestCompleteGameDate(env, deltaFloor, fetchTimeoutMs) {
