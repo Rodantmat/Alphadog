@@ -7992,6 +7992,43 @@ async function processBaseBaselineJob(env, row, runId, trigger) {
 }
 
 
+async function processBaseGameCalendarJob(env, row, runId, trigger) {
+  if (!env.BASE_GAME_CALENDAR_WORKER || typeof env.BASE_GAME_CALENDAR_WORKER.fetch !== "function") {
+    const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "blocked_missing_service_binding", certification: "BASE_GAME_CALENDAR_SERVICE_BINDING_MISSING", trigger };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_base_game_calendar_service_binding', error_message='BASE_GAME_CALENDAR_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+  const started = Date.now();
+  let input = {};
+  try { input = row.input_json ? JSON.parse(row.input_json) : {}; } catch { input = {}; }
+  const payload = { ...input, request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, trigger, orchestrator_version: SYSTEM_VERSION };
+  let output;
+  try {
+    const resp = await env.BASE_GAME_CALENDAR_WORKER.fetch("https://internal.alphadog-v2-base-game-calendar/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    const txt = await resp.text();
+    try { output = JSON.parse(txt); } catch { output = { ok: false, data_ok: false, status: "invalid_json_from_base_game_calendar", raw: txt.slice(0, 1500) }; }
+  } catch (err) {
+    output = { ok: false, data_ok: false, status: "service_binding_fetch_failed", error: String(err && err.message ? err.message : err) };
+  }
+  const elapsed = Date.now() - started;
+  const ok = !!(output && output.ok);
+  const dataOk = output && output.data_ok === true ? 1 : 0;
+  const certification = String((output && output.status) || (ok ? "BASE_GAME_CALENDAR_COMPLETED" : "BASE_GAME_CALENDAR_FAILED"));
+  const cappedOutput = { ...output, processed_by_orchestrator: SYSTEM_VERSION, trigger };
+  const errorCode = ok ? null : "base_game_calendar_dispatch_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Base Game Calendar dispatch failed").slice(0, 500);
+  await run(env.CONTROL_DB,
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, ok ? "completed" : "failed", dataOk, certification, Number((output && output.rows_upserted) || 0), elapsed, JSON.stringify(payload), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", ok ? "completed" : "failed", JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  return cappedOutput;
+}
+
+
 async function processBasePitcherMetricsJob(env, row, runId, trigger) {
   if (!env.BASE_PITCHER_METRICS_WORKER || typeof env.BASE_PITCHER_METRICS_WORKER.fetch !== "function") {
     const output = {
