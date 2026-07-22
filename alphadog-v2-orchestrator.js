@@ -18309,6 +18309,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isBaseCertifierPostgresJob(row)) {
+    const output = await processBaseCertifierPostgresJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_base_certifier_postgres_job" : "failed_one_base_certifier_postgres_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
