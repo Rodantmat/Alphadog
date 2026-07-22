@@ -109,12 +109,12 @@ async function deriveBullpenStageRows(sql, batchId, runId, mode, sourceSeason, s
       ingestion_mode, source_key, source_confidence, source_season, row_status
     )
     SELECT
-      ${batchId} || '_' || p.team_id || '_' || p.game_pk || '_' || p.player_id || '_bullpen',
-      ${batchId}, ${runId}, p.team_id, p.game_pk, p.game_date, p.player_id, p.opponent_team_id, p.is_home,
+      ${batchId} || '_' || regexp_replace(p.team_id, '^mlb_', '') || '_' || p.game_pk || '_' || p.player_id || '_bullpen',
+      ${batchId}, ${runId}, regexp_replace(p.team_id, '^mlb_', ''), p.game_pk, p.game_date, p.player_id, regexp_replace(p.opponent_team_id, '^mlb_', ''), p.is_home,
       p.innings_pitched_decimal, p.earned_runs, p.hits_allowed, p.walks_allowed, p.strikeouts, p.raw_json,
       ${mode}, ${SOURCE_KEY}, 'DERIVED_FROM_PITCHER_GAME_LOGS_AND_STARTER_HISTORY', ${sourceSeason}, 'staged'
     FROM stats_pitcher.game_logs p
-    LEFT JOIN team.starter_history s ON s.team_id = p.team_id AND s.game_pk = p.game_pk
+    LEFT JOIN team.starter_history s ON s.team_id = regexp_replace(p.team_id, '^mlb_', '') AND s.game_pk = p.game_pk
     WHERE p.game_date BETWEEN ${startDate}::date AND ${endDate}::date
       AND (s.mlb_player_id IS NULL OR s.mlb_player_id != p.player_id)
     ON CONFLICT (stage_id) DO UPDATE SET
