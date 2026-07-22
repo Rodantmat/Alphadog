@@ -372,7 +372,7 @@ async function getOrCreateDeltaState(env, sql, input) {
   const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
   await sql`
     INSERT INTO stats_hitter.splits_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_endpoint, source_season, promote_rows_per_tick, certification_status, notes, started_at, updated_at)
-    VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'delta_update', 'DELTA_MINING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${LOCKED_SOURCE_ENDPOINT_PATTERN}, ${sourceSeason}, ${tickConfig.promote_rows_per_tick}, 'not_certified', ${`daily full-refresh delta for ${today}; base batch ${LOCKED_BASE_BATCH_ID} gate required`}, now(), now())
+    VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'delta_update', 'DELTA_MINING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${LOCKED_SOURCE_ENDPOINT_PATTERN}, ${sourceSeason}, ${tickConfig.promote_rows_per_tick}, 'not_certified', ${`daily affected-player refresh (players active in last ${DELTA_AFFECTED_LOOKBACK_DAYS} days) for ${today}; base batch ${LOCKED_BASE_BATCH_ID} gate required`}, now(), now())
     ON CONFLICT (batch_id) DO NOTHING
   `;
   const rows = await sql`SELECT * FROM stats_hitter.splits_batches WHERE batch_id=${batchId} LIMIT 1`;
