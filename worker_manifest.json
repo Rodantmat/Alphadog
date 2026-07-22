@@ -23,6 +23,7 @@
     "alphadog-v2-base-pitcher-splits",
     "alphadog-v2-base-hitter-metrics",
     "alphadog-v2-base-pitcher-metrics",
+    "alphadog-v2-base-expansion-mining",
     "alphadog-v2-base-team-game-logs",
     "alphadog-v2-base-bullpen-history",
     "alphadog-v2-base-starter-history",
