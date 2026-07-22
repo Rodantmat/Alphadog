@@ -2217,3 +2217,78 @@ bullpen_fatigue, stolen_base_family, umpire_tendency, park_factors, market_impli
 opposing_pitcher_quality, defensive_quality_oaa, lineup_slot, lineup_surrounding_quality,
 times_through_order) - checking existing values against this session's real research before
 assuming any of them are already correct, not just filling the genuinely-empty ones.
+
+================================================================================
+SESSION: base-hitter-metrics + base-pitcher-metrics (Postgres migration) — COMPLETE
+================================================================================
+
+Faithfully ported the real, more sophisticated 5-stage D1 pipeline (base_rebuild_stage_only ->
+snapshot_prep_stage_only -> snapshot_delta_gate [bulk first-promote + ongoing repair] ->
+delta_recalculate_affected_players [daily driver]), confirmed correct via both live D1 source
+read and an independent forensic chat-history extraction (two sources agreeing). Critical
+departure from every other worker this session: stage tables (metric_stage,
+metric_snapshot_stage) are NEVER drained -- kept permanent to support snapshot_delta_gate's
+repair capability.
+
+Real formulas (hitter): 5 windows (last_3/5/10/20_games + season_to_date). total_bases_derived_sum
+(singles + 2*doubles + 3*triples + 4*home_runs), not the source total_bases column, drives
+slugging/tb_per_pa. h_bb_per_pa_proxy explicitly not true OBP, audit-only. Splits are pure
+source pass-through. Hand-verified against real data, exact match.
+
+Real formulas (pitcher): era_calculated = earned_runs*27/outs_recorded, whip_calculated =
+(walks+hits)/innings_pitched, k/bb/hr_rate = stat/batters_faced. Split pass-through honestly
+limited to ops/avg/obp/slg_against -- stats_pitcher.splits has no era/whip/earned_runs at the
+split level, so era/whip split pass-through (which the D1 source expected) was correctly
+omitted rather than fabricated. Hand-verified: ERA 6*27/12=13.5, WHIP (1+9)/4=2.5, exact.
+
+Real bugs found and fixed (hitter):
+1. Split-key mismatch: ported code assumed D1's vs_left/vs_right convention, but this project's
+   own Postgres stats_hitter.splits uses vl/vr -- silently broke every split metric on first
+   run. Root-caused and fixed across all 4 pipeline stages.
+2. Legacy shadow-data duplicate keys: stats_hitter.splits has real duplicate rows per
+   player/split_key from an old _hitting_ naming convention (ingestion_mode IS NULL).
+   Root-cause fix: filter ingestion_mode IS NOT NULL, not just a defensive dedup.
+3. getAffectedPlayers referenced a source_snapshot_date column that doesn't exist on
+   stats_hitter.splits -- fixed to use updated_at.
+
+Real bug found and fixed (pitcher): sql(LIVE_COLS) is not valid postgres.js syntax for a
+column-name list (tried to bind LIVE_COLS as INSERT values, threw UNDEFINED_VALUE). Fixed by
+building the INSERT as a literal SQL string via sql.unsafe() since LIVE_COLS is a static,
+trusted column list.
+
+Day-by-day watermark delta -- real design change directed by Rodolfo mid-session: delta was
+originally built matching "any player with data newer than baseline," which could jump straight
+to the latest available date in one tick. Corrected: delta never mines new raw data, only
+recomputes from what upstream workers already mined. Added a persistent delta_watermark_date
+column (seeded from the base batch's real cutoff date on completion). Each delta tick computes
+next_date = watermark + 1 day, recomputes only players active on that single real day, promotes,
+and only then advances the watermark -- one real calendar day per tick, never skipping ahead.
+Validated against standard ETL watermark practice via web search (confirms
+transactional/only-advance-on-success semantics as correct). Confirmed working via real no-op
+test on both workers: watermark=2026-07-20, computed next_date=2026-07-21, correctly refused
+since real game data doesn't extend past 07-20 yet.
+
+This same day-by-day watermark principle is directed to apply to Expansion, Classification, and
+Baseline as those are built, with each layer's delta gated on the prior layer having already
+advanced to that same day.
+
+Results: Hitter 613/613 players, 86580 rows staged, 3065 live rows, 0 duplicates. Pitcher
+675/675 players, 111375 rows staged, 3375 live rows, 0 duplicates. Both: snapshot_delta_gate
+bulk-promoted 100% of stage rows to live in one shot. Day-by-day delta no-op test passed
+cleanly on both.
+
+Key constants: hitter batch id hitter_metrics_base_backfill_singleton, profile
+hitter_metrics_neutral_v0_3_0_stage_only; pitcher batch id
+pitcher_metrics_base_backfill_singleton, profile pitcher_metrics_neutral_v0_3_0_base_stage.
+Both: config.worker_tick_settings chunk_size_players=50, delta batch/snapshot IDs are per-day,
+stage tables permanent (no clean step exists in either worker).
+
+Reference material absorbed this session (not yet applied -- for Expansion/Classification/
+Baseline when built): forensic chat-history extraction confirms a 3-tier system
+(DEVELOPING/ESTABLISHED/ELITE, boundary at non_push_sample>=10), a real prop_recency_profile
+Bayesian shrinkage config (per-prop recency weights + prior_strength_multiplier, profiles A-E),
+subset_of_constraints (clamping hierarchy) and shared_threshold_aliases (true-equality copying)
+mechanisms in runBaselineV6Tick, a Wilson score interval fix for small samples, and a resolved
+More/Less independent-shrinkage bug. Full detail in
+alphadog_metrics_expansion_classification_baseline_forensic_extraction.txt at repo root.
+
