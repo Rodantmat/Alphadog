@@ -201,6 +201,10 @@
       "service": "alphadog-v2-base-pitcher-metrics"
     },
     {
+      "binding": "BASE_EXPANSION_MINING_WORKER",
+      "service": "alphadog-v2-base-expansion-mining"
+    },
+    {
       "binding": "BASE_TEAM_GAME_LOGS_WORKER",
       "service": "alphadog-v2-base-team-game-logs"
     },
