@@ -48,6 +48,7 @@ async function fetchSchedule(startDate, endDate, gameTypes = "R", hydrate = "tea
 
 async function upsertCalendar(sql, games) {
   if (!games.length) return 0;
+  const seen = new Set();
   const rows = games.map(game => {
     const c = classifyGame(game);
     const gamePk = Number(game.gamePk);
@@ -67,7 +68,7 @@ async function upsertCalendar(sql, games) {
       series_game_number: game.seriesGameNumber == null ? null : Number(game.seriesGameNumber),
       raw_json: JSON.stringify(game)
     };
-  }).filter(r => r.game_pk);
+  }).filter(r => r.game_pk && !seen.has(r.game_pk) && seen.add(r.game_pk));
   const CHUNK = 300;
   let written = 0;
   for (let i = 0; i < rows.length; i += CHUNK) {
