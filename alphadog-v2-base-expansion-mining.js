@@ -90,8 +90,8 @@ async function runDeltaMining(sql, input) {
   for (const gamePk of slice) {
     const gRows = await sql`
       SELECT game_pk, MAX(game_date) AS game_date,
-        MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id,
-        MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id
+        MAX(CASE WHEN is_home=1 THEN regexp_replace(team_id::text, '^mlb_', '') END)::bigint AS home_team_id,
+        MAX(CASE WHEN is_home=0 THEN regexp_replace(team_id::text, '^mlb_', '') END)::bigint AS away_team_id
       FROM team.starter_history WHERE game_pk=${gamePk} GROUP BY game_pk
     `;
     const g = gRows[0] || null;
