@@ -2216,7 +2216,39 @@ NEXT: continue this same audit-and-fix pattern through the remaining factors (pl
 bullpen_fatigue, stolen_base_family, umpire_tendency, park_factors, market_implied_total,
 opposing_pitcher_quality, defensive_quality_oaa, lineup_slot, lineup_surrounding_quality,
 times_through_order) - checking existing values against this session's real research before
-assuming any of them are already correct, not just filling the genuinely-empty ones.
+================================================================================
+SESSION: base-classification-v5 (Postgres) — COMPLETE, plus real Expansion dead-end finding
+================================================================================
+
+Real, decisive finding before building: Expansion's Line Inventory/Sanity/HP stages (D1)
+depend on hit_probability_v2_current, which is permanently dead (0 rows, never written) --
+tied to a retired legacy scoring stack (score-enrichment-v1 -> hit-probability-v2 ->
+final-score-v1 -> final-board-v2), confirmed dormant since 2026-06-30. Rodolfo confirmed:
+Classification/Baseline V5 are genuinely board/market/daily-context agnostic (confirmed in
+the live code itself via notes_json flags: no_daily_context/no_market_context/
+no_scoring_context). Real BASELINE_V5_DAILY_SOURCE_LAYERS confirms the only real
+dependencies are the 9 base/metrics layers already built this session (hitter_game_logs,
+pitcher_game_logs, team_game_logs, starter_history, bullpen_history, hitter_splits,
+pitcher_splits, hitter_metrics, pitcher_metrics). Expansion's dead stages are parked --
+not needed for the real Classification/Baseline V5 chain.
+
+Real tier logic ported exactly from live D1 source (hitterTier12, pitcherTier): confirmed
+tier is player-level (prop/line/side params are accepted but unused in the branch logic),
+computed from full-season raw game logs (not windowed metrics snapshots) plus vs_left/
+vs_right splits. Pitcher classification reads starts only, joining team.starter_history
+(identity/matchup) with stats_pitcher.game_logs (real stat columns) -- starter_history has
+no stat columns itself, a real bug caught and fixed during build.
+
+Results: 927 players classified (614 hitters + 313 pitchers), 0 duplicates. Real tier
+distribution sums correctly: 200 micro-sample rookies, 186 utility bench, 88+77 core
+regulars, etc. Confirmed a real, plausible mid-season spread.
+
+Next: Baseline V5 (the HP probability model) is a much larger system than classification --
+dozens of exact per-prop statistical formulas found in the live source (binomial tail
+probabilities, gamma-Poisson models for earned runs/runs allowed, overdispersed proxies,
+HRR cluster proxy with a lift guard, fantasy score compound proxies). This will need its
+own dedicated extraction pass, flagged honestly rather than estimated.
+
 
 ================================================================================
 SESSION: base-hitter-metrics + base-pitcher-metrics (Postgres migration) — COMPLETE
