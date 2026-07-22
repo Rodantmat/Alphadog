@@ -376,7 +376,8 @@ async function getDeltaWindow(env, sql, inputJson, fetchTimeoutMs) {
   return { ok: true, delta_start_date: start, delta_end_date: latest, delta_floor_date: deltaFloor, latest_complete_game_date: latest, repair_lookback_days: DEFAULT_DELTA_LOOKBACK_DAYS, initial_full_delta_catchup: !hasPriorDeltaLive, prior_delta_live_max_game_date: maxDeltaGameDate, schedule_endpoint: schedule.endpoint };
 }
 async function getOrCreateDeltaState(env, sql, input, windowInfo) {
-  const existingRows = await sql`SELECT * FROM team.game_log_batches WHERE mode='delta_update' AND status != 'CERTIFICATION_FAILED' AND delta_start_date=${windowInfo.delta_start_date} ORDER BY started_at DESC LIMIT 1`;
+  const activeStatuses = ["DELTA_MINING", "DELTA_STAGED_READY_FOR_CERTIFICATION", "DELTA_CERTIFIED_READY_TO_PROMOTE", "DELTA_PROMOTING", "DELTA_PROMOTED_READY_TO_CLEAN", "DELTA_CLEANING"];
+  const existingRows = await sql`SELECT * FROM team.game_log_batches WHERE mode='delta_update' AND status = ANY(${activeStatuses}) AND delta_start_date=${windowInfo.delta_start_date} ORDER BY started_at DESC LIMIT 1`;
   if (existingRows[0]) return { is_new: false, batch: existingRows[0] };
   const runId = asText(input.run_id, rid("run_delta_team_game_logs"));
   const batchId = rid("team_game_logs_delta_update_batch");
