@@ -501,7 +501,7 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
       strikeouts_sum: m.strikeouts_sum ?? null, runs_sum: m.runs_sum ?? null, rbi_sum: m.rbi_sum ?? null, stolen_bases_sum: m.stolen_bases_sum ?? null,
       total_bases_derived_sum: m.total_bases_derived_sum ?? null, batting_average: m.batting_average ?? null, slugging_percentage: m.slugging_percentage ?? null,
       strikeout_rate: m.strikeout_rate ?? null, walk_rate: m.walk_rate ?? null, hr_rate: m.hr_rate ?? null, tb_per_pa: m.tb_per_pa ?? null, h_per_ab: m.h_per_ab ?? null,
-      sample_size_label: m.sample_size_label || null, vs_left_json: JSON.stringify(split.vs_left || {}), vs_right_json: JSON.stringify(split.vs_right || {}),
+      sample_size_label: m.sample_size_label || null, vs_left_json: JSON.stringify(split.vl || {}), vs_right_json: JSON.stringify(split.vr || {}),
       metrics_json: JSON.stringify(m), audit_json: JSON.stringify({}), metadata_json: JSON.stringify(b.metadata), review_flags_json: JSON.stringify(b.flags),
       lineage_json: JSON.stringify({ source_metric_batch_id: batchId, snapshot_batch_id: snapshotBatchId, worker_version: VERSION, mode: "delta_recalculate_affected_players" }),
       row_status: b.flags.length ? "snapshot_stage_review" : "snapshot_stage_staged", certification_status: "delta_recalc_snapshot_stage_not_promoted", certification_grade: "DELTA_RECALC_STAGE"
