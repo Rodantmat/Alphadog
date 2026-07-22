@@ -10,12 +10,18 @@ WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["
 SECRETS_FILE = Path(".alphadog_worker_secrets.json")
 
 GLOBAL_REDEPLOY_FILES = {
-    "worker_manifest.json",
-    "vars.production.json",
-    "cloudflare_d1_bindings.json",
     "generate_wrangler_configs.py",
     "github_mobile_deploy_workers.py",
     "github_write_worker_secrets_file.py",
+}
+
+# These change routinely (e.g. registering a single new worker) and must NOT force
+# a full-fleet redeploy. A change here only pulls in a small, targeted set of extra
+# deploy targets instead of the whole WORKERS list.
+TARGETED_EXTRA_FILES = {
+    "worker_manifest.json": ["alphadog-v2-orchestrator"],
+    "vars.production.json": [],
+    "cloudflare_d1_bindings.json": [],
 }
 
 CONTROL_ROOM_EXTRA_FILES = {
