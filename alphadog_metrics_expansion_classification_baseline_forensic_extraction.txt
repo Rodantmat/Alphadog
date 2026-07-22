@@ -312,7 +312,180 @@ STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 2 (honest, explicit)
 - Full disambiguation of which of the 5/8/10/20/50 non_push_sample cutoffs maps to which
   specific tier name or sub-calculation (only the >=10 DEVELOPING/ESTABLISHED+ELITE boundary
   is unambiguously confirmed).
-PASS_4_ADDENDUM_PLACEHOLDER
+- The remaining flagged transcripts from Pass 1's scope statement
+  (2026-07-18-00-37-34, 2026-07-18-04-39-42, 2026-07-18-06-02-41, 2026-07-18-18-25-43,
+  2026-07-19-06-17-57) were NOT deep-read in Pass 2 either, due to time - Pass 2 focused
+  entirely on 2026-07-19-04-41-25, which turned out to be extremely high-yield. These remain
+  a real, honest gap for a Pass 3 if more exhaustive coverage is required.
+
+================================================================================
+PASS 4 ADDENDUM (added 2026-07-20, continuing same day) - NEW SOURCE FOUND:
+/repo/claude-work-log.md (180KB, 2220 lines) - a REPO FILE, not a chat transcript, never
+checked in Passes 1-3. This turned out to be the single richest source found in the entire
+extraction effort. Scope maintained: calculation layers only (Metrics/Expansion/
+Classification/Baseline), Final Scoring System content found in the same file (score-audit.js
+DEFAULT_SIM_CONFIGS dead code, HP-board-level fixes, Final Score blend formula,
+PRIMARY_HP_THRESHOLD) is explicitly EXCLUDED per instruction, even where found.
+================================================================================
+
+--------------------------------------------------------------------------------
+NEW SECTION 5G: THE REAL SHRINKAGE FORMULA'S FUNCTION NAMES, FINALLY LOCATED
+(the exact gap Pass 2/3 flagged as "ingredients found, formula not found")
+--------------------------------------------------------------------------------
+Source: claude-work-log.md, lines ~513-536.
+Confirmed real function names forming the shrinkage chain: shrunkRate (the final blended
+rate) is computed by blending "player's own metric_value + a tier-prior, weighted by
+games_sample via priorStrengthForSample". Three distinct real functions:
+  - priorStrengthForSample (weights how much prior vs. raw player data counts, as a function
+    of games_sample/non_push_sample)
+  - blendedTierPrior (the tier-level population prior itself, computed via
+    runBaselineV6ComputeTierPriors per Pass 3's Section 5D - AVG(metric_value) grouped by
+    tier_key from classification_v6_current)
+  - shrunkRate (the final output combining the two)
+The EXACT closed-form equation combining these three was still not captured verbatim as a
+code snippet even in this pass (only the narrative description above) - this is the one
+remaining piece of the shrinkage-formula gap, now narrowed to "the exact arithmetic inside
+priorStrengthForSample/shrunkRate specifically," not the whole mechanism.
+A REAL, confirmed bug in this exact area (dated, in this same log): "for very-low-games_sample
+rookies, this blend is producing wildly inflated means" - 2 real, named, verified examples:
+Joshua Kuroda-Grauer (home_runs 0.5+ more: baseline_v6 computed 99.08%, real-world 0 HR this
+season/career) and Petey Halpin (rbis 0.5+ more: baseline_v6 computed 98.68%, real-world 1 RBI
+all season) - both cross-checked against real Baseball-Reference/Wikipedia data, not guessed.
+
+--------------------------------------------------------------------------------
+NEW SECTION 4F/5H: EXPANSION - REAL SYSTEM BEHAVIOR FINALLY CONFIRMED (3rd pass with a
+dedicated look, first with a real positive find)
+--------------------------------------------------------------------------------
+Source: claude-work-log.md, lines ~727-734.
+Confirmed real: a system called "expansion_line_inventory" genuinely exists in the same
+codebase (alphadog-v2-phase3a-first-inning-pitcher-context.js) with EXPLICIT dynamic
+line-generation support - confirmed real config/flag names: hardcoded_line_lists_rejected:true,
+needs_dynamic_generation. This is a real, more sophisticated line-generation mechanism than
+what Classification V6/Baseline V6 currently use (which generate a FIXED set of standard line
+increments per prop, not dynamically matched to the market's actual offered lines - this is
+"ISSUE 2 / Variation coverage gap" below).
+CRITICAL SCOPE FINDING: expansion_line_inventory feeds DIFFERENT tables -
+player_baseline_hp_v2_current / expansion_player_baseline_hp_current - NOT baseline_v6_current,
+which is what the currently-active HP Board reads. Direct quote: "The fix infrastructure may
+already partially exist but isn't wired to the active pipeline." This is a real, confirmed,
+dated architectural fact: Expansion is NOT dead code and NOT undocumented - it is a real,
+functioning, more-capable system that was simply never connected to the pipeline that ended
+up becoming the live one (Baseline V6/Classification V6). This directly resolves the
+"Expansion" gap that stood unaddressed across Passes 1 and 3.
+
+--------------------------------------------------------------------------------
+NEW SECTION 4G: prop_line_universe - THE REAL, SOLE SOURCE OF EACH PROP'S LINE LIST,
+REAL CONFIRMED BUG AND FIX
+--------------------------------------------------------------------------------
+Source: claude-work-log.md, lines ~1984-2000.
+Confirmed real: buildComboList() (shared by BOTH classification and HP base-builders - i.e.
+one shared function drives combo generation for both Classification V6 and Baseline V6)
+iterates directly from the live prop_line_universe DB config table. A separate static JS
+constant containing a "correct" full line list was found to be genuinely dead/unused code -
+prop_line_universe is confirmed the real, sole, authoritative source.
+Real, confirmed bug: prop_line_universe was missing the 0.5 line entirely for hits_runs_rbis,
+and had only 3 of 16 real intended lines for fantasy_score (6.5/8.5/10.5 present; the rest
+missing). Real fix: added 0.5 to hits_runs_rbis' line list, added 4.5 to fantasy_score's.
+Real, confirmed post-fix data (direct quote): "hits_runs_rbis@0.5 now has 592 real players
+with a real, sensible league average (58.27%) - correctly higher than Hits' 49.43%, matching
+the proven ground-truth superset relationship" - this is a live, real confirmation of the
+subset_of_constraints hierarchy found in Pass 3 (hits -> hits_runs_rbis), now backed by an
+actual real population-average comparison, not just a declared config rule.
+Real backfill sequence confirmed, in order: classification_v6_compute_stats ->
+classification_v6_tick -> baseline_v6_tick, run across the full live player population for
+each newly-added combo - this is the exact real 3-step pipeline for backfilling one new
+(prop, line) combo into both Classification V6 and Baseline V6.
+Since buildComboList reads the same DB config in both the full-rebuild AND daily-delta code
+paths, both fixes above (Expansion-adjacent line-list fix, and the general prop_line_universe
+correction) automatically apply to both without any separate delta-path change - a real,
+confirmed architectural property of the shared-function design.
+
+--------------------------------------------------------------------------------
+NEW SECTION 5I: WILSON SCORE INTERVAL - THE SMALL-SAMPLE OVERCONFIDENCE FIX, CONFIRMED
+IMPLEMENTED (this is Pass 3's flagged "Wilson interval improvements" mention, now fully
+resolved with real detail)
+--------------------------------------------------------------------------------
+Source: claude-work-log.md, lines ~1980-2024.
+Confirmed real, implemented fix in runBaselineV6Tick: a Wilson score interval bound (cited:
+Wilson 1927, "standard published technique for exactly this failure mode"). Mechanism: the
+model's point estimate is treated as an observed proportion with n=games_sample (i.e.
+non_push_sample) real trials, then bounded to the range that sample size can statistically
+support AT 95% CONFIDENCE - a real, exact, confirmed numeric parameter (95%). Real, exact
+threshold: samples with n>=30 are left completely untouched by this bound (only smaller
+samples get constrained).
+Confirmed real bugs caught and fixed BEFORE this was considered done (genuine engineering
+diligence, quoted): "a real scaling bug (treating a magnitude-average metric as a 0-1
+proportion, and separately a double-multiplication of the 0-100 scale)".
+HONEST, SELF-CORRECTING RE-TEST RESULT (directly quoted, real epistemic humility worth
+preserving verbatim): re-testing the original "998 extreme 0%/100% rows" finding that
+motivated this fix showed most were "genuinely, statistically correct near-zero values for
+real rare events (2+ doubles in a single game is legitimately rare for any MLB player), not
+miscalibrated common events" - and that common, moderate-probability props (hits, strikeouts,
+walks, runs, rbis, singles) already showed ZERO extreme 0%/100% cases at small samples even
+before this fix, because "the existing Bayesian prior_strength shrinkage was already handling
+these well." Conclusion, quoted: "the real-world impact of this fix is smaller than initially
+estimated, but it remains a real, correct, tested additional safeguard." Confirmed via real
+regression test: 0 out-of-range values across 584 real rows tested post-fix.
+
+--------------------------------------------------------------------------------
+NEW SECTION 5J: THE MORE/LESS INDEPENDENT-SHRINKAGE BUG - FULL ROOT CAUSE AND FIX
+(resolves Pass 3's "Singles/1.5 inconsistency" finding completely, with real academic grounding)
+--------------------------------------------------------------------------------
+Source: claude-work-log.md, lines ~1369-1414.
+Confirmed real, cited research grounding for the correct approach (three independent source
+classes, quoted): (1) real industry practice, OpticOdds, confirmed player-prop probabilities
+are read off ONE fitted parametric distribution per player-metric, never independently modeled
+per side; (2) Efron & Morris 1975 (JASA) - described as "one of the most cited papers in all
+of statistics, using MLB batting averages as its central worked example" - shrinkage targets
+ONE rate parameter per unit, never two separately-shrunk quantities for two sides of the same
+threshold; (3) real production baseball projection systems (Marcel, Steamer, ZiPS, PECOTA) -
+every one computes ONE shrunk rate per player per stat.
+Confirmed via direct code inspection: hpFromCountModel and hpFromNormalModel ALREADY implement
+this correctly (one CDF evaluation, "more"=1-CDF, "less"=CDF, which mathematically guarantees
+summation to 100 if the same mean feeds both). The bug was NOT in these formulas - it was that
+"less" independently re-derived its OWN games_sample/tier/shrunkRate via a separate
+classification pass that could race against a live-updating snapshot, occasionally producing
+a very slightly different mean than "more" used.
+Real fix, implemented in runBaselineV6Tick (quoted): when selected_side='less', STOP
+independently classifying/shrinking entirely - read the already-computed 'more' row for the
+same player/prop/line from baseline_v6_current and derive hit_probability_0_100 = 100 -
+more's HP directly, ALSO copying tier_key/confidence/non_push_sample/prior_strength/
+recency_blended_rate from 'more' for full consistency (i.e. 'less' becomes a pure derived
+mirror of 'more', not an independent computation at all, post-fix).
+Confirmed safe without touching classification_v6 or requiring rebuild, because
+buildComboList already enqueues 'more' before 'less' for every (prop,line), and combos process
+sequentially by comboIndex, never interleaved - so 'more' is always complete before 'less'
+starts, confirmed via the existing combo enumeration order.
+Real, confirmed test result: triggered a real production daily-delta run across all 116 real
+combos (mode=baseline_v5_hp_daily_delta - a DIFFERENT, smaller combo count than the 224 found
+in Pass 3 for classification_base; flagging this is a genuinely different mode/scope, not a
+contradiction) - completed cleanly, PASS grade, zero errors. System-wide verification: 37213
+total more/less pairs, 0 pairs with drift among anything the fix touched; 42 remaining bad
+pairs confirmed to be pre-fix stale rows (updated_at 2026-07-13) not yet touched by that day's
+delta - corrected with one more pass. FINAL: 0 bad pairs across all 37213 pairs system-wide.
+IMPORTANT CONFIRMATION (directly relevant to Pass 1's original Q1/Q4-style question about
+classification_v6 consumption): "verified classification_v6_current is read ONLY by
+baseline_v6's own build process within the same file - nothing else in the system
+(enrichment, matrix-builder, HP Board, Final Board) reads it directly." This REFINES (does
+not contradict) Pass 1's finding of zero readers in score-audit.js/score-final-board.js/etc -
+those are all correctly zero because the ONE real reader is baseline_v6's own function inside
+alphadog-v2-phase3a-first-inning-pitcher-context.js, which Pass 1 had not specifically checked
+for this exact table-read relationship.
+
+--------------------------------------------------------------------------------
+STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 4 (honest, explicit)
+--------------------------------------------------------------------------------
+- The exact closed-form arithmetic inside priorStrengthForSample and the final shrunkRate
+  combination step (function names and behavior description now confirmed real; verbatim
+  formula still not captured).
+- Pitcher Metrics v0.4.0/promotion status: not re-checked in Pass 4 (claude-work-log.md's
+  content this pass was entirely Baseline/Classification/Expansion-focused) - still stands
+  from Passes 1 and 3 as genuinely not found.
+- The remaining ~1700 lines of claude-work-log.md (2220 total; roughly lines 1-500 and
+  2036-2220, plus gaps between captured excerpts) were NOT read in this pass - given how much
+  NEW material this single file yielded from a handful of targeted greps, this file should be
+  considered NOT YET FULLY EXHAUSTED, and is the clear first target for Pass 5 rather than
+  returning to raw transcript files.
 - Cross-check against the live base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source
   files for the Metrics sections was still not performed in Pass 2 either.
 
