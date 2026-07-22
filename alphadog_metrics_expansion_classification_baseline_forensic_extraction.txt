@@ -486,6 +486,54 @@ STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 4 (honest, explicit)
   NEW material this single file yielded from a handful of targeted greps, this file should be
   considered NOT YET FULLY EXHAUSTED, and is the clear first target for Pass 5 rather than
   returning to raw transcript files.
+
+================================================================================
+PASS 5 ADDENDUM (added 2026-07-20, continuing same day)
+================================================================================
+Part A: Completed exhausting claude-work-log.md. Checked the remaining unread regions (lines
+~1-400 and ~2036-end) via targeted header/keyword greps. RESULT: zero new in-scope
+(Metrics/Expansion/Classification/Baseline calculation-layer) content found - every remaining
+unread region is Final Scoring System material (scoring-full-run chain validation,
+hit-probability-board reorder, scoring-engine Final Score formula, market-full-run
+starvation/timeout fixes), correctly excluded per this pass's scope. claude-work-log.md is
+now considered FULLY EXHAUSTED for in-scope content across Passes 4-5 combined.
+
+Part B: Checked a new repo file, FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md (32KB, 204
+lines) - its own header states it documents design/research for "the eventual
+Enrichment/Final Scoring rebuild," making it PRIMARILY out of scope for this pass. However,
+one real, new, small terminology nugget was found describing the EXISTING, already-live
+classification_v6/baseline_v6 methodology (used in the document as a design precedent, not
+as its main subject), quoted exactly: "same architectural spirit as the existing, proven
+classification_v6/baseline_v6 (z-score tiering, two-level shrinkage, Poisson/NB/Normal model
+selection)". This adds two new real descriptive terms not found in Passes 1-4:
+  - "z-score tiering" - suggests tier_key assignment (DEVELOPING/ESTABLISHED/ELITE, per
+    Pass 2/3) may be determined via a z-score (standardized deviation from population mean)
+    rather than a raw non_push_sample count alone, or in combination with it. NOT FOUND IN
+    HISTORY: confirmation of which specific metric the z-score is computed against, or
+    whether it determines tier_key directly or is a separate concept from the non_push_sample
+    boundaries already confirmed (5/8/10/20/50) - flagging as a real, new, but
+    NOT-YET-RECONCILED term rather than assuming it maps cleanly onto what's already found.
+  - "two-level shrinkage" - a real, named confirmation that the shrinkage mechanism has
+    exactly two levels (consistent with: level 1 = player's own metric_value blended with
+    tier-level prior via priorStrengthForSample/blendedTierPrior per Pass 4's Section 5G;
+    a plausible level 2 candidate would be the tier prior itself being shrunk toward a
+    league-wide/global prior, though this SECOND level was not independently confirmed by
+    any other source in Passes 1-5 - flagging as a real, named architecture fact whose second
+    level's exact mechanism remains NOT FOUND IN HISTORY).
+The rest of this document (Sections 2 onward: the factor relevance matrix, per-factor
+research on defensive quality/stolen base/TTOP/park factors, the two-layer future Enrichment
+redesign) is Final Scoring System / Enrichment content and is correctly excluded from this
+extraction per the stated scope, even though it was read to find the one relevant nugget
+above.
+
+PASS 5 RESULT: NOT a clean pass (one new item found, however small) - Pass 6 required per the
+two-consecutive-clean-passes rule. Next targets, in priority order: (1) any remaining
+unchecked top-level repo docs (ALPHADOG_SYSTEM_MAP.md sections not yet read in this specific
+extraction effort - it was read for the classification_v6/baseline_v6 architecture facts in
+Pass 1 but not exhaustively for Metrics/Expansion terms; README_SCHEMA_PHASE.txt,
+SETUP_CHECKLIST.txt, TEST_PLAN.txt are small, quick, not-yet-checked candidates), (2) then
+return to raw transcripts only if repo-level docs are exhausted first, since they have proven
+far higher-yield-per-effort than re-grepping multi-megabyte transcripts.
 - Cross-check against the live base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source
   files for the Metrics sections was still not performed in Pass 2 either.
 
