@@ -93,7 +93,7 @@ def targets_for_scope(scope):
         return ["alphadog-v2-control-room"]
 
     if any(Path(f).name in GLOBAL_REDEPLOY_FILES for f in changed):
-        print("Global deploy file changed. Deploying all workers.")
+        print("Global deploy tooling file changed. Deploying all workers.")
         return WORKERS[:]
 
     targets = []
@@ -101,6 +101,12 @@ def targets_for_scope(scope):
         w = worker_from_file(f)
         if w and w not in targets:
             targets.append(w)
+        extra = TARGETED_EXTRA_FILES.get(Path(f).name)
+        if extra:
+            for w2 in extra:
+                if w2 not in targets:
+                    targets.append(w2)
+                    print(f"Targeted extra deploy: {Path(f).name} changed -> also deploying {w2}")
 
     if not targets:
         print("No worker JS/config changed. Nothing to deploy.")
