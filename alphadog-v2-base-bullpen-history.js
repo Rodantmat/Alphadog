@@ -294,12 +294,13 @@ async function getOrCreateDeltaState(env, sql, input, windowInfo) {
   const existingRows = await sql`SELECT * FROM team.bullpen_history_batches WHERE mode='delta_update' AND status IN ${sql(activeStatuses)} AND delta_start_date=${windowInfo.delta_start_date} ORDER BY started_at DESC LIMIT 1`;
   if (existingRows[0]) return { is_new: false, batch: existingRows[0] };
   const runId = asText(input.run_id, rid("run_delta_bullpen_history"));
-  const batchId = rid("bullpen_history_delta_update_batch");
+  const batchId = `bullpen_history_delta_update_batch_${windowInfo.delta_start_date}_${windowInfo.delta_end_date}`;
   const sourceSeason = DEFAULT_SOURCE_SEASON;
   const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_GAMES, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
   await sql`
     INSERT INTO team.bullpen_history_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_season, base_backfill_cutoff_date, delta_start_date, promote_rows_per_tick, certification_status, notes, started_at, updated_at)
     VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'delta_update', 'DELTA_MINING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${sourceSeason}, ${DEFAULT_BASE_BACKFILL_CUTOFF_DATE}, ${windowInfo.delta_start_date}, ${tickConfig.promote_rows_per_tick}, 'not_certified', ${`delta_update window ${windowInfo.delta_start_date} through ${windowInfo.delta_end_date}; base batch ${LOCKED_BASE_BATCH_ID} gate required`}, now(), now())
+    ON CONFLICT (batch_id) DO NOTHING
   `;
   const rows = await sql`SELECT * FROM team.bullpen_history_batches WHERE batch_id=${batchId} LIMIT 1`;
   return { is_new: true, batch: rows[0] };
