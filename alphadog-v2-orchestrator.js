@@ -20224,6 +20224,7 @@ export default {
       await enqueueScheduledScoringFullRunIfDue(env, cronExpression);
       await enqueueScheduledDailyFullRunIfDue(env, cronExpression);
       await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
+      await enqueuePostgresFullRunIfDue(env, cronExpression);
       await pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
     })());
   }
