@@ -141,6 +141,11 @@ async function getPlayerUniverse(sql) {
   const rows = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs ORDER BY player_id`;
   return rows.map(r => Number(r.player_id));
 }
+const DELTA_AFFECTED_LOOKBACK_DAYS = 3;
+async function getAffectedPlayerUniverse(sql) {
+  const rows = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs WHERE game_date >= (CURRENT_DATE - ${DELTA_AFFECTED_LOOKBACK_DAYS}::int) ORDER BY player_id`;
+  return rows.map(r => Number(r.player_id));
+}
 
 async function insertStageRowsBulk(sql, batchId, runId, mode, sourceSeason, rows) {
   if (!rows.length) return { inserted: 0 };
