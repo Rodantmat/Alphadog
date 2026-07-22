@@ -557,7 +557,9 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
   await sql`UPDATE stats_hitter.metric_snapshot_stage SET promoted_at=COALESCE(promoted_at, now()) WHERE snapshot_batch_id=${snapshotBatchId}`;
   await sql`UPDATE stats_hitter.metric_snapshot_batches SET status='COMPLETED_DELTA_HITTER_METRICS_AFFECTED_RECALC', snapshot_rows=${snapshotWritten}, rows_promoted=${promoted.length}, finished_at=now(), promoted_at=now(), updated_at=now() WHERE snapshot_batch_id=${snapshotBatchId}`;
   await sql`UPDATE stats_hitter.metric_batches SET status='COMPLETED_DELTA_HITTER_METRICS_AFFECTED_RECALC', rows_staged=${staged}, rows_promoted=${promoted.length}, finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
-  return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", batch_id: batchId, snapshot_batch_id: snapshotBatchId, status: "COMPLETED_DELTA_HITTER_METRICS_AFFECTED_RECALC", affected_player_count: affected.ids.length, rows_staged: staged, rows_promoted: promoted.length };
+  // Watermark only advances here, after the day's stage+promote fully succeeded (transactional pointer advancement).
+  await sql`UPDATE stats_hitter.metric_batches SET delta_watermark_date=${dayDate}, updated_at=now() WHERE batch_id='hitter_metrics_base_backfill_singleton'`;
+  return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", batch_id: batchId, snapshot_batch_id: snapshotBatchId, status: "COMPLETED_DELTA_HITTER_METRICS_AFFECTED_RECALC", day_processed: dayDate, watermark_advanced_to: dayDate, affected_player_count: affectedIds.length, rows_staged: staged, rows_promoted: promoted.length, continuation_required: dayInfo.latest_available > dayDate };
 }
 
 export default {
