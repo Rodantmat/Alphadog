@@ -519,6 +519,43 @@ function isBaseCertifierPostgresJob(row) {
   return job === "base-certifier-postgres" && worker === "alphadog-v2-base-certifier-postgres";
 }
 
+// Real Postgres-native full-run stage list. Each stage is independently self-gating (checks its
+// own watermark plus the real game-calendar completeness before advancing) and self-continuing
+// (re-enqueues itself via continuation_required until it reaches steady state). This means the
+// full run does NOT need the old "certifier finds gaps -> feeds specific game_pks to miners"
+// pattern - that pattern existed because the old D1 miners were "dumb" executors needing an
+// externally-computed gap list. These Postgres workers discover their own scope. The full run's
+// only job is to make sure every stage gets a turn; ordering dependencies (e.g. baseline needs
+// classification's tier-change signal) self-heal across repeated ticks rather than needing rigid
+// sequencing, matching the validated "self-healing incremental pipeline" ETL pattern.
+const POSTGRES_FULL_RUN_STAGES = [
+  { job_key: "base-game-calendar", worker_name: "alphadog-v2-base-game-calendar", input_json: { mode: "refresh_calendar" } },
+  { job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", input_json: { mode: "delta_recalculate_affected_players" } },
+  { job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", input_json: { mode: "delta_recalculate_affected_players" } },
+  { job_key: "base-classification-v5", worker_name: "alphadog-v2-base-classification-v5", input_json: { mode: "delta_recalculate_affected_players" } },
+  { job_key: "base-baseline", worker_name: "alphadog-v2-base-baseline", input_json: { mode: "delta_recalculate_affected_players" } },
+  { job_key: "base-certifier-postgres", worker_name: "alphadog-v2-base-certifier-postgres", input_json: { mode: "check_date" } }
+];
+
+async function runPostgresFullRunEnqueue(env, input, requestId) {
+  const chainId = asTextOrNull(input.chain_id) || `chain_postgres_full_run_${Date.now().toString(36)}`;
+  const enqueued = [];
+  const skipped = [];
+  for (const stage of POSTGRES_FULL_RUN_STAGES) {
+    const existing = await first(env.CONTROL_DB, "SELECT request_id, status FROM control_job_queue WHERE job_key=? AND worker_name=? AND status IN ('pending','running') ORDER BY updated_at DESC LIMIT 1", stage.job_key, stage.worker_name);
+    if (existing) { skipped.push({ job_key: stage.job_key, reason: "already_pending_or_running", existing_request_id: existing.request_id }); continue; }
+    const stageRequestId = `postgres_full_run_${stage.job_key}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, ?, ?, ?, 'pending', 4, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      stageRequestId, chainId, stage.job_key, stage.worker_name, JSON.stringify(stage.input_json)
+    );
+    enqueued.push({ job_key: stage.job_key, request_id: stageRequestId });
+  }
+  return { ok: true, data_ok: true, mode: "postgres_full_run_enqueue", chain_id: chainId, stages_total: POSTGRES_FULL_RUN_STAGES.length, enqueued, skipped, note: "Each stage self-gates and self-continues; repeated ticks converge the whole chain without rigid sequencing." };
+}
+
+function asTextOrNull(v) { if (v === undefined || v === null || String(v).trim() === "") return null; return String(v).trim(); }
+
 function isBasePitcherGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
