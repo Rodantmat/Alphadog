@@ -14,7 +14,7 @@ const DEFAULT_CLEAN_ROWS_PER_TICK = 3000;
 const DEFAULT_LOCK_STALE_SECONDS = 60;
 const DEFAULT_FETCH_TIMEOUT_MS = 15000;
 const DELTA_AFFECTED_LOOKBACK_DAYS = 3;
-let LOCKED_BASE_BATCH_ID = "PENDING_FIRST_REAL_BASE_BACKFILL_COMPLETION";
+let LOCKED_BASE_BATCH_ID = "pitcher_splits_base_backfill_singleton";
 
 function nowUtc() { return new Date().toISOString(); }
 async function getWorkerTickConfig(sql, workerName, fallbackChunk, fallbackTickMs, fallbackPromote) {
