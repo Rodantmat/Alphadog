@@ -545,20 +545,48 @@ const POSTGRES_FULL_RUN_STAGES = [
 ];
 
 async function runPostgresFullRunEnqueue(env, input, requestId) {
-  const chainId = asTextOrNull(input.chain_id) || `chain_postgres_full_run_${Date.now().toString(36)}`;
-  const enqueued = [];
-  const skipped = [];
-  for (const stage of POSTGRES_FULL_RUN_STAGES) {
-    const existing = await first(env.CONTROL_DB, "SELECT request_id, status FROM control_job_queue WHERE job_key=? AND worker_name=? AND status IN ('pending','running') ORDER BY updated_at DESC LIMIT 1", stage.job_key, stage.worker_name);
-    if (existing) { skipped.push({ job_key: stage.job_key, reason: "already_pending_or_running", existing_request_id: existing.request_id }); continue; }
-    const stageRequestId = `postgres_full_run_${stage.job_key}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, ?, ?, ?, 'pending', 4, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-      stageRequestId, chainId, stage.job_key, stage.worker_name, JSON.stringify(stage.input_json)
+  // Real chain-state lookup: find (or start) the active chain, then look at each stage IN ORDER
+  // and take exactly one action - never touch more than one stage per invocation.
+  let chainId = asTextOrNull(input.chain_id);
+  if (!chainId) {
+    const activeChain = await first(env.CONTROL_DB,
+      "SELECT chain_id FROM control_job_queue WHERE chain_id LIKE 'chain_postgres_full_run_%' AND status IN ('pending','running') ORDER BY created_at DESC LIMIT 1"
     );
-    enqueued.push({ job_key: stage.job_key, request_id: stageRequestId });
+    chainId = activeChain ? activeChain.chain_id : `chain_postgres_full_run_${Date.now().toString(36)}`;
   }
-  return { ok: true, data_ok: true, mode: "postgres_full_run_enqueue", chain_id: chainId, stages_total: POSTGRES_FULL_RUN_STAGES.length, enqueued, skipped, note: "Each stage self-gates and self-continues; repeated ticks converge the whole chain without rigid sequencing." };
+  const stageReport = [];
+  for (let i = 0; i < POSTGRES_FULL_RUN_STAGES.length; i++) {
+    const stage = POSTGRES_FULL_RUN_STAGES[i];
+    const existing = await first(env.CONTROL_DB,
+      "SELECT request_id, status FROM control_job_queue WHERE chain_id=? AND job_key=? AND worker_name=? ORDER BY created_at DESC LIMIT 1",
+      chainId, stage.job_key, stage.worker_name
+    );
+    if (!existing) {
+      // This stage has never run in this chain - enqueue it now and stop. Nothing after this stage
+      // is touched until this one reaches a terminal status.
+      const stageRequestId = `postgres_full_run_${stage.job_key}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, ?, ?, ?, 'pending', 4, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        stageRequestId, chainId, stage.job_key, stage.worker_name, JSON.stringify(stage.input_json)
+      );
+      stageReport.push({ stage_index: i, job_key: stage.job_key, action: "enqueued", request_id: stageRequestId });
+      return { ok: true, data_ok: true, mode: "postgres_full_run_step", chain_id: chainId, current_stage_index: i, current_stage: stage.job_key, action: "enqueued_next_stage", stages_total: POSTGRES_FULL_RUN_STAGES.length, stage_report: stageReport };
+    }
+    const terminal = ["completed", "failed", "cancelled"].includes(String(existing.status));
+    if (!terminal) {
+      // This stage is still in flight (pending/running/partial_continue) - wait. Do not touch any
+      // other stage. The worker's own self-continuation (waitUntil) will keep advancing it.
+      stageReport.push({ stage_index: i, job_key: stage.job_key, action: "waiting", request_id: existing.request_id, status: existing.status });
+      return { ok: true, data_ok: true, mode: "postgres_full_run_step", chain_id: chainId, current_stage_index: i, current_stage: stage.job_key, action: "waiting_for_current_stage", current_stage_status: existing.status, stages_total: POSTGRES_FULL_RUN_STAGES.length, stage_report: stageReport };
+    }
+    stageReport.push({ stage_index: i, job_key: stage.job_key, action: "already_terminal", request_id: existing.request_id, status: existing.status });
+    // Terminal (completed/failed/cancelled) - move on to check the next stage in the same invocation
+    // only if this one succeeded outright; a failed stage stops the chain here for visibility.
+    if (String(existing.status) === "failed") {
+      return { ok: false, data_ok: false, mode: "postgres_full_run_step", chain_id: chainId, current_stage_index: i, current_stage: stage.job_key, action: "stopped_on_failed_stage", stages_total: POSTGRES_FULL_RUN_STAGES.length, stage_report: stageReport };
+    }
+  }
+  return { ok: true, data_ok: true, mode: "postgres_full_run_step", chain_id: chainId, action: "all_stages_terminal", stages_total: POSTGRES_FULL_RUN_STAGES.length, stage_report: stageReport, chain_complete: true };
 }
 
 function asTextOrNull(v) { if (v === undefined || v === null || String(v).trim() === "") return null; return String(v).trim(); }
