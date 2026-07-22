@@ -489,6 +489,12 @@ function isBasePitcherMetricsJob(row) {
   return job === "base-pitcher-metrics" && worker === "alphadog-v2-base-pitcher-metrics";
 }
 
+function isBaseExpansionMiningJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-expansion-mining" && worker === "alphadog-v2-base-expansion-mining";
+}
+
 function isBasePitcherGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
