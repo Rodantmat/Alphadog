@@ -381,11 +381,12 @@ async function runDeltaUpdateTick(env, sql, input) {
   const batch = state.batch;
   const batchId = batch.batch_id;
   const runId = batch.run_id;
-  const status = String(batch.status || "");
   const owner = asText(input.owner, rid("owner"));
   const lock = await acquireBatchLock(sql, batchId, owner, DEFAULT_LOCK_STALE_SECONDS);
   if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, lock };
   try {
+    const freshRows = await sql`SELECT status FROM team.starter_history_batches WHERE batch_id=${batchId} LIMIT 1`;
+    const status = String((freshRows[0] && freshRows[0].status) || "");
     if (status === "COMPLETED_PROMOTED_CLEANED") {
       return { ok: true, data_ok: true, mode: "delta_update", batch_id: batchId, status, delta_window: windowInfo, already_completed: true };
     }
