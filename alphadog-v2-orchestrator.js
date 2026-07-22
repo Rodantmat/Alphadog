@@ -18065,6 +18065,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isBaseExpansionMiningJob(row)) {
+    const output = await processBaseExpansionMiningJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok && output.continuation_required ? "partial_continue_base_expansion_mining_job" : (output && output.ok ? "completed_one_base_expansion_mining_job" : "failed_one_base_expansion_mining_job"),
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
