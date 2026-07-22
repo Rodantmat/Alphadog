@@ -189,10 +189,10 @@ async function runDeltaMining(sql, input) {
   return {
     ok: true, data_ok: true, mode: "expansion_delta_mining", batch_id: batchId, request_id: requestId, run_id: runId,
     status, certification: status, certification_grade: done ? (issueTotal ? "PASS_WITH_WARNINGS" : "PASS") : "PARTIAL_CONTINUE",
-    delta_games_total: total, delta_games_attempted: slice.length, delta_games_written: gamesWritten, delta_pitcher_rows_written: pitcherRows,
+    delta_games_remaining_before_tick: totalRemainingBeforeThisTick, delta_games_attempted: slice.length, delta_games_written: gamesWritten, delta_pitcher_rows_written: pitcherRows,
     current_game_rows: currentGamesRows[0].c, current_pitcher_rows: currentPitchersRows[0].c, issue_rows: issueTotal,
-    delta_cursor_offset: nextCursor, delta_game_chunk_size: chunkSize, continuation_required: !done,
-    next_input_json: !done ? { ...input, delta_mining_batch_id: batchId, delta_cursor_offset: nextCursor, delta_game_chunk_size: chunkSize } : null
+    delta_game_chunk_size: chunkSize, continuation_required: !done,
+    next_input_json: !done ? { ...input, delta_mining_batch_id: batchId, delta_game_chunk_size: chunkSize } : null
   };
 }
 
