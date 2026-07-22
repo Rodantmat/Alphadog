@@ -192,7 +192,15 @@ async function loadChunkSourceRows(sql, playerIds, season) {
 
 async function insertStageRowsBulk(sql, batchId, runId, ingestionMode, rows) {
   if (!rows.length) return 0;
-  const values = rows.map(r => ({
+  const seen = new Set();
+  const dedupedRows = [];
+  for (const r of rows) {
+    const key = `${r.player_id}_${r.season}_${r.metric_window}_${r.metric_key}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    dedupedRows.push(r);
+  }
+  const values = dedupedRows.map(r => ({
     stage_id: `${batchId}_${r.player_id}_${r.season}_${r.metric_window}_${r.metric_key}`,
     batch_id: batchId, run_id: runId, player_id: r.player_id, season: r.season, metric_window: r.metric_window, metric_key: r.metric_key,
     metric_family: r.metric_family, metric_value: r.metric_value, metric_text_value: r.metric_text_value, numerator: r.numerator, denominator: r.denominator,
