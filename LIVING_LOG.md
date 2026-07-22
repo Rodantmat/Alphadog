@@ -613,3 +613,23 @@ The eventual full-run design (orchestrator-driven, certifier-gated) is confirmed
 **`alphadog-v2-base-bullpen-history` is now fully proven end-to-end.** Real standing lessons from this worker for all future workers: (1) audit check-then-insert patterns for true TOCTOU races, not just lock-ordering races — a deterministic key + `ON CONFLICT DO NOTHING` is the stronger fix; (2) default to bulk CTE-based promote/clean statements over row-by-row loops from the start, both for correctness under Cloudflare's hang detection and for real throughput; (3) never assume a source table's team_id (or any foreign-key-like column) convention is consistent — verify empirically before joining, since even a single already-proven table can have a real internal split.
 
 **Next up: `base-hitter-splits`.**
+
+---
+
+## NEW WORKER — `alphadog-v2-base-hitter-splits` built clean, proven end-to-end, same session
+
+**Real architectural difference (confirmed correct with the user)**: hitter splits are per-player *season-to-date aggregates* (vs LHP/RHP), not per-game rows — there's no date range to diff against, since the underlying source itself changes with every new plate appearance. Mining is a per-player fetch loop (`/people/{id}/stats?stats=statSplits&sitCodes=vl,vr&group=hitting&season=2026`), same proven pattern as hitter/pitcher game logs, reusing `stats_hitter.game_logs`' distinct player list as the universe.
+
+**Critical real design correction, caught mid-build**: my first pass had `delta_update` re-fetch the full ~613-player universe daily. Before my new code had even finished its first deploy, the *old* D1 worker was still live and its real output revealed the actual differential design: `daily_affected_player_refresh_enabled: true`, `no_full_universe_remine: true` — it only refreshes players who **actually played recently**, not everyone. Corrected `delta_update` to scope to players with a `stats_hitter.game_logs` row in the last 3 days (`getAffectedPlayerUniverse`), while `base_backfill` still covers the full universe once. Confirmed real: delta correctly scoped to 380 affected players out of 613 total.
+
+**Config table wired in from day one, bulk CTE promote from day one** — both lessons from bullpen-history applied immediately, no retrofitting needed this time.
+
+**Real bug found and fixed**: same `ON CONFLICT DO UPDATE command cannot affect row a second time` class as team-game-logs — a single player's stats response can legitimately produce duplicate (season, split_key) entries within one insert batch. Fixed with the same dedup-before-insert pattern.
+
+**Important real lesson about testing scoped-refresh workers**: the first corrupt/delete repair test attempt used two players who hadn't played in weeks — delta correctly **did not** touch them (matches the real `no_full_universe_remine_for_repair` design), which looked like a failure at first glance but was actually correct behavior. Real lesson: **repair tests for any scoped/affected-refresh worker must use players who are genuinely inside that worker's real refresh scope**, not arbitrary base rows, or the test will produce a false negative. Redid the test with two real affected-universe players and confirmed proper restoration.
+
+**Real corrupt/delete repair test + no-op test, both passing** (using in-scope players `500743` and `502671`, both with games in the last 3 days): corrupted `500743_2026_vl` (real hits=29→777) and `502671_2026_vl` (real hits=35→888); deleted `500743_2026_vr` (real hits=13) and `502671_2026_vr` (real hits=30). Delta run reached `COMPLETED_PROMOTED_CLEANED`; all 4 rows confirmed restored to exact real values. No-op run right after: clean, real re-verification of all 380 affected players (not skipped), all 4 test rows still correct afterward.
+
+**`alphadog-v2-base-hitter-splits` is now fully proven end-to-end.**
+
+**Next up: `base-pitcher-splits`** — expect the same season-aggregate architecture and affected-player-refresh pattern as hitter-splits (likely `sitCodes=vl,vr` equivalent for pitchers, or possibly platoon-of-batter splits from the pitcher's side). Verify the real old file's mode list and the real MLB endpoint shape before assuming it's a straight copy of hitter-splits' logic — check for real differences (e.g. starter vs reliever role splits) before building.
