@@ -229,11 +229,11 @@ async function runBaseRebuild(sql, input) {
   }
   const nextComboIndex = comboIndex + comboSlice.length;
   const done = nextComboIndex >= combos.length;
-  await sql`UPDATE classification.classification_batches SET combo_index=${nextComboIndex}, canonical_prop_key=${combo.canonical_prop_key}, line_value=${combo.line_value}, selected_side=${combo.selected_side}, rows_written=rows_written+${result.rows_written}, status=${done ? "completed" : "running"}, finished_at=${done ? sql`now()` : null}, updated_at=now() WHERE batch_id=${batchId}`;
+  await sql`UPDATE classification.classification_batches SET combo_index=${nextComboIndex}, canonical_prop_key=${lastCombo.canonical_prop_key}, line_value=${lastCombo.line_value}, selected_side=${lastCombo.selected_side}, rows_written=rows_written+${totalRowsWritten}, status=${done ? "completed" : "running"}, finished_at=${done ? sql`now()` : null}, updated_at=now() WHERE batch_id=${batchId}`;
   return {
     ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId,
     status: done ? "COMPLETED_CLASSIFICATION_BASE" : "CLASSIFICATION_BASE_PARTIAL_CONTINUE",
-    combo_processed: combo, combo_index: nextComboIndex, total_combos: combos.length, rows_written_this_combo: result.rows_written,
+    combos_processed_this_tick: comboSlice.length, combo_index: nextComboIndex, total_combos: combos.length, rows_written_this_tick: totalRowsWritten,
     continuation_required: !done, next_input_json: !done ? { ...input } : null
   };
 }
