@@ -417,7 +417,7 @@ async function runSnapshotDeltaGate(sql, input) {
 // ---- Mode 4: delta_recalculate_affected_players — daily driver, real players only ----
 async function getAffectedPlayers(sql, season) {
   const baseBatch = await sql`SELECT input_latest_game_date, input_latest_split_snapshot_date FROM stats_hitter.metric_batches WHERE batch_id='hitter_metrics_base_backfill_singleton' LIMIT 1`;
-  const latestRows = await sql`SELECT MAX(game_date) AS g, (SELECT MAX(source_snapshot_date) FROM stats_hitter.splits WHERE season=${season}) AS s FROM stats_hitter.game_logs WHERE season=${season}`;
+  const latestRows = await sql`SELECT MAX(game_date) AS g, (SELECT MAX(updated_at) FROM stats_hitter.splits WHERE season=${season}) AS s FROM stats_hitter.game_logs WHERE season=${season}`;
   const latestGameDate = latestRows[0].g, latestSplitDate = latestRows[0].s;
   const baselineGameDate = baseBatch[0] ? baseBatch[0].input_latest_game_date : null;
   const baselineSplitDate = baseBatch[0] ? baseBatch[0].input_latest_split_snapshot_date : null;
@@ -425,7 +425,7 @@ async function getAffectedPlayers(sql, season) {
   const freshSplits = latestSplitDate && (!baselineSplitDate || latestSplitDate > baselineSplitDate);
   const ids = new Set();
   if (freshLogs) { const r = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs WHERE season=${season} AND game_date > ${baselineGameDate || "0001-01-01"} AND (COALESCE(pa,0)>0 OR COALESCE(ab,0)>0)`; for (const row of r) ids.add(Number(row.player_id)); }
-  if (freshSplits) { const r = await sql`SELECT DISTINCT player_id FROM stats_hitter.splits WHERE season=${season} AND source_snapshot_date > ${baselineSplitDate || "0001-01-01"}`; for (const row of r) ids.add(Number(row.player_id)); }
+  if (freshSplits) { const r = await sql`SELECT DISTINCT player_id FROM stats_hitter.splits WHERE season=${season} AND updated_at > ${baselineSplitDate || "0001-01-01"}`; for (const row of r) ids.add(Number(row.player_id)); }
   return { ids: Array.from(ids).sort((a, b) => a - b), latestGameDate, latestSplitDate };
 }
 
