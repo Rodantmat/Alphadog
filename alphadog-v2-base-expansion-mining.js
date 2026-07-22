@@ -121,7 +121,8 @@ async function runDeltaMining(sql, input) {
       gamesWritten++;
 
       const starters = await sql`
-        SELECT sh.mlb_player_id AS pitcher_id, sh.team_id, sh.opponent_team_id, sh.is_home, sh.game_date, sh.source_key, p.full_name
+        SELECT sh.mlb_player_id AS pitcher_id, regexp_replace(sh.team_id::text, '^mlb_', '')::bigint AS team_id,
+          regexp_replace(sh.opponent_team_id::text, '^mlb_', '')::bigint AS opponent_team_id, sh.is_home, sh.game_date, sh.source_key, p.full_name
         FROM team.starter_history sh LEFT JOIN ref.players p ON p.mlb_player_id = sh.mlb_player_id
         WHERE sh.game_pk = ${gamePk}
       `;
