@@ -183,7 +183,7 @@ async function getPlayerUniverse(sql, season) {
 async function loadChunkSourceRows(sql, playerIds, season) {
   if (!playerIds.length) return { logsByPlayer: new Map(), splitsByPlayer: new Map() };
   const logRows = await sql`SELECT * FROM stats_hitter.game_logs WHERE season=${season} AND player_id IN ${sql(playerIds)} ORDER BY player_id ASC, game_date ASC, game_pk ASC`;
-  const splitRows = await sql`SELECT * FROM stats_hitter.splits WHERE season=${season} AND split_key IN ('vs_left','vs_right') AND player_id IN ${sql(playerIds)} ORDER BY player_id ASC, split_key ASC`;
+  const splitRows = await sql`SELECT * FROM stats_hitter.splits WHERE season=${season} AND split_key IN ('vl','vr') AND player_id IN ${sql(playerIds)} ORDER BY player_id ASC, split_key ASC`;
   const logsByPlayer = new Map(), splitsByPlayer = new Map();
   for (const r of logRows) { const k = Number(r.player_id); if (!logsByPlayer.has(k)) logsByPlayer.set(k, []); logsByPlayer.get(k).push(r); }
   for (const r of splitRows) { const k = Number(r.player_id); if (!splitsByPlayer.has(k)) splitsByPlayer.set(k, []); splitsByPlayer.get(k).push(r); }
