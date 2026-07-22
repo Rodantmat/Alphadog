@@ -473,12 +473,12 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
   const baseByKey = new Map(), splitByPlayer = new Map();
   for (const r of sourceRows) {
     const playerId = Number(r.player_id), pseason = Number(r.season);
-    const side = r.metric_window === "vs_left" || r.metric_window === "vs_right" ? r.metric_window : null;
+    const side = r.metric_window === "vl" || r.metric_window === "vr" ? r.metric_window : null;
     if (side) {
       const key = `${playerId}|${pseason}`;
-      if (!splitByPlayer.has(key)) splitByPlayer.set(key, { vs_left: {}, vs_right: {}, flags: [] });
+      if (!splitByPlayer.has(key)) splitByPlayer.set(key, { vl: {}, vr: {}, flags: [] });
       const ps = splitByPlayer.get(key);
-      const stripped = String(r.metric_key || "").replace(/^vs_left_/, "").replace(/^vs_right_/, "");
+      const stripped = String(r.metric_key || "").replace(/^vl_/, "").replace(/^vr_/, "");
       ps[side][stripped] = r.metric_text_value !== null && r.metric_text_value !== undefined ? r.metric_text_value : r.metric_value;
       continue;
     }
@@ -491,7 +491,7 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
   }
   const snapshotRows = [];
   for (const b of baseByKey.values()) {
-    const split = splitByPlayer.get(`${b.player_id}|${b.season}`) || { vs_left: {}, vs_right: {} };
+    const split = splitByPlayer.get(`${b.player_id}|${b.season}`) || { vl: {}, vr: {} };
     const m = b.metrics;
     snapshotRows.push({
       snapshot_id: rid("hitter_metric_snapshot"), snapshot_batch_id: snapshotBatchId, source_metric_batch_id: batchId, run_id: runId,
