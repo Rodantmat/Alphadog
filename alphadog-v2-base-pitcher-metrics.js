@@ -122,6 +122,7 @@ function aggregateLogs(rows) {
     a.pitches_sum += num(r.pitches); a.strikes_sum += num(r.strikes); a.hits_allowed_sum += num(r.hits_allowed);
     a.runs_allowed_sum += num(r.runs_allowed); a.earned_runs_sum += num(r.earned_runs); a.walks_allowed_sum += num(r.walks_allowed);
     a.strikeouts_sum += num(r.strikeouts); a.home_runs_allowed_sum += num(r.home_runs_allowed);
+    if (r.rfi_hit !== undefined && r.rfi_hit !== null) { a.rfi_hit_count_sum += num(r.rfi_hit); a.rfi_games_with_data += 1; }
   }
   a.games_count = rows.length;
   a.innings_pitched_sum = a.outs_recorded_sum / 3;
