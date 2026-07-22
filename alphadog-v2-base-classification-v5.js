@@ -150,7 +150,13 @@ async function loadHitterInputs(sql, playerIds, season) {
 }
 async function loadPitcherInputs(sql, playerIds, season) {
   if (!playerIds.length) return { logsByPlayer: new Map(), splitsByPlayer: new Map() };
-  const logRows = await sql`SELECT mlb_player_id AS player_id, game_date, outs_recorded, batters_faced, strikeouts, walks_allowed, hits_allowed FROM team.starter_history WHERE mlb_player_id IN ${sql(playerIds)} ORDER BY mlb_player_id, game_date`;
+  const logRows = await sql`
+    SELECT sh.mlb_player_id AS player_id, gl.game_date, gl.outs_recorded, gl.batters_faced, gl.strikeouts, gl.walks_allowed, gl.hits_allowed
+    FROM team.starter_history sh
+    INNER JOIN stats_pitcher.game_logs gl ON gl.player_id = sh.mlb_player_id AND gl.game_pk = sh.game_pk
+    WHERE sh.mlb_player_id IN ${sql(playerIds)} AND gl.season=${season}
+    ORDER BY sh.mlb_player_id, gl.game_date
+  `;
   const splitRows = await sql`SELECT player_id, split_key, batters_faced, hits_allowed FROM stats_pitcher.splits WHERE season=${season} AND split_key IN ('vl','vr') AND ingestion_mode IS NOT NULL AND player_id IN ${sql(playerIds)}`;
   const logsByPlayer = new Map(), splitsByPlayer = new Map();
   for (const r of logRows) { const k = Number(r.player_id); if (!logsByPlayer.has(k)) logsByPlayer.set(k, []); logsByPlayer.get(k).push(r); }
