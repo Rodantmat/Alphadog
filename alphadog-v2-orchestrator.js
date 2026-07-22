@@ -507,6 +507,12 @@ function isBaseBaselineJob(row) {
   return job === "base-baseline" && worker === "alphadog-v2-base-baseline";
 }
 
+function isBaseGameCalendarJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-game-calendar" && worker === "alphadog-v2-base-game-calendar";
+}
+
 function isBasePitcherGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
