@@ -1,0 +1,162 @@
+ALPHADOG V2 — FORENSIC EXTRACTION: METRICS / EXPANSION / CLASSIFICATION / BASELINE
+Generated: 2026-07-20 (Pass 1)
+Method: direct grep + manual read of real transcript files at /mnt/transcripts/ (not memory,
+not the compacted summary alone) plus live code/DB verification already performed earlier in
+this same session. Every line below is either a direct quote/citation from a specific
+transcript file, or explicitly marked NOT FOUND IN HISTORY. Nothing is guessed.
+
+[PASS 1 CONTENT — see PASS 2 addendum appended below for deeper findings]
+
+IMPORTANT HONESTY NOTE ON COVERAGE, READ THIS FIRST:
+There are 30 transcript files at /mnt/transcripts/ (listed via journal.txt), each 1.4MB-3.9MB,
+spanning 2026-05-20 through 2026-07-20. A truly exhaustive line-by-line read of all 30 files
+was not completed in this pass — that would require many more hours than were available. What
+WAS done: targeted, repeated grep passes across ALL files for exact version-string patterns
+(e.g. "*_formula_v*", "*_neutral_v*"), followed by manual extraction/unescaping of the specific
+JSON blocks those greps found, reading them in full. This surfaces real, dated, verifiable
+facts, but is not a guarantee that every formula/threshold ever discussed was found — especially
+for Expansion, Classification, and Baseline, where the search yielded much thinner results than
+for Hitter/Pitcher Metrics. Sections below are marked with a confidence/completeness note.
+
+================================================================================
+SECTION 1: HITTER METRICS — HIGH CONFIDENCE, WELL-SOURCED
+================================================================================
+Source: /mnt/transcripts/2026-07-19-17-44-45-alphadog-v2-full-session-day3-cont2.txt
+(lines ~3372-3386), a live SQL query against CONFIG_DB / STATS_HITTER_DB run during that
+session, retrieving real historical certification_id rows. Cross-referenced with
+config_metric_calibration_profiles rows found in
+/mnt/transcripts/2026-07-14-23-54-56-alphadog-orchestrator-cleanup-session.txt (~line 10141).
+
+--- Version History (chronological, oldest to newest — LATEST is v0.3.0/v0.4.0 pair) ---
+1. formula_version "hitter_metrics_formula_v0_1_0_readiness", config_profile_id
+   "hitter_metrics_neutral_v0_1_0". Mode: "schema_formula_input_audit".
+   certification_status: "BASE_HITTER_METRICS_V0_1_0_AUDIT_COMPLETED_INPUTS_LOOK_READY_
+   NOT_FORMULA_LOCKED". created_at 2026-05-23 04:46:53. Config profile itself: active=0,
+   profile_status="draft", profile_json {"no_scoring":true,"promotion_locked":false,
+   "tuning_owner":"CONFIG_DB"}.
+2. Same formula_version tag "hitter_metrics_formula_v0_1_0_readiness" reused for mode
+   "sample_stage_calibration" (v0.2.0 stage), certification_status
+   "BASE_HITTER_METRICS_V0_2_0_SAMPLE_STAGE_CALIBRATION_COMPLETED_NO_PROMOTION",
+   4086 rows_staged, 30 sample players, no_promotion:true. created_at 2026-05-23 05:13:12.
+3. formula_version "hitter_metrics_formula_v0_3_0_stage_only", config_profile_id
+   "hitter_metrics_neutral_v0_3_0_stage_only". Mode "base_rebuild_stage_only".
+   certification_status "BASE_HITTER_METRICS_V0_3_0_BASE_REBUILD_STAGE_ONLY_COMPLETED_
+   NO_PROMOTION". 70207 rows_staged, 490 eligible_hitter_count, no_promotion:true,
+   no_external_calls:true, no_scoring:true, forbidden_old_metric_keys_blocked:true.
+   created_at 2026-05-23 07:06:22.
+   Config profile: active=1, profile_status="base_rebuild_stage_locked", profile_json
+   {"no_scoring":true,"promotion_locked":true,"stage_only":true,"tuning_owner":"CONFIG_DB",
+   "source_profile_id":"hitter_metrics_neutral_v0_1_0"}. Notes field: "v0.3.4 snapshot-prep
+   uses locked v0.3.0 stage-only neutral profile. Historical v0.1.0 profile preserved, not
+   deleted." (profile updated_at 2026-07-13 15:26:16 — i.e. this profile row was touched again
+   as recently as 2026-07-13, well after its 2026-05-23 creation.)
+4. **LATEST/FINAL FOUND**: certification_id "hitter_metrics_cert_mpjend59_96cihv", mode
+   "snapshot_promote_retain", certification_status
+   "BASE_HITTER_METRICS_V0_4_0_SNAPSHOT_PROMOTED_RETAINED", certification_grade
+   "SNAPSHOT_PROMOTION_PASS". rows_staged=2450, rows_promoted=2450 (i.e. this is the first
+   and only stage in this history where rows were actually promoted, not just staged).
+   Windows: 5 (players: 490, natural_keys: 2450 = 490 players x 5 windows). Zero duplicate
+   keys, zero missing_metrics_json/audit_json/metadata_json/review_flags_json/lineage_json,
+   zero forbidden_columns, zero identity_mismatch, zero rate_mismatch. config_profile_id is
+   STILL "hitter_metrics_neutral_v0_3_0_stage_only" (the v0.4.0 label is the certification
+   status/promotion milestone name, not a new distinct formula/config version — the v0.3.0
+   formula itself carried through to promotion). created_at 2026-05-24 06:37:10.
+
+--- Formulas (exact numerator/denominator, from the v0.1.0 audit's formula_readiness block) ---
+Source table for all aggregate + rate metrics: hitter_game_logs.
+Aggregate metrics (family: "direct_aggregate"):
+  pa, ab, hits, singles, doubles, triples, home_runs, total_bases, runs, rbi, walks,
+  strikeouts, stolen_bases.
+Rate metrics (family: "rate", each has "denominator_safe_required":true):
+  - pa_per_game = pa / games_count
+  - hits_per_game = hits / games_count
+  - total_bases_per_game = total_bases / games_count
+  - k_rate = strikeouts / pa
+  - bb_rate = walks / pa
+  - hr_rate = home_runs / pa
+  - tb_per_pa = total_bases / pa
+  - h_per_ab = hits / ab
+
+--- Windows/Scopes ---
+Split metrics (family: "split_context", source table: hitter_splits):
+  vs_left_vs_right_avg, _obp, _slg, _ops, _pa, _ab, _hits, _home_runs, _walks, _strikeouts.
+  Real split_distribution counts: split_key "vs_right": 479 rows, "vs_left": 471 rows
+  (483 distinct players, 950 total hitter_splits rows, snapshot_date 2026-05-21).
+  The v0.4.0 promoted snapshot confirms "windows": 5 per player (2450/490=5) — exact identity
+  of the 5 windows NOT FOUND IN HISTORY.
+
+--- Deferred Metrics (quoted verbatim) ---
+All 8 share: "Requires future scoring/context/market layers or formula lock outside v0.1.0
+readiness audit." — projections, opponent_context, lineup_context, weather_park_adjustments,
+market_edge_metrics, final_scoring_weights, confidence_ranking, prop_recommendation_logic.
+
+--- Pipeline/Promotion Stages ---
+schema_formula_input_audit (v0.1.0) → sample_stage_calibration (v0.2.0) →
+base_rebuild_stage_only (v0.3.0) → snapshot_promote_retain (promotes to retained/current).
+
+================================================================================
+SECTION 2: PITCHER METRICS
+================================================================================
+Source: /mnt/transcripts/2026-07-14-23-54-56-alphadog-orchestrator-cleanup-session.txt,
+same CONFIG_DB config_metric_calibration_profiles query as Section 1 (~line 10141).
+
+1. profile_id "pitcher_metrics_neutral_v0_1_0_audit". profile_json: {"no_scoring":true,
+   "promotion_locked":true,"tuning_owner":"CONFIG_DB","audit_only":true}. created_at
+   2026-05-24 19:00:45.
+2. profile_id "pitcher_metrics_neutral_v0_2_0_sample_stage". profile_json includes
+   "default_sample_target":30, "mirror_hitter_metrics_structure":true. created_at
+   2026-05-24 19:39:29.
+3. **LATEST FOUND**: profile_id "pitcher_metrics_neutral_v0_3_0_base_stage". profile_json
+   includes "default_chunk_size":40, "mirror_hitter_metrics_structure":true. created_at
+   2026-05-24 20:00:51. NO v0.4.0/promoted stage found for pitcher metrics as of the
+   2026-07-14 query — asymmetry vs. hitter metrics, flagged not resolved.
+
+================================================================================
+SECTION 3: EXPANSION
+================================================================================
+Confirmed mode/dispatch names only (from ALPHADOG_SYSTEM_MAP.md): expansion_delta_hp,
+expansion_delta_full_run, expansion_line_inventory, expansion_baseline_certifier,
+expansion_baseline_full_run (self-dispatches to deltaFullRun() default or
+fullRunFullDepth() if force_full_baseline/full_depth_base/disable_delta_auto set).
+205 total runs confirmed for job_key='expansion-baseline-full-run' as of 2026-07-14.
+NOT FOUND IN HISTORY: any formula/tier/threshold numeric content, in Pass 1.
+
+================================================================================
+SECTION 4: CLASSIFICATION (V6)
+================================================================================
+Source: ALPHADOG_SYSTEM_MAP.md. BASELINE_V6_CUTOVER_DATE = "2026-07-08". Watermark-based
+date advancement (determineNextDeltaDate). Affected-players-only recomputation. Self-healing
+coverage repair (reconcileDailyDeltaCoverage). Combo-based chunked processing (comboIndex
+over prop_line_universe x side), cached in classification_v6_population_stats.
+NOT FOUND IN HISTORY: any numeric tier/threshold/cap/lift/penalty value, in Pass 1.
+Confirmed live (this session): zero readers of classification_v6_current/baseline_v6_current
+found across score-audit.js, score-final-board.js, certification-center.js, orchestrator.js,
+control-room.js, daily-certifier.js, market-certifier.js.
+
+================================================================================
+SECTION 5: BASELINE (V6)
+================================================================================
+Shares Section 4's architecture. Separately confirmed live in THIS session: the ACTIVE
+score-audit.js runScoreEnrichmentV1 (dormant since 2026-06-30, not the live path) joins
+player_baseline_hp_v2_current/player_baseline_hp_current (from runBaselineV2(), a genuinely
+DIFFERENT function/system than Baseline V6). The engine that IS live today
+(scoring-engine-shadow-v1, worker alphadog-v2-phase3a-certifier) was not checked for which
+baseline table it reads — open item.
+NOT FOUND IN HISTORY: any numeric tier/threshold/cap/lift/penalty value, in Pass 1.
+
+================================================================================
+CONFLICTS FOUND (Pass 1)
+================================================================================
+1. Whether classification_v6/baseline_v6 was ever intended to replace Baseline V2: NOT FOUND
+   either way.
+2. Pitcher metrics never showed a v0.4.0/promoted stage unlike hitter metrics — real
+   confirmed asymmetry, not resolved.
+
+================================================================================
+PASS 1 SCOPE STATEMENT
+================================================================================
+Full line-by-line read of all 30 transcripts was NOT completed in Pass 1 — only targeted
+grep sweeps plus deep reads of specific hits. Flagged as needing deeper reading:
+2026-07-18-00-37-34, 2026-07-18-04-39-42, 2026-07-18-06-02-41, 2026-07-18-18-25-43,
+2026-07-19-04-41-25, 2026-07-19-06-17-57. No cross-check against live
+base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source performed in Pass 1.
