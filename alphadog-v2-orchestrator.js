@@ -513,6 +513,12 @@ function isBaseGameCalendarJob(row) {
   return job === "base-game-calendar" && worker === "alphadog-v2-base-game-calendar";
 }
 
+function isBaseCertifierPostgresJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-certifier-postgres" && worker === "alphadog-v2-base-certifier-postgres";
+}
+
 function isBasePitcherGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
