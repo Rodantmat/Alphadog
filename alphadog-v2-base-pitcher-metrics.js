@@ -382,6 +382,7 @@ async function runSnapshotPrepStageOnly(sql, input) {
       ON CONFLICT (snapshot_batch_id, player_id, season, metric_window, config_profile_id, formula_version) DO UPDATE SET
         games_count=excluded.games_count, era_calculated=excluded.era_calculated, whip_calculated=excluded.whip_calculated,
         k_rate_calculated=excluded.k_rate_calculated, bb_rate_calculated=excluded.bb_rate_calculated, hr_rate_calculated=excluded.hr_rate_calculated,
+        rfi_hit_count_sum=excluded.rfi_hit_count_sum,
         sample_size_label=excluded.sample_size_label, vl_json=excluded.vl_json, vr_json=excluded.vr_json,
         metrics_json=excluded.metrics_json, metadata_json=excluded.metadata_json, review_flags_json=excluded.review_flags_json, row_status=excluded.row_status, updated_at=now()
     `;
