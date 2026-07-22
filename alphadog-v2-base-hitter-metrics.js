@@ -196,7 +196,7 @@ async function insertStageRowsBulk(sql, batchId, runId, ingestionMode, rows) {
     stage_id: `${batchId}_${r.player_id}_${r.season}_${r.metric_window}_${r.metric_key}`,
     batch_id: batchId, run_id: runId, player_id: r.player_id, season: r.season, metric_window: r.metric_window, metric_key: r.metric_key,
     metric_family: r.metric_family, metric_value: r.metric_value, metric_text_value: r.metric_text_value, numerator: r.numerator, denominator: r.denominator,
-    source_start_date: r.source_start_date || null, source_end_date: r.source_end_date || null, source_snapshot_date: r.source_snapshot_date || null,
+    source_start_date: r.source_start_date || null, source_end_date: r.source_end_date || null, source_snapshot_date: null,
     input_log_row_count: r.input_log_row_count, input_split_row_count: r.input_split_row_count, input_latest_game_date: r.input_latest_game_date || null,
     reliability_label: r.reliability_label, missing_data_reason: r.missing_data_reason, row_status: r.row_status, ingestion_mode: r.ingestion_mode,
     raw_input_summary_json: JSON.stringify(r.raw_input_summary_json), metric_json: JSON.stringify(r.metric_json)
