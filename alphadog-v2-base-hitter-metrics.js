@@ -309,12 +309,12 @@ async function runSnapshotPrepStageOnly(sql, input) {
   const baseByKey = new Map(), splitByPlayer = new Map();
   for (const r of stageRows) {
     const playerId = Number(r.player_id), season = Number(r.season);
-    const side = r.metric_window === "vs_left" || r.metric_window === "vs_right" ? r.metric_window : null;
+    const side = r.metric_window === "vl" || r.metric_window === "vr" ? r.metric_window : null;
     if (side) {
       const key = `${playerId}|${season}`;
-      if (!splitByPlayer.has(key)) splitByPlayer.set(key, { vs_left: {}, vs_right: {}, flags: [] });
+      if (!splitByPlayer.has(key)) splitByPlayer.set(key, { vl: {}, vr: {}, flags: [] });
       const ps = splitByPlayer.get(key);
-      const stripped = String(r.metric_key || "").replace(/^vs_left_/, "").replace(/^vs_right_/, "");
+      const stripped = String(r.metric_key || "").replace(/^vl_/, "").replace(/^vr_/, "");
       ps[side][stripped] = r.metric_text_value !== null && r.metric_text_value !== undefined ? r.metric_text_value : r.metric_value;
       if (r.row_status === "review_flag" || r.missing_data_reason) ps.flags.push({ metric_window: r.metric_window, metric_key: r.metric_key, missing_data_reason: r.missing_data_reason });
       continue;
@@ -328,7 +328,7 @@ async function runSnapshotPrepStageOnly(sql, input) {
   }
   const snapshotRows = [];
   for (const b of baseByKey.values()) {
-    const split = splitByPlayer.get(`${b.player_id}|${b.season}`) || { vs_left: {}, vs_right: {}, flags: [] };
+    const split = splitByPlayer.get(`${b.player_id}|${b.season}`) || { vl: {}, vr: {}, flags: [] };
     const flags = [...b.flags, ...(split.flags || [])];
     const m = b.metrics;
     snapshotRows.push({
@@ -339,7 +339,7 @@ async function runSnapshotPrepStageOnly(sql, input) {
       strikeouts_sum: m.strikeouts_sum ?? null, runs_sum: m.runs_sum ?? null, rbi_sum: m.rbi_sum ?? null, stolen_bases_sum: m.stolen_bases_sum ?? null,
       total_bases_derived_sum: m.total_bases_derived_sum ?? null, batting_average: m.batting_average ?? null, slugging_percentage: m.slugging_percentage ?? null,
       strikeout_rate: m.strikeout_rate ?? null, walk_rate: m.walk_rate ?? null, hr_rate: m.hr_rate ?? null, tb_per_pa: m.tb_per_pa ?? null, h_per_ab: m.h_per_ab ?? null,
-      sample_size_label: m.sample_size_label || null, vs_left_json: JSON.stringify(split.vs_left || {}), vs_right_json: JSON.stringify(split.vs_right || {}),
+      sample_size_label: m.sample_size_label || null, vs_left_json: JSON.stringify(split.vl || {}), vs_right_json: JSON.stringify(split.vr || {}),
       metrics_json: JSON.stringify(m), audit_json: JSON.stringify({ h_bb_per_pa_proxy: m.h_bb_per_pa_proxy ?? null, total_bases_source_sum: m.total_bases_source_sum ?? null }),
       metadata_json: JSON.stringify(b.metadata), review_flags_json: JSON.stringify(flags),
       lineage_json: JSON.stringify({ source_metric_batch_id: sourceMetricBatchId, snapshot_batch_id: snapshotBatchId, worker_version: VERSION, no_live_promotion: true }),
