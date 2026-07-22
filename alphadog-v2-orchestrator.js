@@ -18356,6 +18356,14 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (String(row.job_key || "") === "postgres-full-run-enqueue") {
+    let input = {};
+    try { input = row.input_json ? JSON.parse(row.input_json) : {}; } catch { input = {}; }
+    const output = await runPostgresFullRunEnqueue(env, input, row.request_id);
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return { status: "completed_postgres_full_run_enqueue", request_id: row.request_id, run_id: runId, output };
+  }
+
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
