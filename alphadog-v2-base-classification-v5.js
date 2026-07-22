@@ -32,7 +32,17 @@ function asText(v, fallback = null) { if (v === undefined || v === null || Strin
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 function round(v, d = 6) { if (v === null || v === undefined || !Number.isFinite(Number(v))) return null; const m = Math.pow(10, d); return Math.round(Number(v) * m) / m; }
 
-async function ensureSchema(sql) { await sql`SELECT 1`; return { ok: true }; }
+async function ensureSchema(sql) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS classification.tier_change_signal (
+      signal_id TEXT PRIMARY KEY, player_id BIGINT NOT NULL, entity_type TEXT, day_date DATE, batch_id TEXT,
+      canonical_prop_key TEXT, line_value DOUBLE PRECISION, selected_side TEXT, old_tier_key TEXT, new_tier_key TEXT,
+      consumed_by_baseline BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tier_change_signal_unconsumed ON classification.tier_change_signal (consumed_by_baseline, player_id)`;
+  return { ok: true };
+}
 
 async function getCalibrationConfig(sql) {
   const rows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength')`;
