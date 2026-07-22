@@ -180,8 +180,10 @@ async function runDeltaMining(sql, input) {
     }
 
     const GAME_CHUNK = 200;
-    for (let i = 0; i < gameRowsToInsert.length; i += GAME_CHUNK) {
-      const chunk = gameRowsToInsert.slice(i, i + GAME_CHUNK);
+    const dedupedGameRows = [];
+    { const seen = new Set(); for (const r of gameRowsToInsert) { if (seen.has(r.context_row_id)) continue; seen.add(r.context_row_id); dedupedGameRows.push(r); } }
+    for (let i = 0; i < dedupedGameRows.length; i += GAME_CHUNK) {
+      const chunk = dedupedGameRows.slice(i, i + GAME_CHUNK);
       await sql`
         INSERT INTO context.expansion_first_inning_game_context_current ${sql(chunk, "context_row_id","batch_id","game_pk","game_date","home_team_id","away_team_id","home_team_name","away_team_name","top_1st_runs","bottom_1st_runs","first_inning_total_runs","yrfi_flag","nrfi_flag","rfi_pp_more_hit","rfi_pp_less_hit","source_endpoint","source_confidence","source_snapshot_json")}
         ON CONFLICT (context_row_id) DO UPDATE SET
@@ -191,8 +193,10 @@ async function runDeltaMining(sql, input) {
       `;
     }
     const PITCHER_CHUNK = 200;
-    for (let i = 0; i < pitcherRowsToInsert.length; i += PITCHER_CHUNK) {
-      const chunk = pitcherRowsToInsert.slice(i, i + PITCHER_CHUNK);
+    const dedupedPitcherRows = [];
+    { const seen = new Set(); for (const r of pitcherRowsToInsert) { if (seen.has(r.pitcher_context_row_id)) continue; seen.add(r.pitcher_context_row_id); dedupedPitcherRows.push(r); } }
+    for (let i = 0; i < dedupedPitcherRows.length; i += PITCHER_CHUNK) {
+      const chunk = dedupedPitcherRows.slice(i, i + PITCHER_CHUNK);
       await sql`
         INSERT INTO context.expansion_first_inning_pitcher_context_current ${sql(chunk, "pitcher_context_row_id","batch_id","game_pk","game_date","pitcher_id","pitcher_name","team_id","opponent_team_id","is_home","started_game","first_frame_half","first_frame_runs_allowed","rfi_sl_more_hit","rfi_sl_less_hit","source_game_context_row_id","starter_source_key","source_confidence","details_json")}
         ON CONFLICT (pitcher_context_row_id) DO UPDATE SET
