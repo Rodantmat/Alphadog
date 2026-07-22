@@ -339,7 +339,7 @@ function compactStageRows(stageRows) {
       innings_pitched_sum: m.innings_pitched_sum ?? null, outs_recorded_sum: m.outs_recorded_sum ?? null, batters_faced_sum: m.batters_faced_sum ?? null,
       pitches_sum: m.pitches_sum ?? null, strikes_sum: m.strikes_sum ?? null, hits_allowed_sum: m.hits_allowed_sum ?? null,
       runs_allowed_sum: m.runs_allowed_sum ?? null, earned_runs_sum: m.earned_runs_sum ?? null, walks_allowed_sum: m.walks_allowed_sum ?? null,
-      strikeouts_sum: m.strikeouts_sum ?? null, home_runs_allowed_sum: m.home_runs_allowed_sum ?? null, rfi_hit_count_sum: m.rfi_hit_count_sum ?? null,
+      strikeouts_sum: m.strikeouts_sum ?? null, home_runs_allowed_sum: m.home_runs_allowed_sum ?? null, rfi_hit_count_sum: m.rfi_hit_count_sum ?? null, rfi_games_with_data: m.rfi_games_with_data ?? null,
       era_calculated: m.era_calculated ?? null, whip_calculated: m.whip_calculated ?? null, k_rate_calculated: m.k_rate_calculated ?? null,
       bb_rate_calculated: m.bb_rate_calculated ?? null, hr_rate_calculated: m.hr_rate_calculated ?? null, k_minus_bb_rate_calculated: m.k_minus_bb_rate_calculated ?? null,
       pitches_per_out_calculated: m.pitches_per_out_calculated ?? null, strikes_per_pitch_calculated: m.strikes_per_pitch_calculated ?? null, innings_per_appearance_calculated: m.innings_per_appearance_calculated ?? null,
