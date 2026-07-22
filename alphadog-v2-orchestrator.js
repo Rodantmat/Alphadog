@@ -18134,6 +18134,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isBaseClassificationV5Job(row)) {
+    const output = await processBaseClassificationV5Job(env, row, runId, trigger);
+    return {
+      status: output && output.ok && output.continuation_required ? "partial_continue_base_classification_v5_job" : (output && output.ok ? "completed_one_base_classification_v5_job" : "failed_one_base_classification_v5_job"),
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
