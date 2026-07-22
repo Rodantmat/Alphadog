@@ -229,6 +229,99 @@ async function cleanStageRowsChunk(sql, batchId, limit) {
   return { cleaned_this_tick: cleaned, stage_rows_after_clean: remain, cleanup_done: remain === 0, clean_limit: safeLimit };
 }
 // STUB_MARKER_STATE_MACHINE_NEXT
+async function acquireBatchLock(sql, batchId, owner, staleSeconds) {
+  const rows = await sql`SELECT locked_by, lock_acquired_at, lock_expires_at FROM team.starter_history_batches WHERE batch_id=${batchId} LIMIT 1`;
+  const row = rows[0] || null;
+  const nowMs = Date.now();
+  const lockedBy = row && row.locked_by ? String(row.locked_by) : null;
+  const lockExpiresMs = row && row.lock_expires_at ? new Date(row.lock_expires_at).getTime() : NaN;
+  const expired = !Number.isFinite(lockExpiresMs) || lockExpiresMs <= nowMs;
+  if (lockedBy && !expired && lockedBy !== owner) {
+    return { ok: false, reason: "batch_lock_busy", locked_by: lockedBy, retry_after_seconds: 20 };
+  }
+  await sql`UPDATE team.starter_history_batches SET locked_by=${owner}, lock_acquired_at=now(), lock_expires_at=now() + make_interval(secs => ${staleSeconds}), updated_at=now() WHERE batch_id=${batchId}`;
+  return { ok: true, owner };
+}
+async function releaseBatchLock(sql, batchId, owner) {
+  await sql`UPDATE team.starter_history_batches SET locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=now() WHERE batch_id=${batchId} AND locked_by=${owner}`;
+}
+async function buildPrePromotionChecks(sql, batchId) {
+  const dupRows = await sql`SELECT COUNT(*)::int AS c FROM (SELECT team_id, game_pk, COUNT(*) AS n FROM team.starter_history_stage WHERE batch_id=${batchId} GROUP BY team_id, game_pk HAVING COUNT(*) > 1) sub`;
+  const missingRows = await sql`SELECT COUNT(*)::int AS c FROM team.starter_history_stage WHERE batch_id=${batchId} AND (team_id IS NULL OR game_pk IS NULL OR game_date IS NULL OR mlb_player_id IS NULL)`;
+  const totalRows = await sql`SELECT COUNT(*)::int AS c FROM team.starter_history_stage WHERE batch_id=${batchId}`;
+  const duplicateCount = asInt(dupRows[0] && dupRows[0].c, 0);
+  const missing = asInt(missingRows[0] && missingRows[0].c, 0);
+  const total = asInt(totalRows[0] && totalRows[0].c, 0);
+  const pass = duplicateCount === 0 && missing === 0 && total > 0;
+  return { pass, checks: { duplicate_count: duplicateCount, missing_required: missing, rows_staged: total } };
+}
+async function getOrCreateBaseBackfillState(env, sql, input) {
+  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const existingRows = await sql`SELECT * FROM team.starter_history_batches WHERE mode='base_backfill' AND status != 'CERTIFICATION_FAILED' ORDER BY started_at DESC LIMIT 1`;
+  if (existingRows[0]) return { is_new: false, batch: existingRows[0] };
+  const runId = asText(input.run_id, rid("run_base_starter_backfill"));
+  const batchId = asText(inputJson.batch_id, rid("starter_history_base_backfill_batch"));
+  const cutoffDate = asText(inputJson.base_backfill_cutoff_date, DEFAULT_BASE_BACKFILL_CUTOFF_DATE);
+  const sourceSeason = asInt(inputJson.source_season || env.ACTIVE_SEASON, DEFAULT_SOURCE_SEASON);
+  const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_GAMES, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+  await sql`
+    INSERT INTO team.starter_history_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_endpoint, source_season, source_game_type, base_backfill_cutoff_date, delta_start_date, promote_rows_per_tick, certification_status, source_confidence, notes, started_at, updated_at)
+    VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'base_backfill', 'BASE_BACKFILL_MINING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${LOCKED_SOURCE_ENDPOINT_PATTERN}, ${sourceSeason}, 'R', ${cutoffDate}, ${DEFAULT_DELTA_RESERVED_START_DATE}, ${tickConfig.promote_rows_per_tick}, 'not_certified', 'SOURCE_LOCKED_STATSAPI_SCHEDULE_PROBABLE_PITCHER', ${"Postgres-native build, base fills only through " + cutoffDate}, now(), now())
+  `;
+  const rows = await sql`SELECT * FROM team.starter_history_batches WHERE batch_id=${batchId} LIMIT 1`;
+  return { is_new: true, batch: rows[0] };
+}
+async function runBaseBackfillTick(env, sql, input) {
+  const state = await getOrCreateBaseBackfillState(env, sql, input);
+  const batch = state.batch;
+  const batchId = batch.batch_id;
+  const runId = batch.run_id;
+  const status = String(batch.status || "");
+  const owner = asText(input.owner, rid("owner"));
+  const staleSeconds = DEFAULT_LOCK_STALE_SECONDS;
+  const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
+  if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, lock };
+  try {
+    if (status === "COMPLETED_PROMOTED_CLEANED") {
+      return { ok: true, data_ok: true, mode: "base_backfill", batch_id: batchId, status, already_completed: true };
+    }
+    if (status === "BASE_BACKFILL_MINING") {
+      const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
+      const schedule = await fetchScheduleRange(env, DEFAULT_SEASON_START_DATE, batch.base_backfill_cutoff_date, fetchTimeoutMs);
+      if (!schedule.ok) {
+        await sql`UPDATE team.starter_history_batches SET status='SOURCE_ERROR', updated_at=now() WHERE batch_id=${batchId}`;
+        return { ok: true, data_ok: false, mode: "base_backfill", batch_id: batchId, status: "SOURCE_ERROR", schedule };
+      }
+      const ins = await insertStageRowsBulk(sql, batchId, runId, "base_backfill", batch.source_season, schedule.rows);
+      await sql`UPDATE team.starter_history_batches SET status='BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION', rows_staged=${ins.inserted}, updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "base_backfill", batch_id: batchId, status: "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION", final_game_count: schedule.final_game_count, rows_staged: ins.inserted, continuation_required: true };
+    }
+    if (status === "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION") {
+      const pre = await buildPrePromotionChecks(sql, batchId);
+      if (!pre.pass) {
+        await sql`UPDATE team.starter_history_batches SET status='CERTIFICATION_FAILED', certification_status='BASE_STARTER_HISTORY_CERTIFICATION_FAILED', certification_grade='BASE_FAIL', certification_json=${JSON.stringify(pre.checks)}, updated_at=now() WHERE batch_id=${batchId}`;
+        return { ok: true, data_ok: false, mode: "base_backfill", batch_id: batchId, status: "CERTIFICATION_FAILED", checks: pre.checks };
+      }
+      await sql`UPDATE team.starter_history_batches SET status='BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE', certification_status='BASE_STARTER_HISTORY_CERTIFIED', certification_grade='BASE_PASS', certification_json=${JSON.stringify(pre.checks)}, certified_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "base_backfill", batch_id: batchId, status: "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE", checks: pre.checks, continuation_required: true };
+    }
+    if (status === "BASE_BACKFILL_CERTIFIED_READY_TO_PROMOTE" || status === "BASE_BACKFILL_PROMOTING") {
+      const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_GAMES, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+      const promoted = await promoteStageRowsChunk(sql, batchId, "BASE_PASS", tickConfig.promote_rows_per_tick);
+      const nextStatus = promoted.remaining_unpromoted === 0 ? "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN" : "BASE_BACKFILL_PROMOTING";
+      await sql`UPDATE team.starter_history_batches SET status=${nextStatus}, rows_promoted=rows_promoted + ${promoted.promoted_this_tick}, promoted_at=COALESCE(promoted_at, now()), updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "base_backfill", batch_id: batchId, status: nextStatus, promoted, continuation_required: true };
+    }
+    if (status === "BASE_BACKFILL_PROMOTED_READY_TO_CLEAN" || status === "BASE_BACKFILL_CLEANING") {
+      const cleaned = await cleanStageRowsChunk(sql, batchId, DEFAULT_CLEAN_ROWS_PER_TICK);
+      const nextStatus = cleaned.cleanup_done ? "COMPLETED_PROMOTED_CLEANED" : "BASE_BACKFILL_CLEANING";
+      await sql`UPDATE team.starter_history_batches SET status=${nextStatus}, cleaned_at=CASE WHEN ${cleaned.cleanup_done} THEN now() ELSE cleaned_at END, finished_at=CASE WHEN ${cleaned.cleanup_done} THEN now() ELSE finished_at END, updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "base_backfill", batch_id: batchId, status: nextStatus, cleaned, done: cleaned.cleanup_done, continuation_required: !cleaned.cleanup_done };
+    }
+    return { ok: true, data_ok: false, mode: "base_backfill", batch_id: batchId, status: "UNKNOWN_STATUS", real_status: status };
+  } finally { await releaseBatchLock(sql, batchId, owner); }
+}
+// STUB_MARKER_DELTA_NEXT
 export default {
   async fetch(request, env) {
     return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
