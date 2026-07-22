@@ -420,19 +420,25 @@ async function runSnapshotDeltaGate(sql, input) {
   return { ok: missingAfter === 0, data_ok: missingAfter === 0, mode: "snapshot_delta_gate", snapshot_batch_id: snapshotBatchId, status, missing_live_rows_before: missingBefore, missing_live_rows_after: missingAfter, rows_promoted: rowsPromoted };
 }
 
-// ---- Mode 4: delta_recalculate_affected_players — daily driver, real players only ----
-async function getAffectedPlayers(sql, season) {
-  const baseBatch = await sql`SELECT input_latest_game_date, input_latest_split_snapshot_date FROM stats_hitter.metric_batches WHERE batch_id='hitter_metrics_base_backfill_singleton' LIMIT 1`;
-  const latestRows = await sql`SELECT MAX(game_date) AS g, (SELECT MAX(updated_at) FROM stats_hitter.splits WHERE season=${season}) AS s FROM stats_hitter.game_logs WHERE season=${season}`;
-  const latestGameDate = latestRows[0].g, latestSplitDate = latestRows[0].s;
-  const baselineGameDate = baseBatch[0] ? baseBatch[0].input_latest_game_date : null;
-  const baselineSplitDate = baseBatch[0] ? baseBatch[0].input_latest_split_snapshot_date : null;
-  const freshLogs = latestGameDate && (!baselineGameDate || latestGameDate > baselineGameDate);
-  const freshSplits = latestSplitDate && (!baselineSplitDate || latestSplitDate > baselineSplitDate);
+// ---- Mode 4: delta_recalculate_affected_players — day-by-day watermark advancement, one real day per tick ----
+async function getNextDeltaDay(sql, season) {
+  const baseBatch = await sql`SELECT delta_watermark_date FROM stats_hitter.metric_batches WHERE batch_id='hitter_metrics_base_backfill_singleton' LIMIT 1`;
+  const watermark = baseBatch[0] ? baseBatch[0].delta_watermark_date : null;
+  if (!watermark) return { ok: false, reason: "NO_WATERMARK_BASE_NOT_COMPLETED" };
+  const latestRows = await sql`SELECT MAX(game_date) AS d FROM stats_hitter.game_logs WHERE season=${season}`;
+  const latestAvailable = latestRows[0].d;
+  const nextDateRows = await sql`SELECT (${watermark}::date + interval '1 day')::date AS d`;
+  const nextDate = nextDateRows[0].d;
+  if (!latestAvailable || nextDate > latestAvailable) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
+  return { ok: true, no_data_yet: false, watermark, next_date: nextDate, latest_available: latestAvailable };
+}
+async function getPlayersForDay(sql, season, dayDate) {
   const ids = new Set();
-  if (freshLogs) { const r = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs WHERE season=${season} AND game_date > ${baselineGameDate || "0001-01-01"} AND (COALESCE(pa,0)>0 OR COALESCE(ab,0)>0)`; for (const row of r) ids.add(Number(row.player_id)); }
-  if (freshSplits) { const r = await sql`SELECT DISTINCT player_id FROM stats_hitter.splits WHERE season=${season} AND updated_at > ${baselineSplitDate || "0001-01-01"}`; for (const row of r) ids.add(Number(row.player_id)); }
-  return { ids: Array.from(ids).sort((a, b) => a - b), latestGameDate, latestSplitDate };
+  const logPlayers = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs WHERE season=${season} AND game_date=${dayDate} AND (COALESCE(pa,0)>0 OR COALESCE(ab,0)>0)`;
+  for (const row of logPlayers) ids.add(Number(row.player_id));
+  const splitPlayers = await sql`SELECT DISTINCT player_id FROM stats_hitter.splits WHERE season=${season} AND updated_at::date=${dayDate}`;
+  for (const row of splitPlayers) ids.add(Number(row.player_id));
+  return Array.from(ids).sort((a, b) => a - b);
 }
 
 async function runDeltaRecalculateAffectedPlayers(sql, input) {
@@ -441,27 +447,31 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
   if (!baseGate[0] || baseGate[0].status !== "COMPLETED_BASE_REBUILD_STAGE_ONLY_NO_PROMOTION") {
     return { ok: false, data_ok: false, mode: "delta_recalculate_affected_players", status: "BLOCKED_NO_COMPLETED_BASE_BATCH" };
   }
-  const affected = await getAffectedPlayers(sql, season);
-  const today = todayUtc();
-  const batchId = `hitter_metrics_delta_batch_${today}`;
-  const snapshotBatchId = `hitter_metrics_delta_snapshot_${today}`;
-  const runId = asText(input.run_id, rid("run_hitter_metrics_delta"));
-  if (!affected.ids.length) {
-    await sql`
-      INSERT INTO stats_hitter.metric_batches (batch_id, run_id, mode, status, source_season, input_latest_game_date, input_latest_split_snapshot_date, finished_at, notes)
-      VALUES (${batchId}, ${runId}, 'delta_recalculate_affected_players', 'DELTA_HITTER_METRICS_NOOP_NO_NEW_UPSTREAM_DATA', ${season}, ${affected.latestGameDate}, ${affected.latestSplitDate}, now(), 'no-op: no fresh upstream data')
-      ON CONFLICT (batch_id) DO NOTHING
-    `;
-    return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", batch_id: batchId, status: "DELTA_HITTER_METRICS_NOOP_NO_NEW_UPSTREAM_DATA", affected_player_count: 0 };
+  const dayInfo = await getNextDeltaDay(sql, season);
+  if (!dayInfo.ok) return { ok: false, data_ok: false, mode: "delta_recalculate_affected_players", status: "BLOCKED_NO_WATERMARK" };
+  if (dayInfo.no_data_yet) {
+    return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_HITTER_METRICS_NOOP_NO_NEW_DAY_AVAILABLE", watermark: dayInfo.watermark, next_date: dayInfo.next_date, latest_available: dayInfo.latest_available, continuation_required: false };
   }
+  const dayDate = dayInfo.next_date;
+  const runId = asText(input.run_id, rid("run_hitter_metrics_delta"));
+  const batchId = `hitter_metrics_delta_batch_${dayDate}`;
+  const snapshotBatchId = `hitter_metrics_delta_snapshot_${dayDate}`;
+  const affectedIds = await getPlayersForDay(sql, season, dayDate);
+
+  if (!affectedIds.length) {
+    // Real, genuine no-op for this specific day (e.g. off-day, no games) — advance watermark anyway, nothing to recompute.
+    await sql`UPDATE stats_hitter.metric_batches SET delta_watermark_date=${dayDate}, updated_at=now() WHERE batch_id='hitter_metrics_base_backfill_singleton'`;
+    return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_HITTER_METRICS_NOOP_NO_PLAYERS_FOR_DAY", day_processed: dayDate, affected_player_count: 0, watermark_advanced_to: dayDate, continuation_required: dayInfo.latest_available > dayDate };
+  }
+
   await sql`
-    INSERT INTO stats_hitter.metric_batches (batch_id, run_id, mode, status, source_season, input_latest_game_date, input_latest_split_snapshot_date, notes)
-    VALUES (${batchId}, ${runId}, 'delta_recalculate_affected_players', 'RUNNING', ${season}, ${affected.latestGameDate}, ${affected.latestSplitDate}, 'affected-player delta; permanent stage retention')
+    INSERT INTO stats_hitter.metric_batches (batch_id, run_id, mode, status, source_season, notes)
+    VALUES (${batchId}, ${runId}, 'delta_recalculate_affected_players', 'RUNNING', ${season}, ${`day-by-day delta for ${dayDate}; permanent stage retention`})
     ON CONFLICT (batch_id) DO NOTHING
   `;
-  const { logsByPlayer, splitsByPlayer } = await loadChunkSourceRows(sql, affected.ids, season);
+  const { logsByPlayer, splitsByPlayer } = await loadChunkSourceRows(sql, affectedIds, season);
   const stageRows = [];
-  for (const playerId of affected.ids) {
+  for (const playerId of affectedIds) {
     const logs = logsByPlayer.get(playerId) || [];
     const splits = splitsByPlayer.get(playerId) || [];
     const latestGameDate = logs.length ? logs[logs.length - 1].game_date : null;
