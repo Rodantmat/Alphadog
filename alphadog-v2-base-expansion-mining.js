@@ -69,20 +69,22 @@ async function runDeltaMining(sql, input) {
   const requestId = asText(input.request_id, rid("expansion_delta_mining"));
   const runId = asText(input.run_id, rid("run"));
   const batchId = asText(input.delta_mining_batch_id || input.batch_id, "expansion_first_inning_delta_batch_singleton");
-  const cursor = Math.max(0, asInt(input.delta_cursor_offset, 0));
   const chunkSize = Math.max(10, Math.min(asInt(input.delta_game_chunk_size, 40), 60));
   const timeoutMs = Math.max(1500, Math.min(asInt(input.mlb_linescore_timeout_ms, 8000), 15000));
   const maxGames = Math.max(1, Math.min(asInt(input.delta_game_limit, 2500), 2500));
 
   await sql`
     INSERT INTO context.expansion_first_inning_context_batches (batch_id, request_id, run_id, mode, status, worker_version, cursor_offset)
-    VALUES (${batchId}, ${requestId}, ${runId}, 'expansion_delta_mining', 'running', ${VERSION}, ${cursor})
+    VALUES (${batchId}, ${requestId}, ${runId}, 'expansion_delta_mining', 'running', ${VERSION}, 0)
     ON CONFLICT (batch_id) DO UPDATE SET request_id=excluded.request_id, run_id=excluded.run_id, status='running', updated_at=now()
   `;
 
-  const gamePks = await getDeltaGameList(sql, maxGames);
-  const total = gamePks.length;
-  const slice = gamePks.slice(cursor, cursor + chunkSize);
+  // getDeltaGameList already anti-joins out previously-mined games, so it naturally
+  // shrinks every call as mining progresses. No separate cursor is needed (or safe to
+  // combine with this) - always take the front of the freshly-computed remaining list.
+  const remainingGamePks = await getDeltaGameList(sql, maxGames);
+  const totalRemainingBeforeThisTick = remainingGamePks.length;
+  const slice = remainingGamePks.slice(0, chunkSize);
   let gamesWritten = 0, pitcherRows = 0, issues = 0;
 
   for (const gamePk of slice) {
