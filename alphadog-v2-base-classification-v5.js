@@ -218,9 +218,16 @@ async function runBaseRebuild(sql, input) {
     await sql`UPDATE classification.classification_batches SET status='completed', rows_written=${totalRows[0].c}, certification='CLASSIFICATION_BASE_CERTIFIED', certification_grade='PASS', finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
     return { ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId, status: "COMPLETED_CLASSIFICATION_BASE", total_combos: combos.length, continuation_required: false };
   }
-  const combo = combos[comboIndex];
-  const result = await processCombo(sql, combo, batchId, runId);
-  const nextComboIndex = comboIndex + 1;
+  const COMBOS_PER_TICK = Math.max(1, Math.min(asInt(input.combos_per_tick, 10), 15));
+  const comboSlice = combos.slice(comboIndex, comboIndex + COMBOS_PER_TICK);
+  let totalRowsWritten = 0;
+  let lastCombo = null;
+  for (const combo of comboSlice) {
+    const result = await processCombo(sql, combo, batchId, runId);
+    totalRowsWritten += result.rows_written;
+    lastCombo = combo;
+  }
+  const nextComboIndex = comboIndex + comboSlice.length;
   const done = nextComboIndex >= combos.length;
   await sql`UPDATE classification.classification_batches SET combo_index=${nextComboIndex}, canonical_prop_key=${combo.canonical_prop_key}, line_value=${combo.line_value}, selected_side=${combo.selected_side}, rows_written=rows_written+${result.rows_written}, status=${done ? "completed" : "running"}, finished_at=${done ? sql`now()` : null}, updated_at=now() WHERE batch_id=${batchId}`;
   return {
