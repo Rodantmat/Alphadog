@@ -18415,8 +18415,19 @@ async function processOneUnlocked(env, trigger) {
     let input = {};
     try { input = row.input_json ? JSON.parse(row.input_json) : {}; } catch { input = {}; }
     const output = await runPostgresFullRunEnqueue(env, input, row.request_id);
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
-    return { status: "completed_postgres_full_run_enqueue", request_id: row.request_id, run_id: runId, output };
+    const chainDone = output.chain_complete === true || output.action === "stopped_on_failed_stage";
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?",
+      chainDone ? "completed" : "completed", JSON.stringify(output), row.request_id);
+    if (!chainDone) {
+      // Real self-continuation: re-check the same chain again shortly, so the stepper keeps moving
+      // the moment the current stage finishes, instead of waiting for the next cron cycle.
+      const nextRequestId = `postgres_full_run_step_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, ?, 'postgres-full-run-enqueue', 'alphadog-v2-orchestrator', 'pending', 5, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        nextRequestId, output.chain_id, JSON.stringify({ chain_id: output.chain_id })
+      );
+    }
+    return { status: chainDone ? "completed_postgres_full_run_chain" : "completed_postgres_full_run_step", request_id: row.request_id, run_id: runId, output };
   }
 
   if (isBasePitcherGameLogsJob(row)) {
