@@ -39,11 +39,12 @@ async function getCalibrationConfig(sql) {
   for (const r of rows) cfg[r.config_key] = r.config_json;
   return cfg;
 }
+// REAL FIX (found via full-dataset health check + validated against published empirical Bayes
+// literature): the original discrete buckets caused confidence to DECREASE at bucket boundaries.
+// Smooth exponential decay is monotonic by construction, closely tracks the original reference
+// values. Must match Classification's version exactly since both use the same shrinkage math.
 function priorStrengthForSample(n, psCfg) {
-  if (n < 5) return psCfg.tiny_sample_lt5;
-  if (n < 15) return psCfg.low_sample_lt15;
-  if (n < 30) return psCfg.medium_sample_lt30;
-  return psCfg.large_sample_ge30;
+  return 2 + 18 * Math.exp(-n / 18);
 }
 function propCanGoNegative(propConfig) {
   return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0));
