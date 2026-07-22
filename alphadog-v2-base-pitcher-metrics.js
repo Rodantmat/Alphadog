@@ -140,7 +140,7 @@ function metricRowsForWindow(playerId, season, windowKey, rows, splitByKey, late
   add("appearances_count", "direct_aggregate", a.appearances_count, a.appearances_count, null);
   add("starts_count", "role_readiness", a.starts_count, a.starts_count, null);
   add("innings_pitched_sum", "direct_aggregate", a.innings_pitched_sum, a.outs_recorded_sum, 3);
-  for (const key of ["outs_recorded_sum", "batters_faced_sum", "pitches_sum", "strikes_sum", "hits_allowed_sum", "runs_allowed_sum", "earned_runs_sum", "walks_allowed_sum", "strikeouts_sum", "home_runs_allowed_sum"]) add(key, "direct_aggregate", a[key], a[key], null);
+  for (const key of ["outs_recorded_sum", "batters_faced_sum", "pitches_sum", "strikes_sum", "hits_allowed_sum", "runs_allowed_sum", "earned_runs_sum", "walks_allowed_sum", "strikeouts_sum", "home_runs_allowed_sum", "rfi_hit_count_sum", "rfi_games_with_data"]) add(key, "direct_aggregate", a[key], a[key], null, a[key] === undefined ? {} : (key === "rfi_hit_count_sum" || key === "rfi_games_with_data" ? { missing_data_reason: a.rfi_games_with_data <= 0 ? "NO_EXPANSION_FIRST_INNING_CONTEXT_MINED_YET" : null, row_status: a.rfi_games_with_data <= 0 ? "review_flag" : "base_stage_staged" } : {}));
   const bfLabel = reliability(a.batters_faced_sum, THRESHOLDS.minimum_batters_faced_for_ready_rate_label);
   const outsLabel = reliability(a.outs_recorded_sum, THRESHOLDS.minimum_outs_recorded_for_ready_ip_rate_label);
   const pitchLabel = reliability(a.pitches_sum, THRESHOLDS.minimum_pitches_for_ready_pitch_rate_label);
