@@ -151,12 +151,12 @@ function metricRowsForWindow(playerId, season, windowKey, rows, splitRows, lates
 }
 function splitMetricRows(playerId, season, splitRows, logRowsLen, latestGameDate, batchId, runId, ingestionMode) {
   const out = [];
-  const have = new Set(splitRows.map(r => String(r.split_code || r.split_key || "")));
-  const missingSides = ["vs_left", "vs_right"].filter(s => !have.has(s));
-  for (const split of splitRows.filter(r => ["vs_left", "vs_right"].includes(String(r.split_code || r.split_key)))) {
-    const splitKey = String(split.split_code || split.split_key);
+  const have = new Set(splitRows.map(r => String(r.split_key || "")));
+  const missingSides = ["vl", "vr"].filter(s => !have.has(s));
+  for (const split of splitRows.filter(r => ["vl", "vr"].includes(String(r.split_key)))) {
+    const splitKey = String(split.split_key);
     const label = splitLabelFromPa(num(split.pa));
-    const baseMeta = { batch_id: batchId, run_id: runId, player_id: playerId, season, metric_window: splitKey, source_snapshot_date: split.source_snapshot_date || null, input_log_row_count: logRowsLen, input_split_row_count: splitRows.length, input_latest_game_date: latestGameDate, ingestion_mode: ingestionMode, reliability_label: label };
+    const baseMeta = { batch_id: batchId, run_id: runId, player_id: playerId, season, metric_window: splitKey, input_log_row_count: logRowsLen, input_split_row_count: splitRows.length, input_latest_game_date: latestGameDate, ingestion_mode: ingestionMode, reliability_label: label };
     function add(metric_key, family, value, numerator = null, text = null) {
       out.push({ ...baseMeta, metric_key: `${splitKey}_${metric_key}`, metric_family: family, metric_value: value, metric_text_value: text, numerator, denominator: null, raw_input_summary_json: { split_key: splitKey, split_pa: num(split.pa), missing_sides: missingSides }, metric_json: { source_pass_through: true, base_rebuild_stage_only: true }, missing_data_reason: missingSides.length ? `MISSING_SPLIT_SIDE_${missingSides.join("_")}` : null, row_status: missingSides.length ? "review_flag" : "base_stage_staged" });
     }
