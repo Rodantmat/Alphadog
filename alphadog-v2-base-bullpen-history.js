@@ -14,7 +14,7 @@ const DEFAULT_PROMOTE_ROWS_PER_TICK = 750;
 const DEFAULT_CLEAN_ROWS_PER_TICK = 500;
 const DEFAULT_LOCK_STALE_SECONDS = 60;
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
-let LOCKED_BASE_BATCH_ID = "PENDING_FIRST_REAL_BASE_BACKFILL_COMPLETION";
+let LOCKED_BASE_BATCH_ID = "bullpen_history_base_backfill_singleton";
 
 function nowUtc() { return new Date().toISOString(); }
 async function getWorkerTickConfig(sql, workerName, fallbackChunk, fallbackTickMs, fallbackPromote) {
