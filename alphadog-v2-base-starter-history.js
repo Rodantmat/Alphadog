@@ -276,7 +276,6 @@ async function runBaseBackfillTick(env, sql, input) {
   const batch = state.batch;
   const batchId = batch.batch_id;
   const runId = batch.run_id;
-  const status = String(batch.status || "");
   const owner = asText(input.owner, rid("owner"));
   const staleSeconds = DEFAULT_LOCK_STALE_SECONDS;
   const lock = await acquireBatchLock(sql, batchId, owner, staleSeconds);
