@@ -489,7 +489,7 @@ function isBasePitcherMetricsJob(row) {
   return job === "base-pitcher-metrics" && worker === "alphadog-v2-base-pitcher-metrics";
 }
 
-function isBaseExpansionMiningJob(row) {
+function isBaseExpansionMiningJob(row) { // v0.2.353: base-expansion-mining service binding wired via worker_manifest.json
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "base-expansion-mining" && worker === "alphadog-v2-base-expansion-mining";
