@@ -437,6 +437,16 @@ async function runSnapshotDeltaGate(sql, input) {
 }
 
 // ---- Mode 4: delta_recalculate_affected_players — day-by-day watermark advancement, one real day per tick ----
+// Real, explicit day-completeness gate: identical to hitter-metrics' fix - a candidate date is
+// only eligible once every real game on it is genuinely final/available_for_stats (or a
+// legitimate exception - postponed/suspended/cancelled). Replaces the old naive MAX(game_date)
+// check, which only confirmed *some* data existed, not that the whole day was done.
+async function isDateCertifiedComplete(sql, officialDate) {
+  const rows = await sql`SELECT COUNT(*)::int AS total, SUM(CASE WHEN is_available_for_stats OR is_postponed OR is_suspended OR is_cancelled THEN 1 ELSE 0 END)::int AS ready FROM calendar.game_calendar WHERE official_date=${officialDate}`;
+  const r = rows[0];
+  if (!r || Number(r.total) === 0) return { ready: false, reason: "NO_CALENDAR_DATA_FOR_DATE" };
+  return { ready: Number(r.total) === Number(r.ready || 0), reason: null, total: Number(r.total), ready_games: Number(r.ready || 0) };
+}
 async function getNextDeltaDay(sql, season) {
   const baseBatch = await sql`SELECT delta_watermark_date FROM stats_pitcher.metric_batches WHERE batch_id='pitcher_metrics_base_backfill_singleton' LIMIT 1`;
   const watermark = baseBatch[0] ? baseBatch[0].delta_watermark_date : null;
@@ -446,7 +456,9 @@ async function getNextDeltaDay(sql, season) {
   const nextDateRows = await sql`SELECT (${watermark}::date + interval '1 day')::date AS d`;
   const nextDate = nextDateRows[0].d;
   if (!latestAvailable || nextDate > latestAvailable) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
-  return { ok: true, no_data_yet: false, watermark, next_date: nextDate, latest_available: latestAvailable };
+  const completeness = await isDateCertifiedComplete(sql, nextDate);
+  if (!completeness.ready) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable, blocked_reason: completeness.reason || "GAMES_NOT_YET_FINAL_OR_EXCEPTION", calendar_check: completeness };
+  return { ok: true, no_data_yet: false, watermark, next_date: nextDate, latest_available: latestAvailable, calendar_check: completeness };
 }
 async function getPlayersForDay(sql, season, dayDate) {
   const ids = new Set();
