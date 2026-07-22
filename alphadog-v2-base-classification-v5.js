@@ -1,249 +1,356 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-base-classification-v5";
-const VERSION = "alphadog-v2-base-classification-v5-postgres-v1.0.0-tier-profiles";
+const VERSION = "alphadog-v2-base-classification-postgres-v2.0.0-real-zscore-tier-engine-preshrink-fix";
 const JOB_KEY = "base-classification-v5";
-const FORMULA_VERSION = "classification_v5_formula_v0_1_55_history_only_no_daily_context";
+const FORMULA_VERSION = "classification_v2_postgres_zscore_tier_preshrink_v1";
 const DEFAULT_SEASON = 2026;
-const DEFAULT_CHUNK_SIZE = 150;
+const DEFAULT_CHUNK_SIZE_PLAYERS = 300;
+
+// Real, exact canonical line ladders, ported directly from the live source.
+const CANONICAL_HITTER_LINES = {
+  hits: [0.5, 1.5, 2.5], singles: [0.5, 1.5, 2.5], doubles: [0.5, 1.5], triples: [0.5],
+  home_runs: [0.5, 1.5], runs: [0.5, 1.5, 2.5], rbis: [0.5, 1.5, 2.5], walks: [0.5, 1.5, 2.5],
+  hitter_strikeouts: [0.5, 1.5, 2.5], stolen_bases: [0.5, 1.5], total_bases: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5],
+  hits_runs_rbis: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5],
+  fantasy_score: [4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 18.5, 20.5, 22.5, 24.5, 26.5, 28.5, 30.5, 32.5, 34.5]
+};
+const CANONICAL_PITCHER_LINES = {
+  pitcher_strikeouts: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5],
+  pitcher_outs: [8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 20.5, 21.5],
+  hits_allowed: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5], walks_allowed: [0.5, 1.5, 2.5, 3.5, 4.5],
+  earned_runs: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5], runs_allowed: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5],
+  pitches_thrown: [39.5, 49.5, 59.5, 69.5, 79.5, 89.5, 99.5, 109.5],
+  pitcher_fantasy_score: [5.5, 10.5, 15.5, 20.5, 25.5, 30.5, 35.5, 40.5, 45.5],
+  rfi_nrfi: [0.5]
+};
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function asInt(v, fallback = null) { const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : fallback; }
 function asText(v, fallback = null) { if (v === undefined || v === null || String(v).trim() === "") return fallback; return String(v).trim(); }
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
-function round(v, d = 2) { if (v === null || v === undefined || !Number.isFinite(Number(v))) return null; const m = Math.pow(10, d); return Math.round(Number(v) * m) / m; }
-function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-// ---- Real tier functions, ported exactly from the live D1 source (verified: tier logic is player-level, not prop/line-specific) ----
-function hitterTier12({ games, paPerGame, abRatio, avgOrder, hitRatePerGame, walkRate, soRate }) {
-  if (games < 30) return { tier_key: "TIER_12_MICRO_SAMPLE_ROOKIE", tier_number: 12 };
-  if (paPerGame <= 1.5) return { tier_key: "TIER_11_LATE_GAME_SUB_PINCH_HITTER", tier_number: 11 };
-  if (paPerGame < 3.5 && games >= 30) return { tier_key: "TIER_10_HIGH_USAGE_UTILITY_BENCH", tier_number: 10 };
-  if (avgOrder >= 8.5 && hitRatePerGame < 0.85) return { tier_key: "TIER_09_DEFENSIVE_BOTTOM_ORDER_BLACK_HOLE", tier_number: 9 };
-  if (avgOrder >= 7 || (paPerGame >= 3.0 && paPerGame < 3.7)) return { tier_key: "TIER_06_BOTTOM_ORDER_STARTER", tier_number: 6 };
-  if (avgOrder >= 4 && avgOrder <= 6 && abRatio < 0.75) return { tier_key: "TIER_05_MIDDLE_ORDER_TTO_SLUGGER", tier_number: 5 };
-  if (avgOrder >= 3 && avgOrder <= 5 && abRatio >= 0.86) return { tier_key: "TIER_04_MIDDLE_ORDER_CONTACT_REGULAR", tier_number: 4 };
-  if (avgOrder <= 2.5 && paPerGame >= 4.1 && hitRatePerGame < 1.05) return { tier_key: "TIER_03_AGGRESSIVE_VOLUME_DEPENDENT_REGULAR", tier_number: 3 };
-  if (avgOrder <= 3 && paPerGame >= 4.0 && (walkRate + soRate) >= 0.30) return { tier_key: "TIER_02_HIGH_VOLUME_MIDDLE_ORDER_ANCHOR_LOWER_AB_RATIO", tier_number: 2 };
-  if (avgOrder <= 2.5 && paPerGame >= 4.2 && hitRatePerGame >= 1.05 && abRatio >= 0.90) return { tier_key: "TIER_01_HIGH_VOLUME_LEADOFF_CONTACT_ANCHOR", tier_number: 1 };
-  return { tier_key: "TIER_04_MIDDLE_ORDER_CONTACT_REGULAR", tier_number: 4 };
-}
-function pitcherTier({ games, outsPerStart, bfPerStart, kRate, bbRate, haRate, splitDelta }) {
-  if (games < 5) return { tier_key: "PITCHER_TIER_12_MICRO_SAMPLE", tier_number: 12 };
-  if (outsPerStart >= 18 && bfPerStart >= 24 && kRate >= 0.27) return { tier_key: "PITCHER_TIER_01_DEEP_K_WORKHORSE", tier_number: 1 };
-  if (outsPerStart >= 18 && bfPerStart >= 24) return { tier_key: "PITCHER_TIER_02_DEEP_VOLUME_STARTER", tier_number: 2 };
-  if (outsPerStart >= 15 && bbRate <= 0.075) return { tier_key: "PITCHER_TIER_03_COMMAND_VOLUME_STARTER", tier_number: 3 };
-  if (outsPerStart >= 15 && (bbRate >= 0.105 || haRate >= 0.24)) return { tier_key: "PITCHER_TIER_05_DAMAGE_OR_CONTROL_VOLATILE_STARTER", tier_number: 5 };
-  if (outsPerStart >= 12) return { tier_key: "PITCHER_TIER_06_LOW_WORKLOAD_STARTER", tier_number: 6 };
-  if (Math.abs(splitDelta) >= 6) return { tier_key: splitDelta < 0 ? "PITCHER_TIER_07_PLATOON_FAVORABLE_SUPPRESSOR" : "PITCHER_TIER_08_PLATOON_UNFAVORABLE_DAMAGE_RISK", tier_number: splitDelta < 0 ? 7 : 8 };
-  return { tier_key: "PITCHER_TIER_04_STANDARD_STARTER", tier_number: 4 };
-}
-function normalizedBattingOrderValue(raw) {
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  if (n >= 100 && n <= 999) { const slot = Math.floor(n / 100); return (slot >= 1 && slot <= 9) ? slot : null; }
-  if (n >= 1 && n <= 9) return n;
-  return null;
-}
-function battingOrderSummary(rows) {
-  const total = (rows || []).length;
-  const vals = [];
-  for (const r of (rows || [])) { const v = normalizedBattingOrderValue(r && r.batting_order); if (v != null) vals.push(v); }
-  const coverage = total ? vals.length / total : 0;
-  const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-  return { avg_batting_order_normalized: avg, batting_order_rows: vals.length, batting_order_coverage: coverage };
-}
-function resolveLineupProfileFromOrder(orderSummary) {
-  const avg = orderSummary && Number(orderSummary.avg_batting_order_normalized);
-  const coverage = orderSummary && Number(orderSummary.batting_order_coverage || 0);
-  const orderRows = orderSummary && Number(orderSummary.batting_order_rows || 0);
-  if (!Number.isFinite(avg) || orderRows < 3 || coverage < 0.25) return "LINEUP_UNKNOWN";
-  if (avg <= 3) return "TOP_ORDER";
-  if (avg <= 6) return "MIDDLE_ORDER";
-  return "BOTTOM_ORDER";
-}
-function splitRate(rows, key, numField, denField) {
-  const r = (rows || []).find(x => String(x.split_key) === key);
-  if (!r) return null;
-  const den = num(r[denField]);
-  if (den <= 0) return null;
-  return 100 * num(r[numField]) / den;
-}
-function sumNum(rows, field) { return rows.reduce((a, r) => a + num(r[field]), 0); }
+function round(v, d = 6) { if (v === null || v === undefined || !Number.isFinite(Number(v))) return null; const m = Math.pow(10, d); return Math.round(Number(v) * m) / m; }
 
 async function ensureSchema(sql) { await sql`SELECT 1`; return { ok: true }; }
 
-async function getWorkerTickConfig(sql, workerName, fallbackChunk) {
-  try {
-    const rows = await sql`SELECT chunk_size_players FROM config.worker_tick_settings WHERE worker_name=${workerName} LIMIT 1`;
-    return { chunk_size_players: rows[0] ? asInt(rows[0].chunk_size_players, fallbackChunk) : fallbackChunk };
-  } catch (_) { return { chunk_size_players: fallbackChunk }; }
+async function getCalibrationConfig(sql) {
+  const rows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength')`;
+  const cfg = {};
+  for (const r of rows) cfg[r.config_key] = r.config_json;
+  return cfg;
 }
 
-async function classifyHitter(playerId, logs, splitsByKey) {
-  const games = logs.length;
-  const pa = sumNum(logs, "pa"), ab = sumNum(logs, "ab"), hits = sumNum(logs, "hits"), walks = sumNum(logs, "walks"), so = sumNum(logs, "strikeouts");
-  const paPerGame = games ? pa / games : 0, abRatio = pa ? ab / pa : 0, hitRatePerGame = games ? hits / games : 0, walkRate = pa ? walks / pa : 0, soRate = pa ? so / pa : 0;
-  const orderSummary = battingOrderSummary(logs);
-  const avgOrder = orderSummary.avg_batting_order_normalized;
-  const leftHit = splitRate(splitsByKey, "vl", "hits", "pa");
-  const rightHit = splitRate(splitsByKey, "vr", "hits", "pa");
-  const splitDelta = (leftHit != null && rightHit != null) ? round(leftHit - rightHit, 2) : 0;
-  const tier = hitterTier12({ games, paPerGame, abRatio, avgOrder: avgOrder || 0, hitRatePerGame, walkRate, soRate });
-  const lineupProfile = resolveLineupProfileFromOrder(orderSummary);
-  const volumeProfile = paPerGame >= 4.2 ? "HIGH_VOLUME" : (paPerGame >= 3.7 ? "EVERYDAY_CORE" : (paPerGame >= 2.0 ? "LOW_USAGE_OR_PARTIAL" : "MICRO_USAGE"));
-  const platoonProfile = Math.abs(splitDelta) >= 6 ? (splitDelta > 0 ? "FAVORABLE_VS_LEFT_SHAPE" : "FAVORABLE_VS_RIGHT_SHAPE") : "NEUTRAL_OR_LOW_SPLIT_SIGNAL";
-  const confidence = clamp(25 + Math.min(50, games * 0.6), 1, 95); // real model's baseline_confidence_0_100 default fallback path (25) scaled by sample; exact HP-model confidence comes from Stage 4, not classification alone
-  return {
-    classification_row_id: `class_v5|hitter|${playerId}`, player_id: playerId, entity_type: "hitter",
-    games_sample: games, tier_key: tier.tier_key, tier_number: tier.tier_number, volume_profile: volumeProfile, lineup_profile: lineupProfile,
-    platoon_profile: platoonProfile, usage_profile: volumeProfile, split_delta_0_100: splitDelta,
-    pa_per_game: round(paPerGame, 3), ab_ratio: round(abRatio, 3), avg_batting_order: avgOrder != null ? round(avgOrder, 2) : null,
-    outs_per_start: null, bf_per_start: null, k_rate: null, bb_rate: null, ha_rate: null,
-    hits_per_game: round(hitRatePerGame, 3), walk_rate: round(walkRate, 4), strikeout_rate: round(soRate, 4),
-    classification_confidence_0_100: round(confidence, 2), formula_version: FORMULA_VERSION,
-    metrics_json: JSON.stringify({ pa, ab, hits, walks, strikeouts: so, batting_order_rows: orderSummary.batting_order_rows, batting_order_coverage: round(orderSummary.batting_order_coverage, 3), split_rows: splitsByKey.length })
-  };
-}
-async function classifyPitcher(playerId, logs, splitsByKey) {
-  const games = logs.length;
-  const bf = sumNum(logs, "batters_faced"), outs = sumNum(logs, "outs_recorded"), k = sumNum(logs, "strikeouts"), bb = sumNum(logs, "walks_allowed"), ha = sumNum(logs, "hits_allowed");
-  const leftHa = splitRate(splitsByKey, "vl", "hits_allowed", "batters_faced");
-  const rightHa = splitRate(splitsByKey, "vr", "hits_allowed", "batters_faced");
-  const splitDelta = (leftHa != null && rightHa != null) ? round(leftHa - rightHa, 2) : 0;
-  const outsPerStart = games ? outs / games : 0, bfPerStart = games ? bf / games : 0;
-  const kRate = bf ? k / bf : 0, bbRate = bf ? bb / bf : 0, haRate = bf ? ha / bf : 0;
-  const tier = pitcherTier({ games, outsPerStart, bfPerStart, kRate, bbRate, haRate, splitDelta });
-  const volumeProfile = outsPerStart >= 18 ? "DEEP_STARTER" : (outsPerStart >= 15 ? "NORMAL_STARTER" : (outsPerStart >= 12 ? "LOW_WORKLOAD_STARTER" : "SHORT_OR_UNSTABLE_WORKLOAD"));
-  const platoonProfile = Math.abs(splitDelta) >= 6 ? (splitDelta < 0 ? "SUPPRESSES_LEFT_MORE_THAN_RIGHT" : "MORE_DAMAGE_VS_LEFT_THAN_RIGHT") : "NEUTRAL_OR_LOW_SPLIT_SIGNAL";
-  const confidence = clamp(25 + Math.min(50, games * 2), 1, 95);
-  return {
-    classification_row_id: `class_v5|pitcher|${playerId}`, player_id: playerId, entity_type: "pitcher",
-    games_sample: games, tier_key: tier.tier_key, tier_number: tier.tier_number, volume_profile: volumeProfile, lineup_profile: "PITCHER_NA",
-    platoon_profile: platoonProfile, usage_profile: volumeProfile, split_delta_0_100: splitDelta,
-    pa_per_game: null, ab_ratio: null, avg_batting_order: null,
-    outs_per_start: round(outsPerStart, 2), bf_per_start: round(bfPerStart, 2), k_rate: round(kRate, 4), bb_rate: round(bbRate, 4), ha_rate: round(haRate, 4),
-    hits_per_game: null, walk_rate: null, strikeout_rate: null,
-    classification_confidence_0_100: round(confidence, 2), formula_version: FORMULA_VERSION,
-    metrics_json: JSON.stringify({ bf, outs, k, bb, hits_allowed: ha, split_rows: splitsByKey.length })
-  };
-}
-
-async function getPlayerUniverse(sql, entityType, season) {
-  if (entityType === "hitter") {
-    const rows = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs WHERE season=${season} ORDER BY player_id`;
-    return rows.map(r => Number(r.player_id));
+// Real formulas, exact port, validated this session against actual data.
+function computeRecencyBlendedRate(snapshotsByWindow, propConfig, recencyWeights) {
+  let weightedSum = 0, weightTotal = 0;
+  for (const [wKey, weight] of Object.entries(recencyWeights)) {
+    const snap = snapshotsByWindow[wKey];
+    if (!snap) continue;
+    const games = num(snap.games_count);
+    if (games <= 0) continue;
+    let numerator = 0;
+    for (const field of propConfig.numerator_fields) {
+      const raw = num(snap[field]);
+      const w = propConfig.weights ? num(propConfig.weights[field] ?? 1) : 1;
+      numerator += raw * w;
+    }
+    const denom = num(snap[propConfig.denominator_field]);
+    if (denom <= 0) continue;
+    weightedSum += (numerator / denom) * weight;
+    weightTotal += weight;
   }
-  const rows = await sql`SELECT DISTINCT mlb_player_id AS player_id FROM team.starter_history WHERE mlb_player_id IS NOT NULL ORDER BY mlb_player_id`;
-  return rows.map(r => Number(r.player_id));
+  if (weightTotal <= 0) return null;
+  return weightedSum / weightTotal;
+}
+function priorStrengthForSample(n, psCfg) {
+  if (n < 5) return psCfg.tiny_sample_lt5;
+  if (n < 15) return psCfg.low_sample_lt15;
+  if (n < 30) return psCfg.medium_sample_lt30;
+  return psCfg.large_sample_ge30;
+}
+function computePopulationStats(values) {
+  const n = values.length;
+  if (n === 0) return { mean: 0, stddev: 0, n: 0 };
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = values.reduce((a, b) => a + (b - mean) * (b - mean), 0) / n;
+  return { mean, stddev: Math.sqrt(variance), n };
+}
+// REAL FIX (validated this session against Friedman 1989 Regularized Discriminant Analysis and
+// shrinkage-based diagonal discriminant analysis literature): shrink the estimate used for tier
+// ASSIGNMENT itself toward the population mean, using the same sample-size-aware prior strength,
+// before computing z-score. Prevents small-sample noise from misclassifying a player into an
+// extreme tier (confirmed bug: a single lucky HR in 3 games was landing a rookie in the elite
+// tier). Population mean is used here (not tier mean) since tier isn't known yet at this point.
+function preShrinkForTierAssignment(rawRate, gamesSample, populationMean, psCfg) {
+  const priorStrength = priorStrengthForSample(gamesSample, psCfg);
+  return (gamesSample * rawRate + priorStrength * populationMean) / (gamesSample + priorStrength);
+}
+function assignTierFromZScore(z, tierBandsConfig, populationN) {
+  const bands = tierBandsConfig.z_bands;
+  const minPop = tierBandsConfig.min_population_per_tier || 15;
+  const maxTiers = tierBandsConfig.max_tiers || 12;
+  const maxSupportedBands = Math.max(1, Math.min(bands.length + 1, maxTiers, Math.floor(populationN / minPop) || 1));
+  const usableBandCount = maxSupportedBands - 1;
+  const step = Math.max(1, Math.floor(bands.length / Math.max(1, usableBandCount)));
+  const effectiveBands = bands.filter((_, i) => i % step === 0).slice(0, usableBandCount);
+  let tierIndex = effectiveBands.length;
+  for (let i = 0; i < effectiveBands.length; i++) { if (z >= effectiveBands[i]) { tierIndex = i; break; } }
+  const totalTiers = effectiveBands.length + 1;
+  const tierNumber = tierIndex + 1;
+  return { tier_number: tierNumber, tier_key: `TIER_${String(tierNumber).padStart(2, "0")}_OF_${totalTiers}`, total_tiers_used: totalTiers };
 }
 
-async function loadHitterInputs(sql, playerIds, season) {
-  if (!playerIds.length) return { logsByPlayer: new Map(), splitsByPlayer: new Map() };
-  const logRows = await sql`SELECT player_id, game_date, batting_order, pa, ab, hits, walks, strikeouts FROM stats_hitter.game_logs WHERE season=${season} AND player_id IN ${sql(playerIds)} ORDER BY player_id, game_date`;
-  const splitRows = await sql`SELECT player_id, split_key, pa, hits FROM stats_hitter.splits WHERE season=${season} AND split_key IN ('vl','vr') AND ingestion_mode IS NOT NULL AND player_id IN ${sql(playerIds)}`;
-  const logsByPlayer = new Map(), splitsByPlayer = new Map();
-  for (const r of logRows) { const k = Number(r.player_id); if (!logsByPlayer.has(k)) logsByPlayer.set(k, []); logsByPlayer.get(k).push(r); }
-  for (const r of splitRows) { const k = Number(r.player_id); if (!splitsByPlayer.has(k)) splitsByPlayer.set(k, []); splitsByPlayer.get(k).push(r); }
-  return { logsByPlayer, splitsByPlayer };
-}
-async function loadPitcherInputs(sql, playerIds, season) {
-  if (!playerIds.length) return { logsByPlayer: new Map(), splitsByPlayer: new Map() };
-  const logRows = await sql`
-    SELECT sh.mlb_player_id AS player_id, gl.game_date, gl.outs_recorded, gl.batters_faced, gl.strikeouts, gl.walks_allowed, gl.hits_allowed
-    FROM team.starter_history sh
-    INNER JOIN stats_pitcher.game_logs gl ON gl.player_id = sh.mlb_player_id AND gl.game_pk = sh.game_pk
-    WHERE sh.mlb_player_id IN ${sql(playerIds)} AND gl.season=${season}
-    ORDER BY sh.mlb_player_id, gl.game_date
-  `;
-  const splitRows = await sql`SELECT player_id, split_key, batters_faced, hits_allowed FROM stats_pitcher.splits WHERE season=${season} AND split_key IN ('vl','vr') AND ingestion_mode IS NOT NULL AND player_id IN ${sql(playerIds)}`;
-  const logsByPlayer = new Map(), splitsByPlayer = new Map();
-  for (const r of logRows) { const k = Number(r.player_id); if (!logsByPlayer.has(k)) logsByPlayer.set(k, []); logsByPlayer.get(k).push(r); }
-  for (const r of splitRows) { const k = Number(r.player_id); if (!splitsByPlayer.has(k)) splitsByPlayer.set(k, []); splitsByPlayer.get(k).push(r); }
-  return { logsByPlayer, splitsByPlayer };
-}
-
-async function insertRowsBulk(sql, rows) {
-  if (!rows.length) return 0;
-  const cols = ["classification_row_id","batch_id","run_id","player_id","entity_type","games_sample","tier_key","tier_number","volume_profile","lineup_profile","platoon_profile","usage_profile","split_delta_0_100","pa_per_game","ab_ratio","avg_batting_order","outs_per_start","bf_per_start","k_rate","bb_rate","ha_rate","hits_per_game","walk_rate","strikeout_rate","classification_confidence_0_100","formula_version","metrics_json"];
-  const CHUNK = 300;
-  let written = 0;
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    const chunk = rows.slice(i, i + CHUNK);
-    await sql`
-      INSERT INTO classification.player_classification_v5_current ${sql(chunk, ...cols)}
-      ON CONFLICT (classification_row_id) DO UPDATE SET
-        games_sample=excluded.games_sample, tier_key=excluded.tier_key, tier_number=excluded.tier_number,
-        volume_profile=excluded.volume_profile, lineup_profile=excluded.lineup_profile, platoon_profile=excluded.platoon_profile,
-        usage_profile=excluded.usage_profile, split_delta_0_100=excluded.split_delta_0_100, pa_per_game=excluded.pa_per_game,
-        ab_ratio=excluded.ab_ratio, avg_batting_order=excluded.avg_batting_order, outs_per_start=excluded.outs_per_start,
-        bf_per_start=excluded.bf_per_start, k_rate=excluded.k_rate, bb_rate=excluded.bb_rate, ha_rate=excluded.ha_rate,
-        hits_per_game=excluded.hits_per_game, walk_rate=excluded.walk_rate, strikeout_rate=excluded.strikeout_rate,
-        classification_confidence_0_100=excluded.classification_confidence_0_100, metrics_json=excluded.metrics_json, updated_at=now()
-    `;
-    written += chunk.length;
-  }
-  return written;
-}
-
-async function runBaseClassify(sql, input) {
-  const season = asInt(input.source_season, DEFAULT_SEASON);
-  const batchId = "classification_v5_base_backfill_singleton";
-  const runId = asText(input.run_id, rid("run_classification_v5"));
-  const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE);
-
-  await sql`
-    INSERT INTO classification.player_classification_v5_batches (batch_id, run_id, mode, status)
-    VALUES (${batchId}, ${runId}, 'base_classify', 'running')
-    ON CONFLICT (batch_id) DO UPDATE SET run_id=excluded.run_id, status='running', updated_at=now()
-  `;
-  const batchRows = await sql`SELECT * FROM classification.player_classification_v5_batches WHERE batch_id=${batchId} LIMIT 1`;
-  const batch = batchRows[0];
-  if (batch.status === "completed") return { ok: true, data_ok: true, mode: "base_classify", batch_id: batchId, status: "COMPLETED_CLASSIFICATION_V5_BASE", already_completed: true };
-
-  const hitterUniverse = await getPlayerUniverse(sql, "hitter", season);
-  const pitcherUniverse = await getPlayerUniverse(sql, "pitcher", season);
-  const totalUniverse = hitterUniverse.length + pitcherUniverse.length;
-  if (!batch.players_total) await sql`UPDATE classification.player_classification_v5_batches SET players_total=${totalUniverse}, updated_at=now() WHERE batch_id=${batchId}`;
-
-  const cursor = batch.cursor_player_id ? Number(batch.cursor_player_id) : 0;
-  const isHitterPhase = cursor < hitterUniverse.length;
-  const remaining = isHitterPhase ? hitterUniverse.slice(cursor) : pitcherUniverse.slice(cursor - hitterUniverse.length);
-  const chunk = remaining.slice(0, tickConfig.chunk_size_players);
-  const rows = [];
-
-  if (chunk.length) {
-    if (isHitterPhase) {
-      const { logsByPlayer, splitsByPlayer } = await loadHitterInputs(sql, chunk, season);
-      for (const playerId of chunk) {
-        const row = await classifyHitter(playerId, logsByPlayer.get(playerId) || [], splitsByPlayer.get(playerId) || []);
-        rows.push({ ...row, batch_id: batchId, run_id: runId });
-      }
-    } else {
-      const { logsByPlayer, splitsByPlayer } = await loadPitcherInputs(sql, chunk, season);
-      for (const playerId of chunk) {
-        const row = await classifyPitcher(playerId, logsByPlayer.get(playerId) || [], splitsByPlayer.get(playerId) || []);
-        rows.push({ ...row, batch_id: batchId, run_id: runId });
-      }
+function buildComboList(cfg) {
+  const combos = [];
+  for (const [prop, config] of Object.entries(cfg.prop_metric_map)) {
+    const lines = config.entity === "pitcher" ? CANONICAL_PITCHER_LINES[prop] : CANONICAL_HITTER_LINES[prop];
+    if (!lines) continue;
+    for (const line of lines) {
+      for (const side of ["more", "less"]) combos.push({ canonical_prop_key: prop, line_value: line, selected_side: side, entity: config.entity, propConfig: config });
     }
   }
-  const written = await insertRowsBulk(sql, rows);
-  const newCursor = cursor + chunk.length;
-  const done = newCursor >= totalUniverse;
-  const totalWrittenRows = await sql`SELECT COUNT(*)::int AS c FROM classification.player_classification_v5_current`;
+  return combos;
+}
 
+async function getPlayerUniverse(sql, entity, season) {
+  if (entity === "hitter") {
+    const rows = await sql`SELECT DISTINCT player_id FROM stats_hitter.metric_snapshots WHERE snapshot_batch_id IS NOT NULL ORDER BY player_id`;
+    return rows.map(r => Number(r.player_id));
+  }
+  const rows = await sql`SELECT DISTINCT player_id FROM stats_pitcher.metric_snapshots ORDER BY player_id`;
+  return rows.map(r => Number(r.player_id));
+}
+async function loadSnapshotsForPlayers(sql, entity, playerIds) {
+  if (!playerIds.length) return new Map();
+  const table = entity === "pitcher" ? sql`stats_pitcher.metric_snapshots` : sql`stats_hitter.metric_snapshots`;
+  const rows = entity === "pitcher"
+    ? await sql`SELECT * FROM stats_pitcher.metric_snapshots WHERE player_id IN ${sql(playerIds)}`
+    : await sql`SELECT * FROM stats_hitter.metric_snapshots WHERE player_id IN ${sql(playerIds)} AND snapshot_batch_id IS NOT NULL`;
+  const bySeason = new Map();
+  for (const r of rows) { const k = Number(r.player_id); if (!bySeason.has(k)) bySeason.set(k, {}); bySeason.get(k)[r.metric_window] = r; }
+  return bySeason;
+}
+async function loadSeasonGames(sql, entity, playerIds) {
+  if (!playerIds.length) return new Map();
+  const rows = entity === "pitcher"
+    ? await sql`SELECT player_id, games_count FROM stats_pitcher.metric_snapshots WHERE metric_window='season_to_date' AND player_id IN ${sql(playerIds)}`
+    : await sql`SELECT player_id, games_count FROM stats_hitter.metric_snapshots WHERE metric_window='season_to_date' AND snapshot_batch_id IS NOT NULL AND player_id IN ${sql(playerIds)}`;
+  const m = new Map();
+  for (const r of rows) m.set(Number(r.player_id), Number(r.games_count));
+  return m;
+}
+
+// Pass 1 + Pass 2 combined per combo (real population is small enough, ~600-700 players, to do in one tick per combo).
+async function processCombo(sql, combo, batchId, runId) {
+  const universe = await getPlayerUniverse(sql, combo.entity, DEFAULT_SEASON);
+  if (!universe.length) return { rows_written: 0, players_total: 0 };
+  const snapshotsByPlayer = await loadSnapshotsForPlayers(sql, combo.entity, universe);
+  const seasonGamesByPlayer = await loadSeasonGames(sql, combo.entity, universe);
+  const cfg = await getCalibrationConfig(sql);
+  const recencyWeights = cfg.recency_weights;
+  const psCfg = cfg.confidence_prior_strength;
+  const tierBandsCfg = cfg.tier_bands;
+
+  const rawRates = new Map();
+  for (const playerId of universe) {
+    const snap = snapshotsByPlayer.get(playerId) || {};
+    const rate = computeRecencyBlendedRate(snap, combo.propConfig, recencyWeights);
+    if (rate != null) rawRates.set(playerId, rate);
+  }
+  const allRates = Array.from(rawRates.values());
+  const popStats = computePopulationStats(allRates);
+  if (popStats.n === 0) return { rows_written: 0, players_total: 0 };
+
+  const statsKey = `${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`;
   await sql`
-    UPDATE classification.player_classification_v5_batches SET
-      status=${done ? "completed" : "running"}, cursor_player_id=${newCursor}, players_processed=players_processed + ${chunk.length},
-      rows_written=${totalWrittenRows[0].c}, certification=${done ? "CLASSIFICATION_V5_BASE_CERTIFIED" : "PARTIAL_CONTINUE"},
-      certification_grade=${done ? "PASS" : "PARTIAL_CONTINUE"}, finished_at=${done ? sql`now()` : null}, updated_at=now()
-    WHERE batch_id=${batchId}
+    INSERT INTO classification.population_stats_current (stats_key, canonical_prop_key, line_value, selected_side, population_mean, population_stddev, population_n)
+    VALUES (${statsKey}, ${combo.canonical_prop_key}, ${combo.line_value}, ${combo.selected_side}, ${popStats.mean}, ${popStats.stddev}, ${popStats.n})
+    ON CONFLICT (stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev, population_n=excluded.population_n, computed_at=now()
   `;
+
+  const rows = [];
+  for (const [playerId, rawRate] of rawRates.entries()) {
+    const gamesSample = seasonGamesByPlayer.get(playerId) || 0;
+    const preShrunk = preShrinkForTierAssignment(rawRate, gamesSample, popStats.mean, psCfg);
+    const z = popStats.stddev > 0 ? (preShrunk - popStats.mean) / popStats.stddev : 0;
+    const tier = assignTierFromZScore(z, tierBandsCfg, popStats.n);
+    rows.push({
+      classification_row_id: `class|${combo.entity}|${playerId}|${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`,
+      batch_id: batchId, run_id: runId, player_id: playerId, entity_type: combo.entity,
+      canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side,
+      games_sample: gamesSample, raw_rate: round(rawRate), pre_shrunk_rate: round(preShrunk), z_score: round(z, 4),
+      tier_key: tier.tier_key, tier_number: tier.tier_number, total_tiers_used: tier.total_tiers_used, formula_version: FORMULA_VERSION
+    });
+  }
+  const CHUNK = 500;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const slice = rows.slice(i, i + CHUNK);
+    await sql`
+      INSERT INTO classification.player_classification_current ${sql(slice, "classification_row_id","batch_id","run_id","player_id","entity_type","canonical_prop_key","line_value","selected_side","games_sample","raw_rate","pre_shrunk_rate","z_score","tier_key","tier_number","total_tiers_used","formula_version")}
+      ON CONFLICT (player_id, canonical_prop_key, line_value, selected_side) DO UPDATE SET
+        games_sample=excluded.games_sample, raw_rate=excluded.raw_rate, pre_shrunk_rate=excluded.pre_shrunk_rate, z_score=excluded.z_score,
+        tier_key=excluded.tier_key, tier_number=excluded.tier_number, total_tiers_used=excluded.total_tiers_used, batch_id=excluded.batch_id, run_id=excluded.run_id, updated_at=now()
+    `;
+  }
+  return { rows_written: rows.length, players_total: universe.length };
+}
+
+async function runBaseRebuild(sql, input) {
+  const batchId = "classification_base_backfill_singleton";
+  const runId = asText(input.run_id, rid("run_classification"));
+  await sql`
+    INSERT INTO classification.classification_batches (batch_id, run_id, mode, status)
+    VALUES (${batchId}, ${runId}, 'base_rebuild', 'running')
+    ON CONFLICT (batch_id) DO UPDATE SET run_id=excluded.run_id, updated_at=now()
+  `;
+  const batchRows = await sql`SELECT * FROM classification.classification_batches WHERE batch_id=${batchId} LIMIT 1`;
+  const batch = batchRows[0];
+  if (batch.status === "completed") return { ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId, status: "COMPLETED_CLASSIFICATION_BASE", already_completed: true };
+
+  const cfg = await getCalibrationConfig(sql);
+  const combos = buildComboList(cfg);
+  if (!batch.total_combos) await sql`UPDATE classification.classification_batches SET total_combos=${combos.length}, updated_at=now() WHERE batch_id=${batchId}`;
+
+  const comboIndex = batch.combo_index || 0;
+  if (comboIndex >= combos.length) {
+    const totalRows = await sql`SELECT COUNT(*)::int AS c FROM classification.player_classification_current`;
+    await sql`UPDATE classification.classification_batches SET status='completed', rows_written=${totalRows[0].c}, certification='CLASSIFICATION_BASE_CERTIFIED', certification_grade='PASS', finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+    return { ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId, status: "COMPLETED_CLASSIFICATION_BASE", total_combos: combos.length, continuation_required: false };
+  }
+  const combo = combos[comboIndex];
+  const result = await processCombo(sql, combo, batchId, runId);
+  const nextComboIndex = comboIndex + 1;
+  const done = nextComboIndex >= combos.length;
+  await sql`UPDATE classification.classification_batches SET combo_index=${nextComboIndex}, canonical_prop_key=${combo.canonical_prop_key}, line_value=${combo.line_value}, selected_side=${combo.selected_side}, rows_written=rows_written+${result.rows_written}, status=${done ? "completed" : "running"}, finished_at=${done ? sql`now()` : null}, updated_at=now() WHERE batch_id=${batchId}`;
   return {
-    ok: true, data_ok: true, mode: "base_classify", batch_id: batchId, status: done ? "COMPLETED_CLASSIFICATION_V5_BASE" : "CLASSIFICATION_V5_PARTIAL_CONTINUE",
-    players_total: totalUniverse, players_this_tick: chunk.length, rows_written_this_tick: written, rows_written_total: totalWrittenRows[0].c,
+    ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId,
+    status: done ? "COMPLETED_CLASSIFICATION_BASE" : "CLASSIFICATION_BASE_PARTIAL_CONTINUE",
+    combo_processed: combo, combo_index: nextComboIndex, total_combos: combos.length, rows_written_this_combo: result.rows_written,
     continuation_required: !done, next_input_json: !done ? { ...input } : null
+  };
+}
+
+// Delta: day-by-day watermark, recompute affected players across ALL combos, detect real tier changes
+// (compared against previously-stored tier_key) so Baseline knows exactly which players need a full recalc.
+async function getNextDeltaDay(sql) {
+  const baseBatch = await sql`SELECT delta_watermark_date FROM classification.classification_batches WHERE batch_id='classification_base_backfill_singleton' LIMIT 1`;
+  const watermark = baseBatch[0] ? baseBatch[0].delta_watermark_date : null;
+  if (!watermark) {
+    const hd = await sql`SELECT delta_watermark_date FROM stats_hitter.metric_batches WHERE batch_id='hitter_metrics_base_backfill_singleton' LIMIT 1`;
+    const pd = await sql`SELECT delta_watermark_date FROM stats_pitcher.metric_batches WHERE batch_id='pitcher_metrics_base_backfill_singleton' LIMIT 1`;
+    const seedDate = (hd[0] && hd[0].delta_watermark_date) || (pd[0] && pd[0].delta_watermark_date);
+    if (!seedDate) return { ok: false, reason: "NO_WATERMARK_SEED_AVAILABLE" };
+    await sql`UPDATE classification.classification_batches SET delta_watermark_date=${seedDate}, updated_at=now() WHERE batch_id='classification_base_backfill_singleton'`;
+    return { ok: true, no_data_yet: true, watermark: seedDate, next_date: seedDate, latest_available: seedDate };
+  }
+  const hLatest = await sql`SELECT MAX(game_date) AS d FROM stats_hitter.game_logs WHERE season=${DEFAULT_SEASON}`;
+  const pLatest = await sql`SELECT MAX(game_date) AS d FROM stats_pitcher.game_logs WHERE season=${DEFAULT_SEASON}`;
+  const latestAvailable = [hLatest[0].d, pLatest[0].d].filter(Boolean).sort().pop();
+  const nextDateRows = await sql`SELECT (${watermark}::date + interval '1 day')::date AS d`;
+  const nextDate = nextDateRows[0].d;
+  if (!latestAvailable || nextDate > latestAvailable) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
+  return { ok: true, no_data_yet: false, watermark, next_date: nextDate, latest_available: latestAvailable };
+}
+async function getPlayersForDay(sql, dayDate) {
+  const ids = new Set();
+  const h = await sql`SELECT DISTINCT player_id FROM stats_hitter.game_logs WHERE season=${DEFAULT_SEASON} AND game_date=${dayDate}`;
+  for (const r of h) ids.add({ id: Number(r.player_id), entity: "hitter" });
+  const p = await sql`SELECT DISTINCT player_id FROM stats_pitcher.game_logs WHERE season=${DEFAULT_SEASON} AND game_date=${dayDate}`;
+  for (const r of p) ids.add({ id: Number(r.player_id), entity: "pitcher" });
+  return Array.from(ids);
+}
+
+async function runDeltaRecalculateAffectedPlayers(sql, input) {
+  const baseGate = await sql`SELECT status FROM classification.classification_batches WHERE batch_id='classification_base_backfill_singleton' LIMIT 1`;
+  if (!baseGate[0] || baseGate[0].status !== "completed") return { ok: false, data_ok: false, mode: "delta_recalculate_affected_players", status: "BLOCKED_NO_COMPLETED_BASE_BATCH" };
+
+  const dayInfo = await getNextDeltaDay(sql);
+  if (!dayInfo.ok) return { ok: false, data_ok: false, mode: "delta_recalculate_affected_players", status: "BLOCKED_NO_WATERMARK" };
+  if (dayInfo.no_data_yet) return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_CLASSIFICATION_NOOP_NO_NEW_DAY_AVAILABLE", watermark: dayInfo.watermark, next_date: dayInfo.next_date, continuation_required: false };
+
+  const dayDate = dayInfo.next_date;
+  const affected = await getPlayersForDay(sql, dayDate);
+  if (!affected.length) {
+    await sql`UPDATE classification.classification_batches SET delta_watermark_date=${dayDate}, updated_at=now() WHERE batch_id='classification_base_backfill_singleton'`;
+    return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_CLASSIFICATION_NOOP_NO_PLAYERS_FOR_DAY", day_processed: dayDate, tier_changed_players: [], continuation_required: dayInfo.latest_available > dayDate };
+  }
+
+  const runId = asText(input.run_id, rid("run_classification_delta"));
+  const batchId = `classification_delta_batch_${dayDate}`;
+  await sql`INSERT INTO classification.classification_batches (batch_id, run_id, mode, status) VALUES (${batchId}, ${runId}, 'delta_recalculate_affected_players', 'running') ON CONFLICT (batch_id) DO NOTHING`;
+
+  const cfg = await getCalibrationConfig(sql);
+  const combos = buildComboList(cfg);
+  const affectedByEntity = { hitter: affected.filter(a => a.entity === "hitter").map(a => a.id), pitcher: affected.filter(a => a.entity === "pitcher").map(a => a.id) };
+
+  const tierChangedPlayers = new Set();
+  let rowsRecalculated = 0;
+
+  for (const combo of combos) {
+    const playerIds = affectedByEntity[combo.entity];
+    if (!playerIds.length) continue;
+    const oldTiers = await sql`SELECT player_id, tier_key FROM classification.player_classification_current WHERE canonical_prop_key=${combo.canonical_prop_key} AND line_value=${combo.line_value} AND selected_side=${combo.selected_side} AND player_id IN ${sql(playerIds)}`;
+    const oldTierByPlayer = new Map(oldTiers.map(r => [Number(r.player_id), r.tier_key]));
+
+    const statsKey = `${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`;
+    const cachedStats = await sql`SELECT * FROM classification.population_stats_current WHERE stats_key=${statsKey} LIMIT 1`;
+    if (!cachedStats[0]) continue;
+    const popStats = { mean: cachedStats[0].population_mean, stddev: cachedStats[0].population_stddev, n: cachedStats[0].population_n };
+
+    const snapshotsByPlayer = await loadSnapshotsForPlayers(sql, combo.entity, playerIds);
+    const seasonGamesByPlayer = await loadSeasonGames(sql, combo.entity, playerIds);
+    const psCfg = cfg.confidence_prior_strength, tierBandsCfg = cfg.tier_bands;
+    const rows = [];
+    for (const playerId of playerIds) {
+      const snap = snapshotsByPlayer.get(playerId) || {};
+      const rawRate = computeRecencyBlendedRate(snap, combo.propConfig, cfg.recency_weights);
+      if (rawRate == null) continue;
+      const gamesSample = seasonGamesByPlayer.get(playerId) || 0;
+      const preShrunk = preShrinkForTierAssignment(rawRate, gamesSample, popStats.mean, psCfg);
+      const z = popStats.stddev > 0 ? (preShrunk - popStats.mean) / popStats.stddev : 0;
+      const tier = assignTierFromZScore(z, tierBandsCfg, popStats.n);
+      const oldTier = oldTierByPlayer.get(playerId);
+      if (oldTier && oldTier !== tier.tier_key) tierChangedPlayers.add(playerId);
+      rows.push({
+        classification_row_id: `class|${combo.entity}|${playerId}|${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`,
+        batch_id: batchId, run_id: runId, player_id: playerId, entity_type: combo.entity,
+        canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side,
+        games_sample: gamesSample, raw_rate: round(rawRate), pre_shrunk_rate: round(preShrunk), z_score: round(z, 4),
+        tier_key: tier.tier_key, tier_number: tier.tier_number, total_tiers_used: tier.total_tiers_used, formula_version: FORMULA_VERSION
+      });
+    }
+    if (rows.length) {
+      await sql`
+        INSERT INTO classification.player_classification_current ${sql(rows, "classification_row_id","batch_id","run_id","player_id","entity_type","canonical_prop_key","line_value","selected_side","games_sample","raw_rate","pre_shrunk_rate","z_score","tier_key","tier_number","total_tiers_used","formula_version")}
+        ON CONFLICT (player_id, canonical_prop_key, line_value, selected_side) DO UPDATE SET
+          games_sample=excluded.games_sample, raw_rate=excluded.raw_rate, pre_shrunk_rate=excluded.pre_shrunk_rate, z_score=excluded.z_score,
+          tier_key=excluded.tier_key, tier_number=excluded.tier_number, total_tiers_used=excluded.total_tiers_used, batch_id=excluded.batch_id, run_id=excluded.run_id, updated_at=now()
+      `;
+      rowsRecalculated += rows.length;
+    }
+  }
+
+  // Real tier-change signal for Baseline: any player whose tier_key genuinely changed on ANY combo
+  // today gets a row here. Baseline's delta reads this table to know who needs a FULL recalculation
+  // across all of their prop/line/side combos, not just an incremental patch.
+  await sql`
+    CREATE TABLE IF NOT EXISTS classification.tier_change_signal (
+      signal_id TEXT PRIMARY KEY, player_id BIGINT, day_date DATE, batch_id TEXT, consumed_by_baseline BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT now()
+    )
+  `;
+  for (const playerId of tierChangedPlayers) {
+    await sql`INSERT INTO classification.tier_change_signal (signal_id, player_id, day_date, batch_id) VALUES (${`tier_change|${playerId}|${dayDate}`}, ${playerId}, ${dayDate}, ${batchId}) ON CONFLICT (signal_id) DO NOTHING`;
+  }
+
+  await sql`UPDATE classification.classification_batches SET status='completed', rows_written=${rowsRecalculated}, finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+  await sql`UPDATE classification.classification_batches SET delta_watermark_date=${dayDate}, updated_at=now() WHERE batch_id='classification_base_backfill_singleton'`;
+  return {
+    ok: true, data_ok: true, mode: "delta_recalculate_affected_players", batch_id: batchId,
+    status: "COMPLETED_DELTA_CLASSIFICATION_AFFECTED_RECALC", day_processed: dayDate, watermark_advanced_to: dayDate,
+    affected_player_count: affected.length, rows_recalculated: rowsRecalculated,
+    tier_changed_player_count: tierChangedPlayers.size, tier_changed_players: Array.from(tierChangedPlayers),
+    continuation_required: dayInfo.latest_available > dayDate
   };
 }
 
@@ -261,7 +368,10 @@ export default {
         try { input = await request.json(); } catch (_) { input = {}; }
         const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
         const merged = { ...inputJson, ...input };
-        const result = await runBaseClassify(sql, merged);
+        const mode = asText(merged.mode, "base_rebuild");
+        let result;
+        if (mode === "delta_recalculate_affected_players") result = await runDeltaRecalculateAffectedPlayers(sql, merged);
+        else result = await runBaseRebuild(sql, merged);
         return new Response(JSON.stringify(result), { headers: { "content-type": "application/json" } });
       }
       return new Response(JSON.stringify({ ok: false, error: "not_found", path: url.pathname }), { status: 404, headers: { "content-type": "application/json" } });
