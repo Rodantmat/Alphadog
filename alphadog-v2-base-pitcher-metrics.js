@@ -405,16 +405,17 @@ async function runSnapshotDeltaGate(sql, input) {
   const missingBefore = missingCountRows[0].c;
   let rowsPromoted = 0;
   if (missingBefore > 0) {
+    const colsCsv = LIVE_COLS.join(", ");
     const selectCols = LIVE_COLS.map(c => "s." + c).join(", ");
-    const res = await sql`
-      INSERT INTO stats_pitcher.metric_snapshots (snapshot_id, ${sql(LIVE_COLS)}, certification_status, certification_grade, promoted_at, created_at, updated_at)
-      SELECT s.snapshot_id, ${sql.unsafe(selectCols)}, 'snapshot_live_promoted_from_certified_stage', 'SNAPSHOT_PROMOTION_PASS', now(), now(), now()
+    const res = await sql.unsafe(`
+      INSERT INTO stats_pitcher.metric_snapshots (snapshot_id, ${colsCsv}, certification_status, certification_grade, promoted_at, created_at, updated_at)
+      SELECT s.snapshot_id, ${selectCols}, 'snapshot_live_promoted_from_certified_stage', 'SNAPSHOT_PROMOTION_PASS', now(), now(), now()
       FROM stats_pitcher.metric_snapshot_stage s
       LEFT JOIN stats_pitcher.metric_snapshots l ON l.player_id=s.player_id AND l.season=s.season AND l.metric_window=s.metric_window AND l.config_profile_id=s.config_profile_id AND l.formula_version=s.formula_version
-      WHERE s.snapshot_batch_id=${snapshotBatchId} AND l.snapshot_id IS NULL
+      WHERE s.snapshot_batch_id=$1 AND l.snapshot_id IS NULL
       ON CONFLICT (player_id, season, metric_window, config_profile_id, formula_version) DO NOTHING
       RETURNING 1
-    `;
+    `, [snapshotBatchId]);
     rowsPromoted = res.length;
     await sql`UPDATE stats_pitcher.metric_snapshot_stage SET promoted_at=COALESCE(promoted_at, now()), updated_at=now() WHERE snapshot_batch_id=${snapshotBatchId} AND promoted_at IS NULL`;
   }
