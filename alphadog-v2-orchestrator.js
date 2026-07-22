@@ -8072,6 +8072,26 @@ async function processBaseGameCalendarJob(env, row, runId, trigger) {
 }
 
 
+async function enqueuePostgresFullRunIfDue(env, cronExpression) {
+  try {
+    const recent = await first(env.CONTROL_DB, "SELECT created_at FROM control_job_queue WHERE job_key='postgres-full-run-enqueue' ORDER BY created_at DESC LIMIT 1");
+    if (recent && recent.created_at) {
+      const lastMs = new Date(String(recent.created_at).replace(" ", "T") + "Z").getTime();
+      if (Number.isFinite(lastMs) && (Date.now() - lastMs) < 25 * 60 * 1000) {
+        return { ok: true, skipped: true, reason: "throttled_last_enqueue_recent", last_enqueued_at: recent.created_at };
+      }
+    }
+    const requestId = `postgres_full_run_enqueue_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_queue (request_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, 'postgres-full-run-enqueue', 'alphadog-v2-orchestrator', 'pending', 5, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      requestId
+    );
+    return { ok: true, enqueued: true, request_id: requestId, cron_expression: cronExpression };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function processBaseCertifierPostgresJob(env, row, runId, trigger) {
   if (!env.BASE_CERTIFIER_POSTGRES_WORKER || typeof env.BASE_CERTIFIER_POSTGRES_WORKER.fetch !== "function") {
     const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "blocked_missing_service_binding", certification: "BASE_CERTIFIER_POSTGRES_SERVICE_BINDING_MISSING", trigger };
