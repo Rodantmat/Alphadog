@@ -538,3 +538,32 @@ The eventual full-run design (orchestrator-driven, certifier-gated) is confirmed
 **Both `base-hitter-game-logs` and `base-pitcher-game-logs` are now fully retested and confirmed clean end-to-end, standard tick config (chunk=750, tick_runtime_ms=90000, promote_rows_per_tick=750) live and verified in real tick output for both.**
 
 **Next up: `base-team-game-logs`** — apply this exact same standard from line one, including the now-3-column config table lookup (chunk/tick-runtime/promote-rate) wired into the shared promote function itself from day one, not retrofitted after the fact.
+
+---
+
+## NEW WORKER — `alphadog-v2-base-team-game-logs` built clean, proven end-to-end, same session
+
+**Real architectural decision (same reasoning as pitcher)**: the D1 file (`team_game_logs`) used the same complex retained-stage, per-team-fetch-loop architecture already proven problematic. Rebuilt clean instead, using the now-twice-proven hitter/pitcher pattern (single dual-mode file, sticky ownership, widened repair window, drain-after-promote, no duplicate tables).
+
+**Real architectural simplification discovered**: team game logs don't need a per-entity fetch loop like hitter/pitcher — a single MLB schedule-range fetch (with `hydrate=linescore`) returns every finished game's home/away final score directly, so one API call produces every team-game row for the whole range at once. Mining is a single-shot fetch + bulk stage insert, not a chunked per-player loop.
+
+**Registered in `generate_wrangler_configs.py`'s hyperdrive/nodejs_compat tuple before writing any code** (standing rule from last session, followed correctly this time).
+
+**Existing Postgres shadow data**: `team.game_logs` had 3,026 pre-existing rows (10-column sparse schema) from an earlier remine. Added lineage columns (`batch_id`, `ingestion_mode`, `certification_status`, etc.) via `ALTER TABLE ADD COLUMN IF NOT EXISTS`, same pattern as hitter/pitcher — did not touch/recreate the live table.
+
+**Config table wired in from the very first commit** (`chunk_size_players=750, max_tick_runtime_ms=90000, promote_rows_per_tick=750` for `alphadog-v2-base-team-game-logs`) — no retrofitting needed this time, unlike hitter/pitcher which got the config table added after the fact.
+
+**Real bugs found and fixed during first real run (all confirmed via live failures, not guessed):**
+1. **Doubled `/api/v1` path** — assumed `env.MLB_API_BASE_URL` was a bare host (matching hitter/pitcher's own base-URL assumption), but it already includes `/api/v1`, producing `.../api/v1/api/v1/schedule` and a 404. Fixed by not re-appending the path segment.
+2. **Postgres `ON CONFLICT DO UPDATE` "cannot affect row a second time"** — the schedule range can legitimately return the same (team, game_pk) pair twice within one fetch (e.g. a game's date-bucket shifting between calls), which is fine across separate statements but fatal within a single bulk INSERT's conflict set. Fixed by deduping rows by `(team_id, game_pk)` before the bulk insert.
+3. **Base integrity gate too strict on "rows after cutoff"** — game_pk 823523 (a real MLB game, evidently suspended and resumed the next day) was captured as 07-18 during base mining, then correctly re-dated to 07-19 by delta once the schedule endpoint reflected the true final date. Sticky ownership correctly kept base's ownership while refreshing the real date — that's correct behavior. The gate's hard "0 rows after cutoff" requirement doesn't allow for this legitimate correction. Fixed the same way as pitcher's exact-count bug: dropped the after-cutoff hard requirement, kept status/duplicate-key/live-rows-present checks.
+4. **Delta's batch-reuse query treated an already-`COMPLETED_PROMOTED_CLEANED` batch as still "active"** (`status != 'CERTIFICATION_FAILED'` matches everything except explicit failures, including terminal success) — this permanently short-circuited every future delta run sharing the same window start date as a no-op, since it kept reusing the old completed batch instead of creating a fresh one. Fixed by checking against an explicit list of active, non-terminal statuses only (matching hitter/pitcher's real pattern, which was correct from the start). Hit the same postgres.js array-binding gotcha as before (`= ANY(${array})` doesn't bind a plain JS array correctly) — fixed with the same proven `IN ${sql(array)}` idiom.
+
+**Real corrupt/delete repair test + no-op test, both passing:**
+- Corrupted one base-owned row (`108_824008_team`, real 0/7→77/77) and one delta-owned row (`108_824007_team`, real 3/2→88/88); deleted one base-owned row (`108_824009_team`, real 1/2) and one delta-owned row (`109_825057_team`, real 8/7).
+- Ran delta_update: reached `COMPLETED_PROMOTED_CLEANED` again. **All 4 rows confirmed restored to their exact real values directly against Postgres** — corrected-in-place rows kept their original batch owner (sticky ownership held), deleted-then-recreated rows got re-owned by the batch that recreated them (no prior owner existed) — identical behavior to hitter/pitcher's proven tests.
+- **No-op steady-state run performed right after** (zero test corruption): `COMPLETED_PROMOTED_CLEANED` again, 126 rows genuinely re-verified and re-promoted (real re-fetch, not skipped — same MLB-data-vendor pattern as hitter/pitcher), all 4 test rows confirmed still correct afterward.
+
+**`alphadog-v2-base-team-game-logs` is now fully proven end-to-end, same standard as hitter and pitcher**: Postgres-only, single live table + one draining stage table (no duplicate/retained tables), sticky ownership, widened 7-day repair-lookback window, config-table-driven tick settings from day one, real corrupt/delete repair test passing, real no-op steady-state test passing.
+
+**Next up: `base-starter-history`** — per the real orchestrator chain, this one has a different mode shape (`delta_coverage_gap_scoped_repair` instead of plain `delta_update`), flagged since the very first session as needing separate verification of its real mode contract before assuming the same base/delta pattern applies unchanged. Check the real D1 file and its real Control Room dispatch mode before writing any code. Apply the same standards: config table wired in from day one, sticky ownership, widened repair window (if applicable to its real mode shape), no duplicate tables, register in `generate_wrangler_configs.py` before first deploy.
