@@ -280,11 +280,12 @@ async function runMiningTick(env, sql, batch, mode) {
   const batchId = batch.batch_id;
   const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
   const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
+  const universeFn = mode === "delta_update" ? getAffectedPlayerUniverse : getPlayerUniverse;
   let universe;
   if (batch.players_total && Number(batch.players_total) > 0) {
-    universe = await getPlayerUniverse(sql);
+    universe = await universeFn(sql);
   } else {
-    universe = await getPlayerUniverse(sql);
+    universe = await universeFn(sql);
     await sql`UPDATE stats_hitter.splits_batches SET players_total=${universe.length}, updated_at=now() WHERE batch_id=${batchId}`;
   }
   const cursor = batch.cursor_player_id ? Number(batch.cursor_player_id) : 0;
