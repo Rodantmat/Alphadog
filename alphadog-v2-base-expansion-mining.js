@@ -69,9 +69,10 @@ async function runDeltaMining(sql, input) {
   const requestId = asText(input.request_id, rid("expansion_delta_mining"));
   const runId = asText(input.run_id, rid("run"));
   const batchId = asText(input.delta_mining_batch_id || input.batch_id, "expansion_first_inning_delta_batch_singleton");
-  const chunkSize = Math.max(10, Math.min(asInt(input.delta_game_chunk_size, 40), 60));
+  const chunkSize = Math.max(10, Math.min(asInt(input.delta_game_chunk_size, 200), 300));
   const timeoutMs = Math.max(1500, Math.min(asInt(input.mlb_linescore_timeout_ms, 8000), 15000));
   const maxGames = Math.max(1, Math.min(asInt(input.delta_game_limit, 2500), 2500));
+  const concurrency = Math.max(5, Math.min(asInt(input.fetch_concurrency, 25), 40));
 
   await sql`
     INSERT INTO context.expansion_first_inning_context_batches (batch_id, request_id, run_id, mode, status, worker_version, cursor_offset)
@@ -87,81 +88,121 @@ async function runDeltaMining(sql, input) {
   const slice = remainingGamePks.slice(0, chunkSize);
   let gamesWritten = 0, pitcherRows = 0, issues = 0;
 
-  for (const gamePk of slice) {
-    const gRows = await sql`
+  if (slice.length) {
+    // Batch-load per-game home/away team_id AND all starters for the whole chunk in 2 queries
+    // instead of 2 queries per game (was the single biggest source of round-trip overhead).
+    const gameRowsAll = await sql`
       SELECT game_pk, MAX(game_date) AS game_date,
         MAX(CASE WHEN is_home=1 THEN regexp_replace(team_id::text, '^mlb_', '') END)::bigint AS home_team_id,
         MAX(CASE WHEN is_home=0 THEN regexp_replace(team_id::text, '^mlb_', '') END)::bigint AS away_team_id
-      FROM team.starter_history WHERE game_pk=${gamePk} GROUP BY game_pk
+      FROM team.starter_history WHERE game_pk IN ${sql(slice)} GROUP BY game_pk
     `;
-    const g = gRows[0] || null;
-    try {
-      const fetched = await fetchMlbLinescore(gamePk, timeoutMs);
-      const parsed = firstInningFromLinescore(fetched.json);
-      if (!parsed) throw new Error("MISSING_FIRST_INNING_LINESCORE_RUNS");
+    const gameInfoByPk = new Map(gameRowsAll.map(r => [Number(r.game_pk), r]));
+    const startersAll = await sql`
+      SELECT sh.game_pk, sh.mlb_player_id AS pitcher_id, regexp_replace(sh.team_id::text, '^mlb_', '')::bigint AS team_id,
+        regexp_replace(sh.opponent_team_id::text, '^mlb_', '')::bigint AS opponent_team_id, sh.is_home, sh.game_date, sh.source_key, p.full_name
+      FROM team.starter_history sh LEFT JOIN ref.players p ON p.mlb_player_id = sh.mlb_player_id
+      WHERE sh.game_pk IN ${sql(slice)}
+    `;
+    const startersByGame = new Map();
+    for (const s of startersAll) {
+      const k = Number(s.game_pk);
+      if (!startersByGame.has(k)) startersByGame.set(k, []);
+      startersByGame.get(k).push(s);
+    }
+
+    // Fetch all MLB linescores concurrently (bounded pool), instead of one-at-a-time sequential awaits.
+    const results = new Array(slice.length);
+    let nextIdx = 0;
+    async function worker() {
+      while (nextIdx < slice.length) {
+        const idx = nextIdx++;
+        const gamePk = slice[idx];
+        try {
+          const fetched = await fetchMlbLinescore(gamePk, timeoutMs);
+          const parsed = firstInningFromLinescore(fetched.json);
+          if (!parsed) throw new Error("MISSING_FIRST_INNING_LINESCORE_RUNS");
+          results[idx] = { gamePk, ok: true, fetched, parsed };
+        } catch (err) {
+          results[idx] = { gamePk, ok: false, error: String(err && err.message ? err.message : err) };
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(concurrency, slice.length) }, () => worker()));
+
+    const gameRowsToInsert = [];
+    const pitcherRowsToInsert = [];
+    const issueRowsToInsert = [];
+
+    for (const r of results) {
+      const gamePk = r.gamePk;
+      const g = gameInfoByPk.get(gamePk) || null;
+      if (!r.ok) {
+        issues++;
+        issueRowsToInsert.push({ issue_id: rid("exp_delta_issue"), batch_id: batchId, game_pk: gamePk, pitcher_id: null, severity: "WARN", issue_code: "DELTA_MLB_LINESCORE_FETCH_OR_PARSE_FAILED", issue_message: r.error.slice(0, 500), details_json: JSON.stringify({ game_pk: gamePk, delta_update: true }) });
+        continue;
+      }
+      const parsed = r.parsed;
       const contextRowId = `exp_first_game|${gamePk}`;
       const yrfi = parsed.first_inning_total_runs >= 1 ? 1 : 0;
       const nrfi = parsed.first_inning_total_runs === 0 ? 1 : 0;
-      await sql`
-        INSERT INTO context.expansion_first_inning_game_context_current (
-          context_row_id, batch_id, game_pk, game_date, home_team_id, away_team_id, home_team_name, away_team_name,
-          top_1st_runs, bottom_1st_runs, first_inning_total_runs, yrfi_flag, nrfi_flag, rfi_pp_more_hit, rfi_pp_less_hit,
-          source_endpoint, source_confidence, source_snapshot_json, updated_at
-        ) VALUES (
-          ${contextRowId}, ${batchId}, ${gamePk}, ${g ? g.game_date : null}, ${g ? g.home_team_id : null}, ${g ? g.away_team_id : null},
-          ${parsed.home_team_name}, ${parsed.away_team_name}, ${parsed.top_1st_runs}, ${parsed.bottom_1st_runs}, ${parsed.first_inning_total_runs},
-          ${yrfi}, ${nrfi}, ${yrfi}, ${nrfi}, ${fetched.url}, 'MLB_LINESCORE_FIRST_INNING',
-          ${JSON.stringify({ game_pk: gamePk, first_inning: parsed, source: "MLB_STATS_API_LINESCORE", delta_update: true })}, now()
-        )
-        ON CONFLICT (context_row_id) DO UPDATE SET
-          top_1st_runs=excluded.top_1st_runs, bottom_1st_runs=excluded.bottom_1st_runs, first_inning_total_runs=excluded.first_inning_total_runs,
-          yrfi_flag=excluded.yrfi_flag, nrfi_flag=excluded.nrfi_flag, rfi_pp_more_hit=excluded.rfi_pp_more_hit, rfi_pp_less_hit=excluded.rfi_pp_less_hit,
-          source_snapshot_json=excluded.source_snapshot_json, updated_at=now()
-      `;
+      gameRowsToInsert.push({
+        context_row_id: contextRowId, batch_id: batchId, game_pk: gamePk, game_date: g ? g.game_date : null,
+        home_team_id: g ? g.home_team_id : null, away_team_id: g ? g.away_team_id : null,
+        home_team_name: parsed.home_team_name, away_team_name: parsed.away_team_name,
+        top_1st_runs: parsed.top_1st_runs, bottom_1st_runs: parsed.bottom_1st_runs, first_inning_total_runs: parsed.first_inning_total_runs,
+        yrfi_flag: yrfi, nrfi_flag: nrfi, rfi_pp_more_hit: yrfi, rfi_pp_less_hit: nrfi,
+        source_endpoint: r.fetched.url, source_confidence: "MLB_LINESCORE_FIRST_INNING",
+        source_snapshot_json: JSON.stringify({ game_pk: gamePk, first_inning: parsed, source: "MLB_STATS_API_LINESCORE", delta_update: true })
+      });
       gamesWritten++;
-
-      const starters = await sql`
-        SELECT sh.mlb_player_id AS pitcher_id, regexp_replace(sh.team_id::text, '^mlb_', '')::bigint AS team_id,
-          regexp_replace(sh.opponent_team_id::text, '^mlb_', '')::bigint AS opponent_team_id, sh.is_home, sh.game_date, sh.source_key, p.full_name
-        FROM team.starter_history sh LEFT JOIN ref.players p ON p.mlb_player_id = sh.mlb_player_id
-        WHERE sh.game_pk = ${gamePk}
-      `;
+      const starters = startersByGame.get(gamePk) || [];
       for (const s0 of starters) {
         const pitcherId = Number(s0.pitcher_id) || null;
         if (!pitcherId) {
           issues++;
-          await sql`
-            INSERT INTO context.expansion_first_inning_context_issues (issue_id, batch_id, game_pk, pitcher_id, severity, issue_code, issue_message, details_json)
-            VALUES (${rid("exp_delta_issue")}, ${batchId}, ${gamePk}, NULL, 'WARN', 'MISSING_STARTER_PLAYER_ID', 'Starter row missing pitcher id', ${JSON.stringify(s0)})
-          `;
+          issueRowsToInsert.push({ issue_id: rid("exp_delta_issue"), batch_id: batchId, game_pk: gamePk, pitcher_id: null, severity: "WARN", issue_code: "MISSING_STARTER_PLAYER_ID", issue_message: "Starter row missing pitcher id", details_json: JSON.stringify(s0) });
           continue;
         }
         const isHome = Number(s0.is_home || 0) === 1 ? 1 : 0;
         const runsAllowed = isHome ? parsed.top_1st_runs : parsed.bottom_1st_runs;
         const half = isHome ? "top_1st" : "bottom_1st";
-        const rowId = `exp_first_pitcher|${gamePk}|${pitcherId}`;
-        await sql`
-          INSERT INTO context.expansion_first_inning_pitcher_context_current (
-            pitcher_context_row_id, batch_id, game_pk, game_date, pitcher_id, pitcher_name, team_id, opponent_team_id, is_home, started_game,
-            first_frame_half, first_frame_runs_allowed, rfi_sl_more_hit, rfi_sl_less_hit, source_game_context_row_id, starter_source_key,
-            source_confidence, details_json, updated_at
-          ) VALUES (
-            ${rowId}, ${batchId}, ${gamePk}, ${s0.game_date || (g ? g.game_date : null)}, ${pitcherId}, ${s0.full_name || null}, ${s0.team_id}, ${s0.opponent_team_id},
-            ${isHome}, 1, ${half}, ${runsAllowed}, ${runsAllowed >= 1 ? 1 : 0}, ${runsAllowed === 0 ? 1 : 0}, ${contextRowId}, ${s0.source_key || null},
-            'MLB_LINESCORE_PLUS_STARTER_HISTORY',
-            ${JSON.stringify({ mapping: isHome ? "home_starter_allows_top_1st" : "away_starter_allows_bottom_1st", top_1st_runs: parsed.top_1st_runs, bottom_1st_runs: parsed.bottom_1st_runs, delta_update: true })}, now()
-          )
-          ON CONFLICT (pitcher_context_row_id) DO UPDATE SET
-            first_frame_runs_allowed=excluded.first_frame_runs_allowed, rfi_sl_more_hit=excluded.rfi_sl_more_hit, rfi_sl_less_hit=excluded.rfi_sl_less_hit,
-            details_json=excluded.details_json, updated_at=now()
-        `;
+        pitcherRowsToInsert.push({
+          pitcher_context_row_id: `exp_first_pitcher|${gamePk}|${pitcherId}`, batch_id: batchId, game_pk: gamePk,
+          game_date: s0.game_date || (g ? g.game_date : null), pitcher_id: pitcherId, pitcher_name: s0.full_name || null,
+          team_id: s0.team_id, opponent_team_id: s0.opponent_team_id, is_home: isHome, started_game: 1,
+          first_frame_half: half, first_frame_runs_allowed: runsAllowed, rfi_sl_more_hit: runsAllowed >= 1 ? 1 : 0, rfi_sl_less_hit: runsAllowed === 0 ? 1 : 0,
+          source_game_context_row_id: contextRowId, starter_source_key: s0.source_key || null, source_confidence: "MLB_LINESCORE_PLUS_STARTER_HISTORY",
+          details_json: JSON.stringify({ mapping: isHome ? "home_starter_allows_top_1st" : "away_starter_allows_bottom_1st", top_1st_runs: parsed.top_1st_runs, bottom_1st_runs: parsed.bottom_1st_runs, delta_update: true })
+        });
         pitcherRows++;
       }
-    } catch (err) {
-      issues++;
+    }
+
+    const GAME_CHUNK = 200;
+    for (let i = 0; i < gameRowsToInsert.length; i += GAME_CHUNK) {
+      const chunk = gameRowsToInsert.slice(i, i + GAME_CHUNK);
       await sql`
-        INSERT INTO context.expansion_first_inning_context_issues (issue_id, batch_id, game_pk, pitcher_id, severity, issue_code, issue_message, details_json)
-        VALUES (${rid("exp_delta_issue")}, ${batchId}, ${gamePk}, NULL, 'WARN', 'DELTA_MLB_LINESCORE_FETCH_OR_PARSE_FAILED', ${String(err && err.message ? err.message : err).slice(0, 500)}, ${JSON.stringify({ game_pk: gamePk, delta_update: true })})
+        INSERT INTO context.expansion_first_inning_game_context_current ${sql(chunk, "context_row_id","batch_id","game_pk","game_date","home_team_id","away_team_id","home_team_name","away_team_name","top_1st_runs","bottom_1st_runs","first_inning_total_runs","yrfi_flag","nrfi_flag","rfi_pp_more_hit","rfi_pp_less_hit","source_endpoint","source_confidence","source_snapshot_json")}
+        ON CONFLICT (context_row_id) DO UPDATE SET
+          top_1st_runs=excluded.top_1st_runs, bottom_1st_runs=excluded.bottom_1st_runs, first_inning_total_runs=excluded.first_inning_total_runs,
+          yrfi_flag=excluded.yrfi_flag, nrfi_flag=excluded.nrfi_flag, rfi_pp_more_hit=excluded.rfi_pp_more_hit, rfi_pp_less_hit=excluded.rfi_pp_less_hit,
+          source_snapshot_json=excluded.source_snapshot_json, updated_at=now()
+      `;
+    }
+    const PITCHER_CHUNK = 200;
+    for (let i = 0; i < pitcherRowsToInsert.length; i += PITCHER_CHUNK) {
+      const chunk = pitcherRowsToInsert.slice(i, i + PITCHER_CHUNK);
+      await sql`
+        INSERT INTO context.expansion_first_inning_pitcher_context_current ${sql(chunk, "pitcher_context_row_id","batch_id","game_pk","game_date","pitcher_id","pitcher_name","team_id","opponent_team_id","is_home","started_game","first_frame_half","first_frame_runs_allowed","rfi_sl_more_hit","rfi_sl_less_hit","source_game_context_row_id","starter_source_key","source_confidence","details_json")}
+        ON CONFLICT (pitcher_context_row_id) DO UPDATE SET
+          first_frame_runs_allowed=excluded.first_frame_runs_allowed, rfi_sl_more_hit=excluded.rfi_sl_more_hit, rfi_sl_less_hit=excluded.rfi_sl_less_hit,
+          details_json=excluded.details_json, updated_at=now()
+      `;
+    }
+    if (issueRowsToInsert.length) {
+      await sql`
+        INSERT INTO context.expansion_first_inning_context_issues ${sql(issueRowsToInsert, "issue_id","batch_id","game_pk","pitcher_id","severity","issue_code","issue_message","details_json")}
       `;
     }
   }
