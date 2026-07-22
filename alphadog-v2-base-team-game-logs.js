@@ -17,7 +17,7 @@ const DEFAULT_PROMOTE_ROWS_PER_TICK = 25;
 const DEFAULT_CLEAN_ROWS_PER_TICK = 500;
 const DEFAULT_LOCK_STALE_SECONDS = 60;
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
-let LOCKED_BASE_BATCH_ID = "PENDING_FIRST_REAL_BASE_BACKFILL_COMPLETION";
+let LOCKED_BASE_BATCH_ID = "team_game_logs_base_backfill_batch_mrvapy76_qmr1g2";
 const ACTIVE_CURSOR_KEY = "base_team_game_logs_active_cursor";
 const DELTA_CURSOR_KEY = "delta_team_game_logs_active_cursor";
 
