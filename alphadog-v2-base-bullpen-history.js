@@ -101,6 +101,31 @@ async function ensureSchema(sql) {
   return { ok: true };
 }
 // STUB_MARKER_MINING_NEXT
+async function deriveBullpenStageRows(sql, batchId, runId, mode, sourceSeason, startDate, endDate) {
+  const res = await sql`
+    INSERT INTO team.bullpen_history_stage (
+      stage_id, batch_id, run_id, team_id, game_pk, game_date, player_id, opponent_team_id, is_home,
+      innings_pitched_decimal, earned_runs, hits_allowed, walks_allowed, strikeouts, raw_json,
+      ingestion_mode, source_key, source_confidence, source_season, row_status
+    )
+    SELECT
+      ${batchId} || '_' || p.team_id || '_' || p.game_pk || '_' || p.player_id || '_bullpen',
+      ${batchId}, ${runId}, p.team_id, p.game_pk, p.game_date, p.player_id, p.opponent_team_id, p.is_home,
+      p.innings_pitched_decimal, p.earned_runs, p.hits_allowed, p.walks_allowed, p.strikeouts, p.raw_json,
+      ${mode}, ${SOURCE_KEY}, 'DERIVED_FROM_PITCHER_GAME_LOGS_AND_STARTER_HISTORY', ${sourceSeason}, 'staged'
+    FROM stats_pitcher.game_logs p
+    LEFT JOIN team.starter_history s ON s.team_id = p.team_id AND s.game_pk = p.game_pk
+    WHERE p.game_date BETWEEN ${startDate}::date AND ${endDate}::date
+      AND (s.mlb_player_id IS NULL OR s.mlb_player_id != p.player_id)
+    ON CONFLICT (stage_id) DO UPDATE SET
+      innings_pitched_decimal=excluded.innings_pitched_decimal, earned_runs=excluded.earned_runs,
+      hits_allowed=excluded.hits_allowed, walks_allowed=excluded.walks_allowed, strikeouts=excluded.strikeouts,
+      raw_json=excluded.raw_json, row_status='staged', updated_at=now()
+  `;
+  const countRows = await sql`SELECT COUNT(*)::int AS c FROM team.bullpen_history_stage WHERE batch_id=${batchId}`;
+  return { inserted: asInt(countRows[0] && countRows[0].c, 0) };
+}
+// STUB_MARKER_PROMOTE_CLEAN_NEXT
 export default {
   async fetch(request, env) {
     return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
