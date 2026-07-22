@@ -181,6 +181,54 @@ async function insertStageRowsBulk(sql, batchId, runId, mode, sourceSeason, rows
   return { inserted };
 }
 // STUB_MARKER_PROMOTE_CLEAN_NEXT
+async function promoteStageRowsChunk(sql, batchId, grade, limit) {
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 2000);
+  const rows = await sql`
+    SELECT stage_id, team_id, game_pk, game_date, mlb_player_id, opponent_team_id, is_home, raw_json,
+           batch_id, run_id, ingestion_mode, source_key, source_confidence, source_endpoint, source_season, source_game_type
+    FROM team.starter_history_stage
+    WHERE batch_id=${batchId} AND row_status != 'promoted'
+    LIMIT ${safeLimit}
+  `;
+  let promotedThisTick = 0;
+  for (const r of rows) {
+    const historyId = `${r.team_id}_${r.game_pk}_starter`;
+    await sql`
+      INSERT INTO team.starter_history (
+        history_id, team_id, game_pk, game_date, mlb_player_id, opponent_team_id, is_home, raw_json,
+        ingestion_mode, batch_id, run_id, certification_status, certification_grade, source_key, source_confidence,
+        source_endpoint, source_season, source_game_type, certified_at, promoted_at, created_at, updated_at
+      ) VALUES (
+        ${historyId}, ${r.team_id}, ${r.game_pk}, ${r.game_date}, ${r.mlb_player_id}, ${r.opponent_team_id}, ${r.is_home}, ${r.raw_json},
+        ${r.ingestion_mode}, ${r.batch_id}, ${r.run_id}, 'certified_promoted', ${grade}, ${r.source_key}, ${r.source_confidence},
+        ${r.source_endpoint}, ${r.source_season}, ${r.source_game_type}, now(), now(), now(), now()
+      )
+      ON CONFLICT (history_id) DO UPDATE SET
+        game_date=excluded.game_date, mlb_player_id=excluded.mlb_player_id, opponent_team_id=excluded.opponent_team_id, is_home=excluded.is_home, raw_json=excluded.raw_json,
+        source_key=excluded.source_key, source_confidence=excluded.source_confidence, source_endpoint=excluded.source_endpoint,
+        source_season=excluded.source_season, source_game_type=excluded.source_game_type,
+        batch_id=COALESCE(team.starter_history.batch_id, excluded.batch_id),
+        run_id=COALESCE(team.starter_history.run_id, excluded.run_id),
+        ingestion_mode=COALESCE(team.starter_history.ingestion_mode, excluded.ingestion_mode),
+        certification_status=COALESCE(team.starter_history.certification_status, excluded.certification_status),
+        certification_grade=COALESCE(team.starter_history.certification_grade, excluded.certification_grade),
+        promoted_at=now(), updated_at=now()
+    `;
+    await sql`UPDATE team.starter_history_stage SET row_status='promoted', updated_at=now() WHERE stage_id=${r.stage_id}`;
+    promotedThisTick += 1;
+  }
+  const remainingRows = await sql`SELECT COUNT(*)::int AS c FROM team.starter_history_stage WHERE batch_id=${batchId} AND row_status != 'promoted'`;
+  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remainingRows[0] && remainingRows[0].c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_history_id" };
+}
+async function cleanStageRowsChunk(sql, batchId, limit) {
+  const safeLimit = cap(limit || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
+  const res = await sql`DELETE FROM team.starter_history_stage WHERE ctid IN (SELECT ctid FROM team.starter_history_stage WHERE batch_id=${batchId} LIMIT ${safeLimit})`;
+  const cleaned = Number(res.count || 0);
+  const remainRows = await sql`SELECT COUNT(*)::int AS c FROM team.starter_history_stage WHERE batch_id=${batchId}`;
+  const remain = asInt(remainRows[0] && remainRows[0].c, 0);
+  return { cleaned_this_tick: cleaned, stage_rows_after_clean: remain, cleanup_done: remain === 0, clean_limit: safeLimit };
+}
+// STUB_MARKER_STATE_MACHINE_NEXT
 export default {
   async fetch(request, env) {
     return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
