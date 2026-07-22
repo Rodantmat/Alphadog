@@ -18256,6 +18256,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isBaseGameCalendarJob(row)) {
+    const output = await processBaseGameCalendarJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_base_game_calendar_job" : "failed_one_base_game_calendar_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
