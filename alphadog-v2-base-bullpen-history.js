@@ -206,16 +206,15 @@ async function buildPrePromotionChecks(sql, batchId) {
 }
 async function getOrCreateBaseBackfillState(env, sql, input) {
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
-  const existingRows = await sql`SELECT * FROM team.bullpen_history_batches WHERE mode='base_backfill' AND status != 'CERTIFICATION_FAILED' ORDER BY started_at DESC LIMIT 1`;
-  if (existingRows[0]) return { is_new: false, batch: existingRows[0] };
+  const batchId = "bullpen_history_base_backfill_singleton";
   const runId = asText(input.run_id, rid("run_base_bullpen_backfill"));
-  const batchId = asText(inputJson.batch_id, rid("bullpen_history_base_backfill_batch"));
   const cutoffDate = asText(inputJson.base_backfill_cutoff_date, DEFAULT_BASE_BACKFILL_CUTOFF_DATE);
   const sourceSeason = asInt(inputJson.source_season || env.ACTIVE_SEASON, DEFAULT_SOURCE_SEASON);
   const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_GAMES, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
   await sql`
     INSERT INTO team.bullpen_history_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_season, base_backfill_cutoff_date, delta_start_date, promote_rows_per_tick, certification_status, source_confidence, notes, started_at, updated_at)
     VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'base_backfill', 'BASE_BACKFILL_MINING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${sourceSeason}, ${cutoffDate}, ${DEFAULT_DELTA_RESERVED_START_DATE}, ${tickConfig.promote_rows_per_tick}, 'not_certified', 'DERIVED_FROM_PITCHER_GAME_LOGS_AND_STARTER_HISTORY', ${"Postgres-native derived build, base fills only through " + cutoffDate}, now(), now())
+    ON CONFLICT (batch_id) DO NOTHING
   `;
   const rows = await sql`SELECT * FROM team.bullpen_history_batches WHERE batch_id=${batchId} LIMIT 1`;
   return { is_new: true, batch: rows[0] };
