@@ -317,4 +317,197 @@ STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 2 (honest, explicit)
   2026-07-19-06-17-57) were NOT deep-read in Pass 2 either, due to time - Pass 2 focused
   entirely on 2026-07-19-04-41-25, which turned out to be extremely high-yield. These remain
   a real, honest gap for a Pass 3 if more exhaustive coverage is required.
-PASS_3_ADDENDUM_PLACEHOLDER
+- Cross-check against the live base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source
+  files for the Metrics sections was still not performed in Pass 2 either.
+
+================================================================================
+PASS 3 ADDENDUM (added 2026-07-20, continuing same day) — SCOPE THIS PASS: CALCULATION
+LAYERS OF INCREMENTAL DATA ONLY (Metrics/Expansion/Classification/Baseline). Explicitly
+EXCLUDING Final Scoring System content (enrichment factors, HP-board, final board) per
+direct instruction, even where it was found in the same transcripts searched.
+================================================================================
+Sources this pass:
+  /mnt/transcripts/2026-07-19-06-19-37-alphadog-v2-baseline-market-audit-day3.txt
+  /mnt/transcripts/2026-07-19-06-17-57-conversation_summary.md
+
+--------------------------------------------------------------------------------
+NEW SECTION 5D: THE ACTUAL runBaselineV6Tick FUNCTION - REAL CODE, CONFIRMED THE CORE
+CALCULATION FUNCTION FOR BOTH FULL-REBUILD AND DAILY-DELTA
+--------------------------------------------------------------------------------
+Source: 2026-07-19-06-17-57-conversation_summary.md, ~lines 7229-7280 (real code read via
+github_grep_file during that session, pattern "if \(aliasMap\[aliasKey\]\) \{",
+alphadog-v2-phase3a-first-inning-pitcher-context.js, matched_line_number 7254).
+
+Confirmed real, exact code structure:
+```
+async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
+  const rows = await all(env.ARCHIVE_DB,
+    `SELECT tier_key, AVG(metric_value) avg_rate, COUNT(*) tier_n FROM classification_v6_current
+     WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
+    propKey, lineValue, side);
+  const priors = {};
+  for (const r of rows) priors[r.tier_key] = { avg_rate: r.avg_rate, tier_n: r.tier_n };
+  return priors;
+}
+
+async function runBaselineV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const batchId = ...; const propKey = ...; const side = ...; const lineValue = ...;
+  // REAL, SCOPED FIX: some (prop, line, side) combos are logically identical events to
+  // another simpler combo (e.g. total_bases>=1 is the exact same event as hits>=1). Rather
+  // than let two independent models of the same real event diverge, directly copy the
+  // declared alias target's already-computed rows. Shared by both full-rebuild and
+  // daily-delta paths (both call this same function).
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  const aliasKey = `${propKey}|${lineValue}|${side}`;
+  if (aliasMap[aliasKey]) {
+    const [targetProp, targetLineRaw, targetSide] = String(aliasMap[aliasKey]).split("|");
+    ... copies rows directly from baseline_v6_current WHERE canonical_prop_key=targetProp
+        AND line_value=targetLine AND selected_side=targetSide ...
+  }
+  ...
+}
+```
+THIS IS THE SINGLE MOST IMPORTANT CONFIRMED FACT OF THIS PASS: runBaselineV6ComputeTierPriors
+is the exact mechanism connecting Classification V6 to Baseline V6 - it reads
+classification_v6_current, groups by tier_key, and computes avg_rate/tier_n per tier. This IS
+the "tier-level population prior" referenced in Pass 2's Bayesian-shrinkage analysis (Section
+5B/5C) - now confirmed as real, exact code, not just inferred description.
+
+Confirmed real, additional baseline_v6_current column names (partial list from the INSERT
+statement fragment captured, extending what Pass 2 found): baseline_row_id, batch_id,
+player_type, player_id, player_name, canonical_prop_key, line_value, selected_side, tier_key,
+hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength,
+recency_blended_rate_0_100 (list continues beyond the captured excerpt - NOT FOUND IN HISTORY
+for any remaining columns past this point in this pass).
+
+--------------------------------------------------------------------------------
+NEW SECTION 5E: shared_threshold_aliases - A SECOND, DISTINCT CONSTRAINT MECHANISM FROM
+subset_of_constraints (Pass 3's other major find, real config content)
+--------------------------------------------------------------------------------
+Confirmed: shared_threshold_aliases (config_key in calibration_config, read via
+getCalibrationValue(env, "global", "shared_threshold_aliases", {})) is a DIFFERENT mechanism
+than subset_of_constraints (Section 4C below) - it handles TRUE EQUALITIES (e.g.
+total_bases>=1 IS the same event as hits>=1, not merely a subset relationship) by directly
+copying the alias target's already-computed row, rather than clamping a value. This is wired
+directly into runBaselineV6Tick itself (confirmed by direct quote from that session: "The
+prop_recency_profile config and the shared_threshold_aliases/subset_of_constraints mechanisms
+are wired directly into runBaselineV6Tick - the actual function that computes every future
+baseline value, both full-rebuild and daily-delta. This will not recur. Confirmed.") - i.e.
+this is genuinely calculation-layer, in scope, not a downstream correction.
+IMPORTANT SCOPE NOTE: a SEPARATE, DOWNSTREAM function also named similarly,
+reconcileHpBoardSubsetConstraints, operates on hp_board_current (a Final Scoring System
+table, downstream of baseline) - that function and its issues are explicitly OUT OF SCOPE
+for this pass per instruction, and are NOT detailed here even though found in the same
+transcript, to respect the requested boundary.
+The exact numeric alias-pair content of shared_threshold_aliases's config_json (e.g. which
+specific prop|line|side keys map to which target) was NOT located as a directly-quoted JSON
+blob in this pass (only the code that CONSUMES it was found) - NOT FOUND IN HISTORY for the
+exact alias pair list itself, flagged honestly rather than reconstructed from the
+total_bases/hits example given in the code comment alone.
+
+--------------------------------------------------------------------------------
+NEW SECTION 4C: subset_of_constraints - EXACT, COMPLETE HIERARCHY CONFIG FOUND
+(Classification/Baseline calculation layer, confirmed running via reconcileSubsetOfConstraints
+against baseline_v6_current in ARCHIVE_DB - NOT the HP-board layer)
+--------------------------------------------------------------------------------
+Source: 2026-07-19-06-19-37-alphadog-v2-baseline-market-audit-day3.txt, ~lines 3550-3560
+(real SELECT config_json FROM calibration_config WHERE config_key='subset_of_constraints'
+AND is_active=1 result) and ~lines 3808-3830 (real code diff for the fix).
+
+Exact, complete, real subset_of_constraints hierarchy (all entries at line_value=0.5,
+selected_side="more" - this is the ONLY line/side combination this constraint config
+currently covers; NOT FOUND IN HISTORY whether other line/side combinations have separate
+declared constraints):
+  rbis|0.5|more        -> hits_runs_rbis|0.5|more
+  runs|0.5|more         -> hits_runs_rbis|0.5|more
+  hits|0.5|more         -> hits_runs_rbis|0.5|more
+  total_bases|0.5|more  -> hits_runs_rbis|0.5|more
+  singles|0.5|more      -> hits|0.5|more
+  doubles|0.5|more      -> hits|0.5|more
+  triples|0.5|more      -> hits|0.5|more
+  home_runs|0.5|more    -> hits|0.5|more
+(Reading: the key is the "subset" prop, the value is its "superset" prop - e.g. singles is a
+logical subset of hits, so a player's singles>=0.5 hit-probability can never exceed their
+hits>=0.5 hit-probability, and this config enforces that via clamping - see below.)
+
+Confirmed real bug + real fix (reconcileSubsetOfConstraints, operating on ARCHIVE_DB.
+baseline_v6_current, exact code captured):
+- Bug: "found 10 real residual violations (singles>hits) even after reconcileSubsetOfConstraints
+  ran on baseline completion" - root cause: a single pass isn't sufficient because a superset
+  prop (hits) can itself get clamped by ITS OWN constraint (hits->hits_runs_rbis) during the
+  same pass, but a subset (singles->hits) checked earlier in iteration order won't see that
+  newly-updated value - a genuine cascading-order bug, quoted/paraphrased from the session's
+  own diagnosis.
+- Fix (exact real code, quoted): loops the full constraint set repeatedly "until no more
+  changes occur, bounded at 5 passes for safety" (for (let pass = 0; pass < 5; pass++) { ...
+  if (passClamped === 0) break; }). Each pass's SQL:
+  ```
+  UPDATE baseline_v6_current
+  SET hit_probability_0_100 = (SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+      WHERE s.player_id = baseline_v6_current.player_id AND s.canonical_prop_key = ?
+      AND s.line_value = ? AND s.selected_side = ?),   -- superset's value
+      formula_version = formula_version || '+subset_clamped'
+  WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?    -- subset's key
+    AND hit_probability_0_100 > (SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+      WHERE s.player_id = baseline_v6_current.player_id AND s.canonical_prop_key = ?
+      AND s.line_value = ? AND s.selected_side = ?)
+  ```
+  i.e. wherever a subset prop's hit_probability_0_100 exceeds its declared superset's value
+  for the same player, it gets clamped DOWN to exactly match the superset's value, and
+  formula_version gets a "+subset_clamped" suffix appended (a real, confirmed audit trail
+  marker for which rows were touched by this mechanism).
+
+--------------------------------------------------------------------------------
+NEW SECTION 4D: CLASSIFICATION V6 BASE - REAL, CONFIRMED COMBO COUNT AND POPULATION STATS
+EXAMPLE (224 combos, quoted real tick output)
+--------------------------------------------------------------------------------
+Source: 2026-07-19-06-17-57-conversation_summary.md, real tick output JSON (mode
+"baseline_v5_classification_base", job_key "expansion-baseline-full-run", worker
+alphadog-v2-phase3a-first-inning-pitcher-context).
+
+Confirmed real, exact field: "total_combos":224 - i.e. the full classification_v6 base
+rebuild processes exactly 224 (canonical_prop_key, line_value, selected_side) combinations
+total, one combo per iteration via combo_index (confirmed combo_index values 28 and 60 seen
+in real tick outputs, both < 224, consistent with sequential progress through the full set).
+Confirmed real example combo and its real population statistics (one specific real tick's
+output, quoted exactly): canonical_prop_key "total_bases", line_value 3.5, selected_side
+"more" -> population_mean: 1.091386, population_stddev: 0.653098, population_n: 592,
+rows_read: 300, rows_written: 265, reclassified_rows: 64 (i.e. of the 265 rows written in
+that tick, 64 players had their tier_key reassigned to a different tier than before - a
+real, direct measurement of how much churn a single delta tick produces).
+Confirmed real per-tick chunk size: rows_read 300 per invocation for this combo
+(cursor_offset advancing in increments of 300, confirmed across two consecutive real tick
+outputs: cursor_offset 300 then 600). Separately, "normalized_v2_chunk_size":80 also appears
+in the orchestrator_dispatch metadata for the same job - these are two DIFFERENT chunk-size
+figures for different sub-mechanisms within the same run and were NOT reconciled/
+disambiguated in this pass (flagging rather than guessing which governs what).
+
+--------------------------------------------------------------------------------
+NEW SECTION 4E/5F: REAL DISPATCH TIMEOUT VALUES CONFIRMED FOR ALL 4 BASELINE/CLASSIFICATION
+WRAPPER MODES
+--------------------------------------------------------------------------------
+Source: 2026-07-19-06-17-57-conversation_summary.md (direct quote, paraphrased/condensed
+from the session's own status-check text): "the classification base wrapper had the tested
+32s fix; the other 3 wrappers (classification delta, HP delta, HP base) were still on the
+old, slow 18s. All 4 are now consistent." - confirms all 4 of: classification_base,
+classification_delta, hp_delta (baseline HP delta), hp_base (baseline HP base) were
+standardized to the SAME 32-second per-invocation dispatch timeout as of this session,
+having previously been split between 32s (classification base only) and 18s (the other 3).
+This is a real, exact, dated (2026-07-19) infrastructure fact about the calculation layer's
+own timeout budget, distinct from the MAX_TICK_MS/MAX_ROWS_PER_TICK worker-level env vars
+found in earlier sessions of this project.
+
+--------------------------------------------------------------------------------
+CONFIRMED STILL NOT FOUND, AFTER THIS PASS TOO (honest, explicit; genuinely searched again)
+--------------------------------------------------------------------------------
+- Pitcher Metrics reaching a v0.4.0/promoted certification stage: searched again this pass
+  in 2026-07-19-17-44-45 specifically (the file most likely to show it) - zero matches for
+  any PITCHER_METRICS_V[0-9] certification-status string. This gap is now confirmed searched
+  twice (Pass 1 and Pass 3) with the same negative result.
+- The exact numeric content of shared_threshold_aliases's config_json itself (only the
+  consuming code was found, not the config value).
+- Expansion-layer numeric formulas/thresholds: NOT re-searched this pass either (Pass 3
+  focused entirely on Classification/Baseline, which turned out extremely high-yield) - this
+  gap from Pass 1 still stands, unaddressed for a 3rd consecutive pass now, and should be the
+  explicit focus of Pass 4.
