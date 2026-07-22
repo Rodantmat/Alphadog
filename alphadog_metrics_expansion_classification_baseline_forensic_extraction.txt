@@ -153,4 +153,169 @@ CONFLICTS FOUND (Pass 1)
    confirmed asymmetry, not resolved.
 
 ================================================================================
-PASS_2_ADDENDUM_PLACEHOLDER
+PASS 1 SCOPE STATEMENT
+================================================================================
+Full line-by-line read of all 30 transcripts was NOT completed in Pass 1 — only targeted
+grep sweeps plus deep reads of specific hits. Flagged as needing deeper reading:
+2026-07-18-00-37-34, 2026-07-18-04-39-42, 2026-07-18-06-02-41, 2026-07-18-18-25-43,
+2026-07-19-04-41-25, 2026-07-19-06-17-57. No cross-check against live
+base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source performed in Pass 1.
+
+================================================================================
+PASS 2 ADDENDUM — DEEP READ OF FLAGGED TRANSCRIPTS (added 2026-07-20, later same day)
+================================================================================
+Method this pass: direct line-range extraction + Python unescaping of specific transcript
+sections (not just grep hit-lists) for the file previously flagged as highest-probability for
+missing Baseline/Classification numeric content:
+/mnt/transcripts/2026-07-19-04-41-25-alphadog-v2-calibration-fixes-day2.txt
+This single file alone contained the large majority of the previously-missing numeric detail.
+Citations below give line-number ranges within that file so they can be re-verified directly.
+
+--------------------------------------------------------------------------------
+NEW SECTION 4B: CLASSIFICATION/BASELINE — REAL SAMPLE-SIZE TIER SYSTEM FOUND
+--------------------------------------------------------------------------------
+Source: lines ~9720-9840, ~15550-15600 of the file above (live github_grep_file / run_sql
+tool calls made during that session, reading real code from
+alphadog-v2-phase3a-first-inning-pitcher-context.js and writing to CONFIG_DB).
+
+Confirmed real tier NAMES (found as literal SQL string constants, 3 tiers, not 2 as Pass 1
+guessed might exist): 'DEVELOPING', 'ESTABLISHED', 'ELITE' — this is the sample_profile
+column's tier vocabulary for BOTH player_baseline_hp_v2_current (HP table) and
+player_baseline_classification_v5_current (classification table) — i.e. classification and
+baseline share the identical 3-tier vocabulary, confirmed by the same rescue-audit query
+checking both tables with "sample_profile IN ('ESTABLISHED','ELITE')" (line ~4824, ~4834).
+
+Confirmed real tier field name: non_push_sample (236 occurrences in this one file alone —
+the dominant, canonical sample-size field; "games_sample" appears to be an older/alias name
+for what is now, as of this session, generally referred to as non_push_sample).
+
+Confirmed real numeric boundary comparisons actually used against non_push_sample across the
+codebase (found via direct grep of the live source file within that session, NOT guessed):
+  non_push_sample <= 0
+  non_push_sample < 5
+  non_push_sample < 8
+  non_push_sample < 10
+  non_push_sample < 20
+  non_push_sample < 50
+  non_push_sample >= 10
+  non_push_sample >= 20
+This is a genuine multi-rung ladder, not just a single DEVELOPING/ESTABLISHED cutoff — exact
+mapping of which specific number belongs to which of the 3 tier names, and whether the 5/8/50
+values are for a DIFFERENT confidence/shrinkage sub-calculation rather than the tier label
+itself, was NOT fully disambiguated in this pass (the >=10 boundary is directly, explicitly
+confirmed as the DEVELOPING vs ESTABLISHED/ELITE split via the WHERE clauses at lines
+4783-4801 and 4824-4835; the other values' exact role is a real, flagged, honest gap).
+
+Confirmed real invariant/cap: baseline_confidence_0_100 + soft_uncertainty_reserve_0_100 must
+round to exactly 100 (line ~4818: "ROUND(baseline_confidence_0_100 + soft_uncertainty_
+reserve_0_100,2) != 100" used as a bug-detection check) — i.e. confidence and "reserved
+uncertainty" are complementary halves of a fixed 100-point budget, a real, exact cap
+relationship, not a guessed one.
+
+--------------------------------------------------------------------------------
+NEW SECTION 5B: BASELINE — THE ACTUAL RECENCY-WEIGHTING / SHRINKAGE FORMULA CONFIG,
+FULL NUMERIC TABLE (this is the single richest find of Pass 2)
+--------------------------------------------------------------------------------
+Source: lines ~15550-15600 of the same file — a real `UPDATE calibration_config SET
+config_json=? WHERE config_key='prop_recency_profile'` write, executed live during that
+session on 2026-07-19, fixing a previously-inconsistent profile assignment (see the
+"reconciled_note" quoted verbatim below). This IS the actual, current, as-of-2026-07-19
+production config for how Baseline blends recent-games rate into a prior.
+
+Every prop key's exact recency_weights (last_5_games / last_10_games / last_20_games /
+season_to_date, which sum to 1.0 in every row) and prior_strength_multiplier, quoted exactly:
+
+  hitter_strikeouts   profile A: 0.45 / 0.30 / 0.15 / 0.10   prior_strength_multiplier 0.7
+  walks               profile A: 0.45 / 0.30 / 0.15 / 0.10   prior_strength_multiplier 0.7
+  pitcher_strikeouts  profile A: 0.45 / 0.30 / 0.15 / 0.10   prior_strength_multiplier 0.7
+  walks_allowed       profile A: 0.40 / 0.30 / 0.20 / 0.10   prior_strength_multiplier 0.85
+  hits                profile B: 0.35 / 0.30 / 0.20 / 0.15   prior_strength_multiplier 1.0
+  singles             profile B: 0.35 / 0.30 / 0.20 / 0.15   prior_strength_multiplier 1.0
+  hits_allowed        profile B: 0.35 / 0.30 / 0.20 / 0.15   prior_strength_multiplier 1.0
+  total_bases         profile B: 0.35 / 0.30 / 0.20 / 0.15   prior_strength_multiplier 1.0
+    ^ "reconciled_note" quoted verbatim: "Moved from Profile C to Profile B (2026-07-19):
+      real ground-truth data proved total_bases>=1 and hits>=1 are the exact same event
+      (identical raw rate in every sample checked), but were receiving different
+      shrinkage/recency treatment, causing total_bases to systematically diverge above hits
+      at the shared 0.5 line - confirmed as the dominant root cause of cross-prop
+      monotonicity violations, worsening from 40% to 97% by player tier. This table has no
+      per-line override, so aligning the whole prop to hits' profile is the safest fix given
+      0.5 is the overwhelming majority of real board volume for this prop."
+      -> This is a real, dated (2026-07-19), quoted bug-fix rationale - total_bases was
+      PREVIOUSLY on Profile C (different weights) and was moved to Profile B same-day.
+  home_runs           profile C: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.6
+  doubles             profile C: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.5
+  triples             profile C: 0.15 / 0.20 / 0.25 / 0.40   prior_strength_multiplier 1.8
+  stolen_bases        profile C: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.6
+  earned_runs         profile C: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.6
+  runs_allowed        profile C: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.6
+  rbis                profile D: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.5
+  runs                profile D: 0.20 / 0.25 / 0.25 / 0.30   prior_strength_multiplier 1.5
+  pitcher_outs        profile E: 0.50 / 0.30 / 0.15 / 0.05   prior_strength_multiplier 0.6
+  pitches_thrown      profile E: 0.50 / 0.30 / 0.15 / 0.05   prior_strength_multiplier 0.6
+  hits_runs_rbis      profile "B-D blend": 0.30/0.28/0.22/0.20   prior_strength_multiplier 1.2
+  fantasy_score       profile "A-C blend": 0.30/0.28/0.22/0.20   prior_strength_multiplier 1.2
+  pitcher_fantasy_score profile "A-C blend": 0.30/0.28/0.22/0.20 prior_strength_multiplier 1.2
+
+Interpretation note (grounded in the same session's own analysis, lines ~9660-9825, quoted/
+paraphrased, not fabricated): this is described as "a Bayesian shrinkage approach that blends
+individual player metrics with tier-level population priors, where the raw player value gets
+adjusted toward the broader tier average to stabilize estimates," with "shrinkage strength...
+calibrat[ed] adaptive[ly]... based on sample size" - i.e. prior_strength_multiplier is NOT a
+flat constant applied identically regardless of sample size; it interacts with non_push_sample
+(Section 4B above) to determine how much a given player's raw recency-blended rate gets pulled
+toward the tier prior. The EXACT mathematical formula combining prior_strength_multiplier with
+non_push_sample into a final shrinkage weight was NOT located verbatim as a code snippet in
+this pass - the multiplier table above and the tier boundaries in 4B are both real and exact,
+but the precise combination formula is NOT FOUND IN HISTORY as an exact expression, flagged
+honestly rather than reconstructed by guessing a plausible-looking formula.
+
+--------------------------------------------------------------------------------
+NEW SECTION 5C: THE ACTUAL HP PROBABILITY MODEL - FUNCTION NAMES AND MECHANISM CONFIRMED
+--------------------------------------------------------------------------------
+Source: lines ~11280-11340 of the same file (this session's own live analysis of the real
+downstream code, hpFromCountModel/hpFromNormalModel/computeRecencyBlendedRate - 30, 16, and
+15 occurrences respectively in this one file, confirming these are real, heavily-used
+function names, not one-off mentions).
+
+Confirmed real mechanism (from that session's direct code reading, paraphrased where it is
+analysis rather than verbatim quote):
+- computeRecencyBlendedRate does NOT compute a 0-1 probability. It computes an average RATE
+  PER GAME (e.g. ~0.6-0.8 hits/game, ~1.0-1.5 total-bases/game for a typical MLB hitter) - the
+  "recency_blended_rate_0_100" field name is acknowledged in that session as misleadingly
+  named (it is a scaled average rate, not a percentage/probability, and CAN exceed 100,
+  confirmed by a real observed data point: hitter-strikeouts recency_avg showing 110.48%,
+  found to be mathematically valid for a cumulative stat, not a bug).
+- Two distinct downstream probability models exist: hpFromCountModel (a Poisson/Negative-
+  Binomial-style model, appropriate for count stats with real magnitude variation like
+  total_bases: 0,1,2,3,4) and hpFromNormalModel (used for other stat types) - both take the
+  average-rate output of computeRecencyBlendedRate and convert it into an actual P(X >= line)
+  probability.
+- Total_bases numerator, confirmed as a real weighted sum via that session's own code read:
+  doubles x2 + triples x3 + home_runs x4 (+ singles x1, implied by definition though its
+  explicit coefficient was not independently re-quoted in the excerpt captured this pass).
+- A specific, real, root-caused bug is documented here: hits>=1 and total_bases>=1 are "the
+  exact same event" (identical empirical rate at the >=1 threshold), yet were being run
+  through different shrinkage/recency profiles (Profile B vs the OLD Profile C for
+  total_bases before the 2026-07-19 fix in Section 5B above), producing cross-prop
+  monotonicity violations that WORSENED from 40% to 97% by player tier - this exact 40%->97%
+  figure is a directly quoted real measurement from that session's own diagnostic pass.
+
+--------------------------------------------------------------------------------
+STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 2 (honest, explicit)
+--------------------------------------------------------------------------------
+- The exact closed-form mathematical formula combining prior_strength_multiplier with
+  non_push_sample into a final shrinkage weight (only the ingredients, not the exact
+  equation, were found).
+- Any Expansion-layer-specific numeric formula/threshold/tier (Pass 2 did not re-search
+  Expansion specifically; the gap noted in Pass 1 Section 3 stands).
+- Full disambiguation of which of the 5/8/10/20/50 non_push_sample cutoffs maps to which
+  specific tier name or sub-calculation (only the >=10 DEVELOPING/ESTABLISHED+ELITE boundary
+  is unambiguously confirmed).
+- The remaining flagged transcripts from Pass 1's scope statement
+  (2026-07-18-00-37-34, 2026-07-18-04-39-42, 2026-07-18-06-02-41, 2026-07-18-18-25-43,
+  2026-07-19-06-17-57) were NOT deep-read in Pass 2 either, due to time - Pass 2 focused
+  entirely on 2026-07-19-04-41-25, which turned out to be extremely high-yield. These remain
+  a real, honest gap for a Pass 3 if more exhaustive coverage is required.
+- Cross-check against the live base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source
+  files for the Metrics sections was still not performed in Pass 2 either.
