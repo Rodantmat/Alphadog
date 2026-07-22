@@ -266,6 +266,95 @@ async function runBaseBackfillTick(env, sql, input) {
   } finally { await releaseBatchLock(sql, batchId, owner); }
 }
 // STUB_MARKER_DELTA_NEXT
+async function getLockedBaseIntegrity(sql) {
+  const batchRows = await sql`SELECT batch_id, status, rows_promoted, base_backfill_cutoff_date, cleaned_at FROM team.bullpen_history_batches WHERE batch_id=${LOCKED_BASE_BATCH_ID} LIMIT 1`;
+  const batch = batchRows[0] || null;
+  const liveRows = await sql`SELECT COUNT(*)::int AS c FROM team.bullpen_history WHERE batch_id=${LOCKED_BASE_BATCH_ID}`;
+  const dupRows = await sql`SELECT COUNT(*)::int AS c FROM (SELECT team_id, game_pk, player_id, COUNT(*) AS n FROM team.bullpen_history WHERE batch_id=${LOCKED_BASE_BATCH_ID} GROUP BY team_id, game_pk, player_id HAVING COUNT(*) > 1) sub`;
+  const cutoffDate = batch ? batch.base_backfill_cutoff_date : DEFAULT_BASE_BACKFILL_CUTOFF_DATE;
+  const live = liveRows[0] || {}, dup = dupRows[0] || {};
+  const pass = !!batch && String(batch.status) === "COMPLETED_PROMOTED_CLEANED" && asInt(dup.c, 0) === 0 && asInt(live.c, 0) > 0;
+  return { pass, required_base_batch_id: LOCKED_BASE_BATCH_ID, status: batch ? batch.status : null, rows_promoted: batch ? asInt(batch.rows_promoted, 0) : 0, live_base_rows: asInt(live.c, 0), duplicate_base_live_keys: asInt(dup.c, 0), cutoff_date: cutoffDate, cleaned_at: batch ? batch.cleaned_at : null };
+}
+function addDays(dateStr, days) { const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+async function getDeltaWindow(sql, inputJson) {
+  const deltaFloor = asText(inputJson.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE);
+  const latestRows = await sql`SELECT MAX(game_date) AS latest FROM stats_pitcher.game_logs WHERE game_date::date >= ${deltaFloor}::date`;
+  const latest = asText(latestRows[0] && latestRows[0].latest, null);
+  if (!latest) return { ok: false, error: "NO_PITCHER_GAME_LOGS_IN_DELTA_RANGE", delta_start_date: deltaFloor };
+  const latestStr = new Date(latest).toISOString().slice(0, 10);
+  const existingDeltaLiveRows = await sql`SELECT MAX(game_date) AS max_delta_game_date FROM team.bullpen_history WHERE ingestion_mode='delta_update' AND game_date::date >= ${deltaFloor}::date`;
+  const maxDeltaGameDate = asText(existingDeltaLiveRows[0] && existingDeltaLiveRows[0].max_delta_game_date, null);
+  const hasPriorDeltaLive = !!(maxDeltaGameDate && maxDeltaGameDate >= deltaFloor);
+  const lookbackStart = addDays(latestStr, -(DEFAULT_DELTA_LOOKBACK_DAYS - 1));
+  const start = hasPriorDeltaLive ? lookbackStart : deltaFloor;
+  return { ok: true, delta_start_date: start, delta_end_date: latestStr, delta_floor_date: deltaFloor, latest_complete_game_date: latestStr, repair_lookback_days: DEFAULT_DELTA_LOOKBACK_DAYS, initial_full_delta_catchup: !hasPriorDeltaLive, prior_delta_live_max_game_date: maxDeltaGameDate };
+}
+async function getOrCreateDeltaState(env, sql, input, windowInfo) {
+  const activeStatuses = ["DELTA_MINING", "DELTA_STAGED_READY_FOR_CERTIFICATION", "DELTA_CERTIFIED_READY_TO_PROMOTE", "DELTA_PROMOTING", "DELTA_PROMOTED_READY_TO_CLEAN", "DELTA_CLEANING"];
+  const existingRows = await sql`SELECT * FROM team.bullpen_history_batches WHERE mode='delta_update' AND status IN ${sql(activeStatuses)} AND delta_start_date=${windowInfo.delta_start_date} ORDER BY started_at DESC LIMIT 1`;
+  if (existingRows[0]) return { is_new: false, batch: existingRows[0] };
+  const runId = asText(input.run_id, rid("run_delta_bullpen_history"));
+  const batchId = rid("bullpen_history_delta_update_batch");
+  const sourceSeason = DEFAULT_SOURCE_SEASON;
+  const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_GAMES, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+  await sql`
+    INSERT INTO team.bullpen_history_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_season, base_backfill_cutoff_date, delta_start_date, promote_rows_per_tick, certification_status, notes, started_at, updated_at)
+    VALUES (${batchId}, ${runId}, ${WORKER_NAME}, ${VERSION}, 'delta_update', 'DELTA_MINING', ${DATA_FEED_KEY}, ${SOURCE_KEY}, ${sourceSeason}, ${DEFAULT_BASE_BACKFILL_CUTOFF_DATE}, ${windowInfo.delta_start_date}, ${tickConfig.promote_rows_per_tick}, 'not_certified', ${`delta_update window ${windowInfo.delta_start_date} through ${windowInfo.delta_end_date}; base batch ${LOCKED_BASE_BATCH_ID} gate required`}, now(), now())
+  `;
+  const rows = await sql`SELECT * FROM team.bullpen_history_batches WHERE batch_id=${batchId} LIMIT 1`;
+  return { is_new: true, batch: rows[0] };
+}
+async function runDeltaUpdateTick(env, sql, input) {
+  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const baseGate = await getLockedBaseIntegrity(sql);
+  if (!baseGate.pass) return { ok: true, data_ok: false, mode: "delta_update", status: "BASE_INTEGRITY_GATE_CLOSED", base_integrity_gate: baseGate };
+  const windowInfo = await getDeltaWindow(sql, inputJson);
+  if (!windowInfo.ok) return { ok: true, data_ok: false, mode: "delta_update", status: "DELTA_WINDOW_ERROR", delta_window: windowInfo };
+  const state = await getOrCreateDeltaState(env, sql, input, windowInfo);
+  const batch = state.batch;
+  const batchId = batch.batch_id;
+  const runId = batch.run_id;
+  const owner = asText(input.owner, rid("owner"));
+  const lock = await acquireBatchLock(sql, batchId, owner, DEFAULT_LOCK_STALE_SECONDS);
+  if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, lock };
+  try {
+    const freshRows = await sql`SELECT status FROM team.bullpen_history_batches WHERE batch_id=${batchId} LIMIT 1`;
+    const status = String((freshRows[0] && freshRows[0].status) || "");
+    if (status === "COMPLETED_PROMOTED_CLEANED") {
+      return { ok: true, data_ok: true, mode: "delta_update", batch_id: batchId, status, delta_window: windowInfo, already_completed: true };
+    }
+    if (status === "DELTA_MINING") {
+      const ins = await deriveBullpenStageRows(sql, batchId, runId, "delta_update", batch.source_season, windowInfo.delta_start_date, windowInfo.delta_end_date);
+      await sql`UPDATE team.bullpen_history_batches SET status='DELTA_STAGED_READY_FOR_CERTIFICATION', rows_staged=${ins.inserted}, updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "delta_update", batch_id: batchId, status: "DELTA_STAGED_READY_FOR_CERTIFICATION", delta_window: windowInfo, rows_staged: ins.inserted, continuation_required: true };
+    }
+    if (status === "DELTA_STAGED_READY_FOR_CERTIFICATION") {
+      const pre = await buildPrePromotionChecks(sql, batchId);
+      if (!pre.pass) {
+        await sql`UPDATE team.bullpen_history_batches SET status='CERTIFICATION_FAILED', certification_status='DELTA_BULLPEN_HISTORY_CERTIFICATION_FAILED', certification_grade='DELTA_FAIL', certification_json=${JSON.stringify(pre.checks)}, updated_at=now() WHERE batch_id=${batchId}`;
+        return { ok: true, data_ok: false, mode: "delta_update", batch_id: batchId, status: "CERTIFICATION_FAILED", checks: pre.checks };
+      }
+      await sql`UPDATE team.bullpen_history_batches SET status='DELTA_CERTIFIED_READY_TO_PROMOTE', certification_status='DELTA_BULLPEN_HISTORY_CERTIFIED', certification_grade='DELTA_PASS', certification_json=${JSON.stringify(pre.checks)}, certified_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "delta_update", batch_id: batchId, status: "DELTA_CERTIFIED_READY_TO_PROMOTE", delta_window: windowInfo, checks: pre.checks, continuation_required: true };
+    }
+    if (status === "DELTA_CERTIFIED_READY_TO_PROMOTE" || status === "DELTA_PROMOTING") {
+      const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_GAMES, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+      const promoted = await promoteStageRowsChunk(sql, batchId, "DELTA_PASS", tickConfig.promote_rows_per_tick);
+      const nextStatus = promoted.remaining_unpromoted === 0 ? "DELTA_PROMOTED_READY_TO_CLEAN" : "DELTA_PROMOTING";
+      await sql`UPDATE team.bullpen_history_batches SET status=${nextStatus}, rows_promoted=rows_promoted + ${promoted.promoted_this_tick}, promoted_at=COALESCE(promoted_at, now()), updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "delta_update", batch_id: batchId, status: nextStatus, delta_window: windowInfo, promoted, continuation_required: true };
+    }
+    if (status === "DELTA_PROMOTED_READY_TO_CLEAN" || status === "DELTA_CLEANING") {
+      const cleaned = await cleanStageRowsChunk(sql, batchId, DEFAULT_CLEAN_ROWS_PER_TICK);
+      const nextStatus = cleaned.cleanup_done ? "COMPLETED_PROMOTED_CLEANED" : "DELTA_CLEANING";
+      await sql`UPDATE team.bullpen_history_batches SET status=${nextStatus}, cleaned_at=CASE WHEN ${cleaned.cleanup_done} THEN now() ELSE cleaned_at END, finished_at=CASE WHEN ${cleaned.cleanup_done} THEN now() ELSE finished_at END, updated_at=now() WHERE batch_id=${batchId}`;
+      return { ok: true, data_ok: true, mode: "delta_update", batch_id: batchId, status: nextStatus, delta_window: windowInfo, cleaned, done: cleaned.cleanup_done, continuation_required: !cleaned.cleanup_done };
+    }
+    return { ok: true, data_ok: false, mode: "delta_update", batch_id: batchId, status: "UNKNOWN_STATUS", real_status: status };
+  } finally { await releaseBatchLock(sql, batchId, owner); }
+}
+// STUB_MARKER_HANDLER_NEXT
 export default {
   async fetch(request, env) {
     return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "stub_not_yet_built" }), { headers: { "content-type": "application/json" } });
