@@ -312,11 +312,7 @@ STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 2 (honest, explicit)
 - Full disambiguation of which of the 5/8/10/20/50 non_push_sample cutoffs maps to which
   specific tier name or sub-calculation (only the >=10 DEVELOPING/ESTABLISHED+ELITE boundary
   is unambiguously confirmed).
-- The remaining flagged transcripts from Pass 1's scope statement
-  (2026-07-18-00-37-34, 2026-07-18-04-39-42, 2026-07-18-06-02-41, 2026-07-18-18-25-43,
-  2026-07-19-06-17-57) were NOT deep-read in Pass 2 either, due to time - Pass 2 focused
-  entirely on 2026-07-19-04-41-25, which turned out to be extremely high-yield. These remain
-  a real, honest gap for a Pass 3 if more exhaustive coverage is required.
+PASS_4_ADDENDUM_PLACEHOLDER
 - Cross-check against the live base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source
   files for the Metrics sections was still not performed in Pass 2 either.
 
