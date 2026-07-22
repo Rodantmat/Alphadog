@@ -153,10 +153,4 @@ CONFLICTS FOUND (Pass 1)
    confirmed asymmetry, not resolved.
 
 ================================================================================
-PASS 1 SCOPE STATEMENT
-================================================================================
-Full line-by-line read of all 30 transcripts was NOT completed in Pass 1 — only targeted
-grep sweeps plus deep reads of specific hits. Flagged as needing deeper reading:
-2026-07-18-00-37-34, 2026-07-18-04-39-42, 2026-07-18-06-02-41, 2026-07-18-18-25-43,
-2026-07-19-04-41-25, 2026-07-19-06-17-57. No cross-check against live
-base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source performed in Pass 1.
+PASS_2_ADDENDUM_PLACEHOLDER
