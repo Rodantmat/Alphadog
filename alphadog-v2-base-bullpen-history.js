@@ -163,12 +163,15 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
         certification_grade=COALESCE(team.bullpen_history.certification_grade, excluded.certification_grade),
         promoted_at=now(), updated_at=now()
       RETURNING 1
+    ),
+    upd AS (
+      UPDATE team.bullpen_history_stage SET row_status='promoted', updated_at=now()
+      WHERE stage_id IN (SELECT stage_id FROM batch_rows) AND (SELECT COUNT(*) FROM ins) >= 0
+      RETURNING 1
     )
-    UPDATE team.bullpen_history_stage SET row_status='promoted', updated_at=now()
-    WHERE stage_id IN (SELECT stage_id FROM batch_rows)
-    RETURNING 1
+    SELECT COUNT(*)::int AS promoted_count FROM upd
   `;
-  const promotedThisTick = result.length;
+  const promotedThisTick = asInt(result[0] && result[0].promoted_count, 0);
   const remainingRows = await sql`SELECT COUNT(*)::int AS c FROM team.bullpen_history_stage WHERE batch_id=${batchId} AND row_status != 'promoted'`;
   return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remainingRows[0] && remainingRows[0].c, 0), promote_limit: safeLimit, insert_mode: "postgres_bulk_cte_single_statement" };
 }
