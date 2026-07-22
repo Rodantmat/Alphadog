@@ -317,5 +317,4 @@ STILL NOT FOUND IN HISTORY, EVEN AFTER PASS 2 (honest, explicit)
   2026-07-19-06-17-57) were NOT deep-read in Pass 2 either, due to time - Pass 2 focused
   entirely on 2026-07-19-04-41-25, which turned out to be extremely high-yield. These remain
   a real, honest gap for a Pass 3 if more exhaustive coverage is required.
-- Cross-check against the live base-hitter-metrics.js/base-pitcher-metrics.js/phase3a source
-  files for the Metrics sections was still not performed in Pass 2 either.
+PASS_3_ADDENDUM_PLACEHOLDER
