@@ -115,7 +115,7 @@ function windowRowsFor(logRowsAsc, window) {
   return logRowsAsc.slice(Math.max(0, logRowsAsc.length - size));
 }
 function aggregateLogs(rows) {
-  const a = { appearances_count: rows.length, starts_count: 0, outs_recorded_sum: 0, batters_faced_sum: 0, pitches_sum: 0, strikes_sum: 0, hits_allowed_sum: 0, runs_allowed_sum: 0, earned_runs_sum: 0, walks_allowed_sum: 0, strikeouts_sum: 0, home_runs_allowed_sum: 0 };
+  const a = { appearances_count: rows.length, starts_count: 0, outs_recorded_sum: 0, batters_faced_sum: 0, pitches_sum: 0, strikes_sum: 0, hits_allowed_sum: 0, runs_allowed_sum: 0, earned_runs_sum: 0, walks_allowed_sum: 0, strikeouts_sum: 0, home_runs_allowed_sum: 0, rfi_hit_count_sum: 0, rfi_games_with_data: 0 };
   for (const r of rows) {
     a.starts_count += String(r.role || "").toLowerCase().includes("start") ? 1 : 0;
     a.outs_recorded_sum += num(r.outs_recorded); a.batters_faced_sum += num(r.batters_faced);
