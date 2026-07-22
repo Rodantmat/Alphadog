@@ -170,8 +170,7 @@ async function runDeltaMining(sql, input) {
     await sql`INSERT INTO context.expansion_first_inning_pitcher_context_history SELECT *, now() AS archived_at FROM context.expansion_first_inning_pitcher_context_current WHERE batch_id=${batchId}`;
   }
 
-  const nextCursor = cursor + slice.length;
-  const done = nextCursor >= total;
+  const done = totalRemainingBeforeThisTick <= slice.length;
   const currentGamesRows = await sql`SELECT COUNT(*)::int AS c FROM context.expansion_first_inning_game_context_current`;
   const currentPitchersRows = await sql`SELECT COUNT(*)::int AS c FROM context.expansion_first_inning_pitcher_context_current`;
   const issueRows = await sql`SELECT COUNT(*)::int AS c FROM context.expansion_first_inning_context_issues WHERE batch_id=${batchId}`;
@@ -180,8 +179,8 @@ async function runDeltaMining(sql, input) {
 
   await sql`
     UPDATE context.expansion_first_inning_context_batches SET
-      status=${done ? "completed" : "partial_continue"}, games_requested=${total}, games_written=games_written+${gamesWritten},
-      pitcher_rows_written=pitcher_rows_written+${pitcherRows}, issue_rows=${issueTotal}, cursor_offset=${nextCursor},
+      status=${done ? "completed" : "partial_continue"}, games_requested=${totalRemainingBeforeThisTick}, games_written=games_written+${gamesWritten},
+      pitcher_rows_written=pitcher_rows_written+${pitcherRows}, issue_rows=${issueTotal},
       certification=${status}, certification_grade=${done ? (issueTotal ? "PASS_WITH_WARNINGS" : "PASS") : "PARTIAL_CONTINUE"},
       finished_at=${done ? sql`now()` : null}, updated_at=now()
     WHERE batch_id=${batchId}
