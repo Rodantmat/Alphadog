@@ -633,3 +633,21 @@ The eventual full-run design (orchestrator-driven, certifier-gated) is confirmed
 **`alphadog-v2-base-hitter-splits` is now fully proven end-to-end.**
 
 **Next up: `base-pitcher-splits`** — expect the same season-aggregate architecture and affected-player-refresh pattern as hitter-splits (likely `sitCodes=vl,vr` equivalent for pitchers, or possibly platoon-of-batter splits from the pitcher's side). Verify the real old file's mode list and the real MLB endpoint shape before assuming it's a straight copy of hitter-splits' logic — check for real differences (e.g. starter vs reliever role splits) before building.
+
+---
+
+## NEW WORKER — `alphadog-v2-base-pitcher-splits` built clean, proven end-to-end, same session, no new bugs
+
+Checked the real old D1 file before building (per the note left last session): confirmed same season-aggregate architecture and endpoint shape as hitter-splits, just `group=pitching` instead of `hitting`, with pitching-perspective stat fields (innings pitched, batters faced, hits/walks allowed, strikeouts, rate stats against) instead of hitting fields. Universe source: `stats_pitcher.game_logs` distinct player_id (same simpler, proven choice as hitter-splits, rather than porting the old D1 file's `REF_DB` roster-based universe query).
+
+Built the entire worker in one commit, directly applying every lesson from `hitter-splits` and `bullpen-history` from the very first line: deterministic batch IDs + `ON CONFLICT DO NOTHING`, bulk CTE-based promote, affected-players delta scope (`getAffectedPlayerUniverse`, 3-day lookback) vs. full universe for base_backfill, dedup-before-insert fix for the stage bulk insert. **Zero new bugs found this time** — every fix carried over cleanly from the prior two workers, confirming the pattern is now solid.
+
+One real, external hiccup, not a code issue: hit a genuinely stuck GitHub Actions deploy (an earlier commit's auto-deploy run sat `in_progress` for 12+ minutes, queuing the actual worker-code deploy behind it) — resolved on its own after waiting; flagged honestly to the user rather than guessing at a cause.
+
+**Real corrupt/delete repair test + no-op test, both passing** (using in-scope, recently-active pitchers `445276` and `518585`, both with games in the last 3 days, learning directly from hitter-splits' repair-test lesson this time instead of re-discovering it): corrupted `445276_2026_vl` (real K=15→777) and `518585_2026_vl` (real K=24→888); deleted `445276_2026_vr` (real K=14) and `518585_2026_vr` (real K=31). Delta run reached `COMPLETED_PROMOTED_CLEANED`; all 4 rows confirmed restored to exact real values. No-op run right after: clean, real re-verification of all 237 affected pitchers, all 4 test rows still correct afterward.
+
+Base backfill verified: 1,349 rows, exactly 675 pitchers, 2 split types (vl/vr), `LOCKED_BASE_BATCH_ID` set. Delta confirmed correctly scoped to 237 affected (recently-active) pitchers out of 675 total.
+
+**`alphadog-v2-base-pitcher-splits` is now fully proven end-to-end.**
+
+**Next up: `base-hitter-metrics`** — per earlier orchestrator-dispatch notes seen throughout this session ("snapshot promote/retained-stage delta repair dispatch"), this one has a different real shape again (snapshot-based, not per-game or per-split) — check the real D1 file's mode contract and snapshot/repair design before assuming any prior pattern carries over unchanged.
