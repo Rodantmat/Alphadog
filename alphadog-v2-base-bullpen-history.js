@@ -127,30 +127,30 @@ async function deriveBullpenStageRows(sql, batchId, runId, mode, sourceSeason, s
 }
 // STUB_MARKER_PROMOTE_CLEAN_NEXT
 async function promoteStageRowsChunk(sql, batchId, grade, limit) {
-  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 2000);
-  const rows = await sql`
-    SELECT stage_id, team_id, game_pk, game_date, player_id, opponent_team_id, is_home,
-           innings_pitched_decimal, earned_runs, hits_allowed, walks_allowed, strikeouts, raw_json,
-           batch_id, run_id, ingestion_mode, source_key, source_confidence, source_season
-    FROM team.bullpen_history_stage
-    WHERE batch_id=${batchId} AND row_status != 'promoted'
-    LIMIT ${safeLimit}
-  `;
-  let promotedThisTick = 0;
-  for (const r of rows) {
-    const historyId = `${r.team_id}_${r.game_pk}_${r.player_id}_bullpen`;
-    await sql`
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 5000);
+  const result = await sql`
+    WITH batch_rows AS (
+      SELECT stage_id, team_id, game_pk, game_date, player_id, opponent_team_id, is_home,
+             innings_pitched_decimal, earned_runs, hits_allowed, walks_allowed, strikeouts, raw_json,
+             batch_id, run_id, ingestion_mode, source_key, source_confidence, source_season
+      FROM team.bullpen_history_stage
+      WHERE batch_id=${batchId} AND row_status != 'promoted'
+      LIMIT ${safeLimit}
+    ),
+    ins AS (
       INSERT INTO team.bullpen_history (
         history_id, team_id, game_pk, game_date, player_id, opponent_team_id, is_home,
         innings_pitched_decimal, earned_runs, hits_allowed, walks_allowed, strikeouts, raw_json,
         ingestion_mode, batch_id, run_id, certification_status, certification_grade, source_key, source_confidence,
         source_season, certified_at, promoted_at, created_at, updated_at
-      ) VALUES (
-        ${historyId}, ${r.team_id}, ${r.game_pk}, ${r.game_date}, ${r.player_id}, ${r.opponent_team_id}, ${r.is_home},
-        ${r.innings_pitched_decimal}, ${r.earned_runs}, ${r.hits_allowed}, ${r.walks_allowed}, ${r.strikeouts}, ${r.raw_json},
-        ${r.ingestion_mode}, ${r.batch_id}, ${r.run_id}, 'certified_promoted', ${grade}, ${r.source_key}, ${r.source_confidence},
-        ${r.source_season}, now(), now(), now(), now()
       )
+      SELECT
+        b.team_id || '_' || b.game_pk || '_' || b.player_id || '_bullpen',
+        b.team_id, b.game_pk, b.game_date, b.player_id, b.opponent_team_id, b.is_home,
+        b.innings_pitched_decimal, b.earned_runs, b.hits_allowed, b.walks_allowed, b.strikeouts, b.raw_json,
+        b.ingestion_mode, b.batch_id, b.run_id, 'certified_promoted', ${grade}, b.source_key, b.source_confidence,
+        b.source_season, now(), now(), now(), now()
+      FROM batch_rows b
       ON CONFLICT (history_id) DO UPDATE SET
         game_date=excluded.game_date, opponent_team_id=excluded.opponent_team_id, is_home=excluded.is_home,
         innings_pitched_decimal=excluded.innings_pitched_decimal, earned_runs=excluded.earned_runs, hits_allowed=excluded.hits_allowed,
@@ -162,12 +162,15 @@ async function promoteStageRowsChunk(sql, batchId, grade, limit) {
         certification_status=COALESCE(team.bullpen_history.certification_status, excluded.certification_status),
         certification_grade=COALESCE(team.bullpen_history.certification_grade, excluded.certification_grade),
         promoted_at=now(), updated_at=now()
-    `;
-    await sql`UPDATE team.bullpen_history_stage SET row_status='promoted', updated_at=now() WHERE stage_id=${r.stage_id}`;
-    promotedThisTick += 1;
-  }
+      RETURNING 1
+    )
+    UPDATE team.bullpen_history_stage SET row_status='promoted', updated_at=now()
+    WHERE stage_id IN (SELECT stage_id FROM batch_rows)
+    RETURNING 1
+  `;
+  const promotedThisTick = result.length;
   const remainingRows = await sql`SELECT COUNT(*)::int AS c FROM team.bullpen_history_stage WHERE batch_id=${batchId} AND row_status != 'promoted'`;
-  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remainingRows[0] && remainingRows[0].c, 0), promote_limit: safeLimit, insert_mode: "postgres_on_conflict_history_id" };
+  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remainingRows[0] && remainingRows[0].c, 0), promote_limit: safeLimit, insert_mode: "postgres_bulk_cte_single_statement" };
 }
 async function cleanStageRowsChunk(sql, batchId, limit) {
   const safeLimit = cap(limit || DEFAULT_CLEAN_ROWS_PER_TICK, 1, 8000);
