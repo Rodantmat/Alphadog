@@ -286,7 +286,13 @@ async function runBaseRebuildStageOnly(sql, input) {
     const done = remaining.length <= chunk.length;
     const stagedTotalRows = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.metric_stage WHERE batch_id=${batchId}`;
     const nextStatus = done ? "COMPLETED_BASE_REBUILD_STAGE_ONLY_NO_PROMOTION" : "MINING";
-    await sql`UPDATE stats_hitter.metric_batches SET status=${nextStatus}, cursor_player_id=${newOffset}, players_processed=players_processed + ${chunk.length}, rows_staged=${stagedTotalRows[0].c}, finished_at=${done ? sql`now()` : sql`finished_at`}, updated_at=now() WHERE batch_id=${batchId}`;
+    if (done) {
+      const cutoffRows = await sql`SELECT MAX(game_date) AS d FROM stats_hitter.game_logs WHERE season=${season}`;
+      const cutoffDate = cutoffRows[0].d;
+      await sql`UPDATE stats_hitter.metric_batches SET status=${nextStatus}, cursor_player_id=${newOffset}, players_processed=players_processed + ${chunk.length}, rows_staged=${stagedTotalRows[0].c}, input_latest_game_date=${cutoffDate}, delta_watermark_date=${cutoffDate}, finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
+    } else {
+      await sql`UPDATE stats_hitter.metric_batches SET status=${nextStatus}, cursor_player_id=${newOffset}, players_processed=players_processed + ${chunk.length}, rows_staged=${stagedTotalRows[0].c}, updated_at=now() WHERE batch_id=${batchId}`;
+    }
     return { ok: true, data_ok: true, mode: "base_rebuild_stage_only", batch_id: batchId, status: nextStatus, players_this_tick: chunk.length, rows_staged_this_tick: stagedThisTick, rows_staged_total: stagedTotalRows[0].c, players_total: universe.length, continuation_required: !done };
   } finally { await releaseBatchLock(sql, "stats_hitter.metric_batches", "batch_id", batchId, owner); }
 }
