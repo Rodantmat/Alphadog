@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-daily-games-status";
-const VERSION = "alphadog-v2-daily-games-status-v0.2.0-postgres-rewire";
+const VERSION = "alphadog-v2-daily-games-status-v0.2.1-postgres-rewire-redeploy";
 const JOB_KEY = "daily-games-status";
 const MLB_SCHEDULE_SOURCE = "official_mlb_statsapi_schedule";
 const MLB_SCHEDULE_ENDPOINT_PATH = "/api/v1/schedule?sportId=1&gameType=R&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD";
