@@ -1651,8 +1651,8 @@ async function runBoardPrep(env, input) {
   // the write phase (confirmed live via repeated CONNECTION_CLOSED failures at this exact point).
   // Re-establish a fresh connection right before the heaviest DB work instead of reusing one that
   // may have gone stale during the pure-JS resolve step.
-  if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
-  env.pg = pgClient(env);
+  if (env.pg) await env.pg.end().catch(() => {});
+  env.pg = await pgClient(env);
   const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input, timing);
   const totals = writeResult.totals;
   const bySource = writeResult.bySource;
