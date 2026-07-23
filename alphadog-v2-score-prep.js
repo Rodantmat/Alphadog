@@ -400,8 +400,7 @@ async function permanentlyRecordBoardLegs(env) {
 
 async function updatePrepBatchCheckpoint(env, batchId, status, certificationStatus, data = {}) {
   try {
-    await env.pg.unsafe(
-      "UPDATE score.board_prep_batches SET status=$1, certification_status=$2, certification_json=$3, updated_at=now() WHERE batch_id=$4",
+    await env.pg.query(
       [status, certificationStatus, safeJson(data, 9000), batchId]
     );
   } catch (_) {}
