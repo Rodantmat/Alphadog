@@ -44,6 +44,14 @@ async function ensureSchema(sql) {
   return { ok: true };
 }
 
+async function getWorkerTickConfig(sql, workerName, fallbackChunk) {
+  try {
+    const rows = await sql`SELECT chunk_size_players FROM config.worker_tick_settings WHERE worker_name=${workerName} LIMIT 1`;
+    const row = rows[0];
+    return { chunk_size_players: row ? asInt(row.chunk_size_players, fallbackChunk) : fallbackChunk };
+  } catch (_) { return { chunk_size_players: fallbackChunk }; }
+}
+
 async function getCalibrationConfig(sql) {
   const rows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength')`;
   const cfg = {};
