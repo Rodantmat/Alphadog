@@ -385,15 +385,15 @@ async function markPrepBatchRunning(env, batchId, input, startedAt) {
 // not an opaque JSON blob) and copies real rows before this run's own cleanup wipes them.
 // Idempotent via prepared_row_id as primary key (INSERT OR IGNORE).
 async function permanentlyRecordBoardLegs(env) {
-  const rows = await env.pg.unsafe("SELECT prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json FROM score.board_prepared_current").catch(() => []);
+  const rows = await allRows(env.pg, "SELECT prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json FROM score.board_prepared_current").catch(() => []);
   if (!rows.length) return { copied: 0, checked: 0 };
-  const cols = ["prepared_row_id", "official_date", "source_key", "source_row_id", "player_name", "resolved_mlb_player_id", "team", "opponent", "canonical_prop_key", "source_prop_name", "line_value", "official_game_pk", "official_game_time_utc", "pickable_safe", "prep_status", "raw_source_json"];
+  const cols = ["prepared_row_id", "official_date", "source_key", "source_row_id", "player_name", "resolved_mlb_player_id", "team", "opponent", "canonical_prop_key", "source_prop_name", "line_value", "official_game_pk", "official_game_time_utc", "pickable_safe", "prep_status", "raw_source_json", "captured_at"];
   const CHUNK = 200;
   const chunks = [];
   for (let i = 0; i < rows.length; i += CHUNK) chunks.push(rows.slice(i, i + CHUNK));
   for (const chunk of chunks) {
     const values = chunk.map(r => ({ ...r, captured_at: new Date().toISOString() }));
-    await env.pg`INSERT INTO archive.board_leg_history ${env.pg(values, ...cols, "captured_at")} ON CONFLICT (prepared_row_id) DO NOTHING`;
+    await pgBulkInsert(env.pg, "archive.board_leg_history", cols, values, "ON CONFLICT (prepared_row_id) DO NOTHING");
   }
   return { copied: rows.length, checked: rows.length };
 }
