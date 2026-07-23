@@ -227,7 +227,13 @@ function parseCsv(text) {
 
 async function refreshCatcherReferenceIfStale(pg, seasonYear) {
   const stale = await pg`SELECT MAX(updated_at) AS latest FROM ref.catcher_framing_poptime WHERE season=${seasonYear}`;
-  const latest = stale[0] && stale[0].latest ? new Date(stale[0].latest).getTime() : 0;
+  let latest = 0;
+  try {
+    if (stale[0] && stale[0].latest) {
+      const parsed = new Date(stale[0].latest);
+      if (!Number.isNaN(parsed.getTime())) latest = parsed.getTime();
+    }
+  } catch (_) { latest = 0; }
   const ageMs = Date.now() - latest;
   if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
   const framingUrl = `https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=${seasonYear}&seasonStart=${seasonYear}&type=catcher&csv=true`;
