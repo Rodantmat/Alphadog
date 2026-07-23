@@ -12175,98 +12175,95 @@ async function buildDailyContextCertifierSidecarRecoveryOutput(env, requestId, s
     const missingKeys = Number(current.missing_keys || 0);
     if (currentRowCount <= 0 || currentGames <= 0 || preparedRows <= 0 || missingKeys !== 0) return null;
 
-  const dup = await first(env.DAILY_DB,
-    `SELECT COUNT(*) AS n
-     FROM (
-       SELECT readiness_key, COUNT(*) AS c
-       FROM daily_context_readiness_current
-       WHERE batch_id=?
-       GROUP BY readiness_key
-       HAVING COUNT(*) > 1
-     )`,
-    batch.batch_id
-  );
-  const duplicateReadinessKeys = Number(dup && dup.n || 0);
-  if (duplicateReadinessKeys !== 0) return null;
+    const dupRows = await pg.unsafe(`SELECT COUNT(*) AS n FROM (
+         SELECT readiness_key, COUNT(*) AS c FROM context_cert.readiness_current WHERE batch_id=$1 GROUP BY readiness_key HAVING COUNT(*) > 1
+       ) x`, [batch.batch_id]);
+    const duplicateReadinessKeys = Number(dupRows[0] && dupRows[0].n || 0);
+    if (duplicateReadinessKeys !== 0) return null;
 
-  const issueAgg = await first(env.DAILY_DB,
-    "SELECT COUNT(*) AS rows FROM daily_context_readiness_issues WHERE batch_id=?",
-    batch.batch_id
-  );
-  const issueRows = Number(issueAgg && issueAgg.rows || 0);
-  const hardBlockers = Number(current && current.hard_blockers || 0);
-  const warnings = Number(current && current.warnings || 0);
-  const enrichmentGaps = Number(current && current.enrichment_gaps || 0);
-  const blockedRows = Number(current && current.blocked_rows || 0);
-  const notApplicableRows = Number(current && current.not_applicable_rows || 0);
-  const readyWithWarningsRows = Number(current && current.ready_with_warnings_rows || 0);
-  const readyPartialRows = Number(current && current.ready_partial_enrichment_rows || 0);
-  const readyFullRows = Number(current && current.ready_full_context_rows || 0);
-  const waitingRows = Number(current && current.waiting_late_context_rows || 0);
-  const currentDates = Number(current && current.dates || 0);
+    const issueAggRows = await pg`SELECT COUNT(*) AS rows FROM context_cert.readiness_issues WHERE batch_id=${batch.batch_id}`;
+    const issueRows = Number(issueAggRows[0] && issueAggRows[0].rows || 0);
+    const hardBlockers = Number(current.hard_blockers || 0);
+    const warnings = Number(current.warnings || 0);
+    const enrichmentGaps = Number(current.enrichment_gaps || 0);
+    const blockedRows = Number(current.blocked_rows || 0);
+    const notApplicableRows = Number(current.not_applicable_rows || 0);
+    const readyWithWarningsRows = Number(current.ready_with_warnings_rows || 0);
+    const readyPartialRows = Number(current.ready_partial_enrichment_rows || 0);
+    const readyFullRows = Number(current.ready_full_context_rows || 0);
+    const waitingRows = 0;
+    const currentDates = Number(current.dates || 0);
 
-  let grade = "PASS_WITH_WARNINGS";
-  if (hardBlockers > 0 || blockedRows > 0) grade = "PASS_WITH_HARD_BLOCKERS";
-  else if (notApplicableRows === currentRows) grade = "PASS_WITH_NOT_APPLICABLE";
-  else if (warnings <= 0 && enrichmentGaps <= 0 && readyFullRows === currentRows) grade = "PASS";
+    let grade = "PASS_WITH_WARNINGS";
+    if (hardBlockers > 0 || blockedRows > 0) grade = "PASS_WITH_HARD_BLOCKERS";
+    else if (notApplicableRows === currentRowCount) grade = "PASS_WITH_NOT_APPLICABLE";
+    else if (warnings <= 0 && enrichmentGaps <= 0 && readyFullRows === currentRowCount) grade = "PASS";
 
-  const certification = "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN";
-  const output = {
-    ok: true,
-    data_ok: true,
-    version: String(batch.worker_version || SYSTEM_VERSION),
-    worker_name: String(stage && stage.worker_name || "alphadog-v2-daily-certifier"),
-    job_key: String(stage && stage.job_key || "daily-certifier"),
-    request_id: requestId,
-    run_id: batch.run_id || null,
-    batch_id: batch.batch_id,
-    mode: "daily_context_readiness_refresh_window",
-    status: "completed",
-    certification,
-    certification_status: certification,
-    certification_grade: grade,
-    certification_reason: "Recovered and terminalized DB-verified Daily Context Readiness ledger rows after service-binding/terminal handoff timeout; no sidecar rows were deleted.",
-    window_start: batch.window_start || null,
-    window_end: batch.window_end || null,
-    prepared_rows_read: preparedRows,
-    rows_read: preparedRows,
-    prepared_games_checked: currentGames,
-    current_rows_written: currentRows,
-    rows_written: currentRows,
-    issue_rows_written: issueRows,
-    issues_written: issueRows,
-    hard_blocker_count: hardBlockers,
-    warning_count: warnings,
-    enrichment_gap_count: enrichmentGaps,
-    ready_full_context_count: readyFullRows,
-    ready_with_warnings_count: readyWithWarningsRows,
-    ready_partial_enrichment_count: readyPartialRows,
-    waiting_late_context_count: waitingRows,
-    blocked_count: blockedRows,
-    not_applicable_count: notApplicableRows,
-    retention_violations: Number(batch.retention_violations || 0),
-    schema_failures: Number(batch.schema_failures || 0),
-    current_dates_verified: currentDates,
-    current_games_verified: currentGames,
-    current_players_verified: Number(current && current.players || 0),
-    current_rows_verified: currentRows,
-    duplicate_readiness_keys: duplicateReadinessKeys,
-    sidecar_recovery: true,
-    recovered_from_service_binding_timeout: options && options.fromTimeout === true,
-    recovered_from_readiness_sidecar_batch: true,
-    recovered_from_sidecar_terminalization: true,
-    recovery_policy: "verified_daily_context_readiness_current_rows_unique_readiness_key_then_terminalize_batch",
-    external_calls: 0,
-    external_calls_performed: 0,
-    no_external_calls: true,
-    no_sidecar_repair: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_board_mutation: true,
-    no_market_odds: true,
-    no_score_db_mutation: true,
-    no_scoring: true,
-    no_ranking: true,
+    const certification = "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN";
+    const output = {
+      ok: true,
+      data_ok: true,
+      version: String(batch.worker_version || SYSTEM_VERSION),
+      worker_name: String(stage && stage.worker_name || "alphadog-v2-daily-certifier"),
+      job_key: String(stage && stage.job_key || "daily-certifier"),
+      request_id: requestId,
+      run_id: batch.run_id || null,
+      batch_id: batch.batch_id,
+      mode: "daily_context_readiness_refresh_window",
+      status: "completed",
+      certification,
+      certification_status: certification,
+      certification_grade: grade,
+      certification_reason: "Recovered and terminalized DB-verified Daily Context Readiness ledger rows after service-binding/terminal handoff timeout; no sidecar rows were deleted.",
+      window_start: batch.window_start || null,
+      window_end: batch.window_end || null,
+      prepared_rows_read: preparedRows,
+      rows_read: preparedRows,
+      prepared_games_checked: currentGames,
+      current_rows_written: currentRowCount,
+      rows_written: currentRowCount,
+      issue_rows_written: issueRows,
+      issues_written: issueRows,
+      hard_blocker_count: hardBlockers,
+      warning_count: warnings,
+      enrichment_gap_count: enrichmentGaps,
+      ready_full_context_count: readyFullRows,
+      ready_with_warnings_count: readyWithWarningsRows,
+      ready_partial_enrichment_count: readyPartialRows,
+      waiting_late_context_count: waitingRows,
+      blocked_count: blockedRows,
+      not_applicable_count: notApplicableRows,
+      retention_violations: Number(batch.retention_violations || 0),
+      schema_failures: Number(batch.schema_failures || 0),
+      current_dates_verified: currentDates,
+      current_games_verified: currentGames,
+      current_players_verified: Number(current.players || 0),
+      current_rows_verified: currentRowCount,
+      duplicate_readiness_keys: duplicateReadinessKeys,
+      sidecar_recovery: true,
+      recovered_from_service_binding_timeout: options && options.fromTimeout === true,
+      recovered_from_readiness_sidecar_batch: true,
+      recovered_from_sidecar_terminalization: true,
+      recovery_policy: "verified_daily_context_readiness_current_rows_unique_readiness_key_then_terminalize_batch",
+      external_calls: 0,
+      external_calls_performed: 0,
+      no_external_calls: true,
+      no_sidecar_repair: true,
+      no_calendar_rebuild: true,
+      no_daily_game_status_duplication: true,
+      no_board_mutation: true,
+      no_market_odds: true,
+      no_score_db_mutation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+    return output;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
     no_final_board: true,
     no_old_production_touch: true
   };
