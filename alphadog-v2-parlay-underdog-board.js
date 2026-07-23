@@ -876,7 +876,7 @@ async function withDeadline(promise, ms, fallbackFactory) {
 async function safeProbe(env, input = {}) {
   const schema = await ensureUnderdogSchema(env);
   const endpoint = configuredEndpoint(env, input);
-  const auth = authConfig(env);
+  const auth = await authConfig(env);
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const secrets = valuePresence(env, REQUIRED_SECRET_KEYS);
   const cfg = valuePresence(env, CONFIG_KEYS);
