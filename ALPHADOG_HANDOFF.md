@@ -54,7 +54,81 @@ away, don't try to make it artificially fast by cutting corners, and don't sit t
 
 ---
 
-## ROADMAP FOR THE NEXT SESSION(S) — READ BEFORE STARTING ANY NEW WORK
+## RULE THREE — THE NEXT PHASES (BOARD, DAILY CONTEXT, MARKET) ARE REWIRING + EFFICIENCY WORK, NOT BACKFILL WORK. DO NOT TREAT THEM LIKE THE PHASE THAT JUST FINISHED.
+
+This is a real, important distinction the user made explicitly, and it changes how the next
+session should approach its work:
+
+**The phase that just finished (Section 2B) was heavy backfill/mining work** — building real
+Postgres tables from zero, mining months of historical game data from the MLB API for the first
+time, discovering and fixing real formula bugs along the way. That phase genuinely needed months
+of real backfilled history before anything downstream could be verified.
+
+**The upcoming phases are different in kind, not just in degree — most of them are NOT backfill
+work.** Verified directly before writing this: `daily.lineups_current` (303 rows),
+`daily.probable_pitchers` (46 rows), `daily.umpire_context_current` (15 rows),
+`market.historical_props_2025` (196,025 rows), and `market.prizepicks_board_current` (6,780 rows)
+**already have real, live data on Postgres from prior sessions.** The daily/market layers are not
+starting from zero. **Most of the workers, stages, and layers ahead have no meaningful backfill
+step at all — it's pretty much pure rewiring**: the D1 logic already works, already mined real
+data successfully for a long time in production, and mostly just needs its D1 read/write calls
+swapped for the Postgres/Hyperdrive equivalent, following the exact same proven connection
+pattern (`postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false
+})`) used by every worker in Section 2 and 2B. There may be a little genuine backfill here and
+there for a specific table/layer that's missing real history, but treat that as the exception,
+not the default assumption — check what's actually already there (as this section just did)
+before assuming a full backfill is needed.
+
+**Concretely, this means the next session's default posture for each new worker should be**:
+1. Read the equivalent, already-proven D1 worker's logic directly — it already works, has been in
+   real production, and does not need to be redesigned or re-thought. Port it with the minimum
+   surgical changes needed for Postgres syntax (see Section 7's existing rule — this is not new,
+   just doubly emphasized here).
+2. Check whether the target Postgres table already has real data (as this section did for
+   daily/market above) before assuming any backfill work is needed at all.
+3. Spend real, deliberate effort on EFFICIENCY from the start, not as an afterthought discovered
+   via bugs later (see the concrete efficiency guidance immediately below) — since there's
+   comparatively little heavy mining/backfill work ahead, the return on making each worker's daily
+   tick genuinely fast is proportionally higher than it was in the backfill-heavy phase that just
+   finished.
+
+### Concrete efficiency guidance, based on real, proven fixes from this session — apply these from day one on every new worker, don't wait to discover them as bugs
+
+- **Every worker must read its own tick-tuning values (`chunk_size_players` /
+  `max_tick_runtime_ms` / `promote_rows_per_tick`) from the real, live `config.worker_tick_settings`
+  Postgres table from the very first version of the code** — via a `getWorkerTickConfig()` helper
+  exactly matching the one already used throughout Section 2B's workers. Do not hardcode small,
+  conservative defaults (this session found workers still defaulting to `DEFAULT_CHUNK_SIZE = 3`
+  or `10` — leftover from early, cautious first-draft code that was never revisited once the real
+  worker was proven stable).
+- **Never let a hardcoded constant serve as the ceiling argument of a `cap(value, min, max)` /
+  `Math.min(value, N)` call when the intended real ceiling should come from live config.** This
+  session found this exact bug in four different workers (`hitter-game-logs`, `pitcher-game-logs`,
+  `classification-v5`, `baseline`) — a hardcoded low ceiling silently capped real throughput to a
+  fraction of what the live database config already said was safe, for the entire session until
+  found. Use a generous, deliberately-loose ceiling (2000-5000 range, matching what was set this
+  session) and let the actual pacing be controlled entirely by the live config value.
+- **In any fallback/precedence chain (`inputJson.x || batch.x || liveConfig.x || DEFAULT`), the
+  live config source must be checked BEFORE any value that was captured once into a database row
+  at batch-creation time.** A batch created hours or days ago may have frozen an old, slower
+  config value into itself — if that frozen value is checked before the live config, a database
+  tuning change silently does nothing for any already-in-flight or already-existing batch. This
+  exact bug was found and fixed in two workers this session.
+- **Real, proven starting chunk sizes from this session** (useful as sane defaults rather than
+  guessing from scratch): 750 for per-player-fetch game-log-style workers (hitter/pitcher/team
+  game logs, starter/bullpen history), 100 for per-player-fetch splits workers, 150 for
+  compute-heavy tier-assignment workers (classification), 300 for baseline HP computation.
+  `max_tick_runtime_ms = 90000` (90 seconds) was the real, proven value used throughout — this is
+  a wall-clock budget, not a CPU budget, appropriate for fetch-bound work.
+- **Since backfill volume is expected to be low for these next phases, tick efficiency mostly
+  matters for keeping the DAILY delta runs fast and safely within Cloudflare Workers' execution
+  constraints** — not for grinding through a one-time historical mine. A faster daily tick means
+  less risk of a run looking "stuck," less real wall-clock time before the next stage in a
+  full-run chain can start (relevant given Rule Two's "don't babysit" — a genuinely fast daily
+  chain needs less monitoring in the first place), and a shorter window where Rule Two's "trigger
+  and stand by" posture has to hold.
+
+---
 
 The next chat's real, prioritized order of work, as told directly by the user:
 
