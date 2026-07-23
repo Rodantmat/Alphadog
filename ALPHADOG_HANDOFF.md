@@ -130,6 +130,8 @@ before assuming a full backfill is needed.
 
 ---
 
+## ROADMAP FOR THE NEXT SESSION(S) — READ BEFORE STARTING ANY NEW WORK
+
 The next chat's real, prioritized order of work, as told directly by the user:
 
 1. **Board full-run** — first priority. Multiple stages: different boards (PrizePicks, Sleeper,
