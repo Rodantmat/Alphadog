@@ -12,6 +12,12 @@ const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_16
 function pgSchedule(env) {
   return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
 }
+// Dedicated Postgres control-plane client for chains being cut over off D1 CONTROL_DB
+// (daily_context_full_run, board_full_run). Mirrors control_locks/control_job_queue/
+// control_job_runs/control_worker_run_log exactly under the `control` schema.
+function pgControl(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+}
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
