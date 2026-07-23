@@ -281,14 +281,21 @@ function bindingSummary(env) {
   return out;
 }
 
-async function allRows(db, sql, binds = []) {
-  const stmt = db.prepare(sql);
-  const res = await stmt.bind(...binds).all();
-  return res && res.results ? res.results : [];
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
 }
 
-async function firstRow(db, sql, binds = []) {
-  const rows = await allRows(db, sql, binds);
+function toPgPlaceholders(sqlText) {
+  let i = 0;
+  return String(sqlText).replace(/\?/g, () => "$" + (++i));
+}
+
+async function allRows(pg, sql, binds = []) {
+  return await pg.unsafe(toPgPlaceholders(sql), binds);
+}
+
+async function firstRow(pg, sql, binds = []) {
+  const rows = await allRows(pg, sql, binds);
   return rows[0] || null;
 }
 
