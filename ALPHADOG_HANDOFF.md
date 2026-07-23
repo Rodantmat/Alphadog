@@ -162,7 +162,57 @@ than guessing or filling gaps with assumptions.
 
 ---
 
-## 0. WHO RODOLFO IS AND HOW TO WORK WITH HIM — READ THIS FIRST, NON-NEGOTIABLE
+## TESTING PROTOCOL — READ BEFORE STARTING ANY WORKER, THIS IS HOW PROGRESS THROUGH THE ROADMAP IS GATED
+
+This is the real, explicit testing discipline for the next phases (board, daily context, market),
+stated directly by the user. Do not skip steps or move faster than this allows, even if a worker
+looks like it's working after one run.
+
+### Per-worker gate: 3 successful runs before moving to the next worker
+For each individual worker being rewired (e.g. one of the three board workers — PrizePicks,
+Sleeper, Underdog): rewire it to Postgres, apply the efficiency guidance from Rule Three above,
+then run it for real **three separate times, each one a genuine success**, before moving on to
+rewire the next worker in that layer. A single clean run is not enough — three real, independent
+successful runs is the bar. If any of the three runs shows a real problem, fix it and the count
+resets — three successes must be consecutive-in-spirit (i.e. don't count a run that failed toward
+the three).
+
+### Per-layer gate: 2 successful full runs before moving to the next layer
+Once every worker in a layer's complete sequence has individually cleared its 3-run gate above
+(e.g., for Board: all three board workers, plus `score-prep`, plus that layer's certifier), run
+the ENTIRE layer's full-run sequence, end to end, for real. **This needs 2 successful full runs**
+before moving on to the next layer (daily context, then market). A "successful full run" means
+the whole sequence completes and the layer's own certifier reports a real, clean pass — not just
+that no step threw an error.
+
+### How to find the REAL, correct sequence for each full run — do not guess it
+**Go into Control Room and look at the actual button for each full run** (e.g. "Board Full Run").
+Each button in Control Room triggers a specific, real, already-defined stage sequence somewhere in
+`alphadog-v2-orchestrator.js` (the same way `POSTGRES_FULL_RUN_STAGES` defines the 13-stage daily
+chain built this session, or the way `INCREMENTAL_MORNING_FULL_RUN_STAGES` defines the old D1
+chain's exact order). **Find that button's real, exact stage list in the orchestrator code before
+building or testing anything** — do not assume or reconstruct the sequence from memory or from
+what seems logical. The button is the source of truth for what the real, intended sequence is;
+the code behind it is where that sequence is exactly defined.
+
+### Schema protocol for every new Postgres table: D1 is read-only reference, ONCE, then forget it completely
+When a new worker needs a Postgres table that doesn't exist yet:
+1. **Check D1 first, read-only, one time** — does the equivalent table already exist there? Look
+   at its real, actual columns (not a guess, not a summary — the real live schema).
+2. **If D1 has it**: create the exact same table, with the exact same columns, on Postgres — a
+   genuine 1:1 mirror of what's really there. Once that Postgres table is created, D1 is done for
+   that table. Never read from it again, never write to it, never wire anything to it. It served
+   its one purpose (a schema reference) and is now fully forgotten for that table.
+3. **If D1 does NOT have it**: there's nothing to mirror — design the Postgres schema fresh based
+   on what the worker's own logic actually needs, the same way new tables were created for the
+   daily-chain phase (Section 2B) with no D1 equivalent to check against.
+4. **This is the ONLY sanctioned reason to ever open a D1 table during these next phases** — a
+   one-time, read-only schema lookup, immediately followed by never touching that D1 table again.
+   This is not a contradiction of Rule Zero — Rule Zero is about WRITING to D1 or making D1 a live
+   dependency; a single read-only glance at an existing schema, purely to mirror its column
+   structure once, is the narrow, explicit exception this step describes and nothing more.
+
+---
 
 Rodolfo is the system owner and sole operator, working exclusively from iPhone Safari with no
 terminal access. Every file edit, SQL operation, and deploy happens through the Alphadog Bridge
