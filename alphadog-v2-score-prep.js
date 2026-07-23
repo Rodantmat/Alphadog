@@ -326,16 +326,19 @@ async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWri
 }
 
 async function markPrepBatchRunning(env, batchId, input, startedAt) {
-  // REAL FIX: ensureScoreTables is already called once, unconditionally, at the true start of
-  // runBoardPrep - calling it again here was pure redundant overhead (9 more sequential/batched
-  // D1 round-trips for schema that never changes mid-invocation). Removed.
-  await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
-    batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
-    prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
-    unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
-    started_at, finished_at, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, ?, ?, ?, NULL, CURRENT_TIMESTAMP)`)
-    .bind(
+  await env.pg.unsafe(
+    `INSERT INTO score.board_prep_batches (
+      batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
+      prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
+      unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
+      started_at, finished_at, updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 0, 0, 0, 0, 0, 0, 0, 0, $8, $9, $10, NULL, now())
+    ON CONFLICT (batch_id) DO UPDATE SET
+      worker_name=excluded.worker_name, worker_version=excluded.worker_version, mode=excluded.mode,
+      status=excluded.status, certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
+      source_json=excluded.source_json, certification_json=excluded.certification_json, started_at=excluded.started_at,
+      finished_at=NULL, updated_at=now()`,
+    [
       batchId,
       WORKER_NAME,
       VERSION,
@@ -346,8 +349,8 @@ async function markPrepBatchRunning(env, batchId, input, startedAt) {
       safeJson({ request_id: input.request_id || null, chain_id: input.chain_id || null, checkpoint: "started", preserve_current_until_verified: true }, 9000),
       safeJson({ checkpoint: "started", preserve_current_until_verified: true }, 9000),
       startedAt
-    )
-    .run();
+    ]
+  );
 }
 
 // REAL FIX (same class as weather/umpire/market history fixes, per Rodolfo's direct
