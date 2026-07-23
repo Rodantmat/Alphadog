@@ -122,9 +122,12 @@ async function pruneDailyLineupRetention(pg, extraDates = []) {
 // every join/filter against this column, rather than assuming one convention.
 async function deriveLineupFromRecentGame(pg, teamId, beforeDate) {
   if (!teamId || !beforeDate) return [];
-  const beforeDateOnly = String(beforeDate).match(/^\d{4}-\d{2}-\d{2}/)?.[0] || beforeDate;
+  const beforeDateOnly = beforeDate instanceof Date
+    ? beforeDate.toISOString().slice(0, 10)
+    : (String(beforeDate).match(/^\d{4}-\d{2}-\d{2}/)?.[0] || retentionDatesToKeep()[0]);
   const lookbackStart = (() => {
     const d = new Date(`${beforeDateOnly}T12:00:00Z`);
+    if (Number.isNaN(d.getTime())) return retentionDatesToKeep()[0];
     d.setUTCDate(d.getUTCDate() - 20);
     return d.toISOString().slice(0, 10);
   })();
