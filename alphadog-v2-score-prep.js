@@ -541,10 +541,10 @@ async function loadCalendar(env, dateSet, ref) {
   if (!dates.length) dates.push(new Date().toISOString().slice(0, 10));
   const minDate = dateAddDays(dates[0], -1);
   const maxDate = dateAddDays(dates[dates.length - 1], 1);
-  const rows = await allRows(env.TEAM_DB, `
+  const rows = await allRows(env.pg, `
 SELECT game_pk, official_date, game_time_utc, home_team_name, away_team_name,
-       status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final, source_snapshot_at, updated_at
-FROM mlb_game_calendar
+       status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final, updated_at
+FROM calendar.game_calendar
 WHERE official_date >= ? AND official_date <= ?
 ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
 
