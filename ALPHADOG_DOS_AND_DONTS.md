@@ -183,6 +183,7 @@ architecture context.
   compute-heavy tier/HP workers, `max_tick_runtime_ms = 90000` (wall-clock, fetch-bound) throughout.
 
 
+### Testing / verification discipline
 - The single most reliable verification pattern used throughout: **corrupt-and-fix testing**.
   Deliberately change or delete a real row directly in Postgres (e.g., flip a stadium's
   `roof_type`, change a player's `current_team_id` to simulate a trade, delete a stadium row
