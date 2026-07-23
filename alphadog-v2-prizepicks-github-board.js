@@ -823,15 +823,17 @@ async function stageRows(env, rows) {
 }
 
 async function finalizeBatch(env, batchId, cert) {
-  await run(env.MARKET_DB,
-    "UPDATE prizepicks_board_batches SET certified_at=CURRENT_TIMESTAMP, staged_rows=?, mlb_rows=?, valid_rows=?, invalid_rows=?, certification_status=?, certification_reason=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
-    cert.stagedRows, cert.mlbRows, cert.validRows, cert.invalidRows, cert.certification_status, cert.certification_reason, safeJson(cert, 6000), batchId
-  );
-  await run(env.MARKET_DB,
-    "UPDATE prizepicks_board_stage SET certification_status=? WHERE batch_id=?",
-    cert.certification_status, batchId
-  );
-  return { wrote_table: "prizepicks_board_batches", updated_stage_table: "prizepicks_board_stage", batch_id: batchId, certification_status: cert.certification_status };
+  const client = pgClient(env);
+  try {
+    await client.unsafe(
+      "UPDATE market.prizepicks_board_batches SET certified_at=now(), staged_rows=$1, mlb_rows=$2, valid_rows=$3, invalid_rows=$4, certification_status=$5, certification_reason=$6, certification_json=$7, updated_at=now() WHERE batch_id=$8",
+      [cert.stagedRows, cert.mlbRows, cert.validRows, cert.invalidRows, cert.certification_status, cert.certification_reason, safeJson(cert, 6000), batchId]
+    );
+    await client.unsafe("UPDATE market.prizepicks_board_stage SET certification_status=$1 WHERE batch_id=$2", [cert.certification_status, batchId]);
+  } finally {
+    await client.end({ timeout: 1 });
+  }
+  return { wrote_table: "market.prizepicks_board_batches", updated_stage_table: "market.prizepicks_board_stage", batch_id: batchId, certification_status: cert.certification_status };
 }
 
 async function insertCurrentRows(env, rows, batchId, slateDate) {
