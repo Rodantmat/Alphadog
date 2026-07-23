@@ -1756,43 +1756,24 @@ export default {
 
     if (method === "POST" && (path === "/run" || path === "/")) {
       const input = await readJsonSafe(request);
-      let lastErr = null;
-      const MAX_ATTEMPTS = 5;
-      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-        try {
-          const output = await runBoardPrep(env, input);
-          if (env.pg) await env.pg.end().catch(() => {});
-          return jsonResponse(output);
-        } catch (err) {
-          lastErr = err;
-          if (env.pg) await env.pg.end().catch(() => {});
-          const msg = String(err && err.message ? err.message : err);
-          // Real, observed transient failure modes across both postgres.js and node-postgres:
-          // Hyperdrive connections can close mid-request under this worker's heavier per-tick
-          // workload. Real testing showed most individual ticks succeed cleanly; failures are
-          // intermittent, not systematic - so a bounded retry with a fresh connection each time
-          // recovers cleanly in practice. This matches Cloudflare's own stated mitigation approach
-          // for this exact issue ("retries with a clean client connection").
-          const isTransientConnectionError = /CONNECTION_CLOSED|ECONNRESET|ETIMEDOUT|connection.*closed|connection terminated|terminated unexpectedly/i.test(msg);
-          if (attempt < MAX_ATTEMPTS - 1 && isTransientConnectionError) {
-            continue;
-          }
-          break;
-        }
-      }
-      const err = lastErr;
-      await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
-      await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
-      return jsonResponse({
-        ok: false,
-        data_ok: false,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: JOB_KEY,
-        status: "FAILED_BOARD_PREP_ENRICHMENT",
-        error: err && err.message ? err.message : String(err),
-        timestamp_utc: nowIso()
-      }, 500);
+      try {
+        const output = await runBoardPrep(env, input);
+        if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+        return jsonResponse(output);
+      } catch (err) {
+        if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+        await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
+        await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
+        return jsonResponse({
+          ok: false,
+          data_ok: false,
+          version: VERSION,
+          worker_name: WORKER_NAME,
+          job_key: JOB_KEY,
+          status: "FAILED_BOARD_PREP_ENRICHMENT",
+          error: err && err.message ? err.message : String(err),
+          timestamp_utc: nowIso()
+        }, 500);
     }
 
     return jsonResponse({
