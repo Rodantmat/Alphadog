@@ -514,7 +514,7 @@ async function writeResults(pg, batchId, rows) {
   const currentRows = rows.map(item => {
     const r = item.row, c = item.classification;
     return {
-      availability_key: item.availability_key, batch_id: batchId, source_key: SOURCE_KEY, source_snapshot_at: item.source_snapshot_at,
+      availability_id: item.availability_key, availability_key: item.availability_key, batch_id: batchId, source_key: SOURCE_KEY, source_snapshot_at: item.source_snapshot_at,
       official_date: r.official_date, game_pk: r.official_game_pk, game_time_utc: r.official_game_time_utc,
       player_id: intOrNull(r.resolved_player_id), mlb_player_id: intOrNull(r.resolved_mlb_player_id), player_name: r.player_name || null,
       team_abbreviation: normTeam(r.team), team_id: item.team_id || null, team_mlb_id: item.team_mlb_id,
@@ -529,7 +529,7 @@ async function writeResults(pg, batchId, rows) {
       transaction_date: c.latestTx ? (c.latestTx.date || c.latestTx.effectiveDate || null) : null, reason: c.reason, evaluation_json: safeJson(c.evaluation, 9000)
     };
   });
-  const currentCols = ["availability_key", "batch_id", "source_key", "source_snapshot_at", "official_date", "game_pk", "game_time_utc", "player_id", "mlb_player_id", "player_name", "team_abbreviation", "team_id", "team_mlb_id", "opponent_abbreviation", "opponent_mlb_id", "availability_status", "roster_status", "availability_confidence", "active_roster_flag", "injured_list_flag", "forty_man_flag", "transaction_warning_flag", "transaction_block_flag", "team_mismatch_flag", "source_missing_flag", "data_source_level", "is_temporary_derived", "prepared_board_relevant", "prepared_board_pickable_rows", "source_endpoints_json", "transaction_summary", "transaction_date", "reason", "evaluation_json"];
+  const currentCols = ["availability_id", "availability_key", "batch_id", "source_key", "source_snapshot_at", "official_date", "game_pk", "game_time_utc", "player_id", "mlb_player_id", "player_name", "team_abbreviation", "team_id", "team_mlb_id", "opponent_abbreviation", "opponent_mlb_id", "availability_status", "roster_status", "availability_confidence", "active_roster_flag", "injured_list_flag", "forty_man_flag", "transaction_warning_flag", "transaction_block_flag", "team_mismatch_flag", "source_missing_flag", "data_source_level", "is_temporary_derived", "prepared_board_relevant", "prepared_board_pickable_rows", "source_endpoints_json", "transaction_summary", "transaction_date", "reason", "evaluation_json"];
   for (let i = 0; i < currentRows.length; i += WRITE_BATCH_ROW_LIMIT) {
     const chunk = currentRows.slice(i, i + WRITE_BATCH_ROW_LIMIT);
     await pg`INSERT INTO daily.player_availability_current ${pg(chunk, ...currentCols)}
