@@ -943,7 +943,7 @@ async function safeProbe(env, input = {}) {
   let response;
   let text = "";
   try {
-    response = await fetch(endpoint.url, { method: "GET", headers, signal: AbortSignal.timeout(20000) });
+    response = await fetch(endpoint.url, { method: "GET", headers, signal: AbortSignal.timeout(12000) });
     text = await response.text();
   } catch (err) {
     return {
