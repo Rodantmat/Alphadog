@@ -344,7 +344,7 @@ async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWri
 }
 
 async function markPrepBatchRunning(env, batchId, input, startedAt) {
-  await env.pg.query(
+  await env.pg.unsafe(
     `INSERT INTO score.board_prep_batches (
       batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
       prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
