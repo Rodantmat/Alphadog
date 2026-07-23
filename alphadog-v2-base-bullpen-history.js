@@ -114,7 +114,11 @@ async function deriveBullpenStageRows(sql, batchId, runId, mode, sourceSeason, s
       p.innings_pitched_decimal, p.earned_runs, p.hits_allowed, p.walks_allowed, p.strikeouts, p.raw_json,
       ${mode}, ${SOURCE_KEY}, 'DERIVED_FROM_PITCHER_GAME_LOGS_AND_STARTER_HISTORY', ${sourceSeason}, 'staged'
     FROM stats_pitcher.game_logs p
-    LEFT JOIN team.starter_history s ON s.team_id = regexp_replace(p.team_id, '^mlb_', '') AND s.game_pk = p.game_pk
+    LEFT JOIN (
+      SELECT DISTINCT ON (team_id, game_pk) team_id, game_pk, mlb_player_id
+      FROM team.starter_history
+      ORDER BY team_id, game_pk, mlb_player_id
+    ) s ON s.team_id = regexp_replace(p.team_id, '^mlb_', '') AND s.game_pk = p.game_pk
     WHERE p.game_date BETWEEN ${startDate}::date AND ${endDate}::date
       AND (s.mlb_player_id IS NULL OR s.mlb_player_id != p.player_id)
     ON CONFLICT (stage_id) DO UPDATE SET
