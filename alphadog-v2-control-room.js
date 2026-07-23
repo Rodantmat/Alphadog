@@ -892,6 +892,7 @@ async function runJob(request, env, ctx) {
       "orchestrator_enqueue_baseline_v5_stateful_delta",
       "orchestrator_enqueue_prizepicks_github_board",
       "orchestrator_enqueue_parlay_sleeper_board",
+      "orchestrator_enqueue_parlay_underdog_board",
       "orchestrator_enqueue_board_full_run",
       "orchestrator_enqueue_score_prep",
       "orchestrator_enqueue_daily_games_status",
