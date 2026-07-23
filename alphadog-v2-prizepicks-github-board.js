@@ -162,7 +162,7 @@ function pgClient(env) {
 
 function toPgPlaceholders(sqlText) {
   let i = 0;
-  return String(sqlText).replace(/\?/g, () => `${++i}`);
+  return String(sqlText).replace(/\?/g, () => "$" + (++i));
 }
 
 // Real, proven pattern (see DOS_AND_DONTS.md PART 1): prepare:false is required so postgres.js
