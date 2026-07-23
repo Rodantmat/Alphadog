@@ -1739,25 +1739,41 @@ export default {
 
     if (method === "POST" && (path === "/run" || path === "/")) {
       const input = await readJsonSafe(request);
-      try {
-        const output = await runBoardPrep(env, input);
-        if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
-        return jsonResponse(output);
-      } catch (err) {
-        if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
-        await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
-        await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
-        return jsonResponse({
-          ok: false,
-          data_ok: false,
-          version: VERSION,
-          worker_name: WORKER_NAME,
-          job_key: JOB_KEY,
-          status: "FAILED_BOARD_PREP_ENRICHMENT",
-          error: err && err.message ? err.message : String(err),
-          timestamp_utc: nowIso()
-        }, 500);
+      let lastErr = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const output = await runBoardPrep(env, input);
+          if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+          return jsonResponse(output);
+        } catch (err) {
+          lastErr = err;
+          if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+          const msg = String(err && err.message ? err.message : err);
+          const isTransientConnectionError = /CONNECTION_CLOSED|ECONNRESET|connection.*closed/i.test(msg);
+          if (attempt === 0 && isTransientConnectionError) {
+            // Real, observed failure mode: Hyperdrive connections can close mid-request under
+            // this worker's heavier per-tick workload (reference/calendar reload + resolve +
+            // chunked write, all repeated every continuation tick). One retry with a fresh
+            // client recovers cleanly in practice; not masking a real bug, just absorbing a
+            // transient connection drop the same way a person would retry a dropped connection.
+            continue;
+          }
+          break;
+        }
       }
+      const err = lastErr;
+      await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
+      await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
+      return jsonResponse({
+        ok: false,
+        data_ok: false,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        status: "FAILED_BOARD_PREP_ENRICHMENT",
+        error: err && err.message ? err.message : String(err),
+        timestamp_utc: nowIso()
+      }, 500);
     }
 
     return jsonResponse({
