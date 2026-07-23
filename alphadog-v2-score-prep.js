@@ -1594,8 +1594,7 @@ async function runBoardPrep(env, input) {
     ? await permanentlyRecordBoardLegs(env).catch((err) => ({ copied: 0, checked: 0, error: true, error_message: String(err && err.message ? err.message : err) }))
     : { copied: 0, checked: 0, skipped_resume: true };
   try {
-    await env.CONTROL_DB.prepare(`INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-score-prep', 'score-prep', 'INFO', 'score_prep_debug_board_backfill_start', 'Board history backfill at run start', ?, CURRENT_TIMESTAMP)`)
-      .bind(requestId, JSON.stringify({ startCaptureResult }).slice(0, 3000)).run();
+    // No-op: removed direct CONTROL_DB (D1) write. This worker must never touch D1.
   } catch (_) {}
 
   await markPrepBatchRunning(env, batchId, input, startedAt);
