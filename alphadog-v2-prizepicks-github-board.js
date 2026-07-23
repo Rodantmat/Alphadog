@@ -837,48 +837,50 @@ async function finalizeBatch(env, batchId, cert) {
 }
 
 async function insertCurrentRows(env, rows, batchId, slateDate) {
-  const validRows = rows.filter(r => r.is_mlb && r.parse_status === "valid");
-  const sql = "INSERT INTO prizepicks_board_current (current_row_id, batch_id, source_key, slate_date, projection_id, player_id, player_name, team, opponent, league, stat_type, line_score, description, start_time, board_time, end_time, game_id, event_type, status, projection_type, odds_type, source_line_type, payout_variant, is_goblin, is_demon, is_standard, pickable_flag, raw_projection_json, row_payload_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  const validRows = rows.filter(r => r.is_mlb && r.parse_status === "valid").map(r => ({
+    current_row_id: `pp_current_${batchId}_${String(r.projection_id || r.stage_id).replace(/[^a-zA-Z0-9_\-]/g, "_")}`,
+    batch_id: batchId,
+    source_key: SOURCE_KEY,
+    slate_date: slateDate,
+    projection_id: r.projection_id,
+    player_id: r.player_id,
+    player_name: r.player_name,
+    team: r.team,
+    opponent: r.opponent,
+    league: r.league,
+    stat_type: r.stat_type,
+    line_score: r.line_score,
+    description: r.description,
+    start_time: r.start_time,
+    board_time: r.board_time,
+    end_time: r.end_time,
+    game_id: r.game_id,
+    event_type: r.event_type,
+    status: r.status,
+    projection_type: r.projection_type,
+    odds_type: r.odds_type,
+    source_line_type: r.source_line_type,
+    payout_variant: r.payout_variant,
+    is_goblin: r.is_goblin,
+    is_demon: r.is_demon,
+    is_standard: r.is_standard,
+    pickable_flag: r.pickable_flag,
+    raw_projection_json: r.raw_projection_json,
+    row_payload_json: r.row_payload_json
+  }));
+  const cols = ["current_row_id", "batch_id", "source_key", "slate_date", "projection_id", "player_id", "player_name", "team", "opponent", "league", "stat_type", "line_score", "description", "start_time", "board_time", "end_time", "game_id", "event_type", "status", "projection_type", "odds_type", "source_line_type", "payout_variant", "is_goblin", "is_demon", "is_standard", "pickable_flag", "raw_projection_json", "row_payload_json"];
   const chunks = [];
   for (let i = 0; i < validRows.length; i += STAGE_INSERT_CHUNK_SIZE) chunks.push(validRows.slice(i, i + STAGE_INSERT_CHUNK_SIZE));
-  // Same fix as stageRows: fire chunk batches concurrently instead of sequentially. Each chunk
-  // remains its own atomic transaction.
-  await runWithBoundedConcurrency(chunks, chunk =>
-    env.MARKET_DB.batch(chunk.map(r => env.MARKET_DB.prepare(sql).bind(
-      `pp_current_${batchId}_${String(r.projection_id || r.stage_id).replace(/[^a-zA-Z0-9_\-]/g, "_")}`,
-      batchId,
-      SOURCE_KEY,
-      slateDate,
-      r.projection_id,
-      r.player_id,
-      r.player_name,
-      r.team,
-      r.opponent,
-      r.league,
-      r.stat_type,
-      r.line_score,
-      r.description,
-      r.start_time,
-      r.board_time,
-      r.end_time,
-      r.game_id,
-      r.event_type,
-      r.status,
-      r.projection_type,
-      r.odds_type,
-      r.source_line_type,
-      r.payout_variant,
-      r.is_goblin,
-      r.is_demon,
-      r.is_standard,
-      r.pickable_flag,
-      r.raw_projection_json,
-      r.row_payload_json
-    ))),
-    D1_WRITE_CONCURRENCY
-  );
+  const client = pgClient(env);
+  try {
+    for (const chunk of chunks) {
+      await client`INSERT INTO market.prizepicks_board_current ${client(chunk, ...cols)}`;
+    }
+  } finally {
+    await client.end({ timeout: 1 });
+  }
   const inserted = validRows.length;
-  return { wrote_table: "prizepicks_board_current", batch_id: batchId, slate_date: slateDate, inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE, chunk_count: chunks.length, parallel_chunks: true };
+  return { wrote_table: "market.prizepicks_board_current", batch_id: batchId, slate_date: slateDate, inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE, chunk_count: chunks.length, parallel_chunks: false };
 }
 
 async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate, cert, timing) {
