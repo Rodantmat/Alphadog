@@ -12560,23 +12560,27 @@ async function requeueDailyContextStaleChild(env, parentRow, stage, child, stage
 }
 
 async function recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger) {
-  if (!env || !env.CONTROL_DB || !env.DAILY_DB) return { recovered: 0, checked: 0, reason: "missing_db_binding" };
-  const rows = await all(env.CONTROL_DB,
-    `SELECT
+  if (!env || !env.HYPERDRIVE) return { recovered: 0, checked: 0, reason: "missing_db_binding" };
+  const pg = pgControl(env);
+  let rows;
+  try {
+    rows = await pg.unsafe(`SELECT
        c.request_id, c.chain_id, c.parent_request_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json, c.started_at, c.updated_at, c.finished_at,
        p.request_id AS parent_request_id_real, p.job_key AS parent_job_key, p.worker_name AS parent_worker_name, p.input_json AS parent_input_json
-     FROM control_job_queue c
-     JOIN control_job_queue p ON p.request_id=c.parent_request_id AND p.chain_id=c.chain_id
+     FROM control.job_queue c
+     JOIN control.job_queue p ON p.request_id=c.parent_request_id AND p.chain_id=c.chain_id
      WHERE p.job_key='daily-context-full-run'
        AND p.worker_name='alphadog-v2-orchestrator'
        AND p.status IN ('pending','running','partial_continue')
        AND p.finished_at IS NULL
        AND c.status='running'
        AND c.finished_at IS NULL
-       AND datetime(COALESCE(c.updated_at, c.started_at, c.created_at)) <= datetime(CURRENT_TIMESTAMP, '-15 seconds')
-     ORDER BY datetime(COALESCE(c.updated_at, c.started_at, c.created_at)) ASC
-     LIMIT 5`
-  );
+       AND COALESCE(c.updated_at, c.started_at, c.created_at) <= now() - interval '15 seconds'
+     ORDER BY COALESCE(c.updated_at, c.started_at, c.created_at) ASC
+     LIMIT 5`);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
   let recovered = 0;
   const recoveredChildren = [];
   for (const child of rows) {
@@ -12595,24 +12599,27 @@ async function recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env
     if (rec && rec.report) {
       recovered += 1;
       recoveredChildren.push({ request_id: child.request_id, parent_request_id: parentRow.request_id, stage_key: stage.stage_key, job_key: stage.job_key, reason: rec.report.reason || "recovered_from_complete_sidecar_rows" });
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL",
-        parentRow.request_id
-      );
+      const pg2 = pgControl(env);
+      await pg2.unsafe(`UPDATE control.job_queue SET status='pending', run_after=now(), updated_at=now(), error_code=NULL, error_message=NULL WHERE request_id=$1 AND status IN ('pending','running','partial_continue') AND finished_at IS NULL`, [parentRow.request_id]).catch(() => {});
+      await pg2.end({ timeout: 1 }).catch(() => {});
     }
   }
   if (recovered > 0) {
-    await run(env.CONTROL_DB,
-      "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR' AND owner_worker_name=?",
-      WORKER_NAME
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_system_state SET lock_flag=0, running_job_key=NULL, running_request_id=NULL, running_chain_id=NULL, status='IDLE', updated_at=CURRENT_TIMESTAMP WHERE state_key='GLOBAL'"
-    );
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_released_lock', 'Pre-lock watchdog recovered complete Daily Context child sidecar rows and released stale GLOBAL_ORCHESTRATOR lock', ?, CURRENT_TIMESTAMP)",
-      WORKER_NAME, JSON.stringify({ trigger, recovered, recovered_children: recoveredChildren, version: SYSTEM_VERSION, recovery_policy: "complete_sidecar_rows_only_no_false_pass" })
-    );
+    const pg3 = pgControl(env);
+    try {
+      await pg3.unsafe(`UPDATE control.locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=now() WHERE lock_key='GLOBAL_ORCHESTRATOR' AND owner_worker_name=$1`, [WORKER_NAME]).catch(() => {});
+      await pg3`INSERT INTO control.worker_run_log ${pg3([{ request_id: null, run_id: null, worker_name: WORKER_NAME, job_key: "orchestrator", level: "WARN", event_key: "daily_context_prelock_sidecar_recovery_released_lock", message: "Pre-lock watchdog recovered complete Daily Context child sidecar rows and released stale GLOBAL_ORCHESTRATOR lock", data_json: JSON.stringify({ trigger, recovered, recovered_children: recoveredChildren, version: SYSTEM_VERSION, recovery_policy: "complete_sidecar_rows_only_no_false_pass" }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
+    } finally {
+      await pg3.end({ timeout: 1 }).catch(() => {});
+    }
+    // GLOBAL_ORCHESTRATOR / control_system_state remain the shared D1 lock used by every job type
+    // (board, market, static, base-workers, etc), not yet cut over - only released here as a
+    // best-effort courtesy since this watchdog may have been holding it via the legacy path.
+    try {
+      if (env.CONTROL_DB) {
+        await run(env.CONTROL_DB, "UPDATE control_system_state SET lock_flag=0, running_job_key=NULL, running_request_id=NULL, running_chain_id=NULL, status='IDLE', updated_at=CURRENT_TIMESTAMP WHERE state_key='GLOBAL'").catch(() => {});
+      }
+    } catch (_) {}
   }
   return { recovered, checked: rows.length, recovered_children: recoveredChildren };
 }
