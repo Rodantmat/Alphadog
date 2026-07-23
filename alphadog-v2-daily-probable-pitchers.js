@@ -386,8 +386,8 @@ function filterPreparedRowsForRetention(rows, retention, nowIso) {
 }
 
 async function pruneDateScopedDailyStarterTables(pg, retention) {
-  await pg.unsafe(`DELETE FROM daily.probable_pitchers WHERE official_date <> ALL($1::text[])`, [retention.dates]);
-  await pg.unsafe(`DELETE FROM daily.starters_stage WHERE official_date <> ALL($1::text[])`, [retention.dates]);
+  await pg`DELETE FROM daily.probable_pitchers WHERE official_date NOT IN ${pg(retention.dates)}`;
+  await pg`DELETE FROM daily.starters_stage WHERE official_date NOT IN ${pg(retention.dates)}`;
 }
 
 async function pruneGameScopedDailyStarterTables(pg, keepGamePks, batchId, retention) {
