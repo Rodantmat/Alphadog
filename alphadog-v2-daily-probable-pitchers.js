@@ -272,10 +272,7 @@ async function loadRefPlayerHands(pg, playerIds) {
   const ids = [...new Set(playerIds.filter(Boolean).map(Number))];
   const map = new Map();
   if (!ids.length) return map;
-  const rows = await pg.unsafe(
-    `SELECT player_id, mlb_player_id, player_name, full_name, throw_side FROM ref.players WHERE player_id = ANY($1::bigint[]) OR mlb_player_id = ANY($1::bigint[])`,
-    [ids]
-  );
+  const rows = await pg`SELECT player_id, mlb_player_id, player_name, full_name, throw_side FROM ref.players WHERE player_id IN ${pg(ids)} OR mlb_player_id IN ${pg(ids)}`;
   for (const r of rows) {
     const hand = r.throw_side || null;
     if (r.player_id !== null && r.player_id !== undefined) map.set(Number(r.player_id), { hand, name: r.full_name || r.player_name || null });
