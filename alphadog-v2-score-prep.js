@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.5.0-simplified-postgres-js-prepare-true";
+const VERSION = "alphadog-v2-score-prep-v0.5.1-control-db-only-binding";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
