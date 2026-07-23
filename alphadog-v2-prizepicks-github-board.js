@@ -233,7 +233,7 @@ async function readConfigSystemSettings(env, keys) {
   if (!env.HYPERDRIVE) return out;
   const client = pgClient(env);
   try {
-    const placeholders = keys.map((_, i) => `${i + 1}`).join(",");
+    const placeholders = keys.map((_, i) => "$" + (i + 1)).join(",");
     const rows = await client.unsafe(`SELECT setting_key, setting_value FROM config.system_settings WHERE setting_key IN (${placeholders})`, keys);
     for (const row of rows) if (row && row.setting_key) out[String(row.setting_key)] = row.setting_value;
   } catch (err) {
