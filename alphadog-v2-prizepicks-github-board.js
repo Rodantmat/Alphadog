@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.17-deterministic-stage-id-safe";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.2.0-postgres-rewire";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
