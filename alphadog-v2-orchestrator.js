@@ -8107,21 +8107,32 @@ async function processBaseGameCalendarJob(env, row, runId, trigger) {
 }
 
 
+function getPacificTimeParts(nowMs) {
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour12: false, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const parts = fmt.formatToParts(new Date(nowMs));
+  const get = (type) => parts.find(p => p.type === type).value;
+  return { pacific_date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")), minute: Number(get("minute")) };
+}
+
+// Real, once-daily 6:00 AM Pacific trigger (per user directive). Fires in the 6:00-6:04 window to
+// tolerate minor cron/lock timing drift, and guards against re-firing twice in the same window via
+// a last-triggered-Pacific-date marker stored in CONTROL_DB (the only DB this orchestrator can reach
+// directly - it has no Hyperdrive binding). The intended schedule is also documented in Postgres
+// config.worker_schedules for humans/future sessions, but that table is not read at runtime here.
 async function enqueuePostgresFullRunIfDue(env, cronExpression) {
   try {
-    const recent = await first(env.CONTROL_DB, "SELECT created_at FROM control_job_queue WHERE job_key='postgres-full-run-enqueue' ORDER BY created_at DESC LIMIT 1");
-    if (recent && recent.created_at) {
-      const lastMs = new Date(String(recent.created_at).replace(" ", "T") + "Z").getTime();
-      if (Number.isFinite(lastMs) && (Date.now() - lastMs) < 25 * 60 * 1000) {
-        return { ok: true, skipped: true, reason: "throttled_last_enqueue_recent", last_enqueued_at: recent.created_at };
-      }
-    }
+    const pt = getPacificTimeParts(Date.now());
+    const inMorningWindow = pt.hour === 6 && pt.minute < 5;
+    if (!inMorningWindow) return { ok: true, skipped: true, reason: "outside_scheduled_window", scheduled_window: "06:00-06:04 America/Los_Angeles", current_pacific_time: `${pt.pacific_date} ${String(pt.hour).padStart(2,"0")}:${String(pt.minute).padStart(2,"0")}` };
+    const marker = await first(env.CONTROL_DB, "SELECT value FROM control_kv WHERE key='postgres_full_run_last_triggered_pacific_date'");
+    if (marker && marker.value === pt.pacific_date) return { ok: true, skipped: true, reason: "already_triggered_today", pacific_date: pt.pacific_date };
     const requestId = `postgres_full_run_enqueue_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     await run(env.CONTROL_DB,
       "INSERT INTO control_job_queue (request_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, 'postgres-full-run-enqueue', 'alphadog-v2-orchestrator', 'pending', 5, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
       requestId
     );
-    return { ok: true, enqueued: true, request_id: requestId, cron_expression: cronExpression };
+    await run(env.CONTROL_DB, "INSERT INTO control_kv (key, value, updated_at) VALUES ('postgres_full_run_last_triggered_pacific_date', ?, CURRENT_TIMESTAMP) ON CONFLICT (key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP", pt.pacific_date);
+    return { ok: true, enqueued: true, request_id: requestId, cron_expression: cronExpression, pacific_date: pt.pacific_date, scheduled_window: "06:00-06:04 America/Los_Angeles" };
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
   }
