@@ -118,109 +118,28 @@ function pgClient(env) {
 }
 
 async function ensureSleeperSchema(env) {
-  if (!env.MARKET_DB) return { ok: false, reason: "missing_MARKET_DB_binding", ddl_applied: false };
-
-  await env.MARKET_DB.batch([
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS sleeper_board_stage (
-      stage_id TEXT PRIMARY KEY,
-      batch_id TEXT,
-      source_key TEXT,
-      slate_date TEXT,
-      fetched_at TEXT,
-      staged_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      source_event_id TEXT,
-      source_line_id TEXT,
-      source_player_id TEXT,
-      player_name TEXT,
-      team TEXT,
-      opponent TEXT,
-      league TEXT,
-      sport TEXT,
-      source_stat_name TEXT,
-      canonical_prop_key TEXT,
-      line_value REAL,
-      side TEXT,
-      price REAL,
-      decimal_price REAL,
-      is_pickable INTEGER DEFAULT 0,
-      start_time TEXT,
-      raw_line_json TEXT,
-      parse_status TEXT,
-      parse_error TEXT,
-      certification_status TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS sleeper_board_batches (
-      batch_id TEXT PRIMARY KEY,
-      source_key TEXT,
-      slate_date TEXT,
-      fetched_at TEXT,
-      staged_at TEXT,
-      certified_at TEXT,
-      source_base_url TEXT,
-      source_endpoint TEXT,
-      source_http_status INTEGER,
-      source_size_bytes INTEGER,
-      top_level_shape TEXT,
-      total_rows INTEGER DEFAULT 0,
-      staged_rows INTEGER DEFAULT 0,
-      valid_rows INTEGER DEFAULT 0,
-      invalid_rows INTEGER DEFAULT 0,
-      unmapped_stat_types INTEGER DEFAULT 0,
-      certification_status TEXT,
-      certification_reason TEXT,
-      certification_json TEXT,
-      promoted_at TEXT,
-      cleaned_at TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS sleeper_board_current (
-      current_row_id TEXT PRIMARY KEY,
-      batch_id TEXT,
-      source_key TEXT,
-      slate_date TEXT,
-      source_event_id TEXT,
-      source_line_id TEXT,
-      source_player_id TEXT,
-      player_name TEXT,
-      team TEXT,
-      opponent TEXT,
-      league TEXT,
-      sport TEXT,
-      source_stat_name TEXT,
-      canonical_prop_key TEXT,
-      line_value REAL,
-      side TEXT,
-      price REAL,
-      decimal_price REAL,
-      is_pickable INTEGER DEFAULT 0,
-      start_time TEXT,
-      raw_line_json TEXT,
-      row_payload_json TEXT,
-      promoted_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS sleeper_board_active_batches (
-      source_key TEXT,
-      slate_date TEXT,
-      active_batch_id TEXT,
-      certification_status TEXT,
-      row_count INTEGER DEFAULT 0,
-      valid_rows INTEGER DEFAULT 0,
-      activated_at TEXT,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (source_key, slate_date)
-    )`),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_stage_batch ON sleeper_board_stage(batch_id)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_stage_source_slate ON sleeper_board_stage(source_key, slate_date)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_stage_stat ON sleeper_board_stage(source_stat_name, canonical_prop_key)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_batches_source_slate ON sleeper_board_batches(source_key, slate_date)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_batches_cert ON sleeper_board_batches(certification_status)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_current_source_slate_batch ON sleeper_board_current(source_key, slate_date, batch_id)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_sleeper_board_current_player_prop ON sleeper_board_current(player_name, canonical_prop_key)"),
-    env.MARKET_DB.prepare("INSERT OR REPLACE INTO market_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('schema_market_db_sleeper_board_v0_1_0', ?, CURRENT_TIMESTAMP, 'Additive Sleeper board lifecycle tables only. No PrizePicks table changes.')").bind(VERSION)
-  ]);
+  if (!env.HYPERDRIVE) return { ok: false, reason: "missing_HYPERDRIVE_binding", ddl_applied: false };
+  const client = pgClient(env);
+  try {
+    await client.unsafe("CREATE TABLE IF NOT EXISTS market.sleeper_board_stage (stage_id TEXT PRIMARY KEY, batch_id TEXT, source_key TEXT, slate_date TEXT, fetched_at TIMESTAMPTZ, staged_at TIMESTAMPTZ DEFAULT now(), source_event_id TEXT, source_line_id TEXT, source_player_id TEXT, player_name TEXT, team TEXT, opponent TEXT, league TEXT, sport TEXT, source_stat_name TEXT, canonical_prop_key TEXT, line_value DOUBLE PRECISION, side TEXT, price DOUBLE PRECISION, decimal_price DOUBLE PRECISION, is_pickable INTEGER DEFAULT 0, start_time TEXT, raw_line_json JSONB, parse_status TEXT, parse_error TEXT, certification_status TEXT, created_at TIMESTAMPTZ DEFAULT now())");
+    await client.unsafe("CREATE TABLE IF NOT EXISTS market.sleeper_board_batches (batch_id TEXT PRIMARY KEY, source_key TEXT, slate_date TEXT, fetched_at TIMESTAMPTZ, staged_at TIMESTAMPTZ, certified_at TIMESTAMPTZ, source_base_url TEXT, source_endpoint TEXT, source_http_status INTEGER, source_size_bytes INTEGER, top_level_shape TEXT, total_rows INTEGER DEFAULT 0, staged_rows INTEGER DEFAULT 0, valid_rows INTEGER DEFAULT 0, invalid_rows INTEGER DEFAULT 0, unmapped_stat_types INTEGER DEFAULT 0, certification_status TEXT, certification_reason TEXT, certification_json JSONB, promoted_at TIMESTAMPTZ, cleaned_at TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now())");
+    await client.unsafe("CREATE TABLE IF NOT EXISTS market.sleeper_board_current (current_row_id TEXT PRIMARY KEY, batch_id TEXT, source_key TEXT, slate_date TEXT, source_event_id TEXT, source_line_id TEXT, source_player_id TEXT, player_name TEXT, team TEXT, opponent TEXT, league TEXT, sport TEXT, source_stat_name TEXT, canonical_prop_key TEXT, line_value DOUBLE PRECISION, side TEXT, price DOUBLE PRECISION, decimal_price DOUBLE PRECISION, is_pickable INTEGER DEFAULT 0, start_time TEXT, raw_line_json JSONB, row_payload_json JSONB, promoted_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now())");
+    await client.unsafe("CREATE TABLE IF NOT EXISTS market.sleeper_board_active_batches (source_key TEXT, slate_date TEXT, active_batch_id TEXT, certification_status TEXT, row_count INTEGER DEFAULT 0, valid_rows INTEGER DEFAULT 0, activated_at TIMESTAMPTZ, updated_at TIMESTAMPTZ DEFAULT now(), PRIMARY KEY (source_key, slate_date))");
+    await client.unsafe("CREATE TABLE IF NOT EXISTS market.schema_migrations (migration_key TEXT PRIMARY KEY, package_version TEXT NOT NULL, applied_at TIMESTAMPTZ DEFAULT now(), notes TEXT)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_stage_batch ON market.sleeper_board_stage(batch_id)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_stage_source_slate ON market.sleeper_board_stage(source_key, slate_date)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_stage_stat ON market.sleeper_board_stage(source_stat_name, canonical_prop_key)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_batches_source_slate ON market.sleeper_board_batches(source_key, slate_date)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_batches_cert ON market.sleeper_board_batches(certification_status)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_current_source_slate_batch ON market.sleeper_board_current(source_key, slate_date, batch_id)");
+    await client.unsafe("CREATE INDEX IF NOT EXISTS idx_sleeper_board_current_player_prop ON market.sleeper_board_current(player_name, canonical_prop_key)");
+    await client.unsafe(
+      "INSERT INTO market.schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('schema_market_db_sleeper_board_v0_1_0', $1, now(), 'Additive Sleeper board lifecycle tables only. No PrizePicks table changes.') ON CONFLICT (migration_key) DO UPDATE SET package_version=excluded.package_version, applied_at=now()",
+      [VERSION]
+    );
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 
   const validation = await validateSleeperSchema(env);
   return { ok: validation.ok, ddl_applied: true, validation };
