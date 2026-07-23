@@ -129,7 +129,7 @@ async function deriveLineupFromRecentGame(pg, teamId, beforeDate) {
     return d.toISOString().slice(0, 10);
   })();
   const recentDateRow = await pg`SELECT MAX(game_date) AS latest_date FROM stats_hitter.game_logs
-    WHERE regexp_replace(team_id, '^mlb_', '') = ${String(teamId)} AND game_date >= ${lookbackStart} AND game_date < ${beforeDate} AND batting_order IS NOT NULL AND batting_order > 0`;
+    WHERE regexp_replace(team_id, '^mlb_', '') = ${String(teamId)} AND game_date >= ${lookbackStart} AND game_date < ${beforeDateOnly} AND batting_order IS NOT NULL AND batting_order > 0`;
   const latestDate = recentDateRow[0] && recentDateRow[0].latest_date;
   if (!latestDate) return [];
   const rows = await pg`SELECT player_id, batting_order FROM stats_hitter.game_logs
