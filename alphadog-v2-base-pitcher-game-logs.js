@@ -1188,6 +1188,7 @@ async function runBaseBackfillTick(env, sql, input, startedAtMs) {
   try {
     const players = state.players;
     const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+    const cursorOffset = asInt(state.cursor.current_player_offset, 0);
     const chunkSize = asInt(state.batch.chunk_size_players, DEFAULT_CHUNK_SIZE_PLAYERS);
     const maxRows = asInt(tickConfig.promote_rows_per_tick, asInt(state.batch.max_rows_per_tick, DEFAULT_MAX_ROWS_PER_TICK));
     const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
