@@ -982,10 +982,15 @@ async function preserveActivePrizePicksBoardForUnrefreshedSource(env, batchId, s
     no_final_board_write: true
   }, 6000);
 
-  await env.MARKET_DB.batch([
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_stage WHERE batch_id=?").bind(batchId),
-    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(certificationStatus, reason, certificationJson, batchId)
-  ]);
+  const client = pgClient(env);
+  try {
+    await client.begin(async (tx) => {
+      await tx.unsafe("DELETE FROM market.prizepicks_board_stage WHERE batch_id=$1", [batchId]);
+      await tx.unsafe("UPDATE market.prizepicks_board_batches SET certification_status=$1, certification_reason=$2, certification_json=$3, cleaned_at=now(), updated_at=now() WHERE batch_id=$4", [certificationStatus, reason, certificationJson, batchId]);
+    });
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 
   return {
     promoted: false,
