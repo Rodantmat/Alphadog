@@ -1202,7 +1202,12 @@ export default {
       }
       const HARD_DEADLINE_MS = 19200;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
-      const output = await withDeadline(runSourceProbe(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+      let output;
+      try {
+        output = await withDeadline(runSourceProbe(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+      } catch (err) {
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "daily_lineups_exception_debug", error: String(err && err.message ? err.message : err), stack_preview: String(err && err.stack ? err.stack : "").slice(0, 2000) }, 500);
+      }
       if (output === TIMEOUT_SENTINEL) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_LINEUPS_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
       }
