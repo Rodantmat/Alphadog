@@ -1774,13 +1774,15 @@ async function runBoardParseStageCertify(env, input = {}) {
     } catch (err) {
       const promotionError = safeString(err && err.message ? err.message : err, 900);
       promotion = { promoted: false, certification_status: PROMOTION_CERT_FAIL, reason: promotionError, active_board_preserved: true };
-      await run(env.MARKET_DB,
-        "UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
-        PROMOTION_CERT_FAIL,
-        `Promotion failed after successful staging/certification: ${promotionError}`,
-        safeJson({ version: VERSION, batch_id: batchId, promotion_error: promotionError, active_board_preserved_until_pointer_switch: true, no_market_current_lines_write: true, no_scoring: true }, 6000),
-        batchId
-      );
+      const errClient = pgClient(env);
+      try {
+        await errClient.unsafe(
+          "UPDATE market.prizepicks_board_batches SET certification_status=$1, certification_reason=$2, certification_json=$3, updated_at=now() WHERE batch_id=$4",
+          [PROMOTION_CERT_FAIL, `Promotion failed after successful staging/certification: ${promotionError}`, safeJson({ version: VERSION, batch_id: batchId, promotion_error: promotionError, active_board_preserved_until_pointer_switch: true, no_market_current_lines_write: true, no_scoring: true }, 6000), batchId]
+        );
+      } finally {
+        await errClient.end({ timeout: 1 });
+      }
     }
   }
 
