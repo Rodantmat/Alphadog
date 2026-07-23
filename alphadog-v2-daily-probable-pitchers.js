@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-daily-probable-pitchers";
-const VERSION = "alphadog-v2-daily-probable-pitchers-v0.2.0-postgres-rewire";
+const VERSION = "alphadog-v2-daily-probable-pitchers-v0.2.1-postgres-rewire-redeploy";
 const JOB_KEY = "daily-probable-pitchers";
 const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
