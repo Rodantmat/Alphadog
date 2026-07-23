@@ -479,11 +479,8 @@ async function replaceParlayUnderdogPropAliases(env, distinctSourceToCanonical) 
   const client = pgClient(env);
   try {
     await client.unsafe("DELETE FROM ref.prop_aliases WHERE source_key=$1", [SOURCE_KEY]);
-    for (const a of aliases) {
-      await client.unsafe(
-        "INSERT INTO ref.prop_aliases (alias_key, prop_key, source_key, source_market_name, normalized_market_name, updated_at) VALUES ($1, $2, $3, $4, $5, now())",
-        [a.alias_key, a.prop_key, a.source_key, a.source_market_name, a.normalized_market_name]
-      );
+    if (aliases.length) {
+      await client`INSERT INTO ref.prop_aliases ${client(aliases.map(a => ({ ...a, updated_at: new Date().toISOString() })), "alias_key", "prop_key", "source_key", "source_market_name", "normalized_market_name", "updated_at")}`;
     }
   } finally {
     await client.end({ timeout: 1 });
