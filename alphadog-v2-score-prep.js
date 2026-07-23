@@ -362,48 +362,17 @@ async function markPrepBatchRunning(env, batchId, input, startedAt) {
 // not an opaque JSON blob) and copies real rows before this run's own cleanup wipes them.
 // Idempotent via prepared_row_id as primary key (INSERT OR IGNORE).
 async function permanentlyRecordBoardLegs(env) {
-  await env.ARCHIVE_DB.prepare(`CREATE TABLE IF NOT EXISTS archive_board_leg_history (
-    prepared_row_id TEXT PRIMARY KEY,
-    official_date TEXT,
-    source_key TEXT,
-    source_row_id TEXT,
-    player_name TEXT,
-    resolved_mlb_player_id INTEGER,
-    team TEXT,
-    opponent TEXT,
-    canonical_prop_key TEXT,
-    source_prop_name TEXT,
-    line_value REAL,
-    official_game_pk INTEGER,
-    official_game_time_utc TEXT,
-    pickable_safe INTEGER,
-    prep_status TEXT,
-    raw_source_json TEXT,
-    captured_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-  const rows = await env.SCORE_DB.prepare(`SELECT prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json FROM score_board_prepared_current`).all().then(r => r.results || []).catch(() => []);
+  const rows = await env.pg.unsafe("SELECT prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json FROM score.board_prepared_current").catch(() => []);
   if (!rows.length) return { copied: 0, checked: 0 };
-  const statements = [];
-  for (const r of rows) {
-    statements.push(env.ARCHIVE_DB.prepare(`INSERT OR IGNORE INTO archive_board_leg_history (prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json, captured_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
-      r.prepared_row_id, r.official_date, r.source_key, r.source_row_id, r.player_name, r.resolved_mlb_player_id, r.team, r.opponent, r.canonical_prop_key, r.source_prop_name, r.line_value, r.official_game_pk, r.official_game_time_utc, r.pickable_safe, r.prep_status, r.raw_source_json
-    ));
-  }
-  const CHUNK = 90;
-  const ARCHIVE_WRITE_CONCURRENCY = 3; // REAL FIX: Cloudflare's documented D1 limit is max 6 simultaneous connections per Worker invocation, total. Using all 6 here left zero headroom for any other D1 work in the same invocation, causing real connection-queueing contention - confirmed as the likely cause once timeouts got WORSE, not better, right after this concurrency fix was introduced. 3 keeps real concurrency benefit while leaving genuine headroom.
+  const cols = ["prepared_row_id", "official_date", "source_key", "source_row_id", "player_name", "resolved_mlb_player_id", "team", "opponent", "canonical_prop_key", "source_prop_name", "line_value", "official_game_pk", "official_game_time_utc", "pickable_safe", "prep_status", "raw_source_json"];
+  const CHUNK = 200;
   const chunks = [];
-  for (let i = 0; i < statements.length; i += CHUNK) chunks.push(statements.slice(i, i + CHUNK));
-  let nextChunkIndex = 0;
-  async function runOneChunkWorker() {
-    while (nextChunkIndex < chunks.length) {
-      const idx = nextChunkIndex++;
-      await env.ARCHIVE_DB.batch(chunks[idx]);
-    }
+  for (let i = 0; i < rows.length; i += CHUNK) chunks.push(rows.slice(i, i + CHUNK));
+  for (const chunk of chunks) {
+    const values = chunk.map(r => ({ ...r, captured_at: new Date().toISOString() }));
+    await env.pg`INSERT INTO archive.board_leg_history ${env.pg(values, ...cols, "captured_at")} ON CONFLICT (prepared_row_id) DO NOTHING`;
   }
-  const workerCount = Math.min(ARCHIVE_WRITE_CONCURRENCY, chunks.length);
-  await Promise.all(Array.from({ length: workerCount }, runOneChunkWorker));
-  const copied = statements.length;
-  return { copied, checked: rows.length };
+  return { copied: rows.length, checked: rows.length };
 }
 
 async function updatePrepBatchCheckpoint(env, batchId, status, certificationStatus, data = {}) {
