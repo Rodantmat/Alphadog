@@ -393,8 +393,8 @@ async function pruneDateScopedDailyStarterTables(pg, retention) {
 async function pruneGameScopedDailyStarterTables(pg, keepGamePks, batchId, retention) {
   const ids = [...new Set((keepGamePks || []).filter(Boolean).map(Number))];
   if (ids.length) {
-    await pg.unsafe(`DELETE FROM daily.starters_snapshots WHERE game_pk IS NULL OR game_pk <> ALL($1::bigint[])`, [ids]);
-    await pg.unsafe(`DELETE FROM daily.starters_issues WHERE game_pk IS NULL OR game_pk <> ALL($1::bigint[])`, [ids]);
+    await pg`DELETE FROM daily.starters_snapshots WHERE game_pk IS NULL OR game_pk NOT IN ${pg(ids)}`;
+    await pg`DELETE FROM daily.starters_issues WHERE game_pk IS NULL OR game_pk NOT IN ${pg(ids)}`;
   } else {
     await pg.unsafe(`DELETE FROM daily.starters_snapshots`);
     await pg.unsafe(`DELETE FROM daily.starters_issues`);
