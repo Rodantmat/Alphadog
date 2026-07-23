@@ -145,15 +145,6 @@ async function ensureSleeperSchema(env) {
   return { ok: validation.ok, ddl_applied: true, validation };
 }
 
-async function tableColumns(env, tableName) {
-  const client = pgClient(env);
-  try {
-    const rows = await client.unsafe("SELECT column_name FROM information_schema.columns WHERE table_schema='market' AND table_name=" + client.unsafe.array ? "" : "", []);
-  } finally {
-    await client.end({ timeout: 1 });
-  }
-}
-
 async function validateTable(env, tableName, expected) {
   if (!env.HYPERDRIVE) return { ok: false, table: tableName, missing_columns: expected, columns_present: [] };
   const client = pgClient(env);
