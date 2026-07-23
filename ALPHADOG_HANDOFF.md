@@ -278,6 +278,50 @@ is known — VERIFY DIRECTLY, do not assume.**
 
 ---
 
+## 3. WHAT'S NOT DONE — EVERYTHING ELSE
+
+**Section 2B above covers what WAS completed this session (the full 13-stage daily delta chain
+plus classification/baseline). Everything below this line is still genuinely not done — verify
+directly, do not assume, the same discipline applied throughout this migration.**
+
+- **Daily context factor tables**: `daily.team_schedule_spot_current`,
+  `daily.bullpen_availability_current`, `daily.player_availability_current`,
+  `daily.game_weather_current` all exist as real Postgres tables (schema present) but are
+  completely EMPTY — zero rows. These are NOT part of the 13-stage chain built this session and
+  have not been wired to any real daily-refresh worker on Postgres yet. `daily.lineups_current`
+  (303 rows), `daily.probable_pitchers` (46 rows), and `daily.umpire_context_current` (15 rows)
+  DO have real data already — investigate what's populating those before assuming the whole
+  `daily` schema is unbuilt.
+- **Market layer**: `market-normalizer.js`, `market-line-shape-classifier.js`, odds ingestion via
+  The Odds API. `market.historical_props_2025` (196,025 rows, verified clean/no duplicates) and
+  `market.prizepicks_board_current` (6,780 rows) already have real data on Postgres from prior
+  work — verify what wrote them before assuming this layer needs to start from zero.
+- **Scoring chain**: `score-prep.js` (board prep, entry point of the daily chain),
+  `phase2b-recent-form.js` (prop factor miner), `phase2b-certifier.js` (matrix builder),
+  `score-audit.js` (scoring engine, enrichment, hit probability, final board). The Postgres
+  `score.*` schema exists (final_board_current, hp_board_current, prop_matrix_current, etc.) but
+  is entirely EMPTY — this whole layer, which CONSUMES the now-real
+  `classification.baseline_current` output, has not been started.
+- **Control-plane**: `orchestrator.js` (now 1.43MB+), job dispatch/control-plane,
+  `control_job_queue`/`control_locks`. Stays on D1 per Section 1/4 (control plane is not part of
+  the data migration). The starvation-bug fix from Section 2 (`static-full-run`) has NOT yet been
+  extended to the newer `postgres-full-run-enqueue` stepper chain from Section 2B, or to
+  `board-full-run`/`daily-full-run`/`incremental-morning-full-run` — check whether it's actually
+  needed there before assuming it is or isn't.
+- **Main UI worker**: `alphadog-v2-certification-center.js` reads from D1 currently for
+  production board data — a live production surface, treat with extra care. Since the
+  `score.*` layer above is still empty, this worker has nothing real to read from Postgres yet
+  even if it were switched over.
+- **`SCORING_DB`**: still unresolved — a second, separate D1 binding (distinct from `SCORE_DB`).
+  Not investigated this session either. Investigate whether it's live, dead, or a partial
+  migration target before assuming either way.
+- **`score-audit.js`'s correlation-aware enrichment wiring**: unchanged from prior sessions, real
+  partially-done work described in earlier handoffs — not touched this session.
+- **The orphaned "V6" classification/baseline system** (Section 2B) — explicit user decision to
+  leave it alone. Do not re-open this without the user raising it again.
+
+---
+
 ## 4. HARD RULE — D1 IS COMPLETELY OFF LIMITS. WE ONLY WIRE THE NEW DATABASE.
 
 This is explicit and non-negotiable, stated directly by Rodolfo, and restated even more plainly
