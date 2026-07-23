@@ -8,6 +8,7 @@
     "agents": "*",
     "@modelcontextprotocol/sdk": "*",
     "zod": "*",
-    "postgres": "*"
+    "postgres": "*",
+    "pg": ">=8.16.3"
   }
 }
