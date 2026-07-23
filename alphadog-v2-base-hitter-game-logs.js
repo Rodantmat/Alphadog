@@ -3173,7 +3173,7 @@ async function runBaseBackfillTick(env, input) {
     const requestedChunkSize = inputJson.chunk_size_players || batch.chunk_size_players || tickConfig.chunk_size_players;
     const maxRequests = cap(requestedMaxRequests, 1, 2000);
     const chunkSize = cap(requestedChunkSize, 1, 2000);
-    const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || tickConfig.promote_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, 5000);
+    const maxRows = cap(inputJson.max_rows_per_tick || tickConfig.promote_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, 5000);
     const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || tickConfig.max_tick_runtime_ms, 8000, 120000);
     const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
     const tickStartedAtMs = Date.now();
