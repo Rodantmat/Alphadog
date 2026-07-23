@@ -1396,8 +1396,8 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
     prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
     player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
-    canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
-    source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
+    canonical_prop_key, source_prop_name, line_value, official_game_pk, NULLIF(official_game_time_utc, '')::timestamptz, NULLIF(official_date, '')::date,
+    NULLIF(source_start_time, '')::timestamptz, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
     source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, now()
   FROM score.board_prepared_stage WHERE prep_batch_id=$1
   ON CONFLICT (prepared_row_id) DO UPDATE SET
