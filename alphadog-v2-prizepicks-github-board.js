@@ -934,10 +934,16 @@ async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate,
 }
 
 async function currentPrizePicksInventorySummary(env) {
-  const rows = await all(env.MARKET_DB,
-    "SELECT COUNT(*) AS current_rows, SUM(CASE WHEN pickable_flag=1 THEN 1 ELSE 0 END) AS pickable_flag_rows, MIN(start_time) AS min_start_time, MAX(start_time) AS max_start_time, COUNT(DISTINCT batch_id) AS current_batches FROM prizepicks_board_current WHERE source_key=?",
-    SOURCE_KEY
-  );
+  const client = pgClient(env);
+  let rows;
+  try {
+    rows = await client.unsafe(
+      "SELECT COUNT(*) AS current_rows, SUM(CASE WHEN pickable_flag=1 THEN 1 ELSE 0 END) AS pickable_flag_rows, MIN(start_time) AS min_start_time, MAX(start_time) AS max_start_time, COUNT(DISTINCT batch_id) AS current_batches FROM market.prizepicks_board_current WHERE source_key=$1",
+      [SOURCE_KEY]
+    );
+  } finally {
+    await client.end({ timeout: 1 });
+  }
   const row = rows && rows[0] ? rows[0] : {};
   return {
     current_rows: Number(row.current_rows || 0),
