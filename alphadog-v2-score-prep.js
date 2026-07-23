@@ -1772,7 +1772,7 @@ export default {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const output = await runBoardPrep(env, input);
-          if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+          if (env.pg) await env.pg.end().catch(() => {});
           return jsonResponse(output);
         } catch (err) {
           lastErr = err;
