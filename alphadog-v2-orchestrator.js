@@ -12270,83 +12270,55 @@ function isServiceBindingTimeoutLike(text) {
 }
 
 async function buildDailyLineupsSidecarRecoveryOutput(env, requestId, stage) {
-  if (!env || !env.DAILY_DB || !requestId) return null;
-  let batch = null;
+  if (!env || !env.HYPERDRIVE || !requestId) return null;
+  const pg = pgControl(env);
   try {
-    batch = await first(env.DAILY_DB,
-      "SELECT * FROM daily_lineups_batches WHERE json_extract(output_json, '$.request_id')=? ORDER BY datetime(created_at) DESC LIMIT 1",
-      requestId
-    );
-  } catch (err) {
+    let batch = null;
     try {
-      const likeNeedle = `%${String(requestId).replace(/[%_]/g, "")}%`;
-      batch = await first(env.DAILY_DB,
-        "SELECT * FROM daily_lineups_batches WHERE output_json LIKE ? ORDER BY datetime(created_at) DESC LIMIT 1",
-        likeNeedle
-      );
-    } catch (_) {
-      batch = null;
+      const rows = await pg`SELECT * FROM daily.lineups_batches WHERE (output_json::jsonb ->> 'request_id')=${requestId} ORDER BY created_at DESC LIMIT 1`;
+      batch = rows[0] || null;
+    } catch (err) {
+      try {
+        const likeNeedle = `%${String(requestId).replace(/[%_]/g, "")}%`;
+        const rows = await pg.unsafe(`SELECT * FROM daily.lineups_batches WHERE output_json LIKE $1 ORDER BY created_at DESC LIMIT 1`, [likeNeedle]);
+        batch = rows[0] || null;
+      } catch (_) { batch = null; }
     }
+    if (!batch || !batch.batch_id) return null;
+
+    const certification = String(batch.certification_status || "");
+    const grade = String(batch.certification_grade || "");
+    const rowsWritten = Number(batch.rows_written || 0);
+    const writesPerformed = Number(batch.writes_performed || 0);
+    const productionWrites = Number(batch.production_lineup_writes_enabled || 0);
+    if (!certification.startsWith("PASS_") || rowsWritten <= 0 || writesPerformed <= 0 || productionWrites !== 1) return null;
+
+    const currentRows_ = await pg`SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT team_id) AS teams, COUNT(DISTINCT player_id) AS players FROM daily.lineups_current WHERE batch_id=${batch.batch_id}`;
+    const dupRows_ = await pg.unsafe(`SELECT COUNT(*) AS n FROM (SELECT official_date, game_pk, team_side, team_id, lineup_slot, COUNT(*) AS c FROM daily.lineups_current WHERE batch_id=$1 GROUP BY official_date, game_pk, team_side, team_id, lineup_slot HAVING COUNT(*) > 1) x`, [batch.batch_id]);
+    const current = currentRows_[0] || {};
+    const currentRows = Number(current.rows || 0);
+    const currentGames = Number(current.games || 0);
+    const currentTeams = Number(current.teams || 0);
+    const duplicateIdentityRows = Number(dupRows_[0] && dupRows_[0].n || 0);
+    if (currentRows <= 0 || currentGames <= 0 || duplicateIdentityRows !== 0) return null;
+
+    const parsedOutput = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json || "{}"), {});
+    return {
+      ok: true, data_ok: true, version: String(batch.worker_version || SYSTEM_VERSION), worker_name: String(stage && stage.worker_name || "alphadog-v2-daily-lineups"),
+      job_key: String(stage && stage.job_key || "daily-lineups"), mode: "source_probe", status: "COMPLETED_SOURCE_PROBE_RECOVERED_FROM_SIDECAR",
+      certification, certification_status: certification, certification_grade: grade || "PASS", request_id: requestId, batch_id: batch.batch_id,
+      sidecar_recovery: true, recovered_from_service_binding_timeout: true, recovered_from_lineups_sidecar_batch: true,
+      recovery_policy: "verified_daily_lineups_batch_and_current_rows_no_duplicate_identity", write_gate_status: batch.write_gate_status || null,
+      source_probe_lane: batch.source_probe_lane || null, games_checked: Number(batch.games_checked || currentGames), lineup_write_ready_games: Number(batch.lineup_write_ready_games || currentGames),
+      prepared_rows_read: Number(parsedOutput.prepared_rows_read || 0), rows_read: Number(parsedOutput.prepared_rows_read || 0), rows_written: rowsWritten, writes_performed: writesPerformed,
+      current_rows_verified: currentRows, current_games_verified: currentGames, current_teams_verified: currentTeams, current_players_verified: Number(current.players || 0),
+      duplicate_identity_rows: duplicateIdentityRows, external_calls: Number(parsedOutput.external_calls || parsedOutput.external_calls_performed || 0),
+      no_calendar_rebuild: true, no_daily_game_status_duplication: true, no_board_mutation: true, no_market_odds: true, no_score_db_mutation: true,
+      no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true
+    };
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
   }
-  if (!batch || !batch.batch_id) return null;
-
-  const certification = String(batch.certification_status || "");
-  const grade = String(batch.certification_grade || "");
-  const rowsWritten = Number(batch.rows_written || 0);
-  const writesPerformed = Number(batch.writes_performed || 0);
-  const productionWrites = Number(batch.production_lineup_writes_enabled || 0);
-  if (!certification.startsWith("PASS_") || rowsWritten <= 0 || writesPerformed <= 0 || productionWrites !== 1) return null;
-
-  const current = await first(env.DAILY_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT team_id) AS teams, COUNT(DISTINCT player_id) AS players FROM daily_lineups_current WHERE batch_id=?", batch.batch_id);
-  const dup = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM (SELECT official_date, game_pk, team_side, team_id, lineup_slot, COUNT(*) AS c FROM daily_lineups_current WHERE batch_id=? GROUP BY official_date, game_pk, team_side, team_id, lineup_slot HAVING COUNT(*) > 1)", batch.batch_id);
-  const currentRows = Number(current && current.rows || 0);
-  const currentGames = Number(current && current.games || 0);
-  const currentTeams = Number(current && current.teams || 0);
-  const duplicateIdentityRows = Number(dup && dup.n || 0);
-  if (currentRows <= 0 || currentGames <= 0 || duplicateIdentityRows !== 0) return null;
-
-  const parsedOutput = parseJsonSafeText(batch.output_json || "{}", {});
-  return {
-    ok: true,
-    data_ok: true,
-    version: String(batch.worker_version || SYSTEM_VERSION),
-    worker_name: String(stage && stage.worker_name || "alphadog-v2-daily-lineups"),
-    job_key: String(stage && stage.job_key || "daily-lineups"),
-    mode: "source_probe",
-    status: "COMPLETED_SOURCE_PROBE_RECOVERED_FROM_SIDECAR",
-    certification,
-    certification_status: certification,
-    certification_grade: grade || "PASS",
-    request_id: requestId,
-    batch_id: batch.batch_id,
-    sidecar_recovery: true,
-    recovered_from_service_binding_timeout: true,
-    recovered_from_lineups_sidecar_batch: true,
-    recovery_policy: "verified_daily_lineups_batch_and_current_rows_no_duplicate_identity",
-    write_gate_status: batch.write_gate_status || null,
-    source_probe_lane: batch.source_probe_lane || null,
-    games_checked: Number(batch.games_checked || currentGames),
-    lineup_write_ready_games: Number(batch.lineup_write_ready_games || currentGames),
-    prepared_rows_read: Number(parsedOutput.prepared_rows_read || 0),
-    rows_read: Number(parsedOutput.prepared_rows_read || 0),
-    rows_written: rowsWritten,
-    writes_performed: writesPerformed,
-    current_rows_verified: currentRows,
-    current_games_verified: currentGames,
-    current_teams_verified: currentTeams,
-    current_players_verified: Number(current && current.players || 0),
-    duplicate_identity_rows: duplicateIdentityRows,
-    external_calls: Number(parsedOutput.external_calls || parsedOutput.external_calls_performed || 0),
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_board_mutation: true,
-    no_market_odds: true,
-    no_score_db_mutation: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true
-  };
 }
 
 async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, child, report, runId) {
