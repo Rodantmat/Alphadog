@@ -1576,7 +1576,7 @@ async function runBoardPrep(env, input) {
 
   const bindings = bindingSummary(env);
   if (!bindings.HYPERDRIVE) throw new Error("missing_required_binding_HYPERDRIVE");
-  env.pg = pgClient(env);
+  env.pg = await pgClient(env);
 
   await ensureScoreTables(env);
   let recoveredResume = null;
