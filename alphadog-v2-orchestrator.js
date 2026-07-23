@@ -12512,14 +12512,11 @@ async function requeueDailyContextStaleChild(env, parentRow, stage, child, stage
     no_ranking: true,
     no_final_board: true
   };
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='daily_context_stale_child_replaced_by_retry', error_message='Daily Context stale child was closed and replaced by one same-stage retry.' WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL",
-    JSON.stringify(replacedOutput), child.request_id
-  );
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_runs SET status='failed', data_ok=0, certification_status='DAILY_CONTEXT_STALE_CHILD_REPLACED_BY_RETRY', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code='daily_context_stale_child_replaced_by_retry', error_message='Daily Context stale child was closed and replaced by one same-stage retry.' WHERE request_id=? AND status='running' AND finished_at IS NULL",
-    JSON.stringify(replacedOutput), child.request_id
-  );
+  const pg = pgControl(env);
+  await pg.unsafe(`UPDATE control.job_queue SET status='failed', finished_at=now(), updated_at=now(), output_json=$1, error_code='daily_context_stale_child_replaced_by_retry', error_message='Daily Context stale child was closed and replaced by one same-stage retry.' WHERE request_id=$2 AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL`,
+    [JSON.stringify(replacedOutput), child.request_id]);
+  await pg.unsafe(`UPDATE control.job_runs SET status='failed', data_ok=0, certification_status='DAILY_CONTEXT_STALE_CHILD_REPLACED_BY_RETRY', finished_at=now(), elapsed_ms=EXTRACT(EPOCH FROM (now() - started_at))*1000, output_json=$1, error_code='daily_context_stale_child_replaced_by_retry', error_message='Daily Context stale child was closed and replaced by one same-stage retry.' WHERE request_id=$2 AND status='running' AND finished_at IS NULL`,
+    [JSON.stringify(replacedOutput), child.request_id]);
 
   const retryStageIndex = DAILY_CONTEXT_FULL_RUN_STAGES.findIndex(s => s.stage_key === stage.stage_key);
   const enqueued = await enqueueDailyContextFullRunChild(env, parentRow, stage, retryStageIndex >= 0 ? retryStageIndex : 0, retryCount);
@@ -12553,18 +12550,12 @@ async function requeueDailyContextStaleChild(env, parentRow, stage, child, stage
     no_ranking: true,
     no_final_board: true
   };
-  await run(env.CONTROL_DB,
-    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
-    runId, parentRow.request_id, parentRow.chain_id, parentRow.job_key, parentRow.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
-  );
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-    JSON.stringify(output), parentRow.request_id
-  );
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_stale_child_retry_enqueued', 'Daily Context Full Run closed one stale child and enqueued one same-stage retry after sidecar recovery failed', ?, CURRENT_TIMESTAMP)",
-    parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, cleanup, version:SYSTEM_VERSION })
-  );
+  await pg.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES ($1,$2,$3,$4,$5,'partial_continue',1,'DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED',$6,0,0,now(),now(),$7,$8,$9)`,
+    [runId, parentRow.request_id, parentRow.chain_id, parentRow.job_key, parentRow.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)]);
+  await pg.unsafe(`UPDATE control.job_queue SET status='pending', priority=1, run_after=now() + interval '3 seconds', updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2`,
+    [JSON.stringify(output), parentRow.request_id]);
+  await pg`INSERT INTO control.worker_run_log ${pg([{ request_id: parentRow.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: parentRow.job_key, level: "WARN", event_key: "daily_context_full_run_stale_child_retry_enqueued", message: "Daily Context Full Run closed one stale child and enqueued one same-stage retry after sidecar recovery failed", data_json: JSON.stringify({ stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, cleanup, version:SYSTEM_VERSION }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
+  await pg.end({ timeout: 1 }).catch(() => {});
   return output;
 }
 
