@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.2.0-postgres-rewire";
+const VERSION = "alphadog-v2-daily-schedule-v0.2.1-postgres-rewire-redeploy";
 const JOB_KEY = "daily-team-schedule-spot";
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON"];
 
