@@ -100,9 +100,9 @@ function retentionDatesToKeep(now = new Date(), extraDates = []) {
 
 async function pruneDailyLineupRetention(pg, extraDates = []) {
   const keepDates = retentionDatesToKeep(new Date(), extraDates);
-  const currentPrune = await pg`DELETE FROM daily.lineups_current WHERE official_date IS NULL OR official_date NOT IN ${pg(keepDates)}`;
-  const batchPrune = await pg`DELETE FROM daily.lineups_batches WHERE created_at IS NULL OR substr(created_at::text, 1, 10) NOT IN ${pg(keepDates)}`;
-  const catcherPrune = await pg`DELETE FROM daily.catcher_context_current WHERE official_date IS NULL OR official_date NOT IN ${pg(keepDates)}`;
+  const currentPrune = await pg.unsafe(`DELETE FROM daily.lineups_current WHERE official_date IS NULL OR official_date <> ALL($1::text[])`, [keepDates]);
+  const batchPrune = await pg.unsafe(`DELETE FROM daily.lineups_batches WHERE created_at IS NULL OR substr(created_at::text, 1, 10) <> ALL($1::text[])`, [keepDates]);
+  const catcherPrune = await pg.unsafe(`DELETE FROM daily.catcher_context_current WHERE official_date IS NULL OR official_date <> ALL($1::text[])`, [keepDates]);
   return {
     retention_prune_enabled: true,
     retention_window: RETENTION_WINDOW_LABEL,
