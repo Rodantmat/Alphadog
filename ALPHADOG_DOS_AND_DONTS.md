@@ -166,7 +166,23 @@ architecture context.
   specific error (`column "X" is of type Y but expression is of type Z`, or similar) the next
   time that exact code path executes.
 
-### Testing / verification discipline
+### Standing rule for the next phase of work (board, daily context, market): rewiring + efficiency, not backfill
+- Verified directly before this rule was written: `daily.lineups_current`, `daily.probable_pitchers`,
+  `daily.umpire_context_current`, `market.historical_props_2025`, and
+  `market.prizepicks_board_current` already hold real, live data on Postgres from prior sessions.
+  **Most of the workers ahead in these three layers need rewiring (D1 syntax → Postgres syntax,
+  same proven logic) far more than they need backfill.** Always check whether the target table
+  already has real data before assuming a backfill step is needed.
+- **Apply the tick-efficiency lessons from PART 4 proactively on every new worker from its first
+  version, not as a bug fixed later**: read `chunk_size_players`/`max_tick_runtime_ms`/
+  `promote_rows_per_tick` from live `config.worker_tick_settings` via `getWorkerTickConfig()` from
+  day one; never let a hardcoded constant serve as a `cap()`/`Math.min()` ceiling when the real
+  ceiling should come from live config; always check the live config value before any value frozen
+  into a database row at batch-creation time in a fallback chain. Proven, sane starting defaults:
+  chunk size 750 for per-player-fetch workers, 100 for splits-style workers, 150-300 for
+  compute-heavy tier/HP workers, `max_tick_runtime_ms = 90000` (wall-clock, fetch-bound) throughout.
+
+
 - The single most reliable verification pattern used throughout: **corrupt-and-fix testing**.
   Deliberately change or delete a real row directly in Postgres (e.g., flip a stadium's
   `roof_type`, change a player's `current_team_id` to simulate a trade, delete a stadium row
