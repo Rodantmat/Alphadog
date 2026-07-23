@@ -1187,11 +1187,10 @@ async function runBaseBackfillTick(env, sql, input, startedAtMs) {
   if (!lock.ok) return { ok: true, data_ok: false, status: "BATCH_LOCK_BUSY", batch_id: batchId, run_id: runId, lock };
   try {
     const players = state.players;
-    const cursorOffset = asInt(state.cursor.current_player_offset, 0);
-    const chunkSize = asInt(state.batch.chunk_size_players, DEFAULT_CHUNK_SIZE_PLAYERS);
-    const maxRows = asInt(state.batch.max_rows_per_tick, DEFAULT_MAX_ROWS_PER_TICK);
-    const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
     const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS, DEFAULT_PROMOTE_ROWS_PER_TICK);
+    const chunkSize = asInt(state.batch.chunk_size_players, DEFAULT_CHUNK_SIZE_PLAYERS);
+    const maxRows = asInt(tickConfig.promote_rows_per_tick, asInt(state.batch.max_rows_per_tick, DEFAULT_MAX_ROWS_PER_TICK));
+    const fetchTimeoutMs = asInt(env.FETCH_TIMEOUT_MS, DEFAULT_FETCH_TIMEOUT_MS);
     const maxTickRuntimeMs = tickConfig.max_tick_runtime_ms;
     const grade = "BASE_PASS";
 
