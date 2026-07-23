@@ -1296,8 +1296,7 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
   const insertStart = Date.now();
   for (let i = writeOffset; i < writeEndExclusive; i += INSERT_CHUNK_SIZE) {
     const chunk = rows.slice(i, Math.min(i + INSERT_CHUNK_SIZE, writeEndExclusive)).map(r => ({ ...r, stage_row_id: `${batchId}|${r.prepared_row_id}` }));
-    await env.pg`INSERT INTO score.board_prepared_stage ${env.pg(chunk, ...STAGE_COLS)}
-      ON CONFLICT (stage_row_id) DO UPDATE SET
+    await pgBulkInsert(env.pg, "score.board_prepared_stage", STAGE_COLS, chunk, `ON CONFLICT (stage_row_id) DO UPDATE SET
       prepared_row_id=excluded.prepared_row_id, prep_batch_id=excluded.prep_batch_id, source_key=excluded.source_key,
       source_row_id=excluded.source_row_id, source_event_id=excluded.source_event_id, projection_id=excluded.projection_id,
       player_name=excluded.player_name, player_name_normalized=excluded.player_name_normalized, resolved_player_id=excluded.resolved_player_id,
@@ -1308,7 +1307,7 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
       source_start_time=excluded.source_start_time, source_time_status=excluded.source_time_status, start_time_confidence=excluded.start_time_confidence,
       matchup_status=excluded.matchup_status, matchup_confidence=excluded.matchup_confidence, source_pickable=excluded.source_pickable,
       pickable_safe=excluded.pickable_safe, prep_status=excluded.prep_status, block_reason=excluded.block_reason,
-      raw_source_json=excluded.raw_source_json, row_payload_json=excluded.row_payload_json, updated_at=now()`;
+      raw_source_json=excluded.raw_source_json, row_payload_json=excluded.row_payload_json, updated_at=now()`);
   }
   timing.insert_ms = Date.now() - insertStart;
 
