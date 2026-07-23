@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.2.0-postgres-rewire";
+const VERSION = "alphadog-v2-daily-player-availability-v0.2.1-postgres-rewire-redeploy";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
