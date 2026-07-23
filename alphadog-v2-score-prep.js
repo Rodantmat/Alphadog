@@ -388,17 +388,17 @@ async function recoverResumeBatchForRequest(env, input) {
   const requestId = input && input.request_id ? String(input.request_id) : "";
   if (!requestId) return null;
   try {
-    const row = await firstRow(env.SCORE_DB, `
+    const row = await firstRow(env.pg, `
 SELECT
   b.batch_id,
   COUNT(s.stage_row_id) AS stage_rows,
   MAX(s.updated_at) AS max_stage_updated_at,
   MAX(b.updated_at) AS batch_updated_at
-FROM score_board_prep_batches b
-LEFT JOIN score_board_prepared_stage s ON s.prep_batch_id = b.batch_id
+FROM score.board_prep_batches b
+LEFT JOIN score.board_prepared_stage s ON s.prep_batch_id = b.batch_id
 WHERE b.worker_name = ?
   AND b.status IN ('PARTIAL_CONTINUE_BOARD_PREP_WRITE','PREPARED_ROWS_BUILT','RUNNING_BOARD_PREP_ENRICHMENT','PARTIAL_CONTINUE_BOARD_PREP_PROMOTE')
-  AND b.source_json LIKE ?
+  AND b.source_json::text LIKE ?
 GROUP BY b.batch_id
 HAVING COUNT(s.stage_row_id) > 0
 ORDER BY COUNT(s.stage_row_id) DESC, MAX(s.updated_at) DESC, MAX(b.updated_at) DESC
