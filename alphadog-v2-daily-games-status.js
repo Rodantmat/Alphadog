@@ -169,7 +169,7 @@ async function readPlayerTeamMap(pg, teamDir) {
       COALESCE(pa.mlb_team_id, p.current_mlb_team_id, t.mlb_team_id) AS mlb_team_id,
       t.abbreviation AS abbreviation
     FROM ref.player_aliases pa
-    LEFT JOIN ref.players p ON p.player_id=pa.player_id
+    LEFT JOIN ref.players p ON p.player_id::text=pa.player_id
     LEFT JOIN ref.teams t ON t.team_id=COALESCE(pa.team_id, p.current_team_id, p.primary_team_id)
     WHERE COALESCE(pa.active,1)=1 AND COALESCE(p.active,1)=1
     LIMIT 20000`;
