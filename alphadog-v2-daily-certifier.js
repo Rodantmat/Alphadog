@@ -180,7 +180,7 @@ async function purgeExpiredGameLayers(pg, expiredGamePks) {
   const perTable = {};
   for (const t of tables) {
     try {
-      const res = await pg.unsafe(`DELETE FROM ${t} WHERE game_pk = ANY($1::bigint[])`, [expiredGamePks]);
+      const res = await pg.unsafe(`DELETE FROM ${t} WHERE game_pk = ANY($1::bigint[])`, [pgArrayLiteral(expiredGamePks, false)]);
       perTable[t] = res && res.count !== undefined ? res.count : null;
     } catch (e) { perTable[t] = { error: String(e && e.message ? e.message : e) }; }
   }
