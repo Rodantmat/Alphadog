@@ -1776,7 +1776,7 @@ export default {
           return jsonResponse(output);
         } catch (err) {
           lastErr = err;
-          if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+          if (env.pg) await env.pg.end().catch(() => {});
           const msg = String(err && err.message ? err.message : err);
           const isTransientConnectionError = /CONNECTION_CLOSED|ECONNRESET|connection.*closed/i.test(msg);
           if (attempt === 0 && isTransientConnectionError) {
