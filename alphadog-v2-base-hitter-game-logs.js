@@ -3079,7 +3079,7 @@ async function runDeltaUpdateTick(env, sql, input, inputJson) {
 
   const tickConfigDelta = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS);
   const maxRequests = cap(inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || tickConfigDelta.chunk_size_players, 1, 2000);
-  const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
+  const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || tickConfigDelta.promote_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, 5000);
   const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || tickConfigDelta.max_tick_runtime_ms, 8000, 120000);
   const tickStartedAtMs = Date.now();
   let sourceRequestCount = 0, sourceSuccessCount = 0, sourceNoDataCount = 0, sourceErrorCount = 0, rowsStagedThisTick = 0;
