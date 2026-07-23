@@ -201,7 +201,42 @@ architecture context.
 
 ---
 
-## PART 2 — DON'TS (real mistakes, false conclusions, wasted time)
+### Real finding from the immediately following session: intermittent Hyperdrive `CONNECTION_CLOSED`, tied to per-tick workload weight/duration, not to driver choice or config
+- A later worker (`score-prep`, part of the board full-run) hit a real, intermittent
+  `CONNECTION_CLOSED` failure that was ruled out across three different configurations
+  (postgres.js with `prepare:false`, node-postgres, postgres.js with `prepare:true`) — all failed
+  at the same early point, including on completely unattended, naturally-spaced cron ticks with no
+  testing pressure. Cloudflare's own engineers reportedly confirmed this exact error is a known,
+  accepted-rate issue on their Hyperdrive platform for some class of connections.
+- **The real, identifiable difference from every worker built in PART 4 of this document**:
+  `score-prep`'s per-tick workload does a full reference/calendar reload plus an ~8,500-row
+  resolve plus a chunked write, REPEATED on every single continuation tick — a much heavier,
+  longer-held connection per tick than any worker in this migration so far (which kept each tick
+  to a bounded slice: load a cursor, fetch a small bounded batch, one bulk insert, done — see the
+  "Chunking / multi-tick continuation" rule earlier in this PART). No worker built through PART 4
+  encountered this failure, which is consistent with (though not proof of) a connection-duration-
+  or workload-weight-sensitive failure mode: the longer a single tick holds a Hyperdrive
+  connection open and the more total data it moves through it, the more exposure to this
+  intermittent failure, independent of anything being wrong in the code itself.
+- **Concrete mitigation for the next phase's workers, before this failure recurs there too**:
+  1. **Cache/memoize reference or calendar data ACROSS ticks within a single full run, do not
+     reload it fresh on every tick** if it doesn't change tick-to-tick — load it once (e.g. into
+     the batch's own state row) rather than once per continuation.
+  2. **Keep every tick's total DB workload genuinely small and bounded**, the same discipline as
+     the proven chunk sizes elsewhere in this document (750/100/150-300) — this is also a real
+     mitigation against a connection-duration-sensitive failure mode, not just a throughput
+     consideration.
+  3. **Add automatic requeue-on-failure for standalone (non-chain) full-run jobs**, mirroring the
+     existing `board_full_run` chain's `retry_count` logic, so a transient connection blip doesn't
+     require a human to manually re-trigger it every time — a real, small, targeted fix, not a
+     rewrite of the 20,000-line orchestrator's retry logic.
+- **What this does NOT mean**: it does not mean postgres.js, `prepare:false`, or the connection
+  pattern used throughout this document is wrong — three different driver/config combinations all
+  hit the identical failure at the identical point, which is strong evidence AGAINST driver/config
+  being the cause. Do not re-litigate the driver choice over this; the real fix is workload shape,
+  not driver choice.
+
+
 
 ### The single biggest mistake of this migration
 - **Chasing "Network connection lost" as a real connection/network problem for HOURS when it was
