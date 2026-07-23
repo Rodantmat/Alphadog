@@ -178,12 +178,12 @@ async function purgeExpiredGameLayers(pg, expiredGamePks) {
   if (!expiredGamePks.length) return { purged_game_count: 0, per_table: {} };
   const tables = ["daily.probable_pitchers", "daily.lineups_current", "daily.player_availability_current", "daily.game_weather_current", "daily.bullpen_availability_current", "daily.team_schedule_spot_current", "daily.umpire_context_current"];
   const perTable = {};
-  for (const t of tables) {
+  await Promise.all(tables.map(async t => {
     try {
       const res = await pg.unsafe(`DELETE FROM ${t} WHERE game_pk = ANY($1::bigint[])`, [pgArrayLiteral(expiredGamePks, false)]);
       perTable[t] = res && res.count !== undefined ? res.count : null;
     } catch (e) { perTable[t] = { error: String(e && e.message ? e.message : e) }; }
-  }
+  }));
   return { purged_game_count: expiredGamePks.length, per_table: perTable };
 }
 
