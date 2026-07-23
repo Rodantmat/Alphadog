@@ -276,16 +276,17 @@ async function runCertifier(env, input) {
     }
     const notYetStartedDates = [...new Set(preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk)).map(r => r.official_date).filter(Boolean))];
     const boardWindowDates = [...new Set([...notYetStartedDates, ptDate(0), ptDate(1)])].sort();
+    const boardWindowDatesLiteral = pgArrayLiteral(boardWindowDates, true);
 
     await pg.unsafe(
       `INSERT INTO context_cert.readiness_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),now())`,
       [batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_context_readiness_refresh_window", "running", boardWindowDates[0], boardWindowDates[boardWindowDates.length - 1], startedAt]
     );
 
-    await pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date <> ALL($1::text[])`, [boardWindowDates]);
-    await pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date <> ALL($1::text[])`, [boardWindowDates]);
-    await pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]);
-    await pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date = ANY($1::text[])`, [boardWindowDates]);
+    await pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date <> ALL($1::text[])`, [boardWindowDatesLiteral]);
+    await pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date <> ALL($1::text[])`, [boardWindowDatesLiteral]);
+    await pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]);
+    await pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]);
 
     const prepared = preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk));
     const skippedAlreadyStartedRows = preparedAllDates.length - prepared.length;
