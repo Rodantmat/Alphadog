@@ -1145,7 +1145,7 @@ export default {
 
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
-      const schema = env.MARKET_DB ? await validateUnderdogSchema(env) : { ok: false, reason: "missing_MARKET_DB_binding" };
+      const schema = env.HYPERDRIVE ? await validateUnderdogSchema(env) : { ok: false, reason: "missing_HYPERDRIVE_binding" };
       return jsonResponse(baseIdentity(env, {
         route: "/diagnostic",
         input_echo_safe: {
