@@ -1,7 +1,7 @@
-import { Client } from "pg";
+import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.4.1-node-postgres-migration-redeploy";
+const VERSION = "alphadog-v2-score-prep-v0.5.0-simplified-postgres-js-prepare-true";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
