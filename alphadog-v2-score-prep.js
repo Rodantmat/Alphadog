@@ -588,7 +588,7 @@ ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
   for (const r of rows) {
     const rec = {
       game_pk: Number(r.game_pk),
-      official_date: safeStr(r.official_date),
+      official_date: dateOnlyFromAnyTime(r.official_date) || safeStr(r.official_date),
       game_time_utc: safeStr(r.game_time_utc),
       home_team_name: safeStr(r.home_team_name),
       away_team_name: safeStr(r.away_team_name),
