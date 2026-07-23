@@ -917,8 +917,7 @@ async function runHistoricalPropsProbe(env, input) {
 async function safeProbe(env, input = {}) {
   const schema = await ensureSleeperSchema(env);
   const endpoint = configuredEndpoint(env, input);
-  const auth = authConfig(env);
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+  const auth = await authConfig(env);
   const secrets = valuePresence(env, REQUIRED_SECRET_KEYS);
   const cfg = valuePresence(env, CONFIG_KEYS);
   const effective_config_defaults_used = {
