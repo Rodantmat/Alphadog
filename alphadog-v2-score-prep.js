@@ -1774,6 +1774,7 @@ export default {
           error: err && err.message ? err.message : String(err),
           timestamp_utc: nowIso()
         }, 500);
+      }
     }
 
     return jsonResponse({
