@@ -123,6 +123,7 @@ def make_config(worker_name, include_services=False):
         "alphadog-v2-prizepicks-github-board",
         "alphadog-v2-parlay-sleeper-board",
         "alphadog-v2-parlay-underdog-board",
+        "alphadog-v2-score-prep",
     ):
         # Postgres cutover (static-full-run chain, stages 1-4 so far): these workers now read/
         # write DigitalOcean Postgres via Hyperdrive instead of their old D1 tables. Same reason
