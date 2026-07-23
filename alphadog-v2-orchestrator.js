@@ -12890,10 +12890,13 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     return output;
   }
 
-  const childRows = await all(env.CONTROL_DB,
-    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
-    row.request_id, row.chain_id
-  );
+  const pgChildRead = pgControl(env);
+  let childRows;
+  try {
+    childRows = await pgChildRead`SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control.job_queue WHERE parent_request_id=${row.request_id} AND chain_id=${row.chain_id} ORDER BY created_at ASC`;
+  } finally {
+    await pgChildRead.end({ timeout: 1 }).catch(() => {});
+  }
   const stageReports = [];
 
   for (let i = 0; i < DAILY_CONTEXT_FULL_RUN_STAGES.length; i++) {
