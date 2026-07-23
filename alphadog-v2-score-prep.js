@@ -1482,8 +1482,8 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   const cleanupStart = Date.now();
   if (totals.prepared_rows > 0 && totals.prepared_rows > 0) {
     await updatePrepBatchCheckpoint(env, batchId, "CLEANING_OLD_PREP_BATCHES", "SCORE_BOARD_PREP_CLEANING_OLD_BATCHES_AFTER_VERIFY", { prepared_rows: totals.prepared_rows, preserve_current_until_verified: true });
-    await env.pg.query("DELETE FROM score.board_prepared_current WHERE prep_batch_id <> $1", [batchId]);
-    await env.pg.query("DELETE FROM score.board_prepared_stage WHERE prep_batch_id <> $1", [batchId]);
+    await env.pg.unsafe("DELETE FROM score.board_prepared_current WHERE prep_batch_id <> $1", [batchId]);
+    await env.pg.unsafe("DELETE FROM score.board_prepared_stage WHERE prep_batch_id <> $1", [batchId]);
   }
   timing.cleanup_old_batches_ms = Date.now() - cleanupStart;
 
