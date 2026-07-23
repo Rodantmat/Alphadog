@@ -411,148 +411,22 @@ LIMIT 1`, [WORKER_NAME, `%${requestId}%`]);
 }
 
 async function ensureScoreTables(env) {
-  // CRITICAL FIX (root-caused via direct log-timestamp evidence, per Rodolfo's explicit
-  // instruction to research rather than guess): this function previously issued 9 SEPARATE,
-  // SEQUENTIAL D1 round-trips (4 CREATE TABLE + 5 CREATE INDEX statements), each its own
-  // await'd .run() call. It was also called THREE separate times per invocation (here, from
-  // markPrepBatchRunning, and from writePreparedRows) - roughly 27 sequential round-trips for
-  // schema setup alone, on every single tick, even though the schema never changes after the
-  // first successful run ever. Confirmed via real log timestamps: a ~14 second gap existed
-  // between orchestrator dispatch and score-prep's own first logged action, before any real
-  // work (archival, row processing) even began.
-  // Real fix, matching Cloudflare's own documented best practice ("bundle multiple statements
-  // into a single call... eliminating round trips") and the same batching pattern already used
-  // successfully elsewhere in this codebase: issue all CREATE TABLE/INDEX statements as ONE
-  // single .batch() call instead of 9 sequential ones.
-  await env.SCORE_DB.batch([
-    env.SCORE_DB.prepare(`
-CREATE TABLE IF NOT EXISTS score_board_prep_batches (
-  batch_id TEXT PRIMARY KEY,
-  worker_name TEXT,
-  worker_version TEXT,
-  mode TEXT,
-  status TEXT,
-  certification_status TEXT,
-  certification_grade TEXT,
-  prizepicks_rows INTEGER DEFAULT 0,
-  sleeper_rows INTEGER DEFAULT 0,
-  underdog_rows INTEGER DEFAULT 0,
-  prepared_rows INTEGER DEFAULT 0,
-  pickable_safe_rows INTEGER DEFAULT 0,
-  blocked_rows INTEGER DEFAULT 0,
-  unresolved_player_rows INTEGER DEFAULT 0,
-  matchup_unresolved_rows INTEGER DEFAULT 0,
-  started_rows INTEGER DEFAULT 0,
-  source_json TEXT,
-  certification_json TEXT,
-  started_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  finished_at TEXT,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-)`),
-    env.SCORE_DB.prepare(`
-CREATE TABLE IF NOT EXISTS score_board_prepared_current (
-  prepared_row_id TEXT PRIMARY KEY,
-  prep_batch_id TEXT NOT NULL,
-  source_key TEXT NOT NULL,
-  source_row_id TEXT,
-  source_event_id TEXT,
-  projection_id TEXT,
-  player_name TEXT,
-  player_name_normalized TEXT,
-  resolved_player_id INTEGER,
-  resolved_mlb_player_id INTEGER,
-  player_match_status TEXT,
-  player_match_confidence TEXT,
-  team TEXT,
-  opponent TEXT,
-  team_full_name TEXT,
-  opponent_full_name TEXT,
-  canonical_prop_key TEXT,
-  source_prop_name TEXT,
-  line_value REAL,
-  official_game_pk INTEGER,
-  official_game_time_utc TEXT,
-  official_date TEXT,
-  source_start_time TEXT,
-  source_time_status TEXT,
-  start_time_confidence TEXT,
-  matchup_status TEXT,
-  matchup_confidence TEXT,
-  source_pickable INTEGER,
-  pickable_safe INTEGER,
-  prep_status TEXT,
-  block_reason TEXT,
-  raw_source_json TEXT,
-  row_payload_json TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-)`),
-    env.SCORE_DB.prepare(`
-CREATE TABLE IF NOT EXISTS score_board_unresolved_player_log (
-  log_id TEXT PRIMARY KEY,
-  batch_id TEXT,
-  source_key TEXT,
-  player_name TEXT,
-  player_name_normalized TEXT,
-  canonical_prop_key TEXT,
-  match_status TEXT,
-  official_date TEXT,
-  logged_at TEXT DEFAULT CURRENT_TIMESTAMP
-)`),
-    env.SCORE_DB.prepare("CREATE INDEX IF NOT EXISTS idx_score_board_unresolved_player_log_date ON score_board_unresolved_player_log(logged_at)"),
-    env.SCORE_DB.prepare(`
-CREATE TABLE IF NOT EXISTS score_board_prepared_stage (
-  stage_row_id TEXT PRIMARY KEY,
-  prepared_row_id TEXT NOT NULL,
-  prep_batch_id TEXT NOT NULL,
-  source_key TEXT NOT NULL,
-  source_row_id TEXT,
-  source_event_id TEXT,
-  projection_id TEXT,
-  player_name TEXT,
-  player_name_normalized TEXT,
-  resolved_player_id INTEGER,
-  resolved_mlb_player_id INTEGER,
-  player_match_status TEXT,
-  player_match_confidence TEXT,
-  team TEXT,
-  opponent TEXT,
-  team_full_name TEXT,
-  opponent_full_name TEXT,
-  canonical_prop_key TEXT,
-  source_prop_name TEXT,
-  line_value REAL,
-  official_game_pk INTEGER,
-  official_game_time_utc TEXT,
-  official_date TEXT,
-  source_start_time TEXT,
-  source_time_status TEXT,
-  start_time_confidence TEXT,
-  matchup_status TEXT,
-  matchup_confidence TEXT,
-  source_pickable INTEGER,
-  pickable_safe INTEGER,
-  prep_status TEXT,
-  block_reason TEXT,
-  raw_source_json TEXT,
-  row_payload_json TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-)`),
-    env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_stage_batch ON score_board_prepared_stage(prep_batch_id)`),
-    env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_stage_batch_source ON score_board_prepared_stage(prep_batch_id, source_key)`),
-    env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_source ON score_board_prepared_current(source_key, pickable_safe)`),
-    env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_game ON score_board_prepared_current(official_date, official_game_pk)`),
-    env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_player_prop ON score_board_prepared_current(resolved_mlb_player_id, canonical_prop_key)`)
-  ]);
+  await env.pg.unsafe("CREATE TABLE IF NOT EXISTS score.board_prep_batches (batch_id TEXT PRIMARY KEY, worker_name TEXT, worker_version TEXT, mode TEXT, status TEXT, certification_status TEXT, certification_grade TEXT, prizepicks_rows INTEGER DEFAULT 0, sleeper_rows INTEGER DEFAULT 0, underdog_rows INTEGER DEFAULT 0, prepared_rows INTEGER DEFAULT 0, pickable_safe_rows INTEGER DEFAULT 0, blocked_rows INTEGER DEFAULT 0, unresolved_player_rows INTEGER DEFAULT 0, matchup_unresolved_rows INTEGER DEFAULT 0, started_rows INTEGER DEFAULT 0, source_json JSONB, certification_json JSONB, started_at TIMESTAMPTZ DEFAULT now(), finished_at TIMESTAMPTZ, updated_at TIMESTAMPTZ DEFAULT now())");
+  await env.pg.unsafe("CREATE TABLE IF NOT EXISTS score.board_prepared_current (prepared_row_id TEXT PRIMARY KEY, prep_batch_id TEXT NOT NULL, source_key TEXT NOT NULL, source_row_id TEXT, source_event_id TEXT, projection_id TEXT, player_name TEXT, player_name_normalized TEXT, resolved_player_id BIGINT, resolved_mlb_player_id BIGINT, player_match_status TEXT, player_match_confidence TEXT, team TEXT, opponent TEXT, team_full_name TEXT, opponent_full_name TEXT, canonical_prop_key TEXT, source_prop_name TEXT, line_value DOUBLE PRECISION, official_game_pk BIGINT, official_game_time_utc TIMESTAMPTZ, official_date DATE, source_start_time TIMESTAMPTZ, source_time_status TEXT, start_time_confidence TEXT, matchup_status TEXT, matchup_confidence TEXT, source_pickable INTEGER, pickable_safe INTEGER, prep_status TEXT, block_reason TEXT, raw_source_json JSONB, row_payload_json JSONB, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now())");
+  await env.pg.unsafe("CREATE TABLE IF NOT EXISTS score.board_unresolved_player_log (log_id TEXT PRIMARY KEY, batch_id TEXT, source_key TEXT, player_name TEXT, player_name_normalized TEXT, canonical_prop_key TEXT, match_status TEXT, official_date TEXT, logged_at TIMESTAMPTZ DEFAULT now())");
+  await env.pg.unsafe("CREATE INDEX IF NOT EXISTS idx_score_board_unresolved_player_log_date ON score.board_unresolved_player_log(logged_at)");
+  await env.pg.unsafe("CREATE TABLE IF NOT EXISTS score.board_prepared_stage (stage_row_id TEXT PRIMARY KEY, prepared_row_id TEXT NOT NULL, prep_batch_id TEXT NOT NULL, source_key TEXT NOT NULL, source_row_id TEXT, source_event_id TEXT, projection_id TEXT, player_name TEXT, player_name_normalized TEXT, resolved_player_id BIGINT, resolved_mlb_player_id BIGINT, player_match_status TEXT, player_match_confidence TEXT, team TEXT, opponent TEXT, team_full_name TEXT, opponent_full_name TEXT, canonical_prop_key TEXT, source_prop_name TEXT, line_value DOUBLE PRECISION, official_game_pk BIGINT, official_game_time_utc TEXT, official_date TEXT, source_start_time TEXT, source_time_status TEXT, start_time_confidence TEXT, matchup_status TEXT, matchup_confidence TEXT, source_pickable INTEGER, pickable_safe INTEGER, prep_status TEXT, block_reason TEXT, raw_source_json JSONB, row_payload_json JSONB, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now())");
+  await env.pg.unsafe("CREATE INDEX IF NOT EXISTS idx_score_board_prepared_stage_batch ON score.board_prepared_stage(prep_batch_id)");
+  await env.pg.unsafe("CREATE INDEX IF NOT EXISTS idx_score_board_prepared_stage_batch_source ON score.board_prepared_stage(prep_batch_id, source_key)");
+  await env.pg.unsafe("CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_source ON score.board_prepared_current(source_key, pickable_safe)");
+  await env.pg.unsafe("CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_game ON score.board_prepared_current(official_date, official_game_pk)");
+  await env.pg.unsafe("CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_player_prop ON score.board_prepared_current(resolved_mlb_player_id, canonical_prop_key)");
 
-  // v0.2.21: safe migration for the already-existing production table. This PRAGMA check is
-  // real, necessary work (not schema creation) and stays as its own call.
   try {
-    const existingCols = await allRows(env.SCORE_DB, "PRAGMA table_info(score_board_prep_batches)");
-    const hasUnderdogCol = existingCols.some(c => String(c.name) === "underdog_rows");
+    const existingCols = await allRows(env.pg, "SELECT column_name FROM information_schema.columns WHERE table_schema='score' AND table_name='board_prep_batches'");
+    const hasUnderdogCol = existingCols.some(c => String(c.column_name) === "underdog_rows");
     if (!hasUnderdogCol) {
-      await env.SCORE_DB.prepare("ALTER TABLE score_board_prep_batches ADD COLUMN underdog_rows INTEGER DEFAULT 0").run();
+      await env.pg.unsafe("ALTER TABLE score.board_prep_batches ADD COLUMN underdog_rows INTEGER DEFAULT 0");
     }
   } catch (_) { /* best-effort migration guard */ }
 }
