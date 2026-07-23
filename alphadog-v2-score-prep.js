@@ -1269,72 +1269,36 @@ function summarizeSleeperEvents(rows) {
   return Array.from(m.values()).map(s => ({ ...s, matchup_statuses: Array.from(s.matchup_statuses).join(",") })).sort((a, b) => b.rows - a.rows);
 }
 
+const STAGE_COLS = ["stage_row_id", "prepared_row_id", "prep_batch_id", "source_key", "source_row_id", "source_event_id", "projection_id", "player_name", "player_name_normalized", "resolved_player_id", "resolved_mlb_player_id", "player_match_status", "player_match_confidence", "team", "opponent", "team_full_name", "opponent_full_name", "canonical_prop_key", "source_prop_name", "line_value", "official_game_pk", "official_game_time_utc", "official_date", "source_start_time", "source_time_status", "start_time_confidence", "matchup_status", "matchup_confidence", "source_pickable", "pickable_safe", "prep_status", "block_reason", "raw_source_json", "row_payload_json"];
+
 async function writePreparedRows(env, batchId, rows, bySource, startedAt, input, timing = {}) {
   const writeStart = Date.now();
   const writeOffset = Math.max(0, Number(input.score_prep_write_offset ?? input.write_offset ?? 0) || 0);
   const writeEndExclusive = Math.min(rows.length, writeOffset + WRITE_ROWS_PER_INVOCATION);
   const partialWrite = writeEndExclusive < rows.length;
-  // REAL FIX: ensureScoreTables already ran once at the true start of the invocation - removed
-  // this redundant duplicate call (9 more sequential/batched D1 round-trips for no reason).
-
-  const insertSql = `INSERT OR REPLACE INTO score_board_prepared_stage (
-    stage_row_id, prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
-    player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
-    player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
-    canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
-    source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
-    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
   await updatePrepBatchCheckpoint(env, batchId, "WRITING_REPLACEMENT_ROWS", "SCORE_BOARD_PREP_WRITING_REPLACEMENT_ROWS", { attempted_rows: rows.length, write_offset: writeOffset, write_end_exclusive: writeEndExclusive, write_rows_per_invocation: WRITE_ROWS_PER_INVOCATION, insert_chunk_size: INSERT_CHUNK_SIZE, preserve_current_until_verified: true });
   const insertStart = Date.now();
   for (let i = writeOffset; i < writeEndExclusive; i += INSERT_CHUNK_SIZE) {
-    const chunk = rows.slice(i, Math.min(i + INSERT_CHUNK_SIZE, writeEndExclusive));
-    const statements = chunk.map(r => env.SCORE_DB.prepare(insertSql).bind(
-      `${batchId}|${r.prepared_row_id}`,
-      r.prepared_row_id,
-      r.prep_batch_id,
-      r.source_key,
-      r.source_row_id,
-      r.source_event_id,
-      r.projection_id,
-      r.player_name,
-      r.player_name_normalized,
-      r.resolved_player_id,
-      r.resolved_mlb_player_id,
-      r.player_match_status,
-      r.player_match_confidence,
-      r.team,
-      r.opponent,
-      r.team_full_name,
-      r.opponent_full_name,
-      r.canonical_prop_key,
-      r.source_prop_name,
-      r.line_value,
-      r.official_game_pk,
-      r.official_game_time_utc,
-      r.official_date,
-      r.source_start_time,
-      r.source_time_status,
-      r.start_time_confidence,
-      r.matchup_status,
-      r.matchup_confidence,
-      r.source_pickable,
-      r.pickable_safe,
-      r.prep_status,
-      r.block_reason,
-      r.raw_source_json,
-      r.row_payload_json
-    ));
-    await env.SCORE_DB.batch(statements);
+    const chunk = rows.slice(i, Math.min(i + INSERT_CHUNK_SIZE, writeEndExclusive)).map(r => ({ ...r, stage_row_id: `${batchId}|${r.prepared_row_id}` }));
+    await env.pg`INSERT INTO score.board_prepared_stage ${env.pg(chunk, ...STAGE_COLS)}
+      ON CONFLICT (stage_row_id) DO UPDATE SET
+      prepared_row_id=excluded.prepared_row_id, prep_batch_id=excluded.prep_batch_id, source_key=excluded.source_key,
+      source_row_id=excluded.source_row_id, source_event_id=excluded.source_event_id, projection_id=excluded.projection_id,
+      player_name=excluded.player_name, player_name_normalized=excluded.player_name_normalized, resolved_player_id=excluded.resolved_player_id,
+      resolved_mlb_player_id=excluded.resolved_mlb_player_id, player_match_status=excluded.player_match_status, player_match_confidence=excluded.player_match_confidence,
+      team=excluded.team, opponent=excluded.opponent, team_full_name=excluded.team_full_name, opponent_full_name=excluded.opponent_full_name,
+      canonical_prop_key=excluded.canonical_prop_key, source_prop_name=excluded.source_prop_name, line_value=excluded.line_value,
+      official_game_pk=excluded.official_game_pk, official_game_time_utc=excluded.official_game_time_utc, official_date=excluded.official_date,
+      source_start_time=excluded.source_start_time, source_time_status=excluded.source_time_status, start_time_confidence=excluded.start_time_confidence,
+      matchup_status=excluded.matchup_status, matchup_confidence=excluded.matchup_confidence, source_pickable=excluded.source_pickable,
+      pickable_safe=excluded.pickable_safe, prep_status=excluded.prep_status, block_reason=excluded.block_reason,
+      raw_source_json=excluded.raw_source_json, row_payload_json=excluded.row_payload_json, updated_at=now()`;
   }
   timing.insert_ms = Date.now() - insertStart;
 
-  // v0.2.5 performance fix: v0.2.4 proved the final DB-truth contract but
-  // made a full SELECT * after insert. Pulling 8k rows plus raw JSON payloads
-  // caused multi-minute runs. Keep DB-truth, but verify with aggregate SQL only.
   const verifyStart = Date.now();
-  const totalRow = await firstRow(env.SCORE_DB, `
+  const totalRow = await firstRow(env.pg, `
 SELECT
   COUNT(*) AS prepared_rows,
   SUM(CASE WHEN source_key = 'prizepicks' THEN 1 ELSE 0 END) AS prizepicks_rows,
@@ -1347,30 +1311,31 @@ SELECT
   SUM(CASE WHEN block_reason LIKE '%started_or_expired_by_official_time%' THEN 1 ELSE 0 END) AS started_rows,
   SUM(CASE WHEN block_reason LIKE '%source_unpickable_flag%' THEN 1 ELSE 0 END) AS source_unpickable_rows,
   SUM(CASE WHEN block_reason LIKE '%player_team_conflict%' THEN 1 ELSE 0 END) AS player_team_conflict_rows
-FROM score_board_prepared_stage
+FROM score.board_prepared_stage
 WHERE prep_batch_id = ?`, [batchId]);
 
   const verifiedPreparedRows = Number(totalRow && totalRow.prepared_rows || 0);
 
-  // Real, persistent diagnostic added per explicit request: this system previously only ever
-  // computed an aggregate unresolved_player_rows COUNT, with the actual player names never
-  // retained anywhere - confirmed via real historical data showing this has genuinely recurred
-  // many times (17, 32, 97, 29, 25 unresolved rows across past batches) with no way to
-  // investigate which real players were involved after the fact. Log the actual real names here,
-  // at the moment of detection, before the stage table gets cleared - this is what makes a
-  // future occurrence diagnosable instead of just a number.
   const unresolvedCountThisRun = Number(totalRow && totalRow.unresolved_player_rows || 0);
   if (unresolvedCountThisRun > 0) {
-    const unresolvedRows = await allRows(env.SCORE_DB, `
+    const unresolvedRows = await allRows(env.pg, `
 SELECT DISTINCT source_key, player_name, player_name_normalized, canonical_prop_key, official_date
-FROM score_board_prepared_stage
+FROM score.board_prepared_stage
 WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
-    const logStmts = unresolvedRows.map(r => env.SCORE_DB.prepare(
-      `INSERT INTO score_board_unresolved_player_log (log_id, batch_id, source_key, player_name, player_name_normalized, canonical_prop_key, match_status, official_date, logged_at) VALUES (?, ?, ?, ?, ?, ?, 'unresolved', ?, CURRENT_TIMESTAMP)`
-    ).bind(`unresolved_${batchId}_${r.source_key}_${(r.player_name || "").slice(0, 40)}_${Math.random().toString(36).slice(2, 8)}`, batchId, r.source_key, r.player_name, r.player_name_normalized, r.canonical_prop_key, r.official_date));
-    if (logStmts.length) await env.SCORE_DB.batch(logStmts);
-    // Real, bounded retention - keep 30 days of real diagnostic history, not forever.
-    await env.SCORE_DB.prepare("DELETE FROM score_board_unresolved_player_log WHERE datetime(logged_at) < datetime('now', '-30 days')").run();
+    if (unresolvedRows.length) {
+      const logRows = unresolvedRows.map(r => ({
+        log_id: `unresolved_${batchId}_${r.source_key}_${(r.player_name || "").slice(0, 40)}_${Math.random().toString(36).slice(2, 8)}`,
+        batch_id: batchId,
+        source_key: r.source_key,
+        player_name: r.player_name,
+        player_name_normalized: r.player_name_normalized,
+        canonical_prop_key: r.canonical_prop_key,
+        match_status: "unresolved",
+        official_date: r.official_date
+      }));
+      await env.pg`INSERT INTO score.board_unresolved_player_log ${env.pg(logRows, "log_id", "batch_id", "source_key", "player_name", "player_name_normalized", "canonical_prop_key", "match_status", "official_date")}`;
+    }
+    await env.pg.unsafe("DELETE FROM score.board_unresolved_player_log WHERE logged_at < now() - interval '30 days'");
   }
   if (verifiedPreparedRows < rows.length) {
     await updatePrepBatchCheckpoint(env, batchId, "PARTIAL_CONTINUE_BOARD_PREP_WRITE", "SCORE_BOARD_PREP_PARTIAL_WRITE_COUNT_GUARD", {
@@ -1411,7 +1376,7 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
 
   const promoteStart = Date.now();
   await updatePrepBatchCheckpoint(env, batchId, "PROMOTING_STAGE_TO_CURRENT", "SCORE_BOARD_PREP_PROMOTING_STAGE_TO_CURRENT", { attempted_rows: rows.length, stage_rows: verifiedPreparedRows, no_active_current_staging: true, timing_ms: timing });
-  await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prepared_current (
+  await env.pg.unsafe(`INSERT INTO score.board_prepared_current (
     prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
     player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
@@ -1424,9 +1389,22 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
     canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
     source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
-    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, CURRENT_TIMESTAMP
-  FROM score_board_prepared_stage WHERE prep_batch_id=?`).bind(batchId).run();
-  const promotedRow = await firstRow(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE prep_batch_id=?", [batchId]);
+    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, now()
+  FROM score.board_prepared_stage WHERE prep_batch_id=$1
+  ON CONFLICT (prepared_row_id) DO UPDATE SET
+    prep_batch_id=excluded.prep_batch_id, source_key=excluded.source_key, source_row_id=excluded.source_row_id,
+    source_event_id=excluded.source_event_id, projection_id=excluded.projection_id, player_name=excluded.player_name,
+    player_name_normalized=excluded.player_name_normalized, resolved_player_id=excluded.resolved_player_id,
+    resolved_mlb_player_id=excluded.resolved_mlb_player_id, player_match_status=excluded.player_match_status,
+    player_match_confidence=excluded.player_match_confidence, team=excluded.team, opponent=excluded.opponent,
+    team_full_name=excluded.team_full_name, opponent_full_name=excluded.opponent_full_name, canonical_prop_key=excluded.canonical_prop_key,
+    source_prop_name=excluded.source_prop_name, line_value=excluded.line_value, official_game_pk=excluded.official_game_pk,
+    official_game_time_utc=excluded.official_game_time_utc, official_date=excluded.official_date, source_start_time=excluded.source_start_time,
+    source_time_status=excluded.source_time_status, start_time_confidence=excluded.start_time_confidence, matchup_status=excluded.matchup_status,
+    matchup_confidence=excluded.matchup_confidence, source_pickable=excluded.source_pickable, pickable_safe=excluded.pickable_safe,
+    prep_status=excluded.prep_status, block_reason=excluded.block_reason, raw_source_json=excluded.raw_source_json,
+    row_payload_json=excluded.row_payload_json, updated_at=now()`, [batchId]);
+  const promotedRow = await firstRow(env.pg, "SELECT COUNT(*) AS rows FROM score.board_prepared_current WHERE prep_batch_id=?", [batchId]);
   const promotedRows = Number(promotedRow && promotedRow.rows || 0);
   timing.promote_ms = Date.now() - promoteStart;
   if (promotedRows < rows.length) {
@@ -1434,7 +1412,7 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
     return { partial:true, next_write_offset: verifiedPreparedRows, remaining_rows: rows.length - promotedRows, insertedThisInvocation:0, insertedCurrentRows: promotedRows, totals: computeTotals(rows), bySource, sleeperEvents: [] };
   }
 
-  const finalBySource = await allRows(env.SCORE_DB, `
+  const finalBySource = await allRows(env.pg, `
 SELECT
   source_key,
   COUNT(*) AS rows,
@@ -1446,7 +1424,7 @@ SELECT
   SUM(CASE WHEN matchup_status = 'calendar_unresolved' THEN 1 ELSE 0 END) AS matchup_unresolved_rows,
   SUM(CASE WHEN matchup_status = 'calendar_ambiguous' THEN 1 ELSE 0 END) AS matchup_ambiguous_rows,
   SUM(CASE WHEN block_reason LIKE '%player_team_conflict%' THEN 1 ELSE 0 END) AS player_team_conflict_rows
-FROM score_board_prepared_current
+FROM score.board_prepared_current
 WHERE prep_batch_id = ?
 GROUP BY source_key
 ORDER BY source_key`, [batchId]).then(rows => rows.map(r => ({
@@ -1462,7 +1440,7 @@ ORDER BY source_key`, [batchId]).then(rows => rows.map(r => ({
     player_team_conflict_rows: Number(r.player_team_conflict_rows || 0)
   })));
 
-  const finalSleeperEvents = await allRows(env.SCORE_DB, `
+  const finalSleeperEvents = await allRows(env.pg, `
 SELECT
   source_event_id,
   MIN(team_full_name) AS sample_team_full_name,
@@ -1470,11 +1448,11 @@ SELECT
   COUNT(*) AS rows,
   MIN(official_game_pk) AS official_game_pk,
   MIN(official_game_time_utc) AS official_game_time_utc,
-  GROUP_CONCAT(DISTINCT matchup_status) AS matchup_statuses,
+  string_agg(DISTINCT matchup_status, ',') AS matchup_statuses,
   SUM(CASE WHEN pickable_safe = 1 THEN 1 ELSE 0 END) AS pickable_safe_rows,
   SUM(CASE WHEN pickable_safe = 0 THEN 1 ELSE 0 END) AS blocked_rows,
   SUM(CASE WHEN player_match_status = 'unresolved' THEN 1 ELSE 0 END) AS player_unresolved_rows
-FROM score_board_prepared_current
+FROM score.board_prepared_current
 WHERE prep_batch_id = ? AND source_key = 'sleeper'
 GROUP BY source_event_id
 ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
@@ -1492,26 +1470,31 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
 
   timing.verify_ms = Date.now() - verifyStart;
 
-  // v0.2.12 safety fix: never clear the active prepared board before the
-  // replacement batch has been fully inserted and DB-verified. A hung/aborted
-  // worker after an early DELETE left score_board_prepared_current empty.
-  // Now the swap is: insert/verify new batch first, then remove older batches.
   const cleanupStart = Date.now();
   if (totals.prepared_rows > 0 && totals.prepared_rows > 0) {
     await updatePrepBatchCheckpoint(env, batchId, "CLEANING_OLD_PREP_BATCHES", "SCORE_BOARD_PREP_CLEANING_OLD_BATCHES_AFTER_VERIFY", { prepared_rows: totals.prepared_rows, preserve_current_until_verified: true });
-    await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current WHERE prep_batch_id <> ?").bind(batchId).run();
-    await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_stage WHERE prep_batch_id <> ?").bind(batchId).run();
+    await env.pg.unsafe("DELETE FROM score.board_prepared_current WHERE prep_batch_id <> $1", [batchId]);
+    await env.pg.unsafe("DELETE FROM score.board_prepared_stage WHERE prep_batch_id <> $1", [batchId]);
   }
   timing.cleanup_old_batches_ms = Date.now() - cleanupStart;
 
   const finishAt = nowIso();
-  await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
-    batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
-    prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
-    unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
-    started_at, finished_at, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(
+  await env.pg.unsafe(
+    `INSERT INTO score.board_prep_batches (
+      batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
+      prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
+      unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
+      started_at, finished_at, updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+    ON CONFLICT (batch_id) DO UPDATE SET
+      worker_name=excluded.worker_name, worker_version=excluded.worker_version, mode=excluded.mode, status=excluded.status,
+      certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
+      prizepicks_rows=excluded.prizepicks_rows, sleeper_rows=excluded.sleeper_rows, underdog_rows=excluded.underdog_rows,
+      prepared_rows=excluded.prepared_rows, pickable_safe_rows=excluded.pickable_safe_rows, blocked_rows=excluded.blocked_rows,
+      unresolved_player_rows=excluded.unresolved_player_rows, matchup_unresolved_rows=excluded.matchup_unresolved_rows,
+      started_rows=excluded.started_rows, source_json=excluded.source_json, certification_json=excluded.certification_json,
+      finished_at=excluded.finished_at, updated_at=excluded.updated_at`,
+    [
       batchId,
       WORKER_NAME,
       VERSION,
@@ -1533,8 +1516,8 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
       startedAt,
       finishAt,
       finishAt
-    )
-    .run();
+    ]
+  );
 
   timing.write_total_ms = Date.now() - writeStart;
   return { totals, bySource: finalBySource, sleeperEvents: finalSleeperEvents, insertedCurrentRows: totals.prepared_rows };
