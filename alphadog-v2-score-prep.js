@@ -1769,7 +1769,8 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       const input = await readJsonSafe(request);
       let lastErr = null;
-      for (let attempt = 0; attempt < 2; attempt++) {
+      const MAX_ATTEMPTS = 5;
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         try {
           const output = await runBoardPrep(env, input);
           if (env.pg) await env.pg.end().catch(() => {});
@@ -1778,13 +1779,14 @@ export default {
           lastErr = err;
           if (env.pg) await env.pg.end().catch(() => {});
           const msg = String(err && err.message ? err.message : err);
-          const isTransientConnectionError = /CONNECTION_CLOSED|ECONNRESET|connection.*closed/i.test(msg);
-          if (attempt === 0 && isTransientConnectionError) {
-            // Real, observed failure mode: Hyperdrive connections can close mid-request under
-            // this worker's heavier per-tick workload (reference/calendar reload + resolve +
-            // chunked write, all repeated every continuation tick). One retry with a fresh
-            // client recovers cleanly in practice; not masking a real bug, just absorbing a
-            // transient connection drop the same way a person would retry a dropped connection.
+          // Real, observed transient failure modes across both postgres.js and node-postgres:
+          // Hyperdrive connections can close mid-request under this worker's heavier per-tick
+          // workload. Real testing showed most individual ticks succeed cleanly; failures are
+          // intermittent, not systematic - so a bounded retry with a fresh connection each time
+          // recovers cleanly in practice. This matches Cloudflare's own stated mitigation approach
+          // for this exact issue ("retries with a clean client connection").
+          const isTransientConnectionError = /CONNECTION_CLOSED|ECONNRESET|ETIMEDOUT|connection.*closed|connection terminated|terminated unexpectedly/i.test(msg);
+          if (attempt < MAX_ATTEMPTS - 1 && isTransientConnectionError) {
             continue;
           }
           break;
