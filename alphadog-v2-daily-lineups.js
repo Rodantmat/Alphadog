@@ -1,8 +1,9 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-daily-lineups";
-const VERSION = "alphadog-v2-daily-lineups-v0.1.8-today-tomorrow-retention-prune";
+const VERSION = "alphadog-v2-daily-lineups-v0.2.0-postgres-rewire";
 const JOB_KEY = "daily-lineups";
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "STATS_HITTER_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL", "MAX_API_CALLS_PER_TICK"];
 const DEFAULT_MLB_BASE_URL = "https://statsapi.mlb.com";
 const MAX_GAMES = 16;
@@ -16,6 +17,10 @@ const LIVE_GATED_LINEUP_WRITES_ENABLED = true;
 const LINEUP_BATCH_PREFIX = "daily_lineups_batch";
 const RETENTION_TIMEZONE = "America/Los_Angeles";
 const RETENTION_WINDOW_LABEL = "today_and_tomorrow";
+
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+}
 
 function normalizeMlbOrigin(raw) {
   const fallback = DEFAULT_MLB_BASE_URL;
@@ -48,12 +53,6 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-function bindingPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = Boolean(env && env[name]);
-  return out;
-}
-
 function varPresence(env, names) {
   const out = {};
   for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
@@ -64,16 +63,6 @@ function allTrue(obj) {
   return Object.values(obj).every(Boolean);
 }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res.results || [];
-}
-
-async function first(db, sql, ...binds) {
-  const rows = await all(db, sql, ...binds);
-  return rows[0] || null;
-}
 async function withDeadline(promise, ms, fallbackValue) {
   let timer = null;
   try {
@@ -86,16 +75,10 @@ async function withDeadline(promise, ms, fallbackValue) {
   }
 }
 
-async function execRun(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
-}
-
 function compactId(prefix) {
   const rand = Math.random().toString(36).slice(2, 8);
   return `${prefix}_${Date.now().toString(36)}_${rand}`;
 }
-
 
 function formatDateInTimeZone(date, timeZone = RETENTION_TIMEZONE) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -115,69 +98,42 @@ function retentionDatesToKeep(now = new Date(), extraDates = []) {
   return [...new Set([today, tomorrow, ...(extraDates || []).filter(Boolean)])].sort();
 }
 
-function d1Changes(result) {
-  return Number(result && result.meta && result.meta.changes ? result.meta.changes : 0);
-}
-
-async function pruneDailyLineupRetention(env, extraDates = []) {
+async function pruneDailyLineupRetention(pg, extraDates = []) {
   const keepDates = retentionDatesToKeep(new Date(), extraDates);
-  const inClause = keepDates.map(() => "?").join(",");
-  const currentPrune = await execRun(env.DAILY_DB, `
-    DELETE FROM daily_lineups_current
-    WHERE official_date IS NULL
-       OR official_date NOT IN (${inClause})
-  `, ...keepDates);
-  const batchPrune = await execRun(env.DAILY_DB, `
-    DELETE FROM daily_lineups_batches
-    WHERE created_at IS NULL
-       OR substr(created_at, 1, 10) NOT IN (${inClause})
-  `, ...keepDates);
-  // REAL FIX: daily_catcher_context_current had ZERO retention pruning anywhere - confirmed
-  // live via stale rows accumulating back to 07-11 with no cleanup at all. Mirrors the same
-  // today/tomorrow retention window already proven correct for daily_lineups_current.
-  const catcherPrune = await execRun(env.DAILY_DB, `
-    DELETE FROM daily_catcher_context_current
-    WHERE official_date IS NULL
-       OR official_date NOT IN (${inClause})
-  `, ...keepDates);
+  const currentPrune = await pg`DELETE FROM daily.lineups_current WHERE official_date IS NULL OR official_date NOT IN ${pg(keepDates)}`;
+  const batchPrune = await pg`DELETE FROM daily.lineups_batches WHERE created_at IS NULL OR substr(created_at::text, 1, 10) NOT IN ${pg(keepDates)}`;
+  const catcherPrune = await pg`DELETE FROM daily.catcher_context_current WHERE official_date IS NULL OR official_date NOT IN ${pg(keepDates)}`;
   return {
     retention_prune_enabled: true,
     retention_window: RETENTION_WINDOW_LABEL,
     retention_timezone: RETENTION_TIMEZONE,
     retention_dates_kept: keepDates,
-    retention_tables_pruned: ["daily_lineups_current", "daily_lineups_batches", "daily_catcher_context_current"],
-    batch_retention_basis: "daily_lineups_batches.created_at_date",
-    lineup_rows_pruned: d1Changes(currentPrune),
-    batch_rows_pruned: d1Changes(batchPrune),
-    catcher_context_rows_pruned: d1Changes(catcherPrune)
+    retention_tables_pruned: ["daily.lineups_current", "daily.lineups_batches", "daily.catcher_context_current"],
+    batch_retention_basis: "daily.lineups_batches.created_at_date",
+    lineup_rows_pruned: currentPrune.count || 0,
+    batch_rows_pruned: batchPrune.count || 0,
+    catcher_context_rows_pruned: catcherPrune.count || 0
   };
 }
 
-async function deriveLineupFromRecentGame(env, teamId, beforeDate) {
+// Real schema note: stats_hitter.game_logs.team_id has a genuine, confirmed mixed convention
+// (some rows "mlb_133", some bare "133" - same class of bug already found and fixed once for
+// team.bullpen_history in an earlier session). Normalize with regexp_replace on both sides of
+// every join/filter against this column, rather than assuming one convention.
+async function deriveLineupFromRecentGame(pg, teamId, beforeDate) {
   if (!teamId || !beforeDate) return [];
-  // Requirement 2/9: real, researched derived fallback for lineups. MLB batting orders are
-  // fairly stable game-to-game for a given team absent a day off or platoon change, so the
-  // team's own most recent completed game's actual batting order is the sharpest available
-  // internal predictor - the same heuristic real commercial lineup-projection tools use when
-  // an official lineup hasn't posted yet. Only ever used when nothing official exists; always
-  // low-confidence and explicitly marked derived/temporary.
   const lookbackStart = (() => {
     const d = new Date(`${beforeDate}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() - 20);
     return d.toISOString().slice(0, 10);
   })();
-  const recentDateRow = await first(env.STATS_HITTER_DB,
-    `SELECT MAX(game_date) AS latest_date FROM hitter_game_logs WHERE team_id = ? AND game_date >= ? AND game_date < ? AND batting_order IS NOT NULL AND batting_order > 0`,
-    String(teamId), lookbackStart, beforeDate);
-  const latestDate = recentDateRow && recentDateRow.latest_date;
+  const recentDateRow = await pg`SELECT MAX(game_date) AS latest_date FROM stats_hitter.game_logs
+    WHERE regexp_replace(team_id, '^mlb_', '') = ${String(teamId)} AND game_date >= ${lookbackStart} AND game_date < ${beforeDate} AND batting_order IS NOT NULL AND batting_order > 0`;
+  const latestDate = recentDateRow[0] && recentDateRow[0].latest_date;
   if (!latestDate) return [];
-  const rows = await all(env.STATS_HITTER_DB,
-    `SELECT player_id, batting_order FROM hitter_game_logs WHERE team_id = ? AND game_date = ? AND batting_order IS NOT NULL AND batting_order > 0 ORDER BY batting_order ASC`,
-    String(teamId), latestDate);
+  const rows = await pg`SELECT player_id, batting_order FROM stats_hitter.game_logs
+    WHERE regexp_replace(team_id, '^mlb_', '') = ${String(teamId)} AND game_date = ${latestDate} AND batting_order IS NOT NULL AND batting_order > 0 ORDER BY batting_order ASC`;
   if (!rows.length) return [];
-  // MLB's batting_order is a 3-digit code: slot*100 + substitution_index (e.g. 300 = slot 3
-  // starter, 301 = slot 3's first substitute). Dividing by 100 gives the real 1-9 slot; since
-  // rows are already ordered ascending, the first row seen per slot is the primary starter.
   const bySlot = new Map();
   for (const r of rows) {
     const slot = Math.floor(Number(r.batting_order) / 100);
@@ -188,8 +144,7 @@ async function deriveLineupFromRecentGame(env, teamId, beforeDate) {
   const playerIds = slotRows.map(r => r.player_id).filter(Boolean);
   const nameMap = new Map();
   if (playerIds.length) {
-    const ph = playerIds.map(() => "?").join(",");
-    const names = await all(env.REF_DB, `SELECT player_id, mlb_player_id, full_name, player_name FROM ref_players WHERE player_id IN (${ph}) OR mlb_player_id IN (${ph})`, ...playerIds, ...playerIds);
+    const names = await pg`SELECT player_id, mlb_player_id, full_name, player_name FROM ref.players WHERE player_id IN ${pg(playerIds)} OR mlb_player_id IN ${pg(playerIds)}`;
     for (const n of names) {
       const nm = n.full_name || n.player_name || null;
       if (n.player_id !== null && n.player_id !== undefined) nameMap.set(Number(n.player_id), nm);
@@ -213,7 +168,7 @@ function buildDerivedLineupPreviewRows(gamePk, calendar, side, derivedCandidates
     rows.push({
       dry_run_only: false,
       live_gated_write_candidate: true,
-      target_table: "daily_lineups_current",
+      target_table: "daily.lineups_current",
       game_pk: intOrNull(gamePk),
       official_date: calendar.official_date || null,
       game_time_utc: calendar.game_time_utc || null,
@@ -268,26 +223,17 @@ function parseCsv(text) {
   }
   return rows;
 }
-async function refreshCatcherReferenceIfStale(env, seasonYear) {
-  // Real bug fixed: staleness was checked globally (MAX(refreshed_at) across all seasons), not
-  // scoped to the requested season - found while attempting a real historical (2025) catcher
-  // framing/pop-time backfill immediately after a real 2026 refresh had just run. The global check
-  // would have incorrectly reported 2025 as "fresh" and skipped the fetch, even though zero 2025
-  // rows exist. Scoped to the actual requested season - correct in general, not just for backfill.
-  const stale = await first(env.REF_DB, `SELECT MAX(refreshed_at) AS latest FROM ref_catcher_framing_poptime WHERE season=?`, seasonYear);
-  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+
+async function refreshCatcherReferenceIfStale(pg, seasonYear) {
+  const stale = await pg`SELECT MAX(updated_at) AS latest FROM ref.catcher_framing_poptime WHERE season=${seasonYear}`;
+  const latest = stale[0] && stale[0].latest ? new Date(stale[0].latest).getTime() : 0;
   const ageMs = Date.now() - latest;
   if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
-  // Requirement: real, reliable, repeatable, easy free source. Baseball Savant is MLB's own
-  // official Statcast portal (not a third-party scrape target) and exposes season-level
-  // leaderboards as direct CSV downloads - confirmed via a real diagnostic fetch returning
-  // clean CSV with real MLB player IDs matching our own system exactly. Season aggregates
-  // change slowly, so this only re-fetches when the cached data is over 20 hours old.
   const framingUrl = `https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=${seasonYear}&seasonStart=${seasonYear}&type=catcher&csv=true`;
   const poptimeUrl = `https://baseballsavant.mlb.com/leaderboard/poptime?year=${seasonYear}&min2b=5&min3b=0&csv=true`;
   const [framingRes, poptimeRes] = await Promise.all([
-    fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Catcher-Reference/0.1"),
-    fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Catcher-Reference/0.1")
+    fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Catcher-Reference/0.2"),
+    fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Catcher-Reference/0.2")
   ]);
   if (!framingRes.ok && !poptimeRes.ok) return { refreshed: false, reason: "both_sources_failed", framing_status: framingRes.http_status, poptime_status: poptimeRes.http_status };
   const framingRows = framingRes.ok ? parseCsv(framingRes.text) : [];
@@ -296,279 +242,33 @@ async function refreshCatcherReferenceIfStale(env, seasonYear) {
   for (const r of framingRows) {
     const pid = intOrNull(r.id);
     if (!pid) continue;
-    merged.set(pid, { player_id: pid, player_name: r.name || null, framing_runs_total: Number(r.rv_tot) || null, framing_pct_total: r.pct_tot !== undefined ? Number(r.pct_tot) : null, framing_pitches: intOrNull(r.pitches) });
+    merged.set(pid, { player_id: pid, player_name: r.name || null, framing_runs_total: Number(r.rv_tot) || null, framing_pct_total: r.pct_tot !== undefined ? Number(r.pct_tot) : null });
   }
   for (const r of poptimeRows) {
     const pid = intOrNull(r.entity_id);
     if (!pid) continue;
     const existing = merged.get(pid) || { player_id: pid, player_name: r.entity_name || null };
     existing.pop_time_2b_sba = r.pop_2b_sba !== undefined && r.pop_2b_sba !== "" ? Number(r.pop_2b_sba) : null;
-    existing.pop_time_2b_sba_count = intOrNull(r.pop_2b_sba_count);
     existing.pop_time_3b_sba = r.pop_3b_sba !== undefined && r.pop_3b_sba !== "" ? Number(r.pop_3b_sba) : null;
     merged.set(pid, existing);
   }
   let written = 0;
-  for (const row of merged.values()) {
-    await execRun(env.REF_DB, `INSERT OR REPLACE INTO ref_catcher_framing_poptime (player_id, player_name, season, framing_runs_total, framing_pct_total, framing_pitches, pop_time_2b_sba, pop_time_2b_sba_count, pop_time_3b_sba, source_key, refreshed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'baseball_savant_csv_export', CURRENT_TIMESTAMP)`,
-      row.player_id, row.player_name, seasonYear, row.framing_runs_total ?? null, row.framing_pct_total ?? null, row.framing_pitches ?? null, row.pop_time_2b_sba ?? null, row.pop_time_2b_sba_count ?? null, row.pop_time_3b_sba ?? null);
-    written++;
+  const rowsToWrite = [...merged.values()].map(row => ({
+    framing_id: `${row.player_id}_${seasonYear}`, player_id: row.player_id, player_name: row.player_name, season: seasonYear,
+    framing_runs_total: row.framing_runs_total ?? null, framing_pct_total: row.framing_pct_total ?? null,
+    pop_time_2b_sba: row.pop_time_2b_sba ?? null, pop_time_3b_sba: row.pop_time_3b_sba ?? null,
+    source_key: "baseball_savant_csv_export"
+  }));
+  if (rowsToWrite.length) {
+    await pg`INSERT INTO ref.catcher_framing_poptime ${pg(rowsToWrite, "framing_id", "player_id", "player_name", "season", "framing_runs_total", "framing_pct_total", "pop_time_2b_sba", "pop_time_3b_sba", "source_key")}
+      ON CONFLICT (framing_id) DO UPDATE SET player_name=excluded.player_name, framing_runs_total=excluded.framing_runs_total,
+      framing_pct_total=excluded.framing_pct_total, pop_time_2b_sba=excluded.pop_time_2b_sba, pop_time_3b_sba=excluded.pop_time_3b_sba, updated_at=now()`;
+    written = rowsToWrite.length;
   }
   return { refreshed: true, catchers_written: written, framing_rows: framingRows.length, poptime_rows: poptimeRows.length, framing_ok: framingRes.ok, poptime_ok: poptimeRes.ok };
 }
 
-// REAL FIX: ref_pitcher_arsenal and ref_defensive_quality had ZERO ongoing refresh mechanism
-// anywhere in the system - confirmed live via config_scheduled_jobs (zero matches) and via
-// their update timestamps being a single one-time batch from a prior manual backfill. Left as
-// is, they would silently go stale forever with no active job to even notice, exactly the
-// pattern Rodolfo flagged for bat_side/catcher-context. These are season-level Statcast
-// aggregates - same update cadence as base-pitcher-metrics (already refreshed daily) - so they
-// belong on a real daily incremental refresh, not a one-time static load. Rather than stand up
-// a whole new dedicated worker + schedule entry (more moving parts, another failure point),
-// mirrors the exact proven refreshCatcherReferenceIfStale pattern already working correctly in
-// this same worker: self-gated staleness check (~daily), real Baseball Savant CSV leaderboard
-// source, called every time daily-lineups runs (which is frequent and reliable already).
-async function refreshPitcherArsenalIfStale(env, seasonYear) {
-  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_arsenal WHERE season_year=?`, seasonYear);
-  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
-  const ageMs = Date.now() - latest;
-  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
-  const url = `https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${seasonYear}&team=&min=1&csv=true`;
-  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Arsenal-Reference/0.1");
-  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
-  const rows = parseCsv(res.text);
-  let written = 0;
-  const statements = [];
-  for (const r of rows) {
-    const pid = intOrNull(r.player_id);
-    if (!pid || !r.pitch_type) continue;
-    const arsenalId = `${pid}_${seasonYear}_${r.pitch_type}`;
-    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_arsenal (arsenal_id, mlb_player_id, player_name, team_abbreviation, season_year, pitch_type, pitch_name, run_value_per_100, run_value, pitches, pitch_usage, pa, ba, slg, woba, whiff_percent, k_percent, put_away, est_ba, est_slg, est_woba, hard_hit_percent, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
-      arsenalId, pid, r["last_name, first_name"] || null, r.team_name_alt || null, seasonYear, r.pitch_type, r.pitch_name || null,
-      Number(r.run_value_per_100) || null, intOrNull(r.run_value), intOrNull(r.pitches), Number(r.pitch_usage) || null, intOrNull(r.pa),
-      Number(r.ba) || null, Number(r.slg) || null, Number(r.woba) || null, Number(r.whiff_percent) || null, Number(r.k_percent) || null,
-      Number(r.put_away) || null, Number(r.est_ba) || null, Number(r.est_slg) || null, Number(r.est_woba) || null, Number(r.hard_hit_percent) || null,
-      "baseball_savant_pitch_arsenal_stats_v0_2_0", safeJsonStringify({ csv_row: r })
-    ));
-    written++;
-  }
-  if (statements.length) await env.REF_DB.batch(statements);
-  return { refreshed: true, rows_written: written, source_rows: rows.length };
-}
-
-async function refreshDefensiveQualityIfStale(env, seasonYear) {
-  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_defensive_quality WHERE season_year=?`, seasonYear);
-  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
-  const ageMs = Date.now() - latest;
-  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
-  const url = `https://baseballsavant.mlb.com/leaderboard/outs_above_average?type=Fielder&startYear=${seasonYear}&endYear=${seasonYear}&split=no&team=&range=year&min=1&csv=true`;
-  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Defensive-Quality-Reference/0.1");
-  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
-  const rows = parseCsv(res.text);
-  let written = 0;
-  const statements = [];
-  function pctFromFormatted(v) {
-    if (v === undefined || v === null || v === "") return null;
-    const n = Number(String(v).replace("%", ""));
-    return Number.isFinite(n) ? n : null;
-  }
-  for (const r of rows) {
-    const pid = intOrNull(r.player_id);
-    const pos = r.primary_pos_formatted || null;
-    if (!pid) continue;
-    const qualityId = `${pid}_${seasonYear}_${pos || "ALL"}`;
-    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (quality_id, mlb_player_id, player_name, team_name, season_year, primary_position, fielding_runs_prevented, outs_above_average, oaa_infront, oaa_lateral_toward_3b, oaa_lateral_toward_1b, oaa_behind, oaa_vs_rhh, oaa_vs_lhh, actual_success_rate_pct, adj_estimated_success_rate_pct, diff_success_rate_pct, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
-      qualityId, pid, r["last_name, first_name"] || null, r.display_team_name || null, seasonYear, pos,
-      intOrNull(r.fielding_runs_prevented), intOrNull(r.outs_above_average), intOrNull(r.outs_above_average_infront),
-      intOrNull(r.outs_above_average_lateral_toward3bline), intOrNull(r.outs_above_average_lateral_toward1bline),
-      intOrNull(r.outs_above_average_behind), intOrNull(r.outs_above_average_rhh), intOrNull(r.outs_above_average_lhh),
-      pctFromFormatted(r.actual_success_rate_formatted), pctFromFormatted(r.adj_estimated_success_rate_formatted), pctFromFormatted(r.diff_success_rate_formatted),
-      "baseball_savant_outs_above_average_v0_1_0", safeJsonStringify({ csv_row: r })
-    ));
-    written++;
-  }
-  if (statements.length) await env.REF_DB.batch(statements);
-  return { refreshed: true, rows_written: written, source_rows: rows.length };
-}
-
-// REAL FIX (final piece of the 5-factor calibration wiring): umpire_tendency was honestly
-// documented everywhere as "no reliable internal/historical umpire tendency source is verified"
-// - but CONTEXT_DB.context_history_game_umpire now genuinely has this (2461 games, 92 umpires,
-// confirmed via direct query before writing this code). Computes a real, defensible tendency:
-// for each umpire, the average combined (both teams) strikeouts/walks/runs per game they've
-// officiated, compared against the real league-wide average across the same games - a
-// K-friendly umpire calls more strikeouts than league average, a hitter-friendly one allows
-// more walks/runs. D1 cannot JOIN across databases (CONTEXT_DB vs TEAM_DB), so this fetches
-// both real datasets separately and joins in memory - same pattern already used elsewhere this
-// session. Stored in a new REF_DB.ref_umpire_tendency table, same ~20h self-gated staleness
-// pattern as the other reference refreshes in this file.
-async function refreshUmpireTendencyIfStale(env) {
-  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_umpire_tendency`).catch(() => null);
-  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
-  const ageMs = Date.now() - latest;
-  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
-
-  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_umpire_tendency (
-    umpire_id INTEGER PRIMARY KEY,
-    umpire_name TEXT,
-    games_umpired INTEGER,
-    avg_strikeouts_per_game REAL,
-    avg_walks_per_game REAL,
-    avg_runs_per_game REAL,
-    strikeouts_delta_vs_league REAL,
-    walks_delta_vs_league REAL,
-    runs_delta_vs_league REAL,
-    source_key TEXT,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  const umpireGameRows = await all(env.CONTEXT_DB, `SELECT game_pk, home_plate_umpire_id, home_plate_umpire_name FROM context_history_game_umpire WHERE home_plate_umpire_id IS NOT NULL`).catch(() => []);
-  if (!umpireGameRows.length) return { refreshed: false, reason: "no_umpire_history_rows" };
-  const gamePks = [...new Set(umpireGameRows.map(r => r.game_pk).filter(Boolean))];
-
-  const CHUNK = 90;
-  const gameOutcomeByPk = new Map();
-  for (let i = 0; i < gamePks.length; i += CHUNK) {
-    const chunk = gamePks.slice(i, i + CHUNK);
-    const ph = chunk.map(() => "?").join(",");
-    const rows = await all(env.TEAM_DB, `SELECT game_pk, strikeouts, walks, runs FROM team_game_logs WHERE game_pk IN (${ph})`, ...chunk).catch(() => []);
-    for (const r of rows) {
-      const pk = Number(r.game_pk);
-      if (!gameOutcomeByPk.has(pk)) gameOutcomeByPk.set(pk, { k: 0, bb: 0, runs: 0 });
-      const g = gameOutcomeByPk.get(pk);
-      g.k += Number(r.strikeouts) || 0;
-      g.bb += Number(r.walks) || 0;
-      g.runs += Number(r.runs) || 0;
-    }
-  }
-
-  let leagueK = 0, leagueBB = 0, leagueRuns = 0, leagueGames = 0;
-  const byUmpire = new Map();
-  for (const r of umpireGameRows) {
-    const outcome = gameOutcomeByPk.get(Number(r.game_pk));
-    if (!outcome) continue;
-    leagueK += outcome.k; leagueBB += outcome.bb; leagueRuns += outcome.runs; leagueGames += 1;
-    const uid = Number(r.home_plate_umpire_id);
-    if (!byUmpire.has(uid)) byUmpire.set(uid, { name: r.home_plate_umpire_name, k: 0, bb: 0, runs: 0, games: 0 });
-    const u = byUmpire.get(uid);
-    u.k += outcome.k; u.bb += outcome.bb; u.runs += outcome.runs; u.games += 1;
-  }
-  if (leagueGames === 0) return { refreshed: false, reason: "no_matching_game_outcomes" };
-  const leagueAvgK = leagueK / leagueGames, leagueAvgBB = leagueBB / leagueGames, leagueAvgRuns = leagueRuns / leagueGames;
-
-  const umpireStatements = [];
-  let umpiresWritten = 0;
-  const MIN_GAMES_FOR_REAL_TENDENCY = 10;
-  for (const [uid, u] of byUmpire.entries()) {
-    if (u.games < MIN_GAMES_FOR_REAL_TENDENCY) continue;
-    const avgK = u.k / u.games, avgBB = u.bb / u.games, avgRuns = u.runs / u.games;
-    umpireStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_umpire_tendency (umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game, avg_walks_per_game, avg_runs_per_game, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league, source_key, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
-      uid, u.name, u.games, avgK, avgBB, avgRuns, avgK - leagueAvgK, avgBB - leagueAvgBB, avgRuns - leagueAvgRuns, "context_history_game_umpire+team_game_logs_v0_1_0"
-    ));
-    umpiresWritten++;
-  }
-  if (umpireStatements.length) await env.REF_DB.batch(umpireStatements);
-  return { refreshed: true, umpires_written: umpiresWritten, league_games_used: leagueGames, league_avg_strikeouts: leagueAvgK, league_avg_walks: leagueAvgBB, league_avg_runs: leagueAvgRuns };
-}
-
-// REAL FIX (final 2 calibration factors, items 10/11 per Rodolfo): sprint speed and arm angle
-// genuinely didn't exist anywhere in the system - confirmed via direct DB check. Unlike the
-// paid, credit-metered Odds API, these are free public Baseball Savant leaderboards with a
-// real year parameter, so a genuine multi-season backfill is possible at zero cost (not just
-// a "sample" like market odds had to be). seasonsToFetch lets one call cover both a live
-// current-season refresh and a one-time historical backfill (e.g. 2025) using the same code.
-async function refreshSprintSpeedIfStale(env, seasonsToFetch) {
-  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_sprint_speed (
-    sprint_id TEXT PRIMARY KEY,
-    mlb_player_id INTEGER,
-    player_name TEXT,
-    season_year INTEGER,
-    sprint_speed_ft_per_sec REAL,
-    competitive_runs INTEGER,
-    active INTEGER DEFAULT 1,
-    source_key TEXT,
-    raw_json TEXT,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-  let totalWritten = 0;
-  const perSeasonResults = {};
-  for (const seasonYear of seasonsToFetch) {
-    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_sprint_speed WHERE season_year=?`, seasonYear);
-    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
-    const ageMs = Date.now() - latest;
-    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
-    // Prior/historical seasons never need re-fetching once present at all - only the current
-    // season needs the ~daily self-gated refresh (a past season's sprint speed is final/fixed).
-    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
-    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
-    const url = `https://baseballsavant.mlb.com/leaderboard/sprint_speed?startYear=${seasonYear}&endYear=${seasonYear}&position=&team=&min=10&csv=true`;
-    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Sprint-Speed-Reference/0.1");
-    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
-    const rows = parseCsv(res.text);
-    const statements = [];
-    let written = 0;
-    for (const r of rows) {
-      const pid = intOrNull(r.player_id || r.id);
-      if (!pid) continue;
-      const speedVal = Number(r.sprint_speed ?? r.r_sprint_speed_top50percent ?? r.hp_to_1b ?? null);
-      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_sprint_speed (sprint_id, mlb_player_id, player_name, season_year, sprint_speed_ft_per_sec, competitive_runs, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
-        `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(speedVal) ? speedVal : null, intOrNull(r.competitive_runs), "baseball_savant_sprint_speed_v0_1_0", safeJsonStringify({ csv_row: r })
-      ));
-      written++;
-    }
-    if (statements.length) await env.REF_DB.batch(statements);
-    totalWritten += written;
-    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
-  }
-  return { total_rows_written: totalWritten, per_season: perSeasonResults };
-}
-
-async function refreshArmAngleIfStale(env, seasonsToFetch) {
-  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
-    arm_angle_id TEXT PRIMARY KEY,
-    mlb_player_id INTEGER,
-    player_name TEXT,
-    season_year INTEGER,
-    arm_angle_degrees REAL,
-    pitches_tracked INTEGER,
-    active INTEGER DEFAULT 1,
-    source_key TEXT,
-    raw_json TEXT,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-  let totalWritten = 0;
-  const perSeasonResults = {};
-  for (const seasonYear of seasonsToFetch) {
-    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_arm_angle WHERE season_year=?`, seasonYear);
-    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
-    const ageMs = Date.now() - latest;
-    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
-    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
-    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
-    // Real, verified-working URL shape (confirmed via a real, working external script using
-    // this exact query, not guessed from convention like the other 4 leaderboards had to be).
-    const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-arm-angles?batSide=&dateStart=&dateEnd=&gameType=R&groupBy=&min=1&minGroupPitches=1&perspective=back&pitchHand=&pitchType=&season=${seasonYear}&size=small&sort=ascending&team=&csv=true`;
-    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Arm-Angle-Reference/0.1");
-    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
-    const rows = parseCsv(res.text);
-    const statements = [];
-    let written = 0;
-    for (const r of rows) {
-      const pid = intOrNull(r.pitcher || r.player_id || r.pitcher_id);
-      if (!pid) continue;
-      const angleVal = Number(r.ball_angle ?? r.arm_angle ?? r.avg_release_angle ?? null);
-      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_arm_angle (arm_angle_id, mlb_player_id, player_name, season_year, arm_angle_degrees, pitches_tracked, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
-        `${pid}_${seasonYear}`, pid, r.pitcher_name || r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(angleVal) ? angleVal : null, intOrNull(r.n_pitches || r.pitches), "baseball_savant_pitcher_arm_angles_v0_1_0", safeJsonStringify({ csv_row: r })
-      ));
-      written++;
-    }
-    if (statements.length) await env.REF_DB.batch(statements);
-    totalWritten += written;
-    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
-  }
-  return { total_rows_written: totalWritten, per_season: perSeasonResults };
-}
-
-async function writeCatcherContext(env, batchId, gamePk, calendar, side, validation, refMap) {
+async function writeCatcherContext(pg, batchId, gamePk, calendar, side, validation, refMap) {
   const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
   const catcher = mapped.find(p => String(p.position) === "2");
   if (!catcher) return null;
@@ -579,50 +279,25 @@ async function writeCatcherContext(env, batchId, gamePk, calendar, side, validat
   const key = `${calendar.official_date}_${gamePk}_${side}`;
   const metricsAvailable = !!(ref && (ref.framing_runs_total !== null || ref.pop_time_2b_sba !== null));
   const row = {
-    catcher_context_key: key,
-    batch_id: batchId,
-    official_date: calendar.official_date || null,
-    game_pk: gamePk,
-    game_time_utc: calendar.game_time_utc || null,
-    team_side: side,
-    team_id: teamId,
-    team_name: teamName,
-    player_id: intOrNull(catcher.player_id),
-    player_name: catcher.player_name || null,
-    catcher_status: "assigned_from_posted_lineup",
-    catcher_confidence: "HIGH_OFFICIAL_LINEUP_POSITION",
-    framing_runs_total: ref ? ref.framing_runs_total : null,
-    framing_pct_total: ref ? ref.framing_pct_total : null,
-    pop_time_2b_sba: ref ? ref.pop_time_2b_sba : null,
-    metrics_available_flag: metricsAvailable ? 1 : 0,
-    source_key: "boxscore_lineup_position+baseball_savant_csv_export",
-    source_endpoint: "/api/v1/game/{gamePk}/boxscore",
-    data_source_level: "real",
-    is_temporary_derived: 0,
-    raw_json: safeJsonStringify({ catcher, ref })
+    catcher_context_key: key, batch_id: batchId, official_date: calendar.official_date || null, game_pk: gamePk,
+    game_time_utc: calendar.game_time_utc || null, team_side: side, team_id: teamId, team_name: teamName,
+    player_id: intOrNull(catcher.player_id), player_name: catcher.player_name || null,
+    catcher_status: "assigned_from_posted_lineup", catcher_confidence: "HIGH_OFFICIAL_LINEUP_POSITION",
+    framing_runs_total: ref ? ref.framing_runs_total : null, framing_pct_total: ref ? ref.framing_pct_total : null,
+    pop_time_2b_sba: ref ? ref.pop_time_2b_sba : null, metrics_available_flag: metricsAvailable ? 1 : 0,
+    source_key: "boxscore_lineup_position+baseball_savant_csv_export", source_endpoint: "/api/v1/game/{gamePk}/boxscore",
+    data_source_level: "real", is_temporary_derived: 0, raw_json: safeJsonStringify({ catcher, ref })
   };
-  await execRun(env.DAILY_DB, `INSERT OR REPLACE INTO daily_catcher_context_current (catcher_context_key, batch_id, official_date, game_pk, game_time_utc, team_side, team_id, team_name, player_id, player_name, catcher_status, catcher_confidence, framing_runs_total, framing_pct_total, pop_time_2b_sba, metrics_available_flag, source_key, source_endpoint, data_source_level, is_temporary_derived, first_seen_at, last_seen_at, raw_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, ?, COALESCE((SELECT created_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
-    row.catcher_context_key, row.batch_id, row.official_date, row.game_pk, row.game_time_utc, row.team_side, row.team_id, row.team_name, row.player_id, row.player_name, row.catcher_status, row.catcher_confidence, row.framing_runs_total, row.framing_pct_total, row.pop_time_2b_sba, row.metrics_available_flag, row.source_key, row.source_endpoint, row.data_source_level, row.is_temporary_derived, row.catcher_context_key, row.raw_json, row.catcher_context_key);
+  await pg`INSERT INTO daily.catcher_context_current ${pg([row], "catcher_context_key", "batch_id", "official_date", "game_pk", "game_time_utc", "team_side", "team_id", "team_name", "player_id", "player_name", "catcher_status", "catcher_confidence", "framing_runs_total", "framing_pct_total", "pop_time_2b_sba", "metrics_available_flag", "source_key", "source_endpoint", "data_source_level", "is_temporary_derived", "raw_json")}
+    ON CONFLICT (catcher_context_key) DO UPDATE SET batch_id=excluded.batch_id, team_id=excluded.team_id, team_name=excluded.team_name,
+    player_id=excluded.player_id, player_name=excluded.player_name, catcher_status=excluded.catcher_status, catcher_confidence=excluded.catcher_confidence,
+    framing_runs_total=excluded.framing_runs_total, framing_pct_total=excluded.framing_pct_total, pop_time_2b_sba=excluded.pop_time_2b_sba,
+    metrics_available_flag=excluded.metrics_available_flag, data_source_level=excluded.data_source_level, is_temporary_derived=excluded.is_temporary_derived,
+    last_seen_at=now(), raw_json=excluded.raw_json, updated_at=now()`;
   return row;
 }
 
-// REAL FIX: writeCatcherContext above only ever writes when an OFFICIAL lineup is posted -
-// before that (which is most of the day for most games), it silently does nothing, leaving
-// daily_catcher_context_current stuck on a stale prior-day snapshot with zero refresh attempt.
-// This mirrors deriveLineupFromRecentGame's real, researched pattern: a team's most recent
-// starting catcher is the sharpest available predictor absent a rest day or roster move.
-// Always explicitly marked derived/temporary/low-confidence, and this table's own
-// is_temporary_derived flag already existed in schema for exactly this purpose - just never
-// populated with anything other than 0 until now. Per Rodolfo's standing instruction, this is
-// a genuinely temporary bridge: the very next run that sees an official lineup posted for this
-// game will overwrite this row via writeCatcherContext's own INSERT OR REPLACE, so real data
-// always wins the moment it's available - this fallback never blocks or delays that.
-// REAL FIX (perf): the original per-game deriveCatcherFromRecentGame added up to 2 sequential
-// DB round-trips per team needing a fallback, which pushed the worker over its own internal
-// deadline (confirmed live: hard_deadline_timeout at 18000ms). Replaced with one batched query
-// for ALL teams up front, reduced in-memory - the same pattern already used successfully for
-// catcherRefMap above.
-async function batchDeriveCatchers(env, teamIds, beforeDate) {
+async function batchDeriveCatchers(pg, teamIds, beforeDate) {
   const map = new Map();
   if (!teamIds.length) return map;
   const lookbackStart = (() => {
@@ -630,24 +305,23 @@ async function batchDeriveCatchers(env, teamIds, beforeDate) {
     d.setUTCDate(d.getUTCDate() - 20);
     return d.toISOString().slice(0, 10);
   })();
-  const ph = teamIds.map(() => "?").join(",");
-  const rows = await all(env.STATS_HITTER_DB,
-    `SELECT team_id, game_date, player_id, pa FROM hitter_game_logs WHERE played_catcher_flag=1 AND game_date >= ? AND game_date < ? AND team_id IN (${ph})`,
-    lookbackStart, beforeDate, ...teamIds.map(String));
+  const teamIdStrs = teamIds.map(String);
+  const rows = await pg`SELECT team_id, game_date, player_id, pa FROM stats_hitter.game_logs
+    WHERE played_catcher_flag=1 AND game_date >= ${lookbackStart} AND game_date < ${beforeDate} AND regexp_replace(team_id, '^mlb_', '') IN ${pg(teamIdStrs)}`;
   for (const r of rows) {
-    const key = String(r.team_id);
+    const key = String(r.team_id).replace(/^mlb_/, "");
     const existing = map.get(key);
-    if (!existing || r.game_date > existing.as_of_game_date || (r.game_date === existing.as_of_game_date && Number(r.pa || 0) > Number(existing.pa || 0))) {
-      map.set(key, { player_id: Number(r.player_id), as_of_game_date: r.game_date, pa: Number(r.pa || 0) });
+    const gameDateStr = r.game_date instanceof Date ? r.game_date.toISOString().slice(0, 10) : String(r.game_date).slice(0, 10);
+    if (!existing || gameDateStr > existing.as_of_game_date || (gameDateStr === existing.as_of_game_date && Number(r.pa || 0) > Number(existing.pa || 0))) {
+      map.set(key, { player_id: Number(r.player_id), as_of_game_date: gameDateStr, pa: Number(r.pa || 0) });
     }
   }
   return map;
 }
-async function batchPlayerNames(env, playerIds) {
+async function batchPlayerNames(pg, playerIds) {
   const map = new Map();
   if (!playerIds.length) return map;
-  const ph = playerIds.map(() => "?").join(",");
-  const rows = await all(env.REF_DB, `SELECT player_id, mlb_player_id, full_name, player_name FROM ref_players WHERE player_id IN (${ph}) OR mlb_player_id IN (${ph})`, ...playerIds, ...playerIds);
+  const rows = await pg`SELECT player_id, mlb_player_id, full_name, player_name FROM ref.players WHERE player_id IN ${pg(playerIds)} OR mlb_player_id IN ${pg(playerIds)}`;
   for (const r of rows) {
     const nm = r.full_name || r.player_name || null;
     if (r.player_id !== null && r.player_id !== undefined) map.set(Number(r.player_id), nm);
@@ -656,7 +330,7 @@ async function batchPlayerNames(env, playerIds) {
   return map;
 }
 
-async function writeDerivedCatcherContext(env, batchId, gamePk, calendar, side, teamId, derived, refMap, nameMap) {
+async function writeDerivedCatcherContext(pg, batchId, gamePk, calendar, side, teamId, derived, refMap, nameMap) {
   if (!derived || !derived.player_id) return null;
   const sidePrefix = side === "home" ? "home" : "away";
   const teamName = calendar[`${sidePrefix}_team_name`] || null;
@@ -665,30 +339,21 @@ async function writeDerivedCatcherContext(env, batchId, gamePk, calendar, side, 
   const playerName = (nameMap && nameMap.get(Number(derived.player_id))) || null;
   const metricsAvailable = !!(ref && (ref.framing_runs_total !== null || ref.pop_time_2b_sba !== null));
   const row = {
-    catcher_context_key: key,
-    batch_id: batchId,
-    official_date: calendar.official_date || null,
-    game_pk: gamePk,
-    game_time_utc: calendar.game_time_utc || null,
-    team_side: side,
-    team_id: teamId,
-    team_name: teamName,
-    player_id: derived.player_id,
-    player_name: playerName,
-    catcher_status: "derived_likely_starting_catcher",
-    catcher_confidence: "LOW_DERIVED_FROM_RECENT_GAME",
-    framing_runs_total: ref ? ref.framing_runs_total : null,
-    framing_pct_total: ref ? ref.framing_pct_total : null,
-    pop_time_2b_sba: ref ? ref.pop_time_2b_sba : null,
-    metrics_available_flag: metricsAvailable ? 1 : 0,
-    source_key: "derived_recent_game_played_catcher_flag+baseball_savant_csv_export",
-    source_endpoint: "internal:hitter_game_logs",
-    data_source_level: "derived",
-    is_temporary_derived: 1,
+    catcher_context_key: key, batch_id: batchId, official_date: calendar.official_date || null, game_pk: gamePk,
+    game_time_utc: calendar.game_time_utc || null, team_side: side, team_id: teamId, team_name: teamName,
+    player_id: derived.player_id, player_name: playerName, catcher_status: "derived_likely_starting_catcher",
+    catcher_confidence: "LOW_DERIVED_FROM_RECENT_GAME", framing_runs_total: ref ? ref.framing_runs_total : null,
+    framing_pct_total: ref ? ref.framing_pct_total : null, pop_time_2b_sba: ref ? ref.pop_time_2b_sba : null,
+    metrics_available_flag: metricsAvailable ? 1 : 0, source_key: "derived_recent_game_played_catcher_flag+baseball_savant_csv_export",
+    source_endpoint: "internal:hitter_game_logs", data_source_level: "derived", is_temporary_derived: 1,
     raw_json: safeJsonStringify({ derived, ref })
   };
-  await execRun(env.DAILY_DB, `INSERT OR REPLACE INTO daily_catcher_context_current (catcher_context_key, batch_id, official_date, game_pk, game_time_utc, team_side, team_id, team_name, player_id, player_name, catcher_status, catcher_confidence, framing_runs_total, framing_pct_total, pop_time_2b_sba, metrics_available_flag, source_key, source_endpoint, data_source_level, is_temporary_derived, first_seen_at, last_seen_at, raw_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, ?, COALESCE((SELECT created_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
-    row.catcher_context_key, row.batch_id, row.official_date, row.game_pk, row.game_time_utc, row.team_side, row.team_id, row.team_name, row.player_id, row.player_name, row.catcher_status, row.catcher_confidence, row.framing_runs_total, row.framing_pct_total, row.pop_time_2b_sba, row.metrics_available_flag, row.source_key, row.source_endpoint, row.data_source_level, row.is_temporary_derived, row.catcher_context_key, row.raw_json, row.catcher_context_key);
+  await pg`INSERT INTO daily.catcher_context_current ${pg([row], "catcher_context_key", "batch_id", "official_date", "game_pk", "game_time_utc", "team_side", "team_id", "team_name", "player_id", "player_name", "catcher_status", "catcher_confidence", "framing_runs_total", "framing_pct_total", "pop_time_2b_sba", "metrics_available_flag", "source_key", "source_endpoint", "data_source_level", "is_temporary_derived", "raw_json")}
+    ON CONFLICT (catcher_context_key) DO UPDATE SET batch_id=excluded.batch_id, team_id=excluded.team_id, team_name=excluded.team_name,
+    player_id=excluded.player_id, player_name=excluded.player_name, catcher_status=excluded.catcher_status, catcher_confidence=excluded.catcher_confidence,
+    framing_runs_total=excluded.framing_runs_total, framing_pct_total=excluded.framing_pct_total, pop_time_2b_sba=excluded.pop_time_2b_sba,
+    metrics_available_flag=excluded.metrics_available_flag, data_source_level=excluded.data_source_level, is_temporary_derived=excluded.is_temporary_derived,
+    last_seen_at=now(), raw_json=excluded.raw_json, updated_at=now()`;
   return row;
 }
 
@@ -696,88 +361,27 @@ function safeJsonStringify(value) {
   try { return JSON.stringify(value).slice(0, 3000); } catch (_) { return null; }
 }
 
-async function ensureDailyLineupTables(env) {
-  const db = env.DAILY_DB;
-  await db.batch([
-    db.prepare(`
-    CREATE TABLE IF NOT EXISTS daily_lineups_batches (
-      batch_id TEXT PRIMARY KEY,
-      job_key TEXT,
-      worker_name TEXT,
-      worker_version TEXT,
-      mode TEXT,
-      source_probe_lane TEXT,
-      certification_status TEXT,
-      certification_grade TEXT,
-      write_gate_status TEXT,
-      production_lineup_writes_enabled INTEGER DEFAULT 0,
-      derived_backup_write_enabled INTEGER DEFAULT 0,
-      games_checked INTEGER DEFAULT 0,
-      lineup_write_ready_games INTEGER DEFAULT 0,
-      rows_written INTEGER DEFAULT 0,
-      writes_performed INTEGER DEFAULT 0,
-      started_at TEXT,
-      completed_at TEXT,
-      output_json TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `),
-    db.prepare(`
-    CREATE TABLE IF NOT EXISTS daily_lineups_current (
-      lineup_row_id TEXT PRIMARY KEY,
-      batch_id TEXT,
-      game_pk INTEGER NOT NULL,
-      official_date TEXT,
-      game_time_utc TEXT,
-      team_side TEXT NOT NULL,
-      team_id INTEGER,
-      team_name TEXT,
-      player_id INTEGER NOT NULL,
-      player_name TEXT,
-      lineup_slot INTEGER NOT NULL,
-      batting_order_code TEXT,
-      bat_side TEXT,
-      active_position TEXT,
-      lineup_status TEXT,
-      confidence_label TEXT,
-      source_endpoint TEXT,
-      source_mode TEXT,
-      fetched_at_utc TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `),
-    db.prepare(`
-    CREATE TABLE IF NOT EXISTS daily_player_availability_current (
-      availability_row_id TEXT PRIMARY KEY,
-      batch_id TEXT,
-      game_pk INTEGER NOT NULL,
-      official_date TEXT,
-      game_time_utc TEXT,
-      player_id INTEGER NOT NULL,
-      player_name TEXT,
-      team TEXT,
-      side TEXT,
-      availability_status TEXT,
-      roster_status_code TEXT,
-      roster_status_description TEXT,
-      source_status TEXT,
-      confidence_label TEXT,
-      prepared_rows INTEGER DEFAULT 0,
-      sources TEXT,
-      prop_keys TEXT,
-      fetched_at_utc TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_game ON daily_lineups_current(game_pk, team_side, lineup_slot)`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_player ON daily_lineups_current(player_id, game_pk)`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_lineups_batches_created ON daily_lineups_batches(created_at)`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_availability_current_game ON daily_player_availability_current(game_pk, side, player_id)`)
-  ]);
-  return true;
+async function ensureSchema(pg) {
+  await pg.unsafe(`
+CREATE TABLE IF NOT EXISTS daily.lineups_batches (
+  batch_id TEXT PRIMARY KEY, job_key TEXT, worker_name TEXT, worker_version TEXT, mode TEXT, source_probe_lane TEXT,
+  certification_status TEXT, certification_grade TEXT, write_gate_status TEXT, production_lineup_writes_enabled INTEGER DEFAULT 0,
+  derived_backup_write_enabled INTEGER DEFAULT 0, games_checked INTEGER DEFAULT 0, lineup_write_ready_games INTEGER DEFAULT 0,
+  rows_written INTEGER DEFAULT 0, writes_performed INTEGER DEFAULT 0, started_at TIMESTAMPTZ, completed_at TIMESTAMPTZ,
+  output_json JSONB, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_lineups_batches_created ON daily.lineups_batches(created_at);
+CREATE TABLE IF NOT EXISTS daily.catcher_context_current (
+  catcher_context_key TEXT PRIMARY KEY, batch_id TEXT, official_date TEXT, game_pk BIGINT, game_time_utc TIMESTAMPTZ,
+  team_side TEXT, team_id BIGINT, team_name TEXT, player_id BIGINT, player_name TEXT, catcher_status TEXT, catcher_confidence TEXT,
+  framing_runs_total DOUBLE PRECISION, framing_pct_total DOUBLE PRECISION, pop_time_2b_sba DOUBLE PRECISION, metrics_available_flag INTEGER DEFAULT 0,
+  source_key TEXT, source_endpoint TEXT, data_source_level TEXT DEFAULT 'unknown', is_temporary_derived INTEGER DEFAULT 0,
+  first_seen_at TIMESTAMPTZ DEFAULT now(), last_seen_at TIMESTAMPTZ DEFAULT now(), raw_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_catcher_context_game ON daily.catcher_context_current(game_pk, official_date);
+CREATE INDEX IF NOT EXISTS idx_lineups_current_game ON daily.lineups_current(game_pk, team_side, lineup_slot);
+CREATE INDEX IF NOT EXISTS idx_lineups_current_player ON daily.lineups_current(player_id, game_pk);`);
 }
 
 function writeGateStatusFrom(games, writeHardBlocks) {
@@ -799,279 +403,117 @@ function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
       const playerId = intOrNull(row.player_id);
       if (!gamePk || !slot || !playerId) continue;
       rows.push({
-        lineup_row_id: `${gamePk}_${row.team_side}_${slot}`,
-        batch_id: batchId,
-        game_pk: gamePk,
-        official_date: row.official_date || game.official_date || null,
-        game_time_utc: row.game_time_utc || game.game_time_utc || null,
-        team_side: row.team_side,
-        team_id: intOrNull(row.team_id),
-        team_name: row.team_name || null,
-        player_id: playerId,
-        player_name: row.player_name || null,
-        lineup_slot: slot,
-        batting_order_code: row.batting_order_code || null,
-        bat_side: row.bat_side || null,
-        active_position: row.active_position || null,
+        lineup_row_id: `${gamePk}_${row.team_side}_${slot}`, batch_id: batchId, game_pk: gamePk,
+        official_date: row.official_date || game.official_date || null, game_time_utc: row.game_time_utc || game.game_time_utc || null,
+        team_side: row.team_side, team_id: intOrNull(row.team_id), team_name: row.team_name || null,
+        player_id: playerId, player_name: row.player_name || null, lineup_slot: slot,
+        batting_order_code: row.batting_order_code || null, bat_side: row.bat_side || null, active_position: row.active_position || null,
         lineup_status: isOfficial ? "posted_lineup" : "derived_likely_lineup",
         confidence_label: isOfficial ? "OFFICIAL_BATTING_ORDER_POSTED" : "LOW_DERIVED_FROM_RECENT_LINEUP",
         source_endpoint: row.source_endpoint || (isOfficial ? "/api/v1/game/{gamePk}/boxscore" : "internal:hitter_game_logs"),
         source_mode: isOfficial ? "boxscore_batting_order" : "derived_recent_lineup",
-        data_source_level: isOfficial ? "real" : "derived",
-        is_temporary_derived: isOfficial ? 0 : 1,
-        fetched_at_utc: fetchedAtUtc
+        data_source_level: isOfficial ? "real" : "derived", is_temporary_derived: isOfficial ? 0 : 1, fetched_at_utc: fetchedAtUtc
       });
     }
   }
   return rows;
 }
 
-async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) {
-  const schemaReady = await ensureDailyLineupTables(env);
+async function writeConfirmedLineupsIfGateOpen(pg, summary, cert, writeSafety) {
+  await ensureSchema(pg);
   const realBoardDates = [...new Set((summary.games || []).map(g => g && g.official_date).filter(Boolean))];
-  const retentionPrune = await pruneDailyLineupRetention(env, realBoardDates);
+  const retentionPrune = await pruneDailyLineupRetention(pg, realBoardDates);
   const gateStatus = writeGateStatusFrom(summary.games, writeSafety.hard_blocks);
   const fetchedAt = nowUtc();
   const batchId = compactId(LINEUP_BATCH_PREFIX);
   const rows = collectLineupWriteRows(summary.games, batchId, fetchedAt);
 
   if (!PRODUCTION_LINEUP_WRITES_ENABLED || !LIVE_GATED_LINEUP_WRITES_ENABLED || gateStatus !== "live_gate_open_posted_lineup_ready" || rows.length === 0) {
-    return {
-      schema_bootstrap_performed: schemaReady,
-      batch_id: null,
-      write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
-      write_gate_status: gateStatus,
-      ...retentionPrune,
-      lineup_rows_ready_to_write: rows.length,
-      rows_written: 0,
-      writes_performed: 0,
-      write_error: null
-    };
+    return { schema_bootstrap_performed: true, batch_id: null, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: gateStatus, ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: 0, writes_performed: 0, write_error: null };
   }
-
   if ((writeSafety.hard_blocks || []).length > 0 || cert.blockerCount > 0) {
-    return {
-      schema_bootstrap_performed: schemaReady,
-      batch_id: null,
-      write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
-      write_gate_status: "blocked_by_live_gate",
-      ...retentionPrune,
-      lineup_rows_ready_to_write: rows.length,
-      rows_written: 0,
-      writes_performed: 0,
-      write_error: "blocked_by_live_gate"
-    };
+    return { schema_bootstrap_performed: true, batch_id: null, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: "blocked_by_live_gate", ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: 0, writes_performed: 0, write_error: "blocked_by_live_gate" };
   }
 
-  await execRun(env.DAILY_DB, `
-    INSERT OR REPLACE INTO daily_lineups_batches (
-      batch_id, job_key, worker_name, worker_version, mode, source_probe_lane,
-      certification_status, certification_grade, write_gate_status,
-      production_lineup_writes_enabled, derived_backup_write_enabled,
-      games_checked, lineup_write_ready_games, rows_written, writes_performed,
-      started_at, completed_at, output_json, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  `,
-    batchId, JOB_KEY, WORKER_NAME, VERSION, "live_gated_lineup_write", summary.source_probe_lane || null,
-    "PASS_LIVE_GATED_LINEUPS_WRITTEN", "LIVE_GATED_CONFIRMED_LINEUP_WRITES", gateStatus,
-    PRODUCTION_LINEUP_WRITES_ENABLED ? 1 : 0, DERIVED_BACKUP_WRITE_ENABLED ? 1 : 0,
-    Number(summary.games_checked || 0), Number(summary.lineup_write_ready_games || 0), rows.length, rows.length,
-    summary.started_at || null, fetchedAt, JSON.stringify({ request_id: summary.request_id || null, rows_written: rows.length })
+  await pg.unsafe(
+    `INSERT INTO daily.lineups_batches (batch_id, job_key, worker_name, worker_version, mode, source_probe_lane, certification_status, certification_grade, write_gate_status, production_lineup_writes_enabled, derived_backup_write_enabled, games_checked, lineup_write_ready_games, rows_written, writes_performed, started_at, completed_at, output_json, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,now())`,
+    [batchId, JOB_KEY, WORKER_NAME, VERSION, "live_gated_lineup_write", summary.source_probe_lane || null,
+      "PASS_LIVE_GATED_LINEUPS_WRITTEN", "LIVE_GATED_CONFIRMED_LINEUP_WRITES", gateStatus,
+      PRODUCTION_LINEUP_WRITES_ENABLED ? 1 : 0, DERIVED_BACKUP_WRITE_ENABLED ? 1 : 0,
+      Number(summary.games_checked || 0), Number(summary.lineup_write_ready_games || 0), rows.length, rows.length,
+      summary.started_at || null, fetchedAt, JSON.stringify({ request_id: summary.request_id || null, rows_written: rows.length })]
   );
 
-  const statements = rows.map(row => env.DAILY_DB.prepare(`
-      INSERT OR REPLACE INTO daily_lineups_current (
-        lineup_row_id, batch_id, game_pk, official_date, game_time_utc, team_side,
-        team_id, team_name, player_id, player_name, lineup_slot, batting_order_code,
-        bat_side, active_position, lineup_status, confidence_label, source_endpoint,
-        source_mode, data_source_level, is_temporary_derived, fetched_at_utc, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).bind(
-    row.lineup_row_id, row.batch_id, row.game_pk, row.official_date, row.game_time_utc,
-    row.team_side, row.team_id, row.team_name, row.player_id, row.player_name,
-    row.lineup_slot, row.batting_order_code, row.bat_side, row.active_position,
-    row.lineup_status, row.confidence_label, row.source_endpoint, row.source_mode,
-    row.data_source_level, row.is_temporary_derived, row.fetched_at_utc
-  ));
-  if (statements.length) await env.DAILY_DB.batch(statements);
+  const cols = ["lineup_row_id", "batch_id", "game_pk", "official_date", "game_time_utc", "team_side", "team_id", "team_name", "player_id", "player_name", "lineup_slot", "batting_order_code", "bat_side", "active_position", "lineup_status", "confidence_label", "source_endpoint", "source_mode", "data_source_level", "is_temporary_derived", "fetched_at_utc"];
+  await pg`INSERT INTO daily.lineups_current ${pg(rows, ...cols)}
+    ON CONFLICT (lineup_row_id) DO UPDATE SET batch_id=excluded.batch_id, official_date=excluded.official_date, game_time_utc=excluded.game_time_utc,
+    team_id=excluded.team_id, team_name=excluded.team_name, player_id=excluded.player_id, player_name=excluded.player_name,
+    batting_order_code=excluded.batting_order_code, bat_side=excluded.bat_side, active_position=excluded.active_position,
+    lineup_status=excluded.lineup_status, confidence_label=excluded.confidence_label, source_endpoint=excluded.source_endpoint,
+    source_mode=excluded.source_mode, data_source_level=excluded.data_source_level, is_temporary_derived=excluded.is_temporary_derived,
+    fetched_at_utc=excluded.fetched_at_utc, updated_at=now()`;
 
-  return {
-    schema_bootstrap_performed: schemaReady,
-    batch_id: batchId,
-    write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
-    write_gate_status: gateStatus,
-    ...retentionPrune,
-    lineup_rows_ready_to_write: rows.length,
-    rows_written: rows.length,
-    writes_performed: rows.length,
-    write_error: null
-  };
+  return { schema_bootstrap_performed: true, batch_id: batchId, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: gateStatus, ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: rows.length, writes_performed: rows.length, write_error: null };
 }
 
 async function readJsonSafe(request) {
-  try {
-    return await request.json();
-  } catch {
-    return {};
-  }
+  try { return await request.json(); } catch { return {}; }
 }
 
 function baseIdentity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const vars = varPresence(env, EXPECTED_VARS);
-
   return {
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    status: "SOURCE_PROBE_READY",
-    timestamp_utc: nowUtc(),
+    ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "SOURCE_PROBE_READY", timestamp_utc: nowUtc(),
     phase: "daily-context-phase-2-lineups-source-probe",
-    binding_summary: {
-      required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars)
-    },
+    binding_summary: { required_db_bindings_present: Boolean(env && env.HYPERDRIVE), expected_vars_present: allTrue(vars) },
     guardrails: {
-      source_probe_only: true,
-      live_gated_daily_lineups_current_writes: LIVE_GATED_LINEUP_WRITES_ENABLED,
-      no_daily_lineups_current_writes_before_posted_batting_order: true,
-      no_prepared_board_mutation: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_daily_starters_duplication: true,
-      no_daily_game_status_duplication: true,
-      retention_prune_enabled: true,
-      retention_window: RETENTION_WINDOW_LABEL,
-      retention_scope: ["DAILY_DB.daily_lineups_current", "DAILY_DB.daily_lineups_batches"]
+      source_probe_only: true, live_gated_daily_lineups_current_writes: LIVE_GATED_LINEUP_WRITES_ENABLED,
+      no_daily_lineups_current_writes_before_posted_batting_order: true, no_prepared_board_mutation: true,
+      no_scoring: true, no_ranking: true, no_final_board: true, retention_prune_enabled: true,
+      retention_window: RETENTION_WINDOW_LABEL, retention_scope: ["daily.lineups_current", "daily.lineups_batches"]
     }
   };
 }
 
-function normalizeTeamKey(value) {
-  return String(value || "").trim().toUpperCase();
+function normalizeTeamKey(value) { return String(value || "").trim().toUpperCase(); }
+function intOrNull(value) { const n = Number(value); return Number.isFinite(n) ? n : null; }
+function uniqInts(values) { return [...new Set((values || []).map(intOrNull).filter((v) => v !== null))]; }
+
+async function getPreparedGameAnchors(pg) {
+  return await pg.unsafe(`SELECT official_game_pk, official_game_time_utc, COUNT(*) AS prepared_rows, COUNT(DISTINCT resolved_mlb_player_id) AS prepared_players
+    FROM score.board_prepared_current
+    WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched'
+      AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL AND resolved_mlb_player_id IS NOT NULL
+    GROUP BY official_game_pk, official_game_time_utc ORDER BY official_game_time_utc LIMIT ${MAX_GAMES}`);
 }
 
-function intOrNull(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
-function uniqInts(values) {
-  return [...new Set((values || []).map(intOrNull).filter((v) => v !== null))];
-}
-
-function buildInClause(values) {
-  return values.map(() => "?").join(",");
-}
-
-async function getPreparedGameAnchors(env) {
-  return await all(env.SCORE_DB, `
-    SELECT
-      official_game_pk,
-      official_game_time_utc,
-      COUNT(*) AS prepared_rows,
-      COUNT(DISTINCT resolved_mlb_player_id) AS prepared_players
-    FROM score_board_prepared_current
-    WHERE pickable_safe = 1
-      AND matchup_status = 'calendar_matched'
-      AND player_match_status = 'matched'
-      AND official_game_pk IS NOT NULL
-      AND official_game_time_utc IS NOT NULL
-      AND resolved_mlb_player_id IS NOT NULL
-    GROUP BY official_game_pk, official_game_time_utc
-    ORDER BY official_game_time_utc
-    LIMIT ${MAX_GAMES}
-  `);
-}
-
-async function getPreparedPlayers(env, gamePks) {
+async function getPreparedPlayers(pg, gamePks) {
   if (!gamePks.length) return [];
-  const placeholders = buildInClause(gamePks);
-  return await all(env.SCORE_DB, `
-    SELECT
-      official_game_pk,
-      official_game_time_utc,
-      resolved_mlb_player_id,
-      MIN(player_name) AS player_name,
-      team,
-      opponent,
-      COUNT(*) AS prepared_rows,
-      GROUP_CONCAT(DISTINCT source_key) AS sources,
-      GROUP_CONCAT(DISTINCT canonical_prop_key) AS prop_keys
-    FROM score_board_prepared_current
-    WHERE pickable_safe = 1
-      AND matchup_status = 'calendar_matched'
-      AND player_match_status = 'matched'
-      AND official_game_pk IN (${placeholders})
-      AND official_game_time_utc IS NOT NULL
-      AND resolved_mlb_player_id IS NOT NULL
-    GROUP BY
-      official_game_pk,
-      official_game_time_utc,
-      resolved_mlb_player_id,
-      team,
-      opponent
-    ORDER BY official_game_time_utc, official_game_pk, team, player_name
-  `, ...gamePks);
+  return await pg`SELECT official_game_pk, official_game_time_utc, resolved_mlb_player_id, MIN(player_name) AS player_name, team, opponent,
+      COUNT(*) AS prepared_rows, string_agg(DISTINCT source_key, ',') AS sources, string_agg(DISTINCT canonical_prop_key, ',') AS prop_keys
+    FROM score.board_prepared_current
+    WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched'
+      AND official_game_pk IN ${pg(gamePks)} AND official_game_time_utc IS NOT NULL AND resolved_mlb_player_id IS NOT NULL
+    GROUP BY official_game_pk, official_game_time_utc, resolved_mlb_player_id, team, opponent
+    ORDER BY official_game_time_utc, official_game_pk, team, player_name`;
 }
 
-async function getCalendarRows(env, gamePks) {
+async function getCalendarRows(pg, gamePks) {
   if (!gamePks.length) return [];
-  const placeholders = buildInClause(gamePks);
-  return await all(env.TEAM_DB, `
-    SELECT
-      game_pk,
-      official_date,
-      game_time_utc,
-      home_team_id,
-      away_team_id,
-      home_team_name,
-      away_team_name,
-      detailed_state,
-      abstract_game_state,
-      is_final,
-      is_live,
-      is_scheduled,
-      is_pregame,
-      is_available_for_stats,
-      doubleheader,
-      game_number,
-      updated_at
-    FROM mlb_game_calendar
-    WHERE game_pk IN (${placeholders})
-    ORDER BY game_time_utc
-  `, ...gamePks);
+  return await pg`SELECT game_pk, official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name,
+      detailed_state, abstract_game_state, is_final, is_live, is_pregame
+    FROM calendar.game_calendar WHERE game_pk IN ${pg(gamePks)} ORDER BY game_time_utc`;
 }
 
-async function getCalendarOnlyProbeRows(env, targetDate) {
-  const rows = await all(env.TEAM_DB, `
-    SELECT
-      game_pk,
-      official_date,
-      game_time_utc,
-      home_team_id,
-      away_team_id,
-      home_team_name,
-      away_team_name,
-      detailed_state,
-      abstract_game_state,
-      is_final,
-      is_live,
-      is_scheduled,
-      is_pregame,
-      is_available_for_stats,
-      doubleheader,
-      game_number,
-      updated_at
-    FROM mlb_game_calendar
-    WHERE official_date >= ?
-      AND COALESCE(is_final, 0) = 0
-    ORDER BY official_date, game_time_utc
-    LIMIT ${MAX_CALENDAR_PROBE_GAMES}
-  `, targetDate);
+async function getCalendarOnlyProbeRows(pg, targetDate) {
+  const rows = await pg.unsafe(
+    `SELECT game_pk, official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name,
+      detailed_state, abstract_game_state, is_final, is_live, is_pregame
+    FROM calendar.game_calendar WHERE official_date >= $1 AND COALESCE(is_final, 0) = 0
+    ORDER BY official_date, game_time_utc LIMIT ${MAX_CALENDAR_PROBE_GAMES}`,
+    [targetDate]
+  );
   return rows || [];
 }
 
@@ -1079,14 +521,10 @@ async function discoverOfficialSchedule(env, sourceBase, userAgent, rows, label)
   const gamePks = uniqInts((rows || []).map((r) => r.game_pk || r.official_game_pk));
   const { start, end } = minMaxOfficialDates(rows || []);
   const base = {
-    [`${label}_official_schedule_checked`]: false,
-    [`${label}_official_schedule_url`]: null,
-    [`${label}_official_schedule_http_status`]: null,
-    [`${label}_official_schedule_ok`]: false,
-    [`${label}_official_schedule_game_count`]: 0,
-    [`${label}_official_schedule_anchor_hit_count`]: 0,
-    [`${label}_official_schedule_anchor_hit_game_pks`]: [],
-    [`${label}_official_schedule_anchor_missing_count`]: gamePks.length,
+    [`${label}_official_schedule_checked`]: false, [`${label}_official_schedule_url`]: null,
+    [`${label}_official_schedule_http_status`]: null, [`${label}_official_schedule_ok`]: false,
+    [`${label}_official_schedule_game_count`]: 0, [`${label}_official_schedule_anchor_hit_count`]: 0,
+    [`${label}_official_schedule_anchor_hit_game_pks`]: [], [`${label}_official_schedule_anchor_missing_count`]: gamePks.length,
     [`${label}_official_schedule_anchor_missing_game_pks`]: gamePks
   };
   if (!start || !end || !gamePks.length) return base;
@@ -1096,31 +534,16 @@ async function discoverOfficialSchedule(env, sourceBase, userAgent, rows, label)
   const hits = gamePks.filter((pk) => schedulePks.has(pk));
   const misses = gamePks.filter((pk) => !schedulePks.has(pk));
   return {
-    [`${label}_official_schedule_checked`]: true,
-    [`${label}_official_schedule_url`]: scheduleUrl,
-    [`${label}_official_schedule_http_status`]: scheduleRes.http_status,
-    [`${label}_official_schedule_ok`]: !!scheduleRes.ok,
-    [`${label}_official_schedule_game_count`]: schedulePks.size,
-    [`${label}_official_schedule_anchor_hit_count`]: hits.length,
-    [`${label}_official_schedule_anchor_hit_game_pks`]: hits,
-    [`${label}_official_schedule_anchor_missing_count`]: misses.length,
+    [`${label}_official_schedule_checked`]: true, [`${label}_official_schedule_url`]: scheduleUrl,
+    [`${label}_official_schedule_http_status`]: scheduleRes.http_status, [`${label}_official_schedule_ok`]: !!scheduleRes.ok,
+    [`${label}_official_schedule_game_count`]: schedulePks.size, [`${label}_official_schedule_anchor_hit_count`]: hits.length,
+    [`${label}_official_schedule_anchor_hit_game_pks`]: hits, [`${label}_official_schedule_anchor_missing_count`]: misses.length,
     [`${label}_official_schedule_anchor_missing_game_pks`]: misses
   };
 }
 
-async function getTeamMap(env) {
-  const rows = await all(env.REF_DB, `
-    SELECT
-      team_id,
-      mlb_team_id,
-      abbreviation,
-      full_name,
-      team_code,
-      file_code,
-      active
-    FROM ref_teams
-    WHERE active = 1
-  `);
+async function getTeamMap(pg) {
+  const rows = await pg`SELECT team_id, mlb_team_id, abbreviation, full_name, team_code, file_code FROM ref.teams WHERE active = 1`;
   const out = new Map();
   for (const row of rows) {
     const mlbTeamId = intOrNull(row.mlb_team_id);
@@ -1145,9 +568,7 @@ async function fetchJsonWithTimeout(url, userAgent) {
     let json = null;
     if (text) {
       try { json = JSON.parse(text); }
-      catch (err) {
-        return { ok: false, http_status: resp.status, elapsed_ms: Date.now() - started, error: "json_parse_error", response_preview: text.slice(0, 500) };
-      }
+      catch (err) { return { ok: false, http_status: resp.status, elapsed_ms: Date.now() - started, error: "json_parse_error", response_preview: text.slice(0, 500) }; }
     }
     return { ok: resp.ok, http_status: resp.status, elapsed_ms: Date.now() - started, json, response_bytes: text.length };
   } catch (err) {
@@ -1156,7 +577,6 @@ async function fetchJsonWithTimeout(url, userAgent) {
     clearTimeout(timer);
   }
 }
-
 
 async function fetchTextWithTimeout(url, userAgent) {
   const controller = new AbortController();
@@ -1183,7 +603,6 @@ async function fetchJsonWithRetry(url, userAgent, attempts = MAX_ENDPOINT_RETRIE
     tries.push({ attempt: i + 1, http_status: res.http_status, ok: res.ok, elapsed_ms: res.elapsed_ms, response_bytes: res.response_bytes || 0, error: res.error || null });
     last = res;
     if (res.ok) break;
-    // 404 is source-state evidence, not a transient transport failure. Do not spin more calls.
     if (res.http_status === 404) break;
   }
   return { ...last, attempts: tries, attempt_count: tries.length };
@@ -1213,37 +632,18 @@ function analyzeStartingLineupsPage(text, calendarRows, preparedPlayers) {
   const hasNextData = hay.includes('id="__next_data__') || hay.includes("id='__next_data__") || hay.includes("__next_data__");
   const hasJsonScript = hasNextData || hay.includes("application/json") || hay.includes("lineups");
   const dateHits = new Set();
-  for (const row of calendarRows || []) {
-    if (row.official_date && hay.includes(String(row.official_date).toLowerCase())) dateHits.add(row.official_date);
-  }
+  for (const row of calendarRows || []) { if (row.official_date && hay.includes(String(row.official_date).toLowerCase())) dateHits.add(row.official_date); }
   const teamNameHits = [];
-  for (const row of calendarRows || []) {
-    for (const value of [row.home_team_name, row.away_team_name]) {
-      if (value && hay.includes(String(value).toLowerCase())) teamNameHits.push(value);
-    }
-  }
+  for (const row of calendarRows || []) { for (const value of [row.home_team_name, row.away_team_name]) { if (value && hay.includes(String(value).toLowerCase())) teamNameHits.push(value); } }
   const abbrHits = [];
-  for (const row of preparedPlayers || []) {
-    for (const value of [row.team, row.opponent]) {
-      const v = normalizeTeamKey(value);
-      if (v && hay.includes(v.toLowerCase())) abbrHits.push(v);
-    }
-  }
+  for (const row of preparedPlayers || []) { for (const value of [row.team, row.opponent]) { const v = normalizeTeamKey(value); if (v && hay.includes(v.toLowerCase())) abbrHits.push(v); } }
   const playerNameHits = [];
-  for (const row of preparedPlayers || []) {
-    if (row.player_name && hay.includes(String(row.player_name).toLowerCase())) playerNameHits.push(row.player_name);
-    if (playerNameHits.length >= 30) break;
-  }
+  for (const row of preparedPlayers || []) { if (row.player_name && hay.includes(String(row.player_name).toLowerCase())) playerNameHits.push(row.player_name); if (playerNameHits.length >= 30) break; }
   return {
-    has_next_data_marker: hasNextData,
-    has_json_or_lineup_marker: hasJsonScript,
-    target_date_hits: [...new Set(dateHits)],
-    target_team_name_hit_count: [...new Set(teamNameHits)].length,
-    target_team_name_hits_sample: [...new Set(teamNameHits)].slice(0, 20),
-    target_team_abbr_hit_count: [...new Set(abbrHits)].length,
-    target_team_abbr_hits_sample: [...new Set(abbrHits)].slice(0, 20),
-    target_player_name_hit_count: [...new Set(playerNameHits)].length,
-    target_player_name_hits_sample: [...new Set(playerNameHits)].slice(0, 20)
+    has_next_data_marker: hasNextData, has_json_or_lineup_marker: hasJsonScript, target_date_hits: [...new Set(dateHits)],
+    target_team_name_hit_count: [...new Set(teamNameHits)].length, target_team_name_hits_sample: [...new Set(teamNameHits)].slice(0, 20),
+    target_team_abbr_hit_count: [...new Set(abbrHits)].length, target_team_abbr_hits_sample: [...new Set(abbrHits)].slice(0, 20),
+    target_player_name_hit_count: [...new Set(playerNameHits)].length, target_player_name_hits_sample: [...new Set(playerNameHits)].slice(0, 20)
   };
 }
 
@@ -1255,16 +655,11 @@ function samplePlayersFromMap(players) {
     if (!player || typeof player !== "object") continue;
     const person = player.person || {};
     out.push({
-      map_key: key,
-      person_id: intOrNull(person.id),
-      full_name: person.fullName || null,
-      bat_side: person.batSide ? person.batSide.code || null : null,
-      bat_side_description: person.batSide ? person.batSide.description || null : null,
+      map_key: key, person_id: intOrNull(person.id), full_name: person.fullName || null,
+      bat_side: person.batSide ? person.batSide.code || null : null, bat_side_description: person.batSide ? person.batSide.description || null : null,
       primary_position: person.primaryPosition ? person.primaryPosition.code || null : null,
-      active_position: player.position ? player.position.code || null : null,
-      batting_order_code: player.battingOrder || null,
-      status_code: player.status ? player.status.code || null : null,
-      status_description: player.status ? player.status.description || null : null
+      active_position: player.position ? player.position.code || null : null, batting_order_code: player.battingOrder || null,
+      status_code: player.status ? player.status.code || null : null, status_description: player.status ? player.status.description || null : null
     });
     if (out.length >= 3) break;
   }
@@ -1291,28 +686,15 @@ function validateSide(sideName, node) {
     order.forEach((id, index) => {
       const key = `ID${id}`;
       const player = players[key];
-      if (!player) {
-        mappingValid = false;
-        blockers.push(`${sideName}_missing_player_map_key_${key}`);
-        return;
-      }
-      if (!player.person || intOrNull(player.person.id) !== id) {
-        mappingValid = false;
-        blockers.push(`${sideName}_person_id_mismatch_${key}`);
-      }
-      if (!player.person || !player.person.fullName) {
-        mappingValid = false;
-        blockers.push(`${sideName}_person_full_name_missing_${key}`);
-      }
+      if (!player) { mappingValid = false; blockers.push(`${sideName}_missing_player_map_key_${key}`); return; }
+      if (!player.person || intOrNull(player.person.id) !== id) { mappingValid = false; blockers.push(`${sideName}_person_id_mismatch_${key}`); }
+      if (!player.person || !player.person.fullName) { mappingValid = false; blockers.push(`${sideName}_person_full_name_missing_${key}`); }
       if (!player.person || !player.person.batSide || !player.person.batSide.code) warnings.push(`${sideName}_bat_side_missing_${key}`);
       if (!player.position || !player.position.code) warnings.push(`${sideName}_position_missing_${key}`);
       if (!player.battingOrder) warnings.push(`${sideName}_player_batting_order_string_missing_${key}`);
       mappedPlayers.push({
-        player_id: id,
-        player_name: player.person && player.person.fullName ? player.person.fullName : null,
-        lineup_slot: index + 1,
-        batting_order_code: player.battingOrder || null,
-        bat_side: player.person && player.person.batSide ? player.person.batSide.code || null : null,
+        player_id: id, player_name: player.person && player.person.fullName ? player.person.fullName : null, lineup_slot: index + 1,
+        batting_order_code: player.battingOrder || null, bat_side: player.person && player.person.batSide ? player.person.batSide.code || null : null,
         position: player.position ? player.position.code || null : null
       });
     });
@@ -1326,16 +708,9 @@ function validateSide(sideName, node) {
   }
 
   return {
-    batting_order_count: order.length,
-    batting_order_sample: order.slice(0, 12),
-    player_map_count: players ? Object.keys(players).length : 0,
-    player_map_sample: samplePlayersFromMap(players),
-    lineup_status: lineupStatus,
-    mapping_valid: mappingValid,
-    mapped_players: mappedPlayers,
-    mapped_players_sample: mappedPlayers.slice(0, 12),
-    warnings,
-    blockers
+    batting_order_count: order.length, batting_order_sample: order.slice(0, 12), player_map_count: players ? Object.keys(players).length : 0,
+    player_map_sample: samplePlayersFromMap(players), lineup_status: lineupStatus, mapping_valid: mappingValid, mapped_players: mappedPlayers,
+    mapped_players_sample: mappedPlayers.slice(0, 12), warnings, blockers
   };
 }
 
@@ -1357,32 +732,18 @@ function summarizePreparedPlayers(preparedPlayers, calendar, teamMap, homeValida
   const warnings = [];
   const blockers = [];
   const samples = [];
-  let checked = 0;
-  let inLineup = 0;
-  let notInLineup = 0;
-  let unknown = 0;
-  let rosterValidated = 0;
-  let inactiveRosterMatches = 0;
-  let matchMissing = 0;
+  let checked = 0, inLineup = 0, notInLineup = 0, unknown = 0, rosterValidated = 0, inactiveRosterMatches = 0, matchMissing = 0;
 
   for (const row of preparedPlayers) {
     checked += 1;
     const teamKey = normalizeTeamKey(row.team);
     const teamRef = teamMap.get(teamKey);
-    if (!teamRef) {
-      unknown += 1;
-      warnings.push(`team_ref_missing_${teamKey || "blank"}_${row.resolved_mlb_player_id}`);
-      continue;
-    }
+    if (!teamRef) { unknown += 1; warnings.push(`team_ref_missing_${teamKey || "blank"}_${row.resolved_mlb_player_id}`); continue; }
     const playerId = intOrNull(row.resolved_mlb_player_id);
     let side = null;
     if (teamRef.mlb_team_id === intOrNull(calendar.home_team_id)) side = "home";
     else if (teamRef.mlb_team_id === intOrNull(calendar.away_team_id)) side = "away";
-    else {
-      unknown += 1;
-      warnings.push(`prepared_team_not_in_calendar_${teamKey}_${row.resolved_mlb_player_id}`);
-      continue;
-    }
+    else { unknown += 1; warnings.push(`prepared_team_not_in_calendar_${teamKey}_${row.resolved_mlb_player_id}`); continue; }
     const validation = side === "home" ? homeValidation : awayValidation;
     const sideNode = boxscoreTeams && boxscoreTeams[side] ? boxscoreTeams[side] : null;
     const playerNode = getPreparedPlayerNode(playerId, sideNode);
@@ -1393,30 +754,14 @@ function summarizePreparedPlayers(preparedPlayers, calendar, teamMap, homeValida
     if (status === "player_in_lineup") inLineup += 1;
     else if (status === "player_not_in_lineup") notInLineup += 1;
     else if (status === "pre_lineup_roster_validated") {
-      if (statusCode && statusCode !== "A") {
-        inactiveRosterMatches += 1;
-        warnings.push(`prepared_player_non_active_status_${teamKey}_${playerId}_${statusCode}`);
-      } else {
-        rosterValidated += 1;
-      }
+      if (statusCode && statusCode !== "A") { inactiveRosterMatches += 1; warnings.push(`prepared_player_non_active_status_${teamKey}_${playerId}_${statusCode}`); }
+      else rosterValidated += 1;
     }
     else if (status === "player_match_missing") matchMissing += 1;
     else unknown += 1;
 
     if (samples.length < 15) {
-      samples.push({
-        game_pk: intOrNull(row.official_game_pk),
-        player_id: playerId,
-        player_name: row.player_name || null,
-        team: teamKey,
-        side,
-        status,
-        roster_status_code: statusCode,
-        roster_status_description: statusDescription,
-        prepared_rows: Number(row.prepared_rows || 0),
-        sources: row.sources || null,
-        prop_keys: row.prop_keys || null
-      });
+      samples.push({ game_pk: intOrNull(row.official_game_pk), player_id: playerId, player_name: row.player_name || null, team: teamKey, side, status, roster_status_code: statusCode, roster_status_description: statusDescription, prepared_rows: Number(row.prepared_rows || 0), sources: row.sources || null, prop_keys: row.prop_keys || null });
     }
   }
 
@@ -1424,7 +769,6 @@ function summarizePreparedPlayers(preparedPlayers, calendar, teamMap, homeValida
   if (inactiveRosterMatches > 0) warnings.push(`prepared_player_non_active_status_count_${inactiveRosterMatches}`);
   return { checked, inLineup, notInLineup, unknown, rosterValidated, inactiveRosterMatches, matchMissing, samples, warnings, blockers };
 }
-
 
 function buildLineupWritePreviewRows(gamePk, calendar, side, validation) {
   const sidePrefix = side === "home" ? "home" : "away";
@@ -1434,25 +778,12 @@ function buildLineupWritePreviewRows(gamePk, calendar, side, validation) {
   const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
   for (const player of mapped) {
     rows.push({
-      dry_run_only: !PRODUCTION_LINEUP_WRITES_ENABLED,
-      live_gated_write_candidate: PRODUCTION_LINEUP_WRITES_ENABLED,
-      target_table: "daily_lineups_current",
-      game_pk: intOrNull(gamePk),
-      official_date: calendar.official_date || null,
-      game_time_utc: calendar.game_time_utc || null,
-      team_side: side,
-      team_id: teamId,
-      team_name: teamName,
-      player_id: intOrNull(player.player_id),
-      player_name: player.player_name || null,
-      lineup_slot: intOrNull(player.lineup_slot),
-      batting_order_code: player.batting_order_code || null,
-      bat_side: player.bat_side || null,
-      active_position: player.position || null,
-      lineup_status: "posted_lineup",
-      source_endpoint: "/api/v1/game/{gamePk}/boxscore",
-      write_gate: PRODUCTION_LINEUP_WRITES_ENABLED ? "live_gated_posted_batting_order_only" : "locked_preview_only",
-      write_enabled: PRODUCTION_LINEUP_WRITES_ENABLED
+      dry_run_only: !PRODUCTION_LINEUP_WRITES_ENABLED, live_gated_write_candidate: PRODUCTION_LINEUP_WRITES_ENABLED, target_table: "daily.lineups_current",
+      game_pk: intOrNull(gamePk), official_date: calendar.official_date || null, game_time_utc: calendar.game_time_utc || null, team_side: side,
+      team_id: teamId, team_name: teamName, player_id: intOrNull(player.player_id), player_name: player.player_name || null,
+      lineup_slot: intOrNull(player.lineup_slot), batting_order_code: player.batting_order_code || null, bat_side: player.bat_side || null,
+      active_position: player.position || null, lineup_status: "posted_lineup", source_endpoint: "/api/v1/game/{gamePk}/boxscore",
+      write_gate: PRODUCTION_LINEUP_WRITES_ENABLED ? "live_gated_posted_batting_order_only" : "locked_preview_only", write_enabled: PRODUCTION_LINEUP_WRITES_ENABLED
     });
   }
   return rows;
@@ -1462,26 +793,14 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
   const rows = [];
   for (const player of (preparedSummary && preparedSummary.samples ? preparedSummary.samples : [])) {
     rows.push({
-      dry_run_only: !DERIVED_BACKUP_WRITE_ENABLED,
-      live_gated_write_candidate: DERIVED_BACKUP_WRITE_ENABLED,
-      target_table: "daily_player_availability_current",
-      game_pk: intOrNull(gamePk),
-      official_date: calendar.official_date || null,
-      game_time_utc: calendar.game_time_utc || null,
-      player_id: intOrNull(player.player_id),
-      player_name: player.player_name || null,
-      team: player.team || null,
-      side: player.side || null,
-      availability_status: player.status || null,
-      roster_status_code: player.roster_status_code || null,
-      roster_status_description: player.roster_status_description || null,
+      dry_run_only: !DERIVED_BACKUP_WRITE_ENABLED, live_gated_write_candidate: DERIVED_BACKUP_WRITE_ENABLED, target_table: "daily.player_availability_current",
+      game_pk: intOrNull(gamePk), official_date: calendar.official_date || null, game_time_utc: calendar.game_time_utc || null,
+      player_id: intOrNull(player.player_id), player_name: player.player_name || null, team: player.team || null, side: player.side || null,
+      availability_status: player.status || null, roster_status_code: player.roster_status_code || null, roster_status_description: player.roster_status_description || null,
       source_status: "derived_from_boxscore_players_map_before_batting_order_posted",
       confidence_label: player.status === "pre_lineup_roster_validated" ? "PRE_LINEUP_ROSTER_VALIDATED" : "SOURCE_PROBE_ONLY",
-      prepared_rows: Number(player.prepared_rows || 0),
-      sources: player.sources || null,
-      prop_keys: player.prop_keys || null,
-      write_gate: DERIVED_BACKUP_WRITE_ENABLED ? "derived_backup_live_gate" : "locked_preview_only",
-      write_enabled: DERIVED_BACKUP_WRITE_ENABLED
+      prepared_rows: Number(player.prepared_rows || 0), sources: player.sources || null, prop_keys: player.prop_keys || null,
+      write_gate: DERIVED_BACKUP_WRITE_ENABLED ? "derived_backup_live_gate" : "locked_preview_only", write_enabled: DERIVED_BACKUP_WRITE_ENABLED
     });
   }
   return rows;
@@ -1489,16 +808,10 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
 
 function lineupParserContract() {
   return {
-    parser_status: "wired_live_gated_write_ready",
-    boxscore_lineup_path_home: "teams.home.battingOrder",
-    boxscore_lineup_path_away: "teams.away.battingOrder",
-    player_map_path_home: "teams.home.players.ID{playerId}",
-    player_map_path_away: "teams.away.players.ID{playerId}",
-    slot_rule: "array_index_plus_one_is_lineup_slot",
-    identity_rule: "battingOrder integer must equal players.ID{playerId}.person.id",
-    posted_lineup_gate: "battingOrder.length >= 9",
-    not_posted_gate: "battingOrder.length === 0",
-    partial_lineup_gate: "battingOrder.length between 1 and 8",
+    parser_status: "wired_live_gated_write_ready", boxscore_lineup_path_home: "teams.home.battingOrder", boxscore_lineup_path_away: "teams.away.battingOrder",
+    player_map_path_home: "teams.home.players.ID{playerId}", player_map_path_away: "teams.away.players.ID{playerId}",
+    slot_rule: "array_index_plus_one_is_lineup_slot", identity_rule: "battingOrder integer must equal players.ID{playerId}.person.id",
+    posted_lineup_gate: "battingOrder.length >= 9", not_posted_gate: "battingOrder.length === 0", partial_lineup_gate: "battingOrder.length between 1 and 8",
     position_rule: "position fields are informational only before battingOrder posts",
     production_write_gate: "live_gated_enabled_only_when_battingOrder_length_at_least_9_and_mapping_valid"
   };
@@ -1518,26 +831,16 @@ function futureWriteUnlockRequirements() {
 
 function futureTableContracts() {
   return {
-    daily_lineups_current: {
-      status: "live_gated_write_table_bootstrapped_by_worker",
-      minimum_fields: ["game_pk", "official_date", "game_time_utc", "team_side", "team_id", "player_id", "player_name", "lineup_slot", "lineup_status", "source_endpoint", "fetched_at_utc"]
-    },
-    daily_player_availability_current: {
-      status: "table_bootstrapped_by_worker_but_derived_writes_locked_off",
-      minimum_fields: ["game_pk", "official_date", "game_time_utc", "player_id", "player_name", "team", "side", "availability_status", "roster_status_code", "confidence_label", "fetched_at_utc"]
-    },
-    daily_lineups_batches: {
-      status: "live_gated_write_batch_table_bootstrapped_by_worker",
-      minimum_fields: ["batch_id", "source_mode", "certification_status", "games_checked", "players_checked", "rows_written", "created_at"]
-    }
+    daily_lineups_current: { status: "live_gated_write_table_bootstrapped_by_worker", minimum_fields: ["game_pk", "official_date", "game_time_utc", "team_side", "team_id", "player_id", "player_name", "lineup_slot", "lineup_status", "source_endpoint", "fetched_at_utc"] },
+    daily_player_availability_current: { status: "table_bootstrapped_by_worker_but_derived_writes_locked_off", minimum_fields: ["game_pk", "official_date", "game_time_utc", "player_id", "player_name", "team", "side", "availability_status", "roster_status_code", "confidence_label", "fetched_at_utc"] },
+    daily_lineups_batches: { status: "live_gated_write_batch_table_bootstrapped_by_worker", minimum_fields: ["batch_id", "source_mode", "certification_status", "games_checked", "players_checked", "rows_written", "created_at"] }
   };
 }
 
 function writeFrameworkContract() {
   return {
     framework_status: LIVE_GATED_LINEUP_WRITES_ENABLED ? "live_gated_lineup_writes_enabled" : "wired_locked_off",
-    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
-    derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED, derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
     write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
     writes_performed_rule: "0 until posted battingOrder gate opens; then equals confirmed lineup rows written",
     confirmed_lineup_write_rule: "only from battingOrder arrays with length >= 9 and verified players.ID{playerId}.person.id mappings",
@@ -1549,10 +852,7 @@ function writeFrameworkContract() {
       "block if derived backup writes are enabled and the boxscore players map is missing or has fewer than 15 players for a target side",
       "block if any battingOrder ID fails players.ID{playerId}.person.id mapping"
     ],
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_prepared_board_mutation: true
+    no_scoring: true, no_ranking: true, no_final_board: true, no_prepared_board_mutation: true
   };
 }
 
@@ -1565,33 +865,15 @@ function evaluateWriteFrameworkSafety(games) {
       const playerMapCount = Number(g[`${side}_player_map_count`] || 0);
       const mappingValid = g[`${side}_mapping_valid`] === true;
       const sideWriteReady = orderCount >= 9 && mappingValid && playerMapCount >= 15;
-      checks.push({
-        game_pk: g.game_pk,
-        side,
-        batting_order_count: orderCount,
-        player_map_count: playerMapCount,
-        mapping_valid: mappingValid,
-        live_gate_status: sideWriteReady ? "open_for_confirmed_lineup_side" : "closed_waiting_for_posted_batting_order",
-        production_lineup_write_safe: !PRODUCTION_LINEUP_WRITES_ENABLED || LIVE_GATED_LINEUP_WRITES_ENABLED,
-        derived_backup_write_safe: !DERIVED_BACKUP_WRITE_ENABLED || playerMapCount >= 15
-      });
+      checks.push({ game_pk: g.game_pk, side, batting_order_count: orderCount, player_map_count: playerMapCount, mapping_valid: mappingValid, live_gate_status: sideWriteReady ? "open_for_confirmed_lineup_side" : "closed_waiting_for_posted_batting_order", production_lineup_write_safe: !PRODUCTION_LINEUP_WRITES_ENABLED || LIVE_GATED_LINEUP_WRITES_ENABLED, derived_backup_write_safe: !DERIVED_BACKUP_WRITE_ENABLED || playerMapCount >= 15 });
       if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount > 0 && orderCount < 9) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_batting_order_partial_${orderCount}`);
       if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount >= 9 && !mappingValid) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_mapping_invalid`);
       if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount >= 9 && playerMapCount < 15) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
       if (DERIVED_BACKUP_WRITE_ENABLED && playerMapCount < 15) hardBlocks.push(`derived_backup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
     }
   }
-  return {
-    write_framework_locked_off: !PRODUCTION_LINEUP_WRITES_ENABLED && !DERIVED_BACKUP_WRITE_ENABLED,
-    write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
-    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
-    derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
-    write_gate_status: writeGateStatusFrom(games, hardBlocks),
-    hard_blocks: hardBlocks,
-    checks: checks.slice(0, 20)
-  };
+  return { write_framework_locked_off: !PRODUCTION_LINEUP_WRITES_ENABLED && !DERIVED_BACKUP_WRITE_ENABLED, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED, derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED, write_gate_status: writeGateStatusFrom(games, hardBlocks), hard_blocks: hardBlocks, checks: checks.slice(0, 20) };
 }
-
 
 function certificationFrom(games, sourceFailures, discovery, writeHardBlocks = []) {
   const blockerCount = games.reduce((sum, g) => sum + g.blockers.length, 0) + sourceFailures + writeHardBlocks.length;
@@ -1624,478 +906,252 @@ function certificationFrom(games, sourceFailures, discovery, writeHardBlocks = [
 }
 
 async function runSourceProbe(env, input) {
-  const _t0 = Date.now();
-  const _tm = {};
-  const _requestId = (input && input.request_id) || compactId("daily_lineups_debug");
-  const startedAt = nowUtc();
-  const catcherBatchId = compactId("daily_catcher_ctx_batch");
-  const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
-  const sourceBase = normalizeMlbOrigin(rawSourceBase);
-  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.8";
-  const probeFeedLive = input.probe_feed_live !== false;
-  const todayUtc = nowUtc().slice(0, 10);
-
-  const anchors = await getPreparedGameAnchors(env);
-  _tm.after_anchors_ms = Date.now() - _t0;
+  const pg = pgClient(env);
   try {
-    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_early_checkpoint', 'Immediate checkpoint after anchors', ?, CURRENT_TIMESTAMP)",
-      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ after_anchors_ms: _tm.after_anchors_ms, anchors_count: anchors.length }));
-  } catch (_) {}
-  // Real, safe addition: optional override for a one-time historical catcher-framing/pop-time
-  // backfill (e.g. a prior season) - defaults to the real current year exactly as before, so live
-  // production behavior is completely unchanged unless this is explicitly requested.
-  const catcherRefreshSeasonOverride = Number(input && input.catcher_reference_backfill_season);
-  const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
-  const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, catcherRefreshSeason);
-  _tm.after_catcher_refresh_ms = Date.now() - _t0;
-  // REAL FIX (per Rodolfo's direct instruction): the arsenal/defensive-OAA/umpire-tendency/
-  // sprint-speed/arm-angle refreshes moved to alphadog-v2-phase3a-first-inning-pitcher-
-  // context.js, which is dispatched as part of the morning-only incremental-morning-full-run
-  // chain - these don't depend on anything daily-context provides, so running them here 3x/day
-  // was only ever a code-convenience artifact, not a functional requirement. Their own ~20h
-  // self-gates made this harmless in practice, but the correct home is the morning-only run.
-  _tm.after_arsenal_and_defense_refresh_ms = Date.now() - _t0;
-  try {
-    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_after_arsenal_defense_refresh', 'Checkpoint after arsenal/defense refresh', ?, CURRENT_TIMESTAMP)",
-      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ pitcherArsenalRefreshResult, defensiveQualityRefreshResult })).catch(() => {});
-  } catch (_) {}
-  try {
-    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_after_catcher_refresh', 'Checkpoint after catcher refresh', ?, CURRENT_TIMESTAMP)",
-      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ after_catcher_refresh_ms: _tm.after_catcher_refresh_ms, refreshed: catcherRefreshResult && catcherRefreshResult.refreshed })).catch(() => {});
-  } catch (_) {}
-  const catcherRefRows = await all(env.REF_DB, `SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref_catcher_framing_poptime`);
-  const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
-  const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
-  const [preparedCalendarRows, preparedPlayers, calendarProbeRows, teamMap] = await Promise.all([
-    getCalendarRows(env, preparedGamePks),
-    getPreparedPlayers(env, preparedGamePks),
-    getCalendarOnlyProbeRows(env, todayUtc),
-    getTeamMap(env)
-  ]);
-  _tm.after_calendar_and_players_ms = Date.now() - _t0;
+    const startedAt = nowUtc();
+    const catcherBatchId = compactId("daily_catcher_ctx_batch");
+    const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
+    const sourceBase = normalizeMlbOrigin(rawSourceBase);
+    const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.2";
+    const probeFeedLive = input.probe_feed_live !== false;
+    const todayUtc = nowUtc().slice(0, 10);
 
-  const [preparedScheduleDiscovery, calendarScheduleDiscovery] = await Promise.all([
-    discoverOfficialSchedule(env, sourceBase, userAgent, preparedCalendarRows, "prepared"),
-    discoverOfficialSchedule(env, sourceBase, userAgent, calendarProbeRows, "calendar_probe")
-  ]);
-  _tm.after_schedule_discovery_ms = Date.now() - _t0;
-  const preparedBoardStale = preparedGamePks.length > 0 && preparedScheduleDiscovery.prepared_official_schedule_checked && Number(preparedScheduleDiscovery.prepared_official_schedule_anchor_hit_count || 0) < preparedGamePks.length;
+    await ensureSchema(pg);
+    const anchors = await getPreparedGameAnchors(pg);
 
-  const usePreparedBoardLane = preparedGamePks.length > 0 && !preparedBoardStale && preparedCalendarRows.length > 0;
-  const sourceRows = usePreparedBoardLane ? preparedCalendarRows : calendarProbeRows.length ? calendarProbeRows : preparedCalendarRows;
-  const sourceLane = usePreparedBoardLane ? "prepared_board_source_probe" : "calendar_only_source_probe";
-  const sourceGamePks = uniqInts(sourceRows.map((r) => r.game_pk));
-  const calendarByGame = new Map(sourceRows.map((r) => [intOrNull(r.game_pk), r]));
+    const catcherRefreshSeasonOverride = Number(input && input.catcher_reference_backfill_season);
+    const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
+    const catcherRefreshResult = await refreshCatcherReferenceIfStale(pg, catcherRefreshSeason);
 
-  const preparedByGame = new Map();
-  for (const row of preparedPlayers) {
-    const pk = intOrNull(row.official_game_pk);
-    if (!preparedByGame.has(pk)) preparedByGame.set(pk, []);
-    preparedByGame.get(pk).push(row);
-  }
-
-  // REAL FIX (perf): batch-derive fallback catchers for every team in today's slate in ONE
-  // pass here, before per-game processing starts, rather than per-game awaits inside the loop
-  // (which caused a real hard_deadline_timeout - confirmed live). processOneGame below closes
-  // over these maps and does pure synchronous lookups, no additional DB calls.
-  const allTeamIdsToday = uniqInts(sourceRows.flatMap(r => [r.home_team_id, r.away_team_id]).filter(Boolean));
-  const derivedCatcherMap = await batchDeriveCatchers(env, allTeamIdsToday, todayUtc);
-  const derivedCatcherNameMap = await batchPlayerNames(env, [...derivedCatcherMap.values()].map(d => d.player_id));
-
-  const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
-  _tm.after_starting_page_fetch_ms = Date.now() - _t0;
-  try {
-    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_pipeline_timings', 'Concrete timing checkpoint', ?, CURRENT_TIMESTAMP)",
-      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ timings: _tm, game_pks: sourceGamePks.length, prepared_players: preparedPlayers.length })).catch(() => {});
-  } catch (_) {}
-  const startingPageAnalysis = analyzeStartingLineupsPage(startingPageFetch.text, sourceRows, preparedPlayers);
-  const discovery = {
-    ...preparedScheduleDiscovery,
-    ...calendarScheduleDiscovery,
-    prepared_board_stale_warning: preparedBoardStale,
-    source_probe_lane: sourceLane,
-    calendar_probe_target_date_utc: todayUtc,
-    calendar_probe_games_available: calendarProbeRows.length,
-    calendar_probe_game_pks: sourceGamePks,
-    mlb_starting_lineups_page_checked: true,
-    mlb_starting_lineups_url: MLB_STARTING_LINEUPS_URL,
-    mlb_starting_lineups_http_status: startingPageFetch.http_status,
-    mlb_starting_lineups_ok: !!startingPageFetch.ok,
-    mlb_starting_lineups_response_bytes: startingPageFetch.response_bytes || 0,
-    mlb_starting_lineups_has_embedded_json_marker: startingPageAnalysis.has_next_data_marker,
-    mlb_starting_lineups_has_json_or_lineup_marker: startingPageAnalysis.has_json_or_lineup_marker,
-    mlb_starting_lineups_target_date_hits: startingPageAnalysis.target_date_hits,
-    mlb_starting_lineups_target_team_name_hit_count: startingPageAnalysis.target_team_name_hit_count,
-    mlb_starting_lineups_target_team_name_hits_sample: startingPageAnalysis.target_team_name_hits_sample,
-    mlb_starting_lineups_target_team_abbr_hit_count: startingPageAnalysis.target_team_abbr_hit_count,
-    mlb_starting_lineups_target_team_abbr_hits_sample: startingPageAnalysis.target_team_abbr_hits_sample,
-    mlb_starting_lineups_target_player_name_hit_count: startingPageAnalysis.target_player_name_hit_count,
-    mlb_starting_lineups_target_player_name_hits_sample: startingPageAnalysis.target_player_name_hits_sample
-  };
-
-  const games = [];
-  let boxscoreCalls = 0;
-  let feedLiveCalls = 0;
-  let sourceFailures = 0;
-
-  async function processOneGame(gamePk) {
-    const calendar = calendarByGame.get(gamePk) || { game_pk: gamePk };
-    const gamePreparedPlayers = preparedByGame.get(gamePk) || [];
-    const warnings = [];
-    const blockers = [];
-    if (preparedBoardStale && sourceLane === "calendar_only_source_probe") warnings.push("prepared_board_stale_calendar_only_probe_used");
-
-    const boxscoreUrl = buildMlbUrl(sourceBase, `/api/v1/game/${gamePk}/boxscore`);
-    const feedLiveUrl = buildMlbUrl(sourceBase, `/api/v1.1/game/${gamePk}/feed/live`);
-
-    let localBoxscoreCalls = 1;
-    let localFeedLiveCalls = 0;
-    let localSourceFailures = 0;
-    const needsFeedLive = probeFeedLive;
-    const [box, liveEarly] = await Promise.all([
-      fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES),
-      needsFeedLive ? fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES) : Promise.resolve(null)
+    const catcherRefRows = await pg`SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref.catcher_framing_poptime`;
+    const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
+    const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
+    const [preparedCalendarRows, preparedPlayers, calendarProbeRows, teamMap] = await Promise.all([
+      getCalendarRows(pg, preparedGamePks),
+      getPreparedPlayers(pg, preparedGamePks),
+      getCalendarOnlyProbeRows(pg, todayUtc),
+      getTeamMap(pg)
     ]);
-    let boxscoreOk = !!(box.ok && box.json);
-    let boxscoreTeams = boxscoreOk && box.json && box.json.teams ? box.json.teams : null;
-    if (!boxscoreOk) {
-      if (box.http_status === 404) warnings.push("boxscore_game_endpoint_not_initialized_http_404");
-      else {
-        localSourceFailures += 1;
-        blockers.push(`boxscore_fetch_failed_http_${box.http_status || "none"}`);
-      }
-    }
-    if (boxscoreOk && !boxscoreTeams) blockers.push("boxscore_root_teams_missing");
 
-    let feedLiveOk = null;
-    let feedLiveTimestamp = null;
-    let live = null;
-    let liveTeams = null;
-    if (needsFeedLive || !boxscoreOk) {
-      localFeedLiveCalls += 1;
-      live = needsFeedLive ? liveEarly : await fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES);
-      feedLiveOk = !!(live.ok && live.json && live.json.gamePk === gamePk && live.json.liveData && live.json.liveData.boxscore);
-      if (!feedLiveOk) {
-        if (live.http_status === 404) warnings.push("feed_live_game_endpoint_not_initialized_http_404");
-        else warnings.push(`feed_live_probe_failed_http_${live.http_status || "none"}`);
-      }
-      feedLiveTimestamp = live.json && live.json.metaData ? live.json.metaData.timeStamp || null : null;
-      liveTeams = feedLiveOk && live.json.liveData.boxscore ? live.json.liveData.boxscore.teams || null : null;
-      if (feedLiveOk && boxscoreOk) {
-        const liveHome = liveTeams && liveTeams.home ? liveTeams.home.battingOrder || [] : [];
-        const liveAway = liveTeams && liveTeams.away ? liveTeams.away.battingOrder || [] : [];
-        const boxHome = boxscoreTeams && boxscoreTeams.home ? boxscoreTeams.home.battingOrder || [] : [];
-        const boxAway = boxscoreTeams && boxscoreTeams.away ? boxscoreTeams.away.battingOrder || [] : [];
-        if (JSON.stringify(liveHome) !== JSON.stringify(boxHome)) warnings.push("feed_live_home_batting_order_differs_from_boxscore");
-        if (JSON.stringify(liveAway) !== JSON.stringify(boxAway)) warnings.push("feed_live_away_batting_order_differs_from_boxscore");
-      }
-    }
-
-    const activeTeams = boxscoreTeams || liveTeams;
-    let homeValidation;
-    let awayValidation;
-    if (activeTeams) {
-      homeValidation = validateSide("home", activeTeams && activeTeams.home);
-      awayValidation = validateSide("away", activeTeams && activeTeams.away);
-      warnings.push(...homeValidation.warnings, ...awayValidation.warnings);
-      blockers.push(...homeValidation.blockers);
-      blockers.push(...awayValidation.blockers);
-    } else {
-      homeValidation = { batting_order_count: 0, batting_order_sample: [], player_map_count: 0, player_map_sample: [], lineup_status: "game_endpoint_not_initialized", mapping_valid: null, mapped_players_sample: [], warnings: [], blockers: [] };
-      awayValidation = { batting_order_count: 0, batting_order_sample: [], player_map_count: 0, player_map_sample: [], lineup_status: "game_endpoint_not_initialized", mapping_valid: null, mapped_players_sample: [], warnings: [], blockers: [] };
-    }
-
-    const preparedSummary = summarizePreparedPlayers(gamePreparedPlayers, calendar, teamMap, homeValidation, awayValidation, activeTeams);
-    warnings.push(...preparedSummary.warnings);
-    blockers.push(...preparedSummary.blockers);
-
-    const [homeCatcherRow, awayCatcherRow] = await Promise.all([
-      writeCatcherContext(env, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap),
-      writeCatcherContext(env, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap)
+    const [preparedScheduleDiscovery, calendarScheduleDiscovery] = await Promise.all([
+      discoverOfficialSchedule(env, sourceBase, userAgent, preparedCalendarRows, "prepared"),
+      discoverOfficialSchedule(env, sourceBase, userAgent, calendarProbeRows, "calendar_probe")
     ]);
-    // REAL FIX: try the real, official source first (above) - only fall back to a derived
-    // most-recent-starting-catcher estimate for whichever side didn't get an official row,
-    // rather than leaving that side permanently stale until a lineup posts.
-    if (!homeCatcherRow && intOrNull(calendar.home_team_id)) {
-      const derivedHomeCatcher = derivedCatcherMap.get(String(calendar.home_team_id));
-      if (derivedHomeCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap, derivedCatcherNameMap);
-    }
-    if (!awayCatcherRow && intOrNull(calendar.away_team_id)) {
-      const derivedAwayCatcher = derivedCatcherMap.get(String(calendar.away_team_id));
-      if (derivedAwayCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "away", intOrNull(calendar.away_team_id), derivedAwayCatcher, catcherRefMap, derivedCatcherNameMap);
+    const preparedBoardStale = preparedGamePks.length > 0 && preparedScheduleDiscovery.prepared_official_schedule_checked && Number(preparedScheduleDiscovery.prepared_official_schedule_anchor_hit_count || 0) < preparedGamePks.length;
+
+    const usePreparedBoardLane = preparedGamePks.length > 0 && !preparedBoardStale && preparedCalendarRows.length > 0;
+    const sourceRows = usePreparedBoardLane ? preparedCalendarRows : calendarProbeRows.length ? calendarProbeRows : preparedCalendarRows;
+    const sourceLane = usePreparedBoardLane ? "prepared_board_source_probe" : "calendar_only_source_probe";
+    const sourceGamePks = uniqInts(sourceRows.map((r) => r.game_pk));
+    const calendarByGame = new Map(sourceRows.map((r) => [intOrNull(r.game_pk), r]));
+
+    const preparedByGame = new Map();
+    for (const row of preparedPlayers) {
+      const pk = intOrNull(row.official_game_pk);
+      if (!preparedByGame.has(pk)) preparedByGame.set(pk, []);
+      preparedByGame.get(pk).push(row);
     }
 
-    const officialLineupPreviewRows = [
-      ...buildLineupWritePreviewRows(gamePk, calendar, "home", homeValidation),
-      ...buildLineupWritePreviewRows(gamePk, calendar, "away", awayValidation)
-    ];
-    let derivedLineupPreviewRows = [];
-    const derivedFallbackDate = calendar.official_date || retentionDatesToKeep()[0];
-    const needHomeDerived = homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id);
-    const needAwayDerived = awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id);
-    const [homeDerived, awayDerived] = await Promise.all([
-      needHomeDerived ? deriveLineupFromRecentGame(env, calendar.home_team_id, derivedFallbackDate) : Promise.resolve(null),
-      needAwayDerived ? deriveLineupFromRecentGame(env, calendar.away_team_id, derivedFallbackDate) : Promise.resolve(null)
-    ]);
-    if (needHomeDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
-    if (needAwayDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
-    const lineupWritePreviewRows = [...officialLineupPreviewRows, ...derivedLineupPreviewRows];
-    const availabilityWritePreviewRows = buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary);
-    const lineupWriteReady = lineupWritePreviewRows.length > 0 && (homeValidation.lineup_status === "posted_lineup" || awayValidation.lineup_status === "posted_lineup" || derivedLineupPreviewRows.length > 0);
+    const allTeamIdsToday = uniqInts(sourceRows.flatMap(r => [r.home_team_id, r.away_team_id]).filter(Boolean));
+    const derivedCatcherMap = await batchDeriveCatchers(pg, allTeamIdsToday, todayUtc);
+    const derivedCatcherNameMap = await batchPlayerNames(pg, [...derivedCatcherMap.values()].map(d => d.player_id));
 
-    const gameResult = {
-      game_pk: gamePk,
-      probe_lane: sourceLane,
-      official_date: calendar.official_date || null,
-      game_time_utc: calendar.game_time_utc || null,
-      home_team_id: intOrNull(calendar.home_team_id),
-      away_team_id: intOrNull(calendar.away_team_id),
-      home_team_name: calendar.home_team_name || null,
-      away_team_name: calendar.away_team_name || null,
-      detailed_state: calendar.detailed_state || null,
-      abstract_game_state: calendar.abstract_game_state || null,
-      boxscore_ok: boxscoreOk,
-      boxscore_http_status: box.http_status,
-      boxscore_elapsed_ms: box.elapsed_ms,
-      boxscore_response_bytes: box.response_bytes || 0,
-      feed_live_ok: feedLiveOk,
-      feed_live_http_status: live ? live.http_status : null,
-      feed_live_source_timestamp: feedLiveTimestamp,
-      boxscore_attempts: box.attempts || [],
-      feed_live_attempts: live && live.attempts ? live.attempts : [],
-      game_endpoint_availability_status: activeTeams ? "game_endpoint_available" : ((box.http_status === 404 && live && live.http_status === 404) ? "game_endpoints_uninitialized" : "game_endpoints_unavailable"),
-      fetched_at_utc: nowUtc(),
-      home_batting_order_count: homeValidation.batting_order_count,
-      away_batting_order_count: awayValidation.batting_order_count,
-      home_batting_order_sample: homeValidation.batting_order_sample,
-      away_batting_order_sample: awayValidation.batting_order_sample,
-      home_player_map_count: homeValidation.player_map_count,
-      away_player_map_count: awayValidation.player_map_count,
-      home_player_map_sample: homeValidation.player_map_sample,
-      away_player_map_sample: awayValidation.player_map_sample,
-      home_lineup_status: homeValidation.lineup_status,
-      away_lineup_status: awayValidation.lineup_status,
-      home_mapping_valid: homeValidation.mapping_valid,
-      away_mapping_valid: awayValidation.mapping_valid,
-      home_mapped_players_sample: homeValidation.mapped_players_sample,
-      away_mapped_players_sample: awayValidation.mapped_players_sample,
-      prepared_players_checked: preparedSummary.checked,
-      prepared_players_in_lineup: preparedSummary.inLineup,
-      prepared_players_not_in_lineup: preparedSummary.notInLineup,
-      prepared_players_unknown: preparedSummary.unknown,
-      prepared_players_roster_validated: preparedSummary.rosterValidated,
-      prepared_players_inactive_roster_matches: preparedSummary.inactiveRosterMatches,
-      prepared_players_match_missing: preparedSummary.matchMissing,
-      prepared_player_status_sample: preparedSummary.samples,
-      lineup_write_ready: lineupWriteReady,
-      lineup_write_preview_only: true,
-      lineup_write_preview_row_count: lineupWritePreviewRows.length,
-      lineup_write_preview_sample: lineupWritePreviewRows.slice(0, 18),
-      availability_write_preview_only: true,
-      availability_write_preview_row_count: availabilityWritePreviewRows.length,
-      availability_write_preview_sample: availabilityWritePreviewRows.slice(0, 15),
-      derived_backup_status: preparedSummary.rosterValidated > 0 && homeValidation.batting_order_count === 0 && awayValidation.batting_order_count === 0 ? "PRE_LINEUP_ROSTER_VALIDATED" : null,
-      warnings: warnings.slice(0, 80),
-      blockers: blockers.slice(0, 80)
+    const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
+    const startingPageAnalysis = analyzeStartingLineupsPage(startingPageFetch.text, sourceRows, preparedPlayers);
+    const discovery = {
+      ...preparedScheduleDiscovery, ...calendarScheduleDiscovery, prepared_board_stale_warning: preparedBoardStale, source_probe_lane: sourceLane,
+      calendar_probe_target_date_utc: todayUtc, calendar_probe_games_available: calendarProbeRows.length, calendar_probe_game_pks: sourceGamePks,
+      mlb_starting_lineups_page_checked: true, mlb_starting_lineups_url: MLB_STARTING_LINEUPS_URL, mlb_starting_lineups_http_status: startingPageFetch.http_status,
+      mlb_starting_lineups_ok: !!startingPageFetch.ok, mlb_starting_lineups_response_bytes: startingPageFetch.response_bytes || 0,
+      mlb_starting_lineups_has_embedded_json_marker: startingPageAnalysis.has_next_data_marker, mlb_starting_lineups_has_json_or_lineup_marker: startingPageAnalysis.has_json_or_lineup_marker,
+      mlb_starting_lineups_target_date_hits: startingPageAnalysis.target_date_hits, mlb_starting_lineups_target_team_name_hit_count: startingPageAnalysis.target_team_name_hit_count,
+      mlb_starting_lineups_target_team_name_hits_sample: startingPageAnalysis.target_team_name_hits_sample, mlb_starting_lineups_target_team_abbr_hit_count: startingPageAnalysis.target_team_abbr_hit_count,
+      mlb_starting_lineups_target_team_abbr_hits_sample: startingPageAnalysis.target_team_abbr_hits_sample, mlb_starting_lineups_target_player_name_hit_count: startingPageAnalysis.target_player_name_hit_count,
+      mlb_starting_lineups_target_player_name_hits_sample: startingPageAnalysis.target_player_name_hits_sample
     };
-    return { gameResult, localBoxscoreCalls, localFeedLiveCalls, localSourceFailures };
-  }
 
-  const CONCURRENCY = 6;
-  for (let i = 0; i < sourceGamePks.length; i += CONCURRENCY) {
-    const chunk = sourceGamePks.slice(i, i + CONCURRENCY);
-    const chunkResults = await Promise.all(chunk.map(gamePk => processOneGame(gamePk)));
-    for (const r of chunkResults) {
-      games.push(r.gameResult);
-      boxscoreCalls += r.localBoxscoreCalls;
-      feedLiveCalls += r.localFeedLiveCalls;
-      sourceFailures += r.localSourceFailures;
+    const games = [];
+    let boxscoreCalls = 0, feedLiveCalls = 0, sourceFailures = 0;
+
+    async function processOneGame(gamePk) {
+      const calendar = calendarByGame.get(gamePk) || { game_pk: gamePk };
+      const gamePreparedPlayers = preparedByGame.get(gamePk) || [];
+      const warnings = [];
+      const blockers = [];
+      if (preparedBoardStale && sourceLane === "calendar_only_source_probe") warnings.push("prepared_board_stale_calendar_only_probe_used");
+
+      const boxscoreUrl = buildMlbUrl(sourceBase, `/api/v1/game/${gamePk}/boxscore`);
+      const feedLiveUrl = buildMlbUrl(sourceBase, `/api/v1.1/game/${gamePk}/feed/live`);
+
+      let localBoxscoreCalls = 1, localFeedLiveCalls = 0, localSourceFailures = 0;
+      const needsFeedLive = probeFeedLive;
+      const [box, liveEarly] = await Promise.all([
+        fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES),
+        needsFeedLive ? fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES) : Promise.resolve(null)
+      ]);
+      let boxscoreOk = !!(box.ok && box.json);
+      let boxscoreTeams = boxscoreOk && box.json && box.json.teams ? box.json.teams : null;
+      if (!boxscoreOk) {
+        if (box.http_status === 404) warnings.push("boxscore_game_endpoint_not_initialized_http_404");
+        else { localSourceFailures += 1; blockers.push(`boxscore_fetch_failed_http_${box.http_status || "none"}`); }
+      }
+      if (boxscoreOk && !boxscoreTeams) blockers.push("boxscore_root_teams_missing");
+
+      let feedLiveOk = null, feedLiveTimestamp = null, live = null, liveTeams = null;
+      if (needsFeedLive || !boxscoreOk) {
+        localFeedLiveCalls += 1;
+        live = needsFeedLive ? liveEarly : await fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES);
+        feedLiveOk = !!(live.ok && live.json && live.json.gamePk === gamePk && live.json.liveData && live.json.liveData.boxscore);
+        if (!feedLiveOk) { if (live.http_status === 404) warnings.push("feed_live_game_endpoint_not_initialized_http_404"); else warnings.push(`feed_live_probe_failed_http_${live.http_status || "none"}`); }
+        feedLiveTimestamp = live.json && live.json.metaData ? live.json.metaData.timeStamp || null : null;
+        liveTeams = feedLiveOk && live.json.liveData.boxscore ? live.json.liveData.boxscore.teams || null : null;
+        if (feedLiveOk && boxscoreOk) {
+          const liveHome = liveTeams && liveTeams.home ? liveTeams.home.battingOrder || [] : [];
+          const liveAway = liveTeams && liveTeams.away ? liveTeams.away.battingOrder || [] : [];
+          const boxHome = boxscoreTeams && boxscoreTeams.home ? boxscoreTeams.home.battingOrder || [] : [];
+          const boxAway = boxscoreTeams && boxscoreTeams.away ? boxscoreTeams.away.battingOrder || [] : [];
+          if (JSON.stringify(liveHome) !== JSON.stringify(boxHome)) warnings.push("feed_live_home_batting_order_differs_from_boxscore");
+          if (JSON.stringify(liveAway) !== JSON.stringify(boxAway)) warnings.push("feed_live_away_batting_order_differs_from_boxscore");
+        }
+      }
+
+      const activeTeams = boxscoreTeams || liveTeams;
+      let homeValidation, awayValidation;
+      if (activeTeams) {
+        homeValidation = validateSide("home", activeTeams && activeTeams.home);
+        awayValidation = validateSide("away", activeTeams && activeTeams.away);
+        warnings.push(...homeValidation.warnings, ...awayValidation.warnings);
+        blockers.push(...homeValidation.blockers);
+        blockers.push(...awayValidation.blockers);
+      } else {
+        homeValidation = { batting_order_count: 0, batting_order_sample: [], player_map_count: 0, player_map_sample: [], lineup_status: "game_endpoint_not_initialized", mapping_valid: null, mapped_players_sample: [], warnings: [], blockers: [] };
+        awayValidation = { batting_order_count: 0, batting_order_sample: [], player_map_count: 0, player_map_sample: [], lineup_status: "game_endpoint_not_initialized", mapping_valid: null, mapped_players_sample: [], warnings: [], blockers: [] };
+      }
+
+      const preparedSummary = summarizePreparedPlayers(gamePreparedPlayers, calendar, teamMap, homeValidation, awayValidation, activeTeams);
+      warnings.push(...preparedSummary.warnings);
+      blockers.push(...preparedSummary.blockers);
+
+      const [homeCatcherRow, awayCatcherRow] = await Promise.all([
+        writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap),
+        writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap)
+      ]);
+      if (!homeCatcherRow && intOrNull(calendar.home_team_id)) {
+        const derivedHomeCatcher = derivedCatcherMap.get(String(calendar.home_team_id));
+        if (derivedHomeCatcher) await writeDerivedCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap, derivedCatcherNameMap);
+      }
+      if (!awayCatcherRow && intOrNull(calendar.away_team_id)) {
+        const derivedAwayCatcher = derivedCatcherMap.get(String(calendar.away_team_id));
+        if (derivedAwayCatcher) await writeDerivedCatcherContext(pg, catcherBatchId, gamePk, calendar, "away", intOrNull(calendar.away_team_id), derivedAwayCatcher, catcherRefMap, derivedCatcherNameMap);
+      }
+
+      const officialLineupPreviewRows = [...buildLineupWritePreviewRows(gamePk, calendar, "home", homeValidation), ...buildLineupWritePreviewRows(gamePk, calendar, "away", awayValidation)];
+      let derivedLineupPreviewRows = [];
+      const derivedFallbackDate = calendar.official_date || retentionDatesToKeep()[0];
+      const needHomeDerived = homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id);
+      const needAwayDerived = awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id);
+      const [homeDerived, awayDerived] = await Promise.all([
+        needHomeDerived ? deriveLineupFromRecentGame(pg, calendar.home_team_id, derivedFallbackDate) : Promise.resolve(null),
+        needAwayDerived ? deriveLineupFromRecentGame(pg, calendar.away_team_id, derivedFallbackDate) : Promise.resolve(null)
+      ]);
+      if (needHomeDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
+      if (needAwayDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
+      const lineupWritePreviewRows = [...officialLineupPreviewRows, ...derivedLineupPreviewRows];
+      const availabilityWritePreviewRows = buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary);
+      const lineupWriteReady = lineupWritePreviewRows.length > 0 && (homeValidation.lineup_status === "posted_lineup" || awayValidation.lineup_status === "posted_lineup" || derivedLineupPreviewRows.length > 0);
+
+      const gameResult = {
+        game_pk: gamePk, probe_lane: sourceLane, official_date: calendar.official_date || null, game_time_utc: calendar.game_time_utc || null,
+        home_team_id: intOrNull(calendar.home_team_id), away_team_id: intOrNull(calendar.away_team_id), home_team_name: calendar.home_team_name || null,
+        away_team_name: calendar.away_team_name || null, detailed_state: calendar.detailed_state || null, abstract_game_state: calendar.abstract_game_state || null,
+        boxscore_ok: boxscoreOk, boxscore_http_status: box.http_status, boxscore_elapsed_ms: box.elapsed_ms, boxscore_response_bytes: box.response_bytes || 0,
+        feed_live_ok: feedLiveOk, feed_live_http_status: live ? live.http_status : null, feed_live_source_timestamp: feedLiveTimestamp,
+        boxscore_attempts: box.attempts || [], feed_live_attempts: live && live.attempts ? live.attempts : [],
+        game_endpoint_availability_status: activeTeams ? "game_endpoint_available" : ((box.http_status === 404 && live && live.http_status === 404) ? "game_endpoints_uninitialized" : "game_endpoints_unavailable"),
+        fetched_at_utc: nowUtc(), home_batting_order_count: homeValidation.batting_order_count, away_batting_order_count: awayValidation.batting_order_count,
+        home_batting_order_sample: homeValidation.batting_order_sample, away_batting_order_sample: awayValidation.batting_order_sample,
+        home_player_map_count: homeValidation.player_map_count, away_player_map_count: awayValidation.player_map_count,
+        home_player_map_sample: homeValidation.player_map_sample, away_player_map_sample: awayValidation.player_map_sample,
+        home_lineup_status: homeValidation.lineup_status, away_lineup_status: awayValidation.lineup_status,
+        home_mapping_valid: homeValidation.mapping_valid, away_mapping_valid: awayValidation.mapping_valid,
+        home_mapped_players_sample: homeValidation.mapped_players_sample, away_mapped_players_sample: awayValidation.mapped_players_sample,
+        prepared_players_checked: preparedSummary.checked, prepared_players_in_lineup: preparedSummary.inLineup, prepared_players_not_in_lineup: preparedSummary.notInLineup,
+        prepared_players_unknown: preparedSummary.unknown, prepared_players_roster_validated: preparedSummary.rosterValidated,
+        prepared_players_inactive_roster_matches: preparedSummary.inactiveRosterMatches, prepared_players_match_missing: preparedSummary.matchMissing,
+        prepared_player_status_sample: preparedSummary.samples, lineup_write_ready: lineupWriteReady, lineup_write_preview_only: true,
+        lineup_write_preview_row_count: lineupWritePreviewRows.length, lineup_write_preview_sample: lineupWritePreviewRows.slice(0, 18),
+        availability_write_preview_only: true, availability_write_preview_row_count: availabilityWritePreviewRows.length, availability_write_preview_sample: availabilityWritePreviewRows.slice(0, 15),
+        derived_backup_status: preparedSummary.rosterValidated > 0 && homeValidation.batting_order_count === 0 && awayValidation.batting_order_count === 0 ? "PRE_LINEUP_ROSTER_VALIDATED" : null,
+        warnings: warnings.slice(0, 80), blockers: blockers.slice(0, 80)
+      };
+      return { gameResult, localBoxscoreCalls, localFeedLiveCalls, localSourceFailures };
     }
-  }
 
-  const writeSafety = evaluateWriteFrameworkSafety(games);
-  const cert = certificationFrom(games, sourceFailures, discovery, writeSafety.hard_blocks);
-  const ok = cert.status.startsWith("PASS");
-  const preparedRowsRead = anchors.reduce((sum, r) => sum + Number(r.prepared_rows || 0), 0);
-  const preparedPlayersChecked = games.reduce((sum, g) => sum + Number(g.prepared_players_checked || 0), 0);
-  const lineupWritePreviewSample = games.flatMap((g) => g.lineup_write_preview_sample || []).slice(0, 30);
-  const availabilityWritePreviewSample = games.flatMap((g) => g.availability_write_preview_sample || []).slice(0, 30);
-  const lineupWritePreviewRows = games.reduce((sum, g) => sum + Number(g.lineup_write_preview_row_count || 0), 0);
-  const availabilityWritePreviewRows = games.reduce((sum, g) => sum + Number(g.availability_write_preview_row_count || 0), 0);
-  const lineupWriteReadyGames = games.filter((g) => g.lineup_write_ready).length;
+    const CONCURRENCY = 6;
+    for (let i = 0; i < sourceGamePks.length; i += CONCURRENCY) {
+      const chunk = sourceGamePks.slice(i, i + CONCURRENCY);
+      const chunkResults = await Promise.all(chunk.map(gamePk => processOneGame(gamePk)));
+      for (const r of chunkResults) { games.push(r.gameResult); boxscoreCalls += r.localBoxscoreCalls; feedLiveCalls += r.localFeedLiveCalls; sourceFailures += r.localSourceFailures; }
+    }
 
-  const preWriteSummary = {
-    games,
-    games_checked: games.length,
-    lineup_write_ready_games: lineupWriteReadyGames,
-    source_probe_lane: sourceLane,
-    request_id: input.request_id || null,
-    started_at: startedAt
-  };
-  let writeResult;
-  try {
-    writeResult = await writeConfirmedLineupsIfGateOpen(env, preWriteSummary, cert, writeSafety);
-  } catch (err) {
-    writeResult = {
-      schema_bootstrap_performed: false,
-      batch_id: null,
-      write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
-      write_gate_status: "write_exception",
-      retention_prune_enabled: true,
-      retention_window: RETENTION_WINDOW_LABEL,
-      retention_dates_kept: retentionDatesToKeep(),
-      lineup_rows_pruned: 0,
-      batch_rows_pruned: 0,
-      lineup_rows_ready_to_write: 0,
-      rows_written: 0,
-      writes_performed: 0,
-      write_error: err && err.stack ? String(err.stack).slice(0, 1800) : String(err)
-    };
-  }
+    const writeSafety = evaluateWriteFrameworkSafety(games);
+    const cert = certificationFrom(games, sourceFailures, discovery, writeSafety.hard_blocks);
+    const ok = cert.status.startsWith("PASS");
+    const preparedRowsRead = anchors.reduce((sum, r) => sum + Number(r.prepared_rows || 0), 0);
+    const preparedPlayersChecked = games.reduce((sum, g) => sum + Number(g.prepared_players_checked || 0), 0);
+    const lineupWritePreviewSample = games.flatMap((g) => g.lineup_write_preview_sample || []).slice(0, 30);
+    const availabilityWritePreviewSample = games.flatMap((g) => g.availability_write_preview_sample || []).slice(0, 30);
+    const lineupWritePreviewRows = games.reduce((sum, g) => sum + Number(g.lineup_write_preview_row_count || 0), 0);
+    const availabilityWritePreviewRows = games.reduce((sum, g) => sum + Number(g.availability_write_preview_row_count || 0), 0);
+    const lineupWriteReadyGames = games.filter((g) => g.lineup_write_ready).length;
 
-  let finalCertStatus = cert.status;
-  let finalCertGrade = cert.grade;
-  let finalOk = ok && !writeResult.write_error;
-  if (writeResult.write_error) {
-    finalCertStatus = "BLOCKED_DAILY_LINEUPS_WRITE_EXCEPTION";
-    finalCertGrade = "BLOCKED";
-  } else if (writeResult.rows_written > 0) {
-    finalCertStatus = "PASS_LIVE_GATED_LINEUPS_WRITTEN";
-    finalCertGrade = "LIVE_GATED_CONFIRMED_LINEUP_WRITES";
-  } else if (LIVE_GATED_LINEUP_WRITES_ENABLED && PRODUCTION_LINEUP_WRITES_ENABLED && lineupWriteReadyGames === 0 && ok) {
-    finalCertStatus = "PASS_LIVE_GATED_WAITING_FOR_POSTED_LINEUP";
-    finalCertGrade = "LIVE_GATED_PRE_LINEUP_ROSTER_VALIDATED";
-  }
+    const preWriteSummary = { games, games_checked: games.length, lineup_write_ready_games: lineupWriteReadyGames, source_probe_lane: sourceLane, request_id: input.request_id || null, started_at: startedAt };
+    let writeResult;
+    try {
+      writeResult = await writeConfirmedLineupsIfGateOpen(pg, preWriteSummary, cert, writeSafety);
+    } catch (err) {
+      writeResult = { schema_bootstrap_performed: false, batch_id: null, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: "write_exception", retention_prune_enabled: true, retention_window: RETENTION_WINDOW_LABEL, retention_dates_kept: retentionDatesToKeep(), lineup_rows_pruned: 0, batch_rows_pruned: 0, lineup_rows_ready_to_write: 0, rows_written: 0, writes_performed: 0, write_error: err && err.stack ? String(err.stack).slice(0, 1800) : String(err) };
+    }
 
-  return {
-    ok: finalOk,
-    data_ok: finalOk,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    mode: "source_probe",
-    status: finalOk ? "COMPLETED_SOURCE_PROBE" : "BLOCKED_SOURCE_PROBE",
-    certification: finalCertStatus,
-    certification_status: finalCertStatus,
-    certification_grade: finalCertGrade,
-    request_id: input.request_id || null,
-    chain_id: input.chain_id || null,
-    started_at: startedAt,
-    completed_at: nowUtc(),
-    source_probe_lane: sourceLane,
-    mlb_api_base_url_raw: rawSourceBase,
-    mlb_api_origin_used: sourceBase,
-    prepared_board_stale_warning: preparedBoardStale,
-    games_checked: games.length,
-    calendar_probe_games_checked: calendarProbeRows.length,
-    prepared_games_checked: anchors.length,
-    prepared_rows_read: preparedRowsRead,
-    prepared_players_checked: preparedPlayersChecked,
-    prepared_players_roster_validated: games.reduce((sum, g) => sum + Number(g.prepared_players_roster_validated || 0), 0),
-    prepared_player_status_sample: games.flatMap((g) => g.prepared_player_status_sample || []).slice(0, 30),
-    derived_backup_status: games.some((g) => Number(g.prepared_players_roster_validated || 0) > 0) ? "PRE_LINEUP_ROSTER_VALIDATED_SOURCE_PROBE_ONLY" : null,
-    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
-    derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
-    write_framework_locked_off: writeSafety.write_framework_locked_off,
-    write_framework_live_gated: writeSafety.write_framework_live_gated,
-    write_gate_status: writeResult.write_gate_status,
-    schema_bootstrap_performed: writeResult.schema_bootstrap_performed,
-    retention_prune_enabled: writeResult.retention_prune_enabled,
-    retention_window: writeResult.retention_window,
-    retention_timezone: writeResult.retention_timezone,
-    retention_dates_kept: writeResult.retention_dates_kept,
-    retention_tables_pruned: writeResult.retention_tables_pruned,
-    batch_retention_basis: writeResult.batch_retention_basis,
-    lineup_rows_pruned: writeResult.lineup_rows_pruned,
-    batch_rows_pruned: writeResult.batch_rows_pruned,
-    live_lineup_batch_id: writeResult.batch_id,
-    write_framework_contract: writeFrameworkContract(),
-    future_table_contracts: futureTableContracts(),
-    write_safety_hard_blocks: writeSafety.hard_blocks,
-    write_safety_checks: writeSafety.checks,
-    lineup_rows_ready_to_write: writeResult.lineup_rows_ready_to_write,
-    write_error: writeResult.write_error,
-    lineup_write_ready_games: lineupWriteReadyGames,
-    lineup_write_preview_only: true,
-    lineup_write_preview_row_count: lineupWritePreviewRows,
-    lineup_write_preview_sample: lineupWritePreviewSample,
-    availability_write_preview_only: true,
-    availability_write_preview_row_count: availabilityWritePreviewRows,
-    availability_write_preview_sample: availabilityWritePreviewSample,
-    lineup_parser_contract: lineupParserContract(),
-    future_write_unlock_requirements: futureWriteUnlockRequirements(),
-    boxscore_calls: boxscoreCalls,
-    feed_live_calls: feedLiveCalls,
-    external_calls_performed: boxscoreCalls + feedLiveCalls + 3,
-    source_failures: sourceFailures,
-    boxscore_404_count: games.filter((g) => g.boxscore_http_status === 404).length,
-    feed_live_404_count: games.filter((g) => g.feed_live_http_status === 404).length,
-    mlb_starting_lineups_page_checked: discovery.mlb_starting_lineups_page_checked,
-    mlb_starting_lineups_http_status: discovery.mlb_starting_lineups_http_status,
-    mlb_starting_lineups_response_bytes: discovery.mlb_starting_lineups_response_bytes,
-    mlb_starting_lineups_has_embedded_json_marker: discovery.mlb_starting_lineups_has_embedded_json_marker,
-    mlb_starting_lineups_target_team_name_hit_count: discovery.mlb_starting_lineups_target_team_name_hit_count,
-    mlb_starting_lineups_target_player_name_hit_count: discovery.mlb_starting_lineups_target_player_name_hit_count,
-    official_schedule_checked: discovery.calendar_probe_official_schedule_checked || discovery.prepared_official_schedule_checked,
-    prepared_official_schedule_anchor_hit_count: discovery.prepared_official_schedule_anchor_hit_count,
-    prepared_official_schedule_anchor_missing_count: discovery.prepared_official_schedule_anchor_missing_count,
-    calendar_probe_official_schedule_anchor_hit_count: discovery.calendar_probe_official_schedule_anchor_hit_count,
-    calendar_probe_official_schedule_anchor_missing_count: discovery.calendar_probe_official_schedule_anchor_missing_count,
-    warning_count: cert.warningCount,
-    blocker_count: cert.blockerCount,
-    rows_read: preparedRowsRead + sourceRows.length,
-    rows_written: writeResult.rows_written,
-    writes_performed: writeResult.writes_performed,
-    output_json: {
-      source_probe_only: true,
-      live_gated_lineup_writes_possible: LIVE_GATED_LINEUP_WRITES_ENABLED,
-      source_probe_lane: sourceLane,
-      mlb_api_base_url_raw: rawSourceBase,
-      mlb_api_origin_used: sourceBase,
-      prepared_board_stale_warning: preparedBoardStale,
+    let finalCertStatus = cert.status, finalCertGrade = cert.grade, finalOk = ok && !writeResult.write_error;
+    if (writeResult.write_error) { finalCertStatus = "BLOCKED_DAILY_LINEUPS_WRITE_EXCEPTION"; finalCertGrade = "BLOCKED"; }
+    else if (writeResult.rows_written > 0) { finalCertStatus = "PASS_LIVE_GATED_LINEUPS_WRITTEN"; finalCertGrade = "LIVE_GATED_CONFIRMED_LINEUP_WRITES"; }
+    else if (LIVE_GATED_LINEUP_WRITES_ENABLED && PRODUCTION_LINEUP_WRITES_ENABLED && lineupWriteReadyGames === 0 && ok) { finalCertStatus = "PASS_LIVE_GATED_WAITING_FOR_POSTED_LINEUP"; finalCertGrade = "LIVE_GATED_PRE_LINEUP_ROSTER_VALIDATED"; }
+
+    return {
+      ok: finalOk, data_ok: finalOk, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, mode: "source_probe",
+      status: finalOk ? "COMPLETED_SOURCE_PROBE" : "BLOCKED_SOURCE_PROBE", certification: finalCertStatus, certification_status: finalCertStatus, certification_grade: finalCertGrade,
+      request_id: input.request_id || null, chain_id: input.chain_id || null, started_at: startedAt, completed_at: nowUtc(), source_probe_lane: sourceLane,
+      mlb_api_base_url_raw: rawSourceBase, mlb_api_origin_used: sourceBase, prepared_board_stale_warning: preparedBoardStale, games_checked: games.length,
+      calendar_probe_games_checked: calendarProbeRows.length, prepared_games_checked: anchors.length, prepared_rows_read: preparedRowsRead,
+      prepared_players_checked: preparedPlayersChecked, prepared_players_roster_validated: games.reduce((sum, g) => sum + Number(g.prepared_players_roster_validated || 0), 0),
+      prepared_player_status_sample: games.flatMap((g) => g.prepared_player_status_sample || []).slice(0, 30),
       derived_backup_status: games.some((g) => Number(g.prepared_players_roster_validated || 0) > 0) ? "PRE_LINEUP_ROSTER_VALIDATED_SOURCE_PROBE_ONLY" : null,
-      production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
-      derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
-      write_framework_locked_off: writeSafety.write_framework_locked_off,
-      write_framework_live_gated: writeSafety.write_framework_live_gated,
-      write_gate_status: writeResult.write_gate_status,
-      schema_bootstrap_performed: writeResult.schema_bootstrap_performed,
-      retention_prune_enabled: writeResult.retention_prune_enabled,
-      retention_window: writeResult.retention_window,
-      retention_timezone: writeResult.retention_timezone,
-      retention_dates_kept: writeResult.retention_dates_kept,
-      retention_tables_pruned: writeResult.retention_tables_pruned,
-      batch_retention_basis: writeResult.batch_retention_basis,
-      lineup_rows_pruned: writeResult.lineup_rows_pruned,
-      batch_rows_pruned: writeResult.batch_rows_pruned,
-      live_lineup_batch_id: writeResult.batch_id,
-      write_framework_contract: writeFrameworkContract(),
-      future_table_contracts: futureTableContracts(),
-      write_safety_hard_blocks: writeSafety.hard_blocks,
-      write_safety_checks: writeSafety.checks,
-      lineup_rows_ready_to_write: writeResult.lineup_rows_ready_to_write,
-      write_error: writeResult.write_error,
-      lineup_write_preview_only: true,
-      lineup_write_ready_games: lineupWriteReadyGames,
-      lineup_write_preview_row_count: lineupWritePreviewRows,
-      lineup_write_preview_sample: lineupWritePreviewSample,
-      availability_write_preview_only: true,
-      availability_write_preview_row_count: availabilityWritePreviewRows,
-      availability_write_preview_sample: availabilityWritePreviewSample,
-      lineup_parser_contract: lineupParserContract(),
-      future_write_unlock_requirements: futureWriteUnlockRequirements(),
-      primary_endpoint: "/api/v1/game/{gamePk}/boxscore",
-      fallback_endpoint: "/api/v1.1/game/{gamePk}/feed/live",
-      source_discovery_ladder: ["prepared_board_anchor_check", "calendar_only_source_probe", "official_schedule_anchor_check", "mlb_starting_lineups_page_probe", "game_boxscore_probe", "feed_live_probe"],
-      discovery,
-      no_prepared_board_mutation: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      unlock_note: "daily_lineups_current is live-gated: writes occur only when official battingOrder is posted and ID mapping passes; daily_player_availability_current derived writes remain locked off."
-    },
-    games
-  };
+      production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED, derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+      write_framework_locked_off: writeSafety.write_framework_locked_off, write_framework_live_gated: writeSafety.write_framework_live_gated, write_gate_status: writeResult.write_gate_status,
+      schema_bootstrap_performed: writeResult.schema_bootstrap_performed, retention_prune_enabled: writeResult.retention_prune_enabled, retention_window: writeResult.retention_window,
+      retention_timezone: writeResult.retention_timezone, retention_dates_kept: writeResult.retention_dates_kept, retention_tables_pruned: writeResult.retention_tables_pruned,
+      batch_retention_basis: writeResult.batch_retention_basis, lineup_rows_pruned: writeResult.lineup_rows_pruned, batch_rows_pruned: writeResult.batch_rows_pruned,
+      live_lineup_batch_id: writeResult.batch_id, write_framework_contract: writeFrameworkContract(), future_table_contracts: futureTableContracts(),
+      write_safety_hard_blocks: writeSafety.hard_blocks, write_safety_checks: writeSafety.checks, lineup_rows_ready_to_write: writeResult.lineup_rows_ready_to_write,
+      write_error: writeResult.write_error, lineup_write_ready_games: lineupWriteReadyGames, lineup_write_preview_only: true, lineup_write_preview_row_count: lineupWritePreviewRows,
+      lineup_write_preview_sample: lineupWritePreviewSample, availability_write_preview_only: true, availability_write_preview_row_count: availabilityWritePreviewRows,
+      availability_write_preview_sample: availabilityWritePreviewSample, lineup_parser_contract: lineupParserContract(), future_write_unlock_requirements: futureWriteUnlockRequirements(),
+      boxscore_calls: boxscoreCalls, feed_live_calls: feedLiveCalls, external_calls_performed: boxscoreCalls + feedLiveCalls + 3, source_failures: sourceFailures,
+      boxscore_404_count: games.filter((g) => g.boxscore_http_status === 404).length, feed_live_404_count: games.filter((g) => g.feed_live_http_status === 404).length,
+      mlb_starting_lineups_page_checked: discovery.mlb_starting_lineups_page_checked, mlb_starting_lineups_http_status: discovery.mlb_starting_lineups_http_status,
+      mlb_starting_lineups_response_bytes: discovery.mlb_starting_lineups_response_bytes, mlb_starting_lineups_has_embedded_json_marker: discovery.mlb_starting_lineups_has_embedded_json_marker,
+      mlb_starting_lineups_target_team_name_hit_count: discovery.mlb_starting_lineups_target_team_name_hit_count, mlb_starting_lineups_target_player_name_hit_count: discovery.mlb_starting_lineups_target_player_name_hit_count,
+      official_schedule_checked: discovery.calendar_probe_official_schedule_checked || discovery.prepared_official_schedule_checked,
+      prepared_official_schedule_anchor_hit_count: discovery.prepared_official_schedule_anchor_hit_count, prepared_official_schedule_anchor_missing_count: discovery.prepared_official_schedule_anchor_missing_count,
+      calendar_probe_official_schedule_anchor_hit_count: discovery.calendar_probe_official_schedule_anchor_hit_count, calendar_probe_official_schedule_anchor_missing_count: discovery.calendar_probe_official_schedule_anchor_missing_count,
+      warning_count: cert.warningCount, blocker_count: cert.blockerCount, rows_read: preparedRowsRead + sourceRows.length, rows_written: writeResult.rows_written, writes_performed: writeResult.writes_performed,
+      no_prepared_board_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true,
+      games
+    };
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
 }
 
 export default {
@@ -2105,59 +1161,23 @@ export default {
     const method = request.method.toUpperCase();
 
     if (method === "OPTIONS") return new Response(null, { status: 204 });
-
-    if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
-    }
+    if (method === "GET" && path === "/") return jsonResponse(baseIdentity(env));
 
     if (method === "GET" && path === "/diagnostic-savant") {
       const framingUrl = "https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=2026&seasonStart=2026&type=catcher&csv=true";
       const poptimeUrl = "https://baseballsavant.mlb.com/leaderboard/poptime?year=2026&min2b=5&min3b=0&csv=true";
-      const [framing, poptime] = await Promise.all([
-        fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Savant-Probe/0.1"),
-        fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Savant-Probe/0.1")
-      ]);
-      const analyze = (res) => {
-        const text = res.text || "";
-        const firstLine = text.split("\n")[0] || "";
-        const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html");
-        return {
-          ok: res.ok,
-          http_status: res.http_status,
-          response_bytes: res.response_bytes || 0,
-          looks_like_csv: looksLikeCsv,
-          first_line_preview: firstLine.slice(0, 300),
-          first_400_chars: text.slice(0, 400)
-        };
-      };
+      const [framing, poptime] = await Promise.all([fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Savant-Probe/0.2"), fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Savant-Probe/0.2")]);
+      const analyze = (res) => { const text = res.text || ""; const firstLine = text.split("\n")[0] || ""; const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html"); return { ok: res.ok, http_status: res.http_status, response_bytes: res.response_bytes || 0, looks_like_csv: looksLikeCsv, first_line_preview: firstLine.slice(0, 300), first_400_chars: text.slice(0, 400) }; };
       return jsonResponse({ ok: true, route: "/diagnostic-savant", framing: analyze(framing), poptime: analyze(poptime), timestamp_utc: nowUtc() });
     }
 
     if (method === "GET" && path === "/health") {
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: { db_bindings: db, vars },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: { HYPERDRIVE: Boolean(env.HYPERDRIVE) }, vars: varPresence(env, EXPECTED_VARS) }, safe_secret_note: "Secret values are intentionally never printed." });
     }
 
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null }, writes_performed: 0, external_calls_performed: 0 });
     }
 
     if (method === "POST" && (path === "/run" || path === "/source-probe")) {
@@ -2165,55 +1185,23 @@ export default {
       if (input.probe_savant_csv === true) {
         const framingUrl = "https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=2026&seasonStart=2026&type=catcher&csv=true";
         const poptimeUrl = "https://baseballsavant.mlb.com/leaderboard/poptime?year=2026&min2b=5&min3b=0&csv=true";
-        const [framing, poptime] = await Promise.all([
-          fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Savant-Probe/0.1"),
-          fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Savant-Probe/0.1")
-        ]);
-        const analyze = (res) => {
-          const text = res.text || "";
-          const firstLine = text.split("\n")[0] || "";
-          const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html");
-          return { ok: res.ok, http_status: res.http_status, response_bytes: res.response_bytes || 0, looks_like_csv: looksLikeCsv, first_line_preview: firstLine.slice(0, 300), first_400_chars: text.slice(0, 400) };
-        };
+        const [framing, poptime] = await Promise.all([fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Savant-Probe/0.2"), fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Savant-Probe/0.2")]);
+        const analyze = (res) => { const text = res.text || ""; const firstLine = text.split("\n")[0] || ""; const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html"); return { ok: res.ok, http_status: res.http_status, response_bytes: res.response_bytes || 0, looks_like_csv: looksLikeCsv, first_line_preview: firstLine.slice(0, 300), first_400_chars: text.slice(0, 400) }; };
         return jsonResponse({ ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "diagnostic_savant_probe_only", framing: analyze(framing), poptime: analyze(poptime), rows_written: 0, writes_performed: 0, timestamp_utc: nowUtc() });
       }
       const mode = String(input.mode || "source_probe");
-      if (mode !== "source_probe" && mode !== "orchestrator_exact_daily_lineups_source_probe") {
-        return jsonResponse({
-          ok: false,
-          data_ok: false,
-          version: VERSION,
-          worker_name: WORKER_NAME,
-          job_key: input.job_key || JOB_KEY,
-          status: "unsupported_mode_source_probe_only",
-          supported_modes: ["source_probe"],
-          requested_mode: mode,
-          rows_written: 0,
-          writes_performed: 0,
-          no_scoring: true,
-          no_ranking: true,
-          no_final_board: true
-        }, 400);
+      if (mode !== "source_probe" && mode !== "orchestrator_exact_daily_lineups_source_probe" && mode !== "daily_context_full_run_lineups") {
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: input.job_key || JOB_KEY, status: "unsupported_mode_source_probe_only", supported_modes: ["source_probe"], requested_mode: mode, rows_written: 0, writes_performed: 0, no_scoring: true, no_ranking: true, no_final_board: true }, 400);
       }
-      const HARD_DEADLINE_MS = 19200; // Real fix: confirmed via direct log-timestamp evidence that the real, legitimate catcher-reference refresh (2 external fetches to Baseball Savant) can take ~17s+ on real network variance - the old 18000ms internal deadline was firing before this legitimate work could complete. Raised to 19200ms, staying safely under the orchestrator's shared 20000ms external cutoff (that constant is shared by many other daily-context workers and was correctly left untouched).
+      const HARD_DEADLINE_MS = 19200;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const output = await withDeadline(runSourceProbe(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
       if (output === TIMEOUT_SENTINEL) {
-        // Real fix (same class found live in daily-schedule.js): a genuine internal hang -
-        // likely a stalled D1 call - previously had no safety net inside this worker.
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_LINEUPS_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
       }
       return jsonResponse(output, output.ok ? 200 : 502);
     }
 
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /source-probe", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /source-probe", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
 };
