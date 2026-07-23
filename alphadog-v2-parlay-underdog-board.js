@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-parlay-underdog-board";
-const VERSION = "alphadog-v2-parlay-underdog-board-v0.1.0-initial-board-inventory";
+const VERSION = "alphadog-v2-parlay-underdog-board-v0.2.0-postgres-rewire";
 const JOB_KEY = "parlay-underdog-board";
 const SOURCE_KEY = "parlay_underdog";
 const MAX_PREVIEW_CHARS = 900;
