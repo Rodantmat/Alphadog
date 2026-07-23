@@ -248,10 +248,10 @@ async function readLatestBatchMap(pg) {
     ["starters", "daily.starters_batches"], ["lineups", "daily.lineups_batches"], ["player_availability", "daily.player_availability_batches"], ["weather", "daily.game_weather_batches"], ["bullpen", "daily.bullpen_availability_batches"], ["schedule_spot", "daily.team_schedule_spot_batches"], ["umpire", "daily.umpire_context_batches"]
   ];
   const out = {};
-  for (const [key, table] of specs) {
+  await Promise.all(specs.map(async ([key, table]) => {
     try { const rows = await pg.unsafe(`SELECT * FROM ${table} ORDER BY COALESCE(updated_at, completed_at, created_at) DESC LIMIT 1`); out[key] = rows[0] || null; }
     catch (e) { out[key] = { error: String(e && e.message ? e.message : e) }; }
-  }
+  }));
   return out;
 }
 
