@@ -1058,14 +1058,25 @@ async function promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, 
     no_final_board_write: true
   }, 6000);
 
-  await env.MARKET_DB.batch([
-    env.MARKET_DB.prepare("INSERT INTO prizepicks_board_active_batches (source_key, slate_date, active_batch_id, certification_status, row_count, valid_rows, activated_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON CONFLICT(source_key, slate_date) DO UPDATE SET active_batch_id=excluded.active_batch_id, certification_status=excluded.certification_status, row_count=excluded.row_count, valid_rows=excluded.valid_rows, activated_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP").bind(SOURCE_KEY, slateDate, batchId, PROMOTION_CERT_PASS, inserted.inserted_rows, cert.validRows),
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_active_batches WHERE source_key=? AND active_batch_id<>?").bind(SOURCE_KEY, batchId),
-    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(PROMOTION_CERT_PASS, "Certified PrizePicks batch promoted to active current board.", promotionJson, batchId),
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_stage WHERE source_key=?").bind(SOURCE_KEY),
-    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(batchId),
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_current WHERE source_key=? AND batch_id<>?").bind(SOURCE_KEY, batchId)
-  ]);
+  const client = pgClient(env);
+  try {
+    await client.begin(async (tx) => {
+      await tx.unsafe(
+        "INSERT INTO market.prizepicks_board_active_batches (source_key, slate_date, active_batch_id, certification_status, row_count, valid_rows, activated_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, now(), now()) ON CONFLICT(source_key, slate_date) DO UPDATE SET active_batch_id=excluded.active_batch_id, certification_status=excluded.certification_status, row_count=excluded.row_count, valid_rows=excluded.valid_rows, activated_at=now(), updated_at=now()",
+        [SOURCE_KEY, slateDate, batchId, PROMOTION_CERT_PASS, inserted.inserted_rows, cert.validRows]
+      );
+      await tx.unsafe("DELETE FROM market.prizepicks_board_active_batches WHERE source_key=$1 AND active_batch_id<>$2", [SOURCE_KEY, batchId]);
+      await tx.unsafe(
+        "UPDATE market.prizepicks_board_batches SET certification_status=$1, certification_reason=$2, certification_json=$3, promoted_at=now(), updated_at=now() WHERE batch_id=$4",
+        [PROMOTION_CERT_PASS, "Certified PrizePicks batch promoted to active current board.", promotionJson, batchId]
+      );
+      await tx.unsafe("DELETE FROM market.prizepicks_board_stage WHERE source_key=$1", [SOURCE_KEY]);
+      await tx.unsafe("UPDATE market.prizepicks_board_batches SET cleaned_at=now(), updated_at=now() WHERE batch_id=$1", [batchId]);
+      await tx.unsafe("DELETE FROM market.prizepicks_board_current WHERE source_key=$1 AND batch_id<>$2", [SOURCE_KEY, batchId]);
+    });
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 
   return {
     promoted: true,
