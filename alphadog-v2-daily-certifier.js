@@ -25,6 +25,9 @@ async function first(pg, sqlText, binds = []) {
 }
 
 function nowUtc() { return new Date().toISOString(); }
+function pgArrayLiteral(arr, isText = true) {
+  return "{" + (arr || []).map(v => isText ? `"${String(v).replace(/"/g, '\\"')}"` : String(v)).join(",") + "}";
+}
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
