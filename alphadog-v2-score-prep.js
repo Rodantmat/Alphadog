@@ -326,12 +326,9 @@ function safeJson(v, max = 9000) {
 }
 
 async function controlLog(env, input, level, eventKey, message, data = {}) {
-  if (!env || !env.CONTROL_DB || !input || !input.request_id) return;
-  try {
-    await env.CONTROL_DB.prepare(`INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`)
-      .bind(String(input.request_id || ""), input.run_id || null, WORKER_NAME, JOB_KEY, level, eventKey, limitText(message, 900), safeJson(data, 9000))
-      .run();
-  } catch (_) {}
+  // No-op: this worker must never read or write D1. Diagnostic logging removed entirely
+  // rather than redirected, since it was telemetry-only and not required for correctness.
+  return;
 }
 
 async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWritten = 0, extra = {}) {
