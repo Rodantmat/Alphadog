@@ -234,7 +234,7 @@ CREATE INDEX IF NOT EXISTS idx_tally_current_date ON context_cert.tally_current(
 }
 
 async function readPreparedRows(pg) {
-  return await pg.unsafe(`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, projection_id, player_name, resolved_mlb_player_id, player_match_status, team, opponent, team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date, matchup_status, pickable_safe, prep_status, block_reason
+  return await pg.unsafe(`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, projection_id, player_name, resolved_mlb_player_id, player_match_status, team, opponent, team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date::text AS official_date, matchup_status, pickable_safe, prep_status, block_reason
     FROM score.board_prepared_current
     WHERE pickable_safe = 1
       AND matchup_status = 'calendar_matched'
