@@ -113,15 +113,8 @@ function valuePresence(env, names) {
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch (_) { return {}; } }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res.results || [];
-}
-
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
 }
 
 async function ensureSleeperSchema(env) {
