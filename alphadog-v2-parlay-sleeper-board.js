@@ -201,20 +201,44 @@ function safeEndpoint(urlOrPath) {
   return text.split("?")[0];
 }
 
-function authConfig(env) {
+async function authConfig(env) {
   const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || DEFAULT_PARLAY_API_AUTH_HEADER_NAME || "").trim();
   const headerPrefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
-  const keyPresent = present(env, "PARLAY_API_KEY");
+  let apiKey = null;
+  let keySource = null;
+  if (env.HYPERDRIVE) {
+    const client = pgClient(env);
+    try {
+      const rows = await client.unsafe("SELECT credential_value_encrypted FROM config.external_credentials WHERE credential_key='parlay_api_key'");
+      if (rows && rows[0] && rows[0].credential_value_encrypted) {
+        const parsed = JSON.parse(rows[0].credential_value_encrypted);
+        if (parsed && parsed.password) {
+          apiKey = String(parsed.password);
+          keySource = "config.external_credentials";
+        }
+      }
+    } catch (_) {
+      // fall through to env secret fallback below
+    } finally {
+      await client.end({ timeout: 1 });
+    }
+  }
+  if (!apiKey && present(env, "PARLAY_API_KEY")) {
+    apiKey = String(env.PARLAY_API_KEY);
+    keySource = "worker_secret_fallback";
+  }
+  const keyPresent = !!apiKey;
   return {
     ok: keyPresent && !!headerName,
     key_present: keyPresent,
+    key_source: keySource,
     header_name_present: !!headerName,
     header_prefix_present: !!headerPrefix,
     header_name: headerName || null,
-    block_reason: !keyPresent ? "PARLAY_API_KEY_missing" : (!headerName ? "PARLAY_API_AUTH_HEADER_NAME_missing" : null),
-    apply(headers, envRef) {
+    block_reason: !keyPresent ? "PARLAY_API_KEY_missing_in_db_and_env" : (!headerName ? "PARLAY_API_AUTH_HEADER_NAME_missing" : null),
+    apply(headers) {
       if (!keyPresent || !headerName) return headers;
-      headers.set(headerName, headerPrefix ? `${headerPrefix} ${envRef.PARLAY_API_KEY}` : String(envRef.PARLAY_API_KEY));
+      headers.set(headerName, headerPrefix ? `${headerPrefix} ${apiKey}` : apiKey);
       return headers;
     }
   };
