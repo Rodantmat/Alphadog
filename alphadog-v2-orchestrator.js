@@ -8107,35 +8107,50 @@ async function processBaseGameCalendarJob(env, row, runId, trigger) {
 }
 
 
-function getPacificTimeParts(nowMs) {
-  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour12: false, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-  const parts = fmt.formatToParts(new Date(nowMs));
-  const get = (type) => parts.find(p => p.type === type).value;
-  return { pacific_date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")), minute: Number(get("minute")) };
-}
-
-// Real, once-daily 6:00 AM Pacific trigger (per user directive). Fires in the 6:00-6:04 window to
-// tolerate minor cron/lock timing drift, and guards against re-firing twice in the same window via
-// a last-triggered-Pacific-date marker stored in CONTROL_DB (the only DB this orchestrator can reach
-// directly - it has no Hyperdrive binding). The intended schedule is also documented in Postgres
-// config.worker_schedules for humans/future sessions, but that table is not read at runtime here.
-async function enqueuePostgresFullRunIfDue(env, cronExpression) {
+// Real once-daily 6:00 AM Pacific trigger, following the EXACT established pattern used by every
+// other scheduled job in this file (enqueueScheduledDailyFullRunIfDue etc.): schedule config lives
+// in Postgres config.scheduled_jobs (read via the existing pgSchedule/Hyperdrive connection - this
+// orchestrator already has that binding), and same-day dedup is via a deterministic request_id
+// inserted with INSERT OR IGNORE into the existing control_job_queue dispatch table (the same
+// operational queue every pipeline stage already flows through - no new table of any kind).
+async function enqueuePostgresFullRunIfDue(env, cronExpression = "unknown") {
+  const pt = pacificNowParts(new Date());
+  let sqlSchedPgFullRun = pgSchedule(env);
+  let scheduleRows;
   try {
-    const pt = getPacificTimeParts(Date.now());
-    const inMorningWindow = pt.hour === 6 && pt.minute < 5;
-    if (!inMorningWindow) return { ok: true, skipped: true, reason: "outside_scheduled_window", scheduled_window: "06:00-06:04 America/Los_Angeles", current_pacific_time: `${pt.pacific_date} ${String(pt.hour).padStart(2,"0")}:${String(pt.minute).padStart(2,"0")}` };
-    const marker = await first(env.CONTROL_DB, "SELECT value FROM control_kv WHERE key='postgres_full_run_last_triggered_pacific_date'");
-    if (marker && marker.value === pt.pacific_date) return { ok: true, skipped: true, reason: "already_triggered_today", pacific_date: pt.pacific_date };
-    const requestId = `postgres_full_run_enqueue_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_queue (request_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, 'postgres-full-run-enqueue', 'alphadog-v2-orchestrator', 'pending', 5, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    scheduleRows = await sqlSchedPgFullRun`
+      SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, notes
+      FROM config.scheduled_jobs
+      WHERE enabled=1
+        AND job_key='postgres-full-run'
+        AND schedule_type='daily'
+        AND timezone='America/Los_Angeles'
+      ORDER BY local_time, schedule_id
+    `;
+  } finally {
+    await sqlSchedPgFullRun.end();
+  }
+
+  const results = [];
+  for (const schedule of scheduleRows) {
+    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
+    const basePayload = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: "postgres-full-run-enqueue", mode: "scheduled_postgres_full_run_config_scan", cron_expression: cronExpression, schedule_id: schedule.schedule_id, schedule_local_time: schedule.local_time, pacific_date: pt.ymd_dash, pacific_time: pt.local_time };
+    if (!parsedTime) { results.push({ ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_POSTGRES_FULL_RUN_BAD_LOCAL_TIME" }); continue; }
+    const inWindow = isPacificScheduleWindowDue(pt, parsedTime, 5);
+    if (!inWindow) { results.push({ ...basePayload, status: "SCHEDULED_POSTGRES_FULL_RUN_NOT_DUE_YET" }); continue; }
+
+    const scheduledKey = `postgres_full_run_${pt.ymd_key}_${parsedTime.key}_PT`;
+    const requestId = scheduledKey;
+    const insertScheduled = await run(env.CONTROL_DB,
+      "INSERT OR IGNORE INTO control_job_queue (request_id, job_key, worker_name, status, priority, input_json, created_at, updated_at, run_after) VALUES (?, 'postgres-full-run-enqueue', 'alphadog-v2-orchestrator', 'pending', 5, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
       requestId
     );
-    await run(env.CONTROL_DB, "INSERT INTO control_kv (key, value, updated_at) VALUES ('postgres_full_run_last_triggered_pacific_date', ?, CURRENT_TIMESTAMP) ON CONFLICT (key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP", pt.pacific_date);
-    return { ok: true, enqueued: true, request_id: requestId, cron_expression: cronExpression, pacific_date: pt.pacific_date, scheduled_window: "06:00-06:04 America/Los_Angeles" };
-  } catch (err) {
-    return { ok: false, error: String(err && err.message ? err.message : err) };
+    const insertedRows = Number(insertScheduled && insertScheduled.meta && insertScheduled.meta.changes || 0);
+    if (insertedRows === 0) { results.push({ ...basePayload, status: "SCHEDULED_POSTGRES_FULL_RUN_NOOP_DETERMINISTIC_KEY_EXISTS", scheduled_key: scheduledKey, request_id: requestId }); continue; }
+    results.push({ ...basePayload, status: "SCHEDULED_POSTGRES_FULL_RUN_QUEUED", scheduled_key: scheduledKey, request_id: requestId });
   }
+
+  return { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: "postgres-full-run-enqueue", mode: "scheduled_postgres_full_run_config_scan", cron_expression: cronExpression, pacific_date: pt.ymd_dash, pacific_time: pt.local_time, schedules_read: scheduleRows.length, queued_count: results.filter(r => r.status === "SCHEDULED_POSTGRES_FULL_RUN_QUEUED").length, results };
 }
 
 async function processBaseCertifierPostgresJob(env, row, runId, trigger) {
