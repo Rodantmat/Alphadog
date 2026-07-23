@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.3-single-replacement-board";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.5.0-postgres-rewire";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
