@@ -1,5 +1,84 @@
 # ALPHADOG — HANDOFF (Incremental/Delta Postgres Migration Phase)
 
+---
+
+## RULE ZERO — READ THIS FIRST, ABOVE EVERYTHING ELSE. THE MOST IMPORTANT, SACRED, NON-NEGOTIABLE RULE OF THIS ENTIRE PROJECT.
+
+**NEVER WRITE TO D1. NEVER POINT TO D1. NOT EVEN ONCE. NOT EVEN FOR SOMETHING SMALL. NOT EVEN
+"JUST TEMPORARILY." NOT EVEN A SINGLE MARKER VALUE. NOT EVEN IF IT SEEMS LIKE THE EASIEST PATH.**
+
+This is rule zero because it has been violated before — in the immediately prior session, a new
+D1 table was created (`control_kv`, a single-value marker table) as a shortcut while building a
+scheduling fix. It was caught by the user and corrected, but it should never have happened. Read
+the full incident in `ALPHADOG_DOS_AND_DONTS.md` PART 4 ("THE SINGLE MOST IMPORTANT RULE OF THIS
+ENTIRE MIGRATION, VIOLATED ONCE AND CORRECTED") before writing a single line of code.
+
+**The only thing D1 is for**: `control_job_queue` / `control_job_runs` / `control_locks` /
+`control_worker_run_log` in `CONTROL_DB` — the pre-existing operational dispatch bookkeeping that
+already exists and that every worker already reports into. That is READING/WRITING to an
+EXISTING, ALREADY-ESTABLISHED control-plane table, not creating something new. It is not an
+exception to rule zero, it is the one narrow thing rule zero was never about in the first place.
+
+**Before writing any `CREATE TABLE`, any `ALTER TABLE`, or any first `INSERT` anywhere in this
+codebase**: stop, say out loud which binding is being used (D1 or Postgres/Hyperdrive), and if
+it's D1 and the table/data is new, STOP — do not proceed. Look for the Postgres equivalent
+pattern first. One almost always already exists somewhere in this codebase, built by an earlier
+session — the scheduling fix above is a perfect example: a Postgres-based pattern
+(`config.scheduled_jobs` + the orchestrator's existing `pgSchedule()` Hyperdrive helper) was
+ALREADY sitting there, used by five other scheduled jobs, and simply hadn't been noticed before
+reaching for D1 instead.
+
+**Only point at D1. Only read from it as reference if genuinely unavoidable. Only rewire. Only
+write to the new (Postgres) database.** This is not a preference — it is the single sacred rule
+this entire migration exists to enforce.
+
+---
+
+## RULE TWO — DO NOT BABYSIT LONG-RUNNING TRIGGERS. TRIGGER, REPORT, LET IT RUN.
+
+If a full run, a backfill, or any chain of work is triggered that's genuinely going to take a
+long time (multiple minutes to complete, spanning many real external API calls or many stages),
+**do not sit there polling/checking on it turn by turn, burning the user's patience and this
+session's budget.** Trigger it, confirm briefly that it's genuinely running (one real check, not
+a loop of checks), report that, and then stand by — let the user say "check on it" when they want
+an update, rather than proactively re-checking every few seconds.
+
+**The corollary, stated plainly**: because nothing should be silently babysat, the daily/delta
+layers must NOT be designed so that a later layer silently backfills or waits on an earlier
+layer's slow completion within the same triggered run. Each layer (board, daily context, market)
+should be its own genuinely independent full-run chain — trigger one, let it finish (self-gating,
+self-continuing, checked back on only when asked), then trigger the next, rather than one giant
+chain where a slow early stage silently delays or blocks everything after it for an unbounded
+amount of time. If something IS going to take a long time, that's fine — trigger it and walk
+away, don't try to make it artificially fast by cutting corners, and don't sit there watching it.
+
+---
+
+## ROADMAP FOR THE NEXT SESSION(S) — READ BEFORE STARTING ANY NEW WORK
+
+The next chat's real, prioritized order of work, as told directly by the user:
+
+1. **Board full-run** — first priority. Multiple stages: different boards (PrizePicks, Sleeper,
+   Underdog — see `market.prizepicks_board_current` / `sleeper_board_current` /
+   `underdog_board_current`, only PrizePicks currently has real data), plus `score-prep.js`.
+   This is the entry point of the real daily scoring chain and should be built/verified as its
+   own complete, independent full-run chain before moving to daily context.
+2. **Daily context** — second priority. Described as having "many, many minor workers" (the
+   `daily.*` layer: team schedule spot, bullpen availability, player availability, weather,
+   probable pitchers, lineups, umpire context — see Section 3's honest gap list, several of these
+   tables are still completely empty) plus its own certifier and its own full-run chain.
+3. **Market** — third priority. Three or four layers (`market-normalizer.js`,
+   `market-line-shape-classifier.js`, odds ingestion, `market.historical_props_2025` handling)
+   plus its own certifier.
+4. **Scoring** — explicitly deferred. This will come in a FUTURE session, not necessarily the
+   very next one after this handoff — do not start on it unless told to.
+
+Each of these three near-term layers (board, daily context, market) is its own real, independent
+full-run chain with its own certifier — build and verify each one completely (per Rule Two above:
+trigger, let it run, verify with real data, don't babysit) before starting the next.
+
+---
+
 This handoff is for the NEXT chat session. Read this fully, then read `ALPHADOG_DOS_AND_DONTS.md`
 fully, before touching any code. Both files are exhaustive by explicit instruction — nothing was
 skipped or summarized away. If anything in this document seems incomplete, STOP and say so rather
