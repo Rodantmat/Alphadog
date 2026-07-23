@@ -1493,7 +1493,7 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   timing.cleanup_old_batches_ms = Date.now() - cleanupStart;
 
   const finishAt = nowIso();
-  await env.pg.unsafe(
+  await env.pg.query(
     `INSERT INTO score.board_prep_batches (
       batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
       prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
