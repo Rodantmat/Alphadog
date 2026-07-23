@@ -1162,7 +1162,7 @@ export default {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 15000;
+      const HARD_DEADLINE_MS = 18000; // Raised from 15000 (2026-07-23): real evidence of repeated timeouts when running as part of a full board chain alongside other Postgres-touching workers hitting the same Hyperdrive instance concurrently. Still safely under the orchestrator's own 20000ms external wait ceiling for this worker.
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const rawOutput = await withDeadline(safeProbe(env, {
         ...(input || {}),
