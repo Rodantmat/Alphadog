@@ -12675,24 +12675,36 @@ async function failDailyContextStaleChild(env, parentRow, stage, child, stageRep
 }
 
 async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
-  const pg = pgControl(env);
-  try {
-    const existingRows = await pg`SELECT request_id, input_json FROM control.job_queue
-      WHERE parent_request_id=${parentRow.request_id} AND chain_id=${parentRow.chain_id}
-        AND (input_json::jsonb ->> 'stage_key')=${stage.stage_key}
-      ORDER BY created_at ASC LIMIT 1`;
-    const existing = existingRows[0] || null;
-    if (existing && Number(retryCount || 0) <= 0) {
-      return { child_request_id: existing.request_id, input: parseJsonSafeText(existing.input_json || "{}", {}) };
-    }
-    const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
-    const input = dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount);
-    await pg`INSERT INTO control.job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at)
-      VALUES (${childRequestId}, ${parentRow.chain_id}, ${parentRow.request_id}, ${stage.job_key}, ${stage.worker_name}, ${stage.worker_group}, ${stage.phase_key}, ${stage.display_name}, 'pending', ${stage.priority}, 0, ${JSON.stringify(input)}, now() + interval '1 seconds', now(), now())`;
-    return { child_request_id: childRequestId, input };
-  } finally {
-    await pg.end({ timeout: 1 }).catch(() => {});
+  // v0.2.146: Daily Context Full Run must be stage-key deterministic.
+  // If the parent is re-entered by a hot pump, manual wake, or cron rescue after
+  // the child was already inserted, reuse the existing child instead of creating
+  // a duplicate row for the same stage.
+  // NOTE: children stay on D1 control_job_queue intentionally - the shared dispatch
+  // loop that discovers and runs "due" jobs for every job type (board/market/static/
+  // base-workers/daily-context) only polls D1. Moving children to Postgres without also
+  // rewriting that shared loop means nothing would ever pick them up and run them -
+  // confirmed via a real live test where a Postgres-enqueued child sat pending forever.
+  const existing = await first(env.CONTROL_DB,
+    `SELECT request_id, input_json
+     FROM control_job_queue
+     WHERE parent_request_id=?
+       AND chain_id=?
+       AND json_extract(input_json, '$.stage_key')=?
+     ORDER BY datetime(created_at) ASC
+     LIMIT 1`,
+    parentRow.request_id, parentRow.chain_id, stage.stage_key
+  );
+  if (existing && Number(retryCount || 0) <= 0) {
+    return { child_request_id: existing.request_id, input: parseJsonSafeText(existing.input_json || "{}", {}) };
   }
+
+  const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
+  const input = dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, datetime('now','+1 seconds'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
+  );
+  return { child_request_id: childRequestId, input };
 }
 
 function dailyContextFullRunChildHasFatalCertification(stage, output) {
