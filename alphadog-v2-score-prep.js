@@ -332,12 +332,8 @@ async function controlLog(env, input, level, eventKey, message, data = {}) {
 }
 
 async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWritten = 0, extra = {}) {
-  if (!env || !env.CONTROL_DB || !input || !input.request_id) return;
-  try {
-    await env.CONTROL_DB.prepare(`UPDATE control_job_runs SET status=CASE WHEN status='running' THEN 'running' ELSE status END, data_ok=0, certification_status=?, rows_read=?, rows_written=?, output_json=COALESCE(output_json, ?), error_code=NULL, error_message=NULL WHERE request_id=? AND finished_at IS NULL`)
-      .bind(statusText, Number(rowsRead || 0), Number(rowsWritten || 0), safeJson({ ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: statusText, ...extra }, 9000), String(input.request_id || ""))
-      .run();
-  } catch (_) {}
+  // No-op: this worker must never read or write D1.
+  return;
 }
 
 async function markPrepBatchRunning(env, batchId, input, startedAt) {
