@@ -859,7 +859,7 @@ async function getOrCreateBaseBackfillState(env, sql, input) {
   const tickConfigAtCreate = await getWorkerTickConfig(sql, WORKER_NAME, DEFAULT_CHUNK_SIZE_PLAYERS, DEFAULT_MAX_TICK_RUNTIME_MS);
   const chunkSize = cap(inputJson.chunk_size_players || inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || tickConfigAtCreate.chunk_size_players, 1, 2000);
   const maxRequests = cap(inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || tickConfigAtCreate.chunk_size_players, 1, 2000);
-  const maxRows = cap(inputJson.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
+  const maxRows = cap(inputJson.max_rows_per_tick || tickConfigAtCreate.promote_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, 5000);
   const players = await chooseAllPitcherPlayers(sql, inputJson);
   await sql`DELETE FROM stats_pitcher.game_logs_stage WHERE batch_id=${batchId}`;
   const cursorJson = JSON.stringify({ version: VERSION, mode: "base_backfill", players, source_season: sourceSeason, base_backfill_cutoff_date: cutoffDate, delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE });
