@@ -349,13 +349,7 @@ async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWri
 }
 
 async function markPrepBatchRunning(env, batchId, input, startedAt) {
-  await env.pg.unsafe(
-    `INSERT INTO score.board_prep_batches (
-      batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
-      prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
-      unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
-      started_at, finished_at, updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 0, 0, 0, 0, 0, 0, 0, 0, $8, $9, $10, NULL, now())
+  await env.pg.query(
     ON CONFLICT (batch_id) DO UPDATE SET
       worker_name=excluded.worker_name, worker_version=excluded.worker_version, mode=excluded.mode,
       status=excluded.status, certification_status=excluded.certification_status, certification_grade=excluded.certification_grade,
