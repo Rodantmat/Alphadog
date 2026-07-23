@@ -236,6 +236,41 @@ architecture context.
   being the cause. Do not re-litigate the driver choice over this; the real fix is workload shape,
   not driver choice.
 
+### UPDATE from the immediately following session — the precise, actionable root causes, found via harder evidence
+- **`score-prep`'s real fix**: `WRITE_ROWS_PER_INVOCATION` was hardcoded to 350 — a value tuned
+  years earlier for D1's slower per-row `batch()` semantics, never revisited for Postgres bulk
+  multi-row inserts. Real tick evidence showed a single tick already handling 1,400 rows cleanly;
+  raising the constant to 3,000 cut total connection-establishments per full run from ~25 down to
+  ~3, which resolved the failure. This refines rather than contradicts the entry above — "workload
+  weight" was the right direction, "a stale hardcoded chunk-size constant carried over from D1"
+  is the precise, fixable form of it. **Standing check for every future worker with a per-tick
+  row-count constant**: if that constant predates the worker's own Postgres bulk-insert rewrite,
+  don't assume it's still correctly tuned — re-derive it from real observed per-tick throughput.
+- **Sleeper and Underdog's real fix was a completely different, more mundane bug** hitting the
+  exact same symptom (a ~20s external-dispatch timeout): an **N+1 query pattern** — a loop
+  writing one `INSERT` per row (in this case, per prop alias, ~13-15 per run) instead of a single
+  bulk insert, combined with per-tick schema-setup DDL issued as 12-14 separate sequential
+  statements instead of one multi-statement call. Neither of these workers had a genuinely long or
+  heavy tick — they had an ordinary tick with more round trips than necessary, which is a
+  different bug class from score-prep's stale-constant issue even though the symptom (a ~20s
+  external timeout) looked identical. **Before assuming Hyperdrive/connection flakiness on ANY
+  worker that times out around the orchestrator's own external dispatch ceiling, grep the
+  specific worker for any loop issuing one query per row/item** (`for (...) { await
+  client.unsafe/query(...) }`) and any sequential burst of separate DDL statements — both are
+  common, easy-to-miss, and produce the exact same "looks like the DB connection is unhealthy"
+  symptom as a genuinely heavy/long-running tick does. Fixed by switching to `postgres.js`'s bulk
+  `sql(array, ...cols)` tagged-template helper for the alias inserts and consolidating the schema
+  DDL into one multi-statement call each (same fix already proven for score-prep's own schema
+  setup). Both workers dropped from a hard 20000ms timeout to a clean ~15.8s real completion
+  immediately after, with zero other changes.
+- **Real, confirmed-before-acting discipline that paid off here**: before touching any worker
+  code for the Sleeper/Underdog timeout, their real, live upstream API status was checked directly
+  (ParlayAPI publishes a real `/v1/status` endpoint) and confirmed healthy — ruling out the
+  external dependency with real evidence BEFORE looking inward at our own code, rather than
+  assuming an external cause by default (or conversely, assuming our own code by default without
+  checking the dependency first). Do this check-the-dependency-first step whenever a worker that
+  calls an external API times out, before spending time on internal code changes.
+
 
 
 ## PART 2 — DON'TS (real mistakes, false conclusions, wasted time)
