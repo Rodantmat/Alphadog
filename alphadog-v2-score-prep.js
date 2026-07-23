@@ -1344,7 +1344,7 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
       }));
       await pgBulkInsert(env.pg, "score.board_unresolved_player_log", ["log_id", "batch_id", "source_key", "player_name", "player_name_normalized", "canonical_prop_key", "match_status", "official_date"], logRows);
     }
-    await env.pg.query("DELETE FROM score.board_unresolved_player_log WHERE logged_at < now() - interval '30 days'");
+    await env.pg.unsafe("DELETE FROM score.board_unresolved_player_log WHERE logged_at < now() - interval '30 days'");
   }
   if (verifiedPreparedRows < rows.length) {
     await updatePrepBatchCheckpoint(env, batchId, "PARTIAL_CONTINUE_BOARD_PREP_WRITE", "SCORE_BOARD_PREP_PARTIAL_WRITE_COUNT_GUARD", {
