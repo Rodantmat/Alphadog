@@ -226,12 +226,9 @@ async function loadRecentTeamStarters(pg, teamIds, beforeDate) {
   const map = new Map();
   if (!ids.length) return map;
   const lookbackStart = addDays(beforeDate, -30);
-  const rows = await pg.unsafe(
-    `SELECT team_id, mlb_player_id AS player_id, game_date FROM team.starter_history
-     WHERE team_id = ANY($1::text[]) AND game_date >= $2 AND game_date < $3
-     ORDER BY game_date DESC`,
-    [ids, lookbackStart, beforeDate]
-  );
+  const rows = await pg`SELECT team_id, mlb_player_id AS player_id, game_date FROM team.starter_history
+     WHERE team_id IN ${pg(ids)} AND game_date >= ${lookbackStart} AND game_date < ${beforeDate}
+     ORDER BY game_date DESC`;
   for (const r of rows) {
     const key = String(r.team_id);
     if (!map.has(key)) map.set(key, []);
