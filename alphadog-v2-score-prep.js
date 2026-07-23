@@ -1390,7 +1390,7 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
 
   const promoteStart = Date.now();
   await updatePrepBatchCheckpoint(env, batchId, "PROMOTING_STAGE_TO_CURRENT", "SCORE_BOARD_PREP_PROMOTING_STAGE_TO_CURRENT", { attempted_rows: rows.length, stage_rows: verifiedPreparedRows, no_active_current_staging: true, timing_ms: timing });
-  await env.pg.unsafe(`INSERT INTO score.board_prepared_current (
+  await env.pg.query(`INSERT INTO score.board_prepared_current (
     prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
     player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
