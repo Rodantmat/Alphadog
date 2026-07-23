@@ -12325,6 +12325,7 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
   if (!stage || !child || !child.request_id) return null;
   const requestId = child.request_id;
   let batch = null, output = null, rowsRead = 0, rowsWritten = 0, externalCalls = 0;
+  const pg = pgControl(env);
 
   try {
     if (stage.job_key === "daily-lineups") {
@@ -12333,72 +12334,82 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
         batch = { batch_id: output.batch_id, prepared_rows_read: output.prepared_rows_read || 0, external_calls: output.external_calls || 0 };
       }
     } else if (stage.job_key === "daily-player-availability") {
-      batch = await first(env.DAILY_DB, "SELECT * FROM daily_player_availability_batches_v1 WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", requestId);
-      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(batch.output_json, {});
+      const batchRows = await pg`SELECT * FROM daily.player_availability_batches WHERE request_id=${requestId} ORDER BY created_at DESC LIMIT 1`;
+      batch = batchRows[0] || null;
+      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json), {});
       if (batch && !output) {
-        const c = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_player_availability_current_v1 WHERE batch_id=?", batch.batch_id);
-        const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_player_availability_snapshots_v1 WHERE batch_id=?", batch.batch_id);
-        const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_player_availability_issues_v1 WHERE batch_id=?", batch.batch_id);
-        const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
+        const c = await pg`SELECT COUNT(*) AS n FROM daily.player_availability_current WHERE batch_id=${batch.batch_id}`;
+        const s = await pg`SELECT COUNT(*) AS n FROM daily.player_availability_snapshots WHERE batch_id=${batch.batch_id}`;
+        const i = await pg`SELECT COUNT(*) AS n FROM daily.player_availability_issues WHERE batch_id=${batch.batch_id}`;
+        const currentRows = Number(c[0] && c[0].n || 0), snapshotRows = Number(s[0] && s[0].n || 0), issueRows = Number(i[0] && i[0].n || 0);
         const expected = Number(batch.prepared_players_checked || batch.rows_written || 0);
         if (currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected)) {
-          output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_PLAYER_AVAILABILITY_CERTIFIED_WITH_PLAYER_BLOCKERS":"DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Player Availability v1 sidecar rows after child terminal handoff stalled.", prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), prepared_players_checked:Number(batch.prepared_players_checked||currentRows), teams_checked:Number(batch.teams_checked||0), rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
-          await run(env.DAILY_DB, "UPDATE daily_player_availability_batches_v1 SET status='completed', rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
+          output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_PLAYER_AVAILABILITY_CERTIFIED_WITH_PLAYER_BLOCKERS":"DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Player Availability sidecar rows after child terminal handoff stalled.", prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), prepared_players_checked:Number(batch.prepared_players_checked||currentRows), teams_checked:Number(batch.teams_checked||0), rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
+          await pg.unsafe(`UPDATE daily.player_availability_batches SET status='completed', rows_written=$1, snapshot_rows_written=$2, warning_count=$3, certification_status=$4, certification_grade=$5, certification_reason=$6, output_json=$7, completed_at=COALESCE(completed_at, now()), updated_at=now() WHERE batch_id=$8`,
+            [currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id]);
         }
       }
     } else if (stage.job_key === "daily-weather") {
-      batch = await first(env.DAILY_DB, "SELECT * FROM daily_game_weather_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", requestId);
-      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(batch.output_json, {});
+      const batchRows = await pg`SELECT * FROM daily.game_weather_batches WHERE request_id=${requestId} ORDER BY created_at DESC LIMIT 1`;
+      batch = batchRows[0] || null;
+      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json), {});
       if (batch && !output) {
-        const c = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_game_weather_current WHERE batch_id=?", batch.batch_id);
-        const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_game_weather_snapshots WHERE batch_id=?", batch.batch_id);
-        const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_game_weather_issues WHERE batch_id=?", batch.batch_id);
-        const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
+        const c = await pg`SELECT COUNT(*) AS n FROM daily.game_weather_current WHERE batch_id=${batch.batch_id}`;
+        const s = await pg`SELECT COUNT(*) AS n FROM daily.game_weather_snapshots WHERE batch_id=${batch.batch_id}`;
+        const i = await pg`SELECT COUNT(*) AS n FROM daily.game_weather_issues WHERE batch_id=${batch.batch_id}`;
+        const currentRows = Number(c[0] && c[0].n || 0), snapshotRows = Number(s[0] && s[0].n || 0), issueRows = Number(i[0] && i[0].n || 0);
         const expected = Number(batch.prepared_games_checked || batch.calendar_games_checked || 0);
         if (currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected)) {
           output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_WEATHER_CERTIFIED_WITH_WARNINGS":"DAILY_WEATHER_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Weather/Roof sidecar rows after child terminal handoff stalled.", window_start:batch.window_start, window_end:batch.window_end, calendar_games_checked:Number(batch.calendar_games_checked||0), prepared_games_checked:Number(batch.prepared_games_checked||currentRows), prepared_rows_read:Number(batch.prepared_rows_read||0), weather_rows_written:currentRows, rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
-          await run(env.DAILY_DB, "UPDATE daily_game_weather_batches SET status='completed', weather_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
+          await pg.unsafe(`UPDATE daily.game_weather_batches SET status='completed', weather_rows_written=$1, snapshot_rows_written=$2, warning_count=$3, certification_status=$4, certification_grade=$5, certification_reason=$6, output_json=$7, completed_at=COALESCE(completed_at, now()), updated_at=now() WHERE batch_id=$8`,
+            [currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id]);
         }
       }
     } else if (stage.job_key === "daily-bullpen-availability") {
-      batch = await first(env.DAILY_DB, "SELECT * FROM daily_bullpen_availability_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", requestId);
-      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(batch.output_json, {});
+      const batchRows = await pg`SELECT * FROM daily.bullpen_availability_batches WHERE request_id=${requestId} ORDER BY created_at DESC LIMIT 1`;
+      batch = batchRows[0] || null;
+      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json), {});
       if (batch && !output) {
-        const c = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_bullpen_availability_current WHERE batch_id=?", batch.batch_id);
-        const p = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_bullpen_pitcher_availability_current WHERE batch_id=?", batch.batch_id);
-        const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_bullpen_availability_snapshots WHERE batch_id=?", batch.batch_id);
-        const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_bullpen_availability_issues WHERE batch_id=?", batch.batch_id);
-        const expected = Number(batch.teams_checked || 0), currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0), pitcherRows = Number(p && p.n || 0);
+        const c = await pg`SELECT COUNT(*) AS n FROM daily.bullpen_availability_current WHERE batch_id=${batch.batch_id}`;
+        const p = await pg`SELECT COUNT(*) AS n FROM daily.bullpen_pitcher_availability_current WHERE batch_id=${batch.batch_id}`;
+        const s = await pg`SELECT COUNT(*) AS n FROM daily.bullpen_availability_snapshots WHERE batch_id=${batch.batch_id}`;
+        const i = await pg`SELECT COUNT(*) AS n FROM daily.bullpen_availability_issues WHERE batch_id=${batch.batch_id}`;
+        const expected = Number(batch.teams_checked || 0), currentRows = Number(c[0] && c[0].n || 0), snapshotRows = Number(s[0] && s[0].n || 0), issueRows = Number(i[0] && i[0].n || 0), pitcherRows = Number(p[0] && p[0].n || 0);
         if (expected > 0 && currentRows >= expected && snapshotRows >= expected && currentRows === snapshotRows) {
           output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_BULLPEN_CERTIFIED_WITH_WARNINGS":"DAILY_BULLPEN_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered DB-verified complete Daily Bullpen sidecar rows after child terminal handoff stalled.", window_start:batch.window_start, window_end:batch.window_end, calendar_games_checked:Number(batch.calendar_games_checked||0), prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), teams_checked:expected, team_rows_written:currentRows, rows_written:currentRows, pitcher_rows_written:pitcherRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
-          await run(env.DAILY_DB, "UPDATE daily_bullpen_availability_batches SET status='completed', team_rows_written=?, pitcher_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, pitcherRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
+          await pg.unsafe(`UPDATE daily.bullpen_availability_batches SET status='completed', team_rows_written=$1, pitcher_rows_written=$2, snapshot_rows_written=$3, warning_count=$4, certification_status=$5, certification_grade=$6, certification_reason=$7, output_json=$8, completed_at=COALESCE(completed_at, now()), updated_at=now() WHERE batch_id=$9`,
+            [currentRows, pitcherRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id]);
         }
       }
     } else if (stage.job_key === "daily-team-schedule-spot") {
-      batch = await first(env.DAILY_DB, "SELECT * FROM daily_team_schedule_spot_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", requestId);
-      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(batch.output_json, {});
+      const batchRows = await pg`SELECT * FROM daily.team_schedule_spot_batches WHERE request_id=${requestId} ORDER BY created_at DESC LIMIT 1`;
+      batch = batchRows[0] || null;
+      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json), {});
       if (batch && !output) {
-        const c = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_current WHERE batch_id=?", batch.batch_id);
-        const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_snapshots WHERE batch_id=?", batch.batch_id);
-        const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_issues WHERE batch_id=?", batch.batch_id);
-        const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
+        const c = await pg`SELECT COUNT(*) AS n FROM daily.team_schedule_spot_current WHERE batch_id=${batch.batch_id}`;
+        const s = await pg`SELECT COUNT(*) AS n FROM daily.team_schedule_spot_snapshots WHERE batch_id=${batch.batch_id}`;
+        const i = await pg`SELECT COUNT(*) AS n FROM daily.team_schedule_spot_issues WHERE batch_id=${batch.batch_id}`;
+        const currentRows = Number(c[0] && c[0].n || 0), snapshotRows = Number(s[0] && s[0].n || 0), issueRows = Number(i[0] && i[0].n || 0);
         const expected = Number(batch.teams_checked || batch.team_rows_written || 0);
         if (currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected)) {
           output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_WITH_WARNINGS":"DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Team Schedule Spot sidecar rows after child terminal handoff stalled.", window_start:batch.window_start, window_end:batch.window_end, calendar_games_checked:Number(batch.calendar_games_checked||0), prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), teams_checked:Number(batch.teams_checked||currentRows), team_rows_written:currentRows, rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
-          await run(env.DAILY_DB, "UPDATE daily_team_schedule_spot_batches SET status='completed', team_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
+          await pg.unsafe(`UPDATE daily.team_schedule_spot_batches SET status='completed', team_rows_written=$1, snapshot_rows_written=$2, warning_count=$3, certification_status=$4, certification_grade=$5, certification_reason=$6, output_json=$7, completed_at=COALESCE(completed_at, now()), updated_at=now() WHERE batch_id=$8`,
+            [currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id]);
         }
       }
     } else if (stage.job_key === "daily-umpire-context") {
-      batch = await first(env.DAILY_DB, "SELECT * FROM daily_umpire_context_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", requestId);
-      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(batch.output_json, {});
+      const batchRows = await pg`SELECT * FROM daily.umpire_context_batches WHERE request_id=${requestId} ORDER BY created_at DESC LIMIT 1`;
+      batch = batchRows[0] || null;
+      if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json), {});
       if (batch && !output) {
-        const c = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_umpire_context_current WHERE batch_id=?", batch.batch_id);
-        const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_umpire_context_snapshots WHERE batch_id=?", batch.batch_id);
-        const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_umpire_context_issues WHERE batch_id=?", batch.batch_id);
-        const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
+        const c = await pg`SELECT COUNT(*) AS n FROM daily.umpire_context_current WHERE batch_id=${batch.batch_id}`;
+        const s = await pg`SELECT COUNT(*) AS n FROM daily.umpire_context_snapshots WHERE batch_id=${batch.batch_id}`;
+        const i = await pg`SELECT COUNT(*) AS n FROM daily.umpire_context_issues WHERE batch_id=${batch.batch_id}`;
+        const currentRows = Number(c[0] && c[0].n || 0), snapshotRows = Number(s[0] && s[0].n || 0), issueRows = Number(i[0] && i[0].n || 0);
         if (currentRows > 0 && snapshotRows > 0) {
           output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_UMPIRE_CONTEXT_CERTIFIED_WITH_WARNINGS":"DAILY_UMPIRE_CONTEXT_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Umpire sidecar rows after child terminal handoff stalled.", window_start:batch.window_start, window_end:batch.window_end, calendar_games_checked:Number(batch.calendar_games_checked||0), prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), games_checked:Number(batch.games_checked||currentRows), game_rows_written:currentRows, rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, warning_count:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
-          await run(env.DAILY_DB, "UPDATE daily_umpire_context_batches SET status='completed', games_checked=?, game_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", Number(batch.games_checked||currentRows), currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
+          await pg.unsafe(`UPDATE daily.umpire_context_batches SET status='completed', games_checked=$1, game_rows_written=$2, snapshot_rows_written=$3, warning_count=$4, certification_status=$5, certification_grade=$6, certification_reason=$7, output_json=$8, completed_at=COALESCE(completed_at, now()), updated_at=now() WHERE batch_id=$9`,
+            [Number(batch.games_checked||currentRows), currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id]);
         }
       }
     } else if (stage.job_key === "daily-certifier") {
@@ -12408,19 +12419,25 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
       }
     }
   } catch (err) {
-    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_sidecar_recovery_probe_failed', 'Daily Context sidecar recovery probe failed; stale guard will continue without destructive deletes', ?, CURRENT_TIMESTAMP)", parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, error: String(err && err.message ? err.message : err).slice(0,900) }));
+    await pg`INSERT INTO control.worker_run_log ${pg([{ request_id: parentRow.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: parentRow.job_key, level: "WARN", event_key: "daily_context_full_run_sidecar_recovery_probe_failed", message: "Daily Context sidecar recovery probe failed; stale guard will continue without destructive deletes", data_json: JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, error: String(err && err.message ? err.message : err).slice(0,900) }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
+    await pg.end({ timeout: 1 }).catch(() => {});
     return null;
   }
 
-  if (!output || output.ok !== true || !batch) return null;
+  if (!output || output.ok !== true || !batch) {
+    await pg.end({ timeout: 1 }).catch(() => {});
+    return null;
+  }
   rowsRead = Number(output.prepared_rows_read || batch.prepared_rows_read || 0);
   rowsWritten = Number(output.rows_written || output.team_rows_written || output.weather_rows_written || output.game_rows_written || output.current_rows_written || output.rows_promoted || 0);
   externalCalls = Number(output.external_calls || output.external_calls_performed || batch.external_calls || 0);
   const certification = String(output.certification || output.certification_status || "DAILY_CONTEXT_CHILD_RECOVERED_FROM_SIDECAR").slice(0, 120);
   const capped = { ...output, recovered_by_parent_stale_guard: true, recovery_stage_key: stage.stage_key, root_cause_guard: "terminalized_child_from_verified_sidecar_rows_not_symptom_cleanup" };
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", JSON.stringify(capped), requestId);
-  await run(env.CONTROL_DB, "UPDATE control_job_runs SET status='completed', data_ok=1, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL", certification, rowsRead, rowsWritten, externalCalls, JSON.stringify(capped), requestId);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_child_recovered_from_sidecar', 'Recovered stale Daily Context child from complete sidecar rows instead of cleaning live rows', ?, CURRENT_TIMESTAMP)", parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, certification, rows_read: rowsRead, rows_written: rowsWritten }));
+  await pg.unsafe(`UPDATE control.job_queue SET status='completed', finished_at=now(), updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2 AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL`, [JSON.stringify(capped), requestId]);
+  await pg.unsafe(`UPDATE control.job_runs SET status='completed', data_ok=1, certification_status=$1, rows_read=$2, rows_written=$3, external_calls=$4, finished_at=now(), elapsed_ms=EXTRACT(EPOCH FROM (now() - started_at))*1000, output_json=$5, error_code=NULL, error_message=NULL WHERE request_id=$6 AND status='running' AND finished_at IS NULL`,
+    [certification, rowsRead, rowsWritten, externalCalls, JSON.stringify(capped), requestId]);
+  await pg`INSERT INTO control.worker_run_log ${pg([{ request_id: parentRow.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: parentRow.job_key, level: "WARN", event_key: "daily_context_full_run_child_recovered_from_sidecar", message: "Recovered stale Daily Context child from complete sidecar rows instead of cleaning live rows", data_json: JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, certification, rows_read: rowsRead, rows_written: rowsWritten }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
+  await pg.end({ timeout: 1 }).catch(() => {});
   return { report: { ...report, child_status:"completed", child_certification:certification, child_certification_grade:capped.certification_grade || null, child_data_ok:true, pass:true, wait:false, reason:"recovered_from_complete_sidecar_rows", rows_read:rowsRead, rows_written:rowsWritten, external_calls:externalCalls } };
 }
 
