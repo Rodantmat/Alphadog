@@ -49,7 +49,22 @@ def run(cmd):
         raise SystemExit(p.returncode)
 
 def git_changed_files():
-    # GitHub push usually has HEAD~1. For manual first run, fallback to all.
+    # Real fix: diffing only against HEAD~1 means any single skipped/cancelled run (e.g. GitHub
+    # Actions queued a run behind another and it got cancelled, or the user cancelled one
+    # manually) permanently loses that commit's intended deploy target - the next run only ever
+    # looks at its own single-commit delta, never catches up. Diffing against the last commit
+    # that actually finished a successful deploy (tracked in deployed_sha.txt) makes this
+    # self-healing: whatever was missed gets picked up cumulatively on the next real success.
+    marker = Path("deployed_sha.txt")
+    if marker.exists():
+        last_sha = marker.read_text(encoding="utf-8").strip()
+        if last_sha:
+            p = subprocess.run(["git", "diff", "--name-only", last_sha, "HEAD"], capture_output=True, text=True, shell=False)
+            if p.returncode == 0:
+                files = [x.strip() for x in p.stdout.splitlines() if x.strip()]
+                if files:
+                    return files
+    # Fallback for first run ever, or if the marker-based diff produced nothing usable.
     commands = [
         ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
         ["git", "diff", "--name-only", "--cached"],
