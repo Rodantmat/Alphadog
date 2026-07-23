@@ -238,6 +238,8 @@ architecture context.
 
 
 
+## PART 2 — DON'TS (real mistakes, false conclusions, wasted time)
+
 ### The single biggest mistake of this migration
 - **Chasing "Network connection lost" as a real connection/network problem for HOURS when it was
   actually `postgres.js`'s prepared-statement mode masking a plain, simple SQL error (missing
