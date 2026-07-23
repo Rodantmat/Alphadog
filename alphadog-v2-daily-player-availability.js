@@ -256,7 +256,7 @@ async function pruneAvailabilityRetention(pg, retention, latestBatchId = null) {
 
 async function getPreparedPlayers(pg, retention) {
   const nowIso = new Date().toISOString();
-  return await pg`SELECT official_game_pk, official_date, official_game_time_utc, team, opponent, resolved_player_id, resolved_mlb_player_id,
+  return await pg`SELECT official_game_pk, official_date::text AS official_date, official_game_time_utc, team, opponent, resolved_player_id, resolved_mlb_player_id,
       MIN(player_name) AS player_name, COUNT(*) AS prepared_board_pickable_rows,
       string_agg(DISTINCT source_key, ',') AS sources, string_agg(DISTINCT canonical_prop_key, ',') AS prop_keys
     FROM score.board_prepared_current
