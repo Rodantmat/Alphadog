@@ -1624,6 +1624,13 @@ async function runBoardPrep(env, input) {
   await controlLog(env, input, "INFO", "score_prep_rows_built", "Score Prep built replacement prepared rows before DB write", { batch_id: batchId, prepared_rows: prepared.length, all_source_rows_seen_before_window_filter: preparedAllSources.length, current_window_dates: Array.from(currentWindowDateSet), by_source: initialBySource, timing_ms: timing });
   await controlRunHeartbeat(env, input, "SCORE_PREP_ROWS_BUILT_BEFORE_WRITE", prepared.length, 0, { batch_id: batchId, by_source: initialBySource });
   if (!prepared.length) throw new Error("score_prep_zero_prepared_rows_guard_preserved_existing_current");
+  // Real fix: the resolve loop above is CPU-bound over thousands of rows with no awaits, which
+  // can leave the Hyperdrive connection idle long enough to be closed by the time we need it for
+  // the write phase (confirmed live via repeated CONNECTION_CLOSED failures at this exact point).
+  // Re-establish a fresh connection right before the heaviest DB work instead of reusing one that
+  // may have gone stale during the pure-JS resolve step.
+  if (env.pg) await env.pg.end({ timeout: 1 }).catch(() => {});
+  env.pg = pgClient(env);
   const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input, timing);
   const totals = writeResult.totals;
   const bySource = writeResult.bySource;
