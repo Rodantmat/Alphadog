@@ -758,36 +758,51 @@ function buildCertification(shape, stagedRows, sourceSizeBytes, sourcePath) {
 
 async function writeHealth(env, status, rowsLastFetch, health, errorText = null) {
   const healthJson = safeJson(health);
-  if (status === "healthy") {
-    await run(env.MARKET_DB,
-      "INSERT INTO market_source_health (source_key, status, last_success_at, last_error_at, last_error, rows_last_fetch, health_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP, NULL, NULL, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(source_key) DO UPDATE SET status=excluded.status, last_success_at=CURRENT_TIMESTAMP, last_error_at=NULL, last_error=NULL, rows_last_fetch=excluded.rows_last_fetch, health_json=excluded.health_json, updated_at=CURRENT_TIMESTAMP",
-      SOURCE_KEY, status, rowsLastFetch, healthJson
-    );
-  } else {
-    await run(env.MARKET_DB,
-      "INSERT INTO market_source_health (source_key, status, last_success_at, last_error_at, last_error, rows_last_fetch, health_json, updated_at) VALUES (?, ?, NULL, CURRENT_TIMESTAMP, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(source_key) DO UPDATE SET status=excluded.status, last_error_at=CURRENT_TIMESTAMP, last_error=excluded.last_error, rows_last_fetch=excluded.rows_last_fetch, health_json=excluded.health_json, updated_at=CURRENT_TIMESTAMP",
-      SOURCE_KEY, status, safeString(errorText || status, 900), rowsLastFetch, healthJson
-    );
+  const client = pgClient(env);
+  try {
+    if (status === "healthy") {
+      await client.unsafe(
+        "INSERT INTO market.source_health (source_key, status, last_success_at, last_error_at, last_error, rows_last_fetch, health_json, updated_at) VALUES ($1, $2, now(), NULL, NULL, $3, $4, now()) ON CONFLICT(source_key) DO UPDATE SET status=excluded.status, last_success_at=now(), last_error_at=NULL, last_error=NULL, rows_last_fetch=excluded.rows_last_fetch, health_json=excluded.health_json, updated_at=now()",
+        [SOURCE_KEY, status, rowsLastFetch, healthJson]
+      );
+    } else {
+      await client.unsafe(
+        "INSERT INTO market.source_health (source_key, status, last_success_at, last_error_at, last_error, rows_last_fetch, health_json, updated_at) VALUES ($1, $2, NULL, now(), $3, $4, $5, now()) ON CONFLICT(source_key) DO UPDATE SET status=excluded.status, last_error_at=now(), last_error=excluded.last_error, rows_last_fetch=excluded.rows_last_fetch, health_json=excluded.health_json, updated_at=now()",
+        [SOURCE_KEY, status, safeString(errorText || status, 900), rowsLastFetch, healthJson]
+      );
+    }
+  } finally {
+    await client.end({ timeout: 1 });
   }
-  return { wrote_table: "market_source_health", source_key: SOURCE_KEY };
+  return { wrote_table: "market.source_health", source_key: SOURCE_KEY };
 }
 
 async function writeRawSnapshot(env, parsedJson, rowCount, slateDate, status, errorText = null) {
   const snapshotId = rid("pp_raw");
   const bounded = boundedRawJson(parsedJson);
-  await run(env.MARKET_DB,
-    "INSERT INTO market_raw_snapshots (snapshot_id, source_key, slate_date, fetched_at, raw_json, row_count, status, error) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)",
-    snapshotId, SOURCE_KEY, slateDate, bounded.text, rowCount, status, errorText
-  );
-  return { wrote_table: "market_raw_snapshots", snapshot_id: snapshotId, source_key: SOURCE_KEY, slate_date: slateDate, row_count: rowCount, status, raw_json_truncated: bounded.truncated, raw_json_original_chars: bounded.original_chars, raw_json_stored_chars: bounded.stored_chars };
+  const client = pgClient(env);
+  try {
+    await client.unsafe(
+      "INSERT INTO market.raw_snapshots (snapshot_id, source_key, slate_date, fetched_at, raw_json, row_count, status, error) VALUES ($1, $2, $3, now(), $4, $5, $6, $7)",
+      [snapshotId, SOURCE_KEY, slateDate, bounded.text, rowCount, status, errorText]
+    );
+  } finally {
+    await client.end({ timeout: 1 });
+  }
+  return { wrote_table: "market.raw_snapshots", snapshot_id: snapshotId, source_key: SOURCE_KEY, slate_date: slateDate, row_count: rowCount, status, raw_json_truncated: bounded.truncated, raw_json_original_chars: bounded.original_chars, raw_json_stored_chars: bounded.stored_chars };
 }
 
 async function insertBatchPending(env, batchId, source, fetchedAt, slateDate, httpStatus, sizeBytes, shape) {
-  await run(env.MARKET_DB,
-    "INSERT INTO prizepicks_board_batches (batch_id, source_key, slate_date, fetched_at, staged_at, source_path, source_http_status, source_size_bytes, top_level_shape, total_rows, certification_status, certification_reason, certification_json, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, 'pending', 'stage_started', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-    batchId, SOURCE_KEY, slateDate, fetchedAt, source.path, httpStatus, sizeBytes, JSON.stringify({ detected_rows_key: shape.detected_rows_key, top_level_keys: shape.top_level_keys }), shape.detected_row_count, safeJson({ phase: "stage_started", version: VERSION })
-  );
-  return { wrote_table: "prizepicks_board_batches", batch_id: batchId, status: "pending" };
+  const client = pgClient(env);
+  try {
+    await client.unsafe(
+      "INSERT INTO market.prizepicks_board_batches (batch_id, source_key, slate_date, fetched_at, staged_at, source_path, source_http_status, source_size_bytes, top_level_shape, total_rows, certification_status, certification_reason, certification_json, created_at, updated_at) VALUES ($1, $2, $3, $4, now(), $5, $6, $7, $8, $9, 'pending', 'stage_started', $10, now(), now())",
+      [batchId, SOURCE_KEY, slateDate, fetchedAt, source.path, httpStatus, sizeBytes, JSON.stringify({ detected_rows_key: shape.detected_rows_key, top_level_keys: shape.top_level_keys }), shape.detected_row_count, safeJson({ phase: "stage_started", version: VERSION })]
+    );
+  } finally {
+    await client.end({ timeout: 1 });
+  }
+  return { wrote_table: "market.prizepicks_board_batches", batch_id: batchId, status: "pending" };
 }
 
 async function stageRows(env, rows) {
