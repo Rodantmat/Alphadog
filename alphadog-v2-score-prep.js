@@ -275,10 +275,7 @@ function propKeyPrizePicks(statType, ref = null) {
 }
 
 function bindingSummary(env) {
-  const names = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "MARKET_DB", "SCORE_DB"];
-  const out = {};
-  for (const n of names) out[n] = Boolean(env && env[n]);
-  return out;
+  return { HYPERDRIVE: Boolean(env && env.HYPERDRIVE), CONTROL_DB: Boolean(env && env.CONTROL_DB) };
 }
 
 function pgClient(env) {
