@@ -104,6 +104,17 @@ jobs:
       - name: Deploy selected Workers
         run: python github_mobile_deploy_workers.py --scope "$DEPLOY_SCOPE"
 
+      - name: Record last successful deploy marker
+        if: success()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git rev-parse HEAD > deployed_sha.txt
+          git add deployed_sha.txt
+          git commit -m "Auto: record last successful deploy marker [skip ci]" || true
+          git push || true
+
       - name: Remove generated secret file
         if: always()
         shell: bash
