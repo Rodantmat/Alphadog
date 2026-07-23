@@ -294,13 +294,13 @@ async function runCertifier(env, input) {
     const games = gamesAllDates.filter(g => gamePks.includes(g.game_pk));
     const gameMap = gameMapAllDates;
 
-    const starters = await pg.unsafe(`SELECT starter_player_id AS player_id, starter_name AS player_name, game_pk, official_date, batch_id, tbd_flag, hand_missing_flag, starter_status, data_source_level, is_temporary_derived FROM daily.probable_pitchers WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
-    const lineups = await pg.unsafe(`SELECT * FROM daily.lineups_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
-    const availability = await pg.unsafe(`SELECT * FROM daily.player_availability_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
-    const weather = await pg.unsafe(`SELECT * FROM daily.game_weather_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
-    const bullpen = await pg.unsafe(`SELECT * FROM daily.bullpen_availability_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
-    const schedule = await pg.unsafe(`SELECT * FROM daily.team_schedule_spot_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
-    const umpire = await pg.unsafe(`SELECT * FROM daily.umpire_context_current WHERE official_date = ANY($1::text[])`, [boardWindowDates]).catch(() => []);
+    const starters = await pg.unsafe(`SELECT starter_player_id AS player_id, starter_name AS player_name, game_pk, official_date, batch_id, tbd_flag, hand_missing_flag, starter_status, data_source_level, is_temporary_derived FROM daily.probable_pitchers WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
+    const lineups = await pg.unsafe(`SELECT * FROM daily.lineups_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
+    const availability = await pg.unsafe(`SELECT * FROM daily.player_availability_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
+    const weather = await pg.unsafe(`SELECT * FROM daily.game_weather_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
+    const bullpen = await pg.unsafe(`SELECT * FROM daily.bullpen_availability_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
+    const schedule = await pg.unsafe(`SELECT * FROM daily.team_schedule_spot_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
+    const umpire = await pg.unsafe(`SELECT * FROM daily.umpire_context_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]).catch(() => []);
     const batches = await readLatestBatchMap(pg);
 
     const gamePkSetByDate = new Map(boardWindowDates.map(d => [d, new Set(prepared.filter(r => r.official_date === d).map(r => String(r.official_game_pk)))]));
