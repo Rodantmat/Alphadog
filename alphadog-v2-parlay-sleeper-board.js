@@ -146,13 +146,24 @@ async function ensureSleeperSchema(env) {
 }
 
 async function tableColumns(env, tableName) {
-  const rows = await all(env.MARKET_DB, `PRAGMA table_info(${tableName})`);
-  return rows.map(r => String(r.name || ""));
+  const client = pgClient(env);
+  try {
+    const rows = await client.unsafe("SELECT column_name FROM information_schema.columns WHERE table_schema='market' AND table_name=" + client.unsafe.array ? "" : "", []);
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 }
 
 async function validateTable(env, tableName, expected) {
-  if (!env.MARKET_DB) return { ok: false, table: tableName, missing_columns: expected, columns_present: [] };
-  const columns = await tableColumns(env, tableName);
+  if (!env.HYPERDRIVE) return { ok: false, table: tableName, missing_columns: expected, columns_present: [] };
+  const client = pgClient(env);
+  let columns = [];
+  try {
+    const rows = await client.unsafe("SELECT column_name FROM information_schema.columns WHERE table_schema='market' AND table_name=$1", [tableName]);
+    columns = rows.map(r => String(r.column_name || ""));
+  } finally {
+    await client.end({ timeout: 1 });
+  }
   const missing = expected.filter(c => !columns.includes(c));
   return { ok: missing.length === 0, table: tableName, columns_present: columns, required_columns: expected, missing_columns: missing };
 }
