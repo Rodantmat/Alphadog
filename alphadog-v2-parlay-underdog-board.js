@@ -806,50 +806,54 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   const pickableRows = stageRows.filter(row => row.is_pickable === 1).length;
 
   await clearUnpromotedUnderdogStage(env);
-  await run(env.MARKET_DB, `INSERT INTO underdog_board_batches (
-    batch_id, source_key, slate_date, fetched_at, staged_at, source_base_url, source_endpoint, source_http_status,
-    source_size_bytes, top_level_shape, total_rows, staged_rows, valid_rows, invalid_rows, unmapped_stat_types,
-    certification_status, certification_reason, certification_json
-  ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    batchId,
-    SOURCE_KEY,
-    slateDates.length === 1 ? slateDates[0] : (slateDates[0] || null),
-    fetchedAt,
-    sourceMeta.base_url_host || null,
-    sourceMeta.endpoint_preview || null,
-    sourceMeta.http_status || null,
-    sourceMeta.size_bytes || null,
-    shape ? shape.top_level_type : null,
-    sourceRows.length,
-    stageRows.length,
-    validRows,
-    invalidRows,
-    mappingBlockedRows + invalidRows,
-    mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_READY_FOR_BOARD_INVENTORY_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
-    mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Underdog staging, source-scoped aliases written, and valid pickable rows ready for board-inventory-only promotion. No scoring/ranking/final-board logic enabled." : "Rows parsed into Underdog staging and supported/audited REF_DB aliases written, but mapping/taxonomy blockers remain. No promotion allowed.",
-    JSON.stringify({
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_prizepicks_mutation: true,
-      promotion_scope: "underdog_board_inventory_only",
-      rfi_nrfi_logic_status: RFI_NRFI_LOGIC_STATUS,
-      taxonomy_patch: taxonomyPatch,
-      source_market_keys: shape ? shape.source_market_keys : [],
-      market_key_distribution: shape ? shape.market_key_distribution : [],
-      bookmaker_distribution: shape ? shape.bookmaker_distribution : [],
-      sport_key_distribution: shape ? shape.sport_key_distribution : [],
-      slate_dates: slateDates,
-      pickable_rows: pickableRows,
-      mapped_rows: mappedRows,
-      mapping_blocked_rows: mappingBlockedRows,
-      unmapped_rows: unmappedRows,
-      unsupported_rows: unsupportedRows,
-      missing_taxonomy_rows: missingTaxonomyRows,
-      distinct_source_to_canonical: distinctSourceToCanonical,
-      ref_alias_write: { ok: aliasWrite.ok, rows_written: aliasWrite.rows_written, source_key: SOURCE_KEY, aliases_written: aliasWrite.aliases_written }
-    })
-  );
+  const batchClient = pgClient(env);
+  try {
+    await batchClient.unsafe(
+      "INSERT INTO market.underdog_board_batches (batch_id, source_key, slate_date, fetched_at, staged_at, source_base_url, source_endpoint, source_http_status, source_size_bytes, top_level_shape, total_rows, staged_rows, valid_rows, invalid_rows, unmapped_stat_types, certification_status, certification_reason, certification_json) VALUES ($1, $2, $3, $4, now(), $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)",
+      [
+        batchId,
+        SOURCE_KEY,
+        slateDates.length === 1 ? slateDates[0] : (slateDates[0] || null),
+        fetchedAt,
+        sourceMeta.base_url_host || null,
+        sourceMeta.endpoint_preview || null,
+        sourceMeta.http_status || null,
+        sourceMeta.size_bytes || null,
+        shape ? shape.top_level_type : null,
+        sourceRows.length,
+        stageRows.length,
+        validRows,
+        invalidRows,
+        mappingBlockedRows + invalidRows,
+        mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_READY_FOR_BOARD_INVENTORY_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
+        mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Underdog staging, source-scoped aliases written, and valid pickable rows ready for board-inventory-only promotion. No scoring/ranking/final-board logic enabled." : "Rows parsed into Underdog staging and supported/audited ref.prop_aliases written, but mapping/taxonomy blockers remain. No promotion allowed.",
+        JSON.stringify({
+          no_scoring: true,
+          no_ranking: true,
+          no_final_board: true,
+          no_prizepicks_mutation: true,
+          promotion_scope: "underdog_board_inventory_only",
+          rfi_nrfi_logic_status: RFI_NRFI_LOGIC_STATUS,
+          taxonomy_patch: taxonomyPatch,
+          source_market_keys: shape ? shape.source_market_keys : [],
+          market_key_distribution: shape ? shape.market_key_distribution : [],
+          bookmaker_distribution: shape ? shape.bookmaker_distribution : [],
+          sport_key_distribution: shape ? shape.sport_key_distribution : [],
+          slate_dates: slateDates,
+          pickable_rows: pickableRows,
+          mapped_rows: mappedRows,
+          mapping_blocked_rows: mappingBlockedRows,
+          unmapped_rows: unmappedRows,
+          unsupported_rows: unsupportedRows,
+          missing_taxonomy_rows: missingTaxonomyRows,
+          distinct_source_to_canonical: distinctSourceToCanonical,
+          ref_alias_write: { ok: aliasWrite.ok, rows_written: aliasWrite.rows_written, source_key: SOURCE_KEY, aliases_written: aliasWrite.aliases_written }
+        })
+      ]
+    );
+  } finally {
+    await batchClient.end({ timeout: 1 });
+  }
   await insertStageRows(env, stageRows);
 
   // Per-row promotion (not all-or-nothing): promote whatever rows are correctly mapped and
