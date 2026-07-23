@@ -1110,19 +1110,32 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
     };
   }
 
-  const marketPrizePicks = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM prizepicks_board_current");
-  const marketSleeper = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM sleeper_board_current");
-  let marketUnderdog = { rows: 0 };
+  const pg = pgSchedule(env);
+  let marketPrizePicks, marketSleeper, marketUnderdog, scorePrizePicks, scoreSleeper, scoreTotal, prepBatchCount;
   try {
-    marketUnderdog = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM underdog_board_current");
-  } catch (err) {
-    const message = String(err && err.message ? err.message : err);
-    if (!/no such table/i.test(message)) throw err;
+    const mpp = await pg.unsafe("SELECT COUNT(*) AS rows FROM market.prizepicks_board_current");
+    marketPrizePicks = mpp[0];
+    const msl = await pg.unsafe("SELECT COUNT(*) AS rows FROM market.sleeper_board_current");
+    marketSleeper = msl[0];
+    marketUnderdog = { rows: 0 };
+    try {
+      const mud = await pg.unsafe("SELECT COUNT(*) AS rows FROM market.underdog_board_current");
+      marketUnderdog = mud[0];
+    } catch (err) {
+      const message = String(err && err.message ? err.message : err);
+      if (!/does not exist/i.test(message)) throw err;
+    }
+    const spp = await pg.unsafe("SELECT COUNT(*) AS rows FROM score.board_prepared_current WHERE source_key = 'prizepicks'");
+    scorePrizePicks = spp[0];
+    const ssl = await pg.unsafe("SELECT COUNT(*) AS rows FROM score.board_prepared_current WHERE source_key = 'sleeper'");
+    scoreSleeper = ssl[0];
+    const st = await pg.unsafe("SELECT COUNT(*) AS rows FROM score.board_prepared_current");
+    scoreTotal = st[0];
+    const pbc = await pg.unsafe("SELECT COUNT(DISTINCT prep_batch_id) AS rows FROM score.board_prepared_current");
+    prepBatchCount = pbc[0];
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
   }
-  const scorePrizePicks = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'prizepicks'");
-  const scoreSleeper = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'sleeper'");
-  const scoreTotal = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current");
-  const prepBatchCount = await first(env.SCORE_DB, "SELECT COUNT(DISTINCT prep_batch_id) AS rows FROM score_board_prepared_current");
 
   const scorePrepPrizePicksRows = Number(scorePrepReport.prizepicks_rows || 0);
   const scorePrepSleeperRows = Number(scorePrepReport.sleeper_rows || 0);
