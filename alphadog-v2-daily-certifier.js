@@ -264,7 +264,7 @@ async function runCertifier(env, input) {
 
     const preparedAllDates = await readPreparedRows(pg);
     const gamePksAllDates = [...new Set(preparedAllDates.map(r => r.official_game_pk).filter(v => v !== null && v !== undefined))];
-    const gamesAllDates = gamePksAllDates.length ? await pg.unsafe(`SELECT game_pk, official_date, game_time_utc, is_pregame, is_live, is_final, is_postponed, is_cancelled, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, detailed_state FROM calendar.game_calendar WHERE game_pk = ANY($1::bigint[])`, [gamePksAllDates]) : [];
+    const gamesAllDates = gamePksAllDates.length ? await pg.unsafe(`SELECT game_pk, official_date, game_time_utc, is_pregame, is_live, is_final, is_postponed, is_cancelled, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, detailed_state FROM calendar.game_calendar WHERE game_pk = ANY($1::bigint[])`, [pgArrayLiteral(gamePksAllDates, false)]) : [];
     const gameMapAllDates = new Map(gamesAllDates.map(g => [String(g.game_pk), g]));
     const nowIsoForStartCheck = nowUtc();
     function gameHasStarted(gamePk) {
