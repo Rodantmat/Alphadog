@@ -22,7 +22,7 @@ const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
 const STAGE_INSERT_CHUNK_SIZE = 50;
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "MARKET_DB"];
+const REQUIRED_DB_BINDINGS = ["HYPERDRIVE"];
 const REQUIRED_CONFIG_VALUES = ["GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH"];
 const EXPECTED_MARKET_RAW_SNAPSHOTS_COLUMNS = ["snapshot_id", "source_key", "slate_date", "fetched_at", "raw_json", "row_count", "status", "error"];
 const EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS = ["source_key", "status", "last_success_at", "last_error_at", "last_error", "rows_last_fetch", "health_json", "updated_at"];
