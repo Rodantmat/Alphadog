@@ -322,8 +322,14 @@ function extractStatNames(rows) {
 
 async function loadPropTaxonomy(env) {
   const out = new Map();
-  if (!env.CONFIG_DB) return out;
-  const rows = await all(env.CONFIG_DB, `SELECT prop_key, display_name, supported_market_sources, scoring_enabled FROM config_prop_taxonomy`);
+  if (!env.HYPERDRIVE) return out;
+  const client = pgClient(env);
+  let rows;
+  try {
+    rows = await client.unsafe("SELECT prop_key, display_name, supported_market_sources, scoring_enabled FROM config.prop_taxonomy");
+  } finally {
+    await client.end({ timeout: 1 });
+  }
   for (const row of rows || []) {
     const key = String(row.prop_key || "").trim();
     if (!key) continue;
