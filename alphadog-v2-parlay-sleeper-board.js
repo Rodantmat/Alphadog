@@ -875,8 +875,7 @@ async function runHistoricalPropsProbe(env, input) {
   // returns actual player-prop data (not just game-line odds) for a recent real date, within their
   // documented ~14-day rolling window. Reuses the exact real auth/base-URL already live in this
   // worker - no new secret, no new integration risk.
-  const auth = authConfig(env);
-  if (!auth.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "auth_not_configured", block_reason: auth.block_reason, timestamp_utc: nowUtc() };
+  const auth = await authConfig(env);
   const base = String(env.PARLAY_API_BASE_URL || DEFAULT_PARLAY_API_BASE_URL).replace(/\/+$/, "");
   const date = String(input.date || new Date().toISOString().slice(0, 10));
 
