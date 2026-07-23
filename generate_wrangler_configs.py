@@ -16,6 +16,18 @@ def main_file(worker_name):
     return f"./{worker_name}.js" if Path(f"{worker_name}.js").exists() else "./worker.js"
 
 def make_config(worker_name, include_services=False):
+    # Workers fully verified migrated to Postgres: only CONTROL_DB stays wired (the one
+    # allowed exception, for operational dispatch/logging tables only - control_job_queue,
+    # control_job_runs, control_locks, control_worker_run_log). No other D1 database should be
+    # physically bound to these workers even if the code doesn't reference it, since an unused
+    # binding is still "wiring to the old database" per Rule Zero.
+    FULLY_MIGRATED_CONTROL_DB_ONLY = (
+        "alphadog-v2-prizepicks-github-board",
+        "alphadog-v2-parlay-sleeper-board",
+        "alphadog-v2-parlay-underdog-board",
+        "alphadog-v2-score-prep",
+    )
+    control_db_only_binding = [d for d in D1_BINDINGS if d.get("binding") == "CONTROL_DB"]
     cfg = {
         "$schema": "node_modules/wrangler/config-schema.json",
         "name": worker_name,
@@ -23,7 +35,7 @@ def make_config(worker_name, include_services=False):
         "compatibility_date": COMPATIBILITY_DATE,
         "observability": {"enabled": True},
         "vars": VARS,
-        "d1_databases": D1_BINDINGS
+        "d1_databases": control_db_only_binding if worker_name in FULLY_MIGRATED_CONTROL_DB_ONLY else D1_BINDINGS
     }
     if worker_name == "alphadog-v2-orchestrator":
         cfg["triggers"] = {"crons": ORCHESTRATOR_CRONS}
