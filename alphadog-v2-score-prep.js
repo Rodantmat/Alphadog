@@ -432,14 +432,12 @@ async function ensureScoreTables(env) {
 }
 
 async function loadReference(env) {
-  const [teams, teamAliases, players, rosters, aliases, propAliases] = await Promise.all([
-    allRows(env.pg, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref.teams WHERE active=1"),
-    allRows(env.pg, "SELECT alias_value, alias_normalized, team_id, mlb_team_id, alias_type, confidence, active FROM ref.team_aliases WHERE active=1"),
-    allRows(env.pg, "SELECT player_id, mlb_player_id, full_name, player_name, current_team_id, current_mlb_team_id, primary_position, active FROM ref.players WHERE active=1"),
-    allRows(env.pg, "SELECT player_id, mlb_team_id, team_id, player_name, position_abbreviation, roster_status, role, active, updated_at FROM ref.rosters WHERE active=1"),
-    allRows(env.pg, "SELECT alias_name, alias_normalized, player_id, confidence, alias_type, team_id, mlb_team_id, active FROM ref.player_aliases WHERE active=1"),
-    allRows(env.pg, "SELECT prop_key, source_key, source_market_name, normalized_market_name FROM ref.prop_aliases")
-  ]);
+  const teams = await allRows(env.pg, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref.teams WHERE active=1");
+  const teamAliases = await allRows(env.pg, "SELECT alias_value, alias_normalized, team_id, mlb_team_id, alias_type, confidence, active FROM ref.team_aliases WHERE active=1");
+  const players = await allRows(env.pg, "SELECT player_id, mlb_player_id, full_name, player_name, current_team_id, current_mlb_team_id, primary_position, active FROM ref.players WHERE active=1");
+  const rosters = await allRows(env.pg, "SELECT player_id, mlb_team_id, team_id, player_name, position_abbreviation, roster_status, role, active, updated_at FROM ref.rosters WHERE active=1");
+  const aliases = await allRows(env.pg, "SELECT alias_name, alias_normalized, player_id, confidence, alias_type, team_id, mlb_team_id, active FROM ref.player_aliases WHERE active=1");
+  const propAliases = await allRows(env.pg, "SELECT prop_key, source_key, source_market_name, normalized_market_name FROM ref.prop_aliases");
 
   const teamByMlbId = new Map();
   const teamByAbbr = new Map();
