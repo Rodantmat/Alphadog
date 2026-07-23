@@ -204,22 +204,28 @@ function baseIdentity(env, extra = {}) {
   };
 }
 
-async function validateTableColumns(env, tableName, expectedColumns) {
-  if (!env.MARKET_DB) return { ok: false, table: tableName, reason: "missing_MARKET_DB_binding", columns_present: [], missing_columns: expectedColumns };
-  const cols = await all(env.MARKET_DB, `PRAGMA table_info(${tableName})`);
-  const names = cols.map(c => String(c.name || ""));
+async function validateTableColumns(client, tableName, expectedColumns) {
+  if (!client) return { ok: false, table: tableName, reason: "missing_postgres_client", columns_present: [], missing_columns: expectedColumns };
+  const [schema, bareTable] = tableName.includes(".") ? tableName.split(".") : ["market", tableName];
+  const cols = await client.unsafe("SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2", [schema, bareTable]);
+  const names = cols.map(c => String(c.column_name || ""));
   const missing = expectedColumns.filter(c => !names.includes(c));
   return { ok: missing.length === 0, table: tableName, columns_present: names, required_columns: expectedColumns, missing_columns: missing };
 }
 
 async function validateWriteSchema(env) {
-  const raw = await validateTableColumns(env, "market_raw_snapshots", EXPECTED_MARKET_RAW_SNAPSHOTS_COLUMNS);
-  const health = await validateTableColumns(env, "market_source_health", EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS);
-  const batches = await validateTableColumns(env, "prizepicks_board_batches", EXPECTED_PP_BATCH_COLUMNS);
-  const stage = await validateTableColumns(env, "prizepicks_board_stage", EXPECTED_PP_STAGE_COLUMNS);
-  const current = await validateTableColumns(env, "prizepicks_board_current", EXPECTED_PP_CURRENT_COLUMNS);
-  const active = await validateTableColumns(env, "prizepicks_board_active_batches", EXPECTED_PP_ACTIVE_COLUMNS);
-  return { ok: raw.ok && health.ok && batches.ok && stage.ok && current.ok && active.ok, market_raw_snapshots: raw, market_source_health: health, prizepicks_board_batches: batches, prizepicks_board_stage: stage, prizepicks_board_current: current, prizepicks_board_active_batches: active };
+  const client = pgClient(env);
+  try {
+    const raw = await validateTableColumns(client, "market.raw_snapshots", EXPECTED_MARKET_RAW_SNAPSHOTS_COLUMNS);
+    const health = await validateTableColumns(client, "market.source_health", EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS);
+    const batches = await validateTableColumns(client, "market.prizepicks_board_batches", EXPECTED_PP_BATCH_COLUMNS);
+    const stage = await validateTableColumns(client, "market.prizepicks_board_stage", EXPECTED_PP_STAGE_COLUMNS);
+    const current = await validateTableColumns(client, "market.prizepicks_board_current", EXPECTED_PP_CURRENT_COLUMNS);
+    const active = await validateTableColumns(client, "market.prizepicks_board_active_batches", EXPECTED_PP_ACTIVE_COLUMNS);
+    return { ok: raw.ok && health.ok && batches.ok && stage.ok && current.ok && active.ok, market_raw_snapshots: raw, market_source_health: health, prizepicks_board_batches: batches, prizepicks_board_stage: stage, prizepicks_board_current: current, prizepicks_board_active_batches: active };
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 }
 
 async function readConfigSystemSettings(env, keys) {
