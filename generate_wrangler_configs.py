@@ -142,6 +142,7 @@ def make_config(worker_name, include_services=False):
         "alphadog-v2-daily-player-availability",
         "alphadog-v2-daily-weather",
         "alphadog-v2-daily-bullpen-availability",
+        "alphadog-v2-daily-schedule",
     ):
         # Postgres cutover (static-full-run chain, stages 1-4 so far): these workers now read/
         # write DigitalOcean Postgres via Hyperdrive instead of their old D1 tables. Same reason
