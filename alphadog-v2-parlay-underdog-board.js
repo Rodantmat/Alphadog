@@ -386,32 +386,33 @@ async function loadPropTaxonomy(env) {
 }
 
 async function ensureRfiNrfiUnderdogBoardInventorySupport(env) {
-  if (!env.CONFIG_DB) return { ok: false, changed: false, reason: "missing_CONFIG_DB_binding" };
-  const rows = await all(env.CONFIG_DB, `SELECT prop_key, supported_market_sources, scoring_enabled FROM config_prop_taxonomy WHERE prop_key='rfi_nrfi' LIMIT 1`);
-  const row = rows && rows[0] ? rows[0] : null;
-  if (!row) return { ok: false, changed: false, reason: "rfi_nrfi_missing_from_CONFIG_DB_taxonomy" };
-  const current = String(row.supported_market_sources || "").trim();
-  const parts = current.split(/[|,]/).map(s => s.trim()).filter(Boolean);
-  const hasUnderdog = parts.some(s => s.toLowerCase() === "underdog");
-  const nextSources = hasUnderdog ? current : Array.from(new Set([...parts, "Underdog"])).join(",");
-  if (!hasUnderdog) {
-    await run(env.CONFIG_DB, `UPDATE config_prop_taxonomy
-      SET supported_market_sources=?, scoring_enabled=0, updated_at=CURRENT_TIMESTAMP
-      WHERE prop_key='rfi_nrfi'`, nextSources);
-  } else {
-    await run(env.CONFIG_DB, `UPDATE config_prop_taxonomy
-      SET scoring_enabled=0, updated_at=CURRENT_TIMESTAMP
-      WHERE prop_key='rfi_nrfi'`);
+  if (!env.HYPERDRIVE) return { ok: false, changed: false, reason: "missing_HYPERDRIVE_binding" };
+  const client = pgClient(env);
+  try {
+    const rows = await client.unsafe("SELECT prop_key, supported_market_sources, scoring_enabled FROM config.prop_taxonomy WHERE prop_key='rfi_nrfi' LIMIT 1");
+    const row = rows && rows[0] ? rows[0] : null;
+    if (!row) return { ok: false, changed: false, reason: "rfi_nrfi_missing_from_postgres_taxonomy" };
+    const current = String(row.supported_market_sources || "").trim();
+    const parts = current.split(/[|,]/).map(s => s.trim()).filter(Boolean);
+    const hasUnderdog = parts.some(s => s.toLowerCase() === "underdog");
+    const nextSources = hasUnderdog ? current : Array.from(new Set([...parts, "Underdog"])).join(",");
+    if (!hasUnderdog) {
+      await client.unsafe("UPDATE config.prop_taxonomy SET supported_market_sources=$1, scoring_enabled=0, updated_at=now() WHERE prop_key='rfi_nrfi'", [nextSources]);
+    } else {
+      await client.unsafe("UPDATE config.prop_taxonomy SET scoring_enabled=0, updated_at=now() WHERE prop_key='rfi_nrfi'");
+    }
+    return {
+      ok: true,
+      changed: !hasUnderdog,
+      prop_key: "rfi_nrfi",
+      previous_supported_market_sources: current,
+      supported_market_sources: nextSources,
+      scoring_enabled_forced: 0,
+      purpose: "board_inventory_support_only_no_scoring_no_ranking_no_final_board"
+    };
+  } finally {
+    await client.end({ timeout: 1 });
   }
-  return {
-    ok: true,
-    changed: !hasUnderdog,
-    prop_key: "rfi_nrfi",
-    previous_supported_market_sources: current,
-    supported_market_sources: nextSources,
-    scoring_enabled_forced: 0,
-    purpose: "board_inventory_support_only_no_scoring_no_ranking_no_final_board"
-  };
 }
 
 function taxonomySupportsUnderdog(taxonomyRow) {
