@@ -510,7 +510,7 @@ async function getCalendarOnlyProbeRows(pg, targetDate) {
   const rows = await pg.unsafe(
     `SELECT game_pk, official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name,
       detailed_state, abstract_game_state, is_final, is_live, is_pregame
-    FROM calendar.game_calendar WHERE official_date >= $1 AND COALESCE(is_final, 0) = 0
+    FROM calendar.game_calendar WHERE official_date >= $1 AND COALESCE(is_final, false) = false
     ORDER BY official_date, game_time_utc LIMIT ${MAX_CALENDAR_PROBE_GAMES}`,
     [targetDate]
   );
