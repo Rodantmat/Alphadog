@@ -279,7 +279,7 @@ function bindingSummary(env) {
 }
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
 }
 
 function toPgPlaceholders(sqlText) {
