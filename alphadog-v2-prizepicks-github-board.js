@@ -900,12 +900,17 @@ async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate,
     no_final_board_write: true
   }, 6000);
 
-  await env.MARKET_DB.batch([
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_stage WHERE source_key=?").bind(SOURCE_KEY),
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_current WHERE source_key=?").bind(SOURCE_KEY),
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_active_batches WHERE source_key=?").bind(SOURCE_KEY),
-    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(SOURCE_STALE_CERT, staleReason, certificationJson, batchId)
-  ]);
+  const client = pgClient(env);
+  try {
+    await client.begin(async (tx) => {
+      await tx.unsafe("DELETE FROM market.prizepicks_board_stage WHERE source_key=$1", [SOURCE_KEY]);
+      await tx.unsafe("DELETE FROM market.prizepicks_board_current WHERE source_key=$1", [SOURCE_KEY]);
+      await tx.unsafe("DELETE FROM market.prizepicks_board_active_batches WHERE source_key=$1", [SOURCE_KEY]);
+      await tx.unsafe("UPDATE market.prizepicks_board_batches SET certification_status=$1, certification_reason=$2, certification_json=$3, cleaned_at=now(), updated_at=now() WHERE batch_id=$4", [SOURCE_STALE_CERT, staleReason, certificationJson, batchId]);
+    });
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 
   return {
     promoted: false,
