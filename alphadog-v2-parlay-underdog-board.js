@@ -454,7 +454,7 @@ function normalizeAliasName(value) {
 }
 
 async function replaceParlayUnderdogPropAliases(env, distinctSourceToCanonical) {
-  if (!env.REF_DB) return { ok: false, rows_written: 0, reason: "missing_REF_DB_binding", aliases_written: [] };
+  if (!env.HYPERDRIVE) return { ok: false, rows_written: 0, reason: "missing_HYPERDRIVE_binding", aliases_written: [] };
   const aliases = [];
   const seen = new Set();
   for (const row of distinctSourceToCanonical || []) {
@@ -463,7 +463,7 @@ async function replaceParlayUnderdogPropAliases(env, distinctSourceToCanonical) 
     const propKey = normalizeText(row.canonical_prop_key);
     if (!sourceName || !propKey) continue;
     const normalized = normalizeAliasName(sourceName);
-    const aliasKey = `${SOURCE_KEY}:${normalized}`;
+    const aliasKey = SOURCE_KEY + ":" + normalized;
     if (seen.has(aliasKey)) continue;
     seen.add(aliasKey);
     aliases.push({
@@ -475,13 +475,17 @@ async function replaceParlayUnderdogPropAliases(env, distinctSourceToCanonical) 
     });
   }
 
-  await run(env.REF_DB, "DELETE FROM ref_prop_aliases WHERE source_key=?", SOURCE_KEY);
-  for (const a of aliases) {
-    await run(env.REF_DB, `INSERT INTO ref_prop_aliases
-      (alias_key, prop_key, source_key, source_market_name, normalized_market_name, updated_at)
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      a.alias_key, a.prop_key, a.source_key, a.source_market_name, a.normalized_market_name
-    );
+  const client = pgClient(env);
+  try {
+    await client.unsafe("DELETE FROM ref.prop_aliases WHERE source_key=$1", [SOURCE_KEY]);
+    for (const a of aliases) {
+      await client.unsafe(
+        "INSERT INTO ref.prop_aliases (alias_key, prop_key, source_key, source_market_name, normalized_market_name, updated_at) VALUES ($1, $2, $3, $4, $5, now())",
+        [a.alias_key, a.prop_key, a.source_key, a.source_market_name, a.normalized_market_name]
+      );
+    }
+  } finally {
+    await client.end({ timeout: 1 });
   }
   return { ok: true, rows_written: aliases.length, aliases_written: aliases };
 }
