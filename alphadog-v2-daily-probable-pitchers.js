@@ -264,10 +264,7 @@ function deriveLikelyStarter(recentStarts, targetDateText) {
 async function loadCalendarRows(pg, gamePks) {
   const ids = [...gamePks].filter(Boolean).map(Number);
   if (!ids.length) return new Map();
-  const rows = await pg.unsafe(
-    `SELECT game_pk, official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name, status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final, is_postponed, is_cancelled FROM calendar.game_calendar WHERE game_pk = ANY($1::bigint[])`,
-    [ids]
-  );
+  const rows = await pg`SELECT game_pk, official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name, status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final, is_postponed, is_cancelled FROM calendar.game_calendar WHERE game_pk IN ${pg(ids)}`;
   return new Map(rows.map(r => [Number(r.game_pk), r]));
 }
 
