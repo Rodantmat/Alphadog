@@ -278,10 +278,8 @@ function bindingSummary(env) {
   return { HYPERDRIVE: Boolean(env && env.HYPERDRIVE), CONTROL_DB: Boolean(env && env.CONTROL_DB) };
 }
 
-async function pgClient(env) {
-  const client = new Client({ connectionString: env.HYPERDRIVE.connectionString });
-  await client.connect();
-  return client;
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: true });
 }
 
 function toPgPlaceholders(sqlText) {
@@ -290,8 +288,7 @@ function toPgPlaceholders(sqlText) {
 }
 
 async function allRows(pg, sql, binds = []) {
-  const res = await pg.query(toPgPlaceholders(sql), binds);
-  return res && res.rows ? res.rows : [];
+  return await pg.unsafe(toPgPlaceholders(sql), binds);
 }
 
 async function firstRow(pg, sql, binds = []) {
@@ -299,9 +296,7 @@ async function firstRow(pg, sql, binds = []) {
   return rows[0] || null;
 }
 
-// node-postgres has no tagged-template bulk-insert helper like postgres.js's sql(array, ...cols).
-// Build a real, parameterized multi-row VALUES clause instead - still fully parameterized, no
-// string-interpolated data, just programmatically constructed placeholders.
+// Simple, driver-agnostic bulk insert: build a real, parameterized multi-row VALUES clause.
 async function pgBulkInsert(pg, table, cols, rows, extraSql = "") {
   if (!rows.length) return;
   const valueGroups = [];
@@ -316,7 +311,7 @@ async function pgBulkInsert(pg, table, cols, rows, extraSql = "") {
     valueGroups.push("(" + placeholders.join(",") + ")");
   }
   const text = `INSERT INTO ${table} (${cols.join(", ")}) VALUES ${valueGroups.join(", ")} ${extraSql}`;
-  await pg.query(text, params);
+  await pg.unsafe(text, params);
 }
 
 function limitText(v, max = 900) {
