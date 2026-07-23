@@ -283,10 +283,14 @@ async function runCertifier(env, input) {
       [batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_context_readiness_refresh_window", "running", boardWindowDates[0], boardWindowDates[boardWindowDates.length - 1], startedAt]
     );
 
-    await pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date <> ALL($1::text[])`, [boardWindowDatesLiteral]);
-    await pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date <> ALL($1::text[])`, [boardWindowDatesLiteral]);
-    await pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]);
-    await pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]);
+    await Promise.all([
+      pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date <> ALL($1::text[])`, [boardWindowDatesLiteral]),
+      pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date <> ALL($1::text[])`, [boardWindowDatesLiteral])
+    ]);
+    await Promise.all([
+      pg.unsafe(`DELETE FROM context_cert.readiness_current WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral]),
+      pg.unsafe(`DELETE FROM context_cert.readiness_issues WHERE official_date = ANY($1::text[])`, [boardWindowDatesLiteral])
+    ]);
 
     const prepared = preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk));
     const skippedAlreadyStartedRows = preparedAllDates.length - prepared.length;
