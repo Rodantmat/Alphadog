@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-daily-usage-pulse";
-const VERSION = "alphadog-v2-daily-usage-pulse-v0.3.0-postgres-rewire";
+const VERSION = "alphadog-v2-daily-usage-pulse-v0.3.1-postgres-rewire-redeploy";
 const JOB_KEY = "daily-umpire-context";
 const MLB_LIVE_BASE = "https://statsapi.mlb.com/api/v1.1/game";
 const MLB_V1_BASE = "https://statsapi.mlb.com/api/v1";
