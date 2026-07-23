@@ -156,15 +156,25 @@ function valuePresence(env, names) {
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch (_) { return {}; } }
 
-async function all(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-  return res.results || [];
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
 }
 
-async function run(db, sql, ...binds) {
-  const stmt = db.prepare(sql);
-  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+function toPgPlaceholders(sqlText) {
+  let i = 0;
+  return String(sqlText).replace(/\?/g, () => `${++i}`);
+}
+
+// Real, proven pattern (see DOS_AND_DONTS.md PART 1): prepare:false is required so postgres.js
+// does not mask real SQL errors as generic "Network connection lost". These two helpers keep the
+// existing "?"-placeholder call sites unchanged elsewhere in this file - only the underlying
+// engine changes, from D1 .prepare()/.bind() to Postgres sql.unsafe() with $-placeholders.
+async function all(client, sqlText, ...binds) {
+  return await client.unsafe(toPgPlaceholders(sqlText), binds);
+}
+
+async function run(client, sqlText, ...binds) {
+  return await client.unsafe(toPgPlaceholders(sqlText), binds);
 }
 
 function baseIdentity(env, extra = {}) {
