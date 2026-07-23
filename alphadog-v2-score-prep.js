@@ -1,5 +1,7 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.21-underdog-board-coverage";
+const VERSION = "alphadog-v2-score-prep-v0.3.0-postgres-rewire";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
