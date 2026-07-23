@@ -331,22 +331,22 @@ async function runCertifier(env, input) {
         { key: "player_availability", rows: availability.filter(r => r.official_date === targetDate), expected: playerKeysForDate, keyFn: r => `${r.game_pk}:${r.mlb_player_id || r.player_id}` }
       ];
       const tallies = {};
-      for (const spec of layerSpecs) {
+      await Promise.all(layerSpecs.map(async spec => {
         const t = computeLayerTally(spec.rows, spec.expected, spec.keyFn);
         await writeTally(pg, batchId, targetDate, slateShape, spec.key, t);
         tallies[spec.key] = t;
-      }
+      }));
       return tallies;
     }
     const tallyByDate = {};
-    for (const d of boardWindowDates) {
+    await Promise.all(boardWindowDates.map(async d => {
       tallyByDate[d] = await tallyForDate(d);
       await pg.unsafe(
         `INSERT INTO context_cert.slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,now(),now())
          ON CONFLICT (slate_date) DO UPDATE SET batch_id=excluded.batch_id, slate_shape=excluded.slate_shape, game_count=excluded.game_count, computed_at=excluded.computed_at, updated_at=now()`,
         [d, batchId, slateShape, (gamePkSetByDate.get(d) || new Set()).size, nowUtc()]
       );
-    }
+    }));
 
     const expiredGamePks = games.filter(g => isGameStartedExpiredOrUnavailable(g, null)).map(g => g.game_pk);
     const purgeResult = await purgeExpiredGameLayers(pg, expiredGamePks);
