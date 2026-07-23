@@ -1534,6 +1534,64 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
     });
   }
 
+  if (job === "orchestrator_enqueue_parlay_underdog_board") {
+    const existing = await env.CONTROL_DB.prepare(
+      "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'parlay-underdog-board' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
+    ).first();
+
+    if (existing) {
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version,
+        job,
+        status: "already_queued",
+        request_id: existing.request_id,
+        existing,
+        visible_button: "BOARD > Underdog"
+      });
+    }
+
+    const requestId = "underdog_probe_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    const chainId = "chain_" + Date.now().toString(36);
+    const input = {
+      source: "control_room",
+      visible_button: "BOARD > Underdog",
+      mode: "parlay_underdog_base_stage_readiness_only",
+      created_at: now,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_prizepicks_mutation: true,
+      no_promotion: true,
+      no_alias_guessing: true,
+      allowed_market_writes: ["underdog_lifecycle_schema_ddl_only"],
+      base_stage_only: true
+    };
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'parlay-underdog-board', 'alphadog-v2-parlay-underdog-board', '04 Board', 'board', 'Underdog Board Source Probe', 'pending', 6, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+    ).bind(requestId, chainId, JSON.stringify(input)).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', 'orchestrator_enqueue_parlay_underdog_board', 'INFO', 'queued_parlay_underdog_board_probe', 'Queued exact Parlay Underdog Board source-probe readiness job', ?, CURRENT_TIMESTAMP)"
+    ).bind(requestId, JSON.stringify({request_id:requestId, chain_id:chainId, visible_button:"BOARD > Underdog"})).run();
+
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      status: "queued",
+      request_id: requestId,
+      chain_id: chainId,
+      visible_button: "BOARD > Underdog",
+      queued_job_key: "parlay-underdog-board",
+      queued_worker_name: "alphadog-v2-parlay-underdog-board",
+      note: "Queued in CONTROL_DB. Use ORCHESTRATOR > Wake to process the source-probe job, then ORCHESTRATOR > Logs and MANUAL SQL > Run."
+    });
+  }
+
   if (job === "orchestrator_enqueue_market_context_source_probe") {
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'market-normalizer' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
