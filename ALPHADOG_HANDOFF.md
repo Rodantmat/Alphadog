@@ -139,7 +139,108 @@ dead, do not read from or write to it going forward.
 
 ---
 
-## 3. WHAT'S NOT DONE — EVERYTHING ELSE (this is the incremental/delta phase's job)
+## 2B. WHAT'S DONE — THE DAILY DELTA/INCREMENTAL + CALCULATED LAYER (this session, 2026-07-22/23)
+
+**Status summary, in the two tiers Rodolfo asked to have called out explicitly:**
+
+- **Weekly static differential (`static-full-run`)**: prior sessions' work, described fully in
+  Section 2 above. **Already done, tested, checked, and working.** Nothing new needed here; this
+  status is unchanged by today's session.
+- **Morning delta full run (the daily game-log → metrics → classification → baseline →
+  certifier chain)**: **built and verified end-to-end TODAY, working on real data, but this is
+  new work from a single session and needs deeper checking over the next several real days
+  before being treated as fully bulletproof** — see the honest gaps list at the end of this
+  section.
+
+### The complete 13-stage daily chain, all Postgres, zero D1, all confirmed via direct code inspection
+
+| # | Job Key | Worker File | Postgres Tables |
+|---|---|---|---|
+| 1 | `base-game-calendar` | `alphadog-v2-base-game-calendar.js` | `calendar.game_calendar` |
+| 2 | `base-hitter-game-logs` | `alphadog-v2-base-hitter-game-logs.js` | `stats_hitter.game_logs` |
+| 3 | `base-pitcher-game-logs` | `alphadog-v2-base-pitcher-game-logs.js` | `stats_pitcher.game_logs` |
+| 4 | `base-team-game-logs` | `alphadog-v2-base-team-game-logs.js` | `team.game_logs` |
+| 5 | `base-starter-history` | `alphadog-v2-base-starter-history.js` | `team.starter_history` |
+| 6 | `base-bullpen-history` | `alphadog-v2-base-bullpen-history.js` | `team.bullpen_history` |
+| 7 | `base-hitter-splits` | `alphadog-v2-base-hitter-splits.js` | `stats_hitter.splits` |
+| 8 | `base-pitcher-splits` | `alphadog-v2-base-pitcher-splits.js` | `stats_pitcher.splits` |
+| 9 | `base-hitter-metrics` | `alphadog-v2-base-hitter-metrics.js` | `stats_hitter.metric_snapshots` (+ permanent `metric_stage`) |
+| 10 | `base-pitcher-metrics` | `alphadog-v2-base-pitcher-metrics.js` | `stats_pitcher.metric_snapshots` (+ permanent `metric_stage`) |
+| 11 | `base-classification-v5` | `alphadog-v2-base-classification-v5.js` | `classification.player_classification_current` |
+| 12 | `base-baseline` | `alphadog-v2-base-baseline.js` | `classification.baseline_current` |
+| 13 | `base-certifier-postgres` | `alphadog-v2-base-certifier-postgres.js` | `certifier.date_coverage` (read-only report) |
+
+Stages 2-8 (the raw source-mining layer) were mostly BUILT in prior sessions (see the journal
+transcripts) but had never been included in an actual end-to-end scheduled chain until today.
+Stages 9-13 (metrics/classification/baseline/certifier) were newly built and verified today.
+
+### Architecture: self-gating stages + a strict one-at-a-time stepper (not the old D1 gap-dispatch pattern)
+
+Every stage independently checks its own readiness (its own watermark, plus real
+`calendar.game_calendar` completeness for the target date) before advancing — no external
+"gap list" is computed and handed to it. This is the validated, modern self-healing incremental
+pattern (see DOS_AND_DONTS.md PART 4 for the research and reasoning). A dedicated stepper
+(`runPostgresFullRunEnqueue` / `POSTGRES_FULL_RUN_STAGES`, both in `alphadog-v2-orchestrator.js`)
+enqueues stages strictly one at a time — never more than one stage in flight at once — waiting
+for the current stage to reach a terminal state before advancing, and halting visibly (not
+silently retrying) if a stage genuinely fails.
+
+### Real bugs found and fixed today (full detail in DOS_AND_DONTS.md PART 4)
+1. Hardcoded row/chunk-size ceilings in hitter/pitcher-game-logs silently overriding live
+   database speed config (`config.worker_tick_settings`) — fixed in both workers.
+2. A stale-value-wins-over-live-config precedence bug in the same two workers' fallback chains —
+   fixed by putting the live config source first.
+3. Same class of bug in Classification/Baseline (`COMBOS_PER_TICK` hardcoded, ignoring real
+   config) — fixed, and Baseline's missing `config.worker_tick_settings` row was added.
+4. A real LEFT JOIN fan-out bug in `base-bullpen-history.js` causing
+   `ON CONFLICT DO UPDATE command cannot affect row a second time` — fixed via `DISTINCT ON`
+   dedup on the join's right-hand side.
+
+### Formula/version correctness verified two ways, not just one
+Checked both that `formula_version` is uniform across every classification/baseline/metrics row
+and matches the currently deployed code, AND hand-recomputed real rows' stored values from raw
+inputs using the current formulas by hand, confirming they match. See DOS_AND_DONTS.md PART 4 for
+the exact numbers.
+
+### Stale-data sweep completed across all 20 Postgres schemas (not just the daily-chain ones)
+Full detail in DOS_AND_DONTS.md PART 4. Real, old-dev-iteration duplicate data found and cleaned
+in `team.starter_history`, `team.bullpen_history`, `team.game_logs`, `team.game_logs_stage`, and
+`context.first_inning_game`/`first_inning_pitcher` — with explicit care taken to preserve real,
+irreplaceable uncovered data rather than deleting for tidiness. A large (~293,000 row) orphaned
+"V6" classification/baseline system was found (written by `alphadog-v2-phase3a-first-inning-
+pitcher-context.js` under job_key `expansion-baseline-v2`) — **explicit user decision: leave this
+alone, it is isolated and not interfering with the real pipeline.**
+
+### 6:00 AM Pacific daily scheduling implemented
+`config.scheduled_jobs` (Postgres) has a real, enabled row (`postgres_full_run_0600_pt`,
+`local_time='06:00'`, `schedule_type='daily'`, `timezone='America/Los_Angeles'`).
+`enqueuePostgresFullRunIfDue()` in the orchestrator follows the exact same established pattern as
+its five siblings — reads this Postgres row via the orchestrator's existing `pgSchedule()`
+Hyperdrive connection, checks a 5-minute due-window, and dedupes via a deterministic request_id
+inserted into the existing `control_job_queue` (not a new table). **A real, direct D1 mistake was
+made and corrected while building this — see DOS_AND_DONTS.md PART 4's "single most important
+rule" section, read it before touching scheduling code again.**
+
+### Honest, explicit gaps — read before assuming this is fully bulletproof
+- **The 6:00 AM Pacific trigger has NOT yet been observed firing for real at 6:00 AM** — the
+  SQL/logic is confirmed correct by direct inspection and by exactly matching an already-proven
+  pattern, but a live, real-time firing has not been watched end-to-end. Check this the next time
+  a session is active anywhere near 6:00 AM Pacific.
+- **Only two real days (July 21 fully, July 22 partially in-progress) have been observed flowing
+  through this chain.** The certifier confirms July 21 as `FULL_CHAIN_CERTIFIED_COMPLETE`, which
+  is real and meaningful, but a single day's clean run is not the same as multi-day, multi-week
+  reliability. Watch for: doubleheader edge cases, postponed/rescheduled games, DST transitions
+  (none occur again until November 2026), and the delta lookback/repair window behaving correctly
+  across a longer real span.
+- **The `daily.*_current` tables** (`team_schedule_spot_current`, `bullpen_availability_current`,
+  `player_availability_current`, `game_weather_current`) are still completely empty — these are
+  NOT part of the 13-stage chain above and were not built/wired this session. If the eventual
+  scoring layer needs these, they still need real work.
+- **The `score.*` layer** (final board, hp board, prop matrix) is still entirely empty — building
+  the actual scoring/board-generation layer that CONSUMES `classification.baseline_current` has
+  not been started.
+
+---
 
 **Nothing below this line has been touched yet this migration. All of it is still on D1 as far as
 is known — VERIFY DIRECTLY, do not assume.**
