@@ -1222,7 +1222,7 @@ async function runBaseBackfillTick(env, sql, input, startedAtMs) {
     if (doneScanning) {
       finalization = await certifyAndPromoteIfClean(sql, batchId, runId, cutoffDate, { promote_rows_per_tick: tickConfig.promote_rows_per_tick, clean_rows_per_tick: DEFAULT_CLEAN_ROWS_PER_TICK });
     }
-    return { ok: true, data_ok: true, mode: "base_backfill", phase: doneScanning ? "mining_complete_finalization_started" : "mining", batch_id: batchId, run_id: runId, status: finalization ? finalization.status : nextStatus, players_total: players.length, players_processed: offset, processed_this_tick: processedThisTick, rows_staged_this_tick: rowsThisTick, per_player_results: perPlayerResults, finalization };
+    return { ok: true, data_ok: true, mode: "base_backfill", phase: doneScanning ? "mining_complete_finalization_started" : "mining", batch_id: batchId, run_id: runId, status: finalization ? finalization.status : nextStatus, continuation_required: !doneScanning, orchestrator_should_self_continue: !doneScanning, players_total: players.length, players_processed: offset, processed_this_tick: processedThisTick, rows_staged_this_tick: rowsThisTick, per_player_results: perPlayerResults, finalization };
   } finally { await releaseBatchLock(sql, batchId, owner); }
 }
 
