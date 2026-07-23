@@ -12109,95 +12109,71 @@ async function cleanupDailyContextOrphanChildSidecars(env, stage, child, cleanup
   if (!requestId || !stage) return { cleaned: false, reason: "missing_child_or_stage" };
   const note = String(cleanupCode || "daily_context_orphan_child_cleanup").slice(0, 120);
   const result = {
-    cleaned: true,
-    stage_key: stage.stage_key,
-    request_id: requestId,
-    sidecar_scope: "none",
-    destructive_sidecar_delete: false,
+    cleaned: true, stage_key: stage.stage_key, request_id: requestId, sidecar_scope: "none", destructive_sidecar_delete: false,
     cleanup_policy: "mark_running_batch_failed_only_preserve_sidecar_rows_for_audit_and_manual_repair",
     root_cause_guard: "do_not_delete_daily_context_sidecars_from_parent_stale_guard"
   };
-
-  if (stage.job_key === "daily-player-availability") {
-    result.sidecar_scope = "daily_player_availability_v1";
-    await run(env.DAILY_DB, "UPDATE daily_player_availability_batches_v1 SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Availability child; sidecar rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
+  const pg = pgControl(env);
+  try {
+    const tableByJobKey = {
+      "daily-player-availability": ["daily.player_availability_batches", "daily_player_availability_v1", "Availability"],
+      "daily-weather": ["daily.game_weather_batches", "daily_game_weather", "Weather"],
+      "daily-bullpen-availability": ["daily.bullpen_availability_batches", "daily_bullpen_availability", "Bullpen"],
+      "daily-team-schedule-spot": ["daily.team_schedule_spot_batches", "daily_team_schedule_spot", "Team Spot"],
+      "daily-umpire-context": ["daily.umpire_context_batches", "daily_umpire_context", "Umpire"],
+      "daily-certifier": ["context_cert.readiness_batches", "daily_context_readiness", "Context Certifier"]
+    };
+    const entry = tableByJobKey[stage.job_key];
+    if (entry) {
+      const [table, scope, label] = entry;
+      result.sidecar_scope = scope;
+      await pg.unsafe(`UPDATE ${table} SET status='failed', certification_status=$1, certification_grade='FAILED_ORPHAN_BATCH', certification_reason=$2, completed_at=COALESCE(completed_at, now()), updated_at=now() WHERE request_id=$3 AND status='running'`,
+        [note, `Daily Context Full Run guard failed stale ${label} child; sidecar rows were preserved non-destructively for audit/recovery.`, requestId]);
+    }
     return result;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
   }
-
-  if (stage.job_key === "daily-weather") {
-    result.sidecar_scope = "daily_game_weather";
-    await run(env.DAILY_DB, "UPDATE daily_game_weather_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Weather child; sidecar rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
-    return result;
-  }
-
-  if (stage.job_key === "daily-bullpen-availability") {
-    result.sidecar_scope = "daily_bullpen_availability";
-    await run(env.DAILY_DB, "UPDATE daily_bullpen_availability_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Bullpen child; sidecar rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
-    return result;
-  }
-
-  if (stage.job_key === "daily-team-schedule-spot") {
-    result.sidecar_scope = "daily_team_schedule_spot";
-    await run(env.DAILY_DB, "UPDATE daily_team_schedule_spot_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Team Spot child; sidecar rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
-    return result;
-  }
-
-  if (stage.job_key === "daily-umpire-context") {
-    result.sidecar_scope = "daily_umpire_context";
-    await run(env.DAILY_DB, "UPDATE daily_umpire_context_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Umpire child; sidecar rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
-    return result;
-  }
-
-  if (stage.job_key === "daily-certifier") {
-    result.sidecar_scope = "daily_context_readiness";
-    await run(env.DAILY_DB, "UPDATE daily_context_readiness_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Context Certifier child; readiness rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
-    return result;
-  }
-
-  return result;
 }
 
 
 async function buildDailyContextCertifierSidecarRecoveryOutput(env, requestId, stage, options = {}) {
-  if (!env || !env.DAILY_DB || !requestId) return null;
-  const batch = await first(env.DAILY_DB,
-    "SELECT * FROM daily_context_readiness_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1",
-    requestId
-  );
-  if (!batch || !batch.batch_id) return null;
+  if (!env || !env.HYPERDRIVE || !requestId) return null;
+  const pg = pgControl(env);
+  try {
+    const batchRows = await pg`SELECT * FROM context_cert.readiness_batches WHERE request_id=${requestId} ORDER BY created_at DESC LIMIT 1`;
+    const batch = batchRows[0] || null;
+    if (!batch || !batch.batch_id) return null;
 
-  const status = String(batch.status || "");
-  if (status === "completed" && batch.output_json) {
-    const parsed = parseJsonSafeText(batch.output_json, {});
-    if (parsed && parsed.ok === true) return { ...parsed, recovered_from_completed_readiness_batch: true, recovered_batch_id: batch.batch_id };
-  }
+    const status = String(batch.status || "");
+    if (status === "completed" && batch.output_json) {
+      const parsed = parseJsonSafeText(typeof batch.output_json === "string" ? batch.output_json : JSON.stringify(batch.output_json), {});
+      if (parsed && parsed.ok === true) return { ...parsed, recovered_from_completed_readiness_batch: true, recovered_batch_id: batch.batch_id };
+    }
 
-  const current = await first(env.DAILY_DB,
-    `SELECT
-       COUNT(*) AS rows,
-       COUNT(DISTINCT official_date) AS dates,
-       COUNT(DISTINCT game_pk) AS games,
-       COUNT(DISTINCT prepared_row_id) AS prepared_rows,
-       COUNT(DISTINCT player_id) AS players,
-       SUM(CASE WHEN context_status='ready_full_context' THEN 1 ELSE 0 END) AS ready_full_context_rows,
-       SUM(CASE WHEN context_status='ready_with_warnings' THEN 1 ELSE 0 END) AS ready_with_warnings_rows,
-       SUM(CASE WHEN context_status='ready_partial_enrichment' THEN 1 ELSE 0 END) AS ready_partial_enrichment_rows,
-       SUM(CASE WHEN context_status='waiting_late_context' THEN 1 ELSE 0 END) AS waiting_late_context_rows,
-       SUM(CASE WHEN context_status='blocked' THEN 1 ELSE 0 END) AS blocked_rows,
-       SUM(CASE WHEN context_status='not_applicable' THEN 1 ELSE 0 END) AS not_applicable_rows,
-       SUM(COALESCE(hard_blocker_count,0)) AS hard_blockers,
-       SUM(COALESCE(warning_count,0)) AS warnings,
-       SUM(COALESCE(enrichment_gap_count,0)) AS enrichment_gaps,
-       SUM(CASE WHEN readiness_key IS NULL OR readiness_key='' THEN 1 ELSE 0 END) AS missing_keys
-     FROM daily_context_readiness_current
-     WHERE batch_id=?`,
-    batch.batch_id
-  );
-  const currentRows = Number(current && current.rows || 0);
-  const currentGames = Number(current && current.games || 0);
-  const preparedRows = Number(current && current.prepared_rows || 0);
-  const missingKeys = Number(current && current.missing_keys || 0);
-  if (currentRows <= 0 || currentGames <= 0 || preparedRows <= 0 || missingKeys !== 0) return null;
+    const currentRows = await pg.unsafe(`SELECT
+         COUNT(*) AS rows,
+         COUNT(DISTINCT official_date) AS dates,
+         COUNT(DISTINCT game_pk) AS games,
+         COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+         COUNT(DISTINCT player_id) AS players,
+         SUM(CASE WHEN context_status='ready' THEN 1 ELSE 0 END) AS ready_full_context_rows,
+         SUM(CASE WHEN context_status='ready_with_warnings' THEN 1 ELSE 0 END) AS ready_with_warnings_rows,
+         SUM(CASE WHEN context_status='partial_enrichment' THEN 1 ELSE 0 END) AS ready_partial_enrichment_rows,
+         SUM(CASE WHEN context_status='blocked' THEN 1 ELSE 0 END) AS blocked_rows,
+         SUM(CASE WHEN context_status='not_applicable' THEN 1 ELSE 0 END) AS not_applicable_rows,
+         SUM(COALESCE(hard_blocker_count,0)) AS hard_blockers,
+         SUM(COALESCE(warning_count,0)) AS warnings,
+         SUM(COALESCE(enrichment_gap_count,0)) AS enrichment_gaps,
+         SUM(CASE WHEN readiness_key IS NULL OR readiness_key='' THEN 1 ELSE 0 END) AS missing_keys
+       FROM context_cert.readiness_current
+       WHERE batch_id=$1`, [batch.batch_id]);
+    const current = currentRows[0] || {};
+    const currentRowCount = Number(current.rows || 0);
+    const currentGames = Number(current.games || 0);
+    const preparedRows = Number(current.prepared_rows || 0);
+    const missingKeys = Number(current.missing_keys || 0);
+    if (currentRowCount <= 0 || currentGames <= 0 || preparedRows <= 0 || missingKeys !== 0) return null;
 
   const dup = await first(env.DAILY_DB,
     `SELECT COUNT(*) AS n
