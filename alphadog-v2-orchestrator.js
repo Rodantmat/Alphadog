@@ -12264,41 +12264,6 @@ async function buildDailyContextCertifierSidecarRecoveryOutput(env, requestId, s
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-    no_final_board: true,
-    no_old_production_touch: true
-  };
-
-  await run(env.DAILY_DB,
-    `UPDATE daily_context_readiness_batches
-     SET status='completed',
-         prepared_rows_read=?,
-         prepared_games_checked=?,
-         current_rows_written=?,
-         issue_rows_written=?,
-         hard_blocker_count=?,
-         warning_count=?,
-         enrichment_gap_count=?,
-         ready_full_context_count=?,
-         ready_with_warnings_count=?,
-         ready_partial_enrichment_count=?,
-         waiting_late_context_count=?,
-         blocked_count=?,
-         not_applicable_count=?,
-         retention_violations=COALESCE(retention_violations,0),
-         schema_failures=COALESCE(schema_failures,0),
-         certification_status=?,
-         certification_grade=?,
-         certification_reason=?,
-         output_json=?,
-         completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP),
-         updated_at=CURRENT_TIMESTAMP
-     WHERE batch_id=?`,
-    preparedRows, currentGames, currentRows, issueRows, hardBlockers, warnings, enrichmentGaps, readyFullRows, readyWithWarningsRows, readyPartialRows, waitingRows, blockedRows, notApplicableRows, certification, grade, output.certification_reason, JSON.stringify(output), batch.batch_id
-  );
-
-  return output;
-}
-
 function isServiceBindingTimeoutLike(text) {
   const hay = String(text || "").toLowerCase();
   return hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar") || hay.includes("timeout");
