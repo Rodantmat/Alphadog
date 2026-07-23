@@ -230,13 +230,15 @@ async function validateWriteSchema(env) {
 
 async function readConfigSystemSettings(env, keys) {
   const out = {};
-  if (!env.CONFIG_DB) return out;
+  if (!env.HYPERDRIVE) return out;
+  const client = pgClient(env);
   try {
-    const placeholders = keys.map(() => "?").join(",");
-    const rows = await all(env.CONFIG_DB, `SELECT setting_key, setting_value FROM config_system_settings WHERE setting_key IN (${placeholders})`, ...keys);
+    const rows = await client.unsafe("SELECT setting_key, setting_value FROM config.system_settings WHERE setting_key = ANY($1)", [keys]);
     for (const row of rows) if (row && row.setting_key) out[String(row.setting_key)] = row.setting_value;
   } catch (err) {
     out.__config_read_error = safeString(err && err.message ? err.message : err, 500);
+  } finally {
+    await client.end({ timeout: 1 });
   }
   return out;
 }
