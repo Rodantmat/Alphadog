@@ -918,6 +918,7 @@ async function safeProbe(env, input = {}) {
   const schema = await ensureSleeperSchema(env);
   const endpoint = configuredEndpoint(env, input);
   const auth = await authConfig(env);
+  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const secrets = valuePresence(env, REQUIRED_SECRET_KEYS);
   const cfg = valuePresence(env, CONFIG_KEYS);
   const effective_config_defaults_used = {
