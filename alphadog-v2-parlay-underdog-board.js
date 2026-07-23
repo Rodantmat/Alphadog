@@ -583,24 +583,29 @@ function toStageRow(row, batchId, fetchedAt, taxonomy) {
 }
 
 async function clearUnpromotedUnderdogStage(env) {
-  await run(env.MARKET_DB, "DELETE FROM underdog_board_stage WHERE source_key = ?", SOURCE_KEY);
-  await run(env.MARKET_DB, "DELETE FROM underdog_board_batches WHERE source_key = ? AND promoted_at IS NULL", SOURCE_KEY);
+  const client = pgClient(env);
+  try {
+    await client.unsafe("DELETE FROM market.underdog_board_stage WHERE source_key = $1", [SOURCE_KEY]);
+    await client.unsafe("DELETE FROM market.underdog_board_batches WHERE source_key = $1 AND promoted_at IS NULL", [SOURCE_KEY]);
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 }
 
 async function insertStageRows(env, stageRows) {
-  const chunkSize = 80;
+  if (!stageRows.length) return;
+  const cols = ["stage_id", "batch_id", "source_key", "slate_date", "fetched_at", "source_event_id", "source_line_id", "source_player_id", "player_name", "team", "opponent", "league", "sport", "source_stat_name", "canonical_prop_key", "line_value", "side", "price", "decimal_price", "is_pickable", "start_time", "raw_line_json", "parse_status", "parse_error", "certification_status"];
+  const chunkSize = 200;
   const chunks = [];
   for (let i = 0; i < stageRows.length; i += chunkSize) chunks.push(stageRows.slice(i, i + chunkSize));
-  await runWithBoundedConcurrency(chunks, chunk => env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO underdog_board_stage (
-      stage_id, batch_id, source_key, slate_date, fetched_at, source_event_id, source_line_id, source_player_id,
-      player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side, price,
-      decimal_price, is_pickable, start_time, raw_line_json, parse_status, parse_error, certification_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(
-        row.stage_id, row.batch_id, row.source_key, row.slate_date, row.fetched_at, row.source_event_id, row.source_line_id, row.source_player_id,
-        row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side, row.price,
-        row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, row.parse_status, row.parse_error, row.certification_status
-      ))), D1_WRITE_CONCURRENCY);
+  const client = pgClient(env);
+  try {
+    for (const chunk of chunks) {
+      await client`INSERT INTO market.underdog_board_stage ${client(chunk, ...cols)}`;
+    }
+  } finally {
+    await client.end({ timeout: 1 });
+  }
 }
 
 
