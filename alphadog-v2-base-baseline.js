@@ -206,7 +206,8 @@ async function runBaseRebuild(sql, input) {
     await sql`UPDATE classification.baseline_batches SET status='completed', rows_written=${totalRows[0].c}, certification='BASELINE_BASE_CERTIFIED', certification_grade='PASS', finished_at=now(), updated_at=now() WHERE batch_id=${batchId}`;
     return { ok: true, data_ok: true, mode: "base_rebuild", batch_id: batchId, status: "COMPLETED_BASELINE_BASE", total_combos: combos.length, continuation_required: false };
   }
-  const COMBOS_PER_TICK = Math.max(1, Math.min(asInt(input.combos_per_tick, 10), 15));
+  const tickConfig = await getWorkerTickConfig(sql, WORKER_NAME, 10);
+  const COMBOS_PER_TICK = Math.max(1, asInt(input.combos_per_tick, tickConfig.chunk_size_players));
   const comboSlice = combos.slice(comboIndex, comboIndex + COMBOS_PER_TICK);
   const psCfg = cfg.confidence_prior_strength;
   let totalRowsWritten = 0, lastCombo = null;
