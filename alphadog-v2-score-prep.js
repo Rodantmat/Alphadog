@@ -1561,9 +1561,8 @@ async function runBoardPrep(env, input) {
   let batchId = input.prep_batch_id || input.batch_id || null;
 
   const bindings = bindingSummary(env);
-  for (const required of ["REF_DB", "TEAM_DB", "MARKET_DB", "SCORE_DB"]) {
-    if (!bindings[required]) throw new Error(`missing_required_binding_${required}`);
-  }
+  if (!bindings.HYPERDRIVE) throw new Error("missing_required_binding_HYPERDRIVE");
+  env.pg = pgClient(env);
 
   await ensureScoreTables(env);
   let recoveredResume = null;
