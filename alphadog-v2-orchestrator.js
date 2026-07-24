@@ -200,7 +200,7 @@ function translateSqliteToPostgresSql(sqlIn) {
     (m, col, n, unit) => `(${col}::timestamptz + interval '${n} ${unit}')`);
   sql = sql.replace(/datetime\(\s*'now'\s*\)/gi, "now()");
   sql = sql.replace(/datetime\(\s*CURRENT_TIMESTAMP\s*\)/gi, "now()");
-  sql = sql.replace(/datetime\(\s*COALESCE\(([\w.]+),\s*CURRENT_TIMESTAMP\)\s*\)/gi, "COALESCE($1, now())");
+  sql = sql.replace(/datetime\(\s*(COALESCE\([^()]*(?:\([^()]*\)[^()]*)*\))\s*\)/gi, "$1");
   sql = sql.replace(/datetime\(\s*([\w.]+)\s*\)/gi, "$1");
 
   // julianday(a) - julianday(b) day-difference arithmetic (used for elapsed_ms/seconds computations)
