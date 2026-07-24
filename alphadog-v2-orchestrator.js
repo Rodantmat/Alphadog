@@ -1557,15 +1557,41 @@ function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount 
 }
 
 async function ensureMarketScoringFullRunLock(env, parentRow) {
-  await run(env.CONTROL_DB, "INSERT OR IGNORE INTO control_locks (lock_key, lock_flag, updated_at) VALUES (?, 0, CURRENT_TIMESTAMP)", MARKET_SCORING_FULL_RUN_LOCK_KEY);
-  const lock = await first(env.CONTROL_DB,
-    "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key=?",
-    MARKET_SCORING_FULL_RUN_LOCK_KEY
-  );
-  const activeOther = await first(env.CONTROL_DB,
-    "SELECT request_id, chain_id, status, updated_at FROM control_job_queue WHERE job_key='market-scoring-full-run' AND request_id<>? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1",
-    parentRow.request_id
-  );
+  const pg = pgControl(env);
+  try {
+    await pg`INSERT INTO control.locks (lock_key, lock_flag, updated_at) VALUES (${MARKET_SCORING_FULL_RUN_LOCK_KEY}, 0, now()) ON CONFLICT (lock_key) DO NOTHING`;
+    const lockRows = await pg`SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at,
+        CASE WHEN expires_at IS NOT NULL AND expires_at > now() THEN 1 ELSE 0 END AS not_expired
+      FROM control.locks WHERE lock_key=${MARKET_SCORING_FULL_RUN_LOCK_KEY}`;
+    const lock = lockRows[0] || null;
+    const activeOther = await first(env.CONTROL_DB,
+      "SELECT request_id, chain_id, status, updated_at FROM control_job_queue WHERE job_key='market-scoring-full-run' AND request_id<>? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1",
+      parentRow.request_id
+    );
+    if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
+      return { ok: false, reason: "market_scoring_full_run_lock_busy", lock, active_other_parent: activeOther || null };
+    }
+    if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && activeOther) {
+      return { ok: false, reason: "market_scoring_full_run_active_parent_exists", lock, active_other_parent: activeOther };
+    }
+    await pg`UPDATE control.locks SET lock_flag=1, owner_request_id=${parentRow.request_id}, owner_worker_name=${WORKER_NAME},
+        acquired_at=now(), expires_at=now() + interval '45 minutes', updated_at=now()
+      WHERE lock_key=${MARKET_SCORING_FULL_RUN_LOCK_KEY}`;
+    return { ok: true };
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function releaseMarketScoringFullRunLock(env, parentRow) {
+  const pg = pgControl(env);
+  try {
+    await pg`UPDATE control.locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=now()
+      WHERE lock_key=${MARKET_SCORING_FULL_RUN_LOCK_KEY} AND (owner_request_id=${parentRow.request_id} OR owner_request_id IS NULL)`;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
   if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
     return { ok: false, reason: "market_scoring_full_run_lock_busy", lock, active_other_parent: activeOther || null };
   }
