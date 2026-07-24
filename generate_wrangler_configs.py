@@ -185,6 +185,10 @@ def make_config(worker_name, include_services=False):
         cfg["vars"] = {}
         cfg["d1_databases"] = []
         cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
         cfg["services"] = [
             {"binding": "PRIZEPICKS_GITHUB_BOARD_WORKER", "service": "alphadog-v2-prizepicks-github-board"},
             {"binding": "PARLAY_SLEEPER_BOARD_WORKER", "service": "alphadog-v2-parlay-sleeper-board"},
