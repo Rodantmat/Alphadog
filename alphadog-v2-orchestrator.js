@@ -6101,7 +6101,20 @@ function marketFullRunChildPassed(stage, child) {
   return { pass: true, certification: output.certification || output.certification_status || null, status: output.status || null, output };
 }
 
-async function processMarketFullRunJob(env, row, runId, trigger) {
+async function processMarketFullRunJob(rawEnv, row, runId, trigger) {
+  // Real migration wrapper (D1 being deleted, no exceptions) - same pattern as board-full-run and
+  // daily-context-full-run: swap env.CONTROL_DB to Postgres once at the entry point, let the
+  // entire existing call tree beneath this (unchanged) pick it up automatically.
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processMarketFullRunJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processMarketFullRunJobInner(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
   const childRows = await all(env.CONTROL_DB,
