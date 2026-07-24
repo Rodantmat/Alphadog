@@ -1,37 +1,22 @@
 // alphadog-v2-board-runner.js
-// Simple, direct board-full-run pipeline. No queue table, no lock table, no cron-driven ticking.
-// One request runs the whole thing: PrizePicks -> Sleeper -> Underdog -> Score-Prep, calling each
-// stage worker directly via service binding and awaiting the result in sequence.
+// Simple, single-request board-full-run runner.
 //
-// Cloudflare CPU time (the only real platform limit, default 30s / configurable to 5 min) does NOT
-// count time spent waiting on a sub-request or a database query - only actual computation counts.
-// So this worker can safely await long-running sub-calls, and can loop calling the same stage again
-// (with a short pause) if that stage reports it needs another pass, without ever approaching the
-// CPU limit itself. That loop *is* the "worker stops, hands off, cools down, resumes" pattern -
-// no separate relay worker is needed for this size of workload.
+// Design rationale (2026-07-24): the old orchestrator's board-full-run chain used a persistent
+// job-queue table, cross-tick resume state, and a lock table to coordinate work across MANY small
+// invocations. That complexity existed to work around what looked like a Cloudflare execution-time
+// limit. It wasn't a real limit: Cloudflare Workers have UNLIMITED wall-clock time for I/O-bound work
+// (waiting on a database or an API call costs nothing against any real platform limit). Only actual
+// CPU computation is capped, and that cap is configurable up to 5 minutes via wrangler `limits.cpu_ms`.
+// Since PrizePicks/Sleeper/Underdog/score-prep are almost entirely I/O-bound (waiting on GitHub, the
+// Parlay API, and Postgres), they can each run to completion in a single request with no chunking.
 //
-// Kept intentionally free of shared state: no job_queue rows, no lock table. If this is triggered
-// twice at once, worst case is two full runs happening back to back - not corrupted shared state.
+// This worker calls the four existing, already-tested sub-workers directly via service bindings,
+// in plain sequence, in one request. No queue table. No lock table. No cross-request resume state.
+// If you trigger this twice by accident, worst case is two full runs happen back to back - nothing
+// corrupts, because each sub-worker's own writes are idempotent (upserts keyed by natural IDs).
 
-import postgres from "postgres";
-
-const VERSION = "alphadog-v2-board-runner-v1.1.0";
 const WORKER_NAME = "alphadog-v2-board-runner";
-
-function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: true, connect_timeout: 8, connection: { statement_timeout: 20000, idle_in_transaction_session_timeout: 20000 } });
-}
-
-async function log(env, requestId, event, detail) {
-  try {
-    const pg = pgClient(env);
-    try {
-      await pg.unsafe("INSERT INTO control.board_runner_log (request_id, event, detail) VALUES ($1, $2, $3)", [requestId, event, JSON.stringify(detail || {})]);
-    } finally {
-      await pg.end({ timeout: 3 }).catch(() => {});
-    }
-  } catch (_) {}
-}
+const VERSION = "v1.0.0";
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -44,190 +29,136 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function callWorker(binding, bindingName, input) {
-  if (!binding || typeof binding.fetch !== "function") {
-    return { ok: false, data_ok: false, error: `missing_service_binding_${bindingName}`, status: null };
-  }
+async function callStage(binding, bindingName, path, input) {
   const started = Date.now();
+  if (!binding || typeof binding.fetch !== "function") {
+    return {
+      stage: bindingName,
+      ok: false,
+      data_ok: false,
+      error: `missing_service_binding_${bindingName}`,
+      elapsed_ms: Date.now() - started
+    };
+  }
   try {
-    const resp = await binding.fetch("https://internal.alphadog/run", {
+    const resp = await binding.fetch(`https://internal.${bindingName}${path}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
+      body: JSON.stringify(input || {})
     });
-    const status = resp.status;
-    let body = null;
-    try { body = await resp.json(); } catch (_) { body = { ok: false, error: "non_json_response" }; }
-    return { ...body, ok: body && body.ok !== false && status === 200, http_status: status, elapsed_ms: Date.now() - started };
-  } catch (err) {
-    return { ok: false, data_ok: false, error: String(err && err.message ? err.message : err), elapsed_ms: Date.now() - started };
-  }
-}
-
-// Calls a stage once. If it reports continuation_required, calls it again (same worker, fresh
-// invocation, fresh CPU budget) after a short cooldown, up to maxAttempts times, carrying forward
-// whatever resume fields it returned.
-async function runStageUntilDone(binding, bindingName, baseInput, opts = {}) {
-  const maxAttempts = opts.maxAttempts || 40;
-  const cooldownMs = opts.cooldownMs || 400;
-  let attempt = 0;
-  let input = { ...baseInput };
-  let lastResult = null;
-  const attemptLog = [];
-
-  while (attempt < maxAttempts) {
-    attempt += 1;
-    const result = await callWorker(binding, bindingName, input);
-    lastResult = result;
-    attemptLog.push({
-      attempt,
-      ok: !!result.ok,
-      data_ok: result.data_ok !== false,
-      certification: result.certification || null,
-      error: result.error || null,
-      elapsed_ms: result.elapsed_ms
-    });
-
-    if (!result.ok) {
-      // Real failure (not a "needs another pass" signal). Stop retrying blindly - surface it.
-      break;
+    let output;
+    try {
+      output = await resp.json();
+    } catch (parseErr) {
+      output = { ok: false, data_ok: false, error: "non_json_response", parse_error: String(parseErr) };
     }
-
-    const needsContinuation = result.continuation_required === true;
-    if (!needsContinuation) break;
-
-    // Carry forward resume state for the next pass.
-    input = {
-      ...input,
-      prep_batch_id: result.prep_batch_id || result.batch_id || input.prep_batch_id,
-      batch_id: result.batch_id || result.prep_batch_id || input.batch_id,
-      write_offset: result.next_write_offset ?? input.write_offset,
-      score_prep_write_offset: result.next_write_offset ?? input.score_prep_write_offset
+    return {
+      stage: bindingName,
+      ok: !!output.ok,
+      data_ok: !!output.data_ok,
+      http_status: resp.status,
+      certification: output.certification || output.status || null,
+      rows_read: output.rows_read ?? null,
+      rows_written: output.rows_written ?? null,
+      rows_promoted: output.rows_promoted ?? output.promoted_rows_written ?? null,
+      error: output.ok ? null : (output.error || output.certification || "stage_failed"),
+      elapsed_ms: Date.now() - started
     };
-
-    await sleep(cooldownMs);
+  } catch (err) {
+    return {
+      stage: bindingName,
+      ok: false,
+      data_ok: false,
+      error: String(err && err.message ? err.message : err),
+      elapsed_ms: Date.now() - started
+    };
   }
-
-  return { final: lastResult, attempts: attempt, attempt_log: attemptLog };
 }
 
 async function runBoardFullRun(env, input) {
-  const requestId = input.request_id || `board_run_${Date.now()}`;
-  const started = Date.now();
-  const stages = {};
-  await log(env, requestId, "run_started", {});
+  const runId = `board_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const startedAt = nowIso();
+  const stages = [];
 
-  try {
-    // 1. PrizePicks
-    const prizepicks = await runStageUntilDone(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "PRIZEPICKS_GITHUB_BOARD_WORKER",
-      { request_id: `${requestId}_prizepicks`, chain_id: requestId, mode: "board_full_run_prizepicks_refresh" },
-      { maxAttempts: 3, cooldownMs: 2000 });
-    stages.prizepicks = { attempts: prizepicks.attempts, ok: !!(prizepicks.final && prizepicks.final.ok), certification: prizepicks.final && prizepicks.final.certification, error: prizepicks.final && prizepicks.final.error };
-    await log(env, requestId, "stage_done_prizepicks", stages.prizepicks);
+  // Stage 1: PrizePicks (GitHub-sourced). Not last, so a failure here doesn't block the rest -
+  // score-prep will just run on whatever PrizePicks data is already current.
+  const prizepicks = await callStage(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "prizepicks-github-board", "/run", {
+    request_id: `${runId}_prizepicks`, trigger: "board_runner", mode: "board_full_run_prizepicks_refresh"
+  });
+  stages.push(prizepicks);
 
-    // 2. Sleeper
-    const sleeper = await runStageUntilDone(env.PARLAY_SLEEPER_BOARD_WORKER, "PARLAY_SLEEPER_BOARD_WORKER",
-      { request_id: `${requestId}_sleeper`, chain_id: requestId, mode: "board_full_run_sleeper_refresh" },
-      { maxAttempts: 3, cooldownMs: 2000 });
-    stages.sleeper = { attempts: sleeper.attempts, ok: !!(sleeper.final && sleeper.final.ok), certification: sleeper.final && sleeper.final.certification, error: sleeper.final && sleeper.final.error };
-    await log(env, requestId, "stage_done_sleeper", stages.sleeper);
+  // Stage 2: Sleeper
+  const sleeper = await callStage(env.PARLAY_SLEEPER_BOARD_WORKER, "parlay-sleeper-board", "/run", {
+    request_id: `${runId}_sleeper`, trigger: "board_runner", mode: "board_full_run_sleeper_refresh"
+  });
+  stages.push(sleeper);
 
-    // 3. Underdog
-    const underdog = await runStageUntilDone(env.PARLAY_UNDERDOG_BOARD_WORKER, "PARLAY_UNDERDOG_BOARD_WORKER",
-      { request_id: `${requestId}_underdog`, chain_id: requestId, mode: "board_full_run_underdog_refresh" },
-      { maxAttempts: 3, cooldownMs: 2000 });
-    stages.underdog = { attempts: underdog.attempts, ok: !!(underdog.final && underdog.final.ok), certification: underdog.final && underdog.final.certification, error: underdog.final && underdog.final.error };
-    await log(env, requestId, "stage_done_underdog", stages.underdog);
+  // Stage 3: Underdog
+  const underdog = await callStage(env.PARLAY_UNDERDOG_BOARD_WORKER, "parlay-underdog-board", "/run", {
+    request_id: `${runId}_underdog`, trigger: "board_runner", mode: "board_full_run_underdog_refresh"
+  });
+  stages.push(underdog);
 
-    // 4. Score-prep
-    await log(env, requestId, "stage_starting_score_prep", {});
-    const scorePrep = await runStageUntilDone(env.SCORE_PREP_WORKER, "SCORE_PREP_WORKER",
-      { request_id: `${requestId}_score_prep`, chain_id: requestId, mode: "board_prep_enrichment" },
-      { maxAttempts: 15, cooldownMs: 800 });
-    stages.score_prep = {
-      attempts: scorePrep.attempts,
-      ok: !!(scorePrep.final && scorePrep.final.ok),
-      certification: scorePrep.final && scorePrep.final.certification,
-      rows_read: scorePrep.final && scorePrep.final.rows_read,
-      inserted_current_rows: scorePrep.final && scorePrep.final.inserted_current_rows,
-      error: scorePrep.final && scorePrep.final.error
-    };
-    await log(env, requestId, "stage_done_score_prep", stages.score_prep);
-
-    const allOk = stages.prizepicks.ok && stages.sleeper.ok && stages.underdog.ok && stages.score_prep.ok;
-    const output = {
-      ok: allOk,
-      data_ok: allOk,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      request_id: requestId,
-      status: allOk ? "BOARD_FULL_RUN_COMPLETE" : "BOARD_FULL_RUN_PARTIAL_FAILURE",
-      elapsed_ms: Date.now() - started,
-      stages,
-      detail: {
-        prizepicks: prizepicks.final,
-        sleeper: sleeper.final,
-        underdog: underdog.final,
-        score_prep: scorePrep.final
-      },
-      timestamp_utc: nowIso()
-    };
-    await log(env, requestId, "run_complete", { ok: allOk, elapsed_ms: output.elapsed_ms });
-    return output;
-  } catch (err) {
-    await log(env, requestId, "run_exception", { error: String(err && err.stack ? err.stack : err) });
-    return {
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      request_id: requestId,
-      status: "BOARD_FULL_RUN_EXCEPTION",
-      error: String(err && err.message ? err.message : err),
-      stages,
-      elapsed_ms: Date.now() - started,
-      timestamp_utc: nowIso()
-    };
+  // Stage 4: score-prep. Now processes its entire row set in one pass (no more 500-row chunking -
+  // see alphadog-v2-score-prep.js WRITE_ROWS_PER_INVOCATION comment). Loop defensively in case a
+  // future data volume spike ever does require more than one pass, but this should normally be exactly one call.
+  let scorePrep = null;
+  let scorePrepAttempts = 0;
+  const MAX_SCORE_PREP_CALLS = 5; // safety ceiling, not a chunk-size mechanism
+  let scorePrepInput = { request_id: `${runId}_score_prep`, trigger: "board_runner", mode: "board_prep_enrichment" };
+  while (scorePrepAttempts < MAX_SCORE_PREP_CALLS) {
+    scorePrepAttempts += 1;
+    scorePrep = await callStage(env.SCORE_PREP_WORKER, "score-prep", "/run", scorePrepInput);
+    if (scorePrep.ok && !scorePrep.certification?.includes?.("PARTIAL_CONTINUE")) break;
+    if (!scorePrep.ok) break; // real failure, stop and report - don't mask it with silent retries
+    // still partial (unexpected with the new unlimited-row-pass design, but handled just in case)
+    scorePrepInput = { ...scorePrepInput, resume: true };
   }
+  stages.push({ ...scorePrep, attempts: scorePrepAttempts });
+
+  const allOk = stages.every(s => s.ok);
+  const criticalOk = scorePrep && scorePrep.ok; // score-prep is the stage that actually matters most for correctness
+
+  return {
+    ok: allOk,
+    data_ok: criticalOk,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    run_id: runId,
+    started_at: startedAt,
+    finished_at: nowIso(),
+    certification: allOk ? "BOARD_FULL_RUN_COMPLETE" : (criticalOk ? "BOARD_FULL_RUN_PARTIAL_NONCRITICAL_FAILURE" : "BOARD_FULL_RUN_FAILED"),
+    stages
+  };
 }
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const path = url.pathname.replace(/\/$/, "") || "/";
-    const method = request.method.toUpperCase();
+    const path = url.pathname;
+    const method = request.method;
 
-    if (method === "GET" && (path === "/" || path === "/health")) {
+    if (method === "GET" && path === "/health") {
       return jsonResponse({
         ok: true,
-        version: VERSION,
         worker_name: WORKER_NAME,
-        bindings: {
+        version: VERSION,
+        bindings_present: {
           PRIZEPICKS_GITHUB_BOARD_WORKER: !!env.PRIZEPICKS_GITHUB_BOARD_WORKER,
           PARLAY_SLEEPER_BOARD_WORKER: !!env.PARLAY_SLEEPER_BOARD_WORKER,
           PARLAY_UNDERDOG_BOARD_WORKER: !!env.PARLAY_UNDERDOG_BOARD_WORKER,
           SCORE_PREP_WORKER: !!env.SCORE_PREP_WORKER
-        },
-        purpose: "Simple, direct board-full-run: PrizePicks -> Sleeper -> Underdog -> Score-Prep, sequential, no queue, no lock table.",
-        timestamp_utc: nowIso()
+        }
       });
     }
 
     if (method === "POST" && (path === "/run" || path === "/")) {
-      const input = await request.json().catch(() => ({}));
-      const output = await runBoardFullRun(env, input);
-      return jsonResponse(output, output.ok ? 200 : 207);
+      let input = {};
+      try { input = await request.json(); } catch (_) {}
+      const result = await runBoardFullRun(env, input);
+      return jsonResponse(result, result.ok ? 200 : 207);
     }
 
-    return jsonResponse({ ok: false, error: "not_found", path }, 404);
-  },
-
-  async scheduled(event, env, ctx) {
-    const output = await runBoardFullRun(env, { request_id: `board_run_cron_${Date.now()}` });
-    console.log(JSON.stringify(output));
+    return jsonResponse({ ok: false, error: "not_found", worker_name: WORKER_NAME }, 404);
   }
 };
