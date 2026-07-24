@@ -8,10 +8,10 @@ const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.4.0-postgres-r
 
 const HITTER_PACKET_FLUSH_SIZE = 100;
 const PITCHER_PACKET_FLUSH_SIZE = 250;
-const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 350;
-const PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION = 900;
-const HITTER_SOFT_TIMEBOX_MS = 30000;
-const PITCHER_SOFT_TIMEBOX_MS = 30000;
+const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 50000;
+const PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION = 50000;
+const HITTER_SOFT_TIMEBOX_MS = 280000;
+const PITCHER_SOFT_TIMEBOX_MS = 280000;
 
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
 function jsonResponse(body, status = 200) {
