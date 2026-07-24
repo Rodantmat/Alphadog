@@ -3547,6 +3547,20 @@ async function recoverScorePrepFromDbTruth(env, row, input, output, startedAtMs)
     // specific child started - otherwise this is exactly the bug just found live (an old batch
     // from a completely different, much earlier run gets misattributed as the current one).
     const prepBatchId = String(latestBatch.prep_batch_id);
+
+    // Real, root-cause fix (the timing check below is necessary but NOT sufficient - confirmed
+    // live: an unrelated batch from a different run can have max_updated >= childStartedAt purely
+    // by coincidence, causing this function to misattribute someone else's completed work as this
+    // request's own and report a false success while this request's actual work never finished).
+    // Require the batch's own stored request_id to exactly match this child's request_id - real
+    // ownership linkage via the data itself, not a timestamp heuristic.
+    const ownerCheckRows = await pg`
+      SELECT source_json FROM score.board_prep_batches WHERE batch_id=${prepBatchId}`;
+    const ownerRow = ownerCheckRows[0];
+    let ownerRequestId = null;
+    try { ownerRequestId = ownerRow && ownerRow.source_json ? (JSON.parse(String(ownerRow.source_json)).request_id || null) : null; } catch (_) { ownerRequestId = null; }
+    if (!ownerRequestId || String(ownerRequestId) !== String(row.request_id)) return null;
+
     if (childStartedAt) {
       const batchTimeRows = await pg`SELECT MIN(created_at) AS min_created, MAX(updated_at) AS max_updated FROM score.board_prepared_current WHERE prep_batch_id=${prepBatchId}`;
       const bt = batchTimeRows[0];
