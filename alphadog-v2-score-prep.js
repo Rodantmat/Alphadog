@@ -1574,6 +1574,11 @@ async function runBoardPrep(env, input) {
   env.pg = pgClient(env);
 
   await ensureScoreTables(env);
+  try {
+    await env.pg.unsafe(
+      "UPDATE score.board_prep_batches SET status='ABANDONED_STALE_AUTO_CLEANUP', finished_at=now(), updated_at=now() WHERE finished_at IS NULL AND updated_at < now() - interval '3 minutes'"
+    );
+  } catch (_) {}
   let recoveredResume = null;
   const isGenuinelyFreshStart = !batchId;
   if (!batchId) {
