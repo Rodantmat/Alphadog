@@ -558,16 +558,17 @@ async function fetchParlayProps(env, input = {}, config = modeConfig(input)) {
   return { ok, external_calls: allProbeResults.length, http_status: httpStatus, response_preview: responsePreview, parlay_total_fetch_budget_ms: effectiveFetchBudgetMs, parlay_fetch_timeout_ms: PARLAY_FETCH_TIMEOUT_MS, endpoint, probe_strategy: { split_book_probe_active: true, broad_probe_default_enabled: false, props_endpoint_used: true, odds_endpoint_probe_used: probes.some(p => p.endpoint_kind === "odds"), per_book_fallback_used: fallbackResults.length > 0, prop_family: config.prop_family, owned_books_excluded_from_decision: PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION, pickem_books_comparison: PARLAY_PICKEM_BOOKS_COMPARISON, pickem_books_quarantine: PARLAY_PICKEM_BOOKS_QUARANTINE }, pagination: { pages, max_pages: PARLAY_MAX_PAGES, deduped_rows: unique.length, book_counts: bookCounts, book_quality_counts: bookQualityCounts, missing_core_books_after_split_and_fallback: PARLAY_CORE_FALLBACK_BOOKS.filter(b => !bookCounts[b]) }, detected_rows_path: pages[0] && pages[0].detected_rows_path || null, detected_array_candidates: allCandidates.slice(0, 12), rows_seen: unique.length, normalized_player_prop_rows: normalized.length, normalized_primary_non_owned_rows: primaryBookRows, rows: unique.slice(0, MAX_PARLAY_ROWS), normalized };
 }
 async function loadPreparedRows(pgClient, boardWindowDates, config = modeConfig()) {
-  return pgClient.unsafe(`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id, player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id, team, opponent, team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date::text AS official_date, source_start_time, row_payload_json
+  const nowIso = new Date().toISOString();
+  return pgClient`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id, player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id, team, opponent, team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date::text AS official_date, source_start_time, row_payload_json
     FROM score.board_prepared_current
     WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL
-      AND official_date::text IN (${boardWindowDates.map((_, i) => "$" + (i + 1) + "::text").join(",")})
-      AND official_game_time_utc > $${boardWindowDates.length + 1}::timestamptz
-      AND canonical_prop_key IN (${config.prop_keys.map((_, i) => "$" + (boardWindowDates.length + 2 + i) + "::text").join(",")})
+      AND official_date::text = ANY(${boardWindowDates})
+      AND official_game_time_utc > ${nowIso}
+      AND canonical_prop_key = ANY(${config.prop_keys})
       AND player_name NOT LIKE '% + %'
     ORDER BY official_game_time_utc, official_game_pk, source_key, canonical_prop_key, player_name, line_value
-    LIMIT ${MAX_PREPARED_ROWS}`, [...boardWindowDates, new Date().toISOString(), ...config.prop_keys]);
+    LIMIT ${MAX_PREPARED_ROWS}`;
 }
 function lineEqual(a, b) { const na = numberOrNull(a); const nb = numberOrNull(b); if (na === null || nb === null) return false; return Math.abs(na - nb) < 0.001; }
 function mapPush(map, key, row) { if (!key || key.includes("undefined")) return; if (!map.has(key)) map.set(key, []); map.get(key).push(row); }
