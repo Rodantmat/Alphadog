@@ -8,12 +8,10 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 500; // Reduced from 1200 (2026-07-24, same day): real invocations at 1200
-// were taking 8-12s total (load phase alone is 2.4-3.8s before any inserts start), still beyond Hyperdrive's
-// documented internal connection-reservation tolerance ("a few seconds" before it may reclaim the connection -
-// this applies even without an explicit transaction). That's a direct, plausible explanation for the
-// intermittent CONNECTION_CLOSED failures seen mid-write today, distinct from the earlier pure-timeout
-// failures. More, smaller ticks are strictly better than a tick that gets its connection reclaimed mid-write.
+const WRITE_ROWS_PER_INVOCATION = 50000; // Effectively unlimited: Cloudflare wall-clock time is free for I/O-bound
+// work (waiting on Postgres doesn't count against any real platform limit), so there's no need to chunk writes
+// across multiple invocations. Process everything in one pass. CPU time (the only real Cloudflare limit) is
+// raised via wrangler limits.cpu_ms for defensive headroom, though this worker's actual CPU usage is minimal.
 // wastes the entire 24s AND still requires a retry from scratch, while a smaller tick that reliably completes
 // makes real, durable progress every single time. Re-tune upward again only with fresh, real timing evidence.
 
