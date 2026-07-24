@@ -483,6 +483,57 @@ is known — VERIFY DIRECTLY, do not assume.**
 
 ---
 
+## 2C. WHAT'S DONE — THE FIRST REAL 6AM RUN, A REAL INCIDENT, AND CASCADE GUARDS (this session, 2026-07-23/24)
+
+**The 6:00 AM Pacific scheduler from Section 2B fired for real for the first time** —
+confirmed directly (`postgres_full_run_2026_07_23_0600_PT`, created `2026-07-23 13:00:02 UTC`
+= 6:00:02 AM PDT). The chain ran, but **pitcher-game-logs silently stopped at 361 of 760
+players while classification and baseline advanced anyway using the incomplete data** — found
+only because the user pushed to verify *why* pitcher-metrics hadn't advanced, rather than
+accepting the honest-looking "waiting on upstream" explanation given at first.
+
+**Root cause #1, fixed**: `alphadog-v2-base-pitcher-game-logs.js`'s mid-tick response never
+included `continuation_required` at all (not `false` — absent) even when real work remained.
+The orchestrator's completion check looks for `continuation_required === true`; with the field
+simply missing, it silently treated a 47%-done tick as finished. Fixed in both `base_backfill`
+and `delta_update` modes. The sibling `hitter-game-logs.js` already did this correctly, which is
+exactly why only the pitcher side produced incomplete data.
+
+**Root cause #2, the deeper structural gap the user identified**: nothing downstream was
+independently verifying an upstream layer's ACTUAL batch completion — every layer trusted the
+previous layer's watermark/date-presence alone. Fixing root cause #1 closes this one incident;
+it doesn't close the general risk. Real cascade guards were built to close the general risk:
+
+- **Metrics** (`hitter-metrics.js` / `pitcher-metrics.js`): `isUpstreamMiningComplete()` — won't
+  advance if any `game_log_batches` row is non-terminal, regardless of `MAX(game_date)`.
+- **Classification** (`classification-v5.js`): `isUpstreamMetricsComplete()` — won't advance if
+  either hitter or pitcher metrics has a non-terminal batch. Two more REAL bugs found and fixed
+  in the same code while building this: (1) date comparison used the MAXIMUM of hitter/pitcher
+  latest dates instead of the minimum (only needed the faster source, ignored the slower one —
+  an independent, structural cause of the same incident class), and (2) a JS-side Date/string
+  comparison bug that intermittently failed to advance even with every value manually confirmed
+  correct via direct SQL — fixed by moving the ENTIRE date comparison into one SQL query
+  (`LEAST(...)`, boolean computed by Postgres itself), never comparing raw dates in JS again.
+- **Baseline** (`base-baseline.js`): `isUpstreamClassificationComplete()` — won't consume
+  `tier_change_signal` rows if classification's batch is non-terminal; unconsumed signals stay
+  safely unconsumed (no data loss) until classification is genuinely done.
+
+**All three gates tested with real block-then-restore round trips** — confirmed each one blocks
+with the correct `blocked_reason` when the upstream is genuinely non-terminal, confirmed the
+downstream watermark/signal genuinely does not move while blocked, and confirmed each one
+correctly advances again once the upstream is restored to terminal. Full detail, including the
+exact bugs and fixes, is in `ALPHADOG_DOS_AND_DONTS.md` PART 5 — read it before touching any of
+these three files.
+
+**A real, reproducible testing gotcha to know about**: after changing a row's state via the
+admin SQL bridge, the very next worker invocation sometimes still sees the OLD value for a real,
+measurable ~20-30 second window, even though a direct SQL read confirms the write already
+committed (most consistent with Hyperdrive's own read-consistency behavior across separate
+connections). Wait at least 20-30 seconds between a state change and the next test trigger
+before concluding a gate is broken.
+
+---
+
 ## 3. WHAT'S NOT DONE — EVERYTHING ELSE
 
 **Section 2B above covers what WAS completed this session (the full 13-stage daily delta chain
