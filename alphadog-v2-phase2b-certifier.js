@@ -453,12 +453,12 @@ async function runMatrixBuilder(request, env, pgClient) {
   const existingPrepared = new Set(existingRows.map(r => String(r.prepared_row_id || "")).filter(Boolean));
   const remainingPrepared = prepared.filter(r => !existingPrepared.has(String(r.prepared_row_id || "")));
 
-  const requestedChunkSize = Number(input.chunk_size || 75);
-  const chunkSize = Math.max(25, Math.min(75, Number.isFinite(requestedChunkSize) ? requestedChunkSize : 75));
-  const maxChunksPerInvocationRaw = Number(input.max_chunks_per_invocation || input.matrix_max_chunks_per_invocation || 40);
-  const maxChunksPerInvocation = Math.max(1, Math.min(40, Number.isFinite(maxChunksPerInvocationRaw) ? maxChunksPerInvocationRaw : 40));
-  const maxRuntimeMsRaw = Number(input.max_runtime_ms || input.matrix_max_runtime_ms || 27000);
-  const deadlineMs = Date.now() + Math.max(12000, Math.min(27000, Number.isFinite(maxRuntimeMsRaw) ? maxRuntimeMsRaw : 27000));
+  const requestedChunkSize = Number(input.chunk_size || 500);
+  const chunkSize = Math.max(25, Math.min(2000, Number.isFinite(requestedChunkSize) ? requestedChunkSize : 500));
+  const maxChunksPerInvocationRaw = Number(input.max_chunks_per_invocation || input.matrix_max_chunks_per_invocation || 200);
+  const maxChunksPerInvocation = Math.max(1, Math.min(500, Number.isFinite(maxChunksPerInvocationRaw) ? maxChunksPerInvocationRaw : 200));
+  const maxRuntimeMsRaw = Number(input.max_runtime_ms || input.matrix_max_runtime_ms || 260000);
+  const deadlineMs = Date.now() + Math.max(12000, Math.min(260000, Number.isFinite(maxRuntimeMsRaw) ? maxRuntimeMsRaw : 260000));
   let processedChunks = 0;
 
   for (const chunkRows of arrChunks(remainingPrepared, chunkSize)) {
