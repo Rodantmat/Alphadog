@@ -210,7 +210,7 @@ function translateSqliteToPostgresSql(sqlIn) {
 
   // ? positional placeholders -> $1, $2, ... (do this LAST, after all structural rewrites above)
   let i = 0;
-  sql = sql.replace(/\?/g, () => `${++i}`);
+  sql = sql.replace(/\?/g, () => "$" + (++i));
 
   return sql;
 }
