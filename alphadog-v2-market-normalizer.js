@@ -15,7 +15,7 @@ const MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS = 8000;
 const MARKET_TEAMS_EXPANDED_DEFAULT_MAX_EVENTS = 1;
 const MARKET_TEAMS_EXPANDED_DEFAULT_CONCURRENCY = 2;
 
-function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
+function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 }); }
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function safeText(value, max = 900) {
