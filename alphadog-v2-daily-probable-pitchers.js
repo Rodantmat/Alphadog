@@ -9,7 +9,7 @@ const MAX_PEOPLE_FALLBACK_CALLS = 250;
 const MAX_LIVE_FEED_CALLS = 10;
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 });
 }
 function toPgPlaceholders(sqlText) {
   let i = 0;
