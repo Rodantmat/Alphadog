@@ -90,7 +90,7 @@ async function runScoringFullRun(env, input) {
   const stages = [];
 
   for (const s of STAGES) {
-    const result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, trigger: "scoring_runner" });
+    const result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, chain_id: runId, trigger: "scoring_runner" });
     stages.push(result);
     // Real dependency chain: if a stage fails, later stages will very likely fail too since they
     // read what this stage wrote. Keep going anyway so the full picture of what broke is visible
