@@ -447,10 +447,20 @@ async function isDateCertifiedComplete(sql, officialDate) {
   if (!r || Number(r.total) === 0) return { ready: false, reason: "NO_CALENDAR_DATA_FOR_DATE" };
   return { ready: Number(r.total) === Number(r.ready || 0), reason: null, total: Number(r.total), ready_games: Number(r.ready || 0) };
 }
+async function isUpstreamMiningComplete(sql) {
+  // Real cascade guard: verifies no pitcher game-log mining batch is stuck mid-progress before
+  // metrics trusts MAX(game_date) as proof a date is fully, safely available. This is the exact
+  // gap that let pitcher-metrics advance to a date using only ~47% of that day's pitchers mined.
+  const rows = await sql`SELECT COUNT(*)::int AS c, array_agg(batch_id) FILTER (WHERE true) AS batch_ids, array_agg(status) FILTER (WHERE true) AS statuses FROM stats_pitcher.game_log_batches WHERE status NOT IN ('COMPLETED_PROMOTED_CLEANED')`;
+  const r = rows[0];
+  return { ready: Number(r.c) === 0, non_terminal_batch_count: Number(r.c), non_terminal_batch_ids: r.batch_ids || [], non_terminal_statuses: r.statuses || [] };
+}
 async function getNextDeltaDay(sql, season) {
   const baseBatch = await sql`SELECT delta_watermark_date FROM stats_pitcher.metric_batches WHERE batch_id='pitcher_metrics_base_backfill_singleton' LIMIT 1`;
   const watermark = baseBatch[0] ? baseBatch[0].delta_watermark_date : null;
   if (!watermark) return { ok: false, reason: "NO_WATERMARK_BASE_NOT_COMPLETED" };
+  const miningGate = await isUpstreamMiningComplete(sql);
+  if (!miningGate.ready) return { ok: true, no_data_yet: true, watermark, blocked_reason: "UPSTREAM_PITCHER_GAME_LOG_MINING_NOT_TERMINAL", mining_gate: miningGate };
   const latestRows = await sql`SELECT MAX(game_date) AS d FROM stats_pitcher.game_logs WHERE season=${season}`;
   const latestAvailable = latestRows[0].d;
   const nextDateRows = await sql`SELECT (${watermark}::date + interval '1 day')::date AS d`;
