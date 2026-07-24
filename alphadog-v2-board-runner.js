@@ -13,8 +13,25 @@
 // Kept intentionally free of shared state: no job_queue rows, no lock table. If this is triggered
 // twice at once, worst case is two full runs happening back to back - not corrupted shared state.
 
-const VERSION = "alphadog-v2-board-runner-v1.0.0";
+import postgres from "postgres";
+
+const VERSION = "alphadog-v2-board-runner-v1.1.0";
 const WORKER_NAME = "alphadog-v2-board-runner";
+
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: true, connect_timeout: 8, connection: { statement_timeout: 20000, idle_in_transaction_session_timeout: 20000 } });
+}
+
+async function log(env, requestId, event, detail) {
+  try {
+    const pg = pgClient(env);
+    try {
+      await pg.unsafe("INSERT INTO control.board_runner_log (request_id, event, detail) VALUES ($1, $2, $3)", [requestId, event, JSON.stringify(detail || {})]);
+    } finally {
+      await pg.end({ timeout: 3 }).catch(() => {});
+    }
+  } catch (_) {}
+}
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
