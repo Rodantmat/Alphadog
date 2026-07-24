@@ -10779,7 +10779,17 @@ async function processDailyProbablePitchersJobInner(env, row, runId, trigger) {
 }
 
 
-async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
+async function processDailyPlayerAvailabilityJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyPlayerAvailabilityJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyPlayerAvailabilityJobInner(env, row, runId, trigger) {
   if (!env.DAILY_PLAYER_AVAILABILITY_WORKER || typeof env.DAILY_PLAYER_AVAILABILITY_WORKER.fetch !== "function") {
     const output = {
       ok: false,
