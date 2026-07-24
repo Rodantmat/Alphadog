@@ -126,6 +126,7 @@
     "alphadog-v2-gbdt-auto-trigger",
     "alphadog-v2-orchestrator",
     "alphadog-v2-board-runner",
-    "alphadog-v2-daily-context-runner"
+    "alphadog-v2-daily-context-runner",
+    "alphadog-v2-market-runner"
   ]
 }
