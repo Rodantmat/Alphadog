@@ -203,6 +203,29 @@ def make_config(worker_name, include_services=False):
         # of the single master runner's schedule once board/daily-context/market/scoring are all
         # chained together.
         # cfg["triggers"] = {"crons": ["*/5 * * * *"]}
+    if worker_name == "alphadog-v2-daily-context-runner":
+        # New, deliberately simple standalone runner for daily-context-full-run only, same design
+        # as board-runner: no queue table, no lock table, just sequential awaited service-binding
+        # calls to the 9-stage sequence (daily-certifier is called twice, first pass and final pass).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "DAILY_CERTIFIER_WORKER", "service": "alphadog-v2-daily-certifier"},
+            {"binding": "DAILY_PROBABLE_PITCHERS_WORKER", "service": "alphadog-v2-daily-probable-pitchers"},
+            {"binding": "DAILY_LINEUPS_WORKER", "service": "alphadog-v2-daily-lineups"},
+            {"binding": "DAILY_PLAYER_AVAILABILITY_WORKER", "service": "alphadog-v2-daily-player-availability"},
+            {"binding": "DAILY_WEATHER_WORKER", "service": "alphadog-v2-daily-weather"},
+            {"binding": "DAILY_BULLPEN_AVAILABILITY_WORKER", "service": "alphadog-v2-daily-bullpen-availability"},
+            {"binding": "DAILY_SCHEDULE_WORKER", "service": "alphadog-v2-daily-schedule"},
+            {"binding": "DAILY_USAGE_PULSE_WORKER", "service": "alphadog-v2-daily-usage-pulse"},
+        ]
+        # No cron yet - testing via direct run_job trigger first, same lesson learned from
+        # board-runner (avoid overlapping runs fighting over connections).
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
