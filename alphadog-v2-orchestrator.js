@@ -1051,10 +1051,12 @@ async function ensureBoardFullRunLock(env, parentRow) {
         CASE WHEN expires_at IS NOT NULL AND expires_at > now() THEN 1 ELSE 0 END AS not_expired
       FROM control.locks WHERE lock_key=${BOARD_FULL_RUN_LOCK_KEY}`;
     const lock = lockRows[0] || null;
-    const activeOther = await first(env.CONTROL_DB,
-      "SELECT request_id, chain_id, status, updated_at FROM control_job_queue WHERE job_key='board-full-run' AND request_id<>? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1",
-      parentRow.request_id
-    );
+    const activeOtherRows = await pg`
+      SELECT request_id, chain_id, status, updated_at FROM control.job_queue
+      WHERE job_key='board-full-run' AND request_id<>${parentRow.request_id}
+        AND status IN ('pending','running','partial_continue') AND finished_at IS NULL
+      ORDER BY created_at DESC LIMIT 1`;
+    const activeOther = activeOtherRows[0] || null;
     if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
       return { ok: false, reason: "board_full_run_lock_busy", lock, active_other_parent: activeOther || null };
     }
