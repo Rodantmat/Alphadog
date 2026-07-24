@@ -19,7 +19,7 @@ const RETENTION_TIMEZONE = "America/Los_Angeles";
 const RETENTION_WINDOW_LABEL = "today_and_tomorrow";
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 });
 }
 
 function normalizeMlbOrigin(raw) {
