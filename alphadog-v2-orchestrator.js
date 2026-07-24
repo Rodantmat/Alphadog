@@ -160,7 +160,8 @@ const PG_CONTROL_TABLE_PK = {
   control_job_queue: "request_id",
   control_job_runs: "run_id",
   control_worker_run_log: "log_id",
-  control_locks: "lock_key"
+  control_locks: "lock_key",
+  control_system_state: "state_key"
 };
 
 function translateSqliteToPostgresSql(sqlIn) {
