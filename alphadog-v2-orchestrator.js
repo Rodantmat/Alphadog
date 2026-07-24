@@ -19542,6 +19542,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     for (let i = 0; i < limit; i++) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
+      await renewLock(env, owner);
       if (result.status === "no_due_jobs") break;
       // v0.2.146: Do not break after Daily Context parent enqueues a child.
       // The next loop must hot-drain the due same-chain child or parent recheck.
