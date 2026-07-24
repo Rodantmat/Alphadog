@@ -247,6 +247,28 @@ def make_config(worker_name, include_services=False):
             {"binding": "MARKET_LINE_SHAPE_CLASSIFIER_WORKER", "service": "alphadog-v2-market-line-shape-classifier"},
         ]
         # No cron yet - testing via direct run_job trigger first.
+    if worker_name == "alphadog-v2-scoring-runner":
+        # New, deliberately simple standalone runner for scoring-full-run only, same design as
+        # the other three runners: no queue table, no lock table, just sequential awaited
+        # service-binding calls through the 9-stage dependency chain (scoring-full-run-certifier
+        # called twice, prop-factor-miner called twice for hitter then pitcher).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
+            {"binding": "PROP_FACTOR_MINER_WORKER", "service": "alphadog-v2-phase2b-recent-form"},
+            {"binding": "MATRIX_BUILDER_WORKER", "service": "alphadog-v2-phase2b-certifier"},
+            {"binding": "ENRICHMENT_ENGINE_WORKER", "service": "alphadog-v2-phase2a-run-environment"},
+            {"binding": "HIT_PROBABILITY_BOARD_WORKER", "service": "alphadog-v2-phase3c-certifier"},
+            {"binding": "SCORING_ENGINE_WORKER", "service": "alphadog-v2-phase3a-certifier"},
+            {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
+        ]
+        # No cron yet - testing via direct run_job trigger first.
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
