@@ -433,8 +433,15 @@ async function logsPayload(env) {
 
 async function acquireLock(env, owner) {
   await ensureRows(env);
-  const lock = await first(env.CONTROL_DB, "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key='GLOBAL_ORCHESTRATOR'");
-  if (lock && Number(lock.lock_flag) === 1 && Number(lock.not_expired) === 1) {
+  const lock = await first(env.CONTROL_DB, "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired, CASE WHEN updated_at IS NOT NULL AND datetime(updated_at) > datetime('now','-90 seconds') THEN 1 ELSE 0 END AS recently_renewed FROM control_locks WHERE lock_key='GLOBAL_ORCHESTRATOR'");
+  // Real fix (found live, twice): a fixed-TTL lock with no renewal can be stuck for its full
+  // nominal expiry (5 min) if the holder gets killed by the platform mid-execution (CPU/wall-clock
+  // limit on a hanging call) rather than throwing a catchable exception - that bypasses every
+  // try/catch/finally in application code, so nothing releases it. A lock is only treated as
+  // genuinely held if it's BOTH not_expired AND has been renewed within the last 90 seconds;
+  // an actively-processing tick renews well within that window (see renewLock below), so this
+  // only reclaims locks that have gone quiet, not ones doing real, ongoing work.
+  if (lock && Number(lock.lock_flag) === 1 && Number(lock.not_expired) === 1 && Number(lock.recently_renewed) === 1) {
     return { ok: false, reason: "lock_busy", lock };
   }
 
