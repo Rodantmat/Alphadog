@@ -299,13 +299,25 @@ async function getNextDeltaDay(sql) {
   }
   const metricsGate = await isUpstreamMetricsComplete(sql);
   if (!metricsGate.ready) return { ok: true, no_data_yet: true, watermark, blocked_reason: "UPSTREAM_METRICS_NOT_TERMINAL", metrics_gate: metricsGate };
-  const hLatest = await sql`SELECT MAX(game_date) AS d FROM stats_hitter.game_logs WHERE season=${DEFAULT_SEASON}`;
-  const pLatest = await sql`SELECT MAX(game_date) AS d FROM stats_pitcher.game_logs WHERE season=${DEFAULT_SEASON}`;
-  const bothDates = [hLatest[0].d, pLatest[0].d].filter(Boolean).sort();
-  const latestAvailable = bothDates.length === 2 ? bothDates[0] : null;
-  const nextDateRows = await sql`SELECT (${watermark}::date + interval '1 day')::date AS d`;
-  const nextDate = nextDateRows[0].d;
-  if (!latestAvailable || nextDate > latestAvailable) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
+  // Real fix: entire date comparison done in one SQL round-trip (next_date_ready boolean computed
+  // by Postgres itself) rather than pulling dates into JS and comparing there, where a raw column
+  // value and a computed CAST expression can serialize inconsistently through the driver and cause
+  // a silent, hard-to-diagnose comparison bug.
+  const cmp = await sql`
+    SELECT
+      (${watermark}::date + interval '1 day')::date AS next_date,
+      LEAST(
+        (SELECT MAX(game_date) FROM stats_hitter.game_logs WHERE season=${DEFAULT_SEASON}),
+        (SELECT MAX(game_date) FROM stats_pitcher.game_logs WHERE season=${DEFAULT_SEASON})
+      ) AS latest_available,
+      ((${watermark}::date + interval '1 day')::date) <= LEAST(
+        (SELECT MAX(game_date) FROM stats_hitter.game_logs WHERE season=${DEFAULT_SEASON}),
+        (SELECT MAX(game_date) FROM stats_pitcher.game_logs WHERE season=${DEFAULT_SEASON})
+      ) AS next_date_ready
+  `;
+  const nextDate = cmp[0].next_date;
+  const latestAvailable = cmp[0].latest_available;
+  if (!latestAvailable || !cmp[0].next_date_ready) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
   const completeness = await isDateCertifiedComplete(sql, nextDate);
   if (!completeness.ready) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable, blocked_reason: completeness.reason || "GAMES_NOT_YET_FINAL_OR_EXCEPTION", calendar_check: completeness };
   return { ok: true, no_data_yet: false, watermark, next_date: nextDate, latest_available: latestAvailable, calendar_check: completeness };
