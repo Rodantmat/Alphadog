@@ -106,8 +106,8 @@ async function pruneProbeWindow(pgClient, boardWindowDates, slateWindowKey) {
   const tables = ["context_probe_game_odds", "context_probe_player_props", "context_probe_event_map", "context_probe_coverage", "context_probe_issues", "context_probe_book_market_status", "context_probe_game_market_summary", "context_probe_game_team_market_expansion"];
   const deleted = {};
   for (const table of tables) {
-    await pgClient.unsafe(`DELETE FROM market.${table} WHERE slate_window_key <> $1 OR official_date NOT IN (${boardWindowDates.map((_, i) => `$${i + 2}`).join(",")})`, [slateWindowKey, ...boardWindowDates]);
-    await pgClient.unsafe(`DELETE FROM market.${table} WHERE slate_window_key = $1`, [slateWindowKey]);
+    await pgClient.unsafe(`DELETE FROM market.${table} WHERE slate_window_key <> $1::text OR official_date NOT IN (${boardWindowDates.map((_, i) => `${i + 2}::text`).join(",")})`, [slateWindowKey, ...boardWindowDates]);
+    await pgClient.unsafe(`DELETE FROM market.${table} WHERE slate_window_key = $1::text`, [slateWindowKey]);
     deleted[table] = "pruned_outside_board_window_and_replaced_current_window";
   }
   await pgClient`DELETE FROM market.context_probe_batches WHERE slate_window_key <> ${slateWindowKey}`;
