@@ -6,7 +6,7 @@
 // cron-dependent) or by its own cron trigger once the schedule is finalized.
 
 const WORKER_NAME = "alphadog-v2-daily-context-runner";
-const VERSION = "v1.0.0";
+const VERSION = "v1.0.1";
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
