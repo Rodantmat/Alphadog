@@ -1660,6 +1660,20 @@ async function runBoardParseStageCertify(env, input = {}) {
   const started = Date.now();
   const requestId = input.request_id || null;
   const chainId = input.chain_id || null;
+  // Defensive, independent safety-net cleanup (2026-07-24): the individual raw board table must
+  // never accumulate stale batches - only the current run's data belongs here (the PREPPED board
+  // downstream in score-prep is what gets permanently retained, not this raw staging table). The
+  // normal promotion-time cleanup only ever compares against its own batch_id, so a single failed
+  // cleanup transaction anywhere creates a permanent orphan nothing else will ever remove. This
+  // runs independently of the main flow's success/failure and can never itself block a run.
+  try {
+    const cleanupClient = pgClient(env);
+    try {
+      await cleanupClient.unsafe("DELETE FROM market.prizepicks_board_current WHERE source_key=$1 AND updated_at < now() - interval '10 minutes'", [SOURCE_KEY]);
+    } finally {
+      await cleanupClient.end({ timeout: 1 });
+    }
+  } catch (_) { /* best-effort, never blocks the real run */ }
   const schema = await validateWriteSchema(env);
   if (!schema.ok) {
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "blocked_schema_mismatch", certification: "SCHEMA_NOT_SAFE_TO_PROMOTE", schema, rows_read: 0, rows_staged: 0, rows_written: 0, external_calls_performed: 0, error: "MARKET_DB schema is missing required v0.1.3 staging/current-board promotion columns. Stop and patch schema only after review.", timestamp_utc: nowUtc() };
