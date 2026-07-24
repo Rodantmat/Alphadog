@@ -12055,7 +12055,17 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
 }
 
 
-async function processDailyContextCertifierJob(env, row, runId, trigger) {
+async function processDailyContextCertifierJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyContextCertifierJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyContextCertifierJobInner(env, row, runId, trigger) {
   if (!env.DAILY_CERTIFIER_WORKER || typeof env.DAILY_CERTIFIER_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"DAILY_CONTEXT_CERTIFIER_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires DAILY_CERTIFIER_WORKER service binding. Do not generic-dispatch this worker." };
     await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_context_certifier_service_binding', 'DAILY_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
