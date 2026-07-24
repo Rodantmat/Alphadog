@@ -343,6 +343,12 @@ async function toolRunJob(env, args) {
     // delta_update-style periodic jobs should keep going through the orchestrator.
     body = { mode: job, ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal/run";
+  } else if (bindingName === "BOARD_RUNNER_WORKER") {
+    // Direct, on-demand call to the new standalone board-full-run worker's /run endpoint.
+    // No queue table, no lock table involved - triggers the exact same code path its own
+    // cron trigger calls, just synchronously and on demand instead of waiting for a schedule.
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.board-runner/run";
   } else {
     body = {
       job,
