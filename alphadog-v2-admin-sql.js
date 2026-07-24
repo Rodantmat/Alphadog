@@ -353,6 +353,10 @@ async function toolRunJob(env, args) {
     // Same pattern as BOARD_RUNNER_WORKER, for the new standalone daily-context-full-run worker.
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.daily-context-runner/run";
+  } else if (bindingName === "MARKET_RUNNER_WORKER") {
+    // Same pattern, for the new standalone market-full-run worker.
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.market-runner/run";
   } else {
     body = {
       job,
