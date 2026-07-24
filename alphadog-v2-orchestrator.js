@@ -16321,7 +16321,17 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
-async function processScorePrepJob(env, row, runId, trigger) {
+async function processScorePrepJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processScorePrepJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processScorePrepJobInner(env, row, runId, trigger) {
   if (!env.SCORE_PREP_WORKER || typeof env.SCORE_PREP_WORKER.fetch !== "function") {
     const output = {
       ok: false,
