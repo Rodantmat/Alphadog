@@ -12568,8 +12568,6 @@ async function requeueDailyContextStaleChild(env, parentRow, stage, child, stage
   );
   return output;
 }
-  return output;
-}
 
 async function recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger) {
   if (!env || !env.CONTROL_DB) return { recovered: 0, checked: 0, reason: "missing_db_binding" };
