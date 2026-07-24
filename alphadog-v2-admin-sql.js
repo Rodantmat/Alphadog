@@ -323,7 +323,7 @@ async function toolRunJob(env, args) {
       return { ok: false, error: String(err && err.message ? err.message : err), elapsed_ms: Date.now() - started };
     }
   }
-  const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER, BASE_HITTER_GAME_LOGS_WORKER: env.BASE_HITTER_GAME_LOGS_WORKER, BOARD_RUNNER_WORKER: env.BOARD_RUNNER_WORKER, DAILY_CONTEXT_RUNNER_WORKER: env.DAILY_CONTEXT_RUNNER_WORKER };
+  const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER, BASE_HITTER_GAME_LOGS_WORKER: env.BASE_HITTER_GAME_LOGS_WORKER, BOARD_RUNNER_WORKER: env.BOARD_RUNNER_WORKER, DAILY_CONTEXT_RUNNER_WORKER: env.DAILY_CONTEXT_RUNNER_WORKER, MARKET_RUNNER_WORKER: env.MARKET_RUNNER_WORKER };
   const bindingName = target && bindingMap[target] !== undefined ? target : "CONTROL_ROOM";
   const binding = bindingMap[bindingName];
   if (!binding) {
