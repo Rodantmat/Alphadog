@@ -1347,6 +1347,19 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
 }
 
 async function processBoardFullRunJob(env, row, runId, trigger) {
+  // Real migration wrapper (D1 being deleted, no exceptions) - same pattern as
+  // processDailyContextFullRunJob: swap env.CONTROL_DB to Postgres once at the entry point,
+  // let the entire existing call tree beneath this (unchanged) pick it up automatically.
+  const pg = pgControl(env);
+  const pgEnv = { ...env, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processBoardFullRunJobInner(pgEnv, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processBoardFullRunJobInner(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
   const lock = await ensureBoardFullRunLock(env, row);
