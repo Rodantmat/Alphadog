@@ -17936,6 +17936,15 @@ async function processOneUnlocked(env, trigger) {
   }
 
   if (!row) {
+    const pgClaim = pgControl(env);
+    try {
+      row = await pgClaimNextDueJob(pgClaim);
+    } finally {
+      await pgClaim.end({ timeout: 1 }).catch(() => {});
+    }
+  }
+
+  if (!row) {
     row = await first(env.CONTROL_DB,
       "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
     );
