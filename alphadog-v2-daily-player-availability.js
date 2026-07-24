@@ -13,7 +13,7 @@ const WRITE_BATCH_ROW_LIMIT = 500;
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL"];
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 });
 }
 
 function nowUtc() { return new Date().toISOString(); }
