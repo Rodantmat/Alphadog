@@ -4,7 +4,7 @@ const WORKER_NAME = "alphadog-v2-market-certifier";
 const VERSION = "alphadog-v2-market-certifier-v0.2.0-postgres-rewire";
 const JOB_KEY = "market-certifier";
 
-function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
+function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 }); }
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function jsonResponse(body, status = 200) {
