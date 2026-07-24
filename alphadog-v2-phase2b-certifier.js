@@ -8,7 +8,7 @@ const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.3.0-postgres-rew
 
 const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo"]);
 
-function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
+function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8, connection: { statement_timeout: 240000, idle_in_transaction_session_timeout: 240000 } }); }
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
