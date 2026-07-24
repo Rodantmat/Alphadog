@@ -8,10 +8,12 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 1200; // Reduced from 3000 (2026-07-24): 3000 was tuned on one good night's
-// timing and is now reproducibly timing out against the orchestrator's 24000ms service-binding budget with
-// real game-day data volume - confirmed via 3 consecutive real production failures, same exact timeout, not
-// a fluke. More ticks are strictly better than a tick that times out and gets marked failed: a failed tick
+const WRITE_ROWS_PER_INVOCATION = 500; // Reduced from 1200 (2026-07-24, same day): real invocations at 1200
+// were taking 8-12s total (load phase alone is 2.4-3.8s before any inserts start), still beyond Hyperdrive's
+// documented internal connection-reservation tolerance ("a few seconds" before it may reclaim the connection -
+// this applies even without an explicit transaction). That's a direct, plausible explanation for the
+// intermittent CONNECTION_CLOSED failures seen mid-write today, distinct from the earlier pure-timeout
+// failures. More, smaller ticks are strictly better than a tick that gets its connection reclaimed mid-write.
 // wastes the entire 24s AND still requires a retry from scratch, while a smaller tick that reliably completes
 // makes real, durable progress every single time. Re-tune upward again only with fresh, real timing evidence.
 
