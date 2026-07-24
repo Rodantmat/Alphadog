@@ -185,5 +185,10 @@ export default {
     }
 
     return jsonResponse({ ok: false, error: "not_found", path }, 404);
+  },
+
+  async scheduled(event, env, ctx) {
+    const output = await runBoardFullRun(env, { request_id: `board_run_cron_${Date.now()}` });
+    console.log(JSON.stringify(output));
   }
 };
