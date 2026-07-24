@@ -339,7 +339,7 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
 
   const dayInfo = await getNextDeltaDay(sql);
   if (!dayInfo.ok) return { ok: false, data_ok: false, mode: "delta_recalculate_affected_players", status: "BLOCKED_NO_WATERMARK" };
-  if (dayInfo.no_data_yet) return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_CLASSIFICATION_NOOP_NO_NEW_DAY_AVAILABLE", watermark: dayInfo.watermark, next_date: dayInfo.next_date, continuation_required: false };
+  if (dayInfo.no_data_yet) return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_CLASSIFICATION_NOOP_NO_NEW_DAY_AVAILABLE", watermark: dayInfo.watermark, next_date: dayInfo.next_date, latest_available: dayInfo.latest_available, blocked_reason: dayInfo.blocked_reason, metrics_gate: dayInfo.metrics_gate, _debug: dayInfo._debug, continuation_required: false };
 
   const dayDate = dayInfo.next_date;
   const affected = await getPlayersForDay(sql, dayDate);
