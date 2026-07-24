@@ -7366,7 +7366,17 @@ async function processParlaySleeperBoardJobInner(env, row, runId, trigger) {
 }
 
 
-async function processParlayUnderdogBoardJob(env, row, runId, trigger) {
+async function processParlayUnderdogBoardJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processParlayUnderdogBoardJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processParlayUnderdogBoardJobInner(env, row, runId, trigger) {
   if (!env.PARLAY_UNDERDOG_BOARD_WORKER || typeof env.PARLAY_UNDERDOG_BOARD_WORKER.fetch !== "function") {
     const output = {
       ok: false,
