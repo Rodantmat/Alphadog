@@ -119,58 +119,80 @@ async function runBoardFullRun(env, input) {
   const requestId = input.request_id || `board_run_${Date.now()}`;
   const started = Date.now();
   const stages = {};
+  await log(env, requestId, "run_started", {});
 
-  // 1. PrizePicks
-  const prizepicks = await runStageUntilDone(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "PRIZEPICKS_GITHUB_BOARD_WORKER",
-    { request_id: `${requestId}_prizepicks`, chain_id: requestId, mode: "board_full_run_prizepicks_refresh" },
-    { maxAttempts: 3, cooldownMs: 2000 });
-  stages.prizepicks = { attempts: prizepicks.attempts, ok: !!(prizepicks.final && prizepicks.final.ok), certification: prizepicks.final && prizepicks.final.certification, error: prizepicks.final && prizepicks.final.error };
+  try {
+    // 1. PrizePicks
+    const prizepicks = await runStageUntilDone(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "PRIZEPICKS_GITHUB_BOARD_WORKER",
+      { request_id: `${requestId}_prizepicks`, chain_id: requestId, mode: "board_full_run_prizepicks_refresh" },
+      { maxAttempts: 3, cooldownMs: 2000 });
+    stages.prizepicks = { attempts: prizepicks.attempts, ok: !!(prizepicks.final && prizepicks.final.ok), certification: prizepicks.final && prizepicks.final.certification, error: prizepicks.final && prizepicks.final.error };
+    await log(env, requestId, "stage_done_prizepicks", stages.prizepicks);
 
-  // 2. Sleeper
-  const sleeper = await runStageUntilDone(env.PARLAY_SLEEPER_BOARD_WORKER, "PARLAY_SLEEPER_BOARD_WORKER",
-    { request_id: `${requestId}_sleeper`, chain_id: requestId, mode: "board_full_run_sleeper_refresh" },
-    { maxAttempts: 3, cooldownMs: 2000 });
-  stages.sleeper = { attempts: sleeper.attempts, ok: !!(sleeper.final && sleeper.final.ok), certification: sleeper.final && sleeper.final.certification, error: sleeper.final && sleeper.final.error };
+    // 2. Sleeper
+    const sleeper = await runStageUntilDone(env.PARLAY_SLEEPER_BOARD_WORKER, "PARLAY_SLEEPER_BOARD_WORKER",
+      { request_id: `${requestId}_sleeper`, chain_id: requestId, mode: "board_full_run_sleeper_refresh" },
+      { maxAttempts: 3, cooldownMs: 2000 });
+    stages.sleeper = { attempts: sleeper.attempts, ok: !!(sleeper.final && sleeper.final.ok), certification: sleeper.final && sleeper.final.certification, error: sleeper.final && sleeper.final.error };
+    await log(env, requestId, "stage_done_sleeper", stages.sleeper);
 
-  // 3. Underdog
-  const underdog = await runStageUntilDone(env.PARLAY_UNDERDOG_BOARD_WORKER, "PARLAY_UNDERDOG_BOARD_WORKER",
-    { request_id: `${requestId}_underdog`, chain_id: requestId, mode: "board_full_run_underdog_refresh" },
-    { maxAttempts: 3, cooldownMs: 2000 });
-  stages.underdog = { attempts: underdog.attempts, ok: !!(underdog.final && underdog.final.ok), certification: underdog.final && underdog.final.certification, error: underdog.final && underdog.final.error };
+    // 3. Underdog
+    const underdog = await runStageUntilDone(env.PARLAY_UNDERDOG_BOARD_WORKER, "PARLAY_UNDERDOG_BOARD_WORKER",
+      { request_id: `${requestId}_underdog`, chain_id: requestId, mode: "board_full_run_underdog_refresh" },
+      { maxAttempts: 3, cooldownMs: 2000 });
+    stages.underdog = { attempts: underdog.attempts, ok: !!(underdog.final && underdog.final.ok), certification: underdog.final && underdog.final.certification, error: underdog.final && underdog.final.error };
+    await log(env, requestId, "stage_done_underdog", stages.underdog);
 
-  // 4. Score-prep (the one that used to need ~30 chunked ticks - now attempts the whole thing in
-  // one pass per call, and this loop absorbs it if it still needs more than one pass for any reason).
-  const scorePrep = await runStageUntilDone(env.SCORE_PREP_WORKER, "SCORE_PREP_WORKER",
-    { request_id: `${requestId}_score_prep`, chain_id: requestId, mode: "board_prep_enrichment" },
-    { maxAttempts: 15, cooldownMs: 800 });
-  stages.score_prep = {
-    attempts: scorePrep.attempts,
-    ok: !!(scorePrep.final && scorePrep.final.ok),
-    certification: scorePrep.final && scorePrep.final.certification,
-    rows_read: scorePrep.final && scorePrep.final.rows_read,
-    inserted_current_rows: scorePrep.final && scorePrep.final.inserted_current_rows,
-    error: scorePrep.final && scorePrep.final.error
-  };
+    // 4. Score-prep
+    await log(env, requestId, "stage_starting_score_prep", {});
+    const scorePrep = await runStageUntilDone(env.SCORE_PREP_WORKER, "SCORE_PREP_WORKER",
+      { request_id: `${requestId}_score_prep`, chain_id: requestId, mode: "board_prep_enrichment" },
+      { maxAttempts: 15, cooldownMs: 800 });
+    stages.score_prep = {
+      attempts: scorePrep.attempts,
+      ok: !!(scorePrep.final && scorePrep.final.ok),
+      certification: scorePrep.final && scorePrep.final.certification,
+      rows_read: scorePrep.final && scorePrep.final.rows_read,
+      inserted_current_rows: scorePrep.final && scorePrep.final.inserted_current_rows,
+      error: scorePrep.final && scorePrep.final.error
+    };
+    await log(env, requestId, "stage_done_score_prep", stages.score_prep);
 
-  const allOk = stages.prizepicks.ok && stages.sleeper.ok && stages.underdog.ok && stages.score_prep.ok;
-
-  return {
-    ok: allOk,
-    data_ok: allOk,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    request_id: requestId,
-    status: allOk ? "BOARD_FULL_RUN_COMPLETE" : "BOARD_FULL_RUN_PARTIAL_FAILURE",
-    elapsed_ms: Date.now() - started,
-    stages,
-    detail: {
-      prizepicks: prizepicks.final,
-      sleeper: sleeper.final,
-      underdog: underdog.final,
-      score_prep: scorePrep.final
-    },
-    timestamp_utc: nowIso()
-  };
+    const allOk = stages.prizepicks.ok && stages.sleeper.ok && stages.underdog.ok && stages.score_prep.ok;
+    const output = {
+      ok: allOk,
+      data_ok: allOk,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      request_id: requestId,
+      status: allOk ? "BOARD_FULL_RUN_COMPLETE" : "BOARD_FULL_RUN_PARTIAL_FAILURE",
+      elapsed_ms: Date.now() - started,
+      stages,
+      detail: {
+        prizepicks: prizepicks.final,
+        sleeper: sleeper.final,
+        underdog: underdog.final,
+        score_prep: scorePrep.final
+      },
+      timestamp_utc: nowIso()
+    };
+    await log(env, requestId, "run_complete", { ok: allOk, elapsed_ms: output.elapsed_ms });
+    return output;
+  } catch (err) {
+    await log(env, requestId, "run_exception", { error: String(err && err.stack ? err.stack : err) });
+    return {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      request_id: requestId,
+      status: "BOARD_FULL_RUN_EXCEPTION",
+      error: String(err && err.message ? err.message : err),
+      stages,
+      elapsed_ms: Date.now() - started,
+      timestamp_utc: nowIso()
+    };
+  }
 }
 
 export default {
