@@ -11845,7 +11845,17 @@ async function processDailyBullpenAvailabilityJobInner(env, row, runId, trigger)
   return cappedOutput;
 }
 
-async function processDailyUmpireContextJob(env, row, runId, trigger) {
+async function processDailyUmpireContextJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyUmpireContextJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyUmpireContextJobInner(env, row, runId, trigger) {
   if (!env.DAILY_USAGE_PULSE_WORKER || typeof env.DAILY_USAGE_PULSE_WORKER.fetch !== "function") {
     const output = {
       ok: false,
