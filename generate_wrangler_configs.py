@@ -16,18 +16,28 @@ def main_file(worker_name):
     return f"./{worker_name}.js" if Path(f"{worker_name}.js").exists() else "./worker.js"
 
 def make_config(worker_name, include_services=False):
-    # Workers fully verified migrated to Postgres: only CONTROL_DB stays wired (the one
-    # allowed exception, for operational dispatch/logging tables only - control_job_queue,
-    # control_job_runs, control_locks, control_worker_run_log). No other D1 database should be
-    # physically bound to these workers even if the code doesn't reference it, since an unused
-    # binding is still "wiring to the old database" per Rule Zero.
-    FULLY_MIGRATED_CONTROL_DB_ONLY = (
+    # Workers fully verified migrated to Postgres, zero D1 usage anywhere in their code
+    # (confirmed via direct grep of every .prepare()/env.*_DB call site - none found).
+    # D1 is being deleted with no exceptions, so these get NO D1 binding at all - not even
+    # the old CONTROL_DB-only exception, which was a temporary allowance from before that
+    # mandate and is now obsolete. An unused binding is still "wiring to the old database".
+    FULLY_MIGRATED_NO_D1_AT_ALL = (
         "alphadog-v2-prizepicks-github-board",
         "alphadog-v2-parlay-sleeper-board",
         "alphadog-v2-parlay-underdog-board",
         "alphadog-v2-score-prep",
+        "alphadog-v2-daily-certifier",
+        "alphadog-v2-daily-probable-pitchers",
+        "alphadog-v2-daily-lineups",
+        "alphadog-v2-daily-player-availability",
+        "alphadog-v2-daily-weather",
+        "alphadog-v2-daily-bullpen-availability",
+        "alphadog-v2-daily-schedule",
+        "alphadog-v2-daily-usage-pulse",
+        "alphadog-v2-market-normalizer",
+        "alphadog-v2-market-line-shape-classifier",
+        "alphadog-v2-market-certifier",
     )
-    control_db_only_binding = [d for d in D1_BINDINGS if d.get("binding") == "CONTROL_DB"]
     cfg = {
         "$schema": "node_modules/wrangler/config-schema.json",
         "name": worker_name,
@@ -35,7 +45,7 @@ def make_config(worker_name, include_services=False):
         "compatibility_date": COMPATIBILITY_DATE,
         "observability": {"enabled": True},
         "vars": VARS,
-        "d1_databases": control_db_only_binding if worker_name in FULLY_MIGRATED_CONTROL_DB_ONLY else D1_BINDINGS
+        "d1_databases": [] if worker_name in FULLY_MIGRATED_NO_D1_AT_ALL else D1_BINDINGS
     }
     if worker_name == "alphadog-v2-orchestrator":
         cfg["triggers"] = {"crons": ORCHESTRATOR_CRONS}
