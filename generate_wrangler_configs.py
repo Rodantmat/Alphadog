@@ -177,6 +177,20 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
+    if worker_name == "alphadog-v2-board-runner":
+        # New, deliberately simple standalone runner for board-full-run only (separate from the
+        # legacy orchestrator's queue-table/lock-table machinery). No D1, no shared vars - it only
+        # needs service bindings to the 4 stage workers it calls directly in sequence, and a raised
+        # cpu_ms ceiling for headroom (the work itself is I/O-bound, so this is mostly precautionary).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["services"] = [
+            {"binding": "PRIZEPICKS_GITHUB_BOARD_WORKER", "service": "alphadog-v2-prizepicks-github-board"},
+            {"binding": "PARLAY_SLEEPER_BOARD_WORKER", "service": "alphadog-v2-parlay-sleeper-board"},
+            {"binding": "PARLAY_UNDERDOG_BOARD_WORKER", "service": "alphadog-v2-parlay-underdog-board"},
+            {"binding": "SCORE_PREP_WORKER", "service": "alphadog-v2-score-prep"},
+        ]
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
