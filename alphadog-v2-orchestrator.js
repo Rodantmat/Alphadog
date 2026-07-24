@@ -204,9 +204,9 @@ function translateSqliteToPostgresSql(sqlIn) {
   sql = sql.replace(/datetime\(\s*([\w.]+)\s*\)/gi, "$1");
 
   // julianday(a) - julianday(b) day-difference arithmetic (used for elapsed_ms/seconds computations)
-  sql = sql.replace(/CAST\(\(julianday\(([^)]+)\)\s*-\s*julianday\(([^)]+)\)\)\s*\*\s*86400000\s*AS INTEGER\)/gi,
+  sql = sql.replace(/CAST\(\(julianday\(((?:[^()]|\([^()]*\))+)\)\s*-\s*julianday\(((?:[^()]|\([^()]*\))+)\)\)\s*\*\s*86400000\s*AS INTEGER\)/gi,
     (m, a, b) => `CAST(EXTRACT(EPOCH FROM (${a}::timestamptz - ${b}::timestamptz)) * 1000 AS INTEGER)`);
-  sql = sql.replace(/CAST\(\(julianday\(([^)]+)\)\s*-\s*julianday\(([^)]+)\)\)\s*\*\s*86400\s*AS INTEGER\)/gi,
+  sql = sql.replace(/CAST\(\(julianday\(((?:[^()]|\([^()]*\))+)\)\s*-\s*julianday\(((?:[^()]|\([^()]*\))+)\)\)\s*\*\s*86400\s*AS INTEGER\)/gi,
     (m, a, b) => `CAST(EXTRACT(EPOCH FROM (${a}::timestamptz - ${b}::timestamptz)) AS INTEGER)`);
 
   // json_extract(col, '$.field') -> (col::json->>'field')
