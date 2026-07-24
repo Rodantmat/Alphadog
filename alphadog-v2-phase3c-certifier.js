@@ -171,7 +171,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
       source_key: matrixRow.source_key || null, game_pk: matrixRow.game_pk || null, official_date: matrixRow.official_date || null, official_game_time_utc: matrixRow.official_game_time_utc || null,
       mlb_player_id: er.mlb_player_id, player_name: playerName, canonical_prop_key: er.canonical_prop_key, line_value: er.board_line_value, selected_side: side,
       estimated_hit_probability_0_100: hp, probability_confidence_0_100: confidence, board_tier: primaryPlayable ? "PRIMARY" : "REVIEW", live_playable: primaryPlayable ? 1 : 0, review_playable: primaryPlayable ? 0 : 1,
-      is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, is_more_only: moreOnly ? 1 : 0,
+      is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, more_only: moreOnly ? 1 : 0,
       score_grade: gradeForProbability(hp),
       calibration_json: JSON.stringify({ real_reordered: true, baseline_hp: baselineHp, baseline_confidence: baseline?.confidence_0_100 ?? null, rate_multiplier: er.rate_multiplier ?? 1.0, factors_applied: er.factors_applied || 0, factors_missing: er.factors_missing || 0, primary_hp_threshold: PRIMARY_HP_THRESHOLD, is_exact_line_match: baselineMatch ? baselineMatch.is_exact_line_match : null, line_distance: baselineMatch ? baselineMatch.line_distance : null, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "Final HP + Final Confidence computed here, BEFORE Scoring Engine (reordered per spec). score_0_100 intentionally null until Scoring Engine (now running after this stage) fills it in from this row's final HP + final confidence." })
     });
