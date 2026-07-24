@@ -10,7 +10,7 @@ const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_16
 // a narrow, surgical cutover - control_job_queue/control_job_runs and everything else in this
 // file remain on D1 (control plane), unchanged.
 function pgSchedule(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false, connect_timeout: 8 });
 }
 // Dedicated Postgres control-plane client for chains being cut over off D1 CONTROL_DB
 // (daily_context_full_run, board_full_run). Mirrors control_locks/control_job_queue/
