@@ -227,6 +227,25 @@ def make_config(worker_name, include_services=False):
         ]
         # No cron yet - testing via direct run_job trigger first, same lesson learned from
         # board-runner (avoid overlapping runs fighting over connections).
+    if worker_name == "alphadog-v2-market-runner":
+        # New, deliberately simple standalone runner for market-full-run only, same design as
+        # board-runner/daily-context-runner: no queue table, no lock table, just sequential
+        # awaited service-binding calls to the 5-stage sequence (market-certifier called twice,
+        # first pass and final pass; market-line-shape-classifier called twice, hitters then
+        # pitchers).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "MARKET_CERTIFIER_WORKER", "service": "alphadog-v2-market-certifier"},
+            {"binding": "MARKET_NORMALIZER_WORKER", "service": "alphadog-v2-market-normalizer"},
+            {"binding": "MARKET_LINE_SHAPE_CLASSIFIER_WORKER", "service": "alphadog-v2-market-line-shape-classifier"},
+        ]
+        # No cron yet - testing via direct run_job trigger first.
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
