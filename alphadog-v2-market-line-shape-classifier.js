@@ -497,7 +497,7 @@ async function fetchOneParlayProbe(env, probe, deadlineAt = Date.now() + PARLAY_
     for (let page = 0; page < PARLAY_MAX_PAGES && nextUrl; page++) {
       if (Date.now() >= deadlineAt) { ok = false; responsePreview = "parlay_total_fetch_budget_exhausted"; break; }
       const remainingMs = Math.max(1000, Math.min(PARLAY_FETCH_TIMEOUT_MS, deadlineAt - Date.now()));
-      const resp = await fetchWithTimeout(nextUrl, { method: "GET", headers: authHeaders(env) }, remainingMs);
+      const resp = await fetchWithTimeout(nextUrl, { method: "GET", headers: await authHeaders(env) }, remainingMs);
       httpStatus = resp.status;
       const text = await promiseWithTimeout(resp.text(), Math.max(1000, remainingMs), "parlay_response_body_timeout");
       let json = null;
