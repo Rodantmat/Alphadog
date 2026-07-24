@@ -168,7 +168,10 @@ function translateSqliteToPostgresSql(sqlIn) {
   let sql = sqlIn;
 
   // INSERT OR REPLACE INTO <table> (<cols>) VALUES (<placeholders>) -> real ON CONFLICT upsert
-  sql = sql.replace(/INSERT OR REPLACE INTO\s+(control_\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/is, (m, table, colsStr, valsStr) => {
+  // Nested-paren-tolerant (e.g. VALUES containing COALESCE((SELECT ...), 0)) - a naive [^)]+
+  // match stops at the FIRST closing paren and silently truncates, producing garbled SQL.
+  const NESTED_PARENS = "(?:[^()]|\\([^()]*(?:\\([^()]*\\)[^()]*)*\\))+";
+  sql = sql.replace(new RegExp(`INSERT OR REPLACE INTO\\s+(control_\\w+)\\s*\\((${NESTED_PARENS})\\)\\s*VALUES\\s*\\((${NESTED_PARENS})\\)`, "is"), (m, table, colsStr, valsStr) => {
     const cols = colsStr.split(",").map(c => c.trim());
     const pgTable = PG_CONTROL_TABLE_MAP[table] || table;
     const pk = PG_CONTROL_TABLE_PK[table];
