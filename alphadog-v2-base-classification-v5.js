@@ -317,9 +317,7 @@ async function getNextDeltaDay(sql) {
   `;
   const nextDate = cmp[0].next_date;
   const latestAvailable = cmp[0].latest_available;
-  const _debug_watermark_raw = watermark;
-  const _debug_watermark_type = typeof watermark;
-  if (!latestAvailable || !cmp[0].next_date_ready) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable, _debug: { watermark_raw: _debug_watermark_raw, watermark_type: _debug_watermark_type, next_date_ready: cmp[0].next_date_ready, season: DEFAULT_SEASON } };
+  if (!latestAvailable || !cmp[0].next_date_ready) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
   const completeness = await isDateCertifiedComplete(sql, nextDate);
   if (!completeness.ready) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable, blocked_reason: completeness.reason || "GAMES_NOT_YET_FINAL_OR_EXCEPTION", calendar_check: completeness };
   return { ok: true, no_data_yet: false, watermark, next_date: nextDate, latest_available: latestAvailable, calendar_check: completeness };
