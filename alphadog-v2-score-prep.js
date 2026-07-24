@@ -8,7 +8,12 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 3000; // Raised from 350 (2026-07-23): that limit was tuned for D1's per-row batch() mechanics, which this worker no longer uses - Postgres bulk multi-row INSERT (INSERT_CHUNK_SIZE=75 rows per statement) is a different, faster performance profile. Real evidence same night: a single tick already completed 1400 rows cleanly. Fewer, larger ticks also directly reduces how many times per run this worker has to establish a fresh Hyperdrive connection - each fresh connection is itself a point of intermittent failure, so fewer ticks means less exposure. Still safely bounded under the orchestrator's real 24000ms wait budget (SCORE_PREP_SERVICE_TIMEOUT_MS in the orchestrator) based on observed per-chunk timing tonight.
+const WRITE_ROWS_PER_INVOCATION = 1200; // Reduced from 3000 (2026-07-24): 3000 was tuned on one good night's
+// timing and is now reproducibly timing out against the orchestrator's 24000ms service-binding budget with
+// real game-day data volume - confirmed via 3 consecutive real production failures, same exact timeout, not
+// a fluke. More ticks are strictly better than a tick that times out and gets marked failed: a failed tick
+// wastes the entire 24s AND still requires a retry from scratch, while a smaller tick that reliably completes
+// makes real, durable progress every single time. Re-tune upward again only with fresh, real timing evidence.
 
 function nowIso() {
   return new Date().toISOString();
