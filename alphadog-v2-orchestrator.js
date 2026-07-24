@@ -11588,7 +11588,17 @@ async function processDailyTeamScheduleSpotJobInner(env, row, runId, trigger) {
   return cappedOutput;
 }
 
-async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
+async function processDailyBullpenAvailabilityJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyBullpenAvailabilityJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyBullpenAvailabilityJobInner(env, row, runId, trigger) {
   if (!env.DAILY_BULLPEN_AVAILABILITY_WORKER || typeof env.DAILY_BULLPEN_AVAILABILITY_WORKER.fetch !== "function") {
     const output = {
       ok: false,
