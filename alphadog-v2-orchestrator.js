@@ -1592,26 +1592,6 @@ async function releaseMarketScoringFullRunLock(env, parentRow) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
-    return { ok: false, reason: "market_scoring_full_run_lock_busy", lock, active_other_parent: activeOther || null };
-  }
-  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && activeOther) {
-    return { ok: false, reason: "market_scoring_full_run_active_parent_exists", lock, active_other_parent: activeOther };
-  }
-  await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=CURRENT_TIMESTAMP, expires_at=datetime('now','+45 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key=?",
-    parentRow.request_id, WORKER_NAME, MARKET_SCORING_FULL_RUN_LOCK_KEY
-  );
-  return { ok: true };
-}
-
-async function releaseMarketScoringFullRunLock(env, parentRow) {
-  await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key=? AND (owner_request_id=? OR owner_request_id IS NULL)",
-    MARKET_SCORING_FULL_RUN_LOCK_KEY, parentRow.request_id
-  );
-}
-
 async function enqueueMarketScoringFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0, extraInput = {}) {
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
   const input = { ...marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount), ...(extraInput || {}) };
