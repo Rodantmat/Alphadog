@@ -198,7 +198,11 @@ def make_config(worker_name, include_services=False):
         ]
         # TEMPORARY for initial testing only - will be replaced with the real 3x/day schedule
         # once this is verified working end to end.
-        cfg["triggers"] = {"crons": ["*/5 * * * *"]}
+        # Cron disabled during direct-trigger testing (see run_job -> BOARD_RUNNER_WORKER) to avoid
+        # overlapping runs fighting over the same Postgres connections. Will be re-enabled as part
+        # of the single master runner's schedule once board/daily-context/market/scoring are all
+        # chained together.
+        # cfg["triggers"] = {"crons": ["*/5 * * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
