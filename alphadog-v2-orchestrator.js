@@ -7136,7 +7136,17 @@ async function processPrizePicksGithubBoardJobInner(env, row, runId, trigger) {
 
 
 
-async function processParlaySleeperBoardJob(env, row, runId, trigger) {
+async function processParlaySleeperBoardJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processParlaySleeperBoardJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processParlaySleeperBoardJobInner(env, row, runId, trigger) {
   if (!env.PARLAY_SLEEPER_BOARD_WORKER || typeof env.PARLAY_SLEEPER_BOARD_WORKER.fetch !== "function") {
     const output = {
       ok: false,
