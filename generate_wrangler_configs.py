@@ -197,7 +197,7 @@ def make_config(worker_name, include_services=False):
         ]
         # TEMPORARY for initial testing only - will be replaced with the real 3x/day schedule
         # once this is verified working end to end.
-        cfg["triggers"] = {"crons": ["*/30 * * * *"]}
+        cfg["triggers"] = {"crons": ["* * * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
