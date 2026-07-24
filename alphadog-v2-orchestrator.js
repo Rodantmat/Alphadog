@@ -10534,7 +10534,17 @@ async function processStaticPlayersJob(env, row, runId, trigger) {
 
 
 
-async function processDailyProbablePitchersJob(env, row, runId, trigger) {
+async function processDailyProbablePitchersJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyProbablePitchersJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyProbablePitchersJobInner(env, row, runId, trigger) {
   if (!env.DAILY_PROBABLE_PITCHERS_WORKER || typeof env.DAILY_PROBABLE_PITCHERS_WORKER.fetch !== "function") {
     const output = {
       ok: false,
