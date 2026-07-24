@@ -102,9 +102,26 @@ function baseIdentity(env, extra = {}) {
   };
 }
 
+async function permanentlyRecordGameOddsContext(pgClient) {
+  const rows = await pgClient`SELECT probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, bookmaker_key, bookmaker_title, market_key, market_last_update, outcome_name, outcome_side, price_american, point, mapping_status, mapping_confidence, raw_json, created_at FROM market.context_probe_game_odds`.catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  const cols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "game_pk", "source_key", "source_event_id", "source_commence_time_utc", "source_home_team", "source_away_team", "bookmaker_key", "bookmaker_title", "market_key", "market_last_update", "outcome_name", "outcome_side", "price_american", "point", "mapping_status", "mapping_confidence", "raw_json", "captured_at"];
+  const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc() }));
+  const CHUNK = 200;
+  let copied = 0;
+  for (let i = 0; i < withCapturedAt.length; i += CHUNK) {
+    const chunk = withCapturedAt.slice(i, i + CHUNK);
+    await pgClient`INSERT INTO archive.game_odds_context_history ${pgClient(chunk, ...cols)} ON CONFLICT (probe_row_id) DO NOTHING`.catch(() => {});
+    copied += chunk.length;
+  }
+  return { copied, checked: rows.length };
+}
+
 async function pruneProbeWindow(pgClient, boardWindowDates, slateWindowKey) {
+  await pgClient`CREATE TABLE IF NOT EXISTS archive.game_odds_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, game_pk BIGINT, source_key TEXT, source_event_id TEXT, source_commence_time_utc TEXT, source_home_team TEXT, source_away_team TEXT, bookmaker_key TEXT, bookmaker_title TEXT, market_key TEXT, market_last_update TEXT, outcome_name TEXT, outcome_side TEXT, price_american DOUBLE PRECISION, point DOUBLE PRECISION, mapping_status TEXT, mapping_confidence TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now())`.catch(() => {});
+  const archivedGameOdds = await permanentlyRecordGameOddsContext(pgClient);
   const tables = ["context_probe_game_odds", "context_probe_player_props", "context_probe_event_map", "context_probe_coverage", "context_probe_issues", "context_probe_book_market_status", "context_probe_game_market_summary", "context_probe_game_team_market_expansion"];
-  const deleted = {};
+  const deleted = { archive_before_cleanup: archivedGameOdds };
   for (const table of tables) {
     await pgClient.unsafe(`DELETE FROM market.${table} WHERE slate_window_key <> $1::text OR official_date NOT IN (${boardWindowDates.map((_, i) => "$" + (i + 2) + "::text").join(",")})`, [slateWindowKey, ...boardWindowDates]);
     await pgClient.unsafe(`DELETE FROM market.${table} WHERE slate_window_key = $1::text`, [slateWindowKey]);
