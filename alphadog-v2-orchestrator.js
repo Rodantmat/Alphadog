@@ -12853,21 +12853,15 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
   const lock = await ensureDailyContextFullRunLock(env, row);
   if (!lock.ok) {
     const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_LOCK_BUSY", certification: "DAILY_CONTEXT_FULL_RUN_LOCK_BUSY_WAIT", lock, continuation_required: true, orchestrator_should_self_continue: true };
-    const pgLb = pgControl(env);
-    await pgLb.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES ($1,$2,$3,$4,$5,'partial_continue',1,'DAILY_CONTEXT_FULL_RUN_LOCK_BUSY_WAIT',0,0,0,now(),now(),$6,$7,$8)`,
-      [runId, row.request_id, row.chain_id, row.job_key, row.worker_name, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)]);
-    await pgLb.unsafe(`UPDATE control.job_queue SET status='pending', run_after=now() + interval '10 seconds', updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2`, [JSON.stringify(output), row.request_id]);
-    await pgLb.end({ timeout: 1 }).catch(() => {});
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_LOCK_BUSY_WAIT', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+10 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
     return output;
   }
 
-  const pgChildRead = pgControl(env);
-  let childRows;
-  try {
-    childRows = await pgChildRead`SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control.job_queue WHERE parent_request_id=${row.request_id} AND chain_id=${row.chain_id} ORDER BY created_at ASC`;
-  } finally {
-    await pgChildRead.end({ timeout: 1 }).catch(() => {});
-  }
+  const childRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
+    row.request_id, row.chain_id
+  );
   const stageReports = [];
 
   for (let i = 0; i < DAILY_CONTEXT_FULL_RUN_STAGES.length; i++) {
@@ -12884,12 +12878,9 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     if (!child) {
       const enqueued = await enqueueDailyContextFullRunChild(env, row, stage, i, 0);
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
-      const pgE = pgControl(env);
-      await pgE.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES ($1,$2,$3,$4,$5,'partial_continue',1,'DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED',$6,0,0,now(),now(),$7,$8,$9)`,
-        [runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)]);
-      await pgE.unsafe(`UPDATE control.job_queue SET status='pending', priority=1, run_after=now() + interval '3 seconds', updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2`, [JSON.stringify(output), row.request_id]);
-      await pgE`INSERT INTO control.worker_run_log ${pgE([{ request_id: row.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: row.job_key, level: "INFO", event_key: "daily_context_full_run_child_enqueued", message: "Daily Context Full Run enqueued next child stage", data_json: JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
-      await pgE.end({ timeout: 1 }).catch(() => {});
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_child_enqueued', 'Daily Context Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }));
       return output;
     }
 
@@ -12904,14 +12895,10 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         continue;
       }
       const stageStaleSeconds = dailyContextFullRunStageStaleSeconds(stage);
-      const pgS = pgControl(env);
-      let staleChild;
-      try {
-        const staleRows = await pgS.unsafe(`SELECT request_id FROM control.job_queue WHERE request_id=$1 AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND COALESCE(updated_at, started_at, created_at) <= now() - ($2 || ' seconds')::interval LIMIT 1`, [child.request_id, String(stageStaleSeconds)]);
-        staleChild = staleRows[0] || null;
-      } finally {
-        await pgS.end({ timeout: 1 }).catch(() => {});
-      }
+      const staleChild = await first(env.CONTROL_DB,
+        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-' || ? || ' seconds') LIMIT 1",
+        child.request_id, stageStaleSeconds
+      );
       if (staleChild) {
         const recovered = await recoverDailyContextStaleChildFromSidecar(env, row, stage, child, report, runId);
         if (recovered && recovered.report) {
@@ -12924,11 +12911,8 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         return await failDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child became stale and could not be verified from complete sidecar rows after retry budget was exhausted; refusing to false-pass an incomplete mining stage.");
       }
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, stage_stale_guard_seconds: stageStaleSeconds, generic_stale_guard_seconds: DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
-      const pgW = pgControl(env);
-      await pgW.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES ($1,$2,$3,$4,$5,'partial_continue',1,'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD',$6,0,0,now(),now(),$7,$8,$9)`,
-        [runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)]);
-      await pgW.unsafe(`UPDATE control.job_queue SET status='pending', priority=1, run_after=now() + interval '3 seconds', updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2`, [JSON.stringify(output), row.request_id]);
-      await pgW.end({ timeout: 1 }).catch(() => {});
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;
     }
 
@@ -12940,35 +12924,32 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
       }
       if (dailyContextFullRunChildTransientRetryAllowed(stage, child, validation, childOutput)) {
         const retryCount = dailyContextFullRunChildInputRetryCount(child) + 1;
-        const pgT = pgControl(env);
-        await pgT.unsafe(`UPDATE control.job_queue SET status='failed', finished_at=COALESCE(finished_at, now()), updated_at=now(), error_code=COALESCE(error_code,'daily_context_child_transient_retry_replaced'), error_message=COALESCE(error_message,'Daily Context child transient dispatch failure was replaced by one same-stage retry.') WHERE request_id=$1 AND finished_at IS NULL`, [child.request_id]);
+        await run(env.CONTROL_DB,
+          "UPDATE control_job_queue SET status='failed', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, error_code=COALESCE(error_code,'daily_context_child_transient_retry_replaced'), error_message=COALESCE(error_message,'Daily Context child transient dispatch failure was replaced by one same-stage retry.') WHERE request_id=? AND finished_at IS NULL",
+          child.request_id
+        );
         const enqueued = await enqueueDailyContextFullRunChild(env, row, stage, i, retryCount);
         const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"daily_context_full_run", status:"PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification:"DAILY_CONTEXT_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification_grade:"PARTIAL", current_stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, failed_reason:validation.reason, completed_stage_count:stageReports.length, total_stage_count:DAILY_CONTEXT_FULL_RUN_STAGES.length, stages:[...stageReports, { ...report, pass:false, wait:false, retry_child_request_id:enqueued.child_request_id, reason:"transient_child_dispatch_failure_retry_enqueued" }], continuation_required:true, orchestrator_should_self_continue:true, lock_held:true, no_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
-        await pgT.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES ($1,$2,$3,$4,$5,'partial_continue',1,'DAILY_CONTEXT_FULL_RUN_TRANSIENT_RETRY_ENQUEUED',$6,0,0,now(),now(),$7,$8,$9)`,
-          [runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)]);
-        await pgT.unsafe(`UPDATE control.job_queue SET status='pending', priority=1, run_after=now() + interval '3 seconds', updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2`, [JSON.stringify(output), row.request_id]);
-        await pgT`INSERT INTO control.worker_run_log ${pgT([{ request_id: row.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: row.job_key, level: "WARN", event_key: "daily_context_full_run_transient_child_retry_enqueued", message: "Daily Context Full Run replaced one transient child dispatch failure with a same-stage retry", data_json: JSON.stringify({ stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, failed_reason:validation.reason, child_error_code:child.error_code || null, child_error_message:child.error_message || null }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
-        await pgT.end({ timeout: 1 }).catch(() => {});
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_TRANSIENT_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+        await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_transient_child_retry_enqueued', 'Daily Context Full Run replaced one transient child dispatch failure with a same-stage retry', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, failed_reason:validation.reason, child_error_code:child.error_code || null, child_error_message:child.error_message || null }));
         return output;
       }
       if (dailyContextFullRunStageCanContinueAfterFailure(stage, child, validation, childOutput)) {
         const softReport = { ...report, pass:true, wait:false, child_nonfatal_warning:true, reason:`${validation.reason || "child_failed"}_continued_nonfatal_v0_2_278`, nonfatal_cascade_continue:true };
         stageReports.push(softReport);
-        const pgN = pgControl(env);
-        await pgN`INSERT INTO control.worker_run_log ${pgN([{ request_id: row.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: row.job_key, level: "WARN", event_key: "daily_context_full_run_child_failure_continued_nonfatal", message: "Daily Context child failed after retry but cascade continued with warning instead of failing parent", data_json: JSON.stringify({ stage_key:stage.stage_key, child_request_id:child.request_id, child_status:child.status, child_error_code:child.error_code || null, child_error_message:child.error_message || null, validation, output_status:childOutput && childOutput.status || null, output_error:childOutput && childOutput.error || null, nonfatal_cascade_continue_v0_2_278:true, version:SYSTEM_VERSION }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
-        await pgN.end({ timeout: 1 }).catch(() => {});
+        await run(env.CONTROL_DB,
+          "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_child_failure_continued_nonfatal', 'Daily Context child failed after retry but cascade continued with warning instead of failing parent', ?, CURRENT_TIMESTAMP)",
+          row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key:stage.stage_key, child_request_id:child.request_id, child_status:child.status, child_error_code:child.error_code || null, child_error_message:child.error_message || null, validation, output_status:childOutput && childOutput.status || null, output_error:childOutput && childOutput.error || null, nonfatal_cascade_continue_v0_2_278:true, version:SYSTEM_VERSION })
+        );
         continue;
       }
       const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_CHILD_FAILED";
       const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
       await releaseDailyContextFullRunLock(env, row);
-      const pgF = pgControl(env);
-      await pgF.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES ($1,$2,$3,$4,$5,'failed',0,$6,$7,0,0,now(),now(),$8,$9,$10,$11,$12)`,
-        [runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily context full run child failed").slice(0, 900)]);
-      await pgF.unsafe(`UPDATE control.job_queue SET status='failed', finished_at=now(), updated_at=now(), output_json=$1, error_code=$2, error_message=$3 WHERE request_id=$4`,
-        [JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily context full run child failed").slice(0, 900), row.request_id]);
-      await pgF`INSERT INTO control.worker_run_log ${pgF([{ request_id: row.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: row.job_key, level: "ERROR", event_key: "daily_context_full_run_stopped", message: "Daily Context Full Run stopped on failed child stage", data_json: JSON.stringify(output) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
-      await pgF.end({ timeout: 1 }).catch(() => {});
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily context full run child failed").slice(0, 900));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily context full run child failed").slice(0, 900), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'daily_context_full_run_stopped', 'Daily Context Full Run stopped on failed child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
       return output;
     }
 
@@ -12985,12 +12966,9 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
   const finalGrade = warningStageCount > 0 ? "FULL_RUN_PASS_WITH_WARNINGS" : "FULL_RUN_PASS";
   const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "COMPLETED_DAILY_CONTEXT_FULL_RUN", certification: finalCertification, certification_grade: finalGrade, daily_context_full_run_certified: true, daily_context_nonfatal_enrichment_warning_count: nonfatalStageCount, daily_context_warning_stage_count: warningStageCount, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), includes_daily_starters: true, includes_daily_lineups: true, includes_daily_player_availability: true, includes_daily_weather_roof: true, includes_daily_bullpen_availability: true, includes_daily_team_schedule_spot: true, includes_daily_umpire_context: true, includes_daily_context_certifier: true, no_daily_game_status_duplication: true, no_board_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseDailyContextFullRunLock(env, row);
-  const pgC = pgControl(env);
-  await pgC.unsafe(`INSERT INTO control.job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES ($1,$2,$3,$4,$5,'completed',1,$6,$7,0,0,now(),now(),$8,$9,$10)`,
-    [runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)]);
-  await pgC.unsafe(`UPDATE control.job_queue SET status='completed', finished_at=now(), updated_at=now(), output_json=$1, error_code=NULL, error_message=NULL WHERE request_id=$2`, [JSON.stringify(output), row.request_id]);
-  await pgC`INSERT INTO control.worker_run_log ${pgC([{ request_id: row.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: row.job_key, level: "INFO", event_key: "daily_context_full_run_completed", message: "Daily Context Full Run certified all daily sidecar stages plus context certifier", data_json: JSON.stringify(output) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
-  await pgC.end({ timeout: 1 }).catch(() => {});
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_completed', 'Daily Context Full Run certified all daily sidecar stages plus context certifier', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
