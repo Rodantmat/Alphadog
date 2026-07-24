@@ -8,7 +8,7 @@ const RUN_DEADLINE_MS = 16000;
 const MAX_PITCHER_DETAIL_ROWS_PER_TEAM = 4;
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 });
 }
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
