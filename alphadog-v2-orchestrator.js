@@ -6857,7 +6857,17 @@ async function processMarketSourceHealthJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
-async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
+async function processPrizePicksGithubBoardJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processPrizePicksGithubBoardJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processPrizePicksGithubBoardJobInner(env, row, runId, trigger) {
   if (!env.PRIZEPICKS_GITHUB_BOARD_WORKER || typeof env.PRIZEPICKS_GITHUB_BOARD_WORKER.fetch !== "function") {
     const output = {
       ok: false,
