@@ -234,9 +234,21 @@ async function runBaseRebuild(sql, input) {
   };
 }
 
+async function isUpstreamClassificationComplete(sql) {
+  // Real cascade guard: verifies no classification batch is stuck in a non-terminal state before
+  // baseline trusts tier_change_signal rows as safe, complete data to recalculate from. Closes the
+  // same class of gap found and fixed in metrics/classification - no baseline without classification
+  // genuinely, verifiably complete.
+  const rows = await sql`SELECT COUNT(*)::int AS c FROM classification.classification_batches WHERE status != 'completed'`;
+  return { ready: Number(rows[0].c) === 0, non_terminal_batch_count: Number(rows[0].c) };
+}
+
 async function runDeltaRecalculateAffectedPlayers(sql, input) {
   const baseGate = await sql`SELECT status FROM classification.baseline_batches WHERE batch_id='baseline_base_backfill_singleton' LIMIT 1`;
   if (!baseGate[0] || baseGate[0].status !== "completed") return { ok: false, data_ok: false, mode: "delta_recalculate_affected_players", status: "BLOCKED_NO_COMPLETED_BASE_BATCH" };
+
+  const classificationGate = await isUpstreamClassificationComplete(sql);
+  if (!classificationGate.ready) return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "BLOCKED_UPSTREAM_CLASSIFICATION_NOT_TERMINAL", classification_gate: classificationGate, continuation_required: false };
 
   const unconsumed = await sql`SELECT DISTINCT player_id FROM classification.tier_change_signal WHERE consumed_by_baseline = false LIMIT 500`;
   if (!unconsumed.length) return { ok: true, data_ok: true, mode: "delta_recalculate_affected_players", status: "DELTA_BASELINE_NOOP_NO_TIER_CHANGES_PENDING", continuation_required: false };
