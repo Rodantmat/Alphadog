@@ -19289,30 +19289,24 @@ async function countDueDailyContextFullRun(env) {
   // This is intentionally not limited to run_after due rows: if the parent just
   // inserted a child with a 1-second guard, waitUntil must keep the backend alive
   // instead of letting cron become the normal stage driver.
-  // Daily Context Full Run's own queue rows now live in Postgres control.job_queue
-  // (cut over off D1), so this count must check there, not the D1 control_job_queue.
-  const pg = pgControl(env);
-  let rows;
-  try {
-    rows = await pg.unsafe(`SELECT COUNT(*) AS c
-     FROM control.job_queue
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+     FROM control_job_queue
      WHERE finished_at IS NULL
        AND status IN ('pending','running','partial_continue')
        AND (
          (job_key='daily-context-full-run' AND worker_name='alphadog-v2-orchestrator')
          OR parent_request_id IN (
            SELECT request_id
-           FROM control.job_queue
+           FROM control_job_queue
            WHERE job_key='daily-context-full-run'
              AND worker_name='alphadog-v2-orchestrator'
              AND finished_at IS NULL
              AND status IN ('pending','running','partial_continue')
          )
-       )`);
-  } finally {
-    await pg.end({ timeout: 1 }).catch(() => {});
-  }
-  return Number(rows[0] && rows[0].c ? rows[0].c : 0);
+       )`
+  );
+  return Number(row && row.c ? row.c : 0);
 }
 
 
