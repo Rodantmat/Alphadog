@@ -153,7 +153,8 @@ const PG_CONTROL_TABLE_MAP = {
   control_job_queue: "control.job_queue",
   control_job_runs: "control.job_runs",
   control_worker_run_log: "control.worker_run_log",
-  control_locks: "control.locks"
+  control_locks: "control.locks",
+  control_system_state: "control.system_state"
 };
 const PG_CONTROL_TABLE_PK = {
   control_job_queue: "request_id",
