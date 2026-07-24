@@ -704,8 +704,26 @@ function bestPreparedMatch(sourceRow, index) {
   for (const [map, key, status] of attempts) { const rows = map.get(key) || []; if (rows.length) return choosePreparedCandidate(rows, sourceRow, status); }
   return { status: "no_prepared_match_no_resolved_team_pair", row: null, rows: [], candidates: 0, choice_reason: "raw_team_pair_unresolved_or_absent" };
 }
+async function permanentlyRecordMarketPropContext(pgClient) {
+  const rows = await pgClient`SELECT probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at FROM market.context_probe_player_props`.catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  const cols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "prepared_row_id", "source_key", "source_event_id", "source_line_id", "game_pk", "resolved_mlb_player_id", "source_player_name", "canonical_prop_key", "source_market_key", "line_value", "price_american", "price_decimal", "outcome_side", "mapping_status", "coverage_status", "raw_json", "captured_at"];
+  const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc() }));
+  const CHUNK = 200;
+  let copied = 0;
+  for (let i = 0; i < withCapturedAt.length; i += CHUNK) {
+    const chunk = withCapturedAt.slice(i, i + CHUNK);
+    await pgClient`INSERT INTO archive.market_prop_context_history ${pgClient(chunk, ...cols)} ON CONFLICT (probe_row_id) DO NOTHING`.catch(() => {});
+    copied += chunk.length;
+  }
+  return { copied, checked: rows.length };
+}
+
 async function prunePlayerPropRows(pgClient, boardWindowDates, slateWindowKey, config = modeConfig()) {
   const deleted = {};
+  await pgClient`CREATE TABLE IF NOT EXISTS archive.market_prop_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, prepared_row_id TEXT, source_key TEXT, source_event_id TEXT, source_line_id TEXT, game_pk BIGINT, resolved_mlb_player_id BIGINT, source_player_name TEXT, canonical_prop_key TEXT, source_market_key TEXT, line_value DOUBLE PRECISION, price_american DOUBLE PRECISION, price_decimal DOUBLE PRECISION, outcome_side TEXT, mapping_status TEXT, coverage_status TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now())`.catch(() => {});
+  const archived = await permanentlyRecordMarketPropContext(pgClient);
+  deleted.archive_before_cleanup = archived;
   const datesLiteral = "{" + boardWindowDates.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(",") + "}";
   if (config.prop_family === "hitter") {
     for (const sourceKey of LEGACY_PARLAY_SOURCE_KEYS) {
