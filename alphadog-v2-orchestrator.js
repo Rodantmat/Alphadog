@@ -458,6 +458,20 @@ async function acquireLock(env, owner) {
   return { ok: true, owner };
 }
 
+// Real lease renewal (part of the lock-stall fix above): call this after each unit of real work
+// within a tick's job-processing loop. Only updates updated_at/expires_at if this exact owner
+// still holds the lock (safety - never renews a lock we don't actually own), so a genuinely
+// active, multi-job tick keeps refreshing well within the 90-second staleness window, while a
+// tick that hangs or gets killed mid-job simply stops renewing and becomes reclaimable quickly.
+async function renewLock(env, owner) {
+  try {
+    await run(env.CONTROL_DB,
+      "UPDATE control_locks SET expires_at=datetime('now','+5 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR' AND owner_request_id=?",
+      owner
+    );
+  } catch (_) { /* renewal is best-effort - never let it block real job processing */ }
+}
+
 async function releaseLock(env, owner, finalStatus = "IDLE") {
   await run(env.CONTROL_DB,
     "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR' AND (owner_request_id=? OR owner_request_id IS NULL)",
