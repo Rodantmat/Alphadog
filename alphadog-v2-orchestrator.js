@@ -190,6 +190,10 @@ function translateSqliteToPostgresSql(sqlIn) {
   // datetime('now', '+N seconds'|'minutes'|'hours') and datetime(col, '+N ...')
   sql = sql.replace(/datetime\(\s*'now'\s*,\s*'\+'\s*\|\|\s*\?\s*\|\|\s*'\s*(second|seconds|minute|minutes|hour|hours)'\s*\)/gi,
     (m, unit) => `(now() + (? || ' ${unit}')::interval)`);
+  sql = sql.replace(/datetime\(\s*([\w.]+)\s*,\s*'\+'\s*\|\|\s*\?\s*\|\|\s*'\s*(second|seconds|minute|minutes|hour|hours)'\s*\)/gi,
+    (m, col, unit) => `(${col}::timestamptz + (? || ' ${unit}')::interval)`);
+  sql = sql.replace(/datetime\(\s*([\w.]+)\s*,\s*'-'\s*\|\|\s*\?\s*\|\|\s*'\s*(second|seconds|minute|minutes|hour|hours)'\s*\)/gi,
+    (m, col, unit) => `(${col}::timestamptz - (? || ' ${unit}')::interval)`);
   sql = sql.replace(/datetime\(\s*'now'\s*,\s*'\+(\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days)'\s*\)/gi,
     (m, n, unit) => `(now() + interval '${n} ${unit}')`);
   sql = sql.replace(/datetime\(\s*([\w.]+)\s*,\s*'\+(\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days)'\s*\)/gi,
