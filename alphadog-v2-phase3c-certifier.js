@@ -1,37 +1,14 @@
-// Real Hit Probability Board (alphadog-v2-hit-probability-board, deployed to the
-// alphadog-v2-phase3c-certifier slot).
-//
-// REORDERED per Rodolfo's confirmed spec (2026-07-17): this worker now runs SECOND in the
-// scoring chain (right after Enrichment), BEFORE Scoring Engine - not after it. It reads
-// directly from SCORING_DB.prop_matrix_current + SCORING_DB.enrichment_leg_current (the same
-// input pattern Scoring Engine used to read), rather than reading Scoring Engine's output.
-// This worker now computes BOTH the final Hit Probability percentage AND the final
-// Confidence for every leg - previously Confidence was just a raw carry-through from
-// Scoring Engine; now it is computed here using enrichment's real factor-coverage signal on
-// top of baseline_v6's own historical confidence, per Rodolfo's explicit instruction that
-// confidence must be adjusted using enrichment + daily/market context, not left untouched.
-// score_0_100 is intentionally left NULL here - the reordered Scoring Engine stage (which now
-// runs AFTER this worker) reads this worker's final HP + final confidence and computes the
-// real Final Score on top of both, then writes it back into this same table/row so Final
-// Board's existing read path (hp_board_current.score_0_100) needs no changes.
-//
-// Real, honest scope for this first version: baseline_v6's hit_probability_0_100 is
-// adjusted by the real rate_multiplier using a direct, honest percentage-shift
-// approximation (see computeRealHitProbability below) rather than a full re-derivation
-// through the underlying Poisson/NB/Normal model classification_v6 selects internally per
-// prop. Confidence blends baseline_v6's own historical confidence with enrichment's real
-// factor-coverage ratio for this specific leg - a real, honest v1, flagged for refinement.
+import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-phase3c-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-hit-probability-board";
 const JOB_KEY = "hit-probability-board";
-const SYSTEM_VERSION = "alphadog-v2-hit-probability-board-v0.2.0-reordered-final-hp-confidence";
+const SYSTEM_VERSION = "alphadog-v2-hit-probability-board-v0.3.0-postgres-rewire";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
 const PRIMARY_HP_THRESHOLD = 70;
-
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB", "SCORING_DB", "ARCHIVE_DB"];
 const MAX_LEGS_PER_INVOCATION = 100;
 
+function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
 function nowUtc() { return new Date().toISOString(); }
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -40,18 +17,12 @@ function bindingPresence(env, names) { const out = {}; for (const n of names) ou
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
-function safeJsonParse(text, fallback) { if (!text) return fallback; try { return JSON.parse(text); } catch { return fallback; } }
+function safeJsonParse(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === "object") return value;
+  try { return JSON.parse(value); } catch { return fallback; }
+}
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
-
-async function all(db, sql, ...binds) {
-  const stmt = binds.length ? db.prepare(sql).bind(...binds) : db.prepare(sql);
-  const res = await stmt.all();
-  return res.results || [];
-}
-async function run(db, sql, ...binds) {
-  const stmt = binds.length ? db.prepare(sql).bind(...binds) : db.prepare(sql);
-  return stmt.run();
-}
 
 function gradeForProbability(p) {
   if (p == null) return "BIN_0_NULL";
@@ -61,15 +32,8 @@ function gradeForProbability(p) {
   return "BIN_LOW";
 }
 
-// REAL FIX (per Rodolfo's audit instruction, closing the gap identified at the very start of
-// this session's research): the previous version used a flat x40 percentage-point shift, a
-// crude linear approximation with no real mathematical grounding - it doesn't compress
-// correctly at extremes (a 5% baseline and a 50% baseline would move by the same absolute
-// amount for the same rate change, which is not how probability works) and required an
-// arbitrary tuning constant. Real, standard fix (logistic regression / odds-ratio math,
-// the same approach used in ELO-style rating systems): convert baseline HP to odds, apply the
-// real rate_multiplier (already correctly computed in log-rate space by Enrichment - this is
-// exactly why that space was chosen), convert back to a probability. No arbitrary constant.
+// Convert baseline HP to odds, apply the real rate_multiplier (already computed in
+// log-rate space by Enrichment), convert back to a probability. No arbitrary constant.
 function computeRealHitProbability(baselineHp, rateMultiplier) {
   if (baselineHp == null) return null;
   const clampedBaseline = clamp(baselineHp, 1, 99);
@@ -79,14 +43,6 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
   return clamp(finalHp, 1, 99);
 }
 
-// NEW per Rodolfo's spec: Final Confidence is computed here (not left as a raw carry-
-// through) by blending baseline_v6's own historical confidence with how much real
-// Enrichment context is actually available for this specific leg (more real factors
-// applied vs. missing-factor fallbacks = more trust), then applying Enrichment's own
-// confidence_adjustment signal as a final real nudge. Real, honest v1 - direct daily/market
-// context row-level signals can be folded in as an additional real adjustment once a
-// concrete, agreed formula for that piece is defined; this version already uses enrichment
-// (which itself is built from daily+market context) as its real coverage signal.
 function computeFinalConfidence(baselineConfidence, enrichmentRow) {
   const factorsApplied = (enrichmentRow && enrichmentRow.factors_applied) || 0;
   const factorsMissing = (enrichmentRow && enrichmentRow.factors_missing) || 0;
@@ -98,20 +54,13 @@ function computeFinalConfidence(baselineConfidence, enrichmentRow) {
   return Math.round(clamp(blended + adjustment, 30, 95));
 }
 
-// REAL, GROUNDED OPTIMIZATION (same proven pattern as phase3a's classification/baseline
-// wrappers tonight): runHitProbabilityBoard is already idempotent/resumable (it dedupes via
-// alreadyWrittenIds keyed on hp_board_batch_id), so calling it repeatedly with the same input
-// is safe. Only wired in after the dispatch-side timeout was explicitly fixed this session
-// (HIT_PROBABILITY_BOARD_WORKER_TIMEOUT_MS = 35000ms in orchestrator.js, replacing a reused
-// wrong-worker constant) - 24000ms internal budget keeps the same ~30% safety margin proven
-// safe for the classification/baseline wrappers (32000ms internal vs 45000ms caller timeout).
-async function runHitProbabilityBoardFastLoop(env, input, sourceMatrixBatchId) {
+async function runHitProbabilityBoardFastLoop(pgClient, input, sourceMatrixBatchId) {
   const startMs = Date.now();
   const timeBudgetMs = 24000;
   let lastOutput = null;
   let tickCount = 0;
   while (Date.now() - startMs < timeBudgetMs) {
-    lastOutput = await runHitProbabilityBoard(env, input, sourceMatrixBatchId);
+    lastOutput = await runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId);
     tickCount++;
     if (!lastOutput.ok || !lastOutput.continuation_required) {
       return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
@@ -120,58 +69,37 @@ async function runHitProbabilityBoardFastLoop(env, input, sourceMatrixBatchId) {
   return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
 }
 
-async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
+async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   const hpBatchId = input && input.chain_id ? `hp_board_batch_${input.chain_id}` : rid("hp_board_batch");
 
-  // REORDERED: read directly from prop_matrix_current + enrichment_leg_current (the input
-  // Scoring Engine used to read before the reorder) instead of scoring_engine_current, since
-  // Scoring Engine now runs AFTER this worker, not before it.
-  const alreadyWrittenRows = await all(env.SCORE_DB, `SELECT matrix_id FROM hp_board_current WHERE hp_board_batch_id=?`, hpBatchId).catch(() => []);
+  const alreadyWrittenRows = await pgClient`SELECT matrix_id FROM score.hp_board_current WHERE hp_board_batch_id=${hpBatchId}`.catch(() => []);
   const alreadyWrittenIds = new Set(alreadyWrittenRows.map(r => r.matrix_id));
 
-  const enrichmentRows = await all(env.SCORING_DB,
-    `SELECT e.enrichment_id, e.matrix_id, e.batch_id, e.canonical_prop_key, e.mlb_player_id, e.board_line_value, e.prop_side,
+  const enrichmentRows = await pgClient`SELECT e.enrichment_id, e.matrix_id, e.batch_id, e.canonical_prop_key, e.mlb_player_id, e.board_line_value, e.prop_side,
             e.log_rate_adjustment, e.rate_multiplier, e.confidence_adjustment, e.factors_applied, e.factors_missing, e.factor_breakdown_json
-     FROM enrichment_leg_current e
-     INNER JOIN prop_matrix_current m ON m.matrix_id = e.matrix_id
-     ORDER BY e.matrix_id`);
+     FROM scoring.enrichment_leg_current e
+     INNER JOIN score.prop_matrix_current m ON m.matrix_id = e.matrix_id
+     ORDER BY e.matrix_id`.catch(() => []);
   const candidateRows = enrichmentRows.filter(r => !alreadyWrittenIds.has(r.matrix_id));
   const chunkRows = candidateRows.slice(0, MAX_LEGS_PER_INVOCATION);
 
   const matrixIds = chunkRows.map(r => r.matrix_id).filter(Boolean);
   const matrixById = new Map();
   if (matrixIds.length) {
-    const chunkSize = 90;
-    for (let i = 0; i < matrixIds.length; i += chunkSize) {
-      const chunk = matrixIds.slice(i, i + chunkSize);
-      const placeholders = chunk.map(() => "?").join(",");
-      const matrixRows = await all(env.SCORING_DB, `SELECT * FROM prop_matrix_current WHERE matrix_id IN (${placeholders})`, ...chunk);
-      for (const m of matrixRows) matrixById.set(m.matrix_id, m);
-    }
+    const matrixLiteral = "{" + matrixIds.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(",") + "}";
+    const matrixRows = await pgClient`SELECT * FROM score.prop_matrix_current WHERE matrix_id = ANY(${matrixLiteral}::text[])`;
+    for (const m of matrixRows) matrixById.set(m.matrix_id, m);
   }
 
-  // FIX #1 (direction bug): the baseline lookup must be keyed by side too, not just
-  // player+prop+line - baseline_v6 always stores BOTH a "more" and a "less" row per combo,
-  // and without selected_side in the key/lookup, whichever row happened to come back second
-  // from the DB silently overwrote the first, causing the wrong side's value to be used.
-  // FIX #2 (variation coverage gap): when the exact line isn't in baseline_v6 (its
-  // precomputed grid doesn't always match every line the market offers), fall back to the
-  // NEAREST available line for the same player+prop+side rather than losing the leg entirely.
   const playerIds = [...new Set(chunkRows.map(r => r.mlb_player_id).filter(Boolean))];
   const baselineByPlayerPropSide = new Map();
   if (playerIds.length) {
-    const chunkSize = 90;
-    for (let i = 0; i < playerIds.length; i += chunkSize) {
-      const chunk = playerIds.slice(i, i + chunkSize);
-      const placeholders = chunk.map(() => "?").join(",");
-      const baselineRows = await all(env.ARCHIVE_DB,
-        `SELECT player_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, confidence_0_100 FROM baseline_v6_current WHERE player_id IN (${placeholders})`,
-        ...chunk);
-      for (const b of baselineRows) {
-        const k = `${b.player_id}|${b.canonical_prop_key}|${b.selected_side}`;
-        if (!baselineByPlayerPropSide.has(k)) baselineByPlayerPropSide.set(k, []);
-        baselineByPlayerPropSide.get(k).push(b);
-      }
+    const playerLiteral = "{" + playerIds.join(",") + "}";
+    const baselineRows = await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, confidence_0_100 FROM classification.baseline_v6_current WHERE player_id::text = ANY(${playerLiteral}::text[])`;
+    for (const b of baselineRows) {
+      const k = `${b.player_id}|${b.canonical_prop_key}|${b.selected_side}`;
+      if (!baselineByPlayerPropSide.has(k)) baselineByPlayerPropSide.set(k, []);
+      baselineByPlayerPropSide.get(k).push(b);
     }
   }
   function findBaseline(playerId, propKey, side, lineValue) {
@@ -184,112 +112,89 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     }
     return best ? { row: best, is_exact_line_match: bestDist === 0, line_distance: bestDist } : null;
   }
-  // REAL FIX (root-caused via direct data investigation, confirmed live: enrichment_leg_current.
-  // prop_side was ALWAYS "more" or NULL, never "less" - traced to matrix-builder hard-coding
-  // prop_side to "more" for every case except a "less_only" mode that never actually occurs in
-  // practice). This function now does what the comment above admitted was missing: for props
-  // that are NOT goblin/demon-locked (which are genuinely more-only by PrizePicks' own real
-  // product rules), look up BOTH real baseline sides and pick whichever is actually stronger,
-  // instead of silently defaulting to "more" regardless of which side the real data supports.
   function determineSide(matrixRow, er, playerId, propKey, lineValue) {
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
-    const isGoblinOrDemon = Number(payload?.prepared?.is_goblin || 0) === 1 || Number(payload?.prepared?.is_demon || 0) === 1;
-    if (isGoblinOrDemon) return "more"; // Real PrizePicks rule: goblin/demon lines are genuinely more-only.
+    const isGoblinOrDemon = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1 || Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
+    if (isGoblinOrDemon) return "more";
     const moreBaseline = findBaseline(playerId, propKey, "more", lineValue);
     const lessBaseline = findBaseline(playerId, propKey, "less", lineValue);
     const moreHp = moreBaseline && Number.isFinite(Number(moreBaseline.row.hit_probability_0_100)) ? Number(moreBaseline.row.hit_probability_0_100) : null;
     const lessHp = lessBaseline && Number.isFinite(Number(lessBaseline.row.hit_probability_0_100)) ? Number(lessBaseline.row.hit_probability_0_100) : null;
     if (moreHp != null && lessHp != null) return lessHp > moreHp ? "less" : "more";
     if (lessHp != null && moreHp == null) return "less";
-    return matrixRow.prop_side || er.prop_side || "more"; // Real fallback: no baseline for either side yet, preserve prior behavior rather than guess.
+    return matrixRow.side || er.prop_side || "more";
   }
 
-  await run(env.SCORE_DB,
-    `INSERT OR REPLACE INTO hp_board_batches (hp_board_batch_id, worker_version, profile_key, mode, status, source_table, source_engine_batch_id, source_rows_read, board_rows_written, thresholds_locked, no_true_probability_claims, created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT created_at FROM hp_board_batches WHERE hp_board_batch_id=?), CURRENT_TIMESTAMP))`,
-    hpBatchId, SYSTEM_VERSION, PROFILE_KEY, "real_reordered", "running", "SCORING_DB.prop_matrix_current + SCORING_DB.enrichment_leg_current + ARCHIVE_DB.baseline_v6_current", sourceMatrixBatchId || null, chunkRows.length, 0, 1, 1, hpBatchId);
+  const existingBatch = await pgClient`SELECT created_at FROM score.hp_board_batches WHERE hp_board_batch_id=${hpBatchId}`;
+  const createdAt = existingBatch[0] && existingBatch[0].created_at ? existingBatch[0].created_at : new Date().toISOString();
+  await pgClient`INSERT INTO score.hp_board_batches (hp_board_batch_id, worker_version, profile_key, mode, status, source_table, source_engine_batch_id, source_rows_read, board_rows_written, thresholds_locked, no_true_probability_claims, created_at)
+     VALUES (${hpBatchId}, ${SYSTEM_VERSION}, ${PROFILE_KEY}, 'real_reordered', 'running', 'scoring.prop_matrix_current + scoring.enrichment_leg_current + classification.baseline_v6_current', ${sourceMatrixBatchId || null}, ${chunkRows.length}, 0, 1, 1, ${createdAt})
+     ON CONFLICT (hp_board_batch_id) DO UPDATE SET status=EXCLUDED.status, source_rows_read=EXCLUDED.source_rows_read`;
 
   let written = 0, primaryRows = 0, reviewRows = 0;
-  const statements = [];
-  const insertSql = `INSERT OR REPLACE INTO hp_board_current
-       (hp_board_row_id, hp_board_batch_id, source_engine_batch_id, prepared_row_id, matrix_id, source_line_id, profile_key, hp_profile_version,
-        source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
-        estimated_hit_probability_0_100, probability_confidence_0_100, probability_band, probability_grade,
-        score_0_100, score_grade, board_tier, live_playable, review_playable, hp_primary_playable, hp_review_playable, warning_count, blocker_count,
-        is_goblin, is_demon, is_more_only, calibration_json, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+  const insertRows = [];
   for (const er of chunkRows) {
     const matrixRow = matrixById.get(er.matrix_id) || {};
-    // FIX #5: read player_name from the dedicated, never-truncated column matrix-builder
-    // already populates correctly, instead of parsing the (sometimes-truncated) JSON payload.
     const playerName = matrixRow.player_name || null;
-    // FIX #6: extract goblin/demon/more-only payload data for Final Board to surface later.
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
-    const isGoblin = Number(payload?.prepared?.is_goblin || 0) === 1;
-    const isDemon = Number(payload?.prepared?.is_demon || 0) === 1;
-    const sideMode = payload?.side_context?.side_mode || null;
-    const moreOnly = sideMode === "more_only";
+    const isGoblin = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1;
+    const isDemon = Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
+    const moreOnly = Number(matrixRow.more_only ?? 0) === 1 || (payload?.side_context?.side_mode === "more_only");
+    const sideMode = moreOnly ? "more_only" : (payload?.side_context?.side_mode || null);
 
     const side = determineSide(matrixRow, er, er.mlb_player_id, er.canonical_prop_key, er.board_line_value);
     const baselineMatch = findBaseline(er.mlb_player_id, er.canonical_prop_key, side, er.board_line_value);
     const baseline = baselineMatch ? baselineMatch.row : null;
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
     const hp = computeRealHitProbability(baselineHp, er.rate_multiplier);
+
     if (hp == null) {
-      // BUG FIX: previously this leg was skipped via continue without being tracked as
-      // written, which meant it got re-read and re-skipped on every subsequent invocation
-      // forever (a real infinite-loop found via live testing - board_rows_written got stuck
-      // at a fixed number across multiple consecutive invocations). Now write an explicit
-      // no-baseline placeholder row so this leg is correctly excluded from future chunks.
-      statements.push(env.SCORE_DB.prepare(insertSql).bind(
-        `hp_${er.enrichment_id}`, hpBatchId, sourceMatrixBatchId || null, matrixRow.prepared_row_id || null, er.matrix_id, matrixRow.source_line_id || null, PROFILE_KEY, SYSTEM_VERSION,
-        matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
-        er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, side,
-        null, null, "no_baseline_available", "BIN_0_NULL",
-        null, null, "REVIEW", 0, 1, 0, 1, 0, 0,
-        isGoblin ? 1 : 0, isDemon ? 1 : 0, moreOnly ? 1 : 0,
-        JSON.stringify({ real_reordered: true, no_baseline_coverage: true, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "No baseline_v6 row found for this player/prop/line/side combo even after nearest-line fallback - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
-      ));
+      insertRows.push({
+        hp_board_row_id: `hp_${er.enrichment_id}`, hp_board_batch_id: hpBatchId, source_engine_batch_id: sourceMatrixBatchId || null, prepared_row_id: matrixRow.prepared_row_id || null, matrix_id: er.matrix_id, source_line_id: matrixRow.source_line_id || null,
+        source_key: matrixRow.source_key || null, game_pk: matrixRow.game_pk || null, official_date: matrixRow.official_date || null, official_game_time_utc: matrixRow.official_game_time_utc || null,
+        mlb_player_id: er.mlb_player_id, player_name: playerName, canonical_prop_key: er.canonical_prop_key, line_value: er.board_line_value, selected_side: side,
+        estimated_hit_probability_0_100: null, probability_confidence_0_100: null, board_tier: "REVIEW", live_playable: 0, review_playable: 1,
+        is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, is_more_only: moreOnly ? 1 : 0,
+        score_grade: "BIN_0_NULL",
+        calibration_json: JSON.stringify({ real_reordered: true, no_baseline_coverage: true, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "No baseline_v6 row found for this player/prop/line/side combo even after nearest-line fallback - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
+      });
       reviewRows++;
       written++;
       continue;
     }
     const confidence = computeFinalConfidence(baseline?.confidence_0_100, er);
-
     const primaryPlayable = hp >= PRIMARY_HP_THRESHOLD && confidence >= 55;
     if (primaryPlayable) primaryRows++; else reviewRows++;
 
-    statements.push(env.SCORE_DB.prepare(insertSql).bind(
-      `hp_${er.enrichment_id}`, hpBatchId, sourceMatrixBatchId || null, matrixRow.prepared_row_id || null, er.matrix_id, matrixRow.source_line_id || null, PROFILE_KEY, SYSTEM_VERSION,
-      matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
-      er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, side,
-      hp, confidence, hp >= PRIMARY_HP_THRESHOLD ? "playable" : "below_floor", gradeForProbability(hp),
-      null, null, primaryPlayable ? "PRIMARY" : "REVIEW", primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, 0, 0,
-      isGoblin ? 1 : 0, isDemon ? 1 : 0, moreOnly ? 1 : 0,
-      JSON.stringify({ real_reordered: true, baseline_hp: baselineHp, baseline_confidence: baseline?.confidence_0_100 ?? null, rate_multiplier: er.rate_multiplier ?? 1.0, factors_applied: er.factors_applied || 0, factors_missing: er.factors_missing || 0, primary_hp_threshold: PRIMARY_HP_THRESHOLD, is_exact_line_match: baselineMatch ? baselineMatch.is_exact_line_match : null, line_distance: baselineMatch ? baselineMatch.line_distance : null, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "Final HP + Final Confidence computed here, BEFORE Scoring Engine (reordered per spec). score_0_100 intentionally null until Scoring Engine (now running after this stage) fills it in from this row's final HP + final confidence." })
-    ));
+    insertRows.push({
+      hp_board_row_id: `hp_${er.enrichment_id}`, hp_board_batch_id: hpBatchId, source_engine_batch_id: sourceMatrixBatchId || null, prepared_row_id: matrixRow.prepared_row_id || null, matrix_id: er.matrix_id, source_line_id: matrixRow.source_line_id || null,
+      source_key: matrixRow.source_key || null, game_pk: matrixRow.game_pk || null, official_date: matrixRow.official_date || null, official_game_time_utc: matrixRow.official_game_time_utc || null,
+      mlb_player_id: er.mlb_player_id, player_name: playerName, canonical_prop_key: er.canonical_prop_key, line_value: er.board_line_value, selected_side: side,
+      estimated_hit_probability_0_100: hp, probability_confidence_0_100: confidence, board_tier: primaryPlayable ? "PRIMARY" : "REVIEW", live_playable: primaryPlayable ? 1 : 0, review_playable: primaryPlayable ? 0 : 1,
+      is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, is_more_only: moreOnly ? 1 : 0,
+      score_grade: gradeForProbability(hp),
+      calibration_json: JSON.stringify({ real_reordered: true, baseline_hp: baselineHp, baseline_confidence: baseline?.confidence_0_100 ?? null, rate_multiplier: er.rate_multiplier ?? 1.0, factors_applied: er.factors_applied || 0, factors_missing: er.factors_missing || 0, primary_hp_threshold: PRIMARY_HP_THRESHOLD, is_exact_line_match: baselineMatch ? baselineMatch.is_exact_line_match : null, line_distance: baselineMatch ? baselineMatch.line_distance : null, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "Final HP + Final Confidence computed here, BEFORE Scoring Engine (reordered per spec). score_0_100 intentionally null until Scoring Engine (now running after this stage) fills it in from this row's final HP + final confidence." })
+    });
     written++;
   }
-  if (statements.length) await env.SCORE_DB.batch(statements);
+  const insertCols = ["hp_board_row_id", "hp_board_batch_id", "source_engine_batch_id", "prepared_row_id", "matrix_id", "source_line_id", "source_key", "game_pk", "official_date", "official_game_time_utc", "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side", "estimated_hit_probability_0_100", "probability_confidence_0_100", "board_tier", "live_playable", "review_playable", "is_goblin", "is_demon", "is_more_only", "score_grade", "calibration_json"];
+  if (insertRows.length) {
+    const CHUNK = 150;
+    for (let i = 0; i < insertRows.length; i += CHUNK) {
+      await pgClient`INSERT INTO score.hp_board_current ${pgClient(insertRows.slice(i, i + CHUNK), ...insertCols)}
+        ON CONFLICT (hp_board_row_id) DO UPDATE SET estimated_hit_probability_0_100=EXCLUDED.estimated_hit_probability_0_100, probability_confidence_0_100=EXCLUDED.probability_confidence_0_100, board_tier=EXCLUDED.board_tier, live_playable=EXCLUDED.live_playable, review_playable=EXCLUDED.review_playable, score_grade=EXCLUDED.score_grade, calibration_json=EXCLUDED.calibration_json, updated_at=now()`;
+    }
+  }
 
   const isPartial = candidateRows.length > chunkRows.length || chunkRows.length >= MAX_LEGS_PER_INVOCATION;
   const status = isPartial ? "partial_continue" : "completed_hit_probability_current_estimates_written";
 
-  // REAL FIX (confirmed live: hits_runs_rbis was still exceeded by hits for 5 real players on
-  // the actual board even after the baseline-level fix, because this HP-board stage recombines
-  // baseline HP with its own independent per-leg enrichment factors - reintroducing the same
-  // class of monotonicity violation the baseline fix eliminated at its own layer). Applies the
-  // same subset_of_constraints config already used at baseline, directly to hp_board_current,
-  // for this hp_board_batch_id only. Only runs once the full pass is done, not on every partial
-  // chunk, since intermediate chunks may not have both sides of a constraint pair written yet.
   let subsetReconcile = null;
   if (!isPartial) {
-    subsetReconcile = await reconcileHpBoardSubsetConstraints(env, hpBatchId).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    subsetReconcile = await reconcileHpBoardSubsetConstraints(pgClient, hpBatchId).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
   }
 
-  await run(env.SCORE_DB,
-    `UPDATE hp_board_batches SET status=?, certification_status=?, certification_grade=?, board_rows_written=?, primary_rows=?, review_rows=?, updated_at=CURRENT_TIMESTAMP WHERE hp_board_batch_id=?`,
-    status, "HP_BOARD_CERTIFIED_REAL_SKELETON", "PASS_REAL_SKELETON", written, primaryRows, reviewRows, hpBatchId);
+  await pgClient`UPDATE score.hp_board_batches SET status=${status}, certification_status='HP_BOARD_CERTIFIED_REAL_SKELETON', certification_grade='PASS_REAL_SKELETON', board_rows_written=${written}, primary_rows=${primaryRows}, review_rows=${reviewRows}, updated_at=now() WHERE hp_board_batch_id=${hpBatchId}`;
 
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
@@ -299,47 +204,41 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     matrix_rows_read: chunkRows.length, board_rows_written: written, primary_rows: primaryRows, review_rows: reviewRows,
     primary_hp_threshold: PRIMARY_HP_THRESHOLD,
     subset_constraint_reconcile: subsetReconcile,
-    reordered_note: "This worker now runs BEFORE Scoring Engine (reads matrix+enrichment directly, no longer depends on Scoring Engine's output). Computes final HP AND final Confidence. score_0_100 intentionally left null for the reordered Scoring Engine stage to fill in.",
-    fixes_applied: ["direction_bug_side_keyed_baseline_lookup", "nearest_line_fallback", "player_name_from_dedicated_column", "goblin_demon_more_only_carried_in_calibration_json", "hp_board_subset_constraint_reconcile"],
     timestamp_utc: nowUtc(),
   };
 }
 
-async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
-  const aliasRows = await all(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='shared_threshold_aliases' AND is_active=1`);
-  const aliasCfg = (aliasRows[0]) ? safeJsonParse(aliasRows[0].config_json, {}) : {};
-  const cfgRows = await all(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`);
-  const cfgRow = cfgRows[0] || null;
-  const constraints = cfgRow ? safeJsonParse(cfgRow.config_json, {}) : {};
+async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
+  const aliasRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='shared_threshold_aliases' AND is_active=1`;
+  const aliasCfg = aliasRows[0] ? safeJsonParse(aliasRows[0].config_json, {}) : {};
+  const cfgRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`;
+  const constraints = cfgRows[0] ? safeJsonParse(cfgRows[0].config_json, {}) : {};
   let totalClamped = 0;
   const results = [];
-  // REAL FIX (found via live debugging): true-equality aliases (e.g. hits=total_bases) need a
-  // direct copy, not a one-directional clamp - applied first since subset constraints below may
-  // reference an aliased prop and should see its already-reconciled value.
+
   for (const [aliasKeySide, targetKeySide] of Object.entries(aliasCfg)) {
     const [aliasProp, aliasLineRaw, aliasSide] = aliasKeySide.split("|");
     const [targetProp, targetLineRaw, targetSide] = String(targetKeySide).split("|");
     const aliasLine = Number(aliasLineRaw), targetLine = Number(targetLineRaw);
-    const res = await run(env.SCORE_DB, `
-      UPDATE hp_board_current AS h
+    const res = await pgClient`
+      UPDATE score.hp_board_current AS h
       SET estimated_hit_probability_0_100 = (
-        SELECT s.estimated_hit_probability_0_100 FROM hp_board_current s
+        SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+          AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
       ),
       probability_confidence_0_100 = (
-        SELECT s.probability_confidence_0_100 FROM hp_board_current s
+        SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+          AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
       )
-      WHERE h.hp_board_batch_id = ? AND h.canonical_prop_key = ? AND h.line_value = ? AND h.selected_side = ?
+      WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${aliasProp} AND h.line_value = ${aliasLine} AND h.selected_side = ${aliasSide}
         AND EXISTS (
-          SELECT 1 FROM hp_board_current s
+          SELECT 1 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
-        )`,
-      targetProp, targetLine, targetSide, targetProp, targetLine, targetSide, hpBatchId, aliasProp, aliasLine, aliasSide, targetProp, targetLine, targetSide);
-    const changed = Number(res && res.meta && res.meta.changes || 0);
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        )`;
+    const changed = res.count || 0;
     totalClamped += changed;
     results.push({ alias: aliasKeySide, target: targetKeySide, rows_synced: changed });
   }
@@ -347,32 +246,26 @@ async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
     const [subProp, subLineRaw, subSide] = subsetKey.split("|");
     const [supProp, supLineRaw, supSide] = supersetKey.split("|");
     const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
-    // REAL FIX (found via live debugging): matched by source_key too, since hp_board_current
-    // legitimately has one row per real data source (prizepicks/parlay_underdog/sleeper) for
-    // the same player+prop+line - comparing across sources produced wrong results. Explicit
-    // table alias "h" throughout to avoid an unqualified-column SQLite scoping bug that
-    // silently made the original correlated EXISTS clause always evaluate false.
-    const res = await run(env.SCORE_DB, `
-      UPDATE hp_board_current AS h
+    const res = await pgClient`
+      UPDATE score.hp_board_current AS h
       SET estimated_hit_probability_0_100 = (
-        SELECT MIN(s.estimated_hit_probability_0_100) FROM hp_board_current s
+        SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+          AND s.canonical_prop_key = ${supProp} AND s.line_value = ${supLine} AND s.selected_side = ${supSide} AND s.source_key = h.source_key
       ),
       probability_confidence_0_100 = (
-        SELECT s.probability_confidence_0_100 FROM hp_board_current s
+        SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+          AND s.canonical_prop_key = ${supProp} AND s.line_value = ${supLine} AND s.selected_side = ${supSide} AND s.source_key = h.source_key
         ORDER BY s.estimated_hit_probability_0_100 ASC LIMIT 1
       )
-      WHERE h.hp_board_batch_id = ? AND h.canonical_prop_key = ? AND h.line_value = ? AND h.selected_side = ?
+      WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${subProp} AND h.line_value = ${subLine} AND h.selected_side = ${subSide}
         AND h.estimated_hit_probability_0_100 > (
-          SELECT MIN(s.estimated_hit_probability_0_100) FROM hp_board_current s
+          SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
-        )`,
-      supProp, supLine, supSide, supProp, supLine, supSide, hpBatchId, subProp, subLine, subSide, supProp, supLine, supSide);
-    const changed = Number(res && res.meta && res.meta.changes || 0);
+            AND s.canonical_prop_key = ${supProp} AND s.line_value = ${supLine} AND s.selected_side = ${supSide} AND s.source_key = h.source_key
+        )`;
+    const changed = res.count || 0;
     totalClamped += changed;
     results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
   }
@@ -380,8 +273,8 @@ async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
 }
 
 function identity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  return { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY, status: "ready", schema_owner: "SCORE_DB.hp_board_*", upstream_reads: "SCORING_DB.prop_matrix_current, SCORING_DB.enrichment_leg_current, ARCHIVE_DB.baseline_v6_current", required_db_bindings_present: allTrue(db), db_bindings: db };
+  const db = bindingPresence(env, ["HYPERDRIVE"]);
+  return { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY, status: "ready", schema_owner: "score.hp_board_*", upstream_reads: "score.prop_matrix_current, scoring.enrichment_leg_current, classification.baseline_v6_current", required_db_bindings_present: allTrue(db), db_bindings: db };
 }
 
 export default {
@@ -391,53 +284,29 @@ export default {
     if (request.method === "GET" && (path === "/" || path === "/health")) return jsonResponse(identity(env));
     if (request.method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
+      const pgClient = pg(env);
       try {
-        // REAL FIX (per Rodolfo's audit instruction, found via live end-to-end verification):
-        // the real orchestrator chain (scoringFullRunChildInput) only ever passes chain_id to
-        // this worker, never source_matrix_batch_id/source_engine_batch_id explicitly - meaning
-        // this value was always null in real production runs, and Final Board's correlation
-        // query (WHERE source_engine_batch_id = scoring_engine_batch_${chain_id}) could never
-        // match any real rows. Scoring Engine derives its own batch_id the same deterministic
-        // way from the same shared chain_id (scoring_engine_batch_${chain_id}) - deriving the
-        // same value here, as a fallback when not explicitly provided, closes the real gap.
         const sourceMatrixBatchId = input.source_matrix_batch_id || input.source_engine_batch_id || (input.chain_id ? `scoring_engine_batch_${input.chain_id}` : null);
-        const output = await runHitProbabilityBoardFastLoop(env, input, sourceMatrixBatchId);
+        const output = await runHitProbabilityBoardFastLoop(pgClient, input, sourceMatrixBatchId);
         return jsonResponse(output, output.ok ? 200 : 400);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
+      } finally {
+        await pgClient.end({ timeout: 1 }).catch(() => {});
       }
     }
     if (request.method === "POST" && path === "/reconcile-subset-constraints") {
       const input = await readJsonSafe(request);
+      const pgClient = pg(env);
       try {
-        const result = await reconcileHpBoardSubsetConstraints(env, input.hp_board_batch_id);
+        const result = await reconcileHpBoardSubsetConstraints(pgClient, input.hp_board_batch_id);
         return jsonResponse(result, result.ok ? 200 : 400);
       } catch (err) {
         return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      } finally {
+        await pgClient.end({ timeout: 1 }).catch(() => {});
       }
     }
-    if (request.method === "POST" && path === "/run-fast-loop-test") {
-      const input = await readJsonSafe(request);
-      const startMs = Date.now();
-      const timeBudgetMs = Math.min(Number(input.time_budget_ms) || 20000, 25000);
-      const ticks = [];
-      let currentInput = input;
-      try {
-        while (Date.now() - startMs < timeBudgetMs) {
-          const sourceMatrixBatchId = currentInput.source_matrix_batch_id || currentInput.source_engine_batch_id || (currentInput.chain_id ? `scoring_engine_batch_${currentInput.chain_id}` : null);
-          const tickStart = Date.now();
-          const output = await runHitProbabilityBoard(env, currentInput, sourceMatrixBatchId);
-          ticks.push({ tick_elapsed_ms: Date.now() - tickStart, rows_written: output.board_rows_written, status: output.status, subset_constraint_reconcile: output.subset_constraint_reconcile || null });
-          if (!output.continuation_required) {
-            return jsonResponse({ ok: true, done: true, total_wall_ms: Date.now() - startMs, tick_count: ticks.length, ticks, final_output: output }, 200);
-          }
-          currentInput = { mode: "hit_probability_current_estimate", chain_id: input.chain_id, hp_board_batch_id: output.hp_board_batch_id, source_matrix_batch_id: sourceMatrixBatchId };
-        }
-        return jsonResponse({ ok: true, done: false, total_wall_ms: Date.now() - startMs, tick_count: ticks.length, ticks, note: "Time budget reached, more ticks needed." }, 200);
-      } catch (err) {
-        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err), ticks_completed_before_error: ticks.length, ticks }, 500);
-      }
-    }
-    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /reconcile-subset-constraints", "POST /run-fast-loop-test"] }, 404);
+    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /reconcile-subset-constraints"] }, 404);
   },
 };
