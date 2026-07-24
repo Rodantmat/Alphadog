@@ -286,7 +286,7 @@ function bindingSummary(env) {
 }
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: true, connect_timeout: 8 });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: true, connect_timeout: 8, connection: { statement_timeout: 20000, idle_in_transaction_session_timeout: 20000 } });
 }
 
 function toPgPlaceholders(sqlText) {
