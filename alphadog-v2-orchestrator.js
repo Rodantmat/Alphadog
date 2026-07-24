@@ -12419,7 +12419,7 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
       }
     }
   } catch (err) {
-    await pg`INSERT INTO control.worker_run_log ${pg([{ request_id: parentRow.request_id, run_id: runId, worker_name: WORKER_NAME, job_key: parentRow.job_key, level: "WARN", event_key: "daily_context_full_run_sidecar_recovery_probe_failed", message: "Daily Context sidecar recovery probe failed; stale guard will continue without destructive deletes", data_json: JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, error: String(err && err.message ? err.message : err).slice(0,900) }) }], "request_id", "run_id", "worker_name", "job_key", "level", "event_key", "message", "data_json")}`.catch(() => {});
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_sidecar_recovery_probe_failed', 'Daily Context sidecar recovery probe failed; stale guard will continue without destructive deletes', ?, CURRENT_TIMESTAMP)", parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, error: String(err && err.message ? err.message : err).slice(0,900) }));
     await pg.end({ timeout: 1 }).catch(() => {});
     return null;
   }
