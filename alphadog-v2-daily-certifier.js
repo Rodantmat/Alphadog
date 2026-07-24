@@ -515,7 +515,7 @@ export default {
     if (method === "POST" && path === "/diagnostic") return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", writes_performed: 0, external_calls_performed: 0 });
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 18500;
+      const HARD_DEADLINE_MS = 90000;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       try {
         const out = await withDeadline(runCertifier(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
