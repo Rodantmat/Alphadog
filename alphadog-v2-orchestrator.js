@@ -3269,7 +3269,22 @@ async function ensureConfigScheduledJobsTable(env) {
   return;
 }
 
-async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown") {
+async function enqueueScheduledBoardFullRunIfDue(rawEnv, cronExpression = "unknown") {
+  // Real migration wrapper (D1 being deleted, no exceptions): this function creates the PARENT
+  // job row - if that row stayed on D1, pgClaimNextDueJob would never find it (it only polls
+  // Postgres), and the old D1 discovery path would find it instead, feeding it into
+  // processBoardFullRunJob whose internals now write to Postgres - a guaranteed silent no-op
+  // stuck state. The parent must be created in Postgres from the very start.
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await enqueueScheduledBoardFullRunIfDueInner(env, cronExpression);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function enqueueScheduledBoardFullRunIfDueInner(env, cronExpression = "unknown") {
   await ensureSchema(env);
 
   const pt = pacificNowParts(new Date());
