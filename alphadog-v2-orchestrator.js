@@ -12993,6 +12993,21 @@ function dailyContextFullRunStageCanContinueAfterFailure(stage, child, validatio
 }
 
 async function processDailyContextFullRunJob(env, row, runId, trigger) {
+  // Real migration wrapper (D1 being deleted, no exceptions): opens one Postgres connection,
+  // swaps it in as env.CONTROL_DB for the entire call tree beneath this entry point, and closes
+  // it once at the end - rather than hand-editing every individual call site inside the function
+  // body below (which is left completely unchanged), since every one of them already reads
+  // env.CONTROL_DB and every sub-function this calls already receives env as its first argument.
+  const pg = pgControl(env);
+  const pgEnv = { ...env, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyContextFullRunJobInner(pgEnv, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyContextFullRunJobInner(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
   const lock = await ensureDailyContextFullRunLock(env, row);
