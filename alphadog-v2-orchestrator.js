@@ -11032,7 +11032,17 @@ async function processDailyPlayerAvailabilityJobInner(env, row, runId, trigger) 
   return cappedOutput;
 }
 
-async function processDailyWeatherJob(env, row, runId, trigger) {
+async function processDailyWeatherJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyWeatherJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyWeatherJobInner(env, row, runId, trigger) {
   if (!env.DAILY_WEATHER_WORKER || typeof env.DAILY_WEATHER_WORKER.fetch !== "function") {
     const output = {
       ok: false,
