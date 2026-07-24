@@ -157,7 +157,7 @@ function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch (_) { return {}; } }
 
 function pgClient(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false, connect_timeout: 8 });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false, connect_timeout: 8, connection: { statement_timeout: 20000, idle_in_transaction_session_timeout: 20000 } });
 }
 
 function toPgPlaceholders(sqlText) {
