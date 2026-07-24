@@ -13239,7 +13239,17 @@ async function processDailyContextFullRunJobInner(env, row, runId, trigger) {
   return output;
 }
 
-async function processDailyLineupsJob(env, row, runId, trigger) {
+async function processDailyLineupsJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyLineupsJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyLineupsJobInner(env, row, runId, trigger) {
   if (!env.DAILY_LINEUPS_WORKER || typeof env.DAILY_LINEUPS_WORKER.fetch !== "function") {
     const output = {
       ok: false,
