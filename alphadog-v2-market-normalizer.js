@@ -141,8 +141,8 @@ async function loadPreparedRows(pgClient, boardWindowDates) {
     FROM score.board_prepared_current
     WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL
-      AND official_date::text IN (${boardWindowDates.map((_, i) => `$${i + 1}`).join(",")})
-      AND official_game_time_utc > $${boardWindowDates.length + 1}
+      AND official_date::text IN (${boardWindowDates.map((_, i) => `${i + 1}::text`).join(",")})
+      AND official_game_time_utc > ${boardWindowDates.length + 1}::text
     ORDER BY official_game_time_utc, official_game_pk, source_key, canonical_prop_key, player_name
     LIMIT ${MAX_PREPARED_ROWS}`, [...boardWindowDates, new Date().toISOString()]);
 }
