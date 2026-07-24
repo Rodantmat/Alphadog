@@ -210,11 +210,27 @@ function sourceKeyForParlay(row, config = modeConfig()) {
 }
 function safeHost(urlText) { try { return new URL(urlText).host; } catch (_) { return "invalid_url"; } }
 function safeEndpoint(urlText) { try { const u = new URL(urlText); return `${u.origin}${u.pathname}`; } catch (_) { return String(urlText || "").split("?")[0]; } }
-function authHeaders(env) {
+async function authHeaders(env) {
   const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-player-prop-context/0.3.0" });
   const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || "X-API-Key").trim();
   const prefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
-  if (sourceHas(env, "PARLAY_API_KEY") && headerName) headers.set(headerName, prefix ? `${prefix} ${env.PARLAY_API_KEY}` : String(env.PARLAY_API_KEY));
+  let apiKey = null;
+  if (env.HYPERDRIVE) {
+    const client = pg(env);
+    try {
+      const rows = await client.unsafe("SELECT credential_value_encrypted FROM config.external_credentials WHERE credential_key='parlay_api_key'");
+      if (rows && rows[0] && rows[0].credential_value_encrypted) {
+        const parsed = JSON.parse(rows[0].credential_value_encrypted);
+        if (parsed && parsed.password) apiKey = String(parsed.password);
+      }
+    } catch (_) {
+      // fall through to env secret fallback below
+    } finally {
+      await client.end({ timeout: 1 }).catch(() => {});
+    }
+  }
+  if (!apiKey && sourceHas(env, "PARLAY_API_KEY")) apiKey = String(env.PARLAY_API_KEY);
+  if (apiKey && headerName) headers.set(headerName, prefix ? `${prefix} ${apiKey}` : apiKey);
   return headers;
 }
 function findArraysDeep(value, path = "$", out = [], depth = 0) {
