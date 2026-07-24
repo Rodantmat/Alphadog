@@ -220,8 +220,13 @@ function pgControlDB(pg) {
     prepare(sqlIn) {
       const translated = translateSqliteToPostgresSql(sqlIn);
       const exec = async (args) => {
-        const rows = await pg.unsafe(translated, args);
-        return { results: rows, success: true, meta: { changes: Array.isArray(rows) ? rows.length : 0 } };
+        try {
+          const rows = await pg.unsafe(translated, args);
+          return { results: rows, success: true, meta: { changes: Array.isArray(rows) ? rows.length : 0 } };
+        } catch (err) {
+          const e = new Error(`pgControlDB exec failed: ${String(err && err.message ? err.message : err)} | SQL: ${translated.slice(0, 500)} | ARGS: ${JSON.stringify(args).slice(0, 300)}`);
+          throw e;
+        }
       };
       return {
         bind(...args) { return { run: () => exec(args), all: () => exec(args) }; },
