@@ -11339,7 +11339,17 @@ async function recoverDailyTeamScheduleSpotSidecarForDispatch(env, row, timeoutE
   return output;
 }
 
-async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
+async function processDailyTeamScheduleSpotJob(rawEnv, row, runId, trigger) {
+  const pg = pgControl(rawEnv);
+  const env = { ...rawEnv, CONTROL_DB: pgControlDB(pg) };
+  try {
+    return await processDailyTeamScheduleSpotJobInner(env, row, runId, trigger);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function processDailyTeamScheduleSpotJobInner(env, row, runId, trigger) {
   if (!env.DAILY_SCHEDULE_WORKER || typeof env.DAILY_SCHEDULE_WORKER.fetch !== "function") {
     const output = {
       ok: false,
