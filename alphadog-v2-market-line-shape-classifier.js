@@ -706,24 +706,27 @@ function bestPreparedMatch(sourceRow, index) {
 }
 async function prunePlayerPropRows(pgClient, boardWindowDates, slateWindowKey, config = modeConfig()) {
   const deleted = {};
-  const inList = boardWindowDates.map((_, i) => "$" + (i + 2) + "::text").join(",");
+  const datesLiteral = "{" + boardWindowDates.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(",") + "}";
   if (config.prop_family === "hitter") {
     for (const sourceKey of LEGACY_PARLAY_SOURCE_KEYS) {
-      await pgClient.unsafe(`DELETE FROM market.context_probe_player_props WHERE source_key = $1 AND (slate_window_key <> $${boardWindowDates.length + 2} OR official_date NOT IN (${inList}))`, [sourceKey, ...boardWindowDates, slateWindowKey]);
+      await pgClient`DELETE FROM market.context_probe_player_props WHERE source_key = ${sourceKey} AND (slate_window_key <> ${slateWindowKey} OR NOT (official_date::text = ANY(${datesLiteral}::text[])))`;
       await pgClient`DELETE FROM market.context_probe_player_props WHERE source_key = ${sourceKey} AND slate_window_key = ${slateWindowKey}`;
     }
   }
-  await pgClient.unsafe(`DELETE FROM market.context_probe_player_props WHERE source_key LIKE $1 AND (slate_window_key <> $${boardWindowDates.length + 2} OR official_date NOT IN (${inList}))`, [`parlay_api_%_${config.source_suffix}`, ...boardWindowDates, slateWindowKey]);
-  await pgClient.unsafe(`DELETE FROM market.context_probe_player_props WHERE source_key LIKE $1 AND slate_window_key = $2`, [`parlay_api_%_${config.source_suffix}`, slateWindowKey]);
+  const parlayLike = `parlay_api_%_${config.source_suffix}`;
+  await pgClient`DELETE FROM market.context_probe_player_props WHERE source_key LIKE ${parlayLike} AND (slate_window_key <> ${slateWindowKey} OR NOT (official_date::text = ANY(${datesLiteral}::text[])))`;
+  await pgClient`DELETE FROM market.context_probe_player_props WHERE source_key LIKE ${parlayLike} AND slate_window_key = ${slateWindowKey}`;
   deleted.context_probe_player_props = `deleted_${config.prop_family}_parlay_source_rows_outside_or_current_board_window_all_books`;
-  await pgClient.unsafe(`DELETE FROM market.context_probe_coverage WHERE (coverage_grade LIKE $1 OR details_json LIKE $2) AND (slate_window_key <> $${boardWindowDates.length + 3} OR official_date NOT IN (${inList}))`, [`${config.coverage_prefix}_%`, `%"mode":"${config.mode}"%`, ...boardWindowDates, slateWindowKey]);
-  await pgClient.unsafe(`DELETE FROM market.context_probe_coverage WHERE (coverage_grade LIKE $1 OR details_json LIKE $2) AND slate_window_key = $3`, [`${config.coverage_prefix}_%`, `%"mode":"${config.mode}"%`, slateWindowKey]);
+  const covGradeLike = `${config.coverage_prefix}_%`;
+  const covModeLike = `%"mode":"${config.mode}"%`;
+  await pgClient`DELETE FROM market.context_probe_coverage WHERE (coverage_grade LIKE ${covGradeLike} OR details_json LIKE ${covModeLike}) AND (slate_window_key <> ${slateWindowKey} OR NOT (official_date::text = ANY(${datesLiteral}::text[])))`;
+  await pgClient`DELETE FROM market.context_probe_coverage WHERE (coverage_grade LIKE ${covGradeLike} OR details_json LIKE ${covModeLike}) AND slate_window_key = ${slateWindowKey}`;
   deleted.context_probe_coverage = `deleted_only_${config.prop_family}_prop_context_rows_no_teams_coverage_wipe`;
-  await pgClient.unsafe(`DELETE FROM market.context_probe_issues WHERE issue_type LIKE $1 AND (slate_window_key <> $${boardWindowDates.length + 3} OR official_date NOT IN (${inList}))`, [`${config.issue_prefix}_%`, ...boardWindowDates, slateWindowKey]);
-  await pgClient.unsafe(`DELETE FROM market.context_probe_issues WHERE issue_type LIKE $1 AND slate_window_key = $2`, [`${config.issue_prefix}_%`, slateWindowKey]);
+  const issueLike = `${config.issue_prefix}_%`;
+  await pgClient`DELETE FROM market.context_probe_issues WHERE issue_type LIKE ${issueLike} AND (slate_window_key <> ${slateWindowKey} OR NOT (official_date::text = ANY(${datesLiteral}::text[])))`;
+  await pgClient`DELETE FROM market.context_probe_issues WHERE issue_type LIKE ${issueLike} AND slate_window_key = ${slateWindowKey}`;
   deleted.context_probe_issues = `deleted_only_${config.prop_family}_prop_issues`;
-  const inList2 = boardWindowDates.map((_, i) => "$" + (i + 3) + "::text").join(",");
-  await pgClient.unsafe(`DELETE FROM market.context_probe_batches WHERE mode = $1 AND (slate_window_key <> $2 OR window_start_date NOT IN (${inList2}) OR window_end_date NOT IN (${inList2}))`, [config.mode, slateWindowKey, ...boardWindowDates]);
+  await pgClient`DELETE FROM market.context_probe_batches WHERE mode = ${config.mode} AND (slate_window_key <> ${slateWindowKey} OR NOT (window_start_date::text = ANY(${datesLiteral}::text[])) OR NOT (window_end_date::text = ANY(${datesLiteral}::text[])))`;
   await pgClient`DELETE FROM market.context_probe_batches WHERE mode = ${config.mode} AND slate_window_key = ${slateWindowKey}`;
   deleted.context_probe_batches = `deleted_${config.prop_family}_prop_batches_outside_or_current_board_window`;
   return deleted;
