@@ -152,7 +152,7 @@ async function loadCalendarGames(pgClient, gamePks) {
   const chunkSize = 200;
   for (let i = 0; i < gamePks.length; i += chunkSize) {
     const chunk = gamePks.slice(i, i + chunkSize);
-    const rows = await pgClient.unsafe(`SELECT game_pk, official_date::text AS official_date, game_time_utc, status_code, abstract_game_state, detailed_state, is_scheduled, is_pregame, is_live, is_final, home_team_id, away_team_id, home_team_name, away_team_name, doubleheader, game_number, venue_name FROM calendar.game_calendar WHERE game_pk IN (${chunk.map((_, i) => `${i + 1}`).join(",")})`, chunk);
+    const rows = await pgClient.unsafe(`SELECT game_pk, official_date::text AS official_date, game_time_utc, status_code, abstract_game_state, detailed_state, is_scheduled, is_pregame, is_live, is_final, home_team_id, away_team_id, home_team_name, away_team_name, doubleheader, game_number, venue_name FROM calendar.game_calendar WHERE game_pk IN (${chunk.map((_, idx) => "$" + (idx + 1) + "::bigint").join(",")})`, chunk);
     out.push(...rows);
   }
   return out;
