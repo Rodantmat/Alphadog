@@ -276,6 +276,16 @@ async function isDateCertifiedComplete(sql, officialDate) {
   if (!r || Number(r.total) === 0) return { ready: false, reason: "NO_CALENDAR_DATA_FOR_DATE" };
   return { ready: Number(r.total) === Number(r.ready || 0), reason: null, total: Number(r.total), ready_games: Number(r.ready || 0) };
 }
+async function isUpstreamMetricsComplete(sql) {
+  // Real cascade guard: verifies neither hitter_metrics nor pitcher_metrics has a delta/snapshot
+  // batch stuck in a non-terminal state before classification trusts their watermarks. Metrics
+  // batches use several real terminal status names depending on mode (delta vs snapshot-repair),
+  // so this checks for any row whose status doesn't indicate genuine completion.
+  const h = await sql`SELECT COUNT(*)::int AS c FROM stats_hitter.metric_batches WHERE status NOT LIKE 'COMPLETED%' AND status NOT LIKE '%NOOP%' AND batch_id != 'hitter_metrics_base_backfill_singleton'`;
+  const p = await sql`SELECT COUNT(*)::int AS c FROM stats_pitcher.metric_batches WHERE status NOT LIKE 'COMPLETED%' AND status NOT LIKE '%NOOP%' AND batch_id != 'pitcher_metrics_base_backfill_singleton'`;
+  const hc = Number(h[0].c), pc = Number(p[0].c);
+  return { ready: hc === 0 && pc === 0, hitter_non_terminal_count: hc, pitcher_non_terminal_count: pc };
+}
 async function getNextDeltaDay(sql) {
   const baseBatch = await sql`SELECT delta_watermark_date FROM classification.classification_batches WHERE batch_id='classification_base_backfill_singleton' LIMIT 1`;
   const watermark = baseBatch[0] ? baseBatch[0].delta_watermark_date : null;
@@ -287,9 +297,12 @@ async function getNextDeltaDay(sql) {
     await sql`UPDATE classification.classification_batches SET delta_watermark_date=${seedDate}, updated_at=now() WHERE batch_id='classification_base_backfill_singleton'`;
     return { ok: true, no_data_yet: true, watermark: seedDate, next_date: seedDate, latest_available: seedDate };
   }
+  const metricsGate = await isUpstreamMetricsComplete(sql);
+  if (!metricsGate.ready) return { ok: true, no_data_yet: true, watermark, blocked_reason: "UPSTREAM_METRICS_NOT_TERMINAL", metrics_gate: metricsGate };
   const hLatest = await sql`SELECT MAX(game_date) AS d FROM stats_hitter.game_logs WHERE season=${DEFAULT_SEASON}`;
   const pLatest = await sql`SELECT MAX(game_date) AS d FROM stats_pitcher.game_logs WHERE season=${DEFAULT_SEASON}`;
-  const latestAvailable = [hLatest[0].d, pLatest[0].d].filter(Boolean).sort().pop();
+  const bothDates = [hLatest[0].d, pLatest[0].d].filter(Boolean).sort();
+  const latestAvailable = bothDates.length === 2 ? bothDates[0] : null;
   const nextDateRows = await sql`SELECT (${watermark}::date + interval '1 day')::date AS d`;
   const nextDate = nextDateRows[0].d;
   if (!latestAvailable || nextDate > latestAvailable) return { ok: true, no_data_yet: true, watermark, next_date: nextDate, latest_available: latestAvailable };
