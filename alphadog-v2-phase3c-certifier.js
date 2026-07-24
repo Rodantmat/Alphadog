@@ -177,7 +177,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     });
     written++;
   }
-  const insertCols = ["hp_board_row_id", "hp_board_batch_id", "source_engine_batch_id", "prepared_row_id", "matrix_id", "source_line_id", "source_key", "game_pk", "official_date", "official_game_time_utc", "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side", "estimated_hit_probability_0_100", "probability_confidence_0_100", "board_tier", "live_playable", "review_playable", "is_goblin", "is_demon", "is_more_only", "score_grade", "calibration_json"];
+  const insertCols = ["hp_board_row_id", "hp_board_batch_id", "source_engine_batch_id", "prepared_row_id", "matrix_id", "source_line_id", "source_key", "game_pk", "official_date", "official_game_time_utc", "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side", "estimated_hit_probability_0_100", "probability_confidence_0_100", "board_tier", "live_playable", "review_playable", "is_goblin", "is_demon", "more_only", "score_grade", "calibration_json"];
   if (insertRows.length) {
     const CHUNK = 150;
     for (let i = 0; i < insertRows.length; i += CHUNK) {
