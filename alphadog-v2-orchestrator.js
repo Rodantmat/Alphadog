@@ -16,7 +16,7 @@ function pgSchedule(env) {
 // (daily_context_full_run, board_full_run). Mirrors control_locks/control_job_queue/
 // control_job_runs/control_worker_run_log exactly under the `control` schema.
 function pgControl(env) {
-  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 });
 }
 
 function jsonResponse(body, status = 200) {
