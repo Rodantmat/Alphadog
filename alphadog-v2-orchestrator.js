@@ -20647,14 +20647,30 @@ export default {
   async scheduled(event, env, ctx) {
     const cronExpression = event && event.cron ? String(event.cron) : "unknown";
     ctx.waitUntil((async () => {
-      await enqueueScheduledStaticFullRunIfDue(env, cronExpression);
-      await enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression);
-      await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
-      await enqueueScheduledScoringFullRunIfDue(env, cronExpression);
-      await enqueueScheduledDailyFullRunIfDue(env, cronExpression);
-      await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
-      await enqueuePostgresFullRunIfDue(env, cronExpression);
-      await pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
+      // Real resilience fix: each scheduled-enqueue check is now isolated in its own try/catch.
+      // Previously these were a bare sequential await chain - if ANY one of them threw, every
+      // subsequent one (including the final pump() call) silently never ran for that entire tick.
+      // Found live: postgres-full-run's 6am trigger was missed, with zero trace of any attempt,
+      // while every other scheduled chain also shows no natural cron activity in the same window -
+      // consistent with an earlier function in this chain throwing and aborting everything after it.
+      const safeScheduledCall = async (label, fn) => {
+        try { await fn(); } catch (err) {
+          try {
+            await run(env.CONTROL_DB,
+              "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'scheduled_enqueue_exception', 'ERROR', 'scheduled_enqueue_uncaught_exception', ?, ?, CURRENT_TIMESTAMP)",
+              rid("sched_exc"), WORKER_NAME, `Uncaught exception in ${label} during scheduled() - isolated so other scheduled chains still run`, JSON.stringify({ label, error: String(err && err.message ? err.message : err), stack: String(err && err.stack ? err.stack : "").slice(0, 2000), cron_expression: cronExpression })
+            );
+          } catch (_) { /* logging itself must never block the remaining scheduled checks */ }
+        }
+      };
+      await safeScheduledCall("enqueueScheduledStaticFullRunIfDue", () => enqueueScheduledStaticFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("enqueueScheduledContextHistoryFullRunIfDue", () => enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("enqueueScheduledIncrementalMorningFullRunIfDue", () => enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("enqueueScheduledScoringFullRunIfDue", () => enqueueScheduledScoringFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("enqueueScheduledDailyFullRunIfDue", () => enqueueScheduledDailyFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("enqueueScheduledBoardFullRunIfDue", () => enqueueScheduledBoardFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("enqueuePostgresFullRunIfDue", () => enqueuePostgresFullRunIfDue(env, cronExpression));
+      await safeScheduledCall("pump", () => pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12));
     })());
   }
 };
