@@ -1,27 +1,19 @@
+import postgres from "postgres";
+
 const WORKER_NAME = "alphadog-v2-market-certifier";
-const VERSION = "alphadog-v2-market-certifier-v0.1.0-initial-parsing-tally-and-readiness";
+const VERSION = "alphadog-v2-market-certifier-v0.2.0-postgres-rewire";
 const JOB_KEY = "market-certifier";
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "MARKET_DB", "SCORE_DB", "TEAM_DB"];
-const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON"];
-
+function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-      "access-control-allow-origin": "*",
-      "access-control-allow-headers": "content-type,x-ingest-token,x-admin-token,authorization",
-      "access-control-allow-methods": "GET,POST,OPTIONS"
-    }
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type,x-ingest-token,x-admin-token,authorization", "access-control-allow-methods": "GET,POST,OPTIONS" }
   });
 }
 async function readJsonSafe(request) { try { return await request.json(); } catch (_) { return {}; } }
-async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = binds.length ? await s.bind(...binds).all() : await s.all(); return r.results || []; }
-async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).run() : await s.run(); }
 async function withDeadline(promise, ms, fallbackValue) {
   let timer = null;
   try {
@@ -33,42 +25,13 @@ async function withDeadline(promise, ms, fallbackValue) {
     if (timer) clearTimeout(timer);
   }
 }
-async function batchRun(db, statements, chunkSize = 80) {
-  // REAL FIX (same class of bug already found and fixed twice this session in score-prep and
-  // the PrizePicks worker): this previously processed chunks sequentially, one at a time. With
-  // today's real board at 8869 rows (4.6x yesterday's 1926), that's ~111 sequential round-trips
-  // for the main write step alone - directly explaining why this worker now exceeds its 40s
-  // deadline when the identical operation completed in ~12s yesterday on a smaller real board.
-  // Fires chunks concurrently with a safe, bounded worker pool (3, leaving real headroom under
-  // Cloudflare's documented 6-simultaneous-connections-per-invocation limit), matching the same
-  // proven pattern already used successfully elsewhere this session.
-  const CONCURRENCY = 3;
-  const chunks = [];
-  for (let i = 0; i < statements.length; i += chunkSize) chunks.push(statements.slice(i, i + chunkSize));
-  let nextChunkIndex = 0;
-  async function runOneChunkWorker() {
-    while (nextChunkIndex < chunks.length) {
-      const idx = nextChunkIndex++;
-      if (chunks[idx].length) await db.batch(chunks[idx]);
-    }
-  }
-  const workerCount = Math.min(CONCURRENCY, chunks.length);
-  await Promise.all(Array.from({ length: workerCount }, runOneChunkWorker));
-}
 function safeJson(value, max = 10000) {
   if (value === undefined || value === null) return null;
   let text;
   try { text = typeof value === "string" ? value : JSON.stringify(value); } catch (_) { text = String(value); }
   return text.length > max ? text.slice(0, max) + "...TRUNCATED" : text;
 }
-function parseObjectSafe(value) {
-  if (!value) return {};
-  if (typeof value === "object" && !Array.isArray(value)) return value;
-  if (typeof value === "string") { try { const p = JSON.parse(value); return p && typeof p === "object" && !Array.isArray(p) ? p : {}; } catch (_) { return {}; } }
-  return {};
-}
 function bindingPresence(env, names) { const out = {}; for (const name of names) out[name] = Boolean(env && env[name]); return out; }
-function varPresence(env, names) { const out = {}; for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0; return out; }
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 function ptDate(offsetDays = 0) {
   const base = new Date();
@@ -78,206 +41,41 @@ function ptDate(offsetDays = 0) {
   d.setUTCDate(d.getUTCDate() + offsetDays);
   return d.toISOString().slice(0, 10);
 }
-function determineSlateShape(todayCount, tomorrowCount) {
-  if (todayCount > 0 && tomorrowCount > 0) return "split_today_tomorrow";
-  if (todayCount > 0 && tomorrowCount === 0) return "same_day_only";
-  if (todayCount === 0 && tomorrowCount > 0) return "next_day_only";
-  return "no_games";
-}
-
-function baseIdentity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  const vars = varPresence(env, EXPECTED_VARS);
-  return {
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    status: "READY_MARKET_CONTEXT_READINESS_AND_PARSING_CERTIFIER",
-    timestamp_utc: nowUtc(),
-    phase: "market-context-readiness-and-parsing-certifier",
-    binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) },
-    guardrails: {
-      readiness_and_parsing_tally_only: true,
-      no_external_calls: true,
-      no_vendor_fetch: true,
-      no_board_mutation: true,
-      no_score_db_mutation: true,
-      no_market_current_lines_writes: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_matrix_builder: true,
-      volatile_current_retention_today_tomorrow_only: true,
-      batches_retained_for_small_audit_metadata: true
-    },
-    layers_tracked: ["team_game_odds", "hitter_prop_lines", "pitcher_prop_lines"]
-  };
-}
-
-async function ensureSchema(env) {
-  await batchRun(env.MARKET_DB, [
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_certifier_batches (
-    batch_id TEXT PRIMARY KEY,
-    request_id TEXT,
-    run_id TEXT,
-    worker_name TEXT,
-    worker_version TEXT,
-    job_key TEXT,
-    mode TEXT,
-    status TEXT,
-    window_start TEXT,
-    window_end TEXT,
-    prepared_rows_read INTEGER DEFAULT 0,
-    prepared_games_checked INTEGER DEFAULT 0,
-    current_rows_written INTEGER DEFAULT 0,
-    issue_rows_written INTEGER DEFAULT 0,
-    hard_blocker_count INTEGER DEFAULT 0,
-    warning_count INTEGER DEFAULT 0,
-    ready_full_count INTEGER DEFAULT 0,
-    ready_with_warnings_count INTEGER DEFAULT 0,
-    ready_partial_count INTEGER DEFAULT 0,
-    blocked_count INTEGER DEFAULT 0,
-    not_applicable_count INTEGER DEFAULT 0,
-    certification_status TEXT,
-    certification_grade TEXT,
-    certification_reason TEXT,
-    output_json TEXT,
-    started_at TEXT,
-    completed_at TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_context_readiness_current (
-    readiness_key TEXT PRIMARY KEY,
-    batch_id TEXT,
-    official_date TEXT,
-    game_pk INTEGER,
-    prepared_row_id TEXT,
-    source_key TEXT,
-    player_id INTEGER,
-    player_name TEXT,
-    canonical_prop_key TEXT,
-    prop_family TEXT,
-    team_odds_context_status TEXT,
-    prop_line_context_status TEXT,
-    market_context_status TEXT,
-    market_context_grade TEXT,
-    hard_blocker_count INTEGER DEFAULT 0,
-    warning_count INTEGER DEFAULT 0,
-    hard_block_reasons_json TEXT,
-    warning_reasons_json TEXT,
-    details_json TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_context_readiness_issues (
-    issue_id TEXT PRIMARY KEY,
-    batch_id TEXT,
-    official_date TEXT,
-    game_pk INTEGER,
-    prepared_row_id TEXT,
-    player_id INTEGER,
-    layer_key TEXT,
-    issue_class TEXT,
-    severity TEXT,
-    issue_type TEXT,
-    reason TEXT,
-    details_json TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_parsing_tally_current (
-    tally_key TEXT PRIMARY KEY,
-    batch_id TEXT,
-    official_date TEXT,
-    layer_key TEXT,
-    source_key TEXT,
-    rows_seen INTEGER DEFAULT 0,
-    rows_normalized INTEGER DEFAULT 0,
-    rows_matched_to_board INTEGER DEFAULT 0,
-    rows_external_valid_unanchored INTEGER DEFAULT 0,
-    rows_quarantined INTEGER DEFAULT 0,
-    rows_true_unmatched INTEGER DEFAULT 0,
-    normalization_rate_pct REAL,
-    match_rate_pct REAL,
-    true_unmatched_rate_pct REAL,
-    quarantine_reason_breakdown_json TEXT,
-    last_computed_at TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_parsing_tally_history (
-    history_id TEXT PRIMARY KEY,
-    tally_key TEXT,
-    official_date TEXT,
-    layer_key TEXT,
-    source_key TEXT,
-    rows_seen INTEGER DEFAULT 0,
-    rows_normalized INTEGER DEFAULT 0,
-    rows_matched_to_board INTEGER DEFAULT 0,
-    rows_quarantined INTEGER DEFAULT 0,
-    rows_true_unmatched INTEGER DEFAULT 0,
-    normalization_rate_pct REAL,
-    match_rate_pct REAL,
-    recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`),
-    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_certifier_slate_current (
-    slate_date TEXT PRIMARY KEY,
-    batch_id TEXT,
-    slate_shape TEXT,
-    game_count INTEGER DEFAULT 0,
-    computed_at TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_context_readiness_current_game ON market_context_readiness_current(official_date, game_pk)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_context_readiness_current_player ON market_context_readiness_current(player_id, game_pk)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_context_readiness_issues_batch ON market_context_readiness_issues(batch_id)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_parsing_tally_current_layer ON market_parsing_tally_current(official_date, layer_key, source_key)"),
-    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_parsing_tally_history_layer ON market_parsing_tally_history(official_date, layer_key, source_key)")
-  ]);
-}
-
 function pct(part, whole) {
   const p = Number(part || 0), w = Number(whole || 0);
   return w ? Number((100 * p / w).toFixed(1)) : null;
 }
-
-async function readLatestBatch(env, mode) {
-  return (await all(env.MARKET_DB, `SELECT * FROM market_context_probe_batches WHERE mode = ? ORDER BY datetime(updated_at) DESC LIMIT 1`, mode))[0] || null;
-}
-
-async function readPreparedRows(env) {
-  return await all(env.SCORE_DB, `SELECT prepared_row_id, source_key, player_name, resolved_mlb_player_id, canonical_prop_key, line_value, official_game_pk, official_game_time_utc, official_date
-    FROM score_board_prepared_current
-    WHERE pickable_safe = 1
-      AND matchup_status = 'calendar_matched'
-      AND player_match_status = 'matched'
-      AND official_game_pk IS NOT NULL
-      AND official_game_time_utc IS NOT NULL
-    ORDER BY official_game_time_utc, prepared_row_id`);
-}
-
 function isPitcherProp(prop) {
   const p = String(prop || "").toLowerCase();
   return p.includes("pitcher") || p.includes("earned_runs") || p.includes("hits_allowed") || p.includes("walks_allowed") || p.includes("runs_allowed");
 }
 
-// Real per-bookmaker parsing tally, computed directly from the persisted evidence rows rather
-// than the worker's own output_json summary. This is deliberately robust to which internal code
-// path the worker took (standalone rich-summary run vs. backend-chain fast-terminal run) since
-// both write the same real per-row mapping_status into market_context_probe_player_props - that
-// is the one place genuinely safe to depend on. mapping_status buckets:
-//   matched_*                                          -> real match to a real board leg
-//   external_valid_player_resolved_not_on_prepared_board -> real player/prop, just not on our board
-//                                                          (a coverage gap, not a parsing failure)
-//   quarantined_*                                      -> genuine parsing/normalization failure
-//   anything else (no_prepared_match_*, ambiguous_*)   -> true, unexplained non-match
-async function computePropParsingTally(env, batchId) {
+function baseIdentity(env) {
+  const db = { HYPERDRIVE: Boolean(env && env.HYPERDRIVE) };
+  return {
+    ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+    status: "READY_MARKET_CONTEXT_READINESS_AND_PARSING_CERTIFIER", timestamp_utc: nowUtc(),
+    phase: "market-context-readiness-and-parsing-certifier",
+    binding_summary: { required_db_bindings_present: allTrue(db) },
+    guardrails: { readiness_and_parsing_tally_only: true, no_external_calls: true, no_vendor_fetch: true, no_board_mutation: true, no_score_db_mutation: true, no_market_current_lines_writes: true, no_scoring: true, no_ranking: true, no_final_board: true, no_matrix_builder: true, volatile_current_retention_today_tomorrow_only: true, batches_retained_for_small_audit_metadata: true },
+    layers_tracked: ["team_game_odds", "hitter_prop_lines", "pitcher_prop_lines"]
+  };
+}
+
+async function readLatestBatch(pgClient, mode) {
+  const rows = await pgClient`SELECT * FROM market.context_probe_batches WHERE mode = ${mode} ORDER BY updated_at DESC LIMIT 1`;
+  return rows[0] || null;
+}
+async function readPreparedRows(pgClient) {
+  return pgClient`SELECT prepared_row_id, source_key, player_name, resolved_mlb_player_id, canonical_prop_key, line_value, official_game_pk, official_game_time_utc, official_date::text AS official_date
+    FROM score.board_prepared_current
+    WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched'
+      AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL
+    ORDER BY official_game_time_utc, prepared_row_id`;
+}
+async function computePropParsingTally(pgClient, batchId) {
   if (!batchId) return { rows_seen: 0, per_source: {} };
-  const rows = await all(env.MARKET_DB, `SELECT source_key, mapping_status, COUNT(*) AS c FROM market_context_probe_player_props WHERE batch_id = ? GROUP BY source_key, mapping_status`, batchId);
+  const rows = await pgClient`SELECT source_key, mapping_status, COUNT(*) AS c FROM market.context_probe_player_props WHERE batch_id = ${batchId} GROUP BY source_key, mapping_status`;
   const perSource = {};
   let rowsSeen = 0;
   for (const r of rows) {
@@ -294,81 +92,64 @@ async function computePropParsingTally(env, batchId) {
   }
   return { rows_seen: rowsSeen, per_source: perSource };
 }
-
-async function writeParsingTallyForLayer(env, batchId, officialDate, layerKey, perSourceTally, statements) {
+async function writeParsingTallyForLayer(pgClient, batchId, officialDate, layerKey, perSourceTally, rowsOut) {
   for (const [sourceKey, counts] of Object.entries(perSourceTally)) {
     const tallyKey = `${officialDate}|${layerKey}|${sourceKey}`;
     const normalizationRate = pct(counts.rows_seen - (counts.rows_quarantined || 0), counts.rows_seen);
     const matchRate = pct(counts.rows_matched_to_board, counts.rows_seen);
     const trueUnmatchedRate = pct(counts.rows_true_unmatched, counts.rows_seen);
-    statements.push(env.MARKET_DB.prepare(`INSERT OR REPLACE INTO market_parsing_tally_current (tally_key,batch_id,official_date,layer_key,source_key,rows_seen,rows_normalized,rows_matched_to_board,rows_external_valid_unanchored,rows_quarantined,rows_true_unmatched,normalization_rate_pct,match_rate_pct,true_unmatched_rate_pct,quarantine_reason_breakdown_json,last_computed_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT created_at FROM market_parsing_tally_current WHERE tally_key=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`)
-      .bind(tallyKey, batchId, officialDate, layerKey, sourceKey, counts.rows_seen, counts.rows_seen - (counts.rows_quarantined || 0), counts.rows_matched_to_board, counts.rows_external_valid_unanchored || 0, counts.rows_quarantined || 0, counts.rows_true_unmatched || 0, normalizationRate, matchRate, trueUnmatchedRate, safeJson(counts.quarantine_breakdown || {}), nowUtc(), tallyKey));
-    statements.push(env.MARKET_DB.prepare(`INSERT INTO market_parsing_tally_history (history_id,tally_key,official_date,layer_key,source_key,rows_seen,rows_normalized,rows_matched_to_board,rows_quarantined,rows_true_unmatched,normalization_rate_pct,match_rate_pct,recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`)
-      .bind(rid("mkt_parse_hist"), tallyKey, officialDate, layerKey, sourceKey, counts.rows_seen, counts.rows_seen - (counts.rows_quarantined || 0), counts.rows_matched_to_board, counts.rows_quarantined || 0, counts.rows_true_unmatched || 0, normalizationRate, matchRate));
+    rowsOut.push({
+      tally_key: tallyKey, batch_id: batchId, official_date: officialDate, layer_key: layerKey, source_key: sourceKey,
+      rows_seen: counts.rows_seen, rows_normalized: counts.rows_seen - (counts.rows_quarantined || 0), rows_matched_to_board: counts.rows_matched_to_board,
+      rows_external_valid_unanchored: counts.rows_external_valid_unanchored || 0, rows_quarantined: counts.rows_quarantined || 0, rows_true_unmatched: counts.rows_true_unmatched || 0,
+      normalization_rate_pct: normalizationRate, match_rate_pct: matchRate, true_unmatched_rate_pct: trueUnmatchedRate,
+      quarantine_reason_breakdown_json: safeJson(counts.quarantine_breakdown || {})
+    });
   }
 }
-
-// Reads real per-game team-odds coverage out of the market-normalizer batch's own coverage
-// object (game_context_present / missing), keyed by game_pk via the event_map table, rather
-// than re-deriving mapping logic that worker already owns.
-async function readTeamOddsGameCoverage(env, boardWindowDates) {
-  const inClause = boardWindowDates.map(() => "?").join(",");
-  const rows = await all(env.MARKET_DB, `SELECT game_pk, mapping_status FROM market_context_probe_event_map WHERE official_date IN (${inClause})`, ...boardWindowDates);
+async function readTeamOddsGameCoverage(pgClient, boardWindowDates) {
+  const datesLiteral = "{" + boardWindowDates.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(",") + "}";
+  const rows = await pgClient`SELECT game_pk, mapping_status FROM market.context_probe_event_map WHERE official_date::text = ANY(${datesLiteral}::text[])`;
   const covered = new Set();
   for (const r of rows) if (r.mapping_status === "mapped" && r.game_pk) covered.add(String(r.game_pk));
   return covered;
 }
 
-async function runCertifier(env, input) {
+async function runCertifier(pgClient, input) {
   const startedAt = nowUtc();
   const batchId = rid("market_certifier_batch");
-  await ensureSchema(env);
 
-  // Fix (2026-07-15): board-scoped window instead of hardcoded today+tomorrow, same root
-  // cause and fix pattern as Daily Context certifier and score-prep. Also excludes games
-  // that have already started (real game time vs now; is_final/is_postponed/is_cancelled) -
-  // those legs are locked in and shouldn't be re-mined or block certification.
-  const preparedAllDates = await readPreparedRows(env);
+  const preparedAllDates = await readPreparedRows(pgClient);
   const gamePksAllDates = [...new Set(preparedAllDates.map(r => r.official_game_pk).filter(Boolean))];
-  const gamesAllDates = gamePksAllDates.length ? await all(env.TEAM_DB, `SELECT game_pk, official_date, game_time_utc, is_final, is_postponed, is_cancelled FROM mlb_game_calendar WHERE game_pk IN (${gamePksAllDates.map(() => "?").join(",")})`, ...gamePksAllDates) : [];
+  const gamesAllDatesLiteral = "{" + gamePksAllDates.join(",") + "}";
+  const gamesAllDates = gamePksAllDates.length ? await pgClient`SELECT game_pk, official_date::text AS official_date, game_time_utc, is_final, is_postponed, is_cancelled FROM calendar.game_calendar WHERE game_pk = ANY(${gamesAllDatesLiteral}::bigint[])` : [];
   const gameMapAllDates = new Map(gamesAllDates.map(g => [String(g.game_pk), g]));
   const nowIsoForStartCheck = nowUtc();
   function gameHasStarted(gamePk) {
     const g = gameMapAllDates.get(String(gamePk));
     if (!g) return false;
-    // Note: is_live is not used here - confirmed unreliable for future games (frequently
-    // stuck at 1 for games that haven't started). Real game time and terminal state flags
-    // are the trustworthy signals.
     if (Number(g.is_final) === 1 || Number(g.is_postponed) === 1 || Number(g.is_cancelled) === 1) return true;
-    if (g.game_time_utc && String(g.game_time_utc) <= nowIsoForStartCheck) return true;
+    if (g.game_time_utc && new Date(g.game_time_utc).toISOString() <= nowIsoForStartCheck) return true;
     return false;
   }
   const notYetStartedDates = [...new Set(preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk)).map(r => r.official_date).filter(Boolean))];
   const boardWindowDates = [...new Set([...notYetStartedDates, ptDate(0), ptDate(1)])].sort();
   const today = boardWindowDates[0];
   const tomorrow = boardWindowDates[boardWindowDates.length - 1];
-  const windowInClause = boardWindowDates.map(() => "?").join(",");
+  const windowLiteral = "{" + boardWindowDates.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(",") + "}";
 
-  // Real gap found via ongoing-reliability audit: market_parsing_tally_history had no retention
-  // logic at all and would grow unbounded forever (one row per layer/source on every certifier
-  // run, indefinitely). Keep a real, useful trend window (last 30 days) instead of everything
-  // since inception - enough to see real per-source parsing-quality trends over time without
-  // the table growing without bound.
-  await run(env.MARKET_DB, "DELETE FROM market_parsing_tally_history WHERE datetime(recorded_at) < datetime('now', '-30 days')");
-  // Also bound the batches/audit table the same way - keep last 60 days of batch metadata for
-  // audit purposes, not forever.
-  await run(env.MARKET_DB, "DELETE FROM market_certifier_batches WHERE datetime(created_at) < datetime('now', '-60 days')");
+  await pgClient`DELETE FROM market.parsing_tally_history WHERE recorded_at < now() - interval '30 days'`;
+  await pgClient`DELETE FROM market.certifier_batches WHERE created_at < now() - interval '60 days'`;
 
-  await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_certifier_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-    batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "market_context_readiness_refresh", "running", boardWindowDates[0], boardWindowDates[boardWindowDates.length - 1], startedAt);
+  await pgClient`INSERT INTO market.certifier_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at)
+    VALUES (${batchId}, ${input.request_id || null}, ${input.run_id || null}, ${WORKER_NAME}, ${VERSION}, ${JOB_KEY}, ${input.mode || "market_context_readiness_refresh"}, 'running', ${boardWindowDates[0]}, ${boardWindowDates[boardWindowDates.length - 1]}, ${startedAt}, now(), now())`;
 
-  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_current WHERE official_date NOT IN (${windowInClause})`, ...boardWindowDates);
-  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_issues WHERE official_date NOT IN (${windowInClause})`, ...boardWindowDates);
-  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
-  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_issues WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  await pgClient`DELETE FROM market.context_readiness_current WHERE NOT (official_date::text = ANY(${windowLiteral}::text[]))`;
+  await pgClient`DELETE FROM market.context_readiness_issues WHERE NOT (official_date::text = ANY(${windowLiteral}::text[]))`;
+  await pgClient`DELETE FROM market.context_readiness_current WHERE official_date::text = ANY(${windowLiteral}::text[])`;
+  await pgClient`DELETE FROM market.context_readiness_issues WHERE official_date::text = ANY(${windowLiteral}::text[])`;
 
   const prepared = preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk));
-  const skippedAlreadyStartedRows = preparedAllDates.length - prepared.length;
   const todayCount = prepared.filter(r => r.official_date === today).length;
   const tomorrowCount = prepared.filter(r => r.official_date === tomorrow).length;
   const totalBoardGameCount = new Set(prepared.map(r => String(r.official_game_pk))).size;
@@ -376,34 +157,40 @@ async function runCertifier(env, input) {
   const gamePks = [...new Set(prepared.map(r => r.official_game_pk).filter(Boolean))];
   for (const d of boardWindowDates) {
     const gameCountForDate = new Set(prepared.filter(r => r.official_date === d).map(r => r.official_game_pk)).size;
-    await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_certifier_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM market_certifier_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, d, batchId, slateShape, gameCountForDate, nowUtc(), d);
+    await pgClient`INSERT INTO market.certifier_slate_current (slate_date, batch_id, slate_shape, game_count, computed_at, created_at, updated_at)
+      VALUES (${d}, ${batchId}, ${slateShape}, ${gameCountForDate}, ${nowUtc()}, now(), now())
+      ON CONFLICT (slate_date) DO UPDATE SET batch_id=EXCLUDED.batch_id, slate_shape=EXCLUDED.slate_shape, game_count=EXCLUDED.game_count, computed_at=EXCLUDED.computed_at, updated_at=now()`;
   }
 
   const [teamBatch, hitterBatch, pitcherBatch] = await Promise.all([
-    readLatestBatch(env, "market_teams_game_odds"),
-    readLatestBatch(env, "market_hitter_prop_line_context"),
-    readLatestBatch(env, "market_pitcher_prop_line_context")
+    readLatestBatch(pgClient, "market_teams_game_odds"),
+    readLatestBatch(pgClient, "market_hitter_prop_line_context"),
+    readLatestBatch(pgClient, "market_pitcher_prop_line_context")
   ]);
-  const teamCoverage = await readTeamOddsGameCoverage(env, boardWindowDates);
-  const hitterTally = await computePropParsingTally(env, hitterBatch && hitterBatch.batch_id);
-  const pitcherTally = await computePropParsingTally(env, pitcherBatch && pitcherBatch.batch_id);
+  const teamCoverage = await readTeamOddsGameCoverage(pgClient, boardWindowDates);
+  const hitterTally = await computePropParsingTally(pgClient, hitterBatch && hitterBatch.batch_id);
+  const pitcherTally = await computePropParsingTally(pgClient, pitcherBatch && pitcherBatch.batch_id);
 
-  const tallyStatements = [];
-  await writeParsingTallyForLayer(env, batchId, today, "hitter_prop_lines", hitterTally.per_source, tallyStatements);
-  await writeParsingTallyForLayer(env, batchId, today, "pitcher_prop_lines", pitcherTally.per_source, tallyStatements);
-  await batchRun(env.MARKET_DB, tallyStatements, 80);
+  const tallyRows = [];
+  await writeParsingTallyForLayer(pgClient, batchId, today, "hitter_prop_lines", hitterTally.per_source, tallyRows);
+  await writeParsingTallyForLayer(pgClient, batchId, today, "pitcher_prop_lines", pitcherTally.per_source, tallyRows);
+  const tallyCols = ["tally_key", "batch_id", "official_date", "layer_key", "source_key", "rows_seen", "rows_normalized", "rows_matched_to_board", "rows_external_valid_unanchored", "rows_quarantined", "rows_true_unmatched", "normalization_rate_pct", "match_rate_pct", "true_unmatched_rate_pct", "quarantine_reason_breakdown_json"];
+  for (const r of tallyRows) {
+    await pgClient`INSERT INTO market.parsing_tally_current (tally_key, batch_id, official_date, layer_key, source_key, rows_seen, rows_normalized, rows_matched_to_board, rows_external_valid_unanchored, rows_quarantined, rows_true_unmatched, normalization_rate_pct, match_rate_pct, true_unmatched_rate_pct, quarantine_reason_breakdown_json, last_computed_at, created_at, updated_at)
+      VALUES (${r.tally_key}, ${r.batch_id}, ${r.official_date}, ${r.layer_key}, ${r.source_key}, ${r.rows_seen}, ${r.rows_normalized}, ${r.rows_matched_to_board}, ${r.rows_external_valid_unanchored}, ${r.rows_quarantined}, ${r.rows_true_unmatched}, ${r.normalization_rate_pct}, ${r.match_rate_pct}, ${r.true_unmatched_rate_pct}, ${r.quarantine_reason_breakdown_json}, ${nowUtc()}, now(), now())
+      ON CONFLICT (tally_key) DO UPDATE SET batch_id=EXCLUDED.batch_id, rows_seen=EXCLUDED.rows_seen, rows_normalized=EXCLUDED.rows_normalized, rows_matched_to_board=EXCLUDED.rows_matched_to_board, rows_external_valid_unanchored=EXCLUDED.rows_external_valid_unanchored, rows_quarantined=EXCLUDED.rows_quarantined, rows_true_unmatched=EXCLUDED.rows_true_unmatched, normalization_rate_pct=EXCLUDED.normalization_rate_pct, match_rate_pct=EXCLUDED.match_rate_pct, true_unmatched_rate_pct=EXCLUDED.true_unmatched_rate_pct, quarantine_reason_breakdown_json=EXCLUDED.quarantine_reason_breakdown_json, last_computed_at=EXCLUDED.last_computed_at, updated_at=now()`;
+    await pgClient`INSERT INTO market.parsing_tally_history (history_id, tally_key, official_date, layer_key, source_key, rows_seen, rows_normalized, rows_matched_to_board, rows_quarantined, rows_true_unmatched, normalization_rate_pct, match_rate_pct, recorded_at)
+      VALUES (${rid("mkt_parse_hist")}, ${r.tally_key}, ${r.official_date}, ${r.layer_key}, ${r.source_key}, ${r.rows_seen}, ${r.rows_normalized}, ${r.rows_matched_to_board}, ${r.rows_quarantined}, ${r.rows_true_unmatched}, ${r.normalization_rate_pct}, ${r.match_rate_pct}, now())`;
+  }
 
-  // Cross-reference: for each real prepared-board row, does it have team-odds context for its
-  // game, and prop-line context for its own player/prop? This mirrors Daily Context's per-row
-  // readiness pattern but scoped to the 3 real market layers instead of 7 daily-context layers.
-  const propRowsHitter = hitterBatch ? await all(env.MARKET_DB, `SELECT prepared_row_id, source_key, mapping_status FROM market_context_probe_player_props WHERE batch_id = ?`, hitterBatch.batch_id) : [];
-  const propRowsPitcher = pitcherBatch ? await all(env.MARKET_DB, `SELECT prepared_row_id, source_key, mapping_status FROM market_context_probe_player_props WHERE batch_id = ?`, pitcherBatch.batch_id) : [];
+  const hitterBatchIdForProps = hitterBatch && hitterBatch.batch_id;
+  const pitcherBatchIdForProps = pitcherBatch && pitcherBatch.batch_id;
+  const propRowsHitter = hitterBatchIdForProps ? await pgClient`SELECT prepared_row_id, source_key, mapping_status FROM market.context_probe_player_props WHERE batch_id = ${hitterBatchIdForProps}` : [];
+  const propRowsPitcher = pitcherBatchIdForProps ? await pgClient`SELECT prepared_row_id, source_key, mapping_status FROM market.context_probe_player_props WHERE batch_id = ${pitcherBatchIdForProps}` : [];
   const propMatchedSet = new Set([...propRowsHitter, ...propRowsPitcher].filter(r => r.prepared_row_id && String(r.mapping_status || "").startsWith("matched")).map(r => r.prepared_row_id));
 
   const counts = { hard: 0, warning: 0, rows: 0, issues: 0, ready_full: 0, ready_warnings: 0, ready_partial: 0, blocked: 0, not_applicable: 0 };
-  const currentStatements = [];
-  const issueRows = [];
-  const insertCurrentSql = `INSERT OR REPLACE INTO market_context_readiness_current (readiness_key,batch_id,official_date,game_pk,prepared_row_id,source_key,player_id,player_name,canonical_prop_key,prop_family,team_odds_context_status,prop_line_context_status,market_context_status,market_context_grade,hard_blocker_count,warning_count,hard_block_reasons_json,warning_reasons_json,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+  const currentRows = []; const issueRows = [];
 
   for (const p of prepared) {
     const propFamily = isPitcherProp(p.canonical_prop_key) ? "pitcher" : "hitter";
@@ -419,16 +206,21 @@ async function runCertifier(env, input) {
     else { counts.ready_full++; }
     counts.warning += warnings.length; counts.rows++;
 
-    for (const w of warnings) { counts.issues++; issueRows.push(env.MARKET_DB.prepare(`INSERT OR REPLACE INTO market_context_readiness_issues (issue_id,batch_id,official_date,game_pk,prepared_row_id,player_id,layer_key,issue_class,severity,issue_type,reason,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(rid("mkt_issue"), batchId, p.official_date, p.official_game_pk, p.prepared_row_id, p.resolved_mlb_player_id || null, w.layer, "warning", "warning", w.type, w.reason, safeJson({ prop_family: propFamily }))); }
+    for (const w of warnings) { counts.issues++; issueRows.push({ issue_id: rid("mkt_issue"), batch_id: batchId, official_date: p.official_date, game_pk: p.official_game_pk, prepared_row_id: p.prepared_row_id, player_id: p.resolved_mlb_player_id || null, layer_key: w.layer, issue_class: "warning", severity: "warning", issue_type: w.type, reason: w.reason, details_json: safeJson({ prop_family: propFamily }) }); }
 
-    currentStatements.push(env.MARKET_DB.prepare(insertCurrentSql).bind(
-      `mkt_${p.prepared_row_id}`, batchId, p.official_date, p.official_game_pk, p.prepared_row_id, p.source_key, p.resolved_mlb_player_id || null, p.player_name, p.canonical_prop_key, propFamily,
-      hasTeamOdds ? "present" : "missing", hasPropLine ? "present" : "missing", status, grade, hard.length, warnings.length,
-      safeJson(hard), safeJson(warnings), safeJson({ line_value: p.line_value, official_game_time_utc: p.official_game_time_utc })
-    ));
+    currentRows.push({
+      readiness_key: `mkt_${p.prepared_row_id}`, batch_id: batchId, official_date: p.official_date, game_pk: p.official_game_pk, prepared_row_id: p.prepared_row_id, source_key: p.source_key,
+      player_id: p.resolved_mlb_player_id || null, player_name: p.player_name, canonical_prop_key: p.canonical_prop_key, prop_family: propFamily,
+      team_odds_context_status: hasTeamOdds ? "present" : "missing", prop_line_context_status: hasPropLine ? "present" : "missing", market_context_status: status, market_context_grade: grade,
+      hard_blocker_count: hard.length, warning_count: warnings.length, hard_block_reasons_json: safeJson(hard), warning_reasons_json: safeJson(warnings),
+      details_json: safeJson({ line_value: p.line_value, official_game_time_utc: p.official_game_time_utc })
+    });
   }
-  await batchRun(env.MARKET_DB, currentStatements, 80);
-  await batchRun(env.MARKET_DB, issueRows, 80);
+  const currentCols = ["readiness_key", "batch_id", "official_date", "game_pk", "prepared_row_id", "source_key", "player_id", "player_name", "canonical_prop_key", "prop_family", "team_odds_context_status", "prop_line_context_status", "market_context_status", "market_context_grade", "hard_blocker_count", "warning_count", "hard_block_reasons_json", "warning_reasons_json", "details_json"];
+  const issueCols = ["issue_id", "batch_id", "official_date", "game_pk", "prepared_row_id", "player_id", "layer_key", "issue_class", "severity", "issue_type", "reason", "details_json"];
+  const CHUNK = 300;
+  for (let i = 0; i < currentRows.length; i += CHUNK) await pgClient`INSERT INTO market.context_readiness_current ${pgClient(currentRows.slice(i, i + CHUNK), ...currentCols)}`;
+  for (let i = 0; i < issueRows.length; i += CHUNK) await pgClient`INSERT INTO market.context_readiness_issues ${pgClient(issueRows.slice(i, i + CHUNK), ...issueCols)}`;
 
   const output = {
     ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
@@ -445,17 +237,13 @@ async function runCertifier(env, input) {
       hitter_prop_lines: hitterBatch ? { batch_id: hitterBatch.batch_id, updated_at: hitterBatch.updated_at, certification_status: hitterBatch.certification_status } : null,
       pitcher_prop_lines: pitcherBatch ? { batch_id: pitcherBatch.batch_id, updated_at: pitcherBatch.updated_at, certification_status: pitcherBatch.certification_status } : null
     },
-    parsing_tally: {
-      hitter_prop_lines: { rows_seen: hitterTally.rows_seen, per_source: hitterTally.per_source },
-      pitcher_prop_lines: { rows_seen: pitcherTally.rows_seen, per_source: pitcherTally.per_source }
-    },
+    parsing_tally: { hitter_prop_lines: { rows_seen: hitterTally.rows_seen, per_source: hitterTally.per_source }, pitcher_prop_lines: { rows_seen: pitcherTally.rows_seen, per_source: pitcherTally.per_source } },
     team_odds_games_covered: teamCoverage.size,
     external_calls: 0, external_calls_performed: 0, rows_read: prepared.length, rows_written: counts.rows,
-    guardrails: baseIdentity(env).guardrails, completed_at: nowUtc()
+    guardrails: baseIdentity({ HYPERDRIVE: true }).guardrails, completed_at: nowUtc()
   };
 
-  await run(env.MARKET_DB, `UPDATE market_certifier_batches SET status='completed', prepared_rows_read=?, prepared_games_checked=?, current_rows_written=?, issue_rows_written=?, warning_count=?, ready_full_count=?, ready_partial_count=?, blocked_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    prepared.length, gamePks.length, counts.rows, counts.issues, counts.warning, counts.ready_full, counts.ready_partial, counts.blocked, output.certification, output.certification_grade, "Market context readiness + real parsing-quality tally written per layer/source", safeJson(output), output.completed_at, batchId);
+  await pgClient`UPDATE market.certifier_batches SET status='completed', prepared_rows_read=${prepared.length}, prepared_games_checked=${gamePks.length}, current_rows_written=${counts.rows}, issue_rows_written=${counts.issues}, warning_count=${counts.warning}, ready_full_count=${counts.ready_full}, ready_partial_count=${counts.ready_partial}, blocked_count=${counts.blocked}, certification_status=${output.certification}, certification_grade=${output.certification_grade}, certification_reason='Market context readiness + real parsing-quality tally written per layer/source', output_json=${safeJson(output)}, completed_at=${output.completed_at}, updated_at=now() WHERE batch_id=${batchId}`;
   return output;
 }
 
@@ -466,20 +254,23 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
     if (method === "GET" && path === "/") return jsonResponse(baseIdentity(env));
-    if (method === "GET" && path === "/health") return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: bindingPresence(env, REQUIRED_DB_BINDINGS), vars: varPresence(env, EXPECTED_VARS) } });
+    if (method === "GET" && path === "/health") return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: bindingPresence(env, ["HYPERDRIVE"]) } });
     if (method === "POST" && path === "/diagnostic") return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", writes_performed: 0, external_calls_performed: 0 });
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const HARD_DEADLINE_MS = 40000;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+      const pgClient = pg(env);
       try {
-        const out = await withDeadline(runCertifier(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+        const out = await withDeadline(runCertifier(pgClient, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
         if (out === TIMEOUT_SENTINEL) {
           return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "MARKET_CERTIFIER_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
         }
         return jsonResponse(out);
       } catch (e) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "failed", certification: "MARKET_CONTEXT_CERTIFIER_FAILED", error: String(e && e.message ? e.message : e), stack_preview: String(e && e.stack ? e.stack : "").slice(0, 900), external_calls: 0, external_calls_performed: 0 }, 500);
+      } finally {
+        await pgClient.end({ timeout: 1 }).catch(() => {});
       }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
