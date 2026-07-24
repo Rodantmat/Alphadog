@@ -4,7 +4,7 @@ import { z } from "zod";
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v3.0-market-runner-binding";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v3.1-scoring-runner-binding";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB", "SCORING_DB"];
