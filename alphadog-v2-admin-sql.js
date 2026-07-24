@@ -349,6 +349,10 @@ async function toolRunJob(env, args) {
     // cron trigger calls, just synchronously and on demand instead of waiting for a schedule.
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.board-runner/run";
+  } else if (bindingName === "DAILY_CONTEXT_RUNNER_WORKER") {
+    // Same pattern as BOARD_RUNNER_WORKER, for the new standalone daily-context-full-run worker.
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.daily-context-runner/run";
   } else {
     body = {
       job,
