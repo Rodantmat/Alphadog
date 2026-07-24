@@ -133,6 +133,10 @@ async function runBoardFullRun(env, input) {
 }
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runBoardFullRun(env, { trigger: "cron", cron: event.cron }));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
