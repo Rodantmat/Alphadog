@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "alphadog-v2-board-runner",
+  "main": "./alphadog-v2-board-runner.js",
+  "compatibility_date": "2026-05-18",
+  "observability": {
+    "enabled": true
+  },
+  "limits": {
+    "cpu_ms": 300000
+  },
+  "services": [
+    {
+      "binding": "PRIZEPICKS_GITHUB_BOARD_WORKER",
+      "service": "alphadog-v2-prizepicks-github-board"
+    },
+    {
+      "binding": "PARLAY_SLEEPER_BOARD_WORKER",
+      "service": "alphadog-v2-parlay-sleeper-board"
+    },
+    {
+      "binding": "PARLAY_UNDERDOG_BOARD_WORKER",
+      "service": "alphadog-v2-parlay-underdog-board"
+    },
+    {
+      "binding": "SCORE_PREP_WORKER",
+      "service": "alphadog-v2-score-prep"
+    }
+  ]
+}
