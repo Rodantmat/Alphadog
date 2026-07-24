@@ -559,13 +559,15 @@ async function fetchParlayProps(env, input = {}, config = modeConfig(input)) {
 }
 async function loadPreparedRows(pgClient, boardWindowDates, config = modeConfig()) {
   const nowIso = new Date().toISOString();
+  const datesLiteral = "{" + boardWindowDates.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(",") + "}";
+  const propKeysLiteral = "{" + config.prop_keys.map(k => `"${String(k).replace(/"/g, '\\"')}"`).join(",") + "}";
   return pgClient`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id, player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id, team, opponent, team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date::text AS official_date, source_start_time, row_payload_json
     FROM score.board_prepared_current
     WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL
-      AND official_date::text = ANY(${boardWindowDates})
+      AND official_date::text = ANY(${datesLiteral}::text[])
       AND official_game_time_utc > ${nowIso}
-      AND canonical_prop_key = ANY(${config.prop_keys})
+      AND canonical_prop_key = ANY(${propKeysLiteral}::text[])
       AND player_name NOT LIKE '% + %'
     ORDER BY official_game_time_utc, official_game_pk, source_key, canonical_prop_key, player_name, line_value
     LIMIT ${MAX_PREPARED_ROWS}`;
