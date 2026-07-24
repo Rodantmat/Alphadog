@@ -154,7 +154,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
         source_key: matrixRow.source_key || null, game_pk: matrixRow.game_pk || null, official_date: matrixRow.official_date || null, official_game_time_utc: matrixRow.official_game_time_utc || null,
         mlb_player_id: er.mlb_player_id, player_name: playerName, canonical_prop_key: er.canonical_prop_key, line_value: er.board_line_value, selected_side: side,
         estimated_hit_probability_0_100: null, probability_confidence_0_100: null, board_tier: "REVIEW", live_playable: 0, review_playable: 1,
-        is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, is_more_only: moreOnly ? 1 : 0,
+        is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, more_only: moreOnly ? 1 : 0,
         score_grade: "BIN_0_NULL",
         calibration_json: JSON.stringify({ real_reordered: true, no_baseline_coverage: true, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "No baseline_v6 row found for this player/prop/line/side combo even after nearest-line fallback - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
       });
