@@ -124,6 +124,135 @@ async function first(db, sql, ...binds) {
   return rows[0] || null;
 }
 
+// ============================================================================
+// POSTGRES CONTROL-PLANE MIGRATION (D1 is being deleted - this is not optional)
+// ============================================================================
+// Real, D1-API-compatible wrapper around a Postgres connection so that every
+// existing call site using the shared first()/all()/run() helpers above works
+// completely unchanged - only the object passed in as "db" changes (from
+// env.CONTROL_DB to pgControlDB(env)), never the call sites themselves.
+//
+// This works because first()/all()/run() only ever call db.prepare(sql).bind(...
+// args).run()/.all() - they don't know or care whether "db" is D1 or Postgres,
+// as long as the returned object has the same shape. That's the whole trick.
+//
+// The translator below handles the REAL, confirmed SQL dialect differences
+// actually used against control_job_queue/control_job_runs/control_worker_run_log/
+// control_locks throughout this file (verified via direct grep, not assumed):
+// - `?` positional placeholders -> Postgres `$1, $2, ...`
+// - `datetime('now')` / `datetime(x, '+N seconds|minutes|hours')` -> `now()` / interval math
+// - bare `CURRENT_TIMESTAMP` is already valid Postgres, left unchanged
+// - `json_extract(col, '$.field')` -> `(col::json->>'field')`
+// - `INSERT OR REPLACE INTO <table> (...) VALUES (...)` -> real Postgres
+//   `INSERT ... ON CONFLICT (<real_pk>) DO UPDATE SET col=excluded.col, ...`,
+//   generated programmatically from the actual column list in the statement
+//   (not hand-written per call site - these 4 tables' real primary keys are
+//   fixed and known, so this is a safe, mechanical, PK-aware transform)
+// - `INSERT OR IGNORE INTO <table> ...` -> `INSERT ... ON CONFLICT DO NOTHING`
+const PG_CONTROL_TABLE_MAP = {
+  control_job_queue: "control.job_queue",
+  control_job_runs: "control.job_runs",
+  control_worker_run_log: "control.worker_run_log",
+  control_locks: "control.locks"
+};
+const PG_CONTROL_TABLE_PK = {
+  control_job_queue: "request_id",
+  control_job_runs: "run_id",
+  control_worker_run_log: "log_id",
+  control_locks: "lock_key"
+};
+
+function translateSqliteToPostgresSql(sqlIn) {
+  let sql = sqlIn;
+
+  // INSERT OR REPLACE INTO <table> (<cols>) VALUES (<placeholders>) -> real ON CONFLICT upsert
+  sql = sql.replace(/INSERT OR REPLACE INTO\s+(control_\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/is, (m, table, colsStr, valsStr) => {
+    const cols = colsStr.split(",").map(c => c.trim());
+    const pgTable = PG_CONTROL_TABLE_MAP[table] || table;
+    const pk = PG_CONTROL_TABLE_PK[table];
+    const setClause = cols.filter(c => c !== pk).map(c => `${c}=excluded.${c}`).join(", ");
+    return `INSERT INTO ${pgTable} (${colsStr}) VALUES (${valsStr}) ON CONFLICT (${pk}) DO UPDATE SET ${setClause}`;
+  });
+
+  // INSERT OR IGNORE INTO <table> ... -> plain INSERT, append ON CONFLICT DO NOTHING at the end
+  let wasOrIgnore = false;
+  sql = sql.replace(/INSERT OR IGNORE INTO\s+(control_\w+)/is, (m, table) => {
+    wasOrIgnore = true;
+    return `INSERT INTO ${PG_CONTROL_TABLE_MAP[table] || table}`;
+  });
+  if (wasOrIgnore) sql = sql.trim() + " ON CONFLICT DO NOTHING";
+
+  // Plain INSERT/UPDATE/SELECT/DELETE against a bare control_* table name -> schema-qualified
+  for (const [bare, qualified] of Object.entries(PG_CONTROL_TABLE_MAP)) {
+    sql = sql.replace(new RegExp(`\\b${bare}\\b`, "g"), qualified);
+  }
+
+  // datetime('now', '+N seconds'|'minutes'|'hours') and datetime(col, '+N ...')
+  sql = sql.replace(/datetime\(\s*'now'\s*,\s*'\+'\s*\|\|\s*\?\s*\|\|\s*'\s*(second|seconds|minute|minutes|hour|hours)'\s*\)/gi,
+    (m, unit) => `(now() + (? || ' ${unit}')::interval)`);
+  sql = sql.replace(/datetime\(\s*'now'\s*,\s*'\+(\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days)'\s*\)/gi,
+    (m, n, unit) => `(now() + interval '${n} ${unit}')`);
+  sql = sql.replace(/datetime\(\s*([\w.]+)\s*,\s*'\+(\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days)'\s*\)/gi,
+    (m, col, n, unit) => `(${col}::timestamptz + interval '${n} ${unit}')`);
+  sql = sql.replace(/datetime\(\s*'now'\s*\)/gi, "now()");
+  sql = sql.replace(/datetime\(\s*CURRENT_TIMESTAMP\s*\)/gi, "now()");
+  sql = sql.replace(/datetime\(\s*COALESCE\(([\w.]+),\s*CURRENT_TIMESTAMP\)\s*\)/gi, "COALESCE($1, now())");
+  sql = sql.replace(/datetime\(\s*([\w.]+)\s*\)/gi, "$1");
+
+  // julianday(a) - julianday(b) day-difference arithmetic (used for elapsed_ms/seconds computations)
+  sql = sql.replace(/CAST\(\(julianday\(([^)]+)\)\s*-\s*julianday\(([^)]+)\)\)\s*\*\s*86400000\s*AS INTEGER\)/gi,
+    (m, a, b) => `CAST(EXTRACT(EPOCH FROM (${a}::timestamptz - ${b}::timestamptz)) * 1000 AS INTEGER)`);
+  sql = sql.replace(/CAST\(\(julianday\(([^)]+)\)\s*-\s*julianday\(([^)]+)\)\)\s*\*\s*86400\s*AS INTEGER\)/gi,
+    (m, a, b) => `CAST(EXTRACT(EPOCH FROM (${a}::timestamptz - ${b}::timestamptz)) AS INTEGER)`);
+
+  // json_extract(col, '$.field') -> (col::json->>'field')
+  sql = sql.replace(/json_extract\(([\w.]+),\s*'\$\.(\w+)'\)/gi, "($1::json->>'$2')");
+
+  // ? positional placeholders -> $1, $2, ... (do this LAST, after all structural rewrites above)
+  let i = 0;
+  sql = sql.replace(/\?/g, () => `${++i}`);
+
+  return sql;
+}
+
+function pgControlDB(pg) {
+  return {
+    prepare(sqlIn) {
+      const translated = translateSqliteToPostgresSql(sqlIn);
+      const exec = async (args) => {
+        const rows = await pg.unsafe(translated, args);
+        return { results: rows, success: true, meta: { changes: Array.isArray(rows) ? rows.length : 0 } };
+      };
+      return {
+        bind(...args) { return { run: () => exec(args), all: () => exec(args) }; },
+        run: () => exec([]),
+        all: () => exec([])
+      };
+    }
+  };
+}
+
+// Real, atomic, race-free job claim for Postgres - researched and confirmed as the standard
+// pattern (UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *) used
+// by production job-queue libraries (Oban, Que, etc). This single statement finds the next due
+// job AND marks it claimed atomically - no separate SELECT-then-UPDATE race window, which D1's
+// single-writer SQLite model tolerated but real Postgres concurrency requires doing properly.
+async function pgClaimNextDueJob(pg) {
+  const rows = await pg`
+    UPDATE control.job_queue
+    SET status = 'running', started_at = COALESCE(started_at, now()), updated_at = now(), tick_count = tick_count + 1
+    WHERE request_id = (
+      SELECT request_id FROM control.job_queue
+      WHERE status = 'pending' AND run_after <= now()
+      ORDER BY priority ASC, created_at ASC
+      FOR UPDATE SKIP LOCKED
+      LIMIT 1
+    )
+    RETURNING request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+  `;
+  return rows[0] || null;
+}
+
 async function run(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
