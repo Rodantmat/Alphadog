@@ -66,7 +66,7 @@ const PITCHER_MARKET_KEY_TO_PROP = {
   pitcher_strikeouts_combo: "pitcher_strikeouts_combo", player_pitcher_strikeouts_combo: "pitcher_strikeouts_combo"
 };
 
-function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false }); }
+function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 }); }
 
 function modeConfig(input = {}) {
   const requested = String(input.mode || MODE_HITTER);
