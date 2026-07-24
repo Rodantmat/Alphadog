@@ -191,6 +191,9 @@ def make_config(worker_name, include_services=False):
             {"binding": "PARLAY_UNDERDOG_BOARD_WORKER", "service": "alphadog-v2-parlay-underdog-board"},
             {"binding": "SCORE_PREP_WORKER", "service": "alphadog-v2-score-prep"},
         ]
+        # TEMPORARY for initial testing only - will be replaced with the real 3x/day schedule
+        # once this is verified working end to end.
+        cfg["triggers"] = {"crons": ["*/10 * * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
