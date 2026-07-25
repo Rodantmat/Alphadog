@@ -8360,9 +8360,13 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
     const scheduleJson = await scheduleResp.json().catch(() => null);
     const dates = (scheduleJson && Array.isArray(scheduleJson.dates)) ? scheduleJson.dates : [];
     const gamePks = [];
+    const gamePkToDate = new Map();
     for (const d of dates) for (const g of (d.games || [])) {
       const status = (g.status && (g.status.abstractGameState || "")) || "";
-      if (/final/i.test(status)) gamePks.push(g.gamePk);
+      if (/final/i.test(status)) {
+        gamePks.push(g.gamePk);
+        gamePkToDate.set(g.gamePk, String(g.officialDate || d.date || "").slice(0, 10) || null);
+      }
     }
     if (!gamePks.length) return { ok: true, mode: "daily_delta_game_logs_to_postgres", games_found: 0, note: "no completed games in range" };
 
