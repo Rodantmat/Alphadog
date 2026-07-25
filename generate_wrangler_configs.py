@@ -83,7 +83,8 @@ def make_config(worker_name, include_services=False):
             {"binding": "DAILY_CONTEXT_RUNNER_WORKER", "service": "alphadog-v2-daily-context-runner"},
             {"binding": "MARKET_RUNNER_WORKER", "service": "alphadog-v2-market-runner"},
             {"binding": "SCORING_RUNNER_WORKER", "service": "alphadog-v2-scoring-runner"},
-            {"binding": "MASTER_RUNNER_WORKER", "service": "alphadog-v2-master-runner"}
+            {"binding": "MASTER_RUNNER_WORKER", "service": "alphadog-v2-master-runner"},
+            {"binding": "SCORE_PREP_WORKER", "service": "alphadog-v2-score-prep"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
