@@ -722,7 +722,7 @@ function rowToApi(row) {
 
 function buildCurrentSql(url) {
   const where = [
-    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)",
+    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)",
     "f.review_playable = 1",
     "COALESCE(f.live_playable,0) = 0"
   ];
@@ -737,8 +737,8 @@ function buildCurrentSql(url) {
   const minScore = url.searchParams.get("min_score");
   const date = url.searchParams.get("date");
   if (!date) {
-    where.push("f.official_date >= date('now')");
-    where.push("(json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') IS NULL OR json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))");
+    where.push("f.official_date >= CURRENT_DATE");
+    where.push("(f.official_game_time_utc IS NULL OR f.official_game_time_utc > now())");
   }
   const limit = clampLimit(url.searchParams.get("limit"));
   function inClause(column, values) { if (!values.length) return; where.push(`${column} IN (${values.map(() => "?").join(",")})`); params.push(...values); }
@@ -765,16 +765,16 @@ function buildCurrentSql(url) {
   }
   if (minHp !== null && minHp !== "") { where.push("f.estimated_hit_probability_0_100 >= ?"); params.push(Number(minHp)); }
   if (minScore !== null && minScore !== "") { where.push("f.score_0_100 >= ?"); params.push(Number(minScore)); }
-  if (date) { where.push("f.official_date = ?"); params.push(date); }
+  if (date) { where.push("f.official_date = ?::date"); params.push(date); }
   const quotaLineTypeExpr = `CASE WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='demon' THEN 'demon' WHEN LOWER(COALESCE(f.source_key,''))='sleeper' AND LOWER(COALESCE(f.payout_variant,''))='more_only' THEN 'more_only' ELSE 'regular' END`;
   const UNDERDOG_SOURCE_KEYS = "'parlay_underdog','underdog'";
   const baseSelect = `
       f.final_board_row_id AS final_board_row_id,
       f.final_board_batch_id AS final_board_batch_id,
-      NULL AS hp_board_batch_id,
+      f.hp_board_batch_id AS hp_board_batch_id,
       f.source_engine_batch_id AS source_engine_batch_id,
       f.source_engine_batch_id AS source_final_score_batch_id,
-      NULL AS source_hp_batch_id,
+      f.source_hp_batch_id AS source_hp_batch_id,
       NULL AS source_hp_v2_batch_id,
       NULL AS source_score_enrichment_batch_id,
       f.rank_order AS rank_order,
@@ -789,11 +789,11 @@ function buildCurrentSql(url) {
       f.source_key,
       f.game_pk,
       f.official_date,
-      json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') AS official_game_time_utc,
-      json_extract(f.details_json_snapshot, '$.game_context.game_time_pt') AS official_game_time_pt,
-      json_extract(f.details_json_snapshot, '$.game_context.status_code') AS game_status_code,
-      json_extract(f.details_json_snapshot, '$.game_context.abstract_game_state') AS abstract_game_state,
-      json_extract(f.details_json_snapshot, '$.game_context.detailed_state') AS detailed_state,
+      f.official_game_time_utc AS official_game_time_utc,
+      NULL AS official_game_time_pt,
+      (f.details_json_snapshot->'game_context'->>'status_code') AS game_status_code,
+      (f.details_json_snapshot->'game_context'->>'abstract_game_state') AS abstract_game_state,
+      (f.details_json_snapshot->'game_context'->>'detailed_state') AS detailed_state,
       f.prepared_row_id,
       f.matrix_id,
       f.source_line_id,
