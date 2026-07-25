@@ -49,7 +49,14 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 // adjustment: only bins with enough backtest games to trust (>=100) are ever applied, so this
 // can never move a prediction based on noise from a handful of games. Props/bins with no fitted
 // correction, or insufficient sample size, pass through completely unchanged.
-const CALIBRATION_MIN_SAMPLE_GAMES = 100;
+// DISABLED 2026-07-25: this correction map was empirically fit against the old, broken
+// prior_strength formula (2/6 for large/medium samples). That root cause has since been fixed
+// (prior_strength corrected to 40/13, confirmed via fresh backtest to achieve near-perfect
+// calibration on its own for the most-affected prop). Applying these old deltas now would layer
+// stale corrections on top of an already-fixed baseline they were never fit against. Raising the
+// sample gate to an unreachable threshold disables application while preserving the historical
+// bins and methodology notes for future reference or re-fitting against the new baseline.
+const CALIBRATION_MIN_SAMPLE_GAMES = 999999999;
 async function loadCalibrationMap(pgClient) {
   const rows = await pgClient`SELECT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
   const map = new Map();
