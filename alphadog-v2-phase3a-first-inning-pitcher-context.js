@@ -1246,7 +1246,7 @@ function mForProp(prop){ const p=String(prop||""); if(p==="rfi_nrfi") return 50;
 // foundation every future calibration pass (Brier score, reliability diagrams, ECE) depends on -
 // without it there is no ground truth to calibrate against, ever.
 async function runResolvePropOutcomes(env, input = {}) {
-  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
     const lookbackDays = Math.max(1, Math.min(30, Number(input.lookback_days || 3)));
     const rows = await sql`
