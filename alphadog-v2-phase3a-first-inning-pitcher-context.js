@@ -10777,6 +10777,7 @@ async function runMode(env,input={}){
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
   if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
   if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
+  if(mode==="resolve_prop_outcomes") return runResolvePropOutcomes(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
   if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
   if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
