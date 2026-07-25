@@ -1,6 +1,6 @@
 import postgres from "postgres";
 
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.354-minute-cron-retired-new-runners-live";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.355-fully-retired-all-crons-removed";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
