@@ -102,6 +102,32 @@ const STAGES = [
 async function runMarketFullRun(env, input) {
   const runId = `market_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+
+  const lock = await tryAcquireLock(env);
+  if (!lock.acquired) {
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      run_id: runId,
+      started_at: startedAt,
+      finished_at: nowIso(),
+      certification: "MARKET_FULL_RUN_SKIPPED_ALREADY_RUNNING",
+      skipped: true,
+      lock_error: lock.error || null,
+      stages: []
+    };
+  }
+
+  try {
+    return await runMarketFullRunLocked(env, input, runId, startedAt);
+  } finally {
+    await releaseLock(lock.client);
+  }
+}
+
+async function runMarketFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
   for (const s of STAGES) {
