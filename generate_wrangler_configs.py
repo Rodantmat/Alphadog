@@ -291,6 +291,37 @@ def make_config(worker_name, include_services=False):
         ]
         # No cron yet - testing via direct run_job trigger first. Will be set to the real 3x/day
         # schedule once verified working end to end, per Rodolfo's spec.
+    if worker_name == "alphadog-v2-weekly-differential-runner":
+        # New, deliberately simple standalone runner for the weekly static differential, same
+        # design as the other runners: no queue table, no lock table beyond the shared
+        # control.runner_locks table, preflight cleanup, single service binding to the one worker
+        # that owns this whole chain internally (its own 13-step resume sequence).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
+        ]
+        # No cron yet - testing via direct run_job trigger first.
+    if worker_name == "alphadog-v2-daily-delta-runner":
+        # New, deliberately simple standalone runner for the daily morning delta, same design as
+        # weekly-differential-runner: single service binding to the one worker that owns this
+        # whole chain internally (its own 6-step resume sequence).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
+        ]
+        # No cron yet - testing via direct run_job trigger first.
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
