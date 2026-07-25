@@ -189,9 +189,11 @@ async function runMasterFullRunLocked(env, input, runId, startedAt) {
   for (const r of RUNNERS) {
     const result = await callRunner(env[r.bindingKey], r.bindingName, { request_id: `${runId}_${r.bindingName}`, chain_id: runId, trigger: "master_runner" });
     runners.push(result);
-    if (!result.ok) {
-      // Hard stop: every later runner reads what this one wrote. Continuing past a real failure
-      // would let downstream stages silently run on stale or incomplete upstream data.
+    if (!result.data_ok) {
+      // Hard stop: every later runner reads what this one wrote. data_ok (not the stricter ok)
+      // is the right signal here - a runner can report ok:false from a non-critical parallel
+      // source hiccup (e.g. board-runner's Underdog call) while data_ok:true confirms the actual
+      // data downstream stages depend on (e.g. score-prep's output) is ready and correct.
       break;
     }
   }
