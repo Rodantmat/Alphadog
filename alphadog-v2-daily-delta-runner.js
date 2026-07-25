@@ -173,8 +173,8 @@ async function runDailyDeltaFullRunLocked(env, input, runId, startedAt) {
   const trueComplete = complete && certification === "DAILY_DELTA_FULL_RUN_COMPLETE";
 
   return {
-    ok: complete,
-    data_ok: complete,
+    ok: trueComplete,
+    data_ok: trueComplete,
     version: VERSION,
     worker_name: WORKER_NAME,
     run_id: runId,
