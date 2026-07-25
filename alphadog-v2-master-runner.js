@@ -140,7 +140,7 @@ async function runMasterFullRun(env, input) {
   try {
     return await runMasterFullRunLocked(env, input, runId, startedAt);
   } finally {
-    await releaseLock(lock.client);
+    await releaseLock(lock.client, runId);
   }
 }
 
