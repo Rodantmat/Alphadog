@@ -155,6 +155,8 @@ async function runMasterFullRun(env, input) {
   const runId = `master_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
 
+  const preflight = await preflightCleanup(env);
+
   const lock = await tryAcquireLock(env, runId);
   if (!lock.acquired) {
     return {
@@ -168,12 +170,14 @@ async function runMasterFullRun(env, input) {
       certification: "MASTER_FULL_RUN_SKIPPED_ALREADY_RUNNING",
       skipped: true,
       lock_error: lock.error || null,
+      preflight,
       runners: []
     };
   }
 
   try {
-    return await runMasterFullRunLocked(env, input, runId, startedAt);
+    const result = await runMasterFullRunLocked(env, input, runId, startedAt);
+    return { ...result, preflight };
   } finally {
     await releaseLock(lock.client, runId);
   }
