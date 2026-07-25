@@ -156,8 +156,7 @@ async function runDailyContextFullRunLocked(env, input, runId, startedAt) {
   for (const s of STAGES) {
     const result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}`, trigger: "daily_context_runner" });
     stages.push(result);
-    // Not last-stage-blocking: a non-final stage failing doesn't stop the rest, same philosophy
-    // as board-runner - later stages should still run on whatever data is already current.
+    if (!result.ok) break; // every later stage reads what this one wrote - do not proceed on real failure
   }
 
   const allOk = stages.every(s => s.ok);
