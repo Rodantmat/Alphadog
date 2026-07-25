@@ -148,6 +148,11 @@ async function runMasterFullRunLocked(env, input, runId, startedAt) {
   for (const r of RUNNERS) {
     const result = await callRunner(env[r.bindingKey], r.bindingName, { request_id: `${runId}_${r.bindingName}`, chain_id: runId, trigger: "master_runner" });
     runners.push(result);
+    if (!result.ok) {
+      // Hard stop: every later runner reads what this one wrote. Continuing past a real failure
+      // would let downstream stages silently run on stale or incomplete upstream data.
+      break;
+    }
   }
 
   const allOk = runners.every(r => r.ok);
