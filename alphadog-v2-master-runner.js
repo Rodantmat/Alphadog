@@ -74,7 +74,7 @@ async function releaseLock(client, holderId) {
     try { await client.end({ timeout: 1 }); } catch (_) {}
   }
 }
-const VERSION = "v1.0.0";
+const VERSION = "v1.0.1-scheduled";
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
