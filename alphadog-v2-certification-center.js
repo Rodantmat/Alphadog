@@ -1101,11 +1101,11 @@ async function apiDossier(env, url) {
   const officialDate = selectedRaw.official_date;
   const safeQuery = async (queryText, params) => { try { return await queryAllPg(pg, queryText, params); } catch (e) { return []; } };
   const [weatherRows2, umpireRows2, marketRows2, playerRows2, preparedLineRows] = await Promise.all([
-    safeQuery(env.DAILY_DB, `SELECT * FROM daily_game_weather_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
-    safeQuery(env.DAILY_DB, `SELECT * FROM daily_umpire_context_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
-    safeQuery(env.MARKET_DB, `SELECT * FROM market_context_probe_game_market_summary WHERE game_pk=? ORDER BY datetime(created_at) DESC LIMIT 1`, [gamePk]),
-    safeQuery(env.REF_DB, `SELECT * FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [mlbPlayerId]),
-    safeQuery(env.SCORE_DB, `SELECT source_key, canonical_prop_key, source_prop_name, line_value, source_pickable, pickable_safe, prep_status, source_start_time AS start_time FROM score_board_prepared_current WHERE resolved_mlb_player_id=? AND official_date=?`, [mlbPlayerId, officialDate])
+    safeQuery(`SELECT * FROM daily.game_weather_current WHERE game_pk=? ORDER BY updated_at DESC LIMIT 1`, [gamePk]),
+    safeQuery(`SELECT * FROM daily.umpire_context_current WHERE game_pk=? ORDER BY updated_at DESC LIMIT 1`, [gamePk]),
+    safeQuery(`SELECT * FROM market.context_probe_game_market_summary WHERE game_pk=? ORDER BY created_at DESC LIMIT 1`, [gamePk]),
+    safeQuery(`SELECT * FROM ref.players WHERE mlb_player_id=? LIMIT 1`, [mlbPlayerId]),
+    safeQuery(`SELECT source_key, canonical_prop_key, source_prop_name, line_value, source_pickable, pickable_safe, prep_status, source_start_time AS start_time FROM score.board_prepared_current WHERE resolved_mlb_player_id=? AND official_date=?::date`, [mlbPlayerId, officialDate])
   ]);
   const weatherRow = weatherRows2[0] || {};
   const umpireRow = umpireRows2[0] || {};
@@ -1114,8 +1114,8 @@ async function apiDossier(env, url) {
   const venueKey = weatherRow.venue_id || umpireRow.venue_id;
   const homeTeamKey = weatherRow.home_team_id || umpireRow.home_team_id;
   const [stadiumRows2, parkRows2] = await Promise.all([
-    safeQuery(env.REF_DB, `SELECT * FROM ref_stadiums WHERE stadium_id=? OR mlb_venue_id=? LIMIT 1`, [venueKey, venueKey]),
-    safeQuery(env.REF_DB, `SELECT * FROM ref_park_factors WHERE team_id=? ORDER BY season_year DESC LIMIT 1`, [homeTeamKey])
+    safeQuery(`SELECT * FROM ref.stadiums WHERE stadium_id=? OR mlb_venue_id=? LIMIT 1`, [venueKey, venueKey]),
+    safeQuery(`SELECT * FROM ref.park_factors WHERE team_id=? ORDER BY season_year DESC LIMIT 1`, [homeTeamKey])
   ]);
   const stadiumRow = stadiumRows2[0] || {};
   const parkRow = parkRows2[0] || {};
