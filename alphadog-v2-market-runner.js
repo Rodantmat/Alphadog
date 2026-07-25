@@ -115,7 +115,7 @@ async function runMarketFullRun(env, input) {
   const runId = `market_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
 
-  const lock = await tryAcquireLock(env);
+  const lock = await tryAcquireLock(env, runId);
   if (!lock.acquired) {
     return {
       ok: true,
