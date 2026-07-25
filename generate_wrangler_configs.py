@@ -309,8 +309,8 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
         ]
-        # No cron yet - testing via direct run_job trigger first.
-    if worker_name == "alphadog-v2-daily-delta-runner":
+        # Real schedule, matching the same time the old scheduled() dispatch used in production.
+        cfg["triggers"] = {"crons": ["0 3 * * 1"]}
         # New, deliberately simple standalone runner for the daily morning delta, same design as
         # weekly-differential-runner: single service binding to the one worker that owns this
         # whole chain internally (its own 6-step resume sequence).
