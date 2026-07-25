@@ -7481,7 +7481,6 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
       const res = await sql.unsafe(`
         WITH ranked AS (
           SELECT *,
-            ((raw_json->'stat'->>'numberOfPitches')::int) AS pitches,
             ((raw_json->'stat'->>'strikes')::int) AS strikes,
             ((raw_json->'stat'->>'runs')::int) AS runs_allowed,
             (((raw_json->'stat'->>'gamesStarted')::int) = 1) AS is_start,
