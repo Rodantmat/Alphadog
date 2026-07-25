@@ -145,7 +145,7 @@ async function runScoringFullRun(env, input) {
   try {
     return await runScoringFullRunLocked(env, input, runId, startedAt);
   } finally {
-    await releaseLock(lock.client);
+    await releaseLock(lock.client, runId);
   }
 }
 
