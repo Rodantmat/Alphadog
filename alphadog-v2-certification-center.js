@@ -1121,14 +1121,14 @@ async function apiDossier(env, url) {
   const parkRow = parkRows2[0] || {};
 
   const formWindow = async (n) => {
-    const gl = await safeQuery(env.STATS_HITTER_DB, `SELECT pa,ab,hits,doubles,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases FROM (SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT ${n})`, [mlbPlayerId]);
+    const gl = await safeQuery(`SELECT pa,ab,hits,doubles,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases FROM (SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT ${Number(n)}) t`, [mlbPlayerId]);
     if (!gl.length) return null;
     const sum = (k) => gl.reduce((a, r) => a + (Number(r[k]) || 0), 0);
     const ab = sum('ab'), hits = sum('hits'), tb = sum('total_bases');
     return { metric_window: n === 999 ? 'season' : ('last' + n), games_count: gl.length, pa_sum: sum('pa'), ab_sum: ab, hits_sum: hits, doubles_sum: sum('doubles'), home_runs_sum: sum('home_runs'), runs_sum: sum('runs'), rbi_sum: sum('rbi'), walks_sum: sum('walks'), strikeouts_sum: sum('strikeouts'), stolen_bases_sum: sum('stolen_bases'), total_bases_derived_sum: tb, batting_average: ab > 0 ? hits / ab : null, slugging_percentage: ab > 0 ? tb / ab : null };
   };
   const pitcherFormWindow = async (pid, n) => {
-    const gl = await safeQuery(env.STATS_PITCHER_DB, `SELECT innings_pitched_decimal,batters_faced,hits_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed FROM (SELECT * FROM pitcher_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT ${n})`, [pid]);
+    const gl = await safeQuery(`SELECT innings_pitched_decimal,batters_faced,hits_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed FROM (SELECT * FROM stats_pitcher.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT ${Number(n)}) t`, [pid]);
     if (!gl.length) return null;
     const sum = (k) => gl.reduce((a, r) => a + (Number(r[k]) || 0), 0);
     const ip = sum('innings_pitched_decimal'), bf = sum('batters_faced'), er = sum('earned_runs'), bb = sum('walks_allowed'), h = sum('hits_allowed'), k = sum('strikeouts');
