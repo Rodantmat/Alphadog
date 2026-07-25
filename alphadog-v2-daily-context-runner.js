@@ -140,7 +140,7 @@ async function runDailyContextFullRun(env, input) {
   try {
     return await runDailyContextFullRunLocked(env, input, runId, startedAt);
   } finally {
-    await releaseLock(lock.client);
+    await releaseLock(lock.client, runId);
   }
 }
 
