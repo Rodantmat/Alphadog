@@ -1257,8 +1257,8 @@ async function runResolvePropOutcomes(env, input = {}) {
       FROM score.final_board_history f
       LEFT JOIN score.prop_outcome_history o ON o.final_board_row_id = f.final_board_row_id
       WHERE o.outcome_id IS NULL
-        AND f.official_date >= (CURRENT_DATE - (${lookbackDays} || ' days')::interval)
-        AND f.official_date < CURRENT_DATE
+        AND f.official_date::date >= (CURRENT_DATE - (${lookbackDays} || ' days')::interval)
+        AND f.official_date::date < CURRENT_DATE
         AND f.estimated_hit_probability_0_100 IS NOT NULL`;
     if (!rows.length) return { ok: true, mode: "resolve_prop_outcomes", candidates: 0, resolved: 0, no_actual_data: 0, note: "no unresolved rows in lookback window" };
 
