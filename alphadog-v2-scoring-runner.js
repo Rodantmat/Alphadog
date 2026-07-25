@@ -9,6 +9,31 @@
 // so stages run strictly in sequence and a failure is reported clearly per-stage rather than
 // silently continuing past a broken dependency.
 
+import postgres from "postgres";
+
+const SCORING_LOCK_KEY = "alphadog_scoring_full_run";
+
+async function tryAcquireLock(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    const rows = await client`SELECT pg_try_advisory_lock(hashtext(${SCORING_LOCK_KEY})) as acquired`;
+    return { acquired: !!(rows && rows[0] && rows[0].acquired), client };
+  } catch (err) {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+    return { acquired: false, client: null, error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function releaseLock(client) {
+  if (!client) return;
+  try {
+    await client`SELECT pg_advisory_unlock(hashtext(${SCORING_LOCK_KEY}))`;
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 const WORKER_NAME = "alphadog-v2-scoring-runner";
 const VERSION = "v1.0.0";
 
