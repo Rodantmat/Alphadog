@@ -1137,11 +1137,20 @@ async function apiDossier(env, url) {
   };
 
   const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, hitterSnapshotRows] = await Promise.all([
-    safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbPlayerId]),
-    safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbPlayerId]),
-    formWindow(5), formWindow(10), formWindow(20), formWindow(999),
+    isPitcher
+      ? safeQuery(`SELECT * FROM stats_pitcher.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbPlayerId])
+      : safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbPlayerId]),
+    isPitcher
+      ? safeQuery(`SELECT * FROM stats_pitcher.splits WHERE player_id=? ORDER BY season DESC`, [mlbPlayerId])
+      : safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbPlayerId]),
+    isPitcher ? pitcherFormWindow(mlbPlayerId, 5) : formWindow(5),
+    isPitcher ? pitcherFormWindow(mlbPlayerId, 10) : formWindow(10),
+    isPitcher ? pitcherFormWindow(mlbPlayerId, 20) : formWindow(20),
+    isPitcher ? pitcherFormWindow(mlbPlayerId, 999) : formWindow(999),
     safeQuery(`SELECT * FROM daily.probable_pitchers WHERE game_pk=?`, [gamePk]),
-    safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
+    isPitcher
+      ? safeQuery(`SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM stats_pitcher.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
+      : safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
   ]);
   const recentForm = hitterSnapshotRows.length ? hitterSnapshotRows : [form5, form10, form20, formSeason].filter(Boolean);
   const starterRow = starterRows[0] || null;
