@@ -107,6 +107,32 @@ const STAGES = [
 async function runDailyContextFullRun(env, input) {
   const runId = `daily_context_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+
+  const lock = await tryAcquireLock(env);
+  if (!lock.acquired) {
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      run_id: runId,
+      started_at: startedAt,
+      finished_at: nowIso(),
+      certification: "DAILY_CONTEXT_FULL_RUN_SKIPPED_ALREADY_RUNNING",
+      skipped: true,
+      lock_error: lock.error || null,
+      stages: []
+    };
+  }
+
+  try {
+    return await runDailyContextFullRunLocked(env, input, runId, startedAt);
+  } finally {
+    await releaseLock(lock.client);
+  }
+}
+
+async function runDailyContextFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
   for (const s of STAGES) {
