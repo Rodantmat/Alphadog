@@ -1209,7 +1209,7 @@ async function apiDossier(env, url) {
   const awayTeamIdForForm = weatherRow.away_team_id || umpireRow.away_team_id;
   const teamRecentForm = async (teamId) => {
     if (!teamId) return null;
-    const gl = await safeQuery(`SELECT runs_scored, runs_allowed, is_home FROM (SELECT * FROM team.game_logs WHERE team_id=? ORDER BY game_date DESC LIMIT 10) t`, [teamId]);
+    const gl = await safeQuery(`SELECT runs_scored, runs_allowed, is_home FROM (SELECT * FROM team.game_logs WHERE team_id=?::text ORDER BY game_date DESC LIMIT 10) t`, [String(teamId)]);
     if (!gl.length) return null;
     const rs = gl.reduce((a,r)=>a+(Number(r.runs_scored)||0),0), ra = gl.reduce((a,r)=>a+(Number(r.runs_allowed)||0),0);
     const wins = gl.filter(r => Number(r.runs_scored) > Number(r.runs_allowed)).length;
