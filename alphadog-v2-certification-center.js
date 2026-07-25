@@ -1424,7 +1424,7 @@ async function apiHealth(env) {
     SELECT hp_board_batch_id AS batch_id, worker_version, profile_key AS profile_version, status,
            source_engine_batch_id AS source_score_enrichment_batch_id,
            source_rows_read AS expected_hp_rows, board_rows_written AS hp_rows_written,
-           0 AS blocked_rows, 0 AS warning_rows, issue_rows_written,
+           0 AS blocked_rows, 0 AS warning_rows, 0 AS issue_rows_written,
            certification_status, certification_grade, updated_at
     FROM score.hp_board_batches
     WHERE source_engine_batch_id = ?
