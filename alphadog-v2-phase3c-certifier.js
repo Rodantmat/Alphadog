@@ -190,8 +190,20 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   const status = isPartial ? "partial_continue" : "completed_hit_probability_current_estimates_written";
 
   let subsetReconcile = null;
+  let cleanupOldBatches = null;
   if (!isPartial) {
     subsetReconcile = await reconcileHpBoardSubsetConstraints(pgClient, hpBatchId).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    // Real structural fix: hp_board_current previously had no cleanup at all, so every run's
+    // batch accumulated alongside every previous run's batch forever. Scoring-engine correctly
+    // scopes its read to this run's specific batch_id, so an uncleaned table meant it only ever
+    // saw this run's own (often tiny, partial-looking) slice, starving the final board. Delete
+    // everything except the batch that was just successfully, completely written.
+    try {
+      const deleted = await pgClient`DELETE FROM score.hp_board_current WHERE hp_board_batch_id <> ${hpBatchId}`;
+      cleanupOldBatches = { ok: true, deleted_rows: deleted.count ?? null };
+    } catch (e) {
+      cleanupOldBatches = { ok: false, error: String(e && e.message ? e.message : e) };
+    }
   }
 
   await pgClient`UPDATE score.hp_board_batches SET status=${status}, certification_status='HP_BOARD_CERTIFIED_REAL_SKELETON', certification_grade='PASS_REAL_SKELETON', board_rows_written=${written}, primary_rows=${primaryRows}, review_rows=${reviewRows}, updated_at=now() WHERE hp_board_batch_id=${hpBatchId}`;
