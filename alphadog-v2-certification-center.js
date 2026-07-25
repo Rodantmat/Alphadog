@@ -1153,6 +1153,73 @@ async function apiDossier(env, url) {
       : safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
   ]);
   const recentForm = hitterSnapshotRows.length ? hitterSnapshotRows : [form5, form10, form20, formSeason].filter(Boolean);
+
+  // Prop-specific historical hit-rate and streak (new): for the EXACT prop/line/side on this leg,
+  // checks whether each of the player's own recent games would have hit, using the same value
+  // mapping the scoring pipeline itself uses. This is exactly the kind of "how often has this
+  // actually hit recently" check a pro bettor runs before taking a line.
+  function propValueFromGameRow(prop, r) {
+    const p = String(prop || "");
+    if (p === "hits") return Number(r.hits) || 0;
+    if (p === "singles") return Number(r.singles) || 0;
+    if (p === "doubles") return Number(r.doubles) || 0;
+    if (p === "triples") return Number(r.triples) || 0;
+    if (p === "home_runs") return Number(r.home_runs) || 0;
+    if (p === "runs") return Number(r.runs) || 0;
+    if (p === "rbis") return Number(r.rbi) || 0;
+    if (p === "walks") return Number(r.walks) || 0;
+    if (p === "hitter_strikeouts") return Number(r.strikeouts) || 0;
+    if (p === "stolen_bases") return Number(r.stolen_bases) || 0;
+    if (p === "total_bases") return Number(r.total_bases) || 0;
+    if (p === "hits_runs_rbis") return (Number(r.hits) || 0) + (Number(r.runs) || 0) + (Number(r.rbi) || 0);
+    if (p === "plate_appearances") return Number(r.pa) || 0;
+    if (p === "pitcher_strikeouts") return Number(r.strikeouts) || 0;
+    if (p === "hits_allowed") return Number(r.hits_allowed) || 0;
+    if (p === "earned_runs") return Number(r.earned_runs) || 0;
+    if (p === "walks_allowed") return Number(r.walks_allowed) || 0;
+    if (p === "pitcher_outs") return Number(r.outs_recorded) || 0;
+    if (p === "runs_allowed") return Number(r.runs_allowed) || 0;
+    if (p === "pitches_thrown") return Number(r.pitches) || 0;
+    return null;
+  }
+  let propHistory = null;
+  {
+    const propKey = selectedRaw.canonical_prop_key;
+    const lineVal = Number(selectedRaw.line_value);
+    const side = String(selectedRaw.selected_side || "more");
+    const gamesSorted = [...recentGames].sort((a, b) => String(b.game_date).localeCompare(String(a.game_date)));
+    const withResult = gamesSorted.map(r => {
+      const actual = propValueFromGameRow(propKey, r);
+      if (actual == null) return null;
+      const hit = side === "less" ? actual < lineVal : actual > lineVal;
+      return { game_date: r.game_date, opponent_team_id: r.opponent_team_id, actual_value: actual, hit: hit ? 1 : 0 };
+    }).filter(Boolean);
+    const hitRateOver = (n) => {
+      const slice = withResult.slice(0, n);
+      if (!slice.length) return null;
+      const hits = slice.reduce((a, r) => a + r.hit, 0);
+      return { games: slice.length, hits, hit_rate: hits / slice.length };
+    };
+    let streak = 0, streakType = null;
+    if (withResult.length) {
+      streakType = withResult[0].hit ? "hit" : "miss";
+      for (const r of withResult) {
+        if ((r.hit === 1) === (streakType === "hit")) streak++;
+        else break;
+      }
+    }
+    propHistory = {
+      canonical_prop_key: propKey,
+      line_value: lineVal,
+      selected_side: side,
+      last_5: hitRateOver(5),
+      last_10: hitRateOver(10),
+      last_20: hitRateOver(20),
+      season: hitRateOver(withResult.length),
+      current_streak: streak ? { type: streakType, length: streak } : null,
+      game_by_game: withResult.slice(0, 20)
+    };
+  }
   const starterRow = starterRows[0] || null;
   let starters = [], pitcherForm = [], pitcherSplits = [], pitcherProfiles = [];
   if (starterRow) {
