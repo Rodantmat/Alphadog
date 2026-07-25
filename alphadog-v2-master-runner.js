@@ -58,7 +58,7 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-async function callRunner(binding, bindingName, input) {
+async function callRunner(binding, bindingName, input, attempt = 1) {
   const started = Date.now();
   if (!binding || typeof binding.fetch !== "function") {
     return {
@@ -90,15 +90,23 @@ async function callRunner(binding, bindingName, input) {
       stage_count: Array.isArray(output.stages) ? output.stages.length : null,
       failed_stages: Array.isArray(output.stages) ? output.stages.filter(s => !s.ok).map(s => s.stage) : [],
       error: output.ok ? null : (output.certification || "runner_failed"),
-      elapsed_ms: Date.now() - started
+      elapsed_ms: Date.now() - started,
+      attempts: attempt
     };
   } catch (err) {
+    // Network-level exception on the fetch() call itself, not a real business-logic failure -
+    // same documented class of transient service-to-service fetch issue found in board-runner's
+    // call to score-prep. Single retry only; a genuine ok:false response is never retried.
+    if (attempt < 2) {
+      return await callRunner(binding, bindingName, input, attempt + 1);
+    }
     return {
       runner: bindingName,
       ok: false,
       data_ok: false,
       error: String(err && err.message ? err.message : err),
-      elapsed_ms: Date.now() - started
+      elapsed_ms: Date.now() - started,
+      attempts: attempt
     };
   }
 }
