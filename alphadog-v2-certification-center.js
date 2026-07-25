@@ -1149,14 +1149,14 @@ async function apiDossier(env, url) {
     const homeId = weatherRow.home_team_id || umpireRow.home_team_id;
     const awayId = weatherRow.away_team_id || umpireRow.away_team_id;
     const [homePitcher, awayPitcher, homeForm5, homeForm10, homeFormSeason, awayForm5, awayForm10, awayFormSeason, homeSplits, awaySplits, homeTeamRows, awayTeamRows] = await Promise.all([
-      safeQuery(env.REF_DB, `SELECT * FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [starterRow.home_pitcher_id]),
-      safeQuery(env.REF_DB, `SELECT * FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [starterRow.away_pitcher_id]),
+      safeQuery(`SELECT * FROM ref.players WHERE mlb_player_id=? LIMIT 1`, [starterRow.home_pitcher_id]),
+      safeQuery(`SELECT * FROM ref.players WHERE mlb_player_id=? LIMIT 1`, [starterRow.away_pitcher_id]),
       pitcherFormWindow(starterRow.home_pitcher_id, 5), pitcherFormWindow(starterRow.home_pitcher_id, 10), pitcherFormWindow(starterRow.home_pitcher_id, 999),
       pitcherFormWindow(starterRow.away_pitcher_id, 5), pitcherFormWindow(starterRow.away_pitcher_id, 10), pitcherFormWindow(starterRow.away_pitcher_id, 999),
-      safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [starterRow.home_pitcher_id]),
-      safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [starterRow.away_pitcher_id]),
-      safeQuery(env.REF_DB, `SELECT full_name FROM ref_teams WHERE team_id=? LIMIT 1`, [homeId]),
-      safeQuery(env.REF_DB, `SELECT full_name FROM ref_teams WHERE team_id=? LIMIT 1`, [awayId])
+      safeQuery(`SELECT * FROM stats_pitcher.splits WHERE player_id=? ORDER BY season DESC`, [starterRow.home_pitcher_id]),
+      safeQuery(`SELECT * FROM stats_pitcher.splits WHERE player_id=? ORDER BY season DESC`, [starterRow.away_pitcher_id]),
+      safeQuery(`SELECT full_name FROM ref.teams WHERE team_id=? LIMIT 1`, [homeId]),
+      safeQuery(`SELECT full_name FROM ref.teams WHERE team_id=? LIMIT 1`, [awayId])
     ]);
     const hp = homePitcher[0] || {}, ap = awayPitcher[0] || {};
     pitcherProfiles = [hp, ap].map(p => ({ player_id: p.mlb_player_id, mlb_player_id: p.mlb_player_id, full_name: p.full_name, player_name: p.full_name }));
@@ -1165,16 +1165,16 @@ async function apiDossier(env, url) {
       { team_name: (awayTeamRows[0] || {}).full_name || 'Away', is_home: 0, starter_name: ap.full_name || String(starterRow.away_pitcher_id), starter_hand: ap.throw_side, starter_status: starterRow.confidence, starter_confidence: starterRow.confidence }
     ];
     const [homeSnaps, awaySnaps] = await Promise.all([
-      safeQuery(env.STATS_PITCHER_DB, `SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM pitcher_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [starterRow.home_pitcher_id]),
-      safeQuery(env.STATS_PITCHER_DB, `SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM pitcher_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [starterRow.away_pitcher_id])
+      safeQuery(`SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM stats_pitcher.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [starterRow.home_pitcher_id]),
+      safeQuery(`SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM stats_pitcher.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [starterRow.away_pitcher_id])
     ]);
     pitcherForm = (homeSnaps.length || awaySnaps.length) ? [...homeSnaps, ...awaySnaps] : [homeForm5, homeForm10, homeFormSeason, awayForm5, awayForm10, awayFormSeason].filter(Boolean);
     pitcherSplits = [...homeSplits, ...awaySplits];
   }
   const [bullpen, scheduleSpot, marketOdds] = await Promise.all([
-    safeQuery(env.DAILY_DB, `SELECT * FROM daily_bullpen_availability_current WHERE game_pk=?`, [gamePk]),
-    safeQuery(env.DAILY_DB, `SELECT * FROM daily_team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
-    safeQuery(env.MARKET_DB, `SELECT * FROM market_context_probe_game_odds WHERE game_pk=? AND market_key IN ('h2h','spreads','totals')`, [gamePk])
+    safeQuery(`SELECT * FROM daily.bullpen_availability_current WHERE game_pk=?`, [gamePk]),
+    safeQuery(`SELECT * FROM daily.team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
+    safeQuery(`SELECT * FROM market.context_probe_game_odds WHERE game_pk=? AND market_key IN ('h2h','spreads','totals')`, [gamePk])
   ]);
 
   const oppTeamIdsD = [...new Set((recentGames || []).map(g => g.opponent_team_id).filter(v => v != null))];
