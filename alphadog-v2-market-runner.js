@@ -151,6 +151,7 @@ async function runMarketFullRunLocked(env, input, runId, startedAt) {
   for (const s of STAGES) {
     const result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, trigger: "market_runner" });
     stages.push(result);
+    if (!result.ok) break; // every later stage reads what this one wrote - do not proceed on real failure
   }
 
   const allOk = stages.every(s => s.ok);
