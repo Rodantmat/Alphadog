@@ -171,7 +171,18 @@ async function runDailyDeltaFullRun(env, input) {
   try {
     const result = await runDailyDeltaFullRunLocked(env, input, runId, startedAt);
     const coverageAudit = await runCoverageAudit(env);
-    return { ...result, coverage_audit: coverageAudit, preflight };
+    const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
+    const finalCertification = !coverageOk && result.certification === "DAILY_DELTA_FULL_RUN_COMPLETE"
+      ? "DAILY_DELTA_FULL_RUN_COMPLETE_BUT_COVERAGE_GAP_DETECTED"
+      : result.certification;
+    return {
+      ...result,
+      ok: result.ok && coverageOk,
+      data_ok: result.data_ok && coverageOk,
+      certification: finalCertification,
+      coverage_audit: coverageAudit,
+      preflight
+    };
   } finally {
     await releaseLock(lock.client, runId);
   }
