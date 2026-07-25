@@ -8468,6 +8468,10 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
       ok: true, mode: "daily_delta_game_logs_to_postgres", date_range: [startDate, endDate],
       games_found: gamePks.length, games_processed: processedGames,
       hitter_rows_written: dedupedHitters.length, pitcher_rows_written: dedupedPitchers.length,
+      rows_dropped_missing_game_date: missingDateHitters.length + missingDatePitchers.length,
+      dropped_sample: missingDateHitters.length || missingDatePitchers.length
+        ? [...missingDateHitters, ...missingDatePitchers].slice(0, 10).map(r => ({ log_id: r.log_id, game_pk: r.game_pk }))
+        : undefined,
       complete: processedGames >= gamePks.length
     };
   } catch (err) {
