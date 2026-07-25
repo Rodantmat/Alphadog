@@ -16,6 +16,48 @@ const DAILY_DELTA_LOCK_KEY = "alphadog_daily_delta_full_run";
 const LOCK_HOLD_MINUTES = 15;
 const MAX_STEP_CALLS = 20; // safety ceiling - real chain is 6 steps, this allows headroom
 
+// Automated coverage audit (2026-07-25): built directly from the manual audit that found two real,
+// silent gaps in this chain (starter_history/bullpen_history missing 2 full days of games due to
+// a raw_json schema mismatch). Runs after every completed chain, comparing yesterday's real games
+// (from team.game_logs, independently confirmed fully reliable) against starter_history and
+// bullpen_history coverage. Any gap now surfaces immediately in the run's own response.
+async function runCoverageAudit(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    const rows = await client`
+      WITH yesterday_games AS (
+        SELECT DISTINCT game_pk FROM team.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date
+      )
+      SELECT
+        (SELECT COUNT(*) FROM yesterday_games) AS games_expected,
+        (SELECT COUNT(DISTINCT game_pk) FROM team.starter_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_starter_history,
+        (SELECT COUNT(DISTINCT game_pk) FROM team.bullpen_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_bullpen_history,
+        (SELECT COUNT(*) FROM stats_hitter.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS hitter_null_dates_yesterday,
+        (SELECT COUNT(*) FROM stats_pitcher.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS pitcher_null_dates_yesterday`;
+    const r = rows[0] || {};
+    const gamesExpected = Number(r.games_expected || 0);
+    const gamesInStarter = Number(r.games_in_starter_history || 0);
+    const gamesInBullpen = Number(r.games_in_bullpen_history || 0);
+    const pass = gamesExpected === 0 || (gamesInStarter === gamesExpected && gamesInBullpen === gamesExpected);
+    return {
+      ok: true,
+      pass,
+      games_expected: gamesExpected,
+      games_in_starter_history: gamesInStarter,
+      games_in_bullpen_history: gamesInBullpen,
+      starter_history_gap: Math.max(0, gamesExpected - gamesInStarter),
+      bullpen_history_gap: Math.max(0, gamesExpected - gamesInBullpen),
+      hitter_null_dates_yesterday: Number(r.hitter_null_dates_yesterday || 0),
+      pitcher_null_dates_yesterday: Number(r.pitcher_null_dates_yesterday || 0),
+      warning: pass ? null : "COVERAGE_GAP_DETECTED_starter_or_bullpen_history_missing_yesterdays_games"
+    };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 async function preflightCleanup(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
