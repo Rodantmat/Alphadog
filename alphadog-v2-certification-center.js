@@ -1347,9 +1347,10 @@ async function apiDossier(env, url) {
       pitcher_running_game: runningGameRowD[0] || null,
       catcher_framing: catcherRowD[0] || null,
       home_team_recent_form: homeTeamForm,
-      away_team_recent_form: awayTeamForm
+      away_team_recent_form: awayTeamForm,
+      prop_history: propHistory
     },
-    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile", "recent_form", "recent_games", "splits", "starters", "pitcher_form", "bullpen", "schedule_spot", "availability", "sprint_speed", "batted_ball_profile", "defensive_quality", "pitcher_arsenal", "arm_angle", "pitcher_running_game", "catcher_framing", "team_recent_form"],
+    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile", "recent_form", "recent_games", "splits", "starters", "pitcher_form", "bullpen", "schedule_spot", "availability", "sprint_speed", "batted_ball_profile", "defensive_quality", "pitcher_arsenal", "arm_angle", "pitcher_running_game", "catcher_framing", "team_recent_form", "prop_history"],
     writes_performed: 0,
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
