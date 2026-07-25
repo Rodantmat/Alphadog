@@ -11,9 +11,45 @@
 // Parlay API, and Postgres), they can each run to completion in a single request with no chunking.
 //
 // This worker calls the four existing, already-tested sub-workers directly via service bindings,
-// in plain sequence, in one request. No queue table. No lock table. No cross-request resume state.
-// If you trigger this twice by accident, worst case is two full runs happen back to back - nothing
-// corrupts, because each sub-worker's own writes are idempotent (upserts keyed by natural IDs).
+// in plain sequence, in one request.
+//
+// CONCURRENCY GUARD (added 2026-07-25, real production incident): "each sub-worker's own writes
+// are idempotent, so overlapping runs are harmless" turned out to be wrong in practice. Two
+// overlapping board-runner invocations both hammering the same staging tables (heavy DELETE+INSERT
+// churn) caused genuine PostgreSQL I/O contention (AioIoCompletion waits, table bloat from dead
+// tuples piling up faster than autovacuum could reclaim them) - queries that normally take seconds
+// took 5-17+ minutes, and things never fully drained until manually intervened on. Root-caused via
+// research into Postgres wait events and Cloudflare Worker idempotency patterns: the correct fix is
+// a PostgreSQL advisory lock (pg_try_advisory_lock), non-blocking, self-releasing if the connection
+// ever drops (no manual expiry/cleanup logic needed, unlike a hand-rolled lock table) - the standard
+// tool for "only one instance of this job should run at a time" in a serverless/multi-instance
+// environment. If a second invocation arrives while one is already running, it returns immediately
+// with a clear "already running" response instead of racing the first one.
+import postgres from "postgres";
+
+const BOARD_LOCK_KEY = "alphadog_board_full_run";
+
+async function tryAcquireLock(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    const rows = await client`SELECT pg_try_advisory_lock(hashtext(${BOARD_LOCK_KEY})) as acquired`;
+    return { acquired: !!(rows && rows[0] && rows[0].acquired), client };
+  } catch (err) {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+    return { acquired: false, client: null, error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function releaseLock(client) {
+  if (!client) return;
+  try {
+    await client`SELECT pg_advisory_unlock(hashtext(${BOARD_LOCK_KEY}))`;
+  } catch (_) {
+    // best-effort - the lock releases automatically when this connection closes anyway
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
 
 const WORKER_NAME = "alphadog-v2-board-runner";
 const VERSION = "v1.0.0";
