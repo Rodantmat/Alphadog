@@ -4,6 +4,31 @@
 // already-tested stage workers, in the exact order the old orchestrator's MARKET_FULL_RUN_STAGES
 // used. No queue table, no lock table, no cross-request resume state.
 
+import postgres from "postgres";
+
+const MARKET_LOCK_KEY = "alphadog_market_full_run";
+
+async function tryAcquireLock(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    const rows = await client`SELECT pg_try_advisory_lock(hashtext(${MARKET_LOCK_KEY})) as acquired`;
+    return { acquired: !!(rows && rows[0] && rows[0].acquired), client };
+  } catch (err) {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+    return { acquired: false, client: null, error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function releaseLock(client) {
+  if (!client) return;
+  try {
+    await client`SELECT pg_advisory_unlock(hashtext(${MARKET_LOCK_KEY}))`;
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 const WORKER_NAME = "alphadog-v2-market-runner";
 const VERSION = "v1.0.0";
 
