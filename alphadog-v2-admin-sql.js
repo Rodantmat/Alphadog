@@ -365,6 +365,10 @@ async function toolRunJob(env, args) {
     // Same pattern, for the new master runner chaining all four full-runs in sequence.
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.master-runner/run";
+  } else if (bindingName === "SCORE_PREP_WORKER") {
+    // Direct debug call to score-prep to see its full raw response.
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.score-prep/run";
   } else {
     body = {
       job,
