@@ -43,6 +43,33 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
   return clamp(finalHp, 1, 99);
 }
 
+// Calibration correction (2026-07-25): loads the empirically-fit correction map built from
+// walk-forward backtesting (real historical game outcomes, not future data - see
+// score.calibration_correction_map). Applied as a conservative, sample-size-gated post-hoc
+// adjustment: only bins with enough backtest games to trust (>=100) are ever applied, so this
+// can never move a prediction based on noise from a handful of games. Props/bins with no fitted
+// correction, or insufficient sample size, pass through completely unchanged.
+const CALIBRATION_MIN_SAMPLE_GAMES = 100;
+async function loadCalibrationMap(pgClient) {
+  const rows = await pgClient`SELECT canonical_prop_key, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
+  const map = new Map();
+  for (const r of rows) {
+    if (!map.has(r.canonical_prop_key)) map.set(r.canonical_prop_key, []);
+    map.get(r.canonical_prop_key).push(r);
+  }
+  return map;
+}
+function applyCalibrationCorrection(propKey, rawHpPct, calibrationMap) {
+  if (rawHpPct == null || !calibrationMap) return { correctedHp: rawHpPct, applied: false };
+  const bins = calibrationMap.get(propKey);
+  if (!bins || !bins.length) return { correctedHp: rawHpPct, applied: false };
+  const rawP = rawHpPct / 100;
+  const bin = bins.find(b => rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
+  if (!bin) return { correctedHp: rawHpPct, applied: false };
+  const corrected = clamp(rawHpPct + Number(bin.correction_delta) * 100, 1, 99);
+  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta), bin_n_test_games: bin.n_test_games };
+}
+
 function computeFinalConfidence(baselineConfidence, enrichmentRow) {
   const factorsApplied = (enrichmentRow && enrichmentRow.factors_applied) || 0;
   const factorsMissing = (enrichmentRow && enrichmentRow.factors_missing) || 0;
