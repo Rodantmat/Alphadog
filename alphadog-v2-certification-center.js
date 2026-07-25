@@ -1251,9 +1251,15 @@ function currentLegOpen(row) {
 }
 
 async function apiCurrent(env, url) {
-  if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const { sql, params, limit } = buildCurrentSql(url);
-  const rawRows = await queryAll(env.SCORE_DB, sql, params);
+  const pg = pgClient(env);
+  let rawRows;
+  try {
+    rawRows = await queryAllPg(pg, sql, params);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
   const rows = rawRows.filter(currentLegOpen);
   return jsonResponse({
     ok: true,
