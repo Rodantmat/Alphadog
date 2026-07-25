@@ -1160,23 +1160,10 @@ export default {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 18000; // Raised from 15000 (2026-07-23): real evidence of repeated timeouts when running as part of a full board chain alongside other Postgres-touching workers hitting the same Hyperdrive instance concurrently. Still safely under the orchestrator's own 20000ms external wait ceiling for this worker.
-      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
-      const rawOutput = await withDeadline(safeProbe(env, {
+      const output = await safeProbe(env, {
         ...(input || {}),
         ...((input && input.input_json && typeof input.input_json === "object") ? input.input_json : {})
-      }), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
-      const output = rawOutput === TIMEOUT_SENTINEL ? {
-        ok: false,
-        data_ok: false,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: JOB_KEY,
-        status: "hard_deadline_timeout",
-        certification: "PARLAY_UNDERDOG_BOARD_HARD_DEADLINE_TIMEOUT",
-        error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`,
-        hard_deadline_ms: HARD_DEADLINE_MS
-      } : rawOutput;
+      });
       return jsonResponse({
         ...output,
         request_id: input.request_id || null,
