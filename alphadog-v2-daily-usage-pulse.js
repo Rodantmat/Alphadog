@@ -556,12 +556,7 @@ export default {
       const input = await readJsonSafe(request);
       const pg = pgClient(env);
       try {
-        const HARD_DEADLINE_MS = 19000;
-        const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
-        const out = await withDeadline(runUmpireContext(pg, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
-        if (out === TIMEOUT_SENTINEL) {
-          return jsonResponse({ ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "partial_continue", continuation_required: true, orchestrator_should_self_continue: true, certification: "DAILY_UMPIRE_HARD_DEADLINE_TIMEOUT_SAFETY_NET_PARTIAL_CONTINUE", note: `Worker's own ${HARD_DEADLINE_MS}ms internal safety-net deadline fired before the external dispatch timeout - any progress already committed is real; the chain will re-invoke to continue.`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
-        }
+        const out = await runUmpireContext(pg, input);
         return jsonResponse(out);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_UMPIRE_EXCEPTION", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true, no_scoring: true }, 500);
