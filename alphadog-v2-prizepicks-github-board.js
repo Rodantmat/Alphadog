@@ -1964,20 +1964,7 @@ async function withDeadline(promise, ms, fallbackFactory) {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 90000;
-      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
-      const rawOutput = await withDeadline(runBoardParseStageCertify(env, input), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
-      const output = rawOutput === TIMEOUT_SENTINEL ? {
-        ok: false,
-        data_ok: false,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: JOB_KEY,
-        status: "hard_deadline_timeout",
-        certification: "PRIZEPICKS_GITHUB_BOARD_HARD_DEADLINE_TIMEOUT",
-        error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`,
-        hard_deadline_ms: HARD_DEADLINE_MS
-      } : rawOutput;
+      const output = await runBoardParseStageCertify(env, input);
       return jsonResponse(output, 200);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
