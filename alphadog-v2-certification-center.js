@@ -1832,7 +1832,7 @@ async function apiPlayerProfile(env, url) {
   const oppTeamIds = [...new Set(recentGames.map(g => g.opponent_team_id).filter(v => v != null))];
   if (oppTeamIds.length) {
     const ph = oppTeamIds.map(() => "?").join(",");
-    const oppTeamRows = await safeQuery(env.REF_DB, `SELECT team_id, mlb_team_id, abbreviation FROM ref_teams WHERE team_id IN (${ph}) OR mlb_team_id IN (${ph})`, [...oppTeamIds, ...oppTeamIds]);
+    const oppTeamRows = await safeQuery(`SELECT team_id, mlb_team_id, abbreviation FROM ref.teams WHERE team_id IN (${ph}) OR mlb_team_id IN (${ph})`, [...oppTeamIds, ...oppTeamIds]);
     const abbrById = new Map();
     for (const t of oppTeamRows) { if (t.team_id != null) abbrById.set(String(t.team_id), t.abbreviation); if (t.mlb_team_id != null) abbrById.set(String(t.mlb_team_id), t.abbreviation); }
     for (const g of recentGames) g.opponent_abbr = abbrById.get(String(g.opponent_team_id)) || null;
