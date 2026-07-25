@@ -216,6 +216,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     matrix_rows_read: chunkRows.length, board_rows_written: written, primary_rows: primaryRows, review_rows: reviewRows,
     primary_hp_threshold: PRIMARY_HP_THRESHOLD,
     subset_constraint_reconcile: subsetReconcile,
+    cleanup_old_batches: cleanupOldBatches,
     timestamp_utc: nowUtc(),
   };
 }
