@@ -1237,7 +1237,7 @@ async function apiDossier(env, url) {
       hp_display_notes_json: null
     },
     dossier_context: {
-      source_table: "SCORE_DB.score_final_board_current",
+      source_table: "score.final_board_current",
       source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null,
       weather: weatherRow,
       stadium: stadiumRow,
@@ -1261,9 +1261,19 @@ async function apiDossier(env, url) {
       pitcher_profiles: pitcherProfiles,
       bullpen: bullpen,
       schedule_spot: scheduleSpot,
-      market_odds: marketOdds
+      market_odds: marketOdds,
+      availability: availabilityRowD[0] || null,
+      sprint_speed: sprintRowD[0] || null,
+      batted_ball_profile: battedBallRowD[0] || null,
+      defensive_quality: defQualRowD[0] || null,
+      pitcher_arsenal: arsenalRowsD,
+      arm_angle: armAngleRowD[0] || null,
+      pitcher_running_game: runningGameRowD[0] || null,
+      catcher_framing: catcherRowD[0] || null,
+      home_team_recent_form: homeTeamForm,
+      away_team_recent_form: awayTeamForm
     },
-    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile", "recent_form", "recent_games", "splits", "starters", "pitcher_form", "bullpen", "schedule_spot"],
+    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile", "recent_form", "recent_games", "splits", "starters", "pitcher_form", "bullpen", "schedule_spot", "availability", "sprint_speed", "batted_ball_profile", "defensive_quality", "pitcher_arsenal", "arm_angle", "pitcher_running_game", "catcher_framing", "team_recent_form"],
     writes_performed: 0,
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
