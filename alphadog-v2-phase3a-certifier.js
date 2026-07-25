@@ -97,12 +97,27 @@ async function runScoringEngine(pgClient, input) {
   const status = isPartial ? "partial_continue" : "completed_scoring_current_rows_written";
   await pgClient`UPDATE score.scoring_engine_batches SET status=${status}, certification='SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS', certification_grade='PASS_REAL_SKELETON', score_rows_written=${written}, finished_at=${isPartial ? null : new Date().toISOString()} WHERE batch_id=${batchId}`;
 
+  // Real structural fix: scoring_engine_current previously had no cleanup at all, so every run's
+  // batch accumulated alongside every previous run's forever. Delete everything except the batch
+  // that was just successfully, completely written, matching the same fix applied to
+  // hp_board_current.
+  let cleanupOldBatches = null;
+  if (!isPartial) {
+    try {
+      const deleted = await pgClient`DELETE FROM score.scoring_engine_current WHERE batch_id <> ${batchId}`;
+      cleanupOldBatches = { ok: true, deleted_rows: deleted.count ?? null };
+    } catch (e) {
+      cleanupOldBatches = { ok: false, error: String(e && e.message ? e.message : e) };
+    }
+  }
+
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
     request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId, hp_board_batch_id: hpBatchId,
     status, certification: "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS",
     continuation_required: isPartial, orchestrator_should_self_continue: isPartial,
     hp_rows_read: hpRows.length, score_rows_written: written, remaining_null_score_rows: stillRemaining,
+    cleanup_old_batches: cleanupOldBatches,
     timestamp_utc: nowUtc(),
   };
 }
