@@ -884,8 +884,8 @@ function buildCurrentSql(url) {
     LIMIT ${limit}
   ` : `
     SELECT ${baseSelect}
-    FROM score_final_board_current f
-    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
+    FROM score.final_board_current f
+    LEFT JOIN score.board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
     ${where.length ? "WHERE " + where.join(" AND ") : ""}
     ORDER BY COALESCE(f.rank_order,999999) ASC
     LIMIT ${limit}
