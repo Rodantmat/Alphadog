@@ -199,7 +199,7 @@ async function runMasterFullRunLocked(env, input, runId, startedAt) {
   }
 
   const allOk = runners.every(r => r.ok);
-  const lastOk = runners.length && runners[runners.length - 1].ok;
+  const lastOk = runners.length && runners[runners.length - 1].data_ok;
 
   return {
     ok: allOk,
