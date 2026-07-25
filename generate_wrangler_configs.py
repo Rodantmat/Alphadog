@@ -117,7 +117,12 @@ def make_config(worker_name, include_services=False):
         # orchestrator's hardcoded per-worker tick logic - see this worker's own
         # scheduled() handler for the event.cron -> mode mapping. Must live in the
         # generator or it gets wiped on every deploy before Wrangler even runs.
-        cfg["triggers"] = {"crons": ["0 3 * * 1", "45 8 * * *"]}
+        # Native cron triggers RETIRED: weekly-differential-runner and daily-delta-runner now
+        # own these schedules (via their own dedicated cron triggers, calling this worker
+        # directly through a service binding). Leaving both active here would double-trigger
+        # the exact same chains, causing the same lock-contention problem already found and
+        # fixed for the old orchestrator this session.
+        # cfg["triggers"] = {"crons": ["0 3 * * 1", "45 8 * * *"]}
     if worker_name == "alphadog-v2-parlay-underdog-board":
         # Same reason as control-room/admin-sql above: worker-specific vars must live in the
         # generator or they get wiped on every deploy before Wrangler even runs. NOTE: the
