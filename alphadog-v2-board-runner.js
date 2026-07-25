@@ -153,7 +153,7 @@ async function runBoardFullRun(env, input) {
   try {
     return await runBoardFullRunLocked(env, input, runId, startedAt);
   } finally {
-    await releaseLock(lock.client);
+    await releaseLock(lock.client, runId);
   }
 }
 
