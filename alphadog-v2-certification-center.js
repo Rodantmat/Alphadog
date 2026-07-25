@@ -1000,6 +1000,7 @@ async function apiDossier(env, url) {
   `, [finalId]);
   const selectedRaw = selectedRows[0];
   if (!selectedRaw) return jsonResponse({ ok: false, error: "Final Board V3 row not found", version: VERSION, final_board_row_id: finalId }, 404);
+  const isPitcher = String(selectedRaw.prop_family || "").toLowerCase() === "pitcher";
   const legRows = await queryAllPg(pg, `
     SELECT 
       f.final_board_row_id AS final_board_row_id,
