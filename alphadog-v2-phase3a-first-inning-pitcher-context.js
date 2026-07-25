@@ -9114,7 +9114,36 @@ async function runRemineePrizepicksBoardToPostgres(env, input) {
 
 // Build the flat, ordered list of every (canonical_prop_key, line_value, selected_side)
 // combination the Base job needs to classify, from the configured universe.
-function buildComboList(propLineUniverse) {
+async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 30000;
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const startIndex = Math.max(0, Number(input.combo_index || 0));
+  const results = [];
+  let i = startIndex;
+  for (; i < combos.length; i++) {
+    if (Date.now() - startMs > timeBudgetMs) break;
+    const combo = combos[i];
+    try {
+      const res = await runClassificationBaselineV6ToPostgres(env, { canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side, season: input.season });
+      results.push({ combo, ok: !!res.ok, rows_written: res.rows_written || 0, error: res.error || null });
+    } catch (err) {
+      results.push({ combo, ok: false, error: String(err && err.message ? err.message : err) });
+    }
+  }
+  const done = i >= combos.length;
+  return {
+    ok: true, data_ok: true, mode: "classification_baseline_v6_to_postgres_full_run",
+    total_combos: combos.length, combos_processed_this_call: results.length,
+    combo_index: i, combo_done: done,
+    total_rows_written: results.reduce((s, r) => s + (r.rows_written || 0), 0),
+    failed_combos: results.filter(r => !r.ok),
+    partial_continue: !done, orchestrator_should_self_continue: !done,
+    next_input_json: done ? null : { ...input, mode: "classification_baseline_v6_to_postgres_full_run", combo_index: i },
+    results
+  };
+}
   const combos = [];
   for (const [propKey, lines] of Object.entries(propLineUniverse)) {
     for (const lineValue of lines) {
