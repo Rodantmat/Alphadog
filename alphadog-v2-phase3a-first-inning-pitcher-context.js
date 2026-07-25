@@ -5444,12 +5444,14 @@ async function runBaselineV5BaseRescue(env, input={}) {
 // Anything here is a NUMBER that can be tuned without a code deploy. Logic stays hardcoded;
 // only the tunable values live in the database, per locked design decision.
 let CALIBRATION_CONFIG_CACHE = null;
+let CALIBRATION_CONFIG_CACHE_AT = 0;
+const CALIBRATION_CONFIG_TTL_MS = 5 * 60 * 1000; // 5 minutes - see fix note above
 const CALIBRATION_CONFIG_DEFAULTS = {
   "global|confidence_prior_strength": { tiny_sample_lt5: 20, low_sample_lt15: 12, medium_sample_lt30: 6, large_sample_ge30: 2 },
   "global|recency_weights": { last_5_games: 0.40, last_10_games: 0.30, last_20_games: 0.20, season_to_date: 0.10 }
 };
 async function ensureCalibrationConfigLoaded(env){
-  if(CALIBRATION_CONFIG_CACHE) return CALIBRATION_CONFIG_CACHE;
+  if(CALIBRATION_CONFIG_CACHE && (Date.now() - CALIBRATION_CONFIG_CACHE_AT) < CALIBRATION_CONFIG_TTL_MS) return CALIBRATION_CONFIG_CACHE;
   const cfg = { ...CALIBRATION_CONFIG_DEFAULTS };
   try{
     const rows = await all(env.CONFIG_DB, `SELECT config_scope, config_key, config_json FROM calibration_config WHERE is_active=1`);
@@ -5459,6 +5461,7 @@ async function ensureCalibrationConfigLoaded(env){
     }
   } catch(_e){ /* table may not exist yet on first deploy; defaults keep the system working */ }
   CALIBRATION_CONFIG_CACHE = cfg;
+  CALIBRATION_CONFIG_CACHE_AT = Date.now();
   return cfg;
 }
 function priorStrengthForSample(sample, cfg, multiplier=1.0){
