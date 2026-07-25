@@ -8402,7 +8402,7 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
               const hits = Number(bat.hits || 0), doubles = Number(bat.doubles || 0), triples = Number(bat.triples || 0), hr = Number(bat.homeRuns || 0);
               hitterRows.push({
                 log_id: `${pid}_${gamePk}_hitting`, player_id: Number(pid), game_pk: Number(gamePk), season,
-                game_date: json.gameDate ? String(json.gameDate).slice(0, 10) : null,
+                game_date: gamePkToDate.get(gamePk) || null,
                 team_id: teamId != null ? String(teamId) : null, opponent_team_id: oppTeamId != null ? String(oppTeamId) : null,
                 opponent_abbr: null, is_home: side === "home" ? 1 : 0, batting_order: null,
                 pa: Number(bat.plateAppearances || 0), ab: Number(bat.atBats || 0), hits,
