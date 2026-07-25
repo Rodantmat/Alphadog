@@ -160,9 +160,17 @@ async function runDailyDeltaFullRunLocked(env, input, runId, startedAt) {
     }
   }
 
-  const certification = complete
-    ? "DAILY_DELTA_FULL_RUN_COMPLETE"
-    : (failed ? "DAILY_DELTA_FULL_RUN_FAILED" : "DAILY_DELTA_FULL_RUN_INCOMPLETE_MAX_CALLS_REACHED");
+  const certification = (() => {
+    if (failed) return "DAILY_DELTA_FULL_RUN_FAILED";
+    if (!complete) return "DAILY_DELTA_FULL_RUN_INCOMPLETE_MAX_CALLS_REACHED";
+    // The underlying function catches per-step errors and still reports ok:true/complete:true
+    // at the top level, so check each individual step's own ok flag rather than trusting that.
+    const allStepResults = steps.flatMap(s => Array.isArray(s.completed_steps) ? s.completed_steps : []);
+    const failedSteps = allStepResults.filter(s => s && s.ok === false);
+    if (failedSteps.length) return "DAILY_DELTA_FULL_RUN_PARTIAL_SOME_STEPS_FAILED";
+    return "DAILY_DELTA_FULL_RUN_COMPLETE";
+  })();
+  const trueComplete = complete && certification === "DAILY_DELTA_FULL_RUN_COMPLETE";
 
   return {
     ok: complete,
