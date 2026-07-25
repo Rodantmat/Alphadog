@@ -7,7 +7,10 @@ WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["
 D1_BINDINGS = json.loads(Path("cloudflare_d1_bindings.json").read_text(encoding="utf-8"))["d1_databases"]
 VARS = json.loads(Path("vars.production.json").read_text(encoding="utf-8"))
 
-ORCHESTRATOR_CRONS = ["0 8 * * *","0 9 * * *","15 4 * * *","45 8 * * *","0 12 * * *","30 15 * * *","0 3 * * 1"]
+ORCHESTRATOR_CRONS = []  # Retired: board/daily-context/market/scoring (via master-runner),
+# weekly-differential-runner, and daily-delta-runner now own all real scheduling. The
+# orchestrator itself is fully retired - kept deployed only for any manual/direct-call debugging
+# via its own service binding, never self-triggered again.
 
 def service_binding_name(worker_name):
     return worker_name.replace("alphadog-v2-", "").replace("-", "_").upper() + "_WORKER"
