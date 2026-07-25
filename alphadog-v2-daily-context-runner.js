@@ -57,7 +57,7 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-async function callStage(binding, bindingName, mode, input) {
+async function callStage(binding, bindingName, mode, input, attempt = 1) {
   const started = Date.now();
   if (!binding || typeof binding.fetch !== "function") {
     return {
@@ -90,16 +90,21 @@ async function callStage(binding, bindingName, mode, input) {
       rows_read: output.rows_read ?? null,
       rows_written: output.rows_written ?? null,
       error: output.ok ? null : (output.error || output.certification || "stage_failed"),
-      elapsed_ms: Date.now() - started
+      elapsed_ms: Date.now() - started,
+      attempts: attempt
     };
   } catch (err) {
+    if (attempt < 2) {
+      return await callStage(binding, bindingName, mode, input, attempt + 1);
+    }
     return {
       stage: bindingName,
       mode,
       ok: false,
       data_ok: false,
       error: String(err && err.message ? err.message : err),
-      elapsed_ms: Date.now() - started
+      elapsed_ms: Date.now() - started,
+      attempts: attempt
     };
   }
 }
