@@ -8410,7 +8410,7 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
                 runs: Number(bat.runs || 0), rbi: Number(bat.rbi || 0), walks: Number(bat.baseOnBalls || 0),
                 strikeouts: Number(bat.strikeOuts || 0), stolen_bases: Number(bat.stolenBases || 0),
                 total_bases: Number(bat.totalBases || 0), primary_position_played: null, played_catcher_flag: 0,
-                source_key: "mlb_statsapi_boxscore_delta", raw_json: bat
+                source_key: "mlb_statsapi_boxscore_delta", raw_json: { stat: bat, game: { gamePk, gameDate: gamePkToDate.get(gamePk) || null }, team: { id: teamId }, opponent: { id: oppTeamId }, isHome: side === "home" }
               });
             }
             if (pit && pit.inningsPitched) {
