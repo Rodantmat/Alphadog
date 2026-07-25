@@ -1692,7 +1692,7 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
   return out.sort((a,b)=>Number(b.estimated_hit_probability_0_100||0)-Number(a.estimated_hit_probability_0_100||0));
 }
 async function apiGenerateSlips(env, request) {
-  if (!env.SCORE_DB) return jsonResponse({ ok:false, error:"SCORE_DB binding missing", version:VERSION }, 500);
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
   const input = await readJsonSafe(request);
   const rows = await fetchBoardRowsByIds(env, input.leg_ids || input.board_row_ids || []);
   const slips = buildGeneratedSlips(rows, input.structures || null, input.mode || "recommended");
