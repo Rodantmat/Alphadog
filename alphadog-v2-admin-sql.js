@@ -369,6 +369,12 @@ async function toolRunJob(env, args) {
     // Direct debug call to score-prep to see its full raw response.
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.score-prep/run";
+  } else if (bindingName === "WEEKLY_DIFFERENTIAL_RUNNER_WORKER") {
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.weekly-differential-runner/run";
+  } else if (bindingName === "DAILY_DELTA_RUNNER_WORKER") {
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.daily-delta-runner/run";
   } else {
     body = {
       job,
