@@ -7199,6 +7199,7 @@ async function runReminePitcherGameLogsToPostgres(env, input) {
           batters_faced: stat.battersFaced != null ? Number(stat.battersFaced) : null,
           hits_allowed: stat.hits != null ? Number(stat.hits) : null,
           earned_runs: stat.earnedRuns != null ? Number(stat.earnedRuns) : null,
+          runs_allowed: stat.runs != null ? Number(stat.runs) : null,
           walks_allowed: stat.baseOnBalls != null ? Number(stat.baseOnBalls) : null,
           strikeouts: stat.strikeOuts != null ? Number(stat.strikeOuts) : null,
           home_runs_allowed: stat.homeRuns != null ? Number(stat.homeRuns) : null,
@@ -7210,7 +7211,7 @@ async function runReminePitcherGameLogsToPostgres(env, input) {
     }
 
     if (allRows.length) {
-      const cols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","innings_pitched_decimal","batters_faced","hits_allowed","earned_runs","walks_allowed","strikeouts","home_runs_allowed","outs_recorded","source_key","raw_json"];
+      const cols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","innings_pitched_decimal","batters_faced","hits_allowed","earned_runs","runs_allowed","walks_allowed","strikeouts","home_runs_allowed","outs_recorded","source_key","raw_json"];
       const WRITE_CHUNK = 300;
       for (let i = 0; i < allRows.length; i += WRITE_CHUNK) {
         const chunk = allRows.slice(i, i + WRITE_CHUNK);
