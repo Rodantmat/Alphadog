@@ -1760,30 +1760,30 @@ async function apiPlayerProfile(env, url) {
   const idPlaceholders = ids.map(()=>"?").join(",");
   const mlbId = p.mlb_player_id || p.player_id;
   const isPitcher = String(p.primary_position || p.primary_role || "").toUpperCase() === "P" || String(p.primary_position || "").toUpperCase() === "TWP";
-  const safeQuery = async (db, sql, params) => { try { return db ? await queryAll(db, sql, params) : []; } catch (e) { return []; } };
-  const safeOne = async (db, sql, params) => { const r = await safeQuery(db, sql, params); return r[0] || null; };
+  const safeQuery = async (queryText, params) => { try { return await queryAllPg(pg, queryText, params); } catch (e) { return []; } };
+  const safeOne = async (queryText, params) => { const r = await safeQuery(queryText, params); return r[0] || null; };
 
-  const legs = idPlaceholders ? await safeQuery(env.SCORE_DB, `
+  const legs = idPlaceholders ? await safeQuery(`
     SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
-    FROM score_final_board_current
-    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
+    FROM score.final_board_current
+    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
       AND mlb_player_id IN (${idPlaceholders})
     ORDER BY rank_order ASC
     LIMIT 80
   `, ids) : [];
 
   const [teamRow, recentGames, snapshots, splits, nextTeamGame] = await Promise.all([
-    safeOne(env.REF_DB, `SELECT team_id, full_name, abbreviation, league, division FROM ref_teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]),
+    safeOne(`SELECT team_id, full_name, abbreviation, league, division FROM ref.teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]),
     isPitcher
-      ? safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId])
-      : safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId]),
+      ? safeQuery(`SELECT * FROM stats_pitcher.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId])
+      : safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId]),
     isPitcher
-      ? safeQuery(env.STATS_PITCHER_DB, `SELECT metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM pitcher_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId])
-      : safeQuery(env.STATS_HITTER_DB, `SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate FROM hitter_metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId]),
+      ? safeQuery(`SELECT metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM stats_pitcher.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId])
+      : safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId]),
     isPitcher
-      ? safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [mlbId])
-      : safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE player_id=? ORDER BY season DESC`, [mlbId]),
-    safeOne(env.DAILY_DB, `SELECT game_pk, game_time_utc, home_team_id, away_team_id FROM daily_umpire_context_current WHERE (home_team_id=? OR away_team_id=?) AND datetime(game_time_utc) >= datetime('now','-4 hours') ORDER BY datetime(game_time_utc) ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null)
+      ? safeQuery(`SELECT * FROM stats_pitcher.splits WHERE player_id=? ORDER BY season DESC`, [mlbId])
+      : safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbId]),
+    safeOne(`SELECT game_pk, game_time_utc, home_team_id, away_team_id FROM daily.umpire_context_current WHERE (home_team_id=? OR away_team_id=?) AND game_time_utc >= (now() - interval '4 hours') ORDER BY game_time_utc ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null)
   ]);
 
   let nextGame = null, weatherRow = null, umpireRow = null, marketRow = null, bullpenRows = [], scheduleRows = [], opposingStarter = null, opposingTeamRow = null;
