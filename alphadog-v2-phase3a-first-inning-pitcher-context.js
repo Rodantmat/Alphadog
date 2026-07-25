@@ -1237,6 +1237,84 @@ function propValueFromRow(prop, r){
   return null;
 }
 function mForProp(prop){ const p=String(prop||""); if(p==="rfi_nrfi") return 50; if(p==="fantasy"||p==="fantasy_score"||p==="pitcher_fantasy_score"||p==="hits_runs_rbis") return 35; if(p==="pitches_thrown"||p==="pitcher_outs") return 20; if(p==="triples"||p==="home_runs"||p==="stolen_bases") return 100; return 25; }
+
+// Outcome resolution (2026-07-25): builds the ground-truth feedback loop that was missing since
+// launch. For every final_board row on a game that has since completed, looks up the actual box
+// score value (using the exact same propValueFromRow mapping used everywhere else in this file,
+// so outcome resolution is never inconsistent with how props are valued elsewhere), determines
+// hit/miss/push against the predicted side and line, and records it permanently. This is the
+// foundation every future calibration pass (Brier score, reliability diagrams, ECE) depends on -
+// without it there is no ground truth to calibrate against, ever.
+async function runResolvePropOutcomes(env, input = {}) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+  try {
+    const lookbackDays = Math.max(1, Math.min(30, Number(input.lookback_days || 3)));
+    const rows = await sql`
+      SELECT f.final_board_row_id, f.hp_board_batch_id, f.matrix_id, f.prepared_row_id, f.source_key,
+        f.game_pk, f.official_date::text AS official_date, f.mlb_player_id, f.player_name,
+        f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100,
+        f.probability_confidence_0_100, f.score_0_100, f.score_grade, f.board_tier, f.live_playable
+      FROM score.final_board_current f
+      LEFT JOIN score.prop_outcome_history o ON o.final_board_row_id = f.final_board_row_id
+      WHERE o.outcome_id IS NULL
+        AND f.official_date >= (CURRENT_DATE - (${lookbackDays} || ' days')::interval)
+        AND f.official_date < CURRENT_DATE
+        AND f.estimated_hit_probability_0_100 IS NOT NULL`;
+    if (!rows.length) return { ok: true, mode: "resolve_prop_outcomes", candidates: 0, resolved: 0, no_actual_data: 0, note: "no unresolved rows in lookback window" };
+
+    const gamePks = [...new Set(rows.map(r => String(r.game_pk)))];
+    const gamePksLiteral = "{" + gamePks.join(",") + "}";
+    const hitterLogs = await sql`SELECT player_id, game_pk, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases, pa, ab, raw_json FROM stats_hitter.game_logs WHERE game_pk = ANY(${gamePksLiteral}::bigint[])`;
+    const pitcherLogs = await sql`SELECT player_id, game_pk, outs_recorded, hits_allowed, earned_runs, walks_allowed, strikeouts, runs_allowed, home_runs_allowed, raw_json FROM stats_pitcher.game_logs WHERE game_pk = ANY(${gamePksLiteral}::bigint[])`;
+    const hitterByKey = new Map(hitterLogs.map(r => [`${r.player_id}|${r.game_pk}`, r]));
+    const pitcherByKey = new Map(pitcherLogs.map(r => [`${r.player_id}|${r.game_pk}`, r]));
+
+    const outcomeRows = [];
+    let noActual = 0;
+    for (const f of rows) {
+      const key = `${f.mlb_player_id}|${f.game_pk}`;
+      const hitterRow = hitterByKey.get(key);
+      const pitcherRow = pitcherByKey.get(key);
+      const sourceRow = hitterRow || pitcherRow;
+      if (!sourceRow) { noActual++; continue; }
+      const actual = propValueFromRow(f.canonical_prop_key, sourceRow);
+      if (actual == null || !Number.isFinite(Number(actual))) { noActual++; continue; }
+      const line = Number(f.line_value);
+      const side = String(f.selected_side || "more");
+      let outcomeResult, outcomeHit;
+      if (Number(actual) === line) { outcomeResult = "push"; outcomeHit = null; }
+      else {
+        const wentOver = Number(actual) > line;
+        const hit = side === "less" ? !wentOver : wentOver;
+        outcomeResult = hit ? "hit" : "miss";
+        outcomeHit = hit ? 1 : 0;
+      }
+      const predictedP = Number(f.estimated_hit_probability_0_100) / 100;
+      const brierComponent = outcomeHit == null ? null : Math.pow(predictedP - outcomeHit, 2);
+      outcomeRows.push({
+        outcome_id: `outcome_${f.final_board_row_id}`, final_board_row_id: f.final_board_row_id,
+        hp_board_row_id: null, matrix_id: f.matrix_id, prepared_row_id: f.prepared_row_id,
+        source_key: f.source_key, game_pk: f.game_pk, official_date: f.official_date,
+        mlb_player_id: f.mlb_player_id, player_name: f.player_name, canonical_prop_key: f.canonical_prop_key,
+        line_value: f.line_value, selected_side: f.selected_side,
+        estimated_hit_probability_0_100: f.estimated_hit_probability_0_100,
+        probability_confidence_0_100: f.probability_confidence_0_100, score_0_100: f.score_0_100,
+        score_grade: f.score_grade, board_tier: f.board_tier, live_playable: f.live_playable,
+        actual_stat_value: actual, outcome_result: outcomeResult, outcome_hit: outcomeHit,
+        brier_component: brierComponent, resolved_at: nowUtc()
+      });
+    }
+    if (outcomeRows.length) {
+      const cols = ["outcome_id","final_board_row_id","hp_board_row_id","matrix_id","prepared_row_id","source_key","game_pk","official_date","mlb_player_id","player_name","canonical_prop_key","line_value","selected_side","estimated_hit_probability_0_100","probability_confidence_0_100","score_0_100","score_grade","board_tier","live_playable","actual_stat_value","outcome_result","outcome_hit","brier_component","resolved_at"];
+      await sql`INSERT INTO score.prop_outcome_history ${sql(outcomeRows, ...cols)} ON CONFLICT (outcome_id) DO NOTHING`;
+    }
+    return { ok: true, mode: "resolve_prop_outcomes", candidates: rows.length, resolved: outcomeRows.length, no_actual_data: noActual, games_checked: gamePks.length };
+  } catch (err) {
+    return { ok: false, mode: "resolve_prop_outcomes", error: String(err && err.message ? err.message : err) };
+  } finally {
+    await sql.end({ timeout: 1 }).catch(() => {});
+  }
+}
 function sampleTierV2(n, prop, entityType=null){
   const sample=Number(n||0);
   // v0.1.80: true reliability tiers are sample-size bands only.
