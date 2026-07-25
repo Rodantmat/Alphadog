@@ -135,7 +135,7 @@ async function runMarketFullRun(env, input) {
   try {
     return await runMarketFullRunLocked(env, input, runId, startedAt);
   } finally {
-    await releaseLock(lock.client);
+    await releaseLock(lock.client, runId);
   }
 }
 
