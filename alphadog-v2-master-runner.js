@@ -104,6 +104,32 @@ const RUNNERS = [
 async function runMasterFullRun(env, input) {
   const runId = `master_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+
+  const lock = await tryAcquireLock(env);
+  if (!lock.acquired) {
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      run_id: runId,
+      started_at: startedAt,
+      finished_at: nowIso(),
+      certification: "MASTER_FULL_RUN_SKIPPED_ALREADY_RUNNING",
+      skipped: true,
+      lock_error: lock.error || null,
+      runners: []
+    };
+  }
+
+  try {
+    return await runMasterFullRunLocked(env, input, runId, startedAt);
+  } finally {
+    await releaseLock(lock.client);
+  }
+}
+
+async function runMasterFullRunLocked(env, input, runId, startedAt) {
   const runners = [];
 
   for (const r of RUNNERS) {
