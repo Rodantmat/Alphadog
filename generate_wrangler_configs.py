@@ -84,7 +84,9 @@ def make_config(worker_name, include_services=False):
             {"binding": "MARKET_RUNNER_WORKER", "service": "alphadog-v2-market-runner"},
             {"binding": "SCORING_RUNNER_WORKER", "service": "alphadog-v2-scoring-runner"},
             {"binding": "MASTER_RUNNER_WORKER", "service": "alphadog-v2-master-runner"},
-            {"binding": "SCORE_PREP_WORKER", "service": "alphadog-v2-score-prep"}
+            {"binding": "SCORE_PREP_WORKER", "service": "alphadog-v2-score-prep"},
+            {"binding": "WEEKLY_DIFFERENTIAL_RUNNER_WORKER", "service": "alphadog-v2-weekly-differential-runner"},
+            {"binding": "DAILY_DELTA_RUNNER_WORKER", "service": "alphadog-v2-daily-delta-runner"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
