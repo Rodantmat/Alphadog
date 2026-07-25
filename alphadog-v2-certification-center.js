@@ -1415,7 +1415,7 @@ async function apiHealth(env) {
            final_rows_written AS final_rows_written, final_rows_written AS default_board_rows,
            0 AS correlated_duplicate_rows, 0 AS low_sanity_primary_rows, 0 AS rare_more_primary_rows,
            0 AS issue_rows_written, certification AS certification_status, certification_grade,
-           started_at, finished_at, updated_at
+           started_at, finished_at, finished_at AS updated_at
     FROM score.final_board_batches
     WHERE final_board_batch_id = ?
     LIMIT 1
