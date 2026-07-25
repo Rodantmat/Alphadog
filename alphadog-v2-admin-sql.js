@@ -361,6 +361,10 @@ async function toolRunJob(env, args) {
     // Same pattern, for the new standalone scoring-full-run worker.
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.scoring-runner/run";
+  } else if (bindingName === "MASTER_RUNNER_WORKER") {
+    // Same pattern, for the new master runner chaining all four full-runs in sequence.
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal.master-runner/run";
   } else {
     body = {
       job,
