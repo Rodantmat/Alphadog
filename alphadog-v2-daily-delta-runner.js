@@ -170,7 +170,8 @@ async function runDailyDeltaFullRun(env, input) {
 
   try {
     const result = await runDailyDeltaFullRunLocked(env, input, runId, startedAt);
-    return { ...result, preflight };
+    const coverageAudit = await runCoverageAudit(env);
+    return { ...result, coverage_audit: coverageAudit, preflight };
   } finally {
     await releaseLock(lock.client, runId);
   }
