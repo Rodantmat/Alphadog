@@ -1750,10 +1750,12 @@ async function apiPlayerSearch(env, url) {
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows });
 }
 async function apiPlayerProfile(env, url) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version: VERSION }, 500);
   const playerId = Number(url.searchParams.get("player_id") || 0);
   if (!playerId) return jsonResponse({ ok:false, error:"player_id required", version:VERSION }, 400);
-  const p = (await queryAll(env.REF_DB, `SELECT * FROM ref_players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]))[0] || null;
-  if (!p) return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404);
+  const pg = pgClient(env);
+  const p = (await queryAllPg(pg, `SELECT * FROM ref.players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]))[0] || null;
+  if (!p) { await pg.end({ timeout: 1 }).catch(() => {}); return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404); }
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
   const idPlaceholders = ids.map(()=>"?").join(",");
   const mlbId = p.mlb_player_id || p.player_id;
