@@ -11,7 +11,20 @@ const MARKET_LOCK_KEY = "alphadog_market_full_run";
 async function tryAcquireLock(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
-    const rows = await client`SELECT pg_try_advisory_lock(hashtext(${MARKET_LOCK_KEY})) as acquired`;
+    let rows = await client`SELECT pg_try_advisory_lock(hashtext(${MARKET_LOCK_KEY})) as acquired`;
+    if (!(rows && rows[0] && rows[0].acquired)) {
+      const holders = await client`
+        SELECT a.pid, a.state, EXTRACT(EPOCH FROM (now() - a.state_change))::int as idle_seconds
+        FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid
+        WHERE l.locktype = 'advisory' AND l.objid = hashtext(${MARKET_LOCK_KEY})`;
+      const staleHolders = (holders || []).filter(h => h.state === "idle" && Number(h.idle_seconds || 0) > 90);
+      if (staleHolders.length) {
+        for (const h of staleHolders) {
+          await client`SELECT pg_terminate_backend(${h.pid})`.catch(() => {});
+        }
+        rows = await client`SELECT pg_try_advisory_lock(hashtext(${MARKET_LOCK_KEY})) as acquired`;
+      }
+    }
     return { acquired: !!(rows && rows[0] && rows[0].acquired), client };
   } catch (err) {
     try { await client.end({ timeout: 1 }); } catch (_) {}
