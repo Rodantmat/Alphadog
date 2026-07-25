@@ -7850,6 +7850,7 @@ async function runDeriveRfiMetricToPostgres(env, input) {
 async function runWeeklyStaticDifferentialFullRunPostgres(env, input = {}) {
   const season = Number(input.season || 2026);
   const resumeFrom = Number(input.resume_from_step || 0);
+  const TIME_BUDGET_MS = 260000;
   // Postgres-only replacement for the D1 weekly_static_differential_full_run cron.
   // Order matters and is deliberate: reference/roster data first (teams/players/stadiums),
   // then everything derived from it (rosters/aliases), then Statcast leaderboard factors last
