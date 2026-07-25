@@ -1792,18 +1792,18 @@ async function apiPlayerProfile(env, url) {
     const isHomeNext = String(nextTeamGame.home_team_id) === String(p.current_mlb_team_id || p.current_team_id);
     const opponentTeamId = isHomeNext ? nextTeamGame.away_team_id : nextTeamGame.home_team_id;
     const [w, u, m, bp, sched, starters, oppTeam] = await Promise.all([
-      safeOne(env.DAILY_DB, `SELECT * FROM daily_game_weather_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
-      safeOne(env.DAILY_DB, `SELECT * FROM daily_umpire_context_current WHERE game_pk=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [gamePk]),
-      safeOne(env.MARKET_DB, `SELECT * FROM market_context_probe_game_market_summary WHERE game_pk=? ORDER BY datetime(created_at) DESC LIMIT 1`, [gamePk]),
-      safeQuery(env.DAILY_DB, `SELECT * FROM daily_bullpen_availability_current WHERE game_pk=?`, [gamePk]),
-      safeQuery(env.DAILY_DB, `SELECT * FROM daily_team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
-      safeOne(env.DAILY_DB, `SELECT * FROM daily_probable_pitchers WHERE game_key=? OR CAST(game_key AS INTEGER)=?`, [String(gamePk), gamePk]),
-      safeOne(env.REF_DB, `SELECT team_id, full_name, abbreviation FROM ref_teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [opponentTeamId, opponentTeamId])
+      safeOne(`SELECT * FROM daily.game_weather_current WHERE game_pk=? ORDER BY updated_at DESC LIMIT 1`, [gamePk]),
+      safeOne(`SELECT * FROM daily.umpire_context_current WHERE game_pk=? ORDER BY updated_at DESC LIMIT 1`, [gamePk]),
+      safeOne(`SELECT * FROM market.context_probe_game_market_summary WHERE game_pk=? ORDER BY created_at DESC LIMIT 1`, [gamePk]),
+      safeQuery(`SELECT * FROM daily.bullpen_availability_current WHERE game_pk=?`, [gamePk]),
+      safeQuery(`SELECT * FROM daily.team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
+      safeOne(`SELECT * FROM daily.probable_pitchers WHERE game_pk=?`, [gamePk]),
+      safeOne(`SELECT team_id, full_name, abbreviation FROM ref.teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [opponentTeamId, opponentTeamId])
     ]);
     weatherRow = w; umpireRow = u; marketRow = m; bullpenRows = bp; scheduleRows = sched; opposingTeamRow = oppTeam;
     if (starters) {
       const oppPitcherId = isHomeNext ? starters.away_pitcher_id : starters.home_pitcher_id;
-      const oppPitcherRow = await safeOne(env.REF_DB, `SELECT full_name, throw_side FROM ref_players WHERE mlb_player_id=? LIMIT 1`, [oppPitcherId]);
+      const oppPitcherRow = await safeOne(`SELECT full_name, throw_side FROM ref.players WHERE mlb_player_id=? LIMIT 1`, [oppPitcherId]);
       opposingStarter = oppPitcherRow ? { player_id: oppPitcherId, full_name: oppPitcherRow.full_name, throw_side: oppPitcherRow.throw_side, confidence: starters.confidence } : null;
     }
     nextGame = { game_pk: gamePk, game_time_utc: nextTeamGame.game_time_utc, is_home: isHomeNext ? 1 : 0, opponent_team_id: opponentTeamId, opponent_team_name: opposingTeamRow ? opposingTeamRow.full_name : null };
@@ -1811,21 +1811,21 @@ async function apiPlayerProfile(env, url) {
 
   // Advanced Statcast-tier metrics (season-long, player identity — not game-specific)
   const [availabilityRow, sprintRow, battedBallRow, defQualRow, arsenalRows, armAngleRow, runningGameRow, catcherRow, qocRow] = await Promise.all([
-    safeOne(env.DAILY_DB, `SELECT availability_status, roster_status_description, confidence_label FROM daily_player_availability_current WHERE player_id=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [mlbId]),
-    safeOne(env.REF_DB, `SELECT sprint_speed_ft_per_sec, competitive_runs FROM ref_sprint_speed WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
-    safeOne(env.REF_DB, `SELECT ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events FROM ref_batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]),
-    safeOne(env.REF_DB, `SELECT primary_position, outs_above_average, fielding_runs_prevented, oaa_vs_rhh, oaa_vs_lhh FROM ref_defensive_quality WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
-    isPitcher ? safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba, run_value_per_100 FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 8`, [mlbId, mlbId]) : Promise.resolve([]),
-    isPitcher ? safeOne(env.REF_DB, `SELECT arm_angle_degrees, pitches_tracked FROM ref_arm_angle WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
-    isPitcher ? safeOne(env.REF_DB, `SELECT sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained FROM ref_pitcher_running_game WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
-    String(p.primary_position || "").toUpperCase() === "C" ? safeOne(env.REF_DB, `SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref_catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
-    !isPitcher ? safeOne(env.REF_DB, `SELECT xba, xslg, xwoba, woba, ba, slg, xiso, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref_batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
+    safeOne(`SELECT availability_status, roster_status_description, confidence_label FROM daily.player_availability_current WHERE player_id=? ORDER BY updated_at DESC LIMIT 1`, [mlbId]),
+    safeOne(`SELECT sprint_speed_ft_per_sec, competitive_runs FROM ref.sprint_speed WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    safeOne(`SELECT ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    safeOne(`SELECT primary_position, outs_above_average, fielding_runs_prevented, oaa_vs_rhh, oaa_vs_lhh FROM ref.defensive_quality WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    isPitcher ? safeQuery(`SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba, run_value_per_100 FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 8`, [mlbId, mlbId]) : Promise.resolve([]),
+    isPitcher ? safeOne(`SELECT arm_angle_degrees, pitches_tracked FROM ref.arm_angle WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    isPitcher ? safeOne(`SELECT sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained FROM ref.pitcher_running_game WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    String(p.primary_position || "").toUpperCase() === "C" ? safeOne(`SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref.catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    !isPitcher ? safeOne(`SELECT xba, xslg, xwoba, woba, ba, slg, xiso, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
   ]);
 
   // Next-game specific opponent detail: opposing starter's arsenal (for hitters facing them), opposing catcher's framing/poptime
   let opposingStarterArsenal = [], opposingCatcherRow = null;
   if (nextGame && opposingStarter && !isPitcher) {
-    opposingStarterArsenal = await safeQuery(env.REF_DB, `SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref_pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 6`, [opposingStarter.player_id, opposingStarter.player_id]);
+    opposingStarterArsenal = await safeQuery(`SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 6`, [opposingStarter.player_id, opposingStarter.player_id]);
   }
   const homeGames = recentGames.filter(g => Number(g.is_home) === 1);
   const awayGames = recentGames.filter(g => Number(g.is_home) === 0);
