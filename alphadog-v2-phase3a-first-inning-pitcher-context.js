@@ -9144,6 +9144,7 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
     results
   };
 }
+function buildComboList(propLineUniverse) {
   const combos = [];
   for (const [propKey, lines] of Object.entries(propLineUniverse)) {
     for (const lineValue of lines) {
