@@ -1188,6 +1188,35 @@ async function apiDossier(env, url) {
 
   const isPitcher = String(selectedRaw.prop_family || "").toLowerCase() === "pitcher";
   const qocRowD = !isPitcher ? (await safeQuery(`SELECT xba, xslg, xwoba, woba, ba, slg, xiso, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]))[0] || null : null;
+
+  // Statcast-tier and availability metrics, brought into the dossier for parity with player-profile
+  // so a single leg's dossier is fully self-contained for a pro bettor evaluating this exact prop.
+  const [availabilityRowD, sprintRowD, battedBallRowD, defQualRowD, arsenalRowsD, armAngleRowD, runningGameRowD, catcherRowD] = await Promise.all([
+    safeQuery(`SELECT availability_status, roster_status_description, confidence_label FROM daily.player_availability_current WHERE player_id=? ORDER BY updated_at DESC LIMIT 1`, [mlbPlayerId]),
+    !isPitcher ? safeQuery(`SELECT sprint_speed_ft_per_sec, competitive_runs FROM ref.sprint_speed WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]) : Promise.resolve([]),
+    !isPitcher ? safeQuery(`SELECT ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]) : Promise.resolve([]),
+    safeQuery(`SELECT primary_position, outs_above_average, fielding_runs_prevented, oaa_vs_rhh, oaa_vs_lhh FROM ref.defensive_quality WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]),
+    isPitcher ? safeQuery(`SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba, run_value_per_100 FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 8`, [mlbPlayerId, mlbPlayerId]) : Promise.resolve([]),
+    isPitcher ? safeQuery(`SELECT arm_angle_degrees, pitches_tracked FROM ref.arm_angle WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]) : Promise.resolve([]),
+    isPitcher ? safeQuery(`SELECT sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained FROM ref.pitcher_running_game WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]) : Promise.resolve([]),
+    safeQuery(`SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref.catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbPlayerId])
+  ]);
+
+  // Team-level recent form (genuinely new to the UI): last-10-game offensive/defensive trend
+  // for both teams in this game, so a pro bettor can see whether either club is scoring/allowing
+  // runs at an unusual recent rate independent of any single player's own numbers.
+  const homeTeamIdForForm = weatherRow.home_team_id || umpireRow.home_team_id;
+  const awayTeamIdForForm = weatherRow.away_team_id || umpireRow.away_team_id;
+  const teamRecentForm = async (teamId) => {
+    if (!teamId) return null;
+    const gl = await safeQuery(`SELECT runs_scored, runs_allowed, is_home FROM (SELECT * FROM team.game_logs WHERE team_id=? ORDER BY game_date DESC LIMIT 10) t`, [teamId]);
+    if (!gl.length) return null;
+    const rs = gl.reduce((a,r)=>a+(Number(r.runs_scored)||0),0), ra = gl.reduce((a,r)=>a+(Number(r.runs_allowed)||0),0);
+    const wins = gl.filter(r => Number(r.runs_scored) > Number(r.runs_allowed)).length;
+    return { games_count: gl.length, runs_scored_sum: rs, runs_allowed_sum: ra, runs_scored_avg: rs/gl.length, runs_allowed_avg: ra/gl.length, wins, losses: gl.length - wins };
+  };
+  const [homeTeamForm, awayTeamForm] = await Promise.all([teamRecentForm(homeTeamIdForForm), teamRecentForm(awayTeamIdForForm)]);
+
   await pg.end({ timeout: 1 }).catch(() => {});
 
   return jsonResponse({
