@@ -10837,6 +10837,7 @@ async function runMode(env,input={}){
   if(mode==="derive_stadium_aliases_from_postgres") return runDeriveStadiumAliasesFromPostgres(env,input);
   if(mode==="expansion_mining_to_postgres") return runExpansionMiningToPostgres(env,input);
   if(mode==="classification_baseline_v6_to_postgres") return runClassificationBaselineV6ToPostgres(env,input);
+  if(mode==="classification_baseline_v6_to_postgres_full_run") return runClassificationBaselineV6ToPostgresFullRun(env,input);
   if(mode==="derive_rfi_metric_to_postgres") return runDeriveRfiMetricToPostgres(env,input);
   if(mode==="diagnostic_select") return runDiagnosticSelect(env,input);
   if(mode==="diagnostic_prop_aliases_breakdown") return (async () => {
