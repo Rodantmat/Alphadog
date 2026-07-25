@@ -1724,19 +1724,26 @@ async function apiSlipsRecent(env, url) {
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/recent", slips: entries.map(e=>({ ...e, legs: by.get(e.slip_id) || [] })) });
 }
 async function apiPlayerSearch(env, url) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const q = String(url.searchParams.get("q") || "").trim();
   if (q.length < 3) return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows:[] });
   const like = `%${q.replace(/[%_]/g, "")}%`;
-  const rawRows = await queryAll(env.REF_DB, `
-    SELECT player_id, mlb_player_id, COALESCE(full_name, player_name) AS player_name, current_mlb_team_id, primary_position, bat_side, throw_side, 'player' AS match_type
-    FROM ref_players
-    WHERE active = 1 AND (LOWER(COALESCE(full_name, player_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(first_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(last_name,'')) LIKE LOWER(?))
-    UNION ALL
-    SELECT p.player_id, p.mlb_player_id, COALESCE(p.full_name, p.player_name) AS player_name, p.current_mlb_team_id, p.primary_position, p.bat_side, p.throw_side, 'alias' AS match_type
-    FROM ref_player_aliases a
-    JOIN ref_players p ON p.player_id = a.player_id
-    WHERE a.active = 1 AND (LOWER(COALESCE(a.alias_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(a.alias_normalized,'')) LIKE LOWER(?))
-  `, [like, like, like, like, like]);
+  const pg = pgClient(env);
+  let rawRows;
+  try {
+    rawRows = await queryAllPg(pg, `
+      SELECT player_id, mlb_player_id, COALESCE(full_name, player_name) AS player_name, current_mlb_team_id, primary_position, bat_side, throw_side, 'player' AS match_type
+      FROM ref.players
+      WHERE active = 1 AND (LOWER(COALESCE(full_name, player_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(first_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(last_name,'')) LIKE LOWER(?))
+      UNION ALL
+      SELECT p.player_id, p.mlb_player_id, COALESCE(p.full_name, p.player_name) AS player_name, p.current_mlb_team_id, p.primary_position, p.bat_side, p.throw_side, 'alias' AS match_type
+      FROM ref.player_aliases a
+      JOIN ref.players p ON p.player_id = a.player_id
+      WHERE a.active = 1 AND (LOWER(COALESCE(a.alias_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(a.alias_normalized,'')) LIKE LOWER(?))
+    `, [like, like, like, like, like]);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
   // REAL FIX: the same player can match both branches (a direct name match and a registered
   // alias) - UNION alone doesn't merge them since match_type differs between the two rows.
   // Deduplicate by player_id here, preferring the direct 'player' match when both exist.
