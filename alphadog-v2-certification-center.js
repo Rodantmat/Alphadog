@@ -860,8 +860,8 @@ function buildCurrentSql(url) {
   const sql = quotaEnabled ? `
     WITH base AS (
       SELECT ${baseSelect}, ${quotaLineTypeExpr} AS quota_line_type
-      FROM score_final_board_current f
-      LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
+      FROM score.final_board_current f
+      LEFT JOIN score.board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
     ), ranked AS (
       SELECT base.*,
