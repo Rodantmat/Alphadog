@@ -584,12 +584,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
-        const HARD_DEADLINE_MS = 19200;
-        const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
-        const out = await withDeadline(runWeather(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
-        if (out === TIMEOUT_SENTINEL) {
-          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_WEATHER_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
-        }
+        const out = await runWeather(env, input);
         return jsonResponse(out);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception_terminal", certification: "DAILY_WEATHER_EXCEPTION_TERMINAL", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true }, 500);
