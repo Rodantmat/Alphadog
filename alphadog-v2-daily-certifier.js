@@ -515,13 +515,8 @@ export default {
     if (method === "POST" && path === "/diagnostic") return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", writes_performed: 0, external_calls_performed: 0 });
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 90000;
-      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       try {
-        const out = await withDeadline(runCertifier(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
-        if (out === TIMEOUT_SENTINEL) {
-          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_CERTIFIER_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
-        }
+        const out = await runCertifier(env, input);
         return jsonResponse(out);
       }
       catch (e) {
