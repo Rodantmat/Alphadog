@@ -56,7 +56,14 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 // stale corrections on top of an already-fixed baseline they were never fit against. Raising the
 // sample gate to an unreachable threshold disables application while preserving the historical
 // bins and methodology notes for future reference or re-fitting against the new baseline.
-const CALIBRATION_MIN_SAMPLE_GAMES = 999999999;
+// Re-enabled 2026-07-25 after root-cause fix + reconciliation: only bins explicitly validated
+// against the corrected shrinkage formula (methodology containing 'post_rootfix') are ever
+// applied. The original 18-prop bins (methodology 'walk_forward_backtest_v1' /
+// '..._pav_smoothed_v2') were fit against the old, broken prior_strength values and are
+// preserved in the table for reference/audit trail, but stay permanently inert unless
+// explicitly re-validated and re-tagged - reapplying them now would layer stale corrections on
+// top of a baseline they were never fit against.
+const CALIBRATION_MIN_SAMPLE_GAMES = 100;
 async function loadCalibrationMap(pgClient) {
   const rows = await pgClient`SELECT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
   const map = new Map();
