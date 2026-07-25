@@ -291,8 +291,9 @@ def make_config(worker_name, include_services=False):
             {"binding": "MARKET_RUNNER_WORKER", "service": "alphadog-v2-market-runner"},
             {"binding": "SCORING_RUNNER_WORKER", "service": "alphadog-v2-scoring-runner"},
         ]
-        # No cron yet - testing via direct run_job trigger first. Will be set to the real 3x/day
-        # schedule once verified working end to end, per Rodolfo's spec.
+        # Real 3x/day schedule per config.scheduled_jobs (board_full_run_0900_pt/1300_pt/2200_pt):
+        # 09:00, 13:00, 22:00 America/Los_Angeles (PDT, UTC-7 in July) = 16:00, 20:00, 05:00 UTC.
+        cfg["triggers"] = {"crons": ["0 16 * * *", "0 20 * * *", "0 5 * * *"]}
     if worker_name == "alphadog-v2-weekly-differential-runner":
         # New, deliberately simple standalone runner for the weekly static differential, same
         # design as the other runners: no queue table, no lock table beyond the shared
