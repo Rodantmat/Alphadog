@@ -11,35 +11,29 @@ import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-master-runner";
 const MASTER_LOCK_KEY = "alphadog_master_full_run";
+const LOCK_HOLD_MINUTES = 15;
 
-async function tryAcquireLock(env) {
+async function tryAcquireLock(env, holderId) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
-    let rows = await client`SELECT pg_try_advisory_lock(hashtext(${MASTER_LOCK_KEY})) as acquired`;
-    if (!(rows && rows[0] && rows[0].acquired)) {
-      const holders = await client`
-        SELECT a.pid, a.state, EXTRACT(EPOCH FROM (now() - a.state_change))::int as idle_seconds
-        FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid
-        WHERE l.locktype = 'advisory' AND l.objid = hashtext(${MASTER_LOCK_KEY})`;
-      const staleHolders = (holders || []).filter(h => h.state === "idle" && Number(h.idle_seconds || 0) > 90);
-      if (staleHolders.length) {
-        for (const h of staleHolders) {
-          await client`SELECT pg_terminate_backend(${h.pid})`.catch(() => {});
-        }
-        rows = await client`SELECT pg_try_advisory_lock(hashtext(${MASTER_LOCK_KEY})) as acquired`;
-      }
-    }
-    return { acquired: !!(rows && rows[0] && rows[0].acquired), client };
+    await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
+    await client`INSERT INTO control.runner_locks (lock_key, locked_until, holder) VALUES (${MASTER_LOCK_KEY}, NULL, NULL) ON CONFLICT (lock_key) DO NOTHING`;
+    const rows = await client`
+      UPDATE control.runner_locks
+      SET locked_until = now() + (${LOCK_HOLD_MINUTES} || ' minutes')::interval, holder = ${holderId}, acquired_at = now()
+      WHERE lock_key = ${MASTER_LOCK_KEY} AND (locked_until IS NULL OR locked_until < now())
+      RETURNING lock_key`;
+    return { acquired: rows.length > 0, client };
   } catch (err) {
     try { await client.end({ timeout: 1 }); } catch (_) {}
     return { acquired: false, client: null, error: String(err && err.message ? err.message : err) };
   }
 }
 
-async function releaseLock(client) {
+async function releaseLock(client, holderId) {
   if (!client) return;
   try {
-    await client`SELECT pg_advisory_unlock(hashtext(${MASTER_LOCK_KEY}))`;
+    await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE lock_key = ${MASTER_LOCK_KEY} AND holder = ${holderId}`;
   } catch (_) {
   } finally {
     try { await client.end({ timeout: 1 }); } catch (_) {}
