@@ -152,6 +152,8 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     return matrixRow.side || er.prop_side || "more";
   }
 
+  const calibrationMap = await loadCalibrationMap(pgClient);
+
   const existingBatch = await pgClient`SELECT created_at FROM score.hp_board_batches WHERE hp_board_batch_id=${hpBatchId}`;
   const createdAt = existingBatch[0] && existingBatch[0].created_at ? existingBatch[0].created_at : new Date().toISOString();
   await pgClient`INSERT INTO score.hp_board_batches (hp_board_batch_id, worker_version, profile_key, mode, status, source_table, source_engine_batch_id, source_rows_read, board_rows_written, thresholds_locked, no_true_probability_claims, created_at)
