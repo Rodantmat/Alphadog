@@ -8516,7 +8516,7 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
 
     const dedupe = (rows) => Array.from(new Map(rows.map(r => [r.log_id, r])).values());
     const hCols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","batting_order","pa","ab","hits","singles","doubles","triples","home_runs","runs","rbi","walks","strikeouts","stolen_bases","total_bases","primary_position_played","played_catcher_flag","source_key","raw_json"];
-    const pCols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","innings_pitched_decimal","batters_faced","hits_allowed","earned_runs","walks_allowed","strikeouts","home_runs_allowed","outs_recorded","source_key","raw_json"];
+    const pCols = ["log_id","player_id","game_pk","season","game_date","team_id","opponent_team_id","opponent_abbr","is_home","innings_pitched_decimal","batters_faced","hits_allowed","earned_runs","runs_allowed","walks_allowed","strikeouts","home_runs_allowed","outs_recorded","source_key","raw_json"];
     let dedupedHitters = dedupe(hitterRows), dedupedPitchers = dedupe(pitcherRows);
     // Preventive guard (2026-07-25): confirmed live root cause of a real, silent multi-day gap -
     // rows with a missing game_date were previously written anyway, invisibly breaking every
