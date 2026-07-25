@@ -110,6 +110,26 @@ async function queryAll(db, sql, params = []) {
   return Array.isArray(res?.results) ? res.results : [];
 }
 
+// Postgres/Hyperdrive rewiring (2026-07-25): the entire data pipeline migrated to Postgres this
+// season, but this UI worker was never rewired and was still reading D1 tables that the pipeline
+// no longer writes to. pgClient(env) opens a Hyperdrive-backed connection; queryAllPg mirrors the
+// D1 queryAll signature exactly (sql with ? placeholders, params array) so every existing call
+// site can be converted by updating table/schema names and swapping the function name, without
+// restructuring how each query builds its params array.
+function pgClient(env) {
+  return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8 });
+}
+async function queryAllPg(sql, queryText, params = []) {
+  if (!sql) throw new Error("Postgres client missing for queryAllPg");
+  let i = 0;
+  const converted = String(queryText).replace(/\?/g, () => `${++i}`);
+  try {
+    return await sql.unsafe(converted, params);
+  } catch (err) {
+    throw new Error(`queryAllPg failed: ${err && err.message ? err.message : err}`);
+  }
+}
+
 function baseIdentity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const vars = varPresence(env, EXPECTED_VARS);
