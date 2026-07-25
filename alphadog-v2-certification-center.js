@@ -901,17 +901,18 @@ function dossierRowToApi(row) {
   return api;
 }
 async function apiDossier(env, url) {
-  if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const finalId = url.searchParams.get("final_board_row_id");
   if (!finalId) return jsonResponse({ ok: false, error: "final_board_row_id required", version: VERSION }, 400);
-  const selectedRows = await queryAll(env.SCORE_DB, `
+  const pg = pgClient(env);
+  const selectedRows = await queryAllPg(pg, `
     SELECT 
       f.final_board_row_id AS final_board_row_id,
       f.final_board_batch_id AS final_board_batch_id,
-      NULL AS hp_board_batch_id,
+      f.hp_board_batch_id AS hp_board_batch_id,
       f.source_engine_batch_id AS source_engine_batch_id,
       f.source_engine_batch_id AS source_final_score_batch_id,
-      NULL AS source_hp_batch_id,
+      f.source_hp_batch_id AS source_hp_batch_id,
       NULL AS source_hp_v2_batch_id,
       NULL AS source_score_enrichment_batch_id,
       f.rank_order AS rank_order,
@@ -926,9 +927,9 @@ async function apiDossier(env, url) {
       f.source_key,
       f.game_pk,
       f.official_date,
-      json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') AS official_game_time_utc,
-      json_extract(f.details_json_snapshot, '$.game_context.game_time_pt') AS official_game_time_pt,
-      json_extract(f.details_json_snapshot, '$.game_context.status_code') AS game_status_code,
+      f.official_game_time_utc AS official_game_time_utc,
+      NULL AS official_game_time_pt,
+      (f.details_json_snapshot->'game_context'->>'status_code') AS game_status_code,
       f.prepared_row_id,
       f.matrix_id,
       f.source_line_id,
@@ -941,8 +942,8 @@ async function apiDossier(env, url) {
       f.confidence_0_100 AS confidence_0_100,
       f.score_grade AS score_grade,
       f.score_0_100 AS score_sort_0_100,
-      CASE WHEN LOWER(COALESCE(f.payout_variant,'')) IN ('goblin','demon') THEN 'more_only' ELSE COALESCE(json_extract(p.row_payload_json, '$.side_mode'), 'two_sided') END AS side_mode,
-      COALESCE(json_extract(p.row_payload_json, '$.odds_type'), f.payout_variant) AS odds_type,
+      CASE WHEN LOWER(COALESCE(f.payout_variant,'')) IN ('goblin','demon') THEN 'more_only' ELSE COALESCE((p.row_payload_json #>> '{}')::jsonb ->> 'side_mode', 'two_sided') END AS side_mode,
+      COALESCE((p.row_payload_json #>> '{}')::jsonb ->> 'odds_type', f.payout_variant) AS odds_type,
       f.payout_variant AS payout_variant,
       f.board_tier AS board_tier,
       f.review_playable,
@@ -962,10 +963,10 @@ async function apiDossier(env, url) {
         WHEN f.canonical_prop_key LIKE 'pitcher_%' OR f.canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','hits_allowed','runs_allowed','rfi_nrfi') THEN 'pitcher'
         ELSE 'hitter'
       END AS prop_family,
-      COALESCE(json_extract(f.details_json_snapshot, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
-      COALESCE(json_extract(f.details_json_snapshot, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
-      json_extract(f.details_json_snapshot, '$.game_context.venue_name') AS venue_name,
-      COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), f.payout_variant, 'regular') AS source_line_type,
+      COALESCE(p.team_full_name, p.team) AS home_team_name,
+      COALESCE(p.opponent_full_name, p.opponent) AS away_team_name,
+      NULL AS venue_name,
+      COALESCE((p.row_payload_json #>> '{}')::jsonb ->> 'source_line_type', f.payout_variant, 'regular') AS source_line_type,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 1 ELSE 0 END AS is_goblin,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='demon' THEN 1 ELSE 0 END AS is_demon,
       CASE WHEN LOWER(COALESCE(f.payout_variant,'')) NOT IN ('goblin','demon') THEN 1 ELSE 0 END AS is_standard,
@@ -992,8 +993,8 @@ async function apiDossier(env, url) {
       p.raw_source_json AS prepared_raw_source_json,
       p.row_payload_json AS prepared_row_payload_json
 
-    FROM score_final_board_current f
-    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
+    FROM score.final_board_current f
+    LEFT JOIN score.board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
     WHERE f.final_board_row_id = ?
     LIMIT 1
   `, [finalId]);
