@@ -418,6 +418,12 @@ async function findResumeMatrixBatch(pgClient, input, dates) {
 
 async function runMatrixBuilder(request, env, pgClient) {
   const input = await request.json().catch(() => ({}));
+  // Stale-batch auto-cleanup (2026-07-25): a Worker invocation can die mid-flight (confirmed
+  // live: a batch sat in running_chunked for 15+ minutes with no connection actively working on
+  // it), and findResumeMatrixBatch only ever looks for an exact request_id match, so a genuinely
+  // abandoned batch would otherwise sit there forever without being resumed OR cleaned up. Same
+  // self-healing pattern already proven in score-prep.
+  await pgClient`UPDATE scoring.prop_matrix_batches SET status='abandoned_stale_auto_cleanup', updated_at=now() WHERE status LIKE 'running%' AND updated_at < now() - interval '5 minutes'`.catch(() => {});
   let dates;
   if (Array.isArray(input.window_dates) && input.window_dates.length) {
     dates = [...new Set(input.window_dates)].sort();
