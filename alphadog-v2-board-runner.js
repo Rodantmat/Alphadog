@@ -82,7 +82,7 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-async function callStage(binding, bindingName, path, input) {
+async function callStage(binding, bindingName, path, input, attempt = 1) {
   const started = Date.now();
   if (!binding || typeof binding.fetch !== "function") {
     return {
@@ -115,15 +115,26 @@ async function callStage(binding, bindingName, path, input) {
       rows_written: output.rows_written ?? null,
       rows_promoted: output.rows_promoted ?? output.promoted_rows_written ?? null,
       error: output.ok ? null : (output.error || output.certification || "stage_failed"),
-      elapsed_ms: Date.now() - started
+      elapsed_ms: Date.now() - started,
+      attempts: attempt
     };
   } catch (err) {
+    // The fetch() call itself threw (network-level exception, not a real business-logic
+    // failure from the callee). Confirmed live: score-prep's own database work completed
+    // successfully 4 minutes after board-runner had already reported this class of failure -
+    // the HTTP connection broke transiently while the real work kept running unaffected. A
+    // single retry on exception only (never on a real ok:false response) is the standard,
+    // minimal-risk fix for this documented class of service-to-service fetch reliability issue.
+    if (attempt < 2) {
+      return await callStage(binding, bindingName, path, input, attempt + 1);
+    }
     return {
       stage: bindingName,
       ok: false,
       data_ok: false,
       error: String(err && err.message ? err.message : err),
-      elapsed_ms: Date.now() - started
+      elapsed_ms: Date.now() - started,
+      attempts: attempt
     };
   }
 }
