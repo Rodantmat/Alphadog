@@ -625,11 +625,23 @@ export default {
     if (request.method === "GET" && (path === "/" || path === "/health")) return jsonResponse(identity(env));
     if (request.method === "POST" && (path === "/run" || path === "/build" || path === "/matrix")) {
       const pgClient = pg(env);
+      const inputForFailure = await request.clone().json().catch(() => ({}));
       try {
         const response = await runMatrixBuilder(request, env, pgClient);
         return response;
       } catch (err) {
         const failOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY, status: "prop_matrix_builder_exception", certification: "PROP_MATRIX_BUILDER_EXCEPTION", certification_grade: "FAILED", error: String(err && err.stack ? err.stack : err), external_calls: 0, no_scoring: true, no_ranking: true, no_final_board: true };
+        // Real fix: mark any in-progress batch as failed rather than leaving it orphaned in
+        // running/running_chunked forever - this was previously silent, so a genuine crash left
+        // no trace except a permanently stuck row nothing would ever clean up or explain.
+        try {
+          const requestId = inputForFailure && inputForFailure.request_id;
+          if (requestId) {
+            await pgClient`UPDATE scoring.prop_matrix_batches SET status='failed_exception', output_json=${JSON.stringify(failOutput)}, updated_at=now() WHERE request_id=${requestId} AND status LIKE 'running%'`;
+          } else {
+            await pgClient`UPDATE scoring.prop_matrix_batches SET status='failed_exception', output_json=${JSON.stringify(failOutput)}, updated_at=now() WHERE status LIKE 'running%' AND updated_at > now() - interval '5 minutes'`;
+          }
+        } catch (_) {}
         return jsonResponse(failOutput, 500);
       } finally {
         await pgClient.end({ timeout: 1 }).catch(() => {});
