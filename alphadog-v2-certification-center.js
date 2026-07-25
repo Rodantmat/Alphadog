@@ -1361,6 +1361,7 @@ async function apiFilters(env) {
   const props = Array.from(propMap.values()).sort((a, b) => String(a.prop_family).localeCompare(String(b.prop_family)) || String(a.label).localeCompare(String(b.label)));
   const lineTypes = Array.from(sourceMap.values()).sort((a, b) => String(a.source_key).localeCompare(String(b.source_key)) || String(a.label).localeCompare(String(b.label)));
   const summary = summaryRows[0] || {};
+  await pg.end({ timeout: 1 }).catch(() => {});
   return jsonResponse({
     ok: true,
     data_ok: true,
@@ -1368,7 +1369,7 @@ async function apiFilters(env) {
     worker_name: WORKER_NAME,
     logical_app: LOGICAL_APP,
     route: "/api/main-board/filters",
-    source_table: "SCORE_DB.score_final_board_current",
+    source_table: "score.final_board_current",
     quota_contract: { enabled: true, min_per_prop_line: 5, min_goblin: 20, min_demon: 10, min_prizepicks_regular: 20, min_sleeper_regular: 20, min_less: 15, min_more: 20, legs_can_satisfy_multiple_quotas: true, availability_based: true },
     summary,
     prop_groups: { hitter: props.filter(p => p.prop_family === "hitter"), pitcher: props.filter(p => p.prop_family === "pitcher"), other: props.filter(p => p.prop_family !== "hitter" && p.prop_family !== "pitcher") },
