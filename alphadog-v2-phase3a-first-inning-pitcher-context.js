@@ -8292,17 +8292,19 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
             SUM(COALESCE(total_bases,0)) AS total_bases_derived_sum
           FROM windowed GROUP BY player_id
         ), vs_left AS (
-          SELECT player_id, pa AS split_pa, ab AS split_ab, hits AS split_hits, home_runs AS split_home_runs,
+          SELECT DISTINCT ON (player_id) player_id, pa AS split_pa, ab AS split_ab, hits AS split_hits, home_runs AS split_home_runs,
             walks AS split_walks, strikeouts AS split_strikeouts, avg AS split_avg, obp AS split_obp, slg AS split_slg,
             ops AS split_ops, babip AS split_babip,
             CASE WHEN COALESCE(pa,0) < 10 THEN 'split_none' WHEN pa < 25 THEN 'split_tiny' WHEN pa < 50 THEN 'split_usable' ELSE 'split_strong' END AS split_sample_label
           FROM stats_hitter.splits WHERE season = ${season} AND split_key = 'vl'
+          ORDER BY player_id, pa DESC NULLS LAST
         ), vs_right AS (
-          SELECT player_id, pa AS split_pa, ab AS split_ab, hits AS split_hits, home_runs AS split_home_runs,
+          SELECT DISTINCT ON (player_id) player_id, pa AS split_pa, ab AS split_ab, hits AS split_hits, home_runs AS split_home_runs,
             walks AS split_walks, strikeouts AS split_strikeouts, avg AS split_avg, obp AS split_obp, slg AS split_slg,
             ops AS split_ops, babip AS split_babip,
             CASE WHEN COALESCE(pa,0) < 10 THEN 'split_none' WHEN pa < 25 THEN 'split_tiny' WHEN pa < 50 THEN 'split_usable' ELSE 'split_strong' END AS split_sample_label
           FROM stats_hitter.splits WHERE season = ${season} AND split_key = 'vr'
+          ORDER BY player_id, pa DESC NULLS LAST
         )
         INSERT INTO stats_hitter.metric_snapshots
           (snapshot_id, player_id, season, metric_window, games_count, pa_sum, ab_sum, hits_sum, singles_sum, doubles_sum, triples_sum,
