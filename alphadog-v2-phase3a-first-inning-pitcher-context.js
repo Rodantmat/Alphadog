@@ -7374,7 +7374,7 @@ async function runDeriveStarterHistoryFromPostgres(env, input) {
         'starter_' || game_pk || '_' || player_id,
         game_pk, team_id, player_id, game_date, raw_json
       FROM stats_pitcher.game_logs
-      WHERE (((raw_json#>>'{}')::jsonb)->'stat'->>'gamesStarted')::int = 1
+      WHERE COALESCE((((raw_json#>>'{}')::jsonb)->'stat'->>'gamesStarted')::int, (((raw_json#>>'{}')::jsonb)->>'gamesStarted')::int) = 1
       ON CONFLICT (history_id) DO UPDATE SET
         team_id=excluded.team_id, game_date=excluded.game_date, raw_json=excluded.raw_json, updated_at=now()
     `;
@@ -7395,7 +7395,7 @@ async function runDeriveBullpenHistoryFromPostgres(env, input) {
         'bullpen_' || game_pk || '_' || player_id,
         game_pk, team_id, game_date, raw_json
       FROM stats_pitcher.game_logs
-      WHERE (((raw_json#>>'{}')::jsonb)->'stat'->>'gamesStarted')::int = 0
+      WHERE COALESCE((((raw_json#>>'{}')::jsonb)->'stat'->>'gamesStarted')::int, (((raw_json#>>'{}')::jsonb)->>'gamesStarted')::int) = 0
       ON CONFLICT (history_id) DO UPDATE SET
         team_id=excluded.team_id, game_date=excluded.game_date, raw_json=excluded.raw_json, updated_at=now()
     `;
