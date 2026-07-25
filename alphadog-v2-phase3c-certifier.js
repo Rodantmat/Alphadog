@@ -177,7 +177,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const baseline = baselineMatch ? baselineMatch.row : null;
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
     const rawHp = computeRealHitProbability(baselineHp, er.rate_multiplier);
-    const calibration = applyCalibrationCorrection(er.canonical_prop_key, rawHp, calibrationMap);
+    const calibration = applyCalibrationCorrection(er.canonical_prop_key, side, rawHp, calibrationMap);
     const hp = calibration.correctedHp;
 
     if (hp == null) {
