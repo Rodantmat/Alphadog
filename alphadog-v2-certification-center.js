@@ -1290,8 +1290,9 @@ async function apiCurrent(env, url) {
 }
 
 async function apiFilters(env) {
-  if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
-  const rows = await queryAll(env.SCORE_DB, `
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  const pg = pgClient(env);
+  const rows = await queryAllPg(pg, `
     SELECT
       source_key,
       canonical_prop_key,
@@ -1310,16 +1311,16 @@ async function apiFilters(env) {
       MAX(estimated_hit_probability_0_100) AS max_hp,
       MIN(score_0_100) AS min_score,
       MAX(score_0_100) AS max_score
-    FROM score_final_board_current
-    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
+    FROM score.final_board_current
+    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
       AND review_playable=1
       AND COALESCE(live_playable,0)=0
-      AND official_date >= date('now')
-      AND (json_extract(details_json_snapshot, '$.game_context.game_time_utc') IS NULL OR json_extract(details_json_snapshot, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+      AND official_date >= CURRENT_DATE
+      AND (official_game_time_utc IS NULL OR official_game_time_utc > now())
     GROUP BY source_key, canonical_prop_key, prop_family, payout_variant, side_mode, is_goblin, is_demon, is_standard, probability_band, board_tier, review_playable, live_playable
     ORDER BY source_key, prop_family, canonical_prop_key, payout_variant
   `);
-  const summaryRows = await queryAll(env.SCORE_DB, `
+  const summaryRows = await queryAllPg(pg, `
     SELECT COUNT(*) AS total_rows, COUNT(*) AS default_rows,
       SUM(CASE WHEN review_playable=1 THEN 1 ELSE 0 END) AS review_rows,
       SUM(CASE WHEN live_playable=1 THEN 1 ELSE 0 END) AS live_rows,
@@ -1327,8 +1328,8 @@ async function apiFilters(env) {
       MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score,
       MIN(confidence_0_100) AS min_certainty, MAX(confidence_0_100) AS max_certainty,
       MAX(updated_at) AS latest_updated_at
-    FROM score_final_board_current
-    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
+    FROM score.final_board_current
+    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
       AND review_playable=1 AND COALESCE(live_playable,0)=0
   `);
   const sourceMap = new Map();
