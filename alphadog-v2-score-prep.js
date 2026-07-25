@@ -919,8 +919,8 @@ async function loadMarketRows(env) {
     return [...bySignature.values()];
   }
   const dedupedPrizepicks = dedupeSourceRows(prizepicksRows, r => `${r.player_name}|${r.stat_type}|${r.line_score}|${r.is_goblin}|${r.is_demon}|${r.is_standard}|${r.game_id}`);
-  const dedupedSleeper = dedupeSourceRows(sleeperRows, r => `${r.player_name || r.player_id}|${r.stat_type || r.market_key}|${r.line_score || r.line_value}`);
-  const dedupedUnderdog = dedupeSourceRows(underdogRows || [], r => `${r.player_name || r.player_id}|${r.stat_type || r.market_key}|${r.line_score || r.line_value}`);
+  const dedupedSleeper = dedupeSourceRows(sleeperRows, r => `${r.player_name || r.source_player_id}|${r.canonical_prop_key || r.source_stat_name}|${r.line_value}|${r.side || ""}`);
+  const dedupedUnderdog = dedupeSourceRows(underdogRows || [], r => `${r.player_name || r.source_player_id}|${r.canonical_prop_key || r.source_stat_name}|${r.line_value}|${r.side || ""}`);
   return { prizepicksRows: dedupedPrizepicks, sleeperRows: dedupedSleeper, underdogRows: dedupedUnderdog };
 }
 
