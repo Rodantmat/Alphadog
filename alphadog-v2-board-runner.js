@@ -114,6 +114,32 @@ async function callStage(binding, bindingName, path, input) {
 async function runBoardFullRun(env, input) {
   const runId = `board_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+
+  const lock = await tryAcquireLock(env);
+  if (!lock.acquired) {
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      run_id: runId,
+      started_at: startedAt,
+      finished_at: nowIso(),
+      certification: "BOARD_FULL_RUN_SKIPPED_ALREADY_RUNNING",
+      skipped: true,
+      lock_error: lock.error || null,
+      stages: []
+    };
+  }
+
+  try {
+    return await runBoardFullRunLocked(env, input, runId, startedAt);
+  } finally {
+    await releaseLock(lock.client);
+  }
+}
+
+async function runBoardFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
   // Stage 1: PrizePicks (GitHub-sourced). Not last, so a failure here doesn't block the rest -
