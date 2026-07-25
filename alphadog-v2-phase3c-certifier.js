@@ -65,7 +65,7 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 // top of a baseline they were never fit against.
 const CALIBRATION_MIN_SAMPLE_GAMES = 100;
 async function loadCalibrationMap(pgClient) {
-  const rows = await pgClient`SELECT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
+  const rows = await pgClient`SELECT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES} AND methodology LIKE '%post_rootfix%'`.catch(() => []);
   const map = new Map();
   for (const r of rows) {
     const key = `${r.canonical_prop_key}|${r.selected_side || ""}`;
