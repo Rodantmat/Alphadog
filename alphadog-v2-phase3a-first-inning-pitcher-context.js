@@ -8697,7 +8697,8 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "starter_history", fn: runDeriveStarterHistoryFromPostgres },
     { key: "bullpen_history", fn: runDeriveBullpenHistoryFromPostgres },
     { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
-    { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres }
+    { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
+    { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
   ];
   const results = [];
   const startAt = Number(input.resume_from_step || 0);
