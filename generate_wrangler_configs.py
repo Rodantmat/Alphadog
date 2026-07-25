@@ -270,6 +270,25 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
         ]
         # No cron yet - testing via direct run_job trigger first.
+    if worker_name == "alphadog-v2-master-runner":
+        # New, deliberately simple standalone runner that chains the four individual full-run
+        # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
+        # runners it calls: no queue table, no lock table, single request start to finish.
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "BOARD_RUNNER_WORKER", "service": "alphadog-v2-board-runner"},
+            {"binding": "DAILY_CONTEXT_RUNNER_WORKER", "service": "alphadog-v2-daily-context-runner"},
+            {"binding": "MARKET_RUNNER_WORKER", "service": "alphadog-v2-market-runner"},
+            {"binding": "SCORING_RUNNER_WORKER", "service": "alphadog-v2-scoring-runner"},
+        ]
+        # No cron yet - testing via direct run_job trigger first. Will be set to the real 3x/day
+        # schedule once verified working end to end, per Rodolfo's spec.
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
