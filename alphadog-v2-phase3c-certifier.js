@@ -51,17 +51,18 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 // correction, or insufficient sample size, pass through completely unchanged.
 const CALIBRATION_MIN_SAMPLE_GAMES = 100;
 async function loadCalibrationMap(pgClient) {
-  const rows = await pgClient`SELECT canonical_prop_key, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
+  const rows = await pgClient`SELECT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
   const map = new Map();
   for (const r of rows) {
-    if (!map.has(r.canonical_prop_key)) map.set(r.canonical_prop_key, []);
-    map.get(r.canonical_prop_key).push(r);
+    const key = `${r.canonical_prop_key}|${r.selected_side || ""}`;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
   }
   return map;
 }
-function applyCalibrationCorrection(propKey, rawHpPct, calibrationMap) {
+function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
   if (rawHpPct == null || !calibrationMap) return { correctedHp: rawHpPct, applied: false };
-  const bins = calibrationMap.get(propKey);
+  const bins = calibrationMap.get(`${propKey}|${side || ""}`);
   if (!bins || !bins.length) return { correctedHp: rawHpPct, applied: false };
   const rawP = rawHpPct / 100;
   const bin = bins.find(b => rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
