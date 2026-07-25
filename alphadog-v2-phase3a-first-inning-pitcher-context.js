@@ -8502,7 +8502,7 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
                 team_id: teamId != null ? String(teamId) : null, opponent_team_id: oppTeamId != null ? String(oppTeamId) : null,
                 opponent_abbr: null, is_home: side === "home" ? 1 : 0,
                 innings_pitched_decimal: ipDecimal, batters_faced: Number(pit.battersFaced || 0),
-                hits_allowed: Number(pit.hits || 0), earned_runs: Number(pit.earnedRuns || 0),
+                hits_allowed: Number(pit.hits || 0), earned_runs: Number(pit.earnedRuns || 0), runs_allowed: Number(pit.runs || 0),
                 walks_allowed: Number(pit.baseOnBalls || 0), strikeouts: Number(pit.strikeOuts || 0),
                 home_runs_allowed: Number(pit.homeRuns || 0), outs_recorded: Number(ipWhole || 0) * 3 + Number(ipThirds || 0),
                 source_key: "mlb_statsapi_boxscore_delta", raw_json: { stat: pit, game: { gamePk, gameDate: gamePkToDate.get(gamePk) || null }, team: { id: teamId }, opponent: { id: oppTeamId }, isHome: side === "home" }
