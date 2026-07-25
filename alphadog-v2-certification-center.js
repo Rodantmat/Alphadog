@@ -1837,6 +1837,7 @@ async function apiPlayerProfile(env, url) {
     for (const t of oppTeamRows) { if (t.team_id != null) abbrById.set(String(t.team_id), t.abbreviation); if (t.mlb_team_id != null) abbrById.set(String(t.mlb_team_id), t.abbreviation); }
     for (const g of recentGames) g.opponent_abbr = abbrById.get(String(g.opponent_team_id)) || null;
   }
+  await pg.end({ timeout: 1 }).catch(() => {});
 
   return jsonResponse({
     ok:true, data_ok:true, version:VERSION, route:"/api/player-profile",
