@@ -1606,42 +1606,47 @@ async function fetchBoardRowsByIds(env, ids) {
   const clean = [...new Set((ids || []).map(String).filter(Boolean))].slice(0, 80);
   if (!clean.length) return [];
   const qs = clean.map(()=>"?").join(",");
-  return await queryAll(env.SCORE_DB, `
-    SELECT
-      f.final_board_row_id AS board_row_id,
-      f.final_board_row_id AS final_board_row_id,
-      f.final_board_batch_id AS batch_id,
-      f.prepared_row_id,
-      f.source_line_id,
-      f.source_key,
-      f.rank_order,
-      f.game_pk,
-      f.official_date,
-      json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') AS official_game_time_utc,
-      json_extract(f.details_json_snapshot, '$.game_context.game_time_pt') AS official_game_time_pt,
-      json_extract(f.details_json_snapshot, '$.game_context.status_code') AS game_status_code,
-      f.mlb_player_id AS player_id,
-      f.player_name,
-      NULL AS team_id,
-      NULL AS opponent_team_id,
-      f.canonical_prop_key,
-      f.line_value,
-      f.selected_side,
-      f.estimated_hit_probability_0_100 AS hit_probability_0_100,
-      f.confidence_0_100 AS certainty_0_100,
-      f.score_0_100 AS overall_score_0_100,
-      f.score_grade AS board_grade,
-      p.team,
-      p.opponent,
-      p.team_full_name,
-      p.opponent_full_name,
-      p.source_prop_name
-    FROM score_final_board_current f
-    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
-    WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
-      AND f.final_board_row_id IN (${qs})
-    ORDER BY f.rank_order ASC
-  `, clean);
+  const pg = pgClient(env);
+  try {
+    return await queryAllPg(pg, `
+      SELECT
+        f.final_board_row_id AS board_row_id,
+        f.final_board_row_id AS final_board_row_id,
+        f.final_board_batch_id AS batch_id,
+        f.prepared_row_id,
+        f.source_line_id,
+        f.source_key,
+        f.rank_order,
+        f.game_pk,
+        f.official_date,
+        f.official_game_time_utc AS official_game_time_utc,
+        NULL AS official_game_time_pt,
+        (f.details_json_snapshot->'game_context'->>'status_code') AS game_status_code,
+        f.mlb_player_id AS player_id,
+        f.player_name,
+        NULL AS team_id,
+        NULL AS opponent_team_id,
+        f.canonical_prop_key,
+        f.line_value,
+        f.selected_side,
+        f.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        f.confidence_0_100 AS certainty_0_100,
+        f.score_0_100 AS overall_score_0_100,
+        f.score_grade AS board_grade,
+        p.team,
+        p.opponent,
+        p.team_full_name,
+        p.opponent_full_name,
+        p.source_prop_name
+      FROM score.final_board_current f
+      LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND f.final_board_row_id IN (${qs})
+      ORDER BY f.rank_order ASC
+    `, clean);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
 }
 function buildGeneratedSlips(legs, structures, mode = "recommended") {
   const bySource = new Map();
