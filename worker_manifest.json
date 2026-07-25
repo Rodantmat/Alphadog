@@ -128,6 +128,7 @@
     "alphadog-v2-board-runner",
     "alphadog-v2-daily-context-runner",
     "alphadog-v2-market-runner",
-    "alphadog-v2-scoring-runner"
+    "alphadog-v2-scoring-runner",
+    "alphadog-v2-master-runner"
   ]
 }
