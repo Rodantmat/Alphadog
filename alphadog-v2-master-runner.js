@@ -9,6 +9,7 @@
 
 import postgres from "postgres";
 
+const WORKER_NAME = "alphadog-v2-master-runner";
 const MASTER_LOCK_KEY = "alphadog_master_full_run";
 
 async function tryAcquireLock(env) {
