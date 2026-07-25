@@ -13,6 +13,41 @@ const WORKER_NAME = "alphadog-v2-master-runner";
 const MASTER_LOCK_KEY = "alphadog_master_full_run";
 const LOCK_HOLD_MINUTES = 15;
 
+// Preflight cleanup (2026-07-25): this is a genuinely single-operator system - only Rodolfo and
+// Claude ever trigger these runs. That means anything found running, locked, or holding a
+// connection at the moment a NEW master-run starts is, by definition, stale garbage from a
+// previous invocation that was killed or failed mid-flight (Cloudflare can terminate a Worker's
+// execution abruptly, and no JS-level try/finally can guarantee cleanup ran when that happens).
+// This is a standard, well-documented DBA pattern for exactly this situation (see e.g.
+// "How To Kill All Connections to a Database in PostgreSQL") - pg_terminate_backend scoped to
+// backend_type='client backend' safely excludes Postgres's own internal processes (autovacuum,
+// WAL sender, checkpointer) and the caller's own pid, so it can never harm the database itself.
+// Runs before the lock acquire, since a stale lock would otherwise block the very cleanup meant
+// to clear it.
+async function preflightCleanup(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    const killedRows = await client`
+      SELECT pid FROM pg_stat_activity
+      WHERE pid <> pg_backend_pid() AND backend_type = 'client backend'`;
+    for (const row of killedRows) {
+      await client`SELECT pg_terminate_backend(${row.pid})`.catch(() => {});
+    }
+    await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
+    const clearedLocks = await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL RETURNING lock_key`;
+    return {
+      ok: true,
+      connections_terminated: killedRows.length,
+      terminated_pids: killedRows.map(r => r.pid),
+      locks_cleared: clearedLocks.map(r => r.lock_key)
+    };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 async function tryAcquireLock(env, holderId) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
