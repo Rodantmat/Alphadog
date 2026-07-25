@@ -258,14 +258,9 @@ export default {
     if (method === "POST" && path === "/diagnostic") return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", writes_performed: 0, external_calls_performed: 0 });
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 90000;
-      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const pgClient = pg(env);
       try {
-        const out = await withDeadline(runCertifier(pgClient, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
-        if (out === TIMEOUT_SENTINEL) {
-          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "MARKET_CERTIFIER_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
-        }
+        const out = await runCertifier(pgClient, input);
         return jsonResponse(out);
       } catch (e) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "failed", certification: "MARKET_CONTEXT_CERTIFIER_FAILED", error: String(e && e.message ? e.message : e), stack_preview: String(e && e.stack ? e.stack : "").slice(0, 900), external_calls: 0, external_calls_performed: 0 }, 500);
