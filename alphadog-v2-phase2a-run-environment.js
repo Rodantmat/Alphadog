@@ -272,6 +272,14 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const runningGameRows = await pgClient`SELECT mlb_player_id, lead_distance_gained FROM ref.pitcher_running_game`.catch(() => []);
   const pitcherLeadDistanceByPitcherId = new Map(runningGameRows.map(r => [String(r.mlb_player_id), r.lead_distance_gained]));
 
+  const qocRows = playerIds.length ? await pgClient`SELECT mlb_player_id, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id = ANY(${pidLit}::bigint[]) AND active=1 ORDER BY season_year DESC`.catch(() => []) : [];
+  const qocByPlayer = new Map();
+  for (const r of qocRows) {
+    const pid = Number(r.mlb_player_id);
+    const existing = qocByPlayer.get(pid);
+    if (!existing || Number(r.season_year) > existing.season_year) qocByPlayer.set(pid, { xwoba: r.xwoba, xwobacon: r.xwobacon, sweet_spot_percent: r.sweet_spot_percent, barrel_batted_rate: r.barrel_batted_rate, season_year: Number(r.season_year) });
+  }
+
   return {
     weatherByGame: new Map(weatherRows.map(r => [String(r.game_pk), r])),
     lineupByGamePlayer: new Map(lineupRows.map(r => [`${r.game_pk}|${r.player_id}`, r])),
