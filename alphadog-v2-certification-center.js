@@ -2427,6 +2427,17 @@ function renderPlayerProfileDream(j){
   html+='<div class="sectionLabel" style="margin-top:16px">Prop Trends — Last 5 / 10 / 20</div>'+(propCards.length?'<div class="cards">'+propCards.join('')+'</div>':'<div class="small">No recent game log or current lines available for this player yet.</div>');
   html+=splitsBlock(splits,isP);
   html+=homeAwayBlock(homeGames,awayGames,isP);
+  if(isTwoWay){
+    const hGames=j.twp_hitter_recent_games||[],hSnapshots=j.twp_hitter_metric_snapshots||[],hSplits=j.twp_hitter_splits||[];
+    const hHome=hGames.filter(g=>Number(g.is_home)===1),hAway=hGames.filter(g=>Number(g.is_home)===0);
+    html+='<div class="sectionLabel" style="margin-top:20px">As A Hitter — Season Snapshot</div>'+(seasonSnapStrip(hSnapshots,false)||'<div class="small">No hitter season snapshot available yet.</div>');
+    const hPropKeys=propFamilyKeys(false);
+    const hLegsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');if(!k.startsWith('pitcher_')&&!['earned_runs','hits_allowed','walks_allowed'].includes(k))(hLegsByProp[k]=hLegsByProp[k]||[]).push(l)}
+    const hPropCards=hPropKeys.map(k=>propTrendCard(k,hGames,hLegsByProp[k]||[],false)).filter(Boolean);
+    html+='<div class="sectionLabel" style="margin-top:16px">As A Hitter — Prop Trends</div>'+(hPropCards.length?'<div class="cards">'+hPropCards.join('')+'</div>':'<div class="small">No recent hitting game log or current hitter lines available yet.</div>');
+    html+=splitsBlock(hSplits,false);
+    html+=homeAwayBlock(hHome,hAway,false);
+  }
   html+=qualityOfContactBlock(advanced.quality_of_contact);
   html+=advancedMetricsBlock(advanced,isP);
   if(nextGame&&nextCtx){
