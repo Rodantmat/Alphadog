@@ -1026,6 +1026,15 @@ function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, r
   if (prop === "walks" && sourceNorm === "player_walks" && isPitcherPrimaryPosition(player)) {
     return "walks_allowed";
   }
+  // Same ambiguity, same fix: Sleeper/Parlay/Underdog can emit pitcher '1st Inn. Runs Allowed'
+  // under the identical generic player_runs market_key used for batter runs-scored. Confirmed
+  // live (Reynaldo Lopez, Kyle Freeland, Framber Valdez and others were silently mapped to the
+  // batter canonical key before the source-worker fix). This is a second-layer safety net -
+  // the primary fix lives in the Underdog/Sleeper workers themselves - but catches anything
+  // that reaches here still mistagged.
+  if (prop === "runs" && sourceNorm === "player_runs" && isPitcherPrimaryPosition(player)) {
+    return "runs_allowed";
+  }
   return prop;
 }
 
