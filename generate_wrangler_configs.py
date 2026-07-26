@@ -195,6 +195,16 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
+    if worker_name == "alphadog-v2-certification-center":
+        # Explicit, generous CPU time override. This worker builds and serves a very large
+        # (~578KB) HTML response by string-concatenating a giant template literal at request
+        # time - if this exceeds the platform's default CPU budget (30s on paid tier, or the
+        # strict 10ms free-tier limit if this worker is somehow on that tier), the worker gets
+        # silently killed mid-response with no error surfaced to the client - which would
+        # explain a large HTML/script payload appearing to "load" (headers + partial body sent)
+        # while never actually delivering/executing the trailing <script> block. Must live in
+        # the generator or it gets wiped on every deploy before Wrangler even runs.
+        cfg["limits"] = {"cpu_ms": 300000}
     if worker_name == "alphadog-v2-board-runner":
         # New, deliberately simple standalone runner for board-full-run only (separate from the
         # legacy orchestrator's queue-table/lock-table machinery). No D1, no shared vars - it only
