@@ -1540,10 +1540,10 @@ async function apiHealth(env) {
            0 AS issue_rows_written, certification AS certification_status, certification_grade,
            started_at, finished_at, finished_at AS updated_at
     FROM score.final_board_batches
-    WHERE final_board_batch_id = ?
+    WHERE final_board_batch_id = ?::text
     LIMIT 1
-  `, [current.final_board_batch_id]) : [];
-  const hpBatch = current.source_engine_batch_id ? await queryAllPg(pg, `
+  `, [String(current.final_board_batch_id)]) : [];
+  const hpBatch = current.source_final_score_batch_id ? await queryAllPg(pg, `
     SELECT hp_board_batch_id AS batch_id, worker_version, profile_key AS profile_version, status,
            source_engine_batch_id AS source_score_enrichment_batch_id,
            source_rows_read AS expected_hp_rows, board_rows_written AS hp_rows_written,
