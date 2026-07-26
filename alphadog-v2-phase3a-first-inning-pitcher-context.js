@@ -10736,8 +10736,11 @@ async function runClassificationV6ComputeStats(env, input = {}) {
       canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
       population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
       total_players_scanned: allPlayerIds.length,
-    certification: "CLASSIFICATION_V6_STATS_CERTIFIED", certification_grade: "PASS"
-  };
+      certification: "CLASSIFICATION_V6_STATS_CERTIFIED", certification_grade: "PASS"
+    };
+  } finally {
+    try { await sql.end({ timeout: 1 }); } catch (_) {}
+  }
 }
 
 // PASS 2: chunked tier assignment against the CACHED population stats from pass 1.
