@@ -541,10 +541,12 @@ function isFuturePickable(row) {
   return t > Date.now() ? 1 : 0;
 }
 
-function toStageRow(row, batchId, fetchedAt, taxonomy) {
+function toStageRow(row, batchId, fetchedAt, taxonomy, positionByPlayerTeam) {
   const required = rowRequiredAudit(row);
   const sourceStatName = normalizeText(row && row.market_key) || normalizeText(row && row.market);
-  const mapping = auditCanonicalMapping(sourceStatName, taxonomy);
+  const posKey = `${normalizeAliasName(row && row.player)}|${normalizeAliasName(row && row.team)}`;
+  const isPitcher = positionByPlayerTeam ? !!positionByPlayerTeam.get(posKey) : false;
+  const mapping = auditCanonicalMapping(sourceStatName, taxonomy, isPitcher);
   let parseStatus = "parsed_stage_only_alias_audit_pending";
   let parseError = null;
   if (!required.ok) {
