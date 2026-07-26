@@ -9190,19 +9190,18 @@ async function runRemineePrizepicksBoardToPostgres(env, input) {
 // Build the flat, ordered list of every (canonical_prop_key, line_value, selected_side)
 // combination the Base job needs to classify, from the configured universe.
 async function getBaselineV6ResumeIndex(env) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
   try {
-    await run(env.ARCHIVE_DB, `CREATE TABLE IF NOT EXISTS baseline_v6_full_run_state (state_key TEXT PRIMARY KEY, resume_index INTEGER DEFAULT 0, updated_at TEXT)`);
-    const row = await first(env.ARCHIVE_DB, `SELECT resume_index FROM baseline_v6_full_run_state WHERE state_key='singleton'`);
-    return row ? Number(row.resume_index || 0) : 0;
-  } catch (_) { return 0; }
+    const rows = await sql`SELECT resume_index FROM control.worker_state WHERE state_key='baseline_v6_full_run'`;
+    return rows[0] ? Number(rows[0].resume_index || 0) : 0;
+  } catch (_) { return 0; } finally { try { await sql.end({ timeout: 1 }); } catch (_) {} }
 }
 async function setBaselineV6ResumeIndex(env, index) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
   try {
-    await run(env.ARCHIVE_DB,
-      `INSERT INTO baseline_v6_full_run_state (state_key, resume_index, updated_at) VALUES ('singleton', ?, CURRENT_TIMESTAMP)
-       ON CONFLICT(state_key) DO UPDATE SET resume_index=excluded.resume_index, updated_at=excluded.updated_at`,
-      index);
-  } catch (_) {}
+    await sql`INSERT INTO control.worker_state (state_key, resume_index, updated_at) VALUES ('baseline_v6_full_run', ${index}, now())
+      ON CONFLICT (state_key) DO UPDATE SET resume_index=excluded.resume_index, updated_at=excluded.updated_at`;
+  } catch (_) {} finally { try { await sql.end({ timeout: 1 }); } catch (_) {} }
 }
 async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
   const startMs = Date.now();
