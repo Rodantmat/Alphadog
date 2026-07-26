@@ -10722,6 +10722,16 @@ async function loadAllMetricSnapshotsPg(sql, entity, playerIds) {
 // exact prop/line/side, and cache it. This must never be computed per-chunk — every
 // chunk has to score against the SAME population baseline or tier boundaries drift
 // between chunks, which is wrong.
+// ============================================================================
+// D1 PIPELINE - CONFIRMED DEAD/UNUSED, DO NOT TOUCH OR BUILD ON THIS!!!!
+// This function (and classification_v6_tick / classification_v6_full_run below it) write
+// to classification_v6_current and classification_v6_population_stats in D1 (ARCHIVE_DB).
+// Confirmed this session: the real, live baseline writer (runClassificationBaselineV6ToPostgres,
+// driven by the daily cron's baseline_v6_full_run step) is fully Postgres-native and computes
+// its own tier assignment internally, writing to classification.classification_v6_current
+// (Postgres) with zero dependency on this D1 pipeline or its output. D1 is being deleted soon;
+// this entire pipeline can be removed once that happens, with no impact on live scoring.
+// ============================================================================
 async function runClassificationV6ComputeStats(env, input = {}) {
   await ensureCalibrationConfigLoaded(env);
   const propKey = String(input.canonical_prop_key || "");
