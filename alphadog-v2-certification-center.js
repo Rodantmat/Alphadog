@@ -2053,6 +2053,7 @@ const MAIN_HTML = `<!doctype html>
 </style>
 </head>
 <body>
+<script>document.write('<div style="background:red;color:white;font-size:24px;font-weight:bold;padding:20px;text-align:center">TINY SCRIPT EXECUTED OK</div>');</script>
 <div class="wrap">
   <header class="hero">
     <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.19 - Slip Builder + Player Profile</div><div style="background:#ff0;color:#000;font-weight:bold;padding:4px 8px;display:inline-block;margin-top:4px">BUILD-MARKER-ALPHA-7734</div></div></div>
