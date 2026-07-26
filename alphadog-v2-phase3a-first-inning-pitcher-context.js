@@ -7714,7 +7714,16 @@ function clampHpToSampleSupportedRangePg(rawHp0to1, gamesSample) {
 }
 function priorStrengthForSamplePg(sample, psCfg, multiplier) {
   const n = Number(sample || 0);
-  const base = n < 5 ? psCfg.tiny_sample_lt5 : n < 15 ? psCfg.low_sample_lt15 : n < 30 ? psCfg.medium_sample_lt30 : psCfg.large_sample_ge30;
+  // Smooth, monotonic-by-construction logistic replacement for the old 4-bucket step function
+  // (tiny_sample_lt5/low_sample_lt15/medium_sample_lt30/large_sample_ge30), which caused real,
+  // confirmed confidence DECREASES at bucket boundaries (e.g. n=4->5: 58.63->46.87) and a sharp
+  // discontinuous jump at n=30 (77.29->89.22). More real data must never reduce confidence.
+  // Anchors near the same intended values: ~13 for small/mid samples, ramping smoothly up to
+  // ~40 by the time a sample is well into "large" territory, centered around the same n=22-30
+  // range where the old system made its jump - just smoothly now instead of discontinuously.
+  const low = Number(psCfg.low_sample_lt15 ?? 12);
+  const high = Number(psCfg.large_sample_ge30 ?? 40);
+  const base = low + (high - low) / (1 + Math.exp(-(n - 22) / 4));
   return base * Number(multiplier || 1.0);
 }
 function sampleAwareConfidencePg(sample, psCfg, multiplier) {
