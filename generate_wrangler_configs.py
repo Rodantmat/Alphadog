@@ -344,6 +344,7 @@ def make_config(worker_name, include_services=False):
         cfg["compatibility_flags"] = ["nodejs_compat"]
         cfg["services"] = [
             {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
+            {"binding": "BASE_CLASSIFICATION_V5_WORKER", "service": "alphadog-v2-base-classification-v5"},
         ]
         # Real schedule, matching the same time the old scheduled() dispatch used in production.
         cfg["triggers"] = {"crons": ["45 8 * * *"]}
