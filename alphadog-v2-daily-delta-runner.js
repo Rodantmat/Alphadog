@@ -169,6 +169,23 @@ async function runStatefulDeltaToCompletion(env, runId) {
   };
 }
 
+const MAX_CLASSIFICATION_V5_CALLS = 60; // day-by-day watermark; safe to resume next run regardless
+
+async function runClassificationV5ToCompletion(env) {
+  const calls = [];
+  let i = 0;
+  let complete = false;
+  let failed = false;
+  while (i < MAX_CLASSIFICATION_V5_CALLS) {
+    i++;
+    const result = await callStep(env.BASE_CLASSIFICATION_V5_WORKER, { mode: "delta_recalculate_affected_players" });
+    calls.push({ call: i, status: result && result.status, day_processed: result && result.day_processed, ok: result && result.ok });
+    if (!result || result.ok === false) { failed = true; break; }
+    if (result.continuation_required !== true) { complete = true; break; }
+  }
+  return { ok: !failed, complete, total_calls: i, calls_summary: calls.slice(-5) };
+}
+
 async function runDailyDeltaFullRun(env, input) {
   const runId = `daily_delta_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
@@ -196,6 +213,7 @@ async function runDailyDeltaFullRun(env, input) {
   try {
     const result = await runDailyDeltaFullRunLocked(env, input, runId, startedAt);
     const statefulDelta = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+    const classificationV5 = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
     const coverageAudit = await runCoverageAudit(env);
     const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
     const finalCertification = !coverageOk && result.certification === "DAILY_DELTA_FULL_RUN_COMPLETE"
@@ -208,6 +226,7 @@ async function runDailyDeltaFullRun(env, input) {
       certification: finalCertification,
       coverage_audit: coverageAudit,
       stateful_delta: statefulDelta,
+      classification_v5: classificationV5,
       preflight
     };
   } finally {
