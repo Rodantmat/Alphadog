@@ -292,7 +292,7 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const hrRateRows = playerIds.length ? await pgClient`SELECT player_id, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id = ANY(${pidLit}::bigint[]) AND metric_window='season_to_date'`.catch(() => []) : [];
   const hrRateByPlayer = new Map(hrRateRows.map(r => [String(r.player_id), r.hr_rate]));
 
-  const runningGameRows = await pgClient`SELECT mlb_player_id, lead_distance_gained FROM ref.pitcher_running_game`.catch(() => []);
+  const runningGameRows = await pgClient`SELECT DISTINCT ON (mlb_player_id) mlb_player_id, lead_distance_gained FROM ref.pitcher_running_game ORDER BY mlb_player_id, season_year DESC`.catch(() => []);
   const pitcherLeadDistanceByPitcherId = new Map(runningGameRows.map(r => [String(r.mlb_player_id), r.lead_distance_gained]));
 
   const qocRows = playerIds.length ? await pgClient`SELECT mlb_player_id, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id = ANY(${pidLit}::bigint[]) AND active=1 ORDER BY season_year DESC`.catch(() => []) : [];
