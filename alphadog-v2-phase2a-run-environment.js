@@ -405,7 +405,8 @@ function evaluateFlatGate(factorKey, cells, legContext) {
   if (factorKey === "player_availability") {
     if (legContext.availability_status == null) return null;
     const status = String(legContext.availability_status).toLowerCase();
-    if (status.includes("il") || status.includes("injured")) {
+    const isInjuryStatus = /(^|_)il(_|\d|$)/.test(status) || /\binjured\b/.test(status);
+    if (isInjuryStatus) {
       const cell = cells.find(c => c.tier_label === "recent_il_return");
       return cell ? -1 * Math.abs(cell.penalty || 0) : 0;
     }
