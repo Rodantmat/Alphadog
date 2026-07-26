@@ -2102,8 +2102,6 @@ window.onunhandledrejection = function(e) {
 </div>
 <script>
 (()=>{
-try{document.title='SCRIPT-RAN-'+Date.now();}catch(e){}
-try{const bm=document.querySelector('div[style*="background:#ff0"]');if(bm)bm.textContent='JS-IS-RUNNING-'+Date.now();}catch(e){}
 const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.18 - Slip Builder + Player Profile Alpha';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null,selectedLegIds=new Set(),lastGeneratedSlips=[],customStructures=[];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
