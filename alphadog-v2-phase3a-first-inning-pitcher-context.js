@@ -8695,6 +8695,42 @@ async function runWeeklyStaticDifferentialFullRun(env, input) {
   return { ok: true, mode: "weekly_static_differential_full_run", partial: false, complete: true, completed_steps: results };
 }
 
+function buildClassificationV6ComboList() {
+  const combos = [];
+  for (const [prop, lines] of Object.entries(CANONICAL_HITTER_BASELINE_LINES)) {
+    for (const line of lines) for (const side of ["more", "less"]) combos.push({ canonical_prop_key: prop, line_value: line, selected_side: side });
+  }
+  for (const [prop, lines] of Object.entries(CANONICAL_PITCHER_BASELINE_LINES)) {
+    for (const line of lines) for (const side of ["more", "less"]) combos.push({ canonical_prop_key: prop, line_value: line, selected_side: side });
+  }
+  return combos;
+}
+async function runClassificationV6FullRun(env, input = {}) {
+  const TIME_BUDGET_MS = 60000;
+  const startedAt = Date.now();
+  const combos = buildClassificationV6ComboList();
+  const startAt = Number(input.classification_v6_resume_index || 0);
+  let i = startAt;
+  let combosProcessed = 0;
+  let errors = [];
+  for (; i < combos.length; i++) {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      return { ok: true, mode: "classification_v6_full_run", partial: true, combos_processed_this_tick: combosProcessed, next_resume_index: i, total_combos: combos.length, errors: errors.slice(0, 10) };
+    }
+    const combo = combos[i];
+    try {
+      const statsRes = await runClassificationV6ComputeStats(env, combo);
+      if (statsRes.ok === false) { errors.push({ combo, stage: "compute_stats", error: statsRes.error }); continue; }
+      const tickRes = await runClassificationV6Tick(env, combo);
+      if (tickRes.ok === false) { errors.push({ combo, stage: "tick", error: tickRes.error }); continue; }
+      combosProcessed++;
+    } catch (err) {
+      errors.push({ combo, stage: "exception", error: String(err && err.message ? err.message : err) });
+    }
+  }
+  return { ok: true, mode: "classification_v6_full_run", partial: false, complete: true, combos_processed_this_tick: combosProcessed, total_combos: combos.length, errors: errors.slice(0, 10) };
+}
+
 async function runDailyMorningDeltaFullRun(env, input) {
   const TIME_BUDGET_MS = 240000;
   const startedAt = Date.now();
@@ -8705,6 +8741,7 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "bullpen_history", fn: runDeriveBullpenHistoryFromPostgres },
     { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
+    { key: "classification_v6_full_run", fn: runClassificationV6FullRun },
     { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
   ];
   const results = [];
