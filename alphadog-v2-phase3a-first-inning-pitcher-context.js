@@ -9514,18 +9514,9 @@ async function estimatePooledDispersionFromGameLogs(env, propKey) {
   return { dispersion, pooled_mean: pooledMean, pooled_excess_variance: pooledExcess, players_used: rows.length, note: "computed_from_real_game_logs" };
 }
 async function estimatePooledDispersionFromGameLogsPg(sql, propKey) {
-  const gameLogMap = await getCalibrationValue({ ARCHIVE_DB: null, __sqlOverride: sql }, "global", "prop_game_log_map", {}).catch(() => null);
-  // getCalibrationValue reads from D1's calibration cache path in some builds; if unavailable here,
-  // fall back to reading the config table directly via Postgres (config.calibration_config already
-  // migrated and is the real source of truth for this value).
-  let gcfg;
-  if (gameLogMap && gameLogMap[propKey]) {
-    gcfg = gameLogMap[propKey];
-  } else {
-    const cfgRows = await sql`SELECT config_json FROM config.calibration_config WHERE config_key='prop_game_log_map'`;
-    const map = cfgRows[0] ? cfgRows[0].config_json : {};
-    gcfg = map[propKey];
-  }
+  const cfgRows = await sql`SELECT config_json FROM config.calibration_config WHERE config_key='prop_game_log_map'`;
+  const map = cfgRows[0] ? cfgRows[0].config_json : {};
+  const gcfg = map[propKey];
   if (!gcfg) return { dispersion: Infinity, note: "no_game_log_map_entry" };
 
   const table = gcfg.entity === "pitcher" ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
