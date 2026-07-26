@@ -408,12 +408,16 @@ function taxonomySupportsSleeper(taxonomyRow) {
   return sources.includes("sleeper");
 }
 
-function auditCanonicalMapping(sourceStatName, taxonomy) {
+function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
   const sourceKey = String(sourceStatName || "").trim();
   if (!sourceKey) {
     return { ok: false, canonical_prop_key: null, status: "missing_source_stat_name", reason: "source_stat_name_missing" };
   }
-  const canonical = SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
+  // Same latent ambiguity confirmed and fixed on the Underdog worker (shared ParlayAPI market_key
+  // conventions): 'player_runs' can mean either batter runs-scored or pitcher runs-allowed
+  // depending on context. Disambiguate by roster position.
+  const rawCanonical = SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
+  const canonical = (sourceKey === "player_runs" && isPitcher) ? "runs_allowed" : rawCanonical;
   if (!canonical) {
     return { ok: false, canonical_prop_key: null, status: "unmapped_source_stat_name", reason: "no_source_proven_mapping_for_market_key" };
   }
