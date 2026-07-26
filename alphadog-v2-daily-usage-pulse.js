@@ -319,6 +319,15 @@ function parseRefMetricsAssignments(html) {
   return rows;
 }
 let refMetricsRunCache = null;
+async function resolveUmpireIdByName(pg, name) {
+  if (!name) return null;
+  try {
+    const rows = await pg`SELECT umpire_id FROM ref.umpire_tendency WHERE LOWER(umpire_name) = LOWER(${name}) LIMIT 1`;
+    return rows[0] ? Number(rows[0].umpire_id) : null;
+  } catch (_) {
+    return null;
+  }
+}
 async function deriveUmpireViaRefMetrics(pg, target) {
   try {
     if (refMetricsRunCache === null) {
@@ -328,7 +337,8 @@ async function deriveUmpireViaRefMetrics(pg, target) {
     }
     const match = refMetricsRunCache.find(r => r.home === target.home_team_name && r.away === target.away_team_name);
     if (!match || !match.hp_name) return { found: false, reason: "refmetrics_no_assignment_listed" };
-    return { found: true, umpire_name: match.hp_name };
+    const resolvedId = await resolveUmpireIdByName(pg, match.hp_name);
+    return { found: true, umpire_name: match.hp_name, umpire_id: resolvedId, name_resolved_to_id: resolvedId != null };
   } catch (err) {
     return { found: false, reason: `refmetrics_exception_${String(err && err.message ? err.message : err).slice(0, 120)}` };
   }
