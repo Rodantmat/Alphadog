@@ -1881,7 +1881,7 @@ async function apiPlayerSearch(env, url) {
       UNION ALL
       SELECT p.player_id, p.mlb_player_id, COALESCE(p.full_name, p.player_name) AS player_name, p.current_mlb_team_id, p.primary_position, p.bat_side, p.throw_side, 'alias' AS match_type
       FROM ref.player_aliases a
-      JOIN ref.players p ON p.player_id = a.player_id
+      JOIN ref.players p ON p.player_id = a.player_id::bigint
       WHERE a.active = 1 AND (LOWER(COALESCE(a.alias_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(a.alias_normalized,'')) LIKE LOWER(?))
     `, [like, like, like, like, like]);
   } finally {
