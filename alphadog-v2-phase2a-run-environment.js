@@ -211,7 +211,7 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const pidLit = playerIds.length ? "{" + playerIds.join(",") + "}" : null;
 
   const weatherRows = await pgClient`SELECT game_pk, venue_id, temperature_f, rain_risk_flag, precipitation_probability_pct, roof_status, wind_speed_mph, wind_context FROM daily.game_weather_current WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
-  const lineupRows = pidLit ? await pgClient`SELECT game_pk, player_id, bat_side FROM daily.lineups_current WHERE game_pk = ANY(${gpkLit}::bigint[]) AND player_id = ANY(${pidLit}::bigint[])`.catch(() => []) : [];
+  const lineupRows = pidLit ? await pgClient`SELECT game_pk, player_id, bat_side, lineup_slot FROM daily.lineups_current WHERE game_pk = ANY(${gpkLit}::bigint[]) AND player_id = ANY(${pidLit}::bigint[])`.catch(() => []) : [];
   const starterRows = await pgClient`SELECT game_pk, team_id, starter_hand, starter_player_id FROM daily.probable_pitchers WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
   const bullpenRows = await pgClient`SELECT game_pk, team_id, high_usage_reliever_count, back_to_back_reliever_count, bullpen_fatigue_score FROM daily.bullpen_availability_current WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
   const catcherRows = await pgClient`SELECT game_pk, team_id, framing_runs_total, pop_time_2b_sba FROM daily.catcher_context_current WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
