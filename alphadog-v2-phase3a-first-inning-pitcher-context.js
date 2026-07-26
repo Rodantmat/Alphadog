@@ -10791,7 +10791,12 @@ async function runClassificationV6Tick(env, input = {}) {
   let reclassifiedCount = 0;
 
   for (const p of perPlayer) {
-    const z = stats.stddev > 0 ? (p.rate - stats.mean) / stats.stddev : 0;
+    // Empirical-Bayes shrinkage before z-score, same validated formula used elsewhere this
+    // session: prevents small-sample noise (e.g. 0-for-1 in a single game) from being treated
+    // as reliable signal and misclassifying a player into an extreme tier.
+    const priorStrength = 2 + 18 * Math.exp(-p.games / 18);
+    const shrunkRate = (p.games * p.rate + priorStrength * stats.mean) / (p.games + priorStrength);
+    const z = stats.stddev > 0 ? (shrunkRate - stats.mean) / stats.stddev : 0;
     const tier = assignTierFromZScore(z, tierBands, stats.n);
     const rowId = `clsv6|${entity}|${p.playerId}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
