@@ -2450,6 +2450,22 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </body>
 </html>`;
 
+function extractAppScript() {
+  const openIdx = MAIN_HTML.lastIndexOf("<script>");
+  const openTagEnd = MAIN_HTML.indexOf(">", openIdx) + 1;
+  const closeIdx = MAIN_HTML.lastIndexOf("</script>");
+  return MAIN_HTML.slice(openTagEnd, closeIdx);
+}
+const APP_JS = extractAppScript();
+function MAIN_HTML_EXTERNAL() {
+  const openIdx = MAIN_HTML.lastIndexOf("<script>");
+  const closeIdx = MAIN_HTML.lastIndexOf("</script>") + "</script>".length;
+  return MAIN_HTML.slice(0, openIdx) + '<script src="/app.js"></script>' + MAIN_HTML.slice(closeIdx);
+}
+function jsResponse(js) {
+  return new Response(js, { status: 200, headers: { "content-type": "application/javascript; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2458,7 +2474,8 @@ export default {
 
     try {
       if (method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization" } });
-      if (method === "GET" && (path === "/" || path === "/index.html")) return htmlResponse(MAIN_HTML);
+      if (method === "GET" && path === "/app.js") return jsResponse(APP_JS);
+      if (method === "GET" && (path === "/" || path === "/index.html")) return htmlResponse(MAIN_HTML_EXTERNAL());
       if (method === "GET" && ["/main_alphadog_logo.png", "/main_alphadog_favicon.png", "/main_alphadog_apple_touch_icon.png"].includes(path)) return pngResponse(LOGO_PNG_BASE64);
       if (method === "GET" && path === "/health") {
         const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
