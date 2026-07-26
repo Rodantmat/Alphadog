@@ -149,11 +149,23 @@ async function runScoringFullRun(env, input) {
   }
 }
 
+const MAX_PAGINATION_ITERATIONS_PER_STAGE = 20; // safety bound: 20 * 500-per-invocation = 10,000 rows headroom
+
 async function runScoringFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
   for (const s of STAGES) {
-    const result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, chain_id: runId, trigger: "scoring_runner" });
+    let result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, chain_id: runId, trigger: "scoring_runner" });
+    let iterations = 1;
+    // Some stages (enrichment-engine confirmed) paginate internally and report certification
+    // 'partial_continue' when more rows remain. Re-call with the SAME chain_id so the stage's own
+    // batch_id-exclusion filter makes real forward progress, instead of silently moving on with the
+    // tail of the data left stale/unenriched.
+    while (result.ok && result.certification === "partial_continue" && iterations < MAX_PAGINATION_ITERATIONS_PER_STAGE) {
+      result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}_p${iterations}`, chain_id: runId, trigger: "scoring_runner" });
+      iterations++;
+    }
+    result.pagination_iterations = iterations;
     stages.push(result);
     if (!result.ok) break; // every later stage reads what this one wrote - do not proceed on real failure
   }
