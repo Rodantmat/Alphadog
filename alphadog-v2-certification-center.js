@@ -2461,7 +2461,7 @@ const APP_JS = extractAppScript();
 function MAIN_HTML_EXTERNAL() {
   const openIdx = MAIN_HTML.lastIndexOf("<script>");
   const closeIdx = MAIN_HTML.lastIndexOf("</script>") + "</script>".length;
-  return MAIN_HTML.slice(0, openIdx) + '<script src="/app.js" onerror="document.body.insertAdjacentHTML('afterbegin','<div style=\"background:magenta;color:#fff;padding:20px;font-size:18px;font-weight:bold\">SCRIPT LOAD FAILED (404/blocked/network error)</div>')" onload="document.body.insertAdjacentHTML('afterbegin','<div style=\"background:lime;color:#000;padding:20px;font-size:18px;font-weight:bold\">SCRIPT FILE LOADED SUCCESSFULLY (onload fired)</div>')"></script>' + MAIN_HTML.slice(closeIdx);
+  return MAIN_HTML.slice(0, openIdx) + `<script src="/app.js" onerror="document.body.insertAdjacentHTML('afterbegin','<div style=\"background:magenta;color:#fff;padding:20px;font-size:18px;font-weight:bold\">SCRIPT LOAD FAILED (404/blocked/network error)</div>')" onload="document.body.insertAdjacentHTML('afterbegin','<div style=\"background:lime;color:#000;padding:20px;font-size:18px;font-weight:bold\">SCRIPT FILE LOADED SUCCESSFULLY (onload fired)</div>')"></script>` + MAIN_HTML.slice(closeIdx);
 }
 function jsResponse(js) {
   return new Response(js, { status: 200, headers: { "content-type": "application/javascript; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
