@@ -2457,7 +2457,7 @@ function extractAppScript() {
   const closeIdx = MAIN_HTML.lastIndexOf("</script>");
   return MAIN_HTML.slice(openTagEnd, closeIdx);
 }
-const APP_JS = extractAppScript();
+const APP_JS = "document.body.insertAdjacentHTML('afterbegin','<div style=\"background:orange;color:#000;font-size:24px;font-weight:bold;padding:20px;text-align:center\">MINIMAL APP.JS EXECUTED - OK</div>');";
 function MAIN_HTML_EXTERNAL() {
   const openIdx = MAIN_HTML.lastIndexOf("<script>");
   const closeIdx = MAIN_HTML.lastIndexOf("</script>") + "</script>".length;
