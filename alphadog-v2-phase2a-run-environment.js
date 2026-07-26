@@ -286,7 +286,7 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const oaaProbabilityDeltaByTeamIF = new Map();
   for (const [tid, bucket] of oaaByTeamIF.entries()) if (bucket.count > 0) oaaProbabilityDeltaByTeamIF.set(tid, (bucket.runsSum / bucket.count) / 180);
 
-  const battedBallRows = await pgClient`SELECT mlb_player_id, ground_ball_pct, air_pct FROM ref.batted_ball_profile`.catch(() => []);
+  const battedBallRows = await pgClient`SELECT DISTINCT ON (mlb_player_id) mlb_player_id, ground_ball_pct, air_pct FROM ref.batted_ball_profile ORDER BY mlb_player_id, season_year DESC`.catch(() => []);
   const battedBallProfileByPlayer = new Map(battedBallRows.map(r => [String(r.mlb_player_id), r]));
 
   const hrRateRows = playerIds.length ? await pgClient`SELECT player_id, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id = ANY(${pidLit}::bigint[]) AND metric_window='season_to_date'`.catch(() => []) : [];
