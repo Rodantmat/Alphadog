@@ -7601,7 +7601,7 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
            earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, runs_allowed_sum,
            era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated,
            k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated,
-           innings_per_appearance_calculated, sample_size_label)
+           innings_per_appearance_calculated, sample_size_label, config_profile_id, formula_version)
         SELECT
           player_id || '_' || ${season} || '_' || '${w.key}', player_id, ${season}, '${w.key}',
           games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum,
@@ -7613,7 +7613,8 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
             WHEN ready_count > (9 - ready_count) THEN 'sample_usable'
             WHEN ready_count > 0 THEN 'sample_thin'
             ELSE 'review_only'
-          END
+          END,
+          'pitcher_metrics_neutral_v0_3_0_base_stage', 'pitcher_metrics_formula_v0_3_0_base_stage'
         FROM calc
         ON CONFLICT (snapshot_id) DO UPDATE SET
           games_count=excluded.games_count, appearances_count=excluded.appearances_count, starts_count=excluded.starts_count,
@@ -7625,7 +7626,7 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
           bb_rate_calculated=excluded.bb_rate_calculated, hr_rate_calculated=excluded.hr_rate_calculated,
           k_minus_bb_rate_calculated=excluded.k_minus_bb_rate_calculated, pitches_per_out_calculated=excluded.pitches_per_out_calculated,
           strikes_per_pitch_calculated=excluded.strikes_per_pitch_calculated, innings_per_appearance_calculated=excluded.innings_per_appearance_calculated,
-          sample_size_label=excluded.sample_size_label, updated_at=now()
+          sample_size_label=excluded.sample_size_label, config_profile_id=excluded.config_profile_id, formula_version=excluded.formula_version, updated_at=now()
       `);
       totalWritten += res.count || 0;
     }
