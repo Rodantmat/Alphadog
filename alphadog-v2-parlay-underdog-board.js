@@ -787,6 +787,26 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
   }
 }
 
+async function loadPitcherPositionMap(env) {
+  const map = new Map();
+  if (!env.HYPERDRIVE) return map;
+  const client = pgClient(env);
+  try {
+    const rows = await client.unsafe(
+      "SELECT p.full_name, t.abbreviation, p.primary_position FROM ref.players p LEFT JOIN ref.teams t ON t.mlb_team_id = p.current_mlb_team_id WHERE p.primary_position IN ('P','SP','RP')"
+    );
+    for (const r of rows || []) {
+      const key = `${normalizeAliasName(r.full_name)}|${normalizeAliasName(r.abbreviation)}`;
+      map.set(key, true);
+    }
+  } catch (_) {
+    // fall through to empty map - disambiguation simply won't fire, same as before this fix
+  } finally {
+    await client.end({ timeout: 1 });
+  }
+  return map;
+}
+
 async function stageOnlyRows(env, rows, sourceMeta, shape) {
   const fetchedAt = nowUtc();
   const batchId = rid("underdog_batch");
@@ -797,7 +817,8 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     return String(row.bookmaker || "").toLowerCase() === "underdog" && String(row.sport_key || "").toLowerCase() === "baseball_mlb";
   });
   const taxonomy = await loadPropTaxonomy(env);
-  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt, taxonomy));
+  const pitcherPositionMap = await loadPitcherPositionMap(env);
+  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt, taxonomy, pitcherPositionMap));
   const validRows = stageRows.filter(row => !String(row.parse_status || "").startsWith("invalid_")).length;
   const invalidRows = stageRows.length - validRows;
   const mappedRows = stageRows.filter(row => row.parse_status === "parsed_stage_only_canonical_mapping_audited").length;
