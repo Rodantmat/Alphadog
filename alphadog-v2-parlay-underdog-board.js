@@ -794,11 +794,10 @@ async function loadPitcherPositionMap(env) {
   const client = pgClient(env);
   try {
     const rows = await client.unsafe(
-      "SELECT p.full_name, t.abbreviation, p.primary_position FROM ref.players p LEFT JOIN ref.teams t ON t.mlb_team_id = p.current_mlb_team_id WHERE p.primary_position IN ('P','SP','RP')"
+      "SELECT p.full_name FROM ref.players p WHERE p.primary_position IN ('P','SP','RP')"
     );
     for (const r of rows || []) {
-      const key = `${normalizeAliasName(r.full_name)}|${normalizeAliasName(r.abbreviation)}`;
-      map.set(key, true);
+      map.set(normalizeAliasName(r.full_name), true);
     }
   } catch (_) {
     // fall through to empty map - disambiguation simply won't fire, same as before this fix
