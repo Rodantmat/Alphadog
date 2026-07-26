@@ -1,5 +1,20 @@
 import postgres from "postgres";
 
+// ============================================================================
+// OLD VERSION - DO NOT TOUCH IT!!!!
+// CONFIRMED DEAD/UNUSED: this worker writes classification.player_classification_current
+// (Postgres), which is NOT read by the real, live baseline_v6/classification_v6 pipeline.
+// The actual live classification table is classification_v6_current in D1 (ARCHIVE_DB),
+// populated by runClassificationV6ComputeStats/runClassificationV6Tick in
+// alphadog-v2-phase3a-first-inning-pitcher-context.js. Verified directly: a real player's
+// row in THIS worker's table was stale for days while the real classification_v6_current
+// row was already correct and updated within the last 24 hours.
+// The scheduled() handler below and its wiring into daily-delta-runner.js were added in
+// error this session based on a wrong assumption that this was the live path. Left in place
+// (harmless, just wasted cron cycles) rather than removed under time pressure, but do not
+// build any further diagnosis, fixes, or investigation on top of this file or this table.
+// ============================================================================
+
 const WORKER_NAME = "alphadog-v2-base-classification-v5";
 const VERSION = "alphadog-v2-base-classification-postgres-v2.0.0-real-zscore-tier-engine-preshrink-fix";
 const JOB_KEY = "base-classification-v5";
