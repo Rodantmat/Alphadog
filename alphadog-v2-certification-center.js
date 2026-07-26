@@ -122,7 +122,7 @@ function pgClient(env) {
 async function queryAllPg(sql, queryText, params = []) {
   if (!sql) throw new Error("Postgres client missing for queryAllPg");
   let i = 0;
-  const converted = String(queryText).replace(/\?/g, () => `${++i}`);
+  const converted = String(queryText).replace(/\?/g, () => "$" + (++i));
   try {
     return await sql.unsafe(converted, params, { prepare: false });
   } catch (err) {
