@@ -475,10 +475,10 @@ async function enrichLeg(matrixRow, config, legContext) {
       const boundedPenalty = -1 * Math.abs(factor.missing_data_worst_case_penalty_cap || 0);
       if (factor.signal_role === "confidence_modifier") {
         confidenceAdjustment += boundedPenalty * 0.5;
-      } else if (relevance === "full") {
-        logRateAdjustmentSum += boundedPenalty;
       }
-      factorBreakdown.push({ factor_key: factor.factor_key, status: "missing_bounded_penalty_applied", penalty_applied: boundedPenalty, relevance });
+      // NOTE: full-relevance primary factors no longer apply boundedPenalty to logRateAdjustmentSum here.
+      // See 2026-07-26 research-grounded fix note above enrichLeg() for full rationale.
+      factorBreakdown.push({ factor_key: factor.factor_key, status: "missing_neutral_confidence_handled_downstream", relevance });
       continue;
     }
 
