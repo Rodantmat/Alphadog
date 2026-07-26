@@ -873,19 +873,9 @@ function buildCurrentSql(url) {
         MAX(COALESCE(estimated_hit_probability_0_100,0)) AS leg_hp
       FROM base
       GROUP BY game_pk, mlb_player_id, canonical_prop_key, line_value, selected_side
-    ), hier AS (
-      SELECT *, CASE WHEN canonical_prop_key='hits_runs_rbis' THEN 1 WHEN canonical_prop_key='hits' THEN 2 WHEN canonical_prop_key='runs' THEN 3 WHEN canonical_prop_key='rbis' THEN 4 ELSE NULL END AS hier_rank
-      FROM leg_best
-    ), hier_best AS (
-      SELECT game_pk, mlb_player_id, selected_side, MIN(hier_rank) AS best_hier_rank
-      FROM hier WHERE hier_rank IS NOT NULL GROUP BY game_pk, mlb_player_id, selected_side
-    ), leg_survivors AS (
-      SELECT h.* FROM hier h
-      LEFT JOIN hier_best hb ON hb.game_pk=h.game_pk AND hb.mlb_player_id=h.mlb_player_id AND hb.selected_side=h.selected_side
-      WHERE h.hier_rank IS NULL OR h.hier_rank = hb.best_hier_rank
     ), leg_ranked AS (
       SELECT *, ROW_NUMBER() OVER (PARTITION BY canonical_prop_key ORDER BY leg_rank_order, leg_score DESC, leg_hp DESC) AS quota_prop_rank
-      FROM leg_survivors
+      FROM leg_best
     ), ranked AS (
       SELECT base.*, lr.quota_prop_rank,
         ROW_NUMBER() OVER (PARTITION BY base.quota_line_type ORDER BY COALESCE(base.rank_order,999999), COALESCE(base.score_0_100,0) DESC, COALESCE(base.estimated_hit_probability_0_100,0) DESC) AS quota_type_rank,
