@@ -772,6 +772,22 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
   }
 }
 
+async function loadPitcherPositionMap(env) {
+  const map = new Map();
+  if (!env.HYPERDRIVE) return map;
+  const client = pgClient(env);
+  try {
+    const rows = await client.unsafe(
+      "SELECT full_name FROM ref.players WHERE primary_position IN ('P','SP','RP')"
+    );
+    for (const r of rows || []) map.set(normalizeAliasName(r.full_name), true);
+  } catch (_) {
+  } finally {
+    await client.end({ timeout: 1 });
+  }
+  return map;
+}
+
 async function stageOnlyRows(env, rows, sourceMeta, shape) {
   const fetchedAt = nowUtc();
   const batchId = rid("sleeper_batch");
@@ -782,7 +798,8 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     return String(row.bookmaker || "").toLowerCase() === "sleeper" && String(row.sport_key || "").toLowerCase() === "baseball_mlb";
   });
   const taxonomy = await loadPropTaxonomy(env);
-  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt, taxonomy));
+  const pitcherPositionMap = await loadPitcherPositionMap(env);
+  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt, taxonomy, pitcherPositionMap));
   const validRows = stageRows.filter(row => !String(row.parse_status || "").startsWith("invalid_")).length;
   const invalidRows = stageRows.length - validRows;
   const mappedRows = stageRows.filter(row => row.parse_status === "parsed_stage_only_canonical_mapping_audited").length;
