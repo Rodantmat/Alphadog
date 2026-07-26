@@ -550,12 +550,8 @@ async function runEnrichment(pgClient, input) {
     }
   }
 
-  const isComplete = matrixRows.length < MAX_LEGS_PER_INVOCATION;
-  let staleRowsCleaned = null;
-  if (isComplete) {
-    const cleanupResult = await pgClient`DELETE FROM scoring.enrichment_leg_current WHERE matrix_id NOT IN (SELECT matrix_id FROM score.prop_matrix_current)`.catch((e) => ({ count: null, error: String(e && e.message ? e.message : e) }));
-    staleRowsCleaned = cleanupResult && cleanupResult.count != null ? cleanupResult.count : null;
-  }
+  const cleanupResult = await pgClient`DELETE FROM scoring.enrichment_leg_current WHERE matrix_id NOT IN (SELECT matrix_id FROM score.prop_matrix_current)`.catch((e) => ({ count: null, error: String(e && e.message ? e.message : e) }));
+  const staleRowsCleaned = cleanupResult && cleanupResult.count != null ? cleanupResult.count : null;
 
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
