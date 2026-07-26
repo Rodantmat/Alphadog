@@ -169,6 +169,9 @@ async function runStatefulDeltaToCompletion(env, runId) {
   };
 }
 
+// OLD VERSION - DO NOT TOUCH IT!!!! This calls the confirmed-dead base-classification-v5
+// worker (see that file's own header). Does not affect real, live scoring. Left in place
+// harmlessly rather than removed under time pressure.
 const MAX_CLASSIFICATION_V5_CALLS = 60; // day-by-day watermark; safe to resume next run regardless
 
 async function runClassificationV5ToCompletion(env) {
