@@ -364,7 +364,12 @@ function addQuotaReserveRows(mappedRows, baseRows) {
   const selected = new Map();
   const addedRows = [];
   for (const row of baseRows || []) selected.set(finalBoardRowKey(row), row);
-  const pool = (mappedRows || []).filter(r => !selected.has(finalBoardRowKey(r))).filter(r => num(r.estimated_hit_probability_0_100, 0) >= FINAL_BOARD_QUOTA_RESERVE_MIN_HP).filter(r => num(r.score_0_100, 0) >= FINAL_BOARD_QUOTA_RESERVE_MIN_SCORE).sort(finalBoardCandidateComparator);
+  // Structural floors (prop, prop-line, source, variant, side) must survive regardless of HP/score
+  // quality - they are a representation guarantee, not a quality guarantee. Draw from ALL eligible
+  // rows (best-first), not just the HP>=70/score>=50 subset (that threshold remains the correct,
+  // separate bar for the independent 'everything over 70% shows' rule, already satisfied via the
+  // >=60 base-visibility gate upstream).
+  const pool = (mappedRows || []).filter(r => !selected.has(finalBoardRowKey(r))).sort(finalBoardCandidateComparator);
   const addBest = (predicate, needed, reasonKey) => {
     let added = 0;
     if (needed <= 0) return 0;
