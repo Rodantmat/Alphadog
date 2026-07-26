@@ -354,8 +354,8 @@ function classifyTarget(target, probe, previous, recentCrew, refMetricsPredictio
   else if (probe.available_no_plate) { status = "source_available_no_plate_path"; confidence = "WARNING_ASSIGNMENT_MISSING"; sourceStatus = "source_available_no_umpire_path"; assignmentStatus = "missing"; issues.push({ severity: "warning", issue_type: "source_available_no_umpire_path", reason: "Official MLB source returned an officials-like array, but no home plate umpire role was identified." }); }
   else if (pregame && refMetricsPrediction && refMetricsPrediction.found) {
     status = "derived_from_refmetrics_direct"; confidence = "MEDIUM_DERIVED_FROM_REFMETRICS_DIRECT"; sourceStatus = "derived_from_refmetrics_direct"; assignmentStatus = "derived";
-    derivedUmpireId = null; derivedUmpireName = refMetricsPrediction.umpire_name; isDerived = 1;
-    issues.push({ severity: "warning", issue_type: "umpire_derived_from_refmetrics", reason: "No official pregame source yet; derived from RefMetrics' current umpire assignment board (real, credentialed direct fetch)." });
+    derivedUmpireId = refMetricsPrediction.umpire_id || null; derivedUmpireName = refMetricsPrediction.umpire_name; isDerived = 1;
+    issues.push({ severity: "warning", issue_type: "umpire_derived_from_refmetrics", reason: `No official pregame source yet; derived from RefMetrics' current umpire assignment board (real, credentialed direct fetch).${refMetricsPrediction.umpire_id ? "" : " Name found but could not be resolved to an internal umpire_id - tendency lookup will be unavailable for this leg."}` });
   } else if (pregame && recentCrew && recentCrew.home_plate_umpire_id) {
     status = "derived_likely_crew"; confidence = "LOW_DERIVED_FROM_RECENT_SERIES_CREW"; sourceStatus = "derived_from_recent_series_crew"; assignmentStatus = "derived";
     derivedUmpireId = recentCrew.home_plate_umpire_id; derivedUmpireName = recentCrew.home_plate_umpire_name; isDerived = 1;
