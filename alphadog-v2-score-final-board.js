@@ -388,6 +388,17 @@ function addQuotaReserveRows(mappedRows, baseRows) {
   const diagnostics = [];
   const countSelected = (predicate) => Array.from(selected.values()).filter(predicate).length;
   const countAvailable = (predicate) => (mappedRows || []).filter(predicate).length;
+  const propLines = [...new Set((mappedRows || []).map(r => `${String(r.canonical_prop_key || '')}|${r.line_value == null ? '' : Number(r.line_value)}`).filter(k => k !== '|'))].sort();
+  for (const propLineKey of propLines) {
+    const [prop, lineStr] = propLineKey.split('|');
+    const lineNum = lineStr === '' ? null : Number(lineStr);
+    const predicate = r => String(r.canonical_prop_key || '') === prop && (lineNum == null ? r.line_value == null : Number(r.line_value) === lineNum);
+    const available = countAvailable(predicate);
+    const target = Math.min(FINAL_BOARD_PROP_LINE_FLOOR_PER_PROP_LINE, available);
+    const before = countSelected(predicate);
+    const added = addBest(predicate, Math.max(0, target - before), `prop_line_floor:${propLineKey}`);
+    diagnostics.push({ floor_type: 'prop_line', key: propLineKey, target, available, before, added, after: countSelected(predicate) });
+  }
   const props = [...new Set((mappedRows || []).map(r => String(r.canonical_prop_key || '')).filter(Boolean))].sort();
   for (const prop of props) {
     const predicate = r => String(r.canonical_prop_key || '') === prop;
