@@ -345,6 +345,8 @@ function finalBoardRowKey(row) {
   return String(row.prepared_row_id || row.source_line_id || row.matrix_id || row.hp_board_row_id || row.probability_row_id || [row.source_key, row.mlb_player_id, row.canonical_prop_key, row.line_value, row.selected_side].join('|'));
 }
 function finalBoardVariant(row) {
+  if (Number(row && row.is_demon) === 1) return 'demon';
+  if (Number(row && row.is_goblin) === 1) return 'goblin';
   const p = norm(row && row.payout_variant);
   const line = norm(row && row.source_line_id);
   const odds = norm(row && row.odds_type);
