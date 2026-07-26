@@ -1893,6 +1893,7 @@ async function apiPlayerProfile(env, url) {
   const playerId = Number(url.searchParams.get("player_id") || 0);
   if (!playerId) return jsonResponse({ ok:false, error:"player_id required", version:VERSION }, 400);
   const pg = pgClient(env);
+  try {
   const p = (await queryAllPg(pg, `SELECT * FROM ref.players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]))[0] || null;
   if (!p) { await pg.end({ timeout: 1 }).catch(() => {}); return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404); }
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
