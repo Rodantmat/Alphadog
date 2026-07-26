@@ -455,7 +455,12 @@ async function enrichLeg(matrixRow, config, legContext) {
     let matchedCellForCap = null;
 
     if (factor.variation_type === "continuous_formula") {
-      const matchingCell = cells.find(c => c.prop_key === propKey) || cells[0];
+      // Never fall back to an arbitrary array position - that silently applies an unrelated
+      // prop's tuned coefficients (e.g. home_runs-specific barrel/xwoba weighting bleeding into
+      // a hits calculation). Props without their own dedicated cell for this factor share the
+      // hits_runs_rbis cell's coefficients by explicit design (see evaluateContinuousFactor's
+      // own comment for batter_quality_of_contact); if even that doesn't exist, skip the factor.
+      const matchingCell = cells.find(c => c.prop_key === propKey) || cells.find(c => c.prop_key === "hits_runs_rbis") || null;
       if (matchingCell) {
         contribution = evaluateContinuousFactor(factor.factor_key, matchingCell, legContext, config.thresholdsByFactor.get(factor.factor_key));
         cellUsed = matchingCell.cell_id;
