@@ -8777,6 +8777,7 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
     { key: "classification_v6_full_run", fn: runClassificationV6FullRun },
+    { key: "baseline_v6_full_run", fn: runClassificationBaselineV6ToPostgresFullRun },
     { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
   ];
   const results = [];
