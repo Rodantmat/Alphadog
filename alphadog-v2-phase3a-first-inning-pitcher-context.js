@@ -8705,16 +8705,33 @@ function buildClassificationV6ComboList() {
   }
   return combos;
 }
+async function getClassificationV6ResumeIndex(env) {
+  try {
+    await run(env.ARCHIVE_DB, `CREATE TABLE IF NOT EXISTS classification_v6_full_run_state (state_key TEXT PRIMARY KEY, resume_index INTEGER DEFAULT 0, updated_at TEXT)`);
+    const row = await first(env.ARCHIVE_DB, `SELECT resume_index FROM classification_v6_full_run_state WHERE state_key='singleton'`);
+    return row ? Number(row.resume_index || 0) : 0;
+  } catch (_) { return 0; }
+}
+async function setClassificationV6ResumeIndex(env, index) {
+  try {
+    await run(env.ARCHIVE_DB,
+      `INSERT INTO classification_v6_full_run_state (state_key, resume_index, updated_at) VALUES ('singleton', ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(state_key) DO UPDATE SET resume_index=excluded.resume_index, updated_at=excluded.updated_at`,
+      index);
+  } catch (_) {}
+}
 async function runClassificationV6FullRun(env, input = {}) {
   const TIME_BUDGET_MS = 150000;
   const startedAt = Date.now();
   const combos = buildClassificationV6ComboList();
-  const startAt = Number(input.classification_v6_resume_index || 0);
+  const persistedIndex = await getClassificationV6ResumeIndex(env);
+  const startAt = Number(input.classification_v6_resume_index != null ? input.classification_v6_resume_index : persistedIndex) % Math.max(1, combos.length);
   let i = startAt;
   let combosProcessed = 0;
   let errors = [];
   for (; i < combos.length; i++) {
     if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      await setClassificationV6ResumeIndex(env, i);
       return { ok: true, mode: "classification_v6_full_run", partial: true, combos_processed_this_tick: combosProcessed, next_resume_index: i, total_combos: combos.length, errors: errors.slice(0, 10) };
     }
     const combo = combos[i];
@@ -8728,6 +8745,10 @@ async function runClassificationV6FullRun(env, input = {}) {
       errors.push({ combo, stage: "exception", error: String(err && err.message ? err.message : err) });
     }
   }
+  // Reached the end of the combo list this tick - wrap around to 0 so the next run starts a
+  // fresh full cycle rather than looping forever at the tail (Math.max guard above handles this
+  // if the list ever shrinks between deploys).
+  await setClassificationV6ResumeIndex(env, 0);
   return { ok: true, mode: "classification_v6_full_run", partial: false, complete: true, combos_processed_this_tick: combosProcessed, total_combos: combos.length, errors: errors.slice(0, 10) };
 }
 
