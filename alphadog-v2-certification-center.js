@@ -126,7 +126,8 @@ async function queryAllPg(sql, queryText, params = []) {
   try {
     return await sql.unsafe(converted, params, { prepare: false });
   } catch (err) {
-    throw new Error(`queryAllPg failed: ${err && err.message ? err.message : err}`);
+    const paramsDebug = params.map((p, idx) => `[${idx}]=${JSON.stringify(p)}(${typeof p})`).join(', ');
+    throw new Error(`queryAllPg failed: ${err && err.message ? err.message : err} || SQL: ${converted.replace(/\s+/g, ' ').trim().slice(0, 500)} || PARAMS: ${paramsDebug}`);
   }
 }
 
