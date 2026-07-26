@@ -228,7 +228,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const CHUNK = 150;
     for (let i = 0; i < insertRows.length; i += CHUNK) {
       await pgClient`INSERT INTO score.hp_board_current ${pgClient(insertRows.slice(i, i + CHUNK), ...insertCols)}
-        ON CONFLICT (hp_board_row_id) DO UPDATE SET estimated_hit_probability_0_100=EXCLUDED.estimated_hit_probability_0_100, probability_confidence_0_100=EXCLUDED.probability_confidence_0_100, board_tier=EXCLUDED.board_tier, live_playable=EXCLUDED.live_playable, review_playable=EXCLUDED.review_playable, score_grade=EXCLUDED.score_grade, calibration_json=EXCLUDED.calibration_json, updated_at=now()`;
+        ON CONFLICT (hp_board_row_id) DO UPDATE SET hp_board_batch_id=EXCLUDED.hp_board_batch_id, source_engine_batch_id=EXCLUDED.source_engine_batch_id, prepared_row_id=EXCLUDED.prepared_row_id, matrix_id=EXCLUDED.matrix_id, source_line_id=EXCLUDED.source_line_id, source_key=EXCLUDED.source_key, game_pk=EXCLUDED.game_pk, official_date=EXCLUDED.official_date, official_game_time_utc=EXCLUDED.official_game_time_utc, estimated_hit_probability_0_100=EXCLUDED.estimated_hit_probability_0_100, probability_confidence_0_100=EXCLUDED.probability_confidence_0_100, board_tier=EXCLUDED.board_tier, live_playable=EXCLUDED.live_playable, review_playable=EXCLUDED.review_playable, is_goblin=EXCLUDED.is_goblin, is_demon=EXCLUDED.is_demon, more_only=EXCLUDED.more_only, score_grade=EXCLUDED.score_grade, calibration_json=EXCLUDED.calibration_json, updated_at=now()`;
     }
   }
 
