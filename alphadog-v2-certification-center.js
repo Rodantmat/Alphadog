@@ -2053,14 +2053,13 @@ const MAIN_HTML = `<!doctype html>
 </style>
 </head>
 <body>
-<script>document.write('<div style="background:red;color:white;font-size:24px;font-weight:bold;padding:20px;text-align:center">TINY SCRIPT EXECUTED OK</div>');</script>
 <script>
 window.onerror = function(msg, url, line, col, error) {
-  document.body.insertAdjacentHTML('afterbegin', '<div style="background:purple;color:#fff;padding:20px;font-size:18px;font-weight:bold;white-space:pre-wrap">GLOBAL ERROR CAUGHT:\nMessage: ' + msg + '\nLine: ' + line + ' Col: ' + col + '\nStack: ' + (error && error.stack ? error.stack : 'no stack') + '</div>');
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#c00;color:#fff;padding:16px;font-size:14px;font-weight:bold;white-space:pre-wrap;position:relative;z-index:99999">ERROR: ' + msg + ' (line ' + line + ')</div>');
   return false;
 };
 window.onunhandledrejection = function(e) {
-  document.body.insertAdjacentHTML('afterbegin', '<div style="background:orange;color:#000;padding:20px;font-size:18px;font-weight:bold;white-space:pre-wrap">UNHANDLED PROMISE REJECTION:\n' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason)) + '</div>');
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#c60;color:#000;padding:16px;font-size:14px;font-weight:bold;white-space:pre-wrap;position:relative;z-index:99999">UNHANDLED REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)) + '</div>');
 };
 </script>
 <div class="wrap">
