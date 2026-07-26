@@ -8706,7 +8706,7 @@ function buildClassificationV6ComboList() {
   return combos;
 }
 async function runClassificationV6FullRun(env, input = {}) {
-  const TIME_BUDGET_MS = 60000;
+  const TIME_BUDGET_MS = 150000;
   const startedAt = Date.now();
   const combos = buildClassificationV6ComboList();
   const startAt = Number(input.classification_v6_resume_index || 0);
