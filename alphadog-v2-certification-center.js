@@ -1910,7 +1910,8 @@ async function apiPlayerProfile(env, url) {
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
   const idPlaceholders = ids.map(()=>"?").join(",");
   const mlbId = p.mlb_player_id || p.player_id;
-  const isPitcher = String(p.primary_position || p.primary_role || "").toUpperCase() === "P" || String(p.primary_position || "").toUpperCase() === "TWP";
+  const isTwoWay = String(p.primary_position || "").toUpperCase() === "TWP";
+  const isPitcher = (String(p.primary_position || p.primary_role || "").toUpperCase() === "P") || isTwoWay;
   const safeQuery = async (queryText, params) => { try { return await queryAllPg(pg, queryText, params); } catch (e) { return []; } };
   const safeOne = async (queryText, params) => { const r = await safeQuery(queryText, params); return r[0] || null; };
 
