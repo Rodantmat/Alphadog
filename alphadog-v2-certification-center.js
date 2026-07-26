@@ -2059,6 +2059,9 @@ window.onerror = function(msg, url, line, col, error) {
   document.body.insertAdjacentHTML('afterbegin', '<div style="background:purple;color:#fff;padding:20px;font-size:18px;font-weight:bold;white-space:pre-wrap">GLOBAL ERROR CAUGHT:\nMessage: ' + msg + '\nLine: ' + line + ' Col: ' + col + '\nStack: ' + (error && error.stack ? error.stack : 'no stack') + '</div>');
   return false;
 };
+window.onunhandledrejection = function(e) {
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:orange;color:#000;padding:20px;font-size:18px;font-weight:bold;white-space:pre-wrap">UNHANDLED PROMISE REJECTION:\n' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason)) + '</div>');
+};
 </script>
 <div class="wrap">
   <header class="hero">
