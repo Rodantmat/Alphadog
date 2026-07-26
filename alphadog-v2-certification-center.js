@@ -1443,8 +1443,16 @@ async function apiFilters(env) {
       AND COALESCE(live_playable,0)=0
       AND official_date >= CURRENT_DATE
       AND (official_game_time_utc IS NULL OR official_game_time_utc > now())
-    GROUP BY source_key, canonical_prop_key, prop_family, payout_variant, side_mode, is_goblin, is_demon, is_standard, probability_band, board_tier, review_playable, live_playable
-    ORDER BY source_key, prop_family, canonical_prop_key, payout_variant
+    GROUP BY source_key, canonical_prop_key,
+      CASE WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','runs_allowed','rfi_nrfi') THEN 'pitcher' ELSE 'hitter' END,
+      CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 'demon' ELSE 'regular' END,
+      CASE WHEN LOWER(COALESCE(payout_variant,'')) IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END,
+      CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 1 ELSE 0 END,
+      CASE WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 1 ELSE 0 END,
+      CASE WHEN LOWER(COALESCE(payout_variant,'')) NOT IN ('goblin','demon') THEN 1 ELSE 0 END,
+      CASE WHEN estimated_hit_probability_0_100 >= 80 THEN '80+' WHEN estimated_hit_probability_0_100 >= 70 THEN '70+' WHEN estimated_hit_probability_0_100 >= 60 THEN '60+' ELSE '<60' END,
+      board_tier, review_playable, live_playable
+    ORDER BY source_key, canonical_prop_key
   `);
   const summaryRows = await queryAllPg(pg, `
     SELECT COUNT(*) AS total_rows, COUNT(*) AS default_rows,
