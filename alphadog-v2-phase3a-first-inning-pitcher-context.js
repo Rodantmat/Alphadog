@@ -8390,7 +8390,7 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
           (snapshot_id, player_id, season, metric_window, games_count, pa_sum, ab_sum, hits_sum, singles_sum, doubles_sum, triples_sum,
            home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum,
            batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate, tb_per_pa, h_per_ab, sample_size_label,
-           vs_left_json, vs_right_json)
+           vs_left_json, vs_right_json, config_profile_id, formula_version)
         SELECT
           agg.player_id || '_' || ${season} || '_' || '${w.key}', agg.player_id, ${season}, '${w.key}',
           games_count, pa_sum, ab_sum, hits_sum, singles_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum,
@@ -8403,7 +8403,8 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
           CASE WHEN pa_sum >= 1 THEN total_bases_derived_sum::float / pa_sum ELSE NULL END,
           CASE WHEN ab_sum >= 1 THEN hits_sum::float / ab_sum ELSE NULL END,
           CASE WHEN games_count = 0 THEN 'sample_none' WHEN games_count < 3 THEN 'sample_tiny' WHEN games_count < 5 THEN 'sample_thin' WHEN games_count < 10 THEN 'sample_usable' ELSE 'sample_strong' END,
-          to_jsonb(vs_left.*) - 'player_id', to_jsonb(vs_right.*) - 'player_id'
+          to_jsonb(vs_left.*) - 'player_id', to_jsonb(vs_right.*) - 'player_id',
+          'hitter_metrics_neutral_v0_3_0_stage_only', 'hitter_metrics_formula_v0_3_0_stage_only'
         FROM agg
         LEFT JOIN vs_left ON vs_left.player_id = agg.player_id
         LEFT JOIN vs_right ON vs_right.player_id = agg.player_id
@@ -8415,7 +8416,8 @@ async function runDeriveHitterMetricSnapshotsFromPostgres(env, input) {
           batting_average=excluded.batting_average, slugging_percentage=excluded.slugging_percentage,
           strikeout_rate=excluded.strikeout_rate, walk_rate=excluded.walk_rate, hr_rate=excluded.hr_rate,
           tb_per_pa=excluded.tb_per_pa, h_per_ab=excluded.h_per_ab, sample_size_label=excluded.sample_size_label,
-          vs_left_json=excluded.vs_left_json, vs_right_json=excluded.vs_right_json, updated_at=now()
+          vs_left_json=excluded.vs_left_json, vs_right_json=excluded.vs_right_json,
+          config_profile_id=excluded.config_profile_id, formula_version=excluded.formula_version, updated_at=now()
       `);
       totalWritten += res.count || 0;
     }
