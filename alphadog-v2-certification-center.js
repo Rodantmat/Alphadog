@@ -1924,7 +1924,7 @@ async function apiPlayerProfile(env, url) {
     LIMIT 80
   `, ids) : [];
 
-  const [teamRow, recentGames, snapshots, splits, nextTeamGame] = await Promise.all([
+  const [teamRow, recentGames, snapshots, splits, nextTeamGame, twpHitterGames, twpHitterSnapshots, twpHitterSplits] = await Promise.all([
     safeOne(`SELECT team_id, full_name, abbreviation, league, division FROM ref.teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]),
     isPitcher
       ? safeQuery(`SELECT * FROM stats_pitcher.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId])
@@ -1935,7 +1935,10 @@ async function apiPlayerProfile(env, url) {
     isPitcher
       ? safeQuery(`SELECT * FROM stats_pitcher.splits WHERE player_id=? ORDER BY season DESC`, [mlbId])
       : safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbId]),
-    safeOne(`SELECT game_pk, game_time_utc, home_team_id, away_team_id FROM daily.umpire_context_current WHERE (home_team_id=? OR away_team_id=?) AND game_time_utc >= (now() - interval '4 hours') ORDER BY game_time_utc ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null)
+    safeOne(`SELECT game_pk, game_time_utc, home_team_id, away_team_id FROM daily.umpire_context_current WHERE (home_team_id=? OR away_team_id=?) AND game_time_utc >= (now() - interval '4 hours') ORDER BY game_time_utc ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null),
+    isTwoWay ? safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId]) : Promise.resolve([]),
+    isTwoWay ? safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId]) : Promise.resolve([]),
+    isTwoWay ? safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbId]) : Promise.resolve([])
   ]);
 
   let nextGame = null, weatherRow = null, umpireRow = null, marketRow = null, bullpenRows = [], scheduleRows = [], opposingStarter = null, opposingTeamRow = null;
