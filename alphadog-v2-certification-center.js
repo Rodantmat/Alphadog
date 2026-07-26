@@ -905,6 +905,7 @@ async function apiDossier(env, url) {
   const finalId = url.searchParams.get("final_board_row_id");
   if (!finalId) return jsonResponse({ ok: false, error: "final_board_row_id required", version: VERSION }, 400);
   const pg = pgClient(env);
+  try {
   const selectedRows = await queryAllPg(pg, `
     SELECT 
       f.final_board_row_id AS final_board_row_id,
