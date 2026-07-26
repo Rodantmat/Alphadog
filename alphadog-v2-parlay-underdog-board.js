@@ -425,12 +425,17 @@ function taxonomySupportsUnderdog(taxonomyRow) {
   return sources.includes("underdog");
 }
 
-function auditCanonicalMapping(sourceStatName, taxonomy) {
+function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
   const sourceKey = String(sourceStatName || "").trim();
   if (!sourceKey) {
     return { ok: false, canonical_prop_key: null, status: "missing_source_stat_name", reason: "source_stat_name_missing" };
   }
-  const canonical = UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
+  // Underdog reuses 'player_runs' for BOTH batter 'Runs Scored' and pitcher '1st Inn. Runs
+  // Allowed' - confirmed live (Reynaldo Lopez, Kyle Freeland, Framber Valdez and others were
+  // all silently mapped to the batter canonical key). Disambiguate by roster position: a
+  // pitcher's 'player_runs' market is always runs allowed, never runs scored.
+  const rawCanonical = UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
+  const canonical = (sourceKey === "player_runs" && isPitcher) ? "runs_allowed" : rawCanonical;
   if (!canonical) {
     return { ok: false, canonical_prop_key: null, status: "unmapped_source_stat_name", reason: "no_source_proven_mapping_for_market_key" };
   }
