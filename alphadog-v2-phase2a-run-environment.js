@@ -483,13 +483,16 @@ async function enrichLeg(matrixRow, config, legContext) {
     }
 
     if (contribution === null) {
-      missingFactors.push(factor.factor_key);
       const boundedPenalty = -1 * Math.abs(factor.missing_data_worst_case_penalty_cap || 0);
       if (factor.signal_role === "confidence_modifier") {
         confidenceAdjustment += boundedPenalty * 0.5;
+        // NOTE: confidence_modifier factors are intentionally excluded from missingFactors/coverage
+        // tracking below - their entire designed effect flows through confidenceAdjustment alone.
+        // Counting them here too would double-penalize confidence for the same missing signal.
+        factorBreakdown.push({ factor_key: factor.factor_key, status: "missing_confidence_modifier_only", relevance });
+        continue;
       }
-      // NOTE: full-relevance primary factors no longer apply boundedPenalty to logRateAdjustmentSum here.
-      // See 2026-07-26 research-grounded fix note above enrichLeg() for full rationale.
+      missingFactors.push(factor.factor_key);
       factorBreakdown.push({ factor_key: factor.factor_key, status: "missing_neutral_confidence_handled_downstream", relevance });
       continue;
     }
