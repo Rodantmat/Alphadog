@@ -299,7 +299,8 @@ async function loadRealLegContexts(pgClient, matrixRows) {
     umpireTendencyByGame,
     sprintSpeedByPlayer,
     armAngleByPitcher,
-    teamIdByAbbrev
+    teamIdByAbbrev,
+    qocByPlayer
   };
 }
 
