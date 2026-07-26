@@ -1550,10 +1550,10 @@ async function apiHealth(env) {
            0 AS blocked_rows, 0 AS warning_rows, 0 AS issue_rows_written,
            certification_status, certification_grade, updated_at
     FROM score.hp_board_batches
-    WHERE source_engine_batch_id = ?
+    WHERE source_engine_batch_id = ?::text
     ORDER BY updated_at DESC
     LIMIT 1
-  `, [current.source_engine_batch_id]) : [];
+  `, [String(current.source_final_score_batch_id)]) : [];
   await pg.end({ timeout: 1 }).catch(() => {});
 
   return jsonResponse({
