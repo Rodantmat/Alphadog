@@ -2011,6 +2011,10 @@ async function apiPlayerProfile(env, url) {
     note: "Full player profile: identity, current board lines, last-20 game log with home/away split, L5/L10/L20/season snapshots, platoon splits, Statcast-tier advanced metrics (sprint speed, batted-ball profile, defensive quality, pitch arsenal, arm angle, running-game control, catcher framing/pop-time), availability status, and next-game micro-factor context including opposing starter arsenal.",
     diagnostic_test_string: "Sam sells seven silver snakes since Sunday season starts soon"
   });
+  } catch (err) {
+    await pg.end({ timeout: 1 }).catch(() => {});
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, error: String(err && err.message ? err.message : err), route: "/api/player-profile" }, 500);
+  }
 }
 
 const MAIN_HTML = `<!doctype html>
