@@ -393,6 +393,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     pitcher_arm_angle_degrees: oppStarter.starter_player_id != null ? (ctxMaps.armAngleByPitcher.get(Number(oppStarter.starter_player_id))?.value ?? null) : null,
     eastward_travel_flag: scheduleSpot.eastward_travel_flag ?? null,
     westward_travel_flag: scheduleSpot.westward_travel_flag ?? null,
+    actual_slot: lineup.lineup_slot ?? null,
     batter_xwoba: ctxMaps.qocByPlayer.get(Number(playerId))?.xwoba ?? null,
     batter_xwobacon: ctxMaps.qocByPlayer.get(Number(playerId))?.xwobacon ?? null,
     batter_sweet_spot_percent: ctxMaps.qocByPlayer.get(Number(playerId))?.sweet_spot_percent ?? null,
