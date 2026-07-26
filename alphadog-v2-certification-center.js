@@ -1356,6 +1356,10 @@ async function apiDossier(env, url) {
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
   });
+  } catch (err) {
+    await pg.end({ timeout: 1 }).catch(() => {});
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, error: String(err && err.message ? err.message : err), route: "/api/main-board/dossier", final_board_row_id: finalId }, 500);
+  }
 }
 
 
