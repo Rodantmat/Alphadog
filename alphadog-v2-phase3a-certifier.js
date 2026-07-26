@@ -89,7 +89,11 @@ async function runScoringEngine(pgClient, input) {
     written++;
   }
   const mirrorCols = ["score_row_id", "batch_id", "matrix_id", "prepared_row_id", "source_line_id", "source_key", "game_pk", "official_date", "official_game_time_utc", "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "side_mode", "selected_side", "more_score_0_100", "less_score_0_100", "score_0_100", "score_status", "score_grade", "side_eligibility_status", "side_availability_status", "profile_key", "profile_version", "thresholds_locked", "archive_score_threshold", "archive_eligible", "archive_written", "calculation_json", "matrix_payload_json_snapshot", "matrix_status", "blocking_for_scoring", "warning_count", "missing_component_count", "confidence_0_100", "confidence_status", "live_playable", "model_deferred", "score_sort_0_100"];
-  if (mirrorRows.length) await pgClient`INSERT INTO score.scoring_engine_current ${pgClient(mirrorRows, ...mirrorCols)}`;
+  const MIRROR_INSERT_CHUNK_SIZE = 500;
+  for (let i = 0; i < mirrorRows.length; i += MIRROR_INSERT_CHUNK_SIZE) {
+    const chunk = mirrorRows.slice(i, i + MIRROR_INSERT_CHUNK_SIZE);
+    await pgClient`INSERT INTO score.scoring_engine_current ${pgClient(chunk, ...mirrorCols)}`;
+  }
 
   const remainingRows = await pgClient`SELECT COUNT(*) as cnt FROM score.hp_board_current WHERE hp_board_batch_id=${hpBatchId} AND score_0_100 IS NULL AND estimated_hit_probability_0_100 IS NOT NULL`;
   const stillRemaining = Number(remainingRows[0] && remainingRows[0].cnt || 0);
