@@ -1,18 +1,18 @@
 Validating weather_temp_altitude_pressure against real historical data...
 {
   "validated": true,
-  "real_n": 714,
-  "empirical_slope_hr_rate_per_pa_per_degree_f": -0.0003745269583002827,
-  "empirical_r_squared": 0.000583136348413893,
-  "direction_confirms_locked_assumption": false,
+  "real_n": 1098,
+  "empirical_slope_hr_rate_per_pa_per_degree_f": 0.0002761317269643087,
+  "empirical_r_squared": 0.000363976528524379,
+  "direction_confirms_locked_assumption": true,
   "note": "Real, raw empirical relationship (temp_f vs HR rate per PA), not yet unit-converted to the locked formula's rate_multiplier scale - see script docstring for the honest reason why."
 }
 Validating lineup_slot against real historical data...
 {
   "validated": true,
-  "real_n": 15517,
-  "empirical_slope_pa_per_slot": -0.15689166123394832,
-  "empirical_r_squared": 0.0906884466110075,
+  "real_n": 16166,
+  "empirical_slope_pa_per_slot": -0.15730897789106532,
+  "empirical_r_squared": 0.0912279199713324,
   "locked_coefficient_pa_per_slot": 0.105,
   "direction_confirms_locked_assumption": true,
   "magnitude_close_to_locked": false,

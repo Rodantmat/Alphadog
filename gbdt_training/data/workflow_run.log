@@ -861,3 +861,167 @@ Wrote data/factor_validation_report.json
 Wrote real validation result back to CONFIG_DB cell weather_temp_altitude_pressure__home_runs__all__over
 Wrote real validation result back to CONFIG_DB cell lineup_slot__runs__all__over
 === validate_factor_coefficients.py exit code: 0 ===
+=== pip install started Sun Jul 26 10:30:00 UTC 2026 ===
+Collecting requests==2.32.3 (from -r gbdt_training/requirements.txt (line 1))
+  Downloading requests-2.32.3-py3-none-any.whl.metadata (4.6 kB)
+Collecting pandas==2.2.2 (from -r gbdt_training/requirements.txt (line 2))
+  Downloading pandas-2.2.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (19 kB)
+Collecting numpy==1.26.4 (from -r gbdt_training/requirements.txt (line 3))
+  Downloading numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting xgboost==2.1.1 (from -r gbdt_training/requirements.txt (line 4))
+  Downloading xgboost-2.1.1-py3-none-manylinux_2_28_x86_64.whl.metadata (2.1 kB)
+Collecting scikit-learn==1.5.1 (from -r gbdt_training/requirements.txt (line 5))
+  Downloading scikit_learn-1.5.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (12 kB)
+Collecting charset-normalizer<4,>=2 (from requests==2.32.3->-r gbdt_training/requirements.txt (line 1))
+  Downloading charset_normalizer-3.4.9-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (41 kB)
+Collecting idna<4,>=2.5 (from requests==2.32.3->-r gbdt_training/requirements.txt (line 1))
+  Downloading idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+Collecting urllib3<3,>=1.21.1 (from requests==2.32.3->-r gbdt_training/requirements.txt (line 1))
+  Downloading urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting certifi>=2017.4.17 (from requests==2.32.3->-r gbdt_training/requirements.txt (line 1))
+  Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Collecting python-dateutil>=2.8.2 (from pandas==2.2.2->-r gbdt_training/requirements.txt (line 2))
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pytz>=2020.1 (from pandas==2.2.2->-r gbdt_training/requirements.txt (line 2))
+  Downloading pytz-2026.3.post1-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata>=2022.7 (from pandas==2.2.2->-r gbdt_training/requirements.txt (line 2))
+  Downloading tzdata-2026.3-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting nvidia-nccl-cu12 (from xgboost==2.1.1->-r gbdt_training/requirements.txt (line 4))
+  Downloading nvidia_nccl_cu12-2.30.7-py3-none-manylinux_2_18_x86_64.whl.metadata (2.1 kB)
+Collecting scipy (from xgboost==2.1.1->-r gbdt_training/requirements.txt (line 4))
+  Downloading scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+Collecting joblib>=1.2.0 (from scikit-learn==1.5.1->-r gbdt_training/requirements.txt (line 5))
+  Downloading joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+Collecting threadpoolctl>=3.1.0 (from scikit-learn==1.5.1->-r gbdt_training/requirements.txt (line 5))
+  Downloading threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas==2.2.2->-r gbdt_training/requirements.txt (line 2))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Downloading requests-2.32.3-py3-none-any.whl (64 kB)
+Downloading pandas-2.2.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.0/13.0 MB 186.2 MB/s  0:00:00
+Downloading numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.3/18.3 MB 337.8 MB/s  0:00:00
+Downloading xgboost-2.1.1-py3-none-manylinux_2_28_x86_64.whl (153.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.9/153.9 MB 156.5 MB/s  0:00:00
+Downloading scikit_learn-1.5.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.3/13.3 MB 264.5 MB/s  0:00:00
+Downloading charset_normalizer-3.4.9-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (221 kB)
+Downloading idna-3.18-py3-none-any.whl (65 kB)
+Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)
+Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Downloading joblib-1.5.3-py3-none-any.whl (309 kB)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading pytz-2026.3.post1-py2.py3-none-any.whl (508 kB)
+Downloading scipy-1.17.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (35.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.3/35.3 MB 350.4 MB/s  0:00:00
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+Downloading tzdata-2026.3-py2.py3-none-any.whl (348 kB)
+Downloading nvidia_nccl_cu12-2.30.7-py3-none-manylinux_2_18_x86_64.whl (303.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 303.4/303.4 MB 140.2 MB/s  0:00:01
+Installing collected packages: pytz, urllib3, tzdata, threadpoolctl, six, nvidia-nccl-cu12, numpy, joblib, idna, charset-normalizer, certifi, scipy, requests, python-dateutil, xgboost, scikit-learn, pandas
+
+Successfully installed certifi-2026.7.22 charset-normalizer-3.4.9 idna-3.18 joblib-1.5.3 numpy-1.26.4 nvidia-nccl-cu12-2.30.7 pandas-2.2.2 python-dateutil-2.9.0.post0 pytz-2026.3.post1 requests-2.32.3 scikit-learn-1.5.1 scipy-1.17.1 six-1.17.0 threadpoolctl-3.6.0 tzdata-2026.3 urllib3-2.7.0 xgboost-2.1.1
+=== pip install exit code: 0 ===
+Package            Version
+------------------ ------------
+certifi            2026.7.22
+charset-normalizer 3.4.9
+idna               3.18
+joblib             1.5.3
+numpy              1.26.4
+nvidia-nccl-cu12   2.30.7
+pandas             2.2.2
+pip                26.1.2
+python-dateutil    2.9.0.post0
+pytz               2026.3.post1
+requests           2.32.3
+scikit-learn       1.5.1
+scipy              1.17.1
+setuptools         79.0.1
+six                1.17.0
+threadpoolctl      3.6.0
+tzdata             2026.3
+urllib3            2.7.0
+xgboost            2.1.1
+=== build_training_data.py started Sun Jul 26 10:30:25 UTC 2026 ===
+Pulling real weather/umpire context (spans all real historical dates)...
+Pulling real hitter training data for season 2025...
+  season 2025: 44220 real hitter rows
+Pulling real pitcher training data for season 2025...
+  season 2025: 17130 real pitcher rows
+Pulling real hitter training data for season 2026...
+  season 2026: 31207 real hitter rows
+Pulling real pitcher training data for season 2026...
+  season 2026: 12401 real pitcher rows
+Real combined hitter training rows (all seasons): 75427
+Real combined pitcher training rows (all seasons): 29531
+Computing real, leak-safe trailing recent-form features...
+Recent-form features computed.
+Wrote data/hitter_training_multiseason.csv and data/pitcher_training_multiseason.csv
+=== build_training_data.py exit code: 0 ===
+=== train_models.py started Sun Jul 26 10:30:55 UTC 2026 ===
+Training real hitter models...
+  hits: 75427 real rows (train 60341, chronological test 15086), test MAE=0.691 (naive baseline MAE=0.707, 2.3% better), calibration_ratio(pred_mean/actual_mean)=1.0224607387610272, monotone_constraints=(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+  Exported models/hitter_hits.json (150 trees)
+  total_bases: 75427 real rows (train 60341, chronological test 15086), test MAE=1.331 (naive baseline MAE=1.347, 1.2% better), calibration_ratio(pred_mean/actual_mean)=1.017744673617692, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+  Exported models/hitter_total_bases.json (150 trees)
+  runs: 75427 real rows (train 60341, chronological test 15086), test MAE=0.565 (naive baseline MAE=0.568, 0.6% better), calibration_ratio(pred_mean/actual_mean)=1.0251967540991622, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_runs.json (150 trees)
+  rbis: 75427 real rows (train 60341, chronological test 15086), test MAE=0.618 (naive baseline MAE=0.614, -0.7% better), calibration_ratio(pred_mean/actual_mean)=1.0551083844380154, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_rbis.json (150 trees)
+  singles: 75427 real rows (train 60341, chronological test 15086), test MAE=0.604 (naive baseline MAE=0.612, 1.3% better), calibration_ratio(pred_mean/actual_mean)=1.0403940382472805, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_singles.json (150 trees)
+  doubles: 75427 real rows (train 60341, chronological test 15086), test MAE=0.275 (naive baseline MAE=0.261, -5.4% better), calibration_ratio(pred_mean/actual_mean)=1.2126674239999868, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_doubles.json (150 trees)
+  home_runs: 75427 real rows (train 60341, chronological test 15086), test MAE=0.226 (naive baseline MAE=0.210, -7.8% better), calibration_ratio(pred_mean/actual_mean)=1.1185581326839853, monotone_constraints=(0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0)
+  Exported models/hitter_home_runs.json (150 trees)
+  walks: 75427 real rows (train 60341, chronological test 15086), test MAE=0.460 (naive baseline MAE=0.459, -0.2% better), calibration_ratio(pred_mean/actual_mean)=1.124489361122768, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+  Exported models/hitter_walks.json (150 trees)
+  hitter_strikeouts: 75427 real rows (train 60341, chronological test 15086), test MAE=0.679 (naive baseline MAE=0.699, 2.8% better), calibration_ratio(pred_mean/actual_mean)=1.0485289468548333, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+  Exported models/hitter_hitter_strikeouts.json (150 trees)
+  stolen_bases: 75427 real rows (train 60341, chronological test 15086), test MAE=0.144 (naive baseline MAE=0.125, -15.8% better), calibration_ratio(pred_mean/actual_mean)=1.5111822018379806, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_stolen_bases.json (150 trees)
+  triples: 75427 real rows (train 60341, chronological test 15086), test MAE=0.049 (naive baseline MAE=0.026, -91.2% better), calibration_ratio(pred_mean/actual_mean)=2.787541316868971, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_triples.json (150 trees)
+  hits_runs_rbis: 75427 real rows (train 60341, chronological test 15086), test MAE=1.497 (naive baseline MAE=1.532, 2.3% better), calibration_ratio(pred_mean/actual_mean)=1.0056940747009648, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/hitter_hits_runs_rbis.json (150 trees)
+Training real pitcher models...
+  pitcher_strikeouts: 29531 real rows (train 23624, chronological test 5907), test MAE=1.387 (naive baseline MAE=1.616, 14.2% better), calibration_ratio(pred_mean/actual_mean)=0.8096651785864459, monotone_constraints=(0, 0, 0, 1, 0, 0, 0, 0)
+  Exported models/pitcher_pitcher_strikeouts.json (150 trees)
+  pitcher_outs: 29531 real rows (train 23624, chronological test 5907), test MAE=3.347 (naive baseline MAE=4.713, 29.0% better), calibration_ratio(pred_mean/actual_mean)=0.7741102575787653, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/pitcher_pitcher_outs.json (150 trees)
+  earned_runs: 29531 real rows (train 23624, chronological test 5907), test MAE=1.055 (naive baseline MAE=1.159, 9.0% better), calibration_ratio(pred_mean/actual_mean)=0.7055808211799327, monotone_constraints=(0, 0, 0, 0, 0, 0, 1, 0)
+  Exported models/pitcher_earned_runs.json (150 trees)
+  hits_allowed: 29531 real rows (train 23624, chronological test 5907), test MAE=1.500 (naive baseline MAE=1.732, 13.4% better), calibration_ratio(pred_mean/actual_mean)=0.7368605847581304, monotone_constraints=(0, 0, 0, 0, 0, 1, 0, 0)
+  Exported models/pitcher_hits_allowed.json (150 trees)
+  walks_allowed: 29531 real rows (train 23624, chronological test 5907), test MAE=0.783 (naive baseline MAE=0.822, 4.7% better), calibration_ratio(pred_mean/actual_mean)=0.87642359547069, monotone_constraints=(0, 0, 0, 0, 1, 0, 0, 0)
+  Exported models/pitcher_walks_allowed.json (150 trees)
+  runs_allowed: 29531 real rows (train 23624, chronological test 5907), test MAE=1.114 (naive baseline MAE=1.222, 8.8% better), calibration_ratio(pred_mean/actual_mean)=0.7111180766136189, monotone_constraints=(0, 0, 0, 0, 0, 0, 0, 0)
+  Exported models/pitcher_runs_allowed.json (150 trees)
+=== train_models.py exit code: 0 ===
+=== validate_factor_coefficients.py started Sun Jul 26 10:31:05 UTC 2026 ===
+Validating weather_temp_altitude_pressure against real historical data...
+{
+  "validated": true,
+  "real_n": 1098,
+  "empirical_slope_hr_rate_per_pa_per_degree_f": 0.0002761317269643087,
+  "empirical_r_squared": 0.000363976528524379,
+  "direction_confirms_locked_assumption": true,
+  "note": "Real, raw empirical relationship (temp_f vs HR rate per PA), not yet unit-converted to the locked formula's rate_multiplier scale - see script docstring for the honest reason why."
+}
+Validating lineup_slot against real historical data...
+{
+  "validated": true,
+  "real_n": 16166,
+  "empirical_slope_pa_per_slot": -0.15730897789106532,
+  "empirical_r_squared": 0.0912279199713324,
+  "locked_coefficient_pa_per_slot": 0.105,
+  "direction_confirms_locked_assumption": true,
+  "magnitude_close_to_locked": false,
+  "note": "Real, direct empirical check against the exact real, locked coefficient - same units, no conversion needed."
+}
+Wrote data/factor_validation_report.json
+Wrote real validation result back to CONFIG_DB cell weather_temp_altitude_pressure__home_runs__all__over
+Wrote real validation result back to CONFIG_DB cell lineup_slot__runs__all__over
+=== validate_factor_coefficients.py exit code: 0 ===

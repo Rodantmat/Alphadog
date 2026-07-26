@@ -1,37 +1,37 @@
 === pwd (repo root) ===
 /home/runner/work/Alphadog/Alphadog
 === find gbdt_training - full real tree ===
-gbdt_training/d1_client.py
-gbdt_training/models/hitter_total_bases.json
-gbdt_training/models/hitter_home_runs.json
-gbdt_training/models/pitcher_walks_allowed.json
-gbdt_training/models/pitcher_pitcher_outs.json
-gbdt_training/models/hitter_hits.json
-gbdt_training/models/hitter_hitter_strikeouts.json
-gbdt_training/models/hitter_singles.json
-gbdt_training/models/pitcher_runs_allowed.json
-gbdt_training/models/hitter_stolen_bases.json
-gbdt_training/models/pitcher_pitcher_strikeouts.json
+gbdt_training/models/hitter_walks.json
 gbdt_training/models/hitter_triples.json
+gbdt_training/models/pitcher_pitcher_outs.json
+gbdt_training/models/pitcher_runs_allowed.json
+gbdt_training/models/hitter_hits.json
+gbdt_training/models/pitcher_walks_allowed.json
+gbdt_training/models/hitter_stolen_bases.json
 gbdt_training/models/hitter_rbis.json
 gbdt_training/models/hitter_runs.json
-gbdt_training/models/hitter_walks.json
-gbdt_training/models/pitcher_earned_runs.json
-gbdt_training/models/pitcher_hits_allowed.json
 gbdt_training/models/hitter_hits_runs_rbis.json
 gbdt_training/models/hitter_doubles.json
-gbdt_training/train_models.py
+gbdt_training/models/hitter_home_runs.json
+gbdt_training/models/hitter_total_bases.json
+gbdt_training/models/pitcher_hits_allowed.json
+gbdt_training/models/pitcher_earned_runs.json
+gbdt_training/models/hitter_hitter_strikeouts.json
+gbdt_training/models/pitcher_pitcher_strikeouts.json
+gbdt_training/models/hitter_singles.json
 gbdt_training/requirements.txt
-gbdt_training/__pycache__/d1_client.cpython-311.pyc
+gbdt_training/d1_client.py
 gbdt_training/build_training_data.py
+gbdt_training/__pycache__/d1_client.cpython-311.pyc
 gbdt_training/validate_factor_coefficients.py
-gbdt_training/data/pitcher_training_multiseason.csv
+gbdt_training/train_models.py
 gbdt_training/data/build_training_data_debug.log
-gbdt_training/data/train_models_debug.log
-gbdt_training/data/factor_validation_debug.log
-gbdt_training/data/hitter_training_multiseason.csv
-gbdt_training/data/factor_validation_report.json
+gbdt_training/data/pitcher_training_multiseason.csv
 gbdt_training/data/workflow_run.log
+gbdt_training/data/hitter_training_multiseason.csv
+gbdt_training/data/train_models_debug.log
+gbdt_training/data/factor_validation_report.json
+gbdt_training/data/factor_validation_debug.log
 === git status ===
 On branch main
 Your branch is up to date with 'origin/main'.
@@ -73,5 +73,5 @@ no changes added to commit (use "git add" and/or "git commit -a")
 === git branch/HEAD state ===
 * main
   remotes/origin/main
-b73b8b037f9c07c1b6dfacc28c45b7bb38dee36c
+307bfdeddc05db044f6d1c98df5b5599e4f963b4
 refs/heads/main
