@@ -9513,6 +9513,49 @@ async function estimatePooledDispersionFromGameLogs(env, propKey) {
   const dispersion = (pooledExcess > 0 && pooledMean > 0) ? (pooledMean * pooledMean) / pooledExcess : Infinity;
   return { dispersion, pooled_mean: pooledMean, pooled_excess_variance: pooledExcess, players_used: rows.length, note: "computed_from_real_game_logs" };
 }
+async function estimatePooledDispersionFromGameLogsPg(sql, propKey) {
+  const gameLogMap = await getCalibrationValue({ ARCHIVE_DB: null, __sqlOverride: sql }, "global", "prop_game_log_map", {}).catch(() => null);
+  // getCalibrationValue reads from D1's calibration cache path in some builds; if unavailable here,
+  // fall back to reading the config table directly via Postgres (config.calibration_config already
+  // migrated and is the real source of truth for this value).
+  let gcfg;
+  if (gameLogMap && gameLogMap[propKey]) {
+    gcfg = gameLogMap[propKey];
+  } else {
+    const cfgRows = await sql`SELECT config_json FROM config.calibration_config WHERE config_key='prop_game_log_map'`;
+    const map = cfgRows[0] ? cfgRows[0].config_json : {};
+    gcfg = map[propKey];
+  }
+  if (!gcfg) return { dispersion: Infinity, note: "no_game_log_map_entry" };
+
+  const table = gcfg.entity === "pitcher" ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
+  let expr;
+  if (gcfg.weights) {
+    expr = gcfg.fields.map(f => `(${Number(gcfg.weights[f] || 1)}*${f})`).join("+");
+  } else {
+    expr = gcfg.fields[0];
+  }
+
+  const rows = await sql.unsafe(
+    `SELECT player_id, COUNT(*) games, AVG(${expr}) mean_i, AVG((${expr})*(${expr})) mean_sq_i
+     FROM ${table} GROUP BY player_id HAVING COUNT(*) >= 8`);
+
+  let weightedExcessSum = 0, weightedMeanSum = 0, totalGames = 0;
+  for (const r of rows) {
+    const games = Number(r.games);
+    const meanI = Number(r.mean_i);
+    const varI = Number(r.mean_sq_i) - meanI * meanI;
+    weightedExcessSum += games * (varI - meanI);
+    weightedMeanSum += games * meanI;
+    totalGames += games;
+  }
+  if (totalGames === 0) return { dispersion: Infinity, note: "no_qualifying_players" };
+
+  const pooledMean = weightedMeanSum / totalGames;
+  const pooledExcess = weightedExcessSum / totalGames;
+  const dispersion = (pooledExcess > 0 && pooledMean > 0) ? (pooledMean * pooledMean) / pooledExcess : Infinity;
+  return { dispersion, pooled_mean: pooledMean, pooled_excess_variance: pooledExcess, players_used: rows.length, note: "computed_from_real_game_logs_pg" };
+}
 function negBinomialPMF(k, mean, dispersion) {
   const r = dispersion;
   if (!isFinite(r) || r <= 0) return poissonPMF(k, mean);
