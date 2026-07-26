@@ -5467,7 +5467,12 @@ async function ensureCalibrationConfigLoaded(env){
 function priorStrengthForSample(sample, cfg, multiplier=1.0){
   const n = Number(sample||0);
   const ps = (cfg && cfg["global|confidence_prior_strength"]) || CALIBRATION_CONFIG_DEFAULTS["global|confidence_prior_strength"];
-  const base = n < 5 ? ps.tiny_sample_lt5 : n < 15 ? ps.low_sample_lt15 : n < 30 ? ps.medium_sample_lt30 : ps.large_sample_ge30;
+  // Smooth, monotonic-by-construction logistic replacement for the old 4-bucket step function,
+  // which caused real confidence DECREASES at bucket boundaries (e.g. n=4->5: 58.63->46.87) and
+  // a sharp discontinuous jump at n=30 (77.29->89.22). More real data must never reduce confidence.
+  const low = Number(ps.low_sample_lt15 ?? 12);
+  const high = Number(ps.large_sample_ge30 ?? 40);
+  const base = low + (high - low) / (1 + Math.exp(-(n - 22) / 4));
   return base * Number(multiplier || 1.0);
 }
 // Confidence = how many effective observations back this number (real sample + prior pseudo-count),
