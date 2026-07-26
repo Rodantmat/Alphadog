@@ -551,7 +551,7 @@ async function runEnrichment(pgClient, input) {
     const CHUNK = 150;
     for (let i = 0; i < insertRows.length; i += CHUNK) {
       await pgClient`INSERT INTO scoring.enrichment_leg_current ${pgClient(insertRows.slice(i, i + CHUNK), ...insertCols)}
-        ON CONFLICT (enrichment_id) DO UPDATE SET log_rate_adjustment=EXCLUDED.log_rate_adjustment, rate_multiplier=EXCLUDED.rate_multiplier, confidence_adjustment=EXCLUDED.confidence_adjustment, factors_applied=EXCLUDED.factors_applied, factors_missing=EXCLUDED.factors_missing, factor_breakdown_json=EXCLUDED.factor_breakdown_json, updated_at=now()`;
+        ON CONFLICT (enrichment_id) DO UPDATE SET batch_id=EXCLUDED.batch_id, log_rate_adjustment=EXCLUDED.log_rate_adjustment, rate_multiplier=EXCLUDED.rate_multiplier, confidence_adjustment=EXCLUDED.confidence_adjustment, factors_applied=EXCLUDED.factors_applied, factors_missing=EXCLUDED.factors_missing, factor_breakdown_json=EXCLUDED.factor_breakdown_json, updated_at=now()`;
     }
   }
 
