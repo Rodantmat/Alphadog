@@ -70,13 +70,22 @@ async function apiDossier(env, url) {
     `, [id]);
     if (!rows.length) { await pg.end({ timeout: 1 }).catch(() => {}); return json({ ok: false, error: "not found" }, 404); }
     const leg = rows[0];
-    const gameLogs = await q(pg, `
-      SELECT game_date, opponent_team_id, hits, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases, doubles, singles, triples, pa, ab
-      FROM stats_hitter.game_logs WHERE player_id = ? ORDER BY game_date DESC LIMIT 20
-    `, [leg.mlb_player_id]);
+    const isPitcher = String(leg.canonical_prop_key || "").startsWith("pitcher_") || ["earned_runs","hits_allowed","walks_allowed","runs_allowed"].includes(leg.canonical_prop_key);
+    const gameLogsTable = isPitcher ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
+    const gameLogs = await q(pg, `SELECT * FROM ${gameLogsTable} WHERE player_id = ? ORDER BY game_date DESC LIMIT 20`, [leg.mlb_player_id]);
     const player = await q(pg, `SELECT * FROM ref.players WHERE mlb_player_id = ? LIMIT 1`, [leg.mlb_player_id]);
+    const weather = await q(pg, `SELECT * FROM daily.game_weather_current WHERE game_pk = ? ORDER BY updated_at DESC LIMIT 1`, [leg.game_pk]);
+    const umpire = await q(pg, `SELECT * FROM daily.umpire_context_current WHERE game_pk = ? ORDER BY updated_at DESC LIMIT 1`, [leg.game_pk]);
+    const splitsTable = isPitcher ? "stats_pitcher.splits" : "stats_hitter.splits";
+    const splits = await q(pg, `SELECT * FROM ${splitsTable} WHERE player_id = ? ORDER BY season DESC`, [leg.mlb_player_id]);
+    const availability = await q(pg, `SELECT availability_status, roster_status_description FROM daily.player_availability_current WHERE player_id = ? ORDER BY updated_at DESC LIMIT 1`, [leg.mlb_player_id]);
+    let qoc = [];
+    if (!isPitcher) {
+      qoc = await q(pg, `SELECT xba, xslg, xwoba, woba, exit_velocity_avg, barrel_batted_rate, hard_hit_percent, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id = ? AND active=1 ORDER BY season_year DESC LIMIT 1`, [leg.mlb_player_id]);
+    }
     await pg.end({ timeout: 1 }).catch(() => {});
-    return json({ ok: true, version: VERSION, leg, player: player[0] || null, recent_games: gameLogs });
+    return json({ ok: true, version: VERSION, leg, player: player[0] || null, recent_games: gameLogs, is_pitcher: isPitcher,
+      weather: weather[0] || null, umpire: umpire[0] || null, splits, availability: availability[0] || null, quality_of_contact: qoc[0] || null });
   } catch (err) {
     await pg.end({ timeout: 1 }).catch(() => {});
     return json({ ok: false, error: String(err && err.message ? err.message : err) }, 500);
