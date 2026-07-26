@@ -307,16 +307,6 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
     const targets = Array.isArray(supersetKeyOrArray) ? supersetKeyOrArray : [supersetKeyOrArray];
     const targetTriples = targets.map(t => { const [p, l, s] = String(t).split("|"); return { prop: p, line: Number(l), side: s }; });
 
-    // Build a single MIN(hp) across all listed superset targets for this player, via a UNION of
-    // per-target lookups rather than N separate round trips.
-    const unionParts = targetTriples.map((t, i) =>
-      pgClient`SELECT s.mlb_player_id, s.source_key, s.estimated_hit_probability_0_100, s.probability_confidence_0_100
-                FROM score.hp_board_current s
-                WHERE s.hp_board_batch_id = ${hpBatchId} AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side}`
-    );
-    // postgres.js doesn't support dynamic UNION composition well across a loop of tagged templates,
-    // so fall back to per-target sequential clamping instead - functionally identical (each pass only
-    // tightens the bound further), just issued as N small statements rather than one combined query.
     for (const t of targetTriples) {
       const res = await pgClient`
         UPDATE score.hp_board_current AS h
