@@ -121,7 +121,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
             e.log_rate_adjustment, e.rate_multiplier, e.confidence_adjustment, e.factors_applied, e.factors_missing, e.factor_breakdown_json
      FROM scoring.enrichment_leg_current e
      INNER JOIN score.prop_matrix_current m ON m.matrix_id = e.matrix_id
-     ORDER BY e.matrix_id`.catch(() => []);
+     ORDER BY e.matrix_id`;
   const candidateRows = enrichmentRows.filter(r => !alreadyWrittenIds.has(r.matrix_id));
   const chunkRows = candidateRows.slice(0, MAX_LEGS_PER_INVOCATION);
 
