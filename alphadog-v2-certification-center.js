@@ -124,7 +124,9 @@ async function queryAllPg(sql, queryText, params = []) {
   let i = 0;
   const converted = String(queryText).replace(/\?/g, () => "$" + (++i));
   try {
-    return await sql.unsafe(converted, params, { prepare: false });
+    const queryPromise = sql.unsafe(converted, params, { prepare: false });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("HARD_QUERY_TIMEOUT_8000MS - postgres.js call did not resolve or reject in time, which is a documented failure mode of postgres.js under Cloudflare Workers/Hyperdrive where the underlying connection hangs silently with no error")), 8000));
+    return await Promise.race([queryPromise, timeoutPromise]);
   } catch (err) {
     const paramsDebug = params.map((p, idx) => `[${idx}]=${JSON.stringify(p)}(${typeof p})`).join(', ');
     throw new Error(`queryAllPg failed: ${err && err.message ? err.message : err} || SQL: ${converted.replace(/\s+/g, ' ').trim().slice(0, 500)} || PARAMS: ${paramsDebug}`);
