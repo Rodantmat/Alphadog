@@ -10671,19 +10671,15 @@ function assignTierFromZScore(z, tierBandsConfig, populationN) {
   };
 }
 
-async function loadAllMetricSnapshots(env, entity, playerIds) {
-  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
-  const table = entity === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots";
+async function loadAllMetricSnapshotsPg(sql, entity, playerIds) {
+  const table = entity === "pitcher" ? "stats_pitcher.metric_snapshots" : "stats_hitter.metric_snapshots";
   const out = new Map();
-  const chunkSize = 90; // stay well under D1's bound-parameter limit
-  for (let i = 0; i < playerIds.length; i += chunkSize) {
-    const chunk = playerIds.slice(i, i + chunkSize);
-    const placeholders = chunk.map(() => "?").join(",");
-    const rows = await all(db, `SELECT * FROM ${table} WHERE player_id IN (${placeholders})`, ...chunk);
-    for (const r of rows) {
-      if (!out.has(r.player_id)) out.set(r.player_id, {});
-      out.get(r.player_id)[r.metric_window] = r;
-    }
+  if (!playerIds.length) return out;
+  const rows = await sql.unsafe(`SELECT * FROM ${table} WHERE player_id = ANY($1::bigint[])`, [playerIds]);
+  for (const r of rows) {
+    const pid = Number(r.player_id);
+    if (!out.has(pid)) out.set(pid, {});
+    out.get(pid)[r.metric_window] = r;
   }
   return out;
 }
@@ -10704,45 +10700,42 @@ async function runClassificationV6ComputeStats(env, input = {}) {
   const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
 
   const entity = propConfig.entity;
-  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
-  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
-  const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
-  const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+  const sourceTable = entity === "pitcher" ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const idRows = await sql.unsafe(`SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+    const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
 
-  const snapshots = await loadAllMetricSnapshots(env, entity, allPlayerIds);
-  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+    const snapshots = await loadAllMetricSnapshotsPg(sql, entity, allPlayerIds);
+    const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
 
-  const rates = [];
-  for (const playerId of allPlayerIds) {
-    const snapByWindow = snapshots.get(playerId) || {};
-    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
-    if (rate != null) rates.push(rate);
-  }
-  const stats = computePopulationStats(rates);
-  let dispersion;
-  const existingDispersionRow = await first(env.ARCHIVE_DB,
-    `SELECT population_dispersion FROM classification_v6_population_stats WHERE canonical_prop_key=? AND population_dispersion IS NOT NULL LIMIT 1`,
-    propKey);
-  if (existingDispersionRow) {
-    dispersion = existingDispersionRow.population_dispersion;
-  } else {
-    const dispersionResult = await estimatePooledDispersionFromGameLogs(env, propKey);
-    dispersion = dispersionResult.dispersion;
-  }
-  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+    const rates = [];
+    for (const playerId of allPlayerIds) {
+      const snapByWindow = snapshots.get(playerId) || {};
+      const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+      if (rate != null) rates.push(rate);
+    }
+    const stats = computePopulationStats(rates);
+    let dispersion;
+    const existingDispersionRows = await sql`SELECT population_dispersion FROM classification.v6_population_stats WHERE canonical_prop_key=${propKey} AND population_dispersion IS NOT NULL LIMIT 1`;
+    if (existingDispersionRows[0]) {
+      dispersion = existingDispersionRows[0].population_dispersion;
+    } else {
+      const dispersionResult = await estimatePooledDispersionFromGameLogsPg(sql, propKey);
+      dispersion = dispersionResult.dispersion;
+    }
+    const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
-  await run(env.ARCHIVE_DB,
-    `INSERT INTO classification_v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,population_dispersion,computed_at)
-     VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-     ON CONFLICT(stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
-       population_n=excluded.population_n, population_dispersion=excluded.population_dispersion, computed_at=CURRENT_TIMESTAMP`,
-    statsKey, propKey, lineValue, side, stats.mean, stats.stddev, stats.n, isFinite(dispersion) ? dispersion : null);
+    await sql`INSERT INTO classification.v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,population_dispersion,computed_at)
+      VALUES (${statsKey},${propKey},${lineValue},${side},${stats.mean},${stats.stddev},${stats.n},${isFinite(dispersion) ? dispersion : null},now())
+      ON CONFLICT (stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
+        population_n=excluded.population_n, population_dispersion=excluded.population_dispersion, computed_at=now()`;
 
-  return {
-    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6_compute_stats",
-    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
-    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
-    total_players_scanned: allPlayerIds.length,
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6_compute_stats",
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+      total_players_scanned: allPlayerIds.length,
     certification: "CLASSIFICATION_V6_STATS_CERTIFIED", certification_grade: "PASS"
   };
 }
