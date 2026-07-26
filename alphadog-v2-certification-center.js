@@ -2054,6 +2054,12 @@ const MAIN_HTML = `<!doctype html>
 </head>
 <body>
 <script>document.write('<div style="background:red;color:white;font-size:24px;font-weight:bold;padding:20px;text-align:center">TINY SCRIPT EXECUTED OK</div>');</script>
+<script>
+window.onerror = function(msg, url, line, col, error) {
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:purple;color:#fff;padding:20px;font-size:18px;font-weight:bold;white-space:pre-wrap">GLOBAL ERROR CAUGHT:\nMessage: ' + msg + '\nLine: ' + line + ' Col: ' + col + '\nStack: ' + (error && error.stack ? error.stack : 'no stack') + '</div>');
+  return false;
+};
+</script>
 <div class="wrap">
   <header class="hero">
     <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.19 - Slip Builder + Player Profile</div><div style="background:#ff0;color:#000;font-weight:bold;padding:4px 8px;display:inline-block;margin-top:4px">BUILD-MARKER-ALPHA-7734</div></div></div>
