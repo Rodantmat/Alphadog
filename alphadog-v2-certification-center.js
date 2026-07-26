@@ -2084,6 +2084,7 @@ const MAIN_HTML = `<!doctype html>
   <div id="slipFloat" class="slipFloat hidden"><div><b id="slipFloatTotal">0</b> legs</div><div>Sleeper: <b id="slipFloatSleeper">0</b></div><div>PP: <b id="slipFloatPP">0</b></div><div>UD: <b id="slipFloatUD">0</b></div><button id="slipFloatBuild">Build</button></div>
   <section id="healthScreen" class="hidden"><div class="panel"><button id="backBoard" class="btn">← Review Board</button><h2>Board Health</h2><div id="healthStatus" class="status">Loading health...</div><div id="healthCards" class="healthGrid"></div></div></section>
 </div>
+<script>document.write('<div style="background:blue;color:white;font-size:22px;font-weight:bold;padding:16px;text-align:center">SECOND TEST SCRIPT RIGHT BEFORE BIG SCRIPT - OK</div>');</script>
 <script data-cfasync="false">
 (()=>{
 try{document.title='SCRIPT-RAN-'+Date.now();}catch(e){}
