@@ -144,6 +144,31 @@ async function callStep(binding, input, attempt = 1) {
   }
 }
 
+const MAX_STATEFUL_DELTA_CALLS = 200; // real backlog can span many days at 12 players/chunk; generous but bounded
+
+async function runStatefulDeltaToCompletion(env, runId) {
+  const calls = [];
+  let nextInput = { mode: "baseline_v5_stateful_delta", request_id: `${runId}_stateful_delta_init` };
+  let i = 0;
+  let complete = false;
+  let failed = false;
+  while (i < MAX_STATEFUL_DELTA_CALLS) {
+    i++;
+    const result = await callStep(env.PHASE3A_WORKER, nextInput);
+    calls.push({ call: i, status: result && result.status, hitter_cursor_offset: result && result.hitter_cursor_offset, ok: result && result.ok });
+    if (!result || result.ok === false) { failed = true; break; }
+    if (result.continuation_required !== true || !result.next_input_json) { complete = true; break; }
+    nextInput = result.next_input_json;
+  }
+  return {
+    ok: !failed,
+    complete,
+    total_calls: i,
+    final_status: calls.length ? calls[calls.length - 1].status : null,
+    calls_summary: calls.slice(-5) // keep the response compact; only the tail is diagnostic
+  };
+}
+
 async function runDailyDeltaFullRun(env, input) {
   const runId = `daily_delta_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
@@ -170,6 +195,7 @@ async function runDailyDeltaFullRun(env, input) {
 
   try {
     const result = await runDailyDeltaFullRunLocked(env, input, runId, startedAt);
+    const statefulDelta = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
     const coverageAudit = await runCoverageAudit(env);
     const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
     const finalCertification = !coverageOk && result.certification === "DAILY_DELTA_FULL_RUN_COMPLETE"
@@ -181,6 +207,7 @@ async function runDailyDeltaFullRun(env, input) {
       data_ok: result.data_ok && coverageOk,
       certification: finalCertification,
       coverage_audit: coverageAudit,
+      stateful_delta: statefulDelta,
       preflight
     };
   } finally {
