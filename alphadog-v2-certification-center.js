@@ -1376,9 +1376,11 @@ async function apiCurrent(env, url) {
   let rawRows;
   try {
     rawRows = await queryAllPg(pg, sql, params);
-  } finally {
+  } catch (err) {
     await pg.end({ timeout: 1 }).catch(() => {});
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, error: String(err && err.message ? err.message : err), route: "/api/main-board/current" }, 500);
   }
+  await pg.end({ timeout: 1 }).catch(() => {});
   const rows = rawRows.filter(currentLegOpen);
   return jsonResponse({
     ok: true,
