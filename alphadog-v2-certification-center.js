@@ -124,7 +124,7 @@ async function queryAllPg(sql, queryText, params = []) {
   let i = 0;
   const converted = String(queryText).replace(/\?/g, () => `${++i}`);
   try {
-    return await sql.unsafe(converted, params);
+    return await sql.unsafe(converted, params, { prepare: false });
   } catch (err) {
     throw new Error(`queryAllPg failed: ${err && err.message ? err.message : err}`);
   }
