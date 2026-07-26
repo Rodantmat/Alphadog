@@ -10709,7 +10709,8 @@ async function loadAllMetricSnapshotsPg(sql, entity, playerIds) {
   const table = entity === "pitcher" ? "stats_pitcher.metric_snapshots" : "stats_hitter.metric_snapshots";
   const out = new Map();
   if (!playerIds.length) return out;
-  const rows = await sql.unsafe(`SELECT * FROM ${table} WHERE player_id = ANY($1::bigint[])`, [playerIds]);
+  const idLit = "{" + playerIds.join(",") + "}";
+  const rows = await sql.unsafe(`SELECT * FROM ${table} WHERE player_id = ANY('${idLit}'::bigint[])`);
   for (const r of rows) {
     const pid = Number(r.player_id);
     if (!out.has(pid)) out.set(pid, {});
