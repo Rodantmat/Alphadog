@@ -2083,7 +2083,7 @@ const MAIN_HTML = `<!doctype html>
   <div id="slipFloat" class="slipFloat hidden"><div><b id="slipFloatTotal">0</b> legs</div><div>Sleeper: <b id="slipFloatSleeper">0</b></div><div>PP: <b id="slipFloatPP">0</b></div><div>UD: <b id="slipFloatUD">0</b></div><button id="slipFloatBuild">Build</button></div>
   <section id="healthScreen" class="hidden"><div class="panel"><button id="backBoard" class="btn">← Review Board</button><h2>Board Health</h2><div id="healthStatus" class="status">Loading health...</div><div id="healthCards" class="healthGrid"></div></div></section>
 </div>
-<script>
+<script data-cfasync="false">
 (()=>{
 try{document.title='SCRIPT-RAN-'+Date.now();}catch(e){}
 try{const bm=document.querySelector('div[style*="background:#ff0"]');if(bm)bm.textContent='JS-IS-RUNNING-'+Date.now();}catch(e){}
