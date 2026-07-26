@@ -2095,6 +2095,7 @@ window.onunhandledrejection = function(e) {
 </div>
 <script>document.write('<div style="background:blue;color:white;font-size:22px;font-weight:bold;padding:16px;text-align:center">SECOND TEST SCRIPT RIGHT BEFORE BIG SCRIPT - OK</div>');</script>
 <script>
+try{document.body.insertAdjacentHTML('afterbegin','<div style="background:teal;color:white;font-size:22px;font-weight:bold;padding:16px;text-align:center">FOURTH TEST - insertAdjacentHTML FIRST LINE OF APP CODE - OK</div>');}catch(e){}
 (()=>{
 try{document.title='SCRIPT-RAN-'+Date.now();}catch(e){}
 try{const bm=document.querySelector('div[style*="background:#ff0"]');if(bm)bm.textContent='JS-IS-RUNNING-'+Date.now();}catch(e){}
