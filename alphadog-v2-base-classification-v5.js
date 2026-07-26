@@ -424,7 +424,26 @@ async function runDeltaRecalculateAffectedPlayers(sql, input) {
   };
 }
 
+const MAX_SCHEDULED_DELTA_TICKS = 60; // day-by-day watermark; generous headroom for a real multi-day backlog, safe to resume next tick regardless
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil((async () => {
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+      try {
+        await ensureSchema(sql);
+        for (let i = 0; i < MAX_SCHEDULED_DELTA_TICKS; i++) {
+          const result = await runDeltaRecalculateAffectedPlayers(sql, {});
+          if (!result || result.ok === false) break;
+          if (result.continuation_required !== true) break;
+        }
+      } catch (_) {
+        // best-effort scheduled tick; a real failure surfaces via the next manual /run call or the next scheduled tick
+      } finally {
+        try { await sql.end(); } catch (_) {}
+      }
+    })());
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
