@@ -2093,7 +2093,6 @@ window.onunhandledrejection = function(e) {
   <section id="healthScreen" class="hidden"><div class="panel"><button id="backBoard" class="btn">← Review Board</button><h2>Board Health</h2><div id="healthStatus" class="status">Loading health...</div><div id="healthCards" class="healthGrid"></div></div></section>
 </div>
 <script>
-document.body.insertAdjacentHTML('afterbegin','<div style="background:teal;color:white;font-size:22px;font-weight:bold;padding:16px;text-align:center">FOURTH TEST - insertAdjacentHTML FIRST LINE OF APP CODE - OK</div>');
 (()=>{
 try{document.title='SCRIPT-RAN-'+Date.now();}catch(e){}
 try{const bm=document.querySelector('div[style*="background:#ff0"]');if(bm)bm.textContent='JS-IS-RUNNING-'+Date.now();}catch(e){}
