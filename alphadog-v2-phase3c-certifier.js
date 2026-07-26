@@ -301,32 +301,46 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
     totalClamped += changed;
     results.push({ alias: aliasKeySide, target: targetKeySide, rows_synced: changed });
   }
-  for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
+  for (const [subsetKey, supersetKeyOrArray] of Object.entries(constraints)) {
     const [subProp, subLineRaw, subSide] = subsetKey.split("|");
-    const [supProp, supLineRaw, supSide] = supersetKey.split("|");
-    const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
-    const res = await pgClient`
-      UPDATE score.hp_board_current AS h
-      SET estimated_hit_probability_0_100 = (
-        SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
-        WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ${supProp} AND s.line_value = ${supLine} AND s.selected_side = ${supSide} AND s.source_key = h.source_key
-      ),
-      probability_confidence_0_100 = (
-        SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
-        WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ${supProp} AND s.line_value = ${supLine} AND s.selected_side = ${supSide} AND s.source_key = h.source_key
-        ORDER BY s.estimated_hit_probability_0_100 ASC LIMIT 1
-      )
-      WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${subProp} AND h.line_value = ${subLine} AND h.selected_side = ${subSide}
-        AND h.estimated_hit_probability_0_100 > (
+    const subLine = Number(subLineRaw);
+    const targets = Array.isArray(supersetKeyOrArray) ? supersetKeyOrArray : [supersetKeyOrArray];
+    const targetTriples = targets.map(t => { const [p, l, s] = String(t).split("|"); return { prop: p, line: Number(l), side: s }; });
+
+    // Build a single MIN(hp) across all listed superset targets for this player, via a UNION of
+    // per-target lookups rather than N separate round trips.
+    const unionParts = targetTriples.map((t, i) =>
+      pgClient`SELECT s.mlb_player_id, s.source_key, s.estimated_hit_probability_0_100, s.probability_confidence_0_100
+                FROM score.hp_board_current s
+                WHERE s.hp_board_batch_id = ${hpBatchId} AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side}`
+    );
+    // postgres.js doesn't support dynamic UNION composition well across a loop of tagged templates,
+    // so fall back to per-target sequential clamping instead - functionally identical (each pass only
+    // tightens the bound further), just issued as N small statements rather than one combined query.
+    for (const t of targetTriples) {
+      const res = await pgClient`
+        UPDATE score.hp_board_current AS h
+        SET estimated_hit_probability_0_100 = (
           SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${supProp} AND s.line_value = ${supLine} AND s.selected_side = ${supSide} AND s.source_key = h.source_key
-        )`;
-    const changed = res.count || 0;
-    totalClamped += changed;
-    results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+            AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key
+        ),
+        probability_confidence_0_100 = (
+          SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key
+          ORDER BY s.estimated_hit_probability_0_100 ASC LIMIT 1
+        )
+        WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${subProp} AND h.line_value = ${subLine} AND h.selected_side = ${subSide}
+          AND h.estimated_hit_probability_0_100 > (
+            SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
+            WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+              AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key
+          )`;
+      const changed = res.count || 0;
+      totalClamped += changed;
+      results.push({ subset: subsetKey, superset: `${t.prop}|${t.line}|${t.side}`, rows_clamped: changed });
+    }
   }
   return { ok: true, total_clamped: totalClamped, per_constraint: results };
 }
