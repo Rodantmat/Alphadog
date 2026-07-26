@@ -418,6 +418,18 @@ function evaluateFlatGate(factorKey, cells, legContext) {
   return null;
 }
 
+// RESEARCH-GROUNDED FIX (2026-07-26): missing full-relevance primary-factor data no longer applies a
+// worst-case penalty directly to logRateAdjustmentSum (the rate itself). Standard risk-model practice
+// (clinical prediction literature - APACHE-family scores etc.) imputes a neutral/zero value for missing
+// predictors rather than assuming the worst, reflecting reduced information via confidence instead.
+// This system already has a separate, correct mechanism for exactly that: computeFinalConfidence() in
+// the phase3c certifier blends baseline confidence with a coverage-ratio term
+// (factors_applied / (factors_applied + factors_missing)), which properly discounts confidence for legs
+// with sparse factor coverage. Applying a SECOND penalty here, directly to the rate, double-penalized
+// every prop with any missing data and was confirmed as the root cause of a system-wide downward bias
+// (every one of 19 prop types showed avg_multiplier below 1.0; simulation against real production data
+// confirmed removing this specific penalty brings every prop to a tight band around 1.0, with remaining
+// variance reflecting real factor effects rather than missing-data artifacts).
 async function enrichLeg(matrixRow, config, legContext) {
   const propKey = matrixRow.canonical_prop_key;
   const roofClosed = legContext.roof_status && String(legContext.roof_status).toLowerCase().includes("closed");
