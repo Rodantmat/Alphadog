@@ -85,6 +85,29 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       if (ctx.precipitation_probability_pct == null) return null;
       return ctx.precipitation_probability_pct * (a || 0);
     }
+    case "batter_quality_of_contact": {
+      const leagueAvgXwoba = t.league_avg_xwoba ?? 0.320;
+      const leagueAvgXwobacon = t.league_avg_xwobacon ?? 0.369;
+      const leagueAvgSweetSpot = t.league_avg_sweet_spot_pct ?? 32.5;
+      const leagueAvgBarrel = t.league_avg_barrel_pct ?? 7.5;
+      if (cell.prop_key === "doubles") {
+        if (ctx.batter_sweet_spot_percent == null) return null;
+        return (ctx.batter_sweet_spot_percent - leagueAvgSweetSpot) * (a || 0);
+      }
+      if (cell.prop_key === "total_bases") {
+        if (ctx.batter_xwobacon == null) return null;
+        return (ctx.batter_xwobacon - leagueAvgXwobacon) * (a || 0);
+      }
+      if (cell.prop_key === "home_runs") {
+        if (ctx.batter_xwoba == null && ctx.batter_barrel_batted_rate == null) return null;
+        const xwobaTerm = ctx.batter_xwoba != null ? (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0) : 0;
+        const barrelTerm = ctx.batter_barrel_batted_rate != null ? (ctx.batter_barrel_batted_rate - leagueAvgBarrel) * (b || 0) : 0;
+        return xwobaTerm + barrelTerm;
+      }
+      // hits_runs_rbis and partial-relevance props (hits, runs, rbis) all use plain xwOBA deviation
+      if (ctx.batter_xwoba == null) return null;
+      return (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0);
+    }
     default:
       return null;
   }
