@@ -502,9 +502,10 @@ async function enrichLeg(matrixRow, config, legContext) {
 
     if (factor.signal_role === "confidence_modifier") {
       confidenceAdjustment += Math.max(-0.03, Math.min(0.03, contribution));
-    } else {
-      logRateAdjustmentSum += contribution;
+      factorBreakdown.push({ factor_key: factor.factor_key, status: "applied_confidence_modifier_only", cell_id: cellUsed, contribution, relevance });
+      continue;
     }
+    logRateAdjustmentSum += contribution;
     factorBreakdown.push({ factor_key: factor.factor_key, status: "applied", cell_id: cellUsed, contribution, relevance });
   }
 
