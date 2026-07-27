@@ -1522,8 +1522,9 @@ async function runCalibrationReport(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
     const fitResult = await runFitPlattCalibration(env, { ...input, dry_run: true });
-    const activeRows = await sql`SELECT DISTINCT canonical_prop_key FROM score.calibration_correction_map WHERE methodology LIKE '%post_rootfix%' AND methodology NOT LIKE 'validated_no_correction%' AND methodology NOT LIKE 'DEACTIVATED%' AND methodology NOT LIKE 'SUPERSEDED%'`;
-    const activeProps = new Set(activeRows.map(r => r.canonical_prop_key));
+    const activeRows = await sql`SELECT canonical_prop_key, methodology FROM score.calibration_correction_map WHERE methodology LIKE '%post_rootfix%' AND methodology NOT LIKE 'validated_no_correction%' AND methodology NOT LIKE 'DEACTIVATED%' AND methodology NOT LIKE 'SUPERSEDED%'`;
+    const activeProps = new Set(activeRows.filter(r => r.methodology.startsWith("platt_scaling_post_rootfix_v2") || r.methodology.startsWith("isotonic_regression_post_rootfix")).map(r => r.canonical_prop_key));
+    const activeOtherMethodology = new Set(activeRows.filter(r => !r.methodology.startsWith("platt_scaling_post_rootfix_v2") && !r.methodology.startsWith("isotonic_regression_post_rootfix")).map(r => r.canonical_prop_key));
     const report = fitResult.results.map(r => {
       const currentlyActive = activeProps.has(r.prop);
       if (!r.skipped) {
