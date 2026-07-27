@@ -85,21 +85,31 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
   return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta), bin_n_test_games: bin.n_test_games };
 }
 
-function computeFinalConfidence(baselineConfidence, enrichmentRow) {
+function computeFinalConfidence(baselineConfidence, enrichmentRow, lineDistance) {
   const factorsApplied = (enrichmentRow && enrichmentRow.factors_applied) || 0;
   const factorsMissing = (enrichmentRow && enrichmentRow.factors_missing) || 0;
   const totalFactors = factorsApplied + factorsMissing;
   const baseConf = baselineConfidence != null ? baselineConfidence : 55;
   const adjustment = (enrichmentRow && enrichmentRow.confidence_adjustment || 0) * 100;
+  // Distance penalty (2026-07-27): findBaseline() does a flat nearest-neighbor lookup with no
+  // adjustment for how far the mined line is from the actual requested line. A baseline mined
+  // at a nearby line is a reasonable proxy within a small tolerance, but becomes progressively
+  // less trustworthy the further away it is - confirmed live, a 23-unit mismatch presented a
+  // confidently wrong HP with normal confidence. Tolerance of 2 units before any penalty (minor
+  // mismatches are common and usually benign), then -3 points per additional unit, capped at -30.
+  const dist = Number(lineDistance) || 0;
+  const distancePenalty = dist > 2 ? Math.min(30, (dist - 2) * 3) : 0;
+  let result;
   if (totalFactors === 0) {
     // No enrichment factors are configured for this prop type at all (e.g. rfi_nrfi) - this is
     // a design fact, not a coverage gap, and should not be penalized as if factors were missing.
     // Use baseline confidence directly rather than blending with a zero-coverage term.
-    return Math.round(clamp(baseConf + adjustment, 30, 95));
+    result = baseConf + adjustment;
+  } else {
+    const coverageRatio = factorsApplied / totalFactors;
+    result = (baseConf * 0.5) + ((40 + coverageRatio * 45) * 0.5) + adjustment;
   }
-  const coverageRatio = factorsApplied / totalFactors;
-  const blended = (baseConf * 0.5) + ((40 + coverageRatio * 45) * 0.5);
-  return Math.round(clamp(blended + adjustment, 30, 95));
+  return Math.round(clamp(result - distancePenalty, 30, 95));
 }
 
 async function runHitProbabilityBoardFastLoop(pgClient, input, sourceMatrixBatchId) {
