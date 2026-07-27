@@ -135,6 +135,31 @@ earlier-completed items (ISO wired into scoring, batted-ball-direction and HR/FB
 display, xwOBAcon/Pull% surfaced) stand as the real, verified improvements from this
 expansion effort.
 
+## Daily automation added (same session, continued) — closing the "one-time backfill" gap
+The earlier ISO/batted-ball-direction backfill was a one-time manual SQL pass. Per explicit
+follow-up requirement, this is now a recurring daily step: `runQualityOfContactDerivedFieldsRefresh`
+(mode `quality_of_contact_derived_fields_refresh`), wired into `runDailyMorningDeltaFullRun`
+right before `baseline_v6_full_run` so derived fields are fresh before the scoring layers that
+read them run later in the same cycle. It recomputes `iso` and the batted-ball-direction
+columns for any row where the underlying raw data already exists but the derived field is
+still null — genuinely self-healing (idempotent, verified: reports 0 rows changed when
+already-backfilled, meaning it will only ever act on genuinely new/refreshed rows). This does
+NOT mine new raw Statcast data (no ingestion worker exists for that — see the SwStr%/PulledBrl%
+sections above); it ensures whatever raw data does arrive (by whatever external process
+refreshes these two tables) gets its derived fields computed automatically going forward,
+closing the "manual pass required" gap.
+
+## Full layer flow-through verified (same session, continued)
+Explicitly checked, not assumed: `scoring.enrichment_leg_current` → `score.hp_board_current` →
+`score.final_board_current` for real home_runs legs (Kyle Schwarber, Elly De La Cruz, CJ
+Abrams, Yordan Alvarez, Christian Encarnacion-Strand). Confirmed `hp_board_current`'s
+`estimated_hit_probability_0_100` (which includes the ISO-influenced `rate_multiplier` from
+enrichment) matches `final_board_current`'s value exactly for every leg checked, and
+CJ Abrams' `enrichment_leg_current.factor_breakdown_json` confirms `batter_quality_of_contact`
+(now including ISO) is genuinely applied for that leg. The chain carries the new signal
+end-to-end, verified against real production data, not inferred from code review alone.
+Hierarchy check re-run clean (0 violations) after all of this session's changes.
+
 ## Recommended next-session task list, in priority order
 1. ~~Wire HR/FB% as a computed/displayed field~~ — DONE, verified (see above).
 2. ~~Build SwStr%/PulledBrl% mining~~ — CLOSED, per the research-grounded decision above:
