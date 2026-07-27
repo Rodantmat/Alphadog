@@ -1666,63 +1666,6 @@ async function apiHealth(env) {
     layers,
   });
 }
-      MAX(score_0_100) AS max_score,
-      MIN(confidence_0_100) AS min_certainty,
-      MAX(confidence_0_100) AS max_certainty,
-      MAX(updated_at) AS latest_updated_at
-    FROM score.final_board_current
-    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-    GROUP BY final_board_batch_id, source_engine_batch_id
-    ORDER BY latest_updated_at DESC
-    LIMIT 1
-  `);
-  const current = finalCurrent[0] || {};
-  const finalBatch = current.final_board_batch_id ? await queryAllPg(pg, `
-    SELECT final_board_batch_id AS batch_id, worker_version, NULL AS profile_version, status, matrix_rows_read AS source_rows_read, live_rows_read AS eligible_rows_read,
-           final_rows_written AS final_rows_written, final_rows_written AS default_board_rows,
-           0 AS correlated_duplicate_rows, 0 AS low_sanity_primary_rows, 0 AS rare_more_primary_rows,
-           0 AS issue_rows_written, certification AS certification_status, certification_grade,
-           started_at, finished_at, finished_at AS updated_at
-    FROM score.final_board_batches
-    WHERE final_board_batch_id = ?::text
-    LIMIT 1
-  `, [String(current.final_board_batch_id)]) : [];
-  const hpBatch = current.source_final_score_batch_id ? await queryAllPg(pg, `
-    SELECT hp_board_batch_id AS batch_id, worker_version, profile_key AS profile_version, status,
-           source_engine_batch_id AS source_score_enrichment_batch_id,
-           source_rows_read AS expected_hp_rows, board_rows_written AS hp_rows_written,
-           0 AS blocked_rows, 0 AS warning_rows, 0 AS issue_rows_written,
-           certification_status, certification_grade, updated_at
-    FROM score.hp_board_batches
-    WHERE source_engine_batch_id = ?::text
-    ORDER BY updated_at DESC
-    LIMIT 1
-  `, [String(current.source_final_score_batch_id)]) : [];
-  await pg.end({ timeout: 1 }).catch(() => {});
-
-  return jsonResponse({
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    logical_app: LOGICAL_APP,
-    route: "/api/main-board/health",
-    read_only: true,
-    current_board: current,
-    final_board_batch: finalBatch[0] || null,
-    hp_board_batch: hpBatch[0] || null,
-    semantics: {
-      rows_are: "Final Board rows from SCORE_DB.score_final_board_current.",
-      default_board: "Review-only shadow board ordered by rank_order; no production live activation.",
-      hp_under_60: "Excluded upstream by Final Score V2 / Final Board V3 shadow contract.",
-      no_live_claims: "live_playable remains zero until a separate live activation stage is certified."
-    },
-    writes_performed: 0,
-    external_calls_performed: 0,
-    queue_calls_performed: 0,
-    timestamp_utc: nowUtc()
-  });
-}
 
 
 function makeUiId(prefix = "id") {
