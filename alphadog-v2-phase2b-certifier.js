@@ -132,6 +132,13 @@ function buildSideVariationContext(row) {
   const isStandard = Number(payload.is_standard || 0) === 1 || String(oddsType || "").toLowerCase() === "standard" || String(payoutVariant || "").toLowerCase() === "standard";
   const overPrice = numOrNull(payload.over_price !== undefined ? payload.over_price : payload.source_prices && payload.source_prices.over_price);
   const underPrice = numOrNull(payload.under_price !== undefined ? payload.under_price : payload.source_prices && payload.source_prices.under_price);
+  const dfsNormalized = payload.dfs_normalized === true || String(payload.dfs_normalized || "").toLowerCase() === "true";
+  // Real signal, confirmed live: when dfs_normalized is true, one side's price is a flat -100
+  // placeholder (not a genuine market price) - this is how Underdog/Sleeper mark a prop as
+  // effectively one-sided (analogous to PrizePicks' goblin/demon odds_type). Checking mere
+  // presence of both prices (below) missed this entirely, since -100 is still non-null.
+  const overIsPlaceholder = dfsNormalized && overPrice === -100;
+  const underIsPlaceholder = dfsNormalized && underPrice === -100;
   const projectionId = payload.projection_id || row.projection_id || null;
   const sourceLineId = row.source_row_id || projectionId || row.source_event_id || null;
   const lineValue = numOrNull(row.line_value);
