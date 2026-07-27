@@ -725,9 +725,7 @@ function rowToApi(row) {
 
 function buildCurrentSql(url) {
   const where = [
-    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)",
-    "f.review_playable = 1",
-    "COALESCE(f.live_playable,0) = 0"
+    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)"
   ];
   const params = [];
   const propKeys = splitList(url.searchParams.get("prop_keys"));
