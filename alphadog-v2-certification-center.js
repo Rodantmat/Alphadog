@@ -1975,6 +1975,46 @@ async function apiPlayerSearch(env, url) {
   const rows = Array.from(byPlayerId.values()).sort((a, b) => String(a.player_name || "").localeCompare(String(b.player_name || ""))).slice(0, 20);
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows });
 }
+// Dispatch helper (2026-07-27): reuses the exact same service-binding pattern already proven in
+// admin-sql.js's toolRunJob, so this UI worker can directly trigger calibration functions and
+// scoped health-dashboard reruns without needing a separate MCP round-trip. This worker's
+// Health and Calibration sections are explicitly NOT read-only per direction - password-gated
+// on the frontend, but these backend routes are the actual functional surface.
+async function dispatchToWorker(env, target, mode, extra) {
+  const bindingMap = { PHASE3A_WORKER: env.PHASE3A_WORKER, BOARD_RUNNER_WORKER: env.BOARD_RUNNER_WORKER, DAILY_CONTEXT_RUNNER_WORKER: env.DAILY_CONTEXT_RUNNER_WORKER, MARKET_RUNNER_WORKER: env.MARKET_RUNNER_WORKER, SCORING_RUNNER_WORKER: env.SCORING_RUNNER_WORKER, WEEKLY_DIFFERENTIAL_RUNNER_WORKER: env.WEEKLY_DIFFERENTIAL_RUNNER_WORKER, DAILY_DELTA_RUNNER_WORKER: env.DAILY_DELTA_RUNNER_WORKER };
+  const binding = bindingMap[target];
+  if (!binding) return { ok: false, error: `${target} service binding is not configured on this worker.` };
+  try {
+    const resp = await binding.fetch("https://internal/run", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mode, ...(extra && typeof extra === "object" ? extra : {}) }),
+    });
+    const text = await resp.text();
+    let parsed; try { parsed = JSON.parse(text); } catch { parsed = { raw: text.slice(0, 2000) }; }
+    return { ok: resp.ok, http_status: resp.status, response: parsed };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+async function apiCalibrationReport(env) {
+  const result = await dispatchToWorker(env, "PHASE3A_WORKER", "calibration_report", {});
+  return jsonResponse({ ok: result.ok, version: VERSION, route: "/api/calibration/report", read_only: true, ...result });
+}
+async function apiCalibrationApply(env, request) {
+  const input = await readJsonSafe(request);
+  const props = Array.isArray(input.props) ? input.props : [];
+  if (!props.length) return jsonResponse({ ok: false, error: "props array required - select at least one recommendation to apply", version: VERSION }, 400);
+  const result = await dispatchToWorker(env, "PHASE3A_WORKER", "apply_calibration_recommendations", { props });
+  return jsonResponse({ ok: result.ok, version: VERSION, route: "/api/calibration/apply", read_only: false, requested_props: props, ...result });
+}
+async function apiHealthRerun(env, request) {
+  const input = await readJsonSafe(request);
+  const target = String(input.target || "");
+  const mode = String(input.mode || "");
+  if (!target || !mode) return jsonResponse({ ok: false, error: "target and mode required", version: VERSION }, 400);
+  const result = await dispatchToWorker(env, target, mode, {});
+  return jsonResponse({ ok: result.ok, version: VERSION, route: "/api/main-board/health/rerun", read_only: false, target, mode, ...result });
+}
 async function apiPlayerProfile(env, url) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version: VERSION }, 500);
   const playerId = Number(url.searchParams.get("player_id") || 0);
