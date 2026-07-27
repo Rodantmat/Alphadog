@@ -1396,8 +1396,8 @@ async function runFitPlattCalibration(env, input = {}) {
         results.push({ prop: propKey, skipped: true, n: trainPairs.length, reason: `rejected: negative/zero A coefficient (${round(A, 4)}) indicates an inverted, overfit calibration on a small/noisy sample - not stored`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
-      if (A < 0.3) {
-        if (trainPairs.length >= 500) {
+      if (A < minSlopeA) {
+        if (trainPairs.length >= minTrainForIsotonic) {
           const brierBeforeTestFlat = brierScore(testPairs);
           const eceBeforeTestFlat = expectedCalibrationError(testPairs);
           const predictIsoFlat = fitIsotonicRegression(trainPairs);
