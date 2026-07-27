@@ -1548,7 +1548,7 @@ async function runCalibrationReport(env, input = {}) {
           : activeOther
             ? `An older, line-specific correction (a different methodology than this general refit) is currently active for this prop. This report's general fit does not validate the same pattern, but it also does not test or supersede that older, more targeted methodology - not flagging as stale.`
           : (isDataLimited ? `Not enough resolved outcome data yet (n=${r.n}) to fit or validate a correction safely.` : `No correction (Platt or isotonic) genuinely improves this prop's calibration on real held-out data: ${r.reason}`),
-        recommendation: currentlyActive ? `Consider deactivating - the active correction may no longer be reliable.` : (isDataLimited ? "Wait for more games to resolve, then re-check." : "No action recommended - the raw baseline is already the best available estimate for this prop."),
+        recommendation: currentlyActive ? `Consider deactivating - the active correction may no longer be reliable.` : (activeOther ? "No action needed - active correction is from a separate, targeted methodology this report does not evaluate." : (isDataLimited ? "Wait for more games to resolve, then re-check." : "No action recommended - the raw baseline is already the best available estimate for this prop.")),
         metrics: { n: r.n, test_n: r.test_n || null, A: r.A, B: r.B },
       };
     });
