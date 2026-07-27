@@ -1245,6 +1245,73 @@ function mForProp(prop){ const p=String(prop||""); if(p==="rfi_nrfi") return 50;
 // hit/miss/push against the predicted side and line, and records it permanently. This is the
 // foundation every future calibration pass (Brier score, reliability diagrams, ECE) depends on -
 // without it there is no ground truth to calibrate against, ever.
+function logit(p) { const c = Math.min(0.999, Math.max(0.001, p)); return Math.log(c / (1 - c)); }
+function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+function brierScore(pairs) { return pairs.reduce((s, [p, y]) => s + (p - y) * (p - y), 0) / pairs.length; }
+function expectedCalibrationError(pairs, bins = 10) {
+  const buckets = Array.from({ length: bins }, () => ({ sumP: 0, sumY: 0, n: 0 }));
+  for (const [p, y] of pairs) {
+    const idx = Math.min(bins - 1, Math.floor(p * bins));
+    buckets[idx].sumP += p; buckets[idx].sumY += y; buckets[idx].n += 1;
+  }
+  let ece = 0;
+  const total = pairs.length;
+  for (const b of buckets) {
+    if (b.n === 0) continue;
+    ece += (b.n / total) * Math.abs(b.sumP / b.n - b.sumY / b.n);
+  }
+  return ece;
+}
+// Fits Platt scaling (p_calibrated = sigmoid(A*logit(p_raw) + B)) via gradient descent on
+// real resolved outcomes, minimizing log loss. Standard published method (Platt 1999);
+// evidence-backed choice over isotonic regression given our per-prop sample sizes (see
+// runFitPlattCalibration's caller for the research this is grounded in).
+function fitPlattScaling(pairs, iterations = 500, lr = 0.1) {
+  let A = 1, B = 0;
+  const n = pairs.length;
+  for (let iter = 0; iter < iterations; iter++) {
+    let gradA = 0, gradB = 0;
+    for (const [pRaw, y] of pairs) {
+      const x = logit(pRaw);
+      const pCal = sigmoid(A * x + B);
+      const err = pCal - y;
+      gradA += err * x;
+      gradB += err;
+    }
+    A -= lr * gradA / n;
+    B -= lr * gradB / n;
+  }
+  return { A, B };
+}
+async function runFitPlattCalibration(env, input = {}) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const minSamples = Math.max(20, Number(input.min_samples || 20));
+    const propRows = await sql`SELECT DISTINCT canonical_prop_key FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL`;
+    const results = [];
+    for (const { canonical_prop_key: propKey } of propRows) {
+      const rows = await sql`SELECT estimated_hit_probability_0_100, outcome_hit FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL`;
+      if (rows.length < minSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: `below min_samples ${minSamples}` }); continue; }
+      const pairs = rows.map(r => [Number(r.estimated_hit_probability_0_100) / 100, Number(r.outcome_hit)]);
+      const briefBefore = brierScore(pairs);
+      const eceBefore = expectedCalibrationError(pairs);
+      const { A, B } = fitPlattScaling(pairs);
+      const calibratedPairs = pairs.map(([p, y]) => [sigmoid(A * logit(p) + B), y]);
+      const brierAfter = brierScore(calibratedPairs);
+      const eceAfter = expectedCalibrationError(calibratedPairs);
+      await sql`INSERT INTO score.platt_calibration_map (canonical_prop_key, coefficient_a, coefficient_b, n_samples, brier_before, brier_after, ece_before, ece_after, fitted_at)
+        VALUES (${propKey}, ${A}, ${B}, ${pairs.length}, ${briefBefore}, ${brierAfter}, ${eceBefore}, ${eceAfter}, now())
+        ON CONFLICT (canonical_prop_key) DO UPDATE SET coefficient_a=excluded.coefficient_a, coefficient_b=excluded.coefficient_b,
+          n_samples=excluded.n_samples, brier_before=excluded.brier_before, brier_after=excluded.brier_after,
+          ece_before=excluded.ece_before, ece_after=excluded.ece_after, fitted_at=now()`;
+      results.push({ prop: propKey, n: pairs.length, A: round(A, 4), B: round(B, 4), brier_before: round(briefBefore, 5), brier_after: round(brierAfter, 5), ece_before: round(eceBefore, 5), ece_after: round(eceAfter, 5), improved: brierAfter < briefBefore });
+    }
+    return { ok: true, mode: "fit_platt_calibration", props_fitted: results.filter(r => !r.skipped).length, props_skipped: results.filter(r => r.skipped).length, results };
+  } finally {
+    try { await sql.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 async function runResolvePropOutcomes(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
