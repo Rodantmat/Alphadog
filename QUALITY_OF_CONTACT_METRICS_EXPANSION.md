@@ -104,6 +104,37 @@ available/added this session) rather than their exact intersection, or scope a p
 Statcast Search ingestion as separate, larger future work. This is more involved than
 originally scoped — correctly not rushed.
 
+## FINAL DECISION (same session, continued) — grounded in research, closing this question
+Researched both open questions properly before deciding, rather than guessing:
+
+**SwStr%/Whiff% — decision: do not build new mining.** Multiple independent sabermetric
+studies (Beyond the Box Score 2012/2013, Baseball Prospectus) found Whiff% (swinging strikes/
+swings) explains ~67-70% of K% variance and is AT LEAST as predictive as SwStr% (swinging
+strikes/all pitches) — in some studies Whiff% edges it out. There is no meaningful predictive
+gap that would justify building new FanGraphs-specific mining. Additionally: confirmed live
+that `whiff_percent`/`k_percent` exist as schema columns on `ref.batter_quality_of_contact`
+but are 100% unpopulated (0/1279 rows) — and more fundamentally, the `hitter_strikeouts`
+prop's baseline ALREADY uses the player's actual, real strikeout rate from game logs via the
+recency-weighted shrinkage system. SwStr%/Whiff% are themselves proxies FOR that real outcome
+rate — adding either on top of the real, already-used outcome rate would be substantially
+redundant, not new signal. Closing this as "sufficiently addressed by the existing baseline,"
+not "missing data."
+
+**PulledBrl% — decision: do not build new mining.** FanGraphs' own published research
+("Which Hitters Benefit From Pulling?") explicitly tested this: exit-velocity/launch-angle-
+based metrics (what barrel_batted_rate already captures) predict wOBA well, and "adding pull
+rate to that mix doesn't seem to help much." This is a direct, on-point finding against
+building pitch-level PulledBrl% infrastructure — the incremental value research shows for
+pull-direction data on top of barrel rate (already in live scoring) is small. Pull% and
+Barrel% remain available as separate factors (added this session) for anyone who wants to
+look at them individually, but they are not being combined into a new scoring term given this
+finding.
+
+**Net effect**: no further mining work is planned for these two metrics. The session's
+earlier-completed items (ISO wired into scoring, batted-ball-direction and HR/FB% added to
+display, xwOBAcon/Pull% surfaced) stand as the real, verified improvements from this
+expansion effort.
+
 ## Recommended next-session task list, in priority order
 1. Wire HR/FB% as a computed/displayed field (data already exists, just needs joining).
 2. Build a real mining worker against Baseball Savant's Custom Leaderboard CSV endpoint for
