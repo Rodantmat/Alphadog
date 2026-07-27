@@ -11081,6 +11081,7 @@ async function runMode(env,input={}){
   if(mode==="classification_v6_tick" || mode==="classification_v6") return runClassificationV6Tick(env,input);
   if(mode==="baseline_v6_tick") return runBaselineV6Tick(env,input);
   if(mode==="baseline_v6_reconcile_subset_constraints") return reconcileSubsetOfConstraints(env);
+  if(mode==="fit_platt_calibration") return runFitPlattCalibration(env,input);
   if(mode==="baseline_v5_classification_base") return runClassificationV6Base(env,input);
   if(mode==="baseline_v5_base") return runBaselineV6Base(env,input);
   if(mode==="baseline_v5_history_only" || mode==="baseline_v2_heb" || mode==="expansion_baseline_v2" || mode==="expansion-baseline-v2" || mode==="expansion-baseline-v2-full-run") return runBaselineV2(env,input);
