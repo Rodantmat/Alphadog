@@ -195,6 +195,7 @@ function normalizeLineType(row) {
   const isGoblin = Number(row.is_goblin || 0) === 1;
   const isDemon = Number(row.is_demon || 0) === 1;
   const isStandard = Number(row.is_standard || 0) === 1;
+  const isMoreOnly = Number(row.more_only || 0) === 1;
   if (source === "prizepicks") {
     // PrizePicks source_line_type is often the generic text "Single Stat".
     // The real board type is payout_variant / prepared flags. Prefer those before odds_type.
@@ -204,10 +205,10 @@ function normalizeLineType(row) {
     return "regular";
   }
   if (source === "sleeper") {
-    if (sideMode === "more_only" || odds === "more_only" || payout === "more_only") return "more_only";
+    if (sideMode === "more_only" || odds === "more_only" || payout === "more_only" || isMoreOnly) return "more_only";
     return "regular";
   }
-  if (sideMode === "more_only" || odds === "more_only") return "more_only";
+  if (sideMode === "more_only" || odds === "more_only" || isMoreOnly) return "more_only";
   return payout || "regular";
 }
 
