@@ -9321,6 +9321,37 @@ async function setBaselineV6ResumeIndex(env, index) {
   } catch (_) {} finally { try { await sql.end({ timeout: 1 }); } catch (_) {} }
 }
 async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
+  // Lightweight self-collision guard (2026-07-27): this mode is directly callable via run_job,
+  // bypassing daily-delta-runner's own lock. Confirmed live: rapid direct invocations can race
+  // on the shared resume-index state (control.worker_state), causing progress to bounce
+  // backward - writes stay idempotent so no corruption results, just wasted redundant work.
+  // Short hold (3 min, comfortably above one call's real duration) using the same
+  // control.runner_locks table/pattern as the runner-level locks, auto-released via finally.
+  const BASELINE_V6_STEP_LOCK_KEY = "alphadog_baseline_v6_step";
+  const lockClient = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  const holderId = "baseline_v6_step_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  let lockAcquired = false;
+  try {
+    await lockClient`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
+    await lockClient`INSERT INTO control.runner_locks (lock_key, locked_until, holder) VALUES (${BASELINE_V6_STEP_LOCK_KEY}, NULL, NULL) ON CONFLICT (lock_key) DO NOTHING`;
+    const acquireRows = await lockClient`
+      UPDATE control.runner_locks SET locked_until = now() + interval '3 minutes', holder = ${holderId}, acquired_at = now()
+      WHERE lock_key = ${BASELINE_V6_STEP_LOCK_KEY} AND (locked_until IS NULL OR locked_until < now())
+      RETURNING lock_key`;
+    lockAcquired = acquireRows.length > 0;
+  } catch (_) {}
+  if (!lockAcquired) {
+    try { await lockClient.end({ timeout: 1 }); } catch (_) {}
+    return { ok: true, data_ok: true, mode: "classification_baseline_v6_to_postgres_full_run", skipped: true, certification: "SKIPPED_ALREADY_RUNNING", note: "Another invocation of this step holds the lock - call again shortly rather than retrying immediately." };
+  }
+  try {
+    return await runClassificationBaselineV6ToPostgresFullRunLocked(env, input);
+  } finally {
+    try { await lockClient`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE lock_key = ${BASELINE_V6_STEP_LOCK_KEY} AND holder = ${holderId}`; } catch (_) {}
+    try { await lockClient.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {}) {
   const startMs = Date.now();
   const timeBudgetMs = 30000;
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
