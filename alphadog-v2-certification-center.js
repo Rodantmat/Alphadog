@@ -2231,6 +2231,19 @@ window.onunhandledrejection = function(e) {
   <section id="playerProfileScreen" class="hidden"><div class="panel"><button id="profileBack" class="btn">← Main Board</button><h2>Player Profile</h2><input id="playerSearch" class="select" placeholder="Search player name, last name, alias..." autocomplete="off"><div id="playerSearchResults" class="pillRow" style="margin-top:10px"></div><div id="playerProfileBody" class="dossierBody" style="margin-top:12px"><div class="empty">Type at least 3 letters.</div></div></div></section>
   <div id="slipFloat" class="slipFloat hidden"><div><b id="slipFloatTotal">0</b> legs</div><div>Sleeper: <b id="slipFloatSleeper">0</b></div><div>PP: <b id="slipFloatPP">0</b></div><div>UD: <b id="slipFloatUD">0</b></div><button id="slipFloatBuild">Build</button></div>
   <section id="healthScreen" class="hidden"><div class="panel"><button id="backBoard" class="btn">← Review Board</button><h2>Board Health</h2><div id="healthStatus" class="status">Loading health...</div><div id="healthCards" class="healthGrid"></div></div></section>
+  <section id="calibrationScreen" class="hidden"><div class="panel"><button id="calibrationBack" class="btn">← Review Board</button><h2>Calibration</h2><div id="calibrationStatus" class="status">Loading calibration report...</div><div id="calibrationCards"></div><div id="calibrationApplyBar" class="hidden" style="margin-top:14px;padding:12px;background:#1a2230;border-radius:8px"><b><span id="calibrationSelectedCount">0</span> selected</b><button id="calibrationApplyBtn" class="btn" style="margin-left:12px">Apply Selected</button></div></div></section>
+  <div id="pwGateOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center">
+    <div style="background:#1a2230;padding:24px;border-radius:10px;max-width:320px;width:90%">
+      <h3 style="margin-top:0">Enter Password</h3>
+      <div style="font-size:13px;color:#9ab;margin-bottom:10px">This section can affect the live system.</div>
+      <input id="pwGateInput" type="password" inputmode="numeric" class="select" placeholder="Password" style="width:100%;box-sizing:border-box">
+      <div id="pwGateError" class="err" style="min-height:18px;margin-top:6px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="pwGateSubmit" class="btn">Enter</button>
+        <button id="pwGateCancel" class="btn">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
 (()=>{
