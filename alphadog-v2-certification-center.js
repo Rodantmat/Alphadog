@@ -2402,6 +2402,7 @@ function arsenalTable(rows){if(!rows||!rows.length)return '<div class="small">No
 function aggregateHitterGames(games){let ab=0,hits=0,tb=0,pa=0,walks=0;for(const g of games){ab+=Number(g.ab||0);hits+=Number(g.hits||0);tb+=Number(g.total_bases||0);pa+=Number(g.pa||0);walks+=Number(g.walks||0)}return {avg:ab?hits/ab:null,slg:ab?tb/ab:null,obp:pa?(hits+walks)/pa:null}}
 function aggregatePitcherGames(games){let ip=0,er=0,bb=0,h=0,k=0;for(const g of games){ip+=Number(g.innings_pitched_decimal||g.innings_pitched||0);er+=Number(g.earned_runs||0);bb+=Number(g.walks_allowed||0);h+=Number(g.hits_allowed||0);k+=Number(g.strikeouts||0)}return {era:ip?(9*er)/ip:null,whip:ip?(bb+h)/ip:null,k}}
 function homeAwayBlock(homeGames,awayGames,isP){if(!homeGames.length&&!awayGames.length)return '';const h=isP?aggregatePitcherGames(homeGames):aggregateHitterGames(homeGames);const a=isP?aggregatePitcherGames(awayGames):aggregateHitterGames(awayGames);const statsFor=x=>isP?[['ERA',avgFmt(x.era)],['WHIP',avgFmt(x.whip)],['K',x.k]]:[['AVG',avgFmt(x.avg)],['OBP',avgFmt(x.obp)],['SLG',avgFmt(x.slg)]];const side=(lbl,x,n)=>'<div class="splitSide"><div class="splitSideLbl">'+lbl+' ('+n+'G)</div><div class="splitSideStats">'+statsFor(x).map(([k,v])=>'<div class="splitStat"><div class="v">'+(v==null?'—':v)+'</div><div class="k">'+k+'</div></div>').join('')+'</div></div>';return '<div class="dSection wide"><h3>Home / Away Split (recent games)</h3><div class="splitCompare">'+side('Home',h,homeGames.length)+'<div class="splitVs">VS</div>'+side('Away',a,awayGames.length)+'</div></div>'}
+function qocGroup(label,cells){const shown=cells.filter(([,v])=>v!=null&&v!=='—');if(!shown.length)return '';return '<div class="qocGroup"><div class="qocGroupLabel">'+esc(label)+'</div><div class="qocGrid">'+cells.map(([k,v,hl])=>'<div class="qocMiniCell'+(hl?' highlight':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>').join('')+'</div></div>'}
 function qualityOfContactBlock(qoc){if(!qoc)return '';
   const diff=qoc.woba_minus_xwoba_diff;
   let signal='';
@@ -2411,8 +2412,18 @@ function qualityOfContactBlock(qoc){if(!qoc)return '';
     else if(d>=0.02)signal='<div class="regenSignal regenDown">▼ Overperforming its quality — actual wOBA is '+d.toFixed(3)+' above what the contact quality supports. Some of this production has been noise; don\\'t be surprised by a cooldown.</div>';
     else signal='<div class="regenSignal regenFlat">● Actual production matches the quality of contact closely — this is a true-talent read, not a lucky or unlucky stretch.</div>';
   }
-  const cells=[['xBA',avgFmt(qoc.xba)],['xSLG',avgFmt(qoc.xslg)],['xwOBA',avgFmt(qoc.xwoba)],['xwOBAcon',avgFmt(qoc.xwobacon)],['ISO',avgFmt(qoc.iso)],['HR/FB%',pctNum(qoc.hr_fb_percent)],['Exit Velo',qoc.exit_velocity_avg!=null?qoc.exit_velocity_avg+' mph':'—'],['Barrel%',pctNum(qoc.barrel_batted_rate)],['Hard-Hit%',pctNum(qoc.hard_hit_percent)],['Sweet Spot%',pctNum(qoc.sweet_spot_percent)],['Launch Angle',qoc.launch_angle_avg!=null?qoc.launch_angle_avg+'°':'—'],['Pull%',pctNum(qoc.pull_percent)],['FB% / LD% / GB%',[qoc.fly_ball_pct,qoc.line_drive_pct,qoc.ground_ball_pct].every(v=>v!=null)?qoc.fly_ball_pct+'/'+qoc.line_drive_pct+'/'+qoc.ground_ball_pct:'—'],['Pull / Oppo (dir)',[qoc.pull_pct,qoc.opposite_field_pct].every(v=>v!=null)?qoc.pull_pct+'% / '+qoc.opposite_field_pct+'%':'—']];
-  return '<div class="qocCard"><div class="qocTitle">⚡ Quality of Contact <span class="qocSub">Statcast '+(qoc.season_year||'')+'</span></div>'+signal+'<div class="snapStrip" style="margin-top:10px">'+cells.map(([k,v])=>'<div class="snapCell"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>').join('')+'</div></div>';
+  const expectedOutcomes=qocGroup('Expected Outcomes',[['xBA',avgFmt(qoc.xba)],['xSLG',avgFmt(qoc.xslg)],['xwOBA',avgFmt(qoc.xwoba),true],['xwOBAcon',avgFmt(qoc.xwobacon)]]);
+  const powerProfile=qocGroup('Power Profile',[['ISO',avgFmt(qoc.iso),true],['Barrel%',pctNum(qoc.barrel_batted_rate),true],['HR/FB%',pctNum(qoc.hr_fb_percent)],['Exit Velo',qoc.exit_velocity_avg!=null?qoc.exit_velocity_avg+' mph':null],['Launch Angle',qoc.launch_angle_avg!=null?qoc.launch_angle_avg+'°':null]]);
+  const contactQuality=qocGroup('Contact Quality',[['Hard-Hit%',pctNum(qoc.hard_hit_percent)],['Sweet Spot%',pctNum(qoc.sweet_spot_percent)]]);
+  const battedBallMix=(qoc.fly_ball_pct!=null||qoc.pull_pct!=null)?('<div class="qocGroup"><div class="qocGroupLabel">Batted Ball Mix</div><div class="qocGrid">'
+    +(qoc.fly_ball_pct!=null?'<div class="qocMiniCell"><div class="k">Fly Ball%</div><div class="v">'+qoc.fly_ball_pct+'%</div></div>':'')
+    +(qoc.line_drive_pct!=null?'<div class="qocMiniCell"><div class="k">Line Drive%</div><div class="v">'+qoc.line_drive_pct+'%</div></div>':'')
+    +(qoc.ground_ball_pct!=null?'<div class="qocMiniCell"><div class="k">Ground Ball%</div><div class="v">'+qoc.ground_ball_pct+'%</div></div>':'')
+    +(qoc.pop_up_pct!=null?'<div class="qocMiniCell"><div class="k">Pop Up%</div><div class="v">'+qoc.pop_up_pct+'%</div></div>':'')
+    +(qoc.pull_pct!=null?'<div class="qocMiniCell"><div class="k">Pull%</div><div class="v">'+qoc.pull_pct+'%</div></div>':'')
+    +(qoc.opposite_field_pct!=null?'<div class="qocMiniCell"><div class="k">Oppo%</div><div class="v">'+qoc.opposite_field_pct+'%</div></div>':'')
+    +'</div></div>'):'';
+  return '<div class="qocCard"><div class="qocTitle">⚡ Quality of Contact <span class="qocSub">Statcast '+(qoc.season_year||'')+'</span></div>'+signal+expectedOutcomes+powerProfile+contactQuality+battedBallMix+'</div>';
 }
 function advancedMetricsBlock(adv,isP){adv=adv||{};const items=[];
   if(!isP){
