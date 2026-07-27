@@ -1283,6 +1283,43 @@ function fitPlattScaling(pairs, iterations = 500, lr = 0.1) {
   }
   return { A, B };
 }
+// Isotonic regression via PAVA (Pool Adjacent Violators Algorithm) - the standard published
+// method (Zadrozny and Elkan 2001; Niculescu-Mizil and Caruana 2005). A research-grounded
+// alternative to Platt scaling for props with large enough samples: Platt assumes a fixed
+// 2-parameter logistic functional form, which can fail to capture genuinely non-sigmoid
+// miscalibration patterns. Isotonic makes no functional-form assumption at all - only that the
+// calibrated output must be monotonically non-decreasing in the raw input - at the cost of
+// needing substantially more data to avoid overfitting to noise (each fitted point is an
+// average over pooled bins, not a smooth 2-parameter curve).
+function fitIsotonicRegression(pairs) {
+  const sorted = [...pairs].sort((a, b) => a[0] - b[0]);
+  const blocks = sorted.map(([x, y]) => ({ xMin: x, xMax: x, sum: y, count: 1, value: y }));
+  let i = 0;
+  while (i < blocks.length - 1) {
+    if (blocks[i].value > blocks[i + 1].value + 1e-12) {
+      const merged = {
+        xMin: blocks[i].xMin, xMax: blocks[i + 1].xMax,
+        sum: blocks[i].sum + blocks[i + 1].sum, count: blocks[i].count + blocks[i + 1].count,
+      };
+      merged.value = merged.sum / merged.count;
+      blocks.splice(i, 2, merged);
+      i = Math.max(0, i - 1);
+    } else {
+      i++;
+    }
+  }
+  // Predict: for a raw x, find the block whose range contains it (or nearest), return its
+  // pooled average. This is a step function, not a smooth curve - genuinely different in
+  // character from Platt's continuous sigmoid.
+  return function predictIsotonic(x) {
+    if (x <= blocks[0].xMax) return blocks[0].value;
+    for (let b = 0; b < blocks.length; b++) {
+      if (x >= blocks[b].xMin && x <= blocks[b].xMax) return blocks[b].value;
+      if (b < blocks.length - 1 && x > blocks[b].xMax && x < blocks[b + 1].xMin) return blocks[b].value;
+    }
+    return blocks[blocks.length - 1].value;
+  };
+}
 // Daily self-healing derivation for quality-of-contact metrics (2026-07-27): no raw ingestion
 // worker exists for ref.batter_quality_of_contact / ref.batted_ball_profile's underlying
 // Statcast data (confirmed via full codebase search - see QUALITY_OF_CONTACT_METRICS_EXPANSION.md
