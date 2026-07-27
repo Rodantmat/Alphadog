@@ -348,7 +348,8 @@ function compactIssueDetails(issueType, reason, details) {
   return d;
 }
 function addIssue(issues, batchId, matrixId, row, severity, issueType, reason, details) {
-  issues.push({ issue_id: rid("pmi"), batch_id: batchId, matrix_id: matrixId, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: row.resolved_mlb_player_id || row.resolved_player_id, canonical_prop_key: row.canonical_prop_key, severity, issue_type: issueType, reason, details_json: boundedJson(compactIssueDetails(issueType, reason, details || {}), 900), official_date: row.official_date });
+  const issueId = `pmi|${matrixId}|${issueType}|${String(reason || "").slice(0, 80)}`;
+  issues.push({ issue_id: issueId, batch_id: batchId, matrix_id: matrixId, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: row.resolved_mlb_player_id || row.resolved_player_id, canonical_prop_key: row.canonical_prop_key, severity, issue_type: issueType, reason, details_json: boundedJson(compactIssueDetails(issueType, reason, details || {}), 900), official_date: row.official_date });
 }
 
 async function insertMatrixRows(pgClient, matrixRows, issueRows, coverageRows) {
