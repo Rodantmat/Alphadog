@@ -85,20 +85,19 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
   return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta), bin_n_test_games: bin.n_test_games };
 }
 
-function computeFinalConfidence(baselineConfidence, enrichmentRow, lineDistance) {
+function computeFinalConfidence(baselineConfidence, enrichmentRow, lineDistance, penaltyConfig) {
   const factorsApplied = (enrichmentRow && enrichmentRow.factors_applied) || 0;
   const factorsMissing = (enrichmentRow && enrichmentRow.factors_missing) || 0;
   const totalFactors = factorsApplied + factorsMissing;
   const baseConf = baselineConfidence != null ? baselineConfidence : 55;
   const adjustment = (enrichmentRow && enrichmentRow.confidence_adjustment || 0) * 100;
-  // Distance penalty (2026-07-27): findBaseline() does a flat nearest-neighbor lookup with no
-  // adjustment for how far the mined line is from the actual requested line. A baseline mined
-  // at a nearby line is a reasonable proxy within a small tolerance, but becomes progressively
-  // less trustworthy the further away it is - confirmed live, a 23-unit mismatch presented a
-  // confidently wrong HP with normal confidence. Tolerance of 2 units before any penalty (minor
-  // mismatches are common and usually benign), then -3 points per additional unit, capped at -30.
+  // Distance penalty thresholds are DB-configurable (config.calibration_config,
+  // key='line_distance_confidence_penalty') - not hardcoded, per explicit requirement that all
+  // tunable values live in the database for easy adjustment without a code deploy. Falls back to
+  // these defaults only if the DB read fails, never silently changing behavior otherwise.
+  const cfg = penaltyConfig || { free_tolerance_units: 2, penalty_per_unit: 3, max_penalty: 30 };
   const dist = Number(lineDistance) || 0;
-  const distancePenalty = dist > 2 ? Math.min(30, (dist - 2) * 3) : 0;
+  const distancePenalty = dist > cfg.free_tolerance_units ? Math.min(cfg.max_penalty, (dist - cfg.free_tolerance_units) * cfg.penalty_per_unit) : 0;
   let result;
   if (totalFactors === 0) {
     // No enrichment factors are configured for this prop type at all (e.g. rfi_nrfi) - this is
