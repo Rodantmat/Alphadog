@@ -8848,7 +8848,8 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
     { key: "baseline_v6_full_run", fn: runClassificationBaselineV6ToPostgresFullRun },
-    { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
+    { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes },
+    { key: "fit_platt_calibration", fn: runFitPlattCalibration }
   ];
   const results = [];
   const startAt = Number(input.resume_from_step || 0);
