@@ -160,7 +160,36 @@ CJ Abrams' `enrichment_leg_current.factor_breakdown_json` confirms `batter_quali
 end-to-end, verified against real production data, not inferred from code review alone.
 Hierarchy check re-run clean (0 violations) after all of this session's changes.
 
-## Recommended next-session task list, in priority order
+## Deeper factor-by-factor research (same session, continued) — HR/FB% and Pull% specifically
+Per explicit follow-up requiring rigor rather than a batch dismissal, researched these two
+individually rather than lumping them into "batted-ball-direction."
+
+**HR/FB% — confirmed NOT worth adding as a direct scoring signal.** Multiple sources
+consistently describe it as "the BABIP of power": real but modest year-to-year stability
+(r=0.74 for hitters per FanGraphs/Klaassen), and explicitly regression-prone within a season —
+"large spikes or dropoffs in HR/FB are generally temporary... not predictive of a power
+breakout." Critically, xwOBA and barrel_batted_rate (already live in our scoring) are the
+skill-based, luck-adjusted versions of exactly what HR/FB approximates from noisier outcome
+data — adding HR/FB directly risks reintroducing the noise those metrics already correct for.
+It remains valuable as a **display/context** signal (a large HR/FB vs FB% gap flags a
+regression candidate for a human reader), which is what it now is in the dossier — correctly
+scoped as informational, not a scoring input.
+
+**Pull% — confirmed NOT worth adding as a direct scoring signal, and confirmed the
+mechanism it would provide is already covered.** Verified directly in `phase2a-run-environment.js`
+(lines ~343-353): park factors are ALREADY selected by the batter's own handedness
+(`lhb_hr_factor` for L, `rhb_hr_factor` for R) before being applied. This is the exact,
+industry-standard mechanism multiple sources describe for capturing "short porch benefits
+pull hitters" (e.g., "always match batter handedness to the correct park factor column").
+Individual Pull% would be a second-order refinement on top of a mechanism already properly
+implemented — and per the earlier-cited FanGraphs research, that refinement's incremental
+value on top of exit-velocity/barrel metrics is itself small. Confirmed twice now from two
+different angles: not adding.
+
+**Conclusion, stated plainly**: every specific factor considered this session (ISO, xwOBAcon,
+Pull%, batted-ball-direction, HR/FB%, SwStr%, PulledBrl%) has now been individually researched
+and a decision made and justified — not defaulted to "skip." Only ISO cleared the bar for a
+genuine, additive, research-supported scoring signal distinct from what was already live.
 1. ~~Wire HR/FB% as a computed/displayed field~~ — DONE, verified (see above).
 2. ~~Build SwStr%/PulledBrl% mining~~ — CLOSED, per the research-grounded decision above:
    existing data (Whiff%-equivalent via real K-rate baseline, barrel_batted_rate) already
