@@ -1388,7 +1388,35 @@ async function runFitPlattCalibration(env, input = {}) {
         continue;
       }
       if (A < 0.3) {
-        results.push({ prop: propKey, skipped: true, n: trainPairs.length, reason: `rejected: A coefficient (${round(A, 4)}) too close to zero - a near-flat calibration curve that would map most/all of the raw probability range to a narrow output band, destroying per-player discrimination even while improving aggregate ECE/Brier - not stored`, A: round(A, 4), B: round(B, 4) });
+        if (trainPairs.length >= 500) {
+          const brierBeforeTestFlat = brierScore(testPairs);
+          const eceBeforeTestFlat = expectedCalibrationError(testPairs);
+          const predictIsoFlat = fitIsotonicRegression(trainPairs);
+          const calibratedTestIsoFlat = testPairs.map(([p, y]) => [predictIsoFlat(p), y]);
+          const brierAfterIsoFlat = brierScore(calibratedTestIsoFlat);
+          const eceAfterIsoFlat = expectedCalibrationError(calibratedTestIsoFlat);
+          const isoGenuinelyImprovedFlat = brierAfterIsoFlat < brierBeforeTestFlat && eceAfterIsoFlat < eceBeforeTestFlat;
+          if (isoGenuinelyImprovedFlat) {
+            const isoRowsFlat = [];
+            for (let b = 0; b < 10; b++) {
+              const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
+              const predicted = predictIsoFlat(mid);
+              isoRowsFlat.push({
+                correction_id: `isotonic_v1|${propKey}|more|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
+                line_bucket: "all_isotonic_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
+                empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
+                correction_delta: predicted - mid, methodology: "isotonic_regression_post_rootfix_v1", selected_side: "more",
+                notes: `Isotonic regression (PAVA), non-parametric fallback after Platt's fit was too flat to trust (A=${round(A,4)}). Isotonic: test brier ${round(brierBeforeTestFlat,4)}->${round(brierAfterIsoFlat,4)}, test ece ${round(eceBeforeTestFlat,4)}->${round(eceAfterIsoFlat,4)}.`,
+              });
+            }
+            const isoColsFlat = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
+            await sql`INSERT INTO score.calibration_correction_map ${sql(isoRowsFlat, ...isoColsFlat)}
+              ON CONFLICT (correction_id) DO UPDATE SET empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
+            results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, method: "isotonic_fallback_after_too_flat_platt", test_brier_before: round(brierBeforeTestFlat, 5), test_brier_after_isotonic: round(brierAfterIsoFlat, 5), test_ece_before: round(eceBeforeTestFlat, 5), test_ece_after_isotonic: round(eceAfterIsoFlat, 5), platt_A_rejected: round(A, 4) });
+            continue;
+          }
+        }
+        results.push({ prop: propKey, skipped: true, n: trainPairs.length, reason: `rejected: A coefficient (${round(A, 4)}) too close to zero - a near-flat calibration curve that would map most/all of the raw probability range to a narrow output band, destroying per-player discrimination even while improving aggregate ECE/Brier - not stored. Isotonic fallback also did not help (or sample too small to try safely).`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
       // Honest evaluation: apply the train-fitted coefficients to the held-out test set the fit
