@@ -1473,14 +1473,16 @@ async function runFitPlattCalibration(env, input = {}) {
         results.push({ prop: propKey, skipped: true, n: trainPairs.length, test_n: testPairs.length, reason: `rejected: does not genuinely improve on held-out data never seen during fitting (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}) - in-sample improvement alone is not sufficient. Isotonic fallback also did not help (or sample too small to try safely).`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
-      await sql`INSERT INTO score.platt_calibration_map (canonical_prop_key, coefficient_a, coefficient_b, n_samples, brier_before, brier_after, ece_before, ece_after, fitted_at)
-        VALUES (${propKey}, ${A}, ${B}, ${trainPairs.length}, ${brierBeforeTest}, ${brierAfterTest}, ${eceBeforeTest}, ${eceAfterTest}, now())
-        ON CONFLICT (canonical_prop_key) DO UPDATE SET coefficient_a=excluded.coefficient_a, coefficient_b=excluded.coefficient_b,
-          n_samples=excluded.n_samples, brier_before=excluded.brier_before, brier_after=excluded.brier_after,
-          ece_before=excluded.ece_before, ece_after=excluded.ece_after, fitted_at=now()`;
-      results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, A: round(A, 4), B: round(B, 4), test_brier_before: round(brierBeforeTest, 5), test_brier_after: round(brierAfterTest, 5), test_ece_before: round(eceBeforeTest, 5), test_ece_after: round(eceAfterTest, 5), genuinely_improved_out_of_sample: genuinelyImproved });
+      if (!dryRun) {
+        await sql`INSERT INTO score.platt_calibration_map (canonical_prop_key, coefficient_a, coefficient_b, n_samples, brier_before, brier_after, ece_before, ece_after, fitted_at)
+          VALUES (${propKey}, ${A}, ${B}, ${trainPairs.length}, ${brierBeforeTest}, ${brierAfterTest}, ${eceBeforeTest}, ${eceAfterTest}, now())
+          ON CONFLICT (canonical_prop_key) DO UPDATE SET coefficient_a=excluded.coefficient_a, coefficient_b=excluded.coefficient_b,
+            n_samples=excluded.n_samples, brier_before=excluded.brier_before, brier_after=excluded.brier_after,
+            ece_before=excluded.ece_before, ece_after=excluded.ece_after, fitted_at=now()`;
+      }
+      results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, A: round(A, 4), B: round(B, 4), test_brier_before: round(brierBeforeTest, 5), test_brier_after: round(brierAfterTest, 5), test_ece_before: round(eceBeforeTest, 5), test_ece_after: round(eceAfterTest, 5), genuinely_improved_out_of_sample: genuinelyImproved, dry_run: dryRun, would_apply: true });
     }
-    return { ok: true, mode: "fit_platt_calibration", props_fitted: results.filter(r => !r.skipped).length, props_skipped: results.filter(r => r.skipped).length, results };
+    return { ok: true, mode: "fit_platt_calibration", dry_run: dryRun, note: dryRun ? "FLAG-ONLY MODE: no writes made to platt_calibration_map or calibration_correction_map. Pass dry_run=false to actually apply." : "LIVE MODE: results below were written to the live calibration tables.", props_fitted: results.filter(r => !r.skipped).length, props_skipped: results.filter(r => r.skipped).length, results };
   } finally {
     try { await sql.end({ timeout: 1 }); } catch (_) {}
   }
