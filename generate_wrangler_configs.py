@@ -346,8 +346,11 @@ def make_config(worker_name, include_services=False):
             {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
             {"binding": "BASE_CLASSIFICATION_V5_WORKER", "service": "alphadog-v2-base-classification-v5"},
         ]
-        # Real schedule, matching the same time the old scheduled() dispatch used in production.
-        cfg["triggers"] = {"crons": ["45 8 * * *"]}
+        # Real schedule: 7:00 AM Pacific (PDT, UTC-7 in July) = 14:00 UTC. Moved from 1:45 AM PT
+        # (the original "45 8 * * *" UTC time, matching the old scheduled() dispatch) per explicit
+        # request - the run is fast now, and 7 AM gives more complete previous-night game data
+        # (box scores, final stats) time to settle before this pulls it.
+        cfg["triggers"] = {"crons": ["0 14 * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
