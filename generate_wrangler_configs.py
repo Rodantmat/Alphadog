@@ -205,7 +205,15 @@ def make_config(worker_name, include_services=False):
         # while never actually delivering/executing the trailing <script> block. Must live in
         # the generator or it gets wiped on every deploy before Wrangler even runs.
         cfg["limits"] = {"cpu_ms": 300000}
-    if worker_name == "alphadog-v2-board-runner":
+        cfg["services"] = [
+            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
+            {"binding": "BOARD_RUNNER_WORKER", "service": "alphadog-v2-board-runner"},
+            {"binding": "DAILY_CONTEXT_RUNNER_WORKER", "service": "alphadog-v2-daily-context-runner"},
+            {"binding": "MARKET_RUNNER_WORKER", "service": "alphadog-v2-market-runner"},
+            {"binding": "SCORING_RUNNER_WORKER", "service": "alphadog-v2-scoring-runner"},
+            {"binding": "WEEKLY_DIFFERENTIAL_RUNNER_WORKER", "service": "alphadog-v2-weekly-differential-runner"},
+            {"binding": "DAILY_DELTA_RUNNER_WORKER", "service": "alphadog-v2-daily-delta-runner"}
+        ]
         # New, deliberately simple standalone runner for board-full-run only (separate from the
         # legacy orchestrator's queue-table/lock-table machinery). No D1, no shared vars - it only
         # needs service bindings to the 4 stage workers it calls directly in sequence, and a raised
