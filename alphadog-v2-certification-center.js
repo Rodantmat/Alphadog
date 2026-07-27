@@ -1433,11 +1433,11 @@ async function apiFilters(env) {
       source_key,
       canonical_prop_key,
       CASE WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','runs_allowed','rfi_nrfi') THEN 'pitcher' ELSE 'hitter' END AS prop_family,
-      CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 'demon' ELSE 'regular' END AS payout_variant,
-      CASE WHEN LOWER(COALESCE(payout_variant,'')) IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END AS side_mode,
-      CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 1 ELSE 0 END AS is_goblin,
-      CASE WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 1 ELSE 0 END AS is_demon,
-      CASE WHEN LOWER(COALESCE(payout_variant,'')) NOT IN ('goblin','demon') THEN 1 ELSE 0 END AS is_standard,
+      CASE WHEN COALESCE(is_demon,0)=1 THEN 'demon' WHEN COALESCE(is_goblin,0)=1 THEN 'goblin' WHEN COALESCE(more_only,0)=1 THEN 'more_only' ELSE 'regular' END AS payout_variant,
+      CASE WHEN COALESCE(is_goblin,0)=1 OR COALESCE(is_demon,0)=1 OR COALESCE(more_only,0)=1 THEN 'more_only' ELSE 'two_sided' END AS side_mode,
+      COALESCE(is_goblin,0) AS is_goblin,
+      COALESCE(is_demon,0) AS is_demon,
+      CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 AND COALESCE(more_only,0)=0 THEN 1 ELSE 0 END AS is_standard,
       CASE WHEN estimated_hit_probability_0_100 >= 80 THEN '80+' WHEN estimated_hit_probability_0_100 >= 70 THEN '70+' WHEN estimated_hit_probability_0_100 >= 60 THEN '60+' ELSE '<60' END AS probability_band,
       board_tier,
       review_playable,
@@ -1449,17 +1449,15 @@ async function apiFilters(env) {
       MAX(score_0_100) AS max_score
     FROM score.final_board_current
     WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-      AND review_playable=1
-      AND COALESCE(live_playable,0)=0
       AND official_date >= CURRENT_DATE
       AND (official_game_time_utc IS NULL OR official_game_time_utc > now())
     GROUP BY source_key, canonical_prop_key,
       CASE WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','runs_allowed','rfi_nrfi') THEN 'pitcher' ELSE 'hitter' END,
-      CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 'demon' ELSE 'regular' END,
-      CASE WHEN LOWER(COALESCE(payout_variant,'')) IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END,
-      CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 1 ELSE 0 END,
-      CASE WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 1 ELSE 0 END,
-      CASE WHEN LOWER(COALESCE(payout_variant,'')) NOT IN ('goblin','demon') THEN 1 ELSE 0 END,
+      CASE WHEN COALESCE(is_demon,0)=1 THEN 'demon' WHEN COALESCE(is_goblin,0)=1 THEN 'goblin' WHEN COALESCE(more_only,0)=1 THEN 'more_only' ELSE 'regular' END,
+      CASE WHEN COALESCE(is_goblin,0)=1 OR COALESCE(is_demon,0)=1 OR COALESCE(more_only,0)=1 THEN 'more_only' ELSE 'two_sided' END,
+      COALESCE(is_goblin,0),
+      COALESCE(is_demon,0),
+      CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 AND COALESCE(more_only,0)=0 THEN 1 ELSE 0 END,
       CASE WHEN estimated_hit_probability_0_100 >= 80 THEN '80+' WHEN estimated_hit_probability_0_100 >= 70 THEN '70+' WHEN estimated_hit_probability_0_100 >= 60 THEN '60+' ELSE '<60' END,
       board_tier, review_playable, live_playable
     ORDER BY source_key, canonical_prop_key
@@ -1474,7 +1472,6 @@ async function apiFilters(env) {
       MAX(updated_at) AS latest_updated_at
     FROM score.final_board_current
     WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-      AND review_playable=1 AND COALESCE(live_playable,0)=0
   `);
   const sourceMap = new Map();
   const propMap = new Map();
