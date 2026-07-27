@@ -1283,6 +1283,46 @@ function fitPlattScaling(pairs, iterations = 500, lr = 0.1) {
   }
   return { A, B };
 }
+// Daily self-healing derivation for quality-of-contact metrics (2026-07-27): no raw ingestion
+// worker exists for ref.batter_quality_of_contact / ref.batted_ball_profile's underlying
+// Statcast data (confirmed via full codebase search - see QUALITY_OF_CONTACT_METRICS_EXPANSION.md
+// for the full investigation). Whatever refreshes the base raw_json is external to this
+// codebase. What IS owned here: recomputing the derived fields (iso, batted-ball-direction
+// breakdown) from whatever raw_json/columns already exist, for any row missing them. Running
+// this daily means any future manual re-import of the base tables gets its derived fields
+// backfilled automatically on the next cron cycle, rather than requiring another manual pass.
+async function runQualityOfContactDerivedFieldsRefresh(env, input = {}) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const isoResult = await sql`
+      UPDATE ref.batter_quality_of_contact
+      SET iso = ROUND((slg - ba)::numeric, 3)
+      WHERE iso IS NULL AND slg IS NOT NULL AND ba IS NOT NULL`;
+    const isoUpdated = isoResult.count || 0;
+
+    const battedBallResult = await sql`
+      UPDATE ref.batted_ball_profile
+      SET
+        fly_ball_pct = ROUND((raw_json->>'fb_rate')::numeric * 100, 1),
+        line_drive_pct = ROUND((raw_json->>'ld_rate')::numeric * 100, 1),
+        pop_up_pct = ROUND((raw_json->>'pu_rate')::numeric * 100, 1),
+        pull_pct = ROUND((raw_json->>'pull_rate')::numeric * 100, 1),
+        opposite_field_pct = ROUND((raw_json->>'oppo_rate')::numeric * 100, 1),
+        straight_away_pct = ROUND((raw_json->>'straight_rate')::numeric * 100, 1)
+      WHERE fly_ball_pct IS NULL AND raw_json IS NOT NULL AND raw_json->>'fb_rate' IS NOT NULL`;
+    const battedBallUpdated = battedBallResult.count || 0;
+
+    return {
+      ok: true, data_ok: true, mode: "quality_of_contact_derived_fields_refresh",
+      iso_rows_backfilled: isoUpdated,
+      batted_ball_direction_rows_backfilled: battedBallUpdated,
+      note: "Self-healing derivation only - does not mine new raw Statcast data (no ingestion worker exists for that, see QUALITY_OF_CONTACT_METRICS_EXPANSION.md). Recomputes derived fields for any row where the underlying raw_json/columns already exist but the derived field is still null - catches future manual re-imports automatically.",
+      timestamp_utc: nowUtc(),
+    };
+  } finally {
+    try { await sql.end({ timeout: 1 }); } catch (_) {}
+  }
+}
 async function runFitPlattCalibration(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
