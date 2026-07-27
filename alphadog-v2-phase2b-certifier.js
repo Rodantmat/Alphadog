@@ -156,7 +156,13 @@ function buildSideVariationContext(row) {
       sideMode = "two_sided"; availableSides = ["more", "less"]; sideAvailabilityStatus = "side_ready_two_sided"; sideEligibilityReason = "PRIZEPICKS_STANDARD_TWO_SIDED";
     }
   } else {
-    if (overPrice !== null && underPrice !== null) {
+    if (overIsPlaceholder && !underIsPlaceholder) {
+      sideMode = "less_only"; availableSides = ["less"]; sideAvailabilityStatus = "side_ready_less_only";
+      sideEligibilityReason = sourceKey === "sleeper" ? "SLEEPER_DFS_NORMALIZED_OVER_PLACEHOLDER" : (sourceKey === "underdog" ? "UNDERDOG_DFS_NORMALIZED_OVER_PLACEHOLDER" : "SOURCE_DFS_NORMALIZED_OVER_PLACEHOLDER");
+    } else if (underIsPlaceholder && !overIsPlaceholder) {
+      sideMode = "more_only"; availableSides = ["more"]; sideAvailabilityStatus = "side_ready_more_only";
+      sideEligibilityReason = sourceKey === "sleeper" ? "SLEEPER_DFS_NORMALIZED_UNDER_PLACEHOLDER" : (sourceKey === "underdog" ? "UNDERDOG_DFS_NORMALIZED_UNDER_PLACEHOLDER" : "SOURCE_DFS_NORMALIZED_UNDER_PLACEHOLDER");
+    } else if (overPrice !== null && underPrice !== null) {
       sideMode = "two_sided"; availableSides = ["more", "less"]; sideAvailabilityStatus = "side_ready_two_sided";
       sideEligibilityReason = sourceKey === "sleeper" ? "SLEEPER_OVER_UNDER_PRICES_PRESENT" : (sourceKey === "underdog" ? "UNDERDOG_OVER_UNDER_PRICES_PRESENT" : "SOURCE_OVER_UNDER_PRICES_PRESENT");
     } else if (overPrice !== null) {
