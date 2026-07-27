@@ -78,6 +78,14 @@ and was correctly not rushed this session. The right source is Baseball Savant's
 Leaderboard endpoint (`baseballsavant.mlb.com/leaderboard/custom`), which supports CSV export
 with selectable columns; this is the concrete starting point for that future build.
 
+## Update (same session, continued)
+**HR/FB% is now wired and live** — computed as `home_runs_sum / (fly_ball_pct/100 * batted_ball_events)`
+in both dossier and player-profile endpoints, displayed in the QoC card. Verified against real
+data: Colton Cowser shows 17.0% (fly_ball_pct=32.9, batted_ball_events=143, home_runs_sum=8),
+matching hand calculation exactly and consistent with his other above-average power indicators
+(barrel_batted_rate=10.5%, iso=0.126). Item 1 from the priority list below is complete;
+items 2-5 remain open, unchanged.
+
 ## Recommended next-session task list, in priority order
 1. Wire HR/FB% as a computed/displayed field (data already exists, just needs joining).
 2. Build a real mining worker against Baseball Savant's Custom Leaderboard CSV endpoint for
