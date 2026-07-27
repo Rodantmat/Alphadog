@@ -329,9 +329,11 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
         ]
-        # Real schedule, matching the same time the old scheduled() dispatch used in production.
-        cfg["triggers"] = {"crons": ["0 3 * * 1"]}
-    if worker_name == "alphadog-v2-daily-delta-runner":
+        # Real schedule: 2:00 AM Pacific Monday (PDT, UTC-7 in July) = 09:00 UTC Monday. Corrected
+        # 2026-07-27: was "0 3 * * 1" (3am UTC Monday = 8pm PT SUNDAY, the wrong day and 6 hours
+        # off from the documented "Monday 2am PT" intent) - confirmed this caused the run to be
+        # missed/mistimed relative to expectation.
+        cfg["triggers"] = {"crons": ["0 9 * * 1"]}
         # New, deliberately simple standalone runner for the daily morning delta, same design as
         # weekly-differential-runner: single service binding to the one worker that owns this
         # whole chain internally (its own 6-step resume sequence).
