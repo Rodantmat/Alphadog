@@ -1282,8 +1282,13 @@ async function apiDossier(env, url) {
   }
 
   const qocRowD = !isPitcher ? (await safeQuery(`SELECT xba, xslg, xwoba, woba, ba, slg, xiso, iso, xwobacon, pull_percent, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]))[0] || null : null;
-  const battedBallDirD = !isPitcher ? (await safeQuery(`SELECT fly_ball_pct, line_drive_pct, ground_ball_pct, pop_up_pct, pull_pct, opposite_field_pct FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]))[0] || null : null;
+  const battedBallDirD = !isPitcher ? (await safeQuery(`SELECT fly_ball_pct, line_drive_pct, ground_ball_pct, pop_up_pct, pull_pct, opposite_field_pct, batted_ball_events FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbPlayerId]))[0] || null : null;
+  const hrSumRowD = !isPitcher ? (await safeQuery(`SELECT home_runs_sum FROM stats_hitter.metric_snapshots WHERE player_id=? AND metric_window='season_to_date'`, [mlbPlayerId]))[0] || null : null;
   if (qocRowD && battedBallDirD) Object.assign(qocRowD, battedBallDirD);
+  if (qocRowD && battedBallDirD && hrSumRowD && Number(battedBallDirD.batted_ball_events) > 0 && battedBallDirD.fly_ball_pct != null) {
+    const flyBallCount = (Number(battedBallDirD.fly_ball_pct) / 100) * Number(battedBallDirD.batted_ball_events);
+    qocRowD.hr_fb_percent = flyBallCount > 0 ? Math.round(((Number(hrSumRowD.home_runs_sum) || 0) / flyBallCount) * 1000) / 10 : null;
+  }
 
   // Statcast-tier and availability metrics, brought into the dossier for parity with player-profile
   // so a single leg's dossier is fully self-contained for a pro bettor evaluating this exact prop.
