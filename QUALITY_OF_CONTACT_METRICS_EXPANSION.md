@@ -190,6 +190,8 @@ different angles: not adding.
 Pull%, batted-ball-direction, HR/FB%, SwStr%, PulledBrl%) has now been individually researched
 and a decision made and justified — not defaulted to "skip." Only ISO cleared the bar for a
 genuine, additive, research-supported scoring signal distinct from what was already live.
+
+## Recommended next-session task list, in priority order
 1. ~~Wire HR/FB% as a computed/displayed field~~ — DONE, verified (see above).
 2. ~~Build SwStr%/PulledBrl% mining~~ — CLOSED, per the research-grounded decision above:
    existing data (Whiff%-equivalent via real K-rate baseline, barrel_batted_rate) already
