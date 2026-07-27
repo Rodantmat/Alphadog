@@ -1417,7 +1417,11 @@ async function runResolvePropOutcomes(env, input = {}) {
     }
     if (outcomeRows.length) {
       const cols = ["outcome_id","final_board_row_id","hp_board_row_id","matrix_id","prepared_row_id","source_key","game_pk","official_date","mlb_player_id","player_name","canonical_prop_key","line_value","selected_side","estimated_hit_probability_0_100","probability_confidence_0_100","score_0_100","score_grade","board_tier","live_playable","actual_stat_value","outcome_result","outcome_hit","brier_component","resolved_at"];
-      await sql`INSERT INTO score.prop_outcome_history ${sql(outcomeRows, ...cols)} ON CONFLICT (outcome_id) DO NOTHING`;
+      const OUTCOME_INSERT_CHUNK_SIZE = 500;
+      for (let i = 0; i < outcomeRows.length; i += OUTCOME_INSERT_CHUNK_SIZE) {
+        const chunk = outcomeRows.slice(i, i + OUTCOME_INSERT_CHUNK_SIZE);
+        await sql`INSERT INTO score.prop_outcome_history ${sql(chunk, ...cols)} ON CONFLICT (outcome_id) DO NOTHING`;
+      }
     }
     return { ok: true, mode: "resolve_prop_outcomes", candidates: rows.length, resolved: outcomeRows.length, no_actual_data: noActual, games_checked: gamePks.length };
   } catch (err) {
