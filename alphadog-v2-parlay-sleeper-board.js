@@ -417,7 +417,9 @@ function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
   // conventions): 'player_runs' can mean either batter runs-scored or pitcher runs-allowed
   // depending on context. Disambiguate by roster position.
   const rawCanonical = SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
-  const canonical = (sourceKey === "player_runs" && isPitcher) ? "runs_allowed" : rawCanonical;
+  const canonical = (sourceKey === "player_runs" && isPitcher) ? "runs_allowed"
+    : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score"
+    : rawCanonical;
   if (!canonical) {
     return { ok: false, canonical_prop_key: null, status: "unmapped_source_stat_name", reason: "no_source_proven_mapping_for_market_key" };
   }
