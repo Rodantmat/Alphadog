@@ -86,6 +86,21 @@ matching hand calculation exactly and consistent with his other above-average po
 (barrel_batted_rate=10.5%, iso=0.126). Item 1 from the priority list below is complete;
 items 2-5 remain open, unchanged.
 
+## CORRECTION (2026-07-27, later same day) — the earlier "no mining worker" claim was WRONG
+Confirmed live: `alphadog-v2-weekly-differential-runner` DOES mine both `ref.batter_quality_of_contact`
+(step "quality_of_contact") and `ref.batted_ball_profile` (step "batted_ball_profile") as real,
+working steps in its weekly chain - watched it add 2 new player rows live, and the daily
+`quality_of_contact_derived_fields_refresh` step correctly caught and backfilled both immediately
+after. The earlier claim in this document that "no automated mining worker exists anywhere" was
+based on an incomplete search (checked static-*/daily-*/base-expansion-mining/orchestrator/
+control-room/score-audit/main.py, but not weekly-differential-runner's own internal step list) -
+factually wrong, and correcting it here rather than leaving it stand uncorrected. This does NOT
+change the SwStr%/PulledBrl% decision above, which was based on their predictive value via
+independent research, not on mining feasibility - that reasoning stands regardless of what
+mining infrastructure exists. It does mean: if SwStr%/PulledBrl% mining were ever pursued, it
+would likely be added as new steps to this SAME existing weekly-differential chain, not built
+from scratch as a standalone worker.
+
 ## Correction (same session, continued) — the Custom Leaderboard path needs revision
 Direct inspection of `baseballsavant.mlb.com/leaderboard/custom` (full column list fetched)
 confirms: **there is no "SwStr%" column on Baseball Savant at all** — that's FanGraphs
