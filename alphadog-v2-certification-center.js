@@ -2610,10 +2610,93 @@ function renderPlayerProfileDream(j){
 }
 
 
-function renderHealth(){const c=health?.current_board||{}, f=health?.final_board_batch||{}, h=health?.hp_board_batch||{};$('healthStatus').textContent='Read-only V2 health loaded • '+(health?.version||'');const items=[['Raw Rows',c.current_rows],['Default Rows',c.default_rows],['Review Rows',c.review_rows],['Live Rows',c.live_rows],['HP Range',num(c.min_hp)+'–'+num(c.max_hp)],['Certainty Range',num(c.min_certainty)+'–'+num(c.max_certainty)],['Overall Range',num(c.min_score)+'–'+num(c.max_score)],['Final Grade',f.certification_grade||'—'],['HP V2 Rows',h.hp_rows_written||'—']];$('healthCards').innerHTML=items.map(x=>'<div class="healthCard"><div class="small">'+esc(x[0])+'</div><div class="metric">'+esc(x[1]??'—')+'</div></div>').join('')+'<div class="healthCard" style="grid-column:1/-1"><div class="small">Final Board V2 Batch</div><div>'+esc(f.batch_id||c.final_board_batch_id||'—')+'</div><div class="small">'+esc((f.status||'')+' • '+(f.worker_version||''))+'</div></div>'}
+function statusDot(status){const color=status==='green'?'#2ecc71':status==='yellow'?'#f1c40f':'#e74c3c';return '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+color+';margin-right:8px;vertical-align:middle"></span>'}
+function coverageBar(covered,expected){if(expected==null||!expected)return '';const ratio=Math.max(0,Math.min(1,covered/expected));const color=ratio>=0.9?'#2ecc71':ratio>=0.5?'#f1c40f':'#e74c3c';return '<div style="background:#0d1420;border-radius:4px;height:6px;margin-top:4px;overflow:hidden"><div style="background:'+color+';height:100%;width:'+(ratio*100)+'%"></div></div>'}
+function renderHealth(){
+  if(!health||!health.layers){$('healthCards').innerHTML='<div class="empty">No health data.</div>';return}
+  $('healthStatus').innerHTML=statusDot(health.overall_status)+'Overall status • Generated '+esc(health.generated_at||'')+' • '+esc(health.total_board_players||0)+' board players, '+esc(health.total_board_games||0)+' games today';
+  $('healthCards').innerHTML=health.layers.map(layer=>{
+    const metricsHtml=(layer.metrics||[]).map(m=>{
+      const covStr=m.expected!=null?esc(m.covered)+' / '+esc(m.expected):esc(m.covered);
+      return '<div style="padding:6px 0;border-bottom:1px solid #222"><div style="display:flex;justify-content:space-between"><span>'+esc(m.label)+'</span><span><b>'+covStr+'</b> '+esc(m.unit||'')+'</span></div>'+coverageBar(m.covered,m.expected)+(m.note?'<div class="small" style="color:#9ab;margin-top:2px">'+esc(m.note)+'</div>':'')+'</div>'
+    }).join('');
+    const totalsHtml=layer.totals?('<div class="small" style="color:#9ab;margin-top:6px">'+Object.entries(layer.totals).map(([k,v])=>esc(cap(k))+': '+esc(v)).join(' • ')+'</div>'):'';
+    const rerunHtml=layer.rerun_action?('<button class="btn healthRerunBtn" data-target="'+esc(layer.rerun_action.target)+'" data-mode="'+esc(layer.rerun_action.mode)+'" style="margin-top:10px">'+esc(layer.rerun_action.label)+'</button>'):'';
+    return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px">'+
+      '<div style="font-size:16px;font-weight:600">'+statusDot(layer.status)+esc(layer.label)+'</div>'+
+      '<div class="small" style="color:#9ab;margin:4px 0 8px">Last update: '+esc(layer.last_update||'Never')+(layer.note?' • '+esc(layer.note):'')+'</div>'+
+      metricsHtml+totalsHtml+rerunHtml+
+      '<div class="healthRerunResult small" data-for="'+esc(layer.key)+'" style="margin-top:6px"></div>'+
+    '</div>'
+  }).join('');
+  document.querySelectorAll('.healthRerunBtn').forEach(btn=>btn.onclick=async()=>{
+    const target=btn.dataset.target, mode=btn.dataset.mode;
+    const resultDiv=btn.parentElement.querySelector('.healthRerunResult');
+    btn.disabled=true; btn.textContent='Running...'; resultDiv.textContent='';
+    try{
+      const j=await (await fetch('/api/main-board/health/rerun',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({target,mode})})).json();
+      resultDiv.innerHTML=j.ok?'<span style="color:#2ecc71">Triggered successfully. Reload health in a minute to see updated status.</span>':'<span class="err">Failed: '+esc(j.error||JSON.stringify(j.response||{}))+'</span>';
+    }catch(e){resultDiv.innerHTML='<span class="err">Error: '+esc(e.message||e)+'</span>'}
+    btn.disabled=false; btn.textContent=btn.textContent==='Running...'?btn.dataset.mode:btn.textContent;
+    loadHealth();
+  });
+}
 async function fetchWithTimeout(url, opts, ms){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||15000);try{return await fetch(url,{...opts,signal:ctrl.signal})}finally{clearTimeout(t)}}
 async function load(){try{$('status').textContent='Loading filters...';const fj=await (await fetchWithTimeout('/api/main-board/filters?t='+Date.now(),{cache:'no-store'},15000)).json();if(!fj.ok)throw Error(fj.error||'filters failed');renderFilters(fj);$('status').textContent='Loading board...';const j=await (await fetchWithTimeout('/api/main-board/current?limit=1000&t='+Date.now(),{cache:'no-store'},15000)).json();if(!j.ok)throw Error(j.error||'board failed');rows=Array.isArray(j.rows)?j.rows:[];render()}catch(e){const msg=e&&e.name==='AbortError'?'Request timed out after 15s - the server may be slow or unreachable.':(e.message||e);$('status').innerHTML='<span class="err">Board load failed: '+esc(msg)+'</span>';$('cards').innerHTML='<div class="empty err" style="grid-column:1/-1">Could not load Review Board.</div>'}}
 async function loadHealth(){try{$('healthStatus').textContent='Loading health...';const j=await (await fetch('/api/main-board/health?t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'health failed');health=j;renderHealth()}catch(e){$('healthStatus').innerHTML='<span class="err">Health load failed: '+esc(e.message||e)+'</span>'}}
+let calibrationReport=null, calibrationSelected=new Set();
+function renderCalibration(){
+  if(!calibrationReport||!calibrationReport.report){$('calibrationCards').innerHTML='<div class="empty">No calibration data.</div>';return}
+  const rows=calibrationReport.report;
+  $('calibrationStatus').innerHTML='Generated '+esc(calibrationReport.generated_at||'')+' • '+esc(calibrationReport.needs_attention||0)+' need attention out of '+esc(calibrationReport.total_props||0)+' props';
+  $('calibrationCards').innerHTML=rows.map(r=>{
+    const canApply=r.severity==='recommend';
+    const dotColor=r.severity==='recommend'?'yellow':r.severity==='warning'?'red':'green';
+    return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px">'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+      (canApply?'<input type="checkbox" class="calibCheck" data-prop="'+esc(r.prop)+'" style="width:18px;height:18px">':'<span style="width:18px;display:inline-block"></span>')+
+      statusDot(dotColor)+'<b>'+esc(r.prop)+'</b><span class="small" style="color:#9ab">'+esc(r.status)+'</span></div>'+
+      '<div class="small" style="margin:6px 0">'+esc(r.summary)+'</div>'+
+      '<div class="small" style="color:#9ab">'+esc(r.recommendation)+'</div>'+
+    '</div>'
+  }).join('');
+  document.querySelectorAll('.calibCheck').forEach(cb=>cb.onchange=()=>{
+    if(cb.checked)calibrationSelected.add(cb.dataset.prop);else calibrationSelected.delete(cb.dataset.prop);
+    $('calibrationSelectedCount').textContent=calibrationSelected.size;
+    $('calibrationApplyBar').classList.toggle('hidden',calibrationSelected.size===0);
+  });
+}
+async function loadCalibration(){try{$('calibrationStatus').textContent='Loading calibration report...';const j=await (await fetch('/api/calibration/report?t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'calibration report failed');calibrationReport=j.response||j;renderCalibration()}catch(e){$('calibrationStatus').innerHTML='<span class="err">Calibration load failed: '+esc(e.message||e)+'</span>'}}
+async function applyCalibrationSelected(){
+  const props=Array.from(calibrationSelected);
+  if(!props.length)return;
+  $('calibrationApplyBtn').disabled=true; $('calibrationApplyBtn').textContent='Applying...';
+  try{
+    const j=await (await fetch('/api/calibration/apply',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({props})})).json();
+    $('calibrationStatus').innerHTML=j.ok?'<span style="color:#2ecc71">Applied: '+esc((j.response&&j.response.applied||[]).join(', '))+'</span>':'<span class="err">Failed: '+esc(j.error||'')+'</span>';
+    calibrationSelected.clear(); $('calibrationApplyBar').classList.add('hidden');
+    loadCalibration();
+  }catch(e){$('calibrationStatus').innerHTML='<span class="err">Error: '+esc(e.message||e)+'</span>'}
+  $('calibrationApplyBtn').disabled=false; $('calibrationApplyBtn').textContent='Apply Selected';
+}
+const PW_GATE_CODE='3971';
+let pwGateUnlocked=false, pwGatePendingScreen=null;
+function requirePasswordThen(screenName, afterFn){
+  if(pwGateUnlocked){ setScreen(screenName); afterFn(); return; }
+  pwGatePendingScreen={screenName, afterFn};
+  $('pwGateInput').value=''; $('pwGateError').textContent='';
+  $('pwGateOverlay').classList.remove('hidden');
+  $('pwGateInput').focus();
+}
+function pwGateTrySubmit(){
+  if($('pwGateInput').value===PW_GATE_CODE){
+    pwGateUnlocked=true;
+    $('pwGateOverlay').classList.add('hidden');
+    if(pwGatePendingScreen){ setScreen(pwGatePendingScreen.screenName); pwGatePendingScreen.afterFn(); pwGatePendingScreen=null; }
+  } else {
+    $('pwGateError').textContent='Incorrect password.';
+  }
+}
 function boot(){$('menuOpen').onclick=e=>{e.stopPropagation();$('mainMenu').classList.toggle('hidden')};document.addEventListener('click',()=>$('mainMenu').classList.add('hidden'));$('menuBoard').onclick=()=>{setScreen('board');render()};$('menuHealth').onclick=()=>{setScreen('health');loadHealth()};$('menuSlips').onclick=loadSlips;$('menuPlayerProfile').onclick=openPlayerProfile;$('backBoard').onclick=()=>setScreen('board');$('buildBack').onclick=()=>setScreen('board');$('slipsBack').onclick=()=>setScreen('board');$('profileBack').onclick=()=>setScreen('board');$('slipFloatBuild').onclick=openBuild;$('playerSearch').oninput=()=>{clearTimeout(window.__playerSearchTimer);window.__playerSearchTimer=setTimeout(searchPlayers,220)};$('dossierBack').onclick=()=>setScreen('board');$('dossierHome').onclick=()=>setScreen('board');$('refresh').onclick=load;load()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{try{boot()}catch(e){document.body.insertAdjacentHTML('afterbegin','<div style="background:#c00;color:#fff;padding:16px;font-size:16px;font-weight:bold;position:relative;z-index:99999">BOOT ERROR: '+String(e&&e.stack||e)+'</div>')}});else{try{boot()}catch(e){document.body.insertAdjacentHTML('afterbegin','<div style="background:#c00;color:#fff;padding:16px;font-size:16px;font-weight:bold;position:relative;z-index:99999">BOOT ERROR: '+String(e&&e.stack||e)+'</div>')}}
 })();
