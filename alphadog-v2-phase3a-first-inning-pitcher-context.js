@@ -1484,16 +1484,18 @@ async function runFitPlattCalibration(env, input = {}) {
         // the isotonic fallback path did this conversion, so a genuinely-validated Platt fit could
         // sit correctly in platt_calibration_map forever without ever affecting a real prediction.
         const plattBinRows = [];
-        for (let b = 0; b < 10; b++) {
-          const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
-          const predicted = sigmoid(A * logit(mid) + B);
-          plattBinRows.push({
-            correction_id: `platt_v2|${propKey}|more|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
-            line_bucket: "all_platt_v2", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
-            empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
-            correction_delta: predicted - mid, methodology: "platt_scaling_post_rootfix_v2", selected_side: "more",
-            notes: `Platt scaling (A=${round(A,4)}, B=${round(B,4)}), honestly validated on a held-out time-based test set never seen during fitting: test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}.`,
-          });
+        for (const side of ["more", "less"]) {
+          for (let b = 0; b < 10; b++) {
+            const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
+            const predicted = sigmoid(A * logit(mid) + B);
+            plattBinRows.push({
+              correction_id: `platt_v2|${propKey}|${side}|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
+              line_bucket: "all_platt_v2", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
+              empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
+              correction_delta: predicted - mid, methodology: "platt_scaling_post_rootfix_v2", selected_side: side,
+              notes: `Platt scaling (A=${round(A,4)}, B=${round(B,4)}), honestly validated on a held-out time-based test set never seen during fitting (side-agnostic fit applied to both sides): test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}.`,
+            });
+          }
         }
         const plattBinCols = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
         await sql`INSERT INTO score.calibration_correction_map ${sql(plattBinRows, ...plattBinCols)}
