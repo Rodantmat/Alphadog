@@ -1479,6 +1479,25 @@ async function runFitPlattCalibration(env, input = {}) {
           ON CONFLICT (canonical_prop_key) DO UPDATE SET coefficient_a=excluded.coefficient_a, coefficient_b=excluded.coefficient_b,
             n_samples=excluded.n_samples, brier_before=excluded.brier_before, brier_after=excluded.brier_after,
             ece_before=excluded.ece_before, ece_after=excluded.ece_after, fitted_at=now()`;
+        // Convert the fitted A/B coefficients into 10 fixed-width bins in calibration_correction_map,
+        // the table applyCalibrationCorrection() actually reads for live scoring - previously only
+        // the isotonic fallback path did this conversion, so a genuinely-validated Platt fit could
+        // sit correctly in platt_calibration_map forever without ever affecting a real prediction.
+        const plattBinRows = [];
+        for (let b = 0; b < 10; b++) {
+          const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
+          const predicted = sigmoid(A * logit(mid) + B);
+          plattBinRows.push({
+            correction_id: `platt_v2|${propKey}|more|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
+            line_bucket: "all_platt_v2", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
+            empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
+            correction_delta: predicted - mid, methodology: "platt_scaling_post_rootfix_v2", selected_side: "more",
+            notes: `Platt scaling (A=${round(A,4)}, B=${round(B,4)}), honestly validated on a held-out time-based test set never seen during fitting: test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}.`,
+          });
+        }
+        const plattBinCols = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
+        await sql`INSERT INTO score.calibration_correction_map ${sql(plattBinRows, ...plattBinCols)}
+          ON CONFLICT (correction_id) DO UPDATE SET empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
       }
       results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, A: round(A, 4), B: round(B, 4), test_brier_before: round(brierBeforeTest, 5), test_brier_after: round(brierAfterTest, 5), test_ece_before: round(eceBeforeTest, 5), test_ece_after: round(eceAfterTest, 5), genuinely_improved_out_of_sample: genuinelyImproved, dry_run: dryRun, would_apply: true });
     }
