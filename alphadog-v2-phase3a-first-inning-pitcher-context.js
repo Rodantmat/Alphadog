@@ -1365,6 +1365,11 @@ async function runFitPlattCalibration(env, input = {}) {
   try {
     const minSamples = Math.max(20, Number(input.min_samples || 20));
     const minTestSamples = Math.max(10, Number(input.min_test_samples || 15));
+    // Flag-only by default (2026-07-27): no auto-calibration system for now, per explicit
+    // direction. This function detects and reports what it would fit/apply, but does not write
+    // to score.platt_calibration_map or score.calibration_correction_map unless the caller
+    // explicitly passes dry_run=false - a deliberate, human-initiated decision each time.
+    const dryRun = input.dry_run !== false;
     const propRows = await sql`SELECT DISTINCT canonical_prop_key FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL`;
     const results = [];
     for (const { canonical_prop_key: propKey } of propRows) {
