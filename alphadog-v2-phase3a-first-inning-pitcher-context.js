@@ -8887,6 +8887,7 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "bullpen_history", fn: runDeriveBullpenHistoryFromPostgres },
     { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
+    { key: "quality_of_contact_derived_fields_refresh", fn: runQualityOfContactDerivedFieldsRefresh },
     { key: "baseline_v6_full_run", fn: runClassificationBaselineV6ToPostgresFullRun },
     { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes },
     { key: "fit_platt_calibration", fn: runFitPlattCalibration }
