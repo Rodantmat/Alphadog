@@ -1538,19 +1538,134 @@ async function apiFilters(env) {
 async function apiHealth(env) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const pg = pgClient(env);
-  const finalCurrent = await queryAllPg(pg, `
-    SELECT
-      final_board_batch_id AS final_board_batch_id,
-      source_engine_batch_id AS source_final_score_batch_id,
-      NULL AS source_hp_v2_batch_id,
-      NULL AS source_score_enrichment_batch_id,
-      COUNT(*) AS current_rows,
-      COUNT(*) AS default_rows,
-      SUM(CASE WHEN review_playable = 1 THEN 1 ELSE 0 END) AS review_rows,
-      SUM(CASE WHEN live_playable = 1 THEN 1 ELSE 0 END) AS live_rows,
-      MIN(estimated_hit_probability_0_100) AS min_hp,
-      MAX(estimated_hit_probability_0_100) AS max_hp,
-      MIN(score_0_100) AS min_score,
+
+  // Denominator for meaningful coverage: players actually relevant to TODAY's board, not the
+  // entire MLB active roster (most of whom aren't playing today - that comparison would look
+  // like a huge gap when it's actually fine).
+  const boardPlayerRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT mlb_player_id) AS n FROM score.final_board_current`);
+  const totalBoardPlayers = Number(boardPlayerRows[0]?.n || 0);
+  const boardGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_current WHERE game_pk IS NOT NULL`);
+  const totalBoardGames = Number(boardGameRows[0]?.n || 0);
+
+  function statusFor(coverageRatio, isFatal) {
+    if (isFatal) return "red";
+    if (coverageRatio == null) return "yellow";
+    if (coverageRatio >= 0.9) return "green";
+    if (coverageRatio >= 0.5) return "yellow";
+    return "red";
+  }
+  function ratio(covered, total) { return total > 0 ? covered / total : null; }
+
+  // LAYER 1: Incremental / Delta (morning delta chain)
+  const hitterLogRows = await queryAllPg(pg, `
+    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
+    FROM stats_hitter.game_logs gl WHERE gl.game_date >= (CURRENT_DATE - interval '1 day')`);
+  const pitcherLogRows = await queryAllPg(pg, `
+    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
+    FROM stats_pitcher.game_logs gl WHERE gl.game_date >= (CURRENT_DATE - interval '1 day')`);
+  const teamLogRows = await queryAllPg(pg, `
+    SELECT COUNT(DISTINCT team_id) AS covered FROM stats_hitter.game_logs WHERE game_date >= (CURRENT_DATE - interval '1 day')`);
+  const baselineRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM classification.baseline_v6_current`);
+  const hitterCoverage = ratio(Number(hitterLogRows[0]?.covered || 0), totalBoardPlayers);
+  const pitcherCoverage = ratio(Number(pitcherLogRows[0]?.covered || 0), totalBoardPlayers);
+  const teamCoverage = ratio(Number(teamLogRows[0]?.covered || 0), 30);
+  const deltaLastUpdate = hitterLogRows[0]?.last_update || null;
+  const deltaStatus = statusFor(Math.min(hitterCoverage ?? 1, pitcherCoverage ?? 1, teamCoverage ?? 1), !deltaLastUpdate);
+
+  // LAYER 2: Weekly Differential (quality-of-contact/batted-ball mining)
+  const qocRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batter_quality_of_contact`);
+  const bbpRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batted_ball_profile`);
+  const parkRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.park_factors`);
+  const weeklyLastUpdate = qocRows[0]?.last_update || null;
+  const weeklyDaysStale = weeklyLastUpdate ? Math.floor((Date.now() - new Date(weeklyLastUpdate).getTime()) / 86400000) : null;
+  const weeklyStatus = !weeklyLastUpdate ? "red" : (weeklyDaysStale > 10 ? "red" : (weeklyDaysStale > 7 ? "yellow" : "green"));
+
+  // LAYER 3: Board Full Run (per-source leg counts + parse quality)
+  const boardBySourceRows = await queryAllPg(pg, `
+    SELECT source_key, COUNT(*) AS total, SUM(CASE WHEN source_pickable=1 THEN 1 ELSE 0 END) AS pickable, SUM(CASE WHEN pickable_safe=1 THEN 1 ELSE 0 END) AS safe, MAX(updated_at) AS last_update
+    FROM score.board_prepared_current GROUP BY source_key ORDER BY source_key`);
+  const boardTotalLegs = boardBySourceRows.reduce((s, r) => s + Number(r.total || 0), 0);
+  const boardTotalSafe = boardBySourceRows.reduce((s, r) => s + Number(r.safe || 0), 0);
+  const boardParseRatio = ratio(boardTotalSafe, boardTotalLegs);
+  const boardLastUpdate = boardBySourceRows.reduce((max, r) => (!max || (r.last_update && r.last_update > max)) ? r.last_update : max, null);
+  const boardStatus = statusFor(boardParseRatio, boardBySourceRows.length === 0);
+
+  // LAYER 4: Daily Context (per-factor coverage - which is real sourced data)
+  const weatherRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_weather_current`);
+  const umpireRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, SUM(CASE WHEN home_plate_umpire_name IS NOT NULL THEN 1 ELSE 0 END) AS named FROM daily.umpire_context_current`);
+  const lineupRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM daily.lineups_current`);
+  const bullpenRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT team_id) AS n FROM daily.bullpen_availability_current`);
+  const weatherCoverage = ratio(Number(weatherRows[0]?.n || 0), totalBoardGames);
+  const umpireCoverage = ratio(Number(umpireRows[0]?.named || 0), totalBoardGames);
+  const lineupCoverage = ratio(Number(lineupRows[0]?.n || 0), totalBoardGames);
+  const dailyContextStatus = statusFor(Math.min(weatherCoverage ?? 1, umpireCoverage ?? 1, lineupCoverage ?? 1), false);
+  const dailyContextLastUpdate = weatherRows[0]?.last_update || null;
+
+  // LAYER 5: Market (books + coverage)
+  const marketBySourceRows = await queryAllPg(pg, `SELECT source_key, COUNT(*) AS n, MAX(updated_at) AS last_update FROM score.board_prepared_current GROUP BY source_key ORDER BY n DESC`);
+  const marketStatus = marketBySourceRows.length >= 2 ? "green" : (marketBySourceRows.length === 1 ? "yellow" : "red");
+  const marketLastUpdate = marketBySourceRows.reduce((max, r) => (!max || (r.last_update && r.last_update > max)) ? r.last_update : max, null);
+
+  // LAYER 6: Scoring System (final board tier breakdown)
+  const scoringRows = await queryAllPg(pg, `
+    SELECT COUNT(*) AS total, SUM(CASE WHEN board_tier='PRIMARY' THEN 1 ELSE 0 END) AS primary_n, SUM(CASE WHEN board_tier='REVIEW' THEN 1 ELSE 0 END) AS review_n,
+           SUM(CASE WHEN is_goblin=1 THEN 1 ELSE 0 END) AS goblins, SUM(CASE WHEN is_demon=1 THEN 1 ELSE 0 END) AS demons, MAX(updated_at) AS last_update
+    FROM score.final_board_current`);
+  const scoringN = Number(scoringRows[0]?.total || 0);
+  const scoringStatus = scoringN === 0 ? "red" : (scoringN < 500 ? "yellow" : "green");
+
+  await pg.end({ timeout: 1 }).catch(() => {});
+
+  const layers = [
+    { key: "incremental_delta", label: "Incremental Data (Morning Delta)", status: deltaStatus, last_update: deltaLastUpdate,
+      metrics: [
+        { label: "Hitter Logs", covered: Number(hitterLogRows[0]?.covered || 0), expected: totalBoardPlayers, unit: "players" },
+        { label: "Pitcher Logs", covered: Number(pitcherLogRows[0]?.covered || 0), expected: totalBoardPlayers, unit: "players" },
+        { label: "Team Logs", covered: Number(teamLogRows[0]?.covered || 0), expected: 30, unit: "teams" },
+        { label: "Baseline (classification_v6)", covered: Number(baselineRows[0]?.n || 0), expected: null, unit: "rows", note: baselineRows[0]?.last_update ? `Last refreshed ${baselineRows[0].last_update}` : "Never refreshed" },
+      ],
+      rerun_action: { label: "Rerun Morning Delta", mode: "daily_morning_delta_full_run", target: "PHASE3A_WORKER" } },
+    { key: "weekly_differential", label: "Weekly Differential", status: weeklyStatus, last_update: weeklyLastUpdate,
+      metrics: [
+        { label: "Quality of Contact", covered: Number(qocRows[0]?.n || 0), expected: null, unit: "players" },
+        { label: "Batted Ball Profile", covered: Number(bbpRows[0]?.n || 0), expected: null, unit: "players" },
+        { label: "Park Factors", covered: Number(parkRows[0]?.n || 0), expected: 30, unit: "parks" },
+      ],
+      note: weeklyDaysStale != null ? `${weeklyDaysStale} days since last refresh (expected weekly)` : "Never refreshed",
+      rerun_action: { label: "Rerun Weekly Differential", mode: "weekly-differential-full-run", target: "WEEKLY_DIFFERENTIAL_RUNNER_WORKER" } },
+    { key: "board_full_run", label: "Board Full Run", status: boardStatus, last_update: boardLastUpdate,
+      metrics: boardBySourceRows.map(r => ({ label: r.source_key, covered: Number(r.safe || 0), expected: Number(r.total || 0), unit: "legs parsed safely" })),
+      totals: { total_legs: boardTotalLegs, well_parsed: boardTotalSafe },
+      rerun_action: { label: "Rerun Board", mode: "board-full-run", target: "BOARD_RUNNER_WORKER" } },
+    { key: "daily_context", label: "Daily Context", status: dailyContextStatus, last_update: dailyContextLastUpdate,
+      metrics: [
+        { label: "Weather (sourced)", covered: Number(weatherRows[0]?.n || 0), expected: totalBoardGames, unit: "games" },
+        { label: "Umpire (sourced)", covered: Number(umpireRows[0]?.named || 0), expected: totalBoardGames, unit: "games" },
+        { label: "Lineups (sourced)", covered: Number(lineupRows[0]?.n || 0), expected: totalBoardGames, unit: "games" },
+        { label: "Bullpen Availability (derived)", covered: Number(bullpenRows[0]?.n || 0), expected: 30, unit: "teams" },
+      ],
+      rerun_action: { label: "Rerun Daily Context", mode: "daily-context-full-run", target: "DAILY_CONTEXT_RUNNER_WORKER" } },
+    { key: "market", label: "Market", status: marketStatus, last_update: marketLastUpdate,
+      metrics: marketBySourceRows.map(r => ({ label: r.source_key, covered: Number(r.n || 0), expected: null, unit: "legs offered" })),
+      rerun_action: { label: "Rerun Market", mode: "market-full-run", target: "MARKET_RUNNER_WORKER" } },
+    { key: "scoring", label: "Scoring System", status: scoringStatus, last_update: scoringRows[0]?.last_update || null,
+      metrics: [
+        { label: "PRIMARY Tier", covered: Number(scoringRows[0]?.primary_n || 0), expected: null, unit: "legs" },
+        { label: "REVIEW Tier", covered: Number(scoringRows[0]?.review_n || 0), expected: null, unit: "legs" },
+        { label: "Goblins", covered: Number(scoringRows[0]?.goblins || 0), expected: null, unit: "legs" },
+        { label: "Demons", covered: Number(scoringRows[0]?.demons || 0), expected: null, unit: "legs" },
+      ],
+      totals: { total_legs: scoringN },
+      rerun_action: { label: "Rerun Scoring", mode: "scoring-full-run", target: "SCORING_RUNNER_WORKER" } },
+  ];
+  const overallStatus = layers.some(l => l.status === "red") ? "red" : (layers.some(l => l.status === "yellow") ? "yellow" : "green");
+
+  return jsonResponse({
+    ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, route: "/api/main-board/health", read_only: true,
+    generated_at: nowUtc(), overall_status: overallStatus, total_board_players: totalBoardPlayers, total_board_games: totalBoardGames,
+    layers,
+  });
+}
       MAX(score_0_100) AS max_score,
       MIN(confidence_0_100) AS min_certainty,
       MAX(confidence_0_100) AS max_certainty,
