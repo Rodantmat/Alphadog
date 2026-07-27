@@ -1338,7 +1338,7 @@ async function apiDossier(env, url) {
       park_factors: parkRow,
       market_summary: marketRow,
       umpire: umpireRow,
-      player_profile: playerRow,
+      umpire_tendency: umpireTendencyRow,
       prepared_lines: preparedLineRows,
       prizepicks_lines: [],
       sleeper_lines: [],
