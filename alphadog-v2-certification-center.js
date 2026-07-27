@@ -2253,7 +2253,6 @@ function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
 function cap(s){return String(s||'').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
 function displayPropLabel(key){const labels={hits:'Hits',total_bases:'Total Bases',runs:'Runs',rbis:'RBIs',singles:'Singles',doubles:'Doubles',triples:'Triples',home_runs:'Home Runs',walks:'Walks',hitter_strikeouts:'Hitter Strikeouts',hits_runs_rbis:'Hits + Runs + RBIs',pitcher_strikeouts:'Pitcher Strikeouts',pitcher_outs:'Pitcher Outs',earned_runs:'Earned Runs',hits_allowed:'Hits Allowed',walks_allowed:'Walks Allowed',rfi_nrfi:'RFI / NRFI'};return labels[String(key||'').toLowerCase()]||cap(key)}
-function lineLabel(t){return t==='goblin'?'Goblin':t==='demon'?'Demon':t==='more_only'?'More Only':'Regular'}
 function appLabel(s){s=String(s||'').toLowerCase();if(s==='prizepicks')return 'PrizePicks';if(s==='sleeper')return 'Sleeper';if(s==='parlay_underdog'||s==='underdog')return 'Underdog';return cap(s||'Unknown')}
 function appTypeLabel(r){return (r.app_line_label||appLabel(r.source_key)+' • '+lineLabel(r.line_type||'regular'))}
 function fmtDate(s){if(!s)return '';try{const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return s}}
