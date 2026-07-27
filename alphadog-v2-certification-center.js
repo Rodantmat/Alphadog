@@ -812,6 +812,7 @@ function buildCurrentSql(url) {
       f.payout_variant AS payout_variant,
       f.is_goblin AS is_goblin,
       f.is_demon AS is_demon,
+      f.more_only AS more_only,
       f.board_tier AS board_tier,
       f.review_playable,
       f.live_playable,
