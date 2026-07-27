@@ -136,16 +136,12 @@ display, xwOBAcon/Pull% surfaced) stand as the real, verified improvements from 
 expansion effort.
 
 ## Recommended next-session task list, in priority order
-1. Wire HR/FB% as a computed/displayed field (data already exists, just needs joining).
-2. Build a real mining worker against Baseball Savant's Custom Leaderboard CSV endpoint for
-   SwStr% and PulledBrl% specifically. Test thoroughly before wiring into daily cron.
-3. Wire the new worker into the daily cron chain (`runDailyMorningDeltaFullRun`) so these two
-   plus the existing batter_quality_of_contact/batted_ball_profile tables all refresh daily,
-   not just on manual re-import.
-4. Calibrate and add batted-ball-direction (FB%/Pull%) as new enrichment scoring terms, likely
-   as an interaction term with park factors per the design doc's own note on this, rather than
-   a flat additive term like ISO.
-5. Consider whether SwStr%/PulledBrl%, once mined, warrant their own dedicated enrichment
-   factor (separate config row) rather than folding into `batter_quality_of_contact` — SwStr%
-   in particular is arguably more relevant to pitcher-strikeout/contact props for the *batter
-   facing* a pitcher than to the batter's own home_runs/total_bases cells this factor covers.
+1. ~~Wire HR/FB% as a computed/displayed field~~ — DONE, verified (see above).
+2. ~~Build SwStr%/PulledBrl% mining~~ — CLOSED, per the research-grounded decision above:
+   existing data (Whiff%-equivalent via real K-rate baseline, barrel_batted_rate) already
+   captures the predictive signal these would provide. Not pursuing further.
+3. Calibrate and add batted-ball-direction (FB%/Pull%) as a new enrichment scoring term, if
+   desired — likely as an interaction term with park factors per
+   `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md`'s own note on this factor, rather than a flat
+   additive term like ISO. This is the one item from the original list that remains genuinely
+   open; it's a calibration/design task, not a data-mining gap.
