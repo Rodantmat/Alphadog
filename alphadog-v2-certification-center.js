@@ -2645,6 +2645,9 @@ export default {
       if (method === "GET" && path === "/api/main-board/dossier") return await apiDossier(env, url);
       if (method === "GET" && path === "/api/main-board/filters") return await apiFilters(env);
       if (method === "GET" && path === "/api/main-board/health") return await apiHealth(env);
+      if (method === "POST" && path === "/api/main-board/health/rerun") return await apiHealthRerun(env, request);
+      if (method === "GET" && path === "/api/calibration/report") return await apiCalibrationReport(env);
+      if (method === "POST" && path === "/api/calibration/apply") return await apiCalibrationApply(env, request);
       if (method === "GET" && path === "/api/player-search") return await apiPlayerSearch(env, url);
       if (method === "GET" && path === "/api/player-profile") return await apiPlayerProfile(env, url);
       if (method === "GET" && path === "/api/slips/recent") return await apiSlipsRecent(env, url);
