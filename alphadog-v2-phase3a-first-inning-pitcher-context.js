@@ -1327,28 +1327,47 @@ async function runFitPlattCalibration(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
     const minSamples = Math.max(20, Number(input.min_samples || 20));
+    const minTestSamples = Math.max(10, Number(input.min_test_samples || 15));
     const propRows = await sql`SELECT DISTINCT canonical_prop_key FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL`;
     const results = [];
     for (const { canonical_prop_key: propKey } of propRows) {
-      const rows = await sql`SELECT estimated_hit_probability_0_100, outcome_hit FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL`;
+      // official_date (real game date) is the correct chronological key - NOT resolved_at, which
+      // reflects when a batch job happened to process the outcome and can be out of true order.
+      const rows = await sql`SELECT estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL ORDER BY official_date ASC`;
       if (rows.length < minSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: `below min_samples ${minSamples}` }); continue; }
-      const pairs = rows.map(r => [Number(r.estimated_hit_probability_0_100) / 100, Number(r.outcome_hit)]);
-      const briefBefore = brierScore(pairs);
-      const eceBefore = expectedCalibrationError(pairs);
-      const { A, B } = fitPlattScaling(pairs);
+      const allPairs = rows.map(r => [Number(r.estimated_hit_probability_0_100) / 100, Number(r.outcome_hit)]);
+      // Time-based (not random) 75/25 split: sports outcomes are sequential, and a random split
+      // would let the model "see the future" relative to some test rows, defeating the point of
+      // held-out evaluation - the earlier 75% of games (by real date) trains, the later 25% tests.
+      const splitIdx = Math.floor(allPairs.length * 0.75);
+      const trainPairs = allPairs.slice(0, splitIdx);
+      const testPairs = allPairs.slice(splitIdx);
+      if (testPairs.length < minTestSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: `held-out test set too small (${testPairs.length} < ${minTestSamples}) to evaluate honestly` }); continue; }
+      const brierBeforeTrain = brierScore(trainPairs);
+      const eceBeforeTrain = expectedCalibrationError(trainPairs);
+      const { A, B } = fitPlattScaling(trainPairs);
       if (A <= 0) {
-        results.push({ prop: propKey, skipped: true, n: pairs.length, reason: `rejected: negative/zero A coefficient (${round(A, 4)}) indicates an inverted, overfit calibration on a small/noisy sample - not stored`, A: round(A, 4), B: round(B, 4) });
+        results.push({ prop: propKey, skipped: true, n: trainPairs.length, reason: `rejected: negative/zero A coefficient (${round(A, 4)}) indicates an inverted, overfit calibration on a small/noisy sample - not stored`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
       if (A < 0.3) {
-        results.push({ prop: propKey, skipped: true, n: pairs.length, reason: `rejected: A coefficient (${round(A, 4)}) too close to zero - a near-flat calibration curve that would map most/all of the raw probability range to a narrow output band, destroying per-player discrimination even while improving aggregate ECE/Brier - not stored`, A: round(A, 4), B: round(B, 4) });
+        results.push({ prop: propKey, skipped: true, n: trainPairs.length, reason: `rejected: A coefficient (${round(A, 4)}) too close to zero - a near-flat calibration curve that would map most/all of the raw probability range to a narrow output band, destroying per-player discrimination even while improving aggregate ECE/Brier - not stored`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
-      const calibratedPairs = pairs.map(([p, y]) => [sigmoid(A * logit(p) + B), y]);
-      const brierAfter = brierScore(calibratedPairs);
-      const eceAfter = expectedCalibrationError(calibratedPairs);
+      // Honest evaluation: apply the train-fitted coefficients to the held-out test set the fit
+      // never saw. This is the number that actually matters - not the in-sample number.
+      const brierBeforeTest = brierScore(testPairs);
+      const eceBeforeTest = expectedCalibrationError(testPairs);
+      const calibratedTestPairs = testPairs.map(([p, y]) => [sigmoid(A * logit(p) + B), y]);
+      const brierAfterTest = brierScore(calibratedTestPairs);
+      const eceAfterTest = expectedCalibrationError(calibratedTestPairs);
+      const genuinelyImproved = brierAfterTest < brierBeforeTest && eceAfterTest < eceBeforeTest;
+      if (!genuinelyImproved) {
+        results.push({ prop: propKey, skipped: true, n: trainPairs.length, test_n: testPairs.length, reason: `rejected: does not genuinely improve on held-out data never seen during fitting (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}) - in-sample improvement alone is not sufficient`, A: round(A, 4), B: round(B, 4) });
+        continue;
+      }
       await sql`INSERT INTO score.platt_calibration_map (canonical_prop_key, coefficient_a, coefficient_b, n_samples, brier_before, brier_after, ece_before, ece_after, fitted_at)
-        VALUES (${propKey}, ${A}, ${B}, ${pairs.length}, ${briefBefore}, ${brierAfter}, ${eceBefore}, ${eceAfter}, now())
+        VALUES (${propKey}, ${A}, ${B}, ${trainPairs.length}, ${brierBeforeTest}, ${brierAfterTest}, ${eceBeforeTest}, ${eceAfterTest}, now())
         ON CONFLICT (canonical_prop_key) DO UPDATE SET coefficient_a=excluded.coefficient_a, coefficient_b=excluded.coefficient_b,
           n_samples=excluded.n_samples, brier_before=excluded.brier_before, brier_after=excluded.brier_after,
           ece_before=excluded.ece_before, ece_after=excluded.ece_after, fitted_at=now()`;
