@@ -89,10 +89,16 @@ function computeFinalConfidence(baselineConfidence, enrichmentRow) {
   const factorsApplied = (enrichmentRow && enrichmentRow.factors_applied) || 0;
   const factorsMissing = (enrichmentRow && enrichmentRow.factors_missing) || 0;
   const totalFactors = factorsApplied + factorsMissing;
-  const coverageRatio = totalFactors > 0 ? factorsApplied / totalFactors : 0;
   const baseConf = baselineConfidence != null ? baselineConfidence : 55;
-  const blended = (baseConf * 0.5) + ((40 + coverageRatio * 45) * 0.5);
   const adjustment = (enrichmentRow && enrichmentRow.confidence_adjustment || 0) * 100;
+  if (totalFactors === 0) {
+    // No enrichment factors are configured for this prop type at all (e.g. rfi_nrfi) - this is
+    // a design fact, not a coverage gap, and should not be penalized as if factors were missing.
+    // Use baseline confidence directly rather than blending with a zero-coverage term.
+    return Math.round(clamp(baseConf + adjustment, 30, 95));
+  }
+  const coverageRatio = factorsApplied / totalFactors;
+  const blended = (baseConf * 0.5) + ((40 + coverageRatio * 45) * 0.5);
   return Math.round(clamp(blended + adjustment, 30, 95));
 }
 
