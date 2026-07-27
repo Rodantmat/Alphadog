@@ -1994,8 +1994,13 @@ async function apiPlayerProfile(env, url) {
     String(p.primary_position || "").toUpperCase() === "C" ? safeOne(`SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref.catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
     !isPitcher ? safeOne(`SELECT xba, xslg, xwoba, woba, ba, slg, xiso, iso, xwobacon, pull_percent, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
   ]);
-  const battedBallDir = !isPitcher ? (await safeOne(`SELECT fly_ball_pct, line_drive_pct, ground_ball_pct, pop_up_pct, pull_pct, opposite_field_pct FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId])) : null;
+  const battedBallDir = !isPitcher ? (await safeOne(`SELECT fly_ball_pct, line_drive_pct, ground_ball_pct, pop_up_pct, pull_pct, opposite_field_pct, batted_ball_events FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId])) : null;
+  const hrSumRow = !isPitcher ? (await safeOne(`SELECT home_runs_sum FROM stats_hitter.metric_snapshots WHERE player_id=? AND metric_window='season_to_date'`, [mlbId])) : null;
   if (qocRow && battedBallDir) Object.assign(qocRow, battedBallDir);
+  if (qocRow && battedBallDir && hrSumRow && Number(battedBallDir.batted_ball_events) > 0 && battedBallDir.fly_ball_pct != null) {
+    const flyBallCount = (Number(battedBallDir.fly_ball_pct) / 100) * Number(battedBallDir.batted_ball_events);
+    qocRow.hr_fb_percent = flyBallCount > 0 ? Math.round(((Number(hrSumRow.home_runs_sum) || 0) / flyBallCount) * 1000) / 10 : null;
+  }
 
   // Next-game specific opponent detail: opposing starter's arsenal (for hitters facing them), opposing catcher's framing/poptime
   let opposingStarterArsenal = [], opposingCatcherRow = null;
