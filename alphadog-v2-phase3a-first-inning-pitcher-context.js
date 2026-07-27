@@ -11387,6 +11387,8 @@ async function runMode(env,input={}){
   if(mode==="baseline_v6_tick") return runBaselineV6Tick(env,input);
   if(mode==="baseline_v6_reconcile_subset_constraints") return reconcileSubsetOfConstraints(env);
   if(mode==="fit_platt_calibration") return runFitPlattCalibration(env,input);
+  if(mode==="calibration_report") return runCalibrationReport(env,input);
+  if(mode==="apply_calibration_recommendations") return runApplyCalibrationRecommendations(env,input);
   if(mode==="quality_of_contact_derived_fields_refresh") return runQualityOfContactDerivedFieldsRefresh(env,input);
   if(mode==="baseline_v5_classification_base") return runClassificationV6Base(env,input);
   if(mode==="baseline_v5_base") return runBaselineV6Base(env,input);
