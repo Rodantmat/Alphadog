@@ -1316,7 +1316,7 @@ async function runQualityOfContactDerivedFieldsRefresh(env, input = {}) {
       ok: true, data_ok: true, mode: "quality_of_contact_derived_fields_refresh",
       iso_rows_backfilled: isoUpdated,
       batted_ball_direction_rows_backfilled: battedBallUpdated,
-      note: "Self-healing derivation only - does not mine new raw Statcast data (no ingestion worker exists for that, see QUALITY_OF_CONTACT_METRICS_EXPANSION.md). Recomputes derived fields for any row where the underlying raw_json/columns already exist but the derived field is still null - catches future manual re-imports automatically.",
+      note: "Self-healing derivation for iso/batted-ball-direction, which the weekly-differential-runner's quality_of_contact/batted_ball_profile mining steps do not compute themselves. Runs after that weekly mining (and daily, as a safety net) to backfill any row missing these derived fields.",
       timestamp_utc: nowUtc(),
     };
   } finally {
