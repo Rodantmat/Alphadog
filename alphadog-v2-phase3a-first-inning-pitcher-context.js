@@ -1512,6 +1512,64 @@ async function runFitPlattCalibration(env, input = {}) {
     try { await sql.end({ timeout: 1 }); } catch (_) {}
   }
 }
+// Semi-automated calibration reporting (2026-07-27): per explicit direction, no auto-calibration
+// - this produces a clear, human-readable report of what IS currently active vs what a fresh fit
+// WOULD recommend, with plain-language severity and next-step text, so a person can decide what
+// to apply via runApplyCalibrationRecommendations (selective, not all-or-nothing). Research-
+// grounded design (data pipeline / model monitoring best practices): tiered severity levels,
+// actionable alerts that name the specific issue and recommend a concrete next step.
+async function runCalibrationReport(env, input = {}) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const fitResult = await runFitPlattCalibration(env, { ...input, dry_run: true });
+    const activeRows = await sql`SELECT DISTINCT canonical_prop_key FROM score.calibration_correction_map WHERE methodology LIKE '%post_rootfix%' AND methodology NOT LIKE 'validated_no_correction%' AND methodology NOT LIKE 'DEACTIVATED%' AND methodology NOT LIKE 'SUPERSEDED%'`;
+    const activeProps = new Set(activeRows.map(r => r.canonical_prop_key));
+    const report = fitResult.results.map(r => {
+      const currentlyActive = activeProps.has(r.prop);
+      if (!r.skipped) {
+        return {
+          prop: r.prop, severity: currentlyActive ? "info" : "recommend",
+          status: currentlyActive ? "ACTIVE_AND_STILL_VALID" : "RECOMMENDED_NOT_YET_APPLIED",
+          summary: currentlyActive
+            ? `Correction is active and a fresh refit confirms it still genuinely improves out-of-sample performance (test Brier ${r.test_brier_before}->${r.test_brier_after}).`
+            : `A correction is available and genuinely improves out-of-sample performance (test Brier ${r.test_brier_before}->${r.test_brier_after}, test ECE ${r.test_ece_before}->${r.test_ece_after}) but is not currently applied.`,
+          recommendation: currentlyActive ? "No action needed - working as intended." : `Apply this correction: run_apply_calibration_recommendations with props: ["${r.prop}"]`,
+          metrics: { train_n: r.train_n, test_n: r.test_n, A: r.A, B: r.B, test_brier_before: r.test_brier_before, test_brier_after: r.test_brier_after, test_ece_before: r.test_ece_before, test_ece_after: r.test_ece_after },
+        };
+      }
+      const isDataLimited = r.reason.includes("below min_samples") || r.reason.includes("too small to evaluate");
+      return {
+        prop: r.prop, severity: currentlyActive ? "warning" : "none",
+        status: currentlyActive ? "ACTIVE_BUT_NO_LONGER_VALID" : (isDataLimited ? "INSUFFICIENT_DATA" : "NO_FIXABLE_PATTERN_FOUND"),
+        summary: currentlyActive
+          ? `A correction is currently active for this prop, but a fresh refit no longer validates it (${r.reason}). It may be stale.`
+          : (isDataLimited ? `Not enough resolved outcome data yet (n=${r.n}) to fit or validate a correction safely.` : `No correction (Platt or isotonic) genuinely improves this prop's calibration on real held-out data: ${r.reason}`),
+        recommendation: currentlyActive ? `Consider deactivating - the active correction may no longer be reliable.` : (isDataLimited ? "Wait for more games to resolve, then re-check." : "No action recommended - the raw baseline is already the best available estimate for this prop."),
+        metrics: { n: r.n, test_n: r.test_n || null, A: r.A, B: r.B },
+      };
+    });
+    return { ok: true, mode: "calibration_report", generated_at: nowUtc(), total_props: report.length, needs_attention: report.filter(r => r.severity === "recommend" || r.severity === "warning").length, report };
+  } finally {
+    try { await sql.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+// Selective apply (2026-07-27): applies calibration corrections for ONLY the specific prop keys
+// listed, per explicit direction that the person must be able to choose which recommendations to
+// act on rather than an all-or-nothing button. Internally reuses the same honest fitting/
+// validation logic as runFitPlattCalibration, restricted to the requested props.
+async function runApplyCalibrationRecommendations(env, input = {}) {
+  const propsToApply = Array.isArray(input.props) ? input.props : [];
+  if (!propsToApply.length) return { ok: false, error: "Must provide input.props as a non-empty array of canonical_prop_key values to apply. Call calibration_report first to see what is available." };
+  const fullResult = await runFitPlattCalibration(env, { ...input, dry_run: false });
+  const applied = fullResult.results.filter(r => propsToApply.includes(r.prop) && !r.skipped);
+  const notApplied = propsToApply.filter(p => !applied.some(a => a.prop === p));
+  return {
+    ok: true, mode: "apply_calibration_recommendations",
+    note: "Ran the full honest fitting/validation pass, then reports which of your requested props actually had a valid, applicable correction written live. Props not in this list either did not validate or were not found - check calibration_report for why.",
+    requested: propsToApply, applied: applied.map(a => a.prop), not_applied_or_not_found: notApplied,
+    details: applied,
+  };
+}
 
 async function runResolvePropOutcomes(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
