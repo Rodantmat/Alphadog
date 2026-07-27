@@ -810,6 +810,8 @@ function buildCurrentSql(url) {
       CASE WHEN LOWER(COALESCE(f.payout_variant,'')) IN ('goblin','demon') THEN 'more_only' ELSE COALESCE((p.row_payload_json #>> '{}')::jsonb ->> 'side_mode', 'two_sided') END AS side_mode,
       COALESCE((p.row_payload_json #>> '{}')::jsonb ->> 'odds_type', f.payout_variant) AS odds_type,
       f.payout_variant AS payout_variant,
+      f.is_goblin AS is_goblin,
+      f.is_demon AS is_demon,
       f.board_tier AS board_tier,
       f.review_playable,
       f.live_playable,
