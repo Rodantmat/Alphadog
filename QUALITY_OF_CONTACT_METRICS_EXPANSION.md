@@ -86,6 +86,24 @@ matching hand calculation exactly and consistent with his other above-average po
 (barrel_batted_rate=10.5%, iso=0.126). Item 1 from the priority list below is complete;
 items 2-5 remain open, unchanged.
 
+## Correction (same session, continued) — the Custom Leaderboard path needs revision
+Direct inspection of `baseballsavant.mlb.com/leaderboard/custom` (full column list fetched)
+confirms: **there is no "SwStr%" column on Baseball Savant at all** — that's FanGraphs
+terminology specifically (SwStr% = swinging strikes / all pitches). Savant's equivalent is
+"Whiff %" (swinging strikes / swings only) — a genuinely different denominator, not just a
+naming difference. **There is also no "PulledBrl%" column** on Savant's Custom Leaderboard —
+only generic "Barrel%" and generic "Pull %" exist as separate metrics; their intersection
+(barrels that were also pulled) isn't a standard leaderboard export anywhere checked, and
+would likely require pitch/event-level Statcast Search data (a much larger, more granular
+data source than the season-aggregate leaderboards used for everything else in this system)
+rather than a simple leaderboard CSV.
+**Revised path forward**: (1) for a true SwStr%, mining would need to target FanGraphs
+specifically, a different source/format than what this system currently scrapes from Savant;
+(2) for PulledBrl%, either accept "Pull%" and "Barrel%" as separate factors (already partially
+available/added this session) rather than their exact intersection, or scope a pitch-level
+Statcast Search ingestion as separate, larger future work. This is more involved than
+originally scoped — correctly not rushed.
+
 ## Recommended next-session task list, in priority order
 1. Wire HR/FB% as a computed/displayed field (data already exists, just needs joining).
 2. Build a real mining worker against Baseball Savant's Custom Leaderboard CSV endpoint for
