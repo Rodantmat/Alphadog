@@ -228,7 +228,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
       written++;
       continue;
     }
-    const confidence = computeFinalConfidence(baseline?.confidence_0_100, er, baselineMatch ? baselineMatch.line_distance : 0);
+    const confidence = computeFinalConfidence(baseline?.confidence_0_100, er, baselineMatch ? baselineMatch.line_distance : 0, penaltyConfig);
     const primaryPlayable = hp >= PRIMARY_HP_THRESHOLD && confidence >= 55;
     if (primaryPlayable) primaryRows++; else reviewRows++;
 
