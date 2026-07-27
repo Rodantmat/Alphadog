@@ -1455,11 +1455,11 @@ async function apiFilters(env) {
       AND (official_game_time_utc IS NULL OR official_game_time_utc > now())
     GROUP BY source_key, canonical_prop_key,
       CASE WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','runs_allowed','rfi_nrfi') THEN 'pitcher' ELSE 'hitter' END,
-      CASE WHEN COALESCE(is_demon,0)=1 THEN 'demon' WHEN COALESCE(is_goblin,0)=1 THEN 'goblin' WHEN COALESCE(more_only,0)=1 THEN 'more_only' ELSE 'regular' END,
-      CASE WHEN COALESCE(is_goblin,0)=1 OR COALESCE(is_demon,0)=1 OR COALESCE(more_only,0)=1 THEN 'more_only' ELSE 'two_sided' END,
+      CASE WHEN COALESCE(is_demon,0)=1 THEN 'demon' WHEN COALESCE(is_goblin,0)=1 THEN 'goblin' WHEN COALESCE(is_more_only,0)=1 THEN 'more_only' ELSE 'regular' END,
+      CASE WHEN COALESCE(is_goblin,0)=1 OR COALESCE(is_demon,0)=1 OR COALESCE(is_more_only,0)=1 THEN 'more_only' ELSE 'two_sided' END,
       COALESCE(is_goblin,0),
       COALESCE(is_demon,0),
-      CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 AND COALESCE(more_only,0)=0 THEN 1 ELSE 0 END,
+      CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 AND COALESCE(is_more_only,0)=0 THEN 1 ELSE 0 END,
       CASE WHEN estimated_hit_probability_0_100 >= 80 THEN '80+' WHEN estimated_hit_probability_0_100 >= 70 THEN '70+' WHEN estimated_hit_probability_0_100 >= 60 THEN '60+' ELSE '<60' END,
       board_tier, review_playable, live_playable
     ORDER BY source_key, canonical_prop_key
