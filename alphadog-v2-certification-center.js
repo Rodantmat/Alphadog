@@ -1126,6 +1126,8 @@ async function apiDossier(env, url) {
   ]);
   const weatherRow = weatherRows2[0] || {};
   const umpireRow = umpireRows2[0] || {};
+  const umpireTendencyRows = umpireRow.home_plate_umpire_id ? await safeQuery(`SELECT * FROM ref.umpire_tendency WHERE umpire_id=? LIMIT 1`, [umpireRow.home_plate_umpire_id]) : [];
+  const umpireTendencyRow = umpireTendencyRows[0] || {};
   const marketRow = marketRows2[0] || {};
   const playerRow = playerRows2[0] || {};
   const venueKey = weatherRow.venue_id || umpireRow.venue_id;
