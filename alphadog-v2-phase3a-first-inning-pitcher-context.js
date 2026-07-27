@@ -1363,8 +1363,12 @@ async function runQualityOfContactDerivedFieldsRefresh(env, input = {}) {
 async function runFitPlattCalibration(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
-    const minSamples = Math.max(20, Number(input.min_samples || 20));
-    const minTestSamples = Math.max(10, Number(input.min_test_samples || 15));
+    const thresholdCfgRows = await sql`SELECT config_json FROM config.calibration_config WHERE config_key='platt_fitting_thresholds' AND is_active=1`.catch(() => []);
+    const thresholdCfg = thresholdCfgRows[0] ? thresholdCfgRows[0].config_json : { min_train_samples: 20, min_test_samples: 15, min_slope_a: 0.3, min_train_for_isotonic_fallback: 500 };
+    const minSamples = Math.max(20, Number(input.min_samples || thresholdCfg.min_train_samples || 20));
+    const minTestSamples = Math.max(10, Number(input.min_test_samples || thresholdCfg.min_test_samples || 15));
+    const minSlopeA = Number(thresholdCfg.min_slope_a ?? 0.3);
+    const minTrainForIsotonic = Number(thresholdCfg.min_train_for_isotonic_fallback ?? 500);
     // Flag-only by default (2026-07-27): no auto-calibration system for now, per explicit
     // direction. This function detects and reports what it would fit/apply, but does not write
     // to score.platt_calibration_map or score.calibration_correction_map unless the caller
