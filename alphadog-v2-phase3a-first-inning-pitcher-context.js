@@ -9019,8 +9019,12 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
     { key: "quality_of_contact_derived_fields_refresh", fn: runQualityOfContactDerivedFieldsRefresh },
     { key: "baseline_v6_full_run", fn: runClassificationBaselineV6ToPostgresFullRun },
-    { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes },
-    { key: "fit_platt_calibration", fn: runFitPlattCalibration }
+    { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
+    // fit_platt_calibration deliberately removed from automated daily execution (2026-07-27):
+    // no auto-calibration system for now, per explicit direction. Calibration fitting is now a
+    // manual, deliberate action (call the fit_platt_calibration mode directly, or dry_run first
+    // to see what it would flag without writing anything). The current 10 active corrections
+    // stay stable as the production baseline rather than being silently refit every day.
   ];
   const results = [];
   const startAt = Number(input.resume_from_step || 0);
