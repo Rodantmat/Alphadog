@@ -402,6 +402,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     batter_xwobacon: ctxMaps.qocByPlayer.get(Number(playerId))?.xwobacon ?? null,
     batter_sweet_spot_percent: ctxMaps.qocByPlayer.get(Number(playerId))?.sweet_spot_percent ?? null,
     batter_barrel_batted_rate: ctxMaps.qocByPlayer.get(Number(playerId))?.barrel_batted_rate ?? null,
+    batter_iso: ctxMaps.qocByPlayer.get(Number(playerId))?.iso ?? null,
   };
 }
 
