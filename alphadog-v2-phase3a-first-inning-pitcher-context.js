@@ -1539,11 +1539,14 @@ async function runCalibrationReport(env, input = {}) {
         };
       }
       const isDataLimited = r.reason.includes("below min_samples") || r.reason.includes("too small to evaluate");
+      const activeOther = activeOtherMethodology.has(r.prop);
       return {
-        prop: r.prop, severity: currentlyActive ? "warning" : "none",
-        status: currentlyActive ? "ACTIVE_BUT_NO_LONGER_VALID" : (isDataLimited ? "INSUFFICIENT_DATA" : "NO_FIXABLE_PATTERN_FOUND"),
+        prop: r.prop, severity: currentlyActive ? "warning" : (activeOther ? "info" : "none"),
+        status: currentlyActive ? "ACTIVE_BUT_NO_LONGER_VALID" : (activeOther ? "ACTIVE_VIA_DIFFERENT_METHODOLOGY_NOT_RETESTED" : (isDataLimited ? "INSUFFICIENT_DATA" : "NO_FIXABLE_PATTERN_FOUND")),
         summary: currentlyActive
           ? `A correction is currently active for this prop, but a fresh refit no longer validates it (${r.reason}). It may be stale.`
+          : activeOther
+            ? `An older, line-specific correction (a different methodology than this general refit) is currently active for this prop. This report's general fit does not validate the same pattern, but it also does not test or supersede that older, more targeted methodology - not flagging as stale.`
           : (isDataLimited ? `Not enough resolved outcome data yet (n=${r.n}) to fit or validate a correction safely.` : `No correction (Platt or isotonic) genuinely improves this prop's calibration on real held-out data: ${r.reason}`),
         recommendation: currentlyActive ? `Consider deactivating - the active correction may no longer be reliable.` : (isDataLimited ? "Wait for more games to resolve, then re-check." : "No action recommended - the raw baseline is already the best available estimate for this prop."),
         metrics: { n: r.n, test_n: r.test_n || null, A: r.A, B: r.B },
