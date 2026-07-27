@@ -5569,12 +5569,17 @@ async function ensureCalibrationConfigLoaded(env){
   if(CALIBRATION_CONFIG_CACHE && (Date.now() - CALIBRATION_CONFIG_CACHE_AT) < CALIBRATION_CONFIG_TTL_MS) return CALIBRATION_CONFIG_CACHE;
   const cfg = { ...CALIBRATION_CONFIG_DEFAULTS };
   try{
-    const rows = await all(env.CONFIG_DB, `SELECT config_scope, config_key, config_json FROM calibration_config WHERE is_active=1`);
-    for(const r of (rows||[])){
-      const key = `${r.config_scope}|${r.config_key}`;
-      try{ cfg[key] = JSON.parse(r.config_json); } catch(_e){ /* keep default on parse failure */ }
-    }
-  } catch(_e){ /* table may not exist yet on first deploy; defaults keep the system working */ }
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+    try {
+      const rows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE is_active=1`;
+      for(const r of (rows||[])){
+        // Postgres stores config_key flat (no scope column) - every existing call site uses
+        // scope='global', so building the same cache-key format for compatibility.
+        const key = `global|${r.config_key}`;
+        cfg[key] = r.config_json;
+      }
+    } finally { try { await sql.end({ timeout: 1 }); } catch(_e){} }
+  } catch(_e){ /* Postgres unreachable - defaults keep the system working */ }
   CALIBRATION_CONFIG_CACHE = cfg;
   CALIBRATION_CONFIG_CACHE_AT = Date.now();
   return cfg;
