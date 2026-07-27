@@ -158,6 +158,9 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
     const isGoblinOrDemon = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1 || Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
     if (isGoblinOrDemon) return "more";
+    const sideMode = payload?.side_context?.side_mode || null;
+    if (sideMode === "more_only" || Number(matrixRow.more_only ?? 0) === 1) return "more";
+    if (sideMode === "less_only") return "less";
     const moreBaseline = findBaseline(playerId, propKey, "more", lineValue);
     const lessBaseline = findBaseline(playerId, propKey, "less", lineValue);
     const moreHp = moreBaseline && Number.isFinite(Number(moreBaseline.row.hit_probability_0_100)) ? Number(moreBaseline.row.hit_probability_0_100) : null;
