@@ -1340,6 +1340,10 @@ async function runFitPlattCalibration(env, input = {}) {
         results.push({ prop: propKey, skipped: true, n: pairs.length, reason: `rejected: negative/zero A coefficient (${round(A, 4)}) indicates an inverted, overfit calibration on a small/noisy sample - not stored`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
+      if (A < 0.3) {
+        results.push({ prop: propKey, skipped: true, n: pairs.length, reason: `rejected: A coefficient (${round(A, 4)}) too close to zero - a near-flat calibration curve that would map most/all of the raw probability range to a narrow output band, destroying per-player discrimination even while improving aggregate ECE/Brier - not stored`, A: round(A, 4), B: round(B, 4) });
+        continue;
+      }
       const calibratedPairs = pairs.map(([p, y]) => [sigmoid(A * logit(p) + B), y]);
       const brierAfter = brierScore(calibratedPairs);
       const eceAfter = expectedCalibrationError(calibratedPairs);
