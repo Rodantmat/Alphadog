@@ -334,6 +334,7 @@ def make_config(worker_name, include_services=False):
         # off from the documented "Monday 2am PT" intent) - confirmed this caused the run to be
         # missed/mistimed relative to expectation.
         cfg["triggers"] = {"crons": ["0 9 * * 1"]}
+    if worker_name == "alphadog-v2-daily-delta-runner":
         # New, deliberately simple standalone runner for the daily morning delta, same design as
         # weekly-differential-runner: single service binding to the one worker that owns this
         # whole chain internally (its own 6-step resume sequence).
