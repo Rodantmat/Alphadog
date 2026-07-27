@@ -1371,7 +1371,7 @@ async function runFitPlattCalibration(env, input = {}) {
         ON CONFLICT (canonical_prop_key) DO UPDATE SET coefficient_a=excluded.coefficient_a, coefficient_b=excluded.coefficient_b,
           n_samples=excluded.n_samples, brier_before=excluded.brier_before, brier_after=excluded.brier_after,
           ece_before=excluded.ece_before, ece_after=excluded.ece_after, fitted_at=now()`;
-      results.push({ prop: propKey, n: pairs.length, A: round(A, 4), B: round(B, 4), brier_before: round(briefBefore, 5), brier_after: round(brierAfter, 5), ece_before: round(eceBefore, 5), ece_after: round(eceAfter, 5), improved: brierAfter < briefBefore });
+      results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, A: round(A, 4), B: round(B, 4), test_brier_before: round(brierBeforeTest, 5), test_brier_after: round(brierAfterTest, 5), test_ece_before: round(eceBeforeTest, 5), test_ece_after: round(eceAfterTest, 5), genuinely_improved_out_of_sample: genuinelyImproved });
     }
     return { ok: true, mode: "fit_platt_calibration", props_fitted: results.filter(r => !r.skipped).length, props_skipped: results.filter(r => r.skipped).length, results };
   } finally {
