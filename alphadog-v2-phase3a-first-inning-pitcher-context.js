@@ -1296,6 +1296,10 @@ async function runFitPlattCalibration(env, input = {}) {
       const briefBefore = brierScore(pairs);
       const eceBefore = expectedCalibrationError(pairs);
       const { A, B } = fitPlattScaling(pairs);
+      if (A <= 0) {
+        results.push({ prop: propKey, skipped: true, n: pairs.length, reason: `rejected: negative/zero A coefficient (${round(A, 4)}) indicates an inverted, overfit calibration on a small/noisy sample - not stored`, A: round(A, 4), B: round(B, 4) });
+        continue;
+      }
       const calibratedPairs = pairs.map(([p, y]) => [sigmoid(A * logit(p) + B), y]);
       const brierAfter = brierScore(calibratedPairs);
       const eceAfter = expectedCalibrationError(calibratedPairs);
