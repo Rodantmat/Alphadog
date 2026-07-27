@@ -1400,7 +1400,40 @@ async function runFitPlattCalibration(env, input = {}) {
       const eceAfterTest = expectedCalibrationError(calibratedTestPairs);
       const genuinelyImproved = brierAfterTest < brierBeforeTest && eceAfterTest < eceBeforeTest;
       if (!genuinelyImproved) {
-        results.push({ prop: propKey, skipped: true, n: trainPairs.length, test_n: testPairs.length, reason: `rejected: does not genuinely improve on held-out data never seen during fitting (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}) - in-sample improvement alone is not sufficient`, A: round(A, 4), B: round(B, 4) });
+        // Isotonic fallback (2026-07-27): Platt's rigid 2-parameter sigmoid may simply be the
+        // wrong functional-form assumption for this prop's true miscalibration pattern, even
+        // when there IS a fixable pattern present. Isotonic makes no shape assumption, at the
+        // cost of needing substantially more data - only attempted with a large train set.
+        if (trainPairs.length >= 500) {
+          const predictIso = fitIsotonicRegression(trainPairs);
+          const calibratedTestIso = testPairs.map(([p, y]) => [predictIso(p), y]);
+          const brierAfterIso = brierScore(calibratedTestIso);
+          const eceAfterIso = expectedCalibrationError(calibratedTestIso);
+          const isoGenuinelyImproved = brierAfterIso < brierBeforeTest && eceAfterIso < eceBeforeTest;
+          if (isoGenuinelyImproved) {
+            // Store as 10 fixed-width bins (0-0.1, 0.1-0.2, ...) for direct compatibility with
+            // the existing calibration_correction_map / applyCalibrationCorrection mechanism -
+            // no new reading infrastructure needed.
+            const isoRows = [];
+            for (let b = 0; b < 10; b++) {
+              const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
+              const predicted = predictIso(mid);
+              isoRows.push({
+                correction_id: `isotonic_v1|${propKey}|more|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
+                line_bucket: "all_isotonic_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
+                empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
+                correction_delta: predicted - mid, methodology: "isotonic_regression_post_rootfix_v1", selected_side: "more",
+                notes: `Isotonic regression (PAVA), non-parametric fallback after Platt failed honest out-of-sample validation (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)} with Platt). Isotonic: test brier ${round(brierBeforeTest,4)}->${round(brierAfterIso,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterIso,4)}.`,
+              });
+            }
+            const isoCols = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
+            await sql`INSERT INTO score.calibration_correction_map ${sql(isoRows, ...isoCols)}
+              ON CONFLICT (correction_id) DO UPDATE SET empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
+            results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, method: "isotonic_fallback", test_brier_before: round(brierBeforeTest, 5), test_brier_after_isotonic: round(brierAfterIso, 5), test_ece_before: round(eceBeforeTest, 5), test_ece_after_isotonic: round(eceAfterIso, 5), platt_A: round(A, 4), platt_rejected_reason: "did not genuinely improve out-of-sample, isotonic did" });
+            continue;
+          }
+        }
+        results.push({ prop: propKey, skipped: true, n: trainPairs.length, test_n: testPairs.length, reason: `rejected: does not genuinely improve on held-out data never seen during fitting (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}) - in-sample improvement alone is not sufficient. Isotonic fallback also did not help (or sample too small to try safely).`, A: round(A, 4), B: round(B, 4) });
         continue;
       }
       await sql`INSERT INTO score.platt_calibration_map (canonical_prop_key, coefficient_a, coefficient_b, n_samples, brier_before, brier_after, ece_before, ece_after, fitted_at)
