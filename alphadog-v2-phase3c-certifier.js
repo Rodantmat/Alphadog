@@ -290,7 +290,39 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
         SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
           AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
-      )
+      ),
+      board_tier = CASE WHEN (
+          SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        ) >= 70 AND (
+          SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        ) >= 55 THEN 'PRIMARY' ELSE 'REVIEW' END,
+      live_playable = CASE WHEN (
+          SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        ) >= 70 AND (
+          SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        ) >= 55 THEN 1 ELSE 0 END,
+      review_playable = CASE WHEN (
+          SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        ) >= 70 AND (
+          SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+        ) >= 55 THEN 0 ELSE 1 END,
+      score_grade = CASE
+          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 80 THEN 'BIN_ELITE'
+          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 70 THEN 'BIN_STRONG'
+          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 60 THEN 'BIN_QUALIFIED'
+          ELSE 'BIN_LOW' END
       WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${aliasProp} AND h.line_value = ${aliasLine} AND h.selected_side = ${aliasSide}
         AND EXISTS (
           SELECT 1 FROM score.hp_board_current s
