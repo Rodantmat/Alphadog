@@ -128,6 +128,8 @@ async function runHitProbabilityBoardFastLoop(pgClient, input, sourceMatrixBatch
 
 async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   const hpBatchId = input && input.chain_id ? `hp_board_batch_${input.chain_id}` : rid("hp_board_batch");
+  const penaltyConfigRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='line_distance_confidence_penalty' AND is_active=1`.catch(() => []);
+  const penaltyConfig = penaltyConfigRows[0] ? penaltyConfigRows[0].config_json : { free_tolerance_units: 2, penalty_per_unit: 3, max_penalty: 30 };
 
   const alreadyWrittenRows = await pgClient`SELECT matrix_id FROM score.hp_board_current WHERE hp_board_batch_id=${hpBatchId}`.catch(() => []);
   const alreadyWrittenIds = new Set(alreadyWrittenRows.map(r => r.matrix_id));
