@@ -1443,7 +1443,7 @@ async function runFitPlattCalibration(env, input = {}) {
         // wrong functional-form assumption for this prop's true miscalibration pattern, even
         // when there IS a fixable pattern present. Isotonic makes no shape assumption, at the
         // cost of needing substantially more data - only attempted with a large train set.
-        if (trainPairs.length >= 500) {
+        if (trainPairs.length >= minTrainForIsotonic) {
           const predictIso = fitIsotonicRegression(trainPairs);
           const calibratedTestIso = testPairs.map(([p, y]) => [predictIso(p), y]);
           const brierAfterIso = brierScore(calibratedTestIso);
