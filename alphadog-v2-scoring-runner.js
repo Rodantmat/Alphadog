@@ -1,4 +1,5 @@
 // alphadog-v2-scoring-runner.js
+// [2026-07-28: re-enabled own independent cron trigger, T+12 - see generate_wrangler_configs.py]
 // Simple, single-request scoring-full-run runner - same design as board/daily-context/market
 // runners. One request, sequential awaited service-binding calls to the 9 existing,
 // already-tested stage workers, in the exact order the old orchestrator's SCORING_FULL_RUN_STAGES
