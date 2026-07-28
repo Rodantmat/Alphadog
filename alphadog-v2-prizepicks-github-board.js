@@ -1714,6 +1714,16 @@ async function runBoardParseStageCertify(env, input = {}) {
   let sourceRefreshWaitPreservedCurrent = false;
   try {
     sourceFetch = await fetchGithubJsonBySha(source, env);
+    let oddsStalenessDispatch = null;
+    if (sourceFetchOddsAreStale(sourceFetch) && !(input && input.prizepicks_refresh_dispatch_attempted)) {
+      const selected = sourceFetch && sourceFetch.selected_candidate ? sourceFetch.selected_candidate : null;
+      oddsStalenessDispatch = await triggerPrizePicksSourceRefresh(
+        env,
+        source,
+        { ...input, request_id: requestId, chain_id: chainId, slate_date: currentPtDate() },
+        `odds_stale_${selected && selected.odds_age_minutes !== null ? selected.odds_age_minutes : "unknown"}_minutes_old_games_still_upcoming`
+      );
+    }
     if (sourceFetchHasRowsButNoFuturePickable(sourceFetch)) {
       const pollAttempt = Number(input && input.prizepicks_refresh_poll_attempt || 0);
       const dispatchAlreadyAttempted = Boolean(input && input.prizepicks_refresh_dispatch_attempted);
