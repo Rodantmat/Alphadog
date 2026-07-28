@@ -1538,13 +1538,24 @@ async function apiHealth(env) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const pg = pgClient(env);
 
-  // Denominator for meaningful coverage: players actually relevant to TODAY's board, not the
-  // entire MLB active roster (most of whom aren't playing today - that comparison would look
-  // like a huge gap when it's actually fine).
-  const boardPlayerRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT mlb_player_id) AS n FROM score.final_board_current`);
+  // Denominator for meaningful coverage: players/games/teams actually relevant to TODAY's
+  // board specifically (a single Pacific calendar date), not the whole open-ended future board.
+  // The board legitimately carries games 1-2 days ahead too, so an unscoped count silently
+  // mixed today's games with tomorrow's - this was the root cause of several confusing numbers
+  // (lineups showing 0 when most of the "today" games counted were actually tomorrow's, teams
+  // playing shown against a flat 30 instead of who's actually on the slate today).
+  const todayRows = await queryAllPg(pg, `SELECT (now() AT TIME ZONE 'America/Los_Angeles')::date AS d`);
+  const todaysDate = todayRows[0]?.d ? String(todayRows[0].d).slice(0, 10) : null;
+  const boardPlayerRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT mlb_player_id) AS n FROM score.final_board_current WHERE official_date = $1`, [todaysDate]);
   const totalBoardPlayers = Number(boardPlayerRows[0]?.n || 0);
-  const boardGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_current WHERE game_pk IS NOT NULL`);
+  const boardGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_current WHERE game_pk IS NOT NULL AND official_date = $1`, [todaysDate]);
   const totalBoardGames = Number(boardGameRows[0]?.n || 0);
+  const teamsPlayingTodayRows = await queryAllPg(pg, `
+    SELECT COUNT(DISTINCT rp.team_id) AS n
+    FROM score.final_board_current f
+    JOIN ref.players rp ON rp.mlb_player_id = f.mlb_player_id
+    WHERE f.official_date = $1`, [todaysDate]);
+  const teamsPlayingToday = Number(teamsPlayingTodayRows[0]?.n || 0) || (totalBoardGames * 2) || 0;
 
   function statusFor(coverageRatio, isFatal) {
     if (isFatal) return "red";
