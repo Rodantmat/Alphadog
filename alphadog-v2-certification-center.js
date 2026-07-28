@@ -1649,23 +1649,23 @@ async function apiHealth(env) {
   const boardStatus = statusFor(boardParseRatio, boardStageRows.length === 0);
 
   // LAYER 4: Daily Context - each individual stage worker
-  const dailyGameStatusRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_status_current WHERE official_date = $1`, [todaysDate]);
-  const dailyUmpireRows2 = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.umpire_context_current WHERE official_date = $1`, [todaysDate]);
+  const dailyGameStatusRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_status_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
+  const dailyUmpireRows2 = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.umpire_context_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
   const dailyScheduleRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.team_schedule_spot_current`);
-  const weatherRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_weather_current WHERE official_date = $1`, [todaysDate]);
-  const umpireRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, SUM(CASE WHEN home_plate_umpire_name IS NOT NULL THEN 1 ELSE 0 END) AS named FROM daily.umpire_context_current WHERE official_date = $1`, [todaysDate]);
-  const lineupRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.lineups_current WHERE official_date = $1`, [todaysDate]);
+  const weatherRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_weather_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
+  const umpireRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, SUM(CASE WHEN home_plate_umpire_name IS NOT NULL THEN 1 ELSE 0 END) AS named FROM daily.umpire_context_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
+  const lineupRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.lineups_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
   const bullpenRows = await queryAllPg(pg, `
     SELECT COUNT(DISTINCT b.team_id) AS n, MAX(b.updated_at) AS last_update
     FROM daily.bullpen_availability_current b
     JOIN ref.players rp ON rp.current_team_id = b.team_id::text
-    JOIN score.final_board_current f ON f.mlb_player_id = rp.mlb_player_id AND f.official_date = $1`, [todaysDate]);
+    JOIN score.final_board_current f ON f.mlb_player_id = rp.mlb_player_id AND f.official_date = ANY($1::date[])`, [dailyContextDates]);
   const playerAvailRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.player_availability_current`);
-  const weatherCoverage = ratio(Number(weatherRows[0]?.n || 0), totalBoardGames);
-  const umpireCoverage = ratio(Number(umpireRows[0]?.named || 0), totalBoardGames);
-  const lineupCoverage = ratio(Number(lineupRows[0]?.n || 0), totalBoardGames);
+  const weatherCoverage = ratio(Number(weatherRows[0]?.n || 0), dcTotalBoardGames);
+  const umpireCoverage = ratio(Number(umpireRows[0]?.named || 0), dcTotalBoardGames);
+  const lineupCoverage = ratio(Number(lineupRows[0]?.n || 0), dcTotalBoardGames);
   const dailyContextStageWorkers = [
-    { label: "Game Status (daily-certifier)", covered: Number(dailyGameStatusRows[0]?.n || 0), expected: totalBoardGames, unit: "games", last_update: dailyGameStatusRows[0]?.last_update },
+    { label: "Game Status (daily-certifier)", covered: Number(dailyGameStatusRows[0]?.n || 0), expected: dcTotalBoardGames, unit: "games", last_update: dailyGameStatusRows[0]?.last_update },
     { label: "Lineups (daily-lineups)", covered: Number(lineupRows[0]?.n || 0), expected: totalBoardGames, unit: "games", last_update: lineupRows[0]?.last_update },
     { label: "Player Availability (daily-player-availability)", covered: Number(playerAvailRows[0]?.n || 0), expected: null, unit: "rows", last_update: playerAvailRows[0]?.last_update },
     { label: "Weather (daily-weather)", covered: Number(weatherRows[0]?.n || 0), expected: totalBoardGames, unit: "games", last_update: weatherRows[0]?.last_update },
