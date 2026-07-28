@@ -14,7 +14,29 @@ function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
 
-async function runScheduledCalibrationReport(env) {
+async function logExecution(env, result, triggerInfo) {
+  // This worker has no direct Hyperdrive binding (it never touches the database itself, by
+  // design) - route the execution log through PHASE3A_WORKER's own DB access instead, using its
+  // generic mode dispatch. If that specific logging mode isn't available, fail silently rather
+  // than let logging break the actual scheduled call.
+  try {
+    if (!env.PHASE3A_WORKER) return;
+    const needsAttention = result?.report?.needs_attention;
+    const totalProps = result?.report?.total_props;
+    await env.PHASE3A_WORKER.fetch("https://internal/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "log_execution_note",
+        topic: "AUTOMATED_calibration_scheduler_run",
+        finding: `Trigger: ${triggerInfo || "manual"}. report_http_status=${result?.report_http_status}. needs_attention=${needsAttention ?? "n/a"} of ${totalProps ?? "n/a"} props checked.`,
+        status: result?.ok ? "AUTOMATED_RUN_COMPLETED" : "AUTOMATED_RUN_FAILED"
+      })
+    }).catch(() => {});
+  } catch (_) { /* logging must never break the actual scheduled call */ }
+}
+
+async function runScheduledCalibrationReport(env, triggerInfo) {
   if (!env.PHASE3A_WORKER) {
     return { ok: false, error: "PHASE3A_WORKER service binding not present" };
   }
@@ -24,7 +46,7 @@ async function runScheduledCalibrationReport(env) {
     body: JSON.stringify({ mode: "calibration_report" })
   });
   const body = await resp.json().catch((e) => ({ ok: false, error: `non-JSON response: ${String(e)}` }));
-  return {
+  const result = {
     ok: true,
     data_ok: true,
     version: VERSION,
@@ -34,6 +56,8 @@ async function runScheduledCalibrationReport(env) {
     report_http_status: resp.status,
     report: body
   };
+  await logExecution(env, result, triggerInfo);
+  return result;
 }
 
 function identity(env) {
