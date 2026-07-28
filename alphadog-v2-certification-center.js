@@ -1570,11 +1570,11 @@ async function apiHealth(env) {
   const dcGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n, COUNT(DISTINCT mlb_player_id) AS players FROM score.final_board_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
   const dcTotalBoardGames = Number(dcGameRows[0]?.n || 0) || totalBoardGames;
   const dcTeamsRows = await queryAllPg(pg, `
-    SELECT COUNT(DISTINCT t) AS n FROM (
-      SELECT home_mlb_team_id AS t FROM daily.game_status_current WHERE game_pk IN (SELECT DISTINCT game_pk FROM score.final_board_current WHERE official_date = ANY($1::date[]) AND game_pk IS NOT NULL)
+    SELECT COUNT(DISTINCT team) AS n FROM (
+      SELECT team FROM score.board_prepared_current WHERE official_game_pk IN (SELECT DISTINCT game_pk FROM score.final_board_current WHERE official_date = ANY($1::date[]) AND game_pk IS NOT NULL) AND team IS NOT NULL
       UNION
-      SELECT away_mlb_team_id FROM daily.game_status_current WHERE game_pk IN (SELECT DISTINCT game_pk FROM score.final_board_current WHERE official_date = ANY($1::date[]) AND game_pk IS NOT NULL)
-    ) x WHERE t IS NOT NULL`, [dailyContextDates]);
+      SELECT opponent FROM score.board_prepared_current WHERE official_game_pk IN (SELECT DISTINCT game_pk FROM score.final_board_current WHERE official_date = ANY($1::date[]) AND game_pk IS NOT NULL) AND opponent IS NOT NULL
+    ) x`, [dailyContextDates]);
   const dcTeamsPlaying = Number(dcTeamsRows[0]?.n || 0) || teamsPlayingToday;
 
   function statusFor(coverageRatio, isFatal) {
