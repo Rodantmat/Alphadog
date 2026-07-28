@@ -1551,7 +1551,7 @@ async function apiHealth(env) {
   const boardGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_current WHERE game_pk IS NOT NULL AND official_date = $1`, [todaysDate]);
   const totalBoardGames = Number(boardGameRows[0]?.n || 0);
   const teamsPlayingTodayRows = await queryAllPg(pg, `
-    SELECT COUNT(DISTINCT rp.team_id) AS n
+    SELECT COUNT(DISTINCT rp.current_team_id) AS n
     FROM score.final_board_current f
     JOIN ref.players rp ON rp.mlb_player_id = f.mlb_player_id
     WHERE f.official_date = $1`, [todaysDate]);
