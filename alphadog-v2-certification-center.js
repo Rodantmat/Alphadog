@@ -2691,10 +2691,12 @@ function renderHealth(){
       return '<div style="padding:6px 0;border-bottom:1px solid #222"><div style="display:flex;justify-content:space-between"><span>'+esc(m.label)+'</span><span><b>'+covStr+'</b> '+esc(m.unit||'')+'</span></div>'+coverageBar(m.covered,m.expected)+(m.note?'<div class="small" style="color:#9ab;margin-top:2px">'+esc(m.note)+'</div>':'')+'</div>'
     }).join('');
     const totalsHtml=layer.totals?('<div class="small" style="color:#9ab;margin-top:6px">'+Object.entries(layer.totals).map(([k,v])=>esc(cap(k))+': '+esc(v)).join(' • ')+'</div>'):'';
+    const windowNoteHtml=layer.window_note?('<div class="small" style="color:#9ab;margin:4px 0 8px;font-style:italic">'+esc(layer.window_note)+'</div>'):'';
     const rerunHtml=layer.rerun_action?('<button class="btn healthRerunBtn" data-target="'+esc(layer.rerun_action.target)+'" data-mode="'+esc(layer.rerun_action.mode)+'" style="margin-top:10px">'+esc(layer.rerun_action.label)+'</button>'):'';
     return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px">'+
       '<div style="font-size:16px;font-weight:600">'+statusDot(layer.status)+esc(layer.label)+'</div>'+
-      '<div class="small" style="color:#9ab;margin:4px 0 8px">Last update: '+esc(layer.last_update||'Never')+(layer.note?' • '+esc(layer.note):'')+'</div>'+
+      '<div class="small" style="color:#9ab;margin:4px 0 2px">Last update: '+esc(layer.last_update||'Never')+'</div>'+
+      windowNoteHtml+
       metricsHtml+totalsHtml+rerunHtml+
       '<div class="healthRerunResult small" data-for="'+esc(layer.key)+'" style="margin-top:6px"></div>'+
     '</div>'
