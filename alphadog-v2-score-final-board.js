@@ -668,7 +668,9 @@ export default {
       const input = await readJsonSafe(request);
       const pgClient = pg(env);
       try {
-        const output = await generateFinalBoard(pgClient, input || {});
+        const workPromise = generateFinalBoard(pgClient, input || {});
+        ctx.waitUntil(workPromise.then(() => {}, () => {}));
+        const output = await workPromise;
         output.request_id = output.request_id || input.request_id || null;
         output.run_id = output.run_id || input.run_id || null;
         return jsonResponse(output, output.ok !== false ? 200 : 500);
