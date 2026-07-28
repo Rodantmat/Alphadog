@@ -253,16 +253,28 @@ async function loadContext(pgClient, dates, family) {
 
   ctx.hitterMetrics = new Map();
   ctx.pitcherMetrics = new Map();
-  ctx.hitterSnapshots = new Map(); for (const r of await pgClient`SELECT player_id, season, metric_window, games_count, pa_sum, hits_sum, singles_sum, doubles_sum, home_runs_sum, walks_sum, strikeouts_sum, runs_sum, rbi_sum, stolen_bases_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate, tb_per_pa, h_per_ab, sample_size_label, certification_grade, updated_at FROM stats_hitter.metric_snapshots WHERE season=2026`.catch(() => [])) pushMapArray(ctx.hitterSnapshots, key(r.player_id), r);
-  ctx.pitcherSnapshots = new Map(); for (const r of await pgClient`SELECT player_id, season, metric_window, games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum, pitches_sum, strikes_sum, hits_allowed_sum, runs_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated, k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated, innings_per_appearance_calculated, sample_size_label, certification_grade, updated_at FROM stats_pitcher.metric_snapshots WHERE season=2026`.catch(() => [])) pushMapArray(ctx.pitcherSnapshots, key(r.player_id), r);
-  ctx.hitterSplits = new Map(); for (const r of await pgClient`SELECT player_id, season, split_key, split_code, split_description, pa, ab, hits, singles, doubles, home_runs, runs, rbi, walks, strikeouts, avg, obp, slg, ops, babip, certification_grade, updated_at FROM stats_hitter.splits WHERE season=2026`.catch(() => [])) pushMapArray(ctx.hitterSplits, key(r.player_id), r);
-  ctx.pitcherSplits = new Map(); for (const r of await pgClient`SELECT player_id, season, split_key, split_code, split_description, innings_pitched, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, updated_at FROM stats_pitcher.splits WHERE season=2026`.catch(() => [])) pushMapArray(ctx.pitcherSplits, key(r.player_id), r);
+  ctx.hitterSnapshots = new Map();
+  ctx.pitcherSnapshots = new Map();
+  if (family !== "pitcher") {
+    for (const r of await pgClient`SELECT player_id, season, metric_window, games_count, pa_sum, hits_sum, singles_sum, doubles_sum, home_runs_sum, walks_sum, strikeouts_sum, runs_sum, rbi_sum, stolen_bases_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate, tb_per_pa, h_per_ab, sample_size_label, certification_grade, updated_at FROM stats_hitter.metric_snapshots WHERE season=2026`.catch(() => [])) pushMapArray(ctx.hitterSnapshots, key(r.player_id), r);
+  }
+  if (family === "pitcher") {
+    for (const r of await pgClient`SELECT player_id, season, metric_window, games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum, pitches_sum, strikes_sum, hits_allowed_sum, runs_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated, k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated, innings_per_appearance_calculated, sample_size_label, certification_grade, updated_at FROM stats_pitcher.metric_snapshots WHERE season=2026`.catch(() => [])) pushMapArray(ctx.pitcherSnapshots, key(r.player_id), r);
+  }
+  ctx.hitterSplits = new Map();
+  ctx.pitcherSplits = new Map();
+  if (family !== "pitcher") {
+    for (const r of await pgClient`SELECT player_id, season, split_key, split_code, split_description, pa, ab, hits, singles, doubles, home_runs, runs, rbi, walks, strikeouts, avg, obp, slg, ops, babip, certification_grade, updated_at FROM stats_hitter.splits WHERE season=2026`.catch(() => [])) pushMapArray(ctx.hitterSplits, key(r.player_id), r);
+  }
+  if (family === "pitcher") {
+    for (const r of await pgClient`SELECT player_id, season, split_key, split_code, split_description, innings_pitched, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, updated_at FROM stats_pitcher.splits WHERE season=2026`.catch(() => [])) pushMapArray(ctx.pitcherSplits, key(r.player_id), r);
+  }
   ctx.classificationV6 = new Map();
-  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, metric_value, games_sample FROM classification.classification_v6_current`.catch(() => [])) {
+  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, metric_value, games_sample FROM classification.classification_v6_current WHERE canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => [])) {
     pushMapArray(ctx.classificationV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
   }
   ctx.baselineV6 = new Map();
-  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100, formula_version FROM classification.baseline_v6_current`.catch(() => [])) {
+  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100, formula_version FROM classification.baseline_v6_current WHERE canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => [])) {
     pushMapArray(ctx.baselineV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
   }
   ctx.catcherContext = new Map();
