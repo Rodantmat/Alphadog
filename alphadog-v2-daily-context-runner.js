@@ -192,7 +192,9 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const result = await runDailyContextFullRun(env, input);
+      const workPromise = runDailyContextFullRun(env, input);
+      ctx.waitUntil(workPromise.catch(() => {}));
+      const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
 
