@@ -14,26 +14,29 @@ function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
 
+import postgres from "postgres";
+
 async function logExecution(env, result, triggerInfo) {
-  // This worker has no direct Hyperdrive binding (it never touches the database itself, by
-  // design) - route the execution log through PHASE3A_WORKER's own DB access instead, using its
-  // generic mode dispatch. If that specific logging mode isn't available, fail silently rather
-  // than let logging break the actual scheduled call.
+  // Direct, minimal DB connection used ONLY to write this worker's own execution log -
+  // completely independent of the fragile core scoring file, which is deliberately not touched
+  // again this session. A logging failure here must never affect the actual scheduled call.
+  if (!env.HYPERDRIVE) return;
+  let sql;
   try {
-    if (!env.PHASE3A_WORKER) return;
+    sql = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 5 });
     const needsAttention = result?.report?.needs_attention;
     const totalProps = result?.report?.total_props;
-    await env.PHASE3A_WORKER.fetch("https://internal/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        mode: "log_execution_note",
-        topic: "AUTOMATED_calibration_scheduler_run",
-        finding: `Trigger: ${triggerInfo || "manual"}. report_http_status=${result?.report_http_status}. needs_attention=${needsAttention ?? "n/a"} of ${totalProps ?? "n/a"} props checked.`,
-        status: result?.ok ? "AUTOMATED_RUN_COMPLETED" : "AUTOMATED_RUN_FAILED"
-      })
-    }).catch(() => {});
+    await sql.unsafe(
+      `INSERT INTO control.claude_session_log (topic, finding, status, next_step) VALUES ($1, $2, $3, $4)`,
+      [
+        "AUTOMATED_calibration_scheduler_run",
+        `Trigger: ${triggerInfo || "manual"}. report_http_status=${result?.report_http_status}. needs_attention=${needsAttention ?? "n/a"} of ${totalProps ?? "n/a"} props checked.`,
+        result?.ok ? "AUTOMATED_RUN_COMPLETED" : "AUTOMATED_RUN_FAILED",
+        null
+      ]
+    );
   } catch (_) { /* logging must never break the actual scheduled call */ }
+  finally { if (sql) await sql.end({ timeout: 1 }).catch(() => {}); }
 }
 
 async function runScheduledCalibrationReport(env, triggerInfo) {
