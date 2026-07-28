@@ -29,12 +29,16 @@ function normalize(v) {
 }
 function dateOnly(value) {
   if (!value) return null;
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  const text = String(value);
-  const m = text.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (m) return m[1];
-  const d = new Date(text);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  const text = value instanceof Date ? null : String(value);
+  // A bare "YYYY-MM-DD" string (exactly 10 chars, no time component) is already a calendar
+  // date with no timezone ambiguity - keep it as-is.
+  if (text && /^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  // Anything else is a real timestamp. The previous code took a naive UTC-prefix slice here,
+  // which silently misdates any evening Pacific game (e.g. "...T01:45:00Z" for a 6:45pm Pacific
+  // game got read as the NEXT UTC calendar day) - convert to the actual Pacific-local date instead.
+  const d = value instanceof Date ? value : new Date(text);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 function isoMs(value) { const d = new Date(value || ""); return Number.isNaN(d.getTime()) ? null : d.getTime(); }
 function minutesAbs(a, b) { const am = isoMs(a), bm = isoMs(b); return am === null || bm === null ? null : Math.abs(am - bm) / 60000; }
