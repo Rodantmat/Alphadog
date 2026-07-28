@@ -236,7 +236,12 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const result = await runMasterFullRun(env, input);
+      const workPromise = runMasterFullRun(env, input);
+      // Safety net matching the fix verified on board-runner: guarantee the full chain (which
+      // can take significantly longer than any single runner) completes even if the caller
+      // disconnects or times out before it finishes.
+      ctx.waitUntil(workPromise.catch(() => {}));
+      const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
 
