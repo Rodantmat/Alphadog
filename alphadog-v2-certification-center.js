@@ -1557,6 +1557,21 @@ async function apiHealth(env) {
     WHERE f.official_date = $1`, [todaysDate]);
   const teamsPlayingToday = Number(teamsPlayingTodayRows[0]?.n || 0) || (totalBoardGames * 2) || 0;
 
+  // Smart window for Daily Context: today's games become non-actionable once they've started, so
+  // once none of today's games are still upcoming, roll the relevant window forward to include
+  // tomorrow too - otherwise every metric here reads as "broken" for hours every evening even
+  // though the pipeline is working exactly as intended.
+  const upcomingTodayRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_current WHERE official_date = $1 AND (official_game_time_utc IS NULL OR official_game_time_utc > now())`, [todaysDate]);
+  const upcomingTodayGames = Number(upcomingTodayRows[0]?.n || 0);
+  const tomorrowDateRows = await queryAllPg(pg, `SELECT to_char((now() AT TIME ZONE 'America/Los_Angeles')::date + interval '1 day', 'YYYY-MM-DD') AS d`);
+  const tomorrowsDate = tomorrowDateRows[0]?.d ? String(tomorrowDateRows[0].d) : null;
+  const dailyContextWindowMode = upcomingTodayGames > 0 ? "today" : "tomorrow";
+  const dailyContextDates = dailyContextWindowMode === "today" ? [todaysDate] : [todaysDate, tomorrowsDate].filter(Boolean);
+  const dcGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n, COUNT(DISTINCT mlb_player_id) AS players FROM score.final_board_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
+  const dcTotalBoardGames = Number(dcGameRows[0]?.n || 0) || totalBoardGames;
+  const dcTeamsRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT rp.current_team_id) AS n FROM score.final_board_current f JOIN ref.players rp ON rp.mlb_player_id = f.mlb_player_id WHERE f.official_date = ANY($1::date[])`, [dailyContextDates]);
+  const dcTeamsPlaying = Number(dcTeamsRows[0]?.n || 0) || teamsPlayingToday;
+
   function statusFor(coverageRatio, isFatal) {
     if (isFatal) return "red";
     if (coverageRatio == null) return "yellow";
