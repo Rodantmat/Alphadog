@@ -170,15 +170,19 @@ async function runBoardFullRun(env, input) {
       run_id: runId,
       started_at: startedAt,
       finished_at: nowIso(),
-      certification: "BOARD_FULL_RUN_SKIPPED_ALREADY_RUNNING",
+      certification: lock.cooldown ? "BOARD_FULL_RUN_SKIPPED_COOLDOWN" : "BOARD_FULL_RUN_SKIPPED_ALREADY_RUNNING",
       skipped: true,
+      cooldown: lock.cooldown || false,
+      last_completed_at: lock.last_completed_at || null,
       lock_error: lock.error || null,
       stages: []
     };
   }
 
   try {
-    return await runBoardFullRunLocked(env, input, runId, startedAt);
+    const result = await runBoardFullRunLocked(env, input, runId, startedAt);
+    await markCompleted(env);
+    return result;
   } finally {
     await releaseLock(lock.client, runId);
   }
