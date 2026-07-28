@@ -1619,12 +1619,12 @@ async function apiHealth(env) {
   const boardStatus = statusFor(boardParseRatio, boardStageRows.length === 0);
 
   // LAYER 4: Daily Context - each individual stage worker
-  const dailyGameStatusRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_status_current`);
-  const dailyUmpireRows2 = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.umpire_context_current`);
+  const dailyGameStatusRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_status_current WHERE official_date = $1`, [todaysDate]);
+  const dailyUmpireRows2 = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.umpire_context_current WHERE official_date = $1`, [todaysDate]);
   const dailyScheduleRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.team_schedule_spot_current`);
-  const weatherRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_weather_current`);
-  const umpireRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, SUM(CASE WHEN home_plate_umpire_name IS NOT NULL THEN 1 ELSE 0 END) AS named FROM daily.umpire_context_current`);
-  const lineupRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.lineups_current`);
+  const weatherRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_weather_current WHERE official_date = $1`, [todaysDate]);
+  const umpireRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, SUM(CASE WHEN home_plate_umpire_name IS NOT NULL THEN 1 ELSE 0 END) AS named FROM daily.umpire_context_current WHERE official_date = $1`, [todaysDate]);
+  const lineupRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.lineups_current WHERE official_date = $1`, [todaysDate]);
   const bullpenRows = await queryAllPg(pg, `
     SELECT COUNT(DISTINCT b.team_id) AS n, MAX(b.updated_at) AS last_update
     FROM daily.bullpen_availability_current b
