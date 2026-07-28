@@ -1589,7 +1589,7 @@ async function apiHealth(env) {
   const baselineRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM classification.baseline_v6_current`);
   const hitterCoverage = ratio(Number(hitterLogRows[0]?.covered || 0), totalBoardPlayers);
   const pitcherCoverage = ratio(Number(pitcherLogRows[0]?.covered || 0), totalBoardPlayers);
-  const teamCoverage = ratio(Number(teamLogRows[0]?.covered || 0), 30);
+  const teamCoverage = ratio(Number(teamLogRows[0]?.covered || 0), teamsPlayingToday);
   const deltaLastUpdate = hitterLogRows[0]?.last_update || null;
   const deltaStatus = statusFor(Math.min(hitterCoverage ?? 1, pitcherCoverage ?? 1, teamCoverage ?? 1), !deltaLastUpdate);
 
