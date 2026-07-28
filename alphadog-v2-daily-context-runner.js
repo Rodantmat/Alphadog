@@ -106,6 +106,7 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
 // Same order as the old orchestrator's DAILY_CONTEXT_FULL_RUN_STAGES.
 const STAGES = [
   { bindingKey: "DAILY_CERTIFIER_WORKER", bindingName: "daily-certifier", mode: "daily_context_full_run_certifier_first_pass" },
+  { bindingKey: "DAILY_GAMES_STATUS_WORKER", bindingName: "daily-games-status", mode: "daily_context_full_run_games_status" },
   { bindingKey: "DAILY_PROBABLE_PITCHERS_WORKER", bindingName: "daily-probable-pitchers", mode: "daily_context_full_run_starters" },
   { bindingKey: "DAILY_LINEUPS_WORKER", bindingName: "daily-lineups", mode: "daily_context_full_run_lineups" },
   { bindingKey: "DAILY_PLAYER_AVAILABILITY_WORKER", bindingName: "daily-player-availability", mode: "daily_context_full_run_player_availability" },
