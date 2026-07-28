@@ -254,6 +254,7 @@ def make_config(worker_name, include_services=False):
         cfg["compatibility_flags"] = ["nodejs_compat"]
         cfg["services"] = [
             {"binding": "DAILY_CERTIFIER_WORKER", "service": "alphadog-v2-daily-certifier"},
+            {"binding": "DAILY_GAMES_STATUS_WORKER", "service": "alphadog-v2-daily-games-status"},
             {"binding": "DAILY_PROBABLE_PITCHERS_WORKER", "service": "alphadog-v2-daily-probable-pitchers"},
             {"binding": "DAILY_LINEUPS_WORKER", "service": "alphadog-v2-daily-lineups"},
             {"binding": "DAILY_PLAYER_AVAILABILITY_WORKER", "service": "alphadog-v2-daily-player-availability"},
