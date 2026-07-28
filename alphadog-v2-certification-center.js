@@ -1625,7 +1625,11 @@ async function apiHealth(env) {
   const weatherRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.game_weather_current`);
   const umpireRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, SUM(CASE WHEN home_plate_umpire_name IS NOT NULL THEN 1 ELSE 0 END) AS named FROM daily.umpire_context_current`);
   const lineupRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.lineups_current`);
-  const bullpenRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT team_id) AS n, MAX(updated_at) AS last_update FROM daily.bullpen_availability_current`);
+  const bullpenRows = await queryAllPg(pg, `
+    SELECT COUNT(DISTINCT b.team_id) AS n, MAX(b.updated_at) AS last_update
+    FROM daily.bullpen_availability_current b
+    JOIN ref.players rp ON rp.team_id = b.team_id
+    JOIN score.final_board_current f ON f.mlb_player_id = rp.mlb_player_id AND f.official_date = $1`, [todaysDate]);
   const playerAvailRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.player_availability_current`);
   const weatherCoverage = ratio(Number(weatherRows[0]?.n || 0), totalBoardGames);
   const umpireCoverage = ratio(Number(umpireRows[0]?.named || 0), totalBoardGames);
@@ -1635,7 +1639,7 @@ async function apiHealth(env) {
     { label: "Lineups (daily-lineups)", covered: Number(lineupRows[0]?.n || 0), expected: totalBoardGames, unit: "games", last_update: lineupRows[0]?.last_update },
     { label: "Player Availability (daily-player-availability)", covered: Number(playerAvailRows[0]?.n || 0), expected: null, unit: "rows", last_update: playerAvailRows[0]?.last_update },
     { label: "Weather (daily-weather)", covered: Number(weatherRows[0]?.n || 0), expected: totalBoardGames, unit: "games", last_update: weatherRows[0]?.last_update },
-    { label: "Bullpen Availability (daily-bullpen-availability)", covered: Number(bullpenRows[0]?.n || 0), expected: 30, unit: "teams", last_update: bullpenRows[0]?.last_update },
+    { label: "Bullpen Availability (daily-bullpen-availability)", covered: Number(bullpenRows[0]?.n || 0), expected: teamsPlayingToday, unit: "teams", last_update: bullpenRows[0]?.last_update },
     { label: "Schedule (daily-schedule)", covered: Number(dailyScheduleRows[0]?.n || 0), expected: null, unit: "rows", last_update: dailyScheduleRows[0]?.last_update },
     { label: "Umpire Context (daily-probable-pitchers/certifier)", covered: Number(dailyUmpireRows2[0]?.n || 0), expected: totalBoardGames, unit: "games", last_update: dailyUmpireRows2[0]?.last_update },
   ];
