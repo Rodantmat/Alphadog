@@ -380,8 +380,12 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
-        # No cron yet - testing via direct run_job trigger first, same lesson learned from every
-        # other new runner this session (board-runner, daily-context-runner, etc).
+        # Enabled after manual verification: run 6+ times across 4 different dates (July 24-27),
+        # confirmed idempotent (ON CONFLICT DO NOTHING, safe re-runs) and confirmed the live board
+        # (score.final_board_current) is completely unaffected across every test. Scheduled 15
+        # minutes after daily-delta-runner's 14:00 UTC (7am Pacific) run, so the real box-score
+        # stats it depends on (stats_hitter/pitcher.game_logs) are freshly mined first.
+        cfg["triggers"] = {"crons": ["15 14 * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
