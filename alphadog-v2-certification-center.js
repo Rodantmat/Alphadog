@@ -763,16 +763,16 @@ function buildCurrentSql(url) {
   if (lineTypes.length) {
     const wanted = lineTypes.map(v => String(v).toLowerCase());
     const clauses = [];
-    if (wanted.includes("regular") || wanted.includes("standard")) clauses.push("LOWER(COALESCE(f.payout_variant,'')) NOT IN ('goblin','demon')");
-    if (wanted.includes("goblin")) clauses.push("LOWER(COALESCE(f.payout_variant,''))='goblin'");
-    if (wanted.includes("demon")) clauses.push("LOWER(COALESCE(f.payout_variant,''))='demon'");
-    if (wanted.includes("more_only")) clauses.push("LOWER(COALESCE(f.payout_variant,'')) IN ('goblin','demon')");
+    if (wanted.includes("regular") || wanted.includes("standard")) clauses.push("f.is_goblin=0 AND f.is_demon=0");
+    if (wanted.includes("goblin")) clauses.push("f.is_goblin=1");
+    if (wanted.includes("demon")) clauses.push("f.is_demon=1");
+    if (wanted.includes("more_only")) clauses.push("(f.is_goblin=1 OR f.is_demon=1)");
     if (clauses.length) where.push(`(${clauses.join(" OR ")})`);
   }
   if (minHp !== null && minHp !== "") { where.push("f.estimated_hit_probability_0_100 >= ?"); params.push(Number(minHp)); }
   if (minScore !== null && minScore !== "") { where.push("f.score_0_100 >= ?"); params.push(Number(minScore)); }
   if (date) { where.push("f.official_date = ?::date"); params.push(date); }
-  const quotaLineTypeExpr = `CASE WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='demon' THEN 'demon' WHEN LOWER(COALESCE(f.source_key,''))='sleeper' AND LOWER(COALESCE(f.payout_variant,''))='more_only' THEN 'more_only' ELSE 'regular' END`;
+  const quotaLineTypeExpr = `CASE WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND f.is_goblin=1 THEN 'goblin' WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND f.is_demon=1 THEN 'demon' WHEN LOWER(COALESCE(f.source_key,''))='sleeper' AND LOWER(COALESCE(f.payout_variant,''))='more_only' THEN 'more_only' ELSE 'regular' END`;
   const UNDERDOG_SOURCE_KEYS = "'parlay_underdog','underdog'";
   const baseSelect = `
       f.final_board_row_id AS final_board_row_id,
