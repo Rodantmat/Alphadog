@@ -386,6 +386,21 @@ def make_config(worker_name, include_services=False):
         # minutes after daily-delta-runner's 14:00 UTC (7am Pacific) run, so the real box-score
         # stats it depends on (stats_hitter/pitcher.game_logs) are freshly mined first.
         cfg["triggers"] = {"crons": ["15 14 * * *"]}
+    if worker_name == "alphadog-v2-calibration-scheduler":
+        # New, deliberately tiny and separate worker: only job is to call the already-existing,
+        # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
+        # via service binding, on a schedule. Never edits that file directly - kept fully isolated
+        # from it given it caused a production hang earlier this session when modified live.
+        # No D1, no Hyperdrive - this worker never touches the database itself.
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 60000}
+        cfg["services"] = [
+            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"}
+        ]
+        # 14:30 UTC = 15 minutes after outcome-grader (14:15), 30 after daily-delta-runner (14:00).
+        # Full daily loop: mine real stats -> grade outcomes -> check/report calibration.
+        cfg["triggers"] = {"crons": ["30 14 * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
