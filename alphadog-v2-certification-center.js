@@ -1726,6 +1726,7 @@ async function apiHealth(env) {
         { label: "Goblins", covered: Number(scoringRows[0]?.goblins || 0), expected: null, unit: "legs" },
         { label: "Demons", covered: Number(scoringRows[0]?.demons || 0), expected: null, unit: "legs" }],
       totals: { total_legs: scoringN },
+      window_note: "Final board legs are quota-selected from the multi-day board inventory, filtered to today's live/upcoming games only at display time.",
       rerun_action: { label: "Rerun Scoring", mode: "scoring-full-run", target: "SCORING_RUNNER_WORKER" } },
   ];
   const overallStatus = layers.some(l => l.status === "red") ? "red" : (layers.some(l => l.status === "yellow") ? "yellow" : "green");
