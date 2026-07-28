@@ -437,7 +437,9 @@ export default {
       const pgClient = pg(env);
       try {
         const sourceMatrixBatchId = input.source_matrix_batch_id || input.source_engine_batch_id || (input.chain_id ? `scoring_engine_batch_${input.chain_id}` : null);
-        const output = await runHitProbabilityBoardFastLoop(pgClient, input, sourceMatrixBatchId);
+        const workPromise = runHitProbabilityBoardFastLoop(pgClient, input, sourceMatrixBatchId);
+        ctx.waitUntil(workPromise.then(() => {}, () => {}));
+        const output = await workPromise;
         return jsonResponse(output, output.ok ? 200 : 400);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
