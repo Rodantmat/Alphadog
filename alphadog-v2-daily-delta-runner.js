@@ -189,6 +189,23 @@ async function runClassificationV5ToCompletion(env) {
   return { ok: !failed, complete, total_calls: i, calls_summary: calls.slice(-5) };
 }
 
+async function runOutcomeGrading(env, runId) {
+  if (!env.OUTCOME_GRADER_WORKER || typeof env.OUTCOME_GRADER_WORKER.fetch !== "function") {
+    return { ok: false, skipped: true, reason: "missing_service_binding_OUTCOME_GRADER_WORKER" };
+  }
+  try {
+    const resp = await env.OUTCOME_GRADER_WORKER.fetch("https://internal.outcome-grader/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ request_id: `${runId}_outcome_grading` })
+    });
+    const output = await resp.json().catch(() => ({ ok: false, error: "non_json_response" }));
+    return { ...output, http_status: resp.status };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runDailyDeltaFullRun(env, input) {
   const runId = `daily_delta_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
@@ -222,6 +239,15 @@ async function runDailyDeltaFullRun(env, input) {
     const finalCertification = !coverageOk && result.certification === "DAILY_DELTA_FULL_RUN_COMPLETE"
       ? "DAILY_DELTA_FULL_RUN_COMPLETE_BUT_COVERAGE_GAP_DETECTED"
       : result.certification;
+
+    // Only grade outcomes if the mining chain, the baseline stateful delta, AND the coverage
+    // audit all genuinely succeeded - grading against incomplete or gap-flagged mining would
+    // silently poison the calibration training data with wrong/missing actual values.
+    const chainFullySucceeded = result.ok && statefulDelta.ok && coverageOk;
+    const outcomeGrading = chainFullySucceeded
+      ? await runOutcomeGrading(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }))
+      : { ok: false, skipped: true, reason: "chain_did_not_fully_succeed_mining_ok=" + result.ok + "_baseline_ok=" + statefulDelta.ok + "_coverage_ok=" + coverageOk };
+
     return {
       ...result,
       ok: result.ok && coverageOk,
@@ -230,6 +256,7 @@ async function runDailyDeltaFullRun(env, input) {
       coverage_audit: coverageAudit,
       stateful_delta: statefulDelta,
       classification_v5: classificationV5,
+      outcome_grading: outcomeGrading,
       preflight
     };
   } finally {
