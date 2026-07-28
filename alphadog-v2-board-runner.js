@@ -1,5 +1,9 @@
 // alphadog-v2-board-runner.js
 // Simple, single-request board-full-run runner.
+// [2026-07-28 diagnostic redeploy: forcing wrangler to reconcile cron triggers after observing
+// board-full-run re-fire every ~4 minutes starting 15:56 UTC, independent of master-runner's
+// actual 3x/day schedule - investigating whether a stale Cloudflare-side cron trigger survived
+// an earlier deploy despite being commented out in the generator.]
 //
 // Design rationale (2026-07-24): the old orchestrator's board-full-run chain used a persistent
 // job-queue table, cross-tick resume state, and a lock table to coordinate work across MANY small
