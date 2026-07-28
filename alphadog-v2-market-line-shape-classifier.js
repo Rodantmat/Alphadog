@@ -811,9 +811,63 @@ async function finalizePlayerPropBatchFromEvidence(pgClient, input, config, batc
 function writeIssue(issueRows, batchId, slateWindowKey, officialDate, severity, issueType, gamePk, preparedRowId, sourceKey, reason, details, config = modeConfig()) {
   issueRows.push({ issue_id: rid(`issue_${config.prop_family}_prop`), batch_id: batchId, slate_window_key: slateWindowKey, official_date: officialDate, severity, issue_type: issueType, game_pk: gamePk || null, prepared_row_id: preparedRowId || null, source_key: sourceKey || PARLAY_SOURCE_KEY, reason: safeText(reason, 900), details_json: safeJson({ mode: config.mode, prop_family: config.prop_family, ...details }, 3000) });
 }
+const FRESHNESS_BUFFER_MS = 3 * 60 * 60 * 1000; // 3 hours - skip re-mining if current data for this mode is still this fresh
+
+async function lastSuccessfulRunAge(env, mode) {
+  if (!env.HYPERDRIVE) return null;
+  const client = pg(env);
+  try {
+    const rows = await client.unsafe(
+      "SELECT MAX(updated_at) AS last_run FROM market.context_probe_batches WHERE mode=$1 AND certification_status='MARKET_PLAYER_PROP_CONTEXT_EVIDENCE_WRITTEN'",
+      [mode]
+    );
+    return rows && rows[0] && rows[0].last_run ? new Date(rows[0].last_run).getTime() : null;
+  } catch (_) {
+    return null;
+  } finally {
+    await client.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
 async function runPlayerPropContext(env, input = {}) {
   const startedMs = Date.now();
   const config = modeConfig(input);
+  if (!input.force_refresh) {
+    const lastRun = await lastSuccessfulRunAge(env, config.mode);
+    if (lastRun !== null) {
+      const ageMs = Date.now() - lastRun;
+      if (ageMs < FRESHNESS_BUFFER_MS) {
+        return {
+          ok: true,
+          data_ok: true,
+          version: VERSION,
+          worker_name: WORKER_NAME,
+          job_key: JOB_KEY,
+          request_id: input.request_id || null,
+          run_id: input.run_id || null,
+          mode: config.mode,
+          prop_family: config.prop_family,
+          status: "skipped_still_fresh",
+          certification: "MARKET_PLAYER_PROP_CONTEXT_SKIPPED_WITHIN_FRESHNESS_BUFFER",
+          certification_grade: "PASS",
+          freshness_buffer_ms: FRESHNESS_BUFFER_MS,
+          last_run_age_ms: ageMs,
+          last_run_age_minutes: Math.round(ageMs / 60000),
+          note: `Current ${config.prop_family} prop market context is under 3 hours old, so the external ParlayAPI multi-probe fetch was skipped to avoid consuming credits unnecessarily. Pass {force_refresh: true} to bypass this buffer.`,
+          rows_read: 0,
+          rows_written: 0,
+          external_calls_performed: 0,
+          no_teams_game_odds: true,
+          no_market_current_lines_writes: true,
+          no_scoring: true,
+          no_ranking: true,
+          no_final_board: true,
+          elapsed_ms: Date.now() - startedMs,
+          timestamp_utc: nowUtc()
+        };
+      }
+    }
+  }
   const requestId = input.request_id || rid(config.request_prefix);
   const runId = input.run_id || rid("run");
   const batchId = rid(config.batch_prefix);
