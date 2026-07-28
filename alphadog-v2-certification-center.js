@@ -1689,9 +1689,10 @@ async function apiHealth(env) {
       metrics: [
         { label: "Hitter Logs", covered: Number(hitterLogRows[0]?.covered || 0), expected: totalBoardPlayers, unit: "players" },
         { label: "Pitcher Logs", covered: Number(pitcherLogRows[0]?.covered || 0), expected: totalBoardPlayers, unit: "players" },
-        { label: "Team Logs", covered: Number(teamLogRows[0]?.covered || 0), expected: 30, unit: "teams" },
+        { label: "Team Logs", covered: Number(teamLogRows[0]?.covered || 0), expected: teamsPlayingToday, unit: "teams" },
         { label: "Baseline (classification_v6)", covered: Number(baselineRows[0]?.n || 0), expected: null, unit: "rows", note: baselineRows[0]?.last_update ? `Last refreshed ${baselineRows[0].last_update}` : "Never refreshed" },
       ],
+      window_note: `Scoped to today's board (${todaysDate}): ${totalBoardPlayers} players, ${teamsPlayingToday} teams.`,
       rerun_action: { label: "Rerun Morning Delta", mode: "daily_morning_delta_full_run", target: "PHASE3A_WORKER" } },
     { key: "weekly_differential", label: "Weekly Differential", status: weeklyStatus, last_update: weeklyLastUpdate,
       metrics: [
