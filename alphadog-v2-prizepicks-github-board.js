@@ -1196,6 +1196,7 @@ function summarizeCandidateJsonText(text) {
   let maxStart = null;
   let minStartUtc = null;
   let maxStartUtc = null;
+  let maxOddsUpdatedAtMs = null;
   const statuses = new Map();
   const games = new Set();
   for (const row of rows) {
@@ -1204,6 +1205,11 @@ function summarizeCandidateJsonText(text) {
     statuses.set(rawStatus, (statuses.get(rawStatus) || 0) + 1);
     const gameId = attrs.game_id || getDeepValue(row, ["relationships.game.data.id"]);
     if (gameId !== undefined && gameId !== null && String(gameId)) games.add(String(gameId));
+    const oddsUpdatedAt = attrs.updated_at || attrs.board_time || null;
+    if (oddsUpdatedAt) {
+      const oddsMs = Date.parse(String(oddsUpdatedAt));
+      if (Number.isFinite(oddsMs) && (maxOddsUpdatedAtMs === null || oddsMs > maxOddsUpdatedAtMs)) maxOddsUpdatedAtMs = oddsMs;
+    }
     const start = attrs.start_time || attrs.startTime || attrs.start || null;
     if (!start) { missing++; continue; }
     const ms = Date.parse(String(start));
@@ -1225,6 +1231,9 @@ function summarizeCandidateJsonText(text) {
     row_count: rows.length,
     future_pickable_rows: future,
     expired_or_started_rows: expired,
+    max_odds_updated_at_ms: maxOddsUpdatedAtMs,
+    max_odds_updated_at_utc: maxOddsUpdatedAtMs !== null ? new Date(maxOddsUpdatedAtMs).toISOString() : null,
+    odds_age_minutes: maxOddsUpdatedAtMs !== null ? Math.round((nowMs - maxOddsUpdatedAtMs) / 60000) : null,
     missing_start_time_rows: missing,
     invalid_start_time_rows: invalid,
     min_start_time: minStart,
