@@ -270,7 +270,15 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const result = await runBoardFullRun(env, input);
+      const workPromise = runBoardFullRun(env, input);
+      // Safety net: guarantee this runs to completion (and markCompleted fires) even if the
+      // caller disconnects or times out before the full 4-stage chain finishes. Root-caused
+      // 2026-07-28: repeated ~4-minute re-triggering with zero rows ever landing in
+      // control.runner_last_completed pointed to exactly this - the work kept succeeding but
+      // the invocation never reached its own completion line, most likely because whatever
+      // called this endpoint gave up before the full chain finished.
+      ctx.waitUntil(workPromise.catch(() => {}));
+      const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
 
