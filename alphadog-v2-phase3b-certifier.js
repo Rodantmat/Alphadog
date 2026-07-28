@@ -107,7 +107,9 @@ export default {
       const input = await readJsonSafe(request);
       const pgClient = pg(env);
       try {
-        const output = await runCertifier(pgClient, input);
+        const workPromise = runCertifier(pgClient, input);
+        ctx.waitUntil(workPromise.then(() => {}, () => {}));
+        const output = await workPromise;
         return jsonResponse(output, output.ok ? 200 : 400);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
