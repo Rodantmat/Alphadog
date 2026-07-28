@@ -1664,12 +1664,12 @@ async function apiHealth(env) {
   const lineupCoverage = ratio(Number(lineupRows[0]?.n || 0), dcTotalBoardGames);
   const dailyContextStageWorkers = [
     { label: "Game Status (daily-certifier)", covered: Number(dailyGameStatusRows[0]?.n || 0), expected: dcTotalBoardGames, unit: "games", last_update: dailyGameStatusRows[0]?.last_update },
-    { label: "Lineups (daily-lineups)", covered: Number(lineupRows[0]?.n || 0), expected: dcTotalBoardGames, unit: "games", last_update: lineupRows[0]?.last_update },
+    { label: "Lineups (daily-lineups)", covered: Number(lineupRows[0]?.n || 0), expected: dailyContextWindowMode === "today" ? dcTotalBoardGames : null, unit: "games", last_update: lineupRows[0]?.last_update, note: dailyContextWindowMode === "tomorrow" ? "Not expected yet - lineups post ~1-2 hours before first pitch" : undefined },
     { label: "Player Availability (daily-player-availability)", covered: Number(playerAvailRows[0]?.n || 0), expected: null, unit: "rows", last_update: playerAvailRows[0]?.last_update },
     { label: "Weather (daily-weather)", covered: Number(weatherRows[0]?.n || 0), expected: dcTotalBoardGames, unit: "games", last_update: weatherRows[0]?.last_update },
     { label: "Bullpen Availability (daily-bullpen-availability)", covered: Number(bullpenRows[0]?.n || 0), expected: dcTeamsPlaying, unit: "teams", last_update: bullpenRows[0]?.last_update },
     { label: "Schedule (daily-schedule)", covered: Number(dailyScheduleRows[0]?.n || 0), expected: null, unit: "rows", last_update: dailyScheduleRows[0]?.last_update },
-    { label: "Umpire Context (daily-probable-pitchers/certifier)", covered: Number(dailyUmpireRows2[0]?.n || 0), expected: dcTotalBoardGames, unit: "games", last_update: dailyUmpireRows2[0]?.last_update },
+    { label: "Umpire Context (daily-probable-pitchers/certifier)", covered: Number(dailyUmpireRows2[0]?.n || 0), expected: dailyContextWindowMode === "today" ? dcTotalBoardGames : null, unit: "games", last_update: dailyUmpireRows2[0]?.last_update, note: dailyContextWindowMode === "tomorrow" ? "Umpire assignments not typically announced this far out" : undefined },
   ];
   const dailyContextStatus = dailyContextWindowMode === "today"
     ? statusFor(Math.min(weatherCoverage ?? 1, umpireCoverage ?? 1, lineupCoverage ?? 1), false)
