@@ -75,14 +75,14 @@ function identity(env) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScheduledCalibrationReport(env));
+    ctx.waitUntil(runScheduledCalibrationReport(env, `cron (${event.cron})`));
   },
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "") || "/";
     if (request.method === "GET" && (path === "/" || path === "/health")) return jsonResponse(identity(env));
     if (request.method === "POST" && path === "/run") {
-      const output = await runScheduledCalibrationReport(env);
+      const output = await runScheduledCalibrationReport(env, "manual");
       return jsonResponse(output, output.ok ? 200 : 400);
     }
     return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run"] }, 404);
