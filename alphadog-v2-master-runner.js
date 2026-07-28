@@ -1,4 +1,7 @@
 // alphadog-v2-master-runner.js
+// [2026-07-28: own cron trigger retired - each of the 4 stages now has an independent, staggered
+// cron instead, to avoid the shared 15-minute cron wall-clock ceiling. This worker remains fully
+// functional for manual/on-demand full-chain runs via run_job.]
 // Single, sequential daily full-run: board-full-run -> daily-context-full-run -> market-full-run
 // -> scoring-full-run, in that exact order, in one request. Same design as the four individual
 // runners: no queue table, no lock table, no cross-request resume state. Calls each of the four
