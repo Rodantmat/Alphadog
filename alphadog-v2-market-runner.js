@@ -1,4 +1,5 @@
 // alphadog-v2-market-runner.js
+// [2026-07-28: re-enabled own independent cron trigger, T+10 - see generate_wrangler_configs.py]
 // Simple, single-request market-full-run runner - same design as board-runner and
 // daily-context-runner. One request, sequential awaited service-binding calls to the 5 existing,
 // already-tested stage workers, in the exact order the old orchestrator's MARKET_FULL_RUN_STAGES
