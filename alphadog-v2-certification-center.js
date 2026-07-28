@@ -2723,7 +2723,15 @@ function renderPlayerProfileDream(j){
 
 
 function statusDot(status){const color=status==='green'?'#2ecc71':status==='yellow'?'#f1c40f':'#e74c3c';return '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+color+';margin-right:8px;vertical-align:middle"></span>'}
-function coverageBar(covered,expected){if(expected==null||!expected)return '';const ratio=Math.max(0,Math.min(1,covered/expected));const color=ratio>=0.9?'#2ecc71':ratio>=0.5?'#f1c40f':'#e74c3c';return '<div style="background:#0d1420;border-radius:4px;height:6px;margin-top:4px;overflow:hidden"><div style="background:'+color+';height:100%;width:'+(ratio*100)+'%"></div></div>'}
+function coverageBar(covered,expected){
+  if(expected==null||!expected){
+    // No natural ratio for this metric (e.g. a reference-data count) - still show a bar for
+    // homogeneous layout, styled neutrally to signal "informational count", not a red/yellow/green judgment.
+    const hasData=Number(covered||0)>0;
+    return '<div style="background:#0d1420;border-radius:4px;height:6px;margin-top:4px;overflow:hidden"><div style="background:'+(hasData?'#3d5a80':'#3a3f4b')+';height:100%;width:'+(hasData?100:0)+'%"></div></div>';
+  }
+  const ratio=Math.max(0,Math.min(1,covered/expected));const color=ratio>=0.9?'#2ecc71':ratio>=0.5?'#f1c40f':'#e74c3c';return '<div style="background:#0d1420;border-radius:4px;height:6px;margin-top:4px;overflow:hidden"><div style="background:'+color+';height:100%;width:'+(ratio*100)+'%"></div></div>'
+}
 function renderHealth(){
   if(!health||!health.layers){$('healthCards').innerHTML='<div class="empty">No health data.</div>';return}
   $('healthStatus').innerHTML=statusDot(health.overall_status)+'Overall status • Generated '+esc(health.generated_at||'')+' • '+esc(health.total_board_players||0)+' board players, '+esc(health.total_board_games||0)+' games today';
