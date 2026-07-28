@@ -1709,6 +1709,7 @@ async function apiHealth(env) {
     { key: "board_full_run", label: "Board Full Run", status: boardStatus, last_update: boardLastUpdate,
       metrics: boardStageWorkers.map(w => ({ label: w.label, covered: Number(w.row?.safe || 0), expected: Number(w.row?.total || 0), unit: "legs parsed safely", note: w.row?.last_update ? `Last update: ${w.row.last_update}` : "No data" })),
       totals: { total_legs: boardTotalLegs, well_parsed: boardTotalSafe, score_prep_output: Number(scorePrepRows[0]?.n || 0) },
+      window_note: "Covers the full raw board pull (today plus the 1-2 upcoming days each source offers), not scoped to today only - this is the raw ingestion layer feeding score-prep.",
       rerun_action: { label: "Rerun Board", mode: "board-full-run", target: "BOARD_RUNNER_WORKER" } },
     { key: "daily_context", label: "Daily Context", status: dailyContextStatus, last_update: dailyContextLastUpdate,
       metrics: dailyContextStageWorkers.map(w => ({ label: w.label, covered: w.covered, expected: w.expected, unit: w.unit, note: w.last_update ? `Last update: ${w.last_update}` : "No data" })),
