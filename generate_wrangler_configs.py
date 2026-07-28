@@ -391,7 +391,8 @@ def make_config(worker_name, include_services=False):
         # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
         # via service binding, on a schedule. Never edits that file directly - kept fully isolated
         # from it given it caused a production hang earlier this session when modified live.
-        # No D1, no Hyperdrive - this worker never touches the database itself.
+        # This worker now has direct Hyperdrive access too, used only to write its own execution
+        # log independent of the fragile core scoring file.
         cfg["vars"] = {}
         cfg["d1_databases"] = []
         cfg["limits"] = {"cpu_ms": 60000}
@@ -401,6 +402,7 @@ def make_config(worker_name, include_services=False):
         cfg["hyperdrive"] = [
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
         # 14:30 UTC = 15 minutes after outcome-grader (14:15), 30 after daily-delta-runner (14:00).
         # Full daily loop: mine real stats -> grade outcomes -> check/report calibration.
         cfg["triggers"] = {"crons": ["30 14 * * *"]}
