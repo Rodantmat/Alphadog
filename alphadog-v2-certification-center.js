@@ -1688,7 +1688,7 @@ async function apiHealth(env) {
       ) AS last_update`);
   const marketTallyRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM market.parsing_tally_current`);
   const marketStageWorkers = [
-    { label: "Market Certifier (market-certifier)", covered: Number(marketCertifierRows[0]?.n || 0), expected: null, unit: "rows", last_update: marketCertifierRows[0]?.last_update },
+    { label: "Market Certifier (market-certifier)", covered: Number(marketCertifierRows[0]?.n || 0), expected: Number(marketNormRows[0]?.n || 0), unit: "rows", last_update: marketCertifierRows[0]?.last_update },
     { label: "Market Normalizer (market-normalizer)", covered: Number(marketNormRows[0]?.n || 0), expected: null, unit: "legs normalized", last_update: marketNormRows[0]?.last_update },
     { label: "Line Shape Classifier (market-line-shape-classifier)", covered: Number(marketTallyRows[0]?.n || 0), expected: null, unit: "rows", last_update: marketTallyRows[0]?.last_update },
   ];
