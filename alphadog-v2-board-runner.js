@@ -34,11 +34,24 @@ import postgres from "postgres";
 const BOARD_LOCK_KEY = "alphadog_board_full_run";
 const LOCK_HOLD_MINUTES = 10;
 
+const MIN_COOLDOWN_MINUTES = 3;
+
 async function tryAcquireLock(env, holderId) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
     await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
+    await client`CREATE TABLE IF NOT EXISTS control.runner_last_completed (lock_key TEXT PRIMARY KEY, completed_at TIMESTAMPTZ)`;
     await client`INSERT INTO control.runner_locks (lock_key, locked_until, holder) VALUES (${BOARD_LOCK_KEY}, NULL, NULL) ON CONFLICT (lock_key) DO NOTHING`;
+    // Protective cooldown, added after observing repeated ~4-minute-interval re-triggering from
+    // an unidentified external caller (2026-07-28) - regardless of who/what is calling this,
+    // refuse to start again too soon after the last completion. This is deliberately separate
+    // from the concurrency lock above (which only prevents true overlap): a caller invoking this
+    // sequentially, waiting for each response, would pass the concurrency check every time.
+    const recent = await client`SELECT completed_at FROM control.runner_last_completed WHERE lock_key = ${BOARD_LOCK_KEY} AND completed_at > now() - (${MIN_COOLDOWN_MINUTES} || ' minutes')::interval`;
+    if (recent.length > 0) {
+      try { await client.end({ timeout: 1 }); } catch (_) {}
+      return { acquired: false, client: null, cooldown: true, last_completed_at: recent[0].completed_at };
+    }
     const rows = await client`
       UPDATE control.runner_locks
       SET locked_until = now() + (${LOCK_HOLD_MINUTES} || ' minutes')::interval, holder = ${holderId}, acquired_at = now()
@@ -49,6 +62,16 @@ async function tryAcquireLock(env, holderId) {
     try { await client.end({ timeout: 1 }); } catch (_) {}
     return { acquired: false, client: null, error: String(err && err.message ? err.message : err) };
   }
+}
+
+async function markCompleted(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`CREATE TABLE IF NOT EXISTS control.runner_last_completed (lock_key TEXT PRIMARY KEY, completed_at TIMESTAMPTZ)`;
+    await client`INSERT INTO control.runner_last_completed (lock_key, completed_at) VALUES (${BOARD_LOCK_KEY}, now())
+      ON CONFLICT (lock_key) DO UPDATE SET completed_at = now()`;
+  } catch (_) { /* best-effort */ }
+  finally { try { await client.end({ timeout: 1 }); } catch (_) {} }
 }
 
 async function releaseLock(client, holderId) {
