@@ -1503,7 +1503,7 @@ async function runFitPlattCalibration(env, input = {}) {
         }
         const plattBinCols = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
         await sql`INSERT INTO score.calibration_correction_map ${sql(plattBinRows, ...plattBinCols)}
-          ON CONFLICT (correction_id) DO UPDATE SET empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
+          ON CONFLICT (correction_id) DO UPDATE SET methodology=excluded.methodology, empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
       }
       results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, A: round(A, 4), B: round(B, 4), test_brier_before: round(brierBeforeTest, 5), test_brier_after: round(brierAfterTest, 5), test_ece_before: round(eceBeforeTest, 5), test_ece_after: round(eceAfterTest, 5), genuinely_improved_out_of_sample: genuinelyImproved, dry_run: dryRun, would_apply: true });
     }
