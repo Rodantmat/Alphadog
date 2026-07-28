@@ -1,4 +1,7 @@
 // alphadog-v2-board-runner.js
+// [2026-07-28: re-enabled own independent cron trigger, staggered T+0 past each of the 3 daily
+// times - see generate_wrangler_configs.py for the full reasoning on why the single chained
+// master-runner cron was retired in favor of 4 independently-scheduled stages.]
 // Simple, single-request board-full-run runner.
 // [2026-07-28 diagnostic redeploy: forcing wrangler to reconcile cron triggers after observing
 // board-full-run re-fire every ~4 minutes starting 15:56 UTC, independent of master-runner's
