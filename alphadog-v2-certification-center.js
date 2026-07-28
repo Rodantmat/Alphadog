@@ -1628,7 +1628,7 @@ async function apiHealth(env) {
   const bullpenRows = await queryAllPg(pg, `
     SELECT COUNT(DISTINCT b.team_id) AS n, MAX(b.updated_at) AS last_update
     FROM daily.bullpen_availability_current b
-    JOIN ref.players rp ON rp.team_id = b.team_id
+    JOIN ref.players rp ON rp.current_team_id = b.team_id
     JOIN score.final_board_current f ON f.mlb_player_id = rp.mlb_player_id AND f.official_date = $1`, [todaysDate]);
   const playerAvailRows = await queryAllPg(pg, `SELECT COUNT(*) AS n, MAX(updated_at) AS last_update FROM daily.player_availability_current`);
   const weatherCoverage = ratio(Number(weatherRows[0]?.n || 0), totalBoardGames);
