@@ -271,11 +271,11 @@ async function loadContext(pgClient, dates, family, relevantPlayerIds) {
     for (const r of await pgClient`SELECT player_id, season, split_key, split_code, split_description, innings_pitched, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, updated_at FROM stats_pitcher.splits WHERE season=2026`.catch(() => [])) pushMapArray(ctx.pitcherSplits, key(r.player_id), r);
   }
   ctx.classificationV6 = new Map();
-  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, metric_value, games_sample FROM classification.classification_v6_current WHERE canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => [])) {
+  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, metric_value, games_sample FROM classification.classification_v6_current WHERE canonical_prop_key = ANY(${familyPropKeysLit}::text[]) AND player_id::text = ANY(${playerIdsLit}::text[])`.catch(() => [])) {
     pushMapArray(ctx.classificationV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
   }
   ctx.baselineV6 = new Map();
-  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100, formula_version FROM classification.baseline_v6_current WHERE canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => [])) {
+  for (const r of await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100, formula_version FROM classification.baseline_v6_current WHERE canonical_prop_key = ANY(${familyPropKeysLit}::text[]) AND player_id::text = ANY(${playerIdsLit}::text[])`.catch(() => [])) {
     pushMapArray(ctx.baselineV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
   }
   ctx.catcherContext = new Map();
