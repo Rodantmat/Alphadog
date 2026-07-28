@@ -1944,6 +1944,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     board_timing: boardTiming,
     promotion,
     source_refresh_dispatch: sourceRefreshDispatch,
+    odds_staleness_dispatch: oddsStalenessDispatch,
     source_refresh_wait: sourceRefreshWait,
     writes: { raw_snapshot: rawWrite, batch_pending: batchPending, stage: stageWrite, batch_finalize: batchFinalize, promotion, source_health: healthWrite },
     lifecycle_locked: {
