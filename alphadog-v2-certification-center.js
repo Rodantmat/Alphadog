@@ -1666,7 +1666,9 @@ async function apiHealth(env) {
     { label: "Schedule (daily-schedule)", covered: Number(dailyScheduleRows[0]?.n || 0), expected: null, unit: "rows", last_update: dailyScheduleRows[0]?.last_update },
     { label: "Umpire Context (daily-probable-pitchers/certifier)", covered: Number(dailyUmpireRows2[0]?.n || 0), expected: dcTotalBoardGames, unit: "games", last_update: dailyUmpireRows2[0]?.last_update },
   ];
-  const dailyContextStatus = statusFor(Math.min(weatherCoverage ?? 1, umpireCoverage ?? 1, lineupCoverage ?? 1), false);
+  const dailyContextStatus = dailyContextWindowMode === "today"
+    ? statusFor(Math.min(weatherCoverage ?? 1, umpireCoverage ?? 1, lineupCoverage ?? 1), false)
+    : statusFor(dcTotalBoardGames > 0 ? 1 : 0, false);
   const dailyContextLastUpdate = dailyContextStageWorkers.reduce((max, s) => (!max || (s.last_update && s.last_update > max)) ? s.last_update : max, null);
 
   // LAYER 5: Market - each individual worker
