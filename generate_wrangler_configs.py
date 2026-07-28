@@ -236,11 +236,15 @@ def make_config(worker_name, include_services=False):
         ]
         # TEMPORARY for initial testing only - will be replaced with the real 3x/day schedule
         # once this is verified working end to end.
-        # Cron disabled during direct-trigger testing (see run_job -> BOARD_RUNNER_WORKER) to avoid
-        # overlapping runs fighting over the same Postgres connections. Will be re-enabled as part
-        # of the single master runner's schedule once board/daily-context/market/scoring are all
-        # chained together.
-        # cfg["triggers"] = {"crons": ["*/5 * * * *"]}
+        # RE-ENABLED 2026-07-28: master-runner's chained single-cron-invocation approach hit
+        # Cloudflare's hard 15-minute cron wall-clock ceiling (confirmed via research - this cap
+        # applies regardless of ctx.waitUntil or cpu_ms) when board+daily-context+market alone
+        # took ~8.5 minutes, leaving too little runway for scoring's full pipeline. Each stage now
+        # gets its OWN independent cron and its OWN fresh 15-minute budget, staggered so each
+        # stage has a realistic head start based on observed durations (board ~5-8 min with
+        # retries, daily-context/market ~1-3 min each, scoring is the long tail and gets the most
+        # runway before the next cycle 4-11 hours later).
+        cfg["triggers"] = {"crons": ["0 16 * * *", "0 20 * * *", "0 5 * * *"]}
     if worker_name == "alphadog-v2-daily-context-runner":
         # New, deliberately simple standalone runner for daily-context-full-run only, same design
         # as board-runner: no queue table, no lock table, just sequential awaited service-binding
@@ -263,8 +267,9 @@ def make_config(worker_name, include_services=False):
             {"binding": "DAILY_SCHEDULE_WORKER", "service": "alphadog-v2-daily-schedule"},
             {"binding": "DAILY_USAGE_PULSE_WORKER", "service": "alphadog-v2-daily-usage-pulse"},
         ]
-        # No cron yet - testing via direct run_job trigger first, same lesson learned from
-        # board-runner (avoid overlapping runs fighting over connections).
+        # T+7 minutes past each of master's 3 daily times - gives board-runner (T+0) real
+        # headroom (observed 5-8 min including retries) before this stage starts.
+        cfg["triggers"] = {"crons": ["7 16 * * *", "7 20 * * *", "7 5 * * *"]}
     if worker_name == "alphadog-v2-market-runner":
         # New, deliberately simple standalone runner for market-full-run only, same design as
         # board-runner/daily-context-runner: no queue table, no lock table, just sequential
@@ -283,7 +288,9 @@ def make_config(worker_name, include_services=False):
             {"binding": "MARKET_NORMALIZER_WORKER", "service": "alphadog-v2-market-normalizer"},
             {"binding": "MARKET_LINE_SHAPE_CLASSIFIER_WORKER", "service": "alphadog-v2-market-line-shape-classifier"},
         ]
-        # No cron yet - testing via direct run_job trigger first.
+        # T+10 minutes past each of master's 3 daily times - after daily-context (T+7) has had
+        # its own real headroom (observed 1-2 min typical).
+        cfg["triggers"] = {"crons": ["10 16 * * *", "10 20 * * *", "10 5 * * *"]}
     if worker_name == "alphadog-v2-scoring-runner":
         # New, deliberately simple standalone runner for scoring-full-run only, same design as
         # the other three runners: no queue table, no lock table, just sequential awaited
@@ -305,7 +312,10 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORING_ENGINE_WORKER", "service": "alphadog-v2-phase3a-certifier"},
             {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
         ]
-        # No cron yet - testing via direct run_job trigger first.
+        # T+12 minutes past each of master's 3 daily times - the longest, most variable stage
+        # (prop-factor-mining through final-board) gets its own fresh 15-minute cron budget
+        # starting here, rather than sharing whatever remained of a single chained window.
+        cfg["triggers"] = {"crons": ["12 16 * * *", "12 20 * * *", "12 5 * * *"]}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
@@ -323,9 +333,15 @@ def make_config(worker_name, include_services=False):
             {"binding": "MARKET_RUNNER_WORKER", "service": "alphadog-v2-market-runner"},
             {"binding": "SCORING_RUNNER_WORKER", "service": "alphadog-v2-scoring-runner"},
         ]
-        # Real 3x/day schedule per config.scheduled_jobs (board_full_run_0900_pt/1300_pt/2200_pt):
-        # 09:00, 13:00, 22:00 America/Los_Angeles (PDT, UTC-7 in July) = 16:00, 20:00, 05:00 UTC.
-        cfg["triggers"] = {"crons": ["0 16 * * *", "0 20 * * *", "0 5 * * *"]}
+        # RETIRED 2026-07-28: this worker's own cron chained all 4 stages inside ONE cron
+        # invocation, hitting Cloudflare's hard 15-minute cron wall-clock ceiling (confirmed via
+        # research, applies regardless of ctx.waitUntil) whenever the earlier stages took long
+        # enough to leave insufficient runway for scoring's full pipeline. Each of the 4 stages
+        # now has its own independent, staggered cron (see their own blocks above/below) so each
+        # gets a full fresh 15-minute budget instead of sharing one window. This worker is kept
+        # deployed and fully functional for manual/on-demand full-chain runs via run_job, just no
+        # longer self-triggered on a schedule.
+        # cfg["triggers"] = {"crons": ["0 16 * * *", "0 20 * * *", "0 5 * * *"]}
     if worker_name == "alphadog-v2-weekly-differential-runner":
         # New, deliberately simple standalone runner for the weekly static differential, same
         # design as the other runners: no queue table, no lock table beyond the shared
