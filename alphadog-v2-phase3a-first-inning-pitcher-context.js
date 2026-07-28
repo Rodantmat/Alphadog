@@ -4428,7 +4428,25 @@ function erfApprox(x){ const sign=x<0?-1:1; x=Math.abs(x); const a1=0.254829592,
 function normalCdf(x,mu,sd){ if(sd<=0) return x<mu?0:1; return 0.5*(1+erfApprox((x-mu)/(Math.SQRT2*sd))); }
 function poissonTailGE(k,lambda){ k=Math.ceil(k); lambda=Math.max(0,Number(lambda||0)); if(k<=0) return 1; if(lambda<=0) return 0; let term=Math.exp(-lambda), sum=term; for(let i=1;i<k;i++){ term*=lambda/i; sum+=term; if(i>250) break; } return clamp(1-sum,0,1); }
 function binomialTailGE(k,n,p){ n=Math.max(0,Math.round(Number(n||0))); p=clamp(Number(p||0),0,1); k=Math.ceil(k); if(k<=0) return 1; if(k>n) return 0; if(n>80){ const mu=n*p; const sd=Math.sqrt(Math.max(0.0001,n*p*(1-p))); return clamp(1-normalCdf(k-0.5,mu,sd),0,1); } let prob=0; for(let i=k;i<=n;i++){ let comb=1; for(let j=1;j<=i;j++) comb*= (n-j+1)/j; prob += comb*Math.pow(p,i)*Math.pow(1-p,n-i); } return clamp(prob,0,1); }
-function overdispersedTailGE(k,mu,sigma=1){ mu=Math.max(0,Number(mu||0)); k=Math.ceil(k); if(mu<10 && sigma<=1.05) return poissonTailGE(k,mu); const sd=Math.sqrt(Math.max(0.0001,mu*sigma)); return clamp(1-normalCdf(k-0.5,mu,sd),0,1); }
+function negBinomTailGE(k, mu, sigma) {
+  // Negative binomial tail P(X >= k) with mean mu and variance mu*sigma (sigma > 1 = overdispersion).
+  // Replaces a Normal-distribution approximation that badly overstated small counts (e.g. RBIs,
+  // where per-game counts are almost always 0 or 1) - a symmetric continuous distribution is not
+  // an appropriate model for a discrete, right-skewed, near-zero count variable.
+  const r = mu / (sigma - 1);
+  const p = r / (r + mu);
+  let logPmf0 = r * Math.log(p);
+  let logPmf = logPmf0;
+  let cumulative = Math.exp(logPmf0);
+  for (let x = 1; x < k; x++) {
+    // NB pmf recurrence: pmf(x) = pmf(x-1) * (x-1+r)/x * (1-p)
+    logPmf += Math.log((x - 1 + r) / x) + Math.log(1 - p);
+    cumulative += Math.exp(logPmf);
+    if (x > 300) break;
+  }
+  return clamp(1 - cumulative, 0, 1);
+}
+function overdispersedTailGE(k,mu,sigma=1){ mu=Math.max(0,Number(mu||0)); k=Math.ceil(k); if(mu<=0) return k<=0?1:0; if(sigma<=1.05) return poissonTailGE(k,mu); if(k<=0) return 1; return negBinomTailGE(k,mu,sigma); }
 function sideProbFromMore(moreProb, side){ return String(side)==="less" ? clamp(1-moreProb,0,1) : clamp(moreProb,0,1); }
 function lockedSampleCap(games, prop){ const g=Number(games||0); const p=String(prop||""); if(p==="rfi_nrfi"){ if(g<5) return 5; if(g<15) return 15; if(g<30) return 30; return 70; } if(g<5) return 5; if(g<10) return 10; if(g<25) return 25; return 65; }
 function v2LineCap(prop,line,sourceKey){ const p=String(prop||""); const l=Number(line); if(p==="fantasy_score") return l<=25.5?55:(l<=35.5?35:15); if(p==="pitcher_fantasy_score"||p==="fantasy") return l<=25.5?55:(l<=35.5?35:15); if(p==="pitcher_strikeouts") return l<=2.5?60:(l<=3.5?55:(l<=4.5?50:(l<=5.5?45:(l<=8.5?20:10)))); if(p==="pitcher_outs") return l<=12.5?55:(l<=17.5?40:(l<=20.5?25:10)); if(p==="hits_allowed") return l<=3.5?55:(l<=6.5?40:20); if(p==="walks_allowed") return l<=1.5?55:(l<=2.5?35:(l<=3.5?15:5)); if(p==="earned_runs"||p==="runs_allowed") return l<=2.5?55:(l<=3.5?35:(l<=4.5?20:10)); if(p==="triples") return l<=0.5?15:1; if(p==="home_runs") return l<=0.5?40:2; if(p==="stolen_bases") return l<=0.5?35:1; if(p==="doubles") return l<=0.5?50:5; if(p==="rbis") return l<=0.5?60:(l<=1.5?20:5); if(p==="runs") return l<=0.5?70:(l<=1.5?30:10); if(p==="singles") return l<=0.5?70:(l<=1.5?35:10); if(p==="hits") return l<=0.5?80:(l<=1.5?45:20); if(p==="total_bases"||p==="hits_runs_rbis") return l<=0.5?70:(l<=1.5?50:(l<=2.5?35:(l<=3.5?25:(l<=4.5?15:(l<=5.5?10:5))))); if(p==="hitter_strikeouts") return l<=0.5?70:(l<=1.5?40:15); if(p==="walks") return l<=0.5?60:(l<=1.5?15:2); return 55; }
