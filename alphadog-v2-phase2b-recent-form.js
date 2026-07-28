@@ -210,7 +210,7 @@ function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, sta
   };
 }
 
-async function loadContext(pgClient, dates) {
+async function loadContext(pgClient, dates, family) {
   const datesLit = arrLit(dates);
   const ctx = {};
   const gameRows = await pgClient`SELECT game_pk, official_date::text AS official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final FROM calendar.game_calendar WHERE official_date::text = ANY(${datesLit}::text[])`;
@@ -218,14 +218,27 @@ async function loadContext(pgClient, dates) {
   const coverageRows = await pgClient`SELECT game_pk, official_date::text AS official_date, layer_key, coverage_status, live_rows, updated_at FROM team.game_data_coverage WHERE official_date::text = ANY(${datesLit}::text[])`.catch(() => []);
   ctx.gameCoverage = new Map(); for (const r of coverageRows) pushMapArray(ctx.gameCoverage, key(r.game_pk), r);
 
-  const marketCoverageRows = await pgClient`SELECT coverage_row_id, batch_id, official_date::text AS official_date, prepared_row_id, source_key, game_pk, resolved_mlb_player_id, canonical_prop_key, board_line_value, game_market_status, player_prop_market_status, market_context_status, coverage_grade, details_json, created_at FROM market.context_probe_coverage WHERE official_date::text = ANY(${datesLit}::text[])`.catch(() => []);
+  // Memory fix (2026-07-28): these market/readiness tables carry BOTH hitter and pitcher prop
+  // rows for the whole date window - confirmed at real scale (context_probe_player_props:
+  // 27531 rows, readiness_current: 12016 rows for just 2 dates), loaded in full every single
+  // invocation regardless of which family is running. buildPacket() only ever looks up rows
+  // matching the CURRENT family's own canonical_prop_key set, so the other family's rows were
+  // pure dead weight sitting in memory for the whole run. Scoping every one of these queries to
+  // only the current family's prop keys (derived from the already-loaded taxonomy classifier)
+  // cuts this in roughly half with zero change to what buildPacket ever actually reads.
+  const familyPropKeys = [...TAXONOMY_CACHE.entries()]
+    .filter(([, fam]) => fam === family || fam === "ambiguous_disambiguate_by_source_name" || (family === "pitcher" && fam === "deferred"))
+    .map(([propKey]) => propKey);
+  const familyPropKeysLit = arrLit(familyPropKeys);
+
+  const marketCoverageRows = await pgClient`SELECT coverage_row_id, batch_id, official_date::text AS official_date, prepared_row_id, source_key, game_pk, resolved_mlb_player_id, canonical_prop_key, board_line_value, game_market_status, player_prop_market_status, market_context_status, coverage_grade, details_json, created_at FROM market.context_probe_coverage WHERE official_date::text = ANY(${datesLit}::text[]) AND canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => []);
   ctx.marketCoverage = new Map(); for (const r of marketCoverageRows) pushMapArray(ctx.marketCoverage, key(r.prepared_row_id), r);
-  const playerPropRows = await pgClient`SELECT probe_row_id, batch_id, official_date::text AS official_date, prepared_row_id, source_key, source_line_id, game_pk, resolved_mlb_player_id, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, created_at FROM market.context_probe_player_props WHERE official_date::text = ANY(${datesLit}::text[])`.catch(() => []);
+  const playerPropRows = await pgClient`SELECT probe_row_id, batch_id, official_date::text AS official_date, prepared_row_id, source_key, source_line_id, game_pk, resolved_mlb_player_id, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, created_at FROM market.context_probe_player_props WHERE official_date::text = ANY(${datesLit}::text[]) AND canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => []);
   ctx.playerProps = new Map(); for (const r of playerPropRows) pushMapArray(ctx.playerProps, key(r.prepared_row_id), r);
   const gameMarketRows = await pgClient`SELECT summary_row_id, batch_id, official_date::text AS official_date, game_pk, source_key, book_coverage_grade, freshness_status, h2h_book_count, home_ml_consensus, away_ml_consensus, total_book_count, total_consensus_line, over_consensus_price, under_consensus_price, derived_home_implied_runs, derived_away_implied_runs, implied_runs_method, parse_status, warning_flags, created_at FROM market.context_probe_game_market_summary WHERE official_date::text = ANY(${datesLit}::text[])`.catch(() => []);
   ctx.gameMarket = new Map(); for (const r of gameMarketRows) pushMapArray(ctx.gameMarket, key(r.game_pk), r);
 
-  const readinessRows = await pgClient`SELECT readiness_key, batch_id, official_date::text AS official_date, game_pk, prepared_row_id, player_id, canonical_prop_key, context_status, context_grade, hard_blocker_count, warning_count, enrichment_gap_count, starter_context_status, lineup_context_status, player_availability_status, weather_context_status, bullpen_context_status, schedule_spot_context_status, umpire_context_status, hard_block_reasons_json, warning_reasons_json, enrichment_gaps_json, details_json, updated_at FROM context_cert.readiness_current WHERE official_date::text = ANY(${datesLit}::text[])`.catch(() => []);
+  const readinessRows = await pgClient`SELECT readiness_key, batch_id, official_date::text AS official_date, game_pk, prepared_row_id, player_id, canonical_prop_key, context_status, context_grade, hard_blocker_count, warning_count, enrichment_gap_count, starter_context_status, lineup_context_status, player_availability_status, weather_context_status, bullpen_context_status, schedule_spot_context_status, umpire_context_status, hard_block_reasons_json, warning_reasons_json, enrichment_gaps_json, details_json, updated_at FROM context_cert.readiness_current WHERE official_date::text = ANY(${datesLit}::text[]) AND canonical_prop_key = ANY(${familyPropKeysLit}::text[])`.catch(() => []);
   ctx.readiness = latestRowsBy(readinessRows, r => key(r.prepared_row_id));
   ctx.readinessDatesAvailable = [...new Set(readinessRows.map(r => r.official_date))];
 
