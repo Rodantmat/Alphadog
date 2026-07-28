@@ -1717,6 +1717,7 @@ async function apiHealth(env) {
       rerun_action: { label: "Rerun Daily Context", mode: "daily-context-full-run", target: "DAILY_CONTEXT_RUNNER_WORKER" } },
     { key: "market", label: "Market", status: marketStatus, last_update: marketLastUpdate,
       metrics: [...marketBySourceRows.map(r => ({ label: r.source_key + " (offered)", covered: Number(r.n || 0), expected: null, unit: "legs offered" })), ...marketStageWorkers.map(w => ({ label: w.label, covered: w.covered, expected: w.expected, unit: w.unit, note: w.last_update ? `Last update: ${w.last_update}` : "No data" }))],
+      window_note: "Legs offered spans the same multi-day raw board window as Board Full Run, not today only.",
       rerun_action: { label: "Rerun Market", mode: "market-full-run", target: "MARKET_RUNNER_WORKER" } },
     { key: "scoring", label: "Scoring System", status: scoringStatus, last_update: scoringRows[0]?.last_update || null,
       metrics: [...scoringStageWorkers.map(w => ({ label: w.label, covered: w.covered, expected: w.expected, unit: w.unit, note: w.last_update ? `Last update: ${w.last_update}` : "No data" })),
