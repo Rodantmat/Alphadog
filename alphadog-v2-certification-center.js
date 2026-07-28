@@ -1714,16 +1714,16 @@ async function apiHealth(env) {
   const layers = [
     { key: "incremental_delta", label: "Incremental Data (Morning Delta)", status: deltaStatus, last_update: deltaLastUpdate,
       metrics: [
-        { label: "Hitter Logs", covered: Number(hitterLogRows[0]?.covered || 0), expected: totalBoardPlayers, unit: "players" },
-        { label: "Pitcher Logs", covered: Number(pitcherLogRows[0]?.covered || 0), expected: totalBoardPlayers, unit: "players" },
-        { label: "Team Logs", covered: Number(teamLogRows[0]?.covered || 0), expected: teamsPlayingToday, unit: "teams" },
+        { label: "Hitter Logs", covered: Number(hitterLogRows[0]?.covered || 0), expected: null, unit: `players (${minedDate})` },
+        { label: "Pitcher Logs", covered: Number(pitcherLogRows[0]?.covered || 0), expected: null, unit: `players (${minedDate})` },
+        { label: "Team Logs", covered: Number(teamLogRows[0]?.covered || 0), expected: teamsPlayedMinedDate, unit: `teams (${minedDate})` },
         { label: "Starter History", covered: Number(starterHistoryRows[0]?.n || 0), expected: null, unit: "rows (last 2 days)", note: starterHistoryRows[0]?.last_update ? `Last update: ${starterHistoryRows[0].last_update}` : "No data" },
         { label: "Bullpen History", covered: Number(bullpenHistoryRows[0]?.n || 0), expected: null, unit: "rows (last 2 days)", note: bullpenHistoryRows[0]?.last_update ? `Last update: ${bullpenHistoryRows[0].last_update}` : "No data" },
         { label: "Hitter Metric Snapshots", covered: Number(hitterMetricSnapRows[0]?.n || 0), expected: null, unit: "players", note: hitterMetricSnapRows[0]?.last_update ? `Last update: ${hitterMetricSnapRows[0].last_update}` : "No data" },
         { label: "Pitcher Metric Snapshots", covered: Number(pitcherMetricSnapRows[0]?.n || 0), expected: null, unit: "players", note: pitcherMetricSnapRows[0]?.last_update ? `Last update: ${pitcherMetricSnapRows[0].last_update}` : "No data" },
         { label: "Baseline (classification_v6)", covered: Number(baselineRows[0]?.n || 0), expected: null, unit: "rows", note: baselineRows[0]?.last_update ? `Last refreshed ${baselineRows[0].last_update}` : "Never refreshed" },
       ],
-      window_note: `Scoped to today's board (${todaysDate}): ${totalBoardPlayers} players, ${teamsPlayingToday} teams.`,
+      window_note: `Morning Delta mines the PREVIOUS day's completed games, not today's board - last mined date is ${minedDate} (${teamsPlayedMinedDate} teams played). Hitter/Pitcher Logs are shown as counts rather than a ratio against today's board, since that would compare against an unrelated player pool.`,
       rerun_action: { label: "Rerun Morning Delta", mode: "daily_morning_delta_full_run", target: "PHASE3A_WORKER" } },
     { key: "weekly_differential", label: "Weekly Differential", status: weeklyStatus, last_update: weeklyLastUpdate,
       metrics: [
