@@ -1601,6 +1601,17 @@ async function apiHealth(env) {
   const qocRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batter_quality_of_contact`);
   const bbpRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batted_ball_profile`);
   const parkRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.park_factors`);
+  const teamsRefRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.teams`);
+  const playersRefRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.players`);
+  const stadiumsRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.stadiums`);
+  const playerAliasRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.player_aliases`);
+  const teamAliasRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.team_aliases`);
+  const sprintSpeedRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.sprint_speed`);
+  const defQualRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.defensive_quality`);
+  const catcherFramingRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.catcher_framing_poptime`);
+  const runningGameRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.pitcher_running_game`);
+  const armAngleRows2 = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.arm_angle`);
+  const pitcherArsenalRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.pitcher_arsenal`);
   const weeklyLastUpdate = qocRows[0]?.last_update || null;
   const weeklyDaysStale = weeklyLastUpdate ? Math.floor((Date.now() - new Date(weeklyLastUpdate).getTime()) / 86400000) : null;
   const weeklyStatus = !weeklyLastUpdate ? "red" : (weeklyDaysStale > 10 ? "red" : (weeklyDaysStale > 7 ? "yellow" : "green"));
