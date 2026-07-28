@@ -558,7 +558,8 @@ async function runFactorMining(request, env, pgClient) {
     } else {
       await pgClient`UPDATE scoring.prop_factor_batches SET status='running', prepared_rows_read=${prepared.length}, updated_at=now() WHERE batch_id=${batchId}`;
     }
-    const ctx = await loadContext(pgClient, dates, family);
+    const relevantPlayerIds = [...new Set(prepared.map(r => r.resolved_mlb_player_id || r.resolved_player_id).filter(Boolean).map(String))];
+    const ctx = await loadContext(pgClient, dates, family, relevantPlayerIds);
     const alreadyCovered = resuming ? await getCoveredPreparedIds(pgClient, batchId, family) : new Set();
     const coverageRows = [];
     const packetChunk = [];
