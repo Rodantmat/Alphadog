@@ -1615,10 +1615,10 @@ async function apiHealth(env) {
   // LAYER 2: Weekly Differential (quality-of-contact/batted-ball mining)
   const qocRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batter_quality_of_contact`);
   const bbpRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batted_ball_profile`);
-  const parkRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.park_factors`);
-  const teamsRefRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.teams`);
+  const parkRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT mlb_venue_id) AS n FROM ref.park_factors`);
+  const teamsRefRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT mlb_team_id) AS n FROM ref.teams`);
   const playersRefRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.players`);
-  const stadiumsRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.stadiums`);
+  const stadiumsRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT mlb_venue_id) AS n FROM ref.stadiums`);
   const playerAliasRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.player_aliases`);
   const teamAliasRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.team_aliases`);
   const sprintSpeedRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.sprint_speed`);
