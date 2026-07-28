@@ -1564,10 +1564,10 @@ async function apiHealth(env) {
     SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered
     FROM stats_hitter.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`);
   const pitcherLogRows = await queryAllPg(pg, `
-    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
-    FROM stats_pitcher.game_logs gl WHERE gl.game_date >= (CURRENT_DATE - interval '1 day')`);
+    SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered
+    FROM stats_pitcher.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_pitcher.game_logs) - interval '1 day'`);
   const teamLogRows = await queryAllPg(pg, `
-    SELECT COUNT(DISTINCT team_id) AS covered FROM stats_hitter.game_logs WHERE game_date >= (CURRENT_DATE - interval '1 day')`);
+    SELECT COUNT(DISTINCT team_id) AS covered FROM stats_hitter.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`);
   const baselineRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM classification.baseline_v6_current`);
   const hitterCoverage = ratio(Number(hitterLogRows[0]?.covered || 0), totalBoardPlayers);
   const pitcherCoverage = ratio(Number(pitcherLogRows[0]?.covered || 0), totalBoardPlayers);
