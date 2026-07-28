@@ -366,6 +366,21 @@ def make_config(worker_name, include_services=False):
         # request - the run is fast now, and 7 AM gives more complete previous-night game data
         # (box scores, final stats) time to settle before this pulls it.
         cfg["triggers"] = {"crons": ["0 14 * * *"]}
+    if worker_name == "alphadog-v2-outcome-grader":
+        # New, deliberately isolated worker: grades yesterday's board legs against already-mined
+        # real game logs (stats_hitter.game_logs / stats_pitcher.game_logs) and writes results to
+        # score.prop_outcome_history only - the table calibration_report reads to validate/fit
+        # corrections. Never touches score.final_board_current, hp_board_current, or any table
+        # read by the live scoring path, so a bug here cannot affect today's live board.
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 60000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        # No cron yet - testing via direct run_job trigger first, same lesson learned from every
+        # other new runner this session (board-runner, daily-context-runner, etc).
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
