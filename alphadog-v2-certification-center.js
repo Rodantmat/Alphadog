@@ -1712,6 +1712,7 @@ async function apiHealth(env) {
       rerun_action: { label: "Rerun Board", mode: "board-full-run", target: "BOARD_RUNNER_WORKER" } },
     { key: "daily_context", label: "Daily Context", status: dailyContextStatus, last_update: dailyContextLastUpdate,
       metrics: dailyContextStageWorkers.map(w => ({ label: w.label, covered: w.covered, expected: w.expected, unit: w.unit, note: w.last_update ? `Last update: ${w.last_update}` : "No data" })),
+      window_note: `Scoped to today's ${totalBoardGames} games (${todaysDate}), ${teamsPlayingToday} teams. Lineups only post ~1-2 hours before first pitch, so 0 is expected until then; the derived/fallback lineup writer is currently disabled (DERIVED_BACKUP_WRITE_ENABLED=false in daily-lineups), so no automatic fallback fires if MLB is late posting - flag if lineups are still 0 within an hour of first pitch.`,
       rerun_action: { label: "Rerun Daily Context", mode: "daily-context-full-run", target: "DAILY_CONTEXT_RUNNER_WORKER" } },
     { key: "market", label: "Market", status: marketStatus, last_update: marketLastUpdate,
       metrics: [...marketBySourceRows.map(r => ({ label: r.source_key + " (offered)", covered: Number(r.n || 0), expected: null, unit: "legs offered" })), ...marketStageWorkers.map(w => ({ label: w.label, covered: w.covered, expected: w.expected, unit: w.unit, note: w.last_update ? `Last update: ${w.last_update}` : "No data" }))],
