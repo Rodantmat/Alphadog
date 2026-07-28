@@ -1464,7 +1464,7 @@ async function apiFilters(env) {
       MAX(score_0_100) AS max_score
     FROM score.final_board_current
     WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-      AND official_date >= CURRENT_DATE
+      AND official_date >= (now() AT TIME ZONE 'America/Los_Angeles')::date
       AND (official_game_time_utc IS NULL OR official_game_time_utc > now())
     GROUP BY source_key, canonical_prop_key,
       CASE WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','runs_allowed','rfi_nrfi') THEN 'pitcher' ELSE 'hitter' END,
