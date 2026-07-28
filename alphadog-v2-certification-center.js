@@ -1566,7 +1566,7 @@ async function apiHealth(env) {
   const tomorrowDateRows = await queryAllPg(pg, `SELECT to_char((now() AT TIME ZONE 'America/Los_Angeles')::date + interval '1 day', 'YYYY-MM-DD') AS d`);
   const tomorrowsDate = tomorrowDateRows[0]?.d ? String(tomorrowDateRows[0].d) : null;
   const dailyContextWindowMode = upcomingTodayGames > 0 ? "today" : "tomorrow";
-  const dailyContextDates = dailyContextWindowMode === "today" ? [todaysDate] : [todaysDate, tomorrowsDate].filter(Boolean);
+  const dailyContextDates = "{" + (dailyContextWindowMode === "today" ? [todaysDate] : [todaysDate, tomorrowsDate].filter(Boolean)).join(",") + "}";
   const dcGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n, COUNT(DISTINCT mlb_player_id) AS players FROM score.final_board_current WHERE official_date = ANY($1::date[])`, [dailyContextDates]);
   const dcTotalBoardGames = Number(dcGameRows[0]?.n || 0) || totalBoardGames;
   const dcTeamsRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT rp.current_team_id) AS n FROM score.final_board_current f JOIN ref.players rp ON rp.mlb_player_id = f.mlb_player_id WHERE f.official_date = ANY($1::date[])`, [dailyContextDates]);
