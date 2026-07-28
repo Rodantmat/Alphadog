@@ -1712,9 +1712,9 @@ async function runBoardParseStageCertify(env, input = {}) {
   let sourceRefreshDispatch = null;
   let sourceRefreshWait = null;
   let sourceRefreshWaitPreservedCurrent = false;
+  let oddsStalenessDispatch = null;
   try {
     sourceFetch = await fetchGithubJsonBySha(source, env);
-    let oddsStalenessDispatch = null;
     if (sourceFetchOddsAreStale(sourceFetch) && !(input && input.prizepicks_refresh_dispatch_attempted)) {
       const selected = sourceFetch && sourceFetch.selected_candidate ? sourceFetch.selected_candidate : null;
       oddsStalenessDispatch = await triggerPrizePicksSourceRefresh(
