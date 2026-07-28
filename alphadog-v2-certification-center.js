@@ -1557,9 +1557,12 @@ async function apiHealth(env) {
   function ratio(covered, total) { return total > 0 ? covered / total : null; }
 
   // LAYER 1: Incremental / Delta (morning delta chain)
+  // Note: checks against the actual most recent game_date in each table, not a fixed
+  // "yesterday" calendar boundary - CURRENT_DATE is UTC-based and rolls over hours before
+  // Pacific midnight, which was causing genuinely fresh data to show as stale/missing.
   const hitterLogRows = await queryAllPg(pg, `
-    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
-    FROM stats_hitter.game_logs gl WHERE gl.game_date >= (CURRENT_DATE - interval '1 day')`);
+    SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered
+    FROM stats_hitter.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`);
   const pitcherLogRows = await queryAllPg(pg, `
     SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
     FROM stats_pitcher.game_logs gl WHERE gl.game_date >= (CURRENT_DATE - interval '1 day')`);
