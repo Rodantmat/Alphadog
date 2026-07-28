@@ -625,7 +625,9 @@ export default {
     if (request.method === "POST" && (path === "/run" || path === "/mine")) {
       const pgClient = pg(env);
       try {
-        const response = await runFactorMining(request, env, pgClient);
+        const workPromise = runFactorMining(request, env, pgClient);
+        ctx.waitUntil(workPromise.then(() => {}, () => {}));
+        const response = await workPromise;
         return response;
       } catch (err) {
         const failOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY, status: "prop_factor_miner_exception", certification: "PROP_FACTOR_MINER_EXCEPTION", certification_grade: "FAILED", error: String(err && err.stack ? err.stack : err), external_calls: 0, no_scoring: true, no_ranking: true, no_final_board: true, no_matrix_builder: true };
