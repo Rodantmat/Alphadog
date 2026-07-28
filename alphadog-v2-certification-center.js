@@ -1571,13 +1571,21 @@ async function apiHealth(env) {
   // "yesterday" calendar boundary - CURRENT_DATE is UTC-based and rolls over hours before
   // Pacific midnight, which was causing genuinely fresh data to show as stale/missing.
   const hitterLogRows = await queryAllPg(pg, `
-    SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered
-    FROM stats_hitter.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`);
+    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
+    FROM stats_hitter.game_logs gl
+    JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
+    WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`, [todaysDate]);
   const pitcherLogRows = await queryAllPg(pg, `
-    SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered
-    FROM stats_pitcher.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_pitcher.game_logs) - interval '1 day'`);
+    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
+    FROM stats_pitcher.game_logs gl
+    JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
+    WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_pitcher.game_logs) - interval '1 day'`, [todaysDate]);
   const teamLogRows = await queryAllPg(pg, `
-    SELECT COUNT(DISTINCT team_id) AS covered FROM stats_hitter.game_logs WHERE game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`);
+    SELECT COUNT(DISTINCT gl.team_id) AS covered
+    FROM stats_hitter.game_logs gl
+    JOIN ref.players rp ON rp.mlb_player_id = gl.player_id
+    JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
+    WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`, [todaysDate]);
   const baselineRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM classification.baseline_v6_current`);
   const hitterCoverage = ratio(Number(hitterLogRows[0]?.covered || 0), totalBoardPlayers);
   const pitcherCoverage = ratio(Number(pitcherLogRows[0]?.covered || 0), totalBoardPlayers);
