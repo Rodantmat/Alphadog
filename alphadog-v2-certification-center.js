@@ -739,7 +739,11 @@ function buildCurrentSql(url) {
   const minScore = url.searchParams.get("min_score");
   const date = url.searchParams.get("date");
   if (!date) {
-    where.push("f.official_date >= CURRENT_DATE");
+    // Use the system's actual timezone (America/Los_Angeles), not the database server's
+    // UTC clock, to determine "today" - games' official_date is the local calendar date,
+    // and CURRENT_DATE (UTC) rolls over hours before Pacific midnight, which was silently
+    // excluding the entire board right after that rollover.
+    where.push("f.official_date >= (now() AT TIME ZONE 'America/Los_Angeles')::date");
     where.push("(f.official_game_time_utc IS NULL OR f.official_game_time_utc > now())");
   }
   const limit = clampLimit(url.searchParams.get("limit"));
