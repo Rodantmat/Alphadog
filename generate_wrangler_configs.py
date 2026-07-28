@@ -398,6 +398,9 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"}
         ]
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
         # 14:30 UTC = 15 minutes after outcome-grader (14:15), 30 after daily-delta-runner (14:00).
         # Full daily loop: mine real stats -> grade outcomes -> check/report calibration.
         cfg["triggers"] = {"crons": ["30 14 * * *"]}
