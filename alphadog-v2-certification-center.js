@@ -1704,7 +1704,7 @@ async function apiHealth(env) {
         { label: "Batted Ball Profile", covered: Number(bbpRows[0]?.n || 0), expected: null, unit: "players" },
         { label: "Park Factors", covered: Number(parkRows[0]?.n || 0), expected: 30, unit: "parks" },
       ],
-      note: weeklyDaysStale != null ? `${weeklyDaysStale} days since last refresh (expected weekly)` : "Never refreshed",
+      window_note: weeklyDaysStale != null ? (weeklyDaysStale === 0 ? "Refreshed today. League-wide static reference data (all 30 teams/parks), not scoped to today's slate - expected weekly cadence." : `${weeklyDaysStale} day(s) since last refresh (expected weekly). League-wide static reference data (all 30 teams/parks), not scoped to today's slate.`) : "Never refreshed. League-wide static reference data (all 30 teams/parks), not scoped to today's slate.",
       rerun_action: { label: "Rerun Weekly Differential", mode: "weekly-differential-full-run", target: "WEEKLY_DIFFERENTIAL_RUNNER_WORKER" } },
     { key: "board_full_run", label: "Board Full Run", status: boardStatus, last_update: boardLastUpdate,
       metrics: boardStageWorkers.map(w => ({ label: w.label, covered: Number(w.row?.safe || 0), expected: Number(w.row?.total || 0), unit: "legs parsed safely", note: w.row?.last_update ? `Last update: ${w.row.last_update}` : "No data" })),
