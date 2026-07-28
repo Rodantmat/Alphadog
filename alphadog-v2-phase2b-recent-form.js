@@ -210,8 +210,9 @@ function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, sta
   };
 }
 
-async function loadContext(pgClient, dates, family) {
+async function loadContext(pgClient, dates, family, relevantPlayerIds) {
   const datesLit = arrLit(dates);
+  const playerIdsLit = arrLit(relevantPlayerIds || []);
   const ctx = {};
   const gameRows = await pgClient`SELECT game_pk, official_date::text AS official_date, game_time_utc, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final FROM calendar.game_calendar WHERE official_date::text = ANY(${datesLit}::text[])`;
   ctx.games = latestRowsBy(gameRows, r => key(r.game_pk));
