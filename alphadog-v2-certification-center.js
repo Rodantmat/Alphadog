@@ -1544,8 +1544,8 @@ async function apiHealth(env) {
   // mixed today's games with tomorrow's - this was the root cause of several confusing numbers
   // (lineups showing 0 when most of the "today" games counted were actually tomorrow's, teams
   // playing shown against a flat 30 instead of who's actually on the slate today).
-  const todayRows = await queryAllPg(pg, `SELECT (now() AT TIME ZONE 'America/Los_Angeles')::date AS d`);
-  const todaysDate = todayRows[0]?.d ? String(todayRows[0].d).slice(0, 10) : null;
+  const todayRows = await queryAllPg(pg, `SELECT to_char((now() AT TIME ZONE 'America/Los_Angeles')::date, 'YYYY-MM-DD') AS d`);
+  const todaysDate = todayRows[0]?.d ? String(todayRows[0].d) : null;
   const boardPlayerRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT mlb_player_id) AS n FROM score.final_board_current WHERE official_date = $1`, [todaysDate]);
   const totalBoardPlayers = Number(boardPlayerRows[0]?.n || 0);
   const boardGameRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_current WHERE game_pk IS NOT NULL AND official_date = $1`, [todaysDate]);
