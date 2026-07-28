@@ -1582,35 +1582,28 @@ async function apiHealth(env) {
   function ratio(covered, total) { return total > 0 ? covered / total : null; }
 
   // LAYER 1: Incremental / Delta (morning delta chain)
-  // Note: checks against the actual most recent game_date in each table, not a fixed
-  // "yesterday" calendar boundary - CURRENT_DATE is UTC-based and rolls over hours before
-  // Pacific midnight, which was causing genuinely fresh data to show as stale/missing.
-  const hitterLogRows = await queryAllPg(pg, `
-    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
-    FROM stats_hitter.game_logs gl
-    JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
-    WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`, [todaysDate]);
-  const pitcherLogRows = await queryAllPg(pg, `
-    SELECT MAX(gl.updated_at) AS last_update, COUNT(DISTINCT gl.player_id) AS covered
-    FROM stats_pitcher.game_logs gl
-    JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
-    WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_pitcher.game_logs) - interval '1 day'`, [todaysDate]);
-  const teamLogRows = await queryAllPg(pg, `
-    SELECT COUNT(DISTINCT gl.team_id) AS covered
-    FROM stats_hitter.game_logs gl
-    JOIN ref.players rp ON rp.mlb_player_id = gl.player_id
-    JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
-    WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`, [todaysDate]);
+  // Note: Morning Delta mines the PREVIOUS DAY's completed games, not today's board - comparing
+  // its coverage against today's (much smaller) board was comparing against the wrong pool
+  // entirely and produced misleading near-empty-looking ratios even when mining was 100%
+  // complete for the day it actually covers. Scoped instead against the real mined date and,
+  // for teams, against team.game_logs (the authoritative record of which teams played that day).
+  const minedDateRows = await queryAllPg(pg, `SELECT to_char(MAX(game_date), 'YYYY-MM-DD') AS d FROM stats_hitter.game_logs`);
+  const minedDate = minedDateRows[0]?.d ? String(minedDateRows[0].d) : null;
+  const hitterLogRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered FROM stats_hitter.game_logs WHERE game_date = $1`, [minedDate]);
+  const pitcherLogRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS covered FROM stats_pitcher.game_logs WHERE game_date = $1`, [minedDate]);
+  const teamLogRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT team_id) AS covered FROM stats_hitter.game_logs WHERE game_date = $1`, [minedDate]);
+  const teamsPlayedMinedDateRows = await queryAllPg(pg, `SELECT COUNT(DISTINCT team_id) AS n FROM team.game_logs WHERE game_date = $1`, [minedDate]);
+  const teamsPlayedMinedDate = Number(teamsPlayedMinedDateRows[0]?.n || 0) || 30;
   const baselineRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM classification.baseline_v6_current`);
   const starterHistoryRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM team.starter_history WHERE game_date >= (SELECT MAX(game_date) FROM team.starter_history) - interval '2 day'`);
   const bullpenHistoryRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM team.bullpen_history WHERE game_date >= (SELECT MAX(game_date) FROM team.bullpen_history) - interval '2 day'`);
   const hitterMetricSnapRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS n FROM stats_hitter.metric_snapshots`);
   const pitcherMetricSnapRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS n FROM stats_pitcher.metric_snapshots`);
-  const hitterCoverage = ratio(Number(hitterLogRows[0]?.covered || 0), totalBoardPlayers);
-  const pitcherCoverage = ratio(Number(pitcherLogRows[0]?.covered || 0), totalBoardPlayers);
-  const teamCoverage = ratio(Number(teamLogRows[0]?.covered || 0), teamsPlayingToday);
+  const hitterCoverage = null;
+  const pitcherCoverage = null;
+  const teamCoverage = ratio(Number(teamLogRows[0]?.covered || 0), teamsPlayedMinedDate);
   const deltaLastUpdate = hitterLogRows[0]?.last_update || null;
-  const deltaStatus = statusFor(Math.min(hitterCoverage ?? 1, pitcherCoverage ?? 1, teamCoverage ?? 1), !deltaLastUpdate);
+  const deltaStatus = statusFor(teamCoverage, !deltaLastUpdate);
 
   // LAYER 2: Weekly Differential (quality-of-contact/batted-ball mining)
   const qocRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM ref.batter_quality_of_contact`);
