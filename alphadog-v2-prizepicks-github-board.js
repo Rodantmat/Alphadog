@@ -1335,6 +1335,9 @@ function candidatePublicSummary(candidate) {
     max_start_time: summary.max_start_time || null,
     min_start_time_utc: summary.min_start_time_utc || null,
     max_start_time_utc: summary.max_start_time_utc || null,
+    max_odds_updated_at_ms: summary.max_odds_updated_at_ms !== undefined ? summary.max_odds_updated_at_ms : null,
+    max_odds_updated_at_utc: summary.max_odds_updated_at_utc || null,
+    odds_age_minutes: summary.odds_age_minutes !== undefined ? summary.odds_age_minutes : null,
     distinct_games: summary.distinct_games || 0,
     error: candidate && candidate.error ? safeString(candidate.error, 500) : null
   };
@@ -1349,6 +1352,20 @@ function sourceFetchHasRowsButNoFuturePickable(sourceFetch) {
     Number(selected.future_pickable_rows || 0) === 0 &&
     Number(selected.expired_or_started_rows || 0) > 0
   );
+}
+// Root-cause fix (2026-07-28, root-caused via direct code investigation per Rodolfo's
+// instruction): the ONLY staleness signal above is "have games started" - a slate scraped a
+// full day ago still shows every row as "future pickable" right up until first pitch, so this
+// never catches the far more common case where PrizePicks has simply repriced odds (goblin/
+// demon status, line values) throughout the day on an otherwise-still-upcoming slate. This adds
+// the real missing signal: how old is the odds data itself, per PrizePicks' own updated_at
+// timestamp on each row, independent of whether the games have started.
+const PRIZEPICKS_ODDS_MAX_AGE_MINUTES = 60;
+function sourceFetchOddsAreStale(sourceFetch, maxAgeMinutes = PRIZEPICKS_ODDS_MAX_AGE_MINUTES) {
+  const selected = sourceFetch && sourceFetch.selected_candidate ? sourceFetch.selected_candidate : null;
+  if (!sourceFetch || !sourceFetch.ok || !selected || Number(selected.row_count || 0) === 0) return false;
+  const ageMinutes = selected.odds_age_minutes;
+  return typeof ageMinutes === "number" && ageMinutes > maxAgeMinutes;
 }
 
 async function waitForFilledPrizePicksJsonAfterRefresh(env, source, input, initialSourceFetch, refreshDispatch, workerStartedMs) {
