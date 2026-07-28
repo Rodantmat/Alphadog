@@ -1,4 +1,5 @@
 // alphadog-v2-daily-context-runner.js
+// [2026-07-28: re-enabled own independent cron trigger, T+7 - see generate_wrangler_configs.py]
 // Simple, single-request daily-context-full-run runner - same design as alphadog-v2-board-runner.js.
 // One request, sequential awaited service-binding calls to the 9 existing, already-tested stage
 // workers, in the exact order the old orchestrator's DAILY_CONTEXT_FULL_RUN_STAGES used. No queue
