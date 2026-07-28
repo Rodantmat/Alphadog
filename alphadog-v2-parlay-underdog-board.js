@@ -931,7 +931,55 @@ async function withDeadline(promise, ms, fallbackFactory) {
   }
 }
 
+const FRESHNESS_BUFFER_MS = 3 * 60 * 60 * 1000; // 3 hours - skip re-mining if current data is still this fresh
+
+async function lastFetchAge(env) {
+  if (!env.HYPERDRIVE) return null;
+  const client = pgClient(env);
+  try {
+    const rows = await client.unsafe("SELECT MAX(fetched_at) AS last_fetch FROM market.underdog_board_batches WHERE source_key=$1 AND promoted_at IS NOT NULL", [SOURCE_KEY]);
+    const lastFetch = rows && rows[0] && rows[0].last_fetch ? new Date(rows[0].last_fetch).getTime() : null;
+    return lastFetch;
+  } catch (_) {
+    return null;
+  } finally {
+    await client.end({ timeout: 1 });
+  }
+}
+
 async function safeProbe(env, input = {}) {
+  if (!input.force_refresh) {
+    const lastFetch = await lastFetchAge(env);
+    if (lastFetch !== null) {
+      const ageMs = Date.now() - lastFetch;
+      if (ageMs < FRESHNESS_BUFFER_MS) {
+        return {
+          ok: true,
+          data_ok: true,
+          version: VERSION,
+          worker_name: WORKER_NAME,
+          job_key: JOB_KEY,
+          source_key: SOURCE_KEY,
+          status: "skipped_still_fresh",
+          certification: "PARLAY_UNDERDOG_SKIPPED_WITHIN_FRESHNESS_BUFFER",
+          block_downstream_reason: null,
+          freshness_buffer_ms: FRESHNESS_BUFFER_MS,
+          last_fetch_age_ms: ageMs,
+          last_fetch_age_minutes: Math.round(ageMs / 60000),
+          note: "Current Underdog board data is under 3 hours old, so the external ParlayAPI call was skipped to avoid consuming credits unnecessarily. Pass {force_refresh: true} to bypass this buffer.",
+          rows_read: 0,
+          rows_written: 0,
+          promoted_rows_written: 0,
+          external_calls_performed: 0,
+          no_scoring: true,
+          no_ranking: true,
+          no_final_board: true,
+          no_prizepicks_mutation: true,
+          no_promotion: false
+        };
+      }
+    }
+  }
   const schema = await ensureUnderdogSchema(env);
   const endpoint = configuredEndpoint(env, input);
   const auth = await authConfig(env);
