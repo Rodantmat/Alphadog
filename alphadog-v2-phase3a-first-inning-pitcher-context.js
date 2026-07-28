@@ -1421,7 +1421,7 @@ async function runFitPlattCalibration(env, input = {}) {
             const isoColsFlat = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
             if (!dryRun) {
               await sql`INSERT INTO score.calibration_correction_map ${sql(isoRowsFlat, ...isoColsFlat)}
-                ON CONFLICT (correction_id) DO UPDATE SET empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
+                ON CONFLICT (correction_id) DO UPDATE SET methodology=excluded.methodology, empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
             }
             results.push({ prop: propKey, train_n: trainPairs.length, test_n: testPairs.length, method: "isotonic_fallback_after_too_flat_platt", test_brier_before: round(brierBeforeTestFlat, 5), test_brier_after_isotonic: round(brierAfterIsoFlat, 5), test_ece_before: round(eceBeforeTestFlat, 5), test_ece_after_isotonic: round(eceAfterIsoFlat, 5), platt_A_rejected: round(A, 4), dry_run: dryRun, would_apply: true });
             continue;
