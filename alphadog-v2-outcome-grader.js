@@ -140,6 +140,20 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
   return { entity_type: entityType, candidates_found: rows.length, rows_inserted: inserted };
 }
 
+async function logExecution(sql, result, input) {
+  try {
+    await sql.unsafe(
+      `INSERT INTO control.claude_session_log (topic, finding, status, next_step) VALUES ($1, $2, $3, $4)`,
+      [
+        "AUTOMATED_outcome_grader_run",
+        `Trigger: ${input.trigger || "manual"}${input.cron ? ` (cron: ${input.cron})` : ""}. target_date=${result.target_date}. hitter candidates=${result.hitter?.candidates_found ?? "n/a"} inserted=${result.hitter?.rows_inserted ?? "n/a"}. pitcher candidates=${result.pitcher?.candidates_found ?? "n/a"} inserted=${result.pitcher?.rows_inserted ?? "n/a"}.`,
+        result.ok ? "AUTOMATED_RUN_COMPLETED" : "AUTOMATED_RUN_FAILED",
+        result.ok ? null : String(result.error || "unknown error")
+      ]
+    );
+  } catch (_) { /* logging must never break the actual grading run */ }
+}
+
 async function runGradeOutcomes(env, input) {
   const sql = pg(env);
   try {
@@ -151,7 +165,9 @@ async function runGradeOutcomes(env, input) {
       targetDate = r[0].d;
     }
     if (!isValidDateString(targetDate)) {
-      return { ok: false, error: `Invalid target_date: ${targetDate}. Expected YYYY-MM-DD.` };
+      const badResult = { ok: false, error: `Invalid target_date: ${targetDate}. Expected YYYY-MM-DD.` };
+      await logExecution(sql, badResult, input);
+      return badResult;
     }
 
     const hitterResult = await gradeForDate(sql, targetDate, "hitter", HITTER_PROP_EXPR, "stats_hitter.game_logs");
@@ -159,7 +175,7 @@ async function runGradeOutcomes(env, input) {
 
     const totalGamesForDate = await sql.unsafe(`SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_history WHERE official_date::date = $1::date`, [targetDate]);
 
-    return {
+    const result = {
       ok: true,
       data_ok: true,
       version: VERSION,
@@ -173,8 +189,12 @@ async function runGradeOutcomes(env, input) {
       timestamp_utc: nowUtc(),
       note: "Read-only from board history + already-mined stats tables; writes only to score.prop_outcome_history. Idempotent - safe to re-run for the same date (ON CONFLICT DO NOTHING)."
     };
+    await logExecution(sql, result, input);
+    return result;
   } catch (err) {
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, error: String(err && err.stack ? err.stack : err) };
+    const errResult = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, error: String(err && err.stack ? err.stack : err) };
+    await logExecution(sql, errResult, input).catch(() => {});
+    return errResult;
   } finally {
     await sql.end({ timeout: 1 }).catch(() => {});
   }
