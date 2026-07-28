@@ -1587,6 +1587,10 @@ async function apiHealth(env) {
     JOIN score.final_board_current f ON f.mlb_player_id = gl.player_id AND f.official_date = $1
     WHERE gl.game_date >= (SELECT MAX(game_date) FROM stats_hitter.game_logs) - interval '1 day'`, [todaysDate]);
   const baselineRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM classification.baseline_v6_current`);
+  const starterHistoryRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM team.starter_history WHERE game_date >= (SELECT MAX(game_date) FROM team.starter_history) - interval '2 day'`);
+  const bullpenHistoryRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(*) AS n FROM team.bullpen_history WHERE game_date >= (SELECT MAX(game_date) FROM team.bullpen_history) - interval '2 day'`);
+  const hitterMetricSnapRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS n FROM stats_hitter.metric_snapshots`);
+  const pitcherMetricSnapRows = await queryAllPg(pg, `SELECT MAX(updated_at) AS last_update, COUNT(DISTINCT player_id) AS n FROM stats_pitcher.metric_snapshots`);
   const hitterCoverage = ratio(Number(hitterLogRows[0]?.covered || 0), totalBoardPlayers);
   const pitcherCoverage = ratio(Number(pitcherLogRows[0]?.covered || 0), totalBoardPlayers);
   const teamCoverage = ratio(Number(teamLogRows[0]?.covered || 0), teamsPlayingToday);
