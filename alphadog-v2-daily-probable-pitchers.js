@@ -479,7 +479,13 @@ async function writeStarterRows(pg, batchId, rows, previousMap, counters) {
   const stageCols = ["stage_id", "batch_id", "current_key", "source_key", "source_endpoint", "source_snapshot_at", "game_pk", "official_date", "game_time_utc", "team_id", "team_name", "opponent_team_id", "opponent_team_name", "is_home", "starter_player_id", "starter_name", "starter_hand", "starter_status", "starter_confidence", "source_status", "game_status", "abstract_game_state", "detailed_state", "previous_starter_player_id", "previous_starter_name", "change_detected", "scratch_flag", "opener_flag", "bulk_pitcher_flag", "tbd_flag", "unavailable_flag", "hand_missing_flag", "prepared_board_relevant", "prepared_board_pickable_rows", "raw_json"];
   await pg`INSERT INTO daily.starters_stage ${pg(stageRows, ...stageCols)}`;
 
-  const currentRows = rows.map(r => {
+  // Dedupe by current_key (game_pk+team_id) before the upsert only - Postgres rejects an
+  // ON CONFLICT DO UPDATE batch that tries to update the same row twice in one statement.
+  // Last occurrence wins (most likely to be the most complete/final entry for that team's game).
+  // The stage table above already logged every raw row including duplicates for audit purposes.
+  const dedupedRows = Array.from(new Map(rows.map(r => [r.current_key, r])).values());
+
+  const currentRows = dedupedRows.map(r => {
     const prev = previousMap.get(r.current_key);
     const firstSeen = prev?.first_seen_at || nowUtc();
     const changedAt = r.change_detected ? nowUtc() : (prev?.changed_at || null);
