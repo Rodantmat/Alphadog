@@ -1704,7 +1704,7 @@ async function apiHealth(env) {
     { label: "Prop Matrix Builder (phase2b-certifier)", covered: Number(matrixRows[0]?.n || 0), expected: Number(scorePrepRows[0]?.n || 0), unit: "matrix rows", last_update: matrixRows[0]?.last_update },
     { label: "Enrichment Engine (phase2a-run-environment)", covered: Number(enrichmentRows[0]?.n || 0), expected: Number(matrixRows[0]?.n || 0), unit: "legs enriched", last_update: enrichmentRows[0]?.last_update },
     { label: "Hit Probability Board (phase3c-certifier)", covered: Number(hpBoardRows[0]?.n || 0), expected: Number(enrichmentRows[0]?.n || 0), unit: "HP rows", last_update: hpBoardRows[0]?.last_update },
-    { label: "Score Final Board (score-final-board)", covered: Number(scoringRows[0]?.total || 0), expected: Number(hpBoardRows[0]?.n || 0), unit: "final legs", last_update: scoringRows[0]?.last_update },
+    { label: "Score Final Board (score-final-board)", covered: Number(scoringRows[0]?.total || 0), expected: null, unit: "final legs (quota-selected)", last_update: scoringRows[0]?.last_update },
   ];
   const scoringN = Number(scoringRows[0]?.total || 0);
   const scoringStatus = scoringN === 0 ? "red" : (scoringN < 500 ? "yellow" : "green");
