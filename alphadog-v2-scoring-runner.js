@@ -182,7 +182,7 @@ async function runScoringFullRunLocked(env, input, runId, startedAt) {
     run_id: runId,
     started_at: startedAt,
     finished_at: nowIso(),
-    certification: allOk ? "SCORING_FULL_RUN_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_FAILED"),
+    certification: allOk ? "SCORING_FULL_RUN_PART1_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PART1_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_PART1_FAILED"),
     stages
   };
 }
