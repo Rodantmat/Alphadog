@@ -4550,7 +4550,7 @@ function modelPitcherComponent(rows, prop, line, side, sourceKey, formulaKey){ c
     engine="pfs_source_agnostic_component_proxy_no_win_no_qs";
     extra={source_pfs_mode:"SOURCE_AGNOSTIC_COMPONENTS",season_component_pfs:round(season,2),recent_component_pfs:round(recentAvg,2),wins_used:false,qs_used:false,platform_formula_used:false,component_formula:"outs_recorded + 3*strikeouts - 3*earned_runs - hits_allowed - walks_allowed"};
   }
-  else if(prop==="pitches_thrown"){ const expPitch=blendedAvg(rows,"pitches",8); more=overdispersedTailGE(Math.floor(line)+1,expPitch,1.2); }
+  else if(prop==="pitches_thrown"){ const expPitch=blendedAvg(rows,"pitches",8); more=negBinomLogSpaceTailGE(Math.floor(line)+1,expPitch,1.2); }
   const prob0=sideProbFromMore(more,side); const baseConf=Math.min(lockedSampleCap(games,prop),workloadCap(bucket),v2LineCap(prop,line,sourceKey)); const capped=applyLineSideCaps(prob0,baseConf,prop,line,side,rows,{workload_bucket:bucket,leash_profile:leash}); return {prob:capped.prob,confidence:capped.confidence,engine,games,workload_bucket:bucket,leash_profile:leash,sample_cap:lockedSampleCap(games,prop),workload_cap:workloadCap(bucket),line_cap:v2LineCap(prop,line,sourceKey),...extra}; }
 function modelRfiBaseline(values,line,side){ const hs=hitStatsFor(values,line,side); const prior=50; const m=50; const post=posteriorHeb(hs.hit,hs.miss,hs.push,prior,m); const games=values.length; return {prob:post==null?null:post/100,confidence:Math.min(lockedSampleCap(games,"rfi_nrfi"),55),engine:"rfi_binary_larger_sample_tiers",games,sample_cap:lockedSampleCap(games,"rfi_nrfi"),line_cap:55,direct:hs}; }
 function weakHistoryPriorFor(prop, entityType, line, sample){
