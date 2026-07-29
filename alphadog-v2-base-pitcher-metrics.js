@@ -176,7 +176,7 @@ async function loadChunkSourceRows(sql, playerIds, season) {
   if (!playerIds.length) return { logsByPlayer: new Map(), splitsByPlayer: new Map() };
   const logRows = await sql`SELECT * FROM stats_pitcher.game_logs WHERE season=${season} AND player_id IN ${sql(playerIds)} ORDER BY player_id ASC, game_date ASC, game_pk ASC`;
   const splitRows = await sql`SELECT * FROM stats_pitcher.splits WHERE season=${season} AND split_key IN ('vl','vr') AND ingestion_mode IS NOT NULL AND player_id IN ${sql(playerIds)} ORDER BY player_id ASC, split_key ASC`;
-  const rfiRows = await sql`SELECT pitcher_id, game_pk, rfi_sl_more_hit FROM context.first_inning_pitcher WHERE pitcher_id IN ${sql(playerIds)}`;
+  const rfiRows = await sql`SELECT pitcher_id, game_pk, rfi_sl_more_hit FROM context.first_inning_pitcher WHERE pitcher_id IN ${sql(playerIds)}`; // retry deploy touch
   const rfiByKey = new Map();
   for (const r of rfiRows) rfiByKey.set(`${r.pitcher_id}|${r.game_pk}`, r.rfi_sl_more_hit);
   for (const r of logRows) { const key = `${r.player_id}|${r.game_pk}`; if (rfiByKey.has(key)) r.rfi_hit = rfiByKey.get(key); }
