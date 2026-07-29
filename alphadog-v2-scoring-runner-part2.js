@@ -1,4 +1,4 @@
-// alphadog-v2-scoring-runner-part2.js  -- PART 2 of 2
+// alphadog-v2-scoring-runner-part2.js  -- PART 2 of 2 [retry deploy touch]
 // Picks up where alphadog-v2-scoring-runner.js (Part 1) leaves off: enrichment-engine,
 // hit-probability-board, scoring-engine-shadow-v1, score-final-board, certifier-last-pass.
 //
