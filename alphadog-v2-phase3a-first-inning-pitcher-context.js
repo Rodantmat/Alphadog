@@ -4546,7 +4546,7 @@ function modelPitcherComponent(rows, prop, line, side, sourceKey, formulaKey){ c
     const recentAvg=avgArr(recent.map(neutralPfs))||season;
     const mu=0.70*recentAvg+0.30*season;
     let sigma=line>=36.5?1.75:1.50; if(line>=45.5) sigma=1.95;
-    more=overdispersedTailGE(Math.floor(line)+1,mu,sigma);
+    more=negBinomLogSpaceTailGE(Math.floor(line)+1,mu,sigma);
     engine="pfs_source_agnostic_component_proxy_no_win_no_qs";
     extra={source_pfs_mode:"SOURCE_AGNOSTIC_COMPONENTS",season_component_pfs:round(season,2),recent_component_pfs:round(recentAvg,2),wins_used:false,qs_used:false,platform_formula_used:false,component_formula:"outs_recorded + 3*strikeouts - 3*earned_runs - hits_allowed - walks_allowed"};
   }
