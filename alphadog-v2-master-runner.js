@@ -2,6 +2,9 @@
 // [2026-07-28: own cron trigger retired - each of the 4 stages now has an independent, staggered
 // cron instead, to avoid the shared 15-minute cron wall-clock ceiling. This worker remains fully
 // functional for manual/on-demand full-chain runs via run_job.]
+// [2026-07-29: confirmed the retirement did NOT take effect on Cloudflare's side until an
+// explicit empty crons array was set - simply omitting the triggers key left the OLD 0 16/20/5
+// schedule active, and it fired again at 05:01:02 UTC. This commit forces that fix to deploy.]
 // Single, sequential daily full-run: board-full-run -> daily-context-full-run -> market-full-run
 // -> scoring-full-run, in that exact order, in one request. Same design as the four individual
 // runners: no queue table, no lock table, no cross-request resume state. Calls each of the four
