@@ -341,7 +341,12 @@ def make_config(worker_name, include_services=False):
         # gets a full fresh 15-minute budget instead of sharing one window. This worker is kept
         # deployed and fully functional for manual/on-demand full-chain runs via run_job, just no
         # longer self-triggered on a schedule.
-        # cfg["triggers"] = {"crons": ["0 16 * * *", "0 20 * * *", "0 5 * * *"]}
+        # IMPORTANT: must be an EXPLICIT empty array, not an omitted key. Omitting cfg["triggers"]
+        # does NOT clear an existing Cloudflare cron - it leaves whatever was previously deployed
+        # untouched. Confirmed live: master-runner fired again at 05:01:02 UTC on its OLD
+        # 0 16/20/5 schedule even after this line was simply commented out, because nothing told
+        # Cloudflare to actually remove the existing triggers.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-weekly-differential-runner":
         # New, deliberately simple standalone runner for the weekly static differential, same
         # design as the other runners: no queue table, no lock table beyond the shared
