@@ -4506,8 +4506,8 @@ function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=row
   else if(prop==="singles"){ const p=exposureRate(rows,"singles","pa",0.14,priorAB); more=binomialTailGE(Math.floor(line)+1,Math.round(expAb),p); }
   else if(prop==="doubles"){ const p=exposureRate(rows,"doubles","pa",0.045,priorAB); more=negBinomLogSpaceTailGE(Math.floor(line)+1,expAb*p,1.15); }
   else if(prop==="triples"){ const p=exposureRate(rows,"triples","pa",0.004,priorAB); more=line>=1.5?0.0001:overdispersedTailGE(1,expAb*p,1.2); }
-  else if(prop==="home_runs"){ const p=exposureRate(rows,"home_runs","pa",0.03,priorPA); more=line>=1.5?Math.min(0.02,overdispersedTailGE(2,expPa*p,1.2)):overdispersedTailGE(1,expPa*p,1.15); }
-  else if(prop==="walks"){ const p=exposureRate(rows,"walks","pa",0.085,priorPA); more=line>=2.5?Math.min(0.005,overdispersedTailGE(3,expPa*p,1.2)):overdispersedTailGE(Math.floor(line)+1,expPa*p,1.15); }
+  else if(prop==="home_runs"){ const p=exposureRate(rows,"home_runs","pa",0.03,priorPA); more=line>=1.5?Math.min(0.02,negBinomLogSpaceTailGE(2,expPa*p,1.2)):negBinomLogSpaceTailGE(1,expPa*p,1.15); }
+  else if(prop==="walks"){ const p=exposureRate(rows,"walks","pa",0.085,priorPA); more=line>=2.5?Math.min(0.005,negBinomLogSpaceTailGE(3,expPa*p,1.2)):negBinomLogSpaceTailGE(Math.floor(line)+1,expPa*p,1.15); }
   else if(prop==="hitter_strikeouts"){ const p=exposureRate(rows,"strikeouts","pa",0.225,350); more=binomialTailGE(Math.floor(line)+1,Math.round(expPa),p); if(line>=2.5) more*=0.85; }
   else if(prop==="stolen_bases"){ const reaches=rows.reduce((a,r)=>a+hitterReach(r),0); const sb=sumNum(rows,"stolen_bases"); const p=(sb+0.025*100)/Math.max(1,reaches+100); const expReach=expPa*(sumNum(rows,"hits")+sumNum(rows,"walks"))/Math.max(1,sumNum(rows,"pa")); more=line>=1.5?Math.min(0.005,overdispersedTailGE(2,expReach*p*0.88,1.2)):Math.min(0.35,overdispersedTailGE(1,expReach*p*0.88,1.1)); }
   else if(prop==="runs"){ const p=exposureRate(rows,"runs","pa",0.115,250); more=negBinomLogSpaceTailGE(Math.floor(line)+1,expPa*p,1.18); }
