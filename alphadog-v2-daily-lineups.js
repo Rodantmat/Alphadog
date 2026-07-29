@@ -1050,8 +1050,8 @@ async function runSourceProbe(env, input) {
       const needHomeDerived = homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id);
       const needAwayDerived = awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id);
       const [homeDerived, awayDerived] = await Promise.all([
-        needHomeDerived ? deriveLineupFromRecentGame(pg, calendar.home_team_id, derivedFallbackDate) : Promise.resolve(null),
-        needAwayDerived ? deriveLineupFromRecentGame(pg, calendar.away_team_id, derivedFallbackDate) : Promise.resolve(null)
+        needHomeDerived ? deriveLineupFromRecentGame(pg, calendar.home_team_id, derivedFallbackDate, sourceBase, userAgent) : Promise.resolve(null),
+        needAwayDerived ? deriveLineupFromRecentGame(pg, calendar.away_team_id, derivedFallbackDate, sourceBase, userAgent) : Promise.resolve(null)
       ]);
       if (needHomeDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
       if (needAwayDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
