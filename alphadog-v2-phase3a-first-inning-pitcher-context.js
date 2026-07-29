@@ -4517,7 +4517,7 @@ function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=row
     const vals=rows.map(r=>num(r.hits)+num(r.runs)+num(r.rbi));
     const avg=avgArr(vals);
     const ravg=avgArr(recent.map(r=>num(r.hits)+num(r.runs)+num(r.rbi)));
-    const proxyMore=overdispersedTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.35);
+    const proxyMore=negBinomLogSpaceTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.35);
     const direct=calcHpLine(vals,line,"more");
     const directMore=direct.raw_rate_0_100==null ? proxyMore : clamp(direct.raw_rate_0_100/100,0,1);
     // v0.1.29 / formula v0.2.2: SQL proof on 2026-06-30 showed hrr_cluster_proxy was replacing
