@@ -354,11 +354,10 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
         ]
-        # T+20 minutes past each of master's 3 daily times - 8 minutes after Part 1 starts
-        # (T+12), giving Part 1 real headroom (observed ~1-2 min for a light board, but heavy
-        # real-world runs can take considerably longer) before Part 2 checks freshness and
-        # proceeds.
-        cfg["triggers"] = {"crons": ["20 16 * * *", "20 20 * * *", "20 5 * * *"]}
+        # T+36 minutes past each of master's 3 daily times - 1 minute after the matrix worker's
+        # own full 15-minute window closes (T+20 start, budget until T+35), so this checks
+        # freshness against genuinely settled matrix output rather than racing it.
+        cfg["triggers"] = {"crons": ["36 16 * * *", "36 20 * * *", "36 5 * * *"]}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
