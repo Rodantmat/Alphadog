@@ -310,12 +310,31 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
             {"binding": "PROP_FACTOR_MINER_WORKER", "service": "alphadog-v2-phase2b-recent-form"},
+        ]
+        # T+12 minutes past each of master's 3 daily times - now only needs to fit 3 light
+        # stages (certifier + prop-factor x2) inside its own 15-minute budget.
+        cfg["triggers"] = {"crons": ["12 16 * * *", "12 20 * * *", "12 5 * * *"]}
+    if worker_name == "alphadog-v2-scoring-runner-matrix":
+        # PART 1b (new 2026-07-29): matrix-builder, fully isolated. Confirmed live to be the
+        # real bottleneck in the scoring chain - even paired with just 2 light stages, the
+        # combination exceeded a 15-minute window on a heavy real-data day. Gets its own full,
+        # dedicated budget with nothing else competing for it. Verifies Part 1's prop-factor
+        # packet output is fresh before proceeding (see this worker's own
+        # checkPart1Freshness()).
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
             {"binding": "MATRIX_BUILDER_WORKER", "service": "alphadog-v2-phase2b-certifier"},
         ]
-        # T+12 minutes past each of master's 3 daily times - unchanged timing, but now only
-        # needs to fit 4 stages (certifier + prop-factor x2 + matrix) inside its own 15-minute
-        # budget instead of all 9.
-        cfg["triggers"] = {"crons": ["12 16 * * *", "12 20 * * *", "12 5 * * *"]}
+        # T+20 minutes past each of master's 3 daily times - 8 minutes after Part 1 starts
+        # (T+12), giving Part 1's light 3 stages real headroom before this checks freshness
+        # and claims its own full 15-minute window (until T+35).
+        cfg["triggers"] = {"crons": ["20 16 * * *", "20 20 * * *", "20 5 * * *"]}
     if worker_name == "alphadog-v2-scoring-runner-part2":
         # PART 2 of 2 (new 2026-07-29): enrichment, hp-board, scoring-engine, final-board,
         # certifier-last-pass. Verifies Part 1's output (score.prop_matrix_current) is genuinely
