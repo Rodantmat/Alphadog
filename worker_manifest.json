@@ -134,6 +134,7 @@
     "alphadog-v2-weekly-differential-runner",
     "alphadog-v2-daily-delta-runner",
     "alphadog-v2-outcome-grader",
-    "alphadog-v2-calibration-scheduler"
+    "alphadog-v2-calibration-scheduler",
+    "alphadog-v2-scoring-runner-part2"
   ]
 }
