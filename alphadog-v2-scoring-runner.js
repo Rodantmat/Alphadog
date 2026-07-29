@@ -114,12 +114,16 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
   }
 }
 
-// Part 1 stages only: certifier-first-pass, prop-factor-miner (hitter+pitcher), matrix-builder.
+// Part 1 stages only: certifier-first-pass, prop-factor-miner (hitter+pitcher).
+// Matrix-builder moved OUT to its own separate worker (scoring-runner-matrix / Part 1b) after
+// being confirmed live as the real bottleneck - even paired with just these 2 light stages, the
+// combination exceeded a 15-minute window on a heavy real-data day, with matrix-builder itself
+// making zero progress for 20+ minutes. It needs a fully isolated budget with nothing else
+// competing for it.
 const STAGES = [
   { bindingKey: "SCORING_CERTIFIER_WORKER", bindingName: "scoring-full-run-certifier", mode: "scoring_full_run_certifier_first_pass" },
   { bindingKey: "PROP_FACTOR_MINER_WORKER", bindingName: "prop-factor-miner", mode: "hitter_prop_factor_mining" },
-  { bindingKey: "PROP_FACTOR_MINER_WORKER", bindingName: "prop-factor-miner", mode: "pitcher_prop_factor_mining" },
-  { bindingKey: "MATRIX_BUILDER_WORKER", bindingName: "prop-matrix-builder", mode: "matrix_build" }
+  { bindingKey: "PROP_FACTOR_MINER_WORKER", bindingName: "prop-factor-miner", mode: "pitcher_prop_factor_mining" }
 ];
 
 async function runScoringFullRun(env, input) {
