@@ -117,50 +117,38 @@ async function pruneDailyLineupRetention(pg, extraDates = []) {
   };
 }
 
-// Real schema note: stats_hitter.game_logs.team_id has a genuine, confirmed mixed convention
-// (some rows "mlb_133", some bare "133" - same class of bug already found and fixed once for
-// team.bullpen_history in an earlier session). Normalize with regexp_replace on both sides of
-// every join/filter against this column, rather than assuming one convention.
-async function deriveLineupFromRecentGame(pg, teamId, beforeDate) {
+async function findMostRecentCompletedGamePk(pg, teamId, beforeDate) {
+  if (!teamId || !beforeDate) return null;
+  const rows = await pg`SELECT game_pk, official_date FROM calendar.game_calendar
+    WHERE (home_team_id = ${teamId} OR away_team_id = ${teamId}) AND is_final = true AND official_date < ${beforeDate}
+    ORDER BY official_date DESC LIMIT 1`;
+  return rows[0] ? { game_pk: intOrNull(rows[0].game_pk), official_date: rows[0].official_date } : null;
+}
+
+async function deriveLineupFromRecentGame(pg, teamId, beforeDate, sourceBase, userAgent) {
   if (!teamId || !beforeDate) return [];
   const beforeDateOnly = beforeDate instanceof Date
     ? beforeDate.toISOString().slice(0, 10)
     : (String(beforeDate).match(/^\d{4}-\d{2}-\d{2}/)?.[0] || retentionDatesToKeep()[0]);
-  const lookbackStart = (() => {
-    const d = new Date(`${beforeDateOnly}T12:00:00Z`);
-    if (Number.isNaN(d.getTime())) return retentionDatesToKeep()[0];
-    d.setUTCDate(d.getUTCDate() - 20);
-    return d.toISOString().slice(0, 10);
-  })();
-  const recentDateRow = await pg`SELECT MAX(game_date) AS latest_date FROM stats_hitter.game_logs
-    WHERE regexp_replace(team_id, '^mlb_', '') = ${String(teamId)} AND game_date >= ${lookbackStart} AND game_date < ${beforeDateOnly} AND batting_order IS NOT NULL AND batting_order > 0`;
-  const latestDate = recentDateRow[0] && recentDateRow[0].latest_date;
-  if (!latestDate) return [];
-  const rows = await pg`SELECT player_id, batting_order FROM stats_hitter.game_logs
-    WHERE regexp_replace(team_id, '^mlb_', '') = ${String(teamId)} AND game_date = ${latestDate} AND batting_order IS NOT NULL AND batting_order > 0 ORDER BY batting_order ASC`;
-  if (!rows.length) return [];
-  const bySlot = new Map();
-  for (const r of rows) {
-    const slot = Math.floor(Number(r.batting_order) / 100);
-    if (slot < 1 || slot > 9) continue;
-    if (!bySlot.has(slot)) bySlot.set(slot, Number(r.player_id));
-  }
-  const slotRows = [...bySlot.entries()].map(([slot, playerId]) => ({ player_id: playerId, batting_order: slot })).sort((a, b) => a.batting_order - b.batting_order);
-  const playerIds = slotRows.map(r => r.player_id).filter(Boolean);
-  const nameMap = new Map();
-  if (playerIds.length) {
-    const names = await pg`SELECT player_id, mlb_player_id, full_name, player_name FROM ref.players WHERE player_id IN ${pg(playerIds)} OR mlb_player_id IN ${pg(playerIds)}`;
-    for (const n of names) {
-      const nm = n.full_name || n.player_name || null;
-      if (n.player_id !== null && n.player_id !== undefined) nameMap.set(Number(n.player_id), nm);
-      if (n.mlb_player_id !== null && n.mlb_player_id !== undefined) nameMap.set(Number(n.mlb_player_id), nm);
-    }
-  }
-  return slotRows.map(r => ({
-    player_id: Number(r.player_id),
-    player_name: nameMap.get(Number(r.player_id)) || null,
-    lineup_slot: Number(r.batting_order),
-    source_game_date: latestDate
+  // FIXED 2026-07-29: previously read stats_hitter.game_logs.batting_order, which is always null
+  // (confirmed live: 0 of 2212 recent rows populated) because that field comes from a
+  // season-stats-split endpoint that structurally has no lineup/batting-order data - that's
+  // boxscore-level information. Now pulls the team's actual most recent COMPLETED game's real
+  // boxscore instead, reusing the same fetch/parse pattern already proven correct for live games
+  // elsewhere in this file.
+  const recentGame = await findMostRecentCompletedGamePk(pg, teamId, beforeDateOnly);
+  if (!recentGame || !recentGame.game_pk) return [];
+  const boxscoreUrl = buildMlbUrl(sourceBase, `/api/v1/game/${recentGame.game_pk}/boxscore`);
+  const box = await fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES);
+  if (!box.ok || !box.json || !box.json.teams) return [];
+  const homeId = intOrNull(box.json.teams.home && box.json.teams.home.team && box.json.teams.home.team.id);
+  const awayId = intOrNull(box.json.teams.away && box.json.teams.away.team && box.json.teams.away.team.id);
+  const side = Number(teamId) === homeId ? "home" : Number(teamId) === awayId ? "away" : null;
+  if (!side) return [];
+  const validation = validateSide(side, box.json.teams[side]);
+  if (validation.lineup_status !== "posted_lineup" || !validation.mapped_players.length) return [];
+  return validation.mapped_players.map(p => ({
+    player_id: p.player_id, player_name: p.player_name, lineup_slot: p.lineup_slot, source_game_date: recentGame.official_date
   }));
 }
 
