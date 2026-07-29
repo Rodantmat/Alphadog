@@ -121,7 +121,14 @@ async function runMatrixStage(env, input) {
   }
 
   try {
-    const result = await callStage(env.MATRIX_BUILDER_WORKER, "prop-matrix-builder", "matrix_build", { request_id: `${runId}_matrix`, chain_id: runId, trigger: "scoring_runner_matrix" });
+    let result = await callStage(env.MATRIX_BUILDER_WORKER, "prop-matrix-builder", "matrix_build", { request_id: `${runId}_matrix`, chain_id: runId, trigger: "scoring_runner_matrix" });
+    let iterations = 1;
+    const MAX_ITER = 20;
+    while (result.ok && (result.certification === "running_chunked" || result.certification === "partial_continue") && iterations < MAX_ITER) {
+      result = await callStage(env.MATRIX_BUILDER_WORKER, "prop-matrix-builder", "matrix_build", { request_id: `${runId}_matrix_p${iterations}`, chain_id: runId, trigger: "scoring_runner_matrix" });
+      iterations++;
+    }
+    result.pagination_iterations = iterations;
     return {
       ok: result.ok, data_ok: result.ok, version: VERSION, worker_name: WORKER_NAME, run_id: runId,
       started_at: startedAt, finished_at: nowIso(),
