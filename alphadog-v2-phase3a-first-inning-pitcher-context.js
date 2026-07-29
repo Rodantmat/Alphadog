@@ -4511,7 +4511,7 @@ function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=row
   else if(prop==="hitter_strikeouts"){ const p=exposureRate(rows,"strikeouts","pa",0.225,350); more=binomialTailGE(Math.floor(line)+1,Math.round(expPa),p); if(line>=2.5) more*=0.85; }
   else if(prop==="stolen_bases"){ const reaches=rows.reduce((a,r)=>a+hitterReach(r),0); const sb=sumNum(rows,"stolen_bases"); const p=(sb+0.025*100)/Math.max(1,reaches+100); const expReach=expPa*(sumNum(rows,"hits")+sumNum(rows,"walks"))/Math.max(1,sumNum(rows,"pa")); more=line>=1.5?Math.min(0.005,overdispersedTailGE(2,expReach*p*0.88,1.2)):Math.min(0.35,overdispersedTailGE(1,expReach*p*0.88,1.1)); }
   else if(prop==="runs"){ const p=exposureRate(rows,"runs","pa",0.115,250); more=overdispersedTailGE(Math.floor(line)+1,expPa*p,1.18); }
-  else if(prop==="rbis"){ const p=exposureRate(rows,"rbi","pa",0.11,250); more=overdispersedTailGE(Math.floor(line)+1,expPa*p,1.20); }
+  else if(prop==="rbis"){ const p=exposureRate(rows,"rbi","pa",0.11,250); more=negBinomLogSpaceTailGE(Math.floor(line)+1,expPa*p,1.20); }
   else if(prop==="total_bases"){ const avg=rows.reduce((a,r)=>a+num(r.total_bases),0)/Math.max(1,games); const rec=recent.length?recent.reduce((a,r)=>a+num(r.total_bases),0)/recent.length:avg; more=overdispersedTailGE(Math.floor(line)+1,0.6*rec+0.4*avg,1.35); engine="compound_tb_proxy"; }
   else if(prop==="hits_runs_rbis"){
     const vals=rows.map(r=>num(r.hits)+num(r.runs)+num(r.rbi));
