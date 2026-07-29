@@ -292,10 +292,14 @@ def make_config(worker_name, include_services=False):
         # its own real headroom (observed 1-2 min typical).
         cfg["triggers"] = {"crons": ["10 16 * * *", "10 20 * * *", "10 5 * * *"]}
     if worker_name == "alphadog-v2-scoring-runner":
-        # New, deliberately simple standalone runner for scoring-full-run only, same design as
-        # the other three runners: no queue table, no lock table, just sequential awaited
-        # service-binding calls through the 9-stage dependency chain (scoring-full-run-certifier
-        # called twice, prop-factor-miner called twice for hitter then pitcher).
+        # PART 1 of 2 (split 2026-07-29): certifier-first-pass, prop-factor-miner (hitter+pitcher),
+        # matrix-builder - the heaviest, most variable stages. Split from the original single
+        # 9-stage worker after its cron-triggered invocation was confirmed to exceed Cloudflare's
+        # hard 15-minute cron wall-clock ceiling on a heavy day (got through matrix-builder but
+        # died mid-scoring-engine, never reaching final-board). Part 2
+        # (alphadog-v2-scoring-runner-part2) picks up from here and verifies this part's output
+        # is fresh before proceeding - keeps the same strict, ordered cascade, just across two
+        # scheduled workers instead of one, each with its own full 15-minute budget.
         cfg["vars"] = {}
         cfg["d1_databases"] = []
         cfg["limits"] = {"cpu_ms": 300000}
@@ -307,15 +311,35 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
             {"binding": "PROP_FACTOR_MINER_WORKER", "service": "alphadog-v2-phase2b-recent-form"},
             {"binding": "MATRIX_BUILDER_WORKER", "service": "alphadog-v2-phase2b-certifier"},
+        ]
+        # T+12 minutes past each of master's 3 daily times - unchanged timing, but now only
+        # needs to fit 4 stages (certifier + prop-factor x2 + matrix) inside its own 15-minute
+        # budget instead of all 9.
+        cfg["triggers"] = {"crons": ["12 16 * * *", "12 20 * * *", "12 5 * * *"]}
+    if worker_name == "alphadog-v2-scoring-runner-part2":
+        # PART 2 of 2 (new 2026-07-29): enrichment, hp-board, scoring-engine, final-board,
+        # certifier-last-pass. Verifies Part 1's output (score.prop_matrix_current) is genuinely
+        # fresh before proceeding - see this worker's own checkPart1Freshness() - so the cascade
+        # stays strictly ordered and dependable across the two scheduled workers.
+        cfg["vars"] = {}
+        cfg["d1_databases"] = []
+        cfg["limits"] = {"cpu_ms": 300000}
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
             {"binding": "ENRICHMENT_ENGINE_WORKER", "service": "alphadog-v2-phase2a-run-environment"},
             {"binding": "HIT_PROBABILITY_BOARD_WORKER", "service": "alphadog-v2-phase3c-certifier"},
             {"binding": "SCORING_ENGINE_WORKER", "service": "alphadog-v2-phase3a-certifier"},
             {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
+            {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
         ]
-        # T+12 minutes past each of master's 3 daily times - the longest, most variable stage
-        # (prop-factor-mining through final-board) gets its own fresh 15-minute cron budget
-        # starting here, rather than sharing whatever remained of a single chained window.
-        cfg["triggers"] = {"crons": ["12 16 * * *", "12 20 * * *", "12 5 * * *"]}
+        # T+20 minutes past each of master's 3 daily times - 8 minutes after Part 1 starts
+        # (T+12), giving Part 1 real headroom (observed ~1-2 min for a light board, but heavy
+        # real-world runs can take considerably longer) before Part 2 checks freshness and
+        # proceeds.
+        cfg["triggers"] = {"crons": ["20 16 * * *", "20 20 * * *", "20 5 * * *"]}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
