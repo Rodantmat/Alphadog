@@ -1,10 +1,16 @@
-// alphadog-v2-scoring-runner.js
-// [2026-07-28: re-enabled own independent cron trigger, T+12 - see generate_wrangler_configs.py]
-// Simple, single-request scoring-full-run runner - same design as board/daily-context/market
-// runners. One request, sequential awaited service-binding calls to the 9 existing,
-// already-tested stage workers, in the exact order the old orchestrator's SCORING_FULL_RUN_STAGES
-// used (hit-probability-board runs before scoring-engine per the 2026-07-17 reorder). No queue
-// table, no lock table, no cross-request resume state.
+// alphadog-v2-scoring-runner.js  -- PART 1 of 2
+// [2026-07-29: split from the original single 9-stage scoring-runner after its cron-triggered
+// invocation was confirmed to exceed Cloudflare's hard 15-minute cron wall-clock ceiling on a
+// heavy day - it completed matrix-builder but died mid-scoring-engine, never reaching
+// final-board. This is Part 1: certifier-first-pass, prop-factor-miner (hitter+pitcher),
+// matrix-builder - the heaviest, most variable stages, ending at the natural boundary where the
+// candidate/matrix data is fully built. Part 2 (alphadog-v2-scoring-runner-part2.js) picks up
+// from here: enrichment, hp-board, scoring-engine, final-board, certifier-last-pass. Part 2
+// verifies this part actually completed fresh before proceeding, so the overall cascade is still
+// strictly ordered and dependable - just split across two scheduled workers instead of one.]
+// Simple, single-request runner - same design as board/daily-context/market runners. One
+// request, sequential awaited service-binding calls, in the exact stage order the old
+// orchestrator's SCORING_FULL_RUN_STAGES used.
 //
 // This chain has real inter-stage dependencies (each stage reads what the previous one wrote),
 // so stages run strictly in sequence and a failure is reported clearly per-stage rather than
@@ -12,7 +18,7 @@
 
 import postgres from "postgres";
 
-const SCORING_LOCK_KEY = "alphadog_scoring_full_run";
+const SCORING_LOCK_KEY = "alphadog_scoring_full_run_part1";
 const LOCK_HOLD_MINUTES = 15;
 
 async function tryAcquireLock(env, holderId) {
