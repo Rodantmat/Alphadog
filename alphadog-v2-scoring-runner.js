@@ -114,18 +114,12 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
   }
 }
 
-// Same order as the old orchestrator's SCORING_FULL_RUN_STAGES (post 2026-07-17 reorder:
-// hit_probability_board before scoring_engine).
+// Part 1 stages only: certifier-first-pass, prop-factor-miner (hitter+pitcher), matrix-builder.
 const STAGES = [
   { bindingKey: "SCORING_CERTIFIER_WORKER", bindingName: "scoring-full-run-certifier", mode: "scoring_full_run_certifier_first_pass" },
   { bindingKey: "PROP_FACTOR_MINER_WORKER", bindingName: "prop-factor-miner", mode: "hitter_prop_factor_mining" },
   { bindingKey: "PROP_FACTOR_MINER_WORKER", bindingName: "prop-factor-miner", mode: "pitcher_prop_factor_mining" },
-  { bindingKey: "MATRIX_BUILDER_WORKER", bindingName: "prop-matrix-builder", mode: "matrix_build" },
-  { bindingKey: "ENRICHMENT_ENGINE_WORKER", bindingName: "enrichment-engine", mode: "enrichment_run" },
-  { bindingKey: "HIT_PROBABILITY_BOARD_WORKER", bindingName: "hit-probability-board", mode: "hit_probability_board_run" },
-  { bindingKey: "SCORING_ENGINE_WORKER", bindingName: "scoring-engine-shadow-v1", mode: "scoring_engine_run" },
-  { bindingKey: "SCORE_FINAL_BOARD_WORKER", bindingName: "score-final-board", mode: "final_board_run" },
-  { bindingKey: "SCORING_CERTIFIER_WORKER", bindingName: "scoring-full-run-certifier", mode: "scoring_full_run_certifier_last_pass" }
+  { bindingKey: "MATRIX_BUILDER_WORKER", bindingName: "prop-matrix-builder", mode: "matrix_build" }
 ];
 
 async function runScoringFullRun(env, input) {
