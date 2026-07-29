@@ -1,4 +1,4 @@
-// alphadog-v2-scoring-runner-matrix.js  -- PART 1b [retry deploy touch]
+// alphadog-v2-scoring-runner-matrix.js  -- PART 1b [retry deploy touch 2]
 // Confirmed live (2026-07-29): matrix-builder is the real bottleneck in the scoring chain - even
 // paired with just certifier-first-pass + prop-factor-miner, the combination exceeded a
 // 15-minute window on a heavy real-data day, with matrix-builder itself making zero progress for
