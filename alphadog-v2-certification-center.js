@@ -1992,6 +1992,11 @@ function calibrateProbabilityPct(rawPct) {
   }
   return p;
 }
+function slipProb(legs) {
+  let p = 1;
+  for (const l of legs || []) p *= Math.max(0, Math.min(100, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0))) / 100;
+  return Math.round(p * 10000) / 100;
+}
 
 
 function comboCount(n, k) {
