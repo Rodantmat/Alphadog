@@ -2038,13 +2038,25 @@ function slipWarnings(legs) {
   const warnings = [];
   const games = new Map();
   const players = new Map();
+  const onBaseByTeam = new Map(); // team_id -> count of hits/walks/total_bases props
+  const runsRbiByTeam = new Map(); // team_id -> count of runs/rbis/hits_runs_rbis props
+  const ON_BASE_PROPS = new Set(["hits", "walks", "total_bases", "singles", "doubles"]);
+  const RUN_DRIVEN_PROPS = new Set(["runs", "rbis", "hits_runs_rbis"]);
   for (const l of legs) {
     const g = String(l.game_pk || ""); if (g) games.set(g, (games.get(g) || 0) + 1);
     const p = String(l.player_id || l.player_name || ""); if (p) players.set(p, (players.get(p) || 0) + 1);
+    const team = String(l.team_id || "");
+    const prop = String(l.canonical_prop_key || "");
+    if (team && ON_BASE_PROPS.has(prop) && String(l.selected_side || "").toLowerCase() === "more") onBaseByTeam.set(team, (onBaseByTeam.get(team) || 0) + 1);
+    if (team && RUN_DRIVEN_PROPS.has(prop) && String(l.selected_side || "").toLowerCase() === "more") runsRbiByTeam.set(team, (runsRbiByTeam.get(team) || 0) + 1);
   }
   if (games.size === 1 && legs.length >= 3) warnings.push(`All ${legs.length} legs are from the same single game - allowed, but results will be highly correlated.`);
   for (const [g,c] of games) if (c > 2) warnings.push(`High same-game exposure: ${c} legs in game ${g}.`);
   for (const [p,c] of players) if (c > 1) warnings.push(`Same-player stack: ${c} legs on ${p}.`);
+  for (const [team, obCount] of onBaseByTeam) {
+    const rrCount = runsRbiByTeam.get(team) || 0;
+    if (obCount >= 1 && rrCount >= 1) warnings.push(`Correlated legs on ${team}: on-base props (hits/walks/total bases) and runs/RBI props tend to move together (real MLB correlation ~0.7-0.9) - these are not fully independent, so the true combined hit chance is somewhat lower than shown.`);
+  }
   return warnings;
 }
 function validSlip(legs, sourceKey) {
