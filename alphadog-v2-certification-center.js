@@ -1990,14 +1990,13 @@ function legScoreForBuild(l) {
 }
 function slipWarnings(legs) {
   const warnings = [];
-  const teams = new Set(legs.map(l => String(l.team_id || "")).filter(Boolean));
   const games = new Map();
   const players = new Map();
   for (const l of legs) {
     const g = String(l.game_pk || ""); if (g) games.set(g, (games.get(g) || 0) + 1);
     const p = String(l.player_id || l.player_name || ""); if (p) players.set(p, (players.get(p) || 0) + 1);
   }
-  if (teams.size < 2) warnings.push("Needs at least two teams for app eligibility.");
+  if (games.size === 1 && legs.length >= 3) warnings.push(`All ${legs.length} legs are from the same single game - allowed, but results will be highly correlated.`);
   for (const [g,c] of games) if (c > 2) warnings.push(`High same-game exposure: ${c} legs in game ${g}.`);
   for (const [p,c] of players) if (c > 1) warnings.push(`Same-player stack: ${c} legs on ${p}.`);
   return warnings;
@@ -2005,8 +2004,8 @@ function slipWarnings(legs) {
 function validSlip(legs, sourceKey) {
   if (!legs || legs.length < 2) return false;
   if (!legs.every(l => String(l.source_key || "").toLowerCase() === String(sourceKey || "").toLowerCase())) return false;
-  const teams = new Set(legs.map(l => String(l.team_id || "")).filter(Boolean));
-  return teams.size >= 2;
+  const ids = new Set(legs.map(l => l.board_row_id));
+  return ids.size === legs.length;
 }
 function chooseSlip(pool, size, used = new Set()) {
   const sorted = [...pool].sort((a,b)=>legScoreForBuild(b)-legScoreForBuild(a));
