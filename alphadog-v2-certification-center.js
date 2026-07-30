@@ -1868,24 +1868,8 @@ async function ensureArchiveSlipSchema(env) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-      game_pk INTEGER,
-      official_date TEXT,
-      official_game_time_utc TEXT,
-      player_id INTEGER,
-      player_name TEXT,
-      team_id INTEGER,
-      opponent_team_id INTEGER,
-      canonical_prop_key TEXT,
-      line_value REAL,
-      selected_side TEXT,
-      hit_probability_0_100 REAL,
-      certainty_0_100 REAL,
-      overall_score_0_100 REAL,
-      board_grade TEXT,
-      result_status TEXT DEFAULT 'pending',
-      actual_value REAL,
-      hit_flag INTEGER,
-      result_json TEXT,
+
+function slipProb(legs) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`,
