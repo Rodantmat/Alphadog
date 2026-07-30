@@ -1807,36 +1807,67 @@ async function execRun(db, sql, params = []) {
 }
 
 async function ensureArchiveSlipSchema(env) {
-  if (!env.ARCHIVE_DB) throw new Error("ARCHIVE_DB binding missing");
-  const ddl = [
-    `CREATE TABLE IF NOT EXISTS archive_slip_entries (
-      slip_id TEXT PRIMARY KEY,
-      source_key TEXT,
-      slip_type TEXT,
-      slip_size INTEGER,
-      structure_label TEXT,
-      selected_leg_count INTEGER,
-      estimated_hit_probability_0_100 REAL,
-      estimated_multiplier REAL,
-      estimated_payout_note TEXT,
-      strategy_grade TEXT,
-      strategy_notes TEXT,
-      status TEXT DEFAULT 'saved_pending',
-      entry_amount REAL,
-      saved_by TEXT,
-      slip_json TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-    `CREATE TABLE IF NOT EXISTS archive_slip_legs (
-      slip_leg_id TEXT PRIMARY KEY,
-      slip_id TEXT,
-      leg_index INTEGER,
-      board_row_id TEXT,
-      final_board_batch_id TEXT,
-      prepared_row_id TEXT,
-      source_line_id TEXT,
-      source_key TEXT,
+  if (!env.HYPERDRIVE) throw new Error("HYPERDRIVE binding missing");
+  const pg = pgClient(env);
+  try {
+    await pg.unsafe(`
+      CREATE TABLE IF NOT EXISTS score.slip_entries (
+        slip_id TEXT PRIMARY KEY,
+        source_key TEXT,
+        slip_type TEXT,
+        slip_size INTEGER,
+        structure_label TEXT,
+        entry_mode TEXT,
+        selected_leg_count INTEGER,
+        estimated_hit_probability_0_100 DOUBLE PRECISION,
+        estimated_multiplier DOUBLE PRECISION,
+        estimated_payout_note TEXT,
+        breakeven_hit_rate_0_100 DOUBLE PRECISION,
+        edge_vs_breakeven_0_100 DOUBLE PRECISION,
+        strategy_grade TEXT,
+        strategy_notes TEXT,
+        status TEXT DEFAULT 'saved_pending',
+        entry_amount DOUBLE PRECISION,
+        saved_by TEXT,
+        slip_json JSONB,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS score.slip_legs (
+        slip_leg_id TEXT PRIMARY KEY,
+        slip_id TEXT,
+        leg_index INTEGER,
+        board_row_id TEXT,
+        final_board_batch_id TEXT,
+        prepared_row_id TEXT,
+        source_line_id TEXT,
+        source_key TEXT,
+        game_pk BIGINT,
+        official_date TEXT,
+        official_game_time_utc TEXT,
+        player_id BIGINT,
+        player_name TEXT,
+        team_id BIGINT,
+        opponent_team_id BIGINT,
+        canonical_prop_key TEXT,
+        line_value DOUBLE PRECISION,
+        selected_side TEXT,
+        hit_probability_0_100 DOUBLE PRECISION,
+        certainty_0_100 DOUBLE PRECISION,
+        overall_score_0_100 DOUBLE PRECISION,
+        board_grade TEXT,
+        result_status TEXT DEFAULT 'pending',
+        result_json JSONB,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_slip_legs_slip_id ON score.slip_legs(slip_id);
+      CREATE INDEX IF NOT EXISTS idx_slip_entries_created ON score.slip_entries(created_at DESC);
+    `);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
       game_pk INTEGER,
       official_date TEXT,
       official_game_time_utc TEXT,
