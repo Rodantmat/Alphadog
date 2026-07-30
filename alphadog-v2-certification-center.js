@@ -2158,21 +2158,28 @@ async function apiSaveSlips(env, request) {
   const input = await readJsonSafe(request);
   const slips = Array.isArray(input.slips) ? input.slips : [];
   const saved = [];
-  for (const s of slips.slice(0, 50)) {
-    const slipId = makeUiId("slip");
-    const legs = Array.isArray(s.legs) ? s.legs : [];
-    await execRun(env.ARCHIVE_DB, `INSERT INTO archive_slip_entries
-      (slip_id, source_key, slip_type, slip_size, structure_label, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, estimated_payout_note, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-      [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, Number(input.selected_leg_count || legs.length || 0), Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.estimated_payout_note || null, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
-    let idx = 1;
-    for (const l of legs) {
-      await execRun(env.ARCHIVE_DB, `INSERT INTO archive_slip_legs
-        (slip_leg_id, slip_id, leg_index, board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, player_id, player_name, team_id, opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, certainty_0_100, overall_score_0_100, board_grade, result_status, result_json, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?, CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-        [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), l.official_date || null, l.official_game_time_utc || null, l.player_id == null ? null : Number(l.player_id), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading" })]);
+  const pg = pgClient(env);
+  try {
+    for (const s of slips.slice(0, 50)) {
+      const slipId = makeUiId("slip");
+      const legs = Array.isArray(s.legs) ? s.legs : [];
+      const edge = (s.estimated_hit_probability_0_100 != null && s.breakeven_hit_rate_0_100 != null)
+        ? Number(s.estimated_hit_probability_0_100) - Number(s.breakeven_hit_rate_0_100) : null;
+      await pg.unsafe(`INSERT INTO score.slip_entries
+        (slip_id, source_key, slip_type, slip_size, structure_label, entry_mode, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, estimated_payout_note, breakeven_hit_rate_0_100, edge_vs_breakeven_0_100, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+        [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, s.entry_mode || null, Number(input.selected_leg_count || legs.length || 0), Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.estimated_payout_note || null, s.breakeven_hit_rate_0_100 == null ? null : Number(s.breakeven_hit_rate_0_100), edge, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
+      let idx = 1;
+      for (const l of legs) {
+        await pg.unsafe(`INSERT INTO score.slip_legs
+          (slip_leg_id, slip_id, leg_index, board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, player_id, player_name, team_id, opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, certainty_0_100, overall_score_0_100, board_grade, result_status, result_json)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`,
+          [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), l.official_date || null, l.official_game_time_utc || null, l.player_id == null ? null : Number(l.player_id), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading" })]);
+      }
+      saved.push({ slip_id: slipId, leg_count: legs.length });
     }
-    saved.push({ slip_id: slipId, leg_count: legs.length });
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
   }
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/save", saved_count:saved.length, saved_slips:saved });
 }
