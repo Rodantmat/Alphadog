@@ -1389,8 +1389,11 @@ async function runFitPlattCalibration(env, input = {}) {
     for (const { canonical_prop_key: propKey } of propRows) {
       // official_date (real game date) is the correct chronological key - NOT resolved_at, which
       // reflects when a batch job happened to process the outcome and can be out of true order.
-      const rows = await sql`SELECT estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL ORDER BY official_date ASC`;
-      if (rows.length < minSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: `below min_samples ${minSamples}` }); continue; }
+      const fixDate = PROP_CALIBRATION_FIX_DATES[propKey];
+      const rows = fixDate
+        ? await sql`SELECT estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL AND official_date >= ${fixDate} ORDER BY official_date ASC`
+        : await sql`SELECT estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL ORDER BY official_date ASC`;
+      if (rows.length < minSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: fixDate ? `below min_samples ${minSamples} (only counting outcomes from ${fixDate} onward, per documented fix date - old contaminated data excluded)` : `below min_samples ${minSamples}` }); continue; }
       const allPairs = rows.map(r => [Number(r.estimated_hit_probability_0_100) / 100, Number(r.outcome_hit)]);
       // Time-based (not random) 75/25 split: sports outcomes are sequential, and a random split
       // would let the model "see the future" relative to some test rows, defeating the point of
