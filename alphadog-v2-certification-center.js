@@ -2186,10 +2186,15 @@ async function apiSaveSlips(env, request) {
 async function apiSlipsRecent(env, url) {
   await ensureArchiveSlipSchema(env);
   const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") || 50)));
-  const entries = await queryAll(env.ARCHIVE_DB, `SELECT * FROM archive_slip_entries ORDER BY datetime(created_at) DESC LIMIT ${limit}`);
-  const ids = entries.map(e=>e.slip_id).filter(Boolean);
-  let legs = [];
-  if (ids.length) legs = await queryAll(env.ARCHIVE_DB, `SELECT * FROM archive_slip_legs WHERE slip_id IN (${ids.map(()=>"?").join(",")}) ORDER BY slip_id, leg_index`, ids);
+  const pg = pgClient(env);
+  let entries, legs;
+  try {
+    entries = await pg.unsafe(`SELECT * FROM score.slip_entries ORDER BY created_at DESC LIMIT $1`, [limit]);
+    const ids = entries.map(e=>e.slip_id).filter(Boolean);
+    legs = ids.length ? await pg.unsafe(`SELECT * FROM score.slip_legs WHERE slip_id = ANY($1) ORDER BY slip_id, leg_index`, [ids]) : [];
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
   const by = new Map();
   for (const l of legs) { if (!by.has(l.slip_id)) by.set(l.slip_id, []); by.get(l.slip_id).push(l); }
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/recent", slips: entries.map(e=>({ ...e, legs: by.get(e.slip_id) || [] })) });
