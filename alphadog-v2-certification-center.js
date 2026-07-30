@@ -2504,7 +2504,7 @@ window.onunhandledrejection = function(e) {
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.18 - Slip Builder + Player Profile Alpha';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null,selectedLegIds=new Set(),lastGeneratedSlips=[],customStructures=[];
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.3.0 - Smart Slip Builder (EV-grounded recommendations)';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null,selectedLegIds=new Set(),lastGeneratedSlips=[],lastRecommendedSlips=[],customStructures=[];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
