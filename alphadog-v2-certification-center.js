@@ -1970,11 +1970,29 @@ function recommendAllocation(poolSorted) {
   return plan;
 }
 
-function slipProb(legs) {
-  let p = 1;
-  for (const l of legs || []) p *= Math.max(0, Math.min(100, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0))) / 100;
-  return Math.round(p * 10000) / 100;
+// Real, measured calibration curve (from score.prop_outcome_history, large samples per bucket -
+// see control.claude_session_log PHASE_43-46 for the full audit). Raw model probabilities are
+// systematically overconfident at EVERY tier, including the very top. Using raw probabilities in
+// slip EV would silently repeat the exact mistake real bettors make (per research: "AI-driven
+// accumulator construction starts from real edge, not raw model confidence"). Anchor points are
+// (raw_predicted_pct, real_measured_actual_pct); piecewise-linear interpolation between them.
+const CALIBRATION_ANCHORS = [
+  [0, 0], [52.5, 68.0], [57.4, 50.3], [62.4, 54.0], [67.4, 59.5], [72.4, 57.4],
+  [77.1, 63.3], [82.4, 65.5], [87.3, 77.5], [92.4, 75.1], [97.6, 86.7], [100, 90]
+];
+function calibrateProbabilityPct(rawPct) {
+  const p = Math.max(0, Math.min(100, Number(rawPct) || 0));
+  for (let i = 1; i < CALIBRATION_ANCHORS.length; i++) {
+    const [x0, y0] = CALIBRATION_ANCHORS[i - 1];
+    const [x1, y1] = CALIBRATION_ANCHORS[i];
+    if (p <= x1) {
+      const t = x1 === x0 ? 0 : (p - x0) / (x1 - x0);
+      return y0 + t * (y1 - y0);
+    }
+  }
+  return p;
 }
+
 
 function comboCount(n, k) {
   n = Math.floor(Number(n || 0)); k = Math.floor(Number(k || 0));
