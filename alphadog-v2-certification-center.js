@@ -2144,7 +2144,7 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
         if (!picked.length || !validSlip(picked, source)) continue;
         picked.forEach(l=>used.add(l.board_row_id));
         const p = slipProb(picked);
-        const probs01 = picked.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0) / 100)));
+        const probs01 = picked.map(l => Math.max(0.01, Math.min(0.99, calibrateProbabilityPct(Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0)) / 100)));
         const evResult = slipEv(probs01, entryMode);
         const breakeven = breakevenRate(size, entryMode);
         const warnings = slipWarnings(picked);
