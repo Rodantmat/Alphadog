@@ -1939,7 +1939,10 @@ function breakevenRate(size, entryMode) {
 // Given a pool of legs (already sorted best-first by legScoreForBuild), find the single best
 // (size, mode) structure for exactly this pool by real EV - not a fixed rule of thumb.
 function bestStructureForPool(pool) {
-  const probs = pool.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0) / 100)));
+  const probs = pool.map(l => {
+    const raw = Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0);
+    return Math.max(0.01, Math.min(0.99, calibrateProbabilityPct(raw) / 100));
+  });
   let best = null;
   for (let size = MIN_SLIP_SIZE; size <= Math.min(MAX_SLIP_SIZE, probs.length); size++) {
     const slice = probs.slice(0, size);
