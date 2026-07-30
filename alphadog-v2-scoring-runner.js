@@ -1,4 +1,4 @@
-// alphadog-v2-scoring-runner.js  -- PART 1 of 2
+// alphadog-v2-scoring-runner.js  -- PART 1 of 2 [cron widened to T+14 on 2026-07-30]
 // [2026-07-29: split from the original single 9-stage scoring-runner after its cron-triggered
 // invocation was confirmed to exceed Cloudflare's hard 15-minute cron wall-clock ceiling on a
 // heavy day - it completed matrix-builder but died mid-scoring-engine, never reaching
