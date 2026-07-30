@@ -2005,7 +2005,9 @@ function validSlip(legs, sourceKey) {
   if (!legs || legs.length < 2) return false;
   if (!legs.every(l => String(l.source_key || "").toLowerCase() === String(sourceKey || "").toLowerCase())) return false;
   const ids = new Set(legs.map(l => l.board_row_id));
-  return ids.size === legs.length;
+  if (ids.size !== legs.length) return false;
+  const teams = new Set(legs.map(l => String(l.team_id || "")).filter(Boolean));
+  return teams.size >= 2;
 }
 function chooseSlip(pool, size, used = new Set()) {
   const sorted = [...pool].sort((a,b)=>legScoreForBuild(b)-legScoreForBuild(a));
