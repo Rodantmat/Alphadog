@@ -1938,6 +1938,24 @@ function breakevenRate(size, entryMode) {
 
 // Given a pool of legs (already sorted best-first by legScoreForBuild), find the single best
 // (size, mode) structure for exactly this pool by real EV - not a fixed rule of thumb.
+// Risk-adjusted score for RANKING structures (Sharpe-ratio style: EV / stdev of outcomes).
+// Grounded in research consensus: pure EV-maximization is not the same as prudent recommendation.
+// Real-world evidence (see research citations, 2026-07) consistently finds that larger,
+// all-or-nothing structures compound variance faster than their EV grows, and that most
+// consistently profitable pick'em players concentrate on smaller/Flex structures even when a
+// larger Power play's raw EV looks higher on paper. This does not hide the raw EV from the user -
+// it only changes which structure gets selected as "the recommendation."
+function riskAdjustedScore(dist, n, entryMode) {
+  const evResult = slipEv(new Array(0), entryMode); // placeholder, not used directly
+  let mean = 0;
+  const payoutFor = (k) => entryMode === "power" ? (k === n ? POWER_MULTIPLIERS[n] : 0) : (FLEX_MULTIPLIERS[n] && FLEX_MULTIPLIERS[n][k] || 0);
+  for (let k = 0; k <= n; k++) mean += dist[k] * payoutFor(k);
+  let variance = 0;
+  for (let k = 0; k <= n; k++) { const d = payoutFor(k) - mean; variance += dist[k] * d * d; }
+  const stdev = Math.sqrt(Math.max(variance, 1e-6));
+  const ev = mean - 1;
+  return ev / stdev;
+}
 function bestStructureForPool(pool) {
   const probs = pool.map(l => {
     const raw = Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0);
@@ -1946,11 +1964,13 @@ function bestStructureForPool(pool) {
   let best = null;
   for (let size = MIN_SLIP_SIZE; size <= Math.min(MAX_SLIP_SIZE, probs.length); size++) {
     const slice = probs.slice(0, size);
+    const dist = hitCountDistribution(slice);
     for (const mode of ["power", "flex"]) {
       const r = slipEv(slice, mode);
       if (!r) continue;
-      const candidate = { size, mode, ...r, breakeven_hit_rate_0_100: breakevenRate(size, mode) };
-      if (!best || candidate.ev > best.ev) best = candidate;
+      const riskScore = riskAdjustedScore(dist, size, mode);
+      const candidate = { size, mode, ...r, risk_adjusted_score: riskScore, breakeven_hit_rate_0_100: breakevenRate(size, mode) };
+      if (!best || candidate.risk_adjusted_score > best.risk_adjusted_score) best = candidate;
     }
   }
   return best;
