@@ -1360,6 +1360,16 @@ async function runQualityOfContactDerivedFieldsRefresh(env, input = {}) {
     try { await sql.end({ timeout: 1 }); } catch (_) {}
   }
 }
+// Registry of documented root-cause fix dates per prop (2026-07-30). When a prop's underlying
+// source-data or baseline computation gets a confirmed fix, its calibration fitting must not keep
+// training on historical outcomes graded against the OLD, broken predictions - confirmed live:
+// without this, refitting rfi_nrfi reproduced the exact same corrupted correction that had just
+// been removed, because the fitting query had no date filter and pulled all history regardless.
+// Add an entry here whenever a documented prop fix lands; every prop without an entry is
+// completely unaffected (this is purely additive).
+const PROP_CALIBRATION_FIX_DATES = {
+  rfi_nrfi: "2026-07-29", // source-data join fix (context.first_inning_pitcher) + baseline correction
+};
 async function runFitPlattCalibration(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
