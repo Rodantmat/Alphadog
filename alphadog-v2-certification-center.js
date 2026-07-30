@@ -2824,7 +2824,7 @@ function qualityOfContactBlock(qoc){if(!qoc)return '';
   if(diff!=null){
     const d=Number(diff);
     if(d<=-0.02)signal='<div class="regenSignal regenUp">▲ Underperforming its quality — actual wOBA is '+Math.abs(d).toFixed(3)+' below what the contact quality supports. Classic buy-low signal; regression toward the better number is the likely path.</div>';
-    else if(d>=0.02)signal='<div class="regenSignal regenDown">▼ Overperforming its quality — actual wOBA is '+d.toFixed(3)+' above what the contact quality supports. Some of this production has been noise; don\\'t be surprised by a cooldown.</div>';
+    else if(d>=0.02)signal='<div class="regenSignal regenDown">▼ Overperforming its quality — actual wOBA is '+d.toFixed(3)+' above what the contact quality supports. Some of this production has been noise; do not be surprised by a cooldown.</div>';
     else signal='<div class="regenSignal regenFlat">● Actual production matches the quality of contact closely — this is a true-talent read, not a lucky or unlucky stretch.</div>';
   }
   const expectedOutcomes=qocGroup('Expected Outcomes',[['xBA',avgFmt(qoc.xba)],['xSLG',avgFmt(qoc.xslg)],['xwOBA',avgFmt(qoc.xwoba),true],['xwOBAcon',avgFmt(qoc.xwobacon)]]);
