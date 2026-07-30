@@ -2100,36 +2100,51 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
   for (const [source, poolRaw] of bySource.entries()) {
     const pool = [...poolRaw].sort((a,b)=>legScoreForBuild(b)-legScoreForBuild(a));
     const n = pool.length;
-    let plans = requested || (n >= 6 ? [{amount:2, slip_type:3},{amount:1, slip_type:4}] : n >= 5 ? [{amount:1, slip_type:3},{amount:1, slip_type:2}] : n >= 4 ? [{amount:1, slip_type:3},{amount:1, slip_type:2}] : n >= 3 ? [{amount:1, slip_type:3},{amount:1, slip_type:2}] : n >= 2 ? [{amount:1, slip_type:2}] : []);
+    // If the user gave explicit structures, respect them exactly (full manual control).
+    // Otherwise, use the real EV-based recommendation engine instead of a fixed rule of thumb.
+    const plans = requested
+      ? requested.map(s => ({ amount: Number(s.amount || 1), size: Math.floor(Number(s.slip_type || s.size || 0)), mode: s.mode || "power" }))
+      : recommendAllocation(pool).map(p => ({ amount: 1, size: p.size, mode: p.mode }));
     const used = new Set();
     for (const plan of plans) {
-      const size = Math.floor(Number(plan.slip_type || plan.size || 0));
+      const size = plan.size;
+      const entryMode = plan.mode === "flex" ? "flex" : "power";
       const maxAmount = Math.min(20, comboCount(n, size));
       const amount = Math.max(0, Math.min(maxAmount, Math.floor(Number(plan.amount || 1))));
-      if (size < 2 || size > 6 || size > n) continue;
+      if (size < MIN_SLIP_SIZE || size > MAX_SLIP_SIZE || size > n) continue;
       for (let i = 0; i < amount; i++) {
         const picked = chooseSlip(pool, size, used);
         if (!picked.length || !validSlip(picked, source)) continue;
         picked.forEach(l=>used.add(l.board_row_id));
         const p = slipProb(picked);
+        const probs01 = picked.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0) / 100)));
+        const evResult = slipEv(probs01, entryMode);
+        const breakeven = breakevenRate(size, entryMode);
         const warnings = slipWarnings(picked);
         out.push({
           client_slip_id: makeUiId("gen_slip"),
           source_key: source,
           slip_type: `${size}-pick`,
           slip_size: size,
-          structure_label: `${amount}x ${size}-pick`,
+          entry_mode: entryMode,
+          structure_label: `${size}-pick ${entryMode === "flex" ? "Flex" : "Power"}`,
           estimated_hit_probability_0_100: p,
-          estimated_multiplier: null,
-          estimated_payout_note: "Multiplier varies by app, entry type, Goblin/Demon, promos, and displayed app terms; store actual app multiplier at placement.",
-          strategy_grade: warnings.length ? "REVIEW" : (p >= 55 ? "STRONG" : "STANDARD"),
-          strategy_notes: ["Independent probability estimate before correlation adjustment.", ...warnings].join(" "),
+          hit_all_probability_0_100: evResult ? evResult.hit_all_probability_0_100 : null,
+          estimated_multiplier: evResult ? evResult.multiplier : null,
+          estimated_ev_per_unit_stake: evResult ? Math.round(evResult.ev * 1000) / 1000 : null,
+          breakeven_hit_rate_0_100: breakeven,
+          estimated_payout_note: "Real app payout at placement is authoritative - this multiplier is the standard published rate for regular lines, used to estimate expected value from your legs' actual hit probabilities.",
+          strategy_grade: warnings.length ? "REVIEW" : (evResult && evResult.ev > 0 ? "STRONG" : (evResult && evResult.ev > -0.15 ? "STANDARD" : "CAUTION")),
+          strategy_notes: [
+            evResult ? `Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.` : "",
+            ...warnings
+          ].filter(Boolean).join(" "),
           legs: picked
         });
       }
     }
   }
-  return out.sort((a,b)=>Number(b.estimated_hit_probability_0_100||0)-Number(a.estimated_hit_probability_0_100||0));
+  return out.sort((a,b)=>Number(b.estimated_ev_per_unit_stake||-1)-Number(a.estimated_ev_per_unit_stake||-1));
 }
 async function apiGenerateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
