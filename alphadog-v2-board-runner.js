@@ -220,10 +220,22 @@ async function runBoardFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
   // Stage 1: PrizePicks (GitHub-sourced). Not last, so a failure here doesn't block the rest -
-  // score-prep will just run on whatever PrizePicks data is already current.
-  const prizepicks = await callStage(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "prizepicks-github-board", "/run", {
+  // score-prep will just run on whatever PrizePicks data is already current. Retries once within
+  // this same cycle if the first attempt reports zero rows written or fails outright - its own
+  // self-healing logic (stale source -> clear current -> dispatch a fresh scrape) requires a
+  // LATER run to consume the result, and without a same-cycle retry, a staleness check firing at
+  // the wrong moment could leave the table empty until the next full cycle 4-11 hours later.
+  let prizepicks = await callStage(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "prizepicks-github-board", "/run", {
     request_id: `${runId}_prizepicks`, trigger: "board_runner", mode: "board_full_run_prizepicks_refresh"
   });
+  if (!prizepicks.ok || !prizepicks.rows_written) {
+    await new Promise(r => setTimeout(r, 20000));
+    const retry = await callStage(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "prizepicks-github-board", "/run", {
+      request_id: `${runId}_prizepicks_retry`, trigger: "board_runner_retry", mode: "board_full_run_prizepicks_refresh"
+    });
+    retry.retried_after_empty_or_failed_first_attempt = true;
+    prizepicks = retry;
+  }
   stages.push(prizepicks);
 
   // Stage 2: Sleeper
