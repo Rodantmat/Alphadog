@@ -1391,9 +1391,10 @@ async function runFitPlattCalibration(env, input = {}) {
       // reflects when a batch job happened to process the outcome and can be out of true order.
       const fixDate = PROP_CALIBRATION_FIX_DATES[propKey];
       const rows = fixDate
-        ? await sql`SELECT estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL AND official_date >= ${fixDate} ORDER BY official_date ASC`
-        : await sql`SELECT estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL ORDER BY official_date ASC`;
-      if (rows.length < minSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: fixDate ? `below min_samples ${minSamples} (only counting outcomes from ${fixDate} onward, per documented fix date - old contaminated data excluded)` : `below min_samples ${minSamples}` }); continue; }
+        ? await sql`SELECT DISTINCT ON (mlb_player_id, game_pk, canonical_prop_key, line_value, selected_side) estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL AND official_date >= ${fixDate} ORDER BY mlb_player_id, game_pk, canonical_prop_key, line_value, selected_side, official_date ASC`
+        : await sql`SELECT DISTINCT ON (mlb_player_id, game_pk, canonical_prop_key, line_value, selected_side) estimated_hit_probability_0_100, outcome_hit, official_date FROM score.prop_outcome_history WHERE canonical_prop_key=${propKey} AND outcome_hit IS NOT NULL ORDER BY mlb_player_id, game_pk, canonical_prop_key, line_value, selected_side, official_date ASC`;
+      rows.sort((a, b) => new Date(a.official_date) - new Date(b.official_date));
+      if (rows.length < minSamples) { results.push({ prop: propKey, skipped: true, n: rows.length, reason: fixDate ? `below min_samples ${minSamples} after de-duplicating to distinct real events (only counting outcomes from ${fixDate} onward, per documented fix date - old contaminated data excluded)` : `below min_samples ${minSamples} after de-duplicating to distinct real events (same player+game+prop+line+side counted once, not once per app)` }); continue; }
       const allPairs = rows.map(r => [Number(r.estimated_hit_probability_0_100) / 100, Number(r.outcome_hit)]);
       // Time-based (not random) 75/25 split: sports outcomes are sequential, and a random split
       // would let the model "see the future" relative to some test rows, defeating the point of
