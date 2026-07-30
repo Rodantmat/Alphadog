@@ -2190,7 +2190,8 @@ async function apiSlipsRecent(env, url) {
   try {
     entries = await pg.unsafe(`SELECT * FROM score.slip_entries ORDER BY created_at DESC LIMIT $1`, [limit]);
     const ids = entries.map(e=>e.slip_id).filter(Boolean);
-    legs = ids.length ? await pg.unsafe(`SELECT * FROM score.slip_legs WHERE slip_id = ANY($1) ORDER BY slip_id, leg_index`, [ids]) : [];
+    const idsLiteral = "{" + ids.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(",") + "}";
+    legs = ids.length ? await pg.unsafe(`SELECT * FROM score.slip_legs WHERE slip_id = ANY($1::text[]) ORDER BY slip_id, leg_index`, [idsLiteral]) : [];
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
