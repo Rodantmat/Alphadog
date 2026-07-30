@@ -1870,19 +1870,6 @@ async function ensureArchiveSlipSchema(env) {
 }
 
 function slipProb(legs) {
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-    `CREATE INDEX IF NOT EXISTS idx_archive_slip_entries_created ON archive_slip_entries(created_at)`,
-    `CREATE INDEX IF NOT EXISTS idx_archive_slip_entries_status ON archive_slip_entries(status)`,
-    `CREATE INDEX IF NOT EXISTS idx_archive_slip_legs_slip ON archive_slip_legs(slip_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_archive_slip_legs_game_player ON archive_slip_legs(game_pk, player_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_archive_slip_legs_board_row ON archive_slip_legs(board_row_id)`
-  ];
-  for (const sql of ddl) await execRun(env.ARCHIVE_DB, sql);
-}
-
-function slipProb(legs) {
   let p = 1;
   for (const l of legs || []) p *= Math.max(0, Math.min(100, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0))) / 100;
   return Math.round(p * 10000) / 100;
