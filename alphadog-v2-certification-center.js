@@ -2063,7 +2063,7 @@ async function fetchBoardRowsByIds(env, ids) {
         (f.details_json_snapshot->'game_context'->>'status_code') AS game_status_code,
         f.mlb_player_id AS player_id,
         f.player_name,
-        NULL AS team_id,
+        p.team AS team_id,
         NULL AS opponent_team_id,
         f.canonical_prop_key,
         f.line_value,
