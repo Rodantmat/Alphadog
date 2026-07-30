@@ -311,9 +311,12 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
             {"binding": "PROP_FACTOR_MINER_WORKER", "service": "alphadog-v2-phase2b-recent-form"},
         ]
-        # T+12 minutes past each of master's 3 daily times - now only needs to fit 3 light
-        # stages (certifier + prop-factor x2) inside its own 15-minute budget.
-        cfg["triggers"] = {"crons": ["12 16 * * *", "12 20 * * *", "12 5 * * *"]}
+        # T+14 minutes past each of master's 3 daily times (widened from T+12 on 2026-07-30
+        # after confirmed evidence of a near-miss: market's last write and scoring's first read
+        # happened within 0.6 seconds of each other on a clean run - real margin, not luck, is
+        # needed here). Only needs to fit 3 light stages (certifier + prop-factor x2) inside its
+        # own 15-minute budget.
+        cfg["triggers"] = {"crons": ["14 16 * * *", "14 20 * * *", "14 5 * * *"]}
     if worker_name == "alphadog-v2-scoring-runner-matrix":
         # PART 1b (new 2026-07-29): matrix-builder, fully isolated. Confirmed live to be the
         # real bottleneck in the scoring chain - even paired with just 2 light stages, the
