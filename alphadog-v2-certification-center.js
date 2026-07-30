@@ -2821,13 +2821,18 @@ function renderRecommendation(){
     +'</div>';
   $('useRecommended').onclick=()=>{lastGeneratedSlips=lastRecommendedSlips;saveGeneratedSlips()};
 }
+function legLine(l){
+  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel ? displayPropLabel(l.canonical_prop_key) : cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase());
+}
 function recommendedSlipCard(s){
   const evTxt=s.estimated_ev_per_unit_stake!=null?evLabel(s.estimated_ev_per_unit_stake):'—';
   const evCls=evClass(s.estimated_ev_per_unit_stake);
-  return '<div class="legMini" style="align-items:flex-start;flex-direction:column;gap:4px">'
+  const legsHtml=(s.legs||[]).map(l=>'<div style="padding:3px 0">'+legLine(l)+'</div>').join('');
+  return '<div class="legMini" style="align-items:flex-start;flex-direction:column;gap:6px">'
     +'<div style="display:flex;justify-content:space-between;width:100%"><b>'+esc(String(s.source_key||'').toUpperCase())+' • '+esc(s.structure_label)+'</b><span class="'+evCls+'" style="font-weight:950">'+evTxt+'</span></div>'
-    +'<div class="small">'+(s.legs||[]).map(l=>esc((l.player_name||'')+' '+cap(l.canonical_prop_key))).join(', ')+'</div>'
-    +'<div class="small">Needs ~'+esc(s.breakeven_hit_rate_0_100)+'% per leg to break even • your legs average '+pct(s.estimated_hit_probability_0_100)+' combined hit chance</div>'
+    +'<div class="small" style="width:100%">'+legsHtml+'</div>'
+    +'<div class="small">Breakeven: ~'+esc(s.breakeven_hit_rate_0_100)+'% per leg</div>'
+    +'<div class="small">Your legs average: '+pct(s.estimated_hit_probability_0_100)+' combined hit chance</div>'
     +'</div>';
 }
 function bindBuildControls(){document.querySelectorAll('.structType').forEach(el=>el.onchange=()=>{const i=Number(el.dataset.i);customStructures[i].slip_type=Number(el.value);customStructures[i].amount=Math.min(20,nChooseK(selectedRows().length,customStructures[i].slip_type));renderBuild()});document.querySelectorAll('.structMode').forEach(el=>el.onchange=()=>{customStructures[Number(el.dataset.i)].mode=el.value});document.querySelectorAll('.structAmt').forEach(el=>el.onchange=()=>{customStructures[Number(el.dataset.i)].amount=Number(el.value)});document.querySelectorAll('.structAdd').forEach(b=>b.onclick=()=>{const n=selectedRows().length;const used=new Set(customStructures.map(x=>Number(x.slip_type)));const t=validTypes(n).find(x=>!used.has(x));if(t)customStructures.push({amount:Math.min(20,nChooseK(n,t)),slip_type:t,mode:'power'});renderBuild()});const gc=$('generateCustom');if(gc)gc.onclick=generateSlips;const save=$('saveSlips');if(save)save.onclick=saveGeneratedSlips}
