@@ -159,6 +159,29 @@ async function callStage(binding, bindingName, path, input, attempt = 1) {
   }
 }
 
+async function logRunResult(env, result) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`CREATE TABLE IF NOT EXISTS control.board_runner_results (
+      run_id TEXT PRIMARY KEY,
+      trigger TEXT,
+      ok BOOLEAN,
+      certification TEXT,
+      stages_json JSONB,
+      started_at TIMESTAMPTZ,
+      finished_at TIMESTAMPTZ,
+      logged_at TIMESTAMPTZ DEFAULT now()
+    )`;
+    await client`INSERT INTO control.board_runner_results (run_id, trigger, ok, certification, stages_json, started_at, finished_at)
+      VALUES (${result.run_id}, ${result.trigger_source || "unknown"}, ${result.ok}, ${result.certification}, ${JSON.stringify(result.stages)}, ${result.started_at}, ${result.finished_at})
+      ON CONFLICT (run_id) DO NOTHING`;
+  } catch (_) {
+    // best-effort logging - never let a logging failure affect the actual board-run result
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 async function runBoardFullRun(env, input) {
   const runId = `board_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
