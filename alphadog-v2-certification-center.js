@@ -1869,11 +1869,107 @@ async function ensureArchiveSlipSchema(env) {
   }
 }
 
-function slipProb(legs) {
-  let p = 1;
-  for (const l of legs || []) p *= Math.max(0, Math.min(100, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0))) / 100;
-  return Math.round(p * 10000) / 100;
+// ===== Slip recommendation engine (grounded in exhaustive research, 2026-07) =====
+// Standard published multipliers, most common across PrizePicks/Underdog/Pick6 for regular
+// (non-Demon/Goblin) lines. Real app payout at placement is always authoritative - these are
+// used only to compute which structure is worth recommending given the ACTUAL selected legs'
+// real hit probabilities, not to promise an exact payout.
+const POWER_MULTIPLIERS = { 2: 3, 3: 5, 4: 10, 5: 20, 6: 37.5 };
+// Flex payout by (slip size -> { hits: multiplier }), covering the partial-credit tiers.
+const FLEX_MULTIPLIERS = {
+  3: { 3: 2.25, 2: 1.25 },
+  4: { 4: 6, 3: 1.5 },
+  5: { 5: 10, 4: 2, 3: 0.4 },
+  6: { 6: 25, 5: 2, 4: 0.4 }
+};
+const MAX_SLIP_SIZE = 6;
+const MIN_SLIP_SIZE = 2;
+
+// Poisson-binomial distribution: exact probability of exactly k hits out of legs with
+// DIFFERENT individual probabilities (not assuming identical p, which a naive binomial would).
+// This is the correct math for a slip built from legs that don't all have the same hit chance.
+function hitCountDistribution(probs) {
+  let dist = [1];
+  for (const p of probs) {
+    const next = new Array(dist.length + 1).fill(0);
+    for (let i = 0; i < dist.length; i++) {
+      next[i] += dist[i] * (1 - p);
+      next[i + 1] += dist[i] * p;
+    }
+    dist = next;
+  }
+  return dist; // dist[k] = P(exactly k of N legs hit)
 }
+
+function slipEv(legProbs01, entryMode) {
+  const n = legProbs01.length;
+  const dist = hitCountDistribution(legProbs01);
+  if (entryMode === "power") {
+    const mult = POWER_MULTIPLIERS[n];
+    if (!mult) return null;
+    return { ev: dist[n] * mult - 1, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: mult };
+  }
+  const table = FLEX_MULTIPLIERS[n];
+  if (!table) return null;
+  let ev = -1;
+  for (const [k, mult] of Object.entries(table)) ev += dist[Number(k)] * mult;
+  return { ev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: table[n] };
+}
+
+// Breakeven per-leg hit rate for a given (size, mode): the flat probability every leg would
+// need for this structure to break exactly even. Shown to the user as plain-language context,
+// e.g. "your legs need to average 56% to profit here" - grounded in the p = M^(-1/N) formula.
+function breakevenRate(size, entryMode) {
+  if (entryMode === "power") {
+    const mult = POWER_MULTIPLIERS[size];
+    return mult ? Math.round(Math.pow(mult, -1 / size) * 10000) / 100 : null;
+  }
+  // Flex breakeven has no closed form (payout schedule isn't a single power), so solve
+  // numerically: find p such that EV(p repeated n times, flex) = 0.
+  let lo = 0.3, hi = 0.999;
+  for (let iter = 0; iter < 40; iter++) {
+    const mid = (lo + hi) / 2;
+    const r = slipEv(new Array(size).fill(mid), "flex");
+    if (!r) return null;
+    if (r.ev > 0) hi = mid; else lo = mid;
+  }
+  return Math.round(((lo + hi) / 2) * 10000) / 100;
+}
+
+// Given a pool of legs (already sorted best-first by legScoreForBuild), find the single best
+// (size, mode) structure for exactly this pool by real EV - not a fixed rule of thumb.
+function bestStructureForPool(pool) {
+  const probs = pool.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0) / 100)));
+  let best = null;
+  for (let size = MIN_SLIP_SIZE; size <= Math.min(MAX_SLIP_SIZE, probs.length); size++) {
+    const slice = probs.slice(0, size);
+    for (const mode of ["power", "flex"]) {
+      const r = slipEv(slice, mode);
+      if (!r) continue;
+      const candidate = { size, mode, ...r, breakeven_hit_rate_0_100: breakevenRate(size, mode) };
+      if (!best || candidate.ev > best.ev) best = candidate;
+    }
+  }
+  return best;
+}
+
+// Recommends how to allocate a full selected pool (which may exceed one entry's max size)
+// across one or more slips, per source. Strategy: repeatedly find the best-EV structure for
+// the REMAINING best-available legs, take it, and continue with what's left - a greedy EV-max
+// packing rather than an arbitrary fixed split. This is the core answer to "I have N legs
+// selected, what should I actually build" - grounded in real per-leg probabilities, not guesses.
+function recommendAllocation(poolSorted) {
+  const remaining = [...poolSorted];
+  const plan = [];
+  while (remaining.length >= MIN_SLIP_SIZE) {
+    const best = bestStructureForPool(remaining);
+    if (!best) break;
+    plan.push({ size: best.size, mode: best.mode });
+    remaining.splice(0, best.size);
+  }
+  return plan;
+}
+
 function comboCount(n, k) {
   n = Math.floor(Number(n || 0)); k = Math.floor(Number(k || 0));
   if (k < 0 || n < 0 || k > n) return 0;
