@@ -207,7 +207,9 @@ async function runBoardFullRun(env, input) {
 
   try {
     const result = await runBoardFullRunLocked(env, input, runId, startedAt);
+    result.trigger_source = input && input.trigger || "manual";
     await markCompleted(env);
+    await logRunResult(env, result);
     return result;
   } finally {
     await releaseLock(lock.client, runId);
