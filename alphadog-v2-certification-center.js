@@ -3026,21 +3026,36 @@ async function fetchWithTimeout(url, opts, ms){const ctrl=new AbortController();
 async function load(){try{$('status').textContent='Loading filters...';const fj=await (await fetchWithTimeout('/api/main-board/filters?t='+Date.now(),{cache:'no-store'},15000)).json();if(!fj.ok)throw Error(fj.error||'filters failed');renderFilters(fj);$('status').textContent='Loading board...';const j=await (await fetchWithTimeout('/api/main-board/current?limit=1000&t='+Date.now(),{cache:'no-store'},15000)).json();if(!j.ok)throw Error(j.error||'board failed');rows=Array.isArray(j.rows)?j.rows:[];render()}catch(e){const msg=e&&e.name==='AbortError'?'Request timed out after 15s - the server may be slow or unreachable.':(e.message||e);$('status').innerHTML='<span class="err">Board load failed: '+esc(msg)+'</span>';$('cards').innerHTML='<div class="empty err" style="grid-column:1/-1">Could not load Review Board.</div>'}}
 async function loadHealth(){try{$('healthStatus').textContent='Loading health...';const j=await (await fetch('/api/main-board/health?t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'health failed');health=j;renderHealth()}catch(e){$('healthStatus').innerHTML='<span class="err">Health load failed: '+esc(e.message||e)+'</span>'}}
 let calibrationReport=null, calibrationSelected=new Set();
+function plainCalibSummary(r){
+  const m=r.metrics||{};
+  if(r.status==='INSUFFICIENT_DATA') return 'Not enough games have finished yet to check this prop safely. Nothing to do here - check back once more games resolve.';
+  if(r.status==='NO_FIXABLE_PATTERN_FOUND') return 'Checked for a fix using real outcomes - none genuinely helped. The current numbers for this prop are already the best available estimate.';
+  const beforeAcc = m.test_brier_before!=null ? Math.round((1-m.test_brier_before)*100) : null;
+  const afterAcc = m.test_brier_after!=null ? Math.round((1-m.test_brier_after)*100) : null;
+  if(r.status==='RECOMMENDED_NOT_YET_APPLIED') return 'A correction is available, tested against '+(m.test_n||'—')+' real, already-finished games it never saw while being built. '+(beforeAcc!=null&&afterAcc!=null?'Accuracy on those games would improve from about '+beforeAcc+'% to '+afterAcc+'%.':'It genuinely improved accuracy on those games.')+' Not applied yet.';
+  if(r.status==='ACTIVE_AND_STILL_VALID') return 'A correction is already applied for this prop, and checking it again against '+(m.test_n||'—')+' real finished games confirms it is still helping.'+(beforeAcc!=null&&afterAcc!=null?' Accuracy on those games: about '+beforeAcc+'% without the fix, '+afterAcc+'% with it.':'');
+  if(r.status==='ACTIVE_VIA_DIFFERENT_METHODOLOGY_NOT_RETESTED') return 'A correction is active for this prop from an earlier, more targeted fix. This check uses a different, more general method and did not re-test that specific fix - nothing to do.';
+  return r.summary||'';
+}
 function renderCalibration(){
   if(!calibrationReport||!calibrationReport.report){$('calibrationCards').innerHTML='<div class="empty">No calibration data.</div>';return}
   const rows=calibrationReport.report;
-  $('calibrationStatus').innerHTML='Generated '+esc(calibrationReport.generated_at||'')+' • '+esc(calibrationReport.needs_attention||0)+' need attention out of '+esc(calibrationReport.total_props||0)+' props';
-  $('calibrationCards').innerHTML=rows.map(r=>{
+  const needsAction=rows.filter(r=>r.severity==='recommend');
+  const fine=rows.filter(r=>r.severity!=='recommend');
+  $('calibrationStatus').innerHTML='Generated '+esc(calibrationReport.generated_at||'')+'<br>'+(needsAction.length?'<b style="color:var(--gold)">'+needsAction.length+' prop'+(needsAction.length>1?'s':'')+' could be improved</b>':'<b style="color:var(--good)">Everything checked out</b>')+' out of '+esc(calibrationReport.total_props||0)+' props tracked';
+  function card(r){
     const canApply=r.severity==='recommend';
     const dotColor=r.severity==='recommend'?'yellow':r.severity==='warning'?'red':'green';
-    return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px">'+
+    return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px'+(canApply?';border-color:rgba(244,201,93,.5)':'')+'">'+
       '<div style="display:flex;align-items:center;gap:10px">'+
-      (canApply?'<input type="checkbox" class="calibCheck" data-prop="'+esc(r.prop)+'" style="width:18px;height:18px">':'<span style="width:18px;display:inline-block"></span>')+
-      statusDot(dotColor)+'<b>'+esc(r.prop)+'</b><span class="small" style="color:#9ab">'+esc(r.status)+'</span></div>'+
-      '<div class="small" style="margin:6px 0">'+esc(r.summary)+'</div>'+
-      '<div class="small" style="color:#9ab">'+esc(r.recommendation)+'</div>'+
+      (canApply?'<input type="checkbox" class="calibCheck" data-prop="'+esc(r.prop)+'" style="width:18px;height:18px;flex:0 0 auto">':'<span style="width:18px;display:inline-block;flex:0 0 auto"></span>')+
+      statusDot(dotColor)+'<b>'+esc(displayPropLabel(r.prop))+'</b></div>'+
+      '<div class="small" style="margin:8px 0 0">'+esc(plainCalibSummary(r))+'</div>'+
     '</div>'
-  }).join('');
+  }
+  $('calibrationCards').innerHTML=
+    (needsAction.length?'<div style="grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);font-weight:950;margin:4px 0">Could be improved</div>'+needsAction.map(card).join(''):'')+
+    (fine.length?'<details style="grid-column:1/-1;margin-top:'+(needsAction.length?'12px':'0')+'"><summary style="cursor:pointer;font-weight:950;color:var(--muted);padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Everything else, working fine ('+fine.length+')</summary><div style="display:grid;gap:8px;margin-top:8px">'+fine.map(card).join('')+'</div></details>':'');
   document.querySelectorAll('.calibCheck').forEach(cb=>cb.onchange=()=>{
     if(cb.checked)calibrationSelected.add(cb.dataset.prop);else calibrationSelected.delete(cb.dataset.prop);
     $('calibrationSelectedCount').textContent=calibrationSelected.size;
