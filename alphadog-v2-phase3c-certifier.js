@@ -85,6 +85,36 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
   return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta), bin_n_test_games: bin.n_test_games };
 }
 
+// Second-stage residual correction, applied AFTER the first stage above, operating directly on
+// the already-corrected displayed value rather than trying to infer the first stage's raw input
+// (confirmed unreliable - reversing the first-stage delta at the top buckets produced impossible
+// raw values exceeding 100%). Grounded in real, deduplicated outcome data measured directly
+// against the CURRENT displayed output for props found to still have a genuine gap after the
+// first correction. Kept as a small, explicit, auditable table rather than folded into the main
+// correction map, since it operates on a different input (displayed, not raw).
+const RESIDUAL_CORRECTION_MAP = {
+  "fantasy_score|less": [
+    { lo: 50, hi: 60, delta: -18.5 },
+    { lo: 60, hi: 70, delta: -9.3 },
+    { lo: 70, hi: 80, delta: -17.2 },
+    { lo: 80, hi: 90, delta: -14.0 },
+    { lo: 90, hi: 101, delta: -23.1 }
+  ],
+  "walks|less": [
+    { lo: 80, hi: 90, delta: -8.5 },
+    { lo: 90, hi: 101, delta: -17.2 }
+  ]
+};
+function applyResidualCorrection(propKey, side, displayedHpPct) {
+  if (displayedHpPct == null) return { correctedHp: displayedHpPct, applied: false };
+  const bins = RESIDUAL_CORRECTION_MAP[`${propKey}|${side || ""}`];
+  if (!bins) return { correctedHp: displayedHpPct, applied: false };
+  const bin = bins.find(b => displayedHpPct >= b.lo && displayedHpPct < b.hi);
+  if (!bin) return { correctedHp: displayedHpPct, applied: false };
+  const corrected = clamp(displayedHpPct + bin.delta, 1, 99);
+  return { correctedHp: corrected, applied: true, residual_delta_applied: bin.delta };
+}
+
 function computeFinalConfidence(baselineConfidence, enrichmentRow, lineDistance, penaltyConfig) {
   const factorsApplied = (enrichmentRow && enrichmentRow.factors_applied) || 0;
   const factorsMissing = (enrichmentRow && enrichmentRow.factors_missing) || 0;
