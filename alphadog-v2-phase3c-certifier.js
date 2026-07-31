@@ -92,13 +92,6 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
 // against the CURRENT displayed output for props found to still have a genuine gap after the
 // first correction. Kept as a small, explicit, auditable table rather than folded into the main
 // correction map, since it operates on a different input (displayed, not raw).
-// Second-stage residual correction, applied AFTER the first stage above, operating directly on
-// the already-corrected displayed value rather than trying to infer the first stage's raw input
-// (confirmed unreliable - reversing the first-stage delta at the top buckets produced impossible
-// raw values exceeding 100%). Grounded in real, deduplicated outcome data measured directly
-// against the CURRENT displayed output for props found to still have a genuine gap after the
-// first correction. Kept as a small, explicit, auditable table rather than folded into the main
-// correction map, since it operates on a different input (displayed, not raw).
 //
 // Some entries are SOURCE-SPECIFIC (keyed by prop|side|source instead of just prop|side) -
 // confirmed live that PrizePicks and Underdog can show meaningfully different miscalibration for
