@@ -39,6 +39,26 @@ function buildMlbUrl(origin, path) {
   return `${cleanOrigin}${cleanPath}`;
 }
 
+// REAL FIX (2026-07-31): confirmed via research (MLB Stats API's /people endpoint documents
+// batSide as a standard field) and direct debugging (our boxscore-parsing code was already
+// correct, yet 100% of even officially-posted lineup rows showed null bat_side) that boxscore's
+// embedded person sub-object doesn't reliably carry batSide, unlike the full /people endpoint.
+// This backfills it with one supplementary batch call per game covering every player missing it,
+// rather than a per-player fetch.
+async function backfillBatSide(players, sourceBase, userAgent) {
+  const missingIds = [...new Set((players || []).filter(p => !p.bat_side && p.player_id).map(p => p.player_id))];
+  if (!missingIds.length) return players;
+  try {
+    const peopleUrl = buildMlbUrl(sourceBase, `/api/v1/people?personIds=${missingIds.join(",")}&fields=people,id,batSide,code`);
+    const resp = await fetchJsonWithRetry(peopleUrl, userAgent, MAX_ENDPOINT_RETRIES);
+    if (!resp.ok || !resp.json || !Array.isArray(resp.json.people)) return players;
+    const batSideById = new Map(resp.json.people.map(p => [Number(p.id), p.batSide && p.batSide.code ? p.batSide.code : null]));
+    return players.map(p => p.bat_side ? p : { ...p, bat_side: batSideById.get(Number(p.player_id)) ?? null });
+  } catch (_) {
+    return players;
+  }
+}
+
 function nowUtc() {
   return new Date().toISOString();
 }
