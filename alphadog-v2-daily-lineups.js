@@ -1039,6 +1039,11 @@ async function runSourceProbe(env, input) {
       if (activeTeams) {
         homeValidation = validateSide("home", activeTeams && activeTeams.home);
         awayValidation = validateSide("away", activeTeams && activeTeams.away);
+        // REAL FIX (2026-07-31): boxscore's embedded person object doesn't reliably carry
+        // batSide (confirmed live: 100% null even on officially-posted lineups) - backfill via
+        // one supplementary /people batch call per side covering only the players missing it.
+        homeValidation.mapped_players = await backfillBatSide(homeValidation.mapped_players, sourceBase, userAgent);
+        awayValidation.mapped_players = await backfillBatSide(awayValidation.mapped_players, sourceBase, userAgent);
         warnings.push(...homeValidation.warnings, ...awayValidation.warnings);
         blockers.push(...homeValidation.blockers);
         blockers.push(...awayValidation.blockers);
