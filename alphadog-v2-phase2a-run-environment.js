@@ -427,6 +427,15 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     batter_sweet_spot_percent: ctxMaps.qocByPlayer.get(Number(playerId))?.sweet_spot_percent ?? null,
     batter_barrel_batted_rate: ctxMaps.qocByPlayer.get(Number(playerId))?.barrel_batted_rate ?? null,
     batter_iso: ctxMaps.qocByPlayer.get(Number(playerId))?.iso ?? null,
+    preceding_hitters_avg_obp: (() => {
+      const teamLineup = ctxMaps.lineupByGameTeamSorted ? ctxMaps.lineupByGameTeamSorted.get(`${gamePk}|${ownTeamId}`) : null;
+      if (!teamLineup || lineup.lineup_slot == null) return null;
+      const mySlot = Number(lineup.lineup_slot);
+      const preceding = teamLineup.filter(p => p.slot < mySlot && p.obp != null);
+      if (!preceding.length) return null;
+      return preceding.reduce((s, p) => s + p.obp, 0) / preceding.length;
+    })(),
+    league_avg_obp: ctxMaps.leagueAvgObp ?? 0.320,
   };
 }
 
