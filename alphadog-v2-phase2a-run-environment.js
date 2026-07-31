@@ -321,6 +321,14 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const runningGameRows = await pgClient`SELECT DISTINCT ON (mlb_player_id) mlb_player_id, lead_distance_gained FROM ref.pitcher_running_game ORDER BY mlb_player_id, season_year DESC`.catch(() => []);
   const pitcherLeadDistanceByPitcherId = new Map(runningGameRows.map(r => [String(r.mlb_player_id), r.lead_distance_gained]));
 
+  // REAL FIX (2026-07-31): times_through_order was never wired - starter_avg_batters_faced_per_start
+  // was referenced by the factor logic but never populated. Directly computable from existing
+  // batters_faced_sum/starts_count already in stats_pitcher.metric_snapshots.
+  const starterIdsForBfp = [...new Set(starterRows.map(r => r.starter_player_id).filter(Boolean))];
+  const bfpLit = starterIdsForBfp.length ? "{" + starterIdsForBfp.join(",") + "}" : null;
+  const batersFacedRows = bfpLit ? await pgClient`SELECT player_id, batters_faced_sum, starts_count FROM stats_pitcher.metric_snapshots WHERE player_id = ANY(${bfpLit}::bigint[]) AND metric_window='season_to_date'`.catch(() => []) : [];
+  const avgBattersFacedByPitcher = new Map(batersFacedRows.filter(r => Number(r.starts_count) > 0).map(r => [String(r.player_id), Number(r.batters_faced_sum) / Number(r.starts_count)]));
+
   const qocRows = playerIds.length ? await pgClient`SELECT mlb_player_id, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, iso, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id = ANY(${pidLit}::bigint[]) AND active=1 ORDER BY season_year DESC`.catch(() => []) : [];
   const qocByPlayer = new Map();
   for (const r of qocRows) {
