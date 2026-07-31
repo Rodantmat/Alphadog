@@ -1057,6 +1057,14 @@ async function runSourceProbe(env, input) {
       blockers.push(...preparedSummary.blockers);
 
       let catcherWriteError = null;
+      try {
+        await pg.unsafe(`CREATE TABLE IF NOT EXISTS control.debug_catcher_errors (id SERIAL PRIMARY KEY, game_pk BIGINT, error_text TEXT, logged_at TIMESTAMPTZ DEFAULT now())`);
+        const homeMapped = (homeValidation && homeValidation.mapped_players) || [];
+        const awayMapped = (awayValidation && awayValidation.mapped_players) || [];
+        const homeCatcherFound = homeMapped.find(p => String(p.position) === "2");
+        const awayCatcherFound = awayMapped.find(p => String(p.position) === "2");
+        await pg.unsafe(`INSERT INTO control.debug_catcher_errors (game_pk, error_text) VALUES ($1, $2)`, [gamePk, `home_status=${homeValidation.lineup_status}|home_mapped=${homeMapped.length}|home_catcher=${homeCatcherFound ? homeCatcherFound.player_id : "NONE"}|away_status=${awayValidation.lineup_status}|away_mapped=${awayMapped.length}|away_catcher=${awayCatcherFound ? awayCatcherFound.player_id : "NONE"}`]);
+      } catch (_) {}
       const [homeCatcherRow, awayCatcherRow] = await Promise.all([
         writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap).catch(e => { catcherWriteError = String(e && e.message ? e.message : e); return null; }),
         writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap).catch(e => { catcherWriteError = catcherWriteError || String(e && e.message ? e.message : e); return null; })
@@ -1064,7 +1072,6 @@ async function runSourceProbe(env, input) {
       if (catcherWriteError) {
         warnings.push(`catcher_context_write_error_debug_${catcherWriteError}`.slice(0, 150));
         try {
-          await pg.unsafe(`CREATE TABLE IF NOT EXISTS control.debug_catcher_errors (id SERIAL PRIMARY KEY, game_pk BIGINT, error_text TEXT, logged_at TIMESTAMPTZ DEFAULT now())`);
           await pg.unsafe(`INSERT INTO control.debug_catcher_errors (game_pk, error_text) VALUES ($1, $2)`, [gamePk, catcherWriteError]);
         } catch (_) {}
       }
