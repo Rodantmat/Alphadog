@@ -16,31 +16,27 @@ const LOCK_KEY = "alphadog_scoring_full_run_part1b_matrix";
 const LOCK_HOLD_MINUTES = 15;
 const MAX_PACKET_STALENESS_MINUTES = 20; // Part 1 fires 8 min before this worker in the schedule.
 
-async function killStaleLocksAndCooldown(env) {
+async function selfCleanupAfterPhase(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   const result = { terminated_connections: 0, cleared_locks: [], reset_batches: 0 };
   try {
-    // 1. Terminate genuinely idle Postgres backend connections older than 2 minutes - this is
-    // the real target per direct clarification: stale connections are what actually strain
-    // Postgres and compound into cascading slowness across every downstream stage, more than
-    // the lock table rows alone. Never touches this connection's own backend or active queries.
+    // Terminate genuinely idle Postgres backend connections older than 2 minutes - the real
+    // target per direct clarification: stale connections are what actually strain Postgres and
+    // compound into cascading slowness across every downstream stage. A process should clean up
+    // after itself so stale state is never generated in the first place, rather than relying on
+    // the next run to discover and clear it. Never touches this connection's own backend.
     const idleConns = await client`
       SELECT pid FROM pg_stat_activity
       WHERE state = 'idle' AND pid != pg_backend_pid() AND state_change < now() - interval '2 minutes'`.catch(() => []);
     for (const row of idleConns) {
       try { await client`SELECT pg_terminate_backend(${row.pid})`; result.terminated_connections++; } catch (_) {}
     }
-    // 2. Clear any expired runner lock across the whole pipeline, not just this worker's own -
-    // a genuine clean slate before this phase starts.
     await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
     const stale = await client`SELECT lock_key, holder FROM control.runner_locks WHERE locked_until IS NOT NULL AND locked_until < now()`;
     if (stale.length) {
       await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE locked_until IS NOT NULL AND locked_until < now()`;
       result.cleared_locks = stale.map(r => ({ lock_key: r.lock_key, prior_holder: r.holder }));
     }
-    // 3. Reset any batch/queue row stuck in a running state past a reasonable ceiling (10 min)
-    // across every stage this pipeline depends on - same self-healing pattern already proven in
-    // matrix-builder's own exception handler, applied proactively here instead of reactively.
     const staleTables = [
       { schema: "scoring", table: "prop_matrix_batches" },
       { schema: "scoring", table: "prop_factor_batches" },
@@ -48,7 +44,7 @@ async function killStaleLocksAndCooldown(env) {
     ];
     for (const t of staleTables) {
       try {
-        const res = await client.unsafe(`UPDATE ${t.schema}.${t.table} SET status='abandoned_stale_cleanup_before_phase', updated_at=now() WHERE status LIKE 'running%' AND updated_at < now() - interval '10 minutes'`);
+        const res = await client.unsafe(`UPDATE ${t.schema}.${t.table} SET status='abandoned_stale_cleanup_after_phase', updated_at=now() WHERE status LIKE 'running%' AND updated_at < now() - interval '10 minutes'`);
         result.reset_batches += res.count || 0;
       } catch (_) {}
     }
@@ -56,7 +52,6 @@ async function killStaleLocksAndCooldown(env) {
   } finally {
     try { await client.end({ timeout: 1 }); } catch (_) {}
   }
-  await new Promise(r => setTimeout(r, 30000));
   return result;
 }
 
