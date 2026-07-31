@@ -125,6 +125,12 @@ const RESIDUAL_CORRECTION_MAP = {
   ],
   "doubles|less": [
     { lo: 80, hi: 101, delta: -11.9 }
+  ],
+  "rbis|more": [
+    { lo: 20, hi: 30, delta: -14.3 },
+    { lo: 30, hi: 40, delta: -24.2 },
+    { lo: 60, hi: 70, delta: -38.8 },
+    { lo: 70, hi: 80, delta: -57.1 }
   ]
 };
 function applyResidualCorrection(propKey, side, displayedHpPct) {
