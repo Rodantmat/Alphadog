@@ -242,7 +242,8 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
     const rawHp = computeRealHitProbability(baselineHp, er.rate_multiplier);
     const calibration = applyCalibrationCorrection(er.canonical_prop_key, side, rawHp, calibrationMap);
-    const hp = calibration.correctedHp;
+    const residual = applyResidualCorrection(er.canonical_prop_key, side, calibration.correctedHp);
+    const hp = residual.correctedHp;
 
     if (hp == null) {
       insertRows.push({
