@@ -1061,7 +1061,13 @@ async function runSourceProbe(env, input) {
         writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap).catch(e => { catcherWriteError = String(e && e.message ? e.message : e); return null; }),
         writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap).catch(e => { catcherWriteError = catcherWriteError || String(e && e.message ? e.message : e); return null; })
       ]);
-      if (catcherWriteError) warnings.push(`catcher_context_write_error_debug_${catcherWriteError}`.slice(0, 150));
+      if (catcherWriteError) {
+        warnings.push(`catcher_context_write_error_debug_${catcherWriteError}`.slice(0, 150));
+        try {
+          await pg.unsafe(`CREATE TABLE IF NOT EXISTS control.debug_catcher_errors (id SERIAL PRIMARY KEY, game_pk BIGINT, error_text TEXT, logged_at TIMESTAMPTZ DEFAULT now())`);
+          await pg.unsafe(`INSERT INTO control.debug_catcher_errors (game_pk, error_text) VALUES ($1, $2)`, [gamePk, catcherWriteError]);
+        } catch (_) {}
+      }
       if (!homeCatcherRow && intOrNull(calendar.home_team_id)) {
         const derivedHomeCatcher = derivedCatcherMap.get(String(calendar.home_team_id));
         if (derivedHomeCatcher) await writeDerivedCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap, derivedCatcherNameMap);
