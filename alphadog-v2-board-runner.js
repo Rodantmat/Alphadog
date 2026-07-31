@@ -319,7 +319,7 @@ async function runBoardFullRunLocked(env, input, runId, startedAt) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runBoardFullRun(env, { trigger: "cron", cron: event.cron }));
+    ctx.waitUntil(runBoardFullRun(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
   },
 
   async fetch(request, env, ctx) {
@@ -345,13 +345,7 @@ export default {
       let input = {};
       try { input = await request.json(); } catch (_) {}
       const workPromise = runBoardFullRun(env, input);
-      // Safety net: guarantee this runs to completion (and markCompleted fires) even if the
-      // caller disconnects or times out before the full 4-stage chain finishes. Root-caused
-      // 2026-07-28: repeated ~4-minute re-triggering with zero rows ever landing in
-      // control.runner_last_completed pointed to exactly this - the work kept succeeding but
-      // the invocation never reached its own completion line, most likely because whatever
-      // called this endpoint gave up before the full chain finished.
-      ctx.waitUntil(workPromise.catch(() => {}));
+      ctx.waitUntil(workPromise.catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
       const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
