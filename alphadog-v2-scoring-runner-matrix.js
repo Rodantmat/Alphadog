@@ -144,13 +144,15 @@ async function runMatrixStage(env, input) {
   const runId = `scoring_matrix_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
 
+  const cleanSlate = await killStaleLocksAndCooldown(env);
+
   const freshness = await checkPart1Freshness(env);
   if (!freshness.fresh && !input.skip_freshness_check) {
     return {
       ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, run_id: runId,
       started_at: startedAt, finished_at: nowIso(),
       certification: "SCORING_FULL_RUN_MATRIX_SKIPPED_PART1_NOT_FRESH", skipped: true,
-      part1_freshness: freshness, stages: []
+      clean_slate: cleanSlate, part1_freshness: freshness, stages: []
     };
   }
 
