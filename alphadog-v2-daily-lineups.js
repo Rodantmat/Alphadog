@@ -1056,10 +1056,12 @@ async function runSourceProbe(env, input) {
       warnings.push(...preparedSummary.warnings);
       blockers.push(...preparedSummary.blockers);
 
+      let catcherWriteError = null;
       const [homeCatcherRow, awayCatcherRow] = await Promise.all([
-        writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap),
-        writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap)
+        writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap).catch(e => { catcherWriteError = String(e && e.message ? e.message : e); return null; }),
+        writeCatcherContext(pg, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap).catch(e => { catcherWriteError = catcherWriteError || String(e && e.message ? e.message : e); return null; })
       ]);
+      if (catcherWriteError) warnings.push(`catcher_context_write_error_debug_${catcherWriteError}`.slice(0, 150));
       if (!homeCatcherRow && intOrNull(calendar.home_team_id)) {
         const derivedHomeCatcher = derivedCatcherMap.get(String(calendar.home_team_id));
         if (derivedHomeCatcher) await writeDerivedCatcherContext(pg, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap, derivedCatcherNameMap);
