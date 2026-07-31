@@ -103,6 +103,19 @@ const RESIDUAL_CORRECTION_MAP = {
   "walks|less": [
     { lo: 80, hi: 90, delta: -8.5 },
     { lo: 90, hi: 101, delta: -17.2 }
+  ],
+  "total_bases|less": [
+    { lo: 80, hi: 90, delta: -24.4 },
+    { lo: 90, hi: 101, delta: -35.0 }
+  ],
+  "hits_runs_rbis|less": [
+    { lo: 80, hi: 101, delta: -22.0 }
+  ],
+  "singles|less": [
+    { lo: 80, hi: 101, delta: -21.2 }
+  ],
+  "hits|less": [
+    { lo: 80, hi: 101, delta: -22.3 }
   ]
 };
 function applyResidualCorrection(propKey, side, displayedHpPct) {
