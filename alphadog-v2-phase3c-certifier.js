@@ -131,6 +131,14 @@ const RESIDUAL_CORRECTION_MAP = {
     { lo: 30, hi: 40, delta: -24.2 },
     { lo: 60, hi: 70, delta: -38.8 },
     { lo: 70, hi: 80, delta: -57.1 }
+  ],
+  "total_bases|more": [
+    { lo: 20, hi: 30, delta: -17.8 },
+    { lo: 30, hi: 40, delta: -12.7 },
+    { lo: 40, hi: 50, delta: -24.5 },
+    { lo: 50, hi: 60, delta: -30.2 },
+    { lo: 60, hi: 70, delta: -11.9 },
+    { lo: 70, hi: 80, delta: -17.3 }
   ]
 };
 function applyResidualCorrection(propKey, side, displayedHpPct) {
