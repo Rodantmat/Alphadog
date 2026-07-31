@@ -153,7 +153,7 @@ async function loadSources(pg, window) {
   const teamLogs = await pg`SELECT game_pk, game_date::text AS game_date, regexp_replace(team_id, '^mlb_', '') AS team_id, regexp_replace(opponent_team_id, '^mlb_', '') AS opponent_team_id, is_home, source_key, raw_json
     FROM team.game_logs WHERE game_date BETWEEN ${lookbackStart} AND ${window.end} ORDER BY game_date, game_pk, team_id`;
   const preparedRows = await pg`SELECT official_date::text AS official_date, official_game_pk, official_game_time_utc, team, team_full_name, opponent, opponent_full_name, pickable_safe, matchup_status, player_match_status
-    FROM score.board_prepared_current WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched' AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL AND official_date IN ${pg(window.dates)} AND official_game_time_utc > ${nowIso}`;
+    FROM score.board_prepared_current WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched' AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL AND official_date IN ${pg(window.dates)}`;
   const teams = await pg`SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref.teams WHERE active = 1`;
   const stadiums = await pg`SELECT stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type, mlb_venue_id, timezone, active FROM ref.stadiums WHERE active = 1`;
   return { lookbackStart, lookaheadEnd, calendarWindow, calendarContext, teamLogs, preparedRows, teams, stadiums };
