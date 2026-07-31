@@ -200,14 +200,15 @@ const RESIDUAL_CORRECTION_MAP = {
     { lo: 90, hi: 101, delta: -57.3 }
   ]
 };
-function applyResidualCorrection(propKey, side, displayedHpPct) {
+function applyResidualCorrection(propKey, side, sourceKey, displayedHpPct) {
   if (displayedHpPct == null) return { correctedHp: displayedHpPct, applied: false };
-  const bins = RESIDUAL_CORRECTION_MAP[`${propKey}|${side || ""}`];
+  const sourceSpecificBins = RESIDUAL_CORRECTION_MAP[`${propKey}|${side || ""}|${sourceKey || ""}`];
+  const bins = sourceSpecificBins || RESIDUAL_CORRECTION_MAP[`${propKey}|${side || ""}`];
   if (!bins) return { correctedHp: displayedHpPct, applied: false };
   const bin = bins.find(b => displayedHpPct >= b.lo && displayedHpPct < b.hi);
   if (!bin) return { correctedHp: displayedHpPct, applied: false };
   const corrected = clamp(displayedHpPct + bin.delta, 1, 99);
-  return { correctedHp: corrected, applied: true, residual_delta_applied: bin.delta };
+  return { correctedHp: corrected, applied: true, residual_delta_applied: bin.delta, source_specific: Boolean(sourceSpecificBins) };
 }
 
 function computeFinalConfidence(baselineConfidence, enrichmentRow, lineDistance, penaltyConfig) {
