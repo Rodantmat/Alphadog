@@ -59,7 +59,7 @@ async function runScoringEngine(pgClient, input) {
   const hpRows = await pgClient`SELECT hp_board_row_id, hp_board_batch_id, source_engine_batch_id, prepared_row_id, matrix_id, source_line_id,
             source_key, game_pk, official_date::text AS official_date, official_game_time_utc, mlb_player_id, player_name,
             canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100,
-            calibration_json
+            is_goblin, is_demon, calibration_json
      FROM score.hp_board_current
      WHERE hp_board_batch_id=${hpBatchId}
        AND score_0_100 IS NULL
