@@ -441,16 +441,7 @@ function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
 async function writeConfirmedLineupsIfGateOpen(pg, summary, cert, writeSafety) {
   await ensureSchema(pg);
   const realBoardDates = [...new Set((summary.games || []).map(g => g && g.official_date).filter(Boolean))];
-  try {
-    const before = await pg`SELECT COUNT(*) as n FROM daily.catcher_context_current`;
-    await pg.unsafe(`CREATE TABLE IF NOT EXISTS control.debug_catcher_errors (id SERIAL PRIMARY KEY, game_pk BIGINT, error_text TEXT, logged_at TIMESTAMPTZ DEFAULT now())`);
-    await pg.unsafe(`INSERT INTO control.debug_catcher_errors (game_pk, error_text) VALUES ($1, $2)`, [0, `BEFORE_PRUNE_catcher_count=${before[0].n}|real_board_dates=${JSON.stringify(realBoardDates)}`]);
-  } catch (_) {}
   const retentionPrune = await pruneDailyLineupRetention(pg, realBoardDates);
-  try {
-    const after = await pg`SELECT COUNT(*) as n FROM daily.catcher_context_current`;
-    await pg.unsafe(`INSERT INTO control.debug_catcher_errors (game_pk, error_text) VALUES ($1, $2)`, [0, `AFTER_PRUNE_catcher_count=${after[0].n}|catcher_rows_pruned=${retentionPrune.catcher_context_rows_pruned}`]);
-  } catch (_) {}
   const gateStatus = writeGateStatusFrom(summary.games, writeSafety.hard_blocks);
   const fetchedAt = nowUtc();
   const batchId = compactId(LINEUP_BATCH_PREFIX);
