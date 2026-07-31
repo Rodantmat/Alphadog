@@ -92,6 +92,22 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
 // against the CURRENT displayed output for props found to still have a genuine gap after the
 // first correction. Kept as a small, explicit, auditable table rather than folded into the main
 // correction map, since it operates on a different input (displayed, not raw).
+// Second-stage residual correction, applied AFTER the first stage above, operating directly on
+// the already-corrected displayed value rather than trying to infer the first stage's raw input
+// (confirmed unreliable - reversing the first-stage delta at the top buckets produced impossible
+// raw values exceeding 100%). Grounded in real, deduplicated outcome data measured directly
+// against the CURRENT displayed output for props found to still have a genuine gap after the
+// first correction. Kept as a small, explicit, auditable table rather than folded into the main
+// correction map, since it operates on a different input (displayed, not raw).
+//
+// Some entries are SOURCE-SPECIFIC (keyed by prop|side|source instead of just prop|side) -
+// confirmed live that PrizePicks and Underdog can show meaningfully different miscalibration for
+// the same prop (fantasy_score-less: PP consistently 7-10+ points worse than UD at every
+// comparable bucket; hits_runs_rbis-less: PP 31.8pt gap vs UD 12.9pt vs Sleeper 20.3pt). This is
+// NOT applied as a blanket assumption - pitcher_fantasy_score was checked the same way and found
+// to NOT diverge by source (PP 13.3pt vs UD 13.9pt, essentially identical), so it stays
+// source-agnostic. Each entry here reflects what the real data actually showed for that specific
+// prop, not an assumed pattern.
 const RESIDUAL_CORRECTION_MAP = {
   "fantasy_score|less": [
     { lo: 50, hi: 60, delta: -18.5 },
@@ -99,6 +115,27 @@ const RESIDUAL_CORRECTION_MAP = {
     { lo: 70, hi: 80, delta: -17.2 },
     { lo: 80, hi: 90, delta: -14.0 },
     { lo: 90, hi: 101, delta: -23.1 }
+  ],
+  "fantasy_score|less|prizepicks": [
+    { lo: 50, hi: 60, delta: -12.6 },
+    { lo: 60, hi: 70, delta: -18.8 },
+    { lo: 70, hi: 80, delta: -24.4 },
+    { lo: 80, hi: 101, delta: -20.5 }
+  ],
+  "fantasy_score|less|parlay_underdog": [
+    { lo: 60, hi: 70, delta: -5.8 },
+    { lo: 70, hi: 80, delta: -14.5 },
+    { lo: 80, hi: 90, delta: -13.3 },
+    { lo: 90, hi: 101, delta: -23.4 }
+  ],
+  "hits_runs_rbis|less|prizepicks": [
+    { lo: 70, hi: 101, delta: -31.8 }
+  ],
+  "hits_runs_rbis|less|sleeper": [
+    { lo: 70, hi: 101, delta: -20.3 }
+  ],
+  "hits_runs_rbis|less|parlay_underdog": [
+    { lo: 70, hi: 101, delta: -12.9 }
   ],
   "walks|less": [
     { lo: 80, hi: 90, delta: -8.5 },
