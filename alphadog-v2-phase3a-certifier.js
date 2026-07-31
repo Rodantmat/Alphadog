@@ -78,7 +78,7 @@ async function runScoringEngine(pgClient, input) {
   for (const row of hpRows) {
     const hp = row.estimated_hit_probability_0_100;
     const confidence = row.probability_confidence_0_100;
-    const score = computeFinalScore(hp, confidence);
+    const score = computeFinalScore(hp, confidence, row.is_goblin, row.is_demon);
     if (score == null) continue;
     const grade = gradeForScore(score);
 
