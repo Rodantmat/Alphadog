@@ -164,8 +164,6 @@ async function runScoringFullRun(env, input) {
   const runId = `scoring_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
 
-  const cleanSlate = await killStaleLocksAndCooldown(env);
-
   const lock = await tryAcquireLock(env, runId);
   if (!lock.acquired) {
     return {
