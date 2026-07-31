@@ -536,8 +536,7 @@ async function runEnrichment(pgClient, input) {
   const batchId = input && input.chain_id ? `enrichment_batch_${input.chain_id}` : rid("enrichment_batch");
   const matrixRows = await pgClient`SELECT matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side, game_pk, team_id, opponent_team_id, matrix_payload_json
      FROM score.prop_matrix_current
-     WHERE blocking_for_scoring=0
-       AND matrix_id NOT IN (SELECT matrix_id FROM scoring.enrichment_leg_current WHERE batch_id=${batchId})
+     WHERE matrix_id NOT IN (SELECT matrix_id FROM scoring.enrichment_leg_current WHERE batch_id=${batchId})
      ORDER BY matrix_id
      LIMIT ${MAX_LEGS_PER_INVOCATION}`.catch(() => []);
 
