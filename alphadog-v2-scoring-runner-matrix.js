@@ -181,7 +181,7 @@ async function runMatrixStage(env, input) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runMatrixStage(env, { trigger: "cron", cron: event.cron }));
+    ctx.waitUntil(runMatrixStage(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
   },
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -194,7 +194,7 @@ export default {
       let input = {};
       try { input = await request.json(); } catch (_) {}
       const workPromise = runMatrixStage(env, input);
-      ctx.waitUntil(workPromise.catch(() => {}));
+      ctx.waitUntil(workPromise.catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
       const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
