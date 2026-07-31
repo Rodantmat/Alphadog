@@ -148,6 +148,19 @@ const RESIDUAL_CORRECTION_MAP = {
   ],
   "hits_allowed|less": [
     { lo: 60, hi: 70, delta: -27.9 }
+  ],
+  "runs|more": [
+    { lo: 60, hi: 70, delta: -30.2 }
+  ],
+  "singles|more": [
+    { lo: 60, hi: 70, delta: -22.7 }
+  ],
+  "pitcher_outs|less": [
+    { lo: 50, hi: 60, delta: -19.4 },
+    { lo: 60, hi: 70, delta: -8.4 }
+  ],
+  "runs_allowed|less": [
+    { lo: 90, hi: 101, delta: -57.3 }
   ]
 };
 function applyResidualCorrection(propKey, side, displayedHpPct) {
