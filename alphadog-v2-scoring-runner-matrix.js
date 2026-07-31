@@ -16,6 +16,24 @@ const LOCK_KEY = "alphadog_scoring_full_run_part1b_matrix";
 const LOCK_HOLD_MINUTES = 15;
 const MAX_PACKET_STALENESS_MINUTES = 20; // Part 1 fires 8 min before this worker in the schedule.
 
+async function killStaleLocksAndCooldown(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  let killed = [];
+  try {
+    await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
+    const stale = await client`SELECT lock_key, holder FROM control.runner_locks WHERE locked_until IS NOT NULL AND locked_until < now()`;
+    if (stale.length) {
+      await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE locked_until IS NOT NULL AND locked_until < now()`;
+      killed = stale.map(r => ({ lock_key: r.lock_key, prior_holder: r.holder }));
+    }
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+  await new Promise(r => setTimeout(r, 30000));
+  return killed;
+}
+
 async function tryAcquireLock(env, holderId) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
