@@ -116,6 +116,15 @@ const RESIDUAL_CORRECTION_MAP = {
   ],
   "hits|less": [
     { lo: 80, hi: 101, delta: -22.3 }
+  ],
+  "runs|less": [
+    { lo: 80, hi: 101, delta: -13.6 }
+  ],
+  "rbis|less": [
+    { lo: 80, hi: 101, delta: -12.8 }
+  ],
+  "doubles|less": [
+    { lo: 80, hi: 101, delta: -11.9 }
   ]
 };
 function applyResidualCorrection(propKey, side, displayedHpPct) {
