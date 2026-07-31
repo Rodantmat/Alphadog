@@ -445,6 +445,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
       return preceding.reduce((s, p) => s + p.obp, 0) / preceding.length;
     })(),
     league_avg_obp: ctxMaps.leagueAvgObp ?? 0.320,
+    starter_avg_batters_faced_per_start: oppStarter.starter_player_id != null ? (ctxMaps.avgBattersFacedByPitcher.get(String(oppStarter.starter_player_id)) ?? null) : null,
   };
 }
 
