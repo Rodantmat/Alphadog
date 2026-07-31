@@ -21,7 +21,7 @@ import postgres from "postgres";
 const SCORING_LOCK_KEY = "alphadog_scoring_full_run_part1";
 const LOCK_HOLD_MINUTES = 15;
 
-async function killStaleLocksAndCooldown(env) {
+async function selfCleanupAfterPhase(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   const result = { terminated_connections: 0, cleared_locks: [], reset_batches: 0 };
   try {
@@ -44,7 +44,7 @@ async function killStaleLocksAndCooldown(env) {
     ];
     for (const t of staleTables) {
       try {
-        const res = await client.unsafe(`UPDATE ${t.schema}.${t.table} SET status='abandoned_stale_cleanup_before_phase', updated_at=now() WHERE status LIKE 'running%' AND updated_at < now() - interval '10 minutes'`);
+        const res = await client.unsafe(`UPDATE ${t.schema}.${t.table} SET status='abandoned_stale_cleanup_after_phase', updated_at=now() WHERE status LIKE 'running%' AND updated_at < now() - interval '10 minutes'`);
         result.reset_batches += res.count || 0;
       } catch (_) {}
     }
@@ -52,7 +52,6 @@ async function killStaleLocksAndCooldown(env) {
   } finally {
     try { await client.end({ timeout: 1 }); } catch (_) {}
   }
-  await new Promise(r => setTimeout(r, 30000));
   return result;
 }
 
