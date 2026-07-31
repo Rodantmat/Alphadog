@@ -29,12 +29,21 @@ function gradeForScore(score) {
 
 // Final Score is computed FROM final HP and final Confidence (both already finalized by
 // the Hit Probability Board stage that runs before this one) - HP is the primary driver
-// since it IS the actual prediction, Confidence tempers it. Real, honest first-pass
-// weighting, unchanged from the original.
-function computeFinalScore(hp, confidence) {
+// since it IS the actual prediction, Confidence tempers it. A modest multiplier-aware lift
+// is then applied: a Goblin variant pays less for the same probability (worse value - same
+// risk, smaller reward), so it gets a small downward adjustment; a Demon variant pays more
+// for a harder line (better value if the probability still clears it), so it gets a small
+// upward adjustment. This directly reflects that the same underlying prediction is not
+// equally good value on every app/variant - a real gap confirmed live (identical scores
+// showing for the same leg across apps with different payout structures).
+const GOBLIN_SCORE_LIFT = -4;
+const DEMON_SCORE_LIFT = 3;
+function computeFinalScore(hp, confidence, isGoblin, isDemon) {
   if (hp == null) return null;
   const conf = confidence != null ? confidence : 55;
-  const score = (hp * 0.65) + (conf * 0.35);
+  let score = (hp * 0.65) + (conf * 0.35);
+  if (isGoblin) score += GOBLIN_SCORE_LIFT;
+  else if (isDemon) score += DEMON_SCORE_LIFT;
   return Math.round(clamp(score, 1, 99));
 }
 
