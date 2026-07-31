@@ -11,6 +11,40 @@ import postgres from "postgres";
 const DAILY_CONTEXT_LOCK_KEY = "alphadog_daily_context_full_run";
 const LOCK_HOLD_MINUTES = 10;
 
+async function selfCleanupAfterPhase(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  const result = { terminated_connections: 0, cleared_locks: [], reset_batches: 0 };
+  try {
+    const idleConns = await client`
+      SELECT pid FROM pg_stat_activity
+      WHERE state = 'idle' AND pid != pg_backend_pid() AND state_change < now() - interval '2 minutes'`.catch(() => []);
+    for (const row of idleConns) {
+      try { await client`SELECT pg_terminate_backend(${row.pid})`; result.terminated_connections++; } catch (_) {}
+    }
+    await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
+    const stale = await client`SELECT lock_key, holder FROM control.runner_locks WHERE locked_until IS NOT NULL AND locked_until < now()`;
+    if (stale.length) {
+      await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE locked_until IS NOT NULL AND locked_until < now()`;
+      result.cleared_locks = stale.map(r => ({ lock_key: r.lock_key, prior_holder: r.holder }));
+    }
+    const staleTables = [
+      { schema: "scoring", table: "prop_matrix_batches" },
+      { schema: "scoring", table: "prop_factor_batches" },
+      { schema: "score", table: "hp_board_batches" }
+    ];
+    for (const t of staleTables) {
+      try {
+        const res = await client.unsafe(`UPDATE ${t.schema}.${t.table} SET status='abandoned_stale_cleanup_after_phase', updated_at=now() WHERE status LIKE 'running%' AND updated_at < now() - interval '10 minutes'`);
+        result.reset_batches += res.count || 0;
+      } catch (_) {}
+    }
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+  return result;
+}
+
 async function tryAcquireLock(env, holderId) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
