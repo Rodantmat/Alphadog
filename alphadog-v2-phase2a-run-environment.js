@@ -296,6 +296,28 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const hrRateRows = playerIds.length ? await pgClient`SELECT player_id, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id = ANY(${pidLit}::bigint[]) AND metric_window='season_to_date'`.catch(() => []) : [];
   const hrRateByPlayer = new Map(hrRateRows.map(r => [String(r.player_id), r.hr_rate]));
 
+  // REAL FIX (2026-07-31): lineup_surrounding_quality was never wired - preceding_hitters_avg_obp
+  // and league_avg_obp were referenced by the factor logic but never populated anywhere. OBP isn't
+  // directly stored, but is directly computable from existing hits_sum/walks_sum/pa_sum data
+  // (confirmed real, sensible league average ~0.299 when computed this way). Fetches the FULL
+  // lineup for each game (not just this chunk's own players) so "who bats before this player" can
+  // be answered even if that preceding player isn't otherwise being processed in this chunk.
+  const fullLineupRows = gamePks.length ? await pgClient`
+    SELECT l.game_pk, l.team_id, l.lineup_slot, l.player_id,
+      (m.hits_sum + m.walks_sum)::float / NULLIF(m.pa_sum, 0) AS obp
+    FROM daily.lineups_current l
+    LEFT JOIN stats_hitter.metric_snapshots m ON m.player_id = l.player_id AND m.metric_window='season_to_date'
+    WHERE l.game_pk = ANY(${gpkLit}::bigint[]) AND l.lineup_slot IS NOT NULL`.catch(() => []) : [];
+  const lineupByGameTeamSorted = new Map();
+  for (const r of fullLineupRows) {
+    const k = `${r.game_pk}|${r.team_id}`;
+    if (!lineupByGameTeamSorted.has(k)) lineupByGameTeamSorted.set(k, []);
+    lineupByGameTeamSorted.get(k).push({ slot: Number(r.lineup_slot), obp: r.obp != null ? Number(r.obp) : null });
+  }
+  for (const arr of lineupByGameTeamSorted.values()) arr.sort((a, b) => a.slot - b.slot);
+  const leagueAvgObpRow = await pgClient`SELECT AVG((hits_sum+walks_sum)::float/NULLIF(pa_sum,0)) AS avg_obp FROM stats_hitter.metric_snapshots WHERE metric_window='season_to_date' AND pa_sum > 50`.catch(() => []);
+  const leagueAvgObp = leagueAvgObpRow[0] && leagueAvgObpRow[0].avg_obp != null ? Number(leagueAvgObpRow[0].avg_obp) : 0.320;
+
   const runningGameRows = await pgClient`SELECT DISTINCT ON (mlb_player_id) mlb_player_id, lead_distance_gained FROM ref.pitcher_running_game ORDER BY mlb_player_id, season_year DESC`.catch(() => []);
   const pitcherLeadDistanceByPitcherId = new Map(runningGameRows.map(r => [String(r.mlb_player_id), r.lead_distance_gained]));
 
