@@ -227,7 +227,7 @@ async function runScoringFullRunLocked(env, input, runId, startedAt) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScoringFullRun(env, { trigger: "cron", cron: event.cron }));
+    ctx.waitUntil(runScoringFullRun(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
   },
 
   async fetch(request, env, ctx) {
@@ -248,7 +248,7 @@ export default {
       let input = {};
       try { input = await request.json(); } catch (_) {}
       const workPromise = runScoringFullRun(env, input);
-      ctx.waitUntil(workPromise.catch(() => {}));
+      ctx.waitUntil(workPromise.catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
       const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
