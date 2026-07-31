@@ -139,6 +139,9 @@ const RESIDUAL_CORRECTION_MAP = {
     { lo: 50, hi: 60, delta: -30.2 },
     { lo: 60, hi: 70, delta: -11.9 },
     { lo: 70, hi: 80, delta: -17.3 }
+  ],
+  "hits|more": [
+    { lo: 70, hi: 80, delta: -14.1 }
   ]
 };
 function applyResidualCorrection(propKey, side, displayedHpPct) {
