@@ -191,6 +191,16 @@ const RESIDUAL_CORRECTION_MAP = {
   ],
   "runs_allowed|less": [
     { lo: 90, hi: 101, delta: -57.3 }
+  ],
+  "earned_runs|more": [
+    { lo: 30, hi: 40, delta: -14.2 },
+    { lo: 70, hi: 80, delta: -13.5 },
+    { lo: 80, hi: 90, delta: -20.0 }
+  ],
+  "earned_runs|less": [
+    { lo: 30, hi: 40, delta: -14.2 },
+    { lo: 70, hi: 80, delta: -13.5 },
+    { lo: 80, hi: 90, delta: -20.0 }
   ]
 };
 function applyResidualCorrection(propKey, side, sourceKey, displayedHpPct) {
