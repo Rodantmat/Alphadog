@@ -105,7 +105,12 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
 }
 
 // Same order as the old orchestrator's DAILY_CONTEXT_FULL_RUN_STAGES.
+// Same order as the old orchestrator's DAILY_CONTEXT_FULL_RUN_STAGES, with GAME_CALENDAR_WORKER
+// added as the new first stage (2026-07-31 fix) - confirmed live that this worker was never
+// wired into any automated cycle, causing the calendar to silently go stale and breaking
+// score-prep's ability to match new games even when the raw app data already had them mined.
 const STAGES = [
+  { bindingKey: "GAME_CALENDAR_WORKER", bindingName: "base-game-calendar", mode: "refresh_calendar" },
   { bindingKey: "DAILY_CERTIFIER_WORKER", bindingName: "daily-certifier", mode: "daily_context_full_run_certifier_first_pass" },
   { bindingKey: "DAILY_GAMES_STATUS_WORKER", bindingName: "daily-games-status", mode: "daily_context_full_run_games_status" },
   { bindingKey: "DAILY_PROBABLE_PITCHERS_WORKER", bindingName: "daily-probable-pitchers", mode: "daily_context_full_run_starters" },
