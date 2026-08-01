@@ -52,6 +52,15 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       return ctx.catcher_framing_runs_per_game * (a || 0);
     }
     case "catcher_poptime_arm": {
+      // NOTE (2026-08-01): this factor's relevant_prop_keys_json is now deliberately empty in
+      // config.enrichment_factors (confirmed via a full correlation audit across all 20 factors)
+      // - it and stolen_base_family both applied to stolen_bases and both used the identical
+      // opposing_catcher_pop_time_2b_sba signal, double-counting a weak/strong catcher arm
+      // through two channels. stolen_base_family is the more complete model (considers pop time
+      // together with runner speed and pitcher hold time, not in isolation) and was kept as the
+      // single source of this signal. Do not re-enable this factor for stolen_bases without
+      // first removing pop time from stolen_base_family's tier logic, or the double-count
+      // returns.
       if (ctx.opposing_catcher_pop_time_2b_sba == null) return null;
       const leagueAvgPoptime = t.league_avg_poptime_sec ?? 2.0;
       return (ctx.opposing_catcher_pop_time_2b_sba - leagueAvgPoptime) * (a || 0);
