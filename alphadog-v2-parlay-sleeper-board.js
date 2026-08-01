@@ -1031,6 +1031,11 @@ async function safeProbe(env, input = {}) {
       const debugClient = pgClient(env);
       await debugClient.unsafe(`CREATE TABLE IF NOT EXISTS control.debug_sleeper_raw (id SERIAL PRIMARY KEY, http_status INT, body_len INT, body_preview TEXT, logged_at TIMESTAMPTZ DEFAULT now())`);
       await debugClient.unsafe(`INSERT INTO control.debug_sleeper_raw (http_status, body_len, body_preview) VALUES ($1, $2, $3)`, [response.status, text.length, text.slice(0, 4000)]);
+      try {
+        const bmResp = await fetch(String(env.PARLAY_API_BASE_URL || DEFAULT_PARLAY_API_BASE_URL).replace(/\/+$/, "") + "/bookmakers", { method: "GET", headers, signal: AbortSignal.timeout(15000) });
+        const bmText = await bmResp.text();
+        await debugClient.unsafe(`INSERT INTO control.debug_sleeper_raw (http_status, body_len, body_preview) VALUES ($1, $2, $3)`, [bmResp.status, bmText.length, bmText.slice(0, 4000)]);
+      } catch (_) {}
       await debugClient.end({ timeout: 1 });
     } catch (_) {}
   } catch (err) {
