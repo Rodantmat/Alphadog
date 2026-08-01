@@ -335,10 +335,13 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "MATRIX_BUILDER_WORKER", "service": "alphadog-v2-phase2b-certifier"},
         ]
-        # T+20 minutes past each of master's 3 daily times - 8 minutes after Part 1 starts
-        # (T+12), giving Part 1's light 3 stages real headroom before this checks freshness
-        # and claims its own full 15-minute window (until T+35).
-        cfg["triggers"] = {"crons": ["20 16 * * *", "20 20 * * *", "20 5 * * *"]}
+        # T+32 minutes past each of master's 3 daily times (widened from T+20 on 2026-08-01, after
+        # adding real time-aware pagination to Part 1: it can now genuinely use its full 13-minute
+        # wall-clock budget rather than silently dying mid-stage, and self-continuation adds a real
+        # possibility of needing a second pass. T+20 gave Part 1 (starting T+14) only 6 minutes of
+        # headroom - nowhere near enough given the new, honest worst-case duration. T+32 gives a
+        # genuine 18 minutes from Part 1's start before Matrix checks freshness.
+        cfg["triggers"] = {"crons": ["32 16 * * *", "32 20 * * *", "32 5 * * *"]}
     if worker_name == "alphadog-v2-scoring-runner-part2":
         # PART 2 of 2 (new 2026-07-29): enrichment, hp-board, scoring-engine, final-board,
         # certifier-last-pass. Verifies Part 1's output (score.prop_matrix_current) is genuinely
