@@ -219,34 +219,43 @@ async function runScoringPart2(env, input) {
 }
 
 const MAX_PAGINATION_ITERATIONS_PER_STAGE = 20;
+const SAFE_WALL_CLOCK_BUDGET_MS = 13 * 60 * 1000; // Cron Triggers have a hard 15-minute wall-clock
+// ceiling (confirmed via Cloudflare docs and multiple independent sources) - this is separate
+// from CPU time limits (cpu_ms), which exclude I/O wait entirely. Leaves a 2-minute buffer so the
+// loop stops cleanly on its own terms rather than risking an abrupt platform-level kill mid-stage.
 
 async function runScoringPart2Locked(env, input, runId, startedAt, freshness) {
+  const invocationDeadline = Date.now() + SAFE_WALL_CLOCK_BUDGET_MS;
   const stages = [];
 
   for (const s of STAGES) {
     let result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, chain_id: runId, trigger: "scoring_runner_part2" });
     let iterations = 1;
+    let stoppedForTimeBudget = false;
     while (result.ok && result.certification === "partial_continue" && iterations < MAX_PAGINATION_ITERATIONS_PER_STAGE) {
+      if (Date.now() >= invocationDeadline) { stoppedForTimeBudget = true; break; }
       result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}_p${iterations}`, chain_id: runId, trigger: "scoring_runner_part2" });
       iterations++;
     }
     result.pagination_iterations = iterations;
+    result.stopped_for_wall_clock_budget = stoppedForTimeBudget;
     stages.push(result);
-    if (!result.ok) break;
+    if (!result.ok || stoppedForTimeBudget) break;
   }
 
   const allOk = stages.every(s => s.ok);
   const lastStageOk = stages.length && stages[stages.length - 1].ok;
+  const timeBudgetStop = stages.some(s => s.stopped_for_wall_clock_budget);
 
   return {
-    ok: allOk,
+    ok: allOk && !timeBudgetStop,
     data_ok: lastStageOk,
     version: VERSION,
     worker_name: WORKER_NAME,
     run_id: runId,
     started_at: startedAt,
     finished_at: nowIso(),
-    certification: allOk ? "SCORING_FULL_RUN_PART2_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PART2_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_PART2_FAILED"),
+    certification: timeBudgetStop ? "SCORING_FULL_RUN_PART2_STOPPED_FOR_WALL_CLOCK_BUDGET_NEEDS_RETRY" : (allOk ? "SCORING_FULL_RUN_PART2_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PART2_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_PART2_FAILED")),
     part1_freshness: freshness,
     stages
   };
