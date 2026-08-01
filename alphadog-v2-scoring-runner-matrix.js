@@ -139,12 +139,22 @@ async function runMatrixStage(env, input) {
   const runId = `scoring_matrix_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
 
-  const freshness = await checkPart1Freshness(env);
+  let freshness = await checkPart1Freshness(env);
+  let freshnessRetries = 0;
+  // Rather than padding the schedule to cover Part 1's rare worst-case duration, wait and
+  // recheck here instead - this is genuinely just waiting on upstream data, not doing real work,
+  // so a few minutes of in-invocation delay is cheap and keeps the typical-day schedule tight.
+  while (!freshness.fresh && !input.skip_freshness_check && freshnessRetries < 2) {
+    await new Promise(r => setTimeout(r, 3 * 60 * 1000));
+    freshness = await checkPart1Freshness(env);
+    freshnessRetries++;
+  }
   if (!freshness.fresh && !input.skip_freshness_check) {
     return {
       ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, run_id: runId,
       started_at: startedAt, finished_at: nowIso(),
       certification: "SCORING_FULL_RUN_MATRIX_SKIPPED_PART1_NOT_FRESH", skipped: true,
+      freshness_wait_retries: freshnessRetries,
       part1_freshness: freshness, stages: []
     };
   }
