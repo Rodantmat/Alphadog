@@ -19,7 +19,7 @@
 import postgres from "postgres";
 
 const SCORING_LOCK_KEY = "alphadog_scoring_full_run_part1";
-const LOCK_HOLD_MINUTES = 15;
+const LOCK_HOLD_MINUTES = 25;
 
 async function selfCleanupAfterPhase(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
