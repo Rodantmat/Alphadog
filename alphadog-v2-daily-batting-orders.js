@@ -1,8 +1,6 @@
-// TEMPORARY PROBE v3 - compact output to avoid truncation, only returns bookmaker keys/titles
-// and candidate-probe results, not full per-bookmaker detail.
+// TEMPORARY PROBE v4 - only returns the sleeper-specific candidate probe results.
 const WORKER_NAME = "alphadog-v2-daily-batting-orders";
-const VERSION = "TEMP_PROBE_bookmakers_list_v3";
-const JOB_KEY = "daily-batting-orders";
+const VERSION = "TEMP_PROBE_bookmakers_list_v4";
 const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
 
 function nowUtc() { return new Date().toISOString(); }
@@ -24,38 +22,35 @@ export default {
       const apiKey = env.PARLAY_API_KEY ? String(env.PARLAY_API_KEY) : null;
       if (!apiKey) return jsonResponse({ ok: false, error: "no_api_key_found_in_env" });
       const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-TempBookmakersProbe/1.0", "X-API-Key": apiKey });
-      const results = {};
 
+      // 1. Sleeper's own entry in the bookmakers list, in full, to see its exact metadata
+      let sleeperEntry = null;
       try {
         const resp = await fetch(`${DEFAULT_PARLAY_API_BASE_URL}/bookmakers`, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
+        const json = await resp.json();
+        const list = Array.isArray(json) ? json : (json.bookmakers || json.data || []);
+        sleeperEntry = list.find(b => String(b.key).toLowerCase() === "sleeper") || null;
+      } catch (err) { sleeperEntry = { error: String(err && err.message ? err.message : err) }; }
+
+      // 2. Direct test: exact same request our real worker makes
+      let directTest = null;
+      try {
+        const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=sleeper&limit=10000&dfsOdds=effective`;
+        const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
         const text = await resp.text();
-        let json = null;
-        try { json = JSON.parse(text); } catch (_) {}
-        const list = Array.isArray(json) ? json : (json && Array.isArray(json.bookmakers) ? json.bookmakers : (json && Array.isArray(json.data) ? json.data : []));
-        results.bookmakers = {
-          http_status: resp.status,
-          total_count: list.length,
-          all_keys_and_titles: list.map(b => ({ key: b.key, title: b.title, status: b.status })),
-          sleeper_matches: list.filter(b => /sleeper/i.test(JSON.stringify(b)))
-        };
-      } catch (err) {
-        results.bookmakers = { error: String(err && err.message ? err.message : err) };
-      }
+        directTest = { http_status: resp.status, body_preview: text.slice(0, 500) };
+      } catch (err) { directTest = { error: String(err && err.message ? err.message : err) }; }
 
-      const candidateKeys = ["sleeper", "sleeper_dfs", "sleeperdfs", "sleeper_picks", "sleeperpicks", "dfs_sleeper"];
-      results.candidate_probes = {};
-      for (const key of candidateKeys) {
-        try {
-          const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=${encodeURIComponent(key)}&limit=5`;
-          const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(10000) });
-          const text = await resp.text();
-          results.candidate_probes[key] = { http_status: resp.status, preview: text.slice(0, 200) };
-        } catch (err) {
-          results.candidate_probes[key] = { error: String(err && err.message ? err.message : err) };
-        }
-      }
+      // 3. Same request but WITHOUT dfsOdds=effective, in case that param is the actual culprit
+      let noDfsOddsTest = null;
+      try {
+        const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=sleeper&limit=10`;
+        const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
+        const text = await resp.text();
+        noDfsOddsTest = { http_status: resp.status, body_preview: text.slice(0, 500) };
+      } catch (err) { noDfsOddsTest = { error: String(err && err.message ? err.message : err) }; }
 
-      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, results, timestamp_utc: nowUtc() });
+      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, sleeperEntry, directTest, noDfsOddsTest, timestamp_utc: nowUtc() });
     }
 
     return jsonResponse({ ok: false, status: "NOT_FOUND" }, 404);
