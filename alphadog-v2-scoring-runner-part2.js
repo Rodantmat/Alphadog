@@ -14,7 +14,7 @@
 import postgres from "postgres";
 
 const SCORING_LOCK_KEY = "alphadog_scoring_full_run_part2";
-const LOCK_HOLD_MINUTES = 15;
+const LOCK_HOLD_MINUTES = 30;
 const MAX_MATRIX_STALENESS_MINUTES = 25; // Part 1 fires 8 min before Part 2 in the schedule;
 // this generous window absorbs normal Part 1 runtime variance while still catching "Part 1
 // never ran / failed silently" cases.
