@@ -1027,6 +1027,10 @@ async function safeProbe(env, input = {}) {
   try {
     response = await fetch(endpoint.url, { method: "GET", headers, signal: AbortSignal.timeout(30000) });
     text = await response.text();
+    try {
+      await pg.unsafe(`CREATE TABLE IF NOT EXISTS control.debug_sleeper_raw (id SERIAL PRIMARY KEY, http_status INT, body_len INT, body_preview TEXT, logged_at TIMESTAMPTZ DEFAULT now())`);
+      await pg.unsafe(`INSERT INTO control.debug_sleeper_raw (http_status, body_len, body_preview) VALUES ($1, $2, $3)`, [response.status, text.length, text.slice(0, 4000)]);
+    } catch (_) {}
   } catch (err) {
     return {
       ok: true,
