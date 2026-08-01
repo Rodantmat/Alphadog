@@ -361,10 +361,12 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
         ]
-        # T+48 minutes past each of master's 3 daily times (widened from T+36 on 2026-08-01,
-        # matching Matrix's move to T+32 - Matrix's own full 15-minute window now closes at T+47,
-        # so this checks freshness against genuinely settled matrix output rather than racing it.
-        cfg["triggers"] = {"crons": ["48 16 * * *", "48 20 * * *", "48 5 * * *"]}
+        # T+26 minutes past each of master's 3 daily times. Previously widened to T+48 to cover
+        # worst-case padding, but Matrix is confirmed fast in practice (under 2 minutes typical
+        # for a 9,000-row board after the parallelization fix), and this worker now waits and
+        # rechecks Matrix's freshness itself (3 min apart, up to 2 retries) on the rare slow day,
+        # so the schedule reflects typical timing instead of padding for an exception.
+        cfg["triggers"] = {"crons": ["26 16 * * *", "26 20 * * *", "26 5 * * *"]}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
