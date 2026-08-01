@@ -267,6 +267,7 @@ async function runScoringPart2Locked(env, input, runId, startedAt, freshness) {
     started_at: startedAt,
     finished_at: nowIso(),
     certification: timeBudgetStop ? "SCORING_FULL_RUN_PART2_STOPPED_FOR_WALL_CLOCK_BUDGET_NEEDS_RETRY" : (allOk ? "SCORING_FULL_RUN_PART2_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PART2_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_PART2_FAILED")),
+    stopped_for_wall_clock_budget_any_stage: timeBudgetStop,
     part1_freshness: freshness,
     stages
   };
