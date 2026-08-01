@@ -1,74 +1,35 @@
+import postgres from "postgres";
+
+// TEMPORARY PROBE - overwriting a confirmed dummy/unused worker (alphadog-v2-daily-batting-orders,
+// version "dummy-workers-v0.1", never wired into any real pipeline stage) purely to safely check
+// the ParlayAPI /v1/bookmakers list, without touching the real, live parlay-sleeper-board worker
+// at all. To be reverted back to the original dummy stub after use.
 const WORKER_NAME = "alphadog-v2-daily-batting-orders";
-const VERSION = "alphadog-v2-dummy-workers-v0.1";
+const VERSION = "TEMP_PROBE_bookmakers_list_v1";
 const JOB_KEY = "daily-batting-orders";
+const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
-const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
-const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
-
-function nowUtc() {
-  return new Date().toISOString();
-}
-
+function nowUtc() { return new Date().toISOString(); }
 function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
+  return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+}
+function pgClient(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false, connect_timeout: 8 }); }
+
+async function getApiKey(env) {
+  if (env.HYPERDRIVE) {
+    const client = pgClient(env);
+    try {
+      const rows = await client.unsafe("SELECT credential_value_encrypted FROM config.external_credentials WHERE credential_key='parlay_api_key'");
+      if (rows && rows[0] && rows[0].credential_value_encrypted) {
+        const parsed = JSON.parse(rows[0].credential_value_encrypted);
+        if (parsed && parsed.password) return String(parsed.password);
+      }
+    } catch (_) {
+    } finally {
+      await client.end({ timeout: 1 });
     }
-  });
-}
-
-function bindingPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = Boolean(env && env[name]);
-  return out;
-}
-
-function varPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
-  return out;
-}
-
-function allTrue(obj) {
-  return Object.values(obj).every(Boolean);
-}
-
-function baseIdentity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  const vars = varPresence(env, EXPECTED_VARS);
-  const secrets = varPresence(env, REQUIRED_SECRETS);
-
-  return {
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    status: "DUMMY_READY",
-    timestamp_utc: nowUtc(),
-    phase: "alphadog-v2-config-bootstrap",
-    notes: [
-      "Dummy worker only.",
-      "No mining, scoring, external API calls, or production writes.",
-      "Use /health and /diagnostic to verify bindings/secrets/vars."
-    ],
-    binding_summary: {
-      required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars),
-      required_secrets_present: allTrue(secrets)
-    }
-  };
-}
-
-async function readJsonSafe(request) {
-  try {
-    return await request.json();
-  } catch {
-    return {};
   }
+  return env.PARLAY_API_KEY ? String(env.PARLAY_API_KEY) : null;
 }
 
 export default {
@@ -77,89 +38,47 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
 
-    if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
-    }
-
-    if (method === "GET" && path === "/health") {
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
-    }
-
-    if (method === "POST" && path === "/diagnostic") {
-      const input = await readJsonSafe(request);
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        diagnostics: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+    if (method === "GET" && (path === "/" || path === "/health")) {
+      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "TEMP_PROBE_READY", note: "Temporary bookmakers-list probe. Does not touch the real Sleeper worker." });
     }
 
     if (method === "POST" && path === "/run") {
-      const input = await readJsonSafe(request);
+      const apiKey = await getApiKey(env);
+      if (!apiKey) {
+        return jsonResponse({ ok: false, error: "no_api_key_found", timestamp_utc: nowUtc() });
+      }
+      const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-TempBookmakersProbe/1.0", "X-API-Key": apiKey });
+      const results = {};
 
-      return jsonResponse({
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: input.job_key || JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "DUMMY_READY",
-        certification: "DUMMY_ONLY_NOT_REAL_DATA",
-        rows_read: 0,
-        rows_written: 0,
-        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
-        block_downstream_reason: null,
-        output_json: {
-          dummy: true,
-          slate_date: input.slate_date || null,
-          mode: input.mode || null,
-          received_input_json: input.input_json || null
-        },
-        timestamp_utc: nowUtc(),
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      // 1. Fetch the canonical bookmakers list, as the API's own error message directed.
+      try {
+        const resp = await fetch(`${DEFAULT_PARLAY_API_BASE_URL}/bookmakers`, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
+        const text = await resp.text();
+        let json = null;
+        try { json = JSON.parse(text); } catch (_) {}
+        results.bookmakers_list = { http_status: resp.status, body_len: text.length, parsed: json, raw_preview: json ? null : text.slice(0, 2000) };
+      } catch (err) {
+        results.bookmakers_list = { error: String(err && err.message ? err.message : err) };
+      }
+
+      // 2. Try a handful of likely alternate keys for Sleeper directly against the real props
+      //    endpoint, in case the rename is simple (e.g. sleeper_dfs) rather than a full removal.
+      const candidateKeys = ["sleeper", "sleeper_dfs", "sleeperdfs", "sleeper_picks", "sleeperpicks", "dfs_sleeper"];
+      results.candidate_probes = {};
+      for (const key of candidateKeys) {
+        try {
+          const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=${encodeURIComponent(key)}&limit=5`;
+          const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(10000) });
+          const text = await resp.text();
+          results.candidate_probes[key] = { http_status: resp.status, body_len: text.length, preview: text.slice(0, 300) };
+        } catch (err) {
+          results.candidate_probes[key] = { error: String(err && err.message ? err.message : err) };
+        }
+      }
+
+      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, results, timestamp_utc: nowUtc() });
     }
 
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ ok: false, status: "NOT_FOUND", allowed_routes: ["GET /health", "POST /run"] }, 404);
   }
 };
