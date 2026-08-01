@@ -472,17 +472,7 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
           WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 80 THEN 'BIN_ELITE'
           WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 70 THEN 'BIN_STRONG'
           WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 60 THEN 'BIN_QUALIFIED'
-          ELSE 'BIN_LOW' END,
-      calibration_json = COALESCE(h.calibration_json::jsonb, '{}'::jsonb) || jsonb_build_object(
-          'shared_threshold_alias_applied', true,
-          'shared_threshold_alias_target', ${targetKeySide},
-          'hp_before_alias_sync', h.estimated_hit_probability_0_100::numeric,
-          'hp_after_alias_sync', (
-            SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
-            WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-              AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
-          )
-        )
+          ELSE 'BIN_LOW' END
       WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${aliasProp} AND h.line_value = ${aliasLine} AND h.selected_side = ${aliasSide}
         AND EXISTS (
           SELECT 1 FROM score.hp_board_current s
@@ -492,6 +482,12 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
     const changed = res.count || 0;
     totalClamped += changed;
     results.push({ alias: aliasKeySide, target: targetKeySide, rows_synced: changed });
+    if (changed > 0) {
+      await pgClient.unsafe(
+        `UPDATE score.hp_board_current SET calibration_json = COALESCE(calibration_json, '{}'::jsonb) || jsonb_build_object('shared_threshold_alias_applied', true, 'shared_threshold_alias_target', $1::text) WHERE hp_board_batch_id = $2 AND canonical_prop_key = $3 AND line_value = $4 AND selected_side = $5`,
+        [targetKeySide, hpBatchId, aliasProp, aliasLine, aliasSide]
+      ).catch(() => {});
+    }
   }
   for (const [subsetKey, supersetKeyOrArray] of Object.entries(constraints)) {
     const [subProp, subLineRaw, subSide] = subsetKey.split("|");
