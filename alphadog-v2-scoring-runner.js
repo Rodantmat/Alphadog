@@ -189,9 +189,15 @@ async function runScoringFullRun(env, input) {
 }
 
 const MAX_PAGINATION_ITERATIONS_PER_STAGE = 20; // safety bound: 20 * 500-per-invocation = 10,000 rows headroom
+const SAFE_WALL_CLOCK_BUDGET_MS = 13 * 60 * 1000; // Cron Triggers have a hard 15-minute wall-clock
+// ceiling - leaves a 2-minute buffer so the loop stops cleanly on its own terms rather than
+// risking an abrupt platform-level kill mid-stage (confirmed root cause of the recurring pattern
+// where hitter mining completed but pitcher mining got squeezed or killed on a heavy board).
 
 async function runScoringFullRunLocked(env, input, runId, startedAt) {
+  const invocationDeadline = Date.now() + SAFE_WALL_CLOCK_BUDGET_MS;
   const stages = [];
+  let stoppedForTimeBudget = false;
 
   for (const s of STAGES) {
     let result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, chain_id: runId, trigger: "scoring_runner" });
@@ -201,26 +207,29 @@ async function runScoringFullRunLocked(env, input, runId, startedAt) {
     // batch_id-exclusion filter makes real forward progress, instead of silently moving on with the
     // tail of the data left stale/unenriched.
     while (result.ok && result.certification === "partial_continue" && iterations < MAX_PAGINATION_ITERATIONS_PER_STAGE) {
+      if (Date.now() >= invocationDeadline) { stoppedForTimeBudget = true; break; }
       result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}_p${iterations}`, chain_id: runId, trigger: "scoring_runner" });
       iterations++;
     }
     result.pagination_iterations = iterations;
     stages.push(result);
-    if (!result.ok) break; // every later stage reads what this one wrote - do not proceed on real failure
+    if (!result.ok || stoppedForTimeBudget) break; // every later stage reads what this one wrote - do not proceed on real failure
+    if (Date.now() >= invocationDeadline) { stoppedForTimeBudget = true; break; }
   }
 
   const allOk = stages.every(s => s.ok);
   const lastStageOk = stages.length && stages[stages.length - 1].ok;
 
   return {
-    ok: allOk,
+    ok: allOk && !stoppedForTimeBudget,
     data_ok: lastStageOk,
     version: VERSION,
     worker_name: WORKER_NAME,
     run_id: runId,
     started_at: startedAt,
     finished_at: nowIso(),
-    certification: allOk ? "SCORING_FULL_RUN_PART1_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PART1_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_PART1_FAILED"),
+    certification: stoppedForTimeBudget ? "SCORING_FULL_RUN_PART1_STOPPED_FOR_WALL_CLOCK_BUDGET_NEEDS_RETRY" : (allOk ? "SCORING_FULL_RUN_PART1_COMPLETE" : (lastStageOk ? "SCORING_FULL_RUN_PART1_PARTIAL_NONCRITICAL_FAILURE" : "SCORING_FULL_RUN_PART1_FAILED")),
+    stopped_for_wall_clock_budget: stoppedForTimeBudget,
     stages
   };
 }
