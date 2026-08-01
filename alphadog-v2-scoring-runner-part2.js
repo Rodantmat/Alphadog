@@ -224,6 +224,17 @@ const SAFE_WALL_CLOCK_BUDGET_MS = 13 * 60 * 1000; // Cron Triggers have a hard 1
 // from CPU time limits (cpu_ms), which exclude I/O wait entirely. Leaves a 2-minute buffer so the
 // loop stops cleanly on its own terms rather than risking an abrupt platform-level kill mid-stage.
 
+async function selfContinueIfNeeded(env, result, retryCount) {
+  if (!result.stopped_for_wall_clock_budget_any_stage || retryCount >= 2) return;
+  try {
+    await fetch("https://internal.scoring-runner-part2/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ trigger: "self_continuation", self_continuation_retry_count: retryCount + 1 })
+    }).catch(() => {});
+  } catch (_) {}
+}
+
 async function runScoringPart2Locked(env, input, runId, startedAt, freshness) {
   const invocationDeadline = Date.now() + SAFE_WALL_CLOCK_BUDGET_MS;
   const stages = [];
