@@ -275,7 +275,7 @@ async function runScoringPart2Locked(env, input, runId, startedAt, freshness) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScoringPart2(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
+    ctx.waitUntil(runScoringPart2(env, { trigger: "cron", cron: event.cron }).then(r => selfContinueIfNeeded(env, r, 0)).finally(() => selfCleanupAfterPhase(env)));
   },
 
   async fetch(request, env, ctx) {
@@ -296,8 +296,9 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
+      const retryCount = Number(input.self_continuation_retry_count || 0);
       const workPromise = runScoringPart2(env, input);
-      ctx.waitUntil(workPromise.catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
+      ctx.waitUntil(workPromise.then(r => selfContinueIfNeeded(env, r, retryCount)).catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
       const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
