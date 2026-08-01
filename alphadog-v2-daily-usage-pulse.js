@@ -434,7 +434,7 @@ async function runUmpireContext(pg, input) {
   const batchId = input && input.chain_id ? `daily_umpire_batch_${input.chain_id}` : rid("daily_umpire_batch");
   const sourceSnapshotAt = nowUtc();
   const nowIsoForWindow = new Date().toISOString();
-  const realBoardDateRows = await pg.unsafe(`SELECT DISTINCT official_date::text AS official_date FROM score.board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > $1`, [nowIsoForWindow]);
+  const realBoardDateRows = await pg.unsafe(`SELECT DISTINCT official_date::text AS official_date FROM score.board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL`);
   const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
   const retention = retentionWindowPt(realBoardDates);
   let batchStarted = false;
