@@ -6,7 +6,7 @@ const JOB_KEY = "prop-matrix-builder";
 const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.2.0-postgres-rewire";
 const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.3.0-postgres-rewire";
 
-const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo"]);
+const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo", "pitches_thrown"]);
 
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8, connection: { statement_timeout: 240000, idle_in_transaction_session_timeout: 240000 } }); }
 function jsonResponse(body, status = 200) {
