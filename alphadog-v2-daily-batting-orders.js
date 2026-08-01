@@ -1,10 +1,7 @@
-// TEMPORARY PROBE - overwriting a confirmed dummy/unused worker (alphadog-v2-daily-batting-orders,
-// version "dummy-workers-v0.1", never wired into any real pipeline stage) purely to safely check
-// the ParlayAPI /v1/bookmakers list, without touching the real, live parlay-sleeper-board worker
-// at all. To be reverted back to the original dummy stub after use. No postgres import (this
-// worker's config lacks nodejs_compat) - uses the env secret directly instead.
+// TEMPORARY PROBE v3 - compact output to avoid truncation, only returns bookmaker keys/titles
+// and candidate-probe results, not full per-bookmaker detail.
 const WORKER_NAME = "alphadog-v2-daily-batting-orders";
-const VERSION = "TEMP_PROBE_bookmakers_list_v2";
+const VERSION = "TEMP_PROBE_bookmakers_list_v3";
 const JOB_KEY = "daily-batting-orders";
 const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
 
@@ -20,14 +17,12 @@ export default {
     const method = request.method.toUpperCase();
 
     if (method === "GET" && (path === "/" || path === "/health")) {
-      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "TEMP_PROBE_READY", note: "Temporary bookmakers-list probe. Does not touch the real Sleeper worker.", api_key_present: !!env.PARLAY_API_KEY });
+      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "TEMP_PROBE_READY", api_key_present: !!env.PARLAY_API_KEY });
     }
 
     if (method === "POST" && path === "/run") {
       const apiKey = env.PARLAY_API_KEY ? String(env.PARLAY_API_KEY) : null;
-      if (!apiKey) {
-        return jsonResponse({ ok: false, error: "no_api_key_found_in_env", timestamp_utc: nowUtc() });
-      }
+      if (!apiKey) return jsonResponse({ ok: false, error: "no_api_key_found_in_env" });
       const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-TempBookmakersProbe/1.0", "X-API-Key": apiKey });
       const results = {};
 
@@ -36,9 +31,15 @@ export default {
         const text = await resp.text();
         let json = null;
         try { json = JSON.parse(text); } catch (_) {}
-        results.bookmakers_list = { http_status: resp.status, body_len: text.length, parsed: json, raw_preview: json ? null : text.slice(0, 2000) };
+        const list = Array.isArray(json) ? json : (json && Array.isArray(json.bookmakers) ? json.bookmakers : (json && Array.isArray(json.data) ? json.data : []));
+        results.bookmakers = {
+          http_status: resp.status,
+          total_count: list.length,
+          all_keys_and_titles: list.map(b => ({ key: b.key, title: b.title, status: b.status })),
+          sleeper_matches: list.filter(b => /sleeper/i.test(JSON.stringify(b)))
+        };
       } catch (err) {
-        results.bookmakers_list = { error: String(err && err.message ? err.message : err) };
+        results.bookmakers = { error: String(err && err.message ? err.message : err) };
       }
 
       const candidateKeys = ["sleeper", "sleeper_dfs", "sleeperdfs", "sleeper_picks", "sleeperpicks", "dfs_sleeper"];
@@ -48,7 +49,7 @@ export default {
           const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=${encodeURIComponent(key)}&limit=5`;
           const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(10000) });
           const text = await resp.text();
-          results.candidate_probes[key] = { http_status: resp.status, body_len: text.length, preview: text.slice(0, 300) };
+          results.candidate_probes[key] = { http_status: resp.status, preview: text.slice(0, 200) };
         } catch (err) {
           results.candidate_probes[key] = { error: String(err && err.message ? err.message : err) };
         }
@@ -57,6 +58,6 @@ export default {
       return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, results, timestamp_utc: nowUtc() });
     }
 
-    return jsonResponse({ ok: false, status: "NOT_FOUND", allowed_routes: ["GET /health", "POST /run"] }, 404);
+    return jsonResponse({ ok: false, status: "NOT_FOUND" }, 404);
   }
 };
