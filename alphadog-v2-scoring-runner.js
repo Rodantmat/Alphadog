@@ -234,9 +234,20 @@ async function runScoringFullRunLocked(env, input, runId, startedAt) {
   };
 }
 
+async function selfContinueIfNeeded(env, result, retryCount) {
+  if (!result.stopped_for_wall_clock_budget || retryCount >= 2) return;
+  try {
+    await fetch("https://alphadog-v2-scoring-runner.rodolfoaamattos.workers.dev/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ trigger: "self_continuation", self_continuation_retry_count: retryCount + 1 })
+    }).catch(() => {});
+  } catch (_) {}
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScoringFullRun(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
+    ctx.waitUntil(runScoringFullRun(env, { trigger: "cron", cron: event.cron }).then(r => selfContinueIfNeeded(env, r, 0)).finally(() => selfCleanupAfterPhase(env)));
   },
 
   async fetch(request, env, ctx) {
@@ -256,8 +267,9 @@ export default {
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
+      const retryCount = Number(input.self_continuation_retry_count || 0);
       const workPromise = runScoringFullRun(env, input);
-      ctx.waitUntil(workPromise.catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
+      ctx.waitUntil(workPromise.then(r => selfContinueIfNeeded(env, r, retryCount)).catch(() => {}).finally(() => selfCleanupAfterPhase(env)));
       const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
