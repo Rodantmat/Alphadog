@@ -157,6 +157,7 @@ async function fetchHpFinalBoardCandidateRows(pgClient, sourceEngineBatchId, pag
       WHERE h.hp_board_batch_id = ${hpSource.hp_board_batch_id}
         AND h.source_engine_batch_id = ${sourceEngineBatchId}
         AND COALESCE(h.blocker_count, 0) = 0
+        AND h.canonical_prop_key <> 'pitches_thrown'
         AND h.score_0_100 IS NOT NULL AND h.selected_side IS NOT NULL AND h.line_value IS NOT NULL
         AND h.player_name IS NOT NULL AND h.canonical_prop_key IS NOT NULL AND h.source_key IS NOT NULL AND h.mlb_player_id IS NOT NULL
       ORDER BY COALESCE(h.hp_sort_0_100, (0.72 * COALESCE(h.estimated_hit_probability_0_100,0)) + (0.28 * COALESCE(h.score_0_100,0))) DESC,
