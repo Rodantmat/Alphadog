@@ -193,7 +193,7 @@ function buildDerivedLineupPreviewRows(gamePk, calendar, side, derivedCandidates
       player_name: player.player_name || null,
       lineup_slot: intOrNull(player.lineup_slot),
       batting_order_code: null,
-      bat_side: null,
+      bat_side: player.bat_side || null,
       active_position: null,
       lineup_status: "derived_likely_lineup",
       source_endpoint: `internal:hitter_game_logs:${player.source_game_date || "unknown"}`,
