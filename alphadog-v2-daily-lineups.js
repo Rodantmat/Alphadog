@@ -167,8 +167,9 @@ async function deriveLineupFromRecentGame(pg, teamId, beforeDate, sourceBase, us
   if (!side) return [];
   const validation = validateSide(side, box.json.teams[side]);
   if (validation.lineup_status !== "posted_lineup" || !validation.mapped_players.length) return [];
-  return validation.mapped_players.map(p => ({
-    player_id: p.player_id, player_name: p.player_name, lineup_slot: p.lineup_slot, source_game_date: recentGame.official_date
+  const backfilledPlayers = await backfillBatSide(validation.mapped_players, sourceBase, userAgent);
+  return backfilledPlayers.map(p => ({
+    player_id: p.player_id, player_name: p.player_name, lineup_slot: p.lineup_slot, source_game_date: recentGame.official_date, bat_side: p.bat_side || null
   }));
 }
 
