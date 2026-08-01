@@ -11,7 +11,7 @@ const BOARD_INVENTORY_PROMOTION_STATUS = "promoted_board_inventory_only";
 // Safe public ParlayAPI probe defaults. These are endpoint/header names only, never secret values.
 // They are intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably.
 const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
-const DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT = "/sports/baseball_mlb/props?bookmakers=sleeper&limit=10000&dfsOdds=effective";
+const DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT = "/sports/baseball_mlb/props?limit=10000&dfsOdds=effective";
 
 // Source-proven Parlay/Sleeper market keys observed in live v0.1.3/v0.2.0 probes plus prior recovery audit.
 // These are used for stage-only canonical mapping audit. They do not write REF_DB aliases and do not enable promotion.
