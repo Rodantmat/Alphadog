@@ -551,7 +551,7 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
         calibration_json = COALESCE(h.calibration_json::jsonb, '{}'::jsonb) || jsonb_build_object(
             'subset_constraint_clamp_applied', true,
             'subset_constraint_clamped_to_superset', ${t.key},
-            'hp_before_subset_clamp', h.estimated_hit_probability_0_100,
+            'hp_before_subset_clamp', h.estimated_hit_probability_0_100::numeric,
             'hp_after_subset_clamp', (
               SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
               WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
