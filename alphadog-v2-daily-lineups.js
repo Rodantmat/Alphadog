@@ -978,7 +978,7 @@ async function runSourceProbe(env, input) {
     }
 
     const allTeamIdsToday = uniqInts(sourceRows.flatMap(r => [r.home_team_id, r.away_team_id]).filter(Boolean));
-    const derivedCatcherMap = await batchDeriveCatchers(pg, allTeamIdsToday, todayUtc);
+    const derivedCatcherMap = await batchDeriveCatchers(pg, allTeamIdsToday, todayUtc, sourceBase, userAgent);
     const derivedCatcherNameMap = await batchPlayerNames(pg, [...derivedCatcherMap.values()].map(d => d.player_id));
 
     const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
