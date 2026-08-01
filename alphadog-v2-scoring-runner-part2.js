@@ -177,7 +177,13 @@ async function runScoringPart2(env, input) {
   // Dependability check: only proceed if Part 1 genuinely finished recently. This is what keeps
   // the cascade strictly ordered across two separate scheduled workers, same as it was within
   // one worker before.
-  const freshness = await checkPart1Freshness(env);
+  let freshness = await checkPart1Freshness(env);
+  let freshnessRetries = 0;
+  while (!freshness.fresh && !input.skip_freshness_check && freshnessRetries < 2) {
+    await new Promise(r => setTimeout(r, 3 * 60 * 1000));
+    freshness = await checkPart1Freshness(env);
+    freshnessRetries++;
+  }
   if (!freshness.fresh && !input.skip_freshness_check) {
     return {
       ok: true,
@@ -189,6 +195,7 @@ async function runScoringPart2(env, input) {
       finished_at: nowIso(),
       certification: "SCORING_FULL_RUN_PART2_SKIPPED_PART1_NOT_FRESH",
       skipped: true,
+      freshness_wait_retries: freshnessRetries,
       part1_freshness: freshness,
       stages: []
     };
