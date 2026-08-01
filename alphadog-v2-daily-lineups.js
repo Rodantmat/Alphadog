@@ -317,25 +317,30 @@ async function writeCatcherContext(pg, batchId, gamePk, calendar, side, validati
   return row;
 }
 
-async function batchDeriveCatchers(pg, teamIds, beforeDate) {
+async function batchDeriveCatchers(pg, teamIds, beforeDate, sourceBase, userAgent) {
   const map = new Map();
   if (!teamIds.length) return map;
-  const lookbackStart = (() => {
-    const d = new Date(`${beforeDate}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() - 20);
-    return d.toISOString().slice(0, 10);
-  })();
-  const teamIdStrs = teamIds.map(String);
-  const rows = await pg`SELECT team_id, game_date, player_id, pa FROM stats_hitter.game_logs
-    WHERE played_catcher_flag=1 AND game_date >= ${lookbackStart} AND game_date < ${beforeDate} AND regexp_replace(team_id, '^mlb_', '') IN ${pg(teamIdStrs)}`;
-  for (const r of rows) {
-    const key = String(r.team_id).replace(/^mlb_/, "");
-    const existing = map.get(key);
-    const gameDateStr = r.game_date instanceof Date ? r.game_date.toISOString().slice(0, 10) : String(r.game_date).slice(0, 10);
-    if (!existing || gameDateStr > existing.as_of_game_date || (gameDateStr === existing.as_of_game_date && Number(r.pa || 0) > Number(existing.pa || 0))) {
-      map.set(key, { player_id: Number(r.player_id), as_of_game_date: gameDateStr, pa: Number(r.pa || 0) });
-    }
-  }
+  // REAL FIX (2026-08-01): played_catcher_flag is structurally impossible to populate from
+  // stats_hitter.game_logs (mined via /people/{id}/stats?stats=gameLog, a season-stats-split
+  // endpoint with no per-game fielding-position data - confirmed live: 0 of 33,836 rows ever
+  // have this set, same root-cause class as the earlier pitches/batting_order gaps). Replaced
+  // with a direct boxscore lookup on each team's most recent completed game, reusing the exact
+  // pattern already proven correct for lineup derivation.
+  await Promise.all(teamIds.map(async (teamId) => {
+    const recentGame = await findMostRecentCompletedGamePk(pg, teamId, beforeDate);
+    if (!recentGame || !recentGame.game_pk) return;
+    const boxscoreUrl = buildMlbUrl(sourceBase, `/api/v1/game/${recentGame.game_pk}/boxscore`);
+    const box = await fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES);
+    if (!box.ok || !box.json || !box.json.teams) return;
+    const homeId = intOrNull(box.json.teams.home && box.json.teams.home.team && box.json.teams.home.team.id);
+    const awayId = intOrNull(box.json.teams.away && box.json.teams.away.team && box.json.teams.away.team.id);
+    const side = Number(teamId) === homeId ? "home" : Number(teamId) === awayId ? "away" : null;
+    if (!side) return;
+    const validation = validateSide(side, box.json.teams[side]);
+    const catcher = (validation.mapped_players || []).find(p => String(p.position) === "2");
+    if (!catcher) return;
+    map.set(String(teamId), { player_id: catcher.player_id, as_of_game_date: recentGame.official_date, player_name: catcher.player_name || null });
+  }));
   return map;
 }
 async function batchPlayerNames(pg, playerIds) {
