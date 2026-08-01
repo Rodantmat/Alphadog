@@ -30,6 +30,15 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
   const t = thresholds || {};
   switch (factorKey) {
     case "weather_temp_altitude_pressure": {
+      // altitude_ft is intentionally NEVER wired in buildLegContextReal (confirmed via direct
+      // correlation audit 2026-08-01) - park_factors' 5-year historical regression already
+      // empirically captures each venue's altitude effect (altitude directly affects actual
+      // runs/HR scored there over years of real games at that venue). Wiring a separate,
+      // explicit altitude term here would double-count the same physical effect through two
+      // channels for high-altitude venues (Coors Field etc). This term stays structurally zero
+      // by design - do not "fix" this by populating altitude_ft without first removing or
+      // properly decomposing the altitude signal out of park_factors, or the double-count bug
+      // this comment exists to prevent will be reintroduced.
       if (ctx.temp_f == null && ctx.altitude_ft == null && ctx.pressure_drop_inhg == null) return null;
       const tempDelta = (ctx.temp_f ?? 70) - 70;
       const shiftFt = (tempDelta * (a || 0)) + (((ctx.altitude_ft ?? 0) / 1000) * (b || 0)) + ((ctx.pressure_drop_inhg ?? 0) * (c || 0));
