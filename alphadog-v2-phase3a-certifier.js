@@ -5,7 +5,7 @@ const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
 const JOB_KEY = "scoring-engine-shadow-v1";
 const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.3.0-postgres-rewire";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
-const MAX_LEGS_PER_INVOCATION = 50000;
+const MAX_LEGS_PER_INVOCATION = 2500;
 
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8, connection: { statement_timeout: 240000, idle_in_transaction_session_timeout: 240000 } }); }
 function nowUtc() { return new Date().toISOString(); }
