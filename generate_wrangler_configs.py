@@ -158,7 +158,6 @@ def make_config(worker_name, include_services=False):
         "alphadog-v2-base-baseline",
         "alphadog-v2-base-game-calendar",
         "alphadog-v2-base-certifier-postgres",
-        "alphadog-v2-daily-batting-orders",
         "alphadog-v2-prizepicks-github-board",
         "alphadog-v2-parlay-sleeper-board",
         "alphadog-v2-parlay-underdog-board",
