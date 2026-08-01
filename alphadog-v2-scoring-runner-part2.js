@@ -227,7 +227,7 @@ const SAFE_WALL_CLOCK_BUDGET_MS = 13 * 60 * 1000; // Cron Triggers have a hard 1
 async function selfContinueIfNeeded(env, result, retryCount) {
   if (!result.stopped_for_wall_clock_budget_any_stage || retryCount >= 2) return;
   try {
-    await fetch("https://internal.scoring-runner-part2/run", {
+    await fetch("https://alphadog-v2-scoring-runner-part2.rodolfoaamattos.workers.dev/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ trigger: "self_continuation", self_continuation_retry_count: retryCount + 1 })
