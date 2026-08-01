@@ -1,32 +1,74 @@
-import postgres from "postgres";
-
-// TEMPORARY PROBE v6 - now with HYPERDRIVE access to use the REAL database-stored API key
-// (config.external_credentials), not the stale worker-secret fallback that returned 401
-// INVALID_KEY on every prior test. This is the key that matters - what the real, live
-// parlay-sleeper-board worker actually uses and what got the genuine 400 UNKNOWN_BOOKMAKER.
 const WORKER_NAME = "alphadog-v2-daily-batting-orders";
-const VERSION = "TEMP_PROBE_v6_real_key";
-const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
+const VERSION = "alphadog-v2-dummy-workers-v0.1";
+const JOB_KEY = "daily-batting-orders";
 
-function nowUtc() { return new Date().toISOString(); }
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
+const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
+const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
+
+function nowUtc() {
+  return new Date().toISOString();
 }
 
-async function getRealApiKey(env) {
-  if (!env.HYPERDRIVE) return null;
-  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
-  try {
-    const rows = await client.unsafe("SELECT credential_value_encrypted FROM config.external_credentials WHERE credential_key='parlay_api_key'");
-    if (rows && rows[0] && rows[0].credential_value_encrypted) {
-      const parsed = JSON.parse(rows[0].credential_value_encrypted);
-      if (parsed && parsed.password) return String(parsed.password);
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body, null, 2), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
     }
-  } catch (_) {
-  } finally {
-    await client.end({ timeout: 1 });
+  });
+}
+
+function bindingPresence(env, names) {
+  const out = {};
+  for (const name of names) out[name] = Boolean(env && env[name]);
+  return out;
+}
+
+function varPresence(env, names) {
+  const out = {};
+  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
+  return out;
+}
+
+function allTrue(obj) {
+  return Object.values(obj).every(Boolean);
+}
+
+function baseIdentity(env) {
+  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+  const vars = varPresence(env, EXPECTED_VARS);
+  const secrets = varPresence(env, REQUIRED_SECRETS);
+
+  return {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    status: "DUMMY_READY",
+    timestamp_utc: nowUtc(),
+    phase: "alphadog-v2-config-bootstrap",
+    notes: [
+      "Dummy worker only.",
+      "No mining, scoring, external API calls, or production writes.",
+      "Use /health and /diagnostic to verify bindings/secrets/vars."
+    ],
+    binding_summary: {
+      required_db_bindings_present: allTrue(db),
+      expected_vars_present: allTrue(vars),
+      required_secrets_present: allTrue(secrets)
+    }
+  };
+}
+
+async function readJsonSafe(request) {
+  try {
+    return await request.json();
+  } catch {
+    return {};
   }
-  return null;
 }
 
 export default {
@@ -35,37 +77,89 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
 
-    if (method === "GET" && (path === "/" || path === "/health")) {
-      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, hyperdrive_present: !!env.HYPERDRIVE });
+    if (method === "GET" && path === "/") {
+      return jsonResponse(baseIdentity(env));
+    }
+
+    if (method === "GET" && path === "/health") {
+      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+      const vars = varPresence(env, EXPECTED_VARS);
+      const secrets = varPresence(env, REQUIRED_SECRETS);
+
+      return jsonResponse({
+        ...baseIdentity(env),
+        route: "/health",
+        checks: {
+          db_bindings: db,
+          vars: vars,
+          secrets_present_only: secrets
+        },
+        safe_secret_note: "Secret values are intentionally never printed."
+      });
+    }
+
+    if (method === "POST" && path === "/diagnostic") {
+      const input = await readJsonSafe(request);
+      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+      const vars = varPresence(env, EXPECTED_VARS);
+      const secrets = varPresence(env, REQUIRED_SECRETS);
+
+      return jsonResponse({
+        ...baseIdentity(env),
+        route: "/diagnostic",
+        input_echo_safe: {
+          request_id: input.request_id || null,
+          chain_id: input.chain_id || null,
+          job_key: input.job_key || null,
+          mode: input.mode || null
+        },
+        diagnostics: {
+          db_bindings: db,
+          vars: vars,
+          secrets_present_only: secrets
+        },
+        writes_performed: 0,
+        external_calls_performed: 0
+      });
     }
 
     if (method === "POST" && path === "/run") {
-      const apiKey = await getRealApiKey(env);
-      if (!apiKey) return jsonResponse({ ok: false, error: "could_not_load_real_db_api_key" });
-      const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-TempProbe/1.0", "X-API-Key": apiKey });
+      const input = await readJsonSafe(request);
 
-      let noFilterTest = null;
-      try {
-        const r = await fetch(`${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?limit=3000`, { headers, signal: AbortSignal.timeout(20000) });
-        const text = await r.text();
-        let json = null;
-        try { json = JSON.parse(text); } catch (_) {}
-        const rows = Array.isArray(json) ? json : [];
-        const bookmakerCounts = {};
-        for (const row of rows) { const bm = row && row.bookmaker; if (bm) bookmakerCounts[bm] = (bookmakerCounts[bm] || 0) + 1; }
-        noFilterTest = { http_status: r.status, total_rows: rows.length, bookmaker_counts: bookmakerCounts, preview_if_error: rows.length ? undefined : text.slice(0, 500) };
-      } catch (err) { noFilterTest = { error: String(err && err.message ? err.message : err) }; }
-
-      let filterTest = null;
-      try {
-        const r = await fetch(`${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=sleeper&limit=10`, { headers, signal: AbortSignal.timeout(15000) });
-        const text = await r.text();
-        filterTest = { http_status: r.status, preview: text.slice(0, 500) };
-      } catch (err) { filterTest = { error: String(err && err.message ? err.message : err) }; }
-
-      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, key_source: "real_database_key", noFilterTest, filterTest, timestamp_utc: nowUtc() });
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: input.job_key || JOB_KEY,
+        request_id: input.request_id || null,
+        chain_id: input.chain_id || null,
+        status: "DUMMY_READY",
+        certification: "DUMMY_ONLY_NOT_REAL_DATA",
+        rows_read: 0,
+        rows_written: 0,
+        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
+        block_downstream_reason: null,
+        output_json: {
+          dummy: true,
+          slate_date: input.slate_date || null,
+          mode: input.mode || null,
+          received_input_json: input.input_json || null
+        },
+        timestamp_utc: nowUtc(),
+        writes_performed: 0,
+        external_calls_performed: 0
+      });
     }
 
-    return jsonResponse({ ok: false, status: "NOT_FOUND" }, 404);
+    return jsonResponse({
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      status: "NOT_FOUND",
+      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
+      timestamp_utc: nowUtc()
+    }, 404);
   }
 };
