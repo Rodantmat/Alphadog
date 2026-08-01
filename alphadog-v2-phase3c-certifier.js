@@ -547,18 +547,7 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
             WHEN (SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key) >= 80 THEN 'BIN_ELITE'
             WHEN (SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key) >= 70 THEN 'BIN_STRONG'
             WHEN (SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key) >= 60 THEN 'BIN_QUALIFIED'
-            ELSE 'BIN_LOW' END,
-        calibration_json = COALESCE(h.calibration_json::jsonb, '{}'::jsonb) || jsonb_build_object(
-            'subset_constraint_clamp_applied', true,
-            'subset_constraint_clamped_to_superset', ${t.key},
-            'hp_before_subset_clamp', h.estimated_hit_probability_0_100::numeric,
-            'hp_after_subset_clamp', (
-              SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
-              WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-                AND s.canonical_prop_key = ${t.prop} AND s.line_value = ${t.line} AND s.selected_side = ${t.side} AND s.source_key = h.source_key
-            ),
-            'subset_clamp_reason', 'This prop is logically a subset of the superset prop it was clamped to (e.g. hits is a subset of total_bases - any hit guarantees at least 1 total base), so its probability cannot exceed the superset''s.'
-          )
+            ELSE 'BIN_LOW' END
         WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${subProp} AND h.line_value = ${subLine} AND h.selected_side = ${subSide}
           AND h.estimated_hit_probability_0_100 > (
             SELECT MIN(s.estimated_hit_probability_0_100) FROM score.hp_board_current s
@@ -568,6 +557,15 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
       const changed = res.count || 0;
       totalClamped += changed;
       results.push({ subset: subsetKey, superset: `${t.prop}|${t.line}|${t.side}`, rows_clamped: changed });
+      // Simple, separate follow-up audit-trail write - avoids adding calibration_json changes
+      // inside the already-massive multi-subquery clamp statement above, which caused a
+      // parameter type inference error when attempted inline.
+      if (changed > 0) {
+        await pgClient.unsafe(
+          `UPDATE score.hp_board_current SET calibration_json = COALESCE(calibration_json, '{}'::jsonb) || jsonb_build_object('subset_constraint_clamp_applied', true, 'subset_constraint_clamped_to_superset', $1::text, 'subset_clamp_reason', 'This prop is logically a subset of the superset prop it was clamped to (e.g. hits is a subset of total_bases), so its probability cannot exceed the superset''s.') WHERE hp_board_batch_id = $2 AND canonical_prop_key = $3 AND line_value = $4 AND selected_side = $5`,
+          [t.key, hpBatchId, subProp, subLine, subSide]
+        ).catch(() => {});
+      }
     }
   }
   return { ok: true, total_clamped: totalClamped, per_constraint: results };
