@@ -1,11 +1,74 @@
-// TEMPORARY PROBE v4 - only returns the sleeper-specific candidate probe results.
 const WORKER_NAME = "alphadog-v2-daily-batting-orders";
-const VERSION = "TEMP_PROBE_bookmakers_list_v4";
-const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
+const VERSION = "alphadog-v2-dummy-workers-v0.1";
+const JOB_KEY = "daily-batting-orders";
 
-function nowUtc() { return new Date().toISOString(); }
+const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
+const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
+const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
+
+function nowUtc() {
+  return new Date().toISOString();
+}
+
 function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+  return new Response(JSON.stringify(body, null, 2), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+
+function bindingPresence(env, names) {
+  const out = {};
+  for (const name of names) out[name] = Boolean(env && env[name]);
+  return out;
+}
+
+function varPresence(env, names) {
+  const out = {};
+  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
+  return out;
+}
+
+function allTrue(obj) {
+  return Object.values(obj).every(Boolean);
+}
+
+function baseIdentity(env) {
+  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+  const vars = varPresence(env, EXPECTED_VARS);
+  const secrets = varPresence(env, REQUIRED_SECRETS);
+
+  return {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    status: "DUMMY_READY",
+    timestamp_utc: nowUtc(),
+    phase: "alphadog-v2-config-bootstrap",
+    notes: [
+      "Dummy worker only.",
+      "No mining, scoring, external API calls, or production writes.",
+      "Use /health and /diagnostic to verify bindings/secrets/vars."
+    ],
+    binding_summary: {
+      required_db_bindings_present: allTrue(db),
+      expected_vars_present: allTrue(vars),
+      required_secrets_present: allTrue(secrets)
+    }
+  };
+}
+
+async function readJsonSafe(request) {
+  try {
+    return await request.json();
+  } catch {
+    return {};
+  }
 }
 
 export default {
@@ -14,45 +77,89 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
 
-    if (method === "GET" && (path === "/" || path === "/health")) {
-      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, status: "TEMP_PROBE_READY", api_key_present: !!env.PARLAY_API_KEY });
+    if (method === "GET" && path === "/") {
+      return jsonResponse(baseIdentity(env));
+    }
+
+    if (method === "GET" && path === "/health") {
+      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+      const vars = varPresence(env, EXPECTED_VARS);
+      const secrets = varPresence(env, REQUIRED_SECRETS);
+
+      return jsonResponse({
+        ...baseIdentity(env),
+        route: "/health",
+        checks: {
+          db_bindings: db,
+          vars: vars,
+          secrets_present_only: secrets
+        },
+        safe_secret_note: "Secret values are intentionally never printed."
+      });
+    }
+
+    if (method === "POST" && path === "/diagnostic") {
+      const input = await readJsonSafe(request);
+      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+      const vars = varPresence(env, EXPECTED_VARS);
+      const secrets = varPresence(env, REQUIRED_SECRETS);
+
+      return jsonResponse({
+        ...baseIdentity(env),
+        route: "/diagnostic",
+        input_echo_safe: {
+          request_id: input.request_id || null,
+          chain_id: input.chain_id || null,
+          job_key: input.job_key || null,
+          mode: input.mode || null
+        },
+        diagnostics: {
+          db_bindings: db,
+          vars: vars,
+          secrets_present_only: secrets
+        },
+        writes_performed: 0,
+        external_calls_performed: 0
+      });
     }
 
     if (method === "POST" && path === "/run") {
-      const apiKey = env.PARLAY_API_KEY ? String(env.PARLAY_API_KEY) : null;
-      if (!apiKey) return jsonResponse({ ok: false, error: "no_api_key_found_in_env" });
-      const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-TempBookmakersProbe/1.0", "X-API-Key": apiKey });
+      const input = await readJsonSafe(request);
 
-      // 1. Sleeper's own entry in the bookmakers list, in full, to see its exact metadata
-      let sleeperEntry = null;
-      try {
-        const resp = await fetch(`${DEFAULT_PARLAY_API_BASE_URL}/bookmakers`, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
-        const json = await resp.json();
-        const list = Array.isArray(json) ? json : (json.bookmakers || json.data || []);
-        sleeperEntry = list.find(b => String(b.key).toLowerCase() === "sleeper") || null;
-      } catch (err) { sleeperEntry = { error: String(err && err.message ? err.message : err) }; }
-
-      // 2. Direct test: exact same request our real worker makes
-      let directTest = null;
-      try {
-        const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=sleeper&limit=10000&dfsOdds=effective`;
-        const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
-        const text = await resp.text();
-        directTest = { http_status: resp.status, body_preview: text.slice(0, 500) };
-      } catch (err) { directTest = { error: String(err && err.message ? err.message : err) }; }
-
-      // 3. Same request but WITHOUT dfsOdds=effective, in case that param is the actual culprit
-      let noDfsOddsTest = null;
-      try {
-        const testUrl = `${DEFAULT_PARLAY_API_BASE_URL}/sports/baseball_mlb/props?bookmakers=sleeper&limit=10`;
-        const resp = await fetch(testUrl, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
-        const text = await resp.text();
-        noDfsOddsTest = { http_status: resp.status, body_preview: text.slice(0, 500) };
-      } catch (err) { noDfsOddsTest = { error: String(err && err.message ? err.message : err) }; }
-
-      return jsonResponse({ ok: true, worker_name: WORKER_NAME, version: VERSION, sleeperEntry, directTest, noDfsOddsTest, timestamp_utc: nowUtc() });
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: input.job_key || JOB_KEY,
+        request_id: input.request_id || null,
+        chain_id: input.chain_id || null,
+        status: "DUMMY_READY",
+        certification: "DUMMY_ONLY_NOT_REAL_DATA",
+        rows_read: 0,
+        rows_written: 0,
+        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
+        block_downstream_reason: null,
+        output_json: {
+          dummy: true,
+          slate_date: input.slate_date || null,
+          mode: input.mode || null,
+          received_input_json: input.input_json || null
+        },
+        timestamp_utc: nowUtc(),
+        writes_performed: 0,
+        external_calls_performed: 0
+      });
     }
 
-    return jsonResponse({ ok: false, status: "NOT_FOUND" }, 404);
+    return jsonResponse({
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      status: "NOT_FOUND",
+      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
+      timestamp_utc: nowUtc()
+    }, 404);
   }
 };
