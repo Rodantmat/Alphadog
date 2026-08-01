@@ -497,7 +497,7 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
     const [subProp, subLineRaw, subSide] = subsetKey.split("|");
     const subLine = Number(subLineRaw);
     const targets = Array.isArray(supersetKeyOrArray) ? supersetKeyOrArray : [supersetKeyOrArray];
-    const targetTriples = targets.map(t => { const [p, l, s] = String(t).split("|"); return { prop: p, line: Number(l), side: s }; });
+    const targetTriples = targets.map(t => { const [p, l, s] = String(t).split("|"); return { prop: p, line: Number(l), side: s, key: `${p}|${l}|${s}` }; });
 
     for (const t of targetTriples) {
       const res = await pgClient`
