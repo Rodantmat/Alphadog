@@ -374,6 +374,41 @@ const PART2_PHASE_STATE_KEY = "daily_delta_part2_phase";
 // can take several sequential calls.
 const PART2_PHASES = ["quality_of_contact", "baseline_v6", "resolve_outcomes", "stateful_delta", "classification_v5", "finalize"];
 
+async function getJsonState(env, key) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`CREATE TABLE IF NOT EXISTS control.worker_state_json (state_key TEXT PRIMARY KEY, value_json JSONB, updated_at TIMESTAMPTZ)`;
+    const rows = await client`SELECT value_json FROM control.worker_state_json WHERE state_key = ${key}`;
+    return rows.length ? rows[0].value_json : null;
+  } catch (_) {
+    return null;
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
+async function setJsonState(env, key, value) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`CREATE TABLE IF NOT EXISTS control.worker_state_json (state_key TEXT PRIMARY KEY, value_json JSONB, updated_at TIMESTAMPTZ)`;
+    await client`INSERT INTO control.worker_state_json (state_key, value_json, updated_at) VALUES (${key}, ${JSON.stringify(value)}::jsonb, now())
+      ON CONFLICT (state_key) DO UPDATE SET value_json=excluded.value_json, updated_at=excluded.updated_at`;
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
+async function clearJsonState(env, key) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`DELETE FROM control.worker_state_json WHERE state_key = ${key}`;
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 async function getPart2State(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
