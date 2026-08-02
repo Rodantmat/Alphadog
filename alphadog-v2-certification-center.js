@@ -2387,16 +2387,22 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 // independently and multiplicatively, and gives real per-tier ratios rather than a flat guess.
 // Standard 2-pick per-leg = sqrt(3) = 1.732. Tier 1 = easiest/furthest-from-standard goblin,
 // tier 3 = hardest/closest-to-standard goblin. Ratios below are per-leg-multiplier / standard.
-const GOBLIN_TIER_RATIOS = { 1: 0.833, 2: 0.700, 3: 0.633 };
-const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation, decreasing further toward standard
+// VALIDATED (2026-08-02): second real in-app test confirms tier ratios shift when the goblin's
+// OWN ladder has no standard line at all (only goblin/demon variants exist for that prop). Delta
+// vs the has-standard-sibling table is clean and consistent: tier1 +0.133, tier2 +0.067, tier3
+// +0.000 - closest-to-standard tier is unaffected, easier tiers get progressively more boost.
+const GOBLIN_TIER_RATIOS_WITH_STANDARD = { 1: 0.833, 2: 0.700, 3: 0.633 };
+const GOBLIN_TIER_RATIOS_NO_STANDARD = { 1: 0.967, 2: 0.767, 3: 0.633 };
+const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation
 const DEMON_PER_LEG_RATIO = 1.9; // still the earlier research-based estimate; no demon test data yet
-function goblinTierRatio(tierRank) {
-  if (GOBLIN_TIER_RATIOS[tierRank] != null) return GOBLIN_TIER_RATIOS[tierRank];
+function goblinTierRatio(tierRank, hasStandardSibling) {
+  const table = hasStandardSibling ? GOBLIN_TIER_RATIOS_WITH_STANDARD : GOBLIN_TIER_RATIOS_NO_STANDARD;
+  if (table[tierRank] != null) return table[tierRank];
   return GOBLIN_TIER_RATIO_FLOOR;
 }
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
   if (Number(leg.is_goblin) === 1) {
-    const ratio = goblinTierRatio(Number(leg.goblin_tier_rank) || 1);
+    const ratio = goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
     return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
   }
   if (Number(leg.is_demon) === 1) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
