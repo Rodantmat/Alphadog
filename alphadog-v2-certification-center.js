@@ -2370,11 +2370,21 @@ function buildResearchGroundedSlips(legsBySource) {
       // already picked for this specific slip.
       const slipLegs = [];
       const gamesInSlip = new Set();
+      const propTypesInSlip = new Set();
       for (const leg of available) {
         if (slipLegs.length >= RESEARCH_MAX_SLIP_SIZE) break;
         if (gamesInSlip.has(leg.game_pk)) continue;
+        // Prop-type diversification within this slip, grounded in measured overdispersion
+        // (confirmed via real outcome data, not assumption - see 2026-08-02 deep scrutiny):
+        // same-prop-type legs share real day-level correlation beyond what the independence
+        // assumption in the EV math accounts for, even across different games. Capping at one
+        // leg per prop_key+side here directly raises the TRUE probability of a full-slip hit,
+        // not just the claimed one.
+        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
+        if (propTypesInSlip.has(propTypeKey)) continue;
         slipLegs.push(leg);
         gamesInSlip.add(leg.game_pk);
+        propTypesInSlip.add(propTypeKey);
       }
       if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) break; // not enough diversified legs left for even the smallest slip
       slipLegs.forEach(l => used.add(l.board_row_id));
