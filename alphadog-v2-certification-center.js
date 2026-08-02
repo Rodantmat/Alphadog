@@ -2506,7 +2506,7 @@ function buildResearchGroundedSlips(legsBySource) {
               : "This slip includes a goblin/demon (adjusted) line. PrizePicks doesn't publish the exact adjusted multiplier - this is estimated using a fair-odds-preserving model based on this leg's own calibrated probability versus the standard-line breakeven target. Check the real multiplier in-app before placing.")
           : "Real app payout at placement is authoritative - this multiplier is that app's own published rate for regular lines.",
         strategy_grade: chosen.ev > 0.5 ? "STRONG" : (chosen.ev > 0 ? "STANDARD" : "CAUTION"),
-        strategy_notes: `Breakeven ${chosen.breakeven}%, cleared by ${Math.round((finalLegs.reduce((a,l)=>a+Number(l.hit_probability_0_100||0),0)/chosen.size) - chosen.breakeven)}pts. ${new Set(finalLegs.map(l=>l.game_pk)).size} games, ${new Set(finalLegs.map(l=>`${l.canonical_prop_key}|${l.selected_side}`)).size} bet types.${chosen.adjusted ? ` Multiplier estimated (${finalLegs.filter(l=>Number(l.is_goblin)===1).length} goblin, ${finalLegs.filter(l=>Number(l.is_demon)===1).length} demon leg(s)).` : ""}`,
+        adjusted_leg_count: chosen.adjusted ? finalLegs.filter(l=>Number(l.is_goblin)===1||Number(l.is_demon)===1).length : 0,
         legs: finalLegs
       });
     }
