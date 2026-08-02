@@ -244,7 +244,13 @@ def make_config(worker_name, include_services=False):
         # stage has a realistic head start based on observed durations (board ~5-8 min with
         # retries, daily-context/market ~1-3 min each, scoring is the long tail and gets the most
         # runway before the next cycle 4-11 hours later).
-        cfg["triggers"] = {"crons": ["0 16 * * *", "0 20 * * *", "0 5 * * *"]}
+        # RETIRED 2026-08-02: Cowork scheduled task (Claude-supervised, 3x/day at 9am/1pm/5pm,
+        # game-day-aware) now owns triggering this stage instead of a blind cron - it verifies
+        # real data completeness and can diagnose/fix issues live, which a cron trigger cannot.
+        # IMPORTANT: must be an EXPLICIT empty array, not an omitted key - omitting cfg["triggers"]
+        # does NOT clear an existing Cloudflare cron (confirmed live with master-runner's own
+        # retirement this session), it leaves the previously-deployed schedule untouched.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-daily-context-runner":
         # New, deliberately simple standalone runner for daily-context-full-run only, same design
         # as board-runner: no queue table, no lock table, just sequential awaited service-binding
