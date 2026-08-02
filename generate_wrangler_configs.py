@@ -380,7 +380,10 @@ def make_config(worker_name, include_services=False):
         # for a 9,000-row board after the parallelization fix), and this worker now waits and
         # rechecks Matrix's freshness itself (3 min apart, up to 2 retries) on the rare slow day,
         # so the schedule reflects typical timing instead of padding for an exception.
-        cfg["triggers"] = {"crons": ["26 16 * * *", "26 20 * * *", "26 5 * * *"]}
+        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
+        # scheduled task now owns this stage. This is the last of the 6 master-run stage crons
+        # being retired together (board, daily-context, market, scoring part1/matrix/part2).
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
