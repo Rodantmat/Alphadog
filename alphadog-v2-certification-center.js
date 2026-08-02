@@ -2243,6 +2243,8 @@ async function autoSelectBestLegs(env, options) {
         f.confidence_0_100 AS certainty_0_100,
         f.score_0_100 AS overall_score_0_100,
         f.score_grade AS board_grade,
+        f.is_goblin,
+        f.is_demon,
         p.team, p.opponent, p.team_full_name, p.opponent_full_name, p.source_prop_name
       FROM score.final_board_current f
       LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
