@@ -8868,6 +8868,8 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
     const gamePks = [];
     const gamePkToDate = new Map();
     for (const d of dates) for (const g of (d.games || [])) {
+      const detailedState = String((g.status && g.status.detailedState) || "");
+      if (/postponed/i.test(detailedState)) continue;
       const status = (g.status && (g.status.abstractGameState || "")) || "";
       if (/final/i.test(status)) {
         gamePks.push(g.gamePk);
