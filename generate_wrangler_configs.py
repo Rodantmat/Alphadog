@@ -276,7 +276,9 @@ def make_config(worker_name, include_services=False):
         ]
         # T+7 minutes past each of master's 3 daily times - gives board-runner (T+0) real
         # headroom (observed 5-8 min including retries) before this stage starts.
-        cfg["triggers"] = {"crons": ["7 16 * * *", "7 20 * * *", "7 5 * * *"]}
+        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
+        # scheduled task now triggers this stage.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-market-runner":
         # New, deliberately simple standalone runner for market-full-run only, same design as
         # board-runner/daily-context-runner: no queue table, no lock table, just sequential
