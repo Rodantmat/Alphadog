@@ -2251,6 +2251,8 @@ async function autoSelectBestLegs(env, options) {
         AND f.confidence_0_100 >= ${minConfidence}
         AND f.official_game_time_utc IS NOT NULL
         AND f.official_game_time_utc::timestamptz > now()
+        AND COALESCE(f.is_goblin, 0) = 0
+        AND COALESCE(f.is_demon, 0) = 0
       ORDER BY f.score_0_100 DESC NULLS LAST, f.confidence_0_100 DESC NULLS LAST
     `);
     const perGameCount = new Map();
