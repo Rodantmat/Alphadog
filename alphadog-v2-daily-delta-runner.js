@@ -515,7 +515,7 @@ export default {
     // acquired on the NEXT scheduled invocation, and vice versa.
     ctx.waitUntil((async () => {
       await runDailyDeltaPart1(env, { trigger: "cron", cron: event.cron });
-      await runDailyDeltaPart2(env, { trigger: "cron", cron: event.cron });
+      await runDailyDeltaPart2(env, ctx, { trigger: "cron", cron: event.cron });
     })());
   },
 
