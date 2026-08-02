@@ -2508,12 +2508,12 @@ function buildResearchGroundedSlips(legsBySource) {
         estimated_multiplier: chosen.multiplier,
         estimated_ev_per_unit_stake: Math.round(chosen.ev * 1000) / 1000,
         breakeven_hit_rate_0_100: chosen.breakeven,
-        multiplier_estimated: Boolean(chosen.adjusted),
-        estimated_payout_note: chosen.adjusted
-          ? (source === "sleeper"
-              ? "Sleeper uses dynamic per-leg pricing (confirmed via research) with no published formula - this multiplier is estimated using a fair-odds-preserving model calibrated to this app's own breakeven target, not a confirmed value. Check the real multiplier in-app before placing."
-              : "This slip includes a goblin/demon (adjusted) line. PrizePicks doesn't publish the exact adjusted multiplier - this is estimated using a fair-odds-preserving model based on this leg's own calibrated probability versus the standard-line breakeven target. Check the real multiplier in-app before placing.")
-          : "Real app payout at placement is authoritative - this multiplier is that app's own published rate for regular lines.",
+        multiplier_estimated: Boolean(chosen.adjusted) || source === "sleeper",
+        estimated_payout_note: source === "sleeper"
+          ? "Sleeper uses dynamic per-leg pricing (confirmed via research) with no published formula - this multiplier uses PrizePicks' flat table as the closest approximation, not a confirmed value. Check the real multiplier in-app before placing."
+          : (chosen.adjusted
+              ? "This slip includes a goblin/demon (adjusted) line. PrizePicks doesn't publish the exact adjusted multiplier - this is estimated using a fair-odds-preserving model based on this leg's own calibrated probability versus the standard-line breakeven target. Check the real multiplier in-app before placing."
+              : "Real app payout at placement is authoritative - this multiplier is that app's own published rate for regular lines."),
         strategy_grade: chosen.ev > 0.5 ? "STRONG" : (chosen.ev > 0 ? "STANDARD" : "CAUTION"),
         adjusted_leg_count: chosen.adjusted ? finalLegs.filter(l=>Number(l.is_goblin)===1||Number(l.is_demon)===1).length : 0,
         legs: finalLegs
