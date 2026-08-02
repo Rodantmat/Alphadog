@@ -543,12 +543,8 @@ export default {
     if (method === "POST" && path === "/run-part2") {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const runId = `daily_delta_part2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      ctx.waitUntil(runDailyDeltaPart2(env, { ...input, run_id_override: runId }));
-      return jsonResponse({
-        ok: true, started: true, worker_name: WORKER_NAME, part: 2, run_id: runId,
-        note: "Part 2 runs in the background (its total duration exceeds a single HTTP request's execution limit). Check progress via control.worker_state (state_key='baseline_v6_full_run') or control.runner_locks (lock_key='alphadog_daily_delta_part2') rather than this response."
-      });
+      const result = await runDailyDeltaPart2(env, ctx, input);
+      return jsonResponse(result, result.ok ? 200 : 207);
     }
 
     // Backward-compatible: /run or / now runs both parts, part1 synchronously (fast enough to
