@@ -299,7 +299,9 @@ def make_config(worker_name, include_services=False):
         ]
         # T+10 minutes past each of master's 3 daily times - after daily-context (T+7) has had
         # its own real headroom (observed 1-2 min typical).
-        cfg["triggers"] = {"crons": ["10 16 * * *", "10 20 * * *", "10 5 * * *"]}
+        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
+        # scheduled task now triggers this stage.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-scoring-runner":
         # PART 1 of 2 (split 2026-07-29): certifier-first-pass, prop-factor-miner (hitter+pitcher),
         # matrix-builder - the heaviest, most variable stages. Split from the original single
