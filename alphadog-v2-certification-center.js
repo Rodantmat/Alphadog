@@ -2280,7 +2280,7 @@ async function autoSelectBestLegs(env, options) {
     for (const r of rows) {
       const key = `${r.source_key}|${r.player_id}|${r.canonical_prop_key}|${r.selected_side}`;
       const prob = Number(r.hit_probability_0_100 || r.confidence_0_100 || 0) / 100;
-      const ratio = Number(r.is_goblin) === 1 ? goblinTierRatio(Number(r.goblin_tier_rank) || 1) : (Number(r.is_demon) === 1 ? DEMON_PER_LEG_RATIO : 1.0);
+      const ratio = Number(r.is_goblin) === 1 ? goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling)) : (Number(r.is_demon) === 1 ? DEMON_PER_LEG_RATIO : 1.0);
       const effectiveValue = prob * ratio;
       const existing = bestByPropKey.get(key);
       if (!existing || effectiveValue > existing.effectiveValue) {
