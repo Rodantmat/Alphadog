@@ -419,9 +419,16 @@ def make_config(worker_name, include_services=False):
         # missed/mistimed relative to expectation.
         cfg["triggers"] = {"crons": ["0 9 * * 1"]}
     if worker_name == "alphadog-v2-daily-delta-runner":
-        # New, deliberately simple standalone runner for the daily morning delta, same design as
-        # weekly-differential-runner: single service binding to the one worker that owns this
-        # whole chain internally (its own 6-step resume sequence).
+        # Split into two independently-locked parts (2026-08-02): Part 1 (mining through
+        # metrics) completes fully in one cron-triggered call. Part 2 (classification/baseline,
+        # looped to genuine completion via its own internal self-chaining fetch calls) is NOT
+        # guaranteed to finish from a single trigger alone - confirmed live that its self-chain
+        # can stall and require external intervention. The scheduled() handler now checks
+        # event.cron: the first (14:00 UTC) trigger runs both Part 1 and Part 2's first step;
+        # the remaining crons call Part 2 ONLY, spaced ~10 minutes apart for about 50 minutes of
+        # real, externally-driven retry coverage - safe to call repeatedly since Part 2's own
+        # lock and persisted phase state make this idempotent (a no-op if already complete for
+        # the day, or a genuine continuation if the self-chain stalled).
         cfg["vars"] = {}
         cfg["d1_databases"] = []
         cfg["limits"] = {"cpu_ms": 300000}
@@ -434,11 +441,10 @@ def make_config(worker_name, include_services=False):
             {"binding": "BASE_CLASSIFICATION_V5_WORKER", "service": "alphadog-v2-base-classification-v5"},
             {"binding": "OUTCOME_GRADER_WORKER", "service": "alphadog-v2-outcome-grader"},
         ]
-        # Real schedule: 7:00 AM Pacific (PDT, UTC-7 in July) = 14:00 UTC. Moved from 1:45 AM PT
-        # (the original "45 8 * * *" UTC time, matching the old scheduled() dispatch) per explicit
-        # request - the run is fast now, and 7 AM gives more complete previous-night game data
-        # (box scores, final stats) time to settle before this pulls it.
-        cfg["triggers"] = {"crons": ["0 14 * * *"]}
+        # Real schedule: 7:00 AM Pacific (PDT, UTC-7 in July) = 14:00 UTC triggers the full
+        # Part1+Part2 kickoff. Additional crons at :10/:20/:30/:40/:50 past call Part 2 only, as
+        # an external safety net independent of its internal self-chain.
+        cfg["triggers"] = {"crons": ["0 14 * * *", "10 14 * * *", "20 14 * * *", "30 14 * * *", "40 14 * * *", "50 14 * * *"]}
     if worker_name == "alphadog-v2-outcome-grader":
         # New, deliberately isolated worker: grades yesterday's board legs against already-mined
         # real game logs (stats_hitter.game_logs / stats_pitcher.game_logs) and writes results to
