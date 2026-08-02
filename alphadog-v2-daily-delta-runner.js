@@ -34,6 +34,13 @@ async function runCoverageAudit(env) {
         (SELECT COUNT(DISTINCT game_pk) FROM team.bullpen_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_bullpen_history,
         (SELECT COUNT(*) FROM stats_hitter.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS hitter_null_dates_yesterday,
         (SELECT COUNT(*) FROM stats_pitcher.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS pitcher_null_dates_yesterday`;
+    const staleClassification = await client`
+      SELECT canonical_prop_key, selected_side, MAX(updated_at) as last_updated,
+        EXTRACT(EPOCH FROM (now() - MAX(updated_at)))/3600 AS hours_stale
+      FROM classification.classification_v6_current
+      GROUP BY canonical_prop_key, selected_side
+      HAVING now() - MAX(updated_at) > interval '36 hours'
+      ORDER BY MAX(updated_at) ASC`;
     const r = rows[0] || {};
     const gamesExpected = Number(r.games_expected || 0);
     const gamesInStarter = Number(r.games_in_starter_history || 0);
