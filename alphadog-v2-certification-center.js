@@ -2350,7 +2350,16 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 const ADJUSTED_MULTIPLIER_MIN_RATIO = 0.3;
 const ADJUSTED_MULTIPLIER_MAX_RATIO = 3.0;
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
-  const isAdjustedLine = isSleeper || Number(leg.is_goblin) === 1 || Number(leg.is_demon) === 1;
+  // FIXED (2026-08-02): this adjustment must ONLY apply to genuine goblin/demon lines, never to
+  // Sleeper broadly. Confirmed via direct calculation that applying a fair-odds-preserving
+  // formula to every leg (assuming the app prices exactly to its own breakeven target) forces
+  // adjusted EV toward 0 by construction - a real 75%-probability slip came out to +0.0% EV
+  // after "adjustment", which is mathematically equivalent to erasing all edge. That directly
+  // contradicts this system's purpose of finding genuine model-vs-market disagreement. Sleeper's
+  // real per-leg pricing is still unknown (see APP_PAYOUT_TABLES.sleeper comment) - the flat-
+  // table approximation there, while imperfect, does not have this zero-edge-by-construction
+  // flaw. Only apply the adjustment where a real standard-line anchor exists to compare against.
+  const isAdjustedLine = Number(leg.is_goblin) === 1 || Number(leg.is_demon) === 1;
   if (!isAdjustedLine) return { multiplier: standardPerLegMultiplier, adjusted: false };
   const legProbPct = Math.max(1, Math.min(99, Number(leg.hit_probability_0_100 || leg.certainty_0_100 || breakevenTargetPct)));
   const rawRatio = breakevenTargetPct / legProbPct;
