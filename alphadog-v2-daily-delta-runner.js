@@ -206,6 +206,40 @@ async function runOutcomeGrading(env, runId) {
   }
 }
 
+const MAX_BASELINE_V6_CALLS = 30; // 244 combos total, ~50-90 processed per 30s call - generous headroom to guarantee full completion in one invocation
+
+// FIXED (2026-08-02): baseline_v6_full_run was called exactly once per daily-delta invocation and
+// whatever partial progress it made (bounded by its own internal 30s budget) was silently treated
+// as "done" by the outer chain, since the step only checks res.ok (always true) not
+// combo_done/partial_continue. Confirmed live this caused some prop types to go 5 days between
+// reclassifications (pitcher_outs, runs_allowed last updated 2026-07-28 while others updated
+// same-day). This wrapper loops the step to genuine completion, matching the existing pattern
+// already used for the stateful delta and classification v5 steps.
+async function runBaselineV6ToCompletion(env, runId) {
+  const calls = [];
+  let nextInput = { mode: "classification_baseline_v6_to_postgres_full_run", request_id: `${runId}_baseline_v6_init` };
+  let i = 0;
+  let complete = false;
+  let failed = false;
+  let totalRowsWritten = 0;
+  while (i < MAX_BASELINE_V6_CALLS) {
+    i++;
+    const result = await callStep(env.PHASE3A_WORKER, nextInput);
+    calls.push({ call: i, combo_index: result && result.combo_index, combos_processed: result && result.combos_processed_this_call, ok: result && result.ok });
+    if (!result || result.ok === false) { failed = true; break; }
+    totalRowsWritten += Number(result.total_rows_written || 0);
+    if (result.combo_done === true || result.partial_continue !== true) { complete = true; break; }
+    nextInput = result.next_input_json || { mode: "classification_baseline_v6_to_postgres_full_run", combo_index: result.combo_index };
+  }
+  return {
+    ok: !failed,
+    complete,
+    total_calls: i,
+    total_rows_written: totalRowsWritten,
+    calls_summary: calls.slice(-5)
+  };
+}
+
 async function runDailyDeltaFullRun(env, input) {
   const runId = `daily_delta_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
