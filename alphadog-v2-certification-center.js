@@ -2463,10 +2463,11 @@ function buildResearchGroundedSlips(legsBySource) {
       let chosen = null;
       for (let size = RESEARCH_MIN_SLIP_SIZE; size <= slipLegs.length; size++) {
         const sliceProbs = probs01.slice(0, size);
+        const sliceLegs = slipLegs.slice(0, size);
         for (const mode of ["flex", "power"]) {
           const breakeven = researchBreakeven(size, mode, table);
           if (breakeven == null) continue;
-          const r = researchSlipEv(sliceProbs, mode, table);
+          const r = researchSlipEvAdjusted(sliceLegs, sliceProbs, mode, table, source, breakeven);
           const avgProbPct = (sliceProbs.reduce((a, b) => a + b, 0) / size) * 100;
           if (avgProbPct >= breakeven + RESEARCH_BREAKEVEN_MARGIN_PTS && r.ev > 0) {
             chosen = { size, mode, breakeven, ...r };
