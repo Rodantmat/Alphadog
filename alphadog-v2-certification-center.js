@@ -2288,6 +2288,165 @@ async function apiAutoCreateSlips(env, request) {
     notes: ["Legs auto-selected: board_tier=PRIMARY, confidence >= min_confidence, max 2 legs per game per app. Structures chosen by the existing risk-adjusted EV engine (favors smaller Flex structures per the slip-strategy research), not a fixed rule."]
   });
 }
+// ===== Dedicated research-grounded slip engine (2026-08) =====
+// Built specifically per the exhaustive slip-strategy research done this session, NOT a wrapper
+// around the generic/manual builder above. The generic engine's bestStructureForPool uses a
+// Sharpe-style EV/stdev score maximized across sizes 2-6 - confirmed live this session that this
+// can and does select 4-5 leg slips when individual legs are high-probability, because Sharpe
+// ratio does not penalize variance the same way Kelly's log-growth criterion does. Real,
+// worked Kelly math (a genuine 55%-edge example, independently sourced) allocates $657.93 to a
+// single-equivalent bet, $38.29 to a 2-leg parlay, and $0.01 to a 5-leg parlay - the same edge,
+// wildly different variance cost. This engine encodes that conclusion directly: hard cap at 2-3
+// legs, per-app real payout tables, and picks the SMALLEST size that clears real breakeven
+// margin rather than whatever scores highest on a Sharpe-style metric.
+
+// Real, per-app published payout tables (regular lines, non-Demon/Goblin). Confirmed via
+// research these genuinely differ by app - using one shared table for all three (as the generic
+// engine above does) misrepresents the actual breakeven math for at least one of them.
+const APP_PAYOUT_TABLES = {
+  prizepicks: {
+    power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
+    flex: { 3: { 3: 2.25, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } }
+  },
+  parlay_underdog: {
+    power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 25 },
+    flex: { 3: { 3: 2, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 20, 4: 2, 3: 0.4 } }
+  },
+  sleeper: {
+    // Sleeper's multipliers move with the action rather than a fixed published table (per
+    // research) - using PrizePicks' table as the closest fixed approximation, flagged in the
+    // slip's own notes so this is never presented as authoritative.
+    power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
+    flex: { 3: { 3: 2.25, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 } }
+  }
+};
+const RESEARCH_MAX_SLIP_SIZE = 3;
+const RESEARCH_MIN_SLIP_SIZE = 2;
+const RESEARCH_MIN_CONFIDENCE = 65;
+const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, not just clearing it
+
+function researchSlipEv(probs01, mode, table) {
+  const n = probs01.length;
+  const dist = hitCountDistribution(probs01);
+  const payoutFor = (k) => mode === "power" ? (k === n ? (table.power[n] || 0) : 0) : ((table.flex[n] && table.flex[n][k]) || 0);
+  let mean = 0;
+  for (let k = 0; k <= n; k++) mean += dist[k] * payoutFor(k);
+  let variance = 0;
+  for (let k = 0; k <= n; k++) { const d = payoutFor(k) - mean; variance += dist[k] * d * d; }
+  const stdev = Math.sqrt(Math.max(variance, 1e-6));
+  const ev = mean - 1;
+  return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: table.power[n] || null };
+}
+function researchBreakeven(size, mode, table) {
+  if (mode === "power") {
+    const mult = table.power[size];
+    if (!mult) return null;
+    return Math.round(Math.pow(1 / mult, 1 / size) * 10000) / 100;
+  }
+  // Flex breakeven: solve numerically for the per-leg probability where EV crosses zero.
+  let lo = 0.01, hi = 0.99;
+  for (let iter = 0; iter < 40; iter++) {
+    const mid = (lo + hi) / 2;
+    const probs = new Array(size).fill(mid);
+    const r = researchSlipEv(probs, mode, table);
+    if (r.ev > 0) hi = mid; else lo = mid;
+  }
+  return Math.round(((lo + hi) / 2) * 10000) / 100;
+}
+// Per-slip diversification: reject a candidate leg if it shares a game_pk with any leg already
+// in THIS slip (stricter than the candidate-pool-level cap used elsewhere) - the correlation
+// research is explicit that one game's outcome shouldn't be able to swing multiple legs at once
+// within the same entry.
+function buildResearchGroundedSlips(legsBySource) {
+  const out = [];
+  for (const [source, legsRaw] of Object.entries(legsBySource)) {
+    const table = APP_PAYOUT_TABLES[source] || APP_PAYOUT_TABLES.prizepicks;
+    const pool = [...legsRaw].sort((a, b) => Number(b.certainty_0_100 || b.confidence_0_100 || 0) - Number(a.certainty_0_100 || a.confidence_0_100 || 0));
+    const used = new Set();
+    while (pool.some(l => !used.has(l.board_row_id))) {
+      const available = pool.filter(l => !used.has(l.board_row_id));
+      // Greedily build ONE slip: take the highest-confidence available leg, then fill up to
+      // RESEARCH_MAX_SLIP_SIZE with the next-best legs that don't share a game with anything
+      // already picked for this specific slip.
+      const slipLegs = [];
+      const gamesInSlip = new Set();
+      for (const leg of available) {
+        if (slipLegs.length >= RESEARCH_MAX_SLIP_SIZE) break;
+        if (gamesInSlip.has(leg.game_pk)) continue;
+        slipLegs.push(leg);
+        gamesInSlip.add(leg.game_pk);
+      }
+      if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) break; // not enough diversified legs left for even the smallest slip
+      slipLegs.forEach(l => used.add(l.board_row_id));
+
+      const probs01 = slipLegs.map(l => Math.max(0.01, Math.min(0.99, calibrateProbabilityPct(Number(l.hit_probability_0_100 || l.certainty_0_100 || 0)) / 100)));
+      // Try smallest-size-first: 2-leg flex/power, then 3-leg, per the research's own conclusion
+      // that the smallest allowed size carries the best risk-adjusted economics - not scanning
+      // for whichever size scores highest, since that's exactly the mechanism that drifted to
+      // 4-5 legs in the generic engine.
+      let chosen = null;
+      for (let size = RESEARCH_MIN_SLIP_SIZE; size <= slipLegs.length; size++) {
+        const sliceProbs = probs01.slice(0, size);
+        for (const mode of ["flex", "power"]) {
+          const breakeven = researchBreakeven(size, mode, table);
+          if (breakeven == null) continue;
+          const r = researchSlipEv(sliceProbs, mode, table);
+          const avgProbPct = (sliceProbs.reduce((a, b) => a + b, 0) / size) * 100;
+          if (avgProbPct >= breakeven + RESEARCH_BREAKEVEN_MARGIN_PTS && r.ev > 0) {
+            chosen = { size, mode, breakeven, ...r };
+            break;
+          }
+        }
+        if (chosen) break;
+      }
+      if (!chosen) continue; // this batch of legs didn't clear real margin at any allowed size - skip, don't force a slip
+      const finalLegs = slipLegs.slice(0, chosen.size);
+      out.push({
+        client_slip_id: makeUiId("research_slip"),
+        source_key: source,
+        slip_type: `${chosen.size}-pick`,
+        slip_size: chosen.size,
+        entry_mode: chosen.mode,
+        structure_label: `${chosen.size}-pick ${chosen.mode === "flex" ? "Flex" : "Power"}`,
+        estimated_hit_probability_0_100: Math.round(finalLegs.reduce((a, l) => a * (Number(l.hit_probability_0_100 || 0) / 100), 1) * 10000) / 100,
+        hit_all_probability_0_100: chosen.hit_all_probability_0_100,
+        estimated_multiplier: chosen.multiplier,
+        estimated_ev_per_unit_stake: Math.round(chosen.ev * 1000) / 1000,
+        breakeven_hit_rate_0_100: chosen.breakeven,
+        estimated_payout_note: source === "sleeper"
+          ? "Sleeper's multipliers move with the action rather than a fixed table (confirmed via research) - this uses PrizePicks' published table as the closest fixed approximation. Confirm the real multiplier in-app before placing."
+          : "Real app payout at placement is authoritative - this multiplier is that app's own published rate for regular lines.",
+        strategy_grade: chosen.ev > 0.5 ? "STRONG" : (chosen.ev > 0 ? "STANDARD" : "CAUTION"),
+        strategy_notes: `Estimated EV: ${chosen.ev >= 0 ? "+" : ""}${Math.round(chosen.ev * 100)}% per unit staked. Average leg confidence clears this ${chosen.mode} entry's real ${chosen.breakeven}% breakeven by ${Math.round((finalLegs.reduce((a,l)=>a+Number(l.hit_probability_0_100||0),0)/chosen.size) - chosen.breakeven)} points. Sized at ${chosen.size} legs deliberately - per the Kelly-grounded research, this is the smallest structure that clears real margin, since larger structures compound variance faster than they compound EV. Diversified across ${new Set(finalLegs.map(l=>l.game_pk)).size} different game(s).`,
+        legs: finalLegs
+      });
+    }
+  }
+  return out.sort((a, b) => Number(b.estimated_ev_per_unit_stake || -1) - Number(a.estimated_ev_per_unit_stake || -1));
+}
+async function apiResearchCreateSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
+  const input = await readJsonSafe(request);
+  const legs = await autoSelectBestLegs(env, { min_confidence: input.min_confidence || RESEARCH_MIN_CONFIDENCE, max_per_game: 3, max_candidates: 120 });
+  if (!legs.length) {
+    return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/research-create", selected_leg_count:0, generated_slips:[], notes:["No legs currently clear the confidence bar. Check back after the board refreshes."] });
+  }
+  const bySource = {};
+  for (const l of legs) { const k = String(l.source_key || "unknown").toLowerCase(); if (!bySource[k]) bySource[k] = []; bySource[k].push(l); }
+  const slips = buildResearchGroundedSlips(bySource);
+  const missingApps = ["prizepicks", "parlay_underdog", "sleeper"].filter(a => !bySource[a] || !bySource[a].length);
+  return jsonResponse({
+    ok:true, data_ok:true, version:VERSION, route:"/api/slips/research-create",
+    selected_leg_count: legs.length,
+    source_counts: Object.fromEntries(Object.entries(bySource).map(([k,v])=>[k,v.length])),
+    apps_with_no_qualifying_legs: missingApps,
+    generated_slips: slips,
+    notes: [
+      "Dedicated research engine: hard 2-3 leg cap, real per-app payout tables, smallest-size-that-clears-real-margin selection, max 1 leg per game within each slip.",
+      missingApps.length ? `No qualifying legs found for: ${missingApps.join(", ")}. If an app is missing entirely from your board (not just filtered out), that's a data-coverage issue worth checking separately, not a strategy choice.` : ""
+    ].filter(Boolean)
+  });
+}
 async function apiGenerateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
   const input = await readJsonSafe(request);
