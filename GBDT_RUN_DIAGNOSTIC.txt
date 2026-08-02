@@ -40,28 +40,8 @@ Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
 	modified:   GBDT_RUN_DIAGNOSTIC.txt
-	modified:   gbdt_training/data/build_training_data_debug.log
-	modified:   gbdt_training/data/factor_validation_debug.log
 	modified:   gbdt_training/data/factor_validation_report.json
 	modified:   gbdt_training/data/workflow_run.log
-	modified:   gbdt_training/models/hitter_doubles.json
-	modified:   gbdt_training/models/hitter_hits.json
-	modified:   gbdt_training/models/hitter_hits_runs_rbis.json
-	modified:   gbdt_training/models/hitter_hitter_strikeouts.json
-	modified:   gbdt_training/models/hitter_home_runs.json
-	modified:   gbdt_training/models/hitter_rbis.json
-	modified:   gbdt_training/models/hitter_runs.json
-	modified:   gbdt_training/models/hitter_singles.json
-	modified:   gbdt_training/models/hitter_stolen_bases.json
-	modified:   gbdt_training/models/hitter_total_bases.json
-	modified:   gbdt_training/models/hitter_triples.json
-	modified:   gbdt_training/models/hitter_walks.json
-	modified:   gbdt_training/models/pitcher_earned_runs.json
-	modified:   gbdt_training/models/pitcher_hits_allowed.json
-	modified:   gbdt_training/models/pitcher_pitcher_outs.json
-	modified:   gbdt_training/models/pitcher_pitcher_strikeouts.json
-	modified:   gbdt_training/models/pitcher_runs_allowed.json
-	modified:   gbdt_training/models/pitcher_walks_allowed.json
 
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
@@ -73,5 +53,5 @@ no changes added to commit (use "git add" and/or "git commit -a")
 === git branch/HEAD state ===
 * main
   remotes/origin/main
-307bfdeddc05db044f6d1c98df5b5599e4f963b4
+92050362f7c7c20e6f84e8debc4518dc37dd6fd5
 refs/heads/main
