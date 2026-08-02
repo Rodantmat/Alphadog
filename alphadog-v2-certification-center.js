@@ -2262,12 +2262,17 @@ async function autoSelectBestLegs(env, options) {
       ORDER BY f.score_0_100 DESC NULLS LAST, f.confidence_0_100 DESC NULLS LAST
     `);
     const perGameCount = new Map();
+    const perPropTypeCount = new Map();
     const selected = [];
     for (const r of rows) {
       const gameKey = `${r.source_key}|${r.game_pk}`;
-      const count = perGameCount.get(gameKey) || 0;
-      if (count >= maxPerGame) continue;
-      perGameCount.set(gameKey, count + 1);
+      const propKey = `${r.source_key}|${r.canonical_prop_key}|${r.selected_side}|${r.line_value}`;
+      const gameCount = perGameCount.get(gameKey) || 0;
+      const propCount = perPropTypeCount.get(propKey) || 0;
+      if (gameCount >= maxPerGame) continue;
+      if (propCount >= maxPerPropType) continue;
+      perGameCount.set(gameKey, gameCount + 1);
+      perPropTypeCount.set(propKey, propCount + 1);
       selected.push(r);
       if (selected.length >= maxCandidates) break;
     }
