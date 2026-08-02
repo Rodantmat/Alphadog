@@ -268,6 +268,7 @@ async function runDailyDeltaFullRun(env, input) {
     const result = await runDailyDeltaFullRunLocked(env, input, runId, startedAt);
     const statefulDelta = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
     const classificationV5 = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+    const baselineV6 = await runBaselineV6ToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
     const coverageAudit = await runCoverageAudit(env);
     const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
     const finalCertification = !coverageOk && result.certification === "DAILY_DELTA_FULL_RUN_COMPLETE"
