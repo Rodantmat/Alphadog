@@ -9186,7 +9186,9 @@ async function runDailyMorningDeltaFullRun(env, input) {
   ];
   const results = [];
   const startAt = Number(input.resume_from_step || 0);
-  for (let i = startAt; i < steps.length; i++) {
+  const stopBeforeStep = input.stop_before_step != null ? Number(input.stop_before_step) : steps.length;
+  const effectiveEnd = Math.min(steps.length, stopBeforeStep);
+  for (let i = startAt; i < effectiveEnd; i++) {
     if (Date.now() - startedAt > TIME_BUDGET_MS) {
       return { ok: true, mode: "daily_morning_delta_full_run", partial: true, completed_steps: results, next_resume_from_step: i, note: `time budget reached, call again with resume_from_step=${i}` };
     }
@@ -9198,7 +9200,7 @@ async function runDailyMorningDeltaFullRun(env, input) {
       results.push({ step: step.key, ok: false, error: String(err && err.message ? err.message : err) });
     }
   }
-  return { ok: true, mode: "daily_morning_delta_full_run", partial: false, complete: true, completed_steps: results };
+  return { ok: true, mode: "daily_morning_delta_full_run", partial: false, complete: true, stopped_before_step: stopBeforeStep < steps.length ? stopBeforeStep : null, completed_steps: results };
 }
 
 async function runDiagnoseSavantCsvExport(env, input) {
