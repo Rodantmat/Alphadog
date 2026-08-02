@@ -468,7 +468,7 @@ async function getBaselineV6ComboIndexForPart2(env) {
   }
 }
 
-async function runDailyDeltaPart2(env, input) {
+async function runDailyDeltaPart2(env, ctx, input) {
   const runId = `daily_delta_part2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
   const preflight = await preflightCleanup(env);
@@ -482,8 +482,27 @@ async function runDailyDeltaPart2(env, input) {
     };
   }
   try {
-    const result = await runPart2Locked(env, input, runId, startedAt);
-    return { ...result, preflight };
+    const stepResult = await runPart2OneStep(env, input, runId);
+    if (!stepResult.allComplete && ctx) {
+      // More work remains - fire the next call before this invocation's execution budget could
+      // possibly be exceeded, rather than looping internally.
+      await selfTriggerPart2Continuation(ctx);
+    }
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      part: 2,
+      run_id: runId,
+      started_at: startedAt,
+      finished_at: nowIso(),
+      certification: stepResult.allComplete ? "DAILY_DELTA_PART2_COMPLETE" : "DAILY_DELTA_PART2_STEP_COMPLETE_CONTINUING",
+      phase_completed: stepResult.phase,
+      all_complete: stepResult.allComplete,
+      step_result: stepResult.result,
+      preflight
+    };
   } finally {
     await releaseLock(lock.client, PART2_LOCK_KEY, runId);
   }
