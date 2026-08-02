@@ -2490,11 +2490,14 @@ function buildResearchGroundedSlips(legsBySource) {
         estimated_multiplier: chosen.multiplier,
         estimated_ev_per_unit_stake: Math.round(chosen.ev * 1000) / 1000,
         breakeven_hit_rate_0_100: chosen.breakeven,
-        estimated_payout_note: source === "sleeper"
-          ? "Sleeper confirmed to use dynamic, per-leg pricing (each pick's own multiplier scales with its probability, final payout is the product of all legs) - NOT a fixed table like this estimate assumes. The exact formula isn't reliably documented publicly. This number is a rough approximation only - always check Sleeper's actual displayed multiplier in-app before placing, it will likely differ from this estimate."
+        multiplier_estimated: Boolean(chosen.adjusted),
+        estimated_payout_note: chosen.adjusted
+          ? (source === "sleeper"
+              ? "Sleeper uses dynamic per-leg pricing (confirmed via research) with no published formula - this multiplier is estimated using a fair-odds-preserving model calibrated to this app's own breakeven target, not a confirmed value. Check the real multiplier in-app before placing."
+              : "This slip includes a goblin/demon (adjusted) line. PrizePicks doesn't publish the exact adjusted multiplier - this is estimated using a fair-odds-preserving model based on this leg's own calibrated probability versus the standard-line breakeven target. Check the real multiplier in-app before placing.")
           : "Real app payout at placement is authoritative - this multiplier is that app's own published rate for regular lines.",
         strategy_grade: chosen.ev > 0.5 ? "STRONG" : (chosen.ev > 0 ? "STANDARD" : "CAUTION"),
-        strategy_notes: `Breakeven ${chosen.breakeven}%, cleared by ${Math.round((finalLegs.reduce((a,l)=>a+Number(l.hit_probability_0_100||0),0)/chosen.size) - chosen.breakeven)}pts. ${new Set(finalLegs.map(l=>l.game_pk)).size} games, ${new Set(finalLegs.map(l=>`${l.canonical_prop_key}|${l.selected_side}`)).size} bet types.`,
+        strategy_notes: `Breakeven ${chosen.breakeven}%, cleared by ${Math.round((finalLegs.reduce((a,l)=>a+Number(l.hit_probability_0_100||0),0)/chosen.size) - chosen.breakeven)}pts. ${new Set(finalLegs.map(l=>l.game_pk)).size} games, ${new Set(finalLegs.map(l=>`${l.canonical_prop_key}|${l.selected_side}`)).size} bet types.${chosen.adjusted ? ` Multiplier estimated (${finalLegs.filter(l=>Number(l.is_goblin)===1).length} goblin, ${finalLegs.filter(l=>Number(l.is_demon)===1).length} demon leg(s)).` : ""}`,
         legs: finalLegs
       });
     }
