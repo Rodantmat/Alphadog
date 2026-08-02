@@ -7811,7 +7811,15 @@ async function runRemineTeamGameLogsToPostgres(env, input) {
     for (const d of dates) {
       const games = Array.isArray(d.games) ? d.games : [];
       for (const g of games) {
-        const status = (g.status && (g.status.abstractGameState || g.status.detailedState || "")) || "";
+        const detailedState = String((g.status && g.status.detailedState) || "");
+        // FIXED (2026-08-02): MLB's schedule API sets abstractGameState='Final' even for
+        // postponed-and-rescheduled games - detailedState is the field that actually reveals
+        // this. Confirmed live: 7 real games were incorrectly recorded as completed on their
+        // original (rained-out) date instead of their actual rescheduled date, causing false
+        // "missing hitter/pitcher data" gaps for those dates. Exclude postponed games regardless
+        // of abstractGameState - they'll be correctly captured on their real, rescheduled date.
+        if (/postponed/i.test(detailedState)) continue;
+        const status = (g.status && (g.status.abstractGameState || detailedState || "")) || "";
         if (!/final|game over/i.test(status)) continue;
         const home = g.teams && g.teams.home, away = g.teams && g.teams.away;
         if (!home || !away || !home.team || !away.team) continue;
