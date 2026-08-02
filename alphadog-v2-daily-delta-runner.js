@@ -367,6 +367,107 @@ async function runPart2Locked(env, input, runId, startedAt) {
   };
 }
 
+const PART2_SELF_URL = "https://alphadog-v2-daily-delta-runner.rodolfoaamattos.workers.dev/run-part2";
+const PART2_PHASE_STATE_KEY = "daily_delta_part2_phase";
+// Phases run in order; baseline_v6 is NOT a single phase - it re-enters this same phase
+// repeatedly (self-chaining) until the underlying combo loop reports combo_done, since it alone
+// can take several sequential calls.
+const PART2_PHASES = ["quality_of_contact", "baseline_v6", "resolve_outcomes", "stateful_delta", "classification_v5", "finalize"];
+
+async function getPart2State(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`CREATE TABLE IF NOT EXISTS control.worker_state (state_key TEXT PRIMARY KEY, resume_index INTEGER, updated_at TIMESTAMPTZ)`;
+    const rows = await client`SELECT resume_index FROM control.worker_state WHERE state_key = ${PART2_PHASE_STATE_KEY}`;
+    return rows.length ? Number(rows[0].resume_index) : 0;
+  } catch (_) {
+    return 0;
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
+async function setPart2State(env, phaseIndex) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    await client`INSERT INTO control.worker_state (state_key, resume_index, updated_at) VALUES (${PART2_PHASE_STATE_KEY}, ${phaseIndex}, now())
+      ON CONFLICT (state_key) DO UPDATE SET resume_index=excluded.resume_index, updated_at=excluded.updated_at`;
+  } catch (_) {
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
+async function selfTriggerPart2Continuation(ctx) {
+  ctx.waitUntil(fetch(PART2_SELF_URL, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }).catch(() => {}));
+}
+
+// Runs exactly ONE bounded unit of work for the current phase, then either advances to the next
+// phase or (for baseline_v6 specifically) stays on the same phase until combo_done. Returns
+// {phaseComplete, allComplete, phaseResult} - the caller decides whether to self-trigger again.
+async function runPart2OneStep(env, input, runId) {
+  const phaseIndex = await getPart2State(env);
+  const phase = PART2_PHASES[phaseIndex] || "finalize";
+
+  if (phase === "quality_of_contact") {
+    const result = await callStep(env.PHASE3A_WORKER, { mode: "daily_morning_delta_full_run", request_id: `${runId}_qoc`, resume_from_step: 6, stop_before_step: 7 });
+    await setPart2State(env, phaseIndex + 1);
+    return { phase, phaseComplete: true, allComplete: false, result };
+  }
+
+  if (phase === "baseline_v6") {
+    const persistedIndex = await getBaselineV6ComboIndexForPart2(env);
+    const result = await callStep(env.PHASE3A_WORKER, persistedIndex > 0
+      ? { mode: "classification_baseline_v6_to_postgres_full_run", request_id: `${runId}_baseline_v6`, combo_index: persistedIndex }
+      : { mode: "classification_baseline_v6_to_postgres_full_run", request_id: `${runId}_baseline_v6_init` });
+    const done = result && (result.combo_done === true || result.partial_continue !== true);
+    if (done) await setPart2State(env, phaseIndex + 1);
+    return { phase, phaseComplete: done, allComplete: false, result };
+  }
+
+  if (phase === "resolve_outcomes") {
+    const result = await callStep(env.PHASE3A_WORKER, { mode: "daily_morning_delta_full_run", request_id: `${runId}_resolve_outcomes`, resume_from_step: 8, stop_before_step: 9 });
+    await setPart2State(env, phaseIndex + 1);
+    return { phase, phaseComplete: true, allComplete: false, result };
+  }
+
+  if (phase === "stateful_delta") {
+    const result = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+    await setPart2State(env, phaseIndex + 1);
+    return { phase, phaseComplete: true, allComplete: false, result };
+  }
+
+  if (phase === "classification_v5") {
+    const result = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+    await setPart2State(env, phaseIndex + 1);
+    return { phase, phaseComplete: true, allComplete: false, result };
+  }
+
+  // finalize: coverage audit + outcome grading, then reset phase to 0 for the next full daily run
+  const coverageAudit = await runCoverageAudit(env);
+  const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
+  const outcomeGrading = coverageOk
+    ? await runOutcomeGrading(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }))
+    : { ok: false, skipped: true, reason: "coverage_gap_detected" };
+  await setPart2State(env, 0);
+  return { phase: "finalize", phaseComplete: true, allComplete: true, result: { coverage_audit: coverageAudit, outcome_grading: outcomeGrading } };
+}
+
+// baseline_v6's own combo_index isn't tracked by part2's phase state (it lives in the phase3a
+// worker's own control.worker_state under 'baseline_v6_full_run') - read it directly so part2
+// resumes from the right place across self-chained calls instead of restarting from 0 each time.
+async function getBaselineV6ComboIndexForPart2(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+  try {
+    const rows = await client`SELECT resume_index FROM control.worker_state WHERE state_key = 'baseline_v6_full_run'`;
+    return rows.length ? Number(rows[0].resume_index) : 0;
+  } catch (_) {
+    return 0;
+  } finally {
+    try { await client.end({ timeout: 1 }); } catch (_) {}
+  }
+}
+
 async function runDailyDeltaPart2(env, input) {
   const runId = `daily_delta_part2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
