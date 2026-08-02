@@ -291,6 +291,7 @@ async function runDailyDeltaFullRun(env, input) {
       coverage_audit: coverageAudit,
       stateful_delta: statefulDelta,
       classification_v5: classificationV5,
+      baseline_v6: baselineV6,
       outcome_grading: outcomeGrading,
       preflight
     };
