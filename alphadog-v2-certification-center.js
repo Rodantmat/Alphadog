@@ -2337,6 +2337,27 @@ const RESEARCH_MIN_SLIP_SIZE = 2;
 const RESEARCH_MIN_CONFIDENCE = 65;
 const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, not just clearing it
 
+// Per-leg multiplier adjustment for goblin/demon (PrizePicks) and dynamic pricing (Sleeper).
+// Neither app publishes the exact formula, but both apps' own documentation confirms the
+// DIRECTION: goblins (easier, higher true probability) pay less per leg, demons (harder, lower
+// true probability) pay more - confirmed via this system's own board data showing real goblin/
+// standard/demon cascades for the same player+stat. This applies the standard fair-odds-
+// preserving principle: scale the per-leg multiplier inversely to how much easier/harder the
+// leg's own calibrated probability is versus the app's published breakeven target for a
+// standard leg at that slip size. Bounded to 0.3x-3x of the standard per-leg multiplier since
+// the exact proprietary formula is not publicly documented - this is the closest defensible
+// estimate given available data, not a confirmed value.
+const ADJUSTED_MULTIPLIER_MIN_RATIO = 0.3;
+const ADJUSTED_MULTIPLIER_MAX_RATIO = 3.0;
+function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
+  const isAdjustedLine = isSleeper || Number(leg.is_goblin) === 1 || Number(leg.is_demon) === 1;
+  if (!isAdjustedLine) return { multiplier: standardPerLegMultiplier, adjusted: false };
+  const legProbPct = Math.max(1, Math.min(99, Number(leg.hit_probability_0_100 || leg.certainty_0_100 || breakevenTargetPct)));
+  const rawRatio = breakevenTargetPct / legProbPct;
+  const boundedRatio = Math.max(ADJUSTED_MULTIPLIER_MIN_RATIO, Math.min(ADJUSTED_MULTIPLIER_MAX_RATIO, rawRatio));
+  return { multiplier: standardPerLegMultiplier * boundedRatio, adjusted: true, ratio: boundedRatio };
+}
+
 function researchSlipEv(probs01, mode, table) {
   const n = probs01.length;
   const dist = hitCountDistribution(probs01);
@@ -2348,6 +2369,39 @@ function researchSlipEv(probs01, mode, table) {
   const stdev = Math.sqrt(Math.max(variance, 1e-6));
   const ev = mean - 1;
   return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: table.power[n] || null };
+}
+// Adjusted-leg-aware version: when any leg in the slip is goblin/demon/Sleeper, compute the
+// slip's actual multiplier as the product of each leg's own adjusted per-leg multiplier, rather
+// than a flat table lookup that only correctly applies to genuinely standard lines.
+function researchSlipEvAdjusted(legs, probs01, mode, table, source, breakevenTargetPct) {
+  const n = legs.length;
+  const standardPerLegMultiplier = mode === "power" ? Math.pow(table.power[n] || 1, 1 / n) : Math.pow((table.flex[n] && table.flex[n][n]) || 1, 1 / n);
+  const isSleeper = source === "sleeper";
+  const perLeg = legs.map(l => perLegAdjustedMultiplier(l, standardPerLegMultiplier, breakevenTargetPct, isSleeper));
+  const anyAdjusted = perLeg.some(p => p.adjusted);
+  if (!anyAdjusted) {
+    const r = researchSlipEv(probs01, mode, table);
+    return { ...r, adjusted: false, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
+  }
+  // For power mode with adjusted legs: full-hit multiplier is the product of all per-leg
+  // multipliers. Flex mode with adjusted legs falls back to the standard flex table scaled by
+  // the average adjustment ratio, since partial-hit payout curves for adjusted lines are not
+  // documented at all - this is a rough approximation only for that specific case.
+  const fullHitMultiplier = perLeg.reduce((a, p) => a * p.multiplier, 1);
+  const dist = hitCountDistribution(probs01);
+  const avgRatio = perLeg.reduce((a, p) => a + (p.ratio || 1), 0) / perLeg.length;
+  const payoutFor = (k) => {
+    if (mode === "power") return k === n ? fullHitMultiplier : 0;
+    const basePayout = (table.flex[n] && table.flex[n][k]) || 0;
+    return basePayout * avgRatio;
+  };
+  let mean = 0;
+  for (let k = 0; k <= n; k++) mean += dist[k] * payoutFor(k);
+  let variance = 0;
+  for (let k = 0; k <= n; k++) { const d = payoutFor(k) - mean; variance += dist[k] * d * d; }
+  const stdev = Math.sqrt(Math.max(variance, 1e-6));
+  const ev = mean - 1;
+  return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: Math.round(fullHitMultiplier * 1000) / 1000, adjusted: true, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
 }
 function researchBreakeven(size, mode, table) {
   if (mode === "power") {
