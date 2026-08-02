@@ -2380,24 +2380,25 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 // standard leg at that slip size. Bounded to 0.3x-3x of the standard per-leg multiplier since
 // the exact proprietary formula is not publicly documented - this is the closest defensible
 // estimate given available data, not a confirmed value.
-const ADJUSTED_MULTIPLIER_MIN_RATIO = 0.3;
-const ADJUSTED_MULTIPLIER_MAX_RATIO = 3.0;
-// Fixed, research-anchored discount/boost factors for goblin/demon legs - NOT scaled by our own
-// model's probability (that approach, tried first, was proven mathematically self-defeating:
-// verified live that it forces adjusted EV toward 0 for any leg regardless of genuine edge,
-// since it assumes the app prices exactly to a zero-edge target versus OUR OWN probability
-// estimate - directly canceling out the very edge this system exists to find). These fixed
-// ratios are instead anchored to independently-sourced real reference points: a goblin has been
-// documented turning a 3x 2-pick into ~1.4x (per-leg ratio ~0.47 when one of two legs is
-// goblin), and PrizePicks publishes up to 2000x on an all-Demon 6-pick versus 37.5x standard
-// (per-leg ratio ~1.9). Neither app publishes an exact formula for this, so this remains an
-// approximation - but a fixed one that preserves rather than erases genuine model edge.
-const GOBLIN_PER_LEG_RATIO = 0.683; // sqrt(1.4/3): conservative interpretation of the one real
-// reference point found (goblin turning a 3x 2-pick into ~1.4x), assuming BOTH legs were goblin
-// in that example rather than one - avoids over-compounding when multiple goblin legs combine.
-const DEMON_PER_LEG_RATIO = 1.9;
+// VALIDATED (2026-08-02): user ran a real in-app PrizePicks test and reported actual combined
+// multipliers across 7 goblin combinations. Solving for independent per-leg multipliers and
+// cross-checking against 3 goblin+goblin combos not used in the derivation, all 3 predictions
+// matched the reported values within rounding - this confirms PrizePicks prices legs
+// independently and multiplicatively, and gives real per-tier ratios rather than a flat guess.
+// Standard 2-pick per-leg = sqrt(3) = 1.732. Tier 1 = easiest/furthest-from-standard goblin,
+// tier 3 = hardest/closest-to-standard goblin. Ratios below are per-leg-multiplier / standard.
+const GOBLIN_TIER_RATIOS = { 1: 0.833, 2: 0.700, 3: 0.633 };
+const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation, decreasing further toward standard
+const DEMON_PER_LEG_RATIO = 1.9; // still the earlier research-based estimate; no demon test data yet
+function goblinTierRatio(tierRank) {
+  if (GOBLIN_TIER_RATIOS[tierRank] != null) return GOBLIN_TIER_RATIOS[tierRank];
+  return GOBLIN_TIER_RATIO_FLOOR;
+}
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
-  if (Number(leg.is_goblin) === 1) return { multiplier: standardPerLegMultiplier * GOBLIN_PER_LEG_RATIO, adjusted: true, ratio: GOBLIN_PER_LEG_RATIO };
+  if (Number(leg.is_goblin) === 1) {
+    const ratio = goblinTierRatio(Number(leg.goblin_tier_rank) || 1);
+    return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
+  }
   if (Number(leg.is_demon) === 1) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
   return { multiplier: standardPerLegMultiplier, adjusted: false };
 }
