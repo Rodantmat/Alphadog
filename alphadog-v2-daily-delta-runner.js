@@ -379,7 +379,16 @@ async function getJsonState(env, key) {
   try {
     await client`CREATE TABLE IF NOT EXISTS control.worker_state_json (state_key TEXT PRIMARY KEY, value_json JSONB, updated_at TIMESTAMPTZ)`;
     const rows = await client`SELECT value_json FROM control.worker_state_json WHERE state_key = ${key}`;
-    return rows.length ? rows[0].value_json : null;
+    if (!rows.length) return null;
+    const raw = rows[0].value_json;
+    // Defensive: postgres.js should auto-parse jsonb columns to objects, but confirmed live
+    // this can come back as a raw JSON string in some cases - explicitly parse if so, since
+    // silently passing a string downstream causes a dangerous silent wrong-mode fallback rather
+    // than a visible error.
+    if (typeof raw === "string") {
+      try { return JSON.parse(raw); } catch (_) { return null; }
+    }
+    return raw;
   } catch (_) {
     return null;
   } finally {
