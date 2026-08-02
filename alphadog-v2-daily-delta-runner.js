@@ -553,8 +553,8 @@ export default {
       let input = {};
       try { input = await request.json(); } catch (_) {}
       const part1 = await runDailyDeltaPart1(env, input);
-      ctx.waitUntil(runDailyDeltaPart2(env, input));
-      return jsonResponse({ ok: part1.ok, part1, part2: { started: true, note: "running in background, see control.worker_state/control.runner_locks for progress" } }, part1.ok ? 200 : 207);
+      const part2FirstStep = await runDailyDeltaPart2(env, ctx, input);
+      return jsonResponse({ ok: part1.ok, part1, part2_first_step: part2FirstStep }, part1.ok ? 200 : 207);
     }
 
     return jsonResponse({ ok: false, error: "not_found", worker_name: WORKER_NAME }, 404);
