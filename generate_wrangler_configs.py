@@ -353,7 +353,9 @@ def make_config(worker_name, include_services=False):
         # Part 1's freshness itself (3 min apart, up to 2 retries) if it fires and finds Part 1
         # not yet ready, so the schedule can reflect typical timing (Part 1 usually settles by
         # T+17-18) while the rare slow day is handled by the wait-retry, not schedule padding.
-        cfg["triggers"] = {"crons": ["20 16 * * *", "20 20 * * *", "20 5 * * *"]}
+        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
+        # scheduled task now owns this stage.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-scoring-runner-part2":
         # PART 2 of 2 (new 2026-07-29): enrichment, hp-board, scoring-engine, final-board,
         # certifier-last-pass. Verifies Part 1's output (score.prop_matrix_current) is genuinely
