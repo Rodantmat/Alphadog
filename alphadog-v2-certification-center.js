@@ -2359,7 +2359,9 @@ const ADJUSTED_MULTIPLIER_MAX_RATIO = 3.0;
 // goblin), and PrizePicks publishes up to 2000x on an all-Demon 6-pick versus 37.5x standard
 // (per-leg ratio ~1.9). Neither app publishes an exact formula for this, so this remains an
 // approximation - but a fixed one that preserves rather than erases genuine model edge.
-const GOBLIN_PER_LEG_RATIO = 0.47;
+const GOBLIN_PER_LEG_RATIO = 0.683; // sqrt(1.4/3): conservative interpretation of the one real
+// reference point found (goblin turning a 3x 2-pick into ~1.4x), assuming BOTH legs were goblin
+// in that example rather than one - avoids over-compounding when multiple goblin legs combine.
 const DEMON_PER_LEG_RATIO = 1.9;
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
   if (Number(leg.is_goblin) === 1) return { multiplier: standardPerLegMultiplier * GOBLIN_PER_LEG_RATIO, adjusted: true, ratio: GOBLIN_PER_LEG_RATIO };
