@@ -2255,9 +2255,26 @@ async function autoSelectBestLegs(env, options) {
         AND f.official_game_time_utc::timestamptz > now()
       ORDER BY f.score_0_100 DESC NULLS LAST, f.confidence_0_100 DESC NULLS LAST
     `);
+    // Deduplicate alternate lines for the same underlying player+prop+side (goblin vs demon vs
+    // standard) - keep only the best EV-adjusted variant, per the explicit point that the
+    // easiest-to-hit line isn't always the best value once its discounted payout is accounted
+    // for. Without this, both a goblin and its standard sibling could separately consume
+    // candidate pool slots for what is really one betting decision.
+    const bestByPropKey = new Map();
+    for (const r of rows) {
+      const key = `${r.source_key}|${r.player_id}|${r.canonical_prop_key}|${r.selected_side}`;
+      const prob = Number(r.hit_probability_0_100 || r.confidence_0_100 || 0) / 100;
+      const ratio = Number(r.is_goblin) === 1 ? GOBLIN_PER_LEG_RATIO : (Number(r.is_demon) === 1 ? DEMON_PER_LEG_RATIO : 1.0);
+      const effectiveValue = prob * ratio;
+      const existing = bestByPropKey.get(key);
+      if (!existing || effectiveValue > existing.effectiveValue) {
+        bestByPropKey.set(key, { row: r, effectiveValue });
+      }
+    }
+    const dedupedRows = [...bestByPropKey.values()].map(v => v.row).sort((a, b) => Number(b.score_0_100 || 0) - Number(a.score_0_100 || 0));
     const perGameCount = new Map();
     const selected = [];
-    for (const r of rows) {
+    for (const r of dedupedRows) {
       const gameKey = `${r.source_key}|${r.game_pk}`;
       const count = perGameCount.get(gameKey) || 0;
       if (count >= maxPerGame) continue;
