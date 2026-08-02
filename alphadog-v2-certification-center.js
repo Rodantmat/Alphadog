@@ -2205,6 +2205,89 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
   }
   return out.sort((a,b)=>Number(b.estimated_ev_per_unit_stake||-1)-Number(a.estimated_ev_per_unit_stake||-1));
 }
+// Automatic leg selection, grounded in the exhaustive slip-strategy research done this session:
+// - confidence >= 65: comfortably clears the real breakeven range for 2-3 leg slips (~54-58%
+//   per leg), leaving margin for calibration error rather than betting right at the line.
+// - board_tier = PRIMARY: the system's own existing quality gate (HP >= 70, confidence >= 55).
+// - Max 2 legs per game_pk: correlation research is explicit that concentrating legs in one
+//   game means a single blowout, weather delay, or role change can gut multiple legs at once -
+//   spreading across games is a real, not cosmetic, variance reduction.
+// - Per source_key: each app's slip is built independently, since PrizePicks/Underdog/Sleeper
+//   have different players/lines available and different payout tables.
+async function autoSelectBestLegs(env, options) {
+  const opts = options || {};
+  const minConfidence = Number(opts.min_confidence || 65);
+  const maxPerGame = Number(opts.max_per_game || 2);
+  const maxCandidates = Number(opts.max_candidates || 60);
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      SELECT
+        f.final_board_row_id AS board_row_id,
+        f.final_board_row_id AS final_board_row_id,
+        f.final_board_batch_id AS batch_id,
+        f.prepared_row_id,
+        f.source_line_id,
+        f.source_key,
+        f.rank_order,
+        f.game_pk,
+        f.official_date,
+        f.official_game_time_utc AS official_game_time_utc,
+        f.mlb_player_id AS player_id,
+        f.player_name,
+        p.team AS team_id,
+        f.canonical_prop_key,
+        f.line_value,
+        f.selected_side,
+        f.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        f.confidence_0_100 AS certainty_0_100,
+        f.score_0_100 AS overall_score_0_100,
+        f.score_grade AS board_grade,
+        p.team, p.opponent, p.team_full_name, p.opponent_full_name, p.source_prop_name
+      FROM score.final_board_current f
+      LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND f.board_tier = 'PRIMARY'
+        AND f.confidence_0_100 >= ${minConfidence}
+        AND f.official_game_time_utc IS NOT NULL
+        AND f.official_game_time_utc::timestamptz > now()
+      ORDER BY f.score_0_100 DESC NULLS LAST, f.confidence_0_100 DESC NULLS LAST
+    `);
+    const perGameCount = new Map();
+    const selected = [];
+    for (const r of rows) {
+      const gameKey = `${r.source_key}|${r.game_pk}`;
+      const count = perGameCount.get(gameKey) || 0;
+      if (count >= maxPerGame) continue;
+      perGameCount.set(gameKey, count + 1);
+      selected.push(r);
+      if (selected.length >= maxCandidates) break;
+    }
+    return selected;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+async function apiAutoCreateSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
+  const input = await readJsonSafe(request);
+  const legs = await autoSelectBestLegs(env, input);
+  if (!legs.length) {
+    return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/auto-create", selected_leg_count:0, generated_slips:[], notes:["No legs currently clear the confidence/quality bar for auto-selection. Lower min_confidence or check back after the board refreshes."] });
+  }
+  // No explicit structures passed - lets the existing recommendAllocation engine choose sizes
+  // per the same research: it already favors smaller, risk-adjusted structures over raw EV-max,
+  // which is exactly what this research pass confirmed is correct.
+  const slips = buildGeneratedSlips(legs, null, "recommended");
+  return jsonResponse({
+    ok:true, data_ok:true, version:VERSION, route:"/api/slips/auto-create",
+    selected_leg_count: legs.length,
+    source_counts: legs.reduce((a,r)=>{const k=String(r.source_key||"unknown").toLowerCase();a[k]=(a[k]||0)+1;return a;},{}),
+    generated_slips: slips,
+    selection_criteria: { min_confidence: Number(input.min_confidence || 65), max_per_game: Number(input.max_per_game || 2), board_tier_required: "PRIMARY" },
+    notes: ["Legs auto-selected: board_tier=PRIMARY, confidence >= min_confidence, max 2 legs per game per app. Structures chosen by the existing risk-adjusted EV engine (favors smaller Flex structures per the slip-strategy research), not a fixed rule."]
+  });
+}
 async function apiGenerateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
   const input = await readJsonSafe(request);
