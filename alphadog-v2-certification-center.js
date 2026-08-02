@@ -2453,7 +2453,6 @@ function buildResearchGroundedSlips(legsBySource) {
         propTypesInSlip.add(propTypeKey);
       }
       if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) break; // not enough diversified legs left for even the smallest slip
-      slipLegs.forEach(l => used.add(l.board_row_id));
 
       const probs01 = slipLegs.map(l => Math.max(0.01, Math.min(0.99, calibrateProbabilityPct(Number(l.hit_probability_0_100 || l.certainty_0_100 || 0)) / 100)));
       // Try smallest-size-first: 2-leg flex/power, then 3-leg, per the research's own conclusion
@@ -2476,8 +2475,18 @@ function buildResearchGroundedSlips(legsBySource) {
         }
         if (chosen) break;
       }
-      if (!chosen) continue; // this batch of legs didn't clear real margin at any allowed size - skip, don't force a slip
+      if (!chosen) {
+        // BUG FIX (2026-08-02): this specific grouping didn't clear margin at any size - but
+        // the individual legs might still work with DIFFERENT partners. Only remove the anchor
+        // (top-confidence) leg to guarantee forward progress; keep the other candidate legs
+        // available so they get a real chance to combine differently on the next pass, instead
+        // of being silently discarded. Confirmed this was the direct cause of far fewer slips
+        // being built than the candidate pool size should allow.
+        used.add(slipLegs[0].board_row_id);
+        continue;
+      }
       const finalLegs = slipLegs.slice(0, chosen.size);
+      finalLegs.forEach(l => used.add(l.board_row_id));
       out.push({
         client_slip_id: makeUiId("research_slip"),
         source_key: source,
