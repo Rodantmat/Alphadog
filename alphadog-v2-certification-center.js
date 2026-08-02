@@ -2219,14 +2219,6 @@ async function autoSelectBestLegs(env, options) {
   const minConfidence = Number(opts.min_confidence || 65);
   const maxPerGame = Number(opts.max_per_game || 2);
   const maxCandidates = Number(opts.max_candidates || 60);
-  // Prop-type diversification cap, added after a deep-scrutiny finding (2026-08-02): confirmed
-  // live that 82 of 109 qualifying legs (75%) were the exact same narrow bet (walks LESS 0.5) -
-  // a real correlation risk distinct from game diversification. If the model has any systematic
-  // bias specific to one prop/side/line combination, every leg of that type fails together
-  // regardless of which games or players carry it. Without this cap, "top confidence" selection
-  // just reflects which single bet type happens to have the highest baserate today, not genuine
-  // model edge spread across the board.
-  const maxPerPropType = Number(opts.max_per_prop_type || 3);
   const pg = pgClient(env);
   try {
     const rows = await queryAllPg(pg, `
