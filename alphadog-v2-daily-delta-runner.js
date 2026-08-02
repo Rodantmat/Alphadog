@@ -565,11 +565,17 @@ async function runDailyDeltaPart2(env, ctx, input) {
 
 export default {
   async scheduled(event, env, ctx) {
-    // Both parts fire on the same cron trigger, sequentially, each with its own independent
-    // lock/stale-connection-killer - a stall in part1 cannot prevent part2's lock from being
-    // acquired on the NEXT scheduled invocation, and vice versa.
+    // Multiple crons now fire for this worker (2026-08-02 fix): the first (14:00 UTC) runs the
+    // full Part1+Part2 kickoff; the rest (14:10-14:50) call Part 2 ONLY, as an external,
+    // independently-driven retry - confirmed live that Part 2's own internal self-chaining fetch
+    // can stall without one, and this worker's lock + persisted phase state make repeated Part 2
+    // calls safe (no-op if already done for the day, genuine continuation if it stalled).
+    const cronStr = String(event.cron || "");
+    const isKickoffCron = cronStr.startsWith("0 14");
     ctx.waitUntil((async () => {
-      await runDailyDeltaPart1(env, { trigger: "cron", cron: event.cron });
+      if (isKickoffCron) {
+        await runDailyDeltaPart1(env, { trigger: "cron", cron: event.cron });
+      }
       await runDailyDeltaPart2(env, ctx, { trigger: "cron", cron: event.cron });
     })());
   },
