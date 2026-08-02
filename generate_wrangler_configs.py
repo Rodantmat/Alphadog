@@ -327,7 +327,9 @@ def make_config(worker_name, include_services=False):
         # happened within 0.6 seconds of each other on a clean run - real margin, not luck, is
         # needed here). Only needs to fit 3 light stages (certifier + prop-factor x2) inside its
         # own 15-minute budget.
-        cfg["triggers"] = {"crons": ["14 16 * * *", "14 20 * * *", "14 5 * * *"]}
+        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
+        # scheduled task now owns this stage.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-scoring-runner-matrix":
         # PART 1b (new 2026-07-29): matrix-builder, fully isolated. Confirmed live to be the
         # real bottleneck in the scoring chain - even paired with just 2 light stages, the
