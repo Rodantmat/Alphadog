@@ -45,7 +45,7 @@ async function runCoverageAudit(env) {
     const gamesExpected = Number(r.games_expected || 0);
     const gamesInStarter = Number(r.games_in_starter_history || 0);
     const gamesInBullpen = Number(r.games_in_bullpen_history || 0);
-    const pass = gamesExpected === 0 || (gamesInStarter === gamesExpected && gamesInBullpen === gamesExpected);
+    const pass = (gamesExpected === 0 || (gamesInStarter === gamesExpected && gamesInBullpen === gamesExpected)) && staleClassification.length === 0;
     return {
       ok: true,
       pass,
@@ -56,7 +56,8 @@ async function runCoverageAudit(env) {
       bullpen_history_gap: Math.max(0, gamesExpected - gamesInBullpen),
       hitter_null_dates_yesterday: Number(r.hitter_null_dates_yesterday || 0),
       pitcher_null_dates_yesterday: Number(r.pitcher_null_dates_yesterday || 0),
-      warning: pass ? null : "COVERAGE_GAP_DETECTED_starter_or_bullpen_history_missing_yesterdays_games"
+      stale_classification_combos: staleClassification.map(row => ({ canonical_prop_key: row.canonical_prop_key, selected_side: row.selected_side, hours_stale: Math.round(Number(row.hours_stale)) })),
+      warning: pass ? null : "COVERAGE_GAP_DETECTED_starter_bullpen_history_or_classification_staleness"
     };
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
