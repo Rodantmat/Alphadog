@@ -2349,22 +2349,22 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 // estimate given available data, not a confirmed value.
 const ADJUSTED_MULTIPLIER_MIN_RATIO = 0.3;
 const ADJUSTED_MULTIPLIER_MAX_RATIO = 3.0;
+// Fixed, research-anchored discount/boost factors for goblin/demon legs - NOT scaled by our own
+// model's probability (that approach, tried first, was proven mathematically self-defeating:
+// verified live that it forces adjusted EV toward 0 for any leg regardless of genuine edge,
+// since it assumes the app prices exactly to a zero-edge target versus OUR OWN probability
+// estimate - directly canceling out the very edge this system exists to find). These fixed
+// ratios are instead anchored to independently-sourced real reference points: a goblin has been
+// documented turning a 3x 2-pick into ~1.4x (per-leg ratio ~0.47 when one of two legs is
+// goblin), and PrizePicks publishes up to 2000x on an all-Demon 6-pick versus 37.5x standard
+// (per-leg ratio ~1.9). Neither app publishes an exact formula for this, so this remains an
+// approximation - but a fixed one that preserves rather than erases genuine model edge.
+const GOBLIN_PER_LEG_RATIO = 0.47;
+const DEMON_PER_LEG_RATIO = 1.9;
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
-  // FIXED (2026-08-02): this adjustment must ONLY apply to genuine goblin/demon lines, never to
-  // Sleeper broadly. Confirmed via direct calculation that applying a fair-odds-preserving
-  // formula to every leg (assuming the app prices exactly to its own breakeven target) forces
-  // adjusted EV toward 0 by construction - a real 75%-probability slip came out to +0.0% EV
-  // after "adjustment", which is mathematically equivalent to erasing all edge. That directly
-  // contradicts this system's purpose of finding genuine model-vs-market disagreement. Sleeper's
-  // real per-leg pricing is still unknown (see APP_PAYOUT_TABLES.sleeper comment) - the flat-
-  // table approximation there, while imperfect, does not have this zero-edge-by-construction
-  // flaw. Only apply the adjustment where a real standard-line anchor exists to compare against.
-  const isAdjustedLine = Number(leg.is_goblin) === 1 || Number(leg.is_demon) === 1;
-  if (!isAdjustedLine) return { multiplier: standardPerLegMultiplier, adjusted: false };
-  const legProbPct = Math.max(1, Math.min(99, Number(leg.hit_probability_0_100 || leg.certainty_0_100 || breakevenTargetPct)));
-  const rawRatio = breakevenTargetPct / legProbPct;
-  const boundedRatio = Math.max(ADJUSTED_MULTIPLIER_MIN_RATIO, Math.min(ADJUSTED_MULTIPLIER_MAX_RATIO, rawRatio));
-  return { multiplier: standardPerLegMultiplier * boundedRatio, adjusted: true, ratio: boundedRatio };
+  if (Number(leg.is_goblin) === 1) return { multiplier: standardPerLegMultiplier * GOBLIN_PER_LEG_RATIO, adjusted: true, ratio: GOBLIN_PER_LEG_RATIO };
+  if (Number(leg.is_demon) === 1) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
+  return { multiplier: standardPerLegMultiplier, adjusted: false };
 }
 
 function researchSlipEv(probs01, mode, table) {
