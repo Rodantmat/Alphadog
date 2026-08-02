@@ -3089,10 +3089,11 @@ async function autoCreateSlips(){
   if(btn)btn.disabled=true;
   results.innerHTML='<div class="empty">Selecting best legs and building slips...</div>';
   try{
-    const j=await (await fetch('/api/slips/auto-create',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
-    if(!j.ok){results.innerHTML='<div class="empty err">Auto-create failed: '+esc(j.error||'unknown')+'</div>';return}
+    const j=await (await fetch('/api/slips/research-create',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
     lastAutoCreatedSlips=j.generated_slips||[];
-    if(!lastAutoCreatedSlips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying legs right now.')+'</div>';return}
+    const missingApps=(j.apps_with_no_qualifying_legs||[]).join(', ');
+    if(!lastAutoCreatedSlips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying legs right now.')+(missingApps?' No legs found for: '+esc(missingApps)+'.':'')+'</div>';return}
     const counts=j.source_counts||{};
     const countsLine=Object.keys(counts).map(k=>k.toUpperCase()+': '+counts[k]).join(' • ');
     results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs ('+esc(countsLine)+') → built '+lastAutoCreatedSlips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>'
