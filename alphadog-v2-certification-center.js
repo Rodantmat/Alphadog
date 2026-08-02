@@ -2438,7 +2438,17 @@ function buildResearchGroundedSlips(legsBySource) {
   const out = [];
   for (const [source, legsRaw] of Object.entries(legsBySource)) {
     const table = APP_PAYOUT_TABLES[source] || APP_PAYOUT_TABLES.prizepicks;
-    const pool = [...legsRaw].sort((a, b) => Number(b.certainty_0_100 || b.confidence_0_100 || 0) - Number(a.certainty_0_100 || a.confidence_0_100 || 0));
+    // Sort by EV-adjusted value, not raw confidence/probability - a goblin leg's probability is
+    // inflated by design (that's the whole point of a goblin), so sorting by raw confidence
+    // always ranks goblins above genuinely better-value standard lines. This weights each leg by
+    // its own effective payout ratio (1.0 standard, 0.683 goblin, 1.9 demon) so a high-confidence
+    // standard line can outrank a goblin whose discounted payout doesn't justify its easier bar.
+    const legEffectiveValue = (l) => {
+      const prob = Number(l.certainty_0_100 || l.confidence_0_100 || 0) / 100;
+      const ratio = Number(l.is_goblin) === 1 ? GOBLIN_PER_LEG_RATIO : (Number(l.is_demon) === 1 ? DEMON_PER_LEG_RATIO : 1.0);
+      return prob * ratio;
+    };
+    const pool = [...legsRaw].sort((a, b) => legEffectiveValue(b) - legEffectiveValue(a));
     const used = new Set();
     while (pool.some(l => !used.has(l.board_row_id))) {
       const available = pool.filter(l => !used.has(l.board_row_id));
