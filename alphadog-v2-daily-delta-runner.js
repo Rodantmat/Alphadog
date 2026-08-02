@@ -423,17 +423,22 @@ export default {
     if (method === "POST" && path === "/run-part2") {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const result = await runDailyDeltaPart2(env, input);
-      return jsonResponse(result, result.ok ? 200 : 207);
+      const runId = `daily_delta_part2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      ctx.waitUntil(runDailyDeltaPart2(env, { ...input, run_id_override: runId }));
+      return jsonResponse({
+        ok: true, started: true, worker_name: WORKER_NAME, part: 2, run_id: runId,
+        note: "Part 2 runs in the background (its total duration exceeds a single HTTP request's execution limit). Check progress via control.worker_state (state_key='baseline_v6_full_run') or control.runner_locks (lock_key='alphadog_daily_delta_part2') rather than this response."
+      });
     }
 
-    // Backward-compatible: /run or / now runs both parts sequentially, same as scheduled().
+    // Backward-compatible: /run or / now runs both parts, part1 synchronously (fast enough to
+    // await directly) then part2 in the background via ctx.waitUntil (too long to await safely).
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
       const part1 = await runDailyDeltaPart1(env, input);
-      const part2 = await runDailyDeltaPart2(env, input);
-      return jsonResponse({ ok: part1.ok && part2.ok, part1, part2 }, (part1.ok && part2.ok) ? 200 : 207);
+      ctx.waitUntil(runDailyDeltaPart2(env, input));
+      return jsonResponse({ ok: part1.ok, part1, part2: { started: true, note: "running in background, see control.worker_state/control.runner_locks for progress" } }, part1.ok ? 200 : 207);
     }
 
     return jsonResponse({ ok: false, error: "not_found", worker_name: WORKER_NAME }, 404);
