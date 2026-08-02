@@ -2473,15 +2473,18 @@ async function apiResearchCreateSlips(env, request) {
   const bySource = {};
   for (const l of legs) { const k = String(l.source_key || "unknown").toLowerCase(); if (!bySource[k]) bySource[k] = []; bySource[k].push(l); }
   const slips = buildResearchGroundedSlips(bySource);
+  const lineShoppingOpportunities = detectLineShoppingOpportunities(bySource);
   const missingApps = ["prizepicks", "parlay_underdog", "sleeper"].filter(a => !bySource[a] || !bySource[a].length);
   return jsonResponse({
     ok:true, data_ok:true, version:VERSION, route:"/api/slips/research-create",
     selected_leg_count: legs.length,
     source_counts: Object.fromEntries(Object.entries(bySource).map(([k,v])=>[k,v.length])),
     apps_with_no_qualifying_legs: missingApps,
+    line_shopping_opportunities: lineShoppingOpportunities,
     generated_slips: slips,
     notes: [
       "Dedicated research engine: hard 2-3 leg cap, real per-app payout tables, smallest-size-that-clears-real-margin selection, max 1 leg per game within each slip.",
+      lineShoppingOpportunities.length ? `${lineShoppingOpportunities.length} player/prop combo(s) show a meaningfully different number across apps - see line_shopping_opportunities.` : "",
       missingApps.length ? `No qualifying legs found for: ${missingApps.join(", ")}. If an app is missing entirely from your board (not just filtered out), that's a data-coverage issue worth checking separately, not a strategy choice.` : ""
     ].filter(Boolean)
   });
