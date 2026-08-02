@@ -461,7 +461,11 @@ def make_config(worker_name, include_services=False):
         # Real schedule: 7:00 AM Pacific (PDT, UTC-7 in July) = 14:00 UTC triggers the full
         # Part1+Part2 kickoff. Additional crons at :10/:20/:30/:40/:50 past call Part 2 only, as
         # an external safety net independent of its internal self-chain.
-        cfg["triggers"] = {"crons": ["0 14 * * *", "10 14 * * *", "20 14 * * *", "30 14 * * *", "40 14 * * *", "50 14 * * *"]}
+        # RETIRED 2026-08-02: Cowork scheduled task (Claude-supervised, once/day at 7am Pacific,
+        # verifies real coverage across all mining and calculation layers, can diagnose/fix live)
+        # now owns triggering this pipeline instead of a blind cron. Explicit empty array, not
+        # omitted - omitting does not clear an existing Cloudflare cron trigger.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-outcome-grader":
         # New, deliberately isolated worker: grades yesterday's board legs against already-mined
         # real game logs (stats_hitter.game_logs / stats_pitcher.game_logs) and writes results to
