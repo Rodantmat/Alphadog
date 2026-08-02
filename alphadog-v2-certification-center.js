@@ -3413,6 +3413,7 @@ export default {
       if (method === "GET" && path === "/api/slips/recent") return await apiSlipsRecent(env, url);
       if (method === "POST" && path === "/api/slips/generate") return await apiGenerateSlips(env, request);
       if (method === "POST" && path === "/api/slips/auto-create") return await apiAutoCreateSlips(env, request);
+      if (method === "POST" && path === "/api/slips/research-create") return await apiResearchCreateSlips(env, request);
       if (method === "POST" && path === "/api/slips/save") return await apiSaveSlips(env, request);
       if (method === "POST" && path === "/diagnostic") {
         const input = await readJsonSafe(request);
