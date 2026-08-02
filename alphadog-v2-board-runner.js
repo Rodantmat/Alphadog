@@ -254,21 +254,26 @@ async function runBoardFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
   // Stage 1: PrizePicks (GitHub-sourced). Not last, so a failure here doesn't block the rest -
-  // score-prep will just run on whatever PrizePicks data is already current. Retries once within
-  // this same cycle if the first attempt reports zero rows written or fails outright - its own
-  // self-healing logic (stale source -> clear current -> dispatch a fresh scrape) requires a
-  // LATER run to consume the result, and without a same-cycle retry, a staleness check firing at
-  // the wrong moment could leave the table empty until the next full cycle 4-11 hours later.
+  // score-prep will just run on whatever PrizePicks data is already current. Retries with real,
+  // increasing delays (45s, then 60s) within this same cycle if the first attempt reports zero
+  // rows written or fails outright - confirmed live (2026-08-02) that a single 20-second wait
+  // was not enough time for the GitHub Actions scraper workflow it dispatches to actually finish
+  // (cold start + Python scrape + git commit typically takes 30-90+ seconds), leaving genuinely
+  // available PrizePicks data unconsumed until the next full cycle 4-11 hours later.
   let prizepicks = await callStage(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "prizepicks-github-board", "/run", {
     request_id: `${runId}_prizepicks`, trigger: "board_runner", mode: "board_full_run_prizepicks_refresh"
   });
-  if (!prizepicks.ok || !prizepicks.rows_written) {
-    await new Promise(r => setTimeout(r, 20000));
+  let prizepicksRetries = 0;
+  const PRIZEPICKS_RETRY_DELAYS_MS = [45000, 60000];
+  while ((!prizepicks.ok || !prizepicks.rows_written) && prizepicksRetries < PRIZEPICKS_RETRY_DELAYS_MS.length) {
+    await new Promise(r => setTimeout(r, PRIZEPICKS_RETRY_DELAYS_MS[prizepicksRetries]));
     const retry = await callStage(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "prizepicks-github-board", "/run", {
-      request_id: `${runId}_prizepicks_retry`, trigger: "board_runner_retry", mode: "board_full_run_prizepicks_refresh"
+      request_id: `${runId}_prizepicks_retry${prizepicksRetries + 1}`, trigger: "board_runner_retry", mode: "board_full_run_prizepicks_refresh"
     });
     retry.retried_after_empty_or_failed_first_attempt = true;
+    retry.retry_attempt_number = prizepicksRetries + 1;
     prizepicks = retry;
+    prizepicksRetries++;
   }
   stages.push(prizepicks);
 
