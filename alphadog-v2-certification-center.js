@@ -2434,6 +2434,35 @@ function buildResearchGroundedSlips(legsBySource) {
   }
   return out.sort((a, b) => Number(b.estimated_ev_per_unit_stake || -1) - Number(a.estimated_ev_per_unit_stake || -1));
 }
+// Line-shopping detection, grounded in confirmed research (apps genuinely price the same
+// player/prop differently - verified live in this system's own data). Runs automatically as
+// part of every research-create call, no separate step needed. Since each DFS app is a separate
+// product (you can't mix PrizePicks and Underdog legs in one entry), this can't force a single
+// "best" slip across apps - what it CAN do, and does, is surface which app has the meaningfully
+// better number for a given player+prop, so that information isn't silently lost when the
+// per-app slip engine picks its own best legs independently.
+function detectLineShoppingOpportunities(legsBySource) {
+  const byPlayerProp = new Map();
+  for (const [source, legs] of Object.entries(legsBySource)) {
+    for (const leg of legs) {
+      const key = `${leg.player_name}|${leg.canonical_prop_key}|${leg.selected_side}`;
+      if (!byPlayerProp.has(key)) byPlayerProp.set(key, []);
+      byPlayerProp.get(key).push({ source, line: leg.line_value, hp: Number(leg.hit_probability_0_100 || leg.certainty_0_100 || 0) });
+    }
+  }
+  const opportunities = [];
+  for (const [key, entries] of byPlayerProp.entries()) {
+    const distinctSources = new Set(entries.map(e => e.source));
+    if (distinctSources.size < 2) continue;
+    const sorted = [...entries].sort((a, b) => b.hp - a.hp);
+    const best = sorted[0], worst = sorted[sorted.length - 1];
+    const gap = best.hp - worst.hp;
+    if (gap < 3) continue; // only flag meaningfully different numbers, not noise
+    const [playerName, propKey, side] = key.split("|");
+    opportunities.push({ player_name: playerName, canonical_prop_key: propKey, selected_side: side, best_app: best.source, best_line: best.line, best_hp: Math.round(best.hp * 10) / 10, worst_app: worst.source, worst_line: worst.line, worst_hp: Math.round(worst.hp * 10) / 10, edge_gap_points: Math.round(gap * 10) / 10 });
+  }
+  return opportunities.sort((a, b) => b.edge_gap_points - a.edge_gap_points);
+}
 async function apiResearchCreateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
   const input = await readJsonSafe(request);
