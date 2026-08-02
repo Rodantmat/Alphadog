@@ -122,15 +122,16 @@ async function runCertifier(pgClient, input) {
   const preparedAllDates = await readPreparedRows(pgClient);
   const gamePksAllDates = [...new Set(preparedAllDates.map(r => r.official_game_pk).filter(Boolean))];
   const gamesAllDatesLiteral = "{" + gamePksAllDates.join(",") + "}";
-  const gamesAllDates = gamePksAllDates.length ? await pgClient`SELECT game_pk, official_date::text AS official_date, game_time_utc, is_final, is_postponed, is_cancelled FROM calendar.game_calendar WHERE game_pk = ANY(${gamesAllDatesLiteral}::bigint[])` : [];
+  const gamesAllDates = gamePksAllDates.length ? await pgClient`SELECT game_pk, official_date::text AS official_date, game_time_utc, is_final, is_postponed, is_cancelled, is_suspended, is_live FROM calendar.game_calendar WHERE game_pk = ANY(${gamesAllDatesLiteral}::bigint[])` : [];
   const gameMapAllDates = new Map(gamesAllDates.map(g => [String(g.game_pk), g]));
-  const nowIsoForStartCheck = nowUtc();
   function gameHasStarted(gamePk) {
     const g = gameMapAllDates.get(String(gamePk));
     if (!g) return false;
-    if (Number(g.is_final) === 1 || Number(g.is_postponed) === 1 || Number(g.is_cancelled) === 1) return true;
-    if (g.game_time_utc && new Date(g.game_time_utc).toISOString() <= nowIsoForStartCheck) return true;
-    return false;
+    // Use calendar.game_calendar's authoritative live-status booleans rather than comparing
+    // scheduled game_time_utc to wall clock, which produces false positives when a game's
+    // actual start is delayed past its scheduled time (confirmed real 2026-08-02: game_pk
+    // 823919 was still is_pregame=true/is_live=false past its scheduled game_time_utc).
+    return Boolean(g.is_final || g.is_postponed || g.is_cancelled || g.is_suspended || g.is_live);
   }
   const notYetStartedDates = [...new Set(preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk)).map(r => r.official_date).filter(Boolean))];
   const boardWindowDates = [...new Set([...notYetStartedDates, ptDate(0), ptDate(1)])].sort();
