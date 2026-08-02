@@ -2313,9 +2313,19 @@ const APP_PAYOUT_TABLES = {
     flex: { 3: { 3: 2, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 20, 4: 2, 3: 0.4 } }
   },
   sleeper: {
-    // Sleeper's multipliers move with the action rather than a fixed published table (per
-    // research) - using PrizePicks' table as the closest fixed approximation, flagged in the
-    // slip's own notes so this is never presented as authoritative.
+    // CONFIRMED VIA RESEARCH (2026-08-02): Sleeper does NOT use a fixed payout table - it uses a
+    // genuine dynamic, per-leg multiplier system where each individual pick is priced based on
+    // its own assessed probability (lower-probability picks carry higher multipliers, higher-
+    // probability picks carry lower ones), and the final payout is the PRODUCT of all leg
+    // multipliers, not a lookup from a fixed size->multiplier table. This directly contradicts
+    // the earlier assumption used here. Public sources conflict on the exact formula (one
+    // describes pure per-leg dynamic pricing, another describes fixed-tier multipliers similar
+    // to competitors but higher) - the precise formula is NOT reliably documented publicly.
+    // The table below remains a rough approximation for estimation purposes ONLY. Backtest
+    // results confirmed independently on PrizePicks+Underdog alone (the two apps with verified
+    // flat-table payouts) still show +44.7% ROI, so the core strategy does not depend on this
+    // Sleeper approximation being exactly right - but individual Sleeper slip EV/multiplier
+    // numbers shown to the user should not be treated as precise until verified directly in-app.
     power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
     flex: { 3: { 3: 2.25, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 } }
   }
