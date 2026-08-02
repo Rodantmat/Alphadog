@@ -1,71 +1,32 @@
 // alphadog-v2-daily-delta-runner.js
-// Simple, single-request daily-morning-delta runner - same design as board/daily-context/market/
-// scoring/weekly-differential runners: preflight cleanup, atomic table-based lock (Hyperdrive-safe,
-// not session-scoped advisory locks), retry-on-network-exception. No D1, no orchestrator dependency.
-//
-// Like the weekly-differential runner, this chain is a single worker
-// (alphadog-v2-phase3a-first-inning-pitcher-context) with its own internal 6-step sequence
-// (delta game logs, team game logs, starter history, bullpen history, hitter metric snapshots,
-// pitcher metric snapshots), using an internal time budget so it may complete more than one step
-// per invocation. This runner loops, calling it again with resume_from_step until the whole
-// sequence reports complete.
+// Split into two independently-locked, independently-callable parts per explicit request
+// (2026-08-02), so a stall/timeout in one half can never block or corrupt the other, and each
+// gets its own stale-connection killer and lock rather than sharing one long-running invocation:
+//   PART 1: mining chain through metrics (delta game logs, team game logs, starter history,
+//           bullpen history, hitter metric snapshots, pitcher metric snapshots)
+//   PART 2: everything else (quality-of-contact refresh, baseline v6 classification/baseline
+//           looped to genuine completion, prop outcome resolution, stateful delta, old
+//           classification v5, coverage audit, outcome grading)
+// Both parts call the same underlying worker (alphadog-v2-phase3a-first-inning-pitcher-context)
+// via PHASE3A_WORKER, using the stop_before_step/resume_from_step contract that worker already
+// supports.
 
 import postgres from "postgres";
 
-const DAILY_DELTA_LOCK_KEY = "alphadog_daily_delta_full_run";
 const LOCK_HOLD_MINUTES = 15;
-const MAX_STEP_CALLS = 20; // safety ceiling - real chain is 6 steps, this allows headroom
+const MAX_STEP_CALLS = 20; // safety ceiling per part
 
-// Automated coverage audit (2026-07-25): built directly from the manual audit that found two real,
-// silent gaps in this chain (starter_history/bullpen_history missing 2 full days of games due to
-// a raw_json schema mismatch). Runs after every completed chain, comparing yesterday's real games
-// (from team.game_logs, independently confirmed fully reliable) against starter_history and
-// bullpen_history coverage. Any gap now surfaces immediately in the run's own response.
-async function runCoverageAudit(env) {
-  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
-  try {
-    const rows = await client`
-      WITH yesterday_games AS (
-        SELECT DISTINCT game_pk FROM team.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date
-      )
-      SELECT
-        (SELECT COUNT(*) FROM yesterday_games) AS games_expected,
-        (SELECT COUNT(DISTINCT game_pk) FROM team.starter_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_starter_history,
-        (SELECT COUNT(DISTINCT game_pk) FROM team.bullpen_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_bullpen_history,
-        (SELECT COUNT(*) FROM stats_hitter.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS hitter_null_dates_yesterday,
-        (SELECT COUNT(*) FROM stats_pitcher.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS pitcher_null_dates_yesterday`;
-    const staleClassification = await client`
-      SELECT canonical_prop_key, selected_side, MAX(updated_at) as last_updated,
-        EXTRACT(EPOCH FROM (now() - MAX(updated_at)))/3600 AS hours_stale
-      FROM classification.classification_v6_current
-      GROUP BY canonical_prop_key, selected_side
-      HAVING now() - MAX(updated_at) > interval '36 hours'
-      ORDER BY MAX(updated_at) ASC`;
-    const r = rows[0] || {};
-    const gamesExpected = Number(r.games_expected || 0);
-    const gamesInStarter = Number(r.games_in_starter_history || 0);
-    const gamesInBullpen = Number(r.games_in_bullpen_history || 0);
-    const pass = (gamesExpected === 0 || (gamesInStarter === gamesExpected && gamesInBullpen === gamesExpected)) && staleClassification.length === 0;
-    return {
-      ok: true,
-      pass,
-      games_expected: gamesExpected,
-      games_in_starter_history: gamesInStarter,
-      games_in_bullpen_history: gamesInBullpen,
-      starter_history_gap: Math.max(0, gamesExpected - gamesInStarter),
-      bullpen_history_gap: Math.max(0, gamesExpected - gamesInBullpen),
-      hitter_null_dates_yesterday: Number(r.hitter_null_dates_yesterday || 0),
-      pitcher_null_dates_yesterday: Number(r.pitcher_null_dates_yesterday || 0),
-      stale_classification_combos: staleClassification.map(row => ({ canonical_prop_key: row.canonical_prop_key, selected_side: row.selected_side, hours_stale: Math.round(Number(row.hours_stale)) })),
-      warning: pass ? null : "COVERAGE_GAP_DETECTED_starter_bullpen_history_or_classification_staleness"
-    };
-  } catch (err) {
-    return { ok: false, error: String(err && err.message ? err.message : err) };
-  } finally {
-    try { await client.end({ timeout: 1 }); } catch (_) {}
-  }
+function nowIso() { return new Date().toISOString(); }
+
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body, null, 2), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
+  });
 }
 
+// Generic, reusable per-part preflight/lock/release - each part gets its own lock_key so a stuck
+// or slow part1 run can never block part2 (or vice versa) from acquiring its own lock.
 async function preflightCleanup(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
@@ -85,15 +46,15 @@ async function preflightCleanup(env) {
   }
 }
 
-async function tryAcquireLock(env, holderId) {
+async function tryAcquireLock(env, lockKey, holderId) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
     await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
-    await client`INSERT INTO control.runner_locks (lock_key, locked_until, holder) VALUES (${DAILY_DELTA_LOCK_KEY}, NULL, NULL) ON CONFLICT (lock_key) DO NOTHING`;
+    await client`INSERT INTO control.runner_locks (lock_key, locked_until, holder) VALUES (${lockKey}, NULL, NULL) ON CONFLICT (lock_key) DO NOTHING`;
     const rows = await client`
       UPDATE control.runner_locks
       SET locked_until = now() + (${LOCK_HOLD_MINUTES} || ' minutes')::interval, holder = ${holderId}, acquired_at = now()
-      WHERE lock_key = ${DAILY_DELTA_LOCK_KEY} AND (locked_until IS NULL OR locked_until < now())
+      WHERE lock_key = ${lockKey} AND (locked_until IS NULL OR locked_until < now())
       RETURNING lock_key`;
     return { acquired: rows.length > 0, client };
   } catch (err) {
@@ -102,28 +63,14 @@ async function tryAcquireLock(env, holderId) {
   }
 }
 
-async function releaseLock(client, holderId) {
+async function releaseLock(client, lockKey, holderId) {
   if (!client) return;
   try {
-    await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE lock_key = ${DAILY_DELTA_LOCK_KEY} AND holder = ${holderId}`;
+    await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE lock_key = ${lockKey} AND holder = ${holderId}`;
   } catch (_) {
   } finally {
     try { await client.end({ timeout: 1 }); } catch (_) {}
   }
-}
-
-const WORKER_NAME = "alphadog-v2-daily-delta-runner";
-const VERSION = "v1.0.1-scheduled";
-
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
-  });
-}
-
-function nowIso() {
-  return new Date().toISOString();
 }
 
 async function callStep(binding, input, attempt = 1) {
@@ -152,8 +99,98 @@ async function callStep(binding, input, attempt = 1) {
   }
 }
 
-const MAX_STATEFUL_DELTA_CALLS = 200; // real backlog can span many days at 12 players/chunk; generous but bounded
+const WORKER_NAME = "alphadog-v2-daily-delta-runner";
+const VERSION = "v2.0.0-split-part1-part2";
 
+// ============================= PART 1: mining through metrics =============================
+// Steps 0-5 in the inner worker's fixed array: delta_game_logs, team_game_logs, starter_history,
+// bullpen_history, hitter_metric_snapshots, pitcher_metric_snapshots. stop_before_step=6 ensures
+// this NEVER spills into quality-of-contact/baseline/outcomes, even if a single call's internal
+// 240s budget would otherwise have time to start them.
+const PART1_LOCK_KEY = "alphadog_daily_delta_part1";
+const PART1_STOP_BEFORE_STEP = 6;
+
+async function runPart1Locked(env, input, runId, startedAt) {
+  const steps = [];
+  let resumeFromStep = 0;
+  let calls = 0;
+  let complete = false;
+  let failed = false;
+
+  while (calls < MAX_STEP_CALLS) {
+    calls++;
+    const result = await callStep(env.PHASE3A_WORKER, {
+      mode: "daily_morning_delta_full_run",
+      request_id: `${runId}_call_${calls}`,
+      resume_from_step: resumeFromStep,
+      stop_before_step: PART1_STOP_BEFORE_STEP
+    });
+    steps.push(result);
+    if (!result.ok) { failed = true; break; }
+    if (result.complete === true || result.partial === false) { complete = true; break; }
+    if (typeof result.next_resume_from_step === "number") {
+      resumeFromStep = result.next_resume_from_step;
+    } else {
+      failed = true;
+      break;
+    }
+  }
+
+  const certification = (() => {
+    if (failed) return "DAILY_DELTA_PART1_FAILED";
+    if (!complete) return "DAILY_DELTA_PART1_INCOMPLETE_MAX_CALLS_REACHED";
+    const allStepResults = steps.flatMap(s => Array.isArray(s.completed_steps) ? s.completed_steps : []);
+    const failedSteps = allStepResults.filter(s => s && s.ok === false);
+    if (failedSteps.length) return "DAILY_DELTA_PART1_PARTIAL_SOME_STEPS_FAILED";
+    return "DAILY_DELTA_PART1_COMPLETE";
+  })();
+  const trueComplete = complete && certification === "DAILY_DELTA_PART1_COMPLETE";
+
+  return {
+    ok: trueComplete,
+    data_ok: trueComplete,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    part: 1,
+    run_id: runId,
+    started_at: startedAt,
+    finished_at: nowIso(),
+    certification,
+    total_calls: calls,
+    steps
+  };
+}
+
+async function runDailyDeltaPart1(env, input) {
+  const runId = `daily_delta_part1_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const startedAt = nowIso();
+  const preflight = await preflightCleanup(env);
+  const lock = await tryAcquireLock(env, PART1_LOCK_KEY, runId);
+  if (!lock.acquired) {
+    return {
+      ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, part: 1,
+      run_id: runId, started_at: startedAt, finished_at: nowIso(),
+      certification: "DAILY_DELTA_PART1_SKIPPED_ALREADY_RUNNING", skipped: true,
+      lock_error: lock.error || null, preflight, steps: []
+    };
+  }
+  try {
+    const result = await runPart1Locked(env, input, runId, startedAt);
+    return { ...result, preflight };
+  } finally {
+    await releaseLock(lock.client, PART1_LOCK_KEY, runId);
+  }
+}
+
+// ============================= PART 2: classification and baseline =============================
+// Covers steps 6-8 of the inner worker (quality_of_contact_derived_fields_refresh,
+// baseline_v6_full_run, resolve_prop_outcomes), plus the stateful delta, the old classification
+// v5 pass, the coverage audit, and outcome grading. baseline_v6 is explicitly looped to genuine
+// completion (244 combos) rather than called once as part of the 6-8 step range, since that
+// single-call approach was confirmed to silently leave it partially done for days at a time.
+const PART2_LOCK_KEY = "alphadog_daily_delta_part2";
+
+const MAX_STATEFUL_DELTA_CALLS = 200;
 async function runStatefulDeltaToCompletion(env, runId) {
   const calls = [];
   let nextInput = { mode: "baseline_v5_stateful_delta", request_id: `${runId}_stateful_delta_init` };
@@ -168,20 +205,13 @@ async function runStatefulDeltaToCompletion(env, runId) {
     if (result.continuation_required !== true || !result.next_input_json) { complete = true; break; }
     nextInput = result.next_input_json;
   }
-  return {
-    ok: !failed,
-    complete,
-    total_calls: i,
-    final_status: calls.length ? calls[calls.length - 1].status : null,
-    calls_summary: calls.slice(-5) // keep the response compact; only the tail is diagnostic
-  };
+  return { ok: !failed, complete, total_calls: i, final_status: calls.length ? calls[calls.length - 1].status : null, calls_summary: calls.slice(-5) };
 }
 
 // OLD VERSION - DO NOT TOUCH IT!!!! This calls the confirmed-dead base-classification-v5
 // worker (see that file's own header). Does not affect real, live scoring. Left in place
 // harmlessly rather than removed under time pressure.
-const MAX_CLASSIFICATION_V5_CALLS = 60; // day-by-day watermark; safe to resume next run regardless
-
+const MAX_CLASSIFICATION_V5_CALLS = 60;
 async function runClassificationV5ToCompletion(env) {
   const calls = [];
   let i = 0;
@@ -195,6 +225,26 @@ async function runClassificationV5ToCompletion(env) {
     if (result.continuation_required !== true) { complete = true; break; }
   }
   return { ok: !failed, complete, total_calls: i, calls_summary: calls.slice(-5) };
+}
+
+const MAX_BASELINE_V6_CALLS = 30; // 244 combos total, ~50-90 processed per 30s call - generous headroom
+async function runBaselineV6ToCompletion(env, runId) {
+  const calls = [];
+  let nextInput = { mode: "classification_baseline_v6_to_postgres_full_run", request_id: `${runId}_baseline_v6_init` };
+  let i = 0;
+  let complete = false;
+  let failed = false;
+  let totalRowsWritten = 0;
+  while (i < MAX_BASELINE_V6_CALLS) {
+    i++;
+    const result = await callStep(env.PHASE3A_WORKER, nextInput);
+    calls.push({ call: i, combo_index: result && result.combo_index, combos_processed: result && result.combos_processed_this_call, ok: result && result.ok });
+    if (!result || result.ok === false) { failed = true; break; }
+    totalRowsWritten += Number(result.total_rows_written || 0);
+    if (result.combo_done === true || result.partial_continue !== true) { complete = true; break; }
+    nextInput = result.next_input_json || { mode: "classification_baseline_v6_to_postgres_full_run", combo_index: result.combo_index };
+  }
+  return { ok: !failed, complete, total_calls: i, total_rows_written: totalRowsWritten, calls_summary: calls.slice(-5) };
 }
 
 async function runOutcomeGrading(env, runId) {
@@ -214,155 +264,139 @@ async function runOutcomeGrading(env, runId) {
   }
 }
 
-const MAX_BASELINE_V6_CALLS = 30; // 244 combos total, ~50-90 processed per 30s call - generous headroom to guarantee full completion in one invocation
-
-// FIXED (2026-08-02): baseline_v6_full_run was called exactly once per daily-delta invocation and
-// whatever partial progress it made (bounded by its own internal 30s budget) was silently treated
-// as "done" by the outer chain, since the step only checks res.ok (always true) not
-// combo_done/partial_continue. Confirmed live this caused some prop types to go 5 days between
-// reclassifications (pitcher_outs, runs_allowed last updated 2026-07-28 while others updated
-// same-day). This wrapper loops the step to genuine completion, matching the existing pattern
-// already used for the stateful delta and classification v5 steps.
-async function runBaselineV6ToCompletion(env, runId) {
-  const calls = [];
-  let nextInput = { mode: "classification_baseline_v6_to_postgres_full_run", request_id: `${runId}_baseline_v6_init` };
-  let i = 0;
-  let complete = false;
-  let failed = false;
-  let totalRowsWritten = 0;
-  while (i < MAX_BASELINE_V6_CALLS) {
-    i++;
-    const result = await callStep(env.PHASE3A_WORKER, nextInput);
-    calls.push({ call: i, combo_index: result && result.combo_index, combos_processed: result && result.combos_processed_this_call, ok: result && result.ok });
-    if (!result || result.ok === false) { failed = true; break; }
-    totalRowsWritten += Number(result.total_rows_written || 0);
-    if (result.combo_done === true || result.partial_continue !== true) { complete = true; break; }
-    nextInput = result.next_input_json || { mode: "classification_baseline_v6_to_postgres_full_run", combo_index: result.combo_index };
-  }
-  return {
-    ok: !failed,
-    complete,
-    total_calls: i,
-    total_rows_written: totalRowsWritten,
-    calls_summary: calls.slice(-5)
-  };
-}
-
-async function runDailyDeltaFullRun(env, input) {
-  const runId = `daily_delta_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const startedAt = nowIso();
-
-  const preflight = await preflightCleanup(env);
-
-  const lock = await tryAcquireLock(env, runId);
-  if (!lock.acquired) {
-    return {
-      ok: true,
-      data_ok: true,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      run_id: runId,
-      started_at: startedAt,
-      finished_at: nowIso(),
-      certification: "DAILY_DELTA_FULL_RUN_SKIPPED_ALREADY_RUNNING",
-      skipped: true,
-      lock_error: lock.error || null,
-      preflight,
-      steps: []
-    };
-  }
-
+// Coverage audit (2026-07-25, extended 2026-08-02 to also catch classification staleness):
+// compares yesterday's real games (team.game_logs, independently reliable) against
+// starter_history/bullpen_history coverage, and flags any classification_v6_current prop+side
+// combo more than 36 hours stale.
+async function runCoverageAudit(env) {
+  const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   try {
-    const result = await runDailyDeltaFullRunLocked(env, input, runId, startedAt);
-    const statefulDelta = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
-    const classificationV5 = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
-    const baselineV6 = await runBaselineV6ToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
-    const coverageAudit = await runCoverageAudit(env);
-    const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
-    const finalCertification = !coverageOk && result.certification === "DAILY_DELTA_FULL_RUN_COMPLETE"
-      ? "DAILY_DELTA_FULL_RUN_COMPLETE_BUT_COVERAGE_GAP_DETECTED"
-      : result.certification;
-
-    // Only grade outcomes if the mining chain, the baseline stateful delta, AND the coverage
-    // audit all genuinely succeeded - grading against incomplete or gap-flagged mining would
-    // silently poison the calibration training data with wrong/missing actual values.
-    const chainFullySucceeded = result.ok && statefulDelta.ok && coverageOk;
-    const outcomeGrading = chainFullySucceeded
-      ? await runOutcomeGrading(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }))
-      : { ok: false, skipped: true, reason: "chain_did_not_fully_succeed_mining_ok=" + result.ok + "_baseline_ok=" + statefulDelta.ok + "_coverage_ok=" + coverageOk };
-
+    const rows = await client`
+      WITH yesterday_games AS (
+        SELECT DISTINCT game_pk FROM team.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date
+      )
+      SELECT
+        (SELECT COUNT(*) FROM yesterday_games) AS games_expected,
+        (SELECT COUNT(DISTINCT game_pk) FROM team.starter_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_starter_history,
+        (SELECT COUNT(DISTINCT game_pk) FROM team.bullpen_history WHERE game_pk IN (SELECT game_pk FROM yesterday_games)) AS games_in_bullpen_history,
+        (SELECT COUNT(*) FROM stats_hitter.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS hitter_null_dates_yesterday,
+        (SELECT COUNT(*) FROM stats_pitcher.game_logs WHERE game_date = (CURRENT_DATE - INTERVAL '1 day')::date AND game_date IS NULL) AS pitcher_null_dates_yesterday`;
+    const staleClassification = await client`
+      SELECT canonical_prop_key, selected_side, MAX(updated_at) as last_updated,
+        EXTRACT(EPOCH FROM (now() - MAX(updated_at)))/3600 AS hours_stale
+      FROM classification.classification_v6_current
+      GROUP BY canonical_prop_key, selected_side
+      HAVING now() - MAX(updated_at) > interval '36 hours'
+      ORDER BY MAX(updated_at) ASC`;
+    const r = rows[0] || {};
+    const gamesExpected = Number(r.games_expected || 0);
+    const gamesInStarter = Number(r.games_in_starter_history || 0);
+    const gamesInBullpen = Number(r.games_in_bullpen_history || 0);
+    const pass = (gamesExpected === 0 || (gamesInStarter === gamesExpected && gamesInBullpen === gamesExpected)) && staleClassification.length === 0;
     return {
-      ...result,
-      ok: result.ok && coverageOk,
-      data_ok: result.data_ok && coverageOk,
-      certification: finalCertification,
-      coverage_audit: coverageAudit,
-      stateful_delta: statefulDelta,
-      classification_v5: classificationV5,
-      baseline_v6: baselineV6,
-      outcome_grading: outcomeGrading,
-      preflight
+      ok: true, pass,
+      games_expected: gamesExpected,
+      games_in_starter_history: gamesInStarter,
+      games_in_bullpen_history: gamesInBullpen,
+      starter_history_gap: Math.max(0, gamesExpected - gamesInStarter),
+      bullpen_history_gap: Math.max(0, gamesExpected - gamesInBullpen),
+      hitter_null_dates_yesterday: Number(r.hitter_null_dates_yesterday || 0),
+      pitcher_null_dates_yesterday: Number(r.pitcher_null_dates_yesterday || 0),
+      stale_classification_combos: staleClassification.map(row => ({ canonical_prop_key: row.canonical_prop_key, selected_side: row.selected_side, hours_stale: Math.round(Number(row.hours_stale)) })),
+      warning: pass ? null : "COVERAGE_GAP_DETECTED_starter_bullpen_history_or_classification_staleness"
     };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
   } finally {
-    await releaseLock(lock.client, runId);
+    try { await client.end({ timeout: 1 }); } catch (_) {}
   }
 }
 
-async function runDailyDeltaFullRunLocked(env, input, runId, startedAt) {
-  const steps = [];
-  let resumeFromStep = 0;
-  let calls = 0;
-  let complete = false;
-  let failed = false;
+async function runPart2Locked(env, input, runId, startedAt) {
+  // Step 6 only: quality_of_contact_derived_fields_refresh
+  const qocResult = await callStep(env.PHASE3A_WORKER, {
+    mode: "daily_morning_delta_full_run",
+    request_id: `${runId}_qoc`,
+    resume_from_step: 6,
+    stop_before_step: 7
+  });
 
-  while (calls < MAX_STEP_CALLS) {
-    calls++;
-    const result = await callStep(env.PHASE3A_WORKER, {
-      mode: "daily_morning_delta_full_run",
-      request_id: `${runId}_call_${calls}`,
-      resume_from_step: resumeFromStep
-    });
-    steps.push(result);
-    if (!result.ok) { failed = true; break; }
-    if (result.complete === true || result.partial === false) { complete = true; break; }
-    if (typeof result.next_resume_from_step === "number") {
-      resumeFromStep = result.next_resume_from_step;
-    } else {
-      // Defensive: if the worker ever stops reporting next_resume_from_step, don't loop forever.
-      failed = true;
-      break;
-    }
-  }
+  const baselineV6 = await runBaselineV6ToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
 
-  const certification = (() => {
-    if (failed) return "DAILY_DELTA_FULL_RUN_FAILED";
-    if (!complete) return "DAILY_DELTA_FULL_RUN_INCOMPLETE_MAX_CALLS_REACHED";
-    // The underlying function catches per-step errors and still reports ok:true/complete:true
-    // at the top level, so check each individual step's own ok flag rather than trusting that.
-    const allStepResults = steps.flatMap(s => Array.isArray(s.completed_steps) ? s.completed_steps : []);
-    const failedSteps = allStepResults.filter(s => s && s.ok === false);
-    if (failedSteps.length) return "DAILY_DELTA_FULL_RUN_PARTIAL_SOME_STEPS_FAILED";
-    return "DAILY_DELTA_FULL_RUN_COMPLETE";
-  })();
-  const trueComplete = complete && certification === "DAILY_DELTA_FULL_RUN_COMPLETE";
+  // Step 8 only: resolve_prop_outcomes
+  const resolveOutcomes = await callStep(env.PHASE3A_WORKER, {
+    mode: "daily_morning_delta_full_run",
+    request_id: `${runId}_resolve_outcomes`,
+    resume_from_step: 8,
+    stop_before_step: 9
+  });
+
+  const statefulDelta = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+  const classificationV5 = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+  const coverageAudit = await runCoverageAudit(env);
+  const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
+
+  const stepsOk = qocResult.ok && resolveOutcomes.ok;
+  const chainFullySucceeded = stepsOk && baselineV6.ok && statefulDelta.ok && coverageOk;
+  const outcomeGrading = chainFullySucceeded
+    ? await runOutcomeGrading(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }))
+    : { ok: false, skipped: true, reason: "chain_did_not_fully_succeed_steps_ok=" + stepsOk + "_baseline_v6_ok=" + baselineV6.ok + "_stateful_delta_ok=" + statefulDelta.ok + "_coverage_ok=" + coverageOk };
+
+  const certification = !stepsOk ? "DAILY_DELTA_PART2_FAILED"
+    : (!baselineV6.complete ? "DAILY_DELTA_PART2_BASELINE_V6_INCOMPLETE"
+    : (!coverageOk ? "DAILY_DELTA_PART2_COMPLETE_BUT_COVERAGE_GAP_DETECTED"
+    : "DAILY_DELTA_PART2_COMPLETE"));
 
   return {
-    ok: trueComplete,
-    data_ok: trueComplete,
+    ok: stepsOk && baselineV6.ok && coverageOk,
+    data_ok: stepsOk && baselineV6.ok && coverageOk,
     version: VERSION,
     worker_name: WORKER_NAME,
+    part: 2,
     run_id: runId,
     started_at: startedAt,
     finished_at: nowIso(),
     certification,
-    total_calls: calls,
-    steps
+    quality_of_contact_refresh: qocResult,
+    baseline_v6: baselineV6,
+    resolve_prop_outcomes: resolveOutcomes,
+    stateful_delta: statefulDelta,
+    classification_v5: classificationV5,
+    coverage_audit: coverageAudit,
+    outcome_grading: outcomeGrading
   };
+}
+
+async function runDailyDeltaPart2(env, input) {
+  const runId = `daily_delta_part2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const startedAt = nowIso();
+  const preflight = await preflightCleanup(env);
+  const lock = await tryAcquireLock(env, PART2_LOCK_KEY, runId);
+  if (!lock.acquired) {
+    return {
+      ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, part: 2,
+      run_id: runId, started_at: startedAt, finished_at: nowIso(),
+      certification: "DAILY_DELTA_PART2_SKIPPED_ALREADY_RUNNING", skipped: true,
+      lock_error: lock.error || null, preflight
+    };
+  }
+  try {
+    const result = await runPart2Locked(env, input, runId, startedAt);
+    return { ...result, preflight };
+  } finally {
+    await releaseLock(lock.client, PART2_LOCK_KEY, runId);
+  }
 }
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runDailyDeltaFullRun(env, { trigger: "cron", cron: event.cron }));
+    // Both parts fire on the same cron trigger, sequentially, each with its own independent
+    // lock/stale-connection-killer - a stall in part1 cannot prevent part2's lock from being
+    // acquired on the NEXT scheduled invocation, and vice versa.
+    ctx.waitUntil((async () => {
+      await runDailyDeltaPart1(env, { trigger: "cron", cron: event.cron });
+      await runDailyDeltaPart2(env, { trigger: "cron", cron: event.cron });
+    })());
   },
 
   async fetch(request, env, ctx) {
@@ -379,11 +413,27 @@ export default {
       });
     }
 
+    if (method === "POST" && path === "/run-part1") {
+      let input = {};
+      try { input = await request.json(); } catch (_) {}
+      const result = await runDailyDeltaPart1(env, input);
+      return jsonResponse(result, result.ok ? 200 : 207);
+    }
+
+    if (method === "POST" && path === "/run-part2") {
+      let input = {};
+      try { input = await request.json(); } catch (_) {}
+      const result = await runDailyDeltaPart2(env, input);
+      return jsonResponse(result, result.ok ? 200 : 207);
+    }
+
+    // Backward-compatible: /run or / now runs both parts sequentially, same as scheduled().
     if (method === "POST" && (path === "/run" || path === "/")) {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const result = await runDailyDeltaFullRun(env, input);
-      return jsonResponse(result, result.ok ? 200 : 207);
+      const part1 = await runDailyDeltaPart1(env, input);
+      const part2 = await runDailyDeltaPart2(env, input);
+      return jsonResponse({ ok: part1.ok && part2.ok, part1, part2 }, (part1.ok && part2.ok) ? 200 : 207);
     }
 
     return jsonResponse({ ok: false, error: "not_found", worker_name: WORKER_NAME }, 404);
