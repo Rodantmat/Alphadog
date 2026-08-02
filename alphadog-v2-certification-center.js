@@ -2222,38 +2222,54 @@ async function autoSelectBestLegs(env, options) {
   const pg = pgClient(env);
   try {
     const rows = await queryAllPg(pg, `
+      WITH ladder AS (
+        SELECT
+          final_board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key,
+          rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name,
+          canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100,
+          confidence_0_100, score_0_100, score_grade, board_tier, is_goblin, is_demon,
+          MIN(CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 THEN line_value END)
+            OVER (PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side) AS standard_line_value,
+          ROW_NUMBER() OVER (
+            PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side, is_goblin
+            ORDER BY line_value ASC
+          ) AS goblin_tier_rank
+        FROM score.final_board_current
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      )
       SELECT
-        f.final_board_row_id AS board_row_id,
-        f.final_board_row_id AS final_board_row_id,
-        f.final_board_batch_id AS batch_id,
-        f.prepared_row_id,
-        f.source_line_id,
-        f.source_key,
-        f.rank_order,
-        f.game_pk,
-        f.official_date,
-        f.official_game_time_utc AS official_game_time_utc,
-        f.mlb_player_id AS player_id,
-        f.player_name,
+        l.final_board_row_id AS board_row_id,
+        l.final_board_row_id AS final_board_row_id,
+        l.final_board_batch_id AS batch_id,
+        l.prepared_row_id,
+        l.source_line_id,
+        l.source_key,
+        l.rank_order,
+        l.game_pk,
+        l.official_date,
+        l.official_game_time_utc AS official_game_time_utc,
+        l.mlb_player_id AS player_id,
+        l.player_name,
         p.team AS team_id,
-        f.canonical_prop_key,
-        f.line_value,
-        f.selected_side,
-        f.estimated_hit_probability_0_100 AS hit_probability_0_100,
-        f.confidence_0_100 AS certainty_0_100,
-        f.score_0_100 AS overall_score_0_100,
-        f.score_grade AS board_grade,
-        f.is_goblin,
-        f.is_demon,
+        l.canonical_prop_key,
+        l.line_value,
+        l.selected_side,
+        l.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        l.confidence_0_100 AS certainty_0_100,
+        l.score_0_100 AS overall_score_0_100,
+        l.score_grade AS board_grade,
+        l.is_goblin,
+        l.is_demon,
+        l.goblin_tier_rank,
+        (l.standard_line_value IS NOT NULL) AS has_standard_sibling,
         p.team, p.opponent, p.team_full_name, p.opponent_full_name, p.source_prop_name
-      FROM score.final_board_current f
-      LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
-      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND f.board_tier = 'PRIMARY'
-        AND f.confidence_0_100 >= ${minConfidence}
-        AND f.official_game_time_utc IS NOT NULL
-        AND f.official_game_time_utc::timestamptz > now()
-      ORDER BY f.score_0_100 DESC NULLS LAST, f.confidence_0_100 DESC NULLS LAST
+      FROM ladder l
+      LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = l.prepared_row_id
+      WHERE l.board_tier = 'PRIMARY'
+        AND l.confidence_0_100 >= ${minConfidence}
+        AND l.official_game_time_utc IS NOT NULL
+        AND l.official_game_time_utc::timestamptz > now()
+      ORDER BY l.score_0_100 DESC NULLS LAST, l.confidence_0_100 DESC NULLS LAST
     `);
     // Deduplicate alternate lines for the same underlying player+prop+side (goblin vs demon vs
     // standard) - keep only the best EV-adjusted variant, per the explicit point that the
