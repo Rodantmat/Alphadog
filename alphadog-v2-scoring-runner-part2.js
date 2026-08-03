@@ -258,7 +258,7 @@ async function runScoringPart2Locked(env, input, runId, startedAt, freshness) {
     let result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}`, chain_id: runId, trigger: "scoring_runner_part2" });
     let iterations = 1;
     let stoppedForTimeBudget = false;
-    while (result.ok && result.certification === "partial_continue" && iterations < MAX_PAGINATION_ITERATIONS_PER_STAGE) {
+    while (result.ok && (result.certification === "partial_continue" || result.continuation_required || result.orchestrator_should_self_continue) && iterations < MAX_PAGINATION_ITERATIONS_PER_STAGE) {
       if (Date.now() >= invocationDeadline) { stoppedForTimeBudget = true; break; }
       result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_${s.mode}_p${iterations}`, chain_id: runId, trigger: "scoring_runner_part2" });
       iterations++;
