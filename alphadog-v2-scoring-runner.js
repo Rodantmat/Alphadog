@@ -163,6 +163,7 @@ const STAGES = [
 async function runScoringFullRun(env, input) {
   const runId = `scoring_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+  const preflight = await selfCleanupAfterPhase(env);
 
   const lock = await tryAcquireLock(env, runId);
   if (!lock.acquired) {
@@ -177,12 +178,14 @@ async function runScoringFullRun(env, input) {
       certification: "SCORING_FULL_RUN_SKIPPED_ALREADY_RUNNING",
       skipped: true,
       lock_error: lock.error || null,
+      preflight,
       stages: []
     };
   }
 
   try {
-    return await runScoringFullRunLocked(env, input, runId, startedAt);
+    const result = await runScoringFullRunLocked(env, input, runId, startedAt);
+    return { ...result, preflight };
   } finally {
     await releaseLock(lock.client, runId);
   }
