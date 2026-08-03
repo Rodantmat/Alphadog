@@ -185,6 +185,7 @@ async function runDailyDeltaPart1(env, input) {
     return { ...result, preflight };
   } finally {
     await releaseLock(lock.client, PART1_LOCK_KEY, runId);
+    await preflightCleanup(env).catch(() => {});
   }
 }
 
