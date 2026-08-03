@@ -62,7 +62,12 @@ async function stageRowCount(pgClient, stageKey) {
 const REAL_STAGE_ORDER = ["prop-factor-miner", "matrix-builder", "enrichment-engine", "scoring-engine", "hit-probability-board", "final-board"];
 
 async function runCertifier(pgClient, input) {
-  const runPass = input.run_pass === "last" ? "last" : "first";
+  // FIXED (2026-08-03): input.run_pass was never actually set by either caller (scoring-runner.js
+  // or scoring-runner-part2.js) - confirmed live every certifier run was permanently mislabeled
+  // 'first' regardless of which pass invoked it. Both callers do already send a mode string that
+  // correctly distinguishes the two passes (e.g. 'scoring_full_run_certifier_last_pass' vs
+  // '_first_pass') - deriving from that instead, since it's already being sent correctly.
+  const runPass = String(input.mode || "").includes("last_pass") ? "last" : (input.run_pass === "last" ? "last" : "first");
   const certifierRunId = rid("scoring_full_run_certifier");
   const expected = await expectedRowCount(pgClient);
 
