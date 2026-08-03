@@ -562,8 +562,8 @@ async function runDailyGameStatus(env, input = {}) {
     await pg.unsafe(`INSERT INTO daily.game_status_batches (batch_id, job_key, source_key, mode, started_at, certification_status) VALUES ($1,$2,$3,$4,now(),'RUNNING')`, [batchId, JOB_KEY, MLB_SCHEDULE_SOURCE, input.mode || "board_focused_current_status"]);
     await pg`DELETE FROM daily.game_status_stage WHERE batch_id=${batchId}`;
 
-    const [pp, sl, aliases, teamDir] = await Promise.all([readPrizePicksRows(pg), readSleeperRows(pg), readTeamAliases(pg), readTeamDirectory(pg)]);
-    const boardRows = [...pp.rows, ...sl.rows];
+    const [pp, sl, ud, aliases, teamDir] = await Promise.all([readPrizePicksRows(pg), readSleeperRows(pg), readUnderdogRows(pg), readTeamAliases(pg), readTeamDirectory(pg)]);
+    const boardRows = [...pp.rows, ...sl.rows, ...ud.rows];
     const playerTeamMap = await readPlayerTeamMap(pg, teamDir);
     const enrichment = enrichBoardRows(boardRows, playerTeamMap, aliases, teamDir, pp.rows);
     const dates = unique(boardRows.flatMap(r => [dateOnly(r.start_time), dateOnly(r.slate_date), dateOnly(r.sleeper_event_shell?.game_date), dateOnly(r.sleeper_event_shell?.commence_time), dateOnly(r.cross_board_prizepicks_start_time), dateOnly(r.cross_board_prizepicks_slate_date)])).sort();
