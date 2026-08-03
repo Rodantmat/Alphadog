@@ -551,7 +551,8 @@ async function loadCalendar(env, dateSet, ref) {
   const maxDate = dateAddDays(dates[dates.length - 1], 1);
   const rows = await allRows(env.pg, `
 SELECT game_pk, official_date, game_time_utc, home_team_name, away_team_name,
-       status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final, updated_at
+       status_code, abstract_game_state, detailed_state, is_pregame, is_live, is_final,
+       is_postponed, is_cancelled, is_suspended, updated_at
 FROM calendar.game_calendar
 WHERE official_date >= ? AND official_date <= ?
 ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
