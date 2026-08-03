@@ -809,10 +809,13 @@ function teamSideForPlayer(ref, player, game) {
 }
 
 function startedByOfficialTime(game, now = new Date()) {
-  if (!game || !game.game_time_utc) return false;
-  const start = toUtcComparable(game.game_time_utc);
-  if (!start) return false;
-  return start.getTime() <= now.getTime();
+  if (!game) return false;
+  // Use calendar.game_calendar's authoritative live-status booleans rather than comparing
+  // scheduled game_time_utc to wall clock, which produces false positives when a game's
+  // actual start is delayed past its scheduled time (confirmed real 2026-08-02: game_pk
+  // 823919 was still is_pregame=true/is_live=false past its scheduled game_time_utc).
+  // Mirrors the fix already applied to alphadog-v2-market-certifier.js's gameHasStarted().
+  return Boolean(game.is_final || game.is_postponed || game.is_cancelled || game.is_suspended || game.is_live);
 }
 
 function buildBlockReasons({ sourcePickable, sourceKey, calendarResolution, playerResolution, side, game, now }) {
