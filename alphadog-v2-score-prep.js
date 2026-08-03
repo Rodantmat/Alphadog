@@ -608,7 +608,10 @@ ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
       detailed_state: safeStr(r.detailed_state),
       is_final: Number(r.is_final || 0),
       is_live: Number(r.is_live || 0),
-      is_pregame: Number(r.is_pregame || 0)
+      is_pregame: Number(r.is_pregame || 0),
+      is_postponed: Number(r.is_postponed || 0),
+      is_cancelled: Number(r.is_cancelled || 0),
+      is_suspended: Number(r.is_suspended || 0)
     };
 
     const homeAliases = aliasesForCalendarTeamName(rec.home_team_name);
