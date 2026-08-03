@@ -483,23 +483,6 @@ async function runPart2OneStep(env, input, runId) {
     return { phase, phaseComplete: true, allComplete: false, result };
   }
 
-  if (phase === "stateful_delta") {
-    const savedNextInput = await getJsonState(env, "daily_delta_part2_stateful_delta_next_input");
-    const nextInput = savedNextInput || { mode: "baseline_v5_stateful_delta", request_id: `${runId}_stateful_delta` };
-    const result = await callStep(env.PHASE3A_WORKER, nextInput).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
-    if (!result || result.ok === false) {
-      return { phase, phaseComplete: false, allComplete: false, result };
-    }
-    const done = result.continuation_required !== true || !result.next_input_json;
-    if (done) {
-      await clearJsonState(env, "daily_delta_part2_stateful_delta_next_input");
-      await setPart2State(env, phaseIndex + 1);
-    } else {
-      await setJsonState(env, "daily_delta_part2_stateful_delta_next_input", result.next_input_json);
-    }
-    return { phase, phaseComplete: done, allComplete: false, result };
-  }
-
   if (phase === "classification_v5") {
     const result = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
     await setPart2State(env, phaseIndex + 1);
