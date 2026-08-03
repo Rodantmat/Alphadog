@@ -479,12 +479,10 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
-        # Enabled after manual verification: run 6+ times across 4 different dates (July 24-27),
-        # confirmed idempotent (ON CONFLICT DO NOTHING, safe re-runs) and confirmed the live board
-        # (score.final_board_current) is completely unaffected across every test. Scheduled 15
-        # minutes after daily-delta-runner's 14:00 UTC (7am Pacific) run, so the real box-score
-        # stats it depends on (stats_hitter/pitcher.game_logs) are freshly mined first.
-        cfg["triggers"] = {"crons": ["15 14 * * *"]}
+        # RETIRED 2026-08-02: the morning-delta Cowork supervisor's finalize phase already calls
+        # this same worker directly (OUTCOME_GRADER_WORKER binding) after confirming Part 1/2
+        # completed successfully - this separate blind cron is now redundant.
+        cfg["triggers"] = {"crons": []}
     if worker_name == "alphadog-v2-calibration-scheduler":
         # New, deliberately tiny and separate worker: only job is to call the already-existing,
         # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
