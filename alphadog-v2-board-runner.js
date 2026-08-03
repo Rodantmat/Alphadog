@@ -219,6 +219,7 @@ async function logRunResult(env, result) {
 async function runBoardFullRun(env, input) {
   const runId = `board_runner_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+  const preflight = await selfCleanupAfterPhase(env);
 
   const lock = await tryAcquireLock(env, runId);
   if (!lock.acquired) {
@@ -235,6 +236,7 @@ async function runBoardFullRun(env, input) {
       cooldown: lock.cooldown || false,
       last_completed_at: lock.last_completed_at || null,
       lock_error: lock.error || null,
+      preflight,
       stages: []
     };
   }
@@ -242,6 +244,7 @@ async function runBoardFullRun(env, input) {
   try {
     const result = await runBoardFullRunLocked(env, input, runId, startedAt);
     result.trigger_source = input && input.trigger || "manual";
+    result.preflight = preflight;
     await markCompleted(env);
     await logRunResult(env, result);
     return result;
