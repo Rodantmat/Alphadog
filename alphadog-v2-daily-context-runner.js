@@ -118,6 +118,7 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
       certification: output.certification || output.status || null,
       rows_read: output.rows_read ?? null,
       rows_written: output.rows_written ?? null,
+      continuation_required: !!(output.continuation_required || output.orchestrator_should_self_continue),
       error: output.ok ? null : (output.error || output.certification || "stage_failed"),
       elapsed_ms: Date.now() - started,
       attempts: attempt
