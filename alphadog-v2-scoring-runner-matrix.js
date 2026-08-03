@@ -156,7 +156,7 @@ async function runMatrixStage(env, input) {
       started_at: startedAt, finished_at: nowIso(),
       certification: "SCORING_FULL_RUN_MATRIX_SKIPPED_PART1_NOT_FRESH", skipped: true,
       freshness_wait_retries: freshnessRetries,
-      part1_freshness: freshness, stages: []
+      part1_freshness: freshness, preflight, stages: []
     };
   }
 
@@ -166,7 +166,7 @@ async function runMatrixStage(env, input) {
       ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, run_id: runId,
       started_at: startedAt, finished_at: nowIso(),
       certification: "SCORING_FULL_RUN_MATRIX_SKIPPED_ALREADY_RUNNING", skipped: true,
-      lock_error: lock.error || null, stages: []
+      lock_error: lock.error || null, preflight, stages: []
     };
   }
 
@@ -183,7 +183,7 @@ async function runMatrixStage(env, input) {
       ok: result.ok, data_ok: result.ok, version: VERSION, worker_name: WORKER_NAME, run_id: runId,
       started_at: startedAt, finished_at: nowIso(),
       certification: result.ok ? "SCORING_FULL_RUN_MATRIX_COMPLETE" : "SCORING_FULL_RUN_MATRIX_FAILED",
-      part1_freshness: freshness, stages: [result]
+      part1_freshness: freshness, preflight, stages: [result]
     };
   } finally {
     await releaseLock(lock.client, runId);
