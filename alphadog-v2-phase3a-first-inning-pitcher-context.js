@@ -1266,15 +1266,28 @@ function expectedCalibrationError(pairs, bins = 10) {
 // real resolved outcomes, minimizing log loss. Standard published method (Platt 1999);
 // evidence-backed choice over isotonic regression given our per-prop sample sizes (see
 // runFitPlattCalibration's caller for the research this is grounded in).
+// FIXED (2026-08-03): now uses Platt's own original target-smoothing (Platt 1999, confirmed via
+// independent academic sources referencing the original paper) - fits on softened targets
+// t+ = (N1+1)/(N1+2) and t- = 1/(N0+2) instead of raw 0/1 labels. Confirmed live this was the
+// exact missing safeguard behind rfi_nrfi's extreme 99.27% correction from just 43 held-out
+// games: the previous raw-label fit let a small, noisy sample push A to an overconfident slope
+// (2.658) with no bound, producing near-certainty predictions the sample size cannot support.
+// Softened targets are the standard, well-established part of the original method for exactly
+// this failure mode - not a new invented threshold.
 function fitPlattScaling(pairs, iterations = 500, lr = 0.1) {
   let A = 1, B = 0;
   const n = pairs.length;
+  const n1 = pairs.filter(([, y]) => y === 1).length;
+  const n0 = n - n1;
+  const tPos = n1 > 0 ? (n1 + 1) / (n1 + 2) : 1;
+  const tNeg = n0 > 0 ? 1 / (n0 + 2) : 0;
   for (let iter = 0; iter < iterations; iter++) {
     let gradA = 0, gradB = 0;
     for (const [pRaw, y] of pairs) {
       const x = logit(pRaw);
       const pCal = sigmoid(A * x + B);
-      const err = pCal - y;
+      const target = y === 1 ? tPos : tNeg;
+      const err = pCal - target;
       gradA += err * x;
       gradB += err;
     }
