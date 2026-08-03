@@ -304,6 +304,23 @@ async function readPrizePicksRows(pg) {
     raw_board_json: r.row_payload_json || r.raw_projection_json, raw_row: r
   })) };
 }
+async function readUnderdogRows(pg) {
+  // Confirmed live 2026-08-03: unlike PrizePicks/Sleeper (read directly from their raw market
+  // board tables, which already carry team/opponent), Underdog's raw market.underdog_board_current
+  // has NULL team/opponent columns. But that resolution already happens downstream - score-prep.js
+  // matches every source (including Underdog) against calendar.game_calendar + static team
+  // reference data, the same mechanism Sleeper's board rows benefit from. Reading from
+  // score.board_prepared_current (already resolved) instead of the raw market table avoids
+  // needing to duplicate that calendar/static-data matching logic here.
+  const rows = await pg`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, projection_id, player_name, team, opponent, canonical_prop_key, line_value, official_game_pk, official_game_time_utc, official_date
+    FROM score.board_prepared_current WHERE source_key='parlay_underdog' AND pickable_safe=1 LIMIT 5000`;
+  return { columns: ["prepared_row_id", "prep_batch_id", "source_key", "source_row_id", "projection_id", "player_name", "team", "opponent", "canonical_prop_key", "line_value", "official_game_pk", "official_game_time_utc", "official_date"], rows: rows.map(r => ({
+    source_key: "parlay_underdog", board_source_key: r.source_key || "parlay_underdog", board_batch_id: r.prep_batch_id, board_row_id: r.prepared_row_id || r.source_row_id,
+    source_line_id: r.source_row_id || r.projection_id || r.prepared_row_id, source_event_id: r.official_game_pk, source_player_id: null, player_name: r.player_name,
+    canonical_prop_key: r.canonical_prop_key, team: r.team, opponent: r.opponent, start_time: r.official_game_time_utc, slate_date: r.official_date, pickable_flag: 1,
+    raw_board_json: null, raw_row: r
+  })) };
+}
 async function readSleeperRows(pg) {
   const rows = await pg`SELECT current_row_id, batch_id, source_key, slate_date, source_event_id, source_line_id, source_player_id, player_name, team, opponent, canonical_prop_key, source_stat_name, line_value, side, is_pickable, start_time, raw_line_json, row_payload_json
     FROM market.sleeper_board_current WHERE COALESCE(is_pickable,0)=1 LIMIT 5000`;
