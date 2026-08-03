@@ -173,6 +173,7 @@ const STAGES = [
 async function runScoringPart2(env, input) {
   const runId = `scoring_runner_part2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+  const preflight = await selfCleanupAfterPhase(env);
 
   // Dependability check: only proceed if Part 1 genuinely finished recently. This is what keeps
   // the cascade strictly ordered across two separate scheduled workers, same as it was within
@@ -197,6 +198,7 @@ async function runScoringPart2(env, input) {
       skipped: true,
       freshness_wait_retries: freshnessRetries,
       part1_freshness: freshness,
+      preflight,
       stages: []
     };
   }
@@ -214,12 +216,14 @@ async function runScoringPart2(env, input) {
       certification: "SCORING_FULL_RUN_PART2_SKIPPED_ALREADY_RUNNING",
       skipped: true,
       lock_error: lock.error || null,
+      preflight,
       stages: []
     };
   }
 
   try {
-    return await runScoringPart2Locked(env, input, runId, startedAt, freshness);
+    const result = await runScoringPart2Locked(env, input, runId, startedAt, freshness);
+    return { ...result, preflight };
   } finally {
     await releaseLock(lock.client, runId);
   }
