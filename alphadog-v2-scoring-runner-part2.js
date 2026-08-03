@@ -14,7 +14,11 @@
 import postgres from "postgres";
 
 const SCORING_LOCK_KEY = "alphadog_scoring_full_run_part2";
-const LOCK_HOLD_MINUTES = 30;
+const LOCK_HOLD_MINUTES = 16; // FIXED 2026-08-03: was 30, far longer than this worker's own
+// 13-minute self-imposed SAFE_WALL_CLOCK_BUDGET_MS - confirmed live that a dead/killed run's
+// lock sat validly held for the full 30 minutes, requiring manual clear+retrigger (observed a
+// 20+ minute stall needing intervention). 16 min = budget + small buffer, so a genuinely dead
+// run's lock naturally expires and self-heals via the next preflight cleanup call instead.
 const MAX_MATRIX_STALENESS_MINUTES = 25; // Part 1 fires 8 min before Part 2 in the schedule;
 // this generous window absorbs normal Part 1 runtime variance while still catching "Part 1
 // never ran / failed silently" cases.
