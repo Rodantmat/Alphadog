@@ -37,7 +37,13 @@ async function preflightCleanup(env) {
       await client`SELECT pg_terminate_backend(${row.pid})`.catch(() => {});
     }
     await client`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
-    const clearedLocks = await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL RETURNING lock_key`;
+    // FIXED (2026-08-02): previously cleared ALL locks indiscriminately, including locks owned
+    // by entirely different workers (e.g. alphadog_baseline_v6_step, the phase3a worker's own
+    // internal step lock) - confirmed live this was the real root cause of baseline_v6
+    // reprocessing the same combos repeatedly, since clearing that lock let the inner worker's
+    // own unreliable self-trigger race against this worker's explicit sequential calls. Now
+    // scoped to only this worker's own two locks - never touch locks owned by other workers.
+    const clearedLocks = await client`UPDATE control.runner_locks SET locked_until = NULL, holder = NULL WHERE lock_key IN ('alphadog_daily_delta_part1', 'alphadog_daily_delta_part2') AND locked_until < now() RETURNING lock_key`;
     return { ok: true, connections_terminated: killedRows.length, terminated_pids: killedRows.map(r => r.pid), locks_cleared: clearedLocks.map(r => r.lock_key) };
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
