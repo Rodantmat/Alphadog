@@ -372,7 +372,15 @@ const PART2_PHASE_STATE_KEY = "daily_delta_part2_phase";
 // Phases run in order; baseline_v6 is NOT a single phase - it re-enters this same phase
 // repeatedly (self-chaining) until the underlying combo loop reports combo_done, since it alone
 // can take several sequential calls.
-const PART2_PHASES = ["quality_of_contact", "baseline_v6", "resolve_outcomes", "stateful_delta", "classification_v5", "finalize"];
+// REMOVED 2026-08-02 (stateful_delta): confirmed via direct code investigation this phase wrote
+// exclusively to env.SCORE_DB (D1, not Postgres) - a genuine violation of the "D1 is read-only
+// reference, all writes go to Postgres" migration principle. Its output tables
+// (player_baseline_v5_hp_state_current / player_baseline_v5_classification_state_current) never
+// fed the real, live classification.classification_v6_current (Postgres) system, which is
+// maintained correctly and separately by the baseline_v6 phase below. This also explains the
+// 15-day backlog found the same day this was discovered - the phase was never load-bearing for
+// real output, so removing it is safe.
+const PART2_PHASES = ["quality_of_contact", "baseline_v6", "resolve_outcomes", "classification_v5", "finalize"];
 
 async function getJsonState(env, key) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
