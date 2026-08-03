@@ -192,8 +192,23 @@ async function runDailyContextFullRun(env, input) {
 async function runDailyContextFullRunLocked(env, input, runId, startedAt) {
   const stages = [];
 
+  const MAX_STAGE_CONTINUATIONS = 6;
   for (const s of STAGES) {
-    const result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}`, trigger: "daily_context_runner" });
+    // 2026-08-03 fix: some stage workers (e.g. daily-player-availability) chunk their work per
+    // invocation (MAX_TEAMS_PER_INVOCATION) and signal continuation_required /
+    // orchestrator_should_self_continue when one call didn't cover every team/game. That signal
+    // was previously ignored here, so a full run could silently leave some of today's pickable
+    // games without coverage in that stage's table. Re-invoke the same stage - sharing one
+    // chain_id so the worker can resume the same batch - while it reports continuation is
+    // required, bounded so a misbehaving stage can't loop forever.
+    const chainId = `${runId}_${s.bindingName}`;
+    let result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}`, trigger: "daily_context_runner", chain_id: chainId });
+    let continuations = 0;
+    while (result.ok && result.continuation_required && continuations < MAX_STAGE_CONTINUATIONS) {
+      continuations++;
+      result = await callStage(env[s.bindingKey], s.bindingName, s.mode, { request_id: `${runId}_${s.bindingName}_continue${continuations}`, trigger: "daily_context_runner", chain_id: chainId });
+    }
+    if (continuations > 0) result.continuation_calls = continuations;
     stages.push(result);
     if (!result.ok) break; // every later stage reads what this one wrote - do not proceed on real failure
   }
