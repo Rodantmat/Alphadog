@@ -502,9 +502,11 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
-        # 14:30 UTC = 15 minutes after outcome-grader (14:15), 30 after daily-delta-runner (14:00).
-        # Full daily loop: mine real stats -> grade outcomes -> check/report calibration.
-        cfg["triggers"] = {"crons": ["30 14 * * *"]}
+        # RETIRED 2026-08-02: this only ran the read-only calibration_report (diagnostic, never
+        # applies a fix). The morning-delta Cowork supervisor now runs fit_platt_calibration
+        # directly (the real fitting+application step, with built-in held-out test validation),
+        # making this report-only cron redundant.
+        cfg["triggers"] = {"crons": []}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
