@@ -138,6 +138,7 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
 async function runMatrixStage(env, input) {
   const runId = `scoring_matrix_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = nowIso();
+  const preflight = await selfCleanupAfterPhase(env);
 
   let freshness = await checkPart1Freshness(env);
   let freshnessRetries = 0;
