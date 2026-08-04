@@ -210,7 +210,6 @@ async function getPreparedRows(pgClient, dates) {
       AND player_match_status='matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-      AND official_game_time_utc > ${nowIsoV}
     ORDER BY official_date, official_game_pk, resolved_mlb_player_id, canonical_prop_key, source_key, created_at ASC`;
   const seen = new Set();
   const deduped = [];
