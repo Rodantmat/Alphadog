@@ -9667,12 +9667,12 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
 }
 async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 270000; // FIXED 2026-08-04: was 30000 (30s) - far smaller than the actual
-  // configured platform limit (cpu_ms: 300000, 5 min). Confirmed live this was the real cause of
-  // a 77-minute, 11-retry run - every call was voluntarily stopping after 30s, discarding ~4.5
-  // min of safely available budget each time. 270000 (4.5 min) leaves a safe margin below the
-  // real 5-minute ceiling. Same class of mistake as the wall-clock-budget fixes already applied
-  // today to scoring-runner-part2.js and daily-delta-runner.js.
+  const timeBudgetMs = 90000; // REVISED 2026-08-04: first jump to 270000 (4.5min) was too
+  // aggressive and untested - confirmed live it caused a genuine stuck/hard-killed call, likely
+  // because this function does real per-combo CPU computation (not just I/O wait like the
+  // orchestrator workers fixed successfully earlier today), so a large wall-clock increase can
+  // run straight into the actual CPU ceiling instead of safely stopping short of it. Stepping up
+  // conservatively (30s -> 90s) and verifying live before increasing further.
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
   const persistedIndex = await getBaselineV6ResumeIndex(env);
