@@ -397,7 +397,9 @@ def make_config(worker_name, include_services=False):
         # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
         # scheduled task now owns this stage. This is the last of the 6 master-run stage crons
         # being retired together (board, daily-context, market, scoring part1/matrix/part2).
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
+        # comment above (crons=[] doesn't reliably clear an existing live trigger).
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
