@@ -11529,7 +11529,11 @@ export default {
     if(method==="POST" && path==="/diagnostic") return jsonResponse({...baseIdentity(env),route:"/diagnostic",input_echo_safe:await readJsonSafe(request)});
     if(method==="POST" && path==="/run"){
       const input=await readJsonSafe(request);
-      try { return jsonResponse(await runMode(env,input)); }
+      try {
+        const workPromise = runMode(env,input);
+        ctx.waitUntil(workPromise.catch(()=>{}));
+        return jsonResponse(await workPromise);
+      }
       catch(err){ return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,status:"EXPANSION_BASELINE_WORKER_FAILED",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true},500); }
     }
     return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /diagnostic","POST /run"]},404);
