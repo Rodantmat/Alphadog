@@ -465,7 +465,15 @@ def make_config(worker_name, include_services=False):
         # verifies real coverage across all mining and calculation layers, can diagnose/fix live)
         # now owns triggering this pipeline instead of a blind cron. Explicit empty array, not
         # omitted - omitting does not clear an existing Cloudflare cron trigger.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04 for a confirmed, documented Cloudflare Workers-SDK bug
+        # (github.com/cloudflare/workers-sdk/issues/5450): crons=[] does not reliably clear an
+        # existing live cron trigger - confirmed live this worker's scheduled() handler still
+        # fired today (Part1+Part2 kickoff at 14:00 UTC plus the 14:10-14:50 Part2-only retries)
+        # despite this config already specifying an empty array, causing the Cowork-driven and
+        # native-cron-driven runs to race and duplicate work today. Using a cron expression that
+        # can structurally never fire (Feb 30th does not exist) instead of an empty array, since
+        # the bug is specific to empty-array updates, not general trigger changes.
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-outcome-grader":
         # New, deliberately isolated worker: grades yesterday's board legs against already-mined
         # real game logs (stats_hitter.game_logs / stats_pitcher.game_logs) and writes results to
