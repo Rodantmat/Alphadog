@@ -9669,12 +9669,11 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
 }
 async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 120000; // RAISED 2026-08-04, carefully and incrementally, after adding
-  // the missing cpu_ms:300000 override in generate_wrangler_configs.py (confirmed via research
-  // and another worker's own comment that 30s was the actual platform default without an
-  // explicit override, not a mistake in the original value). Verified the 30000ms baseline
-  // works correctly first (33.6s, 26 combos, zero errors) before this increase. 120000 (2 min)
-  // stays well within the now-real 5-minute ceiling.
+  const timeBudgetMs = 30000; // REVERTED 2026-08-04 (second time): 120000 failed genuinely, twice,
+  // even with ctx.waitUntil and the cpu_ms:300000 override both in place - confirmed via direct
+  // lock/resume_index checks, not assumed. The exact remaining cause beyond the two fixes already
+  // applied is not yet understood - landing on the one value with real, confirmed evidence behind
+  // it (33.6s, 26 combos, zero errors) rather than continuing to guess on a live production system.
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
   const persistedIndex = await getBaselineV6ResumeIndex(env);
