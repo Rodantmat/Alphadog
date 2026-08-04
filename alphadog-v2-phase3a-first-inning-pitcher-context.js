@@ -9649,7 +9649,7 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
     await lockClient`CREATE TABLE IF NOT EXISTS control.runner_locks (lock_key TEXT PRIMARY KEY, locked_until TIMESTAMPTZ, holder TEXT, acquired_at TIMESTAMPTZ)`;
     await lockClient`INSERT INTO control.runner_locks (lock_key, locked_until, holder) VALUES (${BASELINE_V6_STEP_LOCK_KEY}, NULL, NULL) ON CONFLICT (lock_key) DO NOTHING`;
     const acquireRows = await lockClient`
-      UPDATE control.runner_locks SET locked_until = now() + interval '3 minutes', holder = ${holderId}, acquired_at = now()
+      UPDATE control.runner_locks SET locked_until = now() + interval '6 minutes', holder = ${holderId}, acquired_at = now()
       WHERE lock_key = ${BASELINE_V6_STEP_LOCK_KEY} AND (locked_until IS NULL OR locked_until < now())
       RETURNING lock_key`;
     lockAcquired = acquireRows.length > 0;
