@@ -1111,7 +1111,8 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
       rawPropKey: safeStr(r.canonical_prop_key || raw.market),
       sourcePropName: sleeperSourcePropName,
       rawMarketKey: raw.market_key,
-      player: playerRes.player
+      player: playerRes.player,
+      rawLineValue: r.line_value ?? raw.line
     });
 
     if (sleeperPropKey !== safeStr(r.canonical_prop_key || raw.market)) {
