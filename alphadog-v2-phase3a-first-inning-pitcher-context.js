@@ -9708,20 +9708,6 @@ async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {
     results: [result]
   };
 }
-  }
-  const done = i >= combos.length;
-  await setBaselineV6ResumeIndex(env, done ? 0 : i);
-  return {
-    ok: true, data_ok: true, mode: "classification_baseline_v6_to_postgres_full_run",
-    total_combos: combos.length, combos_processed_this_call: results.length,
-    combo_index: i, combo_done: done,
-    total_rows_written: results.reduce((s, r) => s + (r.rows_written || 0), 0),
-    failed_combos: results.filter(r => !r.ok),
-    partial_continue: !done, orchestrator_should_self_continue: !done,
-    next_input_json: done ? null : { ...input, mode: "classification_baseline_v6_to_postgres_full_run", combo_index: i },
-    results
-  };
-}
 function buildComboList(propLineUniverse) {
   const combos = [];
   for (const [propKey, lines] of Object.entries(propLineUniverse)) {
