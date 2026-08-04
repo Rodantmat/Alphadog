@@ -84,6 +84,10 @@ async function releaseLock(client, holderId) {
 
 const WORKER_NAME = "alphadog-v2-scoring-runner";
 const VERSION = "v1.0.0";
+// FIXED 2026-08-04, same class of bug found and fixed on sibling workers today: callStage()'s
+// fetch() to downstream sub-workers had no timeout, letting a hung downstream call block this
+// worker's entire invocation forever.
+const STAGE_FETCH_TIMEOUT_MS = 90000;
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
