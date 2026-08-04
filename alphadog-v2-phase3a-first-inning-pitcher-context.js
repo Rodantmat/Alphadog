@@ -9669,13 +9669,12 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
 }
 async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 30000; // REVERTED 2026-08-04: root cause found - this worker never had an
-  // explicit cpu_ms override in generate_wrangler_configs.py, meaning it runs on Cloudflare's
-  // actual default CPU limit (30s on paid tier, confirmed via another worker's own comment
-  // documenting this exact platform behavior), not the 5-minute limit other workers explicitly
-  // configure. The original 30s value was correctly matched to the real ceiling all along - my
-  // earlier increases to 90000/270000 exceeded it and caused genuine stuck/killed calls,
-  // confirmed live. Only safe to raise this again after adding the missing cpu_ms override.
+  const timeBudgetMs = 120000; // RAISED 2026-08-04, carefully and incrementally, after adding
+  // the missing cpu_ms:300000 override in generate_wrangler_configs.py (confirmed via research
+  // and another worker's own comment that 30s was the actual platform default without an
+  // explicit override, not a mistake in the original value). Verified the 30000ms baseline
+  // works correctly first (33.6s, 26 combos, zero errors) before this increase. 120000 (2 min)
+  // stays well within the now-real 5-minute ceiling.
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
   const persistedIndex = await getBaselineV6ResumeIndex(env);
