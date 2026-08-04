@@ -441,7 +441,7 @@ async function writeCoverage(pgClient, batchId, slateWindowKey, preparedRows, od
   }
   const cols = ["coverage_row_id", "batch_id", "slate_window_key", "official_date", "prepared_row_id", "source_key", "game_pk", "resolved_mlb_player_id", "canonical_prop_key", "board_line_value", "game_market_status", "player_prop_market_status", "market_context_status", "coverage_grade", "details_json"];
   const CHUNK = 300;
-  for (let i = 0; i < coverageRows.length; i += CHUNK) await pgClient`INSERT INTO market.context_probe_coverage ${pgClient(coverageRows.slice(i, i + CHUNK), ...cols)}`;
+  for (let i = 0; i < coverageRows.length; i += CHUNK) await pgClient`INSERT INTO market.context_probe_coverage ${pgClient(coverageRows.slice(i, i + CHUNK), ...cols)} ON CONFLICT (coverage_row_id) DO NOTHING`;
   return { game_context_present: present, missing, rows: preparedRows.length, batched_evidence_writes: true };
 }
 
