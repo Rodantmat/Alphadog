@@ -367,7 +367,9 @@ def make_config(worker_name, include_services=False):
         # T+17-18) while the rare slow day is handled by the wait-retry, not schedule padding.
         # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
         # scheduled task now owns this stage.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
+        # comment above (crons=[] doesn't reliably clear an existing live trigger).
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-scoring-runner-part2":
         # PART 2 of 2 (new 2026-07-29): enrichment, hp-board, scoring-engine, final-board,
         # certifier-last-pass. Verifies Part 1's output (score.prop_matrix_current) is genuinely
