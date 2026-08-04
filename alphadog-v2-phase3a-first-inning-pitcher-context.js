@@ -8178,7 +8178,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
   const propKey = String(input.canonical_prop_key || "");
   const lineValue = Number(input.line_value);
   const side = String(input.selected_side || "");
-  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 10, idle_timeout: 20 });
   try {
     const cfgRows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength','tier_blend_constant')`;
     const cfg = {}; for (const r of cfgRows) cfg[r.config_key] = r.config_json;
