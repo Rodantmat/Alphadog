@@ -111,6 +111,9 @@ async function runGeminiCalibrationCheck(env) {
     const prompt = buildPrompt(intel);
     const geminiResult = await callGemini(env, prompt);
     const geminiText = extractText(geminiResult);
+    const checkId = `gemini_calib_check_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await sql`CREATE TABLE IF NOT EXISTS control.gemini_calibration_checks (check_id TEXT PRIMARY KEY, model_used TEXT, gemini_http_status INTEGER, gemini_full_text TEXT, intel_summary JSONB, created_at TIMESTAMPTZ DEFAULT now())`.catch(() => {});
+    await sql`INSERT INTO control.gemini_calibration_checks (check_id, model_used, gemini_http_status, gemini_full_text, intel_summary) VALUES (${checkId}, ${GEMINI_MODEL}, ${geminiResult.http_status}, ${geminiText}, ${JSON.stringify({ top_legs_count: intel.topLegs.length, active_calibrations_count: intel.activeCalibrations.length, population_stats_rows: intel.populationStats.length })})`.catch(() => {});
     return {
       ok: true,
       data_ok: true,
@@ -121,14 +124,15 @@ async function runGeminiCalibrationCheck(env) {
       read_only: true,
       no_production_writes: true,
       model_used: GEMINI_MODEL,
+      check_id: checkId,
       intel_summary: {
         top_legs_count: intel.topLegs.length,
         active_calibrations_count: intel.activeCalibrations.length,
         population_stats_rows: intel.populationStats.length
       },
       gemini_http_status: geminiResult.http_status,
-      gemini_raw_response: geminiResult.parsed,
-      gemini_extracted_text: geminiText,
+      gemini_extracted_text_length: geminiText ? geminiText.length : 0,
+      note: "Full response text saved to control.gemini_calibration_checks (check_id above) to avoid any display truncation - query it directly for the complete text.",
       timestamp_utc: nowUtc()
     };
   } finally {
