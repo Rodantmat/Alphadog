@@ -208,6 +208,18 @@ export default {
       });
     }
 
+    if (method === "POST" && path === "/market-divergence-check") {
+      const sql = pg(env);
+      try {
+        const result = await runMarketDivergenceCheck(sql);
+        return jsonResponse({ ok: true, read_only_diagnostic_table_only: true, ...result });
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      } finally {
+        await sql.end({ timeout: 1 }).catch(() => {});
+      }
+    }
+
     if (method === "POST" && path === "/run") {
       try {
         const workPromise = runGeminiCalibrationCheck(env);
