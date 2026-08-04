@@ -309,7 +309,9 @@ def make_config(worker_name, include_services=False):
         # its own real headroom (observed 1-2 min typical).
         # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
         # scheduled task now triggers this stage.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
+        # comment above (crons=[] doesn't reliably clear an existing live trigger).
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-scoring-runner":
         # PART 1 of 2 (split 2026-07-29): certifier-first-pass, prop-factor-miner (hitter+pitcher),
         # matrix-builder - the heaviest, most variable stages. Split from the original single
