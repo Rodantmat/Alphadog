@@ -250,7 +250,13 @@ def make_config(worker_name, include_services=False):
         # IMPORTANT: must be an EXPLICIT empty array, not an omitted key - omitting cfg["triggers"]
         # does NOT clear an existing Cloudflare cron (confirmed live with master-runner's own
         # retirement this session), it leaves the previously-deployed schedule untouched.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04 for a confirmed, documented Cloudflare Workers-SDK bug
+        # (github.com/cloudflare/workers-sdk/issues/5450): crons=[] itself does not reliably
+        # clear an existing live trigger either (confirmed live on 3 sibling workers using this
+        # identical pattern - daily-delta-runner, outcome-grader, calibration-scheduler all still
+        # fired on their old schedules today despite this exact fix already being deployed).
+        # Applying the same never-fires-in-practice workaround proactively here.
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-daily-context-runner":
         # New, deliberately simple standalone runner for daily-context-full-run only, same design
         # as board-runner: no queue table, no lock table, just sequential awaited service-binding
