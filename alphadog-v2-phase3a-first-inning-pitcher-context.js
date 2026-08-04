@@ -9579,7 +9579,7 @@ async function runRemineePrizepicksBoardToPostgres(env, input) {
     }
     if (!parsed.length) return { ok: false, mode: "remine_prizepicks_board_to_postgres", error: "no_mlb_rows_parsed", total_data_rows: dataRows.length, url };
 
-    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
     const dedupMap = new Map();
     for (const r of parsed) dedupMap.set(r.current_row_id, r);
     const rows = Array.from(dedupMap.values());
