@@ -128,7 +128,14 @@ async function getPreparedSourceDiagnostics(pgClient, dates) {
 
 async function getPreparedRows(pgClient, dates) {
   const datesLit = arrLit(dates);
-  const nowIsoV = new Date().toISOString();
+  // FIXED 2026-08-04: removed a redundant "AND official_game_time_utc > now()" filter here -
+  // confirmed live this was the same bug class already found and fixed twice this session
+  // (market-certifier's gameHasStarted(), score-prep's startedByOfficialTime()): comparing raw
+  // scheduled time to the wall clock instead of trusting pickable_safe, which already correctly
+  // accounts for delays via the upstream fix. This was silently, 100% excluding PrizePicks from
+  // the entire downstream pipeline (all of its currently-pickable rows are delayed games whose
+  // scheduled time has passed, while Sleeper/Underdog's pickable rows happened to all still be
+  // genuinely future) - confirmed via score.final_board_current showing only 2 of 3 sources.
   return pgClient`SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
       player_name, resolved_player_id, resolved_mlb_player_id, player_match_status, team, opponent,
       team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk,
@@ -140,7 +147,6 @@ async function getPreparedRows(pgClient, dates) {
       AND player_match_status='matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-      AND official_game_time_utc > ${nowIsoV}
     ORDER BY official_date, official_game_pk, resolved_mlb_player_id, canonical_prop_key, source_key`;
 }
 
