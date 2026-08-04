@@ -284,7 +284,9 @@ def make_config(worker_name, include_services=False):
         # headroom (observed 5-8 min including retries) before this stage starts.
         # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
         # scheduled task now triggers this stage.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
+        # comment above (crons=[] doesn't reliably clear an existing live trigger).
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-market-runner":
         # New, deliberately simple standalone runner for market-full-run only, same design as
         # board-runner/daily-context-runner: no queue table, no lock table, just sequential
