@@ -522,7 +522,11 @@ def make_config(worker_name, include_services=False):
         # applies a fix). The morning-delta Cowork supervisor now runs fit_platt_calibration
         # directly (the real fitting+application step, with built-in held-out test validation),
         # making this report-only cron redundant.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04 for the same confirmed Cloudflare Workers-SDK bug documented on
+        # daily-delta-runner and outcome-grader's identical fix above (github.com/cloudflare/
+        # workers-sdk/issues/5450) - confirmed live this worker's scheduled() handler still fired
+        # today with the old '30 14 * * *' expression despite crons=[] already being deployed.
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
