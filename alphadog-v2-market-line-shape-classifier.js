@@ -980,7 +980,7 @@ async function runPlayerPropContext(env, input = {}) {
       if (!sides.length) sides.push({ side: "line_present_price_missing", price: null });
       for (const s of sides) {
         propRows.push({
-          probe_row_id: rid(`mcp_${config.prop_family}_prop`), batch_id: batchId, slate_window_key: slateWindowKey, official_date: matchedRow ? matchedRow.official_date : today,
+          probe_row_id: `${rid(`mcp_${config.prop_family}_prop`)}_${propRowSeq++}`, batch_id: batchId, slate_window_key: slateWindowKey, official_date: matchedRow ? matchedRow.official_date : today,
           prepared_row_id: matchedRow ? matchedRow.prepared_row_id : null, source_key: sourceKeyForParlay(sourceRow, config), source_event_id: sourceRow.source_event_id, source_line_id: sourceRow.source_line_id,
           game_pk: matchedRow ? Number(matchedRow.official_game_pk) : null, resolved_mlb_player_id: matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null,
           source_player_name: sourceRow.player_name, canonical_prop_key: sourceRow.canonical_prop_key, source_market_key: sourceRow.market_key, line_value: sourceRow.line_value,
