@@ -235,11 +235,21 @@ async function runScoringPart2(env, input) {
   }
 }
 
-const MAX_PAGINATION_ITERATIONS_PER_STAGE = 20;
-const SAFE_WALL_CLOCK_BUDGET_MS = 13 * 60 * 1000; // Cron Triggers have a hard 15-minute wall-clock
-// ceiling (confirmed via Cloudflare docs and multiple independent sources) - this is separate
-// from CPU time limits (cpu_ms), which exclude I/O wait entirely. Leaves a 2-minute buffer so the
-// loop stops cleanly on its own terms rather than risking an abrupt platform-level kill mid-stage.
+const MAX_PAGINATION_ITERATIONS_PER_STAGE = 200; // Raised 2026-08-03 alongside the wall-clock
+// budget fix below - a genuinely large backlog day should not hit this ceiling before the real
+// constraint (CPU time, not iteration count) would ever matter.
+const SAFE_WALL_CLOCK_BUDGET_MS = 55 * 60 * 1000; // FIXED 2026-08-03, grounded in Cloudflare's
+// own official docs (developers.cloudflare.com/workers/platform/limits): the 15-minute ceiling
+// is specific to CRON TRIGGER invocations, not general HTTP requests. This worker is called via
+// direct HTTP POST (Cowork, manual triggers) - the real applicable constraint is CPU time (5 min,
+// already configured via cpu_ms:300000), and Cloudflare's docs explicitly confirm waiting on
+// network requests/database queries does NOT count toward CPU time. This worker's work is almost
+// entirely I/O-bound (Postgres queries, service-binding fetch calls), so real CPU consumption
+// should be minimal regardless of how long the wall-clock duration runs. The prior 13-minute
+// self-imposed cutoff was the actual, confirmed root cause of repeated incomplete runs requiring
+// manual lock-clear-and-retrigger intervention today - this was never a real platform limit for
+// this call path, just an incorrect assumption carried over from CRON-trigger-specific behavior
+// (compare alphadog-v2-board-runner.js's own correct comment on this exact distinction).
 
 async function selfContinueIfNeeded(env, result, retryCount) {
   if (!result.stopped_for_wall_clock_budget_any_stage || retryCount >= 2) return;
