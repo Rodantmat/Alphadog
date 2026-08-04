@@ -483,6 +483,17 @@ def make_config(worker_name, include_services=False):
         # this same worker directly (OUTCOME_GRADER_WORKER binding) after confirming Part 1/2
         # completed successfully - this separate blind cron is now redundant.
         cfg["triggers"] = {"crons": []}
+    if worker_name == "alphadog-v2-phase3a-rfi-nrfi-context":
+        # REPURPOSED 2026-08-04: was a dummy/placeholder worker (never wired into any real
+        # pipeline - confirmed via its own DUMMY_READY status and the uniform ~5.3KB stub file
+        # size shared by dozens of other never-activated placeholder workers). Repurposed per
+        # explicit request as a read-only Gemini API second-opinion checker for calibration - it
+        # only ever queries Postgres and calls Gemini's API, never writes production data or
+        # triggers any real pipeline stage. GEMINI_API_KEY was already present as a secret.
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
     if worker_name == "alphadog-v2-calibration-scheduler":
         # New, deliberately tiny and separate worker: only job is to call the already-existing,
         # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
