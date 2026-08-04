@@ -338,16 +338,19 @@ async function runPart2Locked(env, input, runId, startedAt) {
     stop_before_step: 9
   });
 
-  const statefulDelta = await runStatefulDeltaToCompletion(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
+  // REMOVED 2026-08-04: statefulDelta call removed here too (already removed from the
+  // state-machine version earlier - see PART2_PHASES comment above). Confirmed this writes
+  // exclusively to deprecated D1 and never fed the real, live classification_v6_current
+  // (Postgres) system - dead weight that was the actual cause of this function's long runtime.
   const classificationV5 = await runClassificationV5ToCompletion(env).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }));
   const coverageAudit = await runCoverageAudit(env);
   const coverageOk = coverageAudit.ok && coverageAudit.pass !== false;
 
   const stepsOk = qocResult.ok && resolveOutcomes.ok;
-  const chainFullySucceeded = stepsOk && baselineV6.ok && statefulDelta.ok && coverageOk;
+  const chainFullySucceeded = stepsOk && baselineV6.ok && coverageOk;
   const outcomeGrading = chainFullySucceeded
     ? await runOutcomeGrading(env, runId).catch((err) => ({ ok: false, error: String(err && err.message ? err.message : err) }))
-    : { ok: false, skipped: true, reason: "chain_did_not_fully_succeed_steps_ok=" + stepsOk + "_baseline_v6_ok=" + baselineV6.ok + "_stateful_delta_ok=" + statefulDelta.ok + "_coverage_ok=" + coverageOk };
+    : { ok: false, skipped: true, reason: "chain_did_not_fully_succeed_steps_ok=" + stepsOk + "_baseline_v6_ok=" + baselineV6.ok + "_coverage_ok=" + coverageOk };
 
   const certification = !stepsOk ? "DAILY_DELTA_PART2_FAILED"
     : (!baselineV6.complete ? "DAILY_DELTA_PART2_BASELINE_V6_INCOMPLETE"
@@ -367,7 +370,6 @@ async function runPart2Locked(env, input, runId, startedAt) {
     quality_of_contact_refresh: qocResult,
     baseline_v6: baselineV6,
     resolve_prop_outcomes: resolveOutcomes,
-    stateful_delta: statefulDelta,
     classification_v5: classificationV5,
     coverage_audit: coverageAudit,
     outcome_grading: outcomeGrading
