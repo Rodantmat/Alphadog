@@ -124,6 +124,14 @@ async function releaseLock(client, holderId) {
 
 const WORKER_NAME = "alphadog-v2-board-runner";
 const VERSION = "v1.0.0";
+// FIXED 2026-08-04, same class of bug found and fixed in market-runner.js today: callStage()'s
+// fetch() to downstream sub-workers had no timeout at all. If a downstream service-binding fetch
+// hangs (confirmed real, reproducible on a sibling worker - the downstream worker's own database
+// work completes fine, the HTTP connection itself just never resolves), this worker's entire
+// invocation blocks forever, holding its lock well past its intended window with no way to
+// self-heal. 90s matches market-runner.js's value - generous for a real slow stage, short enough
+// that a genuinely hung fetch fails fast into the existing retry-on-exception logic below.
+const STAGE_FETCH_TIMEOUT_MS = 90000;
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
