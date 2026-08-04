@@ -482,7 +482,14 @@ def make_config(worker_name, include_services=False):
         # RETIRED 2026-08-02: the morning-delta Cowork supervisor's finalize phase already calls
         # this same worker directly (OUTCOME_GRADER_WORKER binding) after confirming Part 1/2
         # completed successfully - this separate blind cron is now redundant.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04 for a confirmed, documented Cloudflare Workers-SDK bug
+        # (github.com/cloudflare/workers-sdk/issues/5450): crons=[] does not reliably clear an
+        # existing live cron trigger - confirmed live this worker's scheduled() handler (only
+        # ever invocable by a genuine platform cron, never HTTP/service-binding calls) still
+        # fired today with the old '15 14 * * *' expression despite this config already
+        # specifying an empty array. Using a cron expression that can structurally never fire
+        # (Feb 30th does not exist) instead, since the bug is specific to empty-array updates.
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-phase3a-rfi-nrfi-context":
         # REPURPOSED 2026-08-04: was a dummy/placeholder worker (never wired into any real
         # pipeline - confirmed via its own DUMMY_READY status and the uniform ~5.3KB stub file
