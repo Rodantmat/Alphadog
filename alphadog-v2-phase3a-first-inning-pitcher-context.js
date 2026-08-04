@@ -9638,9 +9638,11 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
   // bypassing daily-delta-runner's own lock. Confirmed live: rapid direct invocations can race
   // on the shared resume-index state (control.worker_state), causing progress to bounce
   // backward - writes stay idempotent so no corruption results, just wasted redundant work.
-  // Short hold (6 min, comfortably above one call's real duration - the internal time budget
-  // was raised from 30s to 4.5min on 2026-08-04, so the lock must exceed that too) using the
-  // same control.runner_locks table/pattern as the runner-level locks, auto-released via finally.
+  // Short hold (2 min, comfortably above one call's real duration - reverted 2026-08-04 after
+  // the internal time budget was reverted back to 30s once the real root cause was found: this
+  // worker's actual CPU ceiling was 30s, not 5 min, until the missing platform override was
+  // added separately) using the same control.runner_locks table/pattern as the runner-level
+  // locks, auto-released via finally.
   const BASELINE_V6_STEP_LOCK_KEY = "alphadog_baseline_v6_step";
   const lockClient = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
   const holderId = "baseline_v6_step_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
