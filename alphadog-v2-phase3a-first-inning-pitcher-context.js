@@ -9359,7 +9359,7 @@ async function runDailyContextFullRun(env, input) {
     const json = await resp.json().catch(() => null);
     const dates = (json && Array.isArray(json.dates)) ? json.dates : [];
 
-    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
     const probablePitcherRows = [], lineupRows = [], umpireRows = [];
     let gamesSeen = 0, boxscoresFetched = 0;
 
