@@ -105,7 +105,8 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
     const resp = await binding.fetch(`https://internal.${bindingName}/run`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ mode, ...(input || {}) })
+      body: JSON.stringify({ mode, ...(input || {}) }),
+      signal: AbortSignal.timeout(STAGE_FETCH_TIMEOUT_MS)
     });
     let output;
     try {
