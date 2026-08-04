@@ -1039,7 +1039,15 @@ function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, r
   // batter canonical key before the source-worker fix). This is a second-layer safety net -
   // the primary fix lives in the Underdog/Sleeper workers themselves - but catches anything
   // that reaches here still mistagged.
-  if (prop === "runs" && sourceNorm === "player_runs" && isPitcherPrimaryPosition(player)) {
+  // HARDENED 2026-08-04 (real user-reported case on Sleeper): added a line-value guard. RFI/NRFI
+  // is always a binary line=0.5 prop by definition (will any run score in the 1st inning) - a
+  // genuine full-game runs_allowed line is never 0.5. Without this guard, if the raw feed ever
+  // serves an RFI/NRFI prop under the exact generic "player_runs" market_key (the same ambiguity
+  // this rule's own original comment already documents happening for real players), it would be
+  // wrongly reclassified as "runs_allowed" instead of staying/becoming "rfi_nrfi". This makes
+  // that misclassification structurally impossible regardless of which raw market_key variant
+  // the source ever sends, rather than relying only on exact-string-matching one specific value.
+  if (prop === "runs" && sourceNorm === "player_runs" && isPitcherPrimaryPosition(player) && Number(rawLineValue) !== 0.5) {
     return "runs_allowed";
   }
   return prop;
