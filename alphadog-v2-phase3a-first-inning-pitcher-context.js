@@ -8891,7 +8891,7 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
     }
     if (!gamePks.length) return { ok: true, mode: "daily_delta_game_logs_to_postgres", games_found: 0, note: "no completed games in range" };
 
-    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
     const hitterRows = [], pitcherRows = [];
     let processedGames = 0;
 
