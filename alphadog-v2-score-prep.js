@@ -1015,7 +1015,7 @@ function isPitcherPrimaryPosition(player) {
   return pos === "p" || pos === "pitcher" || pos.includes("pitcher");
 }
 
-function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, rawMarketKey, player }) {
+function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, rawMarketKey, player, rawLineValue }) {
   const prop = safeStr(rawPropKey);
   const source = safeStr(sourcePropName || rawMarketKey);
   const sourceNorm = source.toLowerCase();
