@@ -9670,14 +9670,12 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
 }
 async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 30000; // FINAL 2026-08-04: after extensive testing (multiple combo indices,
-  // multiple budget sizes, skipping the suspected problem combo), the remaining intermittent
-  // failure at larger budgets could not be conclusively explained - ruled out the CPU limit
-  // (confirmed raised via multi-source research), a specific problem combo (tested skipping
-  // past it), and the two real bugs found and fixed along the way (missing prepare:false, a
-  // genuine connection leak on the error path - both kept, both independently correct). Landing
-  // on the one value with fully consistent, repeated, verified success rather than continuing
-  // to guess on a live production system.
+  const timeBudgetMs = 120000; // TESTING 2026-08-04 (third attempt): added connect_timeout(10s)
+  // and idle_timeout(20s) to the per-combo function's postgres() client - grounded in
+  // Hyperdrive's own documented "Failed to acquire a connection from the pool" behavior. The
+  // observed hangs had no thrown/catchable error, consistent with a stuck connection acquisition
+  // that never resolves without an explicit timeout forcing it to fail fast into the existing
+  // try/catch/finally. Testing whether this is the real remaining cause.
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
   const persistedIndex = await getBaselineV6ResumeIndex(env);
