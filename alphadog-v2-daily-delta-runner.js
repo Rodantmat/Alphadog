@@ -592,7 +592,9 @@ export default {
     if (method === "POST" && path === "/run-part2") {
       let input = {};
       try { input = await request.json(); } catch (_) {}
-      const result = await runDailyDeltaPart2(env, ctx, input);
+      const workPromise = runDailyDeltaPart2(env, ctx, input);
+      ctx.waitUntil(workPromise.catch(() => {}));
+      const result = await workPromise;
       return jsonResponse(result, result.ok ? 200 : 207);
     }
 
