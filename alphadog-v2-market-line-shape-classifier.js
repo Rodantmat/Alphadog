@@ -935,6 +935,7 @@ async function runPlayerPropContext(env, input = {}) {
 
     const index = buildPreparedIndex(preparedRows);
     const propRows = [];
+    let propRowSeq = 0;
     const matchedPrepared = new Map();
     let matched = 0; let noMatch = 0; let ambiguous = 0; let sourceRowsWithOverUnder = 0;
     const sourceRowStatusCounts = {}; const sourceKeyStatusCounts = {};
