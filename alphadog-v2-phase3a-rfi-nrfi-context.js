@@ -157,7 +157,9 @@ export default {
 
     if (method === "POST" && path === "/run") {
       try {
-        const result = await runGeminiCalibrationCheck(env);
+        const workPromise = runGeminiCalibrationCheck(env);
+        ctx.waitUntil(workPromise.catch(() => {}));
+        const result = await workPromise;
         return jsonResponse(result, result.ok ? 200 : 500);
       } catch (err) {
         return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
