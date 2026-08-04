@@ -8183,7 +8183,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const cfgRows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength','tier_blend_constant')`;
     const cfg = {}; for (const r of cfgRows) cfg[r.config_key] = r.config_json;
     const propConfig = cfg.prop_metric_map[propKey];
-    if (!propConfig) { await sql.end(); return { ok: false, mode: "classification_baseline_v6_to_postgres", error: `no_prop_metric_map_entry_for_${propKey}` }; }
+    if (!propConfig) { return { ok: false, mode: "classification_baseline_v6_to_postgres", error: `no_prop_metric_map_entry_for_${propKey}` }; }
     const entity = propConfig.entity;
     const table = entity === "pitcher" ? "stats_pitcher.metric_snapshots" : "stats_hitter.metric_snapshots";
     const gameLogTable = entity === "pitcher" ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
