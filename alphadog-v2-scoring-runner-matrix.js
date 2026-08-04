@@ -122,7 +122,8 @@ async function callStage(binding, bindingName, mode, input, attempt = 1) {
   }
   try {
     const resp = await binding.fetch(`https://internal.${bindingName}/run`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode, ...(input || {}) })
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode, ...(input || {}) }),
+      signal: AbortSignal.timeout(STAGE_FETCH_TIMEOUT_MS)
     });
     let output;
     try { output = await resp.json(); } catch (parseErr) { output = { ok: false, data_ok: false, error: "non_json_response", parse_error: String(parseErr) }; }
