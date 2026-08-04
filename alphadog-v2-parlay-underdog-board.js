@@ -425,7 +425,7 @@ function taxonomySupportsUnderdog(taxonomyRow) {
   return sources.includes("underdog");
 }
 
-function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
+function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue) {
   const sourceKey = String(sourceStatName || "").trim();
   if (!sourceKey) {
     return { ok: false, canonical_prop_key: null, status: "missing_source_stat_name", reason: "source_stat_name_missing" };
@@ -434,8 +434,14 @@ function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
   // Allowed' - confirmed live (Reynaldo Lopez, Kyle Freeland, Framber Valdez and others were
   // all silently mapped to the batter canonical key). Disambiguate by roster position: a
   // pitcher's 'player_runs' market is always runs allowed, never runs scored.
+  // HARDENED 2026-08-04 (real user-reported case seen on Sleeper, same root cause applies here):
+  // added a line-value guard. RFI/NRFI is always a binary line=0.5 prop by definition (will any
+  // run score in the 1st inning) - a genuine full-game runs_allowed line is never 0.5. Without
+  // this, if this same generic 'player_runs' key is ever used for an RFI/NRFI prop (exactly the
+  // ambiguity this comment already documents happening for real players), it would be wrongly
+  // classified as runs_allowed instead of rfi_nrfi.
   const rawCanonical = UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
-  const canonical = (sourceKey === "player_runs" && isPitcher) ? "runs_allowed"
+  const canonical = (sourceKey === "player_runs" && isPitcher && Number(lineValue) !== 0.5) ? "runs_allowed"
     : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score"
     : rawCanonical;
   if (!canonical) {
