@@ -535,27 +535,16 @@ async function runDailyDeltaPart2(env, ctx, input) {
     };
   }
   try {
-    const stepResult = await runPart2OneStep(env, input, runId);
-    if (!stepResult.allComplete && ctx) {
-      // More work remains - fire the next call before this invocation's execution budget could
-      // possibly be exceeded, rather than looping internally.
-      await selfTriggerPart2Continuation(ctx);
-    }
-    return {
-      ok: true,
-      data_ok: true,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      part: 2,
-      run_id: runId,
-      started_at: startedAt,
-      finished_at: nowIso(),
-      certification: stepResult.allComplete ? "DAILY_DELTA_PART2_COMPLETE" : "DAILY_DELTA_PART2_STEP_COMPLETE_CONTINUING",
-      phase_completed: stepResult.phase,
-      all_complete: stepResult.allComplete,
-      step_result: stepResult.result,
-      preflight
-    };
+    // FIXED 2026-08-03, grounded in Cloudflare's own docs: runs everything in ONE call now
+    // (the pre-existing runPart2Locked function, previously unused) instead of one-phase-at-a-
+    // time with external self-chaining. The wall-clock ceiling that motivated the state-machine
+    // approach was a misapplied CRON-trigger-specific constraint - this worker is called via
+    // direct HTTP, where the real limit is CPU time (5 min, already configured), and I/O wait
+    // (Postgres queries, service-binding fetches - almost all of this worker's real work) does
+    // not count toward it at all. Verified live: the identical fix let scoring-runner-part2's
+    // previously-permanently-stuck pipeline complete fully in one 19-second call.
+    const result = await runPart2Locked(env, input, runId, startedAt);
+    return { ...result, preflight };
   } finally {
     await releaseLock(lock.client, PART2_LOCK_KEY, runId);
     await preflightCleanup(env).catch(() => {});
