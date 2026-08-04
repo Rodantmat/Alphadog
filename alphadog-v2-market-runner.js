@@ -9,6 +9,14 @@ import postgres from "postgres";
 
 const MARKET_LOCK_KEY = "alphadog_market_full_run";
 const LOCK_HOLD_MINUTES = 10;
+// 2026-08-04: confirmed real - a service-binding fetch to a stage worker (observed on the
+// market-certifier last-pass call) can hang with no underlying DB activity and no error,
+// holding this worker's lock for the full LOCK_HOLD_MINUTES (and blocking self-healing
+// retries) since callStage() previously had no timeout at all on binding.fetch(). Calling
+// the same stage directly completes in ~10s even against a large board, so this is not a
+// genuine slow-stage case - it's an untimed-out hung fetch. Bound it so a hung call fails
+// cleanly and the existing one-retry-then-fail logic in callStage() can do its job.
+const STAGE_FETCH_TIMEOUT_MS = 90000;
 
 async function selfCleanupAfterPhase(env) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
