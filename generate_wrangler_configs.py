@@ -533,6 +533,15 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
+    if worker_name == "alphadog-v2-phase3a-first-inning-pitcher-context":
+        # ADDED 2026-08-04: this worker never had an explicit CPU limit override, meaning it was
+        # silently running on Cloudflare's actual default (30s on paid tier, not the 5-min limit
+        # every other master-run-family worker explicitly configures via this same override).
+        # Confirmed live this was the real cause of the internal baseline_v6 step's originally
+        # very conservative 30000ms internal time budget being exactly, deliberately correct -
+        # and confirmed live that raising that internal budget without also raising this real
+        # platform ceiling causes genuine stuck/killed calls. Both must move together.
+        cfg["limits"] = {"cpu_ms": 300000}
     if worker_name == "alphadog-v2-calibration-scheduler":
         # New, deliberately tiny and separate worker: only job is to call the already-existing,
         # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
