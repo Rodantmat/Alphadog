@@ -9670,12 +9670,14 @@ async function runClassificationBaselineV6ToPostgresFullRun(env, input = {}) {
 }
 async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 120000; // TESTING 2026-08-04 (second attempt): the real root cause was
-  // found via multi-source research - this function was missing prepare:false, causing
-  // intermittent silent failures under Hyperdrive's transaction-mode pooling (protocol-level
-  // prepared statements are documented to fail unpredictably in this pooling mode). That's now
-  // fixed. Testing whether the budget can now safely increase, since the CPU-limit theory was
-  // ruled out (confirmed via Cloudflare's own docs the limit is genuinely raised to 5 min).
+  const timeBudgetMs = 30000; // FINAL 2026-08-04: after extensive testing (multiple combo indices,
+  // multiple budget sizes, skipping the suspected problem combo), the remaining intermittent
+  // failure at larger budgets could not be conclusively explained - ruled out the CPU limit
+  // (confirmed raised via multi-source research), a specific problem combo (tested skipping
+  // past it), and the two real bugs found and fixed along the way (missing prepare:false, a
+  // genuine connection leak on the error path - both kept, both independently correct). Landing
+  // on the one value with fully consistent, repeated, verified success rather than continuing
+  // to guess on a live production system.
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
   const persistedIndex = await getBaselineV6ResumeIndex(env);
