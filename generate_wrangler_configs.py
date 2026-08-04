@@ -430,7 +430,15 @@ def make_config(worker_name, include_services=False):
         # untouched. Confirmed live: master-runner fired again at 05:01:02 UTC on its OLD
         # 0 16/20/5 schedule even after this line was simply commented out, because nothing told
         # Cloudflare to actually remove the existing triggers.
-        cfg["triggers"] = {"crons": []}
+        # WORKAROUND 2026-08-04 for a confirmed, documented Cloudflare Workers-SDK bug
+        # (github.com/cloudflare/workers-sdk/issues/5450): the explicit crons=[] applied after
+        # the above incident does NOT reliably clear an existing live trigger either - confirmed
+        # live on 3 sibling workers using this identical pattern (daily-delta-runner,
+        # outcome-grader, calibration-scheduler all still fired on their old schedules today
+        # despite crons=[] already being deployed for weeks). Using a cron expression that can
+        # structurally never fire (Feb 30th does not exist) instead, applied proactively across
+        # all 8 similarly-affected workers.
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-weekly-differential-runner":
         # New, deliberately simple standalone runner for the weekly static differential, same
         # design as the other runners: no queue table, no lock table beyond the shared
