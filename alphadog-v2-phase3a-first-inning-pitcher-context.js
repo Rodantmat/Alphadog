@@ -8309,10 +8309,11 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, updated_at=now()
       `;
     }
-    await sql.end();
     return { ok: true, mode: "classification_baseline_v6_to_postgres", canonical_prop_key: propKey, line_value: lineValue, selected_side: side, population_mean: popMean, population_stddev: popStddev, population_n: rates.length, dispersion: isFinite(dispersion) ? dispersion : null, rows_written: baselineRows.length };
   } catch (err) {
     return { ok: false, mode: "classification_baseline_v6_to_postgres", error: String(err && err.message ? err.message : err) };
+  } finally {
+    await sql.end({ timeout: 1 }).catch(() => {});
   }
 }
 
