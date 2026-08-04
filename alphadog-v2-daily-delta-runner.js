@@ -234,7 +234,13 @@ async function runClassificationV5ToCompletion(env) {
   return { ok: !failed, complete, total_calls: i, calls_summary: calls.slice(-5) };
 }
 
-const MAX_BASELINE_V6_CALLS = 30; // 244 combos total, ~50-90 processed per 30s call - generous headroom
+const MAX_BASELINE_V6_CALLS = 30; // 244 combos total. UPDATED 2026-08-04: the sub-function this
+// calls now processes exactly 1 combo per call (architectural fix - trading batched-but-
+// occasionally-unstable calls for many small, consistently reliable ones, confirmed via 10/10
+// clean consecutive test calls today). This means ~30 combos of real progress per Part2
+// invocation now, not 50-90 - functionally fine, since runPart2Locked already correctly reports
+// DAILY_DELTA_PART2_BASELINE_V6_INCOMPLETE when this loop doesn't finish, and the Cowork
+// self-healing protocol already retries /run-part2 until genuinely complete.
 async function runBaselineV6ToCompletion(env, runId) {
   const calls = [];
   let nextInput = { mode: "classification_baseline_v6_to_postgres_full_run", request_id: `${runId}_baseline_v6_init` };
