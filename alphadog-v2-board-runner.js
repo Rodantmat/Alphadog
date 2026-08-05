@@ -336,7 +336,19 @@ async function runBoardFullRunLocked(env, input, runId, startedAt) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runBoardFullRun(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
+    // DEFINITIVE FIX 2026-08-05: same confirmed issue as the Delta-pipeline workers today - the
+    // wrangler-level "never fires" cron workaround does not reliably override Cloudflare's
+    // existing live trigger. This worker never logged a detectable marker on cron fire, so a
+    // silent firing would have been invisible without this fix. The Cowork master-run supervisor
+    // calls each individual layer directly instead (LAYER 1-4 architecture) - this handler is now
+    // a guaranteed no-op regardless of what the platform still fires.
+    ctx.waitUntil((async () => {
+      try {
+        await postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 })`
+          INSERT INTO control.claude_session_log (topic, finding, status, next_step)
+          VALUES ('AUTOMATED_board_runner_run', 'Cron fired (cron: ' || ${event.cron || "unknown"} || ') but this handler is now a deliberate no-op - the Cowork master-run supervisor runs LAYER 1-4 directly instead. No board refresh performed by this invocation.', 'CRON_NOOP_RETIRED', null)`;
+      } catch (_) {}
+    })());
   },
 
   async fetch(request, env, ctx) {
