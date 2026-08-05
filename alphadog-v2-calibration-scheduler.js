@@ -75,7 +75,18 @@ function identity(env) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScheduledCalibrationReport(env, `cron (${event.cron})`));
+    // DEFINITIVE FIX 2026-08-05: same issue and same fix as outcome-grader.js - the wrangler-level
+    // "never fires" cron workaround did not reliably override Cloudflare's existing live trigger,
+    // confirmed live today (fired again at its old 30 14 * * * schedule). This cron is retired -
+    // the Cowork morning-delta supervisor's Layer 5 calls fit_platt_calibration directly instead.
+    // Making this handler a guaranteed no-op so any future firing is harmless.
+    ctx.waitUntil((async () => {
+      try {
+        await postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 })`
+          INSERT INTO control.claude_session_log (topic, finding, status, next_step)
+          VALUES ('AUTOMATED_calibration_scheduler_run', 'Cron fired (cron: ' || ${event.cron || "unknown"} || ') but this handler is now a deliberate no-op - the Cowork morning-delta supervisor calls fit_platt_calibration directly instead. No report run by this invocation.', 'CRON_NOOP_RETIRED', null)`;
+      } catch (_) {}
+    })());
   },
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
