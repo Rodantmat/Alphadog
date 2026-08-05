@@ -416,9 +416,11 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   const status = isPartial ? "partial_continue" : "completed_hit_probability_current_estimates_written";
 
   let subsetReconcile = null;
+  let ladderReconcile = null;
   let cleanupOldBatches = null;
   if (!isPartial) {
     subsetReconcile = await reconcileHpBoardSubsetConstraints(pgClient, hpBatchId).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    ladderReconcile = await reconcileHpBoardLadderMonotonicity(pgClient, hpBatchId).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
     // Real structural fix: hp_board_current previously had no cleanup at all, so every run's
     // batch accumulated alongside every previous run's batch forever. Scoring-engine correctly
     // scopes its read to this run's specific batch_id, so an uncleaned table meant it only ever
