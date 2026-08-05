@@ -321,6 +321,26 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const lessBaseline = findBaseline(playerId, propKey, "less", lineValue);
     const moreHp = moreBaseline && Number.isFinite(Number(moreBaseline.row.hit_probability_0_100)) ? Number(moreBaseline.row.hit_probability_0_100) : null;
     const lessHp = lessBaseline && Number.isFinite(Number(lessBaseline.row.hit_probability_0_100)) ? Number(lessBaseline.row.hit_probability_0_100) : null;
+    // FIXED 2026-08-05: confirmed via real user-reported case (Leody Taveras stolen_bases 0.5:
+    // more=0.91%, less=99.09%) that blindly picking whichever side has higher raw probability
+    // breaks down for structurally rare-event props - 'more' is near-0% for almost every player
+    // on these props regardless of matchup, so 'less' always trivially wins, flooding the board
+    // with information-free 99% picks mislabeled as high-value Demon/Goblin recommendations.
+    // A Goblin/Demon tag is fundamentally about the 'more' side (that's the side the elevated/
+    // lowered threshold applies to) - only flip to 'less' when 'more' still shows genuine
+    // two-sided uncertainty (>=15%), not when the comparison is really just exploiting a rare
+    // event's trivial complement. Below the floor, keep 'more' - correctly reflecting that this
+    // specific Demon/Goblin's real probability is genuinely low, which should mean REVIEW tier,
+    // not a laundered PRIMARY pick via the rare event's safe-by-construction 'less' side.
+    const MIN_MORE_HP_FOR_GOBLIN_DEMON_FLIP = 15;
+    if (isGoblinOrDemon) {
+      if (moreHp != null && lessHp != null) {
+        if (moreHp < MIN_MORE_HP_FOR_GOBLIN_DEMON_FLIP) return "more";
+        return lessHp > moreHp ? "less" : "more";
+      }
+      if (lessHp != null && moreHp == null) return "less";
+      return matrixRow.side || er.prop_side || "more";
+    }
     if (moreHp != null && lessHp != null) return lessHp > moreHp ? "less" : "more";
     if (lessHp != null && moreHp == null) return "less";
     return matrixRow.side || er.prop_side || "more";
