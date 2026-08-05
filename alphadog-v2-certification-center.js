@@ -1957,9 +1957,15 @@ function riskAdjustedScore(dist, n, entryMode) {
   return ev / stdev;
 }
 function bestStructureForPool(pool) {
+  // FIXED 2026-08-05: removed calibrateProbabilityPct() wrapper - confirmed via direct code
+  // tracing that estimated_hit_probability_0_100 already includes the real, rigorous,
+  // prop-specific calibration correction (calibration_correction_map, Platt-scaled,
+  // walk-forward-validated) plus a residual correction layer, applied in hit-probability-board.
+  // Applying this separate, generic, hardcoded curve on top was genuine double-discounting of
+  // an already-properly-calibrated number, not a legitimate extra safeguard.
   const probs = pool.map(l => {
     const raw = Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0);
-    return Math.max(0.01, Math.min(0.99, calibrateProbabilityPct(raw) / 100));
+    return Math.max(0.01, Math.min(0.99, raw / 100));
   });
   let best = null;
   for (let size = MIN_SLIP_SIZE; size <= Math.min(MAX_SLIP_SIZE, probs.length); size++) {
