@@ -2576,11 +2576,21 @@ function goblinTierRatio(tierRank, hasStandardSibling) {
   return GOBLIN_TIER_RATIO_FLOOR;
 }
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
-  if (Number(leg.is_goblin) === 1) {
+  // FIXED 2026-08-05: confirmed via real data (Bryan Woo hits_allowed: Goblin lines 2.5/3.5/4.5,
+  // Demon line 8.5 - Goblins genuinely lower the threshold, Demons genuinely raise it) and direct
+  // physical reasoning: a Goblin's lowered threshold makes 'more' easier but 'less' HARDER (need
+  // to stay under an even lower number); a Demon's raised threshold makes 'more' harder but
+  // 'less' EASIER (more room to stay under a higher number). The payout ratio tables were only
+  // ever validated for the 'more' side. Now applies the ratio based on the leg's actual
+  // side-relative difficulty, not just its raw is_goblin/is_demon tag.
+  const side = String(leg.selected_side || "more").toLowerCase();
+  const actsLikeGoblin = (Number(leg.is_goblin) === 1 && side === "more") || (Number(leg.is_demon) === 1 && side === "less");
+  const actsLikeDemon = (Number(leg.is_demon) === 1 && side === "more") || (Number(leg.is_goblin) === 1 && side === "less");
+  if (actsLikeGoblin) {
     const ratio = goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
     return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
   }
-  if (Number(leg.is_demon) === 1) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
+  if (actsLikeDemon) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
   return { multiplier: standardPerLegMultiplier, adjusted: false };
 }
 
