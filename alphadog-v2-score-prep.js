@@ -1331,6 +1331,7 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
       official_game_pk=excluded.official_game_pk, official_game_time_utc=excluded.official_game_time_utc, official_date=excluded.official_date,
       source_start_time=excluded.source_start_time, source_time_status=excluded.source_time_status, start_time_confidence=excluded.start_time_confidence,
       matchup_status=excluded.matchup_status, matchup_confidence=excluded.matchup_confidence, source_pickable=excluded.source_pickable,
+      is_goblin=excluded.is_goblin, is_demon=excluded.is_demon, is_under_allowed=excluded.is_under_allowed,
       pickable_safe=excluded.pickable_safe, prep_status=excluded.prep_status, block_reason=excluded.block_reason,
       raw_source_json=excluded.raw_source_json, row_payload_json=excluded.row_payload_json, updated_at=now()`);
   }
