@@ -3247,9 +3247,9 @@ function renderRecommendation(){
     +'<div class="slipHead"><div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);font-weight:950">✨ Recommended for you</div><div style="font-size:17px;font-weight:950;margin-top:2px">'+esc(summary)+'</div></div></div>'
     +'<div class="small" style="margin-top:6px">Built from real hit probabilities for your legs — highest expected value across '+totalStructures+' structure'+(totalStructures>1?'s':'')+', not a fixed rule of thumb.</div>'
     +'<div style="margin-top:10px">'+lastRecommendedSlips.map(recommendedSlipCard).join('')+'</div>'
-    +'<button id="useRecommended" class="btn" style="margin-top:10px;width:100%;background:#3d2f11;border-color:rgba(244,201,93,.6);color:#ffe7a3;font-size:14px">✓ Use this — Save '+totalStructures+' slip'+(totalStructures>1?'s':'')+'</button>'
+    +'<button id="useRecommended" class="btn" style="margin-top:10px;width:100%;background:#3d2f11;border-color:rgba(244,201,93,.6);color:#ffe7a3;font-size:14px">✓ Use this — '+totalStructures+' slip'+(totalStructures>1?'s':'')+'</button>'
     +'</div>';
-  $('useRecommended').onclick=()=>{lastGeneratedSlips=lastRecommendedSlips;saveGeneratedSlips()};
+  $('useRecommended').onclick=()=>{lastGeneratedSlips=lastRecommendedSlips;renderGenerated()};
 }
 function legLine(l){
   return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel ? displayPropLabel(l.canonical_prop_key) : cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase());
