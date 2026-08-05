@@ -408,7 +408,7 @@ function taxonomySupportsSleeper(taxonomyRow) {
   return sources.includes("sleeper");
 }
 
-function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
+function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue) {
   const sourceKey = String(sourceStatName || "").trim();
   if (!sourceKey) {
     return { ok: false, canonical_prop_key: null, status: "missing_source_stat_name", reason: "source_stat_name_missing" };
@@ -416,8 +416,15 @@ function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher) {
   // Same latent ambiguity confirmed and fixed on the Underdog worker (shared ParlayAPI market_key
   // conventions): 'player_runs' can mean either batter runs-scored or pitcher runs-allowed
   // depending on context. Disambiguate by roster position.
-  const rawCanonical = SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
-  const canonical = (sourceKey === "player_runs" && isPitcher) ? "runs_allowed"
+  // HARDENED 2026-08-05: this file's own version of this function was missed when the line=0.5
+  // guard was added elsewhere yesterday (score-prep.js, parlay-underdog-board.js) - RFI/NRFI is
+  // always a binary line=0.5 prop by definition, a genuine full-game runs_allowed line is never
+  // 0.5. Also added the same new hits_allowed/first_inning_hits_allowed fix just applied to
+  // Underdog - confirmed the same raw market_key convention applies here (shared upstream feed).
+  const rawCanonical = (sourceKey === "player_hits_allowed" && Number(lineValue) === 0.5)
+    ? "first_inning_hits_allowed"
+    : (SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null);
+  const canonical = (sourceKey === "player_runs" && isPitcher && Number(lineValue) !== 0.5) ? "runs_allowed"
     : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score"
     : rawCanonical;
   if (!canonical) {
