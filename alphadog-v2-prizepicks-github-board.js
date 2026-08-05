@@ -718,6 +718,7 @@ function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId
     is_goblin: isGoblin,
     is_demon: isDemon,
     is_standard: isStandard,
+    is_under_allowed: isUnderAllowed,
     pickable_flag: pickableFlag,
     raw_projection_json: rawProjectionJson,
     row_payload_json: rowPayloadJson,
