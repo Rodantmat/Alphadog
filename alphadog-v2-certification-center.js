@@ -2355,16 +2355,15 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
     });
     withValue.sort((a, b) => b._effectiveValue - a._effectiveValue);
     const perGameCount = new Map();
-    const seenPlayerProp = new Set();
+    const seenPlayer = new Set();
     const selected = [];
     for (const r of withValue) {
       if (selected.length >= GOBLIN_SLIP_TARGET_SIZE) break;
-      const ppKey = `${r.mlb_player_id}|${r.canonical_prop_key}`;
-      if (seenPlayerProp.has(ppKey)) continue;
+      if (seenPlayer.has(r.mlb_player_id)) continue;
       const gameCount = perGameCount.get(r.game_pk) || 0;
       if (gameCount >= maxPerGame) continue;
       selected.push(r);
-      seenPlayerProp.add(ppKey);
+      seenPlayer.add(r.mlb_player_id);
       perGameCount.set(r.game_pk, gameCount + 1);
     }
     return selected;
