@@ -2331,12 +2331,17 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
         AND source_key = 'prizepicks' AND is_goblin = 1
         AND confidence_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
-      ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
     `);
+    // FIXED 2026-08-05: sort by real effective value (probability x goblin's actual discounted
+    // payout ratio, ~0.55-0.97x standard), not raw probability - a goblin's probability is
+    // inflated by design (lowered threshold), so raw-probability sorting always favors goblins
+    // over genuinely better-value picks. Same principle already proven in Grounded Slips.
+    const withValue = rows.map(r => ({ ...r, _effectiveValue: (Number(r.hit_probability_0_100 || 0) / 100) * goblinTierRatio(1, false) }));
+    withValue.sort((a, b) => b._effectiveValue - a._effectiveValue);
     const perGameCount = new Map();
     const seenPlayerProp = new Set();
     const selected = [];
-    for (const r of rows) {
+    for (const r of withValue) {
       if (selected.length >= GOBLIN_SLIP_TARGET_SIZE) break;
       const ppKey = `${r.mlb_player_id}|${r.canonical_prop_key}`;
       if (seenPlayerProp.has(ppKey)) continue;
@@ -2358,28 +2363,35 @@ async function apiGoblinSlips(env, request) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Goblin legs available right now - check back after the board refreshes."] });
   }
   const size = Math.min(GOBLIN_SLIP_TARGET_SIZE, legs.length);
-  const sorted = [...legs].sort((a, b) => legScoreForBuild(b) - legScoreForBuild(a)).slice(0, size);
+  const sorted = legs.slice(0, size);
+  const table = APP_PAYOUT_TABLES.prizepicks;
   const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-  const evResult = slipEv(probs01, "power");
-  const breakeven = breakevenRate(size, "power");
+  const breakeven = researchBreakeven(size, "power", table);
+  const evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
   const warnings = slipWarnings(sorted);
   const slip = {
     client_slip_id: makeUiId("goblin_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
     entry_mode: "power", structure_label: `${size}-pick Power (Goblin)`,
-    estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult ? evResult.hit_all_probability_0_100 : null,
-    estimated_multiplier: evResult ? evResult.multiplier : null, estimated_ev_per_unit_stake: evResult ? Math.round(evResult.ev * 1000) / 1000 : null,
+    estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
+    estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
     breakeven_hit_rate_0_100: breakeven,
-    strategy_grade: warnings.length ? "REVIEW" : (evResult && evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [evResult ? `Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.` : "", ...warnings].filter(Boolean).join(" "),
+    multiplier_estimated: true,
+    estimated_payout_note: "PrizePicks doesn't publish the exact Goblin multiplier - this is estimated using a fair-odds-preserving model based on real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). Check the real multiplier in-app before placing.",
+    strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
+    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.`, ...warnings].filter(Boolean).join(" "),
     legs: sorted
   };
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [slip] });
 }
 
-// Demon Slips: PP-only, flexible 2-6 pick (whatever the day's best Demons support, sized as large
-// as genuinely safe rather than forced to a fixed count), exactly one slip a day. Demons are
-// inherently harder than Goblins, so this is deliberately the safest achievable Demon combination,
-// not a max-payout reach. Both 'more' and 'less' Demon legs are eligible on equal footing.
+// Demon Slips: PP-only, flexible 2-6 pick, one slip a day. FIXED 2026-08-05: restricted to the
+// 'more' side only - this is the genuine, meaningful Demon side (elevated threshold, the actual
+// source of a Demon's difficulty and boosted payout). Allowing 'less' let the selector gravitate
+// to trivial, low-information unders on rare-event props (e.g. stolen_bases/home_runs, where
+// almost any non-elite player clears 'under 0.5' regardless of Demon/Goblin/standard tagging),
+// producing 99%-probability legs that don't represent anything demon-caliber at all. A Demon
+// pick should mean genuinely evaluating whether the harder, elevated 'more' threshold is still
+// worth taking - not finding the safest unrelated side of a Demon-tagged row.
 const DEMON_SLIP_MAX_SIZE = 6;
 const DEMON_SLIP_MIN_SIZE = 2;
 const DEMON_SLIP_MIN_CONFIDENCE = 55;
@@ -2393,7 +2405,7 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
         confidence_0_100, score_0_100, board_tier, is_goblin, is_demon
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'prizepicks' AND is_demon = 1
+        AND source_key = 'prizepicks' AND is_demon = 1 AND selected_side = 'more'
         AND confidence_0_100 >= ${DEMON_SLIP_MIN_CONFIDENCE}
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
       ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
@@ -2420,31 +2432,36 @@ async function apiDemonSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectDemonSlipLegs(env, {});
   if (legs.length < DEMON_SLIP_MIN_SIZE) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Demon legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Demon (more-side) legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
   }
-  // Find the largest size (from DEMON_SLIP_MAX_SIZE down to DEMON_SLIP_MIN_SIZE) with genuinely
-  // positive risk-adjusted value using the same real EV math as everywhere else - bigger is
-  // preferred when it's still safe, but never forced past what the day's legs actually support.
-  const sortedAll = [...legs].sort((a, b) => legScoreForBuild(b) - legScoreForBuild(a));
+  const table = APP_PAYOUT_TABLES.prizepicks;
   let best = null;
-  for (let size = Math.min(DEMON_SLIP_MAX_SIZE, sortedAll.length); size >= DEMON_SLIP_MIN_SIZE; size--) {
-    const slice = sortedAll.slice(0, size);
+  for (let size = Math.min(DEMON_SLIP_MAX_SIZE, legs.length); size >= DEMON_SLIP_MIN_SIZE; size--) {
+    const slice = legs.slice(0, size);
     const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    const evResult = slipEv(probs01, "power");
-    if (evResult && evResult.ev > 0) { best = { size, slice, evResult }; break; }
+    const breakeven = researchBreakeven(size, "power", table);
+    const evResult = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", breakeven);
+    if (evResult && evResult.ev > 0) { best = { size, slice, evResult, breakeven }; break; }
   }
-  if (!best) best = { size: DEMON_SLIP_MIN_SIZE, slice: sortedAll.slice(0, DEMON_SLIP_MIN_SIZE), evResult: slipEv(sortedAll.slice(0, DEMON_SLIP_MIN_SIZE).map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100))), "power") };
-  const { size, slice, evResult } = best;
-  const breakeven = breakevenRate(size, "power");
+  if (!best) {
+    const size = DEMON_SLIP_MIN_SIZE;
+    const slice = legs.slice(0, size);
+    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
+    const breakeven = researchBreakeven(size, "power", table);
+    best = { size, slice, evResult: researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", breakeven), breakeven };
+  }
+  const { size, slice, evResult, breakeven } = best;
   const warnings = slipWarnings(slice);
   const slip = {
     client_slip_id: makeUiId("demon_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
     entry_mode: "power", structure_label: `${size}-pick Power (Demon)`,
-    estimated_hit_probability_0_100: slipProb(slice), hit_all_probability_0_100: evResult ? evResult.hit_all_probability_0_100 : null,
-    estimated_multiplier: evResult ? evResult.multiplier : null, estimated_ev_per_unit_stake: evResult ? Math.round(evResult.ev * 1000) / 1000 : null,
+    estimated_hit_probability_0_100: slipProb(slice), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
+    estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
     breakeven_hit_rate_0_100: breakeven,
-    strategy_grade: warnings.length ? "REVIEW" : (evResult && evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [evResult ? `Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Demons are inherently harder - sized to the safest structure the day's legs genuinely support.` : "Demons are inherently harder to hit; this is the safest structure available today, though it may still carry negative expected value.", ...warnings].filter(Boolean).join(" "),
+    multiplier_estimated: true,
+    estimated_payout_note: "PrizePicks doesn't publish the exact Demon multiplier - this is estimated using a fair-odds-preserving model (Demons pay ~1.9x the standard per-leg rate, per prior research). Check the real multiplier in-app before placing.",
+    strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
+    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Demons are inherently harder - sized to the safest structure the day's legs genuinely support.`, ...warnings].filter(Boolean).join(" "),
     legs: slice
   };
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [slip] });
