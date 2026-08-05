@@ -440,7 +440,17 @@ function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue) {
   // this, if this same generic 'player_runs' key is ever used for an RFI/NRFI prop (exactly the
   // ambiguity this comment already documents happening for real players), it would be wrongly
   // classified as runs_allowed instead of rfi_nrfi.
-  const rawCanonical = UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
+  // HARDENED 2026-08-05 (real user-reported case): Underdog's raw 'player_hits_allowed' market
+  // key is genuinely used for BOTH the full-game hits_allowed prop AND the distinct '1st Inn.
+  // Hits Allowed' prop, disambiguated only by line value - confirmed live (Bryan Woo, line=0.5)
+  // and confirmed structurally: 0.5 isn't even a valid line in hits_allowed's own configured
+  // line universe (starts at 2.5), so this line can never be the real full-game prop. Routing
+  // to a distinct, not-yet-configured canonical key so the existing taxonomyRow check below
+  // naturally excludes it from the live board (rather than silently corrupting hits_allowed's
+  // real data) until first_inning_hits_allowed is properly built out as its own scored prop type.
+  const rawCanonical = (sourceKey === "player_hits_allowed" && Number(lineValue) === 0.5)
+    ? "first_inning_hits_allowed"
+    : (UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null);
   const canonical = (sourceKey === "player_runs" && isPitcher && Number(lineValue) !== 0.5) ? "runs_allowed"
     : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score"
     : rawCanonical;
