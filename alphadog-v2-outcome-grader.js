@@ -214,7 +214,21 @@ function identity(env) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runGradeOutcomes(env, { trigger: "cron", cron: event.cron }));
+    // DEFINITIVE FIX 2026-08-05: this cron is retired - the Cowork morning-delta supervisor's
+    // Layer 4 calls this worker directly instead. The wrangler-level "never fires" workaround
+    // (Feb 30th cron expression) did not reliably stop Cloudflare's existing live trigger from
+    // firing - confirmed live twice now, same old '15 14 * * *' expression fired again despite
+    // that source-level fix already being deployed. Making this handler itself a guaranteed
+    // no-op instead: even if the platform keeps firing this worker on its old schedule, nothing
+    // happens, so the firing is harmless rather than something to keep chasing at the trigger
+    // level. Logging so this is visible/auditable rather than silently swallowed.
+    ctx.waitUntil((async () => {
+      try {
+        await postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 })`
+          INSERT INTO control.claude_session_log (topic, finding, status, next_step)
+          VALUES ('AUTOMATED_outcome_grader_run', 'Cron fired (cron: ' || ${event.cron || "unknown"} || ') but this handler is now a deliberate no-op - the Cowork morning-delta supervisor calls this worker directly instead. No grading performed by this invocation.', 'CRON_NOOP_RETIRED', null)`;
+      } catch (_) {}
+    })());
   },
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
