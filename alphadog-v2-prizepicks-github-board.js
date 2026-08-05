@@ -875,11 +875,12 @@ async function insertCurrentRows(env, rows, batchId, slateDate) {
     is_goblin: r.is_goblin,
     is_demon: r.is_demon,
     is_standard: r.is_standard,
+    is_under_allowed: r.is_under_allowed,
     pickable_flag: r.pickable_flag,
     raw_projection_json: r.raw_projection_json,
     row_payload_json: r.row_payload_json
   }));
-  const cols = ["current_row_id", "batch_id", "source_key", "slate_date", "projection_id", "player_id", "player_name", "team", "opponent", "league", "stat_type", "line_score", "description", "start_time", "board_time", "end_time", "game_id", "event_type", "status", "projection_type", "odds_type", "source_line_type", "payout_variant", "is_goblin", "is_demon", "is_standard", "pickable_flag", "raw_projection_json", "row_payload_json"];
+  const cols = ["current_row_id", "batch_id", "source_key", "slate_date", "projection_id", "player_id", "player_name", "team", "opponent", "league", "stat_type", "line_score", "description", "start_time", "board_time", "end_time", "game_id", "event_type", "status", "projection_type", "odds_type", "source_line_type", "payout_variant", "is_goblin", "is_demon", "is_standard", "is_under_allowed", "pickable_flag", "raw_projection_json", "row_payload_json"];
   const chunks = [];
   for (let i = 0; i < validRows.length; i += STAGE_INSERT_CHUNK_SIZE) chunks.push(validRows.slice(i, i + STAGE_INSERT_CHUNK_SIZE));
   const client = pgClient(env);
