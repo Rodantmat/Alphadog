@@ -2323,20 +2323,31 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
   const pg = pgClient(env);
   try {
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, final_board_row_id, source_key, game_pk, player_name,
-        mlb_player_id, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
-        confidence_0_100, score_0_100, board_tier, is_goblin, is_demon
-      FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'prizepicks' AND is_goblin = 1
-        AND confidence_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
+      WITH ladder AS (
+        SELECT
+          final_board_row_id AS board_row_id, source_key, game_pk, player_name, mlb_player_id,
+          canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
+          confidence_0_100, score_0_100, board_tier, is_goblin, is_demon,
+          MIN(CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 THEN line_value END)
+            OVER (PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side) AS standard_line_value,
+          ROW_NUMBER() OVER (
+            PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side, is_goblin
+            ORDER BY line_value ASC
+          ) AS goblin_tier_rank
+        FROM score.final_board_current
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      )
+      SELECT board_row_id, source_key, game_pk, player_name, mlb_player_id, canonical_prop_key, line_value, selected_side,
+        hit_probability_0_100, confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, goblin_tier_rank,
+        (standard_line_value IS NOT NULL) AS has_standard_sibling
+      FROM ladder
+      WHERE source_key = 'prizepicks' AND is_goblin = 1 AND confidence_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
     `);
-    // FIXED 2026-08-05: sort by real effective value (probability x goblin's actual discounted
-    // payout ratio, ~0.55-0.97x standard), not raw probability - a goblin's probability is
-    // inflated by design (lowered threshold), so raw-probability sorting always favors goblins
-    // over genuinely better-value picks. Same principle already proven in Grounded Slips.
-    const withValue = rows.map(r => ({ ...r, _effectiveValue: (Number(r.hit_probability_0_100 || 0) / 100) * goblinTierRatio(1, false) }));
+    // FIXED 2026-08-05: sort by real effective value (probability x the leg's OWN real goblin
+    // tier ratio, computed from its actual ladder position, not a hardcoded tier=1 placeholder)
+    // - a goblin's probability is inflated by design (lowered threshold), so raw-probability
+    // sorting always favors goblins over genuinely better-value picks.
+    const withValue = rows.map(r => ({ ...r, _effectiveValue: (Number(r.hit_probability_0_100 || 0) / 100) * goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling)) }));
     withValue.sort((a, b) => b._effectiveValue - a._effectiveValue);
     const perGameCount = new Map();
     const seenPlayerProp = new Set();
