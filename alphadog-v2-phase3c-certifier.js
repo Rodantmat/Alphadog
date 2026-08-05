@@ -447,6 +447,58 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   };
 }
 
+// Ladder hierarchy enforcement: a harder variation must never show a higher probability than an
+// easier one for the same player/prop/side. Confirmed via real data (Sean Burke earned_runs) that
+// the bucket-based residual correction, applied purely on displayed HP with no awareness of the
+// line-value ladder, mechanically breaks monotonicity whenever two adjacent lines straddle
+// different correction buckets - the raw baseline was genuinely correct and monotonic, the
+// post-correction values weren't. Clamps each row to a running best-so-far in the correct
+// direction for its side: 'more' must be non-increasing as line_value increases (a higher
+// threshold can never show a higher probability); 'less' must be non-decreasing as line_value
+// increases (a higher ceiling can never show a lower probability). A real, mechanical guarantee,
+// not a heuristic - cannot be violated regardless of what any upstream correction did.
+async function reconcileHpBoardLadderMonotonicity(pgClient, hpBatchId) {
+  const moreRes = await pgClient`
+    WITH ladder AS (
+      SELECT hp_board_row_id,
+        MIN(estimated_hit_probability_0_100) OVER (
+          PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side
+          ORDER BY line_value ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS clamped_hp
+      FROM score.hp_board_current
+      WHERE hp_board_batch_id = ${hpBatchId} AND selected_side = 'more' AND estimated_hit_probability_0_100 IS NOT NULL
+    )
+    UPDATE score.hp_board_current h SET
+      estimated_hit_probability_0_100 = l.clamped_hp,
+      board_tier = CASE WHEN l.clamped_hp >= 70 AND h.probability_confidence_0_100 >= 55 THEN 'PRIMARY' ELSE 'REVIEW' END,
+      live_playable = CASE WHEN l.clamped_hp >= 70 AND h.probability_confidence_0_100 >= 55 THEN 1 ELSE 0 END,
+      review_playable = CASE WHEN l.clamped_hp >= 70 AND h.probability_confidence_0_100 >= 55 THEN 0 ELSE 1 END,
+      score_grade = CASE WHEN l.clamped_hp >= 80 THEN 'BIN_ELITE' WHEN l.clamped_hp >= 70 THEN 'BIN_STRONG' WHEN l.clamped_hp >= 60 THEN 'BIN_QUALIFIED' ELSE 'BIN_LOW' END,
+      calibration_json = COALESCE(h.calibration_json, '{}'::jsonb) || jsonb_build_object('ladder_monotonicity_clamp_applied', true, 'ladder_pre_clamp_hp', h.estimated_hit_probability_0_100)
+    FROM ladder l
+    WHERE h.hp_board_row_id = l.hp_board_row_id AND l.clamped_hp < h.estimated_hit_probability_0_100`;
+  const lessRes = await pgClient`
+    WITH ladder AS (
+      SELECT hp_board_row_id,
+        MAX(estimated_hit_probability_0_100) OVER (
+          PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side
+          ORDER BY line_value ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS clamped_hp
+      FROM score.hp_board_current
+      WHERE hp_board_batch_id = ${hpBatchId} AND selected_side = 'less' AND estimated_hit_probability_0_100 IS NOT NULL
+    )
+    UPDATE score.hp_board_current h SET
+      estimated_hit_probability_0_100 = l.clamped_hp,
+      board_tier = CASE WHEN l.clamped_hp >= 70 AND h.probability_confidence_0_100 >= 55 THEN 'PRIMARY' ELSE 'REVIEW' END,
+      live_playable = CASE WHEN l.clamped_hp >= 70 AND h.probability_confidence_0_100 >= 55 THEN 1 ELSE 0 END,
+      review_playable = CASE WHEN l.clamped_hp >= 70 AND h.probability_confidence_0_100 >= 55 THEN 0 ELSE 1 END,
+      score_grade = CASE WHEN l.clamped_hp >= 80 THEN 'BIN_ELITE' WHEN l.clamped_hp >= 70 THEN 'BIN_STRONG' WHEN l.clamped_hp >= 60 THEN 'BIN_QUALIFIED' ELSE 'BIN_LOW' END,
+      calibration_json = COALESCE(h.calibration_json, '{}'::jsonb) || jsonb_build_object('ladder_monotonicity_clamp_applied', true, 'ladder_pre_clamp_hp', h.estimated_hit_probability_0_100)
+    FROM ladder l
+    WHERE h.hp_board_row_id = l.hp_board_row_id AND l.clamped_hp > h.estimated_hit_probability_0_100`;
+  return { ok: true, more_rows_clamped: moreRes.count || 0, less_rows_clamped: lessRes.count || 0 };
+}
+
 async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
   const aliasCfg = aliasRows[0] ? safeJsonParse(aliasRows[0].config_json, {}) : {};
   const cfgRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`;
