@@ -636,6 +636,14 @@ function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId
   const isGoblin = variantHaystack.includes("goblin") ? 1 : 0;
   const isDemon = variantHaystack.includes("demon") ? 1 : 0;
   const isStandard = isGoblin || isDemon ? 0 : 1;
+  // FIX 2026-08-05: real, confirmed field from PrizePicks' own raw data - was never extracted at
+  // all before this. Values seen live: 'over' (more-only), 'under_or_over' (both sides genuinely
+  // playable), null (unknown/absent). Confirmed via direct data audit that a substantial share of
+  // current Goblin/Demon rows allow both sides now, not just 'more' as the whole downstream
+  // pipeline previously, unconditionally assumed for every Goblin/Demon row regardless of this
+  // field's real value.
+  const allowedWagerTypes = safeCell(attrs.allowed_wager_types || null, 40);
+  const isUnderAllowed = (isGoblin || isDemon) ? (String(allowedWagerTypes || "").toLowerCase() === "under_or_over" ? 1 : 0) : 1;
   const payoutVariant = safeCell(isGoblin ? "goblin" : isDemon ? "demon" : (attrs.odds_type || attrs.projection_type || "standard"), 120);
   const sourceLineType = safeCell(attrs.projection_type || attrs.odds_type || attrs.event_type || null, 120);
   const normalizedStatus = String(boardStatus || "").toLowerCase();
