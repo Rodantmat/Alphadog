@@ -448,7 +448,6 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
 }
 
 async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
-  const aliasRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='shared_threshold_aliases' AND is_active=1`;
   const aliasCfg = aliasRows[0] ? safeJsonParse(aliasRows[0].config_json, {}) : {};
   const cfgRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`;
   const constraints = cfgRows[0] ? safeJsonParse(cfgRows[0].config_json, {}) : {};
