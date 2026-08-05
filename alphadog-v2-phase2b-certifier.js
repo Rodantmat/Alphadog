@@ -190,7 +190,7 @@ function buildSideVariationContext(row) {
     projection_type: payload.projection_type || null, odds_type: oddsType, payout_variant: payoutVariant, is_goblin: isGoblin ? 1 : 0, is_demon: isDemon ? 1 : 0, is_standard: isStandard ? 1 : 0,
     line_value: lineValue, board_line_value: lineValue, over_price: overPrice, under_price: underPrice, source_prices: payload.source_prices || { over_price: overPrice, under_price: underPrice },
     side_mode: sideMode, available_sides: availableSides, side_availability_status: sideAvailabilityStatus, side_eligibility_status: sideAvailabilityStatus, side_eligibility_reason: sideEligibilityReason,
-    scoring_side_rule: isGoblin || isDemon ? "goblin_demon_more_only_no_less_under" : (sideMode === "two_sided" ? "evaluate_more_and_less_select_stronger_later" : "block_or_defer_in_scoring_if_unclear"),
+    scoring_side_rule: (isGoblin || isDemon) ? (sideMode === "two_sided" ? "goblin_demon_under_or_over_evaluate_both_select_stronger" : "goblin_demon_more_only_no_less_under") : (sideMode === "two_sided" ? "evaluate_more_and_less_select_stronger_later" : "block_or_defer_in_scoring_if_unclear"),
     selected_side: null, more_score_0_100: null, less_score_0_100: null
   };
 }
