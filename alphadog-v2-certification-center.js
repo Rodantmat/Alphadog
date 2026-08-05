@@ -3427,7 +3427,33 @@ async function autoCreateSlips(){
       +'<h3>Auto-Created Slips</h3>'+lastAutoCreatedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
   }finally{if(btn)btn.disabled=false}
 }
-function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips}
+function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips;const g=$('goblinSlipsBtn');if(g)g.onclick=goblinSlips;const d=$('demonSlipsBtn');if(d)d.onclick=demonSlips}
+async function goblinSlips(){
+  const btn=$('goblinSlipsBtn');const results=$('autoCreateResults');
+  if(btn)btn.disabled=true;
+  results.innerHTML='<div class="empty">Finding the safest PrizePicks Goblins...</div>';
+  try{
+    const j=await (await fetch('/api/slips/goblin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
+    const slips=j.generated_slips||[];
+    if(!slips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Goblin legs right now.')+'</div>';return}
+    results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Goblin legs.</div>'
+      +'<h3>Goblin Slip</h3>'+slips.map(s=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
+  }finally{if(btn)btn.disabled=false}
+}
+async function demonSlips(){
+  const btn=$('demonSlipsBtn');const results=$('autoCreateResults');
+  if(btn)btn.disabled=true;
+  results.innerHTML='<div class="empty">Finding the safest PrizePicks Demons today...</div>';
+  try{
+    const j=await (await fetch('/api/slips/demon',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
+    const slips=j.generated_slips||[];
+    if(!slips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Demon legs right now.')+'</div>';return}
+    results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Demon legs.</div>'
+      +'<h3>Demon Slip</h3>'+slips.map(s=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
+  }finally{if(btn)btn.disabled=false}
+}
 function openPlayerProfile(){setScreen('playerProfile');$('playerProfileBody').innerHTML='<div class="empty">Type at least 3 letters.</div>';$('playerSearch').focus()}
 async function searchPlayers(){const q=$('playerSearch').value.trim();if(q.length<3){$('playerSearchResults').innerHTML='';return}const j=await (await fetch('/api/player-search?q='+encodeURIComponent(q)+'&t='+Date.now(),{cache:'no-store'})).json();$('playerSearchResults').innerHTML=(j.rows||[]).map(r=>'<button class="searchResult" data-player-id="'+esc(r.player_id)+'">'+esc(r.player_name)+' <span class="small">'+esc(r.primary_position||'')+'</span></button>').join('')||'<div class="small">No matches.</div>';document.querySelectorAll('.searchResult[data-player-id]').forEach(b=>b.onclick=()=>loadPlayerProfile(b.dataset.playerId))}
 function initials(name){return String(name||'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?'}
