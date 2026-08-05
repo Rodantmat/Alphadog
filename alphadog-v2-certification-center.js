@@ -3224,7 +3224,7 @@ function renderBuild(){
     +'<div>'+sr.map(r=>'<div class="legMini"><span>'+legTitle(r)+'</span><b>'+pct(r.estimated_hit_probability_0_100)+'</b></div>').join('')+'</div>'
     +'<div id="recoBox"><div class="empty">Finding your best structure...</div></div>'
     +'<details class="microFactor"><summary>⚙ Customize instead</summary><div class="microBody" id="structureBox">'+renderStructureRows()+'<button id="generateCustom" class="btn" style="margin-top:8px">Generate custom</button></div></details>'
-    +'<div id="generatedSlips"></div><button id="saveSlips" class="btn hidden">Save selected slips</button>'
+    +'<div id="generatedSlips"></div>'
     +'</div>';
   bindBuildControls();
   loadRecommendation();
