@@ -1422,14 +1422,14 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
     canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
     source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
-    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, updated_at
+    source_pickable, is_goblin, is_demon, is_under_allowed, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, updated_at
   ) SELECT
     prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
     player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
     canonical_prop_key, source_prop_name, line_value, official_game_pk, NULLIF(official_game_time_utc, '')::timestamptz, NULLIF(official_date, '')::date,
     NULLIF(source_start_time, '')::timestamptz, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
-    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, now()
+    source_pickable, is_goblin, is_demon, is_under_allowed, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, now()
   FROM score.board_prepared_stage WHERE prep_batch_id=$1
   ON CONFLICT (prepared_row_id) DO UPDATE SET
     prep_batch_id=excluded.prep_batch_id, source_key=excluded.source_key, source_row_id=excluded.source_row_id,
@@ -1441,7 +1441,8 @@ WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
     source_prop_name=excluded.source_prop_name, line_value=excluded.line_value, official_game_pk=excluded.official_game_pk,
     official_game_time_utc=excluded.official_game_time_utc, official_date=excluded.official_date, source_start_time=excluded.source_start_time,
     source_time_status=excluded.source_time_status, start_time_confidence=excluded.start_time_confidence, matchup_status=excluded.matchup_status,
-    matchup_confidence=excluded.matchup_confidence, source_pickable=excluded.source_pickable, pickable_safe=excluded.pickable_safe,
+    matchup_confidence=excluded.matchup_confidence, source_pickable=excluded.source_pickable, is_goblin=excluded.is_goblin, is_demon=excluded.is_demon,
+    is_under_allowed=excluded.is_under_allowed, pickable_safe=excluded.pickable_safe,
     prep_status=excluded.prep_status, block_reason=excluded.block_reason, raw_source_json=excluded.raw_source_json,
     row_payload_json=excluded.row_payload_json, updated_at=now()`, [batchId]);
   const promotedRow = await firstRow(env.pg, "SELECT COUNT(*) AS rows FROM score.board_prepared_current WHERE prep_batch_id=?", [batchId]);
