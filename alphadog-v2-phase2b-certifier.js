@@ -202,6 +202,7 @@ async function getPreparedRows(pgClient, dates) {
       player_name, resolved_player_id, resolved_mlb_player_id, player_match_status, team, opponent,
       team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk,
       official_game_time_utc, official_date::text AS official_date, source_start_time, matchup_status, pickable_safe, prep_status, block_reason, row_payload_json,
+      is_goblin, is_demon, is_under_allowed,
       created_at, updated_at
     FROM score.board_prepared_current
     WHERE official_date::text = ANY(${datesLit}::text[])
