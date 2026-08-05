@@ -2325,7 +2325,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
     const rows = await queryAllPg(pg, `
       WITH ladder AS (
         SELECT
-          final_board_row_id AS board_row_id, source_key, game_pk, player_name, mlb_player_id,
+          final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
           canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
           confidence_0_100, score_0_100, board_tier, is_goblin, is_demon,
           MIN(CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 THEN line_value END)
@@ -2342,6 +2342,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
         (standard_line_value IS NOT NULL) AS has_standard_sibling
       FROM ladder
       WHERE source_key = 'prizepicks' AND is_goblin = 1 AND confidence_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
     `);
     // FIXED 2026-08-05: sort by real effective value (probability x the leg's OWN real goblin
     // tier ratio, computed from its actual ladder position, not a hardcoded tier=1 placeholder)
