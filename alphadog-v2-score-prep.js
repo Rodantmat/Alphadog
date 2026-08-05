@@ -847,7 +847,7 @@ function buildBlockReasons({ sourcePickable, sourceKey, calendarResolution, play
   return Array.from(new Set(reasons));
 }
 
-function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, projectionId, playerName, propKey, sourcePropName, lineValue, sourceStartTime, sourcePickable, rawJson, payloadJson, calendarResolution, playerResolution, side, now }) {
+function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, projectionId, playerName, propKey, sourcePropName, lineValue, sourceStartTime, sourcePickable, isGoblin, isDemon, isUnderAllowed, rawJson, payloadJson, calendarResolution, playerResolution, side, now }) {
   const game = calendarResolution.game || null;
   const blockReasons = buildBlockReasons({ sourcePickable, sourceKey, calendarResolution, playerResolution, side, game, now });
   const pickableSafe = blockReasons.length === 0 ? 1 : 0;
