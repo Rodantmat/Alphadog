@@ -675,6 +675,7 @@ function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId
     is_goblin: isGoblin,
     is_demon: isDemon,
     is_standard: isStandard,
+    is_under_allowed: isUnderAllowed,
     pickable_flag: pickableFlag,
     pickability_reason: pickabilityReason,
     raw_type: row && row.type ? String(row.type) : null,
