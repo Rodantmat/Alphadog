@@ -561,18 +561,20 @@ async function runDailyDeltaPart2(env, ctx, input) {
 
 export default {
   async scheduled(event, env, ctx) {
-    // Multiple crons now fire for this worker (2026-08-02 fix): the first (14:00 UTC) runs the
-    // full Part1+Part2 kickoff; the rest (14:10-14:50) call Part 2 ONLY, as an external,
-    // independently-driven retry - confirmed live that Part 2's own internal self-chaining fetch
-    // can stall without one, and this worker's lock + persisted phase state make repeated Part 2
-    // calls safe (no-op if already done for the day, genuine continuation if it stalled).
-    const cronStr = String(event.cron || "");
-    const isKickoffCron = cronStr.startsWith("0 14");
+    // DEFINITIVE FIX 2026-08-05: this cron is retired - the Cowork morning-delta supervisor calls
+    // each individual layer directly instead (LAYER 1-5 architecture). The wrangler-level "never
+    // fires" cron workaround did not reliably override Cloudflare's existing live trigger for
+    // this worker's siblings (outcome-grader.js, calibration-scheduler.js) - confirmed live
+    // today, both still fired on their old schedules despite that source-level fix already being
+    // deployed. This worker is more consequential than those two since it actually runs real
+    // Part1/Part2 mining+calculation work if triggered, not just a check/report. Making this
+    // handler a guaranteed no-op instead of continuing to chase the trigger-removal mechanism.
     ctx.waitUntil((async () => {
-      if (isKickoffCron) {
-        await runDailyDeltaPart1(env, { trigger: "cron", cron: event.cron });
-      }
-      await runDailyDeltaPart2(env, ctx, { trigger: "cron", cron: event.cron });
+      try {
+        await postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 })`
+          INSERT INTO control.claude_session_log (topic, finding, status, next_step)
+          VALUES ('AUTOMATED_daily_delta_runner_run', 'Cron fired (cron: ' || ${event.cron || "unknown"} || ') but this handler is now a deliberate no-op - the Cowork morning-delta supervisor runs LAYER 1-5 directly instead. No mining or calculation performed by this invocation.', 'CRON_NOOP_RETIRED', null)`;
+      } catch (_) {}
     })());
   },
 
