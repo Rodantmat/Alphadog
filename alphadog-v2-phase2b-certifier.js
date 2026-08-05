@@ -150,7 +150,18 @@ function buildSideVariationContext(row) {
   let availableSides = [];
 
   if (sourceKey === "prizepicks") {
-    if (isGoblin || isDemon) {
+    // FIXED 2026-08-05: the real allowed_wager_types field (confirmed via direct data audit:
+    // 'over' vs 'under_or_over') was never checked here - every Goblin/Demon was unconditionally
+    // forced to more_only regardless of what PrizePicks' own data says. row.is_under_allowed now
+    // carries this real flag through from board_prepared_current. When it's genuinely 1, use the
+    // same two_sided mode already proven for standard props, letting the existing baseline-
+    // comparison logic in determineSide (phase3c-certifier.js) evaluate both real probabilities
+    // and pick the stronger one - never guessing, never conflating more/less. When 0 or unknown,
+    // stays exactly the prior, conservative more_only behavior.
+    const isUnderAllowed = Number(row && row.is_under_allowed) === 1;
+    if ((isGoblin || isDemon) && isUnderAllowed) {
+      sideMode = "two_sided"; availableSides = ["more", "less"]; sideAvailabilityStatus = "side_ready_two_sided"; sideEligibilityReason = "PRIZEPICKS_GOBLIN_DEMON_UNDER_OR_OVER_TWO_SIDED";
+    } else if (isGoblin || isDemon) {
       sideMode = "more_only"; availableSides = ["more"]; sideAvailabilityStatus = "side_ready_more_only"; sideEligibilityReason = "PRIZEPICKS_GOBLIN_DEMON_MORE_ONLY";
     } else if (isStandard || String(oddsType || "").toLowerCase() === "standard") {
       sideMode = "two_sided"; availableSides = ["more", "less"]; sideAvailabilityStatus = "side_ready_two_sided"; sideEligibilityReason = "PRIZEPICKS_STANDARD_TWO_SIDED";
