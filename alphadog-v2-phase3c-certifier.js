@@ -303,7 +303,17 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   function determineSide(matrixRow, er, playerId, propKey, lineValue) {
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
     const isGoblinOrDemon = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1 || Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
-    if (isGoblinOrDemon) return "more";
+    // FIXED 2026-08-05: this was the original, definitive bug - it unconditionally forced every
+    // Goblin/Demon to 'more', completely ignoring side_mode, even after matrix-builder was fixed
+    // to correctly set side_mode='two_sided' when PrizePicks' real allowed_wager_types data
+    // genuinely allows both sides. Confirmed live this was still happening (Andre Pallante
+    // pitcher_strikeouts 5.5: side_mode='two_sided' in the matrix, but still forced to 'more' at
+    // only 23.2% HP when 'less' at ~76.8% should have clearly won). Now only forces 'more' when
+    // side_mode is genuinely 'more_only' - otherwise falls through to the existing, already-
+    // correct baseline-comparison logic below to genuinely evaluate both real probabilities.
+    const realSideMode = payload?.side_context?.side_mode || null;
+    if (isGoblinOrDemon && realSideMode === "more_only") return "more";
+    if (isGoblinOrDemon && realSideMode !== "two_sided") return "more"; // conservative fallback: unknown/missing side_mode for a Goblin/Demon row defaults to the historically-safe more_only behavior rather than guessing.
     const sideMode = payload?.side_context?.side_mode || null;
     if (sideMode === "more_only" || Number(matrixRow.more_only ?? 0) === 1) return "more";
     if (sideMode === "less_only") return "less";
