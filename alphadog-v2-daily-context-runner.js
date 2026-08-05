@@ -236,7 +236,16 @@ async function runDailyContextFullRunLocked(env, input, runId, startedAt) {
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runDailyContextFullRun(env, { trigger: "cron", cron: event.cron }).finally(() => selfCleanupAfterPhase(env)));
+    // DEFINITIVE FIX 2026-08-05: same confirmed issue as sibling workers - the cron-removal
+    // workaround does not reliably override an existing live trigger. Cowork calls each layer
+    // directly instead - this handler is now a guaranteed no-op.
+    ctx.waitUntil((async () => {
+      try {
+        await postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 })`
+          INSERT INTO control.claude_session_log (topic, finding, status, next_step)
+          VALUES ('AUTOMATED_daily_context_runner_run', 'Cron fired (cron: ' || ${event.cron || "unknown"} || ') but this handler is now a deliberate no-op - Cowork runs LAYER 1-4 directly instead.', 'CRON_NOOP_RETIRED', null)`;
+      } catch (_) {}
+    })());
   },
 
   async fetch(request, env, ctx) {
