@@ -2384,6 +2384,7 @@ async function apiGoblinSlips(env, request) {
   const breakeven = researchBreakeven(size, "power", table);
   const evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
   const warnings = slipWarnings(sorted);
+  const hasLessLeg = sorted.some(l => String(l.selected_side || "").toLowerCase() === "less");
   const slip = {
     client_slip_id: makeUiId("goblin_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
     entry_mode: "power", structure_label: `${size}-pick Power (Goblin)`,
@@ -2391,7 +2392,9 @@ async function apiGoblinSlips(env, request) {
     estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
     breakeven_hit_rate_0_100: breakeven,
     multiplier_estimated: true,
-    estimated_payout_note: "PrizePicks doesn't publish the exact Goblin multiplier - this is estimated using a fair-odds-preserving model based on real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). Check the real multiplier in-app before placing.",
+    estimated_payout_note: hasLessLeg
+      ? "PrizePicks doesn't publish the exact Goblin multiplier. 'More'-side legs use real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). 'Less'-side legs (the genuinely harder side of a Goblin-tagged line) are estimated using the Demon boost ratio (~1.9x) as the closest directional analog - this direction is confirmed correct, but the exact magnitude has not yet been validated against real in-app data the way the standard Goblin ratios were. Check the real multiplier in-app before placing."
+      : "PrizePicks doesn't publish the exact Goblin multiplier - this is estimated using a fair-odds-preserving model based on real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). Check the real multiplier in-app before placing.",
     strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
     strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.`, ...warnings].filter(Boolean).join(" "),
     legs: sorted
