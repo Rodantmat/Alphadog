@@ -1309,7 +1309,7 @@ function summarizeSleeperEvents(rows) {
   return Array.from(m.values()).map(s => ({ ...s, matchup_statuses: Array.from(s.matchup_statuses).join(",") })).sort((a, b) => b.rows - a.rows);
 }
 
-const STAGE_COLS = ["stage_row_id", "prepared_row_id", "prep_batch_id", "source_key", "source_row_id", "source_event_id", "projection_id", "player_name", "player_name_normalized", "resolved_player_id", "resolved_mlb_player_id", "player_match_status", "player_match_confidence", "team", "opponent", "team_full_name", "opponent_full_name", "canonical_prop_key", "source_prop_name", "line_value", "official_game_pk", "official_game_time_utc", "official_date", "source_start_time", "source_time_status", "start_time_confidence", "matchup_status", "matchup_confidence", "source_pickable", "pickable_safe", "prep_status", "block_reason", "raw_source_json", "row_payload_json"];
+const STAGE_COLS = ["stage_row_id", "prepared_row_id", "prep_batch_id", "source_key", "source_row_id", "source_event_id", "projection_id", "player_name", "player_name_normalized", "resolved_player_id", "resolved_mlb_player_id", "player_match_status", "player_match_confidence", "team", "opponent", "team_full_name", "opponent_full_name", "canonical_prop_key", "source_prop_name", "line_value", "official_game_pk", "official_game_time_utc", "official_date", "source_start_time", "source_time_status", "start_time_confidence", "matchup_status", "matchup_confidence", "source_pickable", "is_goblin", "is_demon", "is_under_allowed", "pickable_safe", "prep_status", "block_reason", "raw_source_json", "row_payload_json"];
 
 async function writePreparedRows(env, batchId, rows, bySource, startedAt, input, timing = {}) {
   const writeStart = Date.now();
