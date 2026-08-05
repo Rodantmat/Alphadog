@@ -82,7 +82,7 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
   const bin = bins.find(b => rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
   if (!bin) return { correctedHp: rawHpPct, applied: false };
   const corrected = clamp(rawHpPct + Number(bin.correction_delta) * 100, 1, 99);
-  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta), bin_n_test_games: bin.n_test_games };
+  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta) * 100, bin_n_test_games: bin.n_test_games };
 }
 
 // Second-stage residual correction, applied AFTER the first stage above, operating directly on
