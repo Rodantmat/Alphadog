@@ -3285,16 +3285,7 @@ async function autoCreateSlips(){
     const counts=j.source_counts||{};
     const countsLine=Object.keys(counts).map(k=>k.toUpperCase()+': '+counts[k]).join(' • ');
     results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs ('+esc(countsLine)+') → built '+lastAutoCreatedSlips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>'
-      +'<h3>Auto-Created Slips</h3>'+lastAutoCreatedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><label><input type="checkbox" class="autoSlipPick" data-i="'+i+'" checked> '+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</label><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('')
-      +'<button id="saveAutoSlips" class="btn" style="margin-top:10px">Save Selected Slips</button>';
-    const save=$('saveAutoSlips');
-    if(save)save.onclick=async()=>{
-      const picks=[...document.querySelectorAll('.autoSlipPick')].filter(x=>x.checked).map(x=>lastAutoCreatedSlips[Number(x.dataset.i)]).filter(Boolean);
-      if(!picks.length)return;
-      const sj=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({selected_leg_count:j.selected_leg_count,slips:picks})})).json();
-      results.insertAdjacentHTML('beforeend',sj.ok?'<div class="dossierNote">Saved '+sj.saved_count+' slips.</div>':'<div class="empty err">Save failed: '+esc(sj.error||'unknown')+'</div>');
-      if(sj.ok)loadSlips();
-    };
+      +'<h3>Auto-Created Slips</h3>'+lastAutoCreatedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
   }finally{if(btn)btn.disabled=false}
 }
 function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips}
