@@ -112,6 +112,8 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
     score_0_100: r.score_0_100,
     score_grade: null,
     board_tier: r.board_tier || null,
+    is_goblin: r.is_goblin || 0,
+    is_demon: r.is_demon || 0,
     live_playable: null,
     actual_stat_value: r.actual_value,
     outcome_result: r.is_hit ? "hit" : "miss",
