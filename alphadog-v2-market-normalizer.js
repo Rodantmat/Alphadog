@@ -105,13 +105,24 @@ function baseIdentity(env, extra = {}) {
 async function permanentlyRecordGameOddsContext(pgClient) {
   const rows = await pgClient`SELECT probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, bookmaker_key, bookmaker_title, market_key, market_last_update, outcome_name, outcome_side, price_american, point, mapping_status, mapping_confidence, raw_json, created_at FROM market.context_probe_game_odds`.catch(() => []);
   if (!rows.length) return { copied: 0, checked: 0 };
-  const cols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "game_pk", "source_key", "source_event_id", "source_commence_time_utc", "source_home_team", "source_away_team", "bookmaker_key", "bookmaker_title", "market_key", "market_last_update", "outcome_name", "outcome_side", "price_american", "point", "mapping_status", "mapping_confidence", "raw_json", "captured_at"];
-  const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc() }));
+  const cols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "game_pk", "source_key", "source_event_id", "source_commence_time_utc", "source_home_team", "source_away_team", "bookmaker_key", "bookmaker_title", "market_key", "market_last_update", "outcome_name", "outcome_side", "price_american", "point", "mapping_status", "mapping_confidence", "raw_json", "captured_at", "stable_key"];
+  // FIXED 2026-08-06: probe_row_id was generated via rid() (timestamp+random on every call), so it
+  // could never repeat for the same real market row, meaning ON CONFLICT (probe_row_id) could
+  // never actually prevent duplication - confirmed live: 4.9x accumulation across runs. This
+  // stable_key (game_pk+source+bookmaker+market+outcome+side+point) is the real, durable
+  // identity of a market line, independent of when it happened to be captured.
+  const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc(),
+    stable_key: [r.game_pk, r.source_key, r.bookmaker_key, r.market_key, r.outcome_name, r.outcome_side, r.point].map(v => v == null ? "" : String(v)).join("|") }));
   const CHUNK = 200;
   let copied = 0;
   for (let i = 0; i < withCapturedAt.length; i += CHUNK) {
     const chunk = withCapturedAt.slice(i, i + CHUNK);
-    await pgClient`INSERT INTO archive.game_odds_context_history ${pgClient(chunk, ...cols)} ON CONFLICT (probe_row_id) DO NOTHING`.catch(() => {});
+    await pgClient`INSERT INTO archive.game_odds_context_history ${pgClient(chunk, ...cols)}
+      ON CONFLICT (stable_key) DO UPDATE SET
+        probe_row_id=EXCLUDED.probe_row_id, batch_id=EXCLUDED.batch_id, slate_window_key=EXCLUDED.slate_window_key,
+        market_last_update=EXCLUDED.market_last_update, price_american=EXCLUDED.price_american, point=EXCLUDED.point,
+        mapping_status=EXCLUDED.mapping_status, mapping_confidence=EXCLUDED.mapping_confidence, raw_json=EXCLUDED.raw_json,
+        captured_at=EXCLUDED.captured_at`.catch(() => {});
     copied += chunk.length;
   }
   return { copied, checked: rows.length };
