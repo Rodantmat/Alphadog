@@ -1,6 +1,12 @@
 name: MLB Automatic Scraper
 
 on:
+  schedule:
+    # PREVENTION FIX 2026-08-06: added after a real incident where the board went stale for an
+    # extended period because this workflow only ran via dispatch from the orchestration layer,
+    # with no independent backstop. Runs every 2 hours regardless of whether anything else in the
+    # pipeline is calling it, so raw PrizePicks data can never go more than ~2 hours stale.
+    - cron: '0 */2 * * *'
   repository_dispatch:
     types: [alphadog_prizepicks_board]
   workflow_dispatch:
