@@ -1963,6 +1963,13 @@ function bestStructureForPool(pool) {
   // walk-forward-validated) plus a residual correction layer, applied in hit-probability-board.
   // Applying this separate, generic, hardcoded curve on top was genuine double-discounting of
   // an already-properly-calibrated number, not a legitimate extra safeguard.
+  // FIXED 2026-08-06: this previously used the generic, unadjusted slipEv with a single
+  // hardcoded payout table regardless of source - meaning goblin/demon ratios and real Sleeper/
+  // Underdog dynamic pricing were silently ignored in the system's flagship "Recommended for
+  // you" feature. Now uses the correct per-source payout table and the same real, adjusted EV
+  // math already proven elsewhere this session.
+  const poolSource = pool.length ? String(pool[0].source_key || "prizepicks").toLowerCase() : "prizepicks";
+  const table = APP_PAYOUT_TABLES[poolSource] || APP_PAYOUT_TABLES.prizepicks;
   const probs = pool.map(l => {
     const raw = Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0);
     return Math.max(0.01, Math.min(0.99, raw / 100));
@@ -1970,12 +1977,15 @@ function bestStructureForPool(pool) {
   let best = null;
   for (let size = MIN_SLIP_SIZE; size <= Math.min(MAX_SLIP_SIZE, probs.length); size++) {
     const slice = probs.slice(0, size);
+    const legSlice = pool.slice(0, size);
     const dist = hitCountDistribution(slice);
     for (const mode of ["power", "flex"]) {
-      const r = slipEv(slice, mode);
+      const breakeven = researchBreakeven(size, mode, table);
+      if (breakeven == null) continue;
+      const r = researchSlipEvAdjusted(legSlice, slice, mode, table, poolSource, breakeven);
       if (!r) continue;
       const riskScore = riskAdjustedScore(dist, size, mode);
-      const candidate = { size, mode, ...r, risk_adjusted_score: riskScore, breakeven_hit_rate_0_100: breakevenRate(size, mode) };
+      const candidate = { size, mode, ...r, risk_adjusted_score: riskScore, breakeven_hit_rate_0_100: breakeven };
       if (!best || candidate.risk_adjusted_score > best.risk_adjusted_score) best = candidate;
     }
   }
