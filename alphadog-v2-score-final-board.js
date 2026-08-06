@@ -469,6 +469,63 @@ function boardRowValues(batchId, sourceEngineBatchId, rank, row, id) {
 
 const BOARD_ROW_COLS = ["final_board_row_id", "final_board_batch_id", "source_simulation_batch_id", "source_engine_batch_id", "profile_key", "rank_order", "board_tier", "review_playable", "source_key", "game_pk", "official_date", "official_game_time_utc", "prepared_row_id", "matrix_id", "source_line_id", "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side", "raw_score_0_100", "raw_confidence_0_100", "score_0_100", "confidence_0_100", "score_grade", "score_sort_0_100", "factor_status", "market_prop_context_status", "daily_readiness_status", "side_mode", "odds_type", "payout_variant", "archive_eligible", "live_playable", "cluster_player_count", "correlation_risk_tier", "calibration_json", "calculation_json", "matrix_payload_json_snapshot", "details_json_snapshot", "hp_board_batch_id", "source_hp_batch_id", "estimated_hit_probability_0_100", "probability_confidence_0_100", "probability_band", "probability_grade", "hp_lane", "hp_rank", "hp_sort_0_100", "sample_size", "non_push_sample", "hit_count", "miss_count", "push_count", "hp_source_board_tier", "hp_source_lane_reason", "is_goblin", "is_demon", "is_more_only"];
 
+async function upsertBoardHistoryRows(pgClient, batchId, sourceEngineBatchId, rows, chunkSize = 150) {
+  let rank = 0;
+  let written = 0;
+  const historyCols = [...BOARD_ROW_COLS, "variation_history_json"];
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const values = chunk.map(row => {
+      rank += 1;
+      const id = rowId(batchId, rank, row);
+      const base = boardRowValues(batchId, sourceEngineBatchId, rank, row, id);
+      return [...base, JSON.stringify([])];
+    });
+    await pgClient`INSERT INTO score.final_board_history ${pgClient(values, ...historyCols)}
+      ON CONFLICT (prepared_row_id) DO UPDATE SET
+        final_board_row_id=EXCLUDED.final_board_row_id, final_board_batch_id=EXCLUDED.final_board_batch_id,
+        source_engine_batch_id=EXCLUDED.source_engine_batch_id, profile_key=EXCLUDED.profile_key, rank_order=EXCLUDED.rank_order,
+        board_tier=EXCLUDED.board_tier, review_playable=EXCLUDED.review_playable, source_key=EXCLUDED.source_key,
+        game_pk=EXCLUDED.game_pk, official_date=EXCLUDED.official_date, official_game_time_utc=EXCLUDED.official_game_time_utc,
+        matrix_id=EXCLUDED.matrix_id, source_line_id=EXCLUDED.source_line_id, mlb_player_id=EXCLUDED.mlb_player_id,
+        player_name=EXCLUDED.player_name, canonical_prop_key=EXCLUDED.canonical_prop_key,
+        raw_score_0_100=EXCLUDED.raw_score_0_100, raw_confidence_0_100=EXCLUDED.raw_confidence_0_100,
+        score_0_100=EXCLUDED.score_0_100, confidence_0_100=EXCLUDED.confidence_0_100, score_grade=EXCLUDED.score_grade,
+        score_sort_0_100=EXCLUDED.score_sort_0_100, factor_status=EXCLUDED.factor_status,
+        market_prop_context_status=EXCLUDED.market_prop_context_status, daily_readiness_status=EXCLUDED.daily_readiness_status,
+        side_mode=EXCLUDED.side_mode, odds_type=EXCLUDED.odds_type, payout_variant=EXCLUDED.payout_variant,
+        archive_eligible=EXCLUDED.archive_eligible, live_playable=EXCLUDED.live_playable,
+        cluster_player_count=EXCLUDED.cluster_player_count, correlation_risk_tier=EXCLUDED.correlation_risk_tier,
+        calibration_json=EXCLUDED.calibration_json, calculation_json=EXCLUDED.calculation_json,
+        matrix_payload_json_snapshot=EXCLUDED.matrix_payload_json_snapshot, details_json_snapshot=EXCLUDED.details_json_snapshot,
+        hp_board_batch_id=EXCLUDED.hp_board_batch_id, source_hp_batch_id=EXCLUDED.source_hp_batch_id,
+        estimated_hit_probability_0_100=EXCLUDED.estimated_hit_probability_0_100, probability_confidence_0_100=EXCLUDED.probability_confidence_0_100,
+        probability_band=EXCLUDED.probability_band, probability_grade=EXCLUDED.probability_grade, hp_lane=EXCLUDED.hp_lane,
+        hp_rank=EXCLUDED.hp_rank, hp_sort_0_100=EXCLUDED.hp_sort_0_100, sample_size=EXCLUDED.sample_size,
+        non_push_sample=EXCLUDED.non_push_sample, hit_count=EXCLUDED.hit_count, miss_count=EXCLUDED.miss_count,
+        push_count=EXCLUDED.push_count, hp_source_board_tier=EXCLUDED.hp_source_board_tier, hp_source_lane_reason=EXCLUDED.hp_source_lane_reason,
+        updated_at=now(),
+        variation_history_json = CASE
+          WHEN score.final_board_history.line_value IS DISTINCT FROM EXCLUDED.line_value
+            OR score.final_board_history.selected_side IS DISTINCT FROM EXCLUDED.selected_side
+            OR score.final_board_history.is_goblin IS DISTINCT FROM EXCLUDED.is_goblin
+            OR score.final_board_history.is_demon IS DISTINCT FROM EXCLUDED.is_demon
+          THEN score.final_board_history.variation_history_json || jsonb_build_object(
+                 'replaced_at', score.final_board_history.updated_at,
+                 'line_value', score.final_board_history.line_value,
+                 'selected_side', score.final_board_history.selected_side,
+                 'is_goblin', score.final_board_history.is_goblin,
+                 'is_demon', score.final_board_history.is_demon
+               )
+          ELSE score.final_board_history.variation_history_json
+        END,
+        line_value=EXCLUDED.line_value, selected_side=EXCLUDED.selected_side, is_goblin=EXCLUDED.is_goblin,
+        is_demon=EXCLUDED.is_demon, is_more_only=EXCLUDED.is_more_only`;
+    written += chunk.length;
+  }
+  return written;
+}
+
 async function insertBoardRowsBatched(pgClient, table, batchId, sourceEngineBatchId, rows, chunkSize = 150) {
   let rank = 0;
   let written = 0;
