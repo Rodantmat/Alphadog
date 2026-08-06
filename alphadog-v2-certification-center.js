@@ -2606,10 +2606,11 @@ function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTarget
   // ingested but never surfaced to slip-building - every Sleeper leg was silently priced with the
   // generic fixed-table estimate instead of its own real, displayed odds. Uses the real price
   // when available; falls back to the fixed-table estimate only when it's genuinely missing.
-  if (isSleeper) {
+  const isSleeperOrUnderdog = isSleeper || leg.source_key === "sleeper" || leg.source_key === "parlay_underdog";
+  if (isSleeperOrUnderdog) {
     const rawPrice = side === "less" ? leg.sleeper_under_price : leg.sleeper_over_price;
     const realMultiplier = americanOddsToDecimalMultiplier(rawPrice);
-    if (realMultiplier != null) return { multiplier: realMultiplier, adjusted: true, ratio: realMultiplier / standardPerLegMultiplier, real_sleeper_price: true };
+    if (realMultiplier != null) return { multiplier: realMultiplier, adjusted: true, ratio: realMultiplier / standardPerLegMultiplier, real_dynamic_price: true };
   }
   const actsLikeGoblin = (Number(leg.is_goblin) === 1 && side === "more") || (Number(leg.is_demon) === 1 && side === "less");
   const actsLikeDemon = (Number(leg.is_demon) === 1 && side === "more") || (Number(leg.is_goblin) === 1 && side === "less");
