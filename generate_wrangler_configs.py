@@ -262,8 +262,12 @@ def make_config(worker_name, include_services=False):
         # identical pattern - daily-delta-runner, outcome-grader, calibration-scheduler all still
         # fired on their old schedules today despite this exact fix already being deployed).
         # Applying the same never-fires-in-practice workaround proactively here.
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
-    if worker_name == "alphadog-v2-daily-context-runner":
+        # RE-ENABLED 2026-08-06 (prevention fix, see MASTER_RUN_BASE_TIMES comment above): Cowork
+        # confirmed to have missed an overnight cycle, leaving the board stale for an extended
+        # period with no backstop. Restoring this proven staggered cron as an independent safety
+        # net - if Cowork runs normally this just finds fresh data and is a no-op; if Cowork
+        # misses a cycle, the board can no longer go stale for more than a few hours.
+        cfg["triggers"] = {"crons": master_run_crons(0)}
         # New, deliberately simple standalone runner for daily-context-full-run only, same design
         # as board-runner: no queue table, no lock table, just sequential awaited service-binding
         # calls to the 9-stage sequence (daily-certifier is called twice, first pass and final pass).
