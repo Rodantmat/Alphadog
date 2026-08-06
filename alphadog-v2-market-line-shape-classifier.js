@@ -723,13 +723,23 @@ function bestPreparedMatch(sourceRow, index) {
 async function permanentlyRecordMarketPropContext(pgClient) {
   const rows = await pgClient`SELECT probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at FROM market.context_probe_player_props`.catch(() => []);
   if (!rows.length) return { copied: 0, checked: 0 };
-  const cols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "prepared_row_id", "source_key", "source_event_id", "source_line_id", "game_pk", "resolved_mlb_player_id", "source_player_name", "canonical_prop_key", "source_market_key", "line_value", "price_american", "price_decimal", "outcome_side", "mapping_status", "coverage_status", "raw_json", "captured_at"];
-  const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc() }));
+  const cols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "prepared_row_id", "source_key", "source_event_id", "source_line_id", "game_pk", "resolved_mlb_player_id", "source_player_name", "canonical_prop_key", "source_market_key", "line_value", "price_american", "price_decimal", "outcome_side", "mapping_status", "coverage_status", "raw_json", "captured_at", "stable_key"];
+  // FIXED 2026-08-06: probe_row_id was never actually stable across runs (same class of bug as
+  // final_board_history and game_odds_context_history), confirmed live: ~7x accumulation.
+  // prepared_row_id is the same proven-stable identity already used elsewhere; falls back to a
+  // real composite key for the ~36% of rows that never got mapped to a prepared_row_id, so both
+  // cases genuinely deduplicate rather than silently accumulating.
+  const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc(),
+    stable_key: r.prepared_row_id || [r.source_key, r.source_event_id, r.source_line_id, r.game_pk, r.canonical_prop_key, r.source_market_key, r.line_value, r.outcome_side].map(v => v == null ? "" : String(v)).join("|") }));
   const CHUNK = 200;
   let copied = 0;
   for (let i = 0; i < withCapturedAt.length; i += CHUNK) {
     const chunk = withCapturedAt.slice(i, i + CHUNK);
-    await pgClient`INSERT INTO archive.market_prop_context_history ${pgClient(chunk, ...cols)} ON CONFLICT (probe_row_id) DO NOTHING`.catch(() => {});
+    await pgClient`INSERT INTO archive.market_prop_context_history ${pgClient(chunk, ...cols)}
+      ON CONFLICT (stable_key) DO UPDATE SET
+        probe_row_id=EXCLUDED.probe_row_id, batch_id=EXCLUDED.batch_id, slate_window_key=EXCLUDED.slate_window_key,
+        price_american=EXCLUDED.price_american, price_decimal=EXCLUDED.price_decimal, mapping_status=EXCLUDED.mapping_status,
+        coverage_status=EXCLUDED.coverage_status, raw_json=EXCLUDED.raw_json, captured_at=EXCLUDED.captured_at`.catch(() => {});
     copied += chunk.length;
   }
   return { copied, checked: rows.length };
