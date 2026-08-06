@@ -2038,7 +2038,17 @@ function comboCount(n, k) {
   return Math.max(0, Math.floor(out));
 }
 function legScoreForBuild(l) {
-  return Number(l.hit_probability_0_100 || 0) * 1.6 + Number(l.overall_score_0_100 || 0) + Number(l.certainty_0_100 || 0) * 0.35 - Number(l.rank_order || 999) * 0.03;
+  const rawScore = Number(l.hit_probability_0_100 || 0) * 1.6 + Number(l.overall_score_0_100 || 0) + Number(l.certainty_0_100 || 0) * 0.35 - Number(l.rank_order || 999) * 0.03;
+  // FIXED 2026-08-06: this previously ignored goblin/demon entirely, meaning even within a
+  // user's own manually-selected leg pool, sorting would favor goblin 'more' legs (probability
+  // inflated by design) over genuinely better-value legs - same distortion already fixed
+  // elsewhere for auto-selection. Applies a real, side-aware discount/boost so the ordering
+  // reflects genuine value, not just raw probability.
+  const side = String(l.selected_side || "more").toLowerCase();
+  const actsLikeGoblin = (Number(l.is_goblin) === 1 && side === "more") || (Number(l.is_demon) === 1 && side === "less");
+  const actsLikeDemon = (Number(l.is_demon) === 1 && side === "more") || (Number(l.is_goblin) === 1 && side === "less");
+  const ratio = actsLikeGoblin ? goblinTierRatio(Number(l.goblin_tier_rank) || 1, Boolean(l.has_standard_sibling)) : (actsLikeDemon ? DEMON_PER_LEG_RATIO : 1.0);
+  return rawScore * ratio;
 }
 function slipWarnings(legs) {
   const warnings = [];
