@@ -129,7 +129,8 @@ async function permanentlyRecordGameOddsContext(pgClient) {
 }
 
 async function pruneProbeWindow(pgClient, boardWindowDates, slateWindowKey) {
-  await pgClient`CREATE TABLE IF NOT EXISTS archive.game_odds_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, game_pk BIGINT, source_key TEXT, source_event_id TEXT, source_commence_time_utc TEXT, source_home_team TEXT, source_away_team TEXT, bookmaker_key TEXT, bookmaker_title TEXT, market_key TEXT, market_last_update TEXT, outcome_name TEXT, outcome_side TEXT, price_american DOUBLE PRECISION, point DOUBLE PRECISION, mapping_status TEXT, mapping_confidence TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now())`.catch(() => {});
+  await pgClient`CREATE TABLE IF NOT EXISTS archive.game_odds_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, game_pk BIGINT, source_key TEXT, source_event_id TEXT, source_commence_time_utc TEXT, source_home_team TEXT, source_away_team TEXT, bookmaker_key TEXT, bookmaker_title TEXT, market_key TEXT, market_last_update TEXT, outcome_name TEXT, outcome_side TEXT, price_american DOUBLE PRECISION, point DOUBLE PRECISION, mapping_status TEXT, mapping_confidence TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now(), stable_key TEXT)`.catch(() => {});
+  await pgClient`CREATE UNIQUE INDEX IF NOT EXISTS game_odds_context_history_stable_key_uq ON archive.game_odds_context_history (stable_key)`.catch(() => {});
   const archivedGameOdds = await permanentlyRecordGameOddsContext(pgClient);
   const tables = ["context_probe_game_odds", "context_probe_player_props", "context_probe_event_map", "context_probe_coverage", "context_probe_issues", "context_probe_book_market_status", "context_probe_game_market_summary", "context_probe_game_team_market_expansion"];
   const deleted = { archive_before_cleanup: archivedGameOdds };
