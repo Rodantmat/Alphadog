@@ -20,6 +20,7 @@ def master_run_crons(minute_offset):
     return [f"{minute_offset} {h} * * *" for h in MASTER_RUN_BASE_TIMES]
 
 
+
 def service_binding_name(worker_name):
     return worker_name.replace("alphadog-v2-", "").replace("-", "_").upper() + "_WORKER"
 
