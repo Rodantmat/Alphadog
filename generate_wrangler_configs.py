@@ -370,17 +370,17 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "MATRIX_BUILDER_WORKER", "service": "alphadog-v2-phase2b-certifier"},
         ]
-        # T+20 minutes past each of master's 3 daily times. Previously widened to T+32 to cover
+        # T+20 minutes past each of master's base times. Previously widened to T+32 to cover
         # Part 1's worst-case duration after adding time-aware pagination, but that padded every
         # normal day for a rare exception. Fixed properly instead: Matrix now waits and rechecks
         # Part 1's freshness itself (3 min apart, up to 2 retries) if it fires and finds Part 1
         # not yet ready, so the schedule can reflect typical timing (Part 1 usually settles by
         # T+17-18) while the rare slow day is handled by the wait-retry, not schedule padding.
-        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
-        # scheduled task now owns this stage.
+        # RE-ENABLED 2026-08-06 (prevention fix): see board-runner's identical comment above -
+        # independent safety net alongside Cowork, not a replacement for it.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+        cfg["triggers"] = {"crons": master_run_crons(20)}
     if worker_name == "alphadog-v2-scoring-runner-part2":
         # PART 2 of 2 (new 2026-07-29): enrichment, hp-board, scoring-engine, final-board,
         # certifier-last-pass. Verifies Part 1's output (score.prop_matrix_current) is genuinely
