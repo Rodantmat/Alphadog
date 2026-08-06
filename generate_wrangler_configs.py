@@ -400,17 +400,17 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORE_FINAL_BOARD_WORKER", "service": "alphadog-v2-score-final-board"},
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
         ]
-        # T+26 minutes past each of master's 3 daily times. Previously widened to T+48 to cover
+        # T+26 minutes past each of master's base times. Previously widened to T+48 to cover
         # worst-case padding, but Matrix is confirmed fast in practice (under 2 minutes typical
         # for a 9,000-row board after the parallelization fix), and this worker now waits and
         # rechecks Matrix's freshness itself (3 min apart, up to 2 retries) on the rare slow day,
         # so the schedule reflects typical timing instead of padding for an exception.
-        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
-        # scheduled task now owns this stage. This is the last of the 6 master-run stage crons
-        # being retired together (board, daily-context, market, scoring part1/matrix/part2).
+        # RE-ENABLED 2026-08-06 (prevention fix): see board-runner's identical comment above -
+        # independent safety net alongside Cowork, not a replacement for it. Last of the 6
+        # master-run stage crons being restored together.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+        cfg["triggers"] = {"crons": master_run_crons(26)}
     if worker_name == "alphadog-v2-master-runner":
         # New, deliberately simple standalone runner that chains the four individual full-run
         # workers in sequence: board -> daily-context -> market -> scoring. Same design as the
