@@ -343,16 +343,16 @@ def make_config(worker_name, include_services=False):
             {"binding": "SCORING_CERTIFIER_WORKER", "service": "alphadog-v2-phase3b-certifier"},
             {"binding": "PROP_FACTOR_MINER_WORKER", "service": "alphadog-v2-phase2b-recent-form"},
         ]
-        # T+14 minutes past each of master's 3 daily times (widened from T+12 on 2026-07-30
+        # T+14 minutes past each of master's base times (widened from T+12 on 2026-07-30
         # after confirmed evidence of a near-miss: market's last write and scoring's first read
         # happened within 0.6 seconds of each other on a clean run - real margin, not luck, is
         # needed here). Only needs to fit 3 light stages (certifier + prop-factor x2) inside its
         # own 15-minute budget.
-        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
-        # scheduled task now owns this stage.
+        # RE-ENABLED 2026-08-06 (prevention fix): see board-runner's identical comment above -
+        # independent safety net alongside Cowork, not a replacement for it.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+        cfg["triggers"] = {"crons": master_run_crons(14)}
     if worker_name == "alphadog-v2-scoring-runner-matrix":
         # PART 1b (new 2026-07-29): matrix-builder, fully isolated. Confirmed live to be the
         # real bottleneck in the scoring chain - even paired with just 2 light stages, the
