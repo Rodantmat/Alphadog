@@ -316,13 +316,13 @@ def make_config(worker_name, include_services=False):
             {"binding": "MARKET_NORMALIZER_WORKER", "service": "alphadog-v2-market-normalizer"},
             {"binding": "MARKET_LINE_SHAPE_CLASSIFIER_WORKER", "service": "alphadog-v2-market-line-shape-classifier"},
         ]
-        # T+10 minutes past each of master's 3 daily times - after daily-context (T+7) has had
+        # T+10 minutes past each of master's base times - after daily-context (T+7) has had
         # its own real headroom (observed 1-2 min typical).
-        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
-        # scheduled task now triggers this stage.
+        # RE-ENABLED 2026-08-06 (prevention fix): see board-runner's identical comment above -
+        # independent safety net alongside Cowork, not a replacement for it.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+        cfg["triggers"] = {"crons": master_run_crons(10)}
     if worker_name == "alphadog-v2-scoring-runner":
         # PART 1 of 2 (split 2026-07-29): certifier-first-pass, prop-factor-miner (hitter+pitcher),
         # matrix-builder - the heaviest, most variable stages. Split from the original single
