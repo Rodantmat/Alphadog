@@ -268,6 +268,7 @@ def make_config(worker_name, include_services=False):
         # net - if Cowork runs normally this just finds fresh data and is a no-op; if Cowork
         # misses a cycle, the board can no longer go stale for more than a few hours.
         cfg["triggers"] = {"crons": master_run_crons(0)}
+    if worker_name == "alphadog-v2-daily-context-runner":
         # New, deliberately simple standalone runner for daily-context-full-run only, same design
         # as board-runner: no queue table, no lock table, just sequential awaited service-binding
         # calls to the 9-stage sequence (daily-certifier is called twice, first pass and final pass).
