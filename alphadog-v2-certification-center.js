@@ -2436,9 +2436,21 @@ async function apiGoblinSlips(env, request) {
   const evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
   const warnings = slipWarnings(sorted);
   const hasLessLeg = sorted.some(l => String(l.selected_side || "").toLowerCase() === "less");
+  const allLessLegs = sorted.every(l => String(l.selected_side || "").toLowerCase() === "less");
+  // FIXED 2026-08-06: real user confusion this session - a Goblin Slip full of 'less' picks is
+  // correctly tagged (a Goblin's lowered threshold makes 'more' easier but 'less' genuinely
+  // harder, demon-like), but looked like a mislabeling since PrizePicks' own tag says 'Goblin'
+  // while the picks read 'LESS' with demon-caliber odds. The mechanism was already explained in
+  // the long payout note, but that's easy to skim past - this adds a short, impossible-to-miss
+  // clarification up front and reflects it directly in the label.
+  const sideClarityNote = allLessLegs
+    ? "All legs here are the 'LESS' side of Goblin-tagged lines - this is correctly labeled Goblin per PrizePicks' own data, but 'less' on a lowered-threshold Goblin line is the functionally harder, demon-like side (not the easy side the Goblin name usually implies). "
+    : (hasLessLeg
+        ? "This slip mixes 'more' (the traditional, easier Goblin side) and 'less' (the functionally harder, demon-like side of the same Goblin-tagged lines) legs. "
+        : "");
   const slip = {
     client_slip_id: makeUiId("goblin_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
-    entry_mode: "power", structure_label: `${size}-pick Power (Goblin)`,
+    entry_mode: "power", structure_label: `${size}-pick Power (Goblin${allLessLegs ? " - Less/Harder Side" : (hasLessLeg ? " - Mixed Sides" : "")})`,
     estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
     estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
     breakeven_hit_rate_0_100: breakeven,
@@ -2447,7 +2459,7 @@ async function apiGoblinSlips(env, request) {
       ? "PrizePicks doesn't publish the exact Goblin multiplier. 'More'-side legs use real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). 'Less'-side legs (the genuinely harder side of a Goblin-tagged line) are estimated using the Demon boost ratio (~1.9x) as the closest directional analog - this direction is confirmed correct, but the exact magnitude has not yet been validated against real in-app data the way the standard Goblin ratios were. Check the real multiplier in-app before placing."
       : "PrizePicks doesn't publish the exact Goblin multiplier - this is estimated using a fair-odds-preserving model based on real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). Check the real multiplier in-app before placing.",
     strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.`, ...warnings].filter(Boolean).join(" "),
+    strategy_notes: [sideClarityNote, `Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.`, ...warnings].filter(Boolean).join(" "),
     legs: sorted
   };
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [slip] });
