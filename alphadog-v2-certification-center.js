@@ -1984,7 +1984,14 @@ function bestStructureForPool(pool) {
       if (breakeven == null) continue;
       const r = researchSlipEvAdjusted(legSlice, slice, mode, table, poolSource, breakeven);
       if (!r) continue;
-      const riskScore = riskAdjustedScore(dist, size, mode);
+      // FIXED 2026-08-06: previously called riskAdjustedScore(dist, size, mode), which
+      // recomputed mean/variance from the raw, unadjusted POWER_MULTIPLIERS/FLEX_MULTIPLIERS
+      // table - ignoring goblin/demon ratios and real Sleeper/Underdog dynamic pricing entirely,
+      // even though r.ev and r.stdev above already reflect the correct, adjusted math. This
+      // meant the ranking decision (which structure size to recommend) still silently used
+      // wrong numbers even after the displayed final EV was fixed. Uses the real, adjusted
+      // ev/stdev directly - the whole reason a Sharpe-style ratio is meaningful here.
+      const riskScore = r.ev / Math.max(r.stdev, 1e-6);
       const candidate = { size, mode, ...r, risk_adjusted_score: riskScore, breakeven_hit_rate_0_100: breakeven };
       if (!best || candidate.risk_adjusted_score > best.risk_adjusted_score) best = candidate;
     }
