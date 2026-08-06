@@ -2585,6 +2585,11 @@ function goblinTierRatio(tierRank, hasStandardSibling) {
   if (table[tierRank] != null) return table[tierRank];
   return GOBLIN_TIER_RATIO_FLOOR;
 }
+function americanOddsToDecimalMultiplier(americanOdds) {
+  const o = Number(americanOdds);
+  if (!Number.isFinite(o) || o === 0) return null;
+  return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+}
 function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
   // FIXED 2026-08-05: confirmed via real data (Bryan Woo hits_allowed: Goblin lines 2.5/3.5/4.5,
   // Demon line 8.5 - Goblins genuinely lower the threshold, Demons genuinely raise it) and direct
@@ -2594,6 +2599,18 @@ function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTarget
   // ever validated for the 'more' side. Now applies the ratio based on the leg's actual
   // side-relative difficulty, not just its raw is_goblin/is_demon tag.
   const side = String(leg.selected_side || "more").toLowerCase();
+  // FIXED 2026-08-06: isSleeper was accepted but never actually used - confirmed via research
+  // (multiple independent sources) and real raw data (genuinely asymmetric over/under American
+  // odds, e.g. 175/-357) that Sleeper prices each leg individually and dynamically based on its
+  // own real probability, unlike PrizePicks' fixed parlay table. This data was already being
+  // ingested but never surfaced to slip-building - every Sleeper leg was silently priced with the
+  // generic fixed-table estimate instead of its own real, displayed odds. Uses the real price
+  // when available; falls back to the fixed-table estimate only when it's genuinely missing.
+  if (isSleeper) {
+    const rawPrice = side === "less" ? leg.sleeper_under_price : leg.sleeper_over_price;
+    const realMultiplier = americanOddsToDecimalMultiplier(rawPrice);
+    if (realMultiplier != null) return { multiplier: realMultiplier, adjusted: true, ratio: realMultiplier / standardPerLegMultiplier, real_sleeper_price: true };
+  }
   const actsLikeGoblin = (Number(leg.is_goblin) === 1 && side === "more") || (Number(leg.is_demon) === 1 && side === "less");
   const actsLikeDemon = (Number(leg.is_demon) === 1 && side === "more") || (Number(leg.is_goblin) === 1 && side === "less");
   if (actsLikeGoblin) {
