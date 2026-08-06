@@ -2770,7 +2770,7 @@ function buildResearchGroundedSlips(legsBySource) {
       }
       if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) break; // not enough diversified legs left for even the smallest slip
 
-      const probs01 = slipLegs.map(l => Math.max(0.01, Math.min(0.99, calibrateProbabilityPct(Number(l.hit_probability_0_100 || l.certainty_0_100 || 0)) / 100)));
+      const probs01 = slipLegs.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.certainty_0_100 || 0) / 100)));
       // Try smallest-size-first: 2-leg flex/power, then 3-leg, per the research's own conclusion
       // that the smallest allowed size carries the best risk-adjusted economics - not scanning
       // for whichever size scores highest, since that's exactly the mechanism that drifted to
