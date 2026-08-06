@@ -94,7 +94,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add cloudflare_d1_bindings.json scoring_db_debug.log 2>/dev/null || true
-          git commit -m "Auto: Scoring DB provisioning attempt (binding + debug log)" || true
+          git commit -m "Auto: Scoring DB provisioning attempt (binding + debug log) [skip ci]" || true
           git push || true
           rm -f scoring_db_binding_changed.flag
 
