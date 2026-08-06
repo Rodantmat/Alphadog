@@ -26,5 +26,14 @@
       "binding": "SCORE_PREP_WORKER",
       "service": "alphadog-v2-score-prep"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      "0 16 * * *",
+      "0 20 * * *",
+      "0 0 * * *",
+      "0 5 * * *",
+      "0 9 * * *"
+    ]
+  }
 }
