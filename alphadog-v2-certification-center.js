@@ -2268,7 +2268,9 @@ async function autoSelectBestLegs(env, options) {
         l.is_demon,
         l.goblin_tier_rank,
         (l.standard_line_value IS NOT NULL) AS has_standard_sibling,
-        p.team, p.opponent, p.team_full_name, p.opponent_full_name, p.source_prop_name
+        p.team, p.opponent, p.team_full_name, p.opponent_full_name, p.source_prop_name,
+        (p.row_payload_json#>>'{}')::jsonb->'source_prices'->>'over_price' AS sleeper_over_price,
+        (p.row_payload_json#>>'{}')::jsonb->'source_prices'->>'under_price' AS sleeper_under_price
       FROM ladder l
       LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = l.prepared_row_id
       WHERE l.board_tier = 'PRIMARY'
