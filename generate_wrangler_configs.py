@@ -16,9 +16,8 @@ MASTER_RUN_BASE_TIMES = ["16", "20", "0", "5", "9"]  # 9am/1pm/5pm/10pm/2am PT -
 # ~11-hour overnight gap the previous 3-time schedule left even when Cowork ran normally.
 
 
-function master_run_crons(minute_offset):
+def master_run_crons(minute_offset):
     return [f"{minute_offset} {h} * * *" for h in MASTER_RUN_BASE_TIMES]
-
 
 def service_binding_name(worker_name):
     return worker_name.replace("alphadog-v2-", "").replace("-", "_").upper() + "_WORKER"
