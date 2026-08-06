@@ -2221,8 +2221,9 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
         picked.forEach(l=>used.add(l.board_row_id));
         const p = slipProb(picked);
         const probs01 = picked.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0) / 100)));
-        const evResult = slipEv(probs01, entryMode);
-        const breakeven = breakevenRate(size, entryMode);
+        const genTable = APP_PAYOUT_TABLES[source] || APP_PAYOUT_TABLES.prizepicks;
+        const breakeven = researchBreakeven(size, entryMode, genTable);
+        const evResult = breakeven != null ? researchSlipEvAdjusted(picked, probs01, entryMode, genTable, source, breakeven) : null;
         const warnings = slipWarnings(picked);
         out.push({
           client_slip_id: makeUiId("gen_slip"),
