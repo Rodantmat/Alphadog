@@ -2134,6 +2134,17 @@ async function fetchBoardRowsByIds(env, ids) {
   const pg = pgClient(env);
   try {
     return await queryAllPg(pg, `
+      WITH ladder AS (
+        SELECT final_board_row_id, mlb_player_id, canonical_prop_key, selected_side, is_goblin, line_value,
+          MIN(CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 THEN line_value END)
+            OVER (PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side) AS standard_line_value,
+          ROW_NUMBER() OVER (
+            PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side, is_goblin
+            ORDER BY line_value ASC
+          ) AS goblin_tier_rank_calc
+        FROM score.final_board_current
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      )
       SELECT
         f.final_board_row_id AS board_row_id,
         f.final_board_row_id AS final_board_row_id,
@@ -2158,6 +2169,12 @@ async function fetchBoardRowsByIds(env, ids) {
         f.confidence_0_100 AS certainty_0_100,
         f.score_0_100 AS overall_score_0_100,
         f.score_grade AS board_grade,
+        f.is_goblin,
+        f.is_demon,
+        ladder.goblin_tier_rank_calc AS goblin_tier_rank,
+        (ladder.standard_line_value IS NOT NULL) AS has_standard_sibling,
+        (p.row_payload_json#>>'{}')::jsonb->'source_prices'->>'over_price' AS sleeper_over_price,
+        (p.row_payload_json#>>'{}')::jsonb->'source_prices'->>'under_price' AS sleeper_under_price,
         p.team,
         p.opponent,
         p.team_full_name,
@@ -2165,6 +2182,7 @@ async function fetchBoardRowsByIds(env, ids) {
         p.source_prop_name
       FROM score.final_board_current f
       LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
+      LEFT JOIN ladder ON ladder.final_board_row_id = f.final_board_row_id
       WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND f.final_board_row_id IN (${qs})
       ORDER BY f.rank_order ASC
