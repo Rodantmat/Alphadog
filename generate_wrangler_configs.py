@@ -291,13 +291,13 @@ def make_config(worker_name, include_services=False):
             {"binding": "DAILY_SCHEDULE_WORKER", "service": "alphadog-v2-daily-schedule"},
             {"binding": "DAILY_USAGE_PULSE_WORKER", "service": "alphadog-v2-daily-usage-pulse"},
         ]
-        # T+7 minutes past each of master's 3 daily times - gives board-runner (T+0) real
+        # T+7 minutes past each of master's base times - gives board-runner (T+0) real
         # headroom (observed 5-8 min including retries) before this stage starts.
-        # RETIRED 2026-08-02: see board-runner's identical retirement comment above - Cowork
-        # scheduled task now triggers this stage.
+        # RE-ENABLED 2026-08-06 (prevention fix): see board-runner's identical comment above -
+        # independent safety net alongside Cowork, not a replacement for it.
         # WORKAROUND 2026-08-04: same confirmed Cloudflare Workers-SDK bug as board-runner's
         # comment above (crons=[] doesn't reliably clear an existing live trigger).
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+        cfg["triggers"] = {"crons": master_run_crons(7)}
     if worker_name == "alphadog-v2-market-runner":
         # New, deliberately simple standalone runner for market-full-run only, same design as
         # board-runner/daily-context-runner: no queue table, no lock table, just sequential
