@@ -7,6 +7,11 @@ WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["
 D1_BINDINGS = json.loads(Path("cloudflare_d1_bindings.json").read_text(encoding="utf-8"))["d1_databases"]
 VARS = json.loads(Path("vars.production.json").read_text(encoding="utf-8"))
 
+ORCHESTRATOR_CRONS = []  # Retired: board/daily-context/market/scoring (via master-runner),
+# weekly-differential-runner, and daily-delta-runner now own all real scheduling. The
+# orchestrator itself is fully retired - kept deployed only for any manual/direct-call debugging
+# via its own service binding, never self-triggered again.
+
 MASTER_RUN_BASE_TIMES = ["16", "20", "0", "5", "9"]  # 9am/1pm/5pm/10pm/2am PT - closes the
 # ~11-hour overnight gap the previous 3-time schedule left even when Cowork ran normally.
 
