@@ -731,10 +731,20 @@ async function permanentlyRecordMarketPropContext(pgClient) {
   // cases genuinely deduplicate rather than silently accumulating.
   const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc(),
     stable_key: r.prepared_row_id || [r.source_key, r.source_event_id, r.source_line_id, r.game_pk, r.canonical_prop_key, r.source_market_key, r.line_value, r.outcome_side].map(v => v == null ? "" : String(v)).join("|") }));
+  // FIXED 2026-08-06: confirmed via direct manual SQL test - Postgres genuinely rejects
+  // 'ON CONFLICT DO UPDATE' when a single INSERT statement contains multiple rows mapping to the
+  // same conflict key (real case here: the same market line can appear from multiple
+  // bookmakers/sources within one read). The prior .catch(()=>{}) silently swallowed this error
+  // on every single invocation, meaning nothing was ever actually archived. Deduplicating by
+  // stable_key within each chunk (keeping the last/freshest) guarantees no single INSERT
+  // statement ever contains a self-conflicting duplicate.
+  const dedupedByKey = new Map();
+  for (const r of withCapturedAt) dedupedByKey.set(r.stable_key, r);
+  const deduped = [...dedupedByKey.values()];
   const CHUNK = 200;
   let copied = 0;
-  for (let i = 0; i < withCapturedAt.length; i += CHUNK) {
-    const chunk = withCapturedAt.slice(i, i + CHUNK);
+  for (let i = 0; i < deduped.length; i += CHUNK) {
+    const chunk = deduped.slice(i, i + CHUNK);
     await pgClient`INSERT INTO archive.market_prop_context_history ${pgClient(chunk, ...cols)}
       ON CONFLICT (stable_key) DO UPDATE SET
         probe_row_id=EXCLUDED.probe_row_id, batch_id=EXCLUDED.batch_id, slate_window_key=EXCLUDED.slate_window_key,
