@@ -1434,21 +1434,23 @@ async function runFitPlattCalibration(env, input = {}) {
           const isoGenuinelyImprovedFlat = brierAfterIsoFlat < brierBeforeTestFlat && eceAfterIsoFlat < eceBeforeTestFlat;
           if (isoGenuinelyImprovedFlat) {
             const isoRowsFlat = [];
-            for (let b = 0; b < 10; b++) {
-              const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
-              const predicted = predictIsoFlat(mid);
-              isoRowsFlat.push({
-                correction_id: `isotonic_v1|${propKey}|more|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
-                line_bucket: "all_isotonic_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
-                empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
-                correction_delta: predicted - mid, methodology: "isotonic_regression_post_rootfix_v1", selected_side: "more",
-                notes: `Isotonic regression (PAVA), non-parametric fallback after Platt's fit was too flat to trust (A=${round(A,4)}). Isotonic: test brier ${round(brierBeforeTestFlat,4)}->${round(brierAfterIsoFlat,4)}, test ece ${round(eceBeforeTestFlat,4)}->${round(eceAfterIsoFlat,4)}.`,
-              });
+            for (const side of ["more", "less"]) {
+              for (let b = 0; b < 10; b++) {
+                const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
+                const predicted = predictIsoFlat(mid);
+                isoRowsFlat.push({
+                  correction_id: `isotonic_v1|${propKey}|${side}|${b}`, canonical_prop_key: propKey, factor_family: "cross_side",
+                  line_bucket: "all_isotonic_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
+                  empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
+                  correction_delta: predicted - mid, methodology: "isotonic_regression_post_rootfix_v1", selected_side: side,
+                  notes: `Isotonic regression (PAVA), non-parametric fallback after Platt's fit was too flat to trust (A=${round(A,4)}, side-agnostic fit applied to both sides). Isotonic: test brier ${round(brierBeforeTestFlat,4)}->${round(brierAfterIsoFlat,4)}, test ece ${round(eceBeforeTestFlat,4)}->${round(eceAfterIsoFlat,4)}.`,
+                });
+              }
             }
             const isoColsFlat = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
             if (!dryRun) {
               await sql`UPDATE score.calibration_correction_map SET methodology = REPLACE('DEACTIVATED_superseded_by_fresh_refit_' || methodology, 'post_rootfix', 'ROOTFIXTAG_DEACTIVATED')
-                WHERE canonical_prop_key = ${propKey} AND selected_side = 'more' AND methodology LIKE '%post_rootfix%'
+                WHERE canonical_prop_key = ${propKey} AND methodology LIKE '%post_rootfix%'
                 AND correction_id NOT IN ${sql(isoRowsFlat.map(r => r.correction_id))}`;
               await sql`INSERT INTO score.calibration_correction_map ${sql(isoRowsFlat, ...isoColsFlat)}
                 ON CONFLICT (correction_id) DO UPDATE SET methodology=excluded.methodology, empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
