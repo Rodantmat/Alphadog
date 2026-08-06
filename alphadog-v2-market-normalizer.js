@@ -113,10 +113,16 @@ async function permanentlyRecordGameOddsContext(pgClient) {
   // identity of a market line, independent of when it happened to be captured.
   const withCapturedAt = rows.map(r => ({ ...r, captured_at: nowUtc(),
     stable_key: [r.game_pk, r.source_key, r.bookmaker_key, r.market_key, r.outcome_name, r.outcome_side, r.point].map(v => v == null ? "" : String(v)).join("|") }));
+  // FIXED 2026-08-06: same real cause confirmed for market_prop_context_history - Postgres
+  // rejects ON CONFLICT DO UPDATE when a single INSERT contains multiple rows with the same
+  // conflict key. Deduplicating within each chunk before inserting prevents this.
+  const dedupedByKey = new Map();
+  for (const r of withCapturedAt) dedupedByKey.set(r.stable_key, r);
+  const deduped = [...dedupedByKey.values()];
   const CHUNK = 200;
   let copied = 0;
-  for (let i = 0; i < withCapturedAt.length; i += CHUNK) {
-    const chunk = withCapturedAt.slice(i, i + CHUNK);
+  for (let i = 0; i < deduped.length; i += CHUNK) {
+    const chunk = deduped.slice(i, i + CHUNK);
     await pgClient`INSERT INTO archive.game_odds_context_history ${pgClient(chunk, ...cols)}
       ON CONFLICT (stable_key) DO UPDATE SET
         probe_row_id=EXCLUDED.probe_row_id, batch_id=EXCLUDED.batch_id, slate_window_key=EXCLUDED.slate_window_key,
