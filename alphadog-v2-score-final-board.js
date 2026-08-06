@@ -479,7 +479,7 @@ async function upsertBoardHistoryRows(pgClient, batchId, sourceEngineBatchId, ro
       rank += 1;
       const id = rowId(batchId, rank, row);
       const base = boardRowValues(batchId, sourceEngineBatchId, rank, row, id);
-      return [...base, JSON.stringify([])];
+      return { ...base, variation_history_json: JSON.stringify([]) };
     });
     await pgClient`INSERT INTO score.final_board_history ${pgClient(values, ...historyCols)}
       ON CONFLICT (prepared_row_id) DO UPDATE SET
