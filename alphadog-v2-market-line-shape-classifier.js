@@ -747,7 +747,8 @@ async function permanentlyRecordMarketPropContext(pgClient) {
 
 async function prunePlayerPropRows(pgClient, boardWindowDates, slateWindowKey, config = modeConfig()) {
   const deleted = {};
-  await pgClient`CREATE TABLE IF NOT EXISTS archive.market_prop_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, prepared_row_id TEXT, source_key TEXT, source_event_id TEXT, source_line_id TEXT, game_pk BIGINT, resolved_mlb_player_id BIGINT, source_player_name TEXT, canonical_prop_key TEXT, source_market_key TEXT, line_value DOUBLE PRECISION, price_american DOUBLE PRECISION, price_decimal DOUBLE PRECISION, outcome_side TEXT, mapping_status TEXT, coverage_status TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now())`.catch(() => {});
+  await pgClient`CREATE TABLE IF NOT EXISTS archive.market_prop_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, prepared_row_id TEXT, source_key TEXT, source_event_id TEXT, source_line_id TEXT, game_pk BIGINT, resolved_mlb_player_id BIGINT, source_player_name TEXT, canonical_prop_key TEXT, source_market_key TEXT, line_value DOUBLE PRECISION, price_american DOUBLE PRECISION, price_decimal DOUBLE PRECISION, outcome_side TEXT, mapping_status TEXT, coverage_status TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now(), stable_key TEXT)`.catch(() => {});
+  await pgClient`CREATE UNIQUE INDEX IF NOT EXISTS market_prop_context_history_stable_key_uq ON archive.market_prop_context_history (stable_key)`.catch(() => {});
   const archived = await permanentlyRecordMarketPropContext(pgClient);
   deleted.archive_before_cleanup = archived;
   const datesLiteral = "{" + boardWindowDates.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(",") + "}";
