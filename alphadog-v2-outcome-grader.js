@@ -128,7 +128,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
   const cols = ["outcome_id", "final_board_row_id", "prepared_row_id", "source_key", "game_pk", "official_date",
     "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side",
     "estimated_hit_probability_0_100", "probability_confidence_0_100", "score_0_100", "score_grade",
-    "board_tier", "live_playable", "actual_stat_value", "outcome_result", "outcome_hit", "brier_component",
+    "board_tier", "is_goblin", "is_demon", "live_playable", "actual_stat_value", "outcome_result", "outcome_hit", "brier_component",
     "resolved_at", "created_at"];
 
   let inserted = 0;
