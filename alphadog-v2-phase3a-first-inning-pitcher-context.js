@@ -1457,6 +1457,56 @@ async function runFitPlattCalibration(env, input = {}) {
       const brierBeforeTrain = brierScore(trainPairs);
       const eceBeforeTrain = expectedCalibrationError(trainPairs);
       const { A, B } = fitPlattScaling(trainPairs);
+      // NEW 2026-08-06: try Beta calibration before deciding Platt's fate - grounded in real
+      // research (Kull, Silva Filho & Flach 2017) and direct analysis of props like home_runs
+      // whose real reliability curve is non-monotonic in a way a single Platt sigmoid cannot
+      // represent. Tested honestly on the same held-out split; only used if it genuinely beats
+      // both the raw baseline AND Platt on data neither has seen. Writes both sides symmetrically
+      // (same fix already proven for the isotonic fallback below).
+      const brierBeforeTestBeta = brierScore(testPairs);
+      const eceBeforeTestBeta = expectedCalibrationError(testPairs);
+      const betaParams = fitBetaCalibration(trainPairs);
+      const calibratedTestBeta = testPairs.map(([p, y]) => [predictBetaCalibration(p, betaParams.a, betaParams.b, betaParams.c), y]);
+      const brierAfterBeta = brierScore(calibratedTestBeta);
+      const eceAfterBeta = expectedCalibrationError(calibratedTestBeta);
+      const plattTestPreview = testPairs.map(([p]) => sigmoid(A * logit(p) + B));
+      const brierPlattPreview = brierScore(plattTestPreview.map((p, i) => [p, testPairs[i][1]]));
+      const betaGenuinelyBest = brierAfterBeta < brierBeforeTestBeta && eceAfterBeta < eceBeforeTestBeta
+        && brierAfterBeta < brierPlattPreview && Number.isFinite(betaParams.a) && Number.isFinite(betaParams.b) && Number.isFinite(betaParams.c);
+      if (betaGenuinelyBest) {
+        const betaRows = [];
+        for (const side of ["more", "less"]) {
+          for (let bkt = 0; bkt < 10; bkt++) {
+            const lo = bkt / 10, hi = (bkt + 1) / 10, mid = lo + 0.05;
+            const predicted = predictBetaCalibration(mid, betaParams.a, betaParams.b, betaParams.c);
+            betaRows.push({
+              correction_id: `beta_v1|${propKey}|${side}|${bkt}`, canonical_prop_key: propKey, factor_family: "cross_side",
+              line_bucket: "all_beta_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
+              empirical_rate: predicted, n_players: trainPairs.length, n_test_games: testPairs.length,
+              correction_delta: predicted - mid, methodology: "beta_calibration_post_rootfix_v1", selected_side: side,
+              notes: `Beta calibration (a=${round(betaParams.a,4)}, b=${round(betaParams.b,4)}, c=${round(betaParams.c,4)}), used because it genuinely beat both the raw baseline and Platt (A=${round(A,4)}) on held-out data (test brier ${round(brierBeforeTestBeta,4)}->${round(brierAfterBeta,4)} vs Platt's ${round(brierPlattPreview,4)}, test ece ${round(eceBeforeTestBeta,4)}->${round(eceAfterBeta,4)}). Side-agnostic fit applied to both sides.`,
+            });
+          }
+        }
+        const betaCols = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
+        if (!dryRun) {
+          await sql`UPDATE score.calibration_correction_map SET methodology = REPLACE('DEACTIVATED_superseded_by_fresh_refit_' || methodology, 'post_rootfix', 'ROOTFIXTAG_DEACTIVATED')
+            WHERE canonical_prop_key = ${propKey} AND methodology LIKE '%post_rootfix%'
+            AND correction_id NOT IN ${sql(betaRows.map(r => r.correction_id))}`;
+          await sql`INSERT INTO score.calibration_correction_map ${sql(betaRows, ...betaCols)}
+            ON CONFLICT (correction_id) DO UPDATE SET empirical_rate=EXCLUDED.empirical_rate, correction_delta=EXCLUDED.correction_delta,
+              n_players=EXCLUDED.n_players, n_test_games=EXCLUDED.n_test_games, methodology=EXCLUDED.methodology, notes=EXCLUDED.notes, fit_at=now()`;
+        }
+        results.push({
+          prop: propKey, method: "beta_calibration", train_n: trainPairs.length, test_n: testPairs.length,
+          a: round(betaParams.a, 4), b: round(betaParams.b, 4), c: round(betaParams.c, 4),
+          test_brier_before: round(brierBeforeTestBeta, 5), test_brier_after_beta: round(brierAfterBeta, 5),
+          test_brier_platt_would_have_been: round(brierPlattPreview, 5),
+          test_ece_before: round(eceBeforeTestBeta, 5), test_ece_after_beta: round(eceAfterBeta, 5),
+          platt_A: round(A, 4), dry_run: dryRun, would_apply: true
+        });
+        continue;
+      }
       if (A <= 0) {
         results.push({ prop: propKey, skipped: true, n: trainPairs.length, reason: `rejected: negative/zero A coefficient (${round(A, 4)}) indicates an inverted, overfit calibration on a small/noisy sample - not stored`, A: round(A, 4), B: round(B, 4) });
         continue;
