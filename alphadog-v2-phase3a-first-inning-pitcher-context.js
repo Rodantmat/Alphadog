@@ -1899,46 +1899,50 @@ async function loadPitcherValues(env, playerId, prop, maxDate=null){
   const vals=rows.map(r=>propValueFromRow(prop,r)).filter(v=>v!==null && Number.isFinite(Number(v)));
   V2_ENTITY_VALUE_CACHE.set(key,vals); return vals;
 }
+// Invocation-scoped shared Postgres connection (2026-08-07 fix): Cloudflare's own docs are
+// explicit that a Worker can open only 6 outgoing connections per invocation, and that a Worker
+// is not a long-lived process that can hold a connection pool open for hours - the correct
+// pattern is one connection per invocation, reused for every query within it. Functions called
+// once per player inside a processing loop (like loadRfiValues below) must never open their own
+// fresh connection per call - confirmed live tonight that doing so causes exactly this timeout
+// once a batch has more than a handful of players.
+let V2_SHARED_SQL_CONN = null;
+function getSharedSql(env) {
+  if (!V2_SHARED_SQL_CONN) V2_SHARED_SQL_CONN = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  return V2_SHARED_SQL_CONN;
+}
 async function loadRfiValues(env, sourceKey, playerId, maxDate=null){
   const cacheKey=`rfi|${sourceKey}|${playerId||'game'}|${baselineV5DateCacheToken(maxDate)}`; if(V2_ENTITY_VALUE_CACHE.has(cacheKey)) return V2_ENTITY_VALUE_CACHE.get(cacheKey);
-  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
-  try {
-    let vals;
-    if(String(sourceKey)==="sleeper"){
-      const rows = maxDate
-        ? await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE pitcher_id=${playerId} AND rfi_sl_more_hit IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
-        : await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE pitcher_id=${playerId} AND rfi_sl_more_hit IS NOT NULL ORDER BY game_date`;
-      vals = rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
-    } else {
-      const rows = maxDate
-        ? await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
-        : await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL ORDER BY game_date`;
-      vals = rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
-    }
-    V2_ENTITY_VALUE_CACHE.set(cacheKey,vals); return vals;
-  } finally {
-    await sql.end().catch(() => {});
+  const sql = getSharedSql(env);
+  let vals;
+  if(String(sourceKey)==="sleeper"){
+    const rows = maxDate
+      ? await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE pitcher_id=${playerId} AND rfi_sl_more_hit IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+      : await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE pitcher_id=${playerId} AND rfi_sl_more_hit IS NOT NULL ORDER BY game_date`;
+    vals = rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
+  } else {
+    const rows = maxDate
+      ? await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+      : await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL ORDER BY game_date`;
+    vals = rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
   }
+  V2_ENTITY_VALUE_CACHE.set(cacheKey,vals); return vals;
 }
 async function loadRfiPriorValues(env, sourceKey, maxDate=null){
   const cacheKey=`rfi_prior|${sourceKey||'source'}|${baselineV5DateCacheToken(maxDate)}`; if(V2_GLOBAL_VALUE_CACHE.has(cacheKey)) return V2_GLOBAL_VALUE_CACHE.get(cacheKey);
-  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
-  try {
-    let rows;
-    if(String(sourceKey)==="sleeper"){
-      rows = maxDate
-        ? await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE rfi_sl_more_hit IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
-        : await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE rfi_sl_more_hit IS NOT NULL ORDER BY game_date`;
-    } else {
-      rows = maxDate
-        ? await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
-        : await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL ORDER BY game_date`;
-    }
-    const vals=rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
-    V2_GLOBAL_VALUE_CACHE.set(cacheKey,vals); return vals;
-  } finally {
-    await sql.end().catch(() => {});
+  const sql = getSharedSql(env);
+  let rows;
+  if(String(sourceKey)==="sleeper"){
+    rows = maxDate
+      ? await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE rfi_sl_more_hit IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+      : await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE rfi_sl_more_hit IS NOT NULL ORDER BY game_date`;
+  } else {
+    rows = maxDate
+      ? await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+      : await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL ORDER BY game_date`;
   }
+  const vals=rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
+  V2_GLOBAL_VALUE_CACHE.set(cacheKey,vals); return vals;
 }
 async function loadValuesForHpRow(env, row, maxDate=null){
   const prop=String(row.canonical_prop_key||""); const src=String(row.source_key||""); const fam=String(row.factor_family||""); const playerId=Number(row.mlb_player_id||0);
