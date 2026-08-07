@@ -7003,17 +7003,25 @@ async function buildExpansionSanityRows(env,batchId,affectedPlayerIds=null, incl
     sanityRows.push(makeSanityRow({batchId,ns:"PFS_PP_",sourceFamily:"starter_history_pitcher_fantasy",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"pitcher_fantasy_score",values:ppVals,lines:PFS_LINES,profileKey:pfsPpProfile(ppVals,prs),sourceFormulaKey:"PFS_PP_NO_WIN_OUTS_K_QS_ER",extraNotes:{win_excluded:true,win_reserve_only:true,formula:"outs_recorded + 3*K + 4*QS - 3*ER",delta_update:!!playerFilter}}));
     sanityRows.push(makeSanityRow({batchId,ns:"PFS_SL_",sourceFamily:"starter_history_pitcher_fantasy",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"pitcher_fantasy_score",values:slVals,lines:PFS_LINES,profileKey:pfsSlProfile(slVals,prs),sourceFormulaKey:"PFS_SL_NO_WIN_OUTS_K_ER_BB",extraNotes:{win_excluded:true,win_reserve_only:true,qs_not_used:true,formula:"outs_recorded + 3*K - 3*ER - 2*BB",delta_update:!!playerFilter}}));
   }
-  let rfiSql=`SELECT pitcher_id, pitcher_name, first_frame_runs_allowed FROM expansion_first_inning_pitcher_context_current WHERE pitcher_id IS NOT NULL`;
-  let rfiRows;
-  if(playerFilter&&playerFilter.length){ const qs=playerFilter.map(()=>'?').join(','); rfiRows=await all(env.CONTEXT_DB,`${rfiSql} AND pitcher_id IN (${qs})`,...playerFilter); } else rfiRows=await all(env.CONTEXT_DB,rfiSql);
-  for(const [pid,prs] of groupBy(rfiRows,r=>r.pitcher_id).entries()){
-    const playerId=Number(pid); const vals=prs.map(r=>num(r.first_frame_runs_allowed)); const name=prs.find(r=>r.pitcher_name)?.pitcher_name||null;
-    sanityRows.push(makeSanityRow({batchId,ns:"RFI_SL_",sourceFamily:"first_inning_pitcher_context",sourceTable:"CONTEXT_DB.expansion_first_inning_pitcher_context_current",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"rfi_nrfi",values:vals,lines:RFI_LINES,profileKey:rfiSlProfile(vals,vals.length),sourceFormulaKey:"RFI_SL_PITCHER_SPECIFIC_FIRST_FRAME",extraNotes:{sleeper_specific:true,home_starter_allows_top_1st:true,away_starter_allows_bottom_1st:true,earned_and_unearned_runs_count:true,delta_update:!!playerFilter}}));
-  }
-  if(includeRfiPp){
-    const rfiGames=await all(env.CONTEXT_DB,`SELECT game_pk, first_inning_total_runs FROM expansion_first_inning_game_context_current WHERE game_pk IS NOT NULL`);
-    const ppVals=rfiGames.map(r=>num(r.first_inning_total_runs));
-    if(ppVals.length) sanityRows.push(makeSanityRow({batchId,ns:"RFI_PP_",sourceFamily:"first_inning_game_context",sourceTable:"CONTEXT_DB.expansion_first_inning_game_context_current",entityType:"game_pair_pool",entityId:"rfi_pp_game_pair_pool",playerType:"game_pair",playerId:null,playerName:"RFI_PP_GAME_PAIR_POOL",propKey:"rfi_nrfi",values:ppVals,lines:RFI_LINES,profileKey:rfiPpProfile(ppVals,ppVals.length),sourceFormulaKey:"RFI_PP_PAIR_GAME_FIRST_INNING_TOTAL",extraNotes:{prizepicks_combo_pair_level:true,earned_and_unearned_runs_count:true,delta_update:!!playerFilter}}));
+  const pgSql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
+  try {
+    let rfiRows;
+    if (playerFilter && playerFilter.length) {
+      rfiRows = await pgSql`SELECT pitcher_id, pitcher_name, first_frame_runs_allowed FROM context.first_inning_pitcher WHERE pitcher_id IS NOT NULL AND pitcher_id = ANY(${playerFilter}::bigint[])`;
+    } else {
+      rfiRows = await pgSql`SELECT pitcher_id, pitcher_name, first_frame_runs_allowed FROM context.first_inning_pitcher WHERE pitcher_id IS NOT NULL`;
+    }
+    for(const [pid,prs] of groupBy(rfiRows,r=>r.pitcher_id).entries()){
+      const playerId=Number(pid); const vals=prs.map(r=>num(r.first_frame_runs_allowed)); const name=prs.find(r=>r.pitcher_name)?.pitcher_name||null;
+      sanityRows.push(makeSanityRow({batchId,ns:"RFI_SL_",sourceFamily:"first_inning_pitcher_context",sourceTable:"context.first_inning_pitcher",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"rfi_nrfi",values:vals,lines:RFI_LINES,profileKey:rfiSlProfile(vals,vals.length),sourceFormulaKey:"RFI_SL_PITCHER_SPECIFIC_FIRST_FRAME",extraNotes:{sleeper_specific:true,home_starter_allows_top_1st:true,away_starter_allows_bottom_1st:true,earned_and_unearned_runs_count:true,delta_update:!!playerFilter}}));
+    }
+    if(includeRfiPp){
+      const rfiGames=await pgSql`SELECT game_pk, first_inning_total_runs FROM context.first_inning_game WHERE game_pk IS NOT NULL`;
+      const ppVals=rfiGames.map(r=>num(r.first_inning_total_runs));
+      if(ppVals.length) sanityRows.push(makeSanityRow({batchId,ns:"RFI_PP_",sourceFamily:"first_inning_game_context",sourceTable:"context.first_inning_game",entityType:"game_pair_pool",entityId:"rfi_pp_game_pair_pool",playerType:"game_pair",playerId:null,playerName:"RFI_PP_GAME_PAIR_POOL",propKey:"rfi_nrfi",values:ppVals,lines:RFI_LINES,profileKey:rfiPpProfile(ppVals,ppVals.length),sourceFormulaKey:"RFI_PP_PAIR_GAME_FIRST_INNING_TOTAL",extraNotes:{prizepicks_combo_pair_level:true,earned_and_unearned_runs_count:true,delta_update:!!playerFilter}}));
+    }
+  } finally {
+    await pgSql.end().catch(() => {});
   }
   return sanityRows;
 }
