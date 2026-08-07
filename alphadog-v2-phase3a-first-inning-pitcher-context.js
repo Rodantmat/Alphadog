@@ -362,8 +362,13 @@ async function mineFirstInningContext(env, input={}){
           source_endpoint=excluded.source_endpoint, source_confidence=excluded.source_confidence, updated_at=now()`.catch(() => {});
     }
     if (pitcherRowsArr.length) {
+      const dedupedPitcherRows = new Map();
+      for (const r of pitcherRowsArr) {
+        const existing = dedupedPitcherRows.get(r.pitcher_context_row_id);
+        if (!existing || (existing.is_home == null && r.is_home != null)) dedupedPitcherRows.set(r.pitcher_context_row_id, r);
+      }
       const pCols = ["pitcher_context_row_id","batch_id","game_pk","game_date","pitcher_id","pitcher_name","team_id","opponent_team_id","is_home","started_game","first_frame_half","first_frame_runs_allowed","rfi_sl_more_hit","rfi_sl_less_hit","source_game_context_row_id","source_confidence"];
-      await sql`INSERT INTO context.first_inning_pitcher ${sql(pitcherRowsArr, ...pCols)}
+      await sql`INSERT INTO context.first_inning_pitcher ${sql([...dedupedPitcherRows.values()], ...pCols)}
         ON CONFLICT (pitcher_context_row_id) DO UPDATE SET
           batch_id=excluded.batch_id, pitcher_name=excluded.pitcher_name, team_id=excluded.team_id,
           opponent_team_id=excluded.opponent_team_id, is_home=excluded.is_home, first_frame_half=excluded.first_frame_half,
