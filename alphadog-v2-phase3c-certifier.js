@@ -370,12 +370,19 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const matrixRow = matrixById.get(er.matrix_id) || {};
     const playerName = matrixRow.player_name || null;
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
-    const isGoblin = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1;
-    const isDemon = Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
-    const moreOnly = Number(matrixRow.more_only ?? 0) === 1 || (payload?.side_context?.side_mode === "more_only");
-    const sideMode = moreOnly ? "more_only" : (payload?.side_context?.side_mode || null);
-
     const side = determineSide(matrixRow, er, er.mlb_player_id, er.canonical_prop_key, er.board_line_value);
+    // CONFIRMED PLATFORM RULE (2026-08-07), real user platform knowledge, not inferred: for
+    // home_runs, 'less' is always goblin, never demon - a home run 'less' pick cannot structurally
+    // be a demon. The raw is_goblin/is_demon flag from PrizePicks describes the 'more' side
+    // specifically (the side the elevated/lowered threshold or payout actually applies to), and
+    // was incorrectly carrying straight through to 'less' whenever 'less' got selected as the
+    // side. This corrects it to be side-aware for this specific, confirmed prop.
+    let isGoblin = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1;
+    let isDemon = Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
+    if (String(er.canonical_prop_key) === "home_runs" && side === "less" && isDemon) {
+      isDemon = false;
+      isGoblin = true;
+    }
     const baselineMatch = findBaseline(er.mlb_player_id, er.canonical_prop_key, side, er.board_line_value);
     const baseline = baselineMatch ? baselineMatch.row : null;
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
