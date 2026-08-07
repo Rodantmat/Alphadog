@@ -296,7 +296,7 @@ function enrichBoardRows(rows, playerTeamMap, aliases = new Map(), teamDir = nul
 
 async function readPrizePicksRows(pg) {
   const rows = await pg`SELECT current_row_id, batch_id, source_key, slate_date, projection_id, player_id, player_name, team, opponent, stat_type, line_score, start_time, board_time, end_time, game_id, pickable_flag, raw_projection_json, row_payload_json
-    FROM market.prizepicks_board_current WHERE COALESCE(pickable_flag,0)=1 LIMIT 5000`;
+    FROM market.prizepicks_board_current WHERE COALESCE(pickable_flag,0)=1 LIMIT 15000`;
   return { columns: ["current_row_id", "batch_id", "source_key", "slate_date", "projection_id", "player_id", "player_name", "team", "opponent", "stat_type", "line_score", "start_time", "board_time", "end_time", "game_id", "pickable_flag", "raw_projection_json", "row_payload_json"], rows: rows.map(r => ({
     source_key: "prizepicks_github", board_source_key: r.source_key || "prizepicks_github", board_batch_id: r.batch_id, board_row_id: r.current_row_id || r.projection_id,
     source_line_id: r.projection_id || r.current_row_id, source_event_id: r.game_id, source_player_id: r.player_id, player_name: r.player_name, canonical_prop_key: r.stat_type,
