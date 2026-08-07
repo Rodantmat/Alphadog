@@ -281,7 +281,7 @@ async function mineFirstInningContext(env, input={}){
     const totalRows = await sql`
       SELECT COUNT(*) AS c FROM (
         SELECT game_pk FROM team.starter_history
-        WHERE started_game=1 AND game_pk IS NOT NULL
+        WHERE game_pk IS NOT NULL
         GROUP BY game_pk ORDER BY MAX(game_date) DESC, game_pk DESC LIMIT ${maxSourceGames}
       ) x`;
     const totalGames = Number(totalRows[0] && totalRows[0].c || 0);
@@ -292,7 +292,7 @@ async function mineFirstInningContext(env, input={}){
           MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id,
           MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id
         FROM team.starter_history
-        WHERE started_game=1 AND game_pk IS NOT NULL
+        WHERE game_pk IS NOT NULL
         GROUP BY game_pk ORDER BY MAX(game_date) DESC, game_pk DESC LIMIT ${maxSourceGames}
       ) x LIMIT ${chunkSize} OFFSET ${cursor}`;
 
