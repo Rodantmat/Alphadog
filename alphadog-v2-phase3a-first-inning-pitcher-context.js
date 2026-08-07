@@ -9322,6 +9322,84 @@ async function runClassificationV6FullRun(env, input = {}) {
   return { ok: true, mode: "classification_v6_full_run", partial: false, complete: true, combos_processed_this_tick: combosProcessed, total_combos: combos.length, errors: errors.slice(0, 10) };
 }
 
+async function runDailyFirstInningMiningDelta(env, input={}) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const games = await sql`
+      SELECT game_pk, game_date, home_team_id, away_team_id FROM (
+        SELECT game_pk, MAX(game_date) AS game_date,
+          MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id,
+          MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id
+        FROM team.starter_history
+        WHERE game_pk IS NOT NULL AND game_date >= (now() - interval '3 days')
+        GROUP BY game_pk
+      ) x
+      WHERE game_pk NOT IN (SELECT game_pk FROM context.first_inning_game)`;
+    if (!games.length) return { ok: true, mode: "daily_first_inning_mining_delta", games_found: 0, games_written: 0, note: "no new games in the last 3 days needing first-inning mining" };
+    let gamesWritten = 0, pitcherRows = 0, issues = 0;
+    const gameRows = []; const pitcherRowsArr = [];
+    for (const g of games) {
+      const gamePk = Number(g.game_pk);
+      if (!gamePk) continue;
+      try {
+        const fetched = await fetchMlbLinescore(env, gamePk, 8000);
+        const parsed = firstInningFromLinescore(fetched.json);
+        if (!parsed) { issues++; continue; }
+        const contextRowId = `exp_first_game|${gamePk}`;
+        const yrfi = parsed.first_inning_total_runs >= 1 ? 1 : 0;
+        const nrfi = parsed.first_inning_total_runs === 0 ? 1 : 0;
+        gameRows.push({
+          context_row_id: contextRowId, batch_id: `daily_delta_${nowUtc().slice(0,10)}`, game_pk: gamePk, game_date: g.game_date || null,
+          home_team_id: g.home_team_id || null, away_team_id: g.away_team_id || null,
+          home_team_name: parsed.home_team_name, away_team_name: parsed.away_team_name,
+          top_1st_runs: parsed.top_1st_runs, bottom_1st_runs: parsed.bottom_1st_runs,
+          first_inning_total_runs: parsed.first_inning_total_runs, yrfi_flag: yrfi, nrfi_flag: nrfi,
+          source_endpoint: fetched.url, source_confidence: "MLB_LINESCORE_FIRST_INNING"
+        });
+        gamesWritten++;
+        const starters = await sql`
+          SELECT sh.mlb_player_id AS player_id, p.full_name AS starter_name, sh.team_id, sh.opponent_team_id, sh.is_home, sh.game_date
+          FROM team.starter_history sh
+          LEFT JOIN ref.players p ON p.player_id::text = sh.mlb_player_id::text
+          WHERE sh.game_pk=${gamePk}`;
+        for (const s0 of starters) {
+          const pitcherId = Number(s0.player_id || 0) || null;
+          if (!pitcherId) { issues++; continue; }
+          const isHome = Number(s0.is_home || 0) === 1 ? 1 : 0;
+          const runsAllowed = isHome ? parsed.top_1st_runs : parsed.bottom_1st_runs;
+          pitcherRowsArr.push({
+            pitcher_context_row_id: `exp_first_pitcher|${gamePk}|${pitcherId}`, batch_id: `daily_delta_${nowUtc().slice(0,10)}`, game_pk: gamePk,
+            game_date: s0.game_date || g.game_date || null, pitcher_id: pitcherId, pitcher_name: s0.starter_name || null,
+            team_id: s0.team_id || null, opponent_team_id: s0.opponent_team_id || null, is_home: isHome, started_game: 1,
+            first_frame_half: isHome ? "top_1st" : "bottom_1st", first_frame_runs_allowed: runsAllowed,
+            rfi_sl_more_hit: runsAllowed >= 1 ? 1 : 0, rfi_sl_less_hit: runsAllowed === 0 ? 1 : 0,
+            source_game_context_row_id: contextRowId, source_confidence: "MLB_LINESCORE_PLUS_STARTER_HISTORY"
+          });
+          pitcherRows++;
+        }
+      } catch (err) { issues++; }
+    }
+    if (gameRows.length) {
+      const gCols = ["context_row_id","batch_id","game_pk","game_date","home_team_id","away_team_id","home_team_name","away_team_name","top_1st_runs","bottom_1st_runs","first_inning_total_runs","yrfi_flag","nrfi_flag","source_endpoint","source_confidence"];
+      await sql`INSERT INTO context.first_inning_game ${sql(gameRows, ...gCols)} ON CONFLICT (context_row_id) DO NOTHING`.catch(() => {});
+    }
+    if (pitcherRowsArr.length) {
+      const dedupedPitcherRows = new Map();
+      for (const r of pitcherRowsArr) {
+        const existing = dedupedPitcherRows.get(r.pitcher_context_row_id);
+        if (!existing || (existing.is_home == null && r.is_home != null)) dedupedPitcherRows.set(r.pitcher_context_row_id, r);
+      }
+      const pCols = ["pitcher_context_row_id","batch_id","game_pk","game_date","pitcher_id","pitcher_name","team_id","opponent_team_id","is_home","started_game","first_frame_half","first_frame_runs_allowed","rfi_sl_more_hit","rfi_sl_less_hit","source_game_context_row_id","source_confidence"];
+      await sql`INSERT INTO context.first_inning_pitcher ${sql([...dedupedPitcherRows.values()], ...pCols)} ON CONFLICT (pitcher_context_row_id) DO NOTHING`.catch(() => {});
+    }
+    return { ok: true, mode: "daily_first_inning_mining_delta", games_found: games.length, games_written: gamesWritten, pitcher_rows_written: pitcherRows, issue_rows: issues };
+  } catch (err) {
+    return { ok: false, mode: "daily_first_inning_mining_delta", error: String(err && err.message ? err.message : err) };
+  } finally {
+    await sql.end().catch(() => {});
+  }
+}
+
 async function runDailyMorningDeltaFullRun(env, input) {
   const TIME_BUDGET_MS = 240000;
   const startedAt = Date.now();
@@ -9333,6 +9411,7 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
     { key: "quality_of_contact_derived_fields_refresh", fn: runQualityOfContactDerivedFieldsRefresh },
+    { key: "first_inning_mining_delta", fn: runDailyFirstInningMiningDelta },
     { key: "baseline_v6_full_run", fn: runClassificationBaselineV6ToPostgresFullRun },
     { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
     // fit_platt_calibration deliberately removed from automated daily execution (2026-07-27):
