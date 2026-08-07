@@ -301,6 +301,16 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     return best ? { row: best, is_exact_line_match: bestDist === 0, line_distance: bestDist } : null;
   }
   function determineSide(matrixRow, er, playerId, propKey, lineValue) {
+    // CONFIRMED PLATFORM-LEVEL MORE-ONLY PROPS (2026-08-07): verified via direct, real user
+    // platform experience placing actual slips - these markets genuinely have no 'less' side to
+    // pick on PrizePicks/Underdog/Sleeper at all, regardless of what the upstream side_mode flag
+    // says (confirmed null/unset for these rows - a separate, real data gap in matrix-builder).
+    // This is a real eligibility fact about what the platform offers, not a confidence/calibration
+    // judgment - the same class of fix already applied once before for this exact prop
+    // (Leody Taveras case, 2026-08-05) via the goblin/demon floor; this closes the remaining gap
+    // for standard (non-goblin/demon) rows that floor never covered.
+    const PLATFORM_CONFIRMED_MORE_ONLY_PROPS = new Set(["stolen_bases"]);
+    if (PLATFORM_CONFIRMED_MORE_ONLY_PROPS.has(String(propKey))) return "more";
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
     const isGoblinOrDemon = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1 || Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
     // FIXED 2026-08-05: this was the original, definitive bug - it unconditionally forced every
