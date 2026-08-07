@@ -326,8 +326,10 @@ async function mineFirstInningContext(env, input={}){
         });
         gamesWritten++;
         const starters = await sql`
-          SELECT player_id, starter_player_id, starter_name, team_id, opponent_team_id, is_home, started_game, starter_key, game_date
-          FROM team.starter_history WHERE game_pk=${gamePk} AND started_game=1`;
+          SELECT sh.mlb_player_id AS player_id, p.full_name AS starter_name, sh.team_id, sh.opponent_team_id, sh.is_home, sh.game_date
+          FROM team.starter_history sh
+          LEFT JOIN ref.players p ON p.player_id::text = sh.mlb_player_id::text
+          WHERE sh.game_pk=${gamePk}`;
         for (const s0 of starters) {
           const pitcherId = Number(s0.player_id || s0.starter_player_id || 0) || null;
           if (!pitcherId) { issues++; continue; }
