@@ -7526,10 +7526,13 @@ async function runRemineRefPlayersToPostgres(env, input) {
       };
     });
     const cols = ["player_id","mlb_player_id","full_name","first_name","last_name","current_team_id","current_mlb_team_id","primary_position","primary_role","bat_side","throw_side","active","source_key","raw_json"];
+    const dedupedByPlayerId = new Map();
+    for (const r of rows) dedupedByPlayerId.set(r.player_id, r);
+    const dedupedRows = [...dedupedByPlayerId.values()];
     const CHUNK = 200;
     let written = 0;
-    for (let i = 0; i < rows.length; i += CHUNK) {
-      const chunk = rows.slice(i, i + CHUNK);
+    for (let i = 0; i < dedupedRows.length; i += CHUNK) {
+      const chunk = dedupedRows.slice(i, i + CHUNK);
       await sql`
         INSERT INTO ref.players ${sql(chunk, ...cols)}
         ON CONFLICT (player_id) DO UPDATE SET
