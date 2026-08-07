@@ -341,7 +341,18 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
       if (lessHp != null && moreHp == null) return "less";
       return matrixRow.side || er.prop_side || "more";
     }
-    if (moreHp != null && lessHp != null) return lessHp > moreHp ? "less" : "more";
+    // FIXED 2026-08-07: confirmed live across all 3 sources that standard (non-goblin/demon)
+    // lines had zero protection against the same trivial-rare-event-less pattern already fixed
+    // above - at PRIMARY tier, 'less' dominated 'more' 3:1 to 5:1 (e.g. Underdog: 77 less vs 15
+    // more). The rationale is the same regardless of whether a line carries a special tag: a
+    // rare event's trivial complement (most players don't hit a double/steal a base/etc most
+    // games) isn't genuine signal just because it clears a probability comparison. Same floor,
+    // same reasoning - only flip to 'less' when 'more' shows genuine two-sided uncertainty.
+    const MIN_MORE_HP_FOR_STANDARD_FLIP = 15;
+    if (moreHp != null && lessHp != null) {
+      if (moreHp < MIN_MORE_HP_FOR_STANDARD_FLIP) return "more";
+      return lessHp > moreHp ? "less" : "more";
+    }
     if (lessHp != null && moreHp == null) return "less";
     return matrixRow.side || er.prop_side || "more";
   }
