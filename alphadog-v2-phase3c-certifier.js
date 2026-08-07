@@ -383,6 +383,8 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
       isDemon = false;
       isGoblin = true;
     }
+    const moreOnly = Number(matrixRow.more_only ?? 0) === 1 || (payload?.side_context?.side_mode === "more_only");
+    const sideMode = moreOnly ? "more_only" : (payload?.side_context?.side_mode || null);
     const baselineMatch = findBaseline(er.mlb_player_id, er.canonical_prop_key, side, er.board_line_value);
     const baseline = baselineMatch ? baselineMatch.row : null;
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
