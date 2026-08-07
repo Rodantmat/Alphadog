@@ -1589,7 +1589,8 @@ async function runFitPlattCalibration(env, input = {}) {
       const calibratedTestPairs = testPairs.map(([p, y]) => [sigmoid(A * logit(p) + B), y]);
       const brierAfterTest = brierScore(calibratedTestPairs);
       const eceAfterTest = expectedCalibrationError(calibratedTestPairs);
-      const genuinelyImproved = brierAfterTest < brierBeforeTest && eceAfterTest < eceBeforeTest;
+      const genuinelyImproved = brierAfterTest < brierBeforeTest && eceAfterTest < eceBeforeTest
+        && testPairs.filter(([, y]) => y === 1).length >= MIN_TEST_POSITIVE_EVENTS;
       if (!genuinelyImproved) {
         // Isotonic fallback (2026-07-27): Platt's rigid 2-parameter sigmoid may simply be the
         // wrong functional-form assumption for this prop's true miscalibration pattern, even
