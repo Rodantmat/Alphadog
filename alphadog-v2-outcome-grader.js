@@ -256,6 +256,7 @@ async function runGradeOutcomes(env, input) {
 
     const hitterResult = await gradeForDate(sql, targetDate, "hitter", HITTER_PROP_EXPR, "stats_hitter.game_logs");
     const pitcherResult = await gradeForDate(sql, targetDate, "pitcher", PITCHER_PROP_EXPR, "stats_pitcher.game_logs");
+    const rfiResult = await gradeRfiNrfiForDate(sql, targetDate);
 
     const totalGamesForDate = await sql.unsafe(`SELECT COUNT(DISTINCT game_pk) AS n FROM score.final_board_history WHERE official_date::date = $1::date`, [targetDate]);
 
@@ -269,7 +270,8 @@ async function runGradeOutcomes(env, input) {
       games_on_board_for_date: Number(totalGamesForDate[0]?.n || 0),
       hitter: hitterResult,
       pitcher: pitcherResult,
-      total_rows_inserted: hitterResult.rows_inserted + pitcherResult.rows_inserted,
+      rfi_nrfi: rfiResult,
+      total_rows_inserted: hitterResult.rows_inserted + pitcherResult.rows_inserted + rfiResult.rows_inserted,
       timestamp_utc: nowUtc(),
       note: "Read-only from board history + already-mined stats tables; writes only to score.prop_outcome_history. Idempotent - safe to re-run for the same date (ON CONFLICT DO NOTHING)."
     };
