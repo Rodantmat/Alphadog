@@ -1901,28 +1901,44 @@ async function loadPitcherValues(env, playerId, prop, maxDate=null){
 }
 async function loadRfiValues(env, sourceKey, playerId, maxDate=null){
   const cacheKey=`rfi|${sourceKey}|${playerId||'game'}|${baselineV5DateCacheToken(maxDate)}`; if(V2_ENTITY_VALUE_CACHE.has(cacheKey)) return V2_ENTITY_VALUE_CACHE.get(cacheKey);
-  const dateFilter=maxDate ? `AND date(game_date) <= date(?)` : ``;
-  if(String(sourceKey)==="sleeper"){
-    const binds=maxDate?[playerId,String(maxDate).slice(0,10)]:[playerId];
-    const rows=await all(env.CONTEXT_DB,`SELECT pitcher_id, game_pk, game_date, rfi_sl_more_hit AS rfi_value FROM expansion_first_inning_pitcher_context_current WHERE pitcher_id=? AND rfi_sl_more_hit IS NOT NULL ${dateFilter} ORDER BY game_date`, ...binds);
-    const vals=rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v))); V2_ENTITY_VALUE_CACHE.set(cacheKey,vals); return vals;
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
+  try {
+    let vals;
+    if(String(sourceKey)==="sleeper"){
+      const rows = maxDate
+        ? await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE pitcher_id=${playerId} AND rfi_sl_more_hit IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+        : await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE pitcher_id=${playerId} AND rfi_sl_more_hit IS NOT NULL ORDER BY game_date`;
+      vals = rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
+    } else {
+      const rows = maxDate
+        ? await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+        : await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL ORDER BY game_date`;
+      vals = rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
+    }
+    V2_ENTITY_VALUE_CACHE.set(cacheKey,vals); return vals;
+  } finally {
+    await sql.end().catch(() => {});
   }
-  const binds=maxDate?[String(maxDate).slice(0,10)]:[];
-  const rows=await all(env.CONTEXT_DB,`SELECT game_pk, game_date, rfi_pp_more_hit AS rfi_value FROM expansion_first_inning_game_context_current WHERE rfi_pp_more_hit IS NOT NULL ${dateFilter} ORDER BY game_date`, ...binds);
-  const vals=rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v))); V2_ENTITY_VALUE_CACHE.set(cacheKey,vals); return vals;
 }
 async function loadRfiPriorValues(env, sourceKey, maxDate=null){
   const cacheKey=`rfi_prior|${sourceKey||'source'}|${baselineV5DateCacheToken(maxDate)}`; if(V2_GLOBAL_VALUE_CACHE.has(cacheKey)) return V2_GLOBAL_VALUE_CACHE.get(cacheKey);
-  const dateFilter=maxDate ? `AND date(game_date) <= date(?)` : ``;
-  const binds=maxDate?[String(maxDate).slice(0,10)]:[];
-  let rows=[];
-  if(String(sourceKey)==="sleeper"){
-    rows=await all(env.CONTEXT_DB,`SELECT pitcher_id, game_pk, game_date, rfi_sl_more_hit AS rfi_value FROM expansion_first_inning_pitcher_context_current WHERE rfi_sl_more_hit IS NOT NULL ${dateFilter} ORDER BY game_date`, ...binds);
-  } else {
-    rows=await all(env.CONTEXT_DB,`SELECT game_pk, game_date, rfi_pp_more_hit AS rfi_value FROM expansion_first_inning_game_context_current WHERE rfi_pp_more_hit IS NOT NULL ${dateFilter} ORDER BY game_date`, ...binds);
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
+  try {
+    let rows;
+    if(String(sourceKey)==="sleeper"){
+      rows = maxDate
+        ? await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE rfi_sl_more_hit IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+        : await sql`SELECT rfi_sl_more_hit AS rfi_value FROM context.first_inning_pitcher WHERE rfi_sl_more_hit IS NOT NULL ORDER BY game_date`;
+    } else {
+      rows = maxDate
+        ? await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL AND game_date::date <= ${String(maxDate).slice(0,10)}::date ORDER BY game_date`
+        : await sql`SELECT yrfi_flag AS rfi_value FROM context.first_inning_game WHERE yrfi_flag IS NOT NULL ORDER BY game_date`;
+    }
+    const vals=rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
+    V2_GLOBAL_VALUE_CACHE.set(cacheKey,vals); return vals;
+  } finally {
+    await sql.end().catch(() => {});
   }
-  const vals=rows.map(r=>num(r.rfi_value)).filter(v=>v!==null && Number.isFinite(Number(v)));
-  V2_GLOBAL_VALUE_CACHE.set(cacheKey,vals); return vals;
 }
 async function loadValuesForHpRow(env, row, maxDate=null){
   const prop=String(row.canonical_prop_key||""); const src=String(row.source_key||""); const fam=String(row.factor_family||""); const playerId=Number(row.mlb_player_id||0);
