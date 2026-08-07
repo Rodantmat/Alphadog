@@ -1491,8 +1491,20 @@ async function runFitPlattCalibration(env, input = {}) {
       const eceAfterBeta = expectedCalibrationError(calibratedTestBeta);
       const plattTestPreview = testPairs.map(([p]) => sigmoid(A * logit(p) + B));
       const brierPlattPreview = brierScore(plattTestPreview.map((p, i) => [p, testPairs[i][1]]));
+      const testPositiveEvents = testPairs.filter(([, y]) => y === 1).length;
+      const MIN_TEST_POSITIVE_EVENTS = 15;
+      // Monotonicity check across the actual probability range Beta calibration will predict for -
+      // a genuine calibration curve should be non-decreasing as raw input increases. A curve that
+      // rises then falls (confirmed live for triples: 1%->11.7%->2.7%) is a structural sign of
+      // overfitting to noise in a small, rare-event sample, not a real relationship - Brier/ECE
+      // improving on a tiny test set doesn't catch this, since a handful of lucky predictions can
+      // still score well even on a nonsensical curve shape.
+      const betaCurvePoints = Array.from({ length: 10 }, (_, bkt) => predictBetaCalibration(bkt / 10 + 0.05, betaParams.a, betaParams.b, betaParams.c));
+      const MONOTONICITY_TOLERANCE = 0.01;
+      const betaCurveMonotonic = betaCurvePoints.every((v, i) => i === 0 || v >= betaCurvePoints[i - 1] - MONOTONICITY_TOLERANCE);
       const betaGenuinelyBest = brierAfterBeta < brierBeforeTestBeta && eceAfterBeta < eceBeforeTestBeta
-        && brierAfterBeta < brierPlattPreview && Number.isFinite(betaParams.a) && Number.isFinite(betaParams.b) && Number.isFinite(betaParams.c);
+        && brierAfterBeta < brierPlattPreview && Number.isFinite(betaParams.a) && Number.isFinite(betaParams.b) && Number.isFinite(betaParams.c)
+        && testPositiveEvents >= MIN_TEST_POSITIVE_EVENTS && betaCurveMonotonic;
       if (betaGenuinelyBest) {
         const betaRows = [];
         for (const side of ["more", "less"]) {
