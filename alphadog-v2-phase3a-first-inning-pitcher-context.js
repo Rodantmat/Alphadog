@@ -1601,7 +1601,8 @@ async function runFitPlattCalibration(env, input = {}) {
           const calibratedTestIso = testPairs.map(([p, y]) => [predictIso(p), y]);
           const brierAfterIso = brierScore(calibratedTestIso);
           const eceAfterIso = expectedCalibrationError(calibratedTestIso);
-          const isoGenuinelyImproved = brierAfterIso < brierBeforeTest && eceAfterIso < eceBeforeTest;
+          const isoGenuinelyImproved = brierAfterIso < brierBeforeTest && eceAfterIso < eceBeforeTest
+            && testPairs.filter(([, y]) => y === 1).length >= MIN_TEST_POSITIVE_EVENTS;
           if (isoGenuinelyImproved) {
             // Store as 10 fixed-width bins (0-0.1, 0.1-0.2, ...) for direct compatibility with
             // the existing calibration_correction_map / applyCalibrationCorrection mechanism -
