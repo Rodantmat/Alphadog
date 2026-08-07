@@ -8418,16 +8418,17 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const numExpr = propConfig.weights
       ? propConfig.numerator_fields.map(f => `COALESCE(${f},0)*${Number(propConfig.weights[f] || 1)}`).join("+")
       : propConfig.numerator_fields.map(f => `COALESCE(${f},0)`).join("+");
+    const denomField = propConfig.denominator_field || "games_count";
     const windowCases = windows.map(w => {
       const weight = cfg.recency_weights[w];
-      return `(CASE WHEN metric_window='${w}' AND games_count>0 THEN (${numExpr})::float/games_count ELSE NULL END, CASE WHEN metric_window='${w}' AND games_count>0 THEN ${weight} ELSE 0 END)`;
+      return `(CASE WHEN metric_window='${w}' AND ${denomField}>0 THEN (${numExpr})::float/${denomField} ELSE NULL END, CASE WHEN metric_window='${w}' AND ${denomField}>0 THEN ${weight} ELSE 0 END)`;
     });
     const rateRows = await sql.unsafe(`
       SELECT player_id,
         SUM(rate*wt) FILTER (WHERE wt > 0) / NULLIF(SUM(wt) FILTER (WHERE wt > 0), 0) AS blended_rate,
-        MAX(CASE WHEN metric_window='season_to_date' THEN games_count ELSE NULL END) AS games_sample
+        MAX(CASE WHEN metric_window='season_to_date' THEN ${denomField} ELSE NULL END) AS games_sample
       FROM (
-        SELECT player_id, metric_window, games_count,
+        SELECT player_id, metric_window, ${denomField},
           CASE ${windows.map((w,i) => `WHEN metric_window='${w}' THEN (${windowCases[i].split(", CASE")[0].replace("(","")})`).join(" ")} END AS rate,
           CASE ${windows.map(w => `WHEN metric_window='${w}' THEN ${cfg.recency_weights[w]}`).join(" ")} END AS wt
         FROM ${table} WHERE season = ${season}
