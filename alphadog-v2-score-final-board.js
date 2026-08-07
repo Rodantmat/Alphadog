@@ -638,9 +638,11 @@ async function generateFinalBoard(pgClient, input) {
 
   const hpAllRaw = hpRead.rows;
   const mappedRows = annotateCorrelation(hpAllRaw.map(r => mapHpCurrentRowToFinalBoardRow(r, activeProfileKey)));
+  const nowMs = Date.now();
   const baseVisibleRows = mappedRows.filter(r =>
     num(r.estimated_hit_probability_0_100, 0) >= 60
     && (Number(r.hp_review_playable || 0) === 1 || Number(r.hp_primary_playable || 0) === 1 || String(r.board_tier || "") === "PRIMARY" || String(r.board_tier || "") === "REVIEW")
+    && (!r.official_game_time_utc || new Date(r.official_game_time_utc).getTime() > nowMs)
   ).sort(finalBoardDisplayComparator);
   const quotaReserveResult = addQuotaReserveRows(mappedRows, baseVisibleRows);
   const sourceMarketClusterResult = dedupeSourceMarketClusters(quotaReserveResult.rows);
