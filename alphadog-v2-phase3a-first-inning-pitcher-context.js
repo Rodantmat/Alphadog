@@ -4621,7 +4621,7 @@ function applyLineSideCaps(prob, conf, prop, line, side, rows, trace){ const p=S
   if(p==="earned_runs" && l>=4.5){ if(trace.leash_profile==="SHORTENING_LEASH") hp=String(side)==="more"?Math.min(hp,0.08):Math.max(hp,0.92); cap=Math.min(cap,20); }
   if(p==="runs_allowed" && l>=5.5 && trace.leash_profile==="SHORTENING_LEASH"){ hp=String(side)==="more"?Math.min(hp,0.02):Math.max(hp,0.98); cap=Math.min(cap,10); }
   if((p==="pitcher_fantasy_score"||p==="fantasy") && l>=36.5) cap=Math.min(cap,15); return {prob:clamp(hp,0.0001,0.9999), confidence:clamp(cap,1,95)}; }
-function exposureRate(rows, numerator, denominator, priorRate, priorExposure){ const den=String(denominator)==="batters_faced"?sumBf(rows):sumNum(rows,denominator); const hit=sumNum(rows,numerator); return (hit + priorRate*priorExposure) / Math.max(1, den + priorExposure); }
+function exposureRate(rows, numerator, denominator, priorRate, priorExposure){ const den=String(denominator)==="batters_faced"?sumBf(rows):(String(denominator)==="ab"?rows.reduce((a,r)=>a+hitterAb(r),0):sumNum(rows,denominator)); const hit=sumNum(rows,numerator); return (hit + priorRate*priorExposure) / Math.max(1, den + priorExposure); }
 function hitterAb(row){ return num(row.ab) || Math.max(0, num(row.pa)*0.88); }
 function hitterReach(row){ return Math.max(0,num(row.hits)+num(row.walks)-num(row.triples)-num(row.home_runs)); }
 function hitterFantasyV2(row){ return 3*num(row.singles)+5*num(row.doubles)+8*num(row.triples)+10*num(row.home_runs)+2*num(row.runs)+2*num(row.rbi)+2*num(row.walks)+5*num(row.stolen_bases); }
