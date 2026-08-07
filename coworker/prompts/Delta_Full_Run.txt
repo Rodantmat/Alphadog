@@ -83,7 +83,9 @@ LAYER 2 - CALCULATION
 
 8. baseline_v6 - different call entirely, mode "classification_baseline_v6_to_postgres_full_run" on the same worker URL, with combo_index (start from whatever SELECT resume_index FROM control.worker_state WHERE state_key='baseline_v6_full_run' shows, or 0 if none). This processes exactly ONE combo per call by design - call repeatedly with combo_index set to the previous response's own combo_index field, until the response shows "combo_done": true. Expect roughly 244 calls total if starting from zero; each call is fast (~2-8 seconds) and independent - this is normal, not a failure, and there is no call limit.
 
-9. Same worker/mode as step 7, {"resume_from_step": 8, "stop_before_step": 9} - resolve_prop_outcomes
+9. Same worker/mode as step 7, {"resume_from_step": 9, "stop_before_step": 10} - resolve_prop_outcomes
+
+(Verified 2026-08-07 directly against the deployed runDailyMorningDeltaFullRun steps array in alphadog-v2-phase3a-first-inning-pitcher-context.js: index 7=first_inning_mining_delta, index 8=baseline_v6_full_run, index 9=resolve_prop_outcomes. A prior version of this prompt used resume_from_step:8 here, which after the first_inning_mining_delta insertion would have redundantly re-run baseline_v6_full_run and skipped resolve_prop_outcomes entirely - fixed. If this worker's internal step array changes again, re-verify indices directly via github_grep_file before editing these calls.)
 
 Do not proceed until both verified: SELECT COUNT(*) FROM classification.population_stats returns exactly 244, AND this returns zero rows:
 
