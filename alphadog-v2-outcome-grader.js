@@ -143,6 +143,87 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
   return { entity_type: entityType, candidates_found: rows.length, rows_inserted: inserted };
 }
 
+async function gradeRfiNrfiForDate(sql, targetDate) {
+  // WIRED 2026-08-07: previously excluded entirely (see known_gaps below) because no
+  // first-inning play-by-play data existed in a usable, Postgres-resident form. That data now
+  // exists (context.first_inning_pitcher, migrated off D1 tonight, real MLB linescore-derived
+  // outcomes) and is joined here directly - closing the root-cause chain that traced rfi_nrfi's
+  // broken calibration all the way back to having no working outcome-grading path at all.
+  const rows = await sql.unsafe(`
+    WITH deduped AS (
+      SELECT DISTINCT ON (mlb_player_id, canonical_prop_key, line_value, selected_side)
+        final_board_row_id, prepared_row_id, source_key, game_pk, official_date, mlb_player_id,
+        player_name, canonical_prop_key, line_value, selected_side,
+        estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, board_tier,
+        is_goblin, is_demon
+      FROM score.final_board_history
+      WHERE official_date::date = $1::date
+        AND board_tier IN ('PRIMARY','REVIEW')
+        AND canonical_prop_key = 'rfi_nrfi'
+      ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, created_at DESC
+    ),
+    graded AS (
+      SELECT f.*, fip.rfi_sl_more_hit, fip.rfi_sl_less_hit
+      FROM deduped f
+      JOIN context.first_inning_pitcher fip ON fip.pitcher_id::text = f.mlb_player_id::text AND fip.game_pk = f.game_pk
+    )
+    SELECT *,
+      CASE WHEN selected_side = 'more' THEN (rfi_sl_more_hit = 1)
+           WHEN selected_side = 'less' THEN (rfi_sl_less_hit = 1)
+           ELSE NULL END AS is_hit
+    FROM graded
+  `, [targetDate]);
+
+  if (!rows.length) return { entity_type: "pitcher_rfi_nrfi", candidates_found: 0, rows_inserted: 0 };
+
+  const insertRows = rows.filter(r => r.is_hit !== null).map(r => ({
+    outcome_id: `grade_rfi_${r.mlb_player_id}_rfi_nrfi_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
+    final_board_row_id: r.final_board_row_id || null,
+    prepared_row_id: r.prepared_row_id || null,
+    source_key: r.source_key || null,
+    game_pk: r.game_pk || null,
+    official_date: targetDate,
+    mlb_player_id: r.mlb_player_id,
+    player_name: r.player_name || null,
+    canonical_prop_key: "rfi_nrfi",
+    line_value: r.line_value,
+    selected_side: r.selected_side,
+    estimated_hit_probability_0_100: r.estimated_hit_probability_0_100,
+    probability_confidence_0_100: r.probability_confidence_0_100,
+    score_0_100: r.score_0_100,
+    score_grade: null,
+    board_tier: r.board_tier || null,
+    is_goblin: r.is_goblin || 0,
+    is_demon: r.is_demon || 0,
+    live_playable: null,
+    actual_stat_value: r.selected_side === "more" ? r.rfi_sl_more_hit : r.rfi_sl_less_hit,
+    outcome_result: r.is_hit ? "hit" : "miss",
+    outcome_hit: r.is_hit ? 1 : 0,
+    brier_component: null,
+    resolved_at: nowUtc(),
+    created_at: nowUtc()
+  }));
+
+  if (!insertRows.length) return { entity_type: "pitcher_rfi_nrfi", candidates_found: rows.length, rows_inserted: 0 };
+
+  const cols = ["outcome_id", "final_board_row_id", "prepared_row_id", "source_key", "game_pk", "official_date",
+    "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side",
+    "estimated_hit_probability_0_100", "probability_confidence_0_100", "score_0_100", "score_grade",
+    "board_tier", "is_goblin", "is_demon", "live_playable", "actual_stat_value", "outcome_result", "outcome_hit", "brier_component",
+    "resolved_at", "created_at"];
+
+  let inserted = 0;
+  const CHUNK = 150;
+  for (let i = 0; i < insertRows.length; i += CHUNK) {
+    const chunk = insertRows.slice(i, i + CHUNK);
+    const res = await sql`INSERT INTO score.prop_outcome_history ${sql(chunk, ...cols)}
+      ON CONFLICT (outcome_id) DO NOTHING`;
+    inserted += res.count || 0;
+  }
+
+  return { entity_type: "pitcher_rfi_nrfi", candidates_found: rows.length, rows_inserted: inserted };
+}
+
 async function logExecution(sql, result, input) {
   try {
     await sql.unsafe(
