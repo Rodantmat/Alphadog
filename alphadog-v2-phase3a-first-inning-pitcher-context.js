@@ -4644,18 +4644,36 @@ function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=row
   else if(prop==="hits_runs_rbis"){
     const vals=rows.map(r=>num(r.hits)+num(r.runs)+num(r.rbi));
     const avg=avgArr(vals);
-    const ravg=avgArr(recent.map(r=>num(r.hits)+num(r.runs)+num(r.rbi)));
+    const recentVals=recent.map(r=>num(r.hits)+num(r.runs)+num(r.rbi));
+    const ravg=avgArr(recentVals);
     const proxyMore=negBinomLogSpaceTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.35);
     const direct=calcHpLine(vals,line,"more");
-    const directMore=direct.raw_rate_0_100==null ? proxyMore : clamp(direct.raw_rate_0_100/100,0,1);
+    // FIXED 2026-08-07: directMore previously came only from calcHpLine on the full-season vals
+    // array, which treats every game equally regardless of age - a game from 3 months ago counted
+    // identically to yesterday's, with zero recency weighting. proxyMore, by contrast, already
+    // blends 60% recent + 40% season. Since more=min(proxyMore, directMore+lineLift), any player
+    // whose recent form has genuinely improved beyond their flat season average had that real
+    // signal silently discarded by directMore never catching up. Confirmed empirically against
+    // real, current player data (CJ Abrams: genuinely hot recently, .344 since July 6, but HRR
+    // probability barely exceeded a season-average-only naive calculation). Now blends a
+    // recent-games-only empirical rate with the full-season rate in the same 60/40 ratio already
+    // used for proxyMore, so the guard compares two equally recency-aware estimates instead of
+    // penalizing exactly the players who've genuinely gotten hot. The original guard's protective
+    // intent (preventing the proxy from being arbitrarily inflated beyond what real game-log
+    // evidence supports) is fully preserved - both sides of the comparison are now just fair.
+    const directRecent=recentVals.length>=5 ? calcHpLine(recentVals,line,"more") : null;
+    const directSeasonRate=direct.raw_rate_0_100==null ? null : clamp(direct.raw_rate_0_100/100,0,1);
+    const directRecentRate=(directRecent && directRecent.raw_rate_0_100!=null) ? clamp(directRecent.raw_rate_0_100/100,0,1) : null;
+    const directMore=directSeasonRate==null ? proxyMore
+      : (directRecentRate==null ? directSeasonRate : (0.6*directRecentRate + 0.4*directSeasonRate));
     // v0.1.29 / formula v0.2.2: SQL proof on 2026-06-30 showed hrr_cluster_proxy was replacing
     // direct binary reality and creating +20 to +39 point lifts on HRR MORE 0.5/1.5/2.5.
     // HRR may get a small compound/opportunity lift, but it may not override the observed direct line hit rate.
     const sampleLift = games < 10 ? 0.03 : (games < 25 ? 0.05 : (games < 50 ? 0.07 : 0.09));
     const lineLift = Number(line)<=0.5 ? sampleLift : (Number(line)<=1.5 ? Math.min(sampleLift,0.08) : (Number(line)<=2.5 ? Math.min(sampleLift,0.06) : Math.min(sampleLift,0.04)));
     more=Math.min(proxyMore,directMore+lineLift);
-    engine="hrr_cluster_proxy_direct_rate_lift_guard";
-    modelExtra={hrr_proxy_more_pre_guard:round(proxyMore*100,2),hrr_direct_more_rate_0_100:direct.raw_rate_0_100,hrr_direct_non_push_sample:direct.non_push_sample,hrr_max_lift_over_direct_0_100:round(lineLift*100,2),hrr_lift_guard_applied:proxyMore>more};
+    engine="hrr_cluster_proxy_direct_rate_lift_guard_recency_aware";
+    modelExtra={hrr_proxy_more_pre_guard:round(proxyMore*100,2),hrr_direct_more_rate_0_100:direct.raw_rate_0_100,hrr_direct_recent_rate_0_100:directRecent?directRecent.raw_rate_0_100:null,hrr_direct_non_push_sample:direct.non_push_sample,hrr_max_lift_over_direct_0_100:round(lineLift*100,2),hrr_lift_guard_applied:proxyMore>more};
   }
   else if(prop==="fantasy_score"){ const vals=rows.map(hitterFantasyV2); const avg=avgArr(vals); const ravg=avgArr(recent.map(hitterFantasyV2)); more=negBinomLogSpaceTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.45); engine="hfs_compound_proxy"; }
   const prob=sideProbFromMore(more,side); const cap=Math.min(lockedSampleCap(games,prop),v2LineCap(prop,line,sourceKey)); return {prob,confidence:cap,engine,games,workload_bucket:"HITTER",leash_profile:"NA",sample_cap:lockedSampleCap(games,prop),line_cap:v2LineCap(prop,line,sourceKey),...modelExtra}; }
