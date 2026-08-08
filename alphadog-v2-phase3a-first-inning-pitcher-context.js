@@ -1608,7 +1608,7 @@ async function runFitPlattCalibration(env, input = {}) {
             // the existing calibration_correction_map / applyCalibrationCorrection mechanism -
             // no new reading infrastructure needed.
             const isoRows = [];
-            for (const side of ["more", "less"]) {
+            for (const side of [fitSide]) {
               for (let b = 0; b < 10; b++) {
                 const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
                 const predicted = predictIso(mid);
