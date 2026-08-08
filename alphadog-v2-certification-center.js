@@ -2778,9 +2778,9 @@ function buildResearchGroundedSlips(legsBySource) {
     const legEffectiveValue = (l) => {
       const prob = Number(l.certainty_0_100 || l.confidence_0_100 || 0) / 100;
       const side = String(l.selected_side || "more").toLowerCase();
-      const actsLikeGoblin = (Number(l.is_goblin) === 1 && side === "more") || (Number(l.is_demon) === 1 && side === "less");
-      const actsLikeDemon = (Number(l.is_demon) === 1 && side === "more") || (Number(l.is_goblin) === 1 && side === "less");
-      const ratio = actsLikeGoblin ? goblinTierRatio(Number(l.goblin_tier_rank) || 1, Boolean(l.has_standard_sibling)) : (actsLikeDemon ? DEMON_PER_LEG_RATIO : 1.0);
+      const actsLikeGoblin = Number(l.is_goblin) === 1;
+      const actsLikeDemon = Number(l.is_demon) === 1;
+      const ratio = actsLikeGoblin ? (side === "less" && Number(l.is_goblin) === 1 ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(l.goblin_tier_rank) || 1, Boolean(l.has_standard_sibling))) : (actsLikeDemon ? DEMON_PER_LEG_RATIO : 1.0);
       return prob * ratio;
     };
     const pool = [...legsRaw].sort((a, b) => legEffectiveValue(b) - legEffectiveValue(a));
