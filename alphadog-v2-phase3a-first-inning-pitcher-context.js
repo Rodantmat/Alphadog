@@ -8381,7 +8381,18 @@ function sampleAwareConfidencePg(sample, psCfg, multiplier) {
   const conf = 95 * (1 - Math.exp(-effectiveN / 25));
   return Math.round(Math.max(5, Math.min(95, conf)) * 100) / 100;
 }
-function assignTierFromZScorePg(z, tierBandsConfig, populationN) {
+function assignTierFromZScorePg(z, tierBandsConfig, populationN, rank, populationSize) {
+  // Quantile (equal-frequency) binning by rank, not fixed equal-width z-score bands - grounded in
+  // established data-science practice (equal-width binning on roughly-normal data produces
+  // genuinely uneven tier populations; quantile binning guarantees comparable population per tier).
+  // Falls back to the old z-band logic only if rank/populationSize aren't provided (defensive).
+  if (rank != null && populationSize > 0) {
+    const minPop = tierBandsConfig.min_population_per_tier || 15;
+    const maxTiers = tierBandsConfig.max_tiers || 12;
+    const totalTiers = Math.max(1, Math.min(maxTiers, Math.floor(populationSize / minPop) || 1));
+    const tierNumber = Math.min(totalTiers, Math.floor((rank / populationSize) * totalTiers) + 1);
+    return { tier_number: tierNumber, tier_key: `TIER_${String(tierNumber).padStart(2, "0")}_OF_${totalTiers}` };
+  }
   const bands = tierBandsConfig.z_bands;
   const minPop = tierBandsConfig.min_population_per_tier || 15;
   const maxTiers = tierBandsConfig.max_tiers || 12;
