@@ -1656,7 +1656,7 @@ async function runFitPlattCalibration(env, input = {}) {
               line_bucket: "all_platt_v2", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
               empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
               correction_delta: predicted - mid, methodology: "platt_scaling_post_rootfix_v2", selected_side: side,
-              notes: `Platt scaling (A=${round(A,4)}, B=${round(B,4)}), honestly validated on a held-out time-based test set never seen during fitting (side-agnostic fit applied to both sides): test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}.`,
+              notes: `Platt scaling (A=${round(A,4)}, B=${round(B,4)}), honestly validated on a held-out time-based test set never seen during fitting (fit independently for the ${side} side only): test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterTest,4)}.`,
             });
           }
         }
