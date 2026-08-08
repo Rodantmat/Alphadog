@@ -2637,6 +2637,16 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 const GOBLIN_TIER_RATIOS_WITH_STANDARD = { 1: 0.833, 2: 0.700, 3: 0.633 };
 const GOBLIN_TIER_RATIOS_NO_STANDARD = { 1: 0.967, 2: 0.767, 3: 0.633 };
 const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation
+// FLIPPED_FROM_DEMON_RATIO (2026-08-08): real, user-observed in-app data for the specific case of
+// a Demon line's 'less' side (correctly flipped to display as Goblin per the side-aware rule, but
+// structurally NOT a raw PrizePicks Goblin - is_goblin=1 with selected_side='less' proves this,
+// since the flip only fires for 'less'). Confirmed: PP 2-pick slips built from these legs mostly
+// showed 1.2x, occasionally 1.3-1.5x - our prior estimate of ~8.8x (reusing the true-Goblin table,
+// validated only for is_goblin=1 WITH selected_side='more') was wildly too high. Backed out from
+// the observed data: (standardPerLeg * r)^2 = 1.2 -> r = 0.632 for the common case. A single flat
+// value (not a tier table) since only one real data point exists so far - unlike true Goblin,
+// which had multiple validated tier positions to derive a table from.
+const FLIPPED_FROM_DEMON_RATIO = 0.632;
 const DEMON_PER_LEG_RATIO = 1.71; // Research-grounded conservative correction (2026-08-08) from
 // the earlier flat 1.9 "fair-odds-preserving" estimate. Deep research into the favorite-longshot
 // bias (decades-documented, peer-reviewed) and sportsbook alternate-line pricing (multiple
