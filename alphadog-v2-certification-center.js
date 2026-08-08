@@ -2335,8 +2335,8 @@ async function autoSelectBestLegs(env, options) {
       const key = `${r.source_key}|${r.player_id}|${r.canonical_prop_key}|${r.selected_side}`;
       const prob = Number(r.hit_probability_0_100 || r.confidence_0_100 || 0) / 100;
       const side = String(r.selected_side || "more").toLowerCase();
-      const actsLikeGoblin = (Number(r.is_goblin) === 1 && side === "more") || (Number(r.is_demon) === 1 && side === "less");
-      const actsLikeDemon = (Number(r.is_demon) === 1 && side === "more") || (Number(r.is_goblin) === 1 && side === "less");
+      const actsLikeGoblin = Number(r.is_goblin) === 1;
+      const actsLikeDemon = Number(r.is_demon) === 1;
       const ratio = actsLikeGoblin ? (side === "less" && Number(r.is_goblin) === 1 ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling))) : (actsLikeDemon ? DEMON_PER_LEG_RATIO : 1.0);
       const effectiveValue = prob * ratio;
       const existing = bestByPropKey.get(key);
