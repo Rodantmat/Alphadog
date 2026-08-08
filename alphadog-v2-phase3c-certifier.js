@@ -153,7 +153,7 @@ const RESIDUAL_CORRECTION_MAP = {
   "rbis|less": [
     { lo: 80, hi: 101, delta: -12.8 }
   ],
-  "doubles|less": [
+  "doubles|less_DEACTIVATED_2026-08-08_confirmed_baseline_already_accurate": [
     { lo: 80, hi: 101, delta: -11.9 }
   ],
   "rbis|more": [
