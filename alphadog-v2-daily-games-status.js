@@ -27,6 +27,13 @@ async function readJsonSafe(request) { try { return await request.json(); } catc
 function normalize(v) {
   return String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
 }
+// Reused across all dateOnly() calls instead of constructing a new Intl.DateTimeFormat every
+// call - this function runs in hot loops (once per board row x once per candidate game inside
+// matchGame/gamesForDate), and Intl.DateTimeFormat construction is expensive enough that at
+// today's board volume (thousands of rows x tens of candidate games) it was exceeding the
+// Cloudflare Worker CPU-time limit (error 1102) before any rows could be written. Pure
+// perf fix - output is identical, formatter is stateless/reentrant.
+const PACIFIC_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" });
 function dateOnly(value) {
   if (!value) return null;
   const text = value instanceof Date ? null : String(value);
@@ -38,7 +45,7 @@ function dateOnly(value) {
   // game got read as the NEXT UTC calendar day) - convert to the actual Pacific-local date instead.
   const d = value instanceof Date ? value : new Date(text);
   if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  return PACIFIC_DATE_FORMATTER.format(d);
 }
 function isoMs(value) { const d = new Date(value || ""); return Number.isNaN(d.getTime()) ? null : d.getTime(); }
 function minutesAbs(a, b) { const am = isoMs(a), bm = isoMs(b); return am === null || bm === null ? null : Math.abs(am - bm) / 60000; }
