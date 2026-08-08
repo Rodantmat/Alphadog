@@ -240,9 +240,15 @@ function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
 }
 
 function annotateCorrelation(rows) {
-  const counts = new Map();
-  for (const r of rows) { const key = String(r.mlb_player_id || ""); if (!key) continue; counts.set(key, (counts.get(key) || 0) + 1); }
-  for (const r of rows) { const count = counts.get(String(r.mlb_player_id || "")) || 0; r.cluster_player_count = count; r.correlation_risk_tier = count >= 3 ? "HIGH" : count === 2 ? "MED" : "LOW"; }
+  const playerCounts = new Map();
+  for (const r of rows) { const key = String(r.mlb_player_id || ""); if (!key) continue; playerCounts.set(key, (playerCounts.get(key) || 0) + 1); }
+  const gameCounts = new Map();
+  for (const r of rows) { const key = `${r.source_key || ""}|${r.game_pk || ""}`; if (!r.game_pk) continue; gameCounts.set(key, (gameCounts.get(key) || 0) + 1); }
+  for (const r of rows) {
+    r.cluster_player_count = playerCounts.get(String(r.mlb_player_id || "")) || 0;
+    const sameGameLegCount = r.game_pk ? (gameCounts.get(`${r.source_key || ""}|${r.game_pk}`) || 0) : 0;
+    r.correlation_risk_tier = sameGameLegCount >= 6 ? "HIGH" : sameGameLegCount >= 3 ? "MED" : "LOW";
+  }
   return rows;
 }
 
