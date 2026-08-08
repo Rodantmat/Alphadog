@@ -10016,6 +10016,17 @@ async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {
   }
   const nextIndex = startIndex + 1;
   const done = nextIndex >= combos.length;
+  let staleCleanup = null;
+  if (done) {
+    try {
+      const sql = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
+      const deleted = await sql`DELETE FROM classification.baseline_v6_current WHERE updated_at < now() - interval '7 days'`;
+      staleCleanup = { ok: true, deleted_rows: deleted.count ?? 0 };
+      await sql.end({ timeout: 1 }).catch(() => {});
+    } catch (e) {
+      staleCleanup = { ok: false, error: String(e && e.message ? e.message : e) };
+    }
+  }
   await setBaselineV6ResumeIndex(env, done ? 0 : nextIndex);
   return {
     ok: true, data_ok: true, mode: "classification_baseline_v6_to_postgres_full_run",
