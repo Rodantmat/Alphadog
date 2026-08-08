@@ -8501,7 +8501,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     // own sample size - this is what makes shrinkage weight properly decay toward zero as an
     // individual's real sample grows, rather than plateauing at a fixed floor regardless of how
     // much real data accumulates past ~30 games.
-    const usesNormalModelForPriorStrength = propCanGoNegativePg(propConfig);
+    const usesNormalModelForPriorStrength = !(popMean >= 0 && popMean <= 1);
     const reliableForVarianceEstimate = playerRates.filter(r => Number(r.games_sample) >= 10);
     const avgN = (reliableForVarianceEstimate.length ? reliableForVarianceEstimate : playerRates)
       .reduce((a, r) => a + Number(r.games_sample), 0) / Math.max(1, (reliableForVarianceEstimate.length || playerRates.length));
