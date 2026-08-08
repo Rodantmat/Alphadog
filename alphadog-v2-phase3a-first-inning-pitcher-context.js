@@ -10034,6 +10034,7 @@ async function runClassificationBaselineV6ToPostgresFullRunLocked(env, input = {
     combo_index: nextIndex, combo_done: done,
     total_rows_written: result.ok ? (result.rows_written || 0) : 0,
     failed_combos: result.ok ? [] : [result],
+    stale_row_cleanup: staleCleanup,
     partial_continue: !done, orchestrator_should_self_continue: !done,
     next_input_json: done ? null : { ...input, mode: "classification_baseline_v6_to_postgres_full_run", combo_index: nextIndex },
     results: [result]
