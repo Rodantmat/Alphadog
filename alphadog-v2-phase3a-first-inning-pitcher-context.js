@@ -8503,12 +8503,15 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
 
     // Tier assignment per player (z-score vs population).
     const tierBandsCfg = cfg.tier_bands;
-    const classRows = playerRates.map(r => {
-      const rate = Number(r.blended_rate);
-      const z = popStddev > 0 ? (rate - popMean) / popStddev : 0;
-      const tier = assignTierFromZScorePg(z, tierBandsCfg, rates.length);
-      return { player_id: r.player_id, rate, games_sample: Number(r.games_sample), tier_key: tier.tier_key };
-    });
+    const classRows = playerRates
+      .slice()
+      .sort((a, b) => Number(a.blended_rate) - Number(b.blended_rate))
+      .map((r, rank) => {
+        const rate = Number(r.blended_rate);
+        const z = popStddev > 0 ? (rate - popMean) / popStddev : 0;
+        const tier = assignTierFromZScorePg(z, tierBandsCfg, rates.length, rank, playerRates.length);
+        return { player_id: r.player_id, rate, games_sample: Number(r.games_sample), tier_key: tier.tier_key };
+      });
     for (let i = 0; i < classRows.length; i += 500) {
       const chunk = classRows.slice(i, i + 500);
       const cols = ["class_row_id","player_type","player_id","canonical_prop_key","line_value","selected_side","tier_key","metric_value","games_sample"];
