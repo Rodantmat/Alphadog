@@ -8444,6 +8444,21 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const popVariance = rates.reduce((a,b) => a + (b-popMean)*(b-popMean), 0) / rates.length;
     const popStddev = Math.sqrt(popVariance);
 
+    // Population-level prior_strength via Beta-Binomial method of moments (2026-08-08), grounded
+    // in established empirical Bayes practice (Efron-Morris shrinkage, the canonical baseball
+    // empirical-Bayes treatment): the sampling variance component (average binomial noise across
+    // real players, popMean*(1-popMean)/avg_n) is subtracted from the observed cross-player
+    // variance to isolate genuine between-player talent variance, then prior_strength is derived
+    // from the ratio of mean-variance to talent-variance - the standard M=alpha+beta estimator.
+    // This is a SINGLE, population-level constant for this specific prop+line+side, not a function
+    // of any individual player's own sample size - confirmed via research this is what makes
+    // shrinkage weight properly decay toward zero as an individual's real sample grows, rather than
+    // plateauing at a fixed floor regardless of how much real data accumulates past ~30 games.
+    const avgInverseN = playerRates.reduce((a, r) => a + 1 / Math.max(1, Number(r.games_sample)), 0) / playerRates.length;
+    const avgSamplingVariance = popMean * (1 - popMean) * avgInverseN;
+    const trueTalentVariance = Math.max(popVariance - avgSamplingVariance, popVariance * 0.05, 1e-6);
+    const empiricalPriorStrength = Math.max(2, Math.min(100, (popMean * (1 - popMean) / trueTalentVariance) - 1));
+
     // Pooled within-player dispersion from real per-game logs (not the blended snapshot rate),
     // weighted by games played, matching the documented intent of estimatePooledDispersionFromGameLogs.
     const rawFields = propConfig.numerator_fields.map(f => f.replace(/_sum$/, ""));
