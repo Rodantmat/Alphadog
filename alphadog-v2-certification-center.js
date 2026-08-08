@@ -2637,7 +2637,17 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 const GOBLIN_TIER_RATIOS_WITH_STANDARD = { 1: 0.833, 2: 0.700, 3: 0.633 };
 const GOBLIN_TIER_RATIOS_NO_STANDARD = { 1: 0.967, 2: 0.767, 3: 0.633 };
 const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation
-const DEMON_PER_LEG_RATIO = 1.9; // still the earlier research-based estimate; no demon test data yet
+const DEMON_PER_LEG_RATIO = 1.71; // Research-grounded conservative correction (2026-08-08) from
+// the earlier flat 1.9 "fair-odds-preserving" estimate. Deep research into the favorite-longshot
+// bias (decades-documented, peer-reviewed) and sportsbook alternate-line pricing (multiple
+// independent sources confirm margin widens with distance from the standard line, with a real
+// quantified anchor of ~47% more relative margin on riskier/less-liquid markets vs standard ones)
+// converges on demons - the structurally "longshot" side of this market - very likely carrying a
+// wider real margin than the prior naive estimate assumed. This is a conservative, directional
+// correction only, not a validated tier table - unlike Goblin's tier ratios (derived from the
+// user's real in-app tests), no real Demon test data exists yet, so no tier-specific structure is
+// applied here to avoid fabricating precision the evidence doesn't support. Real per-tier Demon
+// ratios need the same kind of real in-app validation Goblin received before going further.
 function goblinTierRatio(tierRank, hasStandardSibling) {
   const table = hasStandardSibling ? GOBLIN_TIER_RATIOS_WITH_STANDARD : GOBLIN_TIER_RATIOS_NO_STANDARD;
   if (table[tierRank] != null) return table[tierRank];
