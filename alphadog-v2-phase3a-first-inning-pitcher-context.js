@@ -8454,7 +8454,9 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     // of any individual player's own sample size - confirmed via research this is what makes
     // shrinkage weight properly decay toward zero as an individual's real sample grows, rather than
     // plateauing at a fixed floor regardless of how much real data accumulates past ~30 games.
-    const avgInverseN = playerRates.reduce((a, r) => a + 1 / Math.max(1, Number(r.games_sample)), 0) / playerRates.length;
+    const reliableForVarianceEstimate = playerRates.filter(r => Number(r.games_sample) >= 10);
+    const avgInverseN = (reliableForVarianceEstimate.length ? reliableForVarianceEstimate : playerRates)
+      .reduce((a, r) => a + 1 / Math.max(1, Number(r.games_sample)), 0) / Math.max(1, (reliableForVarianceEstimate.length || playerRates.length));
     const avgSamplingVariance = popMean * (1 - popMean) * avgInverseN;
     const trueTalentVariance = Math.max(popVariance - avgSamplingVariance, popVariance * 0.05, 1e-6);
     const empiricalPriorStrength = Math.max(2, Math.min(100, (popMean * (1 - popMean) / trueTalentVariance) - 1));
