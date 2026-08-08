@@ -11,7 +11,7 @@ function pgClient(env) {
   return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false });
 }
 function nowUtc() { return new Date().toISOString(); }
-function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`; }
 function safeString(value, max = MAX_OUTPUT_CHARS) {
   if (value === undefined || value === null) return null;
   const text = typeof value === "string" ? value : JSON.stringify(value);
