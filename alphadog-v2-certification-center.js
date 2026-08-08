@@ -2401,7 +2401,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
     // sorting always favors goblins over genuinely better-value picks.
     const withValue = rows.map(r => {
       const side = String(r.selected_side || "more").toLowerCase();
-      const ratio = side === "less" ? DEMON_PER_LEG_RATIO : goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling));
+      const ratio = side === "less" ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling));
       return { ...r, _effectiveValue: (Number(r.hit_probability_0_100 || 0) / 100) * ratio };
     });
     withValue.sort((a, b) => b._effectiveValue - a._effectiveValue);
