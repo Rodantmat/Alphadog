@@ -1507,7 +1507,7 @@ async function runFitPlattCalibration(env, input = {}) {
         && testPositiveEvents >= MIN_TEST_POSITIVE_EVENTS && betaCurveMonotonic;
       if (betaGenuinelyBest) {
         const betaRows = [];
-        for (const side of ["more", "less"]) {
+        for (const side of [fitSide]) {
           for (let bkt = 0; bkt < 10; bkt++) {
             const lo = bkt / 10, hi = (bkt + 1) / 10, mid = lo + 0.05;
             const predicted = predictBetaCalibration(mid, betaParams.a, betaParams.b, betaParams.c);
