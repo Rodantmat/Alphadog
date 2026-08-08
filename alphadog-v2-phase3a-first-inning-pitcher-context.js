@@ -1617,7 +1617,7 @@ async function runFitPlattCalibration(env, input = {}) {
                   line_bucket: "all_isotonic_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
                   empirical_rate: predicted, n_players: trainPairs.length, n_test_games: trainPairs.length,
                   correction_delta: predicted - mid, methodology: "isotonic_regression_post_rootfix_v1", selected_side: side,
-                  notes: `Isotonic regression (PAVA), non-parametric fallback after Platt failed honest out-of-sample validation (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)} with Platt, side-agnostic fit applied to both sides). Isotonic: test brier ${round(brierBeforeTest,4)}->${round(brierAfterIso,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterIso,4)}.`,
+                  notes: `Isotonic regression (PAVA), non-parametric fallback after Platt failed honest out-of-sample validation (test brier ${round(brierBeforeTest,4)}->${round(brierAfterTest,4)} with Platt, fit independently for the ${side} side only). Isotonic: test brier ${round(brierBeforeTest,4)}->${round(brierAfterIso,4)}, test ece ${round(eceBeforeTest,4)}->${round(eceAfterIso,4)}.`,
                 });
               }
             }
