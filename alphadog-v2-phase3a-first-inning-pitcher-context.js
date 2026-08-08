@@ -8465,13 +8465,6 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     // of any individual player's own sample size - confirmed via research this is what makes
     // shrinkage weight properly decay toward zero as an individual's real sample grows, rather than
     // plateauing at a fixed floor regardless of how much real data accumulates past ~30 games.
-    const reliableForVarianceEstimate = playerRates.filter(r => Number(r.games_sample) >= 10);
-    const avgInverseN = (reliableForVarianceEstimate.length ? reliableForVarianceEstimate : playerRates)
-      .reduce((a, r) => a + 1 / Math.max(1, Number(r.games_sample)), 0) / Math.max(1, (reliableForVarianceEstimate.length || playerRates.length));
-    const avgSamplingVariance = popMean * (1 - popMean) * avgInverseN;
-    const trueTalentVariance = Math.max(popVariance - avgSamplingVariance, popVariance * 0.05, 1e-6);
-    const empiricalPriorStrength = Math.max(2, Math.min(100, (popMean * (1 - popMean) / trueTalentVariance) - 1));
-
     // Pooled within-player dispersion from real per-game logs (not the blended snapshot rate),
     // weighted by games played, matching the documented intent of estimatePooledDispersionFromGameLogs.
     const rawFields = propConfig.numerator_fields.map(f => f.replace(/_sum$/, ""));
@@ -8479,6 +8472,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       ? rawFields.map((f, i) => `COALESCE(${f},0)*${Number(propConfig.weights[propConfig.numerator_fields[i]] || 1)}`).join("+")
       : rawFields.map(f => `COALESCE(${f},0)`).join("+");
     let dispersion = Infinity;
+    let pooledWithinPlayerVariance = null;
     try {
       const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
       let sumGames=0, sumMeanW=0, sumVarW=0;
@@ -8490,8 +8484,39 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       if (sumGames > 0) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
         dispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
+        pooledWithinPlayerVariance = pooledVar;
       }
     } catch (err) { dispersion = Infinity; }
+
+    // Population-level prior_strength via method of moments (2026-08-08), grounded in established
+    // empirical Bayes practice (Efron-Morris shrinkage, the canonical baseball empirical-Bayes
+    // treatment). Properly branched by distribution type - confirmed live this matters: applying
+    // the Beta-Binomial formula (popMean*(1-popMean)) to count-based props like pitcher_strikeouts
+    // (popMean=2.196, not a 0-1 rate) produces a mathematically negative, nonsensical result that
+    // only avoided visibly breaking because a floor clamp happened to catch it. Rate/binary props
+    // use the standard Beta-Binomial M=alpha+beta estimator; count-based (normal model) props use
+    // the analogous estimator with real within-player variance (from the dispersion computation
+    // just above) standing in for the binomial sampling-variance term. Both are single, population-
+    // level constants for this specific prop+line+side, not a function of any individual player's
+    // own sample size - this is what makes shrinkage weight properly decay toward zero as an
+    // individual's real sample grows, rather than plateauing at a fixed floor regardless of how
+    // much real data accumulates past ~30 games.
+    const usesNormalModelForPriorStrength = propCanGoNegativePg(propConfig);
+    const reliableForVarianceEstimate = playerRates.filter(r => Number(r.games_sample) >= 10);
+    const avgN = (reliableForVarianceEstimate.length ? reliableForVarianceEstimate : playerRates)
+      .reduce((a, r) => a + Number(r.games_sample), 0) / Math.max(1, (reliableForVarianceEstimate.length || playerRates.length));
+    let empiricalPriorStrength;
+    if (usesNormalModelForPriorStrength && pooledWithinPlayerVariance != null && pooledWithinPlayerVariance > 0) {
+      const avgSamplingVarianceNormal = pooledWithinPlayerVariance / Math.max(1, avgN);
+      const trueTalentVarianceNormal = Math.max(popVariance - avgSamplingVarianceNormal, popVariance * 0.05, 1e-6);
+      empiricalPriorStrength = Math.max(2, Math.min(100, pooledWithinPlayerVariance / trueTalentVarianceNormal));
+    } else {
+      const avgInverseN = (reliableForVarianceEstimate.length ? reliableForVarianceEstimate : playerRates)
+        .reduce((a, r) => a + 1 / Math.max(1, Number(r.games_sample)), 0) / Math.max(1, (reliableForVarianceEstimate.length || playerRates.length));
+      const avgSamplingVariance = popMean * (1 - popMean) * avgInverseN;
+      const trueTalentVariance = Math.max(popVariance - avgSamplingVariance, popVariance * 0.05, 1e-6);
+      empiricalPriorStrength = Math.max(2, Math.min(100, (popMean * (1 - popMean) / trueTalentVariance) - 1));
+    }
 
     const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
     await sql`
