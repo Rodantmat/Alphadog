@@ -3551,6 +3551,18 @@ function notesLines(notes){return String(notes||'').split(/(?<=[.!])\s+/).filter
 function renderGenerated(){const el=$('generatedSlips');if(!lastGeneratedSlips.length){el.innerHTML='<div class="empty">No valid slips generated. Check same-team/source constraints.</div>';return}el.innerHTML='<h3>Custom Slips</h3>'+lastGeneratedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('')}
 async function generateSlips(){const ids=[...selectedLegIds];$('generatedSlips').innerHTML='<div class="empty">Generating...</div>';const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids,structures:customStructures})})).json();if(!j.ok){$('generatedSlips').innerHTML='<div class="empty err">Generate failed: '+esc(j.error||'unknown')+'</div>';return}lastGeneratedSlips=j.generated_slips||[];renderGenerated()}
 let lastAutoCreatedSlips=[];
+let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
+function slipCardHtml(s){return '<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>'}
+function activeSourceFilters(){const m={sleeper:$('filterSleeper'),prizepicks:$('filterPrizepicks'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+function applySlipSourceFilter(){
+  const results=$('autoCreateResults');if(!results)return;
+  if(!lastRawSlips.length){return}
+  const active=activeSourceFilters();
+  const filtered=lastRawSlips.filter(s=>active.has(String(s.source_key||'').toLowerCase()));
+  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
+  results.innerHTML=lastSlipsNoteHtml+'<h3>'+esc(lastSlipsHeading)+'</h3>'+filtered.map(slipCardHtml).join('');
+}
+function bindSlipSourceFilters(){const ids=['filterSleeper','filterPrizepicks','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
 async function autoCreateSlips(){
   const btn=$('autoCreateSlipsBtn');const results=$('autoCreateResults');
   if(btn)btn.disabled=true;
@@ -3560,14 +3572,15 @@ async function autoCreateSlips(){
     if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
     lastAutoCreatedSlips=j.generated_slips||[];
     const missingApps=(j.apps_with_no_qualifying_legs||[]).join(', ');
-    if(!lastAutoCreatedSlips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying legs right now.')+(missingApps?' No legs found for: '+esc(missingApps)+'.':'')+'</div>';return}
+    if(!lastAutoCreatedSlips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying legs right now.')+(missingApps?' No legs found for: '+esc(missingApps)+'.':'')+'</div>';return}
     const counts=j.source_counts||{};
     const countsLine=Object.keys(counts).map(k=>k.toUpperCase()+': '+counts[k]).join(' • ');
-    results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs ('+esc(countsLine)+') → built '+lastAutoCreatedSlips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>'
-      +'<h3>Auto-Created Slips</h3>'+lastAutoCreatedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
+    lastRawSlips=lastAutoCreatedSlips;lastSlipsHeading='Auto-Created Slips';
+    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs ('+esc(countsLine)+') → built '+lastAutoCreatedSlips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>';
+    applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
-function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips;const g=$('goblinSlipsBtn');if(g)g.onclick=goblinSlips;const d=$('demonSlipsBtn');if(d)d.onclick=demonSlips}
+function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips;const g=$('goblinSlipsBtn');if(g)g.onclick=goblinSlips;const d=$('demonSlipsBtn');if(d)d.onclick=demonSlips;bindSlipSourceFilters()}
 async function goblinSlips(){
   const btn=$('goblinSlipsBtn');const results=$('autoCreateResults');
   if(btn)btn.disabled=true;
@@ -3576,9 +3589,10 @@ async function goblinSlips(){
     const j=await (await fetch('/api/slips/goblin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
     if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
     const slips=j.generated_slips||[];
-    if(!slips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Goblin legs right now.')+'</div>';return}
-    results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Goblin legs.</div>'
-      +'<h3>Goblin Slip</h3>'+slips.map(s=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
+    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Goblin legs right now.')+'</div>';return}
+    lastRawSlips=slips;lastSlipsHeading='Goblin Slip';
+    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Goblin legs.</div>';
+    applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
 async function demonSlips(){
@@ -3589,9 +3603,10 @@ async function demonSlips(){
     const j=await (await fetch('/api/slips/demon',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
     if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
     const slips=j.generated_slips||[];
-    if(!slips.length){results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Demon legs right now.')+'</div>';return}
-    results.innerHTML='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Demon legs.</div>'
-      +'<h3>Demon Slip</h3>'+slips.map(s=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');
+    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Demon legs right now.')+'</div>';return}
+    lastRawSlips=slips;lastSlipsHeading='Demon Slip';
+    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Demon legs.</div>';
+    applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
 function openPlayerProfile(){setScreen('playerProfile');$('playerProfileBody').innerHTML='<div class="empty">Type at least 3 letters.</div>';$('playerSearch').focus()}
