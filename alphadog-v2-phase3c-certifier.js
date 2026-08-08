@@ -377,11 +377,22 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     // specifically (the side the elevated/lowered threshold or payout actually applies to), and
     // was incorrectly carrying straight through to 'less' whenever 'less' got selected as the
     // side. This corrects it to be side-aware for this specific, confirmed prop.
+    // GENERAL SIDE-AWARE GOBLIN/DEMON RULE (2026-08-07), confirmed via real, direct platform
+    // experience across many props (home_runs, hits, walks, hits_allowed, walks_allowed, stolen_bases,
+    // etc.), not a per-prop patch: PrizePicks' raw odds_type/is_goblin/is_demon flag describes the
+    // difficulty of the 'more' side specifically - that's structurally the side the elevated
+    // (demon) or lowered (goblin) threshold/payout actually applies to. When our system selects
+    // 'less' instead of 'more' for that same projection, the badge must flip, not carry straight
+    // through: if 'more' was made harder (demon), 'less' is structurally the easy, favorable side
+    // (goblin) as its complement - and vice versa for goblin. Confirmed live: dozens of home_runs/
+    // hits/walks/walks_allowed 'less' legs were showing demon when they were structurally goblin
+    // by this exact mechanism, across many different players and props, not one prop in isolation.
     let isGoblin = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1;
     let isDemon = Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
-    if (String(er.canonical_prop_key) === "home_runs" && side === "less" && isDemon) {
-      isDemon = false;
-      isGoblin = true;
+    if (side === "less" && (isGoblin || isDemon)) {
+      const wasDemon = isDemon;
+      isDemon = isGoblin;
+      isGoblin = wasDemon;
     }
     const moreOnly = Number(matrixRow.more_only ?? 0) === 1 || (payload?.side_context?.side_mode === "more_only");
     const sideMode = moreOnly ? "more_only" : (payload?.side_context?.side_mode || null);
