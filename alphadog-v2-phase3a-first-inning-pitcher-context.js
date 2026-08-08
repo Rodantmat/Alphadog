@@ -1516,7 +1516,7 @@ async function runFitPlattCalibration(env, input = {}) {
               line_bucket: "all_beta_v1", raw_p_bin_low: lo, raw_p_bin_high: hi, raw_p_bin_mid: mid,
               empirical_rate: predicted, n_players: trainPairs.length, n_test_games: testPairs.length,
               correction_delta: predicted - mid, methodology: "beta_calibration_post_rootfix_v1", selected_side: side,
-              notes: `Beta calibration (a=${round(betaParams.a,4)}, b=${round(betaParams.b,4)}, c=${round(betaParams.c,4)}), used because it genuinely beat both the raw baseline and Platt (A=${round(A,4)}) on held-out data (test brier ${round(brierBeforeTestBeta,4)}->${round(brierAfterBeta,4)} vs Platt's ${round(brierPlattPreview,4)}, test ece ${round(eceBeforeTestBeta,4)}->${round(eceAfterBeta,4)}). Side-agnostic fit applied to both sides.`,
+              notes: `Beta calibration (a=${round(betaParams.a,4)}, b=${round(betaParams.b,4)}, c=${round(betaParams.c,4)}), used because it genuinely beat both the raw baseline and Platt (A=${round(A,4)}) on held-out data (test brier ${round(brierBeforeTestBeta,4)}->${round(brierAfterBeta,4)} vs Platt's ${round(brierPlattPreview,4)}, test ece ${round(eceBeforeTestBeta,4)}->${round(eceAfterBeta,4)}). Fit independently for the ${side} side only.`,
             });
           }
         }
