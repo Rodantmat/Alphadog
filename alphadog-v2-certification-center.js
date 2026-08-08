@@ -2693,7 +2693,8 @@ function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTarget
   const actsLikeGoblin = (Number(leg.is_goblin) === 1 && side === "more") || (Number(leg.is_demon) === 1 && side === "less");
   const actsLikeDemon = (Number(leg.is_demon) === 1 && side === "more") || (Number(leg.is_goblin) === 1 && side === "less");
   if (actsLikeGoblin) {
-    const ratio = goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
+    const wasFlippedFromDemon = String(leg.selected_side || "more").toLowerCase() === "less" && Number(leg.is_goblin) === 1;
+    const ratio = wasFlippedFromDemon ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
     return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
   }
   if (actsLikeDemon) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
