@@ -1554,7 +1554,7 @@ async function runFitPlattCalibration(env, input = {}) {
           const isoGenuinelyImprovedFlat = brierAfterIsoFlat < brierBeforeTestFlat && eceAfterIsoFlat < eceBeforeTestFlat;
           if (isoGenuinelyImprovedFlat) {
             const isoRowsFlat = [];
-            for (const side of ["more", "less"]) {
+            for (const side of [fitSide]) {
               for (let b = 0; b < 10; b++) {
                 const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
                 const predicted = predictIsoFlat(mid);
