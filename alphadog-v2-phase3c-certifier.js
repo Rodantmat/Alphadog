@@ -131,8 +131,8 @@ const RESIDUAL_CORRECTION_MAP = {
     { lo: 70, hi: 101, delta: -12.9 }
   ],
   "walks|less": [
-    { lo: 80, hi: 90, delta: -8.5 },
-    { lo: 90, hi: 101, delta: -17.2 }
+    { lo: 80, hi: 90, delta: -12.7 },
+    { lo: 90, hi: 101, delta: -19.0 }
   ],
   "total_bases|less": [
     { lo: 80, hi: 90, delta: -24.4 },
