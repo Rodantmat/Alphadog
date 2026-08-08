@@ -1647,7 +1647,7 @@ async function runFitPlattCalibration(env, input = {}) {
         // the isotonic fallback path did this conversion, so a genuinely-validated Platt fit could
         // sit correctly in platt_calibration_map forever without ever affecting a real prediction.
         const plattBinRows = [];
-        for (const side of ["more", "less"]) {
+        for (const side of [fitSide]) {
           for (let b = 0; b < 10; b++) {
             const lo = b / 10, hi = (b + 1) / 10, mid = lo + 0.05;
             const predicted = sigmoid(A * logit(mid) + B);
