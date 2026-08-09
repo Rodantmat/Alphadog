@@ -2610,7 +2610,12 @@ const APP_PAYOUT_TABLES = {
 };
 const RESEARCH_MAX_SLIP_SIZE = 3;
 const RESEARCH_MIN_SLIP_SIZE = 2;
-const RESEARCH_MIN_CONFIDENCE = 65;
+const RESEARCH_MIN_CONFIDENCE = 88; // Real full-hit-rate floor (2026-08-09), not an EV-clearing floor.
+// Grounded in verified math (Bet-Analytix and others: two 70%-probability legs combine to only 49%,
+// not a coin-flip-beating number) and confirmed directly against real placed slips from a bad day -
+// every traced leg was 60-84% predicted, nowhere near reliable. Per-leg floor derived from
+// target_combined_probability^(1/n): 0.88^2 = 77.4% for a 2-pick, a genuinely reliable full-hit
+// floor rather than the old ~60.7% breakeven-clearing threshold that let mediocre legs through.
 const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, not just clearing it
 
 // Per-leg multiplier adjustment for goblin/demon (PrizePicks) and dynamic pricing (Sleeper).
