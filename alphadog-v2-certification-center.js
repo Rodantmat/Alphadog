@@ -3251,7 +3251,7 @@ window.onunhandledrejection = function(e) {
 </script>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.20 - Slip Filters + Player Profile</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.21 - Slip Save + Player Profile</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuSlips">Slips</button><button id="menuPlayerProfile">Player Profile</button><button id="menuHealth">Health</button><button id="menuCalibration">Calibration</button></div></div>
   </header>
   <section id="boardScreen">
