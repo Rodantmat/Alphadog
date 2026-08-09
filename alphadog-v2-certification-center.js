@@ -2610,9 +2610,9 @@ const APP_PAYOUT_TABLES = {
 };
 const RESEARCH_MAX_SLIP_SIZE = 3;
 const RESEARCH_MIN_SLIP_SIZE = 2;
-const RESEARCH_TARGET_COMBINED_HIT_PCT = 80; // Explicit combined full-hit target (2026-08-09, per
-// direct user direction). Enforced directly against hit_all_probability_0_100 in the acceptance
-// check, not just an emergent side-effect of the per-leg RESEARCH_MIN_CONFIDENCE filter.
+// (Combined full-hit target is now derived dynamically per slip size from RESEARCH_MIN_CONFIDENCE,
+// see the acceptance check below - not a fixed constant, so it can never silently contradict the
+// per-leg floor if either is tuned independently in the future.)
 const RESEARCH_MIN_CONFIDENCE = 80; // Per-leg full-hit-rate floor (2026-08-09, lowered from 90 per
 // direct user direction after the 90% floor returned zero qualifying legs). Combined target below
 // is derived FROM this floor, not set independently, so the two can never silently contradict each
