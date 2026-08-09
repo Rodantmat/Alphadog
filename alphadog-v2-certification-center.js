@@ -2610,6 +2610,9 @@ const APP_PAYOUT_TABLES = {
 };
 const RESEARCH_MAX_SLIP_SIZE = 3;
 const RESEARCH_MIN_SLIP_SIZE = 2;
+const RESEARCH_TARGET_COMBINED_HIT_PCT = 80; // Explicit combined full-hit target (2026-08-09, per
+// direct user direction). Enforced directly against hit_all_probability_0_100 in the acceptance
+// check, not just an emergent side-effect of the per-leg RESEARCH_MIN_CONFIDENCE filter.
 const RESEARCH_MIN_CONFIDENCE = 90; // Real full-hit-rate floor (2026-08-09, raised from 88 per direct
 // user feedback that a 75% combined target was still too low - moved to an 80% combined target).
 // Grounded in verified math (Bet-Analytix and others: two 70%-probability legs combine to only 49%,
