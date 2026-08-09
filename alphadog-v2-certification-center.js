@@ -2830,7 +2830,8 @@ function buildResearchGroundedSlips(legsBySource) {
           if (breakeven == null) continue;
           const r = researchSlipEvAdjusted(sliceLegs, sliceProbs, mode, table, source, breakeven);
           const avgProbPct = (sliceProbs.reduce((a, b) => a + b, 0) / size) * 100;
-          if (avgProbPct >= breakeven + RESEARCH_BREAKEVEN_MARGIN_PTS && r.ev > 0) {
+          const meetsFullHitTarget = (r.hit_all_probability_0_100 != null) && r.hit_all_probability_0_100 >= RESEARCH_TARGET_COMBINED_HIT_PCT;
+          if (meetsFullHitTarget && avgProbPct >= breakeven + RESEARCH_BREAKEVEN_MARGIN_PTS && r.ev > 0) {
             chosen = { size, mode, breakeven, ...r };
             break;
           }
