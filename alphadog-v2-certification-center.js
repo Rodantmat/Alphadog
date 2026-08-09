@@ -2320,7 +2320,7 @@ async function autoSelectBestLegs(env, options) {
       FROM ladder l
       LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = l.prepared_row_id
       WHERE l.board_tier = 'PRIMARY'
-        AND l.confidence_0_100 >= ${minConfidence}
+        AND l.estimated_hit_probability_0_100 >= ${minConfidence}
         AND l.official_game_time_utc IS NOT NULL
         AND l.official_game_time_utc::timestamptz > now()
       ORDER BY l.score_0_100 DESC NULLS LAST, l.confidence_0_100 DESC NULLS LAST
