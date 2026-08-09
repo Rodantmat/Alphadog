@@ -3572,7 +3572,18 @@ function renderGenerated(){const el=$('generatedSlips');if(!lastGeneratedSlips.l
 async function generateSlips(){const ids=[...selectedLegIds];$('generatedSlips').innerHTML='<div class="empty">Generating...</div>';const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids,structures:customStructures})})).json();if(!j.ok){$('generatedSlips').innerHTML='<div class="empty err">Generate failed: '+esc(j.error||'unknown')+'</div>';return}lastGeneratedSlips=j.generated_slips||[];renderGenerated()}
 let lastAutoCreatedSlips=[];
 let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
-function slipCardHtml(s){return '<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>'}
+function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>'}
+async function saveSelectedSlips(){
+  const boxes=document.querySelectorAll('.slipSelectBox:checked');
+  if(!boxes.length){alert('Check at least one slip to save.');return}
+  const selected=Array.from(boxes).map(b=>lastRawSlips[Number(b.dataset.slipIdx)]).filter(Boolean);
+  const btn=$('saveSelectedSlipsBtn');if(btn){btn.disabled=true;btn.textContent='Saving...'}
+  try{
+    const j=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slips:selected,selected_leg_count:selected.reduce((a,s)=>a+(s.legs||[]).length,0),saved_by:'main_ui'})})).json();
+    if(!j.ok){alert('Save failed: '+(j.error||'unknown'));return}
+    alert('Saved '+(j.saved||[]).length+' slip(s).');
+  }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
+}
 function activeSourceFilters(){const m={sleeper:$('filterSleeper'),prizepicks:$('filterPrizepicks'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
