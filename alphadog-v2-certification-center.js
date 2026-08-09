@@ -3589,9 +3589,10 @@ function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   if(!lastRawSlips.length){return}
   const active=activeSourceFilters();
-  const filtered=lastRawSlips.filter(s=>active.has(String(s.source_key||'').toLowerCase()));
+  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>active.has(String(x.s.source_key||'').toLowerCase()));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
-  results.innerHTML=lastSlipsNoteHtml+'<h3>'+esc(lastSlipsHeading)+'</h3>'+filtered.map(slipCardHtml).join('');
+  results.innerHTML=lastSlipsNoteHtml+'<h3>'+esc(lastSlipsHeading)+'</h3>'+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
 function bindSlipSourceFilters(){const ids=['filterSleeper','filterPrizepicks','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
 async function autoCreateSlips(){
