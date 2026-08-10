@@ -2476,7 +2476,8 @@ async function apiGoblinSlips(env, request) {
 // worth taking - not finding the safest unrelated side of a Demon-tagged row.
 const DEMON_SLIP_MAX_SIZE = 6;
 const DEMON_SLIP_MIN_SIZE = 2;
-const DEMON_SLIP_MIN_CONFIDENCE = 55;
+const DEMON_SLIP_MIN_CONFIDENCE = 80; // Raised 2026-08-09 per direct user direction: only the
+// highest hit-probability demons, matching the Goblin slip standard.
 async function autoSelectDemonSlipLegs(env, options = {}) {
   const maxPerGame = Number(options.max_per_game || 2);
   const pg = pgClient(env);
