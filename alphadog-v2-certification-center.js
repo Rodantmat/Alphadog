@@ -2725,7 +2725,7 @@ function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTarget
     const ratio = wasFlippedFromDemon ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
     return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
   }
-  if (actsLikeDemon) return { multiplier: standardPerLegMultiplier * DEMON_PER_LEG_RATIO, adjusted: true, ratio: DEMON_PER_LEG_RATIO };
+  if (actsLikeDemon) { const dRatio = demonRatioForHp(leg.hit_probability_0_100); return { multiplier: standardPerLegMultiplier * dRatio, adjusted: true, ratio: dRatio }; }
   return { multiplier: standardPerLegMultiplier, adjusted: false };
 }
 
