@@ -11839,7 +11839,13 @@ async function runClassificationV6Tick(env, input = {}) {
   const chunkSize = Array.isArray(input.player_ids_override) ? allPlayerIds.length : Math.max(10, Number(opLimits.chunk_size_rows || 40));
   const slice = allPlayerIds.slice(cursor, cursor + chunkSize);
 
-  const snapshots = await loadAllMetricSnapshots(env, entity, slice);
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  let snapshots;
+  try {
+    snapshots = await loadAllMetricSnapshotsPg(sql, entity, slice);
+  } finally {
+    try { await sql.end({ timeout: 1 }); } catch (_) {}
+  }
   const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
 
   const perPlayer = [];
