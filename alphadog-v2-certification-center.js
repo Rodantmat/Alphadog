@@ -2666,7 +2666,28 @@ const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservativ
 // value (not a tier table) since only one real data point exists so far - unlike true Goblin,
 // which had multiple validated tier positions to derive a table from.
 const FLIPPED_FROM_DEMON_RATIO = 0.632;
-const DEMON_PER_LEG_RATIO = 1.71; // Research-grounded conservative correction (2026-08-08) from
+const DEMON_HP_RATIO_ANCHORS = [
+  { hp: 69, ratio: 1.15 }, // common props (walks/runs/total_bases), n=4 clean pairs
+  { hp: 44, ratio: 1.91 }, // uncommon/rare-event props (HR/doubles), n=3 clean pairs
+  { hp: 16, ratio: 4.31 }  // very rare props (triples), n=3 clean pairs
+];
+function demonRatioForHp(hpPct) {
+  const hp = Number(hpPct);
+  if (!Number.isFinite(hp)) return DEMON_HP_RATIO_ANCHORS[0].ratio;
+  const anchors = DEMON_HP_RATIO_ANCHORS; // sorted hp descending
+  if (hp >= anchors[0].hp) return anchors[0].ratio;
+  if (hp <= anchors[anchors.length - 1].hp) return anchors[anchors.length - 1].ratio;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const a = anchors[i], b = anchors[i + 1];
+    if (hp <= a.hp && hp >= b.hp) {
+      const t = (a.hp - hp) / (a.hp - b.hp);
+      return a.ratio + t * (b.ratio - a.ratio);
+    }
+  }
+  return anchors[0].ratio;
+}
+const DEMON_PER_LEG_RATIO = 1.71; // DEPRECATED 2026-08-10, kept only as a fallback default for any
+// call site missing an hp value - real usage now goes through demonRatioForHp(hp). See above.
 // the earlier flat 1.9 "fair-odds-preserving" estimate. Deep research into the favorite-longshot
 // bias (decades-documented, peer-reviewed) and sportsbook alternate-line pricing (multiple
 // independent sources confirm margin widens with distance from the standard line, with a real
