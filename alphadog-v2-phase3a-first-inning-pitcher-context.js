@@ -1745,6 +1745,70 @@ async function runCalibrationCoverageGapCheck(env, input = {}) {
     try { await sql.end({ timeout: 1 }); } catch (_) {}
   }
 }
+// Role/context discontinuity detection (2026-08-10), added per direct user request after tracing
+// Blade Tidwell's case: a pitcher whose baseline blends 8 short relief outings (April, mostly 1-3
+// IP) with 1 recent start (5 IP, August, after a 3+ month gap) while now confirmed as today's
+// actual starter - the baseline has no way to know the role changed, silently averaging
+// incompatible contexts together. PURELY DIAGNOSTIC: never adjusts predictions or excludes legs,
+// only surfaces two real, grounded flags for human/board review, same safe pattern as the
+// calibration coverage-gap check.
+async function runRoleDiscontinuityCheck(env, input = {}) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+  try {
+    const ipShiftThreshold = Number(input.ip_shift_threshold || 2.0); // IP difference to flag a role shift
+    const staleGapDays = Number(input.stale_gap_days || 21); // gap between most recent 2 outings to flag staleness
+    const lookbackGames = Math.max(3, Number(input.lookback_games || 10));
+    const rows = await sql`
+      WITH ranked AS (
+        SELECT player_id, game_date, innings_pitched_decimal,
+          ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn
+        FROM stats_pitcher.game_logs
+        WHERE game_date >= (now() - interval '1 year')
+      ),
+      recent AS (
+        SELECT player_id, game_date, innings_pitched_decimal, rn FROM ranked WHERE rn <= ${lookbackGames}
+      )
+      SELECT player_id,
+        MAX(CASE WHEN rn = 1 THEN innings_pitched_decimal END) as most_recent_ip,
+        MAX(CASE WHEN rn = 1 THEN game_date END) as most_recent_date,
+        MAX(CASE WHEN rn = 2 THEN game_date END) as second_most_recent_date,
+        AVG(CASE WHEN rn BETWEEN 2 AND ${lookbackGames} THEN innings_pitched_decimal END) as prior_avg_ip,
+        COUNT(*) FILTER (WHERE rn BETWEEN 2 AND ${lookbackGames}) as prior_sample_n
+      FROM recent GROUP BY player_id HAVING COUNT(*) >= 2
+    `;
+    const findings = [];
+    for (const r of rows) {
+      const mostRecentIp = Number(r.most_recent_ip);
+      const priorAvgIp = Number(r.prior_avg_ip);
+      if (!Number.isFinite(mostRecentIp) || !Number.isFinite(priorAvgIp)) continue;
+      const ipShift = mostRecentIp - priorAvgIp;
+      const gapDays = r.most_recent_date && r.second_most_recent_date
+        ? Math.round((new Date(r.most_recent_date) - new Date(r.second_most_recent_date)) / 86400000) : null;
+      const roleShiftFlag = Math.abs(ipShift) >= ipShiftThreshold;
+      const staleGapFlag = gapDays != null && gapDays >= staleGapDays;
+      if (roleShiftFlag || staleGapFlag) {
+        findings.push({
+          player_id: r.player_id, most_recent_ip: mostRecentIp, prior_avg_ip: Math.round(priorAvgIp * 100) / 100,
+          ip_shift: Math.round(ipShift * 100) / 100, prior_sample_n: Number(r.prior_sample_n),
+          gap_days_since_prior_outing: gapDays, role_shift_flag: roleShiftFlag, stale_gap_flag: staleGapFlag,
+          note: roleShiftFlag && staleGapFlag
+            ? "Both a sharp IP shift AND a large time gap - the baseline sample very likely mixes an old role/context with the current one. Treat any prediction for this player with extra caution regardless of displayed confidence."
+            : roleShiftFlag
+            ? "Recent outing length differs sharply from this player's own longer-window average - possible role change (reliever<->starter) not yet reflected in a role-aware way."
+            : "Large gap since the prior outing - much of the baseline sample may reflect a different season context (injury, minors, role change) than the player's current situation."
+        });
+      }
+    }
+    return {
+      ok: true, mode: "role_discontinuity_check", diagnostic_only: true,
+      note: "READ-ONLY diagnostic. Never adjusts predictions or excludes legs - surfaces role/context discontinuity flags for human review only.",
+      ip_shift_threshold: ipShiftThreshold, stale_gap_days: staleGapDays, lookback_games: lookbackGames,
+      players_checked: rows.length, findings_count: findings.length, findings: findings.sort((a, b) => Math.abs(b.ip_shift) - Math.abs(a.ip_shift))
+    };
+  } finally {
+    try { await sql.end({ timeout: 1 }); } catch (_) {}
+  }
+}
 async function runCalibrationReport(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
   try {
