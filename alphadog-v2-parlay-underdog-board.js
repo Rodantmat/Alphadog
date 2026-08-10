@@ -452,7 +452,7 @@ function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue) {
     ? "first_inning_hits_allowed"
     : (UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null);
   const canonical = (sourceKey === "player_runs" && isPitcher && Number(lineValue) !== 0.5) ? "runs_allowed"
-    : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score"
+    : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score_ud"
     : rawCanonical;
   if (!canonical) {
     return { ok: false, canonical_prop_key: null, status: "unmapped_source_stat_name", reason: "no_source_proven_mapping_for_market_key" };
