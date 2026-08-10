@@ -2321,7 +2321,6 @@ async function autoSelectBestLegs(env, options) {
       LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = l.prepared_row_id
       WHERE l.board_tier = 'PRIMARY'
         AND l.estimated_hit_probability_0_100 >= ${minConfidence}
-        AND NOT (l.source_key = 'parlay_underdog' AND l.canonical_prop_key = 'pitcher_fantasy_score')
         AND l.official_game_time_utc IS NOT NULL
         AND l.official_game_time_utc::timestamptz > now()
       ORDER BY l.score_0_100 DESC NULLS LAST, l.confidence_0_100 DESC NULLS LAST
