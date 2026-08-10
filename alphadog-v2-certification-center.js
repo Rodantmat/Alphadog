@@ -2643,6 +2643,16 @@ const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, n
 // OWN ladder has no standard line at all (only goblin/demon variants exist for that prop). Delta
 // vs the has-standard-sibling table is clean and consistent: tier1 +0.133, tier2 +0.067, tier3
 // +0.000 - closest-to-standard tier is unaffected, easier tiers get progressively more boost.
+// GOBLIN_FLAT_RATIO (2026-08-10): replaces the old tier table after exhaustive, grounded validation -
+// see control.goblin_demon_multiplier_study for the full 44-slip test log. Confirmed via 10+ clean
+// 2-pick real data points across 6 prop types (hits, hits_allowed, pitcher_strikeouts, walks,
+// walks_allowed, hits_runs_rbis) spanning hp 62-89%: goblin ratio does NOT vary meaningfully by
+// tier/prop/probability the way demons do. Real cluster: 0.6325-0.8367, mean=0.7366. Validated by
+// slip-size scaling too (3-pick power r=0.726, 4-pick power r=0.755 - consistent with the 2-pick
+// mean, confirming the multiplicative per-leg model holds across sizes). One anomaly remains
+// unresolved (a with-standard demon pairing showed a discount instead of boost, could not be
+// replicated in isolation testing) - flagged in the study log, does not affect this goblin fix.
+const GOBLIN_FLAT_RATIO = 0.7366;
 const GOBLIN_TIER_RATIOS_WITH_STANDARD = { 1: 0.833, 2: 0.700, 3: 0.633 };
 const GOBLIN_TIER_RATIOS_NO_STANDARD = { 1: 0.967, 2: 0.767, 3: 0.633 };
 const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation
