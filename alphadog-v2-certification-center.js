@@ -2678,9 +2678,7 @@ const DEMON_PER_LEG_RATIO = 1.71; // Research-grounded conservative correction (
 // applied here to avoid fabricating precision the evidence doesn't support. Real per-tier Demon
 // ratios need the same kind of real in-app validation Goblin received before going further.
 function goblinTierRatio(tierRank, hasStandardSibling) {
-  const table = hasStandardSibling ? GOBLIN_TIER_RATIOS_WITH_STANDARD : GOBLIN_TIER_RATIOS_NO_STANDARD;
-  if (table[tierRank] != null) return table[tierRank];
-  return GOBLIN_TIER_RATIO_FLOOR;
+  return GOBLIN_FLAT_RATIO;
 }
 function americanOddsToDecimalMultiplier(americanOdds) {
   const o = Number(americanOdds);
