@@ -8673,17 +8673,23 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
           // genuinely-representative sample then receives correct shrinkage via the existing,
           // unmultiplied prior_strength - standard empirical-Bayes behavior for thin samples.
           const caseStmts = flaggedIds.map(id => `WHEN player_id=${id} THEN ${flaggedMap.get(id)}`).join(" ");
+          // rfi_nrfi's raw data lives in context.first_inning_pitcher (joined to game_logs only
+          // in-memory during mining, never persisted) - confirmed live this silently broke the
+          // generic exprRaw path for this one prop. Branch to the correct source table for it.
+          const rawValueExpr = propKey === "rfi_nrfi"
+            ? `(SELECT fip.rfi_sl_more_hit::float FROM context.first_inning_pitcher fip WHERE fip.pitcher_id = gl.player_id AND fip.game_pk = gl.game_pk LIMIT 1)`
+            : `(${exprRaw})`;
           const freshRows = await sql.unsafe(`
             WITH anchored AS (
-              SELECT player_id, game_date, (${exprRaw})::float as raw_value,
-                CASE ${caseStmts} END as anchor_ip, innings_pitched_decimal,
-                ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn
-              FROM ${gameLogTable} WHERE season=${season} AND player_id IN (${flaggedIds.join(",")})
+              SELECT gl.player_id, gl.game_date, ${rawValueExpr}::float as raw_value,
+                CASE ${caseStmts} END as anchor_ip, gl.innings_pitched_decimal,
+                ROW_NUMBER() OVER (PARTITION BY gl.player_id ORDER BY gl.game_date DESC) as rn
+              FROM ${gameLogTable} gl WHERE gl.season=${season} AND gl.player_id IN (${flaggedIds.join(",")})
             ),
             role_consistent AS (
               SELECT player_id, game_date, raw_value,
                 ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn2
-              FROM anchored WHERE ABS(innings_pitched_decimal - anchor_ip) <= 2
+              FROM anchored WHERE ABS(innings_pitched_decimal - anchor_ip) <= 2 AND raw_value IS NOT NULL
             )
             SELECT player_id, COUNT(*) as n, AVG(raw_value) as fresh_rate
             FROM role_consistent WHERE rn2 <= 8 GROUP BY player_id
