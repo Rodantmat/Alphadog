@@ -8668,6 +8668,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         }
       } catch (err) { /* fail-safe: if this check errors, no players get flagged - never blocks baseline computation */ }
     }
+    const usesNormalModelForPriorStrength = !(popMean >= 0 && popMean <= 1);
     const reliableForVarianceEstimate = playerRates.filter(r => Number(r.games_sample) >= 10);
     const avgN = (reliableForVarianceEstimate.length ? reliableForVarianceEstimate : playerRates)
       .reduce((a, r) => a + Number(r.games_sample), 0) / Math.max(1, (reliableForVarianceEstimate.length || playerRates.length));
