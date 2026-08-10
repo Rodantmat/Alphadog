@@ -8638,7 +8638,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     // contextually-irrelevant games into even the shortest window - the exact "blending across a
     // changepoint" failure the research identifies. Only applies to pitchers (where the signal is
     // grounded); only affects players with real evidence of discontinuity, everyone else unchanged.
-    let discontinuityMultipliers = new Map();
+    let discontinuityFreshSamples = new Map();
     if (entity === "pitcher") {
       try {
         const discRows = await sql`
@@ -8655,18 +8655,37 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
             AVG(CASE WHEN rn BETWEEN 2 AND 10 THEN innings_pitched_decimal END) as prior_avg_ip
           FROM recent GROUP BY player_id HAVING COUNT(*) >= 2
         `;
+        const flaggedIds = [];
         for (const r of discRows) {
           const mostRecentIp = Number(r.most_recent_ip), priorAvgIp = Number(r.prior_avg_ip);
           if (!Number.isFinite(mostRecentIp) || !Number.isFinite(priorAvgIp)) continue;
           const ipShift = Math.abs(mostRecentIp - priorAvgIp);
           const gapDays = r.most_recent_date && r.second_date
             ? Math.round((new Date(r.most_recent_date) - new Date(r.second_date)) / 86400000) : 0;
-          const roleShiftFlag = ipShift >= 2.0;
-          const staleGapFlag = gapDays >= 21;
-          if (roleShiftFlag && staleGapFlag) discontinuityMultipliers.set(String(r.player_id), 5);
-          else if (roleShiftFlag || staleGapFlag) discontinuityMultipliers.set(String(r.player_id), 3);
+          if (ipShift >= 2.0 || gapDays >= 21) flaggedIds.push(Number(r.player_id));
         }
-      } catch (err) { /* fail-safe: if this check errors, no players get flagged - never blocks baseline computation */ }
+        if (flaggedIds.length) {
+          // REAL FIX (not a multiplier hack): for flagged players, compute a genuinely fresh rate
+          // from ONLY their most recent games (up to 5), bypassing the game-count-based snapshot
+          // windows entirely (those silently pull stale pre-discontinuity games into even the
+          // shortest window). A small, honest fresh sample then naturally receives strong, correct
+          // shrinkage toward the population/tier prior via the EXISTING, unmultiplied prior_strength
+          // - standard empirical-Bayes behavior, not a hack layered on top of a contaminated sample.
+          const freshRows = await sql.unsafe(`
+            WITH ranked AS (
+              SELECT player_id, game_date, (${exprRaw})::float as raw_value,
+                ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn
+              FROM ${gameLogTable} WHERE season=${season} AND player_id = ANY($1)
+            )
+            SELECT player_id, COUNT(*) as n, AVG(raw_value) as fresh_rate
+            FROM ranked WHERE rn <= 5 GROUP BY player_id
+          `, [flaggedIds]);
+          for (const fr of freshRows) {
+            const n = Number(fr.n), rate = Number(fr.fresh_rate);
+            if (n > 0 && Number.isFinite(rate)) discontinuityFreshSamples.set(String(fr.player_id), { rate, games_sample: n });
+          }
+        }
+      } catch (err) { /* fail-safe: if this check errors, no players get overridden - never blocks baseline computation */ }
     }
     const usesNormalModelForPriorStrength = !(popMean >= 0 && popMean <= 1);
     const reliableForVarianceEstimate = playerRates.filter(r => Number(r.games_sample) >= 10);
