@@ -1699,14 +1699,14 @@ async function runCalibrationCoverageGapCheck(env, input = {}) {
     const rows = await sql`
       SELECT canonical_prop_key, selected_side,
         WIDTH_BUCKET(estimated_hit_probability_0_100, 80, 100, ${Math.round(20 / bucketWidth)}) as bucket,
-        COUNT(*) as n,
+        COUNT(*) as raw_rows, COUNT(DISTINCT player_name || official_date::text) as n,
         AVG(estimated_hit_probability_0_100) as avg_predicted,
         AVG(outcome_hit::int)*100 as actual_hit_rate
       FROM score.prop_outcome_history
       WHERE outcome_hit IS NOT NULL AND estimated_hit_probability_0_100 >= 80
         AND official_date >= (now() - (${lookbackDays} || ' days')::interval)
       GROUP BY canonical_prop_key, selected_side, bucket
-      HAVING COUNT(*) >= ${minSamples}
+      HAVING COUNT(DISTINCT player_name || official_date::text) >= ${minSamples}
     `;
     const activeRows = await sql`
       SELECT DISTINCT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high FROM score.calibration_correction_map
