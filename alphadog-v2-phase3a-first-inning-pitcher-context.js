@@ -8675,11 +8675,11 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
             WITH ranked AS (
               SELECT player_id, game_date, (${exprRaw})::float as raw_value,
                 ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn
-              FROM ${gameLogTable} WHERE season=${season} AND player_id = ANY($1)
+              FROM ${gameLogTable} WHERE season=${season} AND player_id IN (${flaggedIds.join(",")})
             )
             SELECT player_id, COUNT(*) as n, AVG(raw_value) as fresh_rate
             FROM ranked WHERE rn <= 5 GROUP BY player_id
-          `, [flaggedIds]);
+          `);
           for (const fr of freshRows) {
             const n = Number(fr.n), rate = Number(fr.fresh_rate);
             if (n > 0 && Number.isFinite(rate)) discontinuityFreshSamples.set(String(fr.player_id), { rate, games_sample: n });
