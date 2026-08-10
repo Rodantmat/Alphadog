@@ -2687,17 +2687,7 @@ function demonRatioForHp(hpPct) {
   return anchors[0].ratio;
 }
 const DEMON_PER_LEG_RATIO = 1.71; // DEPRECATED 2026-08-10, kept only as a fallback default for any
-// call site missing an hp value - real usage now goes through demonRatioForHp(hp). See above.
-// the earlier flat 1.9 "fair-odds-preserving" estimate. Deep research into the favorite-longshot
-// bias (decades-documented, peer-reviewed) and sportsbook alternate-line pricing (multiple
-// independent sources confirm margin widens with distance from the standard line, with a real
-// quantified anchor of ~47% more relative margin on riskier/less-liquid markets vs standard ones)
-// converges on demons - the structurally "longshot" side of this market - very likely carrying a
-// wider real margin than the prior naive estimate assumed. This is a conservative, directional
-// correction only, not a validated tier table - unlike Goblin's tier ratios (derived from the
-// user's real in-app tests), no real Demon test data exists yet, so no tier-specific structure is
-// applied here to avoid fabricating precision the evidence doesn't support. Real per-tier Demon
-// ratios need the same kind of real in-app validation Goblin received before going further.
+// call site missing an hp value - real usage now goes through demonRatioForHp(hp) above.
 function goblinTierRatio(tierRank, hasStandardSibling) {
   return GOBLIN_FLAT_RATIO;
 }
