@@ -8748,21 +8748,24 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const psCfg = cfg.confidence_prior_strength;
     const baselineRows = [];
     for (const r of classRows) {
+      const freshOverride = discontinuityFreshSamples.get(String(r.player_id));
+      const effectiveGamesSample = freshOverride ? freshOverride.games_sample : r.games_sample;
+      const effectiveRate = freshOverride ? freshOverride.rate : r.rate;
       const tierInfo = tierPriorRows[r.tier_key];
-      const rawTierMean = tierInfo ? tierInfo.avg_rate : r.rate;
+      const rawTierMean = tierInfo ? tierInfo.avg_rate : effectiveRate;
       const tierN = tierInfo ? tierInfo.tier_n : 0;
       const blendedTierPrior = (tierN * rawTierMean + tierBlendK * popMean) / (tierN + tierBlendK);
-      const priorStrength = empiricalPriorStrength * (discontinuityMultipliers.get(String(r.player_id)) || 1);
-      const shrunkRate = (r.games_sample * r.rate + priorStrength * blendedTierPrior) / (r.games_sample + priorStrength);
+      const priorStrength = empiricalPriorStrength;
+      const shrunkRate = (effectiveGamesSample * effectiveRate + priorStrength * blendedTierPrior) / (effectiveGamesSample + priorStrength);
       const rawHp = usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, popStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion);
-      const hp = clampHpToSampleSupportedRangePg(rawHp, r.games_sample);
-      const confidence = sampleAwareConfidencePg(r.games_sample, psCfg, 1.0);
+      const hp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
+      const confidence = sampleAwareConfidencePg(effectiveGamesSample, psCfg, 1.0);
       baselineRows.push({
         baseline_row_id: `blv6|${entity}|${r.player_id}|${propKey}|${String(lineValue).replace(".","p")}|${side}`,
         player_type: entity, player_id: r.player_id, canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
         tier_key: r.tier_key, hit_probability_0_100: Math.round(hp*10000)/100, confidence_0_100: confidence,
-        non_push_sample: r.games_sample, prior_strength: Math.round(priorStrength*100)/100,
-        recency_blended_rate_0_100: Math.round(shrunkRate*10000)/100, formula_version: "postgres_v1_exact_port"
+        non_push_sample: effectiveGamesSample, prior_strength: Math.round(priorStrength*100)/100,
+        recency_blended_rate_0_100: Math.round(shrunkRate*10000)/100, formula_version: freshOverride ? "postgres_v1_exact_port+discontinuity_fresh_sample" : "postgres_v1_exact_port"
       });
     }
     for (let i = 0; i < baselineRows.length; i += 500) {
