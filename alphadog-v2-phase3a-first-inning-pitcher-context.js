@@ -1695,44 +1695,51 @@ async function runCalibrationCoverageGapCheck(env, input = {}) {
     const minSamples = Math.max(5, Number(input.min_samples || 10));
     const gapAlertThresholdPts = Number(input.gap_alert_threshold_pts || 15);
     const lookbackDays = Number(input.lookback_days || 7);
+    const bucketWidth = Number(input.bucket_width_pts || 5);
     const rows = await sql`
-      SELECT canonical_prop_key, selected_side, COUNT(*) as n,
+      SELECT canonical_prop_key, selected_side,
+        WIDTH_BUCKET(estimated_hit_probability_0_100, 80, 100, ${Math.round(20 / bucketWidth)}) as bucket,
+        COUNT(*) as n,
         AVG(estimated_hit_probability_0_100) as avg_predicted,
         AVG(outcome_hit::int)*100 as actual_hit_rate
       FROM score.prop_outcome_history
       WHERE outcome_hit IS NOT NULL AND estimated_hit_probability_0_100 >= 80
         AND official_date >= (now() - (${lookbackDays} || ' days')::interval)
-      GROUP BY canonical_prop_key, selected_side
+      GROUP BY canonical_prop_key, selected_side, bucket
       HAVING COUNT(*) >= ${minSamples}
     `;
     const activeRows = await sql`
-      SELECT DISTINCT canonical_prop_key, selected_side FROM score.calibration_correction_map
+      SELECT DISTINCT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high FROM score.calibration_correction_map
       WHERE raw_p_bin_low >= 0.8 AND methodology NOT LIKE '%DEACTIVATED%' AND methodology NOT LIKE '%SUPERSEDED%'
     `;
-    const activeSet = new Set(activeRows.map(r => `${r.canonical_prop_key}|${r.selected_side}`));
     const findings = [];
     for (const r of rows) {
       const predicted = Number(r.avg_predicted);
       const actual = Number(r.actual_hit_rate);
       const gap = predicted - actual;
-      const hasActiveCoverage = activeSet.has(`${r.canonical_prop_key}|${r.selected_side}`);
+      const bucketLowPct = 80 + (Number(r.bucket) - 1) * bucketWidth;
+      const bucketHighPct = bucketLowPct + bucketWidth;
+      const hasActiveCoverage = activeRows.some(a =>
+        a.canonical_prop_key === r.canonical_prop_key && a.selected_side === r.selected_side &&
+        Number(a.raw_p_bin_low) * 100 <= bucketLowPct && Number(a.raw_p_bin_high) * 100 >= bucketHighPct
+      );
       if (Math.abs(gap) >= gapAlertThresholdPts) {
         findings.push({
-          prop: r.canonical_prop_key, side: r.selected_side, n: Number(r.n),
-          avg_predicted: Math.round(predicted * 10) / 10, actual_hit_rate: Math.round(actual * 10) / 10,
-          gap_pts: Math.round(gap * 10) / 10, has_active_calibration_coverage: hasActiveCoverage,
-          severity: (!hasActiveCoverage && Math.abs(gap) >= gapAlertThresholdPts) ? "urgent_no_coverage" : "moderate_has_coverage_but_still_gapped",
+          prop: r.canonical_prop_key, side: r.selected_side, bucket_range_pct: `${bucketLowPct}-${bucketHighPct}`,
+          n: Number(r.n), avg_predicted: Math.round(predicted * 10) / 10, actual_hit_rate: Math.round(actual * 10) / 10,
+          gap_pts: Math.round(gap * 10) / 10, has_active_calibration_coverage_for_this_bucket: hasActiveCoverage,
+          severity: !hasActiveCoverage ? "urgent_no_coverage" : "moderate_has_coverage_but_still_gapped",
           note: !hasActiveCoverage
-            ? "Real deviation this large with ZERO active correction covering this range - this is exactly the silent-failure pattern that caused real losses before. Needs a fresh fit and review, not necessarily automated action."
-            : "A correction exists but the gap persists - may need re-fitting with fresher data, or the correction itself may be stale/insufficient."
+            ? "Real deviation this large in THIS specific probability range with ZERO active correction covering it - this is exactly the silent-failure pattern that caused real losses before. Needs a fresh fit and review, not necessarily automated action."
+            : "A correction covers this exact bucket but the gap persists - may need re-fitting with fresher data, or the correction magnitude itself may be too weak."
         });
       }
     }
     return {
       ok: true, mode: "calibration_coverage_gap_check", diagnostic_only: true,
-      note: "READ-ONLY diagnostic. No writes, no scoring/selection changes, no legs capped or excluded. Purely surfaces coverage gaps for human review.",
-      lookback_days: lookbackDays, min_samples: minSamples, gap_alert_threshold_pts: gapAlertThresholdPts,
-      combos_checked: rows.length, findings_count: findings.length, findings: findings.sort((a, b) => Math.abs(b.gap_pts) - Math.abs(a.gap_pts))
+      note: "READ-ONLY diagnostic. No writes, no scoring/selection changes, no legs capped or excluded. Purely surfaces coverage gaps for human review. Checked per-bucket (not a blended 80-100% average) so a small noisy bucket cannot hide or fake a signal from the rest of the range.",
+      lookback_days: lookbackDays, min_samples: minSamples, gap_alert_threshold_pts: gapAlertThresholdPts, bucket_width_pts: bucketWidth,
+      buckets_checked: rows.length, findings_count: findings.length, findings: findings.sort((a, b) => Math.abs(b.gap_pts) - Math.abs(a.gap_pts))
     };
   } finally {
     try { await sql.end({ timeout: 1 }); } catch (_) {}
