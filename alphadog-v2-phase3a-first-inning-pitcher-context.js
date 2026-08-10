@@ -8677,7 +8677,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
           // in-memory during mining, never persisted) - confirmed live this silently broke the
           // generic exprRaw path for this one prop. Branch to the correct source table for it.
           const rawValueExpr = propKey === "rfi_nrfi"
-            ? `(SELECT fip.rfi_sl_more_hit::float FROM context.first_inning_pitcher fip WHERE fip.pitcher_id = gl.player_id AND fip.game_pk = gl.game_pk LIMIT 1)`
+            ? `(SELECT fip.rfi_sl_more_hit::float FROM context.first_inning_pitcher fip WHERE fip.pitcher_id::text = gl.player_id::text AND fip.game_pk::text = gl.game_pk::text LIMIT 1)`
             : `(${exprRaw})`;
           const freshRows = await sql.unsafe(`
             WITH anchored AS (
