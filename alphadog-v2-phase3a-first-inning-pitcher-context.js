@@ -8655,30 +8655,38 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
             AVG(CASE WHEN rn BETWEEN 2 AND 10 THEN innings_pitched_decimal END) as prior_avg_ip
           FROM recent GROUP BY player_id HAVING COUNT(*) >= 2
         `;
-        const flaggedIds = [];
+        const flaggedMap = new Map();
         for (const r of discRows) {
           const mostRecentIp = Number(r.most_recent_ip), priorAvgIp = Number(r.prior_avg_ip);
           if (!Number.isFinite(mostRecentIp) || !Number.isFinite(priorAvgIp)) continue;
           const ipShift = Math.abs(mostRecentIp - priorAvgIp);
           const gapDays = r.most_recent_date && r.second_date
             ? Math.round((new Date(r.most_recent_date) - new Date(r.second_date)) / 86400000) : 0;
-          if (ipShift >= 2.0 || gapDays >= 21) flaggedIds.push(Number(r.player_id));
+          if (ipShift >= 2.0 || gapDays >= 21) flaggedMap.set(Number(r.player_id), mostRecentIp);
         }
+        const flaggedIds = Array.from(flaggedMap.keys());
         if (flaggedIds.length) {
-          // REAL FIX (not a multiplier hack): for flagged players, compute a genuinely fresh rate
-          // from ONLY their most recent games (up to 5), bypassing the game-count-based snapshot
-          // windows entirely (those silently pull stale pre-discontinuity games into even the
-          // shortest window). A small, honest fresh sample then naturally receives strong, correct
-          // shrinkage toward the population/tier prior via the EXISTING, unmultiplied prior_strength
-          // - standard empirical-Bayes behavior, not a hack layered on top of a contaminated sample.
+          // REFINED REAL FIX: filters for ROLE-CONSISTENT games (innings within 2 of the most
+          // recent game's IP), not just "last N by date" - confirmed live that pure recency can
+          // still pull in mostly pre-change games for a player whose new-role starts aren't all
+          // consecutive by date. Capped at 8 most-recent role-consistent games. A small, honest,
+          // genuinely-representative sample then receives correct shrinkage via the existing,
+          // unmultiplied prior_strength - standard empirical-Bayes behavior for thin samples.
+          const caseStmts = flaggedIds.map(id => `WHEN player_id=${id} THEN ${flaggedMap.get(id)}`).join(" ");
           const freshRows = await sql.unsafe(`
-            WITH ranked AS (
+            WITH anchored AS (
               SELECT player_id, game_date, (${exprRaw})::float as raw_value,
+                CASE ${caseStmts} END as anchor_ip, innings_pitched_decimal,
                 ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn
               FROM ${gameLogTable} WHERE season=${season} AND player_id IN (${flaggedIds.join(",")})
+            ),
+            role_consistent AS (
+              SELECT player_id, game_date, raw_value,
+                ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) as rn2
+              FROM anchored WHERE ABS(innings_pitched_decimal - anchor_ip) <= 2
             )
             SELECT player_id, COUNT(*) as n, AVG(raw_value) as fresh_rate
-            FROM ranked WHERE rn <= 5 GROUP BY player_id
+            FROM role_consistent WHERE rn2 <= 8 GROUP BY player_id
           `);
           for (const fr of freshRows) {
             const n = Number(fr.n), rate = Number(fr.fresh_rate);
