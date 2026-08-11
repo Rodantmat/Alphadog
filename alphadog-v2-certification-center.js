@@ -3091,8 +3091,16 @@ async function apiResearchCreateSlips(env, request) {
   const bySource = {};
   for (const app of APP_PRIORITY_ORDER) {
     const boostedMaxPerGame = carryDeficit > 0 ? 5 : 3;
+    // Real cap fix (2026-08-11): without this, a lower-priority app with a naturally deeper pool
+    // (e.g. Underdog) could silently outproduce a higher-priority app (PrizePicks) that's simply
+    // thinner that day - confirmed live (UD pulled 55 legs vs PP's 15 despite PP being priority
+    // #1). Caps each app's own candidate pool at ~3x its target (room for real diversification,
+    // not unlimited) UNLESS it's actively absorbing a real deficit passed down from a
+    // higher-priority app, in which case it's allowed to pull more to genuinely fill that gap.
+    const ownCap = (APP_TARGET_SLIPS[app] || 10) * 3 * 2; // *2 for legs-per-slip
+    const effectiveMaxCandidates = carryDeficit > 0 ? 60 : Math.min(60, ownCap);
     const appLegs = await autoSelectBestLegs(env, {
-      min_confidence: minConfidence, max_per_game: boostedMaxPerGame, max_candidates: 60,
+      min_confidence: minConfidence, max_per_game: boostedMaxPerGame, max_candidates: effectiveMaxCandidates,
       source_key_filter: app
     });
     if (appLegs.length) bySource[app] = appLegs;
