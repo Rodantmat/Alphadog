@@ -2424,7 +2424,7 @@ async function autoSelectBestLegs(env, options) {
       const actsLikeGoblin = Number(r.is_goblin) === 1;
       const actsLikeDemon = Number(r.is_demon) === 1;
       const ratio = actsLikeGoblin ? (side === "less" && Number(r.is_goblin) === 1 ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling))) : (actsLikeDemon ? demonRatioForHp(r.hit_probability_0_100) : 1.0);
-      const trustKey = `${r.canonical_prop_key}|${r.line_value}|${r.selected_side}|${Number(r.is_goblin) || 0}`;
+      const trustKey = `${r.canonical_prop_key}|${Number(r.line_value)}|${r.selected_side}|${Number(r.is_goblin) || 0}`;
       const trust = (trustMapsBySource.get(r.source_key) || new Map()).get(trustKey) || 1.0;
       // Hard exclusion: a verified-bad line (trust=0, distinct from merely unproven) is removed
       // from the candidate pool entirely here - not just deprioritized in sorting, which the
