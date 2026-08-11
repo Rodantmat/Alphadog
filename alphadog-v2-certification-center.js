@@ -2926,6 +2926,8 @@ function buildResearchGroundedSlips(legsBySource) {
       for (const leg of available) {
         if (slipLegs.length >= RESEARCH_MAX_SLIP_SIZE) break;
         if (gamesInSlip.has(leg.game_pk)) continue;
+        const playerKey = String(leg.player_id || leg.player_name || "");
+        if ((playerUsageGlobal.get(playerKey) || 0) >= MAX_PLAYER_APPEARANCES_PER_DAY) continue;
         // Prop-type diversification within this slip, grounded in measured overdispersion
         // (confirmed via real outcome data, not assumption - see 2026-08-02 deep scrutiny):
         // same-prop-type legs share real day-level correlation beyond what the independence
@@ -2937,6 +2939,7 @@ function buildResearchGroundedSlips(legsBySource) {
         slipLegs.push(leg);
         gamesInSlip.add(leg.game_pk);
         propTypesInSlip.add(propTypeKey);
+        playerUsageGlobal.set(playerKey, (playerUsageGlobal.get(playerKey) || 0) + 1);
       }
       if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) break; // not enough diversified legs left for even the smallest slip
 
