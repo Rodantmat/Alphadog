@@ -2699,7 +2699,6 @@ const RESEARCH_MIN_CONFIDENCE = 65; // Lowered from 80 (2026-08-11), grounded in
 // earlier this session) is now the real discriminator: an unverified line at 65% stays untouched,
 // a verified, sample-backed line gets boosted, a verified-bad line gets discounted - this floor
 // exists to keep obviously weak legs out, not to do the actual quality filtering.
-// impossible for any 2-pick to ever pass, since 0.80*0.80=64%).
 const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, not just clearing it
 
 // Per-leg multiplier adjustment for goblin/demon (PrizePicks) and dynamic pricing (Sleeper).
