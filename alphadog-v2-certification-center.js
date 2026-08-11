@@ -2692,10 +2692,13 @@ const RESEARCH_MIN_SLIP_SIZE = 2;
 // (Combined full-hit target is now derived dynamically per slip size from RESEARCH_MIN_CONFIDENCE,
 // see the acceptance check below - not a fixed constant, so it can never silently contradict the
 // per-leg floor if either is tuned independently in the future.)
-const RESEARCH_MIN_CONFIDENCE = 80; // Per-leg full-hit-rate floor (2026-08-09, lowered from 90 per
-// direct user direction after the 90% floor returned zero qualifying legs). Combined target below
-// is derived FROM this floor, not set independently, so the two can never silently contradict each
-// other again (a fixed 80% combined bar alongside an 80% per-leg floor would be mathematically
+const RESEARCH_MIN_CONFIDENCE = 65; // Lowered from 80 (2026-08-11), grounded in live verification
+// that 80 screened out 349 of 362 genuinely upcoming legs before the trust-multiplier system could
+// evaluate them - the sweet-spot volume research this strategy targets was built on verified sharp
+// segments averaging ~65-75% stated confidence, not 80+. The trust-multiplier system (deployed
+// earlier this session) is now the real discriminator: an unverified line at 65% stays untouched,
+// a verified, sample-backed line gets boosted, a verified-bad line gets discounted - this floor
+// exists to keep obviously weak legs out, not to do the actual quality filtering.
 // impossible for any 2-pick to ever pass, since 0.80*0.80=64%).
 const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, not just clearing it
 
