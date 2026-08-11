@@ -2288,7 +2288,7 @@ async function computeLineTrustMultipliers(sql, sourceKey) {
           COALESCE(fbh.is_goblin,0) AS is_goblin, fbh.official_date, fbh.estimated_hit_probability_0_100
         FROM score.final_board_history fbh
         WHERE fbh.source_key = ${sourceKey} AND fbh.is_demon = 0 AND fbh.board_tier IN ('PRIMARY','REVIEW')
-          AND fbh.official_date >= (now() - (${LINE_TRUST_WINDOW_DAYS} || ' days')::interval)
+          AND fbh.official_date::date >= (now() - (${LINE_TRUST_WINDOW_DAYS} || ' days')::interval)::date
       ),
       matched AS (
         SELECT b.canonical_prop_key, b.line_value, b.selected_side, b.is_goblin,
