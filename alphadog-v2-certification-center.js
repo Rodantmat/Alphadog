@@ -2387,7 +2387,11 @@ async function autoSelectBestLegs(env, options) {
     // easiest-to-hit line isn't always the best value once its discounted payout is accounted
     // for. Without this, both a goblin and its standard sibling could separately consume
     // candidate pool slots for what is really one betting decision.
-    const trustMultipliers = await computeLineTrustMultipliers(pg, opts.source_key_filter || rows[0]?.source_key || "prizepicks");
+    const distinctSourceKeys = [...new Set(rows.map(r => r.source_key))];
+    const trustMapsBySource = new Map();
+    for (const sk of distinctSourceKeys) {
+      trustMapsBySource.set(sk, await computeLineTrustMultipliers(pg, sk));
+    }
     const bestByPropKey = new Map();
     for (const r of rows) {
       const key = `${r.source_key}|${r.player_id}|${r.canonical_prop_key}|${r.selected_side}`;
@@ -2397,7 +2401,7 @@ async function autoSelectBestLegs(env, options) {
       const actsLikeDemon = Number(r.is_demon) === 1;
       const ratio = actsLikeGoblin ? (side === "less" && Number(r.is_goblin) === 1 ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(r.goblin_tier_rank) || 1, Boolean(r.has_standard_sibling))) : (actsLikeDemon ? demonRatioForHp(r.hit_probability_0_100) : 1.0);
       const trustKey = `${r.canonical_prop_key}|${r.line_value}|${r.selected_side}|${Number(r.is_goblin) || 0}`;
-      const trust = trustMultipliers.get(trustKey) || 1.0;
+      const trust = (trustMapsBySource.get(r.source_key) || new Map()).get(trustKey) || 1.0;
       const effectiveValue = prob * ratio * trust;
       const existing = bestByPropKey.get(key);
       if (!existing || effectiveValue > existing.effectiveValue) {
