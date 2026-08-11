@@ -181,7 +181,10 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
       SELECT f.*, fip.rfi_sl_more_hit, fip.rfi_sl_less_hit, gs.is_final
       FROM deduped f
       LEFT JOIN context.first_inning_pitcher fip ON fip.pitcher_id::text = f.mlb_player_id::text AND fip.game_pk = f.game_pk
-      LEFT JOIN daily.game_status_current gs ON gs.game_pk = f.game_pk
+      LEFT JOIN LATERAL (
+        SELECT bool_or(((raw_json#>>'{}')::jsonb->'status'->>'abstractGameState') = 'Final') as is_final
+        FROM team.game_logs tgl WHERE tgl.game_pk = f.game_pk
+      ) gs ON true
     )
     SELECT *,
       CASE
@@ -189,7 +192,7 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
         WHEN selected_side = 'less' AND rfi_sl_less_hit IS NOT NULL THEN (rfi_sl_less_hit = 1)
         ELSE NULL END AS is_hit
     FROM graded
-    WHERE rfi_sl_more_hit IS NOT NULL OR rfi_sl_less_hit IS NOT NULL OR is_final = 1
+    WHERE rfi_sl_more_hit IS NOT NULL OR rfi_sl_less_hit IS NOT NULL OR is_final = true
   `, [targetDate]);
 
   if (!rows.length) return { entity_type: "pitcher_rfi_nrfi", candidates_found: 0, rows_inserted: 0 };
