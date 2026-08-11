@@ -175,46 +175,53 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
       ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, created_at DESC
     ),
     graded AS (
-      SELECT f.*, fip.rfi_sl_more_hit, fip.rfi_sl_less_hit
+      SELECT f.*, fip.rfi_sl_more_hit, fip.rfi_sl_less_hit, gs.is_final
       FROM deduped f
-      JOIN context.first_inning_pitcher fip ON fip.pitcher_id::text = f.mlb_player_id::text AND fip.game_pk = f.game_pk
+      LEFT JOIN context.first_inning_pitcher fip ON fip.pitcher_id::text = f.mlb_player_id::text AND fip.game_pk = f.game_pk
+      LEFT JOIN daily.game_status_current gs ON gs.game_pk = f.game_pk
     )
     SELECT *,
-      CASE WHEN selected_side = 'more' THEN (rfi_sl_more_hit = 1)
-           WHEN selected_side = 'less' THEN (rfi_sl_less_hit = 1)
-           ELSE NULL END AS is_hit
+      CASE
+        WHEN selected_side = 'more' AND rfi_sl_more_hit IS NOT NULL THEN (rfi_sl_more_hit = 1)
+        WHEN selected_side = 'less' AND rfi_sl_less_hit IS NOT NULL THEN (rfi_sl_less_hit = 1)
+        ELSE NULL END AS is_hit
     FROM graded
+    WHERE rfi_sl_more_hit IS NOT NULL OR rfi_sl_less_hit IS NOT NULL OR is_final = true
   `, [targetDate]);
 
   if (!rows.length) return { entity_type: "pitcher_rfi_nrfi", candidates_found: 0, rows_inserted: 0 };
 
-  const insertRows = rows.filter(r => r.is_hit !== null).map(r => ({
-    outcome_id: `grade_rfi_${r.mlb_player_id}_rfi_nrfi_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
-    final_board_row_id: r.final_board_row_id || null,
-    prepared_row_id: r.prepared_row_id || null,
-    source_key: r.source_key || null,
-    game_pk: r.game_pk || null,
-    official_date: targetDate,
-    mlb_player_id: r.mlb_player_id,
-    player_name: r.player_name || null,
-    canonical_prop_key: "rfi_nrfi",
-    line_value: r.line_value,
-    selected_side: r.selected_side,
-    estimated_hit_probability_0_100: r.estimated_hit_probability_0_100,
-    probability_confidence_0_100: r.probability_confidence_0_100,
-    score_0_100: r.score_0_100,
-    score_grade: null,
-    board_tier: r.board_tier || null,
-    is_goblin: r.is_goblin || 0,
-    is_demon: r.is_demon || 0,
-    live_playable: null,
-    actual_stat_value: r.selected_side === "more" ? r.rfi_sl_more_hit : r.rfi_sl_less_hit,
-    outcome_result: r.is_hit ? "hit" : "miss",
-    outcome_hit: r.is_hit ? 1 : 0,
-    brier_component: null,
-    resolved_at: nowUtc(),
-    created_at: nowUtc()
-  }));
+  const insertRows = rows.map(r => {
+    const hasData = r.selected_side === "more" ? r.rfi_sl_more_hit !== null : r.rfi_sl_less_hit !== null;
+    const isPush = !hasData;
+    return {
+      outcome_id: `grade_rfi_${r.mlb_player_id}_rfi_nrfi_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
+      final_board_row_id: r.final_board_row_id || null,
+      prepared_row_id: r.prepared_row_id || null,
+      source_key: r.source_key || null,
+      game_pk: r.game_pk || null,
+      official_date: targetDate,
+      mlb_player_id: r.mlb_player_id,
+      player_name: r.player_name || null,
+      canonical_prop_key: "rfi_nrfi",
+      line_value: r.line_value,
+      selected_side: r.selected_side,
+      estimated_hit_probability_0_100: r.estimated_hit_probability_0_100,
+      probability_confidence_0_100: r.probability_confidence_0_100,
+      score_0_100: r.score_0_100,
+      score_grade: null,
+      board_tier: r.board_tier || null,
+      is_goblin: r.is_goblin || 0,
+      is_demon: r.is_demon || 0,
+      live_playable: null,
+      actual_stat_value: r.selected_side === "more" ? r.rfi_sl_more_hit : r.rfi_sl_less_hit,
+      outcome_result: isPush ? "push" : (r.is_hit ? "hit" : "miss"),
+      outcome_hit: isPush ? null : (r.is_hit ? 1 : 0),
+      brier_component: null,
+      resolved_at: nowUtc(),
+      created_at: nowUtc()
+    };
+  });
 
   if (!insertRows.length) return { entity_type: "pitcher_rfi_nrfi", candidates_found: rows.length, rows_inserted: 0 };
 
