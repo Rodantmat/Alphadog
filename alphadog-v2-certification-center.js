@@ -1153,7 +1153,7 @@ async function apiDossier(env, url) {
     return { player_id: pid, metric_window: n === 999 ? 'season' : ('last' + n), games_count: gl.length, innings_pitched_sum: ip, batters_faced_sum: bf, hits_allowed_sum: h, earned_runs_sum: er, walks_allowed_sum: bb, strikeouts_sum: k, home_runs_allowed_sum: sum('home_runs_allowed'), era_calculated: ip > 0 ? (9 * er) / ip : null, whip_calculated: ip > 0 ? (bb + h) / ip : null, k_rate_calculated: bf > 0 ? k / bf : null, bb_rate_calculated: bf > 0 ? bb / bf : null };
   };
 
-  const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, hitterSnapshotRows] = await Promise.all([
+  const [recentGames, hitterSplits, form5, form10, form20, formSeason, starterRows, hitterSnapshotRows, rfiRows] = await Promise.all([
     isPitcher
       ? safeQuery(`SELECT * FROM stats_pitcher.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbPlayerId])
       : safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbPlayerId]),
@@ -1167,9 +1167,23 @@ async function apiDossier(env, url) {
     safeQuery(`SELECT * FROM daily.probable_pitchers WHERE game_pk=?`, [gamePk]),
     isPitcher
       ? safeQuery(`SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM stats_pitcher.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
-      : safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId])
+      : safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbPlayerId]),
+    isPitcher
+      ? safeQuery(`SELECT game_pk, first_frame_runs_allowed FROM context.first_inning_pitcher WHERE pitcher_id=? ORDER BY game_date DESC LIMIT 30`, [mlbPlayerId])
+      : Promise.resolve([])
   ]);
   const recentForm = hitterSnapshotRows.length ? hitterSnapshotRows : [form5, form10, form20, formSeason].filter(Boolean);
+  // Merge first-inning data onto each game row by game_pk - a real merge, not a fabrication: a
+  // game with no matching row correctly stays without a value (handled as null downstream), same
+  // as any other genuinely-missing stat.
+  if (isPitcher && rfiRows.length) {
+    const rfiByGamePk = new Map();
+    for (const r of rfiRows) rfiByGamePk.set(String(r.game_pk), r);
+    for (const g of recentGames) {
+      const rfi = rfiByGamePk.get(String(g.game_pk));
+      if (rfi) g.first_frame_runs_allowed = rfi.first_frame_runs_allowed;
+    }
+  }
 
   // Prop-specific historical hit-rate and streak (new): for the EXACT prop/line/side on this leg,
   // checks whether each of the player's own recent games would have hit, using the same value
