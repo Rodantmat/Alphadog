@@ -3045,12 +3045,29 @@ function rebalanceSlipsAcrossApps(slipsBySource) {
 async function apiResearchCreateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
   const input = await readJsonSafe(request);
-  const legs = await autoSelectBestLegs(env, { min_confidence: input.min_confidence || RESEARCH_MIN_CONFIDENCE, max_per_game: 3, max_candidates: 120 });
+  const minConfidence = input.min_confidence || RESEARCH_MIN_CONFIDENCE;
+  // Per-app priority-ordered fetch (2026-08-11), grounded in the real win-rate/sample-depth
+  // research this session (UD deepest/most trustworthy sample, PP strongest per-slip edge,
+  // Sleeper weakest on both). When a higher-priority app's real leg pool falls short of its
+  // target slip count, the next app gets a boosted max_per_game so it can pull more of its own
+  // genuinely-qualifying legs (capped at 5, never fabricated, never a lowered confidence bar).
+  let carryDeficit = 0;
+  const bySource = {};
+  for (const app of APP_PRIORITY_ORDER) {
+    const boostedMaxPerGame = carryDeficit > 0 ? 5 : 3;
+    const appLegs = await autoSelectBestLegs(env, {
+      min_confidence: minConfidence, max_per_game: boostedMaxPerGame, max_candidates: 60,
+      source_key_filter: app
+    });
+    if (appLegs.length) bySource[app] = appLegs;
+    const appSlipsPreview = buildResearchGroundedSlips({ [app]: appLegs || [] })[app] || [];
+    const target = APP_TARGET_SLIPS[app] || 0;
+    carryDeficit = Math.max(0, target - appSlipsPreview.length);
+  }
+  const legs = Object.values(bySource).flat();
   if (!legs.length) {
     return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/research-create", selected_leg_count:0, generated_slips:[], notes:["No legs currently clear the confidence bar. Check back after the board refreshes."] });
   }
-  const bySource = {};
-  for (const l of legs) { const k = String(l.source_key || "unknown").toLowerCase(); if (!bySource[k]) bySource[k] = []; bySource[k].push(l); }
   const slips = buildResearchGroundedSlips(bySource);
   const lineShoppingOpportunities = detectLineShoppingOpportunities(bySource);
   const missingApps = ["prizepicks", "parlay_underdog", "sleeper"].filter(a => !bySource[a] || !bySource[a].length);
@@ -3063,6 +3080,7 @@ async function apiResearchCreateSlips(env, request) {
     generated_slips: slips,
     notes: [
       "Dedicated research engine: hard 2-3 leg cap, real per-app payout tables, smallest-size-that-clears-real-margin selection, max 1 leg per game within each slip.",
+      "App priority order (UD, then PP, then Sleeper) and per-app boosted max_per_game applied when a higher-priority app's board is thin - grounded in real win-rate/sample-depth research from this session.",
       lineShoppingOpportunities.length ? `${lineShoppingOpportunities.length} player/prop combo(s) show a meaningfully different number across apps - see line_shopping_opportunities.` : "",
       missingApps.length ? `No qualifying legs found for: ${missingApps.join(", ")}. If an app is missing entirely from your board (not just filtered out), that's a data-coverage issue worth checking separately, not a strategy choice.` : ""
     ].filter(Boolean)
