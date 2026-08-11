@@ -90,7 +90,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
       FROM deduped f
       LEFT JOIN ${sourceTable} gl ON gl.player_id = f.mlb_player_id AND gl.game_date = f.official_date::date
       LEFT JOIN LATERAL (
-        SELECT bool_or((raw_json->'status'->>'abstractGameState') = 'Final') as is_final
+        SELECT bool_or(((raw_json#>>'{}')::jsonb->'status'->>'abstractGameState') = 'Final') as is_final
         FROM team.game_logs tgl WHERE tgl.game_pk = f.game_pk
       ) gs ON true
     )
