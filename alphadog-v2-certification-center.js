@@ -2436,7 +2436,7 @@ async function autoSelectBestLegs(env, options) {
         bestByPropKey.set(key, { row: r, effectiveValue });
       }
     }
-    const dedupedRows = [...bestByPropKey.values()].map(v => v.row).sort((a, b) => Number(b.score_0_100 || 0) - Number(a.score_0_100 || 0));
+    const dedupedRows = [...bestByPropKey.values()].sort((a, b) => b.effectiveValue - a.effectiveValue).map(v => v.row);
     const perGameCount = new Map();
     const selected = [];
     for (const r of dedupedRows) {
