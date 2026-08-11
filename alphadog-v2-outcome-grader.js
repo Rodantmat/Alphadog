@@ -89,7 +89,10 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
         gs.is_final
       FROM deduped f
       LEFT JOIN ${sourceTable} gl ON gl.player_id = f.mlb_player_id AND gl.game_date = f.official_date::date
-      LEFT JOIN daily.game_status_current gs ON gs.game_pk = f.game_pk
+      LEFT JOIN LATERAL (
+        SELECT bool_or((raw_json->'status'->>'abstractGameState') = 'Final') as is_final
+        FROM team.game_logs tgl WHERE tgl.game_pk = f.game_pk
+      ) gs ON true
     )
     SELECT *,
       CASE
@@ -97,7 +100,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
         WHEN actual_value IS NOT NULL AND selected_side = 'less' THEN (actual_value < line_value)
         ELSE NULL END AS is_hit
     FROM graded
-    WHERE actual_value IS NOT NULL OR is_final = 1
+    WHERE actual_value IS NOT NULL OR is_final = true
   `, [targetDate, propLiteral]);
 
   if (!rows.length) {
