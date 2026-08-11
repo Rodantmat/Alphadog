@@ -3051,8 +3051,8 @@ function detectLineShoppingOpportunities(legsBySource) {
 // loosens the confidence bar to hit a number - a thin app's shortfall (in slip count, not raw
 // legs) only gets passed to the next-priority app, which fills it only from genuine surplus in
 // its own already-qualifying pool.
-const APP_PRIORITY_ORDER = ["parlay_underdog", "prizepicks", "sleeper"];
-const APP_TARGET_SLIPS = { parlay_underdog: 12, prizepicks: 5, sleeper: 12 };
+const APP_PRIORITY_ORDER = ["prizepicks", "parlay_underdog", "sleeper"];
+const APP_TARGET_SLIPS = { prizepicks: 20, parlay_underdog: 6, sleeper: 3 };
 function rebalanceSlipsAcrossApps(slipsBySource) {
   let carryDeficit = 0;
   const rebalanced = {};
