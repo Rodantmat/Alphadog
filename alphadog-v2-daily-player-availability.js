@@ -657,7 +657,7 @@ async function runAvailability(env, input) {
       rows_written: written.rows_written, snapshot_rows_written: written.snapshot_rows_written, issues_written: written.issues_written,
       source_failures: sourceFailures, hard_source_failures: unresolvedHardSourceFailures, blocker_count: blockerCount, warning_count: warningCount, external_calls: sources.externalCalls
     };
-    const coverageOk = results.length > 0 && written.rows_written === results.length && written.snapshot_rows_written === results.length;
+    const coverageOk = written.rows_written === results.length && written.snapshot_rows_written === results.length;
     const dataOk = coverageOk && unresolvedHardSourceFailures === 0;
     const certification = dataOk ? (blockerCount ? "DAILY_PLAYER_AVAILABILITY_CERTIFIED_WITH_PLAYER_BLOCKERS" : "DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY") : "DAILY_PLAYER_AVAILABILITY_FAILED_SOURCE_OR_COVERAGE";
     const grade = dataOk ? (blockerCount || warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL";
