@@ -64,6 +64,12 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
 
   // Dedupe board legs to one row per (player, prop, line, side) using the latest snapshot of
   // that day, matching the same dedup pattern used successfully in prior sessions' analysis.
+  // REAL FIX (2026-08-11): switched from INNER to LEFT JOIN against game_logs, and added a join
+  // to daily.game_status_current for is_final. Previously, any player with zero matching game-log
+  // rows for the date (rest day, unused bullpen arm, etc.) silently vanished from the candidate
+  // set entirely via the INNER JOIN - never graded, never stored, permanently stuck as invisible
+  // "ungraded" rather than the genuine push/void it actually is. Confirmed live via real research:
+  // multiple real players (rest days, unused relievers) were affected by exactly this gap.
   const rows = await sql.unsafe(`
     WITH deduped AS (
       SELECT DISTINCT ON (mlb_player_id, canonical_prop_key, line_value, selected_side)
@@ -79,49 +85,55 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
     ),
     graded AS (
       SELECT f.*,
-        ${actualExpr} AS actual_value
+        ${actualExpr} AS actual_value,
+        gs.is_final
       FROM deduped f
-      JOIN ${sourceTable} gl ON gl.player_id = f.mlb_player_id AND gl.game_date = f.official_date::date
+      LEFT JOIN ${sourceTable} gl ON gl.player_id = f.mlb_player_id AND gl.game_date = f.official_date::date
+      LEFT JOIN daily.game_status_current gs ON gs.game_pk = f.game_pk
     )
     SELECT *,
-      CASE WHEN selected_side = 'more' THEN (actual_value > line_value)
-           WHEN selected_side = 'less' THEN (actual_value < line_value)
-           ELSE NULL END AS is_hit
+      CASE
+        WHEN actual_value IS NOT NULL AND selected_side = 'more' THEN (actual_value > line_value)
+        WHEN actual_value IS NOT NULL AND selected_side = 'less' THEN (actual_value < line_value)
+        ELSE NULL END AS is_hit
     FROM graded
-    WHERE actual_value IS NOT NULL
+    WHERE actual_value IS NOT NULL OR is_final = true
   `, [targetDate, propLiteral]);
 
   if (!rows.length) {
     return { entity_type: entityType, candidates_found: 0, rows_inserted: 0 };
   }
 
-  const insertRows = rows.filter(r => r.is_hit !== null).map(r => ({
-    outcome_id: `grade_${entityType}_${r.mlb_player_id}_${r.canonical_prop_key}_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
-    final_board_row_id: r.final_board_row_id || null,
-    prepared_row_id: r.prepared_row_id || null,
-    source_key: r.source_key || null,
-    game_pk: r.game_pk || null,
-    official_date: targetDate,
-    mlb_player_id: r.mlb_player_id,
-    player_name: r.player_name || null,
-    canonical_prop_key: r.canonical_prop_key,
-    line_value: r.line_value,
-    selected_side: r.selected_side,
-    estimated_hit_probability_0_100: r.estimated_hit_probability_0_100,
-    probability_confidence_0_100: r.probability_confidence_0_100,
-    score_0_100: r.score_0_100,
-    score_grade: null,
-    board_tier: r.board_tier || null,
-    is_goblin: r.is_goblin || 0,
-    is_demon: r.is_demon || 0,
-    live_playable: null,
-    actual_stat_value: r.actual_value,
-    outcome_result: r.is_hit ? "hit" : "miss",
-    outcome_hit: r.is_hit ? 1 : 0,
-    brier_component: null,
-    resolved_at: nowUtc(),
-    created_at: nowUtc()
-  }));
+  const insertRows = rows.map(r => {
+    const isPush = r.actual_value === null;
+    return {
+      outcome_id: `grade_${entityType}_${r.mlb_player_id}_${r.canonical_prop_key}_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
+      final_board_row_id: r.final_board_row_id || null,
+      prepared_row_id: r.prepared_row_id || null,
+      source_key: r.source_key || null,
+      game_pk: r.game_pk || null,
+      official_date: targetDate,
+      mlb_player_id: r.mlb_player_id,
+      player_name: r.player_name || null,
+      canonical_prop_key: r.canonical_prop_key,
+      line_value: r.line_value,
+      selected_side: r.selected_side,
+      estimated_hit_probability_0_100: r.estimated_hit_probability_0_100,
+      probability_confidence_0_100: r.probability_confidence_0_100,
+      score_0_100: r.score_0_100,
+      score_grade: null,
+      board_tier: r.board_tier || null,
+      is_goblin: r.is_goblin || 0,
+      is_demon: r.is_demon || 0,
+      live_playable: null,
+      actual_stat_value: r.actual_value,
+      outcome_result: isPush ? "push" : (r.is_hit ? "hit" : "miss"),
+      outcome_hit: isPush ? null : (r.is_hit ? 1 : 0),
+      brier_component: null,
+      resolved_at: nowUtc(),
+      created_at: nowUtc()
+    };
+  });
 
   if (!insertRows.length) return { entity_type: entityType, candidates_found: rows.length, rows_inserted: 0 };
 
