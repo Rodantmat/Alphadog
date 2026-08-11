@@ -2900,7 +2900,13 @@ function researchSlipEvAdjusted(legs, probs01, mode, table, source, breakevenTar
   for (let k = 0; k <= n; k++) { const d = payoutFor(k) - mean; variance += dist[k] * d * d; }
   const stdev = Math.sqrt(Math.max(variance, 1e-6));
   const ev = mean - 1;
-  return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: Math.round(fullHitMultiplier * 1000) / 1000, adjusted: true, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
+  // FIXED 2026-08-11: the displayed multiplier previously always showed fullHitMultiplier (the
+  // Power-mode all-legs-hit product), even when mode was flex - the EV math above already used
+  // the correct flex payout curve via payoutFor(), but the number shown to the user was wrong,
+  // silently displaying Power's multiplier on a Flex slip. Now shows the real full-hit Flex
+  // payout for flex mode, matching what payoutFor(n) itself computes.
+  const displayMultiplier = mode === "power" ? fullHitMultiplier : payoutFor(n);
+  return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: Math.round(displayMultiplier * 1000) / 1000, adjusted: true, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
 }
 function researchBreakeven(size, mode, table) {
   if (mode === "power") {
