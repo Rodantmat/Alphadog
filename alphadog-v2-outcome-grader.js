@@ -32,6 +32,7 @@ const HITTER_PROP_EXPR = {
   runs: "gl.runs",
   hits: "gl.hits",
   walks: "gl.walks",
+  singles: "gl.singles",
   rbis: "gl.rbi",
   home_runs: "gl.home_runs",
   stolen_bases: "gl.stolen_bases",
