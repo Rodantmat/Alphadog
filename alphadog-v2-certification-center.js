@@ -2392,7 +2392,7 @@ async function autoSelectBestLegs(env, options) {
         AND l.estimated_hit_probability_0_100 >= ${minConfidence}
         AND l.official_game_time_utc IS NOT NULL
         AND l.official_game_time_utc::timestamptz > now()
-        ${opts.source_key_filter ? sql`AND l.source_key = ${opts.source_key_filter}` : sql``}
+        ${opts.source_key_filter ? `AND l.source_key = '${String(opts.source_key_filter).replace(/'/g, "")}'` : ""}
       ORDER BY l.score_0_100 DESC NULLS LAST, l.confidence_0_100 DESC NULLS LAST
     `);
     // Deduplicate alternate lines for the same underlying player+prop+side (goblin vs demon vs
