@@ -2320,8 +2320,19 @@ async function computeLineTrustMultipliers(sql, sourceKey) {
       // priced in).
       const raw = stated > 0 ? verifiedFloor / stated : 1.0;
       const capped = Math.max(0.6, Math.min(1.4, raw));
+      // Hard exclusion (2026-08-11, distinct from the soft 0.6 floor above): when we're
+      // statistically confident - via the Wilson UPPER bound, the optimistic end of the interval
+      // - that even the best-case real rate still falls short of the 2-pick breakeven, this line
+      // is excluded entirely rather than just discounted. A thin/noisy sample's upper bound stays
+      // wide and won't trigger this; only a real, sample-backed underperformer does.
+      const TWO_PICK_BREAKEVEN = 0.5774;
+      const wilsonUpper = wilson.upper;
       const key = `${r.canonical_prop_key}|${r.line_value}|${r.selected_side}|${r.is_goblin}`;
-      multipliers.set(key, capped);
+      if (n >= LINE_TRUST_MIN_SAMPLE && wilsonUpper < TWO_PICK_BREAKEVEN) {
+        multipliers.set(key, 0); // hard exclude - verified-bad, not just unproven
+      } else {
+        multipliers.set(key, capped);
+      }
     }
   } catch (err) { /* fail-safe: if this query errors, no lines get boosted or penalized - never blocks selection */ }
   return multipliers;
