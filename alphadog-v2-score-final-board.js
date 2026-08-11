@@ -555,7 +555,13 @@ async function copyHistoryToCurrent(pgClient, batchId) {
   // is of type date but expression is of type text" whenever this reconciliation
   // path runs (e.g. after a client-side timeout leaves a batch in 'running' status).
   // Explicit cast only on the SELECT side; INSERT column list (cols) is unchanged.
-  const selectCols = BOARD_ROW_COLS.map(c => (c === "official_date" ? "official_date::date" : c)).join(", ");
+  // FIX (2026-08-11, same class): score.final_board_history.official_game_time_utc is
+  // also TEXT while score.final_board_current.official_game_time_utc is TIMESTAMPTZ,
+  // causing the identical "column ... is of type timestamp with time zone but
+  // expression is of type text" failure. The original fix above only covered
+  // official_date; this extends the same explicit-cast approach to the second column.
+  const CAST_SELECT_COLS = { official_date: "official_date::date", official_game_time_utc: "official_game_time_utc::timestamptz" };
+  const selectCols = BOARD_ROW_COLS.map(c => CAST_SELECT_COLS[c] || c).join(", ");
   await pgClient`DELETE FROM score.final_board_current`;
   await pgClient`INSERT INTO score.final_board_current (${pgClient.unsafe(cols)})
     SELECT ${pgClient.unsafe(selectCols)} FROM score.final_board_history WHERE final_board_batch_id = ${batchId}
