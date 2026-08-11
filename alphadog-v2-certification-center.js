@@ -1197,6 +1197,8 @@ async function apiDossier(env, url) {
     if (p === "pitcher_outs") return Number(r.outs_recorded) || 0;
     if (p === "runs_allowed") return Number(r.runs_allowed) || 0;
     if (p === "pitches_thrown") return Number(r.pitches) || 0;
+    if (p === "fantasy_score") return (Number(r.hits)||0)*3 + (Number(r.runs)||0)*2 + (Number(r.rbi)||0)*2 + (Number(r.home_runs)||0)*4 + (Number(r.stolen_bases)||0)*2 + (Number(r.walks)||0)*1;
+    if (p === "pitcher_fantasy_score") return (Number(r.outs_recorded)||0)*1 + (Number(r.strikeouts)||0)*3 - (Number(r.earned_runs)||0)*3 - (Number(r.walks_allowed)||0)*1;
     return null;
   }
   let propHistory = null;
