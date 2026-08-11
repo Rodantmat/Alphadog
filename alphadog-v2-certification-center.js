@@ -2671,12 +2671,18 @@ async function apiDemonSlips(env, request) {
   }
   const table = APP_PAYOUT_TABLES.prizepicks;
   let best = null;
-  for (let size = Math.min(DEMON_SLIP_MAX_SIZE, legs.length); size >= DEMON_SLIP_MIN_SIZE; size--) {
+  // FIXED 2026-08-11: was largest-size-first (6 down to 2), which let per-leg demon ratios
+  // compound multiplicatively into implausible results at larger sizes (a real 6-pick test
+  // produced a 3721x multiplier / +1728% EV - mathematically following from the formula but
+  // not remotely realistic). Smallest-size-first matches the pattern already used in the main
+  // research-grounded engine and the explicit ask for a 2-pick baseline; only grows beyond 2 if
+  // a larger size still clears real positive EV without compounding into something implausible.
+  for (let size = DEMON_SLIP_MIN_SIZE; size <= Math.min(DEMON_SLIP_MAX_SIZE, legs.length); size++) {
     const slice = legs.slice(0, size);
     const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
     const breakeven = researchBreakeven(size, "power", table);
     const evResult = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", breakeven);
-    if (evResult && evResult.ev > 0) { best = { size, slice, evResult, breakeven }; break; }
+    if (evResult && evResult.ev > 0 && evResult.multiplier < 50) { best = { size, slice, evResult, breakeven }; break; }
   }
   if (!best) {
     const size = DEMON_SLIP_MIN_SIZE;
