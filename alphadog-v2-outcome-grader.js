@@ -97,7 +97,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
         WHEN actual_value IS NOT NULL AND selected_side = 'less' THEN (actual_value < line_value)
         ELSE NULL END AS is_hit
     FROM graded
-    WHERE actual_value IS NOT NULL OR is_final = true
+    WHERE actual_value IS NOT NULL OR is_final = 1
   `, [targetDate, propLiteral]);
 
   if (!rows.length) {
