@@ -2486,8 +2486,13 @@ async function autoSelectBestLegs(env, options) {
 // which side appears more often is a real, emergent result of the underlying probabilities (per
 // the new correctly-fixed two-sided Goblin/Demon scoring), not a hardcoded preference either way.
 const GOBLIN_SLIP_TARGET_SIZE = 6;
-const GOBLIN_SLIP_MIN_CONFIDENCE = 80; // Raised 2026-08-09 per direct user direction: only the
-// highest hit-probability goblins, not just anything clearing a lower bar.
+const GOBLIN_SLIP_MIN_CONFIDENCE = 70; // Lowered 2026-08-11 from 80: the 80 bar was calibrated
+// against the pre-fix, inflated goblin population (rbis/walks/hits/total_bases/etc were wrongly
+// labeled Goblin at 85-91% HP). Now that those correctly show as Demon instead, genuinely-correct
+// goblins top out around 78-79% HP on a typical night - 70 matches the system's own PRIMARY-tier
+// bar (estimated_hit_probability_0_100 >= 70) used everywhere else, so this tab reflects real
+// data rather than going empty whenever the true goblin population is thinner than the old,
+// bug-inflated one.
 async function autoSelectGoblinSlipLegs(env, options = {}) {
   const maxPerGame = Number(options.max_per_game || 2);
   const pg = pgClient(env);
