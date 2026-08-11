@@ -549,9 +549,16 @@ async function insertBoardRowsBatched(pgClient, table, batchId, sourceEngineBatc
 
 async function copyHistoryToCurrent(pgClient, batchId) {
   const cols = BOARD_ROW_COLS.join(", ");
+  // FIX (2026-08-11): score.final_board_history.official_date is TEXT but
+  // score.final_board_current.official_date is DATE. Postgres has no implicit
+  // text->date cast in this INSERT...SELECT context, causing "column official_date
+  // is of type date but expression is of type text" whenever this reconciliation
+  // path runs (e.g. after a client-side timeout leaves a batch in 'running' status).
+  // Explicit cast only on the SELECT side; INSERT column list (cols) is unchanged.
+  const selectCols = BOARD_ROW_COLS.map(c => (c === "official_date" ? "official_date::date" : c)).join(", ");
   await pgClient`DELETE FROM score.final_board_current`;
   await pgClient`INSERT INTO score.final_board_current (${pgClient.unsafe(cols)})
-    SELECT ${pgClient.unsafe(cols)} FROM score.final_board_history WHERE final_board_batch_id = ${batchId}
+    SELECT ${pgClient.unsafe(selectCols)} FROM score.final_board_history WHERE final_board_batch_id = ${batchId}
     ON CONFLICT (final_board_row_id) DO NOTHING`;
   return { ok: true };
 }
