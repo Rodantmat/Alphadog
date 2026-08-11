@@ -2906,7 +2906,7 @@ function buildResearchGroundedSlips(legsBySource) {
     // its own effective payout ratio (1.0 standard, 0.683 goblin, 1.9 demon) so a high-confidence
     // standard line can outrank a goblin whose discounted payout doesn't justify its easier bar.
     const legEffectiveValue = (l) => {
-      const prob = Number(l.certainty_0_100 || l.confidence_0_100 || 0) / 100;
+      const prob = Number(l.hit_probability_0_100 != null ? l.hit_probability_0_100 : (l.certainty_0_100 || l.confidence_0_100 || 0)) / 100;
       const side = String(l.selected_side || "more").toLowerCase();
       const actsLikeGoblin = Number(l.is_goblin) === 1;
       const actsLikeDemon = Number(l.is_demon) === 1;
