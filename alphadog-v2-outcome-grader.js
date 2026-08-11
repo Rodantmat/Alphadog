@@ -186,7 +186,7 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
         WHEN selected_side = 'less' AND rfi_sl_less_hit IS NOT NULL THEN (rfi_sl_less_hit = 1)
         ELSE NULL END AS is_hit
     FROM graded
-    WHERE rfi_sl_more_hit IS NOT NULL OR rfi_sl_less_hit IS NOT NULL OR is_final = true
+    WHERE rfi_sl_more_hit IS NOT NULL OR rfi_sl_less_hit IS NOT NULL OR is_final = 1
   `, [targetDate]);
 
   if (!rows.length) return { entity_type: "pitcher_rfi_nrfi", candidates_found: 0, rows_inserted: 0 };
