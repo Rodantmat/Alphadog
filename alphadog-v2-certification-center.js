@@ -2403,6 +2403,8 @@ async function autoSelectBestLegs(env, options) {
         AND l.estimated_hit_probability_0_100 >= ${minConfidence}
         AND l.official_game_time_utc IS NOT NULL
         AND l.official_game_time_utc::timestamptz > now()
+        ${opts.source_key_filter === 'parlay_underdog' ? `AND l.canonical_prop_key = 'hits_runs_rbis'` : ""}
+        ${opts.source_key_filter === 'sleeper' ? `AND l.canonical_prop_key IN ('rfi_nrfi','doubles')` : ""}
         ${opts.source_key_filter ? `AND l.source_key = '${String(opts.source_key_filter).replace(/'/g, "")}'` : ""}
       ORDER BY l.score_0_100 DESC NULLS LAST, l.confidence_0_100 DESC NULLS LAST
     `);
