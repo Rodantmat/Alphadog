@@ -2845,7 +2845,15 @@ function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTarget
     const ratio = wasFlippedFromDemon ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
     return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
   }
-  if (actsLikeDemon) { const dRatio = demonRatioForHp(leg.hit_probability_0_100); return { multiplier: standardPerLegMultiplier * dRatio, adjusted: true, ratio: dRatio }; }
+  if (actsLikeDemon) {
+    // FIXED 2026-08-11: demonRatioForHp was only ever validated for the 'more' side (genuinely
+    // harder, deserves a premium payout). A demon on the 'less' side is structurally the easy,
+    // favorable side and needs a discount, not a premium - use the same FLIPPED_FROM_DEMON_RATIO
+    // already validated for this exact case (previously only reachable via the old, now-removed
+    // is_goblin mislabeling; now reached correctly via the true is_demon flag).
+    if (side === "less") return { multiplier: standardPerLegMultiplier * FLIPPED_FROM_DEMON_RATIO, adjusted: true, ratio: FLIPPED_FROM_DEMON_RATIO };
+    const dRatio = demonRatioForHp(leg.hit_probability_0_100); return { multiplier: standardPerLegMultiplier * dRatio, adjusted: true, ratio: dRatio };
+  }
   return { multiplier: standardPerLegMultiplier, adjusted: false };
 }
 
