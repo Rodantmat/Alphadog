@@ -110,7 +110,9 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
   }
 
   const insertRows = rows.map(r => {
-    const isPush = r.actual_value === null;
+    const isDnpPush = r.actual_value === null;
+    const isTiePush = r.is_tie === true;
+    const isPush = isDnpPush || isTiePush;
     return {
       outcome_id: `grade_${entityType}_${r.mlb_player_id}_${r.canonical_prop_key}_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
       final_board_row_id: r.final_board_row_id || null,
@@ -132,7 +134,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
       is_demon: r.is_demon || 0,
       live_playable: null,
       actual_stat_value: r.actual_value,
-      outcome_result: isPush ? "push" : (r.is_hit ? "hit" : "miss"),
+      outcome_result: isDnpPush ? "push_dnp" : (isTiePush ? "push_tie" : (r.is_hit ? "hit" : "miss")),
       outcome_hit: isPush ? null : (r.is_hit ? 1 : 0),
       brier_component: null,
       resolved_at: nowUtc(),
