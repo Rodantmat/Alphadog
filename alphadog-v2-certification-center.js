@@ -2327,7 +2327,7 @@ async function computeLineTrustMultipliers(sql, sourceKey) {
       // wide and won't trigger this; only a real, sample-backed underperformer does.
       const TWO_PICK_BREAKEVEN = 0.5774;
       const wilsonUpper = wilson.upper;
-      const key = `${r.canonical_prop_key}|${r.line_value}|${r.selected_side}|${r.is_goblin}`;
+      const key = `${r.canonical_prop_key}|${Number(r.line_value)}|${r.selected_side}|${Number(r.is_goblin) || 0}`;
       if (n >= LINE_TRUST_MIN_SAMPLE && wilsonUpper < TWO_PICK_BREAKEVEN) {
         multipliers.set(key, 0); // hard exclude - verified-bad, not just unproven
       } else {
