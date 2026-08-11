@@ -2257,6 +2257,63 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
   }
   return out.sort((a,b)=>Number(b.estimated_ev_per_unit_stake||-1)-Number(a.estimated_ev_per_unit_stake||-1));
 }
+// Line-trust scoring, grounded in the per-line research done this session (2026-08-11): raw
+// per-line hit rates from a short window are genuinely risky to trust directly (a line with
+// n=20 could just be a lucky streak) - so this uses the Wilson lower bound, already used
+// elsewhere in this codebase for the same reason, to automatically discount small or noisy
+// samples rather than trusting them. Deliberately capped to [0.6, 1.4] - this can nudge which
+// legs get preferred, never override the underlying model's selection outright. A line needs a
+// real sample size (n>=20) AND a verified-above-model real rate before it gets boosted; thin
+// samples are left neutral (1.0x), not penalized and not trusted.
+const LINE_TRUST_MIN_SAMPLE = 20;
+const LINE_TRUST_WINDOW_DAYS = 21;
+async function computeLineTrustMultipliers(sql, sourceKey) {
+  const multipliers = new Map();
+  try {
+    const rows = await sql`
+      WITH board AS (
+        SELECT DISTINCT fbh.mlb_player_id, fbh.canonical_prop_key, fbh.line_value, fbh.selected_side,
+          COALESCE(fbh.is_goblin,0) AS is_goblin, fbh.official_date, fbh.estimated_hit_probability_0_100
+        FROM score.final_board_history fbh
+        WHERE fbh.source_key = ${sourceKey} AND fbh.is_demon = 0 AND fbh.board_tier IN ('PRIMARY','REVIEW')
+          AND fbh.official_date >= (now() - (${LINE_TRUST_WINDOW_DAYS} || ' days')::interval)
+      ),
+      matched AS (
+        SELECT b.canonical_prop_key, b.line_value, b.selected_side, b.is_goblin,
+          b.estimated_hit_probability_0_100, o.outcome_hit
+        FROM board b JOIN score.prop_outcome_history o
+          ON o.mlb_player_id = b.mlb_player_id AND o.canonical_prop_key = b.canonical_prop_key
+          AND o.line_value = b.line_value AND o.selected_side = b.selected_side
+          AND o.official_date::date = b.official_date::date AND o.source_key = ${sourceKey}
+        WHERE o.outcome_hit IS NOT NULL
+      )
+      SELECT canonical_prop_key, line_value, selected_side, is_goblin,
+        COUNT(*) AS n, AVG(outcome_hit)::float AS raw_hit_rate,
+        AVG(estimated_hit_probability_0_100)::float / 100 AS avg_stated_prob
+      FROM matched
+      GROUP BY canonical_prop_key, line_value, selected_side, is_goblin
+      HAVING COUNT(*) >= ${LINE_TRUST_MIN_SAMPLE}
+    `;
+    for (const r of rows) {
+      const n = Number(r.n);
+      const pHat = Number(r.raw_hit_rate);
+      const stated = Number(r.avg_stated_prob) || pHat;
+      // Wilson lower bound at z=1.28 (~90% one-sided) - conservative real-world floor, not the
+      // point estimate, so a lucky small-sample streak can't masquerade as a verified edge.
+      const wilson = wilsonIntervalPg(pHat, n, 1.28);
+      const verifiedFloor = wilson.lower;
+      // Only boost when the verified floor still beats what the model itself claimed for these
+      // same lines - i.e. real outcomes consistently ran ahead of the stated probability, not
+      // just "this line has a high hit rate" (which could just mean it's an easy line already
+      // priced in).
+      const raw = stated > 0 ? verifiedFloor / stated : 1.0;
+      const capped = Math.max(0.6, Math.min(1.4, raw));
+      const key = `${r.canonical_prop_key}|${r.line_value}|${r.selected_side}|${r.is_goblin}`;
+      multipliers.set(key, capped);
+    }
+  } catch (err) { /* fail-safe: if this query errors, no lines get boosted or penalized - never blocks selection */ }
+  return multipliers;
+}
 // Automatic leg selection, grounded in the exhaustive slip-strategy research done this session:
 // - confidence >= 65: comfortably clears the real breakeven range for 2-3 leg slips (~54-58%
 //   per leg), leaving margin for calibration error rather than betting right at the line.
