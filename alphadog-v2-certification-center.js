@@ -2890,6 +2890,14 @@ function researchBreakeven(size, mode, table) {
 // within the same entry.
 function buildResearchGroundedSlips(legsBySource) {
   const out = [];
+  // Cross-slip, cross-app player concentration cap (2026-08-11), grounded in a live scrutiny
+  // finding: per-slip game diversification has no memory across slips or apps, so the same
+  // player can be reused repeatedly across a day's whole output - one bad game for that player
+  // then fails multiple slips at once, which no existing rule was built to prevent. Declared
+  // here, outside the per-app loop below, so it genuinely persists across every app processed,
+  // not just within one.
+  const MAX_PLAYER_APPEARANCES_PER_DAY = 2;
+  const playerUsageGlobal = new Map();
   for (const [source, legsRaw] of Object.entries(legsBySource)) {
     const table = APP_PAYOUT_TABLES[source] || APP_PAYOUT_TABLES.prizepicks;
     // Sort by EV-adjusted value, not raw confidence/probability - a goblin leg's probability is
