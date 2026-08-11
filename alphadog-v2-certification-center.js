@@ -2312,7 +2312,7 @@ async function computeLineTrustMultipliers(sql, sourceKey) {
       const stated = Number(r.avg_stated_prob) || pHat;
       // Wilson lower bound at z=1.28 (~90% one-sided) - conservative real-world floor, not the
       // point estimate, so a lucky small-sample streak can't masquerade as a verified edge.
-      const wilson = wilsonIntervalPg(pHat, n, 1.28);
+      const wilson = wilsonIntervalCC(pHat, n, 1.28);
       const verifiedFloor = wilson.lower;
       // Only boost when the verified floor still beats what the model itself claimed for these
       // same lines - i.e. real outcomes consistently ran ahead of the stated probability, not
