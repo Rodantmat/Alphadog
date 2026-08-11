@@ -2896,7 +2896,7 @@ function buildResearchGroundedSlips(legsBySource) {
   // then fails multiple slips at once, which no existing rule was built to prevent. Declared
   // here, outside the per-app loop below, so it genuinely persists across every app processed,
   // not just within one.
-  const MAX_PLAYER_APPEARANCES_PER_DAY = 2;
+  const MAX_PLAYER_APPEARANCES_PER_DAY = 999; // TEMP DIAGNOSTIC - see commit message
   const playerUsageGlobal = new Map();
   for (const [source, legsRaw] of Object.entries(legsBySource)) {
     const table = APP_PAYOUT_TABLES[source] || APP_PAYOUT_TABLES.prizepicks;
