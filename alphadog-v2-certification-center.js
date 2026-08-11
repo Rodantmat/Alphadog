@@ -2599,8 +2599,27 @@ async function apiGoblinSlips(env, request) {
 // worth taking - not finding the safest unrelated side of a Demon-tagged row.
 const DEMON_SLIP_MAX_SIZE = 6;
 const DEMON_SLIP_MIN_SIZE = 2;
-const DEMON_SLIP_MIN_CONFIDENCE = 80; // Raised 2026-08-09 per direct user direction: only the
-// highest hit-probability demons, matching the Goblin slip standard.
+// REBUILT 2026-08-11 per direct research request. Real historical hit rates (PP, is_demon=1,
+// selected_side='more', Aug 1-10, n>=15 min sample), highest to lowest:
+// walks 31.3% (n=80), fantasy_score 30.3% (n=393), hitter_strikeouts 22.8% (n=289) - tier 1, the
+// clear best performers, far ahead of the rest. pitcher_outs 20.4%, singles 20.0%, home_runs
+// 16.7% - tier 2 fallback. pitcher_strikeouts 13.6%, hits_allowed 9.6%, runs 9.5%, doubles 9.4%,
+// walks_allowed 8.6%, total_bases 8.3% - tier 3, last-resort fallback only. The remaining segments
+// (pitcher_fantasy_score, hits_runs_rbis, stolen_bases, hits, earned_runs, rbis, triples, all
+// under 8%) are deliberately excluded even as a fallback - real data shows they're too far below
+// breakeven-with-demon-payout to be worth including under any circumstance.
+// MIN_CONFIDENCE fixed from 80 to a real, achievable floor: verified live that the single best
+// leg across the ENTIRE board on a representative night only reached 46.3% HP - genuine hard-side
+// Demons structurally cannot clear 80%, so that bar produced an empty result almost every day
+// (the same class of bug just fixed on the Goblin tab). 12 is low enough to let the tiered
+// fallback actually reach tier 3 on a thin night without admitting genuinely bad legs, since the
+// segment restriction above - not this floor - is what does the real quality gating now.
+const DEMON_SLIP_MIN_CONFIDENCE = 12;
+const DEMON_SEGMENT_TIERS = [
+  ["walks", "fantasy_score", "hitter_strikeouts"],
+  ["pitcher_outs", "singles", "home_runs"],
+  ["pitcher_strikeouts", "hits_allowed", "runs", "doubles", "walks_allowed", "total_bases"]
+];
 async function autoSelectDemonSlipLegs(env, options = {}) {
   const maxPerGame = Number(options.max_per_game || 2);
   const pg = pgClient(env);
@@ -2616,10 +2635,21 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
       ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
     `);
+    // Tiered fallback: only fall through to a lower tier if the current tier(s) don't yet have
+    // enough distinct-player legs to build a real slip - always prefers the research-verified
+    // better segments, but still guarantees an attempt on a thin day rather than going empty.
+    let allowedProps = new Set();
+    let rowsForTiers = [];
+    for (const tier of DEMON_SEGMENT_TIERS) {
+      for (const p of tier) allowedProps.add(p);
+      rowsForTiers = rows.filter(r => allowedProps.has(r.canonical_prop_key));
+      const distinctPlayers = new Set(rowsForTiers.map(r => r.mlb_player_id)).size;
+      if (distinctPlayers >= DEMON_SLIP_MIN_SIZE) break;
+    }
     const perGameCount = new Map();
     const seenPlayer = new Set();
     const selected = [];
-    for (const r of rows) {
+    for (const r of rowsForTiers) {
       if (selected.length >= DEMON_SLIP_MAX_SIZE) break;
       if (seenPlayer.has(r.mlb_player_id)) continue;
       const gameCount = perGameCount.get(r.game_pk) || 0;
