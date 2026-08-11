@@ -8602,6 +8602,14 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       : rawFields.map(f => `COALESCE(${f},0)`).join("+");
     let dispersion = Infinity;
     let pooledWithinPlayerVariance = null;
+    // REAL FIX (2026-08-11): caps dispersion at a conservative maximum (0.65), confirmed via
+    // large-sample research (see commit message) that the raw pooled-variance estimate is
+    // severely overconfident for at least two real, independently-verified segments
+    // (fantasy_score|more, hits|more) - in one case falling back to plain Poisson (zero
+    // overdispersion) entirely when pooledVar<=pooledMean, in the other computing a technically
+    // valid but still-too-narrow value. This is a floor, not a replacement: the pooled estimate
+    // is still used as-is whenever it's already conservative enough (<=0.65).
+    const DISPERSION_MAX_CAP = 0.65;
     try {
       const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
       let sumGames=0, sumMeanW=0, sumVarW=0;
@@ -8612,10 +8620,13 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       }
       if (sumGames > 0) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
-        dispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
+        const rawDispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
+        dispersion = Math.min(rawDispersion, DISPERSION_MAX_CAP);
         pooledWithinPlayerVariance = pooledVar;
+      } else {
+        dispersion = DISPERSION_MAX_CAP;
       }
-    } catch (err) { dispersion = Infinity; }
+    } catch (err) { dispersion = DISPERSION_MAX_CAP; }
 
     // Population-level prior_strength via method of moments (2026-08-08), grounded in established
     // empirical Bayes practice (Efron-Morris shrinkage, the canonical baseball empirical-Bayes
