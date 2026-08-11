@@ -2941,7 +2941,14 @@ function buildResearchGroundedSlips(legsBySource) {
         propTypesInSlip.add(propTypeKey);
         playerUsageGlobal.set(playerKey, (playerUsageGlobal.get(playerKey) || 0) + 1);
       }
-      if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) break; // not enough diversified legs left for even the smallest slip
+      if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) {
+        // Real fix (2026-08-11): don't abandon the whole remaining pool just because THIS
+        // top-down attempt stalled (e.g. the highest-ranked leg couldn't find a diversified
+        // partner among what's left) - mark only that top leg used and keep going, so a large
+        // pool with plenty of valid combinations further down doesn't get thrown away wholesale.
+        used.add(available[0].board_row_id);
+        continue;
+      }
 
       const probs01 = slipLegs.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.certainty_0_100 || 0) / 100)));
       // Try smallest-size-first: 2-leg flex/power, then 3-leg, per the research's own conclusion
