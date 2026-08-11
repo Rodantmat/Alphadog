@@ -2257,6 +2257,18 @@ function buildGeneratedSlips(legs, structures, mode = "recommended") {
   }
   return out.sort((a,b)=>Number(b.estimated_ev_per_unit_stake||-1)-Number(a.estimated_ev_per_unit_stake||-1));
 }
+// Wilson score interval lower bound - conservative real-world estimate for a proportion given a
+// sample size, used here specifically so small samples get pulled toward "unproven" rather than
+// trusted outright. Not present elsewhere in this file (only in a separate worker), added here
+// as a local helper so the line-trust logic below actually functions instead of silently
+// no-oping through its own fail-safe catch.
+function wilsonIntervalCC(pHat, n, z) {
+  if (n <= 0) return { lower: 0, upper: 1 };
+  const z2 = z * z, denom = 1 + z2 / n;
+  const center = (pHat + z2 / (2 * n)) / denom;
+  const margin = (z * Math.sqrt((pHat * (1 - pHat) / n) + (z2 / (4 * n * n)))) / denom;
+  return { lower: Math.max(0, center - margin), upper: Math.min(1, center + margin) };
+}
 // Line-trust scoring, grounded in the per-line research done this session (2026-08-11): raw
 // per-line hit rates from a short window are genuinely risky to trust directly (a line with
 // n=20 could just be a lucky streak) - so this uses the Wilson lower bound, already used
