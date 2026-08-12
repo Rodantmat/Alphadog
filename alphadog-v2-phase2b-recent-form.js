@@ -74,6 +74,7 @@ async function loadTaxonomyClassifier(pgClient) {
     map.set(String(r.prop_key || "").toLowerCase(), family);
   }
   TAXONOMY_CACHE = map;
+  TAXONOMY_CACHE_AT = Date.now();
   return map;
 }
 function classifyProp(propKey, sourcePropName) {
