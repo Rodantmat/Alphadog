@@ -8582,10 +8582,10 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     function hpFromEmpiricalDistribution(tierKey, threshold, side) {
       const table = empiricalByTier.get(tierKey);
       if (!table) return null;
+      const maxBucket = Math.max(...table.keys());
+      if (threshold >= maxBucket) return null; // would require splitting the top "N or more" bucket - not supported, fall back
       let pUnder = 0;
-      for (let k = 0; k <= Math.min(threshold, 2); k++) { const p = table.get(k); if (p == null) return null; pUnder += p; }
-      if (threshold >= 3) { const p3 = table.get(3); if (p3 == null) return null; /* threshold>=3 already fully covered by k=0..2 above plus needing partial 3+; only exact at threshold<=2 or ==the bucket boundary */ }
-      if (threshold > 2) return null; // only trust the table at threshold 0,1,2 - the "3+" bucket can't be split further without more granularity
+      for (let k = 0; k <= threshold; k++) { const p = table.get(k); if (p == null) return null; pUnder += p; }
       return side === "more" ? (1 - pUnder) : pUnder;
     }
     const entity = propConfig.entity;
