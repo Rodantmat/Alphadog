@@ -2721,6 +2721,7 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
         AND source_key = 'prizepicks' AND is_demon = 1 AND selected_side = 'more'
         AND estimated_hit_probability_0_100 >= ${DEMON_SLIP_MIN_CONFIDENCE}
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
     `);
     // Tiered fallback: only fall through to a lower tier if the current tier(s) don't yet have
