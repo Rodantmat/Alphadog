@@ -4,7 +4,16 @@ from pathlib import Path
 
 COMPATIBILITY_DATE = "2026-05-18"
 WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["workers"]
-D1_BINDINGS = json.loads(Path("cloudflare_d1_bindings.json").read_text(encoding="utf-8"))["d1_databases"]
+D1_BINDINGS = []  # CRITICAL FIX 2026-08-12: all 12 D1 databases confirmed deleted (verified by
+# direct query against every single one this session - CONTROL_DB, CONFIG_DB, REF_DB,
+# STATS_HITTER_DB, STATS_PITCHER_DB, TEAM_DB, DAILY_DB, MARKET_DB, CONTEXT_DB, SCORE_DB,
+# ARCHIVE_DB, SCORING_DB all return "D1 database has been deleted"). This is an active,
+# real-time decommissioning - ARCHIVE_DB was successfully queried earlier this same session
+# and is now gone too. Every worker not already in FULLY_MIGRATED_NO_D1_AT_ALL was about to
+# fail deploy the same way alphadog-v2-phase3a-first-inning-pitcher-context just did
+# (confirmed: "D1 binding TEAM_DB references database ... which was not found"). No live D1
+# database exists anywhere anymore, so no worker should attempt to bind one.
+# json.loads(Path("cloudflare_d1_bindings.json").read_text(encoding="utf-8"))["d1_databases"]
 VARS = json.loads(Path("vars.production.json").read_text(encoding="utf-8"))
 
 ORCHESTRATOR_CRONS = []  # Retired: board/daily-context/market/scoring (via master-runner),
