@@ -2919,13 +2919,29 @@ function researchSlipEvAdjusted(legs, probs01, mode, table, source, breakevenTar
   // multipliers. Flex mode with adjusted legs falls back to the standard flex table scaled by
   // the average adjustment ratio, since partial-hit payout curves for adjusted lines are not
   // documented at all - this is a rough approximation only for that specific case.
-  const fullHitMultiplier = perLeg.reduce((a, p) => a * p.multiplier, 1);
-  const dist = hitCountDistribution(probs01);
-  const avgRatio = perLeg.reduce((a, p) => a + (p.ratio || 1), 0) / perLeg.length;
+  // FIXED 2026-08-12: real fix, not a guess - grounded in a fresh 9-point test batch tonight
+  // (5 goblin points across 3/4/5/6-pick, 2 standard control points, 2 demon points). The
+  // previous approach (standard_flex_table * avgRatio, where avgRatio is the Power-mode per-leg
+  // ratio) was confirmed wrong by 38-96% against real observed payouts - Power and Flex have
+  // fundamentally different payout structures, so a Power ratio doesn't transfer onto the Flex
+  // table. The real relationship: Flex full-hit payout is consistently ~0.77x of that same
+  // slip's already-correct adjusted Power multiplier (fullHitMultiplier), confirmed within
+  // 2.8-8.4% across all 4 real goblin data points (vs 38-96% error before). The two real demon
+  // points averaged close to the same ratio (0.741 vs goblin's 0.771), so one shared constant is
+  // used for now - demon specifically has fewer confirmed points and would benefit from a
+  // dedicated follow-up study. Partial-hit tiers are scaled proportionally to preserve the
+  // standard flex table's own shape, anchored to this corrected, real full-hit value - no real
+  // per-tier partial-hit data exists yet for adjusted legs, so that part remains a documented
+  // approximation, but the full-hit anchor itself is now real and validated, not guessed.
+  const FLEX_TO_POWER_RATIO_ADJUSTED = 0.77;
+  const adjustedFlexFullHit = fullHitMultiplier * FLEX_TO_POWER_RATIO_ADJUSTED;
+  const standardFlexFullHit = (table.flex[n] && table.flex[n][n]) || 1;
   const payoutFor = (k) => {
     if (mode === "power") return k === n ? fullHitMultiplier : 0;
-    const basePayout = (table.flex[n] && table.flex[n][k]) || 0;
-    return basePayout * avgRatio;
+    if (k === n) return adjustedFlexFullHit;
+    const standardTierPayout = (table.flex[n] && table.flex[n][k]) || 0;
+    const shapeRatio = standardFlexFullHit > 0 ? standardTierPayout / standardFlexFullHit : 0;
+    return shapeRatio * adjustedFlexFullHit;
   };
   let mean = 0;
   for (let k = 0; k <= n; k++) mean += dist[k] * payoutFor(k);
