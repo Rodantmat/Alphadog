@@ -68,17 +68,17 @@ Mining now also covers first-inning game/pitcher context (context.first_inning_g
 
 READINESS GATE (new as of 2026-08-11, replaces any fixed-timer buffer - this run fires at 10pm Pacific while some games may still be live or not yet finalized):
 
-A. Build tonight's real target game list once, at the very start of Layer 1:
+A. Build tonight's real target game list once, at the very start of Layer 1. Do NOT use bare CURRENT_DATE - the Postgres session runs in GMT, and this trigger fires at 10pm Pacific, which is already past UTC midnight (Master's own supervisor independently hit and documented this exact structural timing quirk at its 2026-08-11 5pm-Pacific run: CURRENT_DATE silently resolves to tomorrow's Pacific calendar date during Pacific-evening hours). Compute the real Pacific calendar date explicitly instead:
    SELECT game_pk, is_final, is_live, is_pregame FROM calendar.game_calendar
-   WHERE official_date = CURRENT_DATE AND is_postponed = false AND is_cancelled = false;
+   WHERE official_date = (NOW() AT TIME ZONE 'America/Los_Angeles')::date AND is_postponed = false AND is_cancelled = false;
    This is the authoritative list every check below is scoped to. If it returns zero rows (a genuine full off-day), the gate is trivially satisfied - proceed straight to Layer 2.
 
 B. Run mining steps 1-6 above once immediately - mine whatever is genuinely available right now. This call is always safe to repeat; it only writes what's actually postable at call time.
 
-C. Run the coverage verification query, scoped to TODAY (not MAX(game_date) - on a same-night run, team.game_logs can still reflect a stale prior date until today's first row lands):
+C. Run the coverage verification query, scoped to TODAY in Pacific terms (not MAX(game_date), and not bare CURRENT_DATE - same GMT-vs-Pacific reason as step A; use the identical explicit Pacific-date expression so this check and step A's target list always agree on which calendar day "today" means):
 
    SELECT tg.game_pk FROM team.game_logs tg
-   WHERE tg.game_date::date = CURRENT_DATE
+   WHERE tg.game_date::date = (NOW() AT TIME ZONE 'America/Los_Angeles')::date
    AND (
      NOT EXISTS (SELECT 1 FROM stats_hitter.game_logs h WHERE h.game_pk=tg.game_pk AND h.team_id=tg.team_id)
      OR NOT EXISTS (SELECT 1 FROM stats_pitcher.game_logs p WHERE p.game_pk=tg.game_pk AND p.team_id=tg.team_id)
@@ -123,7 +123,7 @@ LAYER 3 - COVERAGE AUDIT (direct SQL, not a worker call)
 ============================================================
 Run this yourself and confirm no genuine gap (0 expected games trivially passes; if games_expected > 0, games_in_starter_history and games_in_bullpen_history must equal it):
 
-WITH todays_games AS (SELECT DISTINCT game_pk FROM team.game_logs WHERE game_date = CURRENT_DATE)
+WITH todays_games AS (SELECT DISTINCT game_pk FROM team.game_logs WHERE game_date = (NOW() AT TIME ZONE 'America/Los_Angeles')::date)  -- explicit Pacific date, not bare CURRENT_DATE (GMT) - see LAYER 1 READINESS GATE note
 SELECT (SELECT COUNT(*) FROM todays_games) AS games_expected,
   (SELECT COUNT(DISTINCT game_pk) FROM team.starter_history WHERE game_pk IN (SELECT game_pk FROM todays_games)) AS games_in_starter_history,
   (SELECT COUNT(DISTINCT game_pk) FROM team.bullpen_history WHERE game_pk IN (SELECT game_pk FROM todays_games)) AS games_in_bullpen_history
