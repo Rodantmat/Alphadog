@@ -560,7 +560,12 @@ async function copyHistoryToCurrent(pgClient, batchId) {
   // causing the identical "column ... is of type timestamp with time zone but
   // expression is of type text" failure. The original fix above only covered
   // official_date; this extends the same explicit-cast approach to the second column.
-  const CAST_SELECT_COLS = { official_date: "official_date::date", official_game_time_utc: "official_game_time_utc::timestamptz" };
+  // FIX (2026-08-12): score.final_board_history.details_json_snapshot is TEXT but
+  // score.final_board_current.details_json_snapshot is JSONB, causing the identical
+  // "column ... is of type jsonb but expression is of type text" failure as the
+  // official_date/official_game_time_utc casts above. Same explicit-cast fix, extended
+  // to this third column (surfaced 2026-08-12 when reconcileStaleRunningFinalBoard hit it).
+  const CAST_SELECT_COLS = { official_date: "official_date::date", official_game_time_utc: "official_game_time_utc::timestamptz", details_json_snapshot: "details_json_snapshot::jsonb" };
   const selectCols = BOARD_ROW_COLS.map(c => CAST_SELECT_COLS[c] || c).join(", ");
   await pgClient`DELETE FROM score.final_board_current`;
   await pgClient`INSERT INTO score.final_board_current (${pgClient.unsafe(cols)})
