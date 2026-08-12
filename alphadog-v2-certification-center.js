@@ -2554,6 +2554,7 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
         AND source_key = 'prizepicks' AND COALESCE(is_goblin,0) = 0 AND COALESCE(is_demon,0) = 0
         AND estimated_hit_probability_0_100 >= ${REGULAR_SLIP_MIN_CONFIDENCE}
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
     `);
     const perGameCount = new Map();
