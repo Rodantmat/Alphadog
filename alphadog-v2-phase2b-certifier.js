@@ -604,24 +604,48 @@ async function runMatrixBuilder(request, env, pgClient) {
       daily_readiness: compactReadiness(readiness, effectiveDailyStatus), factor_coverage: compactFactorCoverage(factorCov),
       issue_counts: { warning_count: warningCount, blocker_count: blockerCount, missing_component_count: missingComponentCount }
     };
-    matrixRows.push({
-      matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk,
-      official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: row.team, opponent_team_id: row.opponent,
-      is_home: row.team && game && String(game.home_team_id || game.home_team_name || "") === String(row.team) ? 1 : null, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value,
-      prop_side: (sideVariation.side_mode === "less_only" ? "less" : "more"), factor_family: factorCov ? factorCov.factor_family : classification.family,
-      factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing",
-      market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: effectiveDailyStatus, matrix_status: matrixStatus, matrix_grade: matrixGrade,
-      blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount,
-      matrix_payload: {
-        prepared: { prepared_row_id: row.prepared_row_id, prep_batch_id: row.prep_batch_id, source_key: row.source_key, player_name: row.player_name, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, line_value: row.line_value, official_game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, source_line_id: sourceLineId, variation_key: sideVariation.variation_key, odds_type: sideVariation.odds_type, source_line_type: sideVariation.source_line_type, projection_type: sideVariation.projection_type, payout_variant: sideVariation.payout_variant, is_goblin: sideVariation.is_goblin, is_demon: sideVariation.is_demon, is_standard: sideVariation.is_standard, over_price: sideVariation.over_price, under_price: sideVariation.under_price, source_prices: sideVariation.source_prices },
-        side_context: { side_mode: sideVariation.side_mode, available_sides: sideVariation.available_sides, side_availability_status: sideVariation.side_availability_status, side_eligibility_status: sideVariation.side_eligibility_status, side_eligibility_reason: sideVariation.side_eligibility_reason, scoring_side_rule: sideVariation.scoring_side_rule, goblin_demon_under_blocker: ((sideVariation.is_goblin || sideVariation.is_demon) && sideVariation.side_mode === "more_only") ? "GOBLIN_DEMON_UNDER_NOT_SELECTABLE" : null, selected_side: null, more_score_0_100: null, less_score_0_100: null },
-        variation_context: { variation_key: sideVariation.variation_key, source_line_id: sourceLineId, prepared_row_id: row.prepared_row_id, source_key: row.source_key, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, line_value: row.line_value, board_line_value: row.line_value, odds_type: sideVariation.odds_type, source_line_type: sideVariation.source_line_type, projection_type: sideVariation.projection_type, payout_variant: sideVariation.payout_variant, source_key_normalized: sideVariation.source_key_normalized, no_collapse_identity_rule: "score_every_valid_matrix_eligible_line_variation_independently" },
-        scoring_placeholders: { selected_side: null, more_score_0_100: null, less_score_0_100: null, score_0_100: null, scoring_status: "not_scored_matrix_handoff_only", side_eligibility_status: sideVariation.side_eligibility_status, side_eligibility_reason: sideVariation.side_eligibility_reason, variation_key: sideVariation.variation_key },
-        factor_packet_ref: packetRef,
-        context_refs: { daily_readiness_status: effectiveDailyStatus, market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing" },
-        compact_storage_v0_1_14: true
-      }, details
-    });
+    // REAL ARCHITECTURAL FIX (2026-08-11): a genuinely two-sided line (side_mode='two_sided',
+    // confirmed via row.is_under_allowed for PrizePicks Goblin/Demon, or real over/under prices
+    // for other sources) represents TWO real, independently pickable options - not one. The old
+    // code always emitted a single row defaulted to prop_side='more', meaning the 'less' side of
+    // every two-sided Goblin/Demon line was never computed or scored at all, regardless of its
+    // real hit probability. Now emits one matrix row per real side for two-sided lines, each with
+    // its own matrix_id, correct prop_side, and correctly flipped is_goblin/is_demon (the raw tag
+    // describes 'more' as PrizePicks set it; 'less' gets the structural complement - a lowered/
+    // Goblin threshold makes 'more' easier and 'less' harder, and vice versa for a raw Demon tag).
+    // scoring.enrichment_leg_current (phase2a-run-environment.js) already processes every distinct
+    // matrix_id independently via row.prop_side - confirmed compatible with zero changes needed
+    // there. more_only/less_only lines are unchanged: one row, the one real side.
+    const isTwoSided = sideVariation.side_mode === "two_sided";
+    const sidesToEmit = isTwoSided ? ["more", "less"] : [(sideVariation.side_mode === "less_only" ? "less" : "more")];
+    for (const emitSide of sidesToEmit) {
+      const sideMatrixId = isTwoSided ? key("matrix", row.prepared_row_id, emitSide) : matrixId;
+      let sideIsGoblin = sideVariation.is_goblin;
+      let sideIsDemon = sideVariation.is_demon;
+      if (isTwoSided && emitSide === "less" && (sideIsGoblin || sideIsDemon)) {
+        const wasGoblin = sideIsGoblin;
+        sideIsGoblin = sideIsDemon ? 1 : 0;
+        sideIsDemon = wasGoblin ? 1 : 0;
+      }
+      matrixRows.push({
+        matrix_id: sideMatrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk,
+        official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: row.team, opponent_team_id: row.opponent,
+        is_home: row.team && game && String(game.home_team_id || game.home_team_name || "") === String(row.team) ? 1 : null, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value,
+        prop_side: emitSide, factor_family: factorCov ? factorCov.factor_family : classification.family,
+        factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing",
+        market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: effectiveDailyStatus, matrix_status: matrixStatus, matrix_grade: matrixGrade,
+        blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount,
+        matrix_payload: {
+          prepared: { prepared_row_id: row.prepared_row_id, prep_batch_id: row.prep_batch_id, source_key: row.source_key, player_name: row.player_name, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, line_value: row.line_value, official_game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, source_line_id: sourceLineId, variation_key: sideVariation.variation_key, odds_type: sideVariation.odds_type, source_line_type: sideVariation.source_line_type, projection_type: sideVariation.projection_type, payout_variant: sideVariation.payout_variant, is_goblin: sideIsGoblin, is_demon: sideIsDemon, is_standard: sideVariation.is_standard, over_price: sideVariation.over_price, under_price: sideVariation.under_price, source_prices: sideVariation.source_prices, is_under_allowed: row.is_under_allowed == null ? 1 : Number(row.is_under_allowed) },
+          side_context: { side_mode: sideVariation.side_mode, available_sides: sideVariation.available_sides, side_availability_status: sideVariation.side_availability_status, side_eligibility_status: sideVariation.side_eligibility_status, side_eligibility_reason: sideVariation.side_eligibility_reason, scoring_side_rule: sideVariation.scoring_side_rule, goblin_demon_under_blocker: ((sideVariation.is_goblin || sideVariation.is_demon) && sideVariation.side_mode === "more_only") ? "GOBLIN_DEMON_UNDER_NOT_SELECTABLE" : null, explicit_side_assigned: isTwoSided, selected_side: emitSide, more_score_0_100: null, less_score_0_100: null },
+          variation_context: { variation_key: sideVariation.variation_key, source_line_id: sourceLineId, prepared_row_id: row.prepared_row_id, source_key: row.source_key, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, line_value: row.line_value, board_line_value: row.line_value, odds_type: sideVariation.odds_type, source_line_type: sideVariation.source_line_type, projection_type: sideVariation.projection_type, payout_variant: sideVariation.payout_variant, source_key_normalized: sideVariation.source_key_normalized, no_collapse_identity_rule: "score_every_valid_matrix_eligible_line_variation_independently" },
+          scoring_placeholders: { selected_side: emitSide, more_score_0_100: null, less_score_0_100: null, score_0_100: null, scoring_status: "not_scored_matrix_handoff_only", side_eligibility_status: sideVariation.side_eligibility_status, side_eligibility_reason: sideVariation.side_eligibility_reason, variation_key: sideVariation.variation_key },
+          factor_packet_ref: packetRef,
+          context_refs: { daily_readiness_status: effectiveDailyStatus, market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing" },
+          compact_storage_v0_1_14: true
+        }, details
+      });
+    }
     coverageRows.push({ coverage_key: key("matrix", row.prepared_row_id), prepared_row_id: row.prepared_row_id, matrix_id: matrixId, matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, latest_batch_id: batchId, latest_checked_at: nowIso(), missing_reason: blockerCount ? issues.slice(rowIssuesBefore).filter(i => i.severity === "blocker").map(i => i.reason).join(",") : null, details: { warning_count: warningCount, blocker_count: blockerCount, missing_component_count: missingComponentCount }, official_date: row.official_date });
     }
 
