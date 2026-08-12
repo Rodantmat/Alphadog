@@ -101,112 +101,26 @@ function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
 // to NOT diverge by source (PP 13.3pt vs UD 13.9pt, essentially identical), so it stays
 // source-agnostic. Each entry here reflects what the real data actually showed for that specific
 // prop, not an assumed pattern.
-const RESIDUAL_CORRECTION_MAP = {
-  "fantasy_score|less": [
-    { lo: 50, hi: 60, delta: -18.5 },
-    { lo: 60, hi: 70, delta: -9.3 },
-    { lo: 70, hi: 80, delta: -17.2 },
-    { lo: 80, hi: 90, delta: -14.0 },
-    { lo: 90, hi: 101, delta: -23.1 }
-  ],
-  "fantasy_score|less|prizepicks": [
-    { lo: 50, hi: 60, delta: -12.6 },
-    { lo: 60, hi: 70, delta: -18.8 },
-    { lo: 70, hi: 80, delta: -24.4 },
-    { lo: 80, hi: 101, delta: -20.5 }
-  ],
-  "fantasy_score|less|parlay_underdog": [
-    { lo: 60, hi: 70, delta: -5.8 },
-    { lo: 70, hi: 80, delta: -14.5 },
-    { lo: 80, hi: 90, delta: -13.3 },
-    { lo: 90, hi: 101, delta: -23.4 }
-  ],
-  "hits_runs_rbis|less|prizepicks": [
-    { lo: 70, hi: 101, delta: -31.8 }
-  ],
-  "hits_runs_rbis|less|sleeper": [
-    { lo: 70, hi: 101, delta: -20.3 }
-  ],
-  "hits_runs_rbis|less|parlay_underdog": [
-    { lo: 70, hi: 101, delta: -12.9 }
-  ],
-  "walks|less": [
-    { lo: 80, hi: 90, delta: -12.7 },
-    { lo: 90, hi: 101, delta: -19.0 }
-  ],
-  "total_bases|less": [
-    { lo: 80, hi: 90, delta: -24.4 },
-    { lo: 90, hi: 101, delta: -35.0 }
-  ],
-  "hits_runs_rbis|less": [
-    { lo: 80, hi: 101, delta: -22.0 }
-  ],
-  "singles|less": [
-    { lo: 80, hi: 101, delta: -21.2 }
-  ],
-  "hits|less": [
-    { lo: 80, hi: 101, delta: -22.3 }
-  ],
-  "runs|less": [
-    { lo: 80, hi: 101, delta: -13.6 }
-  ],
-  "rbis|less": [
-    { lo: 80, hi: 101, delta: -12.8 }
-  ],
-  "doubles|less_DEACTIVATED_2026-08-08_confirmed_baseline_already_accurate": [
-    { lo: 80, hi: 101, delta: -11.9 }
-  ],
-  "rbis|more": [
-    { lo: 20, hi: 30, delta: -14.3 },
-    { lo: 30, hi: 40, delta: -24.2 },
-    { lo: 60, hi: 70, delta: -38.8 },
-    { lo: 70, hi: 80, delta: -57.1 }
-  ],
-  "total_bases|more": [
-    { lo: 20, hi: 30, delta: -17.8 },
-    { lo: 30, hi: 40, delta: -12.7 },
-    { lo: 40, hi: 50, delta: -24.5 },
-    { lo: 50, hi: 60, delta: -30.2 },
-    { lo: 60, hi: 70, delta: -11.9 },
-    { lo: 70, hi: 80, delta: -17.3 }
-  ],
-  "hits|more": [
-    { lo: 70, hi: 80, delta: -14.1 }
-  ],
-  "doubles|more": [
-    { lo: 60, hi: 70, delta: -49.6 }
-  ],
-  "hits_allowed|less": [
-    { lo: 60, hi: 70, delta: -27.9 }
-  ],
-  "runs|more": [
-    { lo: 60, hi: 70, delta: -30.2 }
-  ],
-  "singles|more": [
-    { lo: 60, hi: 70, delta: -22.7 }
-  ],
-  "pitcher_outs|less": [
-    { lo: 50, hi: 60, delta: -19.4 },
-    { lo: 60, hi: 70, delta: -8.4 }
-  ],
-  "runs_allowed|less": [
-    { lo: 90, hi: 101, delta: -57.3 }
-  ],
-  "earned_runs|more": [
-    { lo: 30, hi: 40, delta: -14.2 },
-    { lo: 70, hi: 80, delta: -13.5 },
-    { lo: 80, hi: 90, delta: -20.0 }
-  ],
-  "earned_runs|less": [
-    { lo: 30, hi: 40, delta: -14.2 },
-    { lo: 70, hi: 80, delta: -13.5 },
-    { lo: 80, hi: 90, delta: -20.0 }
-  ]
-};
-function applyResidualCorrection(propKey, side, sourceKey, displayedHpPct) {
+// Residual correction bins now live in config.residual_correction_bins (2026-08-12) - previously
+// a hardcoded JS object, which meant any adjustment (including deactivating a prop once a more
+// accurate baseline superseded it, as happened for 'hits' this same night) required a full
+// redeploy. Loaded once per invocation, same pattern as loadCalibrationMap below.
+async function loadResidualCorrectionMap(pgClient) {
+  const rows = await pgClient`SELECT canonical_prop_key, selected_side, source_key, lo_bound, hi_bound, delta FROM config.residual_correction_bins WHERE is_active = true`.catch(() => []);
+  const map = new Map();
+  for (const r of rows) {
+    const sourceSpecificKey = r.source_key ? `${r.canonical_prop_key}|${r.selected_side || ""}|${r.source_key}` : null;
+    const genericKey = `${r.canonical_prop_key}|${r.selected_side || ""}`;
+    const key = sourceSpecificKey || genericKey;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push({ lo: Number(r.lo_bound), hi: Number(r.hi_bound), delta: Number(r.delta) });
+  }
+  return map;
+}
+function applyResidualCorrection(propKey, side, sourceKey, displayedHpPct, residualMap) {
   if (displayedHpPct == null) return { correctedHp: displayedHpPct, applied: false };
-  const sourceSpecificBins = RESIDUAL_CORRECTION_MAP[`${propKey}|${side || ""}|${sourceKey || ""}`];
-  const bins = sourceSpecificBins || RESIDUAL_CORRECTION_MAP[`${propKey}|${side || ""}`];
+  const sourceSpecificBins = residualMap.get(`${propKey}|${side || ""}|${sourceKey || ""}`);
+  const bins = sourceSpecificBins || residualMap.get(`${propKey}|${side || ""}`);
   if (!bins) return { correctedHp: displayedHpPct, applied: false };
   const bin = bins.find(b => displayedHpPct >= b.lo && displayedHpPct < b.hi);
   if (!bin) return { correctedHp: displayedHpPct, applied: false };
