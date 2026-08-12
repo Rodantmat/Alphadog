@@ -8555,7 +8555,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
   const side = String(input.selected_side || "");
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 10, idle_timeout: 20 });
   try {
-    const cfgRows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength','tier_blend_constant')`;
+    const cfgRows = await sql`SELECT config_key, config_json FROM config.calibration_config WHERE config_key IN ('prop_metric_map','recency_weights','tier_bands','confidence_prior_strength','tier_blend_constant','empirical_distribution_config')`;
     const cfg = {}; for (const r of cfgRows) cfg[r.config_key] = r.config_json;
     const propConfig = cfg.prop_metric_map[propKey];
     if (!propConfig) { return { ok: false, mode: "classification_baseline_v6_to_postgres", error: `no_prop_metric_map_entry_for_${propKey}` }; }
