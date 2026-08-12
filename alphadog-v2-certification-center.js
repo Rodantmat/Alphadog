@@ -2373,26 +2373,18 @@ async function autoSelectBestLegs(env, options) {
     const rows = await queryAllPg(pg, `
       WITH ladder AS (
         SELECT
-          fbc.final_board_row_id, fbc.final_board_batch_id, fbc.prepared_row_id, fbc.source_line_id, fbc.source_key,
-          fbc.rank_order, fbc.game_pk, fbc.official_date, fbc.official_game_time_utc, fbc.mlb_player_id, fbc.player_name,
-          fbc.canonical_prop_key, fbc.line_value, fbc.selected_side, fbc.estimated_hit_probability_0_100,
-          fbc.confidence_0_100, fbc.score_0_100, fbc.score_grade, fbc.board_tier,
-          -- CRITICAL FIX (2026-08-11): score.final_board_current's own is_goblin/is_demon columns are
-          -- confirmed wrong for most props (verified: total_bases, hits_runs_rbis, rbis, walks, hits,
-          -- doubles, singles, home_runs all substantially mislabeled). The raw source payload is the
-          -- one thing proven consistently correct all session - overriding here so nothing downstream
-          -- (trust scoring, payout ratio, EV check) ever sees the corrupted classification.
-          COALESCE(NULLIF((( bp.row_payload_json#>>'{}')::jsonb->>'is_goblin')::int, NULL), 0) AS is_goblin,
-          COALESCE(NULLIF((( bp.row_payload_json#>>'{}')::jsonb->>'is_demon')::int, NULL), 0) AS is_demon,
-          MIN(CASE WHEN COALESCE((((bp.row_payload_json#>>'{}')::jsonb->>'is_goblin'))::int,0)=0 AND COALESCE((((bp.row_payload_json#>>'{}')::jsonb->>'is_demon'))::int,0)=0 THEN fbc.line_value END)
-            OVER (PARTITION BY fbc.source_key, fbc.mlb_player_id, fbc.canonical_prop_key, fbc.selected_side) AS standard_line_value,
+          final_board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key,
+          rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name,
+          canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100,
+          confidence_0_100, score_0_100, score_grade, board_tier, is_goblin, is_demon,
+          MIN(CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 THEN line_value END)
+            OVER (PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side) AS standard_line_value,
           ROW_NUMBER() OVER (
-            PARTITION BY fbc.source_key, fbc.mlb_player_id, fbc.canonical_prop_key, fbc.selected_side, COALESCE((((bp.row_payload_json#>>'{}')::jsonb->>'is_goblin'))::int,0)
-            ORDER BY fbc.line_value ASC
+            PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side, is_goblin
+            ORDER BY line_value ASC
           ) AS goblin_tier_rank
-        FROM score.final_board_current fbc
-        LEFT JOIN score.board_prepared_current bp ON bp.prepared_row_id = fbc.prepared_row_id
-        WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        FROM score.final_board_current
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
       )
       SELECT
         l.final_board_row_id AS board_row_id,
