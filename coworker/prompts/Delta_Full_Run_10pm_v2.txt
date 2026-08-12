@@ -42,7 +42,7 @@ CRITICAL OPERATIONAL KNOWLEDGE - READ BEFORE STARTING
 ============================================================
 1. Architecture (as of 2026-08-05): no runners, no orchestrator wrapper, no partial acceptance. You call each individual step directly and own all chaining logic yourself, in the exact sequence documented in LAYER 1-5 below. Never advance to the next layer until the current layer's own real-data verification query genuinely confirms complete coverage - not a partial mine, not a partial calculation, not an assumed pass from an ok: true response alone. If a layer's real coverage isn't complete, keep working that layer - retry, resume, self-heal - until it genuinely is, no matter how many calls it takes.
 
-2. baseline_v6 (LAYER 2, step 8) processes exactly ONE combo per call by design - this was tested live, step by step, with real data verification, and confirmed via 10/10 clean consecutive test calls. Each call is fast (~2-8 seconds) and independent. Expect roughly 244 calls total if starting from zero - this is normal, not a failure, and there is no call limit. See LAYER 2 step 8 below for the exact call protocol (combo_index handling, resume behavior).
+2. baseline_v6 (LAYER 2, step 8) processes exactly ONE combo per call by design - this was tested live, step by step, with real data verification, and confirmed via 10/10 clean consecutive test calls. Each call is fast (~2-8 seconds) and independent. The total call count is NOT a fixed number - trust the live API's own total_combos field, not any number documented here (confirmed 268 total_combos as of the 2026-08-12 live run, not the originally-documented ~244 - that number was stale/outdated, not a bug). There is no call limit. See LAYER 2 step 8 below for the exact call protocol (combo_index handling, resume behavior).
 
 3. Known historical bug patterns already fixed (2026-08-02) - verify these haven't resurfaced rather than assuming they're permanently safe:
    - team_id format: stats_hitter.game_logs / stats_pitcher.game_logs / team.game_logs must all use plain numeric team_id (e.g. "108"), never "mlb_"-prefixed. A recurrence would silently break the coverage-check joins below even if the underlying data is fine.
@@ -63,12 +63,16 @@ All calls to https://alphadog-v2-phase3a-first-inning-pitcher-context.rodolfoaam
 4. {"resume_from_step": 3, "stop_before_step": 4} - bullpen_history
 5. {"resume_from_step": 4, "stop_before_step": 5} - hitter_metric_snapshots
 6. {"resume_from_step": 5, "stop_before_step": 6} - pitcher_metric_snapshots
+6b. {"resume_from_step": 7, "stop_before_step": 8} - first_inning_mining_delta (added 2026-08-12 - see correction below; do NOT skip this call)
 
-Mining now also covers first-inning game/pitcher context (context.first_inning_game / context.first_inning_pitcher, Postgres), wired into daily_morning_delta_full_run as its own internal step (first_inning_mining_delta) - it runs automatically as part of this same call sequence, no separate call needed. This was added 2026-08-05 after this data was found to have gone stale for weeks with nothing checking its coverage - the same class of silent gap the verification query below already catches for game_logs/starter_history/bullpen_history, now extended to cover it too.
+Mining now also covers first-inning game/pitcher context (context.first_inning_game / context.first_inning_pitcher, Postgres) - internal step index 7 in the deployed steps array, key first_inning_mining_delta. CORRECTION (2026-08-12): earlier versions of this prompt claimed this ran "automatically as part of this same call sequence, no separate call needed" - that was verified FALSE during the 2026-08-12 live run: Layer 1 steps 1-6 above only reach internal index 5, and Layer 2 step 7 below only reaches index 6, so index 7 was never actually being invoked by any documented call. Call 6b above explicitly, every run - do not assume it happens implicitly.
 
 READINESS GATE (new as of 2026-08-11, replaces any fixed-timer buffer - this run fires at 10pm Pacific while some games may still be live or not yet finalized):
 
-A. Build tonight's real target game list once, at the very start of Layer 1. Do NOT use bare CURRENT_DATE - the Postgres session runs in GMT, and this trigger fires at 10pm Pacific, which is already past UTC midnight (Master's own supervisor independently hit and documented this exact structural timing quirk at its 2026-08-11 5pm-Pacific run: CURRENT_DATE silently resolves to tomorrow's Pacific calendar date during Pacific-evening hours). Compute the real Pacific calendar date explicitly instead:
+A0. Refresh calendar.game_calendar FIRST, before building the target list - added 2026-08-12 after the live run found this table can go stale (one real run found it hadn't refreshed since 5:11pm PT, still showing genuinely-Final games as pregame/live, which would have permanently blocked the gate on phantom not-final games). Nothing else in this documented sequence refreshes this table, so do it explicitly every run:
+   POST https://alphadog-v2-base-game-calendar.rodolfoaamattos.workers.dev with {} (mode defaults to refresh_calendar - confirmed live via direct_worker_probe 2026-08-12; refreshes a rolling window from 3 days ago to 6 days ahead in Pacific time, no parameters needed).
+
+A. Build tonight's real target game list once, at the very start of Layer 1 (after A0's refresh). Do NOT use bare CURRENT_DATE - the Postgres session runs in GMT, and this trigger fires at 10pm Pacific, which is already past UTC midnight (Master's own supervisor independently hit and documented this exact structural timing quirk at its 2026-08-11 5pm-Pacific run: CURRENT_DATE silently resolves to tomorrow's Pacific calendar date during Pacific-evening hours). Compute the real Pacific calendar date explicitly instead:
    SELECT game_pk, is_final, is_live, is_pregame FROM calendar.game_calendar
    WHERE official_date = (NOW() AT TIME ZONE 'America/Los_Angeles')::date AND is_postponed = false AND is_cancelled = false;
    This is the authoritative list every check below is scoped to. If it returns zero rows (a genuine full off-day), the gate is trivially satisfied - proceed straight to Layer 2.
@@ -107,13 +111,13 @@ LAYER 2 - CALCULATION
 ============================================================
 7. Same worker/mode, {"resume_from_step": 6, "stop_before_step": 7} - quality_of_contact_derived_fields_refresh
 
-8. baseline_v6 - different call entirely, mode "classification_baseline_v6_to_postgres_full_run" on the same worker URL, with combo_index (start from whatever SELECT resume_index FROM control.worker_state WHERE state_key='baseline_v6_full_run' shows, or 0 if none). This processes exactly ONE combo per call by design - call repeatedly with combo_index set to the previous response's own combo_index field, until the response shows "combo_done": true. Expect roughly 244 calls total if starting from zero; each call is fast (~2-8 seconds) and independent - this is normal, not a failure, and there is no call limit.
+8. baseline_v6 - different call entirely, mode "classification_baseline_v6_to_postgres_full_run" on the same worker URL, with combo_index (start from whatever SELECT resume_index FROM control.worker_state WHERE state_key='baseline_v6_full_run' shows, or 0 if none). This processes exactly ONE combo per call by design - call repeatedly with combo_index set to the previous response's own combo_index field, until the response shows "combo_done": true. The total call count is whatever the live API's own total_combos field reports (confirmed 268 as of 2026-08-12 - do not treat this as a fixed target, it can change as the combo set evolves); each call is fast (~2-8 seconds) and independent - this is normal, not a failure, and there is no call limit.
 
 9. Same worker/mode as step 7, {"resume_from_step": 9, "stop_before_step": 10} - resolve_prop_outcomes
 
 (Verified 2026-08-07 directly against the deployed runDailyMorningDeltaFullRun steps array in alphadog-v2-phase3a-first-inning-pitcher-context.js: index 7=first_inning_mining_delta, index 8=baseline_v6_full_run, index 9=resolve_prop_outcomes. A prior version of this prompt used resume_from_step:8 here, which after the first_inning_mining_delta insertion would have redundantly re-run baseline_v6_full_run and skipped resolve_prop_outcomes entirely - fixed. If this worker's internal step array changes again, re-verify indices directly via github_grep_file before editing these calls.)
 
-Do not proceed until both verified: SELECT COUNT(*) FROM classification.population_stats returns exactly 244, AND this returns zero rows:
+Do not proceed until both verified: SELECT COUNT(*) FROM classification.population_stats returns a count matching the total_combos value the baseline_v6 API itself reported this run (confirmed 268 as of 2026-08-12 - do NOT hardcode 244, that figure was stale; always compare against the live API response, not a number in this prompt), AND this returns zero rows:
 
 SELECT canonical_prop_key, selected_side FROM classification.classification_v6_current
 GROUP BY canonical_prop_key, selected_side HAVING now() - MAX(updated_at) > interval '36 hours'
@@ -131,7 +135,9 @@ SELECT (SELECT COUNT(*) FROM todays_games) AS games_expected,
 ============================================================
 LAYER 4 - OUTCOME GRADING
 ============================================================
-POST https://alphadog-v2-outcome-grader.rodolfoaamattos.workers.dev/run with {}. Idempotent - zero new rows inserted on a re-run for an already-graded date is expected, not a failure.
+CRITICAL (confirmed via the 2026-08-12 live run): do NOT call this with an empty body. alphadog-v2-outcome-grader defaults target_date to "yesterday in America/Los_Angeles" - a holdover from the old 7am-next-morning schedule. On this 10pm same-night schedule, "yesterday Pacific" is the WRONG day; a default call silently re-grades an already-graded prior date (0 new rows, looks like a harmless idempotent no-op) and NEVER grades tonight's actual games. Always pass target_date explicitly as the same Pacific calendar date used throughout LAYER 1 (the (NOW() AT TIME ZONE 'America/Los_Angeles')::date value):
+
+POST https://alphadog-v2-outcome-grader.rodolfoaamattos.workers.dev/run with {"target_date": "<today's Pacific date, e.g. 2026-08-11>"}. Idempotent for a given target_date - zero new rows on a re-run of the SAME date is expected, not a failure. Zero new rows is only suspicious if games_on_board_for_date > 0 for that explicit target_date.
 
 ============================================================
 LAYER 5 - CALIBRATION TRAINING (do not skip this - it is NOT part of the internal step array above, it is a fully separate, required layer)
@@ -189,7 +195,7 @@ Fixes must be MINIMAL and SURGICAL:
 - Do not restructure working code as a side effect of a fix.
 - If unsure of the true root cause, say so in your log entry rather than guessing.
 
-The baseline_v6 single-combo loop in Layer 2 step 8 is NOT something to fix in code - it's the correct, tested operational pattern (one combo per call, ~244 calls expected). Follow that protocol, don't stop. Only escalate to BLOCKED_NEEDS_HUMAN after genuine investigation confirms something is truly novel, not just slow.
+The baseline_v6 single-combo loop in Layer 2 step 8 is NOT something to fix in code - it's the correct, tested operational pattern (one combo per call, count driven by the live API's total_combos field, confirmed 268 as of 2026-08-12). Follow that protocol, don't stop. Only escalate to BLOCKED_NEEDS_HUMAN after genuine investigation confirms something is truly novel, not just slow.
 
 ============================================================
 LOGGING - REQUIRED EVERY RUN
