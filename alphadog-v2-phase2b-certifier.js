@@ -655,7 +655,18 @@ async function runMatrixBuilder(request, env, pgClient) {
   }
 
   const summary = await summarizeMatrixBatch(pgClient, batchId);
-  const complete = summary.matrix_rows_written === prepared.length;
+  // FIXED 2026-08-11: this previously compared matrix_rows_written === prepared.length, which
+  // assumed exactly one matrix row per prepared row - no longer true now that two-sided lines
+  // correctly produce two matrix rows (one per real side) from one prepared row. Confirmed live:
+  // a real run showed matrix_rows_written=7639 against prepared.length=4585 with every prepared
+  // row already fully processed - genuinely complete, but the old check would never be satisfied.
+  // The real completion signal is whether every prepared row has been processed, independent of
+  // how many matrix rows each one produced - re-query existingPrepared fresh here (not the stale
+  // pre-loop snapshot) since this run's own chunks may have just finished processing the rest.
+  const finalExistingRows = await pgClient`SELECT DISTINCT prepared_row_id FROM score.prop_matrix_current WHERE batch_id=${batchId}`;
+  const finalExistingPrepared = new Set(finalExistingRows.map(r => String(r.prepared_row_id || "")).filter(Boolean));
+  const finalRemainingPrepared = prepared.filter(r => !finalExistingPrepared.has(String(r.prepared_row_id || "")));
+  const complete = finalRemainingPrepared.length === 0;
   const maxRuntimeMsFinal = Math.max(12000, Math.min(27000, Number.isFinite(maxRuntimeMsRaw) ? maxRuntimeMsRaw : 27000));
   if (!complete) {
     const remainingRows = Math.max(0, prepared.length - summary.matrix_rows_written);
