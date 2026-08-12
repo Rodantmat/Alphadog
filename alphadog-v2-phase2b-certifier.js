@@ -616,7 +616,15 @@ async function runMatrixBuilder(request, env, pgClient) {
     // scoring.enrichment_leg_current (phase2a-run-environment.js) already processes every distinct
     // matrix_id independently via row.prop_side - confirmed compatible with zero changes needed
     // there. more_only/less_only lines are unchanged: one row, the one real side.
-    const isTwoSided = sideVariation.side_mode === "two_sided";
+    // SCOPE FIX (2026-08-11): the row-expansion below (one matrix row per real side) must only
+    // apply to PrizePicks, where side_mode='two_sided' genuinely means ONE raw projection covers
+    // BOTH real, independently pickable sides via allowed_wager_types - the actual case this fix
+    // was built for. For Sleeper/Underdog, side_mode='two_sided' means real over AND under prices
+    // are both present on this ONE row already - it does NOT mean this row should be duplicated
+    // into two rows. Confirmed live: applying the expansion to those sources produced genuine
+    // duplicate (player, prop, line, side, source) rows, all landing on 'less', which broke the
+    // downstream subset-constraint reconciliation (its subqueries assume at most one match).
+    const isTwoSided = sideVariation.side_mode === "two_sided" && String(row.source_key || "").toLowerCase() === "prizepicks";
     const sidesToEmit = isTwoSided ? ["more", "less"] : [(sideVariation.side_mode === "less_only" ? "less" : "more")];
     for (const emitSide of sidesToEmit) {
       const sideMatrixId = isTwoSided ? key("matrix", row.prepared_row_id, emitSide) : matrixId;
