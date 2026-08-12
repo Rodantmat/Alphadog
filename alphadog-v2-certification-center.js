@@ -2420,6 +2420,7 @@ async function autoSelectBestLegs(env, options) {
         AND l.estimated_hit_probability_0_100 >= ${minConfidence}
         AND l.official_game_time_utc IS NOT NULL
         AND l.official_game_time_utc::timestamptz > now()
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = l.game_pk::text AND (c.is_live = true OR c.is_final = true))
         ${opts.source_key_filter ? `` : ""}
         ${opts.source_key_filter ? `AND l.source_key = '${String(opts.source_key_filter).replace(/'/g, "")}'` : ""}
       ORDER BY l.score_0_100 DESC NULLS LAST, l.confidence_0_100 DESC NULLS LAST
