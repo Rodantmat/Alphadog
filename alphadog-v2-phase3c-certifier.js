@@ -281,6 +281,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   }
 
   const calibrationMap = await loadCalibrationMap(pgClient);
+  const residualMap = await loadResidualCorrectionMap(pgClient);
 
   const existingBatch = await pgClient`SELECT created_at FROM score.hp_board_batches WHERE hp_board_batch_id=${hpBatchId}`;
   const createdAt = existingBatch[0] && existingBatch[0].created_at ? existingBatch[0].created_at : new Date().toISOString();
