@@ -58,8 +58,10 @@ function arrLit(arr) {
 }
 
 let TAXONOMY_CACHE = null;
+let TAXONOMY_CACHE_AT = 0;
+const TAXONOMY_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes - see fix note above
 async function loadTaxonomyClassifier(pgClient) {
-  if (TAXONOMY_CACHE) return TAXONOMY_CACHE;
+  if (TAXONOMY_CACHE && (Date.now() - TAXONOMY_CACHE_AT) < TAXONOMY_CACHE_TTL_MS) return TAXONOMY_CACHE;
   const rows = await pgClient`SELECT prop_key, player_side FROM config.prop_taxonomy`;
   const map = new Map();
   for (const r of rows) {
