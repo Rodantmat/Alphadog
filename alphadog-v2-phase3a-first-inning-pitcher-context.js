@@ -8823,7 +8823,8 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       const blendedTierPrior = (tierN * rawTierMean + tierBlendK * popMean) / (tierN + tierBlendK);
       const priorStrength = empiricalPriorStrength;
       const shrunkRate = (effectiveGamesSample * effectiveRate + priorStrength * blendedTierPrior) / (effectiveGamesSample + priorStrength);
-      const rawHp = usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, popStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion);
+      const empiricalHp = empiricalEnabled ? hpFromEmpiricalDistribution(r.tier_key, Math.floor(lineValue), side) : null;
+      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, popStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
       const hp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
       const confidence = sampleAwareConfidencePg(effectiveGamesSample, psCfg, 1.0);
       baselineRows.push({
