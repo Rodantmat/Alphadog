@@ -301,6 +301,16 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     return best ? { row: best, is_exact_line_match: bestDist === 0, line_distance: bestDist } : null;
   }
   function determineSide(matrixRow, er, playerId, propKey, lineValue) {
+    // REAL ARCHITECTURAL FIX (2026-08-11): the matrix builder now emits one matrix row per real
+    // side for genuinely two-sided lines (side_context.explicit_side_assigned=true), each already
+    // representing its own specific side by construction. Use that assignment directly rather than
+    // re-deriving side via the baseline comparison below - re-deriving could independently pick
+    // the same side for both of the two rows (e.g. both landing on 'more'), silently duplicating
+    // one side and never producing the other, exactly the bug this fix addresses.
+    const explicitSideCheck = safeJsonParse(matrixRow.matrix_payload_json, {});
+    if (explicitSideCheck?.side_context?.explicit_side_assigned && (explicitSideCheck?.side_context?.selected_side === "more" || explicitSideCheck?.side_context?.selected_side === "less")) {
+      return explicitSideCheck.side_context.selected_side;
+    }
     // CONFIRMED PLATFORM-LEVEL MORE-ONLY PROPS (2026-08-07): verified via direct, real user
     // platform experience placing actual slips - these markets genuinely have no 'less' side to
     // pick on PrizePicks/Underdog/Sleeper at all, regardless of what the upstream side_mode flag
