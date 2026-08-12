@@ -3989,7 +3989,21 @@ async function autoCreateSlips(){
     applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
-function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips;const g=$('goblinSlipsBtn');if(g)g.onclick=goblinSlips;const d=$('demonSlipsBtn');if(d)d.onclick=demonSlips;bindSlipSourceFilters()}
+function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips;const g=$('goblinSlipsBtn');if(g)g.onclick=goblinSlips;const r=$('regularSlipsBtn');if(r)r.onclick=regularSlips;const d=$('demonSlipsBtn');if(d)d.onclick=demonSlips;bindSlipSourceFilters()}
+async function regularSlips(){
+  const btn=$('regularSlipsBtn');const results=$('autoCreateResults');
+  if(btn)btn.disabled=true;
+  results.innerHTML='<div class="empty">Finding the strongest PrizePicks standard legs...</div>';
+  try{
+    const j=await (await fetch('/api/slips/regular',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
+    const slips=j.generated_slips||[];
+    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying standard legs right now.')+'</div>';return}
+    lastRawSlips=slips;lastSlipsHeading='Regular Slip';
+    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' standard legs.</div>';
+    applySlipSourceFilter();
+  }finally{if(btn)btn.disabled=false}
+}
 async function goblinSlips(){
   const btn=$('goblinSlipsBtn');const results=$('autoCreateResults');
   if(btn)btn.disabled=true;
