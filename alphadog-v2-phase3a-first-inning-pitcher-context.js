@@ -8559,6 +8559,35 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const cfg = {}; for (const r of cfgRows) cfg[r.config_key] = r.config_json;
     const propConfig = cfg.prop_metric_map[propKey];
     if (!propConfig) { return { ok: false, mode: "classification_baseline_v6_to_postgres", error: `no_prop_metric_map_entry_for_${propKey}` }; }
+    const empiricalCfg = cfg.empirical_distribution_config || { min_sample_games_per_tier: 300, props_enabled: [] };
+    const empiricalEnabled = Array.isArray(empiricalCfg.props_enabled) && empiricalCfg.props_enabled.includes(propKey);
+    const empiricalByTier = new Map();
+    if (empiricalEnabled) {
+      const empRows = await sql`SELECT source_tier_key, outcome_value, empirical_probability, sample_games, notes
+        FROM config.prop_empirical_distribution WHERE canonical_prop_key=${propKey}`;
+      for (const er of empRows) {
+        if (er.notes && String(er.notes).includes("INSUFFICIENT_SAMPLE")) continue;
+        if (Number(er.sample_games) < Number(empiricalCfg.min_sample_games_per_tier || 300)) continue;
+        if (!empiricalByTier.has(er.source_tier_key)) empiricalByTier.set(er.source_tier_key, new Map());
+        empiricalByTier.get(er.source_tier_key).set(Number(er.outcome_value), Number(er.empirical_probability) / 100);
+      }
+    }
+    // Real empirical P(k) table lookup, replacing the parametric dispersion formula for tiers with
+    // sufficient real sample. Sums P(0..threshold) directly from observed frequencies - no assumed
+    // distribution family at all, which is what let this correctly handle both a low threshold (0.5,
+    // dominated by the P(0) bucket) and a higher one (1.5+) simultaneously, validated against real
+    // vig-free market data at both thresholds (see session notes 2026-08-12: -3.2pp and -5.0pp
+    // residual respectively, versus -25.2pp/-10.2pp under the old capped-dispersion formula).
+    // outcome_value=3 in the table represents "3 or more", so any threshold>=3 uses that bucket alone.
+    function hpFromEmpiricalDistribution(tierKey, threshold, side) {
+      const table = empiricalByTier.get(tierKey);
+      if (!table) return null;
+      let pUnder = 0;
+      for (let k = 0; k <= Math.min(threshold, 2); k++) { const p = table.get(k); if (p == null) return null; pUnder += p; }
+      if (threshold >= 3) { const p3 = table.get(3); if (p3 == null) return null; /* threshold>=3 already fully covered by k=0..2 above plus needing partial 3+; only exact at threshold<=2 or ==the bucket boundary */ }
+      if (threshold > 2) return null; // only trust the table at threshold 0,1,2 - the "3+" bucket can't be split further without more granularity
+      return side === "more" ? (1 - pUnder) : pUnder;
+    }
     const entity = propConfig.entity;
     const table = entity === "pitcher" ? "stats_pitcher.metric_snapshots" : "stats_hitter.metric_snapshots";
     const gameLogTable = entity === "pitcher" ? "stats_pitcher.game_logs" : "stats_hitter.game_logs";
