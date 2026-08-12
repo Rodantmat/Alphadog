@@ -4325,6 +4325,7 @@ export default {
       if (method === "POST" && path === "/api/slips/generate") return await apiGenerateSlips(env, request);
       if (method === "POST" && path === "/api/slips/auto-create") return await apiAutoCreateSlips(env, request);
       if (method === "POST" && path === "/api/slips/goblin") return await apiGoblinSlips(env, request);
+      if (method === "POST" && path === "/api/slips/regular") return await apiRegularSlips(env, request);
       if (method === "POST" && path === "/api/slips/demon") return await apiDemonSlips(env, request);
       if (method === "POST" && path === "/api/slips/research-create") return await apiResearchCreateSlips(env, request);
       if (method === "POST" && path === "/api/slips/save") return await apiSaveSlips(env, request);
