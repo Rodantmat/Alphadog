@@ -2544,12 +2544,29 @@ async function apiGoblinSlips(env, request) {
   if (legs.length < 2) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Goblin legs available right now - check back after the board refreshes."] });
   }
-  const size = Math.min(GOBLIN_SLIP_TARGET_SIZE, legs.length);
-  const sorted = legs.slice(0, size);
+  const maxSize = Math.min(GOBLIN_SLIP_TARGET_SIZE, legs.length);
+  // FIXED 2026-08-12: was a fixed target size (always 6 legs, capped only by availability) -
+  // per direct request, sizing now reflects real board quality instead. Goblin's ratio is always
+  // <1, so compounding across more legs only shrinks the multiplier (unlike Demon, which needed
+  // smallest-first specifically because ITS >1 ratios compound explosively) - largest-size-first
+  // is the correct, safe direction here: start at the largest size the board supports, shrink
+  // down only if that size's real EV goes negative, so a thin night with only 2-3 genuinely
+  // strong legs correctly produces a smaller slip instead of padding out to 6 with weak legs.
   const table = APP_PAYOUT_TABLES.prizepicks;
-  const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-  const breakeven = researchBreakeven(size, "power", table);
-  const evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
+  let size = 2, sorted = legs.slice(0, 2), evResult = null, breakeven = null;
+  for (let trySize = maxSize; trySize >= 2; trySize--) {
+    const slice = legs.slice(0, trySize);
+    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
+    const tryBreakeven = researchBreakeven(trySize, "power", table);
+    const tryEv = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", tryBreakeven);
+    if (tryEv && tryEv.ev > 0) { size = trySize; sorted = slice; evResult = tryEv; breakeven = tryBreakeven; break; }
+  }
+  if (!evResult) {
+    size = 2; sorted = legs.slice(0, 2);
+    breakeven = researchBreakeven(size, "power", table);
+    const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
+    evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
+  }
   const warnings = slipWarnings(sorted);
   const hasLessLeg = sorted.some(l => String(l.selected_side || "").toLowerCase() === "less");
   const allLessLegs = sorted.every(l => String(l.selected_side || "").toLowerCase() === "less");
