@@ -2511,6 +2511,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
       FROM ladder
       WHERE source_key = 'prizepicks' AND is_goblin = 1 AND hit_probability_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = ladder.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
     // FIXED 2026-08-05: sort by real effective value (probability x the leg's OWN real goblin
     // tier ratio, computed from its actual ladder position, not a hardcoded tier=1 placeholder)
