@@ -2538,6 +2538,82 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
+async function autoSelectRegularSlipLegs(env, options = {}) {
+  const maxPerGame = Number(options.max_per_game || 2);
+  const REGULAR_SLIP_MIN_CONFIDENCE = 65; // matches the system's own PRIMARY-tier bar used elsewhere
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
+        confidence_0_100, score_0_100, board_tier, is_goblin, is_demon
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'prizepicks' AND COALESCE(is_goblin,0) = 0 AND COALESCE(is_demon,0) = 0
+        AND estimated_hit_probability_0_100 >= ${REGULAR_SLIP_MIN_CONFIDENCE}
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
+      ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
+    `);
+    const perGameCount = new Map();
+    const seenPlayer = new Set();
+    const selected = [];
+    for (const r of rows) {
+      if (selected.length >= REGULAR_SLIP_MAX_SIZE) break;
+      if (seenPlayer.has(r.mlb_player_id)) continue;
+      const gameCount = perGameCount.get(r.game_pk) || 0;
+      if (gameCount >= maxPerGame) continue;
+      selected.push(r);
+      seenPlayer.add(r.mlb_player_id);
+      perGameCount.set(r.game_pk, gameCount + 1);
+    }
+    return selected;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+const REGULAR_SLIP_MIN_SIZE = 4;
+const REGULAR_SLIP_MAX_SIZE = 6;
+async function apiRegularSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  const legs = await autoSelectRegularSlipLegs(env, {});
+  if (legs.length < REGULAR_SLIP_MIN_SIZE) {
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying PrizePicks standard legs available right now - check back after the board refreshes."] });
+  }
+  const table = APP_PAYOUT_TABLES.prizepicks;
+  const maxSize = Math.min(REGULAR_SLIP_MAX_SIZE, legs.length);
+  // Same largest-size-first-then-shrink direction as the Goblin fix - standard legs use flat
+  // 1.0x per-leg ratios (no compounding risk), so a strong night correctly produces a full
+  // 6-pick and a thinner night correctly shrinks toward the 4-pick floor instead of padding
+  // with weak legs to hit a fixed target.
+  let size = REGULAR_SLIP_MIN_SIZE, sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE), evResult = null, breakeven = null;
+  for (let trySize = maxSize; trySize >= REGULAR_SLIP_MIN_SIZE; trySize--) {
+    const slice = legs.slice(0, trySize);
+    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
+    const tryBreakeven = researchBreakeven(trySize, "power", table);
+    const tryEv = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", tryBreakeven);
+    if (tryEv && tryEv.ev > 0) { size = trySize; sorted = slice; evResult = tryEv; breakeven = tryBreakeven; break; }
+  }
+  if (!evResult) {
+    size = REGULAR_SLIP_MIN_SIZE; sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE);
+    breakeven = researchBreakeven(size, "power", table);
+    const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
+    evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
+  }
+  const warnings = slipWarnings(sorted);
+  const slip = {
+    client_slip_id: makeUiId("regular_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
+    entry_mode: "power", structure_label: `${size}-pick Power (Regular)`,
+    estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
+    estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
+    breakeven_hit_rate_0_100: breakeven,
+    multiplier_estimated: false,
+    estimated_payout_note: "Standard PrizePicks Power table - no Goblin/Demon adjustment applied.",
+    strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
+    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Sized to the strongest structure the day's standard legs genuinely support (4-6 pick).`, ...warnings].filter(Boolean).join(" "),
+    legs: sorted
+  };
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [slip] });
+}
 async function apiGoblinSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectGoblinSlipLegs(env, {});
