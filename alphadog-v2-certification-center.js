@@ -3008,6 +3008,7 @@ function researchSlipEvAdjusted(legs, probs01, mode, table, source, breakevenTar
     const r = researchSlipEv(probs01, mode, table);
     return { ...r, adjusted: false, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
   }
+  const fullHitMultiplier = perLeg.reduce((a, p) => a * p.multiplier, 1);
   // For power mode with adjusted legs: full-hit multiplier is the product of all per-leg
   // multipliers. Flex mode with adjusted legs falls back to the standard flex table scaled by
   // the average adjustment ratio, since partial-hit payout curves for adjusted lines are not
