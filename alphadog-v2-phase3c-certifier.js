@@ -410,7 +410,12 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     // what actually matters and is what the user's comprehensive real data now confirms.
     let isGoblin = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1;
     let isDemon = Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
-    if (side === "less" && (isGoblin || isDemon)) {
+    // FIXED 2026-08-11: rows with an explicit pre-assigned side (the new dual-matrix-row
+    // architecture) already carry the correctly-flipped is_goblin/is_demon baked in by the matrix
+    // builder itself - applying this flip again here would double-flip and undo the correct value.
+    // Only apply this flip to legacy single-row legs that don't already carry an explicit side.
+    const hasExplicitSideAssignment = Boolean(payload?.side_context?.explicit_side_assigned);
+    if (!hasExplicitSideAssignment && side === "less" && (isGoblin || isDemon)) {
       const wasDemon = isDemon;
       isDemon = isGoblin;
       isGoblin = wasDemon;
