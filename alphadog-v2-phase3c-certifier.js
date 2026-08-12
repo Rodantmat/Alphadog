@@ -387,16 +387,24 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     // (goblin) as its complement - and vice versa for goblin. Confirmed live: dozens of home_runs/
     // hits/walks/walks_allowed 'less' legs were showing demon when they were structurally goblin
     // by this exact mechanism, across many different players and props, not one prop in isolation.
-    // ROOT CAUSE FIX (2026-08-11): the blanket side='less' flip below was removed. It was
-    // originally validated only for home_runs specifically, then wrongly generalized to every
-    // prop - directly disproven with real evidence (PrizePicks' own source_line_id literally
-    // contains 'demon' for doubles legs this flip was converting to is_goblin=1). A comprehensive
-    // audit found 1,752 legs mislabeled across 9 props, including home_runs itself (38/38 wrong -
-    // even the originally-"confirmed" case doesn't hold). The raw is_goblin/is_demon from the
-    // source matrix row is authoritative and used as-is, matching what's been directly verified
-    // correct against PrizePicks' real data throughout tonight's investigation.
+    // ROOT CAUSE FIX (2026-08-11) WAS WRONG, REVERTED SAME NIGHT: verified directly against the
+    // user's real, live PrizePicks app observations across multiple props (Doubles, Hits, Total
+    // Bases, Hits+Runs+RBIs), cross-checked against the raw JSON feed itself. The raw odds_type
+    // tag applies to whichever side PrizePicks originally set it for (confirmed directly in the
+    // raw file: Total Bases 0.5 raw tag='goblin', Hits 0.5 raw tag='goblin') - and the OPPOSITE
+    // side genuinely does get the complement on the real app (confirmed: Total Bases 0.5 shows
+    // more=goblin/less=demon live, exactly matching raw tag='goblin' for 'more' with the flip
+    // giving 'demon' for 'less'). The earlier removal was based on a single example (Sanoja
+    // doubles) that only confirmed the raw tag matched what was already displayed - it never
+    // checked whether the OPPOSITE, undisplayed side also correctly showed the flip, which is
+    // what actually matters and is what the user's comprehensive real data now confirms.
     let isGoblin = Number(matrixRow.is_goblin ?? payload?.prepared?.is_goblin ?? 0) === 1;
     let isDemon = Number(matrixRow.is_demon ?? payload?.prepared?.is_demon ?? 0) === 1;
+    if (side === "less" && (isGoblin || isDemon)) {
+      const wasDemon = isDemon;
+      isDemon = isGoblin;
+      isGoblin = wasDemon;
+    }
     const moreOnly = Number(matrixRow.more_only ?? 0) === 1 || (payload?.side_context?.side_mode === "more_only");
     const sideMode = moreOnly ? "more_only" : (payload?.side_context?.side_mode || null);
     const baselineMatch = findBaseline(er.mlb_player_id, er.canonical_prop_key, side, er.board_line_value);
