@@ -8559,9 +8559,11 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const cfg = {}; for (const r of cfgRows) cfg[r.config_key] = r.config_json;
     const propConfig = cfg.prop_metric_map[propKey];
     if (!propConfig) { return { ok: false, mode: "classification_baseline_v6_to_postgres", error: `no_prop_metric_map_entry_for_${propKey}` }; }
-    const empiricalCfg = cfg.empirical_distribution_config || { min_sample_games_per_tier: 300, props_enabled: [] };
+    const empiricalCfg = cfg.empirical_distribution_config || { min_sample_games_per_tier: 300, props_enabled: [], role_aware_props: [] };
     const empiricalEnabled = Array.isArray(empiricalCfg.props_enabled) && empiricalCfg.props_enabled.includes(propKey);
+    const roleAware = Array.isArray(empiricalCfg.role_aware_props) && empiricalCfg.role_aware_props.includes(propKey);
     const empiricalByTier = new Map();
+    const roleTierByPlayer = new Map();
     if (empiricalEnabled) {
       const empRows = await sql`SELECT source_tier_key, outcome_value, empirical_probability, sample_games, notes
         FROM config.prop_empirical_distribution WHERE canonical_prop_key=${propKey}`;
@@ -8570,6 +8572,10 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         if (Number(er.sample_games) < Number(empiricalCfg.min_sample_games_per_tier || 300)) continue;
         if (!empiricalByTier.has(er.source_tier_key)) empiricalByTier.set(er.source_tier_key, new Map());
         empiricalByTier.get(er.source_tier_key).set(Number(er.outcome_value), Number(er.empirical_probability) / 100);
+      }
+      if (roleAware) {
+        const roleRows = await sql`SELECT player_id, role_skill_tier FROM config.prop_tier_role_assignment WHERE canonical_prop_key=${propKey}`;
+        for (const rr of roleRows) roleTierByPlayer.set(String(rr.player_id), rr.role_skill_tier);
       }
     }
     // Real empirical P(k) table lookup, replacing the parametric dispersion formula for tiers with
