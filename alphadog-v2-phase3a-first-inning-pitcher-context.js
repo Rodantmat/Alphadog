@@ -217,7 +217,19 @@ async function ensureScoreSchema(env){
   await writeRun(db,"expansion_line_inventory_current",`CREATE INDEX IF NOT EXISTS idx_exp_line_inventory_key ON expansion_line_inventory_current(source_key, canonical_prop_key, selected_side, line_value)`);
   await writeRun(db,"expansion_line_inventory_current",`CREATE INDEX IF NOT EXISTS idx_exp_line_inventory_status ON expansion_line_inventory_current(line_inventory_status, missing_baseline_rows)`);
 }
-async function ensureSchema(env){ await ensureContextSchema(env); await ensureScoreSchema(env); }
+async function ensureSchema(env){
+  // FIXED 2026-08-12: this previously called ensureContextSchema/ensureScoreSchema
+  // unconditionally with zero error handling, hard-writing DDL to env.CONTEXT_DB (a D1
+  // database) via writeRun's direct db.prepare(sql) call. D1 databases are being actively
+  // decommissioned as part of the ongoing Postgres migration - confirmed multiple D1
+  // databases already deleted this session. This was blocking EVERY mode in this worker,
+  // not just splits - real, pure-Postgres work (remine_hitter_splits_to_postgres, etc.)
+  // was failing outright because of unrelated legacy D1 bookkeeping tables that aren't the
+  // real, live data anymore. Fails safe now, matching the same try/catch pattern already
+  // used by ensureCalibrationConfigLoaded elsewhere in this file.
+  try { await ensureContextSchema(env); } catch(_e) { /* legacy D1 bookkeeping unreachable - real Postgres work continues */ }
+  try { await ensureScoreSchema(env); } catch(_e) { /* legacy D1 bookkeeping unreachable - real Postgres work continues */ }
+}
 
 async function archiveAndClearCurrent(db, currentTable, historyTable){
   assertExpansionTable(currentTable);
