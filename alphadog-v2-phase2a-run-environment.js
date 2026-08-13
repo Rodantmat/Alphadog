@@ -331,7 +331,7 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const catcherRows = await pgClient`SELECT game_pk, team_id, framing_runs_total, pop_time_2b_sba FROM daily.catcher_context_current WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
   const availRows = pidLit ? await pgClient`SELECT game_pk, mlb_player_id, availability_status FROM daily.player_availability_current WHERE game_pk = ANY(${gpkLit}::bigint[]) AND mlb_player_id = ANY(${pidLit}::bigint[])`.catch(() => []) : [];
   const scheduleSpotRows = await pgClient`SELECT game_pk, team_id, eastward_travel_flag, westward_travel_flag FROM daily.team_schedule_spot_current WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
-  const marketRows = await pgClient`SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market.context_probe_game_market_summary WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
+  const marketRows = await pgClient`SELECT game_pk, home_team, away_team, derived_home_implied_runs, derived_away_implied_runs FROM market.context_probe_game_market_summary WHERE game_pk = ANY(${gpkLit}::bigint[])`.catch(() => []);
   const umpireAssignmentRows = await pgClient`SELECT game_pk, home_plate_umpire_id FROM daily.umpire_context_current WHERE game_pk = ANY(${gpkLit}::bigint[]) AND home_plate_umpire_id IS NOT NULL`.catch(() => []);
   const umpireIds = [...new Set(umpireAssignmentRows.map(r => r.home_plate_umpire_id).filter(Boolean))];
   const umpireTendencyRows = umpireIds.length ? await pgClient`SELECT umpire_id, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league FROM ref.umpire_tendency WHERE umpire_id = ANY(${"{" + umpireIds.join(",") + "}"}::bigint[])`.catch(() => []) : [];
