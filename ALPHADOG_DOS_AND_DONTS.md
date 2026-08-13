@@ -754,6 +754,62 @@ architecture context.
   the rotation, since a stale calendar directly risks showing already-started legs to the user,
   not just degrading a background metric.
 
+### Standing discipline: residual-testing any enrichment factor before trusting raw correlation — and its real limits
+- **Real, confirmed pattern found 2026-08-13, twice in one investigation**: a candidate enrichment
+  signal can show strong RAW correlation with an outcome (0.47-0.91) purely because it's
+  mechanically derived from the same player's own season-long stats that the baseline model
+  (`classification.player_classification_current`) already uses — without adding any genuine
+  incremental information. The correct test: correlate the candidate signal against
+  `(actual_outcome - the player's own season average for that same stat)`, i.e. does it predict
+  TODAY'S deviation from his normal, not just correlate with the outcome directly.
+- **`times_through_order`** (avg batters faced per start, used for `pitcher_strikeouts`): raw
+  correlation 0.73, residual correlation exactly 0 (2e-18, pure floating-point noise). Also had an
+  independent, confirmed bug — it was referencing the OPPOSING starter's batters-faced instead of
+  the leg's own player, wrong in 100% of its applications since this factor has no hitter-prop use
+  case. Fixed the bug, then found the underlying signal itself was worthless anyway. Deactivated
+  (cell deleted), scope kept at 1 prop (never extended to the other 5 declared-relevant props).
+- **`recent_form_trend`** (pitcher's own recent-3-start average vs season average): built and
+  shipped same-day based on raw correlation alone (0.46-0.91 across 5 props) — a real, own mistake,
+  not just a review of someone else's code. Residual-tested immediately after and collapsed to
+  near-zero for 4 of 5 props (earned_runs -0.03, hits_allowed 0.01, walks_allowed -0.03,
+  strikeouts -0.00002). All 15 cells deleted same day as a direct, documented reversal.
+  **`pitcher_outs` alone survived** — but only after re-testing the residual correlation SPLIT BY
+  the pitcher's own role tier revealed the overall 0.06 residual was hiding a real, tier-concentrated
+  signal (short-role pitchers: residual 0.206; mid: 0.114; true workhorse starters: 0.010 — the
+  tier Gilbert, the case that started this whole investigation, actually falls into). Restored with
+  2 cells (short + mid tier only), coefficients scaled to the validated residual magnitude, not the
+  original inflated raw-correlation numbers. Workhorse tier deliberately has no cell.
+- **Positive control, run before trusting either negative result**: tested a known-real, physically
+  grounded effect (home park's HR factor vs a pitcher's own home-run-rate deviation) using the same
+  residual methodology — it returned 0.06, confirming the test correctly detects real signal at
+  that magnitude rather than being biased toward zero. This calibration point is what led to
+  re-checking `pitcher_outs`'s tier structure instead of accepting its overall 0.06 as "probably
+  nothing" by analogy to the confirmed-zero props.
+- **A real near-mistake, caught before acting — the limit of this test**: `batter_quality_of_contact`
+  (season xwOBA/ISO/barrel rate, used for home_runs/total_bases/doubles/hits_runs_rbis) initially
+  looked broken under the identical residual test (also ~0, even across sample-size tiers). This
+  conclusion was WRONG and was retracted before any config change was made. The residual test is
+  mathematically invalid for a FIXED, single per-player-per-season value: within any one player's
+  set of games, a season-constant predictor has zero within-player variance, and the residual
+  `(outcome - own season average)` is mean-zero by construction within that same player's games —
+  so ANY player-level constant will trivially show ~0 correlation against it, regardless of whether
+  it carries real cross-player information. This test only validly applies to signals that vary
+  game-to-game (recent form, matchup-specific context); it says nothing about fixed season
+  snapshots. Testing those requires genuine out-of-sample validation (does adding the signal
+  improve prediction accuracy on held-out games beyond baseline alone) — a different, more careful
+  test not yet built. **Do not apply the within-player residual test to any factor whose value is
+  constant across a player's games within a season** — confirm first whether the candidate signal
+  varies by game/date or only by player before choosing which test applies.
+- **Standing rule for any future enrichment factor, addition or audit**: (1) identify whether the
+  signal is time-varying (per-game/date) or a fixed player-level constant (season snapshot) before
+  choosing a test; (2) for time-varying signals, always residual-test against the player's own
+  season average before shipping, and re-check by any plausible tier/segment split before accepting
+  a weak overall result as "no signal" — a real effect can hide inside a misleading average; (3) for
+  fixed season-snapshot signals, raw correlation plus a genuine held-out/out-of-sample check is the
+  right validation, not the within-player residual test; (4) run a positive control against a
+  known-real effect before trusting a negative result, so a "zero" finding can be distinguished from
+  a broken or inapplicable test.
+
 
 ## PART 5 — Session: the first real 6am run, a real incomplete-data incident, and cascade guards built across metrics/classification/baseline
 
