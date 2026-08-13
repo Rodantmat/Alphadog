@@ -360,10 +360,6 @@ function classifyTarget(target, probe, previous, recentCrew, refMetricsPredictio
     status = "derived_from_refmetrics_direct"; confidence = "MEDIUM_DERIVED_FROM_REFMETRICS_DIRECT"; sourceStatus = "derived_from_refmetrics_direct"; assignmentStatus = "derived";
     derivedUmpireId = refMetricsPrediction.umpire_id || null; derivedUmpireName = refMetricsPrediction.umpire_name; isDerived = 1;
     issues.push({ severity: "warning", issue_type: "umpire_derived_from_refmetrics", reason: `No official pregame source yet; derived from RefMetrics' current umpire assignment board (real, credentialed direct fetch).${refMetricsPrediction.umpire_id ? "" : " Name found but could not be resolved to an internal umpire_id - tendency lookup will be unavailable for this leg."}` });
-  } else if (pregame && recentCrew && recentCrew.home_plate_umpire_id) {
-    status = "derived_likely_crew"; confidence = "LOW_DERIVED_FROM_RECENT_SERIES_CREW"; sourceStatus = "derived_from_recent_series_crew"; assignmentStatus = "derived";
-    derivedUmpireId = recentCrew.home_plate_umpire_id; derivedUmpireName = recentCrew.home_plate_umpire_name; isDerived = 1;
-    issues.push({ severity: "warning", issue_type: "umpire_derived_from_recent_crew", reason: `No official pregame source and no RefMetrics candidate; derived from this venue's most recent real assignment on ${recentCrew.official_date} based on the standard crew-rotation pattern.` });
   } else if (probe.calls && probe.calls.some(c => c.ok)) {
     status = pregame ? "no_official_pregame_source" : "pending_assignment"; confidence = pregame ? "WARNING_NO_PREGAME_UMPIRE_SOURCE" : "LOW_PENDING_ASSIGNMENT"; sourceStatus = pregame ? "no_official_pregame_source" : "source_missing_assignment"; assignmentStatus = "pending";
     issues.push({ severity: "warning", issue_type: pregame ? "no_official_pregame_source" : "assignment_pending", reason: pregame ? "MLB source was reachable but did not expose a home plate umpire assignment for this pregame/scheduled game." : "MLB source was reachable but no home plate umpire assignment was present." });
