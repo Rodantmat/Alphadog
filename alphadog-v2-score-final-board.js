@@ -146,7 +146,7 @@ async function fetchHpFinalBoardCandidateRows(pgClient, sourceEngineBatchId, pag
         h.lane_reason AS hp_source_lane_reason, h.calibration_json AS hp_calibration_json, NULL AS hp_profile_key,
         h.source_key, h.game_pk, h.official_date, h.official_game_time_utc, h.prepared_row_id, h.matrix_id, h.source_line_id,
         h.mlb_player_id, h.player_name, h.canonical_prop_key, h.line_value, h.selected_side,
-        h.score_0_100, h.score_grade, h.is_goblin, h.is_demon, h.more_only,
+        h.score_0_100, h.score_grade, h.is_goblin, h.is_demon, h.more_only, h.source_variant_label,
         e.profile_key, NULL AS source_scoring_worker_version, e.confidence_0_100, e.score_sort_0_100 AS engine_score_sort_0_100,
         e.factor_status, e.market_prop_context_status, e.daily_readiness_status, e.side_mode, e.odds_type, e.payout_variant, e.archive_eligible,
         e.calculation_json AS engine_calculation_json, e.matrix_payload_json_snapshot, e.details_json_snapshot,
