@@ -151,18 +151,19 @@ async function pruneProbeWindow(pgClient, boardWindowDates, slateWindowKey) {
   return deleted;
 }
 
+// RETIRED 2026-08-13: this function used to write a second, fully redundant permanent archive
+// (market.historical_props_2025) of the exact same market.context_probe_game_odds rows that
+// permanentlyRecordGameOddsContext() above already archives correctly into
+// archive.game_odds_context_history. Confirmed via exhaustive search (this file, score-audit.js,
+// control-room.js, orchestrator.js, phase3a-first-inning-pitcher-context.js) that
+// historical_props_2025 has no live consumer anywhere in the active pipeline - its only other
+// references are a one-time D1-to-Postgres migration mapping and a maintenance repair utility,
+// neither of which depends on this table continuing to grow. archive.game_odds_context_history
+// is the properly-deduped (stable_key-based, confirmed fixed 2026-08-06) replacement already
+// doing this same job from the same source data. The existing 203,071 historical rows in
+// historical_props_2025 are left untouched - only this daily duplicate write is retired.
 async function permanentlyRecordConfirmedMarketOdds(pgClient) {
-  const rows = await pgClient`SELECT official_date, source_event_id, source_home_team, source_away_team, source_commence_time_utc, bookmaker_key, market_key, outcome_name, price_american, point, market_last_update, raw_json FROM market.context_probe_game_odds WHERE mapping_status IS NOT NULL AND source_event_id IS NOT NULL`.catch(() => []);
-  if (!rows.length) return { copied: 0, checked: 0 };
-  let copied = 0;
-  for (const r of rows) {
-    const rowId = `${r.official_date}|${r.source_event_id}|${r.bookmaker_key}|${r.market_key}|${r.outcome_name}|${r.point}`.slice(0, 200);
-    await pgClient`INSERT INTO market.historical_props_2025 (row_id, batch_id, official_date, odds_api_event_id, home_team, away_team, commence_time_utc, bookmaker_key, market_key, player_name, outcome_name, line_point, price_american, snapshot_timestamp, raw_json, created_at)
-      VALUES (${rowId}, 'permanent_daily_backfill_v0_2_0', ${r.official_date}, ${r.source_event_id}, ${r.source_home_team}, ${r.source_away_team}, ${r.source_commence_time_utc}, ${r.bookmaker_key}, ${r.market_key}, NULL, ${r.outcome_name}, ${r.point}, ${r.price_american}, ${r.market_last_update}, ${r.raw_json}, now())
-      ON CONFLICT (row_id) DO NOTHING`.catch(() => {});
-    copied++;
-  }
-  return { copied, checked: rows.length };
+  return { copied: 0, checked: 0, retired: true, reason: "duplicate_of_archive_game_odds_context_history_retired_2026_08_13" };
 }
 
 function preparedSelectColumns() {
