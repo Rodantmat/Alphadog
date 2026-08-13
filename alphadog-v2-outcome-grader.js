@@ -129,6 +129,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
     const isDnpPush = r.actual_value === null;
     const isTiePush = r.is_tie === true;
     const isPush = isDnpPush || isTiePush;
+    const enrichment = extractEnrichmentSignal(r.calibration_json);
     return {
       outcome_id: `grade_${entityType}_${r.mlb_player_id}_${r.canonical_prop_key}_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
       final_board_row_id: r.final_board_row_id || null,
@@ -153,6 +154,9 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
       outcome_result: isDnpPush ? "push_dnp" : (isTiePush ? "push_tie" : (r.is_hit ? "hit" : "miss")),
       outcome_hit: isPush ? null : (r.is_hit ? 1 : 0),
       brier_component: null,
+      enrichment_rate_multiplier: enrichment.rate_multiplier,
+      enrichment_factors_applied: enrichment.factors_applied,
+      enrichment_factors_missing: enrichment.factors_missing,
       resolved_at: nowUtc(),
       created_at: nowUtc()
     };
@@ -164,6 +168,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
     "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "selected_side",
     "estimated_hit_probability_0_100", "probability_confidence_0_100", "score_0_100", "score_grade",
     "board_tier", "is_goblin", "is_demon", "live_playable", "actual_stat_value", "outcome_result", "outcome_hit", "brier_component",
+    "enrichment_rate_multiplier", "enrichment_factors_applied", "enrichment_factors_missing",
     "resolved_at", "created_at"];
 
   let inserted = 0;
