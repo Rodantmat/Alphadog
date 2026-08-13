@@ -361,8 +361,9 @@ async function loadRealLegContexts(pgClient, matrixRows) {
     if (!existing || Number(r.season_year) > existing.season_year) armAngleByPitcher.set(pid, { value: r.arm_angle_degrees, season_year: Number(r.season_year) });
   }
 
-  const teamRows = await pgClient`SELECT mlb_team_id, abbreviation FROM ref.teams`.catch(() => []);
+  const teamRows = await pgClient`SELECT mlb_team_id, abbreviation, full_name FROM ref.teams`.catch(() => []);
   const teamIdByAbbrev = new Map(teamRows.map(r => [String(r.abbreviation).toUpperCase(), Number(r.mlb_team_id)]));
+  const teamIdByFullName = new Map(teamRows.map(r => [String(r.full_name).toUpperCase(), Number(r.mlb_team_id)]));
 
   const arsenalRows = armLit ? await pgClient`SELECT mlb_player_id, run_value_per_100, pitch_usage FROM ref.pitcher_arsenal WHERE mlb_player_id = ANY(${armLit}::bigint[]) AND active=1`.catch(() => []) : [];
   const arsenalByPitcher = new Map();
