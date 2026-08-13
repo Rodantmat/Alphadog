@@ -484,7 +484,7 @@ function classify(row, context) {
     availability_status = "injured_list";
     roster_status = String(il?.status?.description || il?.status?.code || "injured_list").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "injured_list";
     availability_confidence = "BLOCKED_OFFICIAL_IL";
-    reason = "Player appears on official MLB injuredList roster endpoint for expected team.";
+    reason = "Player has an official MLB 40-man roster injured-list status code (D-day designation) for the expected team.";
     issues.push({ issue_type: "official_injured_list", issue_severity: "blocker", reason });
   } else if (activeFlag) {
     availability_status = "active_available"; roster_status = "active_roster"; availability_confidence = "HIGH_OFFICIAL_ACTIVE_ROSTER";
