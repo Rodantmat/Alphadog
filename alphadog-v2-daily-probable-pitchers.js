@@ -253,7 +253,12 @@ function deriveLikelyStarter(recentStarts, targetDateText) {
     const lastMs = new Date(`${lastStart}T12:00:00Z`).getTime();
     const daysSince = Math.round((targetMs - lastMs) / 86400000);
     if (daysSince < 3) continue;
-    const gapFrom5 = Math.abs(daysSince - 5);
+    // FIXED 2026-08-13: real data (team.starter_history, July 2026 onward) shows 6-day gaps
+    // (313 occurrences) are actually more common than 5-day gaps (253) - likely team off-days
+    // shifting a standard 5-man rotation. 5.5 as the target makes both score equally close,
+    // matching their near-equal real frequency, rather than the old symmetric-around-5 scoring
+    // that treated a 4-day gap as equally likely as a 6-day gap when it clearly isn't.
+    const gapFrom5 = Math.abs(daysSince - 5.5);
     candidates.push({ player_id: p.player_id, name: null, throws: null, days_since_last_start: daysSince, rotation_fit_score: gapFrom5, starts_in_window: p.dates.length });
   }
   if (!candidates.length) return null;
