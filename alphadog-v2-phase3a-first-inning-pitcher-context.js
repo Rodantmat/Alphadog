@@ -8261,14 +8261,15 @@ async function runDeriveBullpenHistoryFromPostgres(env, input) {
   try {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
     await sql`
-      INSERT INTO team.bullpen_history (history_id, game_pk, team_id, game_date, raw_json)
+      INSERT INTO team.bullpen_history (history_id, game_pk, team_id, game_date, player_id, opponent_team_id, is_home, raw_json)
       SELECT
         'bullpen_' || game_pk || '_' || player_id,
-        game_pk, team_id, game_date, raw_json
+        game_pk, team_id, game_date, player_id, opponent_team_id, is_home, raw_json
       FROM stats_pitcher.game_logs
       WHERE COALESCE((((raw_json#>>'{}')::jsonb)->'stat'->>'gamesStarted')::int, (((raw_json#>>'{}')::jsonb)->>'gamesStarted')::int) = 0
       ON CONFLICT (history_id) DO UPDATE SET
-        team_id=excluded.team_id, game_date=excluded.game_date, raw_json=excluded.raw_json, updated_at=now()
+        team_id=excluded.team_id, game_date=excluded.game_date, player_id=excluded.player_id,
+        opponent_team_id=excluded.opponent_team_id, is_home=excluded.is_home, raw_json=excluded.raw_json, updated_at=now()
     `;
     const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM team.bullpen_history`;
     await sql.end();
