@@ -694,26 +694,31 @@ async function runEnrichment(pgClient, input) {
      LIMIT ${MAX_LEGS_PER_INVOCATION}`.catch(() => []);
 
   const ctxMaps = await loadRealLegContexts(pgClient, matrixRows);
+  const roleInputs = await loadRoleTransitionInputs(pgClient, matrixRows).catch(() => ({ classifiedRoleByPlayer: new Map(), confirmedStarterIds: new Set(), historicalRateByPlayerProp: new Map(), cfg: null }));
 
   let written = 0;
   const insertRows = [];
   for (const row of matrixRows) {
     const legContext = buildLegContextReal(row, ctxMaps, config.thresholdsByFactor.get("market_implied_total"));
     const result = await enrichLeg(row, config, legContext);
+    const roleOverride = computeRoleTransitionOverride(row, roleInputs);
     insertRows.push({
       enrichment_id: `enr_${row.matrix_id}`, matrix_id: row.matrix_id, batch_id: batchId, canonical_prop_key: result.canonical_prop_key,
       mlb_player_id: row.mlb_player_id, board_line_value: row.board_line_value, prop_side: row.prop_side,
       log_rate_adjustment: result.log_rate_adjustment, rate_multiplier: result.rate_multiplier, confidence_adjustment: result.confidence_adjustment,
-      factors_applied: result.factors_applied, factors_missing: result.factors_missing, factor_breakdown_json: result.factor_breakdown_json
+      factors_applied: result.factors_applied, factors_missing: result.factors_missing, factor_breakdown_json: result.factor_breakdown_json,
+      role_transition_override_hp: roleOverride ? roleOverride.override_hp : null,
+      role_transition_confidence_penalty: roleOverride ? roleOverride.confidence_penalty : null,
+      role_transition_detected: roleOverride ? roleOverride.detected : null
     });
     written++;
   }
-  const insertCols = ["enrichment_id", "matrix_id", "batch_id", "canonical_prop_key", "mlb_player_id", "board_line_value", "prop_side", "log_rate_adjustment", "rate_multiplier", "confidence_adjustment", "factors_applied", "factors_missing", "factor_breakdown_json"];
+  const insertCols = ["enrichment_id", "matrix_id", "batch_id", "canonical_prop_key", "mlb_player_id", "board_line_value", "prop_side", "log_rate_adjustment", "rate_multiplier", "confidence_adjustment", "factors_applied", "factors_missing", "factor_breakdown_json", "role_transition_override_hp", "role_transition_confidence_penalty", "role_transition_detected"];
   if (insertRows.length) {
     const CHUNK = 150;
     for (let i = 0; i < insertRows.length; i += CHUNK) {
       await pgClient`INSERT INTO scoring.enrichment_leg_current ${pgClient(insertRows.slice(i, i + CHUNK), ...insertCols)}
-        ON CONFLICT (enrichment_id) DO UPDATE SET batch_id=EXCLUDED.batch_id, log_rate_adjustment=EXCLUDED.log_rate_adjustment, rate_multiplier=EXCLUDED.rate_multiplier, confidence_adjustment=EXCLUDED.confidence_adjustment, factors_applied=EXCLUDED.factors_applied, factors_missing=EXCLUDED.factors_missing, factor_breakdown_json=EXCLUDED.factor_breakdown_json, updated_at=now()`;
+        ON CONFLICT (enrichment_id) DO UPDATE SET batch_id=EXCLUDED.batch_id, log_rate_adjustment=EXCLUDED.log_rate_adjustment, rate_multiplier=EXCLUDED.rate_multiplier, confidence_adjustment=EXCLUDED.confidence_adjustment, factors_applied=EXCLUDED.factors_applied, factors_missing=EXCLUDED.factors_missing, factor_breakdown_json=EXCLUDED.factor_breakdown_json, role_transition_override_hp=EXCLUDED.role_transition_override_hp, role_transition_confidence_penalty=EXCLUDED.role_transition_confidence_penalty, role_transition_detected=EXCLUDED.role_transition_detected, updated_at=now()`;
     }
   }
 
