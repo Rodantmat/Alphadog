@@ -176,7 +176,10 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
   for (let i = 0; i < insertRows.length; i += CHUNK) {
     const chunk = insertRows.slice(i, i + CHUNK);
     const res = await sql`INSERT INTO score.prop_outcome_history ${sql(chunk, ...cols)}
-      ON CONFLICT (outcome_id) DO NOTHING`;
+      ON CONFLICT (outcome_id) DO UPDATE SET
+        enrichment_rate_multiplier=EXCLUDED.enrichment_rate_multiplier,
+        enrichment_factors_applied=EXCLUDED.enrichment_factors_applied,
+        enrichment_factors_missing=EXCLUDED.enrichment_factors_missing`;
     inserted += res.count || 0;
   }
 
