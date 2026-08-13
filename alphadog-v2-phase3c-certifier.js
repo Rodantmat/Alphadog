@@ -211,6 +211,7 @@ function computeFinalConfidence(baselineConfidence, enrichmentRow, lineDistance,
     const coverageRatio = factorsApplied / totalFactors;
     result = (baseConf * 0.5) + ((40 + coverageRatio * 45) * 0.5) + adjustment;
   }
+  result += Number(marketAgreementDelta || 0);
   return Math.round(clamp(result - distancePenalty, 30, 95));
 }
 
