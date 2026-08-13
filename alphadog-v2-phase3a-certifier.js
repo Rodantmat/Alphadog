@@ -100,8 +100,9 @@ async function runScoringEngine(pgClient, input) {
       ? Number(b.row.line_value) - Number(a.row.line_value)
       : Number(a.row.line_value) - Number(b.row.line_value));
     for (let i = 1; i < group.length; i++) {
-      if (group[i].finalScore > group[i - 1].finalScore) {
-        group[i].finalScore = group[i - 1].finalScore;
+      const runningMin = Math.min(...group.slice(0, i).map(g => g.finalScore));
+      if (group[i].finalScore > runningMin) {
+        group[i].finalScore = runningMin;
         group[i].monotonicity_clamped = true;
       }
     }
