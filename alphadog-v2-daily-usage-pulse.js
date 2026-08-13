@@ -559,6 +559,21 @@ export default {
       const input = await readJsonSafe(request);
       return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null } });
     }
+    if (method === "POST" && path === "/diagnostic-refmetrics") {
+      const pg = pgClient(env);
+      try {
+        const fetchResult = await fetchRefMetricsAssignmentsHtml(pg);
+        const parsed = fetchResult.ok ? parseRefMetricsAssignments(fetchResult.html) : [];
+        return jsonResponse({
+          fetch_ok: fetchResult.ok, fetch_reason: fetchResult.reason || null,
+          html_length: fetchResult.html ? fetchResult.html.length : 0,
+          html_preview: fetchResult.html ? fetchResult.html.slice(0, 2000) : null,
+          parsed_rows_count: parsed.length, parsed_rows_sample: parsed.slice(0, 10)
+        });
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
+    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const pg = pgClient(env);
