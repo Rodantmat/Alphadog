@@ -351,8 +351,7 @@ function classifyWeather(row, calendar, stadium, parkFactor, mlbResult, external
   const delayRiskFlag = precip !== null && precip >= 55 ? 1 : 0;
   if (rainRiskFlag) issues.push({ severity: "warning", issue_type: "rain_risk", reason: `Precipitation probability is ${precip}%.` });
   if (wind !== null && wind >= 18) issues.push({ severity: "warning", issue_type: "wind_extreme", reason: `Wind speed is ${wind} mph.` });
-  const roofIsDerived = roofStatus === "derived_likely_closed" || roofStatus === "derived_likely_open";
-  const weatherIsReal = hasAnyWeather || !weatherApplicableFlag;
+  const roofIsDerived = roofStatus === "derived_likely_closed" || roofStatus === "derived_likely_open";  const weatherIsReal = hasAnyWeather || !weatherApplicableFlag;
   const overallDataSourceLevel = roofIsDerived ? "derived" : (weatherIsReal ? "real" : "unknown");
   return {
     roof_type: roofType, roof_status: roofStatus, roof_confidence: roofConfidence, indoor_flag: indoorFlag, retractable_roof_flag: retractableFlag,
