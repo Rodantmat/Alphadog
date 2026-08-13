@@ -1855,7 +1855,11 @@ async function runCalibrationReport(env, input = {}) {
         metrics: { n: r.n, test_n: r.test_n || null, A: r.A, B: r.B },
       };
     });
-    return { ok: true, mode: "calibration_report", generated_at: nowUtc(), total_props: report.length, needs_attention: report.filter(r => r.severity === "recommend" || r.severity === "warning").length, report };
+    const finalReport = { ok: true, mode: "calibration_report", generated_at: nowUtc(), total_props: report.length, needs_attention: report.filter(r => r.severity === "recommend" || r.severity === "warning").length, report };
+    try {
+      await sql`INSERT INTO control.claude_session_log (topic, finding, status, next_step) VALUES ('calibration_report_full_output', ${JSON.stringify(finalReport)}, 'REPORT_GENERATED', 'Query this row directly via SQL when the HTTP response is too large to read in full.')`;
+    } catch (_) { /* logging must never break the actual report */ }
+    return finalReport;
   } finally {
     try { await sql.end({ timeout: 1 }); } catch (_) {}
   }
