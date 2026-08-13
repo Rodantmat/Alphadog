@@ -438,11 +438,14 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   const runningGameRows = await pgClient`SELECT DISTINCT ON (mlb_player_id) mlb_player_id, lead_distance_gained FROM ref.pitcher_running_game ORDER BY mlb_player_id, season_year DESC`.catch(() => []);
   const pitcherLeadDistanceByPitcherId = new Map(runningGameRows.map(r => [String(r.mlb_player_id), r.lead_distance_gained]));
 
-  // REAL FIX (2026-07-31): times_through_order was never wired - starter_avg_batters_faced_per_start
+  // REAL FIX (2026-07-31, corrected 2026-08-13): times_through_order was never wired - starter_avg_batters_faced_per_start
   // was referenced by the factor logic but never populated. Directly computable from existing
-  // batters_faced_sum/starts_count already in stats_pitcher.metric_snapshots.
-  const starterIdsForBfp = [...new Set(starterRows.map(r => r.starter_player_id).filter(Boolean))];
-  const bfpLit = starterIdsForBfp.length ? "{" + starterIdsForBfp.join(",") + "}" : null;
+  // batters_faced_sum/starts_count already in stats_pitcher.metric_snapshots. CORRECTED 2026-08-13:
+  // originally scoped to only opposing starters (starterIdsForBfp) under the assumption this signal
+  // was about the opponent - confirmed live that was wrong, since this factor is used exclusively
+  // for pitcher props about the leg's OWN player, never a hitter prop. Widened to cover every
+  // player in this batch so the leg's own player_id is always found.
+  const bfpLit = playerIds.length ? "{" + playerIds.join(",") + "}" : null;
   const batersFacedRows = bfpLit ? await pgClient`SELECT player_id, batters_faced_sum, starts_count FROM stats_pitcher.metric_snapshots WHERE player_id = ANY(${bfpLit}::bigint[]) AND metric_window='season_to_date'`.catch(() => []) : [];
   const avgBattersFacedByPitcher = new Map(batersFacedRows.filter(r => Number(r.starts_count) > 0).map(r => [String(r.player_id), Number(r.batters_faced_sum) / Number(r.starts_count)]));
 
