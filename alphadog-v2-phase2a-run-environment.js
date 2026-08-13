@@ -100,7 +100,8 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       return ctx.starter_avg_batters_faced_per_start * (a || 0);
     }
     case "recent_form_trend": {
-      const ratio = cell.prop_key === "pitcher_outs" ? ctx.recent3_outs_ratio : cell.prop_key === "earned_runs" ? ctx.recent3_er_ratio : null;
+      const ratioByProp = { pitcher_outs: ctx.recent3_outs_ratio, earned_runs: ctx.recent3_er_ratio, hits_allowed: ctx.recent3_hits_ratio, walks_allowed: ctx.recent3_bb_ratio, pitcher_strikeouts: ctx.recent3_k_ratio };
+      const ratio = ratioByProp[cell.prop_key];
       if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
       return Math.log(ratio) * (a ?? 1.0);
     }
