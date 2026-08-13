@@ -712,6 +712,36 @@ architecture context.
   sample — never apply blanket/unreviewed. This mirrors the same manual-first, human-reviewed
   discipline already governing every other layer in the current operating model.
 
+### Standing addition to the manual rotation: game-calendar live-status refresh during game hours
+- **Real bug found and fixed 2026-08-13, via a live user report of already-started legs appearing
+  in generated slips.** `calendar.game_calendar` (`is_live`/`is_final`/`game_time_utc`) is the ONLY
+  signal the slip-builder's game-time filters (`official_game_time_utc > now()` + `NOT EXISTS
+  (is_live OR is_final)`, present and correct in every auto-select function) rely on to exclude
+  already-started games. Its ONLY writer is `alphadog-v2-base-game-calendar`, which is stage 1 of
+  the retired `static-full-run` chain (see above) — a worker architecturally designed to run ONCE
+  to build season schedule structure, not to refresh live in-game status. It has zero schedule/cron
+  row anywhere (`config.worker_schedules`, `config.worker_definitions` both empty for it) and
+  nothing else calls it. Confirmed live: it had not run in 4+ hours (last `updated_at` 16:36 UTC,
+  found stalled at 20:36 UTC), during which two real games went live/final while their legs kept
+  showing as available on the slip builder — one leg's game had genuinely ENDED, another was mid-
+  game, both slipped through every filter because the filter's only data source was hours stale.
+- **A second, independent bug compounded this**: even after refreshing, one game's stored
+  `game_time_utc` was found to be a full hour later than its real MLB start time (board said
+  18:10 UTC, real game started 17:10 UTC) — meaning even a perfectly fresh `is_live` check
+  wouldn't fully protect against a wrong stored time. Root cause of the wrong stored time not yet
+  investigated — flag if this recurs on other games, it may be a one-off or a real pattern.
+- **Immediate fix applied**: manually triggered `POST /run` on `alphadog-v2-base-game-calendar`
+  (confirmed 134 games refreshed, both affected legs correctly disappeared from the next slip
+  generation). Also added a 10-minute safety margin (`now() + interval '10 minutes'`) to all four
+  slip auto-selectors' game-time filters as defense-in-depth against tight timing, independent of
+  calendar freshness.
+- **Standing action**: during live game hours (roughly noon-midnight ET on any day with games),
+  call `POST /run` on `alphadog-v2-base-game-calendar` every 20-30 minutes as part of the manual
+  rotation — treat it the same as any other delta/master layer that needs regular re-triggering
+  under the current retired-cron operating model. This is the single most time-sensitive item in
+  the rotation, since a stale calendar directly risks showing already-started legs to the user,
+  not just degrading a background metric.
+
 
 ## PART 5 — Session: the first real 6am run, a real incomplete-data incident, and cascade guards built across metrics/classification/baseline
 
