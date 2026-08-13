@@ -87,7 +87,15 @@ function extractMlbWeather(json) {
   const w = (json && json.gameData && json.gameData.weather) || (json && json.liveData && json.liveData.linescore && json.liveData.linescore.weather) || null;
   if (!w || typeof w !== "object") return { ok: false, source_key: MLB_SOURCE_KEY, weather: null };
   const wind = parseMlbWind(w.wind || w.windSpeed || w.windDescription || "");
-  return { ok: true, source_key: MLB_SOURCE_KEY, weather: { condition: w.condition || w.conditions || null, temperature_f: numOrNull(w.temp || w.temperature || w.temperatureF), wind_speed_mph: wind.wind_speed_mph, wind_direction_cardinal: wind.wind_direction_cardinal, wind_context: wind.wind_context, raw_weather: w } };
+  // FIXED 2026-08-13: MLB's live feed condition field often states the real roof status directly
+  // (confirmed live: "Roof Closed" for a real Rogers Centre game) - this is an authoritative,
+  // official signal that was previously being completely ignored in favor of a weather-based
+  // guess for every retractable-roof venue. Extracted here so classifyWeather can use it first.
+  const conditionText = String(w.condition || w.conditions || "").toLowerCase();
+  let officialRoofStatus = null;
+  if (/roof\s*closed|dome\s*closed|retractable\s*roof\s*closed/.test(conditionText)) officialRoofStatus = "official_closed";
+  else if (/roof\s*open|dome\s*open|retractable\s*roof\s*open/.test(conditionText)) officialRoofStatus = "official_open";
+  return { ok: true, source_key: MLB_SOURCE_KEY, weather: { condition: w.condition || w.conditions || null, temperature_f: numOrNull(w.temp || w.temperature || w.temperatureF), wind_speed_mph: wind.wind_speed_mph, wind_direction_cardinal: wind.wind_direction_cardinal, wind_context: wind.wind_context, official_roof_status: officialRoofStatus, raw_weather: w } };
 }
 function mlbV11Base(env) {
   const raw = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/+$/, "");
