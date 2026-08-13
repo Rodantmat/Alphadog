@@ -469,7 +469,7 @@ function boardRowValues(batchId, sourceEngineBatchId, rank, row, id) {
     sample_size: row.sample_size == null ? null : Number(row.sample_size), non_push_sample: row.non_push_sample == null ? null : Number(row.non_push_sample),
     hit_count: row.hit_count == null ? null : Number(row.hit_count), miss_count: row.miss_count == null ? null : Number(row.miss_count), push_count: row.push_count == null ? null : Number(row.push_count),
     hp_source_board_tier: row.hp_source_board_tier || null, hp_source_lane_reason: row.hp_source_lane_reason || null,
-    is_goblin: Number(row.is_goblin || 0), is_demon: Number(row.is_demon || 0), is_more_only: Number(row.more_only || 0)
+    is_goblin: Number(row.is_goblin || 0), is_demon: Number(row.is_demon || 0), is_more_only: Number(row.more_only || 0), source_variant_label: row.source_variant_label || null
   };
 }
 
