@@ -268,7 +268,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   const baselineByPlayerPropSide = new Map();
   if (playerIds.length) {
     const playerLiteral = "{" + playerIds.join(",") + "}";
-    const baselineRows = await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, confidence_0_100 FROM classification.baseline_v6_current WHERE player_id::text = ANY(${playerLiteral}::text[])`;
+    const baselineRows = await pgClient`SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, hit_probability_0_100, confidence_0_100 FROM classification.baseline_v6_current WHERE player_id::text = ANY(${playerLiteral}::text[])`;
     for (const b of baselineRows) {
       const k = `${b.player_id}|${b.canonical_prop_key}|${b.selected_side}`;
       if (!baselineByPlayerPropSide.has(k)) baselineByPlayerPropSide.set(k, []);
