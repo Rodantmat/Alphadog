@@ -810,6 +810,24 @@ architecture context.
   known-real effect before trusting a negative result, so a "zero" finding can be distinguished from
   a broken or inapplicable test.
 
+### Follow-up: batter_quality_of_contact properly out-of-sample tested, honest mixed result, no change made
+- Designed the correct test for this factor per the standing rule above (fixed season snapshot,
+  not time-varying - the within-player residual test doesn't apply): split games by date
+  (train < Aug 1, test >= Aug 1), computed each player's empirical HR rate from TRAIN games only,
+  then tested whether ISO predicts the genuinely unseen TEST-period outcome beyond what train-period
+  performance already explains (partial correlation, controlling for train rate).
+- **Established players** (15+ train games, n=319): partial correlation -0.030 - essentially zero,
+  ISO adds no real incremental value once a real sample of the player's own performance exists.
+- **Thin-sample players** (5-15 train games, n=18): partial correlation 0.205 - suggestive, and
+  consistent with the standard sabermetric principle that Statcast contact-quality metrics
+  stabilize faster than counting stats, so they should matter most exactly when the empirical
+  sample is thin. n=18 is underpowered to confirm this, though.
+- **Conclusion: no change made.** Unlike times_through_order and recent_form_trend's 4 failed
+  props (clean, robust zeros), this is a genuinely mixed, underpowered picture - not confirmable
+  either way with currently available data. Changing the factor here would be exactly the kind of
+  premature action this whole discipline exists to prevent. Revisit once more of-season data
+  accumulates and the thin-sample group's n grows large enough to trust.
+
 
 ## PART 5 — Session: the first real 6am run, a real incomplete-data incident, and cascade guards built across metrics/classification/baseline
 
