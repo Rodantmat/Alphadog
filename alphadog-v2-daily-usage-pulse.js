@@ -564,6 +564,36 @@ export default {
       const input = await readJsonSafe(request);
       return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null } });
     }
+    if (method === "POST" && path === "/backfill-completed-games") {
+      const pg = pgClient(env);
+      try {
+        const missing = await pg`SELECT c.game_pk, c.official_date::text AS official_date, c.home_team_id, c.venue_id
+          FROM calendar.game_calendar c WHERE c.is_final=true
+            AND NOT EXISTS (SELECT 1 FROM context.history_game_umpire h WHERE h.game_pk=c.game_pk)
+          ORDER BY c.official_date`;
+        let found = 0, notFound = 0, errors = 0;
+        const results = [];
+        for (const g of missing) {
+          try {
+            const boxUrl = `${MLB_V1_BASE}/game/${g.game_pk}/boxscore`;
+            const box = await fetchJson(boxUrl);
+            if (!box.ok) { notFound++; results.push({ game_pk: g.game_pk, status: "fetch_failed" }); continue; }
+            const ext = extractFromJson(box.json, "boxscore_backfill");
+            if (!ext.found) { notFound++; results.push({ game_pk: g.game_pk, status: "no_plate_umpire_in_boxscore" }); continue; }
+            const key = `${g.official_date}_${toInt(g.home_team_id)}_${g.game_pk}`;
+            const crewIds = (ext.officials_sample || []).map(o => o.id).filter(Boolean);
+            await pg`INSERT INTO daily.umpire_assignment_history ${pg([{ history_key: key, official_date: g.official_date, home_team_id: toInt(g.home_team_id), venue_id: toInt(g.venue_id), game_pk: g.game_pk, home_plate_umpire_id: ext.home_plate_umpire_id, home_plate_umpire_name: ext.home_plate_umpire_name, crew_umpire_ids_json: safeJson(crewIds, 500) }], "history_key", "official_date", "home_team_id", "venue_id", "game_pk", "home_plate_umpire_id", "home_plate_umpire_name", "crew_umpire_ids_json")}
+              ON CONFLICT (history_key) DO UPDATE SET home_plate_umpire_id=excluded.home_plate_umpire_id, home_plate_umpire_name=excluded.home_plate_umpire_name, crew_umpire_ids_json=excluded.crew_umpire_ids_json, recorded_at=now()`;
+            found++;
+            results.push({ game_pk: g.game_pk, status: "found", umpire: ext.home_plate_umpire_name });
+          } catch (err) { errors++; results.push({ game_pk: g.game_pk, status: "exception", error: String(err && err.message ? err.message : err) }); }
+        }
+        const permanentBackfill = await permanentlyRecordConfirmedAssignments(pg).catch(() => ({ copied: 0, checked: 0, error: true }));
+        return jsonResponse({ total_missing: missing.length, found, not_found: notFound, errors, permanent_backfill: permanentBackfill, results: results.slice(0, 30) });
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
+    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const pg = pgClient(env);
