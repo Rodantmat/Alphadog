@@ -726,15 +726,12 @@ export default {
       const teamId = new URL(request.url).searchParams.get("teamId") || "142";
       const base = sourceBase(env);
       const il = await fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, false, FETCH_TIMEOUT_MS);
-      const active = await fetchJson(`${base}/teams/${teamId}/roster/active`, env, false, FETCH_TIMEOUT_MS);
-      const buxtonInIl = il.json && Array.isArray(il.json.roster) ? il.json.roster.find(r => r.person && String(r.person.id) === "621439") : null;
-      const buxtonInActive = active.json && Array.isArray(active.json.roster) ? active.json.roster.find(r => r.person && String(r.person.id) === "621439") : null;
-      const allIlStatusCodes = il.json && Array.isArray(il.json.roster) ? [...new Set(il.json.roster.map(r => r.status && r.status.code))] : null;
+      const roster = il.json && Array.isArray(il.json.roster) ? il.json.roster : [];
+      const buxton = roster.find(r => r.person && String(r.person.id) === "621439");
       return jsonResponse({
-        il_ok: il.ok, il_status: il.status, il_roster_count: il.json && Array.isArray(il.json.roster) ? il.json.roster.length : null,
-        il_roster_sample: il.json && Array.isArray(il.json.roster) ? il.json.roster.slice(0, 5) : null,
-        buxton_in_il_response: buxtonInIl, buxton_in_active_response: buxtonInActive, all_il_status_codes: allIlStatusCodes,
-        active_ok: active.ok, active_status: active.status
+        il_ok: il.ok, roster_count: roster.length,
+        buxton_found: !!buxton, buxton_row: buxton || null,
+        all_names: roster.map(r => r.person && r.person.fullName).filter(Boolean)
       });
     }
     if (method === "POST" && path === "/run") {
