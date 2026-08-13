@@ -374,7 +374,18 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate, options
       if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
       if (!tx.ok) sourceFailures.push({ teamId, endpoint: "transactions", hard: false, status: tx.status, error: tx.error || tx.text_preview || null });
       fortyByTeam.set(teamId, rosterMap(forty, "any"));
-      ilByTeam.set(teamId, rosterMap(il, "injuredList"));
+      // FIXED 2026-08-13: the dedicated injuredList endpoint response is not used for IL
+      // determination (confirmed unreliable via live diagnostic - see isInjuredListRosterRow).
+      // IL status is derived from the already-fetched 40-man roster's real per-player status
+      // codes instead, which is both more reliable and avoids depending on this extra endpoint.
+      const fortyRoster = forty && forty.ok && forty.json && Array.isArray(forty.json.roster) ? forty.json.roster : [];
+      const ilMapFromForty = new Map();
+      for (const row of fortyRoster) {
+        if (!isInjuredListRosterRow(row)) continue;
+        const id = intOrNull(row?.person?.id);
+        if (id !== null) ilMapFromForty.set(id, row);
+      }
+      ilByTeam.set(teamId, ilMapFromForty);
       txByTeam.set(teamId, txMap(tx));
     }
   } else {
