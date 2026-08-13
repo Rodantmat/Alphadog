@@ -304,14 +304,19 @@ async function fetchRefMetricsAssignmentsHtml(pg) {
 }
 function parseRefMetricsAssignments(html) {
   const rows = [];
-  const trRegex = /<tr>([\s\S]*?)<\/tr>/g;
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
   let m;
   while ((m = trRegex.exec(html))) {
     const block = m[1];
-    const teamLinks = [...block.matchAll(/team-profiles\?team=[^"]+"[^>]*>([^<]+)<\/a>/g)];
+    // FIXED 2026-08-13: team names are NOT the immediate link text (that's a nested
+    // span.rm-team-logo-label element containing only the short name, e.g. "Twins") - the
+    // reliable, full team name lives in the href's team= query parameter itself. Confirmed
+    // live against the real page (was always 0 matches before this fix, root-caused via direct
+    // diagnostic fetch rather than assumed - see 2026-08-13 commit history for the raw HTML).
+    const teamLinks = [...block.matchAll(/team-profiles\?team=([^"&]+)/g)];
     if (teamLinks.length < 2) continue;
-    const home = decodeHtmlEntities(teamLinks[0][1].trim());
-    const away = decodeHtmlEntities(teamLinks[1][1].trim());
+    const home = decodeHtmlEntities(decodeURIComponent(teamLinks[0][1].replace(/\+/g, " ")).trim());
+    const away = decodeHtmlEntities(decodeURIComponent(teamLinks[1][1].replace(/\+/g, " ")).trim());
     const umpMatch = block.match(/umpire-profiles\?official=[^"]+"[^>]*>([^<]+)<\/a>/);
     rows.push({ home, away, hp_name: umpMatch ? decodeHtmlEntities(umpMatch[1].trim()) : null });
   }
