@@ -564,25 +564,6 @@ export default {
       const input = await readJsonSafe(request);
       return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null } });
     }
-    if (method === "POST" && path === "/diagnostic-refmetrics") {
-      const pg = pgClient(env);
-      try {
-        const fetchResult = await fetchRefMetricsAssignmentsHtml(pg);
-        const parsed = fetchResult.ok ? parseRefMetricsAssignments(fetchResult.html) : [];
-        const html = fetchResult.html || "";
-        const tableIdx = html.indexOf("<table");
-        const tbodyIdx = html.indexOf("<tbody");
-        const firstTrAfterTbody = tbodyIdx >= 0 ? html.indexOf("<tr", tbodyIdx) : -1;
-        const trEndIdx = firstTrAfterTbody >= 0 ? html.indexOf("</tr>", firstTrAfterTbody) : -1;
-        return jsonResponse({
-          fetch_ok: fetchResult.ok, html_length: html.length, parsed_rows_count: parsed.length,
-          table_idx: tableIdx, tbody_idx: tbodyIdx,
-          full_first_row: firstTrAfterTbody >= 0 && trEndIdx >= 0 ? html.slice(firstTrAfterTbody, trEndIdx + 5) : "NOT_FOUND"
-        });
-      } catch (err) {
-        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
-      } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
-    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const pg = pgClient(env);
