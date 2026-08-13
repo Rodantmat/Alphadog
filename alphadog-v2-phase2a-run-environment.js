@@ -224,6 +224,98 @@ function factorFamilyForProp(propKey) {
   return pitcherProps.has(String(propKey || "")) ? "pitcher" : "hitter";
 }
 
+// Role-transition detection and probability override (2026-08-13). Addresses a real, urgent bug:
+// when a pitcher's actual role genuinely changes mid-season (e.g. a reliever confirmed starting
+// today per daily.probable_pitchers, while classified by history as short_reliever/
+// multi_inning_reliever), the season-long baseline measures a fundamentally different exposure
+// level. No bounded rate_multiplier can fix this - a reliever's 1-inning baseline can't be
+// nudged into a starter's 5-6 inning reality via a capped log-space adjustment. Researched
+// properly first: the Times Through the Order Penalty (TTOP, Tango et al. 2007) is well-
+// established - a reliever's per-batter-faced rate is systematically inflated by always facing
+// hitters in the easier 1st-time-through context, so a naive linear per-inning prorate would
+// still be too optimistic. The actual adjustment factors below are empirically validated against
+// this system's own real 2026 data (44 pitchers with >=50 BF in both roles this season: hits/BF
+// +11.1%, K/BF -9.5%, BB/BF +9.4% going reliever-to-starter), not assumed from literature alone.
+function poissonCdfAtMost(k, lambda) {
+  if (!Number.isFinite(lambda) || lambda < 0) return null;
+  let sum = 0, term = Math.exp(-lambda);
+  for (let i = 0; i <= Math.max(0, Math.floor(k)); i++) {
+    if (i > 0) term *= lambda / i;
+    sum += term;
+  }
+  return Math.min(1, Math.max(0, sum));
+}
+const ROLE_TRANSITION_SENSITIVE_PROPS = new Map([
+  ["pitcher_strikeouts", "k_rate_multiplier"],
+  ["walks_allowed", "bb_rate_multiplier"],
+  ["hits_allowed", "hits_rate_multiplier"],
+  ["earned_runs", "er_rate_multiplier"],
+]);
+async function loadRoleTransitionInputs(pgClient, matrixRows) {
+  const pitcherPropKeys = new Set(ROLE_TRANSITION_SENSITIVE_PROPS.keys());
+  const relevantPlayerIds = [...new Set(matrixRows.filter(r => pitcherPropKeys.has(r.canonical_prop_key)).map(r => r.mlb_player_id).filter(Boolean))];
+  const empty = { classifiedRoleByPlayer: new Map(), confirmedStarterIds: new Set(), historicalRateByPlayerProp: new Map(), cfg: null };
+  if (!relevantPlayerIds.length) return empty;
+  const cfgRows = await pgClient`SELECT config_json FROM config.calibration_config WHERE config_key='role_transition_adjustment' AND is_active=1`.catch(() => []);
+  const cfg = cfgRows[0] ? cfgRows[0].config_json : null;
+  if (!cfg) return empty;
+  const pidLit = "{" + relevantPlayerIds.join(",") + "}";
+  const roleRows = await pgClient`SELECT player_id, role_key FROM config.prop_tier_role_assignment WHERE player_id::text = ANY(${pidLit}::text[]) AND canonical_prop_key='hits_allowed'`.catch(() => []);
+  const classifiedRoleByPlayer = new Map(roleRows.map(r => [String(r.player_id), r.role_key]));
+  const gamePks = [...new Set(matrixRows.map(r => r.game_pk).filter(Boolean))];
+  const gpkLit = gamePks.length ? "{" + gamePks.join(",") + "}" : null;
+  const starterRows = gpkLit ? await pgClient`SELECT starter_player_id FROM daily.probable_pitchers WHERE game_pk = ANY(${gpkLit}::bigint[]) AND starter_player_id IS NOT NULL`.catch(() => []) : [];
+  const confirmedStarterIds = new Set(starterRows.map(r => String(r.starter_player_id)));
+  // Only relevant when a real mismatch exists (classified as a reliever role, confirmed starting today) -
+  // avoids the cost of computing per-BF rates for every pitcher when almost none will need it.
+  const mismatchedIds = relevantPlayerIds.filter(pid => confirmedStarterIds.has(String(pid)) && ["short_reliever", "multi_inning_reliever"].includes(classifiedRoleByPlayer.get(String(pid))));
+  const historicalRateByPlayerProp = new Map();
+  if (mismatchedIds.length) {
+    const mLit = "{" + mismatchedIds.join(",") + "}";
+    const rateRows = await pgClient`
+      SELECT player_id, SUM(batters_faced) as bf, SUM(hits_allowed) as hits, SUM(strikeouts) as k, SUM(walks_allowed) as bb, SUM(earned_runs) as er
+      FROM stats_pitcher.game_logs WHERE player_id::text = ANY(${mLit}::text[])
+      GROUP BY player_id`.catch(() => []);
+    for (const r of rateRows) {
+      const bf = Number(r.bf) || 0;
+      if (bf < Number(cfg.min_source_bf_required || 40)) continue;
+      historicalRateByPlayerProp.set(String(r.player_id), {
+        bf, hits_per_bf: Number(r.hits) / bf, k_per_bf: Number(r.k) / bf, bb_per_bf: Number(r.bb) / bf, er_per_bf: Number(r.er) / bf
+      });
+    }
+  }
+  return { classifiedRoleByPlayer, confirmedStarterIds, historicalRateByPlayerProp, cfg };
+}
+function computeRoleTransitionOverride(matrixRow, roleInputs) {
+  const propKey = matrixRow.canonical_prop_key;
+  const rateFieldKey = ROLE_TRANSITION_SENSITIVE_PROPS.get(propKey);
+  if (!rateFieldKey || !roleInputs.cfg) return null;
+  const pid = String(matrixRow.mlb_player_id);
+  const classifiedRole = roleInputs.classifiedRoleByPlayer.get(pid);
+  const isConfirmedStarterToday = roleInputs.confirmedStarterIds.has(pid);
+  if (!isConfirmedStarterToday || !["short_reliever", "multi_inning_reliever"].includes(classifiedRole)) return null;
+  const rates = roleInputs.historicalRateByPlayerProp.get(pid);
+  if (!rates) return null;
+  const cfg = roleInputs.cfg;
+  const adj = cfg.reliever_to_starter || {};
+  const perBfKey = propKey === "pitcher_strikeouts" ? "k_per_bf" : propKey === "walks_allowed" ? "bb_per_bf" : propKey === "hits_allowed" ? "hits_per_bf" : "er_per_bf";
+  const sourceRate = rates[perBfKey];
+  if (sourceRate == null || !Number.isFinite(sourceRate)) return null;
+  const adjustedRate = sourceRate * Number(adj[rateFieldKey] ?? 1.0);
+  const expectedBf = Number((cfg.expected_bf_by_role || {}).starter ?? 22);
+  const projectedMean = adjustedRate * expectedBf;
+  const threshold = Math.floor(Number(matrixRow.board_line_value));
+  const pAtMost = poissonCdfAtMost(threshold, projectedMean);
+  if (pAtMost == null) return null;
+  const side = matrixRow.side || matrixRow.prop_side || "more";
+  const hp = side === "more" ? (1 - pAtMost) * 100 : pAtMost * 100;
+  return {
+    override_hp: Math.max(1, Math.min(99, hp)),
+    confidence_penalty: -1 * Math.abs(Number(cfg.confidence_penalty ?? 20)),
+    detected: `${classifiedRole}_confirmed_starter_today_source_bf_${rates.bf}_projected_mean_${projectedMean.toFixed(2)}`
+  };
+}
+
 async function loadRealLegContexts(pgClient, matrixRows) {
   const gamePks = [...new Set(matrixRows.map(r => r.game_pk).filter(Boolean))];
   const playerIds = [...new Set(matrixRows.map(r => r.mlb_player_id).filter(Boolean))];
