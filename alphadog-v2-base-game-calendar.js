@@ -36,8 +36,17 @@ function classifyGame(game) {
 
 async function fetchSchedule(startDate, endDate, gameTypes = "R", hydrate = "team,venue,linescore,probablePitcher(note)") {
   const endpoint = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=${encodeURIComponent(gameTypes)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&hydrate=${encodeURIComponent(hydrate)}`;
-  const resp = await fetch(endpoint, { headers: { accept: "application/json" } });
-  const text = await resp.text();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("timeout"), 10000);
+  let resp, text;
+  try {
+    resp = await fetch(endpoint, { headers: { accept: "application/json" }, signal: controller.signal });
+    text = await resp.text();
+  } catch (err) {
+    throw new Error(`MLB schedule fetch failed (network/timeout): ${String(err && err.message ? err.message : err)}`);
+  } finally {
+    clearTimeout(timer);
+  }
   let data = {};
   try { data = JSON.parse(text); } catch (_) { data = { parse_error: true }; }
   if (!resp.ok) throw new Error(`MLB schedule fetch failed ${resp.status}: ${text.slice(0, 300)}`);
