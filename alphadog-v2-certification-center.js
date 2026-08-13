@@ -2548,7 +2548,7 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
     const rows = await queryAllPg(pg, `
       SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
         canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
-        confidence_0_100, score_0_100, board_tier, is_goblin, is_demon
+        confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND source_key = 'prizepicks' AND COALESCE(is_goblin,0) = 0 AND COALESCE(is_demon,0) = 0
