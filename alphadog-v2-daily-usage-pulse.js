@@ -565,16 +565,14 @@ export default {
         const fetchResult = await fetchRefMetricsAssignmentsHtml(pg);
         const parsed = fetchResult.ok ? parseRefMetricsAssignments(fetchResult.html) : [];
         const html = fetchResult.html || "";
-        const trTagMatches = [...html.matchAll(/<tr[^>]*>/g)].slice(0, 5).map(m => m[0]);
-        const teamProfileIdx = html.indexOf("team-profiles");
-        const umpireProfileIdx = html.indexOf("umpire-profiles");
+        const tableIdx = html.indexOf("<table");
+        const tbodyIdx = html.indexOf("<tbody");
+        const firstTrAfterTbody = tbodyIdx >= 0 ? html.indexOf("<tr", tbodyIdx) : -1;
         return jsonResponse({
-          fetch_ok: fetchResult.ok, fetch_reason: fetchResult.reason || null,
-          html_length: html.length,
-          parsed_rows_count: parsed.length, parsed_rows_sample: parsed.slice(0, 10),
-          tr_tag_samples: trTagMatches,
-          team_profiles_context: teamProfileIdx >= 0 ? html.slice(Math.max(0, teamProfileIdx - 300), teamProfileIdx + 300) : "NOT_FOUND",
-          umpire_profiles_context: umpireProfileIdx >= 0 ? html.slice(Math.max(0, umpireProfileIdx - 300), umpireProfileIdx + 300) : "NOT_FOUND"
+          fetch_ok: fetchResult.ok, html_length: html.length, parsed_rows_count: parsed.length,
+          table_idx: tableIdx, tbody_idx: tbodyIdx,
+          table_context: tableIdx >= 0 ? html.slice(tableIdx, tableIdx + 600) : "NOT_FOUND",
+          first_data_row: firstTrAfterTbody >= 0 ? html.slice(firstTrAfterTbody, firstTrAfterTbody + 1500) : "NOT_FOUND"
         });
       } catch (err) {
         return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
