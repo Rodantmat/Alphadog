@@ -241,7 +241,8 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
   const alreadyWrittenIds = new Set(alreadyWrittenRows.map(r => r.matrix_id));
 
   const enrichmentRows = await pgClient`SELECT e.enrichment_id, e.matrix_id, e.batch_id, e.canonical_prop_key, e.mlb_player_id, e.board_line_value, e.prop_side,
-            e.log_rate_adjustment, e.rate_multiplier, e.confidence_adjustment, e.factors_applied, e.factors_missing, e.factor_breakdown_json
+            e.log_rate_adjustment, e.rate_multiplier, e.confidence_adjustment, e.factors_applied, e.factors_missing, e.factor_breakdown_json,
+            e.role_transition_override_hp, e.role_transition_confidence_penalty, e.role_transition_detected
      FROM scoring.enrichment_leg_current e
      INNER JOIN score.prop_matrix_current m ON m.matrix_id = e.matrix_id
      ORDER BY e.matrix_id`;
