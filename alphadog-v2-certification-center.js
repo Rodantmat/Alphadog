@@ -3935,7 +3935,8 @@ function renderRecommendation(){
   $('useRecommended').onclick=()=>{lastGeneratedSlips=lastRecommendedSlips;renderGenerated()};
 }
 function legLine(l){
-  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel ? displayPropLabel(l.canonical_prop_key) : cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase());
+  const variant=l.source_variant_label?(' ['+cap(l.source_variant_label)+']'):'';
+  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel ? displayPropLabel(l.canonical_prop_key) : cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant;
 }
 function recommendedSlipCard(s){
   const evTxt=s.estimated_ev_per_unit_stake!=null?evLabel(s.estimated_ev_per_unit_stake):'—';
