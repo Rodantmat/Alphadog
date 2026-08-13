@@ -1056,6 +1056,14 @@ function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, r
   if (prop === "runs" && sourceNorm === "player_runs" && isPitcherPrimaryPosition(player) && Number(rawLineValue) !== 0.5) {
     return "runs_allowed";
   }
+  // Completes the fix the guard above only prevented: a 0.5-line pitcher 'player_runs' prop is
+  // RFI/NRFI by definition (see the hardening comment above), not a generic, unclassifiable
+  // 'runs' leg. Confirmed live: 6 legs (Scherzer, Gilbert, Cavalli, Martin, Urena, Tolle) were
+  // falling through to the unchanged 'runs' value here, leaving them with no HP path at all and
+  // silently dropping off the board - the guard alone was necessary but not sufficient.
+  if (prop === "runs" && sourceNorm === "player_runs" && isPitcherPrimaryPosition(player) && Number(rawLineValue) === 0.5) {
+    return "rfi_nrfi";
+  }
   return prop;
 }
 
