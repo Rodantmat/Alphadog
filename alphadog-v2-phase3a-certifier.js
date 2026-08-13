@@ -75,11 +75,41 @@ async function runScoringEngine(pgClient, input) {
 
   let written = 0;
   const mirrorRows = [];
-  for (const row of hpRows) {
+  const scoredRows = hpRows.map(row => {
     const hp = row.estimated_hit_probability_0_100;
     const confidence = row.probability_confidence_0_100;
-    const score = computeFinalScore(hp, confidence, row.is_goblin, row.is_demon);
-    if (score == null) continue;
+    const rawScore = computeFinalScore(hp, confidence, row.is_goblin, row.is_demon);
+    return { row, hp, confidence, rawScore, finalScore: rawScore, monotonicity_clamped: false };
+  }).filter(r => r.rawScore != null);
+
+  // Difficulty-monotonicity enforcement (2026-08-13): a leg with harder true difficulty (regardless
+  // of goblin/demon/standard label) must never score higher than an easier leg for the same
+  // player/prop/side/date - see commit message above for the confirmed real leak this closes.
+  const groups = new Map();
+  for (const r of scoredRows) {
+    const key = `${r.row.mlb_player_id}|${r.row.canonical_prop_key}|${r.row.selected_side}|${r.row.official_date}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const side = group[0].row.selected_side;
+    // Easiest first: for 'more', lower line is easier (ascending); for 'less', higher line is
+    // easier (descending) - this is the true difficulty ordering, independent of goblin/demon label.
+    group.sort((a, b) => side === "less"
+      ? Number(b.row.line_value) - Number(a.row.line_value)
+      : Number(a.row.line_value) - Number(b.row.line_value));
+    for (let i = 1; i < group.length; i++) {
+      if (group[i].finalScore > group[i - 1].finalScore) {
+        group[i].finalScore = group[i - 1].finalScore;
+        group[i].monotonicity_clamped = true;
+      }
+    }
+  }
+
+  for (const r of scoredRows) {
+    const { row, hp, confidence, rawScore, finalScore, monotonicity_clamped } = r;
+    const score = finalScore;
     const grade = gradeForScore(score);
 
     await pgClient`UPDATE score.hp_board_current SET score_0_100=${score}, score_grade=${grade}, updated_at=now() WHERE hp_board_row_id=${row.hp_board_row_id}`;
@@ -91,7 +121,7 @@ async function runScoringEngine(pgClient, input) {
       mlb_player_id: row.mlb_player_id, player_name: row.player_name, canonical_prop_key: row.canonical_prop_key, line_value: row.line_value, side_mode: "two_sided", selected_side: row.selected_side || "more",
       more_score_0_100: score, less_score_0_100: score, score_0_100: score, score_status: "scored_from_final_hp_confidence_v1", score_grade: grade,
       side_eligibility_status: "side_ready", side_availability_status: "side_ready_two_sided", profile_key: PROFILE_KEY, profile_version: SYSTEM_VERSION, thresholds_locked: 1, archive_score_threshold: 70,
-      archive_eligible: score >= 70 ? 1 : 0, archive_written: 0, calculation_json: JSON.stringify({ real_reordered: true, computed_from_final_hp: hp, computed_from_final_confidence: confidence, note: "Final Score computed FROM finalized HP + Confidence (reordered per spec), written back into hp_board_current.score_0_100 and mirrored here for audit/compatibility." }), matrix_payload_json_snapshot: null,
+      archive_eligible: score >= 70 ? 1 : 0, archive_written: 0, calculation_json: JSON.stringify({ real_reordered: true, computed_from_final_hp: hp, computed_from_final_confidence: confidence, raw_score_before_monotonicity: rawScore, monotonicity_clamped, note: "Final Score computed FROM finalized HP + Confidence (reordered per spec), written back into hp_board_current.score_0_100 and mirrored here for audit/compatibility. Difficulty-monotonicity enforced across same player/prop/side/date group (2026-08-13 fix)." }), matrix_payload_json_snapshot: null,
       matrix_status: null, blocking_for_scoring: 0, warning_count: 0, missing_component_count: 0,
       confidence_0_100: confidence, confidence_status: confidence >= 55 ? "confidence_ok" : "confidence_low", live_playable: score >= 76 ? 1 : 0, model_deferred: 0, score_sort_0_100: score
     });
