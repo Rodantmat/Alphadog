@@ -428,7 +428,7 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     }
     const marketOddsRow = marketAgreementCfg ? marketOddsMap.get(`${er.mlb_player_id}|${er.canonical_prop_key}|${Number(er.board_line_value)}`) : null;
     const marketAgreement = marketAgreementCfg ? computeMarketAgreementAdjustment(rawHp, side, marketOddsRow, marketAgreementCfg) : { delta: 0, applied: false };
-    const confidence = computeFinalConfidence(baseline?.confidence_0_100, er, baselineMatch ? baselineMatch.line_distance : 0, penaltyConfig, marketAgreement.delta);
+    const confidence = computeFinalConfidence(baseline?.confidence_0_100, er, baselineMatch ? baselineMatch.line_distance : 0, penaltyConfig, marketAgreement.delta + (hasRoleOverride ? Number(er.role_transition_confidence_penalty || 0) : 0));
     const primaryPlayable = hp >= PRIMARY_HP_THRESHOLD && confidence >= 55;
     if (primaryPlayable) primaryRows++; else reviewRows++;
 
