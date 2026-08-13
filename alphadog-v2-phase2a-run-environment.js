@@ -510,7 +510,14 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     wind_context: weather.wind_context ?? null,
     roof_status: weather.roof_status ?? null,
     catcher_framing_runs_per_game: catcher.framing_runs_total ?? null,
-    implied_team_total: market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null,
+    implied_team_total: (() => {
+      const ownAbbrev = String(matrixRow.team_id || "").toUpperCase();
+      if (market.home_team && ownAbbrev === String(market.home_team).toUpperCase()) return market.derived_home_implied_runs ?? null;
+      if (market.away_team && ownAbbrev === String(market.away_team).toUpperCase()) return market.derived_away_implied_runs ?? null;
+      // Fallback only if we couldn't confidently match the player's team to home/away (e.g. missing
+      // abbreviation data) - preserves the old behavior rather than dropping the signal entirely.
+      return market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null;
+    })(),
     league_avg_implied_total: (marketThresholds && marketThresholds.league_avg_implied_total_runs) ?? 4.3,
     prop_key: matrixRow.canonical_prop_key || null,
     batter_hr_rate: ctxMaps.hrRateByPlayer ? (ctxMaps.hrRateByPlayer.get(String(playerId)) ?? null) : null,
