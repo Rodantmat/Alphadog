@@ -355,43 +355,48 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate, options
     if (!resp.ok) sourceFailures.push({ endpoint: "people", hard: false, status: resp.status, error: resp.error || resp.text_preview || null });
   }
 
+  // FIXED 2026-08-13: previously this entire block (40-man roster, injuredList probe, and
+  // transactions) was skipped under masterChainSourceBudget for time-budget reasons - but that
+  // meant IL detection never ran at all in the production Master_Full_Run path, since ilByTeam is
+  // derived from the 40-man roster response. Confirmed live this caused a genuinely IL'd player
+  // (hip impingement, real news-confirmed) to show as source_missing instead of injured_list.
+  // The 40-man roster fetch (needed for real IL detection - the single most safety-critical
+  // signal this worker produces) now always runs regardless of time budget; only the lower-
+  // priority transactions endpoint remains skippable under the master-chain budget.
+  const fortyManResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
+    const forty = await fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true, fetchTimeoutMs);
+    return { teamId, forty };
+  });
+  for (const item of fortyManResults) {
+    const { teamId, forty } = item;
+    externalCalls++;
+    endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status, elapsed_ms: forty.elapsed_ms });
+    if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
+    fortyByTeam.set(teamId, rosterMap(forty, "any"));
+    const fortyRoster = forty && forty.ok && forty.json && Array.isArray(forty.json.roster) ? forty.json.roster : [];
+    const ilMapFromForty = new Map();
+    for (const row of fortyRoster) {
+      if (!isInjuredListRosterRow(row)) continue;
+      const id = intOrNull(row?.person?.id);
+      if (id !== null) ilMapFromForty.set(id, row);
+    }
+    ilByTeam.set(teamId, ilMapFromForty);
+  }
+
   if (!masterChainSourceBudget) {
-    const secondaryResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
-      const [forty, il, tx] = await Promise.all([
-        fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true),
-        fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, true),
-        fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true)
-      ]);
-      return { teamId, forty, il, tx };
+    const txResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
+      const tx = await fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true);
+      return { teamId, tx };
     });
-    for (const item of secondaryResults) {
-      const { teamId, forty, il, tx } = item;
-      externalCalls += 3;
-      endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status, elapsed_ms: forty.elapsed_ms });
-      endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status, elapsed_ms: il.elapsed_ms });
+    for (const item of txResults) {
+      const { teamId, tx } = item;
+      externalCalls++;
       endpointLog.push({ teamId, endpoint: "transactions", ok: tx.ok, status: tx.status, elapsed_ms: tx.elapsed_ms });
-      if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
-      if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
       if (!tx.ok) sourceFailures.push({ teamId, endpoint: "transactions", hard: false, status: tx.status, error: tx.error || tx.text_preview || null });
-      fortyByTeam.set(teamId, rosterMap(forty, "any"));
-      // FIXED 2026-08-13: the dedicated injuredList endpoint response is not used for IL
-      // determination (confirmed unreliable via live diagnostic - see isInjuredListRosterRow).
-      // IL status is derived from the already-fetched 40-man roster's real per-player status
-      // codes instead, which is both more reliable and avoids depending on this extra endpoint.
-      const fortyRoster = forty && forty.ok && forty.json && Array.isArray(forty.json.roster) ? forty.json.roster : [];
-      const ilMapFromForty = new Map();
-      for (const row of fortyRoster) {
-        if (!isInjuredListRosterRow(row)) continue;
-        const id = intOrNull(row?.person?.id);
-        if (id !== null) ilMapFromForty.set(id, row);
-      }
-      ilByTeam.set(teamId, ilMapFromForty);
       txByTeam.set(teamId, txMap(tx));
     }
   } else {
     for (const teamId of teamIds) {
-      endpointLog.push({ teamId, endpoint: "40Man", ok: false, status: "skipped_master_chain_source_budget", elapsed_ms: 0 });
-      endpointLog.push({ teamId, endpoint: "injuredList", ok: false, status: "skipped_master_chain_source_budget", elapsed_ms: 0 });
       endpointLog.push({ teamId, endpoint: "transactions", ok: false, status: "skipped_master_chain_source_budget", elapsed_ms: 0 });
     }
   }
