@@ -65,7 +65,7 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 // top of a baseline they were never fit against.
 const CALIBRATION_MIN_SAMPLE_GAMES = 100;
 async function loadCalibrationMap(pgClient) {
-  const rows = await pgClient`SELECT canonical_prop_key, selected_side, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES} AND methodology LIKE '%post_rootfix%'`.catch(() => []);
+  const rows = await pgClient`SELECT canonical_prop_key, selected_side, tier_key, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES} AND methodology LIKE '%post_rootfix%'`.catch(() => []);
   const map = new Map();
   for (const r of rows) {
     const key = `${r.canonical_prop_key}|${r.selected_side || ""}`;
@@ -74,15 +74,22 @@ async function loadCalibrationMap(pgClient) {
   }
   return map;
 }
-function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
+// Tier-aware lookup (2026-08-13): a tier-specific bin (tier_key matches the player's own
+// baseline_v6 tier) is preferred over a prop-level bin (tier_key IS NULL) when both exist for the
+// same raw-probability range. This is additive only - every prop with only prop-level rows (the
+// entire pre-existing correction map) behaves identically to before, since those rows all have
+// tier_key IS NULL and are only ever reached via the fallback branch below.
+function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap, playerTierKey) {
   if (rawHpPct == null || !calibrationMap) return { correctedHp: rawHpPct, applied: false };
   const bins = calibrationMap.get(`${propKey}|${side || ""}`);
   if (!bins || !bins.length) return { correctedHp: rawHpPct, applied: false };
   const rawP = rawHpPct / 100;
-  const bin = bins.find(b => rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
+  let bin = null;
+  if (playerTierKey) bin = bins.find(b => b.tier_key === playerTierKey && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
+  if (!bin) bin = bins.find(b => !b.tier_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
   if (!bin) return { correctedHp: rawHpPct, applied: false };
   const corrected = clamp(rawHpPct + Number(bin.correction_delta) * 100, 1, 99);
-  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta) * 100, bin_n_test_games: bin.n_test_games };
+  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta) * 100, bin_n_test_games: bin.n_test_games, tier_specific: Boolean(bin.tier_key) };
 }
 
 // Second-stage residual correction, applied AFTER the first stage above, operating directly on
