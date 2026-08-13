@@ -231,7 +231,7 @@ function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
     score_0_100: score, confidence_0_100: confidence, score_grade: rawRow.score_grade || gradeForScore(score), score_sort_0_100: boardSort,
     archive_eligible: 1, factor_status: rawRow.factor_status || null, market_prop_context_status: rawRow.market_prop_context_status || null,
     daily_readiness_status: rawRow.daily_readiness_status || null, side_mode: (hpCal && hpCal.side_mode) || rawRow.side_mode || null,
-    is_goblin: Number(rawRow.is_goblin || 0) === 1 ? 1 : 0, is_demon: Number(rawRow.is_demon || 0) === 1 ? 1 : 0, more_only: Boolean(hpCal && hpCal.more_only) ? 1 : 0,
+    is_goblin: Number(rawRow.is_goblin || 0) === 1 ? 1 : 0, is_demon: Number(rawRow.is_demon || 0) === 1 ? 1 : 0, more_only: Boolean(hpCal && hpCal.more_only) ? 1 : 0, source_variant_label: rawRow.source_variant_label || null,
     odds_type: rawRow.odds_type || null, payout_variant: rawRow.payout_variant || null, calculation_json: safeJson(calc), calibration_json: safeJson(calibration),
     matrix_payload_json_snapshot: rawRow.matrix_payload_json_snapshot || null, details_json_snapshot: rawRow.details_json_snapshot || null,
     hp_source_board_tier: rawRow.hp_source_board_tier || null, hp_source_lane_reason: rawRow.hp_source_lane_reason || null,
