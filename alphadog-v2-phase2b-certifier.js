@@ -630,6 +630,10 @@ async function runMatrixBuilder(request, env, pgClient) {
       const sideMatrixId = isTwoSided ? key("matrix", row.prepared_row_id, emitSide) : matrixId;
       let sideIsGoblin = sideVariation.is_goblin;
       let sideIsDemon = sideVariation.is_demon;
+      // Raw, unflipped label - matches what PrizePicks actually displays on both sides of this
+      // line (the label belongs to the line, not the side). Used for display only; scoring keeps
+      // using the flipped sideIsGoblin/sideIsDemon below, which is correct for value calculation.
+      const sourceVariantLabel = sideVariation.is_goblin ? "goblin" : sideVariation.is_demon ? "demon" : (sideVariation.is_standard ? "standard" : null);
       if (isTwoSided && emitSide === "less" && (sideIsGoblin || sideIsDemon)) {
         const wasGoblin = sideIsGoblin;
         sideIsGoblin = sideIsDemon ? 1 : 0;
