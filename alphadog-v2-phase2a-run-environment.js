@@ -630,8 +630,12 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     })(),
     league_avg_obp: ctxMaps.leagueAvgObp ?? 0.320,
     starter_avg_batters_faced_per_start: oppStarter.starter_player_id != null ? (ctxMaps.avgBattersFacedByPitcher.get(String(oppStarter.starter_player_id)) ?? null) : null,
+    pitcher_role_tier: ctxMaps.recentFormByPlayer.get(String(playerId))?.tier ?? null,
     recent3_outs_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.outs_ratio ?? null,
     recent3_er_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.er_ratio ?? null,
+    recent3_hits_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.hits_ratio ?? null,
+    recent3_bb_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.bb_ratio ?? null,
+    recent3_k_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.k_ratio ?? null,
   };
 }
 
