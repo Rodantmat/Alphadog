@@ -8578,7 +8578,35 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         for (const rr of roleRows) roleTierByPlayer.set(String(rr.player_id), rr.role_skill_tier);
       }
     }
-    // Real empirical P(k) table lookup, replacing the parametric dispersion formula for tiers with
+    const opponentContextProps = Array.isArray(empiricalCfg.opponent_context_props) && empiricalCfg.opponent_context_props.includes(propKey);
+    const opponentTierByPlayer = new Map();
+    if (empiricalEnabled && opponentContextProps) {
+      // Board-agnostic, daily-context-agnostic by design: uses only calendar (static scheduling
+      // data, always available regardless of board/market state) plus real historical team run
+      // rates. Computed fresh every run since opponent changes daily, unlike role which is stable
+      // and can be precomputed. Never touches score.board_prepared_current or any market table.
+      const teamTierRows = await sql`
+        WITH team_scoring AS (
+          SELECT team_id, SUM(runs::float)/COUNT(DISTINCT game_pk) as team_runs_per_game
+          FROM stats_hitter.game_logs WHERE season=${season} GROUP BY team_id
+        )
+        SELECT team_id, NTILE(4) OVER (ORDER BY team_runs_per_game) as opp_tier FROM team_scoring`;
+      const oppTierByTeam = new Map(teamTierRows.map(r => [String(r.team_id), Number(r.opp_tier)]));
+      const todaysOpponentRows = await sql`
+        WITH pitcher_current_team AS (
+          SELECT DISTINCT ON (player_id) player_id, team_id FROM stats_pitcher.game_logs
+          WHERE season=${season} ORDER BY player_id, game_date DESC
+        )
+        SELECT pct.player_id,
+          CASE WHEN gc.home_team_id::text=pct.team_id THEN gc.away_team_id ELSE gc.home_team_id END as opponent_team_id
+        FROM pitcher_current_team pct
+        JOIN calendar.game_calendar gc ON gc.season=${season} AND gc.official_date=CURRENT_DATE
+          AND (gc.home_team_id::text=pct.team_id OR gc.away_team_id::text=pct.team_id)`;
+      for (const r of todaysOpponentRows) {
+        const oppTier = oppTierByTeam.get(String(r.opponent_team_id));
+        if (oppTier != null) opponentTierByPlayer.set(String(r.player_id), oppTier);
+      }
+    }
     // sufficient real sample. Sums P(0..threshold) directly from observed frequencies - no assumed
     // distribution family at all, which is what let this correctly handle both a low threshold (0.5,
     // dominated by the P(0) bucket) and a higher one (1.5+) simultaneously, validated against real
