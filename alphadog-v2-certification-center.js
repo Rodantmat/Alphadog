@@ -2090,15 +2090,24 @@ function slipWarnings(legs) {
   const players = new Map();
   const onBaseByTeam = new Map(); // team_id -> count of hits/walks/total_bases props
   const runsRbiByTeam = new Map(); // team_id -> count of runs/rbis/hits_runs_rbis props
+  const propSideCounts = new Map(); // canonical_prop_key|selected_side -> count, across all games/players
   const ON_BASE_PROPS = new Set(["hits", "walks", "total_bases", "singles", "doubles"]);
   const RUN_DRIVEN_PROPS = new Set(["runs", "rbis", "hits_runs_rbis"]);
+  // Real gap fix (2026-08-13): props/sides confirmed to have no active, validated calibration
+  // correction (post_rootfix methodology present but below the 100-test-game minimum, so it's
+  // correctly never applied) - their displayed HP is uncorrected raw model output, carrying more
+  // uncertainty than props with a validated correction. Checked directly against
+  // score.calibration_correction_map; update this list if that table's coverage changes.
+  const DATA_LIMITED_PROP_SIDES = new Set(["pitcher_fantasy_score|less"]);
   for (const l of legs) {
     const g = String(l.game_pk || ""); if (g) games.set(g, (games.get(g) || 0) + 1);
     const p = String(l.player_id || l.player_name || ""); if (p) players.set(p, (players.get(p) || 0) + 1);
     const team = String(l.team_id || "");
     const prop = String(l.canonical_prop_key || "");
-    if (team && ON_BASE_PROPS.has(prop) && String(l.selected_side || "").toLowerCase() === "more") onBaseByTeam.set(team, (onBaseByTeam.get(team) || 0) + 1);
-    if (team && RUN_DRIVEN_PROPS.has(prop) && String(l.selected_side || "").toLowerCase() === "more") runsRbiByTeam.set(team, (runsRbiByTeam.get(team) || 0) + 1);
+    const side = String(l.selected_side || "").toLowerCase();
+    if (team && ON_BASE_PROPS.has(prop) && side === "more") onBaseByTeam.set(team, (onBaseByTeam.get(team) || 0) + 1);
+    if (team && RUN_DRIVEN_PROPS.has(prop) && side === "more") runsRbiByTeam.set(team, (runsRbiByTeam.get(team) || 0) + 1);
+    if (prop && side) { const key = `${prop}|${side}`; propSideCounts.set(key, (propSideCounts.get(key) || 0) + 1); }
   }
   if (games.size === 1 && legs.length >= 3) warnings.push(`All ${legs.length} legs are from the same single game - allowed, but results will be highly correlated.`);
   for (const [g,c] of games) if (c > 2) warnings.push(`High same-game exposure: ${c} legs in game ${g}.`);
@@ -2106,6 +2115,16 @@ function slipWarnings(legs) {
   for (const [team, obCount] of onBaseByTeam) {
     const rrCount = runsRbiByTeam.get(team) || 0;
     if (obCount >= 1 && rrCount >= 1) warnings.push(`Correlated legs on ${team}: on-base props (hits/walks/total bases) and runs/RBI props tend to move together (real MLB correlation ~0.7-0.9) - these are not fully independent, so the true combined hit chance is somewhat lower than shown.`);
+  }
+  for (const [propSide, c] of propSideCounts) {
+    if (c >= 3) {
+      const [prop, side] = propSide.split("|");
+      warnings.push(`Prop concentration: ${c} legs are all ${prop} ${side.toUpperCase()} across different players/games - not correlated by game, but they share the same model behavior on this specific prop/side, so a systematic bias would hit all ${c} at once.`);
+    }
+    if (DATA_LIMITED_PROP_SIDES.has(propSide)) {
+      const [prop, side] = propSide.split("|");
+      warnings.push(`${prop} ${side.toUpperCase()} currently has no validated calibration correction (insufficient backtest sample) - its displayed hit probability is less trustworthy than props with an active correction.`);
+    }
   }
   return warnings;
 }
