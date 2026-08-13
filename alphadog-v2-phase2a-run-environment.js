@@ -630,7 +630,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
       return preceding.reduce((s, p) => s + p.obp, 0) / preceding.length;
     })(),
     league_avg_obp: ctxMaps.leagueAvgObp ?? 0.320,
-    starter_avg_batters_faced_per_start: oppStarter.starter_player_id != null ? (ctxMaps.avgBattersFacedByPitcher.get(String(oppStarter.starter_player_id)) ?? null) : null,
+    starter_avg_batters_faced_per_start: ctxMaps.avgBattersFacedByPitcher.get(String(playerId)) ?? null,
     pitcher_role_tier: ctxMaps.recentFormByPlayer.get(String(playerId))?.tier ?? null,
     recent3_outs_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.outs_ratio ?? null,
     recent3_er_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.er_ratio ?? null,
