@@ -282,7 +282,14 @@ async function getStaticPlayers(pg, ids) {
 function rosterStatusCode(row) { return String(row?.status?.code || "").trim().toUpperCase(); }
 function rosterStatusDesc(row) { return String(row?.status?.description || "").trim().toLowerCase(); }
 function isActiveRosterRow(row) { const code = rosterStatusCode(row); const desc = rosterStatusDesc(row); return code === "A" || desc === "active"; }
-function isInjuredListRosterRow(row) { const code = rosterStatusCode(row); const desc = rosterStatusDesc(row); return code.startsWith("I") || /\binjured\b|\bil\b|\bday il\b/.test(desc); }
+// FIXED 2026-08-13: the dedicated /roster/injuredList endpoint does not reliably represent
+// current IL status (confirmed live: a player genuinely on the 10-day IL, with real news
+// confirmation and a matching D10 status on the 40-man roster, was completely absent from this
+// endpoint's response for their real team). The 40-man roster's real per-player status codes are
+// the reliable source instead - D7/D10/D15/D60 (Injured Day-lists), not the 'I'-prefixed codes
+// this function used to check for, which could never have matched even against a correct source.
+function isInjuredListStatusCode(code) { return /^D\d+$/.test(String(code || "").trim().toUpperCase()); }
+function isInjuredListRosterRow(row) { return isInjuredListStatusCode(rosterStatusCode(row)); }
 function rosterMap(resp, expectedKind = "any") {
   const m = new Map();
   const rows = resp && resp.ok && resp.json && Array.isArray(resp.json.roster) ? resp.json.roster : [];
