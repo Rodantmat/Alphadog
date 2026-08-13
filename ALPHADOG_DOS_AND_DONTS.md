@@ -725,11 +725,12 @@ architecture context.
   found stalled at 20:36 UTC), during which two real games went live/final while their legs kept
   showing as available on the slip builder — one leg's game had genuinely ENDED, another was mid-
   game, both slipped through every filter because the filter's only data source was hours stale.
-- **A second, independent bug compounded this**: even after refreshing, one game's stored
-  `game_time_utc` was found to be a full hour later than its real MLB start time (board said
-  18:10 UTC, real game started 17:10 UTC) — meaning even a perfectly fresh `is_live` check
-  wouldn't fully protect against a wrong stored time. Root cause of the wrong stored time not yet
-  investigated — flag if this recurs on other games, it may be a one-off or a real pattern.
+- **A second symptom of the SAME staleness, not a separate bug**: at the time of the report, one
+  game's stored `game_time_utc` on the board (18:10 UTC) differed from the calendar's real MLB
+  time (17:10 UTC) by a full hour. Re-checked directly after the manual calendar refresh: zero
+  mismatches remained across every game_pk in the day's board — confirming this was downstream
+  staleness propagated from the same stalled refresh, not an independent data-integrity bug. No
+  further investigation needed on this specific point.
 - **Immediate fix applied**: manually triggered `POST /run` on `alphadog-v2-base-game-calendar`
   (confirmed 134 games refreshed, both affected legs correctly disappeared from the next slip
   generation). Also added a 10-minute safety margin (`now() + interval '10 minutes'`) to all four
