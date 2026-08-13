@@ -699,7 +699,15 @@ async function enrichLeg(matrixRow, config, legContext) {
       // a hits calculation). Props without their own dedicated cell for this factor share the
       // hits_runs_rbis cell's coefficients by explicit design (see evaluateContinuousFactor's
       // own comment for batter_quality_of_contact); if even that doesn't exist, skip the factor.
-      const matchingCell = cells.find(c => c.prop_key === propKey) || cells.find(c => c.prop_key === "hits_runs_rbis") || null;
+      // recent_form_trend is a special case (2026-08-13): its coefficient must vary by
+      // pitcher_role_tier, not just prop_key - confirmed the correlation this factor is built on
+      // differs by 3-7x between workhorse starters and short/variable-role pitchers, so a single
+      // flat cell per prop would misapply one role's signal strength to a completely different
+      // role. Matches on (prop_key, tier_label) first; falls through to the generic match for
+      // every other continuous_formula factor, unchanged.
+      const matchingCell = factor.factor_key === "recent_form_trend"
+        ? (cells.find(c => c.prop_key === propKey && c.tier_label === legContext.pitcher_role_tier) || null)
+        : (cells.find(c => c.prop_key === propKey) || cells.find(c => c.prop_key === "hits_runs_rbis") || null);
       if (matchingCell) {
         contribution = evaluateContinuousFactor(factor.factor_key, matchingCell, legContext, config.thresholdsByFactor.get(factor.factor_key));
         cellUsed = matchingCell.cell_id;
