@@ -599,6 +599,8 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     })(),
     league_avg_obp: ctxMaps.leagueAvgObp ?? 0.320,
     starter_avg_batters_faced_per_start: oppStarter.starter_player_id != null ? (ctxMaps.avgBattersFacedByPitcher.get(String(oppStarter.starter_player_id)) ?? null) : null,
+    recent3_outs_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.outs_ratio ?? null,
+    recent3_er_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.er_ratio ?? null,
   };
 }
 
