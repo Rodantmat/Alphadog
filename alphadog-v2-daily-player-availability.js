@@ -733,7 +733,7 @@ export default {
       return jsonResponse({
         il_ok: il.ok, il_status: il.status, il_roster_count: il.json && Array.isArray(il.json.roster) ? il.json.roster.length : null,
         il_roster_sample: il.json && Array.isArray(il.json.roster) ? il.json.roster.slice(0, 5) : null,
-        buxton_in_il_response: buxtonInIl, buxton_in_active_response: buxtonInActive,
+        buxton_in_il_response: buxtonInIl, buxton_in_active_response: buxtonInActive, all_il_status_codes: allIlStatusCodes,
         active_ok: active.ok, active_status: active.status
       });
     }
