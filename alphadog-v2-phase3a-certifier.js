@@ -161,7 +161,7 @@ async function runScoringEngine(pgClient, input) {
     // (not the in-memory slice from any single tick) so tied-difficulty groups that happened to
     // split across separate ticks still get correctly clamped as one true group.
     try {
-      const allScored = await pgClient`SELECT hp_board_row_id, mlb_player_id, canonical_prop_key, selected_side, official_date::text AS official_date, line_value, score_0_100
+      const allScored = await pgClient`SELECT hp_board_row_id, matrix_id, mlb_player_id, canonical_prop_key, selected_side, official_date::text AS official_date, line_value, score_0_100
         FROM score.hp_board_current WHERE hp_board_batch_id=${hpBatchId} AND score_0_100 IS NOT NULL`;
       const sweepGroups = new Map();
       for (const r of allScored) {
