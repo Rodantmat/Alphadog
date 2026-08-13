@@ -489,7 +489,7 @@ async function runUmpireContext(pg, input) {
       if (classified.unknown) unknownUmpireCount += 1;
       issuesWritten += classified.issues.length;
       results.push({ target, probe, classified });
-      summaries.push({ game_pk: target.game_pk, official_date: target.official_date, home: target.home_team_name, away: target.away_team_name, prepared_rows: target.prepared_board_pickable_rows, status: classified.status, confidence: classified.confidence, source_status: classified.sourceStatus, home_plate_umpire_id: probe.home_plate_umpire_id || null, home_plate_umpire_name: probe.home_plate_umpire_name || null, assignment_source_path: probe.path || null, issues: classified.issues.length });
+      summaries.push({ game_pk: target.game_pk, official_date: target.official_date, home: target.home_team_name, away: target.away_team_name, prepared_rows: target.prepared_board_pickable_rows, status: classified.status, confidence: classified.confidence, source_status: classified.sourceStatus, home_plate_umpire_id: (classified.isDerived ? classified.derivedUmpireId : probe.home_plate_umpire_id) || null, home_plate_umpire_name: (classified.isDerived ? classified.derivedUmpireName : probe.home_plate_umpire_name) || null, assignment_source_path: probe.path || null, issues: classified.issues.length });
       const writes = await writeTarget(pg, batchId, target, probe, classified, sourceSnapshotAt);
       currentWritten += writes.current_written;
       snapshotWritten += writes.snapshot_written;
