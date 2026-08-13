@@ -449,33 +449,59 @@ async function loadRealLegContexts(pgClient, matrixRows) {
 
   // Recent-form trend (2026-08-13): validated via direct correlation testing against real 2026
   // outcomes before building - pitcher's own recent-3-start average vs his own season average
-  // correlates 0.906 (outs_recorded) / 0.455 (earned_runs) with today's actual outcome, both far
-  // stronger than any opponent-side signal tested (generic recent team runs scored: 0.026-0.037;
-  // pitcher-specific opponent ERA history: fails entirely once pitcher quality is controlled for,
-  // -0.027). The system's existing baseline (classification.player_classification_current) is a
-  // full-season average with zero recency weighting, so a pitcher's current role/health/workload
-  // trend gets diluted by months of no-longer-representative starts - this factor closes that gap.
+  // correlates strongly with today's actual outcome across 5 props (outs 0.91, hits_allowed 0.70,
+  // strikeouts 0.70, walks_allowed 0.47, earned_runs 0.46 - all measured overall, far stronger
+  // than any opponent-side signal tested and rejected in the same investigation). BUT the
+  // correlation is NOT uniform across pitchers - confirmed by splitting on season-long role
+  // stability (avg outs/start): short/variable-role pitchers show the strongest signal (0.22-0.70
+  // across props), while true workhorse starters (16+ outs/start average) show a much weaker one
+  // (0.04-0.28) - a stable starter's outcome varies less game to game, so recent form carries less
+  // information. A flat coefficient across all pitchers would misapply the short-role signal
+  // strength to workhorses, which is exactly the failure mode that motivated this investigation.
+  // Tier is computed once per pitcher (season_avg_outs >= 16 = workhorse, >= 12 = mid, else short)
+  // and applied consistently across all 5 props' ratios below.
   const recentFormRows = playerIds.length ? await pgClient`
-    WITH recent AS (
-      SELECT player_id, game_date,
-        AVG(outs_recorded) OVER (PARTITION BY player_id ORDER BY game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_outs,
-        AVG(earned_runs) OVER (PARTITION BY player_id ORDER BY game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_er,
-        AVG(outs_recorded) OVER (PARTITION BY player_id ORDER BY game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_outs,
-        AVG(earned_runs) OVER (PARTITION BY player_id ORDER BY game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_er,
-        COUNT(*) OVER (PARTITION BY player_id ORDER BY game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent_n,
-        COUNT(*) OVER (PARTITION BY player_id ORDER BY game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_n,
-        ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY game_date DESC) AS rn
+    WITH season_tier AS (
+      SELECT player_id, AVG(outs_recorded) AS season_avg_outs, COUNT(*) AS season_starts
       FROM stats_pitcher.game_logs WHERE player_id = ANY(${pidLit}::bigint[]) AND innings_pitched_decimal >= 1
+      GROUP BY player_id
+    ),
+    recent AS (
+      SELECT gl.player_id, gl.game_date,
+        AVG(gl.outs_recorded) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_outs,
+        AVG(gl.earned_runs) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_er,
+        AVG(gl.hits_allowed) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_hits,
+        AVG(gl.walks_allowed) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_bb,
+        AVG(gl.strikeouts) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent3_k,
+        AVG(gl.outs_recorded) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_outs,
+        AVG(gl.earned_runs) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_er,
+        AVG(gl.hits_allowed) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_hits,
+        AVG(gl.walks_allowed) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_bb,
+        AVG(gl.strikeouts) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_k,
+        COUNT(*) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING) AS recent_n,
+        COUNT(*) OVER (PARTITION BY gl.player_id ORDER BY gl.game_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS season_n,
+        ROW_NUMBER() OVER (PARTITION BY gl.player_id ORDER BY gl.game_date DESC) AS rn
+      FROM stats_pitcher.game_logs gl WHERE gl.player_id = ANY(${pidLit}::bigint[]) AND gl.innings_pitched_decimal >= 1
     )
-    SELECT player_id, recent3_outs, recent3_er, season_outs, season_er, recent_n, season_n FROM recent WHERE rn = 1
+    SELECT r.player_id, r.recent3_outs, r.recent3_er, r.recent3_hits, r.recent3_bb, r.recent3_k,
+      r.season_outs, r.season_er, r.season_hits, r.season_bb, r.season_k, r.recent_n, r.season_n,
+      st.season_avg_outs
+    FROM recent r JOIN season_tier st ON st.player_id = r.player_id
+    WHERE r.rn = 1
   `.catch(() => []) : [];
   const recentFormByPlayer = new Map();
   for (const r of recentFormRows) {
     if (Number(r.recent_n) < 3 || Number(r.season_n) < 5) continue;
-    const seasonOuts = Number(r.season_outs), seasonEr = Number(r.season_er);
+    const seasonAvgOuts = Number(r.season_avg_outs);
+    const tier = seasonAvgOuts >= 16 ? "workhorse_16plus_outs" : seasonAvgOuts >= 12 ? "mid_12to16_outs" : "short_under12_outs";
+    const ratio = (recentVal, seasonVal) => { const rv = Number(recentVal), sv = Number(seasonVal); return sv > 0 ? rv / sv : null; };
     recentFormByPlayer.set(String(r.player_id), {
-      outs_ratio: seasonOuts > 0 ? Number(r.recent3_outs) / seasonOuts : null,
-      er_ratio: seasonEr > 0 ? Number(r.recent3_er) / seasonEr : null
+      tier,
+      outs_ratio: ratio(r.recent3_outs, r.season_outs),
+      er_ratio: ratio(r.recent3_er, r.season_er),
+      hits_ratio: ratio(r.recent3_hits, r.season_hits),
+      bb_ratio: ratio(r.recent3_bb, r.season_bb),
+      k_ratio: ratio(r.recent3_k, r.season_k)
     });
   }
   const qocByPlayer = new Map();
