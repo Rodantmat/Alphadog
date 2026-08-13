@@ -99,6 +99,11 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       if (ctx.starter_avg_batters_faced_per_start == null) return null;
       return ctx.starter_avg_batters_faced_per_start * (a || 0);
     }
+    case "recent_form_trend": {
+      const ratio = cell.prop_key === "pitcher_outs" ? ctx.recent3_outs_ratio : cell.prop_key === "earned_runs" ? ctx.recent3_er_ratio : null;
+      if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
+      return Math.log(ratio) * (a ?? 1.0);
+    }
     case "weather_precip": {
       if (ctx.precipitation_probability_pct == null) return null;
       return ctx.precipitation_probability_pct * (a || 0);
