@@ -2495,7 +2495,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
         SELECT
           final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
           canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
-          confidence_0_100, score_0_100, board_tier, is_goblin, is_demon,
+          confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label,
           MIN(CASE WHEN COALESCE(is_goblin,0)=0 AND COALESCE(is_demon,0)=0 THEN line_value END)
             OVER (PARTITION BY source_key, mlb_player_id, canonical_prop_key, selected_side) AS standard_line_value,
           ROW_NUMBER() OVER (
