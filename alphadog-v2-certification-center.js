@@ -2739,7 +2739,7 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND source_key = 'prizepicks' AND is_demon = 1 AND selected_side = 'more'
         AND estimated_hit_probability_0_100 >= ${DEMON_SLIP_MIN_CONFIDENCE}
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now()
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
     `);
