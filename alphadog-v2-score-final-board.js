@@ -16,7 +16,7 @@ function safeJson(v) { try { return JSON.stringify(v == null ? {} : v); } catch 
 function num(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 function norm(v) { return String(v == null ? "" : v).trim().toLowerCase(); }
-function parseJsonObject(value) { try { const parsed = JSON.parse(value || "{}"); return parsed && typeof parsed === "object" ? parsed : {}; } catch (_) { return {}; } }
+function parseJsonObject(value) { if (value && typeof value === "object") return value; try { const parsed = JSON.parse(value || "{}"); return parsed && typeof parsed === "object" ? parsed : {}; } catch (_) { return {}; } }
 function getPath(obj, path) { let cur = obj; for (const part of path) { if (cur == null || typeof cur !== "object") return null; cur = cur[part]; } return cur == null ? null : cur; }
 const PRIMARY_THRESHOLD_SCORE = 88;
 const PRIMARY_THRESHOLD_CONFIDENCE = 85;
