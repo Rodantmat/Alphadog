@@ -643,7 +643,7 @@ async function runMatrixBuilder(request, env, pgClient) {
         matrix_id: sideMatrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk,
         official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: row.team, opponent_team_id: row.opponent,
         is_home: row.team && game && String(game.home_team_id || game.home_team_name || "") === String(row.team) ? 1 : null, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value,
-        prop_side: emitSide, factor_family: factorCov ? factorCov.factor_family : classification.family,
+        prop_side: emitSide, source_variant_label: sourceVariantLabel, factor_family: factorCov ? factorCov.factor_family : classification.family,
         factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing",
         market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: effectiveDailyStatus, matrix_status: matrixStatus, matrix_grade: matrixGrade,
         blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount,
