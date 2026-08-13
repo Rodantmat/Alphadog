@@ -177,7 +177,7 @@ async function runScoringEngine(pgClient, input) {
         for (let i = 1; i < group.length; i++) {
           const runningMin = Math.min(...group.slice(0, i).map(g => g.score_0_100));
           if (group[i].score_0_100 > runningMin) {
-            sweepUpdates.push({ hp_board_row_id: group[i].hp_board_row_id, new_score: runningMin });
+            sweepUpdates.push({ hp_board_row_id: group[i].hp_board_row_id, matrix_id: group[i].matrix_id, new_score: runningMin });
             group[i].score_0_100 = runningMin;
           }
         }
@@ -185,7 +185,9 @@ async function runScoringEngine(pgClient, input) {
       for (const u of sweepUpdates) {
         const grade = gradeForScore(u.new_score);
         await pgClient`UPDATE score.hp_board_current SET score_0_100=${u.new_score}, score_grade=${grade}, updated_at=now() WHERE hp_board_row_id=${u.hp_board_row_id}`;
-        await pgClient`UPDATE score.scoring_engine_current SET score_0_100=${u.new_score}, more_score_0_100=${u.new_score}, less_score_0_100=${u.new_score}, score_grade=${grade}, score_sort_0_100=${u.new_score} WHERE batch_id=${batchId} AND hp_board_row_id_placeholder_unused=NULL`.catch(() => {});
+        if (u.matrix_id) {
+          await pgClient`UPDATE score.scoring_engine_current SET score_0_100=${u.new_score}, more_score_0_100=${u.new_score}, less_score_0_100=${u.new_score}, score_grade=${grade}, score_sort_0_100=${u.new_score} WHERE batch_id=${batchId} AND matrix_id=${u.matrix_id}`.catch(() => {});
+        }
       }
       finalSweep = { ok: true, rows_checked: allScored.length, groups_checked: sweepGroups.size, cross_tick_leaks_fixed: sweepUpdates.length };
     } catch (e) {
