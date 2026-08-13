@@ -112,7 +112,16 @@ async function validateMarketSourceHealthSchema(env) {
     return { ok: false, reason: "missing_MARKET_DB_binding", columns: [] };
   }
 
-  const cols = await all(env.MARKET_DB, "PRAGMA table_info(market_source_health)");
+  // Defensive fix: this D1 database has been confirmed deleted (D1_ERROR on any real query) -
+  // this worker predates the Postgres migration and is not part of the active production
+  // pipeline, but without this catch, any accidental trigger crashes with a raw, confusing
+  // unhandled D1 error instead of a clean, honest "database unavailable" response.
+  let cols;
+  try {
+    cols = await all(env.MARKET_DB, "PRAGMA table_info(market_source_health)");
+  } catch (err) {
+    return { ok: false, reason: "MARKET_DB_query_failed", error: safeString(err && err.message ? err.message : err, 500), columns: [] };
+  }
   const names = cols.map(c => String(c.name || ""));
   const missing = EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS.filter(c => !names.includes(c));
 
