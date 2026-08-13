@@ -146,12 +146,50 @@ async function runScoringEngine(pgClient, input) {
   // that was just successfully, completely written, matching the same fix applied to
   // hp_board_current.
   let cleanupOldBatches = null;
+  let finalSweep = null;
   if (!isPartial) {
     try {
       const deleted = await pgClient`DELETE FROM score.scoring_engine_current WHERE batch_id <> ${batchId}`;
       cleanupOldBatches = { ok: true, deleted_rows: deleted.count ?? null };
     } catch (e) {
       cleanupOldBatches = { ok: false, error: String(e && e.message ? e.message : e) };
+    }
+
+    // Whole-batch monotonicity sweep (2026-08-13): closes the cross-tick gap the per-tick clamp
+    // above cannot see - runs once, only when the entire hp_board_batch_id is confirmed complete
+    // (isPartial === false), re-reading every scored row for this batch fresh from the database
+    // (not the in-memory slice from any single tick) so tied-difficulty groups that happened to
+    // split across separate ticks still get correctly clamped as one true group.
+    try {
+      const allScored = await pgClient`SELECT hp_board_row_id, mlb_player_id, canonical_prop_key, selected_side, official_date::text AS official_date, line_value, score_0_100
+        FROM score.hp_board_current WHERE hp_board_batch_id=${hpBatchId} AND score_0_100 IS NOT NULL`;
+      const sweepGroups = new Map();
+      for (const r of allScored) {
+        const key = `${r.mlb_player_id}|${r.canonical_prop_key}|${r.selected_side}|${r.official_date}`;
+        if (!sweepGroups.has(key)) sweepGroups.set(key, []);
+        sweepGroups.get(key).push(r);
+      }
+      const sweepUpdates = [];
+      for (const group of sweepGroups.values()) {
+        if (group.length < 2) continue;
+        const side = group[0].selected_side;
+        group.sort((a, b) => side === "less" ? Number(b.line_value) - Number(a.line_value) : Number(a.line_value) - Number(b.line_value));
+        for (let i = 1; i < group.length; i++) {
+          const runningMin = Math.min(...group.slice(0, i).map(g => g.score_0_100));
+          if (group[i].score_0_100 > runningMin) {
+            sweepUpdates.push({ hp_board_row_id: group[i].hp_board_row_id, new_score: runningMin });
+            group[i].score_0_100 = runningMin;
+          }
+        }
+      }
+      for (const u of sweepUpdates) {
+        const grade = gradeForScore(u.new_score);
+        await pgClient`UPDATE score.hp_board_current SET score_0_100=${u.new_score}, score_grade=${grade}, updated_at=now() WHERE hp_board_row_id=${u.hp_board_row_id}`;
+        await pgClient`UPDATE score.scoring_engine_current SET score_0_100=${u.new_score}, more_score_0_100=${u.new_score}, less_score_0_100=${u.new_score}, score_grade=${grade}, score_sort_0_100=${u.new_score} WHERE batch_id=${batchId} AND hp_board_row_id_placeholder_unused=NULL`.catch(() => {});
+      }
+      finalSweep = { ok: true, rows_checked: allScored.length, groups_checked: sweepGroups.size, cross_tick_leaks_fixed: sweepUpdates.length };
+    } catch (e) {
+      finalSweep = { ok: false, error: String(e && e.message ? e.message : e) };
     }
   }
 
