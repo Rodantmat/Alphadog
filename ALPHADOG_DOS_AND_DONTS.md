@@ -711,6 +711,17 @@ architecture context.
   `run_apply_calibration_recommendations` only for props that genuinely, honestly validate out of
   sample — never apply blanket/unreviewed. This mirrors the same manual-first, human-reviewed
   discipline already governing every other layer in the current operating model.
+- **Real gap found 2026-08-13, worth fixing in a future session**: `run_apply_calibration_recommendations`'s
+  `props` input only filters what's reported back in its response - it does NOT limit what actually
+  gets written. Internally it calls `runFitPlattCalibration` with no props filter of its own, which
+  iterates every (prop, side) pair in `score.prop_outcome_history` and writes/refreshes any that
+  genuinely validate. Confirmed live: requesting 5 specific props also silently refreshed 5 unrelated
+  props (`doubles`, `earned_runs`, `home_runs`, `stolen_bases`, `walks`) in the same call, visible
+  only via their `fit_at` timestamps jumping to the call time - never mentioned in the response's
+  own `applied`/`not_applied_or_not_found` lists. Not unsafe (every write, requested or not, passed
+  the same honest validation gate), but the parameter name implies a selectivity that doesn't exist.
+  Fix not yet done: thread a real filter into `runFitPlattCalibration`'s `propSideRows` query, or
+  re-document the parameter as advisory-only.
 
 ### Standing addition to the manual rotation: game-calendar live-status refresh during game hours
 - **Real bug found and fixed 2026-08-13, via a live user report of already-started legs appearing
