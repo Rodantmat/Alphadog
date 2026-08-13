@@ -513,11 +513,12 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     roof_status: weather.roof_status ?? null,
     catcher_framing_runs_per_game: catcher.framing_runs_total ?? null,
     implied_team_total: (() => {
-      const ownAbbrev = String(matrixRow.team_id || "").toUpperCase();
-      if (market.home_team && ownAbbrev === String(market.home_team).toUpperCase()) return market.derived_home_implied_runs ?? null;
-      if (market.away_team && ownAbbrev === String(market.away_team).toUpperCase()) return market.derived_away_implied_runs ?? null;
-      // Fallback only if we couldn't confidently match the player's team to home/away (e.g. missing
-      // abbreviation data) - preserves the old behavior rather than dropping the signal entirely.
+      const homeId = market.home_team ? ctxMaps.teamIdByFullName.get(String(market.home_team).toUpperCase()) : null;
+      const awayId = market.away_team ? ctxMaps.teamIdByFullName.get(String(market.away_team).toUpperCase()) : null;
+      if (homeId != null && Number(ownTeamId) === homeId) return market.derived_home_implied_runs ?? null;
+      if (awayId != null && Number(ownTeamId) === awayId) return market.derived_away_implied_runs ?? null;
+      // Fallback only if we couldn't confidently match the player's team to home/away (e.g. a
+      // full-name lookup miss) - preserves the old behavior rather than dropping the signal.
       return market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null;
     })(),
     league_avg_implied_total: (marketThresholds && marketThresholds.league_avg_implied_total_runs) ?? 4.3,
