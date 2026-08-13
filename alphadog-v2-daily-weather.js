@@ -311,16 +311,25 @@ function classifyWeather(row, calendar, stadium, parkFactor, mlbResult, external
   else if (roofType === "fixed_dome") { roofStatus = "fixed_dome"; roofConfidence = "HIGH_STATIC_STADIUM_ROOF_TYPE"; indoorFlag = 1; weatherApplicableFlag = 0; }
   else if (roofType === "retractable") {
     const hasAnyWeatherForRoof = !!((mlbResult && mlbResult.ok && mlbResult.weather) || (externalResult && externalResult.ok && externalResult.weather));
-    const roofPrecip = numOrNull(merged.precipitation_probability_pct);
-    const roofTemp = numOrNull(merged.temperature_f);
-    if (hasAnyWeatherForRoof && (roofPrecip !== null || roofTemp !== null)) {
-      const likelyClosed = (roofPrecip !== null && roofPrecip >= 40) || (roofTemp !== null && (roofTemp < 50 || roofTemp > 95));
-      roofStatus = likelyClosed ? "derived_likely_closed" : "derived_likely_open";
-      roofConfidence = "LOW_DERIVED_FROM_WEATHER_CONDITIONS";
-      issues.push({ severity: "warning", issue_type: "roof_status_derived", reason: `No live roof source; inferred ${roofStatus} from forecast conditions (precip ${roofPrecip}%, temp ${roofTemp}F).` });
+    const officialRoof = mlbResult && mlbResult.ok && mlbResult.weather ? mlbResult.weather.official_roof_status : null;
+    if (officialRoof === "official_closed" || officialRoof === "official_open") {
+      // FIXED 2026-08-13: MLB's live feed condition text often states the real roof status
+      // directly (confirmed live) - use it as the authoritative source, HIGH confidence, before
+      // ever falling back to a weather-based guess for a fact the source already stated plainly.
+      roofStatus = officialRoof === "official_closed" ? "closed" : "open";
+      roofConfidence = "HIGH_OFFICIAL_MLB_FEED_CONDITION_TEXT";
     } else {
-      roofStatus = "retractable_unknown"; roofConfidence = "WARNING_ROOF_UNKNOWN";
-      issues.push({ severity: "warning", issue_type: "roof_unknown_retractable", reason: "Retractable roof venue has no proved live open/closed source and no weather data available to derive a likely state." });
+      const roofPrecip = numOrNull(merged.precipitation_probability_pct);
+      const roofTemp = numOrNull(merged.temperature_f);
+      if (hasAnyWeatherForRoof && (roofPrecip !== null || roofTemp !== null)) {
+        const likelyClosed = (roofPrecip !== null && roofPrecip >= 40) || (roofTemp !== null && (roofTemp < 50 || roofTemp > 95));
+        roofStatus = likelyClosed ? "derived_likely_closed" : "derived_likely_open";
+        roofConfidence = "LOW_DERIVED_FROM_WEATHER_CONDITIONS";
+        issues.push({ severity: "warning", issue_type: "roof_status_derived", reason: `No live roof source; inferred ${roofStatus} from forecast conditions (precip ${roofPrecip}%, temp ${roofTemp}F).` });
+      } else {
+        roofStatus = "retractable_unknown"; roofConfidence = "WARNING_ROOF_UNKNOWN";
+        issues.push({ severity: "warning", issue_type: "roof_unknown_retractable", reason: "Retractable roof venue has no proved live open/closed source and no weather data available to derive a likely state." });
+      }
     }
   } else {
     roofStatus = "unknown"; roofConfidence = "WARNING_ROOF_CLASSIFICATION_MISSING";
