@@ -8846,6 +8846,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const tierBlendK = Math.max(1, Number(cfg.tier_blend_constant.k || 5));
     const usesNormalModel = propCanGoNegativePg(propConfig);
     const psCfg = cfg.confidence_prior_strength;
+    const rankByPlayerId = new Map(classRows.map((r, idx) => [String(r.player_id), idx]));
     const baselineRows = [];
     for (const r of classRows) {
       const freshOverride = discontinuityFreshSamples.get(String(r.player_id));
