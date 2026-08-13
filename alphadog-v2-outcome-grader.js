@@ -58,6 +58,21 @@ function buildCaseExpr(exprMap) {
   return `CASE f.canonical_prop_key ${whens} END`;
 }
 
+function extractEnrichmentSignal(calibrationJsonValue) {
+  // Defensive: calibration_json may come back as a native object (jsonb) or a string,
+  // depending on the column/driver - handle both rather than assuming one (see the
+  // parseJsonObject bug this mirrors, fixed 2026-08-13 in score-final-board.js).
+  let obj = calibrationJsonValue;
+  if (obj && typeof obj === "string") { try { obj = JSON.parse(obj); } catch (_) { obj = null; } }
+  const hpCal = obj && typeof obj === "object" ? obj.hp_calibration_json : null;
+  if (!hpCal || typeof hpCal !== "object") return { rate_multiplier: null, factors_applied: null, factors_missing: null };
+  return {
+    rate_multiplier: hpCal.rate_multiplier == null ? null : Number(hpCal.rate_multiplier),
+    factors_applied: hpCal.factors_applied == null ? null : Number(hpCal.factors_applied),
+    factors_missing: hpCal.factors_missing == null ? null : Number(hpCal.factors_missing)
+  };
+}
+
 async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTable) {
   const actualExpr = buildCaseExpr(propExprMap);
   const propKeys = Object.keys(propExprMap);
