@@ -731,6 +731,14 @@ async function runEnrichment(pgClient, input) {
     status: matrixRows.length >= MAX_LEGS_PER_INVOCATION ? "partial_continue" : "completed",
     legs_read: matrixRows.length, legs_enriched: written,
     stale_rows_cleaned: staleRowsCleaned,
+    _debug_role_transition: {
+      classified_role_615698: roleInputs.classifiedRoleByPlayer.get("615698") || null,
+      confirmed_starter_615698: roleInputs.confirmedStarterIds.has("615698"),
+      has_historical_rate_615698: roleInputs.historicalRateByPlayerProp.has("615698"),
+      cfg_loaded: !!roleInputs.cfg,
+      classified_role_663738: roleInputs.classifiedRoleByPlayer.get("663738") || null,
+      confirmed_starter_663738: roleInputs.confirmedStarterIds.has("663738")
+    },
     timestamp_utc: nowUtc(),
   };
 }
