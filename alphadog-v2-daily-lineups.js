@@ -6,8 +6,8 @@ const JOB_KEY = "daily-lineups";
 
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL", "MAX_API_CALLS_PER_TICK"];
 const DEFAULT_MLB_BASE_URL = "https://statsapi.mlb.com";
-const MAX_GAMES = 16;
-const MAX_CALENDAR_PROBE_GAMES = 16;
+const MAX_GAMES = 40;
+const MAX_CALENDAR_PROBE_GAMES = 40;
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_ENDPOINT_RETRIES = 2;
 const MLB_STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups";
