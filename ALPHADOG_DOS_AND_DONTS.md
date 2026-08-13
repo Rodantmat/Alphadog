@@ -661,6 +661,58 @@ architecture context.
   end-to-end firing has not yet been observed.
 
 
+## PART 6 — Operating model update: orchestrator/runners/full-runs retired for now; manual, coworker-driven layer-by-layer execution is current standing practice
+
+### Current standing practice (read this before assuming any automated schedule is live)
+- **The orchestrator, the various `*-runner` workers (board-runner, market-runner, scoring-runner,
+  master-runner, etc.), and the full-run stepper chains described in PARTS 4-5 above are retired
+  for now.** Do not assume any of that automated dispatch machinery is currently firing, even
+  though the code and `config.scheduled_jobs` rows still exist and are structurally correct.
+- **The current, real operating model: Cowork (the coworker/session-driven interface) runs each
+  layer manually** — delta and master, layer by layer — with each layer run at its own proper time
+  by direct invocation (`run_job` / direct worker `/run` calls), not by cron or orchestrator
+  dispatch. Treat `config.scheduled_jobs` rows and any `enqueueScheduled*IfDue` orchestrator
+  function as dormant/historical unless explicitly told otherwise — verify live behavior directly
+  (as PART 5 did for the 6am trigger) before ever assuming a schedule is actually executing.
+- **Practical consequence for adding any new recurring check or job**: do NOT add orchestrator
+  dispatch functions or `config.scheduled_jobs` rows expecting them to fire automatically right
+  now. Instead, add the new check to the manual, coworker-run rotation directly (see below), the
+  same way delta/master layers are already being run.
+
+### Standing addition to the manual rotation: weekly calibration_report dry-run check
+- **Added this session, grounded in both real internal evidence and external research.** Real
+  finding: `earned_runs` and `pitcher_strikeouts` ran with zero active post-rootfix calibration
+  correction for ~2.5 weeks (since the 2026-07-25 root-cause fix) while showing real-world
+  overconfidence gaps of 30-45 percentage points at high stated HP — undetected until manually
+  investigated. External research (ML model monitoring / drift detection literature) converges
+  on weekly retraining/re-check cadence as the practical sweet spot, and consistently recommends
+  trigger-based retraining with human review before applying, not full unattended automation.
+- **Why not full automation**: this system's own history has a real, concrete case
+  (`stolen_bases`, methodology tag `..._side_agnostic_fit_dominated_by_less_wrongly_applied_to_more`)
+  where a fit GENUINELY PASSED honest walk-forward out-of-sample validation (beat both raw
+  baseline and Platt on held-out Brier/ECE) and was still structurally wrong — it was fit
+  side-agnostic and got dominated by one side's pattern, silently misapplied to the other side.
+  Aggregate Brier/ECE improvement did not catch this. This is concrete, first-party proof that
+  honest validation gates, while necessary, are not sufficient on their own to safely auto-apply
+  unattended — a human review step before applying is a real safeguard, not excess caution.
+- **The tool already exists and is safe to run as-is**: `alphadog-v2-calibration-scheduler`
+  worker, `POST /run`, calls `PHASE3A_WORKER` with `mode: "calibration_report"` (which internally
+  runs `fit_platt_calibration` in dry-run — writes nothing to `score.calibration_correction_map`
+  or `score.platt_calibration_map`) and logs the execution to `control.claude_session_log`. Its
+  own `scheduled()` cron handler was deliberately turned into a no-op earlier (comment claims "the
+  Cowork morning-delta supervisor's Layer 5 calls fit_platt_calibration directly instead") — but
+  the 2.5-week gap above is direct proof that alternate process was not actually running reliably.
+  Do not re-enable its cron trigger via the orchestrator right now (see retirement note above);
+  instead, run it manually as part of the weekly coworker rotation.
+- **Standing action**: once a week, as part of the manual layer-by-layer rotation, call
+  `POST /run` on `alphadog-v2-calibration-scheduler` (or `fit_platt_calibration` with
+  `dry_run:true` directly on `alphadog-v2-phase3a-first-inning-pitcher-context`), review the
+  `needs_attention` findings in the returned report, and apply selectively via
+  `run_apply_calibration_recommendations` only for props that genuinely, honestly validate out of
+  sample — never apply blanket/unreviewed. This mirrors the same manual-first, human-reviewed
+  discipline already governing every other layer in the current operating model.
+
+
 ## PART 5 — Session: the first real 6am run, a real incomplete-data incident, and cascade guards built across metrics/classification/baseline
 
 ### UPDATE: the 6:00 AM Pacific trigger from PART 4 DID fire for real — and immediately surfaced a genuine bug
