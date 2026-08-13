@@ -740,19 +740,6 @@ export default {
       const input = await readJsonSafe(request);
       return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null } });
     }
-    if (method === "POST" && path === "/diagnostic-il") {
-      const teamId = new URL(request.url).searchParams.get("teamId") || "142";
-      const base = sourceBase(env);
-      const forty = await fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, false, FETCH_TIMEOUT_MS);
-      const roster = forty.json && Array.isArray(forty.json.roster) ? forty.json.roster : [];
-      const buxton = roster.find(r => r.person && String(r.person.id) === "621439");
-      const statusCounts = {};
-      for (const r of roster) { const c = r.status && r.status.code; statusCounts[c] = (statusCounts[c] || 0) + 1; }
-      return jsonResponse({
-        forty_ok: forty.ok, roster_count: roster.length, status_code_counts: statusCounts,
-        buxton_found: !!buxton, buxton_row: buxton || null
-      });
-    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const out = await runAvailability(env, input);
