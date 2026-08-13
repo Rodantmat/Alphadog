@@ -618,8 +618,17 @@ export default {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await runSourceHealth(env, input);
-      return jsonResponse(output, output.ok ? 200 : 200);
+      try {
+        const output = await runSourceHealth(env, input);
+        return jsonResponse(output, output.ok ? 200 : 200);
+      } catch (err) {
+        return jsonResponse({
+          ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, source_key: SOURCE_KEY,
+          status: "exception", certification: "MARKET_SOURCE_HEALTH_EXCEPTION",
+          error: safeString(err && err.stack ? err.stack : err, 900),
+          rows_read: 0, rows_written: 0, external_calls_performed: 0, timestamp_utc: nowUtc()
+        }, 200);
+      }
     }
 
     return jsonResponse({
