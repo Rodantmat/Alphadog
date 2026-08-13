@@ -201,7 +201,7 @@ async function runScoringEngine(pgClient, input) {
     status, certification: "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS",
     continuation_required: isPartial, orchestrator_should_self_continue: isPartial,
     hp_rows_read: hpRows.length, score_rows_written: written, remaining_null_score_rows: stillRemaining,
-    cleanup_old_batches: cleanupOldBatches,
+    cleanup_old_batches: cleanupOldBatches, final_sweep: finalSweep,
     timestamp_utc: nowUtc(),
   };
 }
