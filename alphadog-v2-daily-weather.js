@@ -591,17 +591,6 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
     if (method === "GET" && path === "/") return jsonResponse(baseIdentity(env));
-    if (method === "GET" && path === "/diagnostic-roof") {
-      const gamePk = url.searchParams.get("gamePk") || "822779";
-      const feedUrl = `${mlbV11Base(env)}/game/${gamePk}/feed/live`;
-      const fetched = await fetchJson(feedUrl, env, true);
-      const gameData = fetched.json && fetched.json.gameData ? fetched.json.gameData : null;
-      return jsonResponse({
-        ok: fetched.ok, weather_node: gameData ? gameData.weather : null,
-        venue_node: gameData ? gameData.venue : null,
-        status_node: gameData ? gameData.status : null
-      });
-    }
     if (method === "GET" && path === "/health") return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: { HYPERDRIVE: Boolean(env.HYPERDRIVE) }, vars: varPresence(env, EXPECTED_VARS), weather_keys_present: { OPENWEATHER_API_KEY: !!env.OPENWEATHER_API_KEY, OPEN_WEATHER_API_KEY: !!env.OPEN_WEATHER_API_KEY, OPENWEATHERMAP_API_KEY: !!env.OPENWEATHERMAP_API_KEY } } });
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
