@@ -2506,7 +2506,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
         WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
       )
       SELECT board_row_id, source_key, game_pk, player_name, mlb_player_id, canonical_prop_key, line_value, selected_side,
-        hit_probability_0_100, confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, goblin_tier_rank,
+        hit_probability_0_100, confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label, goblin_tier_rank,
         (standard_line_value IS NOT NULL) AS has_standard_sibling
       FROM ladder
       WHERE source_key = 'prizepicks' AND is_goblin = 1 AND hit_probability_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
