@@ -566,6 +566,7 @@ async function classifyBaselineV5(env,row,line,side,entityType,model,hs,stats,ma
 function qualityStart(r){ return num(r.outs_recorded)>=18 && num(r.earned_runs)<=3 ? 1 : 0; }
 function pfsPp(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) + 4*qualityStart(r) - 3*num(r.earned_runs); }
 function pfsSl(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) - 2*num(r.walks_allowed); }
+function pfsUd(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) + 5*num(r.wins) + 5*qualityStart(r); }
 function sourceAgnosticPitcherFantasyBaselineValue(r){
   // Baseline V5 is source/app agnostic. Do not leak PrizePicks/Sleeper win/QS bonuses here.
   // This neutral component score keeps the historical workload/K/damage components only.
