@@ -216,6 +216,7 @@ function baseIdentity(extra = {}) {
     no_ranking: true,
     no_final_board: true,
     no_candidate_board_write: true,
+    dead_code_warning: "DEAD as of 2026-08-14, confirmed not just deprecated: this entire file uses D1 bindings (SCORE_DB, ARCHIVE_DB) exclusively - zero Postgres usage across all 6487 lines - and every D1 database in this system is physically deleted from Cloudflare (confirmed directly via query, not inferred). The real, live scoring engine is a completely different, small file deployed under a different slot name - see alphadog-v2-phase3a-certifier.js (logical_worker_name: alphadog-v2-scoring-engine, job_key: scoring-engine-shadow-v1). Any call into this file will fail with a generic 'Cannot read properties of undefined (reading prepare)' error - that is not a bug to debug, it is this file being permanently non-functional. See ALPHADOG_DOS_AND_DONTS.md for full detail.",
     ...extra
   };
 }
