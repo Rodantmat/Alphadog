@@ -1474,8 +1474,9 @@ async function runFitPlattCalibration(env, input = {}) {
     // refreshed 5 unrelated ones, visible only via their fit_at timestamps. Now genuinely
     // scopes the underlying query when input.props is provided; omitting it is unchanged.
     const requestedProps = Array.isArray(input.props) && input.props.length ? input.props.map(String) : null;
-    const propSideRows = requestedProps
-      ? await sql`SELECT DISTINCT canonical_prop_key, selected_side FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL AND selected_side IS NOT NULL AND canonical_prop_key = ANY(${requestedProps})`
+    const requestedPropsLit = requestedProps ? "{" + requestedProps.map(p => `"${p.replace(/"/g, '\\"')}"`).join(",") + "}" : null;
+    const propSideRows = requestedPropsLit
+      ? await sql`SELECT DISTINCT canonical_prop_key, selected_side FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL AND selected_side IS NOT NULL AND canonical_prop_key = ANY(${requestedPropsLit}::text[])`
       : await sql`SELECT DISTINCT canonical_prop_key, selected_side FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL AND selected_side IS NOT NULL`;
     const results = [];
     for (const { canonical_prop_key: propKey, selected_side: fitSide } of propSideRows) {
