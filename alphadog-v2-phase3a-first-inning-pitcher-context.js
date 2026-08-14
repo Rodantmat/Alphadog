@@ -8475,6 +8475,7 @@ async function runDerivePitcherMetricSnapshotsFromPostgres(env, input) {
           batters_faced_sum=excluded.batters_faced_sum, pitches_sum=excluded.pitches_sum, strikes_sum=excluded.strikes_sum,
           hits_allowed_sum=excluded.hits_allowed_sum, earned_runs_sum=excluded.earned_runs_sum, walks_allowed_sum=excluded.walks_allowed_sum,
           strikeouts_sum=excluded.strikeouts_sum, home_runs_allowed_sum=excluded.home_runs_allowed_sum, runs_allowed_sum=excluded.runs_allowed_sum,
+          wins_sum=excluded.wins_sum, quality_starts_sum=excluded.quality_starts_sum,
           era_calculated=excluded.era_calculated, whip_calculated=excluded.whip_calculated, k_rate_calculated=excluded.k_rate_calculated,
           bb_rate_calculated=excluded.bb_rate_calculated, hr_rate_calculated=excluded.hr_rate_calculated,
           k_minus_bb_rate_calculated=excluded.k_minus_bb_rate_calculated, pitches_per_out_calculated=excluded.pitches_per_out_calculated,
