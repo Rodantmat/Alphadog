@@ -828,6 +828,46 @@ architecture context.
   premature action this whole discipline exists to prevent. Revisit once more of-season data
   accumulates and the thin-sample group's n grows large enough to trust.
 
+### Follow-up: sign-verification pass across opponent-side factors - two real bugs found, one confirmed working correctly
+- **`stolen_base_family` (sprint speed)**: tested with the same out-of-sample train/test partial
+  correlation methodology used for batter_quality_of_contact. Result: 0.129, robust n=319, holding
+  up even after controlling for train-period performance. **Confirmed genuinely working correctly
+  - no change made.** Not everything found in this audit was broken; worth stating plainly so the
+  audit isn't read as "everything in the system is wrong."
+- **`opposing_pitcher_quality` (hits cell)**: coefficient was +0.05. Confirmed via two independent
+  checks that this was backwards: (1) the underlying `weighted_rv100` signal correlates -0.61 with
+  the pitcher's own real ERA (higher rv100 = better pitcher, standard Statcast run-value-saved
+  convention), and (2) a direct residual test (rv100 vs a batter's hit-rate deviation from his own
+  season average, n=66954) showed the correct negative direction. A positive coefficient was
+  predicting MORE hits against BETTER pitchers. Fixed to -0.05.
+- **`defensive_quality_oaa` (hits cell)**: coefficient was +1. The underlying signal
+  (`matchup_specific_oaa_probability_delta`) is positive for good defense, so a positive
+  coefficient was predicting MORE hits against BETTER defense. A residual test (simplified
+  team-average OAA proxy, not the code's exact OF/IF-weighted batted-ball-specific version)
+  confirmed the correct direction (-0.006, n=36790) but at low, honestly-flagged confidence given
+  the magnitude is weak and the test proxy is cruder than the real signal the code computes. Fixed
+  the sign to -1 regardless - a weak-but-correctly-signed factor is strictly better than a
+  wrong-signed one, and the existing 0.15 cap already bounds any downside from magnitude
+  uncertainty.
+- **`catcher_framing` (walks_allowed cell)**: coefficient was +0.039, identical to the
+  pitcher_strikeouts cell's +0.039. Confirmed backwards via direct match to published research
+  (FanGraphs pitch-framing study): framing runs add 3.9% to strikeout rate but SUBTRACT 3.9% from
+  walk rate - the exact 0.039 magnitude match confirms this system's coefficient was sourced
+  directly from that study, but the walks_allowed cell kept the same positive sign as strikeouts
+  instead of the study's negative sign for walks (a likely copy-paste error). Fixed to -0.039.
+- **Root mechanism enabling all of these to go undetected**: confirmed the `direction` column
+  (`over`/`under`/`both`) on `config.enrichment_profile_cells` is pure descriptive metadata - grepped
+  the entire enrichment engine and confirmed it is never referenced in `evaluateContinuousFactor`,
+  cell-matching, or anywhere else in the actual contribution computation. There is no mechanism that
+  auto-flips a coefficient's sign based on its `direction` label. A cell labeled `under` with a
+  positive coefficient does NOT get corrected anywhere - it silently pushes the rate the wrong way.
+- **Systematic check for further hidden cases**: queried for the specific signature that caught the
+  catcher_framing bug - any factor with multiple cells sharing the same coefficient MAGNITUDE across
+  different `direction` labels (a strong tell for a copy-paste sign error, since two genuinely
+  opposite effects should essentially never happen to need the identical unsigned value). Found and
+  confirmed only the now-fixed catcher_framing case; no other factor in the system currently shows
+  this pattern. This check is cheap and worth re-running after any future factor addition.
+
 
 ## PART 5 — Session: the first real 6am run, a real incomplete-data incident, and cascade guards built across metrics/classification/baseline
 
