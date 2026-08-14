@@ -50,7 +50,8 @@ const PITCHER_PROP_EXPR = {
   hits_allowed: "gl.hits_allowed",
   earned_runs: "gl.earned_runs",
   runs_allowed: "gl.runs_allowed",
-  pitcher_outs: "gl.outs_recorded"
+  pitcher_outs: "gl.outs_recorded",
+  pitcher_fantasy_score_ud: "(gl.outs_recorded + 3*gl.strikeouts - 3*gl.earned_runs + 5*COALESCE(gl.wins,0) + 5*(CASE WHEN gl.outs_recorded>=18 AND gl.earned_runs<=3 THEN 1 ELSE 0 END))"
 };
 
 function buildCaseExpr(exprMap) {
