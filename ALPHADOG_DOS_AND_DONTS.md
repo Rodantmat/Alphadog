@@ -686,6 +686,56 @@ architecture context.
   by construction, not because it was checked and found harmless after the fact. Left as-is,
   same as the confirmed-superseded expansion_baseline chain - not worth spending further session
   time on a pipeline that can never reach a user by design.
+
+### Real bug found and fixed in the outcome grader itself - the ground truth every calibration check tonight depended on
+- **Found by deliberately checking foundational integrity, not by chasing a symptom**: every
+  calibration test run this session (the tier-granularity discovery, the props-filter fix, all of
+  it) depends on `score.prop_outcome_history` being correctly graded. Checked the grader
+  (`alphadog-v2-outcome-grader.js`) directly rather than assuming it was trustworthy because
+  nothing downstream had flagged it.
+- **Real bug confirmed**: the grading join (`stats_hitter/pitcher.game_logs` against
+  `score.final_board_history`) matched on `player_id + game_date` only, not the specific
+  `game_pk` the board leg was actually for. Confirmed live: 281 player-dates this season involve
+  doubleheaders (multiple distinct `game_pk` for the same player, same date). Since `outcome_id`
+  doesn't include `game_pk`, a doubleheader-day leg's `ON CONFLICT DO UPDATE` meant whichever
+  game's row processed last silently won - non-deterministic, potentially-wrong-game grading.
+  Fixed by adding `AND gl.game_pk = f.game_pk` to the join. The `rfi_nrfi` grading path already
+  correctly included `game_pk` in its join - this was isolated to the hitter/pitcher stat path.
+- **Scoped honestly rather than assumed catastrophic**: of the 281 affected player-dates, only 2
+  actually had graded board data to have been affected at all (most fell in early-season gaps
+  where the board pipeline wasn't yet fully operational, a separate known limitation). Re-graded
+  both real affected dates (2026-07-28, 2026-07-29) with the fix live, correcting the historical
+  record rather than just fixing it going forward. This does not materially change any of
+  tonight's broader aggregate findings (built on thousands of outcomes), but the grading system
+  is now genuinely correct at the root, not just correct in aggregate by luck of small numbers.
+
+### Major finding: the entire 445KB `alphadog-v2-score-audit.js` file is dead - confirmed, not assumed
+- While auditing the scoring engine (the layer computing `score_0_100`, gating PRIMARY vs REVIEW
+  placement) for the first time this session, confirmed `score-audit.js` **never uses Postgres
+  anywhere in the file** (zero matches for `postgres(env.HYPERDRIVE` across all 6487 lines) -
+  every function in it, including `runScoringEngine`/`runScoringEngineCurrent`, is built entirely
+  on `env.SCORE_DB` (D1), which is confirmed physically deleted. This is not two dead functions
+  like the earlier phase3a finding - the whole file is dead.
+- **The real, live scoring engine is a completely different, small file**: confirmed via
+  `score.scoring_engine_batches.worker_version` on the actual latest live batch
+  (`alphadog-v2-scoring-engine-v0.3.0-postgres-rewire`), then traced to its source by checking
+  every candidate file's own `LOGICAL_WORKER_NAME` constant rather than guessing from file names -
+  it's `alphadog-v2-phase3a-certifier.js` (16KB, `WORKER_NAME="alphadog-v2-phase3a-certifier"`,
+  `LOGICAL_WORKER_NAME="alphadog-v2-scoring-engine"`, `job_key="scoring-engine-shadow-v1"` -
+  matching the exact binding name found earlier in `scoring-runner-part2.js`'s dispatch chain).
+  Confirms the same "deployed slot name ≠ logical name" pattern already seen with
+  `phase3c-certifier.js` being the real `hit-probability-board` - always verify a worker's actual
+  identity via its own `LOGICAL_WORKER_NAME`/health response, never assume from the filename.
+- **The real engine's formula was reviewed and is sound**: a clean, documented 65% HP + 35%
+  confidence blend, small justified goblin/demon adjustments (-4/+3, reasoning stated in-code),
+  and a genuinely careful two-layer difficulty-monotonicity enforcement (per-tick clamp plus a
+  whole-batch sweep specifically built to catch cross-tick leaks the per-tick clamp can't see).
+  No bugs found in the live formula itself - the finding here is entirely about `score-audit.js`
+  being confirmed dead weight, not about the real engine being wrong.
+- **Not yet done**: `score-audit.js` was not deleted or its dispatch entries guarded this session -
+  confirmed dead, not yet cleaned up. A future session could add the same `DEAD_D1_MODES`-style
+  guard used for the phase3a expansion_baseline chain, or simply confirm nothing references it
+  and remove it outright, given its D1 dependency is unfixable regardless.
 ### THE SINGLE MOST IMPORTANT RULE OF THIS ENTIRE MIGRATION, VIOLATED ONCE AND CORRECTED — READ THIS BEFORE WRITING ANY NEW CODE
 - **This session, while implementing a scheduling fix, a new D1 table (`control_kv`, in
   `CONTROL_DB`) was created to store a single "last triggered Pacific date" marker value.** This
