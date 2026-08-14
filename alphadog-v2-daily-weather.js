@@ -584,6 +584,48 @@ async function runWeather(env, input) {
   }
 }
 
+async function runBackfillRoofStatus(env, input) {
+  const pg = pgClient(env);
+  try {
+    const gamePks = Array.isArray(input.game_pks) ? input.game_pks.map(Number).filter(Number.isFinite) : [];
+    if (!gamePks.length) return { ok: false, error: "Must provide input.game_pks as a non-empty array." };
+    const results = [];
+    let written = 0, failed = 0;
+    for (const gamePk of gamePks) {
+      try {
+        const feedUrl = `${mlbV11Base(env)}/game/${gamePk}/feed/live`;
+        const fetched = await fetchJson(feedUrl, env, false);
+        if (!fetched.ok || !fetched.json) { results.push({ game_pk: gamePk, ok: false, reason: "fetch_failed", status: fetched.status }); failed++; continue; }
+        const extracted = extractMlbWeather(fetched.json);
+        const roofStatus = extracted.ok && extracted.weather ? extracted.weather.official_roof_status : null;
+        const conditionText = extracted.ok && extracted.weather ? extracted.weather.condition : null;
+        const tempF = extracted.ok && extracted.weather ? extracted.weather.temperature_f : null;
+        const windMph = extracted.ok && extracted.weather ? extracted.weather.wind_speed_mph : null;
+        const windCardinal = extracted.ok && extracted.weather ? extracted.weather.wind_direction_cardinal : null;
+        const gameData = fetched.json.gameData || {};
+        const venueId = gameData.venue ? Number(gameData.venue.id) : null;
+        const officialDate = gameData.datetime ? String(gameData.datetime.officialDate || "") : null;
+        const homeTeamId = gameData.teams && gameData.teams.home ? String(gameData.teams.home.id) : null;
+        await pg.unsafe(`
+          INSERT INTO context.history_game_weather (game_pk, official_date, venue_id, home_team_id, temp_f, condition, wind_speed_mph, wind_direction_cardinal, wind_context, source_key, roof_status, roof_status_confidence, raw_json, captured_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'backfill_mlb_live_feed_v1',$10,$11,$12,now())
+          ON CONFLICT (game_pk) DO UPDATE SET roof_status=EXCLUDED.roof_status, roof_status_confidence=EXCLUDED.roof_status_confidence,
+            condition=COALESCE(context.history_game_weather.condition, EXCLUDED.condition), captured_at=now()`,
+          [gamePk, officialDate, venueId, homeTeamId, tempF, conditionText, windMph, windCardinal, null, roofStatus,
+            roofStatus ? "HIGH_OFFICIAL_MLB_FEED_CONDITION_TEXT" : "LOW_NO_ROOF_TEXT_FOUND", JSON.stringify({ backfill: true, condition_text: conditionText })]);
+        written++;
+        results.push({ game_pk: gamePk, ok: true, roof_status: roofStatus, condition: conditionText });
+      } catch (err) {
+        failed++;
+        results.push({ game_pk: gamePk, ok: false, reason: String(err && err.message ? err.message : err) });
+      }
+    }
+    return { ok: true, mode: "backfill_roof_status", requested: gamePks.length, written, failed, results };
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return jsonResponse({ ok: true });
