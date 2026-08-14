@@ -12235,6 +12235,27 @@ async function runMode(env,input={}){
   return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run","expansion_delta_mining","expansion_delta_sanity","expansion_delta_hp","expansion_delta_full_run","baseline_v5_classification_base","baseline_v5_classification_delta","baseline_v5_classification_rescue","baseline_v5_base","baseline_v5_base_rescue","baseline_v5_delta","baseline_v5_state_hydrate","baseline_v5_stateful_delta","baseline_v5_classification_daily_delta","baseline_v5_hp_daily_delta","baseline_v5_history_only","expansion-baseline-v2"]};
 }
 
+async function runClassificationBaselineV6ToPostgresFastLoop(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 35000;
+  let lastOutput = null;
+  let tickCount = 0;
+  let currentInput = input;
+  const allResults = [];
+  let totalRowsWritten = 0;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationBaselineV6ToPostgresFullRun(env, currentInput);
+    tickCount++;
+    if (lastOutput.results) allResults.push(...lastOutput.results);
+    totalRowsWritten += lastOutput.total_rows_written || 0;
+    if (!lastOutput.ok || lastOutput.combo_done || !lastOutput.partial_continue) {
+      return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs, fast_loop_total_rows_written: totalRowsWritten, fast_loop_results: allResults };
+    }
+    currentInput = lastOutput.next_input_json;
+  }
+  return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs, fast_loop_total_rows_written: totalRowsWritten, fast_loop_results: allResults };
+}
+
 export default {
   async scheduled(event, env, ctx) {
     // event.cron matches one of the two triggers configured in the generator:
