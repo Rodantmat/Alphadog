@@ -636,7 +636,8 @@ async function runBackfillUmpireAssignments(env, input) {
     let written = 0, failed = 0;
     for (const gamePk of gamePks) {
       try {
-        const boxUrl = `${mlbV11Base(env)}/game/${gamePk}/boxscore`;
+        const v1Base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/+$/, "");
+        const boxUrl = `${v1Base}/game/${gamePk}/boxscore`;
         const fetched = await fetchJson(boxUrl, env, false);
         if (!fetched.ok || !fetched.json) { results.push({ game_pk: gamePk, ok: false, reason: "fetch_failed", status: fetched.status }); failed++; continue; }
         const officials = Array.isArray(fetched.json.officials) ? fetched.json.officials : [];
