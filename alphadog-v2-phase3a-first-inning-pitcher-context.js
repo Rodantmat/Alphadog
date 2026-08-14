@@ -7815,28 +7815,43 @@ async function runRemineRefStadiumsToPostgres(env, input) {
     const rawTeams = Array.isArray(teamsJson.teams) ? teamsJson.teams : [];
     const venueIds = [...new Set(rawTeams.map(t => t.venue && t.venue.id).filter(Boolean))];
     if (!venueIds.length) return { ok: false, mode: "remine_ref_stadiums_to_postgres", error: "no_venue_ids_found" };
+    // REAL FIX (2026-08-14): venue-to-team map, needed to build the SAME composite stadium_id
+    // convention (mlb_venue_X_team_Y) used everywhere else in the system - a bare venue ID
+    // caused ON CONFLICT to never match the existing correct row, silently inserting a fresh
+    // duplicate on every single weekly cron run instead of updating in place. Confirmed live:
+    // 30 duplicate rows, one per venue, all from this exact bug.
+    const teamIdByVenueId = new Map();
+    for (const t of rawTeams) { if (t.venue && t.venue.id && t.id) teamIdByVenueId.set(Number(t.venue.id), Number(t.id)); }
 
     const venueResp = await fetch(`${base}/venues?venueIds=${encodeURIComponent(venueIds.join(","))}&hydrate=location`, { headers });
     const venueJson = await venueResp.json();
     const venues = Array.isArray(venueJson.venues) ? venueJson.venues : [];
 
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
-    const rows = venues.filter(v => v && v.id).map(v => ({
-      stadium_id: String(v.id),
-      mlb_venue_id: Number(v.id),
-      stadium_name: String(v.name || "").trim(),
-      city: (v.location && v.location.city) || null,
-      state: (v.location && v.location.state) || null,
-      roof_type: (v.fieldInfo && v.fieldInfo.roofType) || null,
-      turf_type: (v.fieldInfo && v.fieldInfo.turfType) || null,
-      raw_json: JSON.stringify(v)
-    }));
+    const rows = venues.filter(v => v && v.id).map(v => {
+      const teamId = teamIdByVenueId.get(Number(v.id));
+      return {
+        stadium_id: teamId != null ? `mlb_venue_${v.id}_team_${teamId}` : String(v.id),
+        mlb_venue_id: Number(v.id),
+        stadium_name: String(v.name || "").trim(),
+        city: (v.location && v.location.city) || null,
+        state: (v.location && v.location.state) || null,
+        // REAL FIX (2026-08-14): this MLB API field returns unreliably (confirmed null for every
+        // venue in a real run) - alphadog-v2-static-stadiums.js maintains the authoritative,
+        // hand-curated roof_type per team and must never be overwritten by this weaker source.
+        // Only used as a genuine fallback on a brand-new row that static-stadiums hasn't created
+        // yet; the ON CONFLICT clause below preserves the existing value on every subsequent run.
+        roof_type: (v.fieldInfo && v.fieldInfo.roofType) || null,
+        turf_type: (v.fieldInfo && v.fieldInfo.turfType) || null,
+        raw_json: JSON.stringify(v)
+      };
+    });
     const cols = ["stadium_id","mlb_venue_id","stadium_name","city","state","roof_type","turf_type","raw_json"];
     await sql`
       INSERT INTO ref.stadiums ${sql(rows, ...cols)}
       ON CONFLICT (stadium_id) DO UPDATE SET
         mlb_venue_id=excluded.mlb_venue_id, stadium_name=excluded.stadium_name, city=excluded.city,
-        state=excluded.state, roof_type=excluded.roof_type, turf_type=excluded.turf_type,
+        state=excluded.state, roof_type=COALESCE(ref.stadiums.roof_type, excluded.roof_type), turf_type=COALESCE(ref.stadiums.turf_type, excluded.turf_type),
         raw_json=excluded.raw_json, updated_at=now()
     `;
     await sql.end();
