@@ -868,6 +868,49 @@ architecture context.
   confirmed only the now-fixed catcher_framing case; no other factor in the system currently shows
   this pattern. This check is cheap and worth re-running after any future factor addition.
 
+### Full sign-verification pass completed across every remaining enrichment factor
+- **`platoon_handedness`**: verified against published platoon-split research (FanGraphs/Hardball
+  Times) - same-handed matchup favors the pitcher (more K, fewer hits/HR/BB), dramatically amplified
+  for sidearm/submarine arm angles, exactly matching the config's tier structure and signs.
+  **Confirmed correct, no change.**
+- **`umpire_tendency`**: residual-tested directly (n=1992, using real historical umpire assignments
+  from `context.history_game_umpire`) - strikeouts_delta_vs_league correctly predicts a pitcher's
+  strikeout deviation from his own season average (0.150, real signal) and correctly (if weakly)
+  predicts walks direction (-0.012). **Confirmed correct, no change.** Noted a minor precision gap
+  worth a future look: a dedicated `walks_delta_vs_league` signal exists in the data but is never
+  used - the walks-relevant cells all key off the strikeouts-based tier classification instead.
+- **`bullpen_fatigue`, `lineup_slot`, `lineup_surrounding_quality`, `schedule_travel_fatigue`,
+  `weather_wind`, `weather_temp_altitude_pressure`**: verified by tracing each formula's sign
+  against well-established, physically or statistically grounded expected direction (fatigued
+  bullpen allows more offense; earlier lineup slots mean more plate appearances and more runs;
+  better on-base hitters ahead of you mean more RBI chances; eastward travel is the harder
+  direction per circadian research; wind blowing out helps fly balls carry, blowing in suppresses
+  them; warmer/lower-pressure air is less dense and lets the ball travel farther). **All confirmed
+  correctly signed, no changes.**
+- **`player_availability`**: a universal negative penalty applied whenever a player's status
+  indicates a recent IL return, regardless of which of its many relevant props is being scored.
+  This is the right design - reduced performance following an IL stint is a reasonable expectation
+  across essentially any offensive prop. **Confirmed correct, no change.**
+- **`weather_roof`**: a real, previously undocumented gap found - its handler unconditionally
+  `return 0` regardless of roof status, with no comment explaining this as deliberate (unlike the
+  altitude term in `weather_temp_altitude_pressure`, which has an explicit, reasoned comment for
+  why it's intentionally zero to avoid double-counting with park_factors). Declared relevant to
+  home_runs/total_bases/doubles/triples but currently provides no real signal at all. Safe (a
+  silent no-op, not actively wrong), but unrealized - flagged for a future session rather than
+  rushed here, since implementing it properly needs the same research-plus-validation rigor as
+  everything else in this audit, not a guessed coefficient.
+- **Audit status: every enrichment factor in the system has now been checked at least once**,
+  either empirically (residual test, out-of-sample partial correlation, or direct ERA/outcome
+  cross-check) or via careful formula-and-sign tracing grounded in established research where a
+  direct test wasn't feasible with available data. Net result: 3 real sign bugs found and fixed
+  (opposing_pitcher_quality, defensive_quality_oaa, catcher_framing/walks_allowed), 2 factors
+  deactivated or narrowed after failing residual testing (times_through_order, recent_form_trend),
+  1 factor left unchanged after a genuinely mixed/inconclusive out-of-sample result
+  (batter_quality_of_contact), 1 real gap found and left honestly unimplemented (weather_roof), and
+  roughly a dozen factors confirmed already correct - including real positive findings, not just
+  bugs, which matters for trusting the audit's completeness rather than assuming everything must
+  be broken.
+
 
 ## PART 5 — Session: the first real 6am run, a real incomplete-data incident, and cascade guards built across metrics/classification/baseline
 
