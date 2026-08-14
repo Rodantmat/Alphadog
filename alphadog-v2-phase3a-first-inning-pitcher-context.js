@@ -1930,7 +1930,9 @@ async function runResolvePropOutcomes(env, input = {}) {
         f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100,
         f.probability_confidence_0_100, f.score_0_100, f.score_grade, f.board_tier, f.live_playable
       FROM score.final_board_history f
-      LEFT JOIN score.prop_outcome_history o ON o.final_board_row_id = f.final_board_row_id
+      LEFT JOIN score.prop_outcome_history o ON o.mlb_player_id = f.mlb_player_id
+        AND o.canonical_prop_key = f.canonical_prop_key AND o.line_value = f.line_value
+        AND o.selected_side = f.selected_side AND o.official_date::date = f.official_date::date
       WHERE o.outcome_id IS NULL
         AND f.official_date::date >= (CURRENT_DATE - (${lookbackDays} || ' days')::interval)
         AND f.official_date::date < CURRENT_DATE
