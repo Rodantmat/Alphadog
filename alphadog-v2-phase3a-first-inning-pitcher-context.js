@@ -1454,6 +1454,8 @@ async function runQualityOfContactDerivedFieldsRefresh(env, input = {}) {
 // completely unaffected (this is purely additive).
 const PROP_CALIBRATION_FIX_DATES = {
   rfi_nrfi: "2026-07-29", // source-data join fix (context.first_inning_pitcher) + baseline correction
+  pitcher_fantasy_score: "2026-08-14", // formula fix: config was missing hits_allowed_sum entirely, so raw HP never matched the real grading formula (outs + 3K - 3ER - walks - hits_allowed) until today
+  fantasy_score: "2026-08-14", // formula fix: config previously used a flat hits_sum*3 + wrong weights that double-counted home runs as both a generic "hit" and a home run, and omitted HBP - corrected to match the real per-hit-type formula today
 };
 async function runFitPlattCalibration(env, input = {}) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
