@@ -879,6 +879,20 @@ architecture context.
   predicts walks direction (-0.012). **Confirmed correct, no change.** Noted a minor precision gap
   worth a future look: a dedicated `walks_delta_vs_league` signal exists in the data but is never
   used - the walks-relevant cells all key off the strikeouts-based tier classification instead.
+  **RESOLVED 2026-08-14**: residual-tested `walks_delta_vs_league` directly against real walk
+  outcomes (n=1992) - 0.119, roughly 10x stronger than the strikeouts-based proxy's -0.012 for
+  the same purpose. Made `classifyIntoTier` prop-aware (added a `propKey` parameter) and routed
+  walks/walks_allowed specifically through `walks_delta_vs_league` instead of
+  `strikeouts_delta_vs_league`. **Caught a real sign error in my own first pass before it went
+  live**: `walks_delta_vs_league`'s convention is inverted relative to `strikeouts_delta_vs_league`
+  for this classification's purposes - high strikeouts_delta favors the pitcher (more Ks called),
+  but high walks_delta favors the batter (more walks called, confirmed directly against real
+  umpire rows, e.g. 3.41 for the highest umpire), the opposite direction. The first version routed
+  high walks_delta into the pitcher_friendly tier (which applies a penalty, predicting FEWER
+  walks) - backwards. Fixed by inverting the comparison specifically for the walks-relevant path;
+  every other prop's classification is unchanged. Verified the field itself was already correctly
+  wired into the leg context (a false alarm during verification, caught and corrected by a
+  non-truncated re-check before making an unnecessary change) and confirmed deployed.
 - **`bullpen_fatigue`, `lineup_slot`, `lineup_surrounding_quality`, `schedule_travel_fatigue`,
   `weather_wind`, `weather_temp_altitude_pressure`**: verified by tracing each formula's sign
   against well-established, physically or statistically grounded expected direction (fatigued
