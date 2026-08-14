@@ -3,6 +3,7 @@
   "name": "alphadog-v2-gbdt-auto-trigger",
   "main": "./alphadog-v2-gbdt-auto-trigger.js",
   "compatibility_date": "2026-05-18",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
@@ -11,18 +12,13 @@
     "SYSTEM_FAMILY": "alphadog-v2",
     "SYSTEM_VERSION": "v2.0.0"
   },
-  "d1_databases": [
+  "hyperdrive": [
     {
-      "binding": "CONTROL_DB",
-      "database_name": "alphadog-v2-control-db",
-      "database_id": "13cd2d5d-6817-4d5c-88d6-2b7d0a52722a"
-    },
-    {
-      "binding": "CONFIG_DB",
-      "database_name": "alphadog-v2-config-db",
-      "database_id": "e55efd67-b2fb-41e2-8dfe-7e2a9ca78f00"
+      "binding": "HYPERDRIVE",
+      "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"
     }
   ],
+  "d1_databases": [],
   "triggers": {
     "crons": [
       "* * * * *"
