@@ -9997,7 +9997,7 @@ async function runReminePitcherArsenalToPostgresV2(env, input) {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
     const num = (v) => v != null && v !== "" ? Number(v) : null;
     const rows = fetched.rows.filter(r => r.player_id).map((r, i) => ({
-      arsenal_id: `savant_arsenal_${year}_${r.player_id}_${(r.pitch_type || "p") + "_" + i}`,
+      arsenal_id: `savant_arsenal_${year}_${r.player_id}_${(r.pitch_type || r.pitch_name || "p")}`,
       mlb_player_id: Number(r.player_id), player_name: r["last_name, first_name"] || null, season_year: year,
       pitch_name: r.pitch_name || r.pitch_type || null,
       pitch_usage: num(r.pitch_usage), whiff_percent: num(r.whiff_percent), k_percent: num(r.k_percent),
