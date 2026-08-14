@@ -9903,6 +9903,64 @@ async function runDailyFirstInningMiningDelta(env, input={}) {
   }
 }
 
+async function ensureSplitsCursorSchema(sql) {
+  await sql`CREATE TABLE IF NOT EXISTS control.splits_mining_cursor (
+    splits_type TEXT PRIMARY KEY, next_offset INT NOT NULL DEFAULT 0,
+    last_cycle_started_at TIMESTAMPTZ, last_cycle_completed_at TIMESTAMPTZ, updated_at TIMESTAMPTZ DEFAULT now()
+  )`;
+}
+
+// Real, structural fix (2026-08-14) for the splits-staleness bug: runRemineHitterSplitsToPostgres
+// and runReminePitcherSplitsToPostgres are real, correct per-page miners, but each only advances
+// 60 players per call and require external, manual re-invocation with an incrementing offset -
+// they were never designed to be called from within a single automated delta step. This wrapper
+// makes them self-continuing: it persists progress in Postgres (control.splits_mining_cursor) so
+// every daily delta run resumes exactly where the last one left off, advances as many pages as
+// fit in a conservative internal time budget, and wraps back to offset 0 (starting a fresh cycle)
+// once a full pass completes - guaranteeing splits keep rolling forward every single day this
+// step runs, with zero dependence on a session remembering a separate manual instruction.
+async function runDailySplitsMiningDelta(env, input) {
+  const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
+  const TOTAL_SOFT_BUDGET_MS = 70000;
+  const startedAt = Date.now();
+  const season = Number(input.splits_season || 2026);
+  const summary = { hitter: { pages_this_run: 0, players_written: 0, cycle_completed: false }, pitcher: { pages_this_run: 0, players_written: 0, cycle_completed: false } };
+  try {
+    await ensureSplitsCursorSchema(sql);
+    const cursorRows = await sql`SELECT splits_type, next_offset FROM control.splits_mining_cursor WHERE splits_type IN ('hitter','pitcher')`;
+    const cursors = { hitter: 0, pitcher: 0 };
+    for (const r of cursorRows) cursors[r.splits_type] = Number(r.next_offset || 0);
+
+    for (const type of ["hitter", "pitcher"]) {
+      const fn = type === "hitter" ? runRemineHitterSplitsToPostgres : runReminePitcherSplitsToPostgres;
+      let offset = cursors[type];
+      while (Date.now() - startedAt < TOTAL_SOFT_BUDGET_MS) {
+        const res = await fn(env, { season, offset });
+        if (!res || res.ok === false) break;
+        summary[type].pages_this_run++;
+        summary[type].players_written += Number(res.splits_written_this_invocation || 0);
+        if (res.complete) {
+          summary[type].cycle_completed = true;
+          offset = 0;
+          await sql`INSERT INTO control.splits_mining_cursor (splits_type, next_offset, last_cycle_started_at, last_cycle_completed_at, updated_at)
+            VALUES (${type}, 0, now(), now(), now())
+            ON CONFLICT (splits_type) DO UPDATE SET next_offset=0, last_cycle_completed_at=now(), updated_at=now()`;
+          break;
+        }
+        offset = Number(res.next_offset || offset + 60);
+      }
+      await sql`INSERT INTO control.splits_mining_cursor (splits_type, next_offset, updated_at)
+        VALUES (${type}, ${offset}, now())
+        ON CONFLICT (splits_type) DO UPDATE SET next_offset=${offset}, updated_at=now()`;
+    }
+    return { ok: true, mode: "daily_splits_mining_delta", ...summary };
+  } catch (err) {
+    return { ok: false, mode: "daily_splits_mining_delta", error: String(err && err.message ? err.message : err), ...summary };
+  } finally {
+    await sql.end().catch(() => {});
+  }
+}
+
 async function runDailyMorningDeltaFullRun(env, input) {
   const TIME_BUDGET_MS = 240000;
   const startedAt = Date.now();
@@ -9915,6 +9973,7 @@ async function runDailyMorningDeltaFullRun(env, input) {
     { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres },
     { key: "quality_of_contact_derived_fields_refresh", fn: runQualityOfContactDerivedFieldsRefresh },
     { key: "first_inning_mining_delta", fn: runDailyFirstInningMiningDelta },
+    { key: "splits_mining_delta", fn: runDailySplitsMiningDelta },
     { key: "baseline_v6_full_run", fn: runClassificationBaselineV6ToPostgresFullRun },
     { key: "resolve_prop_outcomes", fn: runResolvePropOutcomes }
     // fit_platt_calibration deliberately removed from automated daily execution (2026-07-27):
