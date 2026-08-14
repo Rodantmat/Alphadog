@@ -655,6 +655,21 @@ function evaluateFlatGate(factorKey, cells, legContext) {
     return 0;
   }
   if (factorKey === "weather_roof") {
+    // RESEARCH-GROUNDED, DELIBERATE NO-OP (2026-08-14): checked real published research before
+    // deciding, not left silent. Studies on roof-open vs roof-closed effects at retractable-roof
+    // venues (Rogers Centre, Chase Field) show a real but small and CONFOUNDED effect - roofs get
+    // closed BECAUSE of cold/windy/rainy conditions, and those conditions independently suppress
+    // offense. Baseball Prospectus's more careful analysis of Rogers Centre found "almost no
+    // roof-closed effect" once accounting for this. Since this system already has dedicated
+    // weather_temp_altitude_pressure/weather_wind/weather_precip factors capturing those same
+    // conditions directly, a naive "roof closed -> fewer HRs" coefficient would very likely
+    // double-count the same underlying weather signal through a second channel - the same failure
+    // mode the altitude term above is explicitly zeroed to avoid. No historical roof-status data
+    // exists in this system either (context.history_game_weather's condition field, the only
+    // source of real historical roof state, is null for every retractable-venue game on record),
+    // so there's no way to empirically validate a coefficient even if one were attempted. Revisit
+    // only if historical roof-status capture is built AND a way to properly isolate the roof
+    // effect from the weather that caused the closure is designed - not with a guessed number.
     if (legContext.roof_status == null) return 0;
     return 0;
   }
