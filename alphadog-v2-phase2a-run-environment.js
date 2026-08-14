@@ -167,6 +167,7 @@ function classifyIntoTier(factorKey, legContext, thresholds, propKey) {
     // correctly signed (an umpire who calls more walks than league average predicts more walks
     // for pitchers facing him).
     const isWalksRelevant = propKey === "walks" || propKey === "walks_allowed";
+    const isRunsRelevant = propKey === "earned_runs" || propKey === "hits_allowed";
     const pitcherFriendlyMin = t.k_delta_pitcher_friendly_min ?? 0.3;
     const hitterFriendlyMax = t.k_delta_hitter_friendly_max ?? -0.3;
     if (isWalksRelevant && ctx.umpire_walks_delta_vs_league != null) {
@@ -176,6 +177,17 @@ function classifyIntoTier(factorKey, legContext, thresholds, propKey) {
       const bb = ctx.umpire_walks_delta_vs_league;
       if (bb > pitcherFriendlyMin) return "hitter_friendly_zone";
       if (bb < hitterFriendlyMax) return "pitcher_friendly_zone";
+      return "neutral_zone";
+    }
+    if (isRunsRelevant && ctx.umpire_runs_delta_vs_league != null) {
+      // Same direction as the walks case (not inverted): high runs_delta_vs_league means the
+      // umpire's games see MORE runs than league average, which favors the batter. Residual-
+      // validated directly (n=2489): runs_delta_vs_league reaches 0.092/0.074 for earned_runs/
+      // hits_allowed vs the strikeouts proxy's 0.004/-0.003 - a real, dedicated signal that was
+      // sitting unused in the same data, same pattern as the walks_delta_vs_league fix.
+      const rd = ctx.umpire_runs_delta_vs_league;
+      if (rd > pitcherFriendlyMin) return "hitter_friendly_zone";
+      if (rd < hitterFriendlyMax) return "pitcher_friendly_zone";
       return "neutral_zone";
     }
     if (ctx.umpire_strikeouts_delta_vs_league == null) return null;
