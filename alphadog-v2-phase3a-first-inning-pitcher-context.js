@@ -12225,8 +12225,8 @@ async function runMode(env,input={}){
   if(mode==="role_discontinuity_check") return runRoleDiscontinuityCheck(env,input);
   if(mode==="apply_calibration_recommendations") return runApplyCalibrationRecommendations(env,input);
   if(mode==="quality_of_contact_derived_fields_refresh") return runQualityOfContactDerivedFieldsRefresh(env,input);
-  if(mode==="baseline_v5_classification_base") return runClassificationV6Base(env,input);
-  if(mode==="baseline_v5_base") return runBaselineV6Base(env,input);
+  if(mode==="baseline_v5_classification_base") return runClassificationBaselineV6ToPostgresFastLoop(env,input);
+  if(mode==="baseline_v5_base") return runClassificationBaselineV6ToPostgresFastLoop(env,input);
   if(mode==="baseline_v5_history_only" || mode==="baseline_v2_heb" || mode==="expansion_baseline_v2" || mode==="expansion-baseline-v2" || mode==="expansion-baseline-v2-full-run") return runBaselineV2(env,input);
   const jobKey = String(input.job_key || "");
   if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
