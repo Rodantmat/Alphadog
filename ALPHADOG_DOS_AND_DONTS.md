@@ -978,6 +978,23 @@ architecture context.
   diluting the opposing_pitcher_quality signal with staleness. Not fixed this session (needs
   identifying and updating whichever mining step writes this table with proper deactivation logic,
   its own scoped piece of work) - flagged clearly as the next real, confirmed item.
+  **RESOLVED 2026-08-14**: root cause was different from the initial hypothesis - not a missing
+  deactivation step, but an unstable ID. `arsenal_id` included the array index from the scraped
+  Savant leaderboard rows (`pitch_type + '_' + i`), and that row order genuinely shifts between
+  scrapes (re-sorting, pitchers added/removed), so the same pitcher's same pitch got a different
+  index and therefore a different ID nearly every run - silently defeating `ON CONFLICT` every
+  single time. Exactly the same failure class as the stadium ID bug found earlier this session
+  (an unstable/mismatched identifier defeating conflict resolution), just manifesting as an
+  unstable index instead of an unstable format. Fixed in both writer functions
+  (`runReminePitcherArsenalToPostgres` and the CSV-based V2 the weekly differential actually
+  calls) by dropping the index suffix - `mlb_player_id + season_year + pitch_type/pitch_name` is
+  already a genuinely stable, unique natural key (one arsenal row per pitch type per pitcher per
+  season is the correct granularity). Verified live with a real double-run test: ran the fixed
+  miner twice in immediate succession and confirmed the second run updated the exact same 4
+  arsenal_ids the first run created (matching `updated_at` within seconds), proving `ON CONFLICT`
+  now correctly matches instead of duplicating. Cleaned up 13,565 confirmed-superseded old-format
+  rows (verified each had a matching new-format replacement before deleting); 10 old-format rows
+  without a confirmed replacement were left untouched rather than deleted speculatively.
 - **Audit status: every enrichment factor in the system has now been checked at least once**,
   either empirically (residual test, out-of-sample partial correlation, or direct ERA/outcome
   cross-check) or via careful formula-and-sign tracing grounded in established research where a
