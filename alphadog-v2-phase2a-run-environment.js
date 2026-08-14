@@ -141,7 +141,7 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
   }
 }
 
-function classifyIntoTier(factorKey, legContext, thresholds) {
+function classifyIntoTier(factorKey, legContext, thresholds, propKey) {
   const ctx = legContext;
   const t = thresholds || {};
   if (factorKey === "platoon_handedness") {
