@@ -7418,13 +7418,6 @@ async function fullRunFullDepth(env,input={}){
 }
 
 async function fullRun(env,input={}){
-  const DEAD_D1_MODES = new Set(["expansion_baseline_sanity","expansion-baseline-sanity","expansion_baseline_hp","expansion-baseline-hp","expansion_delta_sanity","expansion-delta-sanity","expansion_delta_hp","expansion-delta-hp","expansion_line_inventory","expansion-baseline-line-inventory","expansion_baseline_certifier","expansion-baseline-certifier","expansion_baseline_full_run","expansion-baseline-full-run","expansion_delta_full_run","expansion-delta-full-run","baseline_v5_state_hydrate","baseline_v5_stateful_delta","baseline_v5_classification_rescue","baseline_v5_base_rescue","baseline_v5_classification_daily_delta","baseline_v5_hp_daily_delta"]);
-  if (DEAD_D1_MODES.has(mode)) {
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, mode, status: "DEAD_D1_DEPENDENCY_CONFIRMED_DELETED",
-      error: "This mode calls legacy code bound to a D1 database that has been physically deleted from Cloudflare (confirmed directly 2026-08-14, not just deprecated by policy - all 11 D1 databases in this system return 'has been deleted' on any query). This is not a transient bug and cannot be retried into working.",
-      superseded_note: "For the expansion_baseline_* / expansion_delta_* family specifically: confirmed the live table this feeds (context.first_inning_pitcher, used by real-time rfi_nrfi scoring) is kept fully fresh by expansion_baseline_mining and expansion_delta_mining alone, which are genuinely Postgres-native and working - this dead sanity/hp/certifier/full_run stage of the old multi-step architecture is not needed for current live scoring, matching the same superseded-V5 pattern already found and tagged in classification.baseline_current tonight.",
-      allowed_working_modes_in_this_family: ["expansion_baseline_mining", "expansion_delta_mining"] };
-  }
   const mode=String(input.mode||input.expansion_mode||"");
   if(mode==="expansion_delta_full_run" || mode==="expansion-delta-full-run") return deltaFullRun(env,input);
   if(input.force_full_baseline===true || input.full_depth_base===true || input.disable_delta_auto===true) return fullRunFullDepth(env,input);
