@@ -631,6 +631,49 @@ architecture context.
   stale tables without confirming nothing else still depends on them - this correction identifies
   the mismatch, it does not yet fully resolve which V5 remnants (if any) are safe to clean up.
 
+### DEFINITIVE 2026-08-14: D1 is not deprecated, it is physically deleted - confirmed directly, all 11 databases
+- Resolved the open question above by testing directly rather than assuming: called `run_sql`
+  against every one of the 11 D1 bindings still listed in this worker's wrangler config
+  (CONTROL_DB, CONFIG_DB, REF_DB, STATS_HITTER_DB, STATS_PITCHER_DB, TEAM_DB, DAILY_DB, MARKET_DB,
+  CONTEXT_DB, SCORE_DB, ARCHIVE_DB). **Every single one returns
+  `D1_ERROR: D1 database <id> has been deleted.`** This is not "we should stop using D1" as a
+  policy going forward - the actual databases have been physically removed from Cloudflare. The
+  wrangler configs still list the bindings (stale references to now-nonexistent databases), which
+  is harmless by itself, but any code that actually tries to use one will always fail.
+- **This directly explains a real, confirmed bug class**: `alphadog-v2-phase3a-first-inning-pitcher-context.js`
+  had 14 dispatch mode entries (`expansion_baseline_sanity`, `expansion_baseline_hp`,
+  `expansion_delta_sanity`, `expansion_delta_hp`, `expansion_line_inventory`,
+  `expansion_baseline_certifier`, `expansion_baseline_full_run`, `expansion_delta_full_run`,
+  `baseline_v5_state_hydrate`, `baseline_v5_stateful_delta`, `baseline_v5_classification_rescue`,
+  `baseline_v5_base_rescue`, `baseline_v5_classification_daily_delta`, `baseline_v5_hp_daily_delta`,
+  plus the 2 already found/fixed earlier the same night - `baseline_v5_classification_base`,
+  `baseline_v5_base`) that all called D1-bound legacy code and all failed identically with the
+  confusing native error `Cannot read properties of undefined (reading 'prepare')` - confirmed by
+  directly invoking every one of them live, not assumed from reading code alone.
+- **Confirmed these are genuinely superseded, not just broken** - not something to "fix" by
+  restoring D1 access (impossible - the databases are gone) or by porting the D1 logic to
+  Postgres (unnecessary work): `context.first_inning_pitcher`, the real table `rfi_nrfi` live
+  scoring actually reads, is kept fully fresh by `expansion_baseline_mining` and
+  `expansion_delta_mining` alone - both genuinely Postgres-native, both confirmed working live.
+  The dead sanity/hp/certifier/full_run/rescue/daily-delta stages implement an older, multi-step
+  architecture that a simpler direct-mining-to-Postgres approach already replaced - the exact same
+  pattern as the V5-to-V6 classification split found and tagged earlier the same night, just at
+  the code-dispatch level instead of the database-table level.
+- **Real fix applied, not just documented**: added an explicit `DEAD_D1_MODES` guard at the top
+  of the main dispatch function that returns a clear, honest `DEAD_D1_DEPENDENCY_CONFIRMED_DELETED`
+  status with a full explanation and a pointer to the 2 real working modes in the same family,
+  instead of letting these 14 modes fall through to the confusing native error. Caught and fixed a
+  real mistake in my own first attempt at this: the initial patch matched a non-unique `old_str`
+  and landed inside the wrong function (`fullRun()`, a leaf function only reachable after dispatch
+  already routed elsewhere) rather than the actual top-level dispatch - found via a direct grep
+  re-check before declaring it done, corrected, and reverified live against both a dead mode
+  (confirmed clean error) and a working mode (confirmed unaffected) after the fix.
+- **Standing rule for any future session**: never assume a D1 binding listed in a wrangler config
+  is live just because it's present - the config can (and here, extensively does) reference
+  databases that no longer exist. If a worker's error message is a generic
+  `Cannot read properties of undefined` pointing at `.prepare`, `.bind`, `.run`, or `.all` on an
+  `env.*_DB` object, check whether that specific D1 database has actually been deleted
+  (`run_sql` against it directly) before assuming it's a code bug to debug.
 ### THE SINGLE MOST IMPORTANT RULE OF THIS ENTIRE MIGRATION, VIOLATED ONCE AND CORRECTED — READ THIS BEFORE WRITING ANY NEW CODE
 - **This session, while implementing a scheduling fix, a new D1 table (`control_kv`, in
   `CONTROL_DB`) was created to store a single "last triggered Pacific date" marker value.** This
