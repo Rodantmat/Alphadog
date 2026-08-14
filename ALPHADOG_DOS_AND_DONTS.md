@@ -899,6 +899,18 @@ architecture context.
   silent no-op, not actively wrong), but unrealized - flagged for a future session rather than
   rushed here, since implementing it properly needs the same research-plus-validation rigor as
   everything else in this audit, not a guessed coefficient.
+  **RESOLVED 2026-08-14**: checked the stadium dictionary (`ref.stadiums.park_json`) and
+  `ref.park_factors` for any existing roof-open/closed split - neither has one, park factors are a
+  single season-blended value per venue regardless of roof state. Researched published roof-status
+  effects (Rogers Centre, Chase Field) - real but small, and confounded: roofs close BECAUSE of
+  cold/windy/rainy conditions, which independently suppress offense and are already captured by
+  this system's dedicated weather_temp_altitude_pressure/weather_wind/weather_precip factors. A
+  naive roof-status coefficient would likely double-count that same weather signal through a
+  second channel - the identical failure mode the altitude term is already zeroed to avoid.
+  Confirmed no historical roof-status data exists to test empirically either (the one field that
+  could carry it, `context.history_game_weather.condition`, is null for every retractable-venue
+  game on record). Converted from a silent, undocumented `return 0` into an explicit, reasoned,
+  commented one in the code itself - the gap is now a documented decision, not an open question.
 - **Audit status: every enrichment factor in the system has now been checked at least once**,
   either empirically (residual test, out-of-sample partial correlation, or direct ERA/outcome
   cross-check) or via careful formula-and-sign tracing grounded in established research where a
