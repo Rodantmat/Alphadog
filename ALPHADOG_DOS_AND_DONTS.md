@@ -949,6 +949,35 @@ architecture context.
   strong lead), (3) confirm the data it mines is being consumed correctly downstream and that
   its own mining functions are wired and working as intended - a full review, not just the ID
   format question.
+  **RESOLVED 2026-08-14**: confirmed definitively via `control.runner_locks` - the lock for
+  `alphadog_weekly_differential_full_run` was acquired at 2026-08-09T03:01:07Z, exactly 38 seconds
+  before the 30 duplicate `ref.stadiums` rows were created (2026-08-09T03:01:45Z). This IS the
+  source, confirmed by timestamp, not inferred. Its `scheduled()` handler is real and live (unlike
+  the four daily runners, which are documented as retired). Root-caused the exact bug in
+  `runRemineRefStadiumsToPostgres` (called by this runner's step 3 of 13, inside
+  `alphadog-v2-phase3a-first-inning-pitcher-context.js`): (1) `stadium_id: String(v.id)` used the
+  bare venue ID instead of the system-wide `mlb_venue_X_team_Y` convention, so `ON CONFLICT` could
+  never match the existing correct row and silently inserted a fresh duplicate every single weekly
+  run; (2) `roof_type` was being overwritten from an MLB API field (`v.fieldInfo.roofType`) that
+  returns unreliably (confirmed null for all 30 venues in the actual bad rows), clobbering the
+  correct, hand-curated values `alphadog-v2-static-stadiums.js` already maintains as the
+  authoritative source. Fixed both: builds the same composite ID via a venue-to-team map from the
+  same teams response already being fetched, and changed the `ON CONFLICT` clause to
+  `COALESCE(existing, new)` for roof_type/turf_type so a bad API response can never overwrite a
+  good curated value again. Verified live: ran the fixed function directly, confirmed zero new
+  duplicates and all 7 retractable venues' `roof_type` correctly preserved.
+  **Swept the runner's other tables for the same failure class** (per the "confirm data is
+  consumed properly and mining functions are well wired" ask): teams and players showed zero
+  duplicates - the bug was isolated to stadiums, not systemic across this runner's whole chain.
+  Found one more real, separate issue while sweeping: `ref.pitcher_arsenal` (a genuine, intentional
+  historical time-series table, confirmed NOT a duplicate bug itself - multiple snapshots per
+  pitch over time is by design) never deactivates old snapshots - every historical row for a given
+  player+pitch stays `active=1` forever. Since `phase2a-run-environment.js`'s
+  `pitcherQualityByPitcherId` computation reads `WHERE active=1` expecting that to mean "current,"
+  it's silently averaging together weeks of stale snapshots instead of using just the latest one -
+  diluting the opposing_pitcher_quality signal with staleness. Not fixed this session (needs
+  identifying and updating whichever mining step writes this table with proper deactivation logic,
+  its own scoped piece of work) - flagged clearly as the next real, confirmed item.
 - **Audit status: every enrichment factor in the system has now been checked at least once**,
   either empirically (residual test, out-of-sample partial correlation, or direct ERA/outcome
   cross-check) or via careful formula-and-sign tracing grounded in established research where a
