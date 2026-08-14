@@ -76,6 +76,27 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// REAL GAP FOUND AND FIXED 2026-08-14: this worker never logged to control.claude_session_log
+// at all, unlike every other runner in this system (master, daily-delta, board, etc.) - made it
+// genuinely impossible to verify whether/when its cron has actually fired. Logs both cron and
+// manual triggers, and never lets a logging failure break the actual run.
+async function logExecution(env, result, input) {
+  try {
+    const client = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false, connect_timeout: 8 });
+    try {
+      await client`
+        INSERT INTO control.claude_session_log (topic, finding, status, next_step) VALUES (
+          'AUTOMATED_weekly_differential_run',
+          ${`Trigger: ${input.trigger || "manual"}${input.cron ? ` (cron: ${input.cron})` : ""}. run_id=${result.run_id}. certification=${result.certification}. total_calls=${result.total_calls || 0}. steps_completed=${(result.steps || []).length}. connections_terminated=${result.preflight ? result.preflight.connections_terminated : "n/a"}.`},
+          ${result.certification || (result.ok ? "COMPLETED" : "FAILED")},
+          ${result.ok ? null : "Weekly differential run did not complete - check steps array for failed_at_step."}
+        )`;
+    } finally {
+      await client.end({ timeout: 1 }).catch(() => {});
+    }
+  } catch (_) { /* logging must never break the actual run */ }
+}
+
 async function callStep(binding, input, attempt = 1) {
   const started = Date.now();
   if (!binding || typeof binding.fetch !== "function") {
