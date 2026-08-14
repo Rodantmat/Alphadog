@@ -491,7 +491,7 @@ def make_config(worker_name, include_services=False):
         # outcome-grader, calibration-scheduler, and master-runner. Using their proven fix:
         # temporarily set to an impossible date to force genuine re-registration, deploy, then
         # restore the real schedule in a second deploy.
-        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+        cfg["triggers"] = {"crons": ["0 9 * * 1"]}
     if worker_name == "alphadog-v2-daily-delta-runner":
         # Split into two independently-locked parts (2026-08-02): Part 1 (mining through
         # metrics) completes fully in one cron-triggered call. Part 2 (classification/baseline,
