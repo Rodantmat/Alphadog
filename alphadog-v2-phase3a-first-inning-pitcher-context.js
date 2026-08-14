@@ -1467,7 +1467,16 @@ async function runFitPlattCalibration(env, input = {}) {
     // to score.platt_calibration_map or score.calibration_correction_map unless the caller
     // explicitly passes dry_run=false - a deliberate, human-initiated decision each time.
     const dryRun = input.dry_run !== false;
-    const propSideRows = await sql`SELECT DISTINCT canonical_prop_key, selected_side FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL AND selected_side IS NOT NULL`;
+    // REAL FIX (2026-08-14): previously this query always fit every (prop, side) pair found,
+    // and any props filter only trimmed the RESPONSE afterward - meaning a caller asking to
+    // apply corrections for specific props would silently also write/refresh unrelated ones
+    // that happened to validate in the same pass. Confirmed live: requesting 5 props also
+    // refreshed 5 unrelated ones, visible only via their fit_at timestamps. Now genuinely
+    // scopes the underlying query when input.props is provided; omitting it is unchanged.
+    const requestedProps = Array.isArray(input.props) && input.props.length ? input.props.map(String) : null;
+    const propSideRows = requestedProps
+      ? await sql`SELECT DISTINCT canonical_prop_key, selected_side FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL AND selected_side IS NOT NULL AND canonical_prop_key = ANY(${requestedProps})`
+      : await sql`SELECT DISTINCT canonical_prop_key, selected_side FROM score.prop_outcome_history WHERE outcome_hit IS NOT NULL AND selected_side IS NOT NULL`;
     const results = [];
     for (const { canonical_prop_key: propKey, selected_side: fitSide } of propSideRows) {
       // official_date (real game date) is the correct chronological key - NOT resolved_at, which
