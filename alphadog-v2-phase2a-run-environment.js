@@ -709,6 +709,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     recent3_hits_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.hits_ratio ?? null,
     recent3_bb_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.bb_ratio ?? null,
     recent3_k_ratio: ctxMaps.recentFormByPlayer.get(String(playerId))?.k_ratio ?? null,
+    hitter_season_games: ctxMaps.seasonGamesByPlayer.get(Number(playerId)) ?? null,
   };
 }
 
