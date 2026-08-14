@@ -749,7 +749,7 @@ async function enrichLeg(matrixRow, config, legContext) {
         matchedCellForCap = matchingCell;
       }
     } else if (factor.variation_type === "tiered_bands") {
-      const tier = classifyIntoTier(factor.factor_key, legContext, config.thresholdsByFactor.get(factor.factor_key));
+      const tier = classifyIntoTier(factor.factor_key, legContext, config.thresholdsByFactor.get(factor.factor_key), propKey);
       if (tier) {
         const matchingCell = cells.find(c => c.prop_key === propKey && c.tier_label === tier);
         if (matchingCell) { contribution = matchingCell.lift || -1 * (matchingCell.penalty || 0); cellUsed = matchingCell.cell_id; matchedCellForCap = matchingCell; }
