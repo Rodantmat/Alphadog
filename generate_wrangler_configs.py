@@ -203,6 +203,7 @@ def make_config(worker_name, include_services=False):
         "alphadog-v2-score-final-board",
         "alphadog-v2-certification-center",
         "alphadog-v2-board-ui",
+        "alphadog-v2-gbdt-auto-trigger",
     ):
         # Postgres cutover (static-full-run chain, stages 1-4 so far): these workers now read/
         # write DigitalOcean Postgres via Hyperdrive instead of their old D1 tables. Same reason
