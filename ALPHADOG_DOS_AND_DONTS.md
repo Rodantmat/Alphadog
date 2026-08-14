@@ -737,6 +737,27 @@ architecture context.
   guard used for the phase3a expansion_baseline chain, or simply confirm nothing references it
   and remove it outright, given its D1 dependency is unfixable regardless.
 
+### Dual outcome-grading systems - researched origin via chat history, real fix applied (not a removal)
+- Found `score.prop_outcome_history` had two independent active writers for weeks -
+  `resolve_prop_outcomes` (in phase3a, data back to 7/24) and `alphadog-v2-outcome-grader.js`
+  (dedicated worker). Confirmed on one real night: 6717 total rows but only 2862 distinct
+  (player, prop, line, side) combos.
+- Origin confirmed via chat history: outcome-grader.js was built 2026-07-30, logged explicitly as
+  solving "no automated pipeline feeding score.prop_outcome_history." resolve_prop_outcomes
+  predates it, was the earlier ad-hoc mechanism, never formally retired once the real fix shipped.
+- Not removed - resolve_prop_outcomes has a real purpose (configurable lookback_days catch-up
+  safety net for dates outcome-grader might miss). The bug was that neither could see the other's
+  rows (incompatible outcome_id formats), not that both existing was itself wrong.
+- Fixed bidirectionally: resolve_prop_outcomes now dedupes by logical identity (player/prop/line/
+  side/date) instead of final_board_row_id. outcome-grader.js now excludes resolve_prop_outcomes'
+  rows specifically (outcome_id LIKE 'outcome_final|%'), scoped narrowly so its own intentional
+  re-run/update behavior on its own rows is preserved. Verified live both directions: outcome-grader
+  re-run on an already-graded date still returns full counts; resolve_prop_outcomes re-run dropped
+  from thousands of redundant candidates to 53 genuinely-unresolved ones.
+- Not done: existing historical duplicate rows from before this fix were not retroactively cleaned
+  up - only prevents new duplication going forward. Both systems agreed on actual_stat_value in
+  every case checked, so this inflates sample counts in calibration_report but doesn't corrupt values.
+
 ### Update: score-audit.js tagging done, plus a separate serious finding (gbdt-auto-trigger)
 - **score-audit.js tagging completed 2026-08-14**: a top-of-file comment block and a
   `dead_code_warning` field baked into `baseIdentity()` (surfaces on every response this file
