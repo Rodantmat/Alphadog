@@ -582,9 +582,19 @@ async function reconcileStaleRunningFinalBoard(pgClient, input, engine, started)
   const stale = staleRows[0];
   if (!stale || !stale.final_board_batch_id) return null;
   const staleBatchId = stale.final_board_batch_id;
-  const historyRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_history WHERE final_board_batch_id = ${staleBatchId}`;
-  const historyCount = Number(historyRows[0] && historyRows[0].rows || 0);
-  if (historyCount <= 0) return null;
+  const firstCountRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_history WHERE final_board_batch_id = ${staleBatchId}`;
+  const firstCount = Number(firstCountRows[0] && firstCountRows[0].rows || 0);
+  if (firstCount <= 0) return null;
+  // REAL FIX (found live 2026-08-14, bit twice the same night - 2550-row and 300-row silent
+  // truncations of a ~3000-5000 row board): a single history-count snapshot cannot tell a
+  // background writer that has genuinely finished apart from one that is still actively adding
+  // rows via ctx.waitUntil past this caller's own timeout. Blindly reconciling the first snapshot
+  // marks the batch finished_at=now() and orphans any further rows the real writer would still
+  // add. Require the count to be stable across a short wait before trusting it as final.
+  await new Promise(resolve => setTimeout(resolve, 4000));
+  const secondCountRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_history WHERE final_board_batch_id = ${staleBatchId}`;
+  const historyCount = Number(secondCountRows[0] && secondCountRows[0].rows || 0);
+  if (historyCount !== firstCount) return null;
   await copyHistoryToCurrent(pgClient, staleBatchId);
   const currentRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_current WHERE final_board_batch_id = ${staleBatchId}`;
   const currentCount = Number(currentRows[0] && currentRows[0].rows || 0);
@@ -599,7 +609,7 @@ async function reconcileStaleRunningFinalBoard(pgClient, input, engine, started)
     stale_running_batch_reconciled: true, copied_history_to_current: true, by_tier_source: byTierSource, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true,
     elapsed_ms: Date.now() - started, timestamp_utc: nowUtc()
   };
-  await writeIssue(pgClient, staleBatchId, engine.batch_id, "SERVICE_BINDING_TIMEOUT_RECONCILED", "WARNING", 1, { note: "Prior invocation wrote history/current evidence but timed out before finalizing the batch row. Rebuilt current from history, verified invariants, and finalized the batch." });
+  await writeIssue(pgClient, staleBatchId, engine.batch_id, "SERVICE_BINDING_TIMEOUT_RECONCILED", "WARNING", 1, { note: "Prior invocation wrote history/current evidence but timed out before finalizing the batch row. Rebuilt current from history, verified invariants, and finalized the batch.", stability_checked: true });
   await pgClient`UPDATE score.final_board_batches SET worker_version=${VERSION}, source_simulation_batch_id=NULL, source_engine_batch_id=${engine.batch_id}, source_scoring_worker_version=${engine.worker_version}, profile_key=${PRIMARY_PROFILE}, status=${output.status}, certification=${output.certification}, certification_grade=${output.certification_grade}, matrix_rows_read=${output.matrix_rows_read}, live_rows_read=${output.live_rows_read}, final_rows_written=${output.final_rows_written}, current_rows_written=${output.current_rows_written}, finished_at=now(), output_json=${safeJson(output)} WHERE final_board_batch_id=${staleBatchId}`;
   return output;
 }
