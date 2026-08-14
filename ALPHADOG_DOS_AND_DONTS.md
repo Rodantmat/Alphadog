@@ -939,6 +939,16 @@ architecture context.
   n=77 result, but worth revisiting once meaningfully more games accumulate, and going forward any
   new `daily-weather` run should now correctly classify these 7 venues instead of hitting the
   duplicate-row ambiguity that caused the original "unknown" misclassification.
+- **Open issue flagged 2026-08-14, not yet investigated**: Rodolfo's direct hint - the duplicate
+  stadium rows (and possibly other duplication elsewhere) may trace back to
+  `alphadog-v2-weekly-differential-runner`, the only full-run chain still dispatched via a
+  scheduled cron/runner rather than manual coworker invocation (see PART 6's retirement note -
+  this one may be an exception that was never actually stopped). Needs: (1) confirm whether its
+  cron is genuinely still firing weekly, (2) review what it writes and whether its write logic
+  uses the correct ID conventions (the bare-numeric stadium_id pattern found this session is a
+  strong lead), (3) confirm the data it mines is being consumed correctly downstream and that
+  its own mining functions are wired and working as intended - a full review, not just the ID
+  format question.
 - **Audit status: every enrichment factor in the system has now been checked at least once**,
   either empirically (residual test, out-of-sample partial correlation, or direct ERA/outcome
   cross-check) or via careful formula-and-sign tracing grounded in established research where a
