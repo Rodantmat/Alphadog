@@ -608,7 +608,8 @@ async function loadRealLegContexts(pgClient, matrixRows) {
     lineupByGameTeamSorted,
     leagueAvgObp,
     avgBattersFacedByPitcher,
-    recentFormByPlayer
+    recentFormByPlayer,
+    seasonGamesByPlayer
   };
 }
 
