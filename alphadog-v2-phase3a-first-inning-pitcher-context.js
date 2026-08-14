@@ -1944,7 +1944,7 @@ async function runResolvePropOutcomes(env, input = {}) {
     const gamePks = [...new Set(rows.map(r => String(r.game_pk)))];
     const gamePksLiteral = "{" + gamePks.join(",") + "}";
     const hitterLogs = await sql`SELECT player_id, game_pk, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases, pa, ab, raw_json FROM stats_hitter.game_logs WHERE game_pk = ANY(${gamePksLiteral}::bigint[])`;
-    const pitcherLogs = await sql`SELECT player_id, game_pk, outs_recorded, hits_allowed, earned_runs, walks_allowed, strikeouts, runs_allowed, home_runs_allowed, raw_json FROM stats_pitcher.game_logs WHERE game_pk = ANY(${gamePksLiteral}::bigint[])`;
+    const pitcherLogs = await sql`SELECT player_id, game_pk, outs_recorded, hits_allowed, earned_runs, walks_allowed, strikeouts, runs_allowed, home_runs_allowed, wins, raw_json FROM stats_pitcher.game_logs WHERE game_pk = ANY(${gamePksLiteral}::bigint[])`;
     const hitterByKey = new Map(hitterLogs.map(r => [`${r.player_id}|${r.game_pk}`, r]));
     const pitcherByKey = new Map(pitcherLogs.map(r => [`${r.player_id}|${r.game_pk}`, r]));
 
