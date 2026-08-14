@@ -1659,9 +1659,16 @@ async function runFitPlattCalibration(env, input = {}) {
             }
             const isoCols = ["correction_id", "canonical_prop_key", "factor_family", "line_bucket", "raw_p_bin_low", "raw_p_bin_high", "raw_p_bin_mid", "empirical_rate", "n_players", "n_test_games", "correction_delta", "methodology", "selected_side", "notes"];
             if (!dryRun) {
-              await sql`UPDATE score.calibration_correction_map SET methodology = REPLACE('DEACTIVATED_superseded_by_fresh_refit_' || methodology, 'post_rootfix', 'ROOTFIXTAG_DEACTIVATED')
-                WHERE canonical_prop_key = ${propKey} AND selected_side = ${fitSide} AND methodology LIKE '%post_rootfix%'
-                AND correction_id NOT IN ${sql(isoRows.map(r => r.correction_id))}`;
+              const isoRowsCorrectionIds = isoRows.map(r => r.correction_id);
+              if (isoRowsCorrectionIds.length) {
+                const isoRowsIdsLit = "{" + isoRowsCorrectionIds.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(",") + "}";
+                await sql`UPDATE score.calibration_correction_map SET methodology = REPLACE('DEACTIVATED_superseded_by_fresh_refit_' || methodology, 'post_rootfix', 'ROOTFIXTAG_DEACTIVATED')
+                  WHERE canonical_prop_key = ${propKey} AND selected_side = ${fitSide} AND methodology LIKE '%post_rootfix%'
+                  AND NOT (correction_id = ANY(${isoRowsIdsLit}::text[]))`;
+              } else {
+                await sql`UPDATE score.calibration_correction_map SET methodology = REPLACE('DEACTIVATED_superseded_by_fresh_refit_' || methodology, 'post_rootfix', 'ROOTFIXTAG_DEACTIVATED')
+                  WHERE canonical_prop_key = ${propKey} AND selected_side = ${fitSide} AND methodology LIKE '%post_rootfix%'`;
+              }
               await sql`INSERT INTO score.calibration_correction_map ${sql(isoRows, ...isoCols)}
                 ON CONFLICT (correction_id) DO UPDATE SET methodology=excluded.methodology, empirical_rate=excluded.empirical_rate, correction_delta=excluded.correction_delta, n_players=excluded.n_players, n_test_games=excluded.n_test_games, notes=excluded.notes, fit_at=now()`;
             }
