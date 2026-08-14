@@ -610,6 +610,26 @@ architecture context.
   re-open this question in a future session without the user explicitly raising it again — it is
   isolated (own tables, own write-guard, `no_current_baseline_mutation: true`,
   `no_full_run_integration: true`) and not costing correctness, only some disk space.
+- **CRITICAL CORRECTION 2026-08-14 - the paragraph above is backwards and was never re-verified
+  against live code until now.** While auditing the classification/baseline layer's freshness for
+  the first time this session (previously untouched - all prior work this session was on the
+  enrichment layer downstream of it), found: `classification.baseline_current` and
+  `classification.player_classification_current` (the tables PART 4-5 call "current, active V5")
+  are genuinely stale - 20 and 17 days respectively (last updated 2026-07-24 and 2026-07-27).
+  Meanwhile `classification.baseline_v6_current` and `classification.classification_v6_current`
+  (the tables this section calls "isolated V6, not integrated") are fresh as of TODAY
+  (2026-08-13). Confirmed definitively, not inferred: `alphadog-v2-phase3c-certifier.js` - the
+  real, live worker generating the actual HP board run repeatedly tonight - has its own
+  `identity()` endpoint explicitly declaring `upstream_reads: "...classification.baseline_v6_current"`,
+  and its actual query (`determineSide`, line ~271) reads `FROM classification.baseline_v6_current`
+  directly. **V6 is not isolated - it is the real, live, currently-serving system. V5 is the one
+  that appears genuinely abandoned.** This may reflect a real architecture change made sometime
+  after PART 4-5 were written (a migration from V5 to V6 that was never reflected back into this
+  document), not an error in those sections at the time they were written - but the CURRENT state,
+  right now, is the opposite of what's documented above. **Do not trust the "V6 is isolated,
+  ignore it" framing without re-verifying live code first**, and do not delete/deprecate V5's
+  stale tables without confirming nothing else still depends on them - this correction identifies
+  the mismatch, it does not yet fully resolve which V5 remnants (if any) are safe to clean up.
 
 ### THE SINGLE MOST IMPORTANT RULE OF THIS ENTIRE MIGRATION, VIOLATED ONCE AND CORRECTED — READ THIS BEFORE WRITING ANY NEW CODE
 - **This session, while implementing a scheduling fix, a new D1 table (`control_kv`, in
