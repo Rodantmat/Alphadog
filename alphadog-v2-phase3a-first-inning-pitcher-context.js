@@ -9620,7 +9620,7 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
       INSERT INTO stats_pitcher.game_logs ${sql(dedupedPitchers, ...pCols)}
       ON CONFLICT (log_id) DO UPDATE SET innings_pitched_decimal=excluded.innings_pitched_decimal, batters_faced=excluded.batters_faced,
         hits_allowed=excluded.hits_allowed, earned_runs=excluded.earned_runs, runs_allowed=excluded.runs_allowed, walks_allowed=excluded.walks_allowed,
-        strikeouts=excluded.strikeouts, home_runs_allowed=excluded.home_runs_allowed, outs_recorded=excluded.outs_recorded,
+        strikeouts=excluded.strikeouts, home_runs_allowed=excluded.home_runs_allowed, outs_recorded=excluded.outs_recorded, wins=excluded.wins,
         raw_json=excluded.raw_json, updated_at=now()`;
     await sql.end();
     return {
