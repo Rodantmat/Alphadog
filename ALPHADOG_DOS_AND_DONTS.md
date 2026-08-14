@@ -906,6 +906,18 @@ architecture context.
   every other prop's classification is unchanged. Verified the field itself was already correctly
   wired into the leg context (a false alarm during verification, caught and corrected by a
   non-truncated re-check before making an unnecessary change) and confirmed deployed.
+  **Extended further 2026-08-14**: `earned_runs`/`hits_allowed` were still using the strikeouts
+  proxy too. Tested the third available dedicated signal, `runs_delta_vs_league` (n=2489):
+  earned_runs improved from 0.004 (proxy) to 0.092, hits_allowed from -0.003 to 0.074 - both
+  correctly signed already (positive = umpire's games see more runs than league average = more
+  runs/hits for batters). Routed both props to this dedicated signal, same prop-aware pattern.
+  `umpire_tendency` now uses its most precise available signal for every prop it covers.
+- **`times_through_order`'s remaining 4 declared-relevant props** (hits_allowed, earned_runs,
+  walks_allowed, runs_allowed) were flagged as untested when the factor was deactivated for
+  pitcher_strikeouts. **Tested and closed 2026-08-14**: residual correlation is exactly zero for
+  all four (same mechanical redundancy with the season-average baseline as pitcher_strikeouts
+  showed), n=11594. Confirms deactivation was correct for the whole factor, not just the one prop
+  that happened to be built - no further action needed on this factor.
 - **`bullpen_fatigue`, `lineup_slot`, `lineup_surrounding_quality`, `schedule_travel_fatigue`,
   `weather_wind`, `weather_temp_altitude_pressure`**: verified by tracing each formula's sign
   against well-established, physically or statistically grounded expected direction (fatigued
