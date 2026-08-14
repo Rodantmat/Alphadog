@@ -131,7 +131,7 @@ async function runWeeklyDifferentialFullRun(env, input) {
 
   const lock = await tryAcquireLock(env, runId);
   if (!lock.acquired) {
-    return {
+    const skippedResult = {
       ok: true,
       data_ok: true,
       version: VERSION,
@@ -145,11 +145,15 @@ async function runWeeklyDifferentialFullRun(env, input) {
       preflight,
       steps: []
     };
+    await logExecution(env, skippedResult, input);
+    return skippedResult;
   }
 
   try {
     const result = await runWeeklyDifferentialFullRunLocked(env, input, runId, startedAt);
-    return { ...result, preflight };
+    const finalResult = { ...result, preflight };
+    await logExecution(env, finalResult, input);
+    return finalResult;
   } finally {
     await releaseLock(lock.client, runId);
   }
