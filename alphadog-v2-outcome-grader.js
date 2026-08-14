@@ -121,7 +121,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
         ELSE NULL END AS is_hit,
       (actual_value IS NOT NULL AND actual_value = line_value) AS is_tie
     FROM graded
-    WHERE actual_value IS NOT NULL OR is_final = true
+    WHERE (actual_value IS NOT NULL OR is_final = true) AND existing.outcome_id IS NULL
   `, [targetDate, propLiteral]);
 
   if (!rows.length) {
