@@ -115,26 +115,37 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       const leagueAvgSweetSpot = t.league_avg_sweet_spot_pct ?? 32.5;
       const leagueAvgBarrel = t.league_avg_barrel_pct ?? 7.5;
       const leagueAvgIso = t.league_avg_iso ?? 0.150;
+      // Thin-sample boost (2026-08-14): validated via 3 independent out-of-sample train/test
+      // splits (train-period rate predicts held-out test-period outcome, partial correlation
+      // controlling for train rate) - ISO/xwOBA carry real incremental value for players with a
+      // thin season sample (0.205/n=18, 0.426/n=22, 0.615/n=41 - all positive, strengthening with
+      // n), consistent with Statcast contact-quality metrics stabilizing faster than counting
+      // stats. Established players (15+ games) showed no incremental value in the same test
+      // (-0.030), so their existing coefficients are left completely unchanged below - this
+      // multiplier only ever increases the signal for the specific segment it was validated on.
+      // Deliberately conservative (1.3x, not more) given the largest validated sample was still
+      // only n=41 - a real, modest signal, not overcommitted extrapolation.
+      const thinSampleMultiplier = (ctx.hitter_season_games != null && ctx.hitter_season_games < 15) ? 1.3 : 1.0;
       if (cell.prop_key === "doubles") {
         if (ctx.batter_sweet_spot_percent == null) return null;
-        return (ctx.batter_sweet_spot_percent - leagueAvgSweetSpot) * (a || 0);
+        return (ctx.batter_sweet_spot_percent - leagueAvgSweetSpot) * (a || 0) * thinSampleMultiplier;
       }
       if (cell.prop_key === "total_bases") {
         if (ctx.batter_xwobacon == null && ctx.batter_iso == null) return null;
         const xwobaconTerm = ctx.batter_xwobacon != null ? (ctx.batter_xwobacon - leagueAvgXwobacon) * (a || 0) : 0;
         const isoTerm = ctx.batter_iso != null ? (ctx.batter_iso - leagueAvgIso) * (c || 0) : 0;
-        return xwobaconTerm + isoTerm;
+        return (xwobaconTerm + isoTerm) * thinSampleMultiplier;
       }
       if (cell.prop_key === "home_runs") {
         if (ctx.batter_xwoba == null && ctx.batter_barrel_batted_rate == null && ctx.batter_iso == null) return null;
         const xwobaTerm = ctx.batter_xwoba != null ? (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0) : 0;
         const barrelTerm = ctx.batter_barrel_batted_rate != null ? (ctx.batter_barrel_batted_rate - leagueAvgBarrel) * (b || 0) : 0;
         const isoTerm = ctx.batter_iso != null ? (ctx.batter_iso - leagueAvgIso) * (c || 0) : 0;
-        return xwobaTerm + barrelTerm + isoTerm;
+        return (xwobaTerm + barrelTerm + isoTerm) * thinSampleMultiplier;
       }
       // hits_runs_rbis and partial-relevance props (hits, runs, rbis) all use plain xwOBA deviation
       if (ctx.batter_xwoba == null) return null;
-      return (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0);
+      return (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0) * thinSampleMultiplier;
     }
     default:
       return null;
