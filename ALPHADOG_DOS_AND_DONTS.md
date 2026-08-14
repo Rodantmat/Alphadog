@@ -910,7 +910,35 @@ architecture context.
   Confirmed no historical roof-status data exists to test empirically either (the one field that
   could carry it, `context.history_game_weather.condition`, is null for every retractable-venue
   game on record). Converted from a silent, undocumented `return 0` into an explicit, reasoned,
-  commented one in the code itself - the gap is now a documented decision, not an open question.
+  commented one in the code itself.
+  **SUPERSEDED 2026-08-14 - finished properly rather than left as a documented no-op**: built a real
+  backfill (`POST /backfill-roof-status` on `alphadog-v2-daily-weather`, reusing the existing,
+  already-tested `extractMlbWeather` MLB-live-feed extraction logic) and populated genuine historical
+  roof status for all 79 finalized games at the 7 retractable-roof venues this season, writing into
+  two new columns on `context.history_game_weather` (`roof_status`, `roof_status_confidence`). With
+  real data in hand, ran the properly confound-controlled test instead of relying on external
+  research alone: raw correlation between closed-roof and total runs was 0.165 (n=77), but this
+  collapses to 0.042 (essentially noise) once controlling for each venue's own baseline scoring
+  level - confirming, with this system's own data, the same conclusion the careful published
+  research reached (Baseball Prospectus's confound-controlled Rogers Centre analysis: "almost no
+  roof-closed effect"). The `return 0` in the code stands, now backed by a direct empirical test on
+  real backfilled data, not just external citations.
+  **Real, separate bug found and fixed along the way**: while investigating why live weather
+  snapshots showed `roof_type: "unknown"` for these venues despite `ref.stadiums` correctly having
+  `roof_type='retractable'`, found 30 stale duplicate rows in `ref.stadiums` - one per MLB venue,
+  all created in a single batch on 2026-08-09, all using a bare-numeric `stadium_id` (e.g. `"14"`)
+  instead of the correct `mlb_venue_X_team_Y` convention, all with `roof_type` and `source_key`
+  NULL. This is the identical duplicate-ID-format failure mode already documented in PART 2 for
+  team IDs, now found in stadium IDs too. `ref.park_factors` had 29 rows referencing these bad IDs
+  via its own `stadium_id` column (the live enrichment lookup itself queries by `mlb_venue_id`
+  directly, so this wasn't actively corrupting predictions, but was a real, separate data-integrity
+  problem). Fixed by repointing all 29 `park_factors.stadium_id` references to the correct rows,
+  verifying zero other tables reference `stadium_id` at all, then deleting all 30 stale duplicates.
+  Verified `ref.stadiums` now has exactly one row per `mlb_venue_id` system-wide. The backfilled
+  roof-status data is preserved as a permanent, growing asset - not urgent to re-test given the
+  n=77 result, but worth revisiting once meaningfully more games accumulate, and going forward any
+  new `daily-weather` run should now correctly classify these 7 venues instead of hitting the
+  duplicate-row ambiguity that caused the original "unknown" misclassification.
 - **Audit status: every enrichment factor in the system has now been checked at least once**,
   either empirically (residual test, out-of-sample partial correlation, or direct ERA/outcome
   cross-check) or via careful formula-and-sign tracing grounded in established research where a
