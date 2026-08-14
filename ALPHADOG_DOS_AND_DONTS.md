@@ -736,6 +736,22 @@ architecture context.
   confirmed dead, not yet cleaned up. A future session could add the same `DEAD_D1_MODES`-style
   guard used for the phase3a expansion_baseline chain, or simply confirm nothing references it
   and remove it outright, given its D1 dependency is unfixable regardless.
+
+### Update: score-audit.js tagging done, plus a separate serious finding (gbdt-auto-trigger)
+- **score-audit.js tagging completed 2026-08-14**: a top-of-file comment block and a
+  `dead_code_warning` field baked into `baseIdentity()` (surfaces on every response this file
+  returns, not just `/health`). Confirmed live post-deploy. File itself not deleted - still a
+  candidate for outright removal once confirmed nothing references it.
+- **Separate, serious finding while re-checking GBDT**: `alphadog-v2-gbdt-auto-trigger` had a live
+  `"* * * * *"` (every-minute) cron trigger and D1 bindings that are physically deleted - meaning
+  it had been crashing on every single invocation, every minute, for as long as D1 has been gone.
+  The most severe single instance of this bug class found this session, by pure invocation
+  frequency. Ported to Postgres rather than tagged dead (real wanted feature, small file, PAT
+  credential already existed in config.external_credentials) - new tables
+  `control.gbdt_auto_trigger_switch`/`control.gbdt_training_requests`, defaults to disabled,
+  matching original posture. Hit and fixed the same generator-wipes-manual-jsonc-edits gotcha
+  documented elsewhere in this file (9th worker), by adding it to generate_wrangler_configs.py's
+  Postgres-cutover tuple directly. Confirmed live: `/health` and `/tick` both run cleanly now.
 ### THE SINGLE MOST IMPORTANT RULE OF THIS ENTIRE MIGRATION, VIOLATED ONCE AND CORRECTED — READ THIS BEFORE WRITING ANY NEW CODE
 - **This session, while implementing a scheduling fix, a new D1 table (`control_kv`, in
   `CONTROL_DB`) was created to store a single "last triggered Pacific date" marker value.** This
