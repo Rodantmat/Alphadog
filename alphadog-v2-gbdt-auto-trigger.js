@@ -1,3 +1,4 @@
+// Postgres-ported, Hyperdrive binding added to generate_wrangler_configs.py 2026-08-14.
 import postgres from "postgres";
 
 // PORTED FROM D1 TO POSTGRES 2026-08-14: the original D1-based version (CONFIG_DB, CONTROL_DB)
