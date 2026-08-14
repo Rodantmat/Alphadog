@@ -9921,7 +9921,12 @@ async function ensureSplitsCursorSchema(sql) {
 // step runs, with zero dependence on a session remembering a separate manual instruction.
 async function runDailySplitsMiningDelta(env, input) {
   const sql = postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false });
-  const TOTAL_SOFT_BUDGET_MS = 70000;
+  // Kept conservative (well under most caller HTTP timeouts) rather than matching other workers'
+  // longer soft-yield budgets: confirmed live that a slower caller-side timeout aborts this
+  // worker mid-flight with zero cursor progress persisted, since this function does not use
+  // ctx.waitUntil to survive a disconnected caller. Reliable, small progress every call beats a
+  // faster but unreliable one that risks writing nothing.
+  const TOTAL_SOFT_BUDGET_MS = 28000;
   const startedAt = Date.now();
   const season = Number(input.splits_season || 2026);
   const summary = { hitter: { pages_this_run: 0, players_written: 0, cycle_completed: false }, pitcher: { pages_this_run: 0, players_written: 0, cycle_completed: false } };
