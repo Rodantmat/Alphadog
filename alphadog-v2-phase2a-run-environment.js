@@ -372,7 +372,7 @@ async function loadRealLegContexts(pgClient, matrixRows) {
   // rule within that scope, not a probabilistic signal - applied with full confidence, not
   // dampened, but strictly limited to days_since_prior_game=1 since larger gaps (where a new
   // crew may have started a different series) were never validated and shouldn't be assumed.
-  const pendingGamePks = gamePksInBatch.filter(gp => !umpireTendencyByGame.has(String(gp)));
+  const pendingGamePks = gamePks.filter(gp => !umpireTendencyByGame.has(String(gp)));
   if (pendingGamePks.length) {
     const pendingGpkLit = "{" + pendingGamePks.join(",") + "}";
     const pendingGameTeamRows = await pgClient`SELECT game_pk, home_team_id, official_date FROM daily.umpire_context_current WHERE game_pk = ANY(${pendingGpkLit}::bigint[]) AND home_team_id IS NOT NULL AND official_date IS NOT NULL`.catch(() => []);
