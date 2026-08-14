@@ -389,8 +389,8 @@ async function loadRealLegContexts(pgClient, matrixRows) {
       try { crewArr = Array.isArray(prior.crew_umpire_ids_json) ? prior.crew_umpire_ids_json : JSON.parse(String(prior.crew_umpire_ids_json)); } catch (_) { continue; }
       if (!Array.isArray(crewArr) || crewArr.length < 2) continue;
       const predictedUmpireId = Number(crewArr[1]);
-      const tendency = tendencyByUmpireId.get(predictedUmpireId) || umpireIds.includes(predictedUmpireId) ? tendencyByUmpireId.get(predictedUmpireId) : null;
-      if (tendency) { umpireTendencyByGame.set(String(g.game_pk), tendency); continue; }
+      const alreadyFetched = tendencyByUmpireId.get(predictedUmpireId);
+      if (alreadyFetched) { umpireTendencyByGame.set(String(g.game_pk), alreadyFetched); continue; }
       const fetchedTendency = await pgClient`SELECT umpire_id, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league FROM ref.umpire_tendency WHERE umpire_id = ${predictedUmpireId}`.catch(() => []);
       if (fetchedTendency.length) umpireTendencyByGame.set(String(g.game_pk), fetchedTendency[0]);
     }
