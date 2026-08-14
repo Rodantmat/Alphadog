@@ -722,6 +722,19 @@ architecture context.
   the same honest validation gate), but the parameter name implies a selectivity that doesn't exist.
   Fix not yet done: thread a real filter into `runFitPlattCalibration`'s `propSideRows` query, or
   re-document the parameter as advisory-only.
+  **RESOLVED 2026-08-14**: threaded a real filter into `propSideRows` - when `input.props` is
+  provided, only those (prop, side) pairs are fitted/written at all, not just filtered in the
+  response afterward. Verified live: applying `hitter_strikeouts` alone left `doubles` and
+  `home_runs`'s `fit_at` timestamps completely untouched, where the old code would have silently
+  refreshed them too. **A real, separate, pre-existing bug was found and fixed along the way**:
+  the write path's `correction_id NOT IN ${sql(array)}` pattern (4 separate occurrences across the
+  beta/isotonic/Platt branches) broke with a "malformed array literal" error the moment this fix
+  made it possible to actually reach one of those paths for a prop that had never been applied
+  with `dry_run:false` before - `sql()`'s implicit handling of a bare array in a `NOT IN` clause
+  is unreliable, especially when the array can be empty. Fixed all 4 occurrences using the same
+  explicit array-literal-plus-cast pattern already proven throughout this codebase, with an
+  explicit empty-array branch instead of relying on `sql()`'s own handling. Verified live: the
+  same call that previously failed now applies cleanly with a real, honest Brier/ECE improvement.
 
 ### Standing addition to the manual rotation: game-calendar live-status refresh during game hours
 - **Real bug found and fixed 2026-08-13, via a live user report of already-started legs appearing
