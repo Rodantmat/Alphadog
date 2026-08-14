@@ -626,6 +626,50 @@ async function runBackfillRoofStatus(env, input) {
   }
 }
 
+async function runBackfillUmpireAssignments(env, input) {
+  const pg = pgClient(env);
+  try {
+    const gamePks = Array.isArray(input.game_pks) ? input.game_pks.map(Number).filter(Number.isFinite) : [];
+    if (!gamePks.length) return { ok: false, error: "Must provide input.game_pks as a non-empty array." };
+    const dryRun = !!input.dry_run;
+    const results = [];
+    let written = 0, failed = 0;
+    for (const gamePk of gamePks) {
+      try {
+        const boxUrl = `${mlbV11Base(env)}/game/${gamePk}/boxscore`;
+        const fetched = await fetchJson(boxUrl, env, false);
+        if (!fetched.ok || !fetched.json) { results.push({ game_pk: gamePk, ok: false, reason: "fetch_failed", status: fetched.status }); failed++; continue; }
+        const officials = Array.isArray(fetched.json.officials) ? fetched.json.officials : [];
+        if (!officials.length) { results.push({ game_pk: gamePk, ok: false, reason: "no_officials_in_response", sample_keys: Object.keys(fetched.json || {}) }); failed++; continue; }
+        const hp = officials.find(o => /home\s*plate/i.test(String(o.officialType || "")));
+        const crewIds = officials.map(o => o.official && o.official.id).filter(Boolean);
+        if (dryRun) { results.push({ game_pk: gamePk, ok: true, dry_run: true, officials, home_plate_umpire_id: hp && hp.official ? hp.official.id : null, home_plate_umpire_name: hp && hp.official ? hp.official.fullName : null, crew_ids: crewIds }); continue; }
+        const feedUrl = `${mlbV11Base(env)}/game/${gamePk}/feed/live`;
+        const feedFetched = await fetchJson(feedUrl, env, false);
+        const gameData = feedFetched.ok && feedFetched.json ? (feedFetched.json.gameData || {}) : {};
+        const venueId = gameData.venue ? Number(gameData.venue.id) : null;
+        const officialDate = gameData.datetime ? String(gameData.datetime.officialDate || "") : null;
+        const homeTeamId = gameData.teams && gameData.teams.home ? String(gameData.teams.home.id) : null;
+        await pg.unsafe(`
+          INSERT INTO context.history_game_umpire (game_pk, official_date, venue_id, home_team_id, home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json, source_key, raw_json, captured_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,'backfill_mlb_boxscore_officials_v1',$8,now())
+          ON CONFLICT (game_pk) DO UPDATE SET home_plate_umpire_id=EXCLUDED.home_plate_umpire_id, home_plate_umpire_name=EXCLUDED.home_plate_umpire_name,
+            crew_umpire_ids_json=EXCLUDED.crew_umpire_ids_json, captured_at=now()`,
+          [gamePk, officialDate, venueId, homeTeamId, hp && hp.official ? hp.official.id : null, hp && hp.official ? hp.official.fullName : null,
+            JSON.stringify(crewIds), JSON.stringify({ backfill: true, officials })]);
+        written++;
+        results.push({ game_pk: gamePk, ok: true, home_plate_umpire_id: hp && hp.official ? hp.official.id : null, crew_size: crewIds.length });
+      } catch (err) {
+        failed++;
+        results.push({ game_pk: gamePk, ok: false, reason: String(err && err.message ? err.message : err) });
+      }
+    }
+    return { ok: true, mode: "backfill_umpire_assignments", dry_run: dryRun, requested: gamePks.length, written, failed, results };
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return jsonResponse({ ok: true });
