@@ -750,6 +750,15 @@ export default {
         return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
       }
     }
-    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic", "POST /backfill-roof-status", "POST /backfill-umpire-assignments"], timestamp_utc: nowUtc() }, 404);
+    if (method === "POST" && path === "/predict-next-umpire") {
+      const input = await readJsonSafe(request);
+      try {
+        const out = await runPredictNextUmpire(env, input);
+        return jsonResponse(out);
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      }
+    }
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic", "POST /backfill-roof-status", "POST /backfill-umpire-assignments", "POST /predict-next-umpire"], timestamp_utc: nowUtc() }, 404);
   }
 };
