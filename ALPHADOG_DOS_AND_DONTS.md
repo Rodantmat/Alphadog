@@ -674,6 +674,18 @@ architecture context.
   `Cannot read properties of undefined` pointing at `.prepare`, `.bind`, `.run`, or `.all` on an
   `env.*_DB` object, check whether that specific D1 database has actually been deleted
   (`run_sql` against it directly) before assuming it's a code bug to debug.
+- **A second D1-dependent location found in `alphadog-v2-orchestrator.js`** (job_keys
+  `hit-probability-v2`, `final-score-v1`, `final-board-v2` - a completely separate,
+  parallel pipeline from `hit-probability`/`score-final-board`, writing to
+  `hit_probability_v2_current`/`final_score_v1_current`/`score_final_board_v2_current`, not the
+  live `score.hp_board_current`/`score.final_board_current` tables used everywhere else).
+  **Confirmed safe, not fixed, by design rather than oversight**: every stage in this "v2" track
+  explicitly carries `orchestrator_direct_fallback: true` and, critically,
+  `live_playable_forced_zero: true` - this pipeline is architecturally incapable of ever making
+  anything live-playable, regardless of what it computes. Its D1 dependency is real but low-risk
+  by construction, not because it was checked and found harmless after the fact. Left as-is,
+  same as the confirmed-superseded expansion_baseline chain - not worth spending further session
+  time on a pipeline that can never reach a user by design.
 ### THE SINGLE MOST IMPORTANT RULE OF THIS ENTIRE MIGRATION, VIOLATED ONCE AND CORRECTED — READ THIS BEFORE WRITING ANY NEW CODE
 - **This session, while implementing a scheduling fix, a new D1 table (`control_kv`, in
   `CONTROL_DB`) was created to store a single "last triggered Pacific date" marker value.** This
