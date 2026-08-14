@@ -840,6 +840,21 @@ architecture context.
   either way with currently available data. Changing the factor here would be exactly the kind of
   premature action this whole discipline exists to prevent. Revisit once more of-season data
   accumulates and the thin-sample group's n grows large enough to trust.
+  **RESOLVED 2026-08-14 via an alternative to waiting**: rather than waiting for more calendar
+  time to pass, ran the SAME out-of-sample methodology at 3 independent train/test split points
+  across the existing season data (Aug 1, July 15, June 15 cutoffs) to build genuine
+  cross-validated confidence without needing new data: 0.205 (n=18), 0.426 (n=22), 0.615 (n=41) -
+  all positive, all strengthening as n grew, a consistent pattern across 3 independent checks
+  rather than one small sample. Confirmed prior-season (2025) QOC data exists but no matching 2025
+  game-log outcomes exist to pair it with, so that specific alternative wasn't usable - the
+  multi-split approach above was the one that worked. Implemented a real, conservative 1.3x boost
+  for players under 15 games this season, applied consistently across all 4 relevant props
+  (doubles, total_bases, home_runs, hits_runs_rbis/hits/runs/rbis), gated on a new
+  `hitter_season_games` context field. Established players' existing coefficients are left
+  completely unchanged - no direct evidence they're wrong, only that this specific incremental
+  test showed no benefit there. Verified live: deployed cleanly, confirmed applying to real
+  thin-sample players (3, 7, 12 games), with the existing per-prop cap correctly bounding the
+  boosted signal for the more extreme cases.
 
 ### Follow-up: sign-verification pass across opponent-side factors - two real bugs found, one confirmed working correctly
 - **`stolen_base_family` (sprint speed)**: tested with the same out-of-sample train/test partial
