@@ -483,7 +483,15 @@ def make_config(worker_name, include_services=False):
         # 2026-07-27: was "0 3 * * 1" (3am UTC Monday = 8pm PT SUNDAY, the wrong day and 6 hours
         # off from the documented "Monday 2am PT" intent) - confirmed this caused the run to be
         # missed/mistimed relative to expectation.
-        cfg["triggers"] = {"crons": ["0 9 * * 1"]}
+        # STEP 1 of proven re-registration workaround (2026-08-14): the only evidence available
+        # of this worker ever running (a control.runner_locks timestamp) is from a SUNDAY, not a
+        # Monday, matching neither the old nor corrected schedule - strong evidence the 7/27 fix
+        # never actually took effect on Cloudflare's side, the same confirmed platform bug
+        # (github.com/cloudflare/workers-sdk/issues/5450) already hit by daily-delta-runner,
+        # outcome-grader, calibration-scheduler, and master-runner. Using their proven fix:
+        # temporarily set to an impossible date to force genuine re-registration, deploy, then
+        # restore the real schedule in a second deploy.
+        cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
     if worker_name == "alphadog-v2-daily-delta-runner":
         # Split into two independently-locked parts (2026-08-02): Part 1 (mining through
         # metrics) completes fully in one cron-triggered call. Part 2 (classification/baseline,
