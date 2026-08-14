@@ -167,14 +167,20 @@ function classifyIntoTier(factorKey, legContext, thresholds, propKey) {
     // correctly signed (an umpire who calls more walks than league average predicts more walks
     // for pitchers facing him).
     const isWalksRelevant = propKey === "walks" || propKey === "walks_allowed";
-    const deltaValue = isWalksRelevant && ctx.umpire_walks_delta_vs_league != null
-      ? ctx.umpire_walks_delta_vs_league
-      : ctx.umpire_strikeouts_delta_vs_league;
-    if (deltaValue == null) return null;
     const pitcherFriendlyMin = t.k_delta_pitcher_friendly_min ?? 0.3;
     const hitterFriendlyMax = t.k_delta_hitter_friendly_max ?? -0.3;
-    if (deltaValue > pitcherFriendlyMin) return "pitcher_friendly_zone";
-    if (deltaValue < hitterFriendlyMax) return "hitter_friendly_zone";
+    if (isWalksRelevant && ctx.umpire_walks_delta_vs_league != null) {
+      // Inverted relative to the strikeouts convention below: high walks_delta_vs_league means
+      // the umpire calls MORE walks than league average (confirmed live: e.g. 3.41 for the
+      // highest umpire), which favors the batter (hitter_friendly), not the pitcher.
+      const bb = ctx.umpire_walks_delta_vs_league;
+      if (bb > pitcherFriendlyMin) return "hitter_friendly_zone";
+      if (bb < hitterFriendlyMax) return "pitcher_friendly_zone";
+      return "neutral_zone";
+    }
+    if (ctx.umpire_strikeouts_delta_vs_league == null) return null;
+    if (ctx.umpire_strikeouts_delta_vs_league > pitcherFriendlyMin) return "pitcher_friendly_zone";
+    if (ctx.umpire_strikeouts_delta_vs_league < hitterFriendlyMax) return "hitter_friendly_zone";
     return "neutral_zone";
   }
   if (factorKey === "weather_wind") {
