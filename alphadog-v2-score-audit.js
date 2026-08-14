@@ -1,3 +1,28 @@
+// ============================================================================
+// DEAD CODE - CONFIRMED 2026-08-14, DO NOT USE OR ATTEMPT TO FIX
+// ============================================================================
+// This entire file is built exclusively on D1 bindings (SCORE_DB, ARCHIVE_DB).
+// Every D1 database in this system is physically deleted from Cloudflare
+// (confirmed directly via query: "D1 database <id> has been deleted", not
+// inferred from policy or convention). Zero Postgres usage exists anywhere in
+// this file's 6487 lines - this is not a couple of broken functions, the
+// entire file is permanently non-functional and cannot be repaired by fixing
+// individual bugs, since the underlying databases no longer exist and never
+// will again.
+//
+// The REAL, LIVE scoring engine that replaced this file is a completely
+// different, much smaller file: alphadog-v2-phase3a-certifier.js
+// (LOGICAL_WORKER_NAME: "alphadog-v2-scoring-engine", same logical identity
+// this file also claims below - this file is that worker's dead predecessor,
+// not a parallel system). Confirmed via score.scoring_engine_batches'
+// worker_version on real, live batches, then traced to source by checking
+// LOGICAL_WORKER_NAME constants directly, not by guessing from filenames.
+//
+// Any call into any mode/route in this file will fail with a generic,
+// confusing "Cannot read properties of undefined (reading 'prepare')" error.
+// That is not a bug to chase - it is this file's D1 dependency being
+// permanently gone. See ALPHADOG_DOS_AND_DONTS.md for the full investigation.
+// ============================================================================
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
 const VERSION = "alphadog-v2-score-audit-v0.4.61-v3-board-calendar-guard";
