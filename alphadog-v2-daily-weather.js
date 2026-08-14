@@ -645,12 +645,10 @@ async function runBackfillUmpireAssignments(env, input) {
         const hp = officials.find(o => /home\s*plate/i.test(String(o.officialType || "")));
         const crewIds = officials.map(o => o.official && o.official.id).filter(Boolean);
         if (dryRun) { results.push({ game_pk: gamePk, ok: true, dry_run: true, officials, home_plate_umpire_id: hp && hp.official ? hp.official.id : null, home_plate_umpire_name: hp && hp.official ? hp.official.fullName : null, crew_ids: crewIds }); continue; }
-        const feedUrl = `${mlbV11Base(env)}/game/${gamePk}/feed/live`;
-        const feedFetched = await fetchJson(feedUrl, env, false);
-        const gameData = feedFetched.ok && feedFetched.json ? (feedFetched.json.gameData || {}) : {};
-        const venueId = gameData.venue ? Number(gameData.venue.id) : null;
-        const officialDate = gameData.datetime ? String(gameData.datetime.officialDate || "") : null;
-        const homeTeamId = gameData.teams && gameData.teams.home ? String(gameData.teams.home.id) : null;
+        const meta = (input.meta_by_game_pk && input.meta_by_game_pk[String(gamePk)]) || {};
+        const venueId = meta.venue_id != null ? Number(meta.venue_id) : null;
+        const officialDate = meta.official_date || null;
+        const homeTeamId = meta.home_team_id != null ? String(meta.home_team_id) : null;
         await pg.unsafe(`
           INSERT INTO context.history_game_umpire (game_pk, official_date, venue_id, home_team_id, home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json, source_key, raw_json, captured_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7,'backfill_mlb_boxscore_officials_v1',$8,now())
