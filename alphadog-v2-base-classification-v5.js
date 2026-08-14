@@ -464,7 +464,10 @@ export default {
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
     try {
       if (url.pathname === "/" || url.pathname === "/health") {
-        return new Response(JSON.stringify({ ok: true, worker_name: WORKER_NAME, version: VERSION, job_key: JOB_KEY, timestamp_utc: nowUtc() }), { headers: { "content-type": "application/json" } });
+        return new Response(JSON.stringify({
+          ok: true, worker_name: WORKER_NAME, version: VERSION, job_key: JOB_KEY, timestamp_utc: nowUtc(),
+          deprecation_warning: "DEAD/STALE as of 2026-08-14, NOT read by live scoring - phase3c-certifier.js (the real, live HP-board worker) reads classification.baseline_v6_current instead, never this worker's output tables (classification.player_classification_current, classification.baseline_current). This worker's code still functions correctly if invoked - it simply is not being called anymore. See COMMENT ON TABLE on the affected tables for full detail."
+        }), { headers: { "content-type": "application/json" } });
       }
       if (url.pathname === "/run" && request.method === "POST") {
         await ensureSchema(sql);
