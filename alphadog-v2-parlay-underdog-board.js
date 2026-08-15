@@ -425,7 +425,7 @@ function taxonomySupportsUnderdog(taxonomyRow) {
   return sources.includes("underdog");
 }
 
-function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue) {
+function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue, marketLabel) {
   const sourceKey = String(sourceStatName || "").trim();
   if (!sourceKey) {
     return { ok: false, canonical_prop_key: null, status: "missing_source_stat_name", reason: "source_stat_name_missing" };
@@ -440,18 +440,26 @@ function auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, lineValue) {
   // this, if this same generic 'player_runs' key is ever used for an RFI/NRFI prop (exactly the
   // ambiguity this comment already documents happening for real players), it would be wrongly
   // classified as runs_allowed instead of rfi_nrfi.
-  // HARDENED 2026-08-05 (real user-reported case): Underdog's raw 'player_hits_allowed' market
-  // key is genuinely used for BOTH the full-game hits_allowed prop AND the distinct '1st Inn.
-  // Hits Allowed' prop, disambiguated only by line value - confirmed live (Bryan Woo, line=0.5)
-  // and confirmed structurally: 0.5 isn't even a valid line in hits_allowed's own configured
-  // line universe (starts at 2.5), so this line can never be the real full-game prop. Routing
-  // to a distinct, not-yet-configured canonical key so the existing taxonomyRow check below
-  // naturally excludes it from the live board (rather than silently corrupting hits_allowed's
-  // real data) until first_inning_hits_allowed is properly built out as its own scored prop type.
-  const rawCanonical = (sourceKey === "player_hits_allowed" && Number(lineValue) === 0.5)
+  // REPLACED 2026-08-15 (real user-reported case: recommendations totally mismatched the live
+  // app, e.g. Kyle Bradish evaluated against line=1.5 when the app showed 5.5): the 2026-08-05
+  // fix below only guarded line===0.5 (based on one observed example, Bryan Woo), but real data
+  // shows Underdog's '1st Inn. Hits Allowed' and '1st Inn. Runs Allowed' markets use ordinary
+  // full-range lines too (1.5, 2.5, 3.5, 4.5...) - confirmed live: 22 of 25 current hits_allowed
+  // rows and 17 of 33 current runs-family rows are genuinely the 1st-inning variant at lines the
+  // old guard never caught, silently evaluating a first-inning-only line against the player's
+  // full-game history. The market label itself ('1st Inn. Hits Allowed' / '1st Inn. Runs
+  // Allowed' vs the plain full-game name) is present on every raw row and is the one reliable
+  // signal Underdog actually provides here - line value overlaps between both markets and can
+  // never safely disambiguate them. Route any '1st Inn.' market to a distinct, not-yet-scored
+  // canonical key so the existing taxonomy check below naturally excludes it from the live board,
+  // exactly like the original fix intended, but based on the label that's actually reliable.
+  const isFirstInningVariant = /1st\s*inn/i.test(String(marketLabel || ""));
+  const rawCanonical = (sourceKey === "player_hits_allowed" && isFirstInningVariant)
     ? "first_inning_hits_allowed"
+    : (sourceKey === "player_runs" && isFirstInningVariant)
+    ? "first_inning_runs_allowed"
     : (UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null);
-  const canonical = (sourceKey === "player_runs" && isPitcher && Number(lineValue) !== 0.5) ? "runs_allowed"
+  const canonical = (sourceKey === "player_runs" && isPitcher && !isFirstInningVariant && Number(lineValue) !== 0.5) ? "runs_allowed"
     : (sourceKey === "player_points" && isPitcher) ? "pitcher_fantasy_score_ud"
     : rawCanonical;
   if (!canonical) {
