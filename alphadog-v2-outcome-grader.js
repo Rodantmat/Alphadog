@@ -103,7 +103,8 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
     graded AS (
       SELECT f.*,
         ${actualExpr} AS actual_value,
-        gs.is_final
+        gs.is_final,
+        existing.outcome_id AS existing_outcome_id
       FROM deduped f
       LEFT JOIN ${sourceTable} gl ON gl.player_id = f.mlb_player_id AND gl.game_date = f.official_date::date AND gl.game_pk = f.game_pk
       LEFT JOIN LATERAL (
@@ -123,7 +124,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
       (actual_value IS NOT NULL AND actual_value = line_value) AS is_tie
     FROM graded
     WHERE (actual_value IS NOT NULL OR is_final = true)
-      AND (existing.outcome_id IS NULL OR existing.outcome_id NOT LIKE 'outcome_final|%')
+      AND (existing_outcome_id IS NULL OR existing_outcome_id NOT LIKE 'outcome_final|%')
   `, [targetDate, propLiteral]);
 
   if (!rows.length) {
