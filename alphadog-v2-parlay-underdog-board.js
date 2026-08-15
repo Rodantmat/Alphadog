@@ -573,7 +573,7 @@ function toStageRow(row, batchId, fetchedAt, taxonomy, positionByPlayer) {
   const required = rowRequiredAudit(row);
   const sourceStatName = normalizeText(row && row.market_key) || normalizeText(row && row.market);
   const isPitcher = positionByPlayer ? !!positionByPlayer.get(normalizeAliasName(row && row.player)) : false;
-  const mapping = auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, row && row.line);
+  const mapping = auditCanonicalMapping(sourceStatName, taxonomy, isPitcher, row && row.line, row && row.market);
   let parseStatus = "parsed_stage_only_alias_audit_pending";
   let parseError = null;
   if (!required.ok) {
