@@ -599,6 +599,53 @@ async function reconcileStaleRunningFinalBoard(pgClient, input, engine, started)
   const currentRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_current WHERE final_board_batch_id = ${staleBatchId}`;
   const currentCount = Number(currentRows[0] && currentRows[0].rows || 0);
   if (currentCount <= 0 || currentCount !== historyCount) return null;
+  // REAL FIX (found live 2026-08-15, same night as the stability-check fix above): a writer that
+  // permanently died mid-write - not just a slow client - also leaves a perfectly stable row
+  // count, since it will never write another row. The stability check above cannot tell that
+  // apart from a genuine finish. Rows are written PRIMARY-tier first (finalBoardDisplayComparator
+  // sorts PRIMARY before REVIEW), so a died-mid-write batch characteristically recovers as 100%
+  // one tier. Confirmed live: a died writer left exactly 1500 rows, all PRIMARY, zero REVIEW,
+  // which passed the stability check and silently dropped ~12,000 real REVIEW candidates from the
+  // live board with no error anywhere - only found by manual leg-by-leg board scrutiny. Before
+  // trusting this recovered set as final, independently check what the SAME upstream
+  // hp_board_current data (same engine batch, same base-visibility rule the real selection path
+  // uses) actually supports for each tier, and refuse to reconcile if a tier upstream clearly has
+  // real candidates but the recovered set shows none of it.
+  const upstreamTierCounts = await pgClient`SELECT
+      SUM(CASE WHEN h.board_tier='PRIMARY' THEN 1 ELSE 0 END) AS primary_candidates,
+      SUM(CASE WHEN h.board_tier='REVIEW' THEN 1 ELSE 0 END) AS review_candidates
+    FROM score.hp_board_current h
+    WHERE h.source_engine_batch_id = ${engine.batch_id}
+      AND COALESCE(h.blocker_count, 0) = 0
+      AND h.canonical_prop_key <> 'pitches_thrown'
+      AND h.estimated_hit_probability_0_100 >= 60
+      AND h.score_0_100 IS NOT NULL AND h.selected_side IS NOT NULL AND h.line_value IS NOT NULL
+      AND h.player_name IS NOT NULL AND h.canonical_prop_key IS NOT NULL AND h.source_key IS NOT NULL AND h.mlb_player_id IS NOT NULL
+      AND (h.official_game_time_utc IS NULL OR h.official_game_time_utc > now())`;
+  const upstreamPrimaryCandidates = Number(upstreamTierCounts[0] && upstreamTierCounts[0].primary_candidates || 0);
+  const upstreamReviewCandidates = Number(upstreamTierCounts[0] && upstreamTierCounts[0].review_candidates || 0);
+  const recoveredTierCounts = await pgClient`SELECT
+      SUM(CASE WHEN board_tier='PRIMARY' THEN 1 ELSE 0 END) AS primary_rows,
+      SUM(CASE WHEN board_tier='REVIEW' THEN 1 ELSE 0 END) AS review_rows
+    FROM score.final_board_current WHERE final_board_batch_id = ${staleBatchId}`;
+  const recoveredPrimaryRows = Number(recoveredTierCounts[0] && recoveredTierCounts[0].primary_rows || 0);
+  const recoveredReviewRows = Number(recoveredTierCounts[0] && recoveredTierCounts[0].review_rows || 0);
+  // A small gap is expected and fine (quota reserve only pulls REVIEW rows up to the documented
+  // per-prop/source/variant floors, not every eligible REVIEW row). Only refuse when upstream
+  // clearly has a real, substantial population (100+ genuine candidates) of a tier that is
+  // completely absent from the recovered set - that specific combination (substantial supply,
+  // zero recovered) is the actual signature of a died-mid-write batch, not normal quota behavior.
+  const tierCompositionImplausible =
+    (upstreamReviewCandidates >= 100 && recoveredReviewRows === 0) ||
+    (upstreamPrimaryCandidates >= 100 && recoveredPrimaryRows === 0);
+  if (tierCompositionImplausible) {
+    await writeIssue(pgClient, staleBatchId, engine.batch_id, "RECONCILE_TIER_COMPOSITION_IMPLAUSIBLE", "WARNING", 1, {
+      note: "Stable history count reconciled a tier composition that upstream hp_board_current does not support - likely a writer that died mid-write rather than one that genuinely finished. Refusing to finalize this batch; caller will retry into a fresh rebuild.",
+      upstream_primary_candidates: upstreamPrimaryCandidates, upstream_review_candidates: upstreamReviewCandidates,
+      recovered_primary_rows: recoveredPrimaryRows, recovered_review_rows: recoveredReviewRows
+    });
+    return null;
+  }
   const byTierSource = await pgClient`SELECT board_tier, review_playable, source_key, COUNT(*) AS rows, COUNT(DISTINCT canonical_prop_key) AS prop_families, COUNT(DISTINCT mlb_player_id) AS players, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
     FROM score.final_board_current WHERE final_board_batch_id = ${staleBatchId} GROUP BY board_tier, review_playable, source_key ORDER BY board_tier, rows DESC`;
   const output = {
