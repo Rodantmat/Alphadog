@@ -478,9 +478,9 @@ async function insertPacketAndIssueRows(pgClient, family, batchId, packets, issu
       daily_context_status: p.daily_context_status, base_metric_status: p.base_metric_status, missing_factor_count: p.missing_factor_count, warning_count: p.warning_count, blocker_count: p.blocker_count,
       factor_payload_json: JSON.stringify(p.payload), details_json: JSON.stringify({ source_prop_name: p.row.source_prop_name, warnings: p.warnings, missing: p.missing })
     }));
-    const CHUNK = 150;
-    for (let i = 0; i < rowsForInsert.length; i += CHUNK) {
-      const slice = rowsForInsert.slice(i, i + CHUNK);
+    const PACKET_INSERT_CHUNK = 900;
+    for (let i = 0; i < rowsForInsert.length; i += PACKET_INSERT_CHUNK) {
+      const slice = rowsForInsert.slice(i, i + PACKET_INSERT_CHUNK);
       await pgClient`INSERT INTO ${pgClient.unsafe(packetTable)} ${pgClient(slice, ...packetCols)}
         ON CONFLICT (packet_id) DO UPDATE SET factor_status=EXCLUDED.factor_status, factor_grade=EXCLUDED.factor_grade, readiness_status=EXCLUDED.readiness_status, market_context_status=EXCLUDED.market_context_status, daily_context_status=EXCLUDED.daily_context_status, base_metric_status=EXCLUDED.base_metric_status, missing_factor_count=EXCLUDED.missing_factor_count, warning_count=EXCLUDED.warning_count, blocker_count=EXCLUDED.blocker_count, factor_payload_json=EXCLUDED.factor_payload_json, details_json=EXCLUDED.details_json, updated_at=now()`;
     }
