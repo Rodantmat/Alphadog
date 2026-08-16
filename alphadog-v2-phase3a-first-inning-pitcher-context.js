@@ -1260,7 +1260,7 @@ function propValueFromRow(prop, r){
   if(p==="hits_runs_rbis") return num(r.hits)+num(r.runs)+num(r.rbi);
   if(p==="fantasy"||p==="pitcher_fantasy_score") return sourceAgnosticPitcherFantasyBaselineValue(r);
   if(p==="pitcher_fantasy_score_ud") return pfsUd(r);
-  if(p==="pitches_thrown") return num(r.pitches);
+  if(p==="pitches_thrown") return r.pitches != null ? num(r.pitches) : null;
   if(p==="pitcher_strikeouts") return num(r.strikeouts);
   if(p==="pitcher_outs") return num(r.outs_recorded);
   if(p==="hits_allowed") return num(r.hits_allowed);
