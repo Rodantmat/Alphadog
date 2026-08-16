@@ -1337,4 +1337,58 @@ architecture context.
   fix was confirmed working).
 
 
+## PART 7 — Session 2026-08-15/16: real, reusable lessons from this session's bug-fixing (full detail in LIVING_LOG.md's matching entry)
+
+### "Stable" and "finished" are not the same thing - a lesson for any recovery/reconciliation logic
+- A background writer that's genuinely still active (just slow) and one that has permanently died
+  mid-write both eventually produce an unchanging, stable observed value - a stability check alone
+  (read twice, confirm no change) cannot tell them apart. Confirmed live this session:
+  `final_board_run`'s reconciliation path correctly stopped trusting a writer mid-actively-writing
+  (an earlier fix), but then trusted a writer that had genuinely died, because a died writer's
+  output is just as stable as a finished one's. Real fix required an INDEPENDENT plausibility
+  check against a separate source of truth (what the real upstream data actually supports), not a
+  tighter version of the same self-consistency check. **Standing rule**: any time a "wait and
+  re-check for stability" pattern is used to decide something is genuinely finished, ask
+  separately whether a permanently-stalled/dead process would produce output indistinguishable
+  from a genuinely-finished one - if yes, stability alone is not sufficient proof, and a real
+  external check against independent data is needed too.
+
+### When a raw API field is ambiguous, find the real disambiguating signal - don't heuristic the ambiguous field itself
+- Underdog's raw `market_key` field is identical for a full-game stat and a distinct 1st-inning-only
+  variant of the same stat - genuinely ambiguous at that field. A prior fix guarded against this by
+  checking `line===0.5` (based on one observed example), which caught almost nothing in practice,
+  because both the real and the 1st-inning variant use ordinary lines (1.5, 2.5, 3.5...) - the line
+  value legitimately overlaps between the two cases and can never reliably disambiguate them. The
+  real, reliable signal was a completely different field: the human-readable `market` label text
+  ("1st Inn. Hits Allowed" vs "Hits Allowed"), present on every raw row. **Standing rule**: when an
+  ambiguity is found in one field, look for a DIFFERENT field on the same raw record that might be
+  the source's own real disambiguator, before building a heuristic on the ambiguous field itself -
+  a heuristic on an overlapping value will always be fragile even after a first "fix."
+
+### A completion check built from proxy signals can be satisfied even when the real work never happened
+- The Delta run's own completion check for its 268-combo classification refresh relied on two
+  proxies: a static reference count (always true regardless of whether anything refreshed) and a
+  36-hour staleness window (satisfied because most rows were sitting at ~34-35 hours old from the
+  PRIOR night's run, masking that THIS run's own step never touched them at all). Both proxies
+  passed while 18 of 23 props went a full night completely untouched. **Standing rule**: when
+  writing or reviewing any "did this step actually complete" check, ask whether the check could be
+  satisfied by evidence from a PRIOR, unrelated success rather than genuine evidence from THIS run
+  - a completion signal needs to be freshly, directly produced by the specific execution being
+  checked, not inferred from an aggregate state a different, earlier execution could equally well
+  explain.
+
+### Systematic whole-universe comparison (config vs. real formula) found 3 real bugs that targeted testing hadn't caught
+- Three of tonight's real bugs (`pitcher_fantasy_score_ud`, `pitcher_fantasy_score`,
+  `fantasy_score`) were all found the same way: comparing every prop's real JS grading formula
+  against its live `config.calibration_config` weights, across the WHOLE prop universe in one
+  pass, not by testing one prop that seemed suspicious. Each individual prop had been "working"
+  (returning a number, not erroring) for weeks - the bugs were silent, wrong-but-plausible values,
+  the kind that never trip an error path and are invisible to spot-checking any single prop in
+  isolation. **Standing rule, worth repeating alongside the enrichment-factor audit discipline in
+  PART 4**: for any config-driven formula/weight system, periodically diff the live config against
+  the actual code computing the real value, for EVERY entry in the universe at once, not just the
+  one currently under investigation - this class of bug hides specifically in the entries nobody
+  happened to be looking at.
+
+
 
