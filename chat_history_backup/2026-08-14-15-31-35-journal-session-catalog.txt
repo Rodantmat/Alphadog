@@ -1,0 +1,566 @@
+
+=== Journal Entry 2026-07-21T23:31:31.258316+00:00 ===
+2026-07-21-23-31-30-alphadog-pitcher-game-logs-migration.txt
+[AlphaDog v2 Postgres migration session: base-pitcher-game-logs worker built from scratch, deployed, base_backfill driven to completion, delta_update proven end-to-end. Contains real bug discoveries and fixes (certifier gate bugs, missing dispatcher branch), chunk-size speed fix, and confirmed architectural patterns for all future workers.]
+
+
+
+
+=== Journal Entry 2026-07-22T02:12:32.469824+00:00 ===
+2026-07-22-02-12-32-alphadog-team-game-logs-migration.txt
+[AlphaDog v2 Postgres migration session: continuation from pitcher game logs completion. Covers corrupt/delete repair test for pitcher (all 4 rows restored), no-op verification, shared tick-config table (config.worker_tick_settings) creation and wiring to both hitter and pitcher workers (chunk=750, tick_runtime=90000ms, promote_rows_per_tick=750), real bug found (promoteStageRowsChunk internal 300-row cap blocking 750 promote rate), and start of base-team-game-logs worker build. Contains real bug discoveries, speed optimization findings, and partial team-game-logs worker build (stub+patch method, deployed, first run hit SOURCE_ERROR from doubled /api/v1 in endpoint URL — fix applied).]
+
+
+
+
+=== Journal Entry 2026-07-22T04:44:33.921390+00:00 ===
+2026-07-22-04-44-33-alphadog-team-starter-bullpen-migration.txt
+[AlphaDog v2 Postgres migration session: continuation from pitcher game logs. Covers base-team-game-logs (base_backfill + delta proven, 3 bugs fixed), base-starter-history (real concurrency TOCTOU fix, base_backfill + delta proven), and base-bullpen-history (derived from pitcher_game_logs + starter_history via pure SQL JOIN, deterministic batch ID fix for TOCTOU race, promote hang fix with 200-row batches, mid-promotion at ~65%). Contains real structural bug discoveries (TOCTOU race in all getOrCreate functions, pre-lock status snapshot staleness, Cloudflare worker hang from 750-row sequential promote loops), and partial completion state for bullpen-history.]
+
+
+
+
+=== Journal Entry 2026-07-22T06:43:55.967566+00:00 ===
+2026-07-22-06-43-55-alphadog-v2-postgres-migration-splits-complete.txt
+[AlphaDog v2 Postgres migration session continuation: covers base-bullpen-history completion (bulk CTE promote fix, mlb_ prefix normalization bug, full proven), base-hitter-splits (affected-player delta scope, dedup fix, proven), and base-pitcher-splits (zero new bugs, same pattern, proven). Contains real structural discoveries, performance fixes, and data quality bugs. Session ended ready to start base-hitter-metrics.]
+
+
+
+
+=== Journal Entry 2026-07-22T21:19:56.455671+00:00 ===
+2026-07-22-21-19-56-alphadog-hitter-pitcher-metrics-migration.txt
+[AlphaDog v2 Postgres migration session: covers base-hitter-metrics and base-pitcher-metrics workers. Includes full D1 formula extraction, multi-stage pipeline architecture (base_rebuild/snapshot_prep/snapshot_delta_gate/delta_recalculate), day-by-day watermark delta redesign per user instruction, real bug fixes (vl/vr split keys, legacy shadow data, source_snapshot_date column, ON CONFLICT duplicates). Both workers deployed and tested. Session ended with pitcher-metrics deployed but not yet tested.]
+
+
+
+
+=== Journal Entry 2026-07-22T21:58:50.958454+00:00 ===
+2026-07-22-21-58-50-alphadog-expansion-classification-migration.txt
+[AlphaDog v2 Postgres migration session continuing from prior session. Covers: base-pitcher-metrics testing and completion, expansion mining worker (base-expansion-mining) design/build/debug cycle, scheduling fixes, auto-deploy optimization, and architectural discovery that Classification V5/Baseline V5 are board-agnostic and skip Expansion Line Inventory/Sanity/HP entirely.]
+
+
+
+
+=== Journal Entry 2026-07-22T23:20:41.547417+00:00 ===
+2026-07-22-23-20-41-alphadog-v2-postgres-classification-baseline-build.txt
+[AlphaDog v2 Postgres migration session: Expansion mining completion, metrics refinement (RFI gap found/fixed), Classification V6 validated formula extraction, extensive statistical testing/calibration loop (7 real bugs fixed), and Classification base worker build/deploy. Covers: base-expansion-mining completion, base-pitcher-metrics RFI fix, pre-shrinkage tier assignment fix (Friedman 1989 RDA validated), Classification worker V2 build with real z-score tier engine, combo-per-tick speedup. Classification base rebuild actively running at 161/252 combos when session paused.]
+
+
+
+
+=== Journal Entry 2026-07-23T00:43:17.667160+00:00 ===
+2026-07-23-00-43-17-alphadog-v2-baseline-certifier-fullrun-build.txt
+[AlphaDog v2 Postgres migration session: Baseline worker creation, full-dataset health check revealing two real bugs (confidence-decreasing-with-sample and partial-day-data gap), fixes applied with literature validation, Postgres-native game calendar worker, certifier worker, and delta chain wiring across all workers. No D1 dependency anywhere. All workers deployed and verified with real MLB live data.]
+
+
+
+
+=== Journal Entry 2026-07-24T02:51:01.742210+00:00 ===
+2026-07-24-02-51-01-alphadog-v2-postgres-fullrun-certification.txt
+[AlphaDog v2 Postgres full-run orchestration session: complete daily chain built, debugged, and verified end-to-end. Covers sequential stepper design, throughput bug fixes (hardcoded ceilings overriding DB config), bullpen-history duplicate-key bug fix, and final FULL_CHAIN_CERTIFIED_COMPLETE verification for July 21. All workers confirmed clean, no stuck locks.]
+
+
+
+
+=== Journal Entry 2026-07-24T03:36:21.014647+00:00 ===
+2026-07-24-03-36-20-alphadog-v2-postgres-sweep-scheduling-bugfix.txt
+[AlphaDog v2 session covering: full Postgres data integrity sweep across all 20 schemas, stale/duplicate data cleanup, 6 AM Pacific daily scheduling implementation, handoff documentation updates (ALPHADOG_HANDOFF.md + ALPHADOG_DOS_AND_DONTS.md), and a real runtime bug discovery/fix in base-pitcher-game-logs (missing continuation_required flag causing premature chain advancement). Includes real cascading data correction for July 22 (classification/baseline re-run after incomplete pitcher data).]
+
+
+
+
+=== Journal Entry 2026-07-24T17:57:39.614880+00:00 ===
+2026-07-24-17-57-39-cascade-guard-implementation-testing.txt
+[AlphaDog v2 session implementing real cascade guards across the metrics/classification/baseline pipeline layers. Includes code for isUpstreamMiningComplete, isUpstreamMetricsComplete, isUpstreamClassificationComplete guard functions, a second real bug fix (classification's .pop() max→LEAST min fix for dual-source date gating), discovery of JS-side Date comparison bug in classification requiring SQL-side fix, and multi-round live testing of all gates. System left in FULL_CHAIN_CERTIFIED_COMPLETE state for July 22.]
+
+
+
+
+=== Journal Entry 2026-07-24T18:18:37.004061+00:00 ===
+2026-07-24-18-18-36-cascade-guards-daily-chain-starvation-bug.txt
+[AlphaDog v2 session covering: (1) completion of cascade guard testing across all three pipeline layers — metrics, classification, baseline — with full block-then-restore round-trip validation; (2) documentation updates to DOS_AND_DONTS.md PART 5 and HANDOFF.md Section 2C; (3) a new chat's partial migration status report for the control-plane queue mechanics (control_job_queue D1 vs Postgres); (4) real-time diagnosis of the daily-context-full-run chain failure, identifying a known parent-starvation bug (zero parent-recheck delay) as root cause rather than a D1/Postgres architecture issue.]
+
+
+
+
+=== Journal Entry 2026-07-24T19:00:13.518763+00:00 ===
+2026-07-24-19-00-13-d1-to-postgres-full-run-migration.txt
+[AlphaDog v2 session: Complete D1→Postgres migration for board-full-run, daily-context-full-run, and market-full-run orchestrator chains. Built a foundational SQLite→Postgres SQL dialect translator, D1-compatible Postgres wrapper (pgControlDB), and atomic job claim using FOR UPDATE SKIP LOCKED. Converted all parent drivers, child dispatchers, lock functions, and enqueue functions. Multiple real, live end-to-end test runs performed. Also includes a worker-level binding audit removing all D1 bindings from 15 fully-migrated workers via generate_wrangler_configs.py.]
+
+
+
+
+=== Journal Entry 2026-07-24T19:26:42.355052+00:00 ===
+2026-07-24-19-26-42-alphadog-d1-postgres-migration-board-daily-market.txt
+[AlphaDog v2 session: Deep operational debugging and multi-chain production run sequence (board → daily-context → market → scoring). Critical scheduler bugs found and fixed, lock-stall root-cause identified and repaired, postgres-full-run daily delta manually recovered, and daily-context-full-run completed for first time ever. Score-prep performance issue discovered mid-board-full-run sequence. Session still in progress executing the board→daily-context→market production run sequence required before scoring-full-run work.]
+
+
+
+
+=== Journal Entry 2026-07-24T20:20:15.182786+00:00 ===
+2026-07-24-20-20-14-alphadog-board-daily-market-fix-progress.txt
+[AlphaDog v2 session continuing board→daily-context→market production run sequence. Root-cause research for score-prep timeout — Cloudflare Hyperdrive obscure-hang issue found and fixed system-wide. connect_timeout=8 deployed to all 16 workers. Score-prep confirmed writing rows after fix. Session still in progress: score-prep flipped to failed mid-write, cause unknown, needs investigation.]
+
+
+
+
+=== Journal Entry 2026-07-24T22:18:59.115059+00:00 ===
+2026-07-24-22-18-58-alphadog-board-fullrun-score-prep-debug.txt
+[AlphaDog v2 board-full-run debugging session. Real root-cause investigation of score-prep and PrizePicks failures. Found and fixed: (1) orphaned Postgres connections from Promise.race withDeadline pattern, (2) zombie batch accumulation in board_prep_batches, (3) missing statement_timeout on connections. Multiple code fixes deployed. Session ends mid-flight: board_full_run_v1_20260724 was running with score-prep still processing chunks.]
+
+
+
+
+=== Journal Entry 2026-07-25T17:45:48.137339+00:00 ===
+2026-07-25-17-45-47-alphadog-board-market-runner-new-arch.txt
+[AlphaDog v2 architectural redesign session: replaced complex orchestrator-based board/daily-context/market full-run chains with simple standalone sequential workers (board-runner, daily-context-runner, market-runner). Includes root cause fixes for self-imposed timeout bugs, stale data accumulation, Parlay API credential failure, and new permanent archive tables for prepped board and market data.]
+
+
+
+
+=== Journal Entry 2026-07-25T19:07:35.183687+00:00 ===
+2026-07-25-19-07-34-alphadog-new-arch-runners-complete.txt
+[AlphaDog v2 full architectural migration session: all four standalone runners (board, daily-context, market, scoring) built and validated, master runner built and deployed, old orchestrator minute-cron retired, systemic withDeadline/orphaned-connection bug found and fixed across 10+ workers, Postgres advisory locks added to all 5 runners for concurrency safety, and session-end attempts to validate master runner end-to-end.]
+
+
+
+
+=== Journal Entry 2026-07-25T20:41:20.206006+00:00 ===
+2026-07-25-20-41-19-alphadog-master-runner-deep-audit-fixes.txt
+[AlphaDog v2 master-runner deep audit and bug-fix session: five critical bugs found and fixed across all pipeline layers (board dedup, market fetch budget, scoring accumulation, concurrency, matrix-builder resilience), two consecutive clean MASTER_FULL_RUN_COMPLETE runs confirmed, system now structurally sound end-to-end.]
+
+
+
+
+=== Journal Entry 2026-07-25T23:02:10.168391+00:00 ===
+2026-07-25-23-02-09-alphadog-calibration-scoring-audit.txt
+[AlphaDog v2 calibration scrutiny session: scoring system deep audit, daily-delta morning delta coverage fixes, schedule cutover, and master full run. Previous sessions covered new runner builds, bug fixes, and pipeline validation.]
+
+
+
+
+=== Journal Entry 2026-07-26T00:35:56.958870+00:00 ===
+2026-07-26-00-35-56-alphadog-calibration-ui-rewire.txt
+[AlphaDog v2 comprehensive calibration audit and UI Postgres rewiring session. Covers: walk-forward backtest methodology, root-cause shrinkage formula fix, 18-prop correction map (built, retired, rebuilt), runs_allowed data bug fix, k-fold validation, 224-combo baseline_v6 refresh, and beginning of UI certification-center Postgres rewiring (board endpoint complete).]
+
+
+
+
+=== Journal Entry 2026-07-26T02:10:52.887547+00:00 ===
+2026-07-26-02-10-52-alphadog-board-ui-rebuild-session.txt
+[AlphaDog v2 UI rewiring session: full Postgres migration of certification-center worker, bug hunting across all board/dossier/health endpoints, and discovery that the old 578KB file had a fundamental JS execution failure on device (script never ran at all). Session ends with successful creation of a brand new fresh board-ui worker at a different URL that works correctly.]
+
+
+
+
+=== Journal Entry 2026-07-26T05:11:43.193540+00:00 ===
+2026-07-26-05-11-42-alphadog-board-ui-debug-session.txt
+[Intensive debugging session resolving multiple layered bugs preventing the AlphaDog v2 certification-center worker from functioning on iOS Safari - covering UI JavaScript execution failure, root-cause apostrophe syntax error, SQL type mismatches, and GROUP BY issues. Session ends with all major features working: board loads, menu opens, dossier functional, player search fixed.]
+
+
+
+
+=== Journal Entry 2026-07-26T06:47:06.046524+00:00 ===
+2026-07-26-06-47-05-alphadog-enrichment-calibration-fixes-2026-07-26.txt
+[Deep investigation and multi-layer fixing of AlphaDog v2 enrichment/scoring system bugs: batter_quality_of_contact wiring gap, system-wide missing-data rate-penalty bias, lineup_slot SELECT bug, batter_quality_of_contact factor/cell type mismatch, quota merge ordering, TWP player profiles, and daily-context-runner scheduling gap. Spans baseline, enrichment, certifier, and board-UI layers with SQL verification before each deploy.]
+
+
+
+
+=== Journal Entry 2026-07-26T19:48:14.944258+00:00 ===
+2026-07-26-19-48-14-alphadog-enrichment-hp-deep-audit-2026-07-26.txt
+[Deep systematic audit and multi-layer bug fixing session for AlphaDog v2 scoring pipeline: daily context workers (umpire fallback chain, RefMetrics name-to-ID resolution, retry-on-next-run logic), enrichment engine (orphaned stale-row accumulation, confidence_modifier double-counting), hit probability pipeline (baseline_v6_current table sourcing, computeRealHitProbability formula tracing), scoring engine identification (phase3a-certifier.js = scoring-engine-shadow-v1). Multiple fixes deployed and verified against live data.]
+
+
+
+
+=== Journal Entry 2026-07-26T20:29:20.980937+00:00 ===
+2026-07-26-20-29-20-alphadog-enrichment-hp-deep-audit-2026-07-26.txt
+[Deep systematic audit and multi-layer bug fixing session for AlphaDog v2: daily context workers (umpire fallback chain, RefMetrics name-to-ID resolution, retry-on-next-run logic), enrichment engine (orphaned stale-row accumulation, confidence_modifier double-counting, batter_quality_of_contact wiring never persisted to Postgres, player_availability substring false-positive bias, profile cell coverage gaps filled for 3 factors), hit probability pipeline (baseline_v6_current table sourcing confirmed, computeRealHitProbability formula verified), scoring engine identification, master-runner cron scheduling fix, enrichment pagination loop fix. Multiple fixes deployed and verified against live data.]
+
+
+
+
+=== Journal Entry 2026-07-26T21:59:11.038167+00:00 ===
+2026-07-26-21-59-10-alphadog-v2-deep-audit-session-2.txt
+[Continuation of AlphaDog v2 deep audit and multi-layer bug-fixing session: hierarchy less-side fixes, prop taxonomy misclassification (runs/runs_allowed for pitchers across all sources), quota survival system, top/bottom hitters sanity check, silent data-loss in HP board, metric_snapshots duplicate-row bug causing stale classification, and research-grounded rejection of over-engineered platoon-split proposal in favor of validated population-level adjustment.]
+
+
+
+
+=== Journal Entry 2026-07-27T01:33:56.542533+00:00 ===
+2026-07-27-01-33-56-alphadog-v2-deep-audit-session-3.txt
+[Continuation of AlphaDog v2 deep audit: classification/baseline v6 calibration bugs (no shrinkage, confidence discontinuity, dispersion cache poisoning), enrichment cell contamination, reference table non-deterministic queries, quota architecture fixes, and comprehensive reality-check validation against 2633 resolved real outcomes.]
+
+
+
+
+=== Journal Entry 2026-07-27T18:32:16.134313+00:00 ===
+2026-07-27-18-32-15-alphadog-v2-deep-audit-session-4.txt
+[AlphaDog v2 deep audit session 4: continuation covering D1-to-Postgres migration audit, scoring engine parameter limit fix, Platt scaling calibration layer implementation, major UI bug discovery (main board showing only review-tier legs), board-breaking matrix-builder duplicate key fix, goblin/demon/more_only pipeline and UI filter bugs, underdog dfs_normalized more_only detection, and selected_side ON CONFLICT omission root cause. Includes control.claude_session_log table for session recovery.]
+
+
+
+
+=== Journal Entry 2026-07-27T23:11:37.906091+00:00 ===
+2026-07-27-23-11-37-alphadog-v2-deep-audit-session-5.txt
+[AlphaDog v2 deep audit session 5: continuation of session 4 covering calibration safety fixes (Platt monotonicity guard for inverted coefficients), team abbreviation debugging, comprehensive dossier/player-profile data enrichment (K-BB%, Strike%, 1st-Inn-Run-Rate, umpire tendency, quality-of-contact expansion), cron schedule corrections, lock/connection cleanup enforcement, and multiple verified full-run cycles. Includes quality-of-contact expansion documentation and all session log entries through log_id 58.]
+
+
+
+
+=== Journal Entry 2026-07-28T00:06:59.763438+00:00 ===
+2026-07-28-00-06-59-alphadog-v2-deep-audit-session-6.txt
+[AlphaDog v2 deep audit session 6: continuation of sessions 1-5 covering calibration safety fixes (pitcher/hitter fantasy-score prop-key mapping, zero-factor confidence penalty, confidence formula fixes, D1 config migration for calibration, pitcher_fantasy_score line coverage expansion), board-wide top-3-per-prop deep scrutiny, multiple Platt calibration bugs (in-sample evaluation replaced with honest time-based 75/25 train/test split, isotonic regression fallback added, low-slope guard A&lt;0.3), pivot to flag-only calibration system (dry_run=true default, removed from cron), DB-configurable thresholds, semi-automated calibration report/apply API with selective-apply, and board health dashboard planning. Includes comprehensive board health verification runs through log_id 59+.]
+
+
+
+
+=== Journal Entry 2026-07-28T01:24:31.271287+00:00 ===
+2026-07-28-01-24-31-alphadog-v2-deep-audit-session-7.txt
+[AlphaDog v2 deep audit session 7 (continuation of sessions 1-6): building and iterating the Board Health dashboard and Calibration UI with password gate (3971), plus fixing goblin/demon tag rendering bug on main board cards. Covers wrangler config bind bug discovery/fix, per-worker-stage health redesign, and full session including prior calibration fixes.]
+
+
+
+
+=== Journal Entry 2026-07-28T06:16:31.782592+00:00 ===
+2026-07-28-06-16-31-alphadog-v2-session-8-deep-bug-sprint.txt
+[AlphaDog v2 deep audit session 8: major multi-bug sprint covering goblin/demon tag fixes (root cause finally found: duplicate column alias bug), UTC timezone board-emptying fix, daily-probable-pitchers ON CONFLICT crash fix, ParlayAPI key expiry for Underdog/Sleeper, PrizePicks staleness auto-refresh, Board Health dashboard rework, and missing daily-games-status pipeline stage. Continuation of sessions 1-7.]
+
+
+
+
+=== Journal Entry 2026-07-28T20:34:20.351767+00:00 ===
+2026-07-28-20-34-20-alphadog-v2-session-9-calibration-healthdash-sprint.txt
+[AlphaDog v2 session 9: comprehensive health dashboard overhaul (all 6 layers corrected, smart window logic, homogeneous bars), 3-hour freshness buffers for ParlayAPI board/market workers, daily-games-status date fix, full-board calibration study across 1459 real legs vs real box scores, root-cause identified in overdispersedTailGE normal-approximation flaw, fix attempted and reverted after production hang. Continuation of sessions 1-8.]
+
+
+
+
+=== Journal Entry 2026-07-30T00:34:29.173894+00:00 ===
+2026-07-30-00-34-28-alphadog-v2-session-10-calibration-outcome-grader-runner-fixes.txt
+[AlphaDog v2 session 10: comprehensive calibration system overhaul (outcome-grader worker, automated Platt/isotonic refits, 8 corrections applied/5 deactivated), full board runner loop root-cause diagnosed and fixed (ctx.waitUntil gap), all 5 runner workers patched (board, master, daily-context, market, scoring + phase2b-recent-form). Continuation of sessions 1-9.]
+
+
+
+
+=== Journal Entry 2026-07-30T02:14:12.580920+00:00 ===
+2026-07-30-02-14-12-alphadog-v2-session-11-scoring-chain-memory-fix-cron-overhaul.txt
+[AlphaDog v2 session 11: comprehensive overhaul of the full scoring chain - root-cause memory fix in prop-factor-miner, ctx.waitUntil safety net applied to 10 workers, staggered independent cron architecture replacing monolithic master-runner cron, lineup derived-fallback fix, and full pipeline verification including calibration overconfidence deep-check. Continuation of sessions 1-10.]
+
+
+
+
+=== Journal Entry 2026-07-31T01:44:03.316953+00:00 ===
+2026-07-31-01-44-02-alphadog-session-11-12-calibration-scoring-fixes.txt
+[AlphaDog v2 sessions 11-12: comprehensive root-cause overconfidence fixes (NB replacing Normal approximation for all overdispersed props), scoring chain 3-way split architecture (Part1/matrix/Part2), RFI/NRFI mining bug traced and partially fixed, matrix-builder ctx.waitUntil and pagination fixes, calibration manual grounded audit. Continuation of sessions 1-10.]
+
+
+
+
+=== Journal Entry 2026-07-31T22:05:20.398386+00:00 ===
+2026-07-31-22-05-20-alphadog-session-12-13-slip-builder-calibration-ui-fixes.txt
+[AlphaDog v2 sessions 12-13: complete slip builder redesign (D1→Postgres migration, EV/calibration engine, team constraints, correlation warnings), RFI 99%-clamp root cause 2 found/fixed (stale calibration corrections fit against broken data), Sleeper board staleness bug traced and fixed, client-side game-started filter added, calibration screen systemic gap fixed (PROP_CALIBRATION_FIX_DATES registry). Multiple syntax crash/fix cycles with node --check validation. Continuation of sessions 1-12.]
+
+
+
+
+=== Journal Entry 2026-07-31T23:40:03.848087+00:00 ===
+2026-07-31-23-40-03-alphadog-sessions-12-13.txt
+[AlphaDog v2 sessions 12-13: comprehensive system audit including game-log mining, calibration system overhaul (deduplication fix, zombie correction cleanup, new residual second-stage corrections for 8 props), board validation (PrizePicks staleness root cause, scoring chain fixes, multi-app score differentiation), scheduler timing analysis, and deep board certification with empirical overconfidence fixes across total_bases/singles/hits_runs_rbis/hits/runs/rbis/doubles/walks/fantasy_score. Continuation of sessions 1-12.]
+
+
+
+
+=== Journal Entry 2026-08-02T02:48:19.120773+00:00 ===
+2026-08-02-02-48-18-alphadog-sessions-14-20-calibration-enrichment-confidence.txt
+[AlphaDog v2 sessions 14-20: complete deep calibration audit (both sides, all props, source-aware corrections for PP/UD/Sleeper, tier/profile analysis), confidence system root-cause investigation (enrichment blocking_for_scoring bug, missing context fields), structural fixes (calendar-refresh automation, stale lock self-cleanup, matrix-builder parallelization), and multiple master run verifications with per-layer scrutiny.]
+
+
+
+
+=== Journal Entry 2026-08-02T03:41:49.199151+00:00 ===
+2026-08-02-03-41-48-alphadog-sessions-14-27-deep-fixes.txt
+[AlphaDog v2 sessions 14-27: deep scrutiny and systematic fixes across enrichment layer (blocking_for_scoring bug, 4 wiring gaps), daily-context layer (game-time-filter bug in 5 workers, date-format prune bugs, catcher_context persistence, probable_pitchers NULL accumulation), market layer (duplicate-key crash), classification/baseline layer (pitches_thrown data gap discovered), final-board scrutiny, and night master run verification with Sleeper/Underdog API investigation.]
+
+
+
+
+=== Journal Entry 2026-08-02T04:18:25.586083+00:00 ===
+2026-08-02-04-18-25-alphadog-sessions-28-50-deep-fixes-calibration.txt
+[AlphaDog v2 sessions 28-50: Sleeper API fix (Parlay filter bug), bat_side fallback extension, catcher_context fallback rewrite, played_catcher_flag replacement, Part2 lock-budget widening, hp-board/scoring-engine pagination fix, schedule budget adjustment with wait-and-retry, Part1 pitcher-stage self-continuation, umpire 100% coverage fix (finalizeWindowReplacement bug), calibration session review, factor correlation/stacking audit (catcher_poptime_arm double-count fix), naive projection scrutiny, and subset-constraint reconciliation audit-trail gap discovered.]
+
+
+
+
+=== Journal Entry 2026-08-02T05:47:41.852214+00:00 ===
+2026-08-02-05-47-41-alphadog-sessions-51-73-slips-prizepicks-research.txt
+[AlphaDog v2 sessions 51-73: calibration_json audit-trail gap fix (subset_constraint reconciliation), deep research on DFS slip strategy (Kelly math, payout tables, app mechanics), new dedicated research-grounded slip engine, PrizePicks board empty bug investigation and fix, and deep statistical overdispersion research grounding prop-type diversification within slips.]
+
+
+
+
+=== Journal Entry 2026-08-03T00:30:34.069010+00:00 ===
+2026-08-03-00-30-33-alphadog-sessions-74-end-slips-research-backtest.txt
+[AlphaDog v2 sessions 74-end: comprehensive 4-day backtest of research-grounded slip engine (PrizePicks/Underdog/Sleeper), statistical significance testing, Kelly criterion analysis, goblin/demon multiplier research, Sleeper dynamic pricing investigation, slip-count bug fix (legs being wasted when no valid slip found), and multiple UI/EV calculation improvements.]
+
+
+
+
+=== Journal Entry 2026-08-04T05:44:05.481764+00:00 ===
+2026-08-04-05-44-05-alphadog-sessions-74-end-slips-gaps-delta-fixes.txt
+[AlphaDog v2 sessions 74-end: comprehensive work on slip engine (goblin/demon multiplier validation with real user test data, EV calculation fixes, PrizePicks/Sleeper/Underdog slip generation), full season data gap investigation and remediation (team_id format normalization, postponed game detection), and daily-delta-runner architectural redesign as two independently-locked parts with self-chaining state machine for Part 2.]
+
+
+
+
+=== Journal Entry 2026-08-04T05:45:52.753431+00:00 ===
+2026-08-04-05-45-52-alphadog-cowork-scheduling-calibration-cron-fixes.txt
+[AlphaDog v2 session covering: cron fix for split part1/part2 daily-delta-runner, calibration re-run after data gap fixes (pitcher_outs and fantasy_score updated), extensive brainstorm and research on Claude Cowork scheduled tasks as a replacement for cron-based orchestration, decision to drop the Anthropic API worker approach (cost), and creation of a detailed Cowork scheduled task prompt for the master run supervisor (board/daily-context/market/scoring full runs with verification and surgical fix instructions).]
+
+
+
+
+=== Journal Entry 2026-08-04T21:56:28.884875+00:00 ===
+2026-08-04-21-56-28-alphadog-cowork-monitoring-calibration-connection-fixes.txt
+[AlphaDog v2 session covering: Cowork scheduled task setup for Master Run Supervisor (3x/day) and Morning Delta Full Run Supervisor (7am daily), extensive debugging of stateful_delta D1-write bug, preflightCleanup lock-scoping bug fix, connection-killer start+end pattern added to 7 workers, Platt scaling target-smoothing root-cause fix (fitPlattScaling missing Platt's own 1999 safeguard), master run deep scrutiny revealing scoring stall and orchestrator chain_id propagation bug, calibration prompt lightweight slope check addition.]
+
+
+
+
+=== Journal Entry 2026-08-05T18:48:34.543074+00:00 ===
+2026-08-05-18-48-34-alphadog-v2-aug4-deep-fixes-gemini.txt
+[AlphaDog v2 session covering: calibration sweep revealing PrizePicks missing from live board (prop-factor-miner and matrix-builder time filter bug), RFI/NRFI misclassification fix across 3 locations, scoring-engine pagination bug root cause and fix, Gemini API second-opinion checker built on repurposed dummy worker, Gemini critique grounded/validated against real data and research, market-odds-aware calibration signal scoped. Also covers Cowork scheduled task self-healing prompts for delta and master runs.]
+
+
+
+
+=== Journal Entry 2026-08-05T19:46:42.268750+00:00 ===
+2026-08-05-19-46-41-alphadog-v2-aug4-master-delta-deep-fixes.txt
+[AlphaDog v2 extended session covering: Cowork scheduled task permission issues, confirmed duplicate-cron Cloudflare bug fix (Feb 30 workaround), market-runner/all-6-runner callStage timeout fix, baseline_v6 architectural fix (one combo per call), complete 29-call individual-worker master run sequence verified live with root causes found (matrix-builder request_id vs chain_id bug, enrichment-engine chain_id, scoring-engine chain_id chained to hp-board), master run and delta prompts fully updated to direct-call-no-runners architecture, market-divergence diagnostic built and deployed. Also covers cron-fires-despite-empty-array Cloudflare bug, daily-context weather stall investigation, scoring certifier report quirks.]
+
+
+
+
+=== Journal Entry 2026-08-05T22:12:07.692072+00:00 ===
+2026-08-05-22-12-07-alphadog-v2-aug5-master-delta-architecture.txt
+[AlphaDog v2 extended session covering: manual layer-by-layer Delta run execution and verification, Delta prompt rewrite (LAYER 1-5 architecture matching Master), calibration training validation, cron no-op fixes (9 workers total: 3 delta + 6 master), Master run data verification, UI/slip system debugging (double-calibration bug fixed, PP Goblin/Demon "less" root cause found and ingestion fix deployed), new control.user_placed_slips_log table with 23 slips saved for 2026-08-05, parsing bug fixes (first_inning_hits_allowed for Bryan Woo/Drew Anderson in Underdog and Sleeper), PP board refresh investigation, is_under_allowed column added to market.prizepicks_board_current.]
+
+
+
+
+=== Journal Entry 2026-08-06T17:38:50.968890+00:00 ===
+2026-08-06-17-38-50-alphadog-v2-aug5-goblin-demon-more-less-fix.txt
+[AlphaDog v2 session: Goblin/Demon "more" vs "less" side-conflation root-cause fix across score-prep, matrix-builder, and all DB tables. Covers multi-layer plumbing of is_goblin/is_demon/is_under_allowed through board_prepared_current → prop_matrix_current. Critical buildSideVariationContext fix from "more_only" hardcode to genuine two_sided when is_under_allowed=1.]
+
+
+
+
+=== Journal Entry 2026-08-07T03:15:48.077700+00:00 ===
+2026-08-07-03-15-47-alphadog-v2-aug5-goblin-demon-less-calibration-deep-fix.txt
+[AlphaDog v2 session: Deep multi-hour calibration scrutiny and bug-fixing pass. Covers the full chain of Goblin/Demon 'less' side selection fixes (from raw ingestion through final board), ladder hierarchy enforcement, EV payout ratio corrections (side-aware goblin/demon ratios), cross-source consistency checks, star-player sanity checks, diagnostic breadcrumb scale bug fix, and a final deep research pass on PrizePicks' allowed_wager_types system for the new bidirectional Goblin/Demon feature. Heavy pipeline manipulation (factor mining, matrix, enrichment, hp-board, scoring, final-board cycles). Critical open question surfaced at session end: online sources universally say Goblins/Demons require 'more' only, but user states PP changed this yesterday and raw API shows under_or_over for thousands of rows — consensus unresolved.]
+
+
+
+
+=== Journal Entry 2026-08-07T05:03:49.553850+00:00 ===
+2026-08-07-05-03-49-alphadog-v2-aug6-deep-bug-fix-calibration-prevention.txt
+[AlphaDog v2 session: Continuation of prior session. Major EV/slip logic bug fixes (Grounded/Goblin/Demon slips), real Sleeper/Underdog dynamic pricing implementation, calibration double-discounting fix, final-board is_goblin/is_demon bug fix, data deduplication across history tables, PP board staleness prevention (GitHub Actions cron), and calibration fitting asymmetry fix (isotonic fallback only correcting 'more' side). Full master and morning delta run verifications. Session ended with GitHub Actions major platform outage blocking final deploy.]
+
+
+
+
+=== Journal Entry 2026-08-07T22:49:19.484493+00:00 ===
+2026-08-07-22-49-19-alphadog-v2-aug6-deep-fixes-rfi-migration.txt
+[AlphaDog v2 marathon session: GitHub Actions outage diagnosis/resolution, calibration improvements (Beta calibration, isotonic fixes, PA/AB denominator bug), hits_runs_rbis recency fix, weekly differential roster update fix, RFI/NRFI complete D1→Postgres migration with outcome grading wired. Covers deploy pipeline bugs, probability model root causes, and full first-inning data infrastructure rebuild.]
+
+
+
+
+=== Journal Entry 2026-08-08T06:09:42.638458+00:00 ===
+2026-08-08-06-09-42-alphadog-v2-aug7-rfi-calibration-board-deep-fixes.txt
+[AlphaDog v2 session continuing from prior compaction: RFI/NRFI full migration completion, coworker prompt discovery and verification, calibration safeguard implementation, morning delta and master run verification, board/slips audit, and critical connection pooling fix for Cloudflare Workers/Hyperdrive.]
+
+
+
+
+=== Journal Entry 2026-08-08T07:36:16.538176+00:00 ===
+2026-08-08-07-36-16-alphadog-v2-aug8-calibration-goblin-fixes.txt
+[AlphaDog v2 session: deep calibration audit via baseline vs outcome cross-reference, goblin/demon badge fix (general side-aware rule), stolen_bases more-only enforcement, walks sharpening, doubles|less stale correction removal, board restoration, outcome-history duplicate cleanup, and RFI/NRFI denominator fix with starter-eligibility filter.]
+
+
+
+
+=== Journal Entry 2026-08-10T01:19:54.381563+00:00 ===
+2026-08-10-01-19-54-alphadog-v2-aug8-deep-calibration-classification-enrichment-audit.txt
+[AlphaDog v2 marathon session: deep, multi-layer system audit covering calibration (more-side cluster root cause, structural fitting fix), classification/baseline (shrinkage formula, tier binning, count vs rate branching, data propagation 244/244), enrichment layer validation, final score validation, final board assembly, and grounded slips (Goblin/Demon multiplier gap confirmed, Demon tier data needed). All work grounded in deep research and empirical validation.]
+
+
+
+
+=== Journal Entry 2026-08-10T21:51:57.128002+00:00 ===
+2026-08-10-21-51-56-alphadog-v2-aug8-10-deep-calibration-slip-builder-ud-fix.txt
+[AlphaDog v2 marathon session covering: calibration deactivation side-scoping bug fix, slip builder confidence-vs-probability field bug, 80% per-leg hit floor implementation, source-filter checkboxes + per-slip save UI, Underdog pitcher_fantasy_score formula mismatch discovery and exclusion, backtest of 5 days with new threshold, and multiple compounding bug fixes across the full pipeline. Real money placement context throughout.]
+
+
+
+
+=== Journal Entry 2026-08-11T00:28:17.012923+00:00 ===
+2026-08-11-00-28-16-alphadog-v2-ud-pitcher-formula-research.txt
+[AlphaDog v2 multi-session marathon: covers calibration deactivation side-scoping bug fix, slip builder confidence-vs-hit-probability fix, 80% per-leg floor, Underdog pitcher_fantasy_score formula research with multi-source consensus, revert of prop exclusion, and scope of proper architectural fix. Real money context throughout.]
+
+
+
+
+=== Journal Entry 2026-08-11T00:29:25.484950+00:00 ===
+2026-08-11-00-29-25-alphadog-v2-aug10-fixes-calibration-slips-research.txt
+[Massive AlphaDog v2 session (Aug 10, 2026) covering: pitcher role-change discontinuity fix in baseline_v6, goblin/demon multiplier study with 44+ real data points, calibration coverage gap check (per-bucket refined), pitches_thrown data bug discovery, Blade Tidwell role-change case study, manual stage-by-stage pipeline propagation run (147 baseline combos), and multiple other fixes. Real money placement context throughout.]
+
+
+
+
+=== Journal Entry 2026-08-11T04:31:30.286742+00:00 ===
+2026-08-11-04-31-30-alphadog-v2-aug10-11-fixes-grading-calibration-slips.txt
+[Massive multi-session AlphaDog v2 session (Aug 10-11, 2026) covering: classification_v6_tick bug fix, role-discontinuity detection overhaul (multiplier → fresh-sample replacement), pitcher_fantasy_score_ud prop_line_universe gap fix, outcome grader DNP/push/tie/singles fixes, 7-day top-10-per-app grading exercise with financial simulation. Multiple real bugs found and fixed throughout via direct testing. Real money context throughout.]
+
+
+
+
+=== Journal Entry 2026-08-11T20:53:07.834818+00:00 ===
+2026-08-11-20-53-07-alphadog-v2-aug11-calibration-slips-strategy.txt
+[Massive AlphaDog v2 session (Aug 11, 2026) covering: dispersion cap fix for fantasy_score/hits miscalibration, full per-app per-prop-line calibration study (goblins included), 7-day slip simulation with real leg1×leg2 pairwise pairing, sweet-spot analysis (volume vs stake size), line-trust multiplier deployed to slip builder, priority-order volume balancing (UD→PP→Sleeper) deployed, live board comparison against user's real app output. Multiple real bugs found, fixed, and validated throughout. Real money context. Research-grounded throughout with large-sample validation mandated.]
+
+
+
+
+=== Journal Entry 2026-08-11T22:21:54.134974+00:00 ===
+2026-08-11-22-21-53-alphadog-v2-aug11-calibration-slips-pipeline.txt
+[Marathon AlphaDog v2 session (Aug 11, 2026) covering: grounded slip engine overhaul (priority order, trust multiplier, segment restrictions, real dynamic pricing discovery), 7-day study recalculation with real per-leg pricing, sandbox-first development protocol established, master run deep scrutiny, and critical PP selected_side bug discovered and fixed. Real money context. Multiple production deploys with sandbox validation.]
+
+
+
+
+=== Journal Entry 2026-08-12T01:53:21.485300+00:00 ===
+2026-08-12-01-53-21-alphadog-v2-aug11-goblin-demon-fix-board-restore.txt
+[Marathon AlphaDog v2 session (Aug 11, 2026 continued) covering: grounded slip engine wide-pool revert fix (restoring 24 slips from 165 legs), board reliability investigation revealing massive Goblin/Demon mislabeling bug (1,752 legs wrong across 9 prop types), root-cause found in phase3c-certifier.js (blanket side='less' flip rule), root-cause fix deployed, board outage caused and recovered, rfi_nrfi and fantasy_score added to dossier/player profile, walks_allowed analysis, Taco Tuesday leg validation, delta run schedule change review with sleep-timeout risk analysis, master run deep scrutiny.]
+
+
+
+
+=== Journal Entry 2026-08-12T01:55:43.949750+00:00 ===
+2026-08-12-01-55-43-alphadog-v2-aug12-goblin-demon-board-refresh.txt
+[AlphaDog v2 session covering exhaustive one-by-one Goblin/Demon verification of all 2,839 PrizePicks legs against both score_prep and raw PrizePicks feed, live board UPDATE to fix stale restored data, PrizePicks board refresh (8,767 rows), score_prep refresh (8,736 PP rows), and failed scoring-runner-matrix attempt (CONNECTION_CLOSED error). Session ended with coworker taking over matrix rebuild. User explicitly frustrated throughout.]
+
+
+
+
+=== Journal Entry 2026-08-12T18:18:29.068090+00:00 ===
+2026-08-12-18-18-28-alphadog-v2-aug12-goblin-demon-pipeline-fix.txt
+[AlphaDog v2 marathon session covering: (1) EV calculation bug fixes for goblin/demon payout ratios, (2) Goblin/Demon Slips tab fixes (threshold and segment selection), (3) discovery and deep investigation of PrizePicks' two-sided goblin/demon lines (same variation showing goblin for one side, demon for the other, confirmed via screenshot), (4) identification of the architectural wiring bug where two-sided lines only produce ONE matrix row (always "more") instead of TWO (one per side), causing high-probability "less" legs to be silently discarded, and (5) partial implementation of the fix — matrix builder modification in progress at session end. Contains critical code changes, SQL verification queries, and raw JSON analysis across multiple files.]
+
+
+
+
+=== Journal Entry 2026-08-12T20:00:14.479799+00:00 ===
+2026-08-12-20-00-14-alphadog-v2-aug12-goblin-demon-pipeline-fix-session2.txt
+[AlphaDog v2 extended session continuing from compacted summary. Covers: (1) discovery and read of Master_Full_Run.txt coworker prompt (coworker/prompts/Master_Full_Run.txt), (2) implementation and live verification of the two-sided goblin/demon matrix fix — generating TWO rows per PrizePicks two-sided line instead of one, with correct is_goblin/is_demon flip, (3) multiple secondary bugs found and fixed same session (completion-check bug, Sleeper/UD duplicate expansion bug, double-flip bug in phase3c-certifier.js), (4) comprehensive end-to-end verification (6,487 matrix rows, zero duplicates, subset_constraint_reconcile clean), (5) walks overconfidence root-cause investigation spanning the full scoring stack — confirmed an active beta_calibration_post_rootfix_v1 correction already handles this, (6) PrizePicks Arena peer-to-peer format discovery (all US fixed-payout model retired Aug 22, 2025), (7) slip multiplier study revisit revealing the 1.2x/1.3x/1.4x data is slip-level not per-leg, and the pattern suggests discrete tiers not continuous HP curve. Contains all commits, real verification SQL, and code changes across phase2b-certifier.js and phase3c-certifier.js.]
+
+
+
+
+=== Journal Entry 2026-08-12T20:45:52.384383+00:00 ===
+2026-08-12-20-45-52-alphadog-v2-aug12-delta-run-d1-migration-splits-fix.txt
+[AlphaDog v2 marathon multi-topic session covering: (1) multiplier study research from prior transcripts confirming 44-point validated study already complete, (2) Flex payout mode real-data study with user testing (9 data points: goblin 3-6 pick, standard control, demon), (3) Flex EV calculation fix deployed, (4) goblin dynamic sizing fix, (5) new Regular Slips endpoint built and deployed, (6) 7-day demon/goblin/regular historical backtests, (7) delta run deep scrutiny and independent verification for Aug 11, (8) CRITICAL: all 12 D1 databases confirmed deleted — ensureSchema fix, D1_BINDINGS=[] global fix deployed, (9) splits mining gap found+backfilled (hitter 2225 rows, pitcher 2799 rows), (10) Delta_Full_Run_10pm_v2.txt updated with splits calls 6c/6d, (11) manual delta full run Layer 1-2 execution for Aug 11 (88 combos of 268 baseline_v6 completed, then continuing to 110/268 across sessions).]
+
+
+
+
+=== Journal Entry 2026-08-12T22:30:28.321134+00:00 ===
+2026-08-12-22-30-28-conversation_summary.md
+[AlphaDog v2 marathon session covering: (1) Master Full Run all 29 steps manually executed and verified, (2) prop-factor-miner taxonomy gap found and fixed for 4 new prop types, (3) fullHitMultiplier/dist regression bug found and fixed in certification-center.js, (4) slip generator started-legs filter bug found and fixed across all 4 builders, (5) new two-sided legs calibration validation, (6) Delta Full Run baseline_v6 completed (268/268 combos), (7) calibration training applied. Full transcript at /mnt/transcripts/]
+
+
+
+
+=== Journal Entry 2026-08-13T02:21:11.065278+00:00 ===
+2026-08-13-02-21-10-alphadog-calibration-empirical-distribution-audit.txt
+[Deep calibration debugging and architecture session for AlphaDog v2: discovered and fixed the dispersion cap bug across all count-based props, built a real empirical tier-based distribution system replacing parametric formulas, found stale double-correction hidden bugs, migrated hardcoded correction maps to database, and created a comprehensive audit tracker. Covers full investigation trail with market data validation at each step. Continues from a prior session summary.]
+
+
+
+
+=== Journal Entry 2026-08-13T03:57:57.971762+00:00 ===
+2026-08-13-03-57-57-alphadog-calibration-enrichment-audit.txt
+[Deep multi-session audit of AlphaDog v2: classification/baseline empirical distribution system (all hitter/pitcher props), enrichment layer consumption audit, bullpen_history root cause investigation and fix, and enrichment factor architecture analysis. Covers the full investigation trail with market data validation at each step. Continuation of the prior calibration/empirical distribution session.]
+
+
+
+
+=== Journal Entry 2026-08-13T05:26:36.885798+00:00 ===
+2026-08-13-05-26-36-alphadog-v2-audit-daily-context-fixes.txt
+[Deep multi-session audit of AlphaDog v2 covering: daily-context layer completeness verification per Master_Full_Run.txt coworker prompt, market-odds integration (player-specific confidence signal), pitcher role-transition bug discovery and fix (Quantrill/Lynch), redundant data archive cleanup, umpire mining pipeline (RefMetrics parser root-cause fix, derived_likely_crew fallback empirical validation and disabling, ref.umpire_tendency rebuild from 168-game backfill). All fixes deployed and verified against real production data.]
+
+
+
+
+=== Journal Entry 2026-08-13T06:37:37.564930+00:00 ===
+2026-08-13-06-37-37-alphadog-v2-scoring-calibration-audit.txt
+[Deep multi-session audit of AlphaDog v2 scoring pipeline: daily-context layer completion verification (all 11 workers), market/scoring layer consumption audit, factor-miner disconnection investigation, baseline_v6 recency-blend architecture trace, and empirical calibration testing. Multiple real bugs found and fixed including IL detection, weather roof status, lineup coverage cap, and others. Final research question: whether phase2b-recent-form.js packets should be consumed in scoring, with empirical calibration data showing uniform ~8-9pp overconfidence at high-HP regardless of sample size.]
+
+
+
+
+=== Journal Entry 2026-08-13T17:30:04.389844+00:00 ===
+2026-08-13-17-30-04-alphadog-v2-calibration-audit-tier-fix.txt
+[Deep AlphaDog v2 calibration audit session: empirical overconfidence analysis, prop-specific and variant-level (goblin/demon/standard) tiering, earned_runs/pitcher_strikeouts Platt-scaling fixes applied, tier-aware calibration infrastructure added, enrichment factor consumption audit, baseline v5/v6 architecture clarification, and calibration monitoring cadence decision grounded in research and internal debugging.]
+
+
+
+
+=== Journal Entry 2026-08-13T17:37:14.636077+00:00 ===
+2026-08-13-17-37-14-alphadog-v2-final-scrutiny-slip-builder.txt
+[AlphaDog v2 comprehensive calibration audit, full-board hierarchy verification, score-variation leak fix (goblin/demon/standard), production board repair, and slip-building system investigation. Covers: all enrichment factor wiring confirmed, calibration corrections applied and pipeline-traced, line/tier/easy-match hierarchy checks across full historical universe, goblin/demon score monotonicity leak found and fixed in scoring engine, live production board emptiness resolved, 206 missing-HP legs diagnosed (200 deliberately deferred, 6 genuine rfi_nrfi normalization bug fixed), and slip-building system found non-existent despite schema being present.]
+
+
+
+
+=== Journal Entry 2026-08-14T00:52:10.257657+00:00 ===
+2026-08-14-00-52-10-alphadog-slip-builder-review-live-test.txt
+[AlphaDog v2 slip-building system audit and live endpoint verification session. Covers: discovery that slip system exists in certification-center worker (not separate workers as previously thought), live testing of all four slip endpoints against freshly-fixed board data, goblin/demon ratio mechanics analysis, legScoreForBuild ratio-based scoring review, and final clean bill of health on the slip-building system. Also covers: initial conversation context about "the slip building system" being on "the main UI, the certification center worker" triggering the full investigation.]
+
+
+
+
+=== Journal Entry 2026-08-14T00:56:38.112033+00:00 ===
+2026-08-14-00-56-37-slip-builder-variant-label-correlation-enrichment-fixes.txt
+[AlphaDog v2 multi-fix session covering: (1) goblin/demon variant label mislabeling in slip display pipeline (source_variant_label column added across matrix→HP→final board→slip builder), (2) prop-concentration warnings added to slipWarnings(), (3) pitcher_fantasy_score|less calibration gap documented, (4) parseJsonObject JSONB bug discovered and fixed in score-final-board.js, (5) enrichment_rate_multiplier wired through outcome-grader for future per-prop hierarchy verification. Contains all code changes, SQL column adds, deploy confirmations, and calibration data queries.]
+
+
+
+
+=== Journal Entry 2026-08-14T04:43:54.535956+00:00 ===
+2026-08-14-04-43-54-alphadog-slip-system-enrichment-audit-2026-08-13-14.txt
+[AlphaDog v2 marathon session covering: (1) slip system bugs (started-game legs, goblin/demon labels, prop-concentration warnings), (2) game-calendar staleness root cause and fix, (3) calibration batch apply for 5 props plus deactivation of stale corrections, (4) umpire rotation predictor scoping, (5) comprehensive enrichment factor audit with residual-testing methodology establishing permanent discipline, (6) multiple sign-inversion bugs found and fixed in enrichment factors, (7) weather_roof gap fully resolved with real backfill + stadium duplicate-row bug found and fixed system-wide. Contains all code changes, SQL fixes, correlation tests, config changes, deploy confirmations, and DOS_AND_DONTS updates.]
+
+
+
+
+=== Journal Entry 2026-08-14T05:57:17.103772+00:00 ===
+2026-08-14-05-57-16-alphadog-v2-enrichment-calibration-weekly-diff-umpire-predictor-2026-08-14.txt
+[AlphaDog v2 extended session covering: (1) weekly-differential-runner root cause investigation and fix (stadium duplication bug), (2) pitcher_arsenal unstable ID fix, (3) full enrichment factor extension (opposing_pitcher_quality 4 new props, umpire_tendency walks+runs dedicated signals, batter_quality_of_contact thin-sample tiering), (4) umpire predictor build (data backfill, 100% backtested, integrated into live enrichment), (5) calibration props-filter real fix + 4 pre-existing write-path bugs, (6) classification/baseline V5-vs-V6 misidentification discovery and tagging, (7) system-wide calibration audit revealing severe high-confidence overconfidence (10.5pp gap at 80+ stated HP for standard less-side legs). Contains all code changes, SQL fixes, deploy confirmations, and DOS_AND_DONTS updates.]
+
+
+
+
+=== Journal Entry 2026-08-14T06:43:42.331817+00:00 ===
+2026-08-14-06-43-42-alphadog-v2-overconfidence-tier-granularity-d1-cleanup-2026-08-14.txt
+[Extended AlphaDog v2 session covering: (1) high-confidence overconfidence root-cause investigation and tier granularity fix, (2) system-wide D1 dead-code discovery and cleanup (score-audit.js confirmed entirely dead, GBDT auto-trigger crash loop fixed), (3) outcome grader doubleheader bug found and fixed, (4) fast-loop classification refresh pipeline built, (5) multiple dead-mode dispatch guards deployed. Contains all simulation results, empirical testing, code changes, SQL fixes, deploy confirmations, and DOS_AND_DONTS updates.]
+
+
+
+
+=== Journal Entry 2026-08-14T15:31:35.783775+00:00 ===
+2026-08-14-15-31-35-alphadog-v2-aug14-delta-scrutiny-dual-grading-splits.txt
+[AlphaDog v2 session covering: (1) deep scrutiny of coworker's 2026-08-13 delta full run (all 5 layers verified against live DB), (2) discovery and root-cause research of dual outcome-grading system bug (resolve_prop_outcomes vs outcome-grader.js writing incompatible IDs to same table), (3) bidirectional dedupe fix deployed and verified, (4) splits staleness regression discovered live. Contains all DB verification queries, source code analysis, transcript research, code patches, deploy confirmations, and DOS_AND_DONTS update.]
+
+
