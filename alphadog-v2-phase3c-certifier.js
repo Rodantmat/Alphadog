@@ -79,17 +79,18 @@ async function loadCalibrationMap(pgClient) {
 // same raw-probability range. This is additive only - every prop with only prop-level rows (the
 // entire pre-existing correction map) behaves identically to before, since those rows all have
 // tier_key IS NULL and are only ever reached via the fallback branch below.
-function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap, playerTierKey) {
+function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap, playerTierKey, playerVariantKey) {
   if (rawHpPct == null || !calibrationMap) return { correctedHp: rawHpPct, applied: false };
   const bins = calibrationMap.get(`${propKey}|${side || ""}`);
   if (!bins || !bins.length) return { correctedHp: rawHpPct, applied: false };
   const rawP = rawHpPct / 100;
   let bin = null;
-  if (playerTierKey) bin = bins.find(b => b.tier_key === playerTierKey && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
-  if (!bin) bin = bins.find(b => !b.tier_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
+  if (playerVariantKey) bin = bins.find(b => b.variant_key === playerVariantKey && !b.tier_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
+  if (!bin && playerTierKey) bin = bins.find(b => b.tier_key === playerTierKey && !b.variant_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
+  if (!bin) bin = bins.find(b => !b.tier_key && !b.variant_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
   if (!bin) return { correctedHp: rawHpPct, applied: false };
   const corrected = clamp(rawHpPct + Number(bin.correction_delta) * 100, 1, 99);
-  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta) * 100, bin_n_test_games: bin.n_test_games, tier_specific: Boolean(bin.tier_key) };
+  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta) * 100, bin_n_test_games: bin.n_test_games, tier_specific: Boolean(bin.tier_key), variant_specific: Boolean(bin.variant_key) };
 }
 
 // Second-stage residual correction, applied AFTER the first stage above, operating directly on
