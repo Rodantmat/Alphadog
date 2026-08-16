@@ -739,7 +739,7 @@ async function generateFinalBoard(pgClient, input) {
     return output;
   }
 
-  await upsertBoardHistoryRows(pgClient, batchId, simBatchId, rows, 150);
+  await upsertBoardHistoryRows(pgClient, batchId, simBatchId, rows, 900);
   await pgClient`DELETE FROM score.final_board_current`;
   await insertBoardRowsBatched(pgClient, "score.final_board_current", batchId, simBatchId, rows, 150);
 
