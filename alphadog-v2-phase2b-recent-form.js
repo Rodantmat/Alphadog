@@ -501,9 +501,9 @@ async function insertCoverageRows(pgClient, batchId, coverageRows) {
     normalized_factor_lane: c.normalized_factor_lane, factor_status: c.factor_status, factor_grade: c.factor_grade, packet_id: c.packet_id || null, latest_batch_id: batchId, latest_checked_at: nowIso(),
     blocking_for_matrix: c.blocking_for_matrix ? 1 : 0, missing_reason: c.missing_reason || null, details_json: JSON.stringify(c.details || {}), official_date: c.official_date
   }));
-  const CHUNK = 150;
-  for (let i = 0; i < rowsForInsert.length; i += CHUNK) {
-    const slice = rowsForInsert.slice(i, i + CHUNK);
+  const COVERAGE_INSERT_CHUNK = 900;
+  for (let i = 0; i < rowsForInsert.length; i += COVERAGE_INSERT_CHUNK) {
+    const slice = rowsForInsert.slice(i, i + COVERAGE_INSERT_CHUNK);
     await pgClient`INSERT INTO scoring.prop_factor_coverage_current ${pgClient(slice, ...covCols)}
       ON CONFLICT (coverage_key) DO UPDATE SET factor_status=EXCLUDED.factor_status, factor_grade=EXCLUDED.factor_grade, packet_id=EXCLUDED.packet_id, latest_batch_id=EXCLUDED.latest_batch_id, latest_checked_at=EXCLUDED.latest_checked_at, blocking_for_matrix=EXCLUDED.blocking_for_matrix, missing_reason=EXCLUDED.missing_reason, details_json=EXCLUDED.details_json, updated_at=now()`;
   }
