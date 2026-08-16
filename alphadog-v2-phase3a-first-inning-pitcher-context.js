@@ -1267,7 +1267,7 @@ function propValueFromRow(prop, r){
   if(p==="earned_runs") return num(r.earned_runs);
   if(p==="runs_allowed") return num(r.runs_allowed);
   if(p==="walks_allowed") return num(r.walks_allowed);
-  if(p==="rfi_nrfi") return num(r.rfi_value);
+  if(p==="rfi_nrfi") return r.rfi_value != null ? num(r.rfi_value) : null;
   return null;
 }
 function mForProp(prop){ const p=String(prop||""); if(p==="rfi_nrfi") return 50; if(p==="fantasy"||p==="fantasy_score"||p==="pitcher_fantasy_score"||p==="hits_runs_rbis") return 35; if(p==="pitches_thrown"||p==="pitcher_outs") return 20; if(p==="triples"||p==="home_runs"||p==="stolen_bases") return 100; return 25; }
