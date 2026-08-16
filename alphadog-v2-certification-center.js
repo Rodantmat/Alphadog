@@ -4035,7 +4035,17 @@ async function autoCreateSlips(){
     applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
-function bindAutoCreateSlips(){const b=$('autoCreateSlipsBtn');if(b)b.onclick=autoCreateSlips;const g=$('goblinSlipsBtn');if(g)g.onclick=goblinSlips;const r=$('regularSlipsBtn');if(r)r.onclick=regularSlips;const d=$('demonSlipsBtn');if(d)d.onclick=demonSlips;bindSlipSourceFilters()}
+function setActiveSlipTab(tabName){
+  document.querySelectorAll('.slipTab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabName));
+  const filterRow=$('slipSourceFilterRow');if(filterRow)filterRow.classList.toggle('hidden',tabName!=='grounded');
+}
+function bindAutoCreateSlips(){
+  const b=$('autoCreateSlipsBtn');if(b)b.onclick=()=>{setActiveSlipTab('grounded');autoCreateSlips()};
+  const g=$('goblinSlipsBtn');if(g)g.onclick=()=>{setActiveSlipTab('goblin');goblinSlips()};
+  const r=$('regularSlipsBtn');if(r)r.onclick=()=>{setActiveSlipTab('regular');regularSlips()};
+  const d=$('demonSlipsBtn');if(d)d.onclick=()=>{setActiveSlipTab('demon');demonSlips()};
+  bindSlipSourceFilters()
+}
 async function regularSlips(){
   const btn=$('regularSlipsBtn');const results=$('autoCreateResults');
   if(btn)btn.disabled=true;
