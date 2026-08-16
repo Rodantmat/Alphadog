@@ -416,7 +416,8 @@ async function runHitProbabilityBoard(pgClient, input, sourceMatrixBatchId) {
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
     const hasRoleOverride = er.role_transition_override_hp != null;
     const rawHp = hasRoleOverride ? Number(er.role_transition_override_hp) : computeRealHitProbability(baselineHp, er.rate_multiplier);
-    const calibration = applyCalibrationCorrection(er.canonical_prop_key, side, rawHp, calibrationMap, baseline?.tier_key || null);
+    const playerVariantKey = isGoblin ? "goblin" : isDemon ? "demon" : "standard";
+    const calibration = applyCalibrationCorrection(er.canonical_prop_key, side, rawHp, calibrationMap, baseline?.tier_key || null, playerVariantKey);
     const residual = applyResidualCorrection(er.canonical_prop_key, side, matrixRow.source_key, calibration.correctedHp, residualMap);
     const hp = residual.correctedHp;
 
