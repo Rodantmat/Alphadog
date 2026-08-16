@@ -379,12 +379,17 @@ function classifyGame(game, boardRow, nowMs) {
   const officialStart = game && game.gameDate ? game.gameDate : null;
   const startMs = isoMs(officialStart);
   const boardStartMs = isoMs(boardRow.start_time);
-  const hasStarted = /in progress|live|warmup|final|completed|suspended|delayed/.test(joined) || (startMs !== null && nowMs >= startMs);
   const isFinal = /final|completed|game over/.test(joined) || abstractState.toLowerCase() === "final";
   const isPostponed = /postponed/.test(joined);
   const isSuspended = /suspended/.test(joined);
   const isDelayed = /delayed/.test(joined);
-  const isInProgress = /in progress|live/.test(joined) || abstractState.toLowerCase() === "live";
+  const isInProgress = /in progress|live/.test(joined) || abstractState.toLowerCase() === "live" || coded === "I";
+  // hasStarted uses authoritative game-state signals (in-progress/final/suspended) rather than a raw
+  // "delayed" text match or a scheduled-time-vs-wall-clock comparison. The old version produced false
+  // positives for pregame delays (e.g. "Delayed Start: Rain" while abstractGameState is still "Preview")
+  // once the scheduled time passed, incorrectly blocking not-yet-started games as "blocked_started" -
+  // same class of bug fixed in alphadog-v2-market-certifier.js gameHasStarted() on 2026-08-02.
+  const hasStarted = isInProgress || isFinal || isSuspended;
   const warnings = [];
   const delta = minutesAbs(boardRow.start_time, officialStart);
   if (delta !== null && delta > 15) warnings.push("warning_board_mlb_time_mismatch");
