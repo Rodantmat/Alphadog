@@ -4011,8 +4011,11 @@ function activeSourceFilters(){const m={sleeper:$('filterSleeper'),prizepicks:$(
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   if(!lastRawSlips.length){return}
-  const active=activeSourceFilters();
-  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>active.has(String(x.s.source_key||'').toLowerCase()));
+  const filterRow=$('slipSourceFilterRow');
+  const filterVisible=filterRow && !filterRow.classList.contains('hidden');
+  const filtered=filterVisible
+    ? lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()))
+    : lastRawSlips.map((s,i)=>({s,i}));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
   results.innerHTML=lastSlipsNoteHtml+'<h3>'+esc(lastSlipsHeading)+'</h3>'+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
