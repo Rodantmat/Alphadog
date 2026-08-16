@@ -564,5 +564,3 @@
 [AlphaDog v2 session covering: (1) deep scrutiny of coworker's 2026-08-13 delta full run (all 5 layers verified against live DB), (2) discovery and root-cause research of dual outcome-grading system bug (resolve_prop_outcomes vs outcome-grader.js writing incompatible IDs to same table), (3) bidirectional dedupe fix deployed and verified, (4) splits staleness regression discovered live. Contains all DB verification queries, source code analysis, transcript research, code patches, deploy confirmations, and DOS_AND_DONTS update.]
 
 
-
-
