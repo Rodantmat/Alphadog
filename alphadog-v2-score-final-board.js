@@ -741,7 +741,7 @@ async function generateFinalBoard(pgClient, input) {
 
   await upsertBoardHistoryRows(pgClient, batchId, simBatchId, rows, 900);
   await pgClient`DELETE FROM score.final_board_current`;
-  await insertBoardRowsBatched(pgClient, "score.final_board_current", batchId, simBatchId, rows, 150);
+  await insertBoardRowsBatched(pgClient, "score.final_board_current", batchId, simBatchId, rows, 900);
 
   const byTierSource = await pgClient`SELECT board_tier, review_playable, source_key, COUNT(*) AS rows, COUNT(DISTINCT canonical_prop_key) AS prop_families, COUNT(DISTINCT mlb_player_id) AS players, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
     FROM score.final_board_current WHERE final_board_batch_id = ${batchId} GROUP BY board_tier, review_playable, source_key ORDER BY board_tier, rows DESC`;
