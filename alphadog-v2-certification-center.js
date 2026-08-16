@@ -2851,13 +2851,24 @@ async function apiAutoCreateSlips(env, request) {
 // research these genuinely differ by app - using one shared table for all three (as the generic
 // engine above does) misrepresents the actual breakeven math for at least one of them.
 const APP_PAYOUT_TABLES = {
+  // PrizePicks: verified 2026-08-15 against PrizePicks' own official Help Center payout page
+  // (prizepicks.com/help-center/payouts, updated 2026-07-02) via a third-party calculator that
+  // cites it directly. Corrects a real discrepancy in the 3-pick Flex tier: this table previously
+  // had 2.25x/1.25x, the actual published rate is 3x/1x - all other tiers already matched.
   prizepicks: {
     power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
-    flex: { 3: { 3: 2.25, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } }
+    flex: { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } }
   },
+  // Underdog: verified 2026-08-15 against Underdog's own official Help Center payout articles
+  // (help.underdogsports.com, Standard & Flex Entry Payouts), also via a third-party calculator
+  // that cites them directly. Replaces a table with multiple real errors - most tellingly, the
+  // old 5-pick Flex full-hit rate (20x) exactly matched the 5-pick Standard rate, which cannot be
+  // correct since Flex always pays less than Standard at the same pick count (true of every other
+  // tier in both apps' real tables). Extended to the full published 2-8 pick range so this stays
+  // honest if RESEARCH_MAX_SLIP_SIZE is ever raised past 3 later.
   parlay_underdog: {
-    power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 25 },
-    flex: { 3: { 3: 2, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 20, 4: 2, 3: 0.4 } }
+    power: { 2: 3.5, 3: 6.5, 4: 10, 5: 20, 6: 35, 7: 65, 8: 120 },
+    flex: { 3: { 3: 3.25, 2: 1.09 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2.5 }, 6: { 6: 25, 5: 2.6, 4: 0.25 }, 7: { 7: 40, 6: 2.75, 5: 0.5 }, 8: { 8: 80, 7: 3, 6: 1 } }
   },
   sleeper: {
     // CONFIRMED VIA RESEARCH (2026-08-02): Sleeper does NOT use a fixed payout table - it uses a
