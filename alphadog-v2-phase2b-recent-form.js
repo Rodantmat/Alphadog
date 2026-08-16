@@ -488,8 +488,8 @@ async function insertPacketAndIssueRows(pgClient, family, batchId, packets, issu
   if (issues.length) {
     const issueCols = ["issue_id", "batch_id", "factor_family", "packet_id", "prepared_row_id", "game_pk", "mlb_player_id", "canonical_prop_key", "severity", "issue_type", "reason", "details_json", "official_date"];
     const issueRowsForInsert = issues.map(i => ({ issue_id: i.issue_id, batch_id: batchId, factor_family: i.factor_family, packet_id: i.packet_id || null, prepared_row_id: i.prepared_row_id || null, game_pk: i.game_pk || null, mlb_player_id: i.mlb_player_id || null, canonical_prop_key: i.canonical_prop_key || null, severity: i.severity, issue_type: i.issue_type, reason: i.reason, details_json: JSON.stringify(i.details || {}), official_date: i.official_date || null }));
-    const CHUNK = 150;
-    for (let i = 0; i < issueRowsForInsert.length; i += CHUNK) await pgClient`INSERT INTO scoring.prop_factor_issues ${pgClient(issueRowsForInsert.slice(i, i + CHUNK), ...issueCols)}`;
+    const ISSUE_INSERT_CHUNK = 900;
+    for (let i = 0; i < issueRowsForInsert.length; i += ISSUE_INSERT_CHUNK) await pgClient`INSERT INTO scoring.prop_factor_issues ${pgClient(issueRowsForInsert.slice(i, i + ISSUE_INSERT_CHUNK), ...issueCols)}`;
   }
 }
 
