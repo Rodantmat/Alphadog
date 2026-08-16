@@ -3954,7 +3954,11 @@ function renderRecommendation(){
   $('useRecommended').onclick=()=>{lastGeneratedSlips=lastRecommendedSlips;renderGenerated()};
 }
 function legLine(l){
-  const variant=l.source_variant_label?(' ['+cap(l.source_variant_label)+']'):'';
+  let variant='';
+  if(String(l.source_key||'').toLowerCase()==='prizepicks'){
+    const label=l.source_variant_label?cap(l.source_variant_label):(Number(l.is_goblin)===1?'Goblin':(Number(l.is_demon)===1?'Demon':'Regular'));
+    variant=' <span class="variantTag variantTag-'+label.toLowerCase()+'">'+esc(label)+'</span>';
+  }
   return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel ? displayPropLabel(l.canonical_prop_key) : cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant;
 }
 function recommendedSlipCard(s){
