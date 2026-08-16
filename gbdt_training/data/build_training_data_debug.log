@@ -1,14 +1,17 @@
 Pulling real weather/umpire context (spans all real historical dates)...
-Pulling real hitter training data for season 2025...
-  season 2025: 44220 real hitter rows
-Pulling real pitcher training data for season 2025...
-  season 2025: 17130 real pitcher rows
-Pulling real hitter training data for season 2026...
-  season 2026: 31207 real hitter rows
-Pulling real pitcher training data for season 2026...
-  season 2026: 12401 real pitcher rows
-Real combined hitter training rows (all seasons): 75427
-Real combined pitcher training rows (all seasons): 29531
-Computing real, leak-safe trailing recent-form features...
-Recent-form features computed.
-Wrote data/hitter_training_multiseason.csv and data/pitcher_training_multiseason.csv
+EXCEPTION:
+Traceback (most recent call last):
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/build_training_data.py", line 234, in main
+    weather, umpire = pull_weather_umpire(d1)
+                      ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/build_training_data.py", line 71, in pull_weather_umpire
+    weather = pd.DataFrame(d1.query_paginated(
+                           ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/d1_client.py", line 85, in query_paginated
+    rows = self.query(db_binding, paged_sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/d1_client.py", line 76, in query
+    raise RuntimeError(f"D1 query failed against {db_binding} after {max_retries} attempts: {last_error}\nSQL: {sql[:200]}")
+RuntimeError: D1 query failed against CONTEXT_DB after 3 attempts: [{'code': 7404, 'message': 'The database ca44e9a7-0624-4ac7-857e-5e2af70c6b8f could not be found'}]
+SQL: SELECT game_pk, temp_f, wind_speed_mph, wind_direction_cardinal, wind_context FROM context_history_game_weather ORDER BY game_pk LIMIT 5000 OFFSET 0
+

@@ -1,23 +1,20 @@
 Validating weather_temp_altitude_pressure against real historical data...
-{
-  "validated": true,
-  "real_n": 1098,
-  "empirical_slope_hr_rate_per_pa_per_degree_f": 0.0002761317269643087,
-  "empirical_r_squared": 0.000363976528524379,
-  "direction_confirms_locked_assumption": true,
-  "note": "Real, raw empirical relationship (temp_f vs HR rate per PA), not yet unit-converted to the locked formula's rate_multiplier scale - see script docstring for the honest reason why."
-}
-Validating lineup_slot against real historical data...
-{
-  "validated": true,
-  "real_n": 16166,
-  "empirical_slope_pa_per_slot": -0.15730897789106532,
-  "empirical_r_squared": 0.0912279199713324,
-  "locked_coefficient_pa_per_slot": 0.105,
-  "direction_confirms_locked_assumption": true,
-  "magnitude_close_to_locked": false,
-  "note": "Real, direct empirical check against the exact real, locked coefficient - same units, no conversion needed."
-}
-Wrote data/factor_validation_report.json
-Wrote real validation result back to CONFIG_DB cell weather_temp_altitude_pressure__home_runs__all__over
-Wrote real validation result back to CONFIG_DB cell lineup_slot__runs__all__over
+EXCEPTION:
+Traceback (most recent call last):
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/validate_factor_coefficients.py", line 173, in main
+    weather_result = validate_weather_temp(d1, seasons)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/validate_factor_coefficients.py", line 89, in validate_weather_temp
+    hdf = pull_hitter_outcomes_with_slot(d1, season)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/validate_factor_coefficients.py", line 36, in pull_hitter_outcomes_with_slot
+    rows = d1.query_paginated(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/d1_client.py", line 85, in query_paginated
+    rows = self.query(db_binding, paged_sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Alphadog/Alphadog/gbdt_training/d1_client.py", line 76, in query
+    raise RuntimeError(f"D1 query failed against {db_binding} after {max_retries} attempts: {last_error}\nSQL: {sql[:200]}")
+RuntimeError: D1 query failed against STATS_HITTER_DB after 3 attempts: [{'code': 7404, 'message': 'The database 293b1eaf-ed73-4bfe-9a39-b5ec5d397100 could not be found'}]
+SQL: SELECT player_id, game_pk, game_date, is_home, batting_order, pa, home_runs FROM hitter_game_logs WHERE season=2025 AND batting_order IS NOT NULL ORDER BY game_pk, player_id LIMIT 5000 OFFSET 0
+
