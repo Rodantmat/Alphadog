@@ -708,7 +708,7 @@ async function generateFinalBoard(pgClient, input) {
   await pgClient`INSERT INTO score.final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
     VALUES (${batchId}, ${VERSION}, ${JOB_KEY}, NULL, ${simBatchId}, ${engine.worker_version || null}, ${activeProfileKey}, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', now())`;
 
-  const hpRead = await fetchHpFinalBoardCandidateRows(pgClient, simBatchId, 500);
+  const hpRead = await fetchHpFinalBoardCandidateRows(pgClient, simBatchId, 1000);
   const hpSource = hpRead.hp_source;
   if (!hpSource || !hpSource.hp_board_batch_id) {
     const output = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, status: "blocked_no_hp_board_for_engine_batch", certification: "SCORE_FINAL_BOARD_BLOCKED_NO_HP_BOARD_FOR_ENGINE_BATCH", certification_grade: "BLOCKED", final_board_batch_id: batchId, source_engine_batch_id: simBatchId, reason: "Final Board requires the locked HP Board output for the same completed Engine batch. Run Hit Probability after Engine before Final Board." };
