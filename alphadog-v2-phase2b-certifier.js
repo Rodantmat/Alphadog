@@ -394,7 +394,7 @@ async function insertMatrixRows(pgClient, matrixRows, issueRows, coverageRows) {
     more_only: r.prop_side === "more" && r.matrix_payload && r.matrix_payload.side_context && r.matrix_payload.side_context.side_mode === "more_only" ? 1 : 0,
     source_variant_label: r.source_variant_label || null
   }));
-  const CHUNK = 150;
+  const CHUNK = 900;
   for (let i = 0; i < rowsForInsert.length; i += CHUNK) {
     const slice = rowsForInsert.slice(i, i + CHUNK);
     await pgClient`INSERT INTO score.prop_matrix_current ${pgClient(slice, ...matrixCols)}
