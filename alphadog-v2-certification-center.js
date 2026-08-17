@@ -2968,6 +2968,12 @@ function buildSleeperHighHitSlips(legs) {
 // goblin/demon distinction on this app, just regular lines. Qualifying (prop,side,line) triples
 // are the real, validated ones from the 2026-08-17 research session (n>=20, real historical hit
 // rate confirmed against score.prop_outcome_history, source_key='parlay_underdog').
+// Real discount vs UD's own published table (2026-08-17): 10 real 6-pick observations averaged
+// 3.75x against the 35x published rate - real placed multipliers run at only ~68.65% of the
+// published table, not the full rate. Applied directly to the published multiplier (not
+// exponentiated - this is a flat table discount, not a compounding per-leg ratio like PrizePicks
+// goblin).
+const UNDERDOG_REAL_DISCOUNT = 0.6865;
 const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
   { prop: "rbis", side: "less", line: 0.5, rank: 10 },
   { prop: "walks", side: "less", line: 0.5, rank: 9 },
