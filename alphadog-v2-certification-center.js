@@ -2902,6 +2902,9 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
 function buildSleeperHighHitSlips(legs) {
   const used = new Set();
   const slips = [];
+  // Thin-day game cap boost (2026-08-17) - same real, dynamic logic as the other two apps.
+  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
+  const maxPerGame = distinctGames < 5 ? 4 : 3;
   while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
     let built = null;
     for (const size of [6, 5, 4, 3]) {
@@ -2913,7 +2916,7 @@ function buildSleeperHighHitSlips(legs) {
         if (used.has(leg.board_row_id)) continue;
         if (playersInSlip.has(leg.mlb_player_id)) continue;
         const gameCount = gameCounts.get(leg.game_pk) || 0;
-        if (gameCount >= 3) continue;
+        if (gameCount >= maxPerGame) continue;
         const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
         const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
         if (propTypeCount >= 3) continue;
