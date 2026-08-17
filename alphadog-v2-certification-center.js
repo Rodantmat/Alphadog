@@ -2799,6 +2799,30 @@ function buildHighHitSlips(legs) {
   const distinctGames = new Set(legs.map(l => l.game_pk)).size;
   const maxPerGame = distinctGames < 5 ? 4 : 3;
   while (slips.length < PRIZEPICKS_HIGH_HIT_CAP) {
+    let built = null;
+    for (const size of [6, 5, 4, 3]) {
+      const slipLegs = [];
+      const gameCounts = new Map();
+      const propTypeCounts = new Map();
+      const playersInSlip = new Set();
+      for (const leg of legs) {
+        if (used.has(leg.board_row_id)) continue;
+        if (playersInSlip.has(leg.mlb_player_id)) continue;
+        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+        const gameCount = gameCounts.get(leg.game_pk) || 0;
+        if (gameCount >= maxPerGame) continue;
+        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
+        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
+        if (propTypeCount >= 3) continue;
+        slipLegs.push(leg);
+        gameCounts.set(leg.game_pk, gameCount + 1);
+        propTypeCounts.set(propTypeKey, propTypeCount + 1);
+        playersInSlip.add(leg.mlb_player_id);
+        if (slipLegs.length >= size) break;
+      }
+      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+    }
+    if (!built) break;
     for (const l of built.slipLegs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
