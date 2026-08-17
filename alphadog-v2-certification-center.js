@@ -2897,12 +2897,16 @@ function buildSleeperHighHitSlips(legs) {
       const slipLegs = [];
       const gamesInSlip = new Set();
       const playersInSlip = new Set();
+      const propTypesInSlip = new Set();
       for (const leg of legs) {
         if (used.has(leg.board_row_id)) continue;
         if (gamesInSlip.has(leg.game_pk) || playersInSlip.has(leg.mlb_player_id)) continue;
+        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
+        if (propTypesInSlip.has(propTypeKey)) continue;
         slipLegs.push(leg);
         gamesInSlip.add(leg.game_pk);
         playersInSlip.add(leg.mlb_player_id);
+        propTypesInSlip.add(propTypeKey);
         if (slipLegs.length >= size) break;
       }
       if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
