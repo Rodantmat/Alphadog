@@ -4209,6 +4209,20 @@ async function goblinSlips(){
     applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
+async function highHitSlips(){
+  const btn=$('highHitSlipsBtn');const results=$('autoCreateResults');
+  if(btn)btn.disabled=true;
+  results.innerHTML='<div class="empty">Building High Hit Slips from real-hit-rate qualifying lines...</div>';
+  try{
+    const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
+    const slips=j.generated_slips||[];
+    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying High Hit legs right now.')+'</div>';return}
+    lastRawSlips=slips;lastSlipsHeading='High Hit Slip';
+    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' High Hit legs. '+esc((j.notes||[])[0]||'')+'</div>';
+    applySlipSourceFilter();
+  }finally{if(btn)btn.disabled=false}
+}
 async function demonSlips(){
   const btn=$('demonSlipsBtn');const results=$('autoCreateResults');
   if(btn)btn.disabled=true;
