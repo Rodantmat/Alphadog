@@ -2830,6 +2830,99 @@ async function apiHighHitSlips(env, request) {
   });
 }
 
+// Underdog High Hit legs: real, published payout table (APP_PAYOUT_TABLES.parlay_underdog),
+// verified 2026-08-15 against Underdog's own official Help Center payout articles - no
+// goblin/demon distinction on this app, just regular lines. Qualifying (prop,side,line) triples
+// are the real, validated ones from the 2026-08-17 research session (n>=20, real historical hit
+// rate confirmed against score.prop_outcome_history, source_key='parlay_underdog').
+const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
+  { prop: "rbis", side: "less", line: 0.5, rank: 10 },
+  { prop: "walks", side: "less", line: 0.5, rank: 9 },
+  { prop: "hits", side: "less", line: 1.5, rank: 8 },
+  { prop: "hits_allowed", side: "less", line: 5.5, rank: 7 },
+  { prop: "hits_allowed", side: "more", line: 0.5, rank: 6 },
+  { prop: "hits_allowed", side: "more", line: 1.5, rank: 6 },
+  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 5 }
+];
+async function autoSelectUnderdogHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const propSideLineList = UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'parlay_underdog'
+        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    const rankByPropSideLine = new Map(UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    return rows
+      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function buildUnderdogHighHitSlips(legs) {
+  const table = APP_PAYOUT_TABLES.parlay_underdog;
+  const used = new Set();
+  const slips = [];
+  while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
+    let built = null;
+    for (const size of [6, 5, 4]) {
+      const slipLegs = [];
+      const gamesInSlip = new Set();
+      const playersInSlip = new Set();
+      for (const leg of legs) {
+        if (used.has(leg.board_row_id)) continue;
+        if (gamesInSlip.has(leg.game_pk) || playersInSlip.has(leg.mlb_player_id)) continue;
+        slipLegs.push(leg);
+        gamesInSlip.add(leg.game_pk);
+        playersInSlip.add(leg.mlb_player_id);
+        if (slipLegs.length >= size) break;
+      }
+      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+    }
+    if (!built) break;
+    for (const l of built.slipLegs) used.add(l.board_row_id);
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_ud"),
+      source_key: "parlay_underdog",
+      slip_type: `${built.size}-pick`,
+      slip_size: built.size,
+      entry_mode: "power",
+      structure_label: `${built.size}-pick Power (High Hit)`,
+      estimated_multiplier: table.power[built.size],
+      estimated_payout_note: "Real, published Underdog Power table (regular lines, no goblin/demon on this app) - verified 2026-08-15 against Underdog's own official Help Center payout articles.",
+      strategy_notes: [
+        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=20, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
+        "Correlation-safe: max 1 leg per game, max 1 leg per player, within this slip.",
+        `Daily cap: ${HIGH_HIT_DAILY_SLIP_CAP} slips/day, same real tested sweet spot as the PrizePicks track.`
+      ],
+      legs: built.slipLegs
+    });
+  }
+  return slips;
+}
+async function apiHighHitSlipsUnderdog(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  const legs = await autoSelectUnderdogHighHitSlipLegs(env);
+  if (legs.length < 4) {
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying Underdog High Hit legs available right now - board may still be filling in for the day."] });
+  }
+  const slips = buildUnderdogHighHitSlips(legs);
+  return jsonResponse({
+    ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog",
+    selected_leg_count: legs.length, generated_slips: slips,
+    notes: [
+      "Underdog High Hit Slips: real published payout table, real validated qualifying lines. Known open risk: fewer real backtested days than the PrizePicks track (Underdog hit-rate data was validated over a 14-day pooled window, not a full day-by-day leg-level backtest yet)."
+    ]
+  });
+}
+
 // Demon Slips: PP-only, flexible 2-6 pick, one slip a day. FIXED 2026-08-05: restricted to the
 // 'more' side only - this is the genuine, meaningful Demon side (elevated threshold, the actual
 // source of a Demon's difficulty and boosted payout). Allowing 'less' let the selector gravitate
