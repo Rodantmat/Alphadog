@@ -2773,12 +2773,14 @@ function buildHighHitSlips(legs) {
   const table = APP_PAYOUT_TABLES.prizepicks;
   const used = new Set();
   const slips = [];
-  // Thin-day game cap boost (2026-08-17): on a genuinely thin board (few distinct games in the
-  // real qualifying pool), the normal max-3-per-game limit can make it impossible to reach a
-  // useful slip size at all. Real, dynamic check - not a manual toggle: if the qualifying legs
-  // span fewer than 5 distinct games, allow up to 4 legs from the same game instead of 3. On a
-  // normal, healthy multi-game day this never engages (game count check fails), same behavior
-  // as before.
+  // Cross-slip player cap (2026-08-17): the per-slip correlation rules (max 3/game, max 3/prop
+  // line, max 1/player WITHIN a slip) never addressed the same player recurring across MULTIPLE
+  // different slips in the same day's batch - confirmed via real audit that a strong player can
+  // legitimately appear in 3-4 separate slips, meaning one bad game creates real correlated risk
+  // across supposedly independent $10 bets. dailyPlayerUsage tracks usage across the WHOLE
+  // while-loop (all 10 slips), capped at 2 slips/player/day - allows a genuinely strong pick to
+  // recur once without letting any single player's outcome dominate the day's real exposure.
+  const dailyPlayerUsage = new Map();
   const distinctGames = new Set(legs.map(l => l.game_pk)).size;
   const maxPerGame = distinctGames < 5 ? 4 : 3;
   while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
@@ -2793,6 +2795,7 @@ function buildHighHitSlips(legs) {
       for (const leg of legs) {
         if (used.has(leg.board_row_id)) continue;
         if (playersInSlip.has(leg.mlb_player_id)) continue;
+        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
         const gameCount = gameCounts.get(leg.game_pk) || 0;
         if (gameCount >= maxPerGame) continue;
         const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
@@ -2807,7 +2810,10 @@ function buildHighHitSlips(legs) {
       if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
     }
     if (!built) break;
-    for (const l of built.slipLegs) used.add(l.board_row_id);
+    for (const l of built.slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
     const rawMult = table.power[built.size];
     // CORRECTED 2026-08-17: the real per-leg ratio compounds across every leg in the slip
     // (ratio^size), NOT applied once - confirmed via user's real observed 6-pick power (~2.6x)
