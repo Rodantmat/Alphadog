@@ -4272,6 +4272,7 @@ function setActiveSlipTab(tabName){
 function bindAutoCreateSlips(){
   const b=$('autoCreateSlipsBtn');if(b)b.onclick=()=>{setActiveSlipTab('grounded');autoCreateSlips()};
   const h=$('highHitSlipsBtn');if(h)h.onclick=()=>{setActiveSlipTab('highhit');highHitSlips()};
+  const hu=$('highHitUnderdogSlipsBtn');if(hu)hu.onclick=()=>{setActiveSlipTab('highhitud');highHitSlipsUnderdog()};
   const g=$('goblinSlipsBtn');if(g)g.onclick=()=>{setActiveSlipTab('goblin');goblinSlips()};
   const r=$('regularSlipsBtn');if(r)r.onclick=()=>{setActiveSlipTab('regular');regularSlips()};
   const d=$('demonSlipsBtn');if(d)d.onclick=()=>{setActiveSlipTab('demon');demonSlips()};
