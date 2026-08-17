@@ -3030,26 +3030,7 @@ function buildUnderdogHighHitSlips(legs) {
   // distinct games in the qualifying pool allows up to 4 legs from the same game instead of 3.
   const distinctGames = new Set(legs.map(l => l.game_pk)).size;
   const maxPerGame = distinctGames < 5 ? 4 : 3;
-  while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
-    let built = null;
-    // Thin-day fallback (2026-08-17): same reasoning as PrizePicks - try 6 down to 3 rather than
-    // a fixed floor of 4, so a low-volume day still produces the largest real slip it can support.
-    for (const size of [6, 5, 4, 3]) {
-      const slipLegs = [];
-      const gameCounts = new Map();
-      const propTypeCounts = new Map();
-      const playersInSlip = new Set();
-      for (const leg of legs) {
-        if (used.has(leg.board_row_id)) continue;
-        if (playersInSlip.has(leg.mlb_player_id)) continue;
-        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
-        const gameCount = gameCounts.get(leg.game_pk) || 0;
-        if (gameCount >= maxPerGame) continue;
-        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
-        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
-        if (propTypeCount >= 3) continue;
-        slipLegs.push(leg);
-        gameCounts.set(leg.game_pk, gameCount + 1);
+  while (slips.length < UNDERDOG_HIGH_HIT_CAP) {
         propTypeCounts.set(propTypeKey, propTypeCount + 1);
         playersInSlip.add(leg.mlb_player_id);
         if (slipLegs.length >= size) break;
