@@ -2798,8 +2798,8 @@ function buildHighHitSlips(legs) {
       slip_size: built.size,
       entry_mode: "power",
       structure_label: `${built.size}-pick Power (High Hit)`,
-      estimated_real_multiplier: realMult,
-      estimated_real_multiplier_buffered_30pct: bufferedMult,
+      estimated_multiplier: realMult,
+      estimated_multiplier_buffered_30pct: bufferedMult,
       estimated_payout_note: "Real goblin per-leg ratio 0.63-0.76 (0.70 central estimate) applied to the published PrizePicks Power table, per 14 live-verified 2026-08-17 data points. Buffered figure applies an additional 30% conservative haircut on top - real placed multipliers have consistently run below the raw published/estimated number all session.",
       strategy_notes: [
         "Legs selected by real historical hit rate rank across qualifying (prop,side) buckets (n>=30, >=80% hit rate, trailing 14 days) - NOT by the system's own estimated_hit_probability_0_100.",
