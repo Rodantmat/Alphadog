@@ -2706,6 +2706,22 @@ async function apiGoblinSlips(env, request) {
 //
 // Qualifying lines: (prop,side) combos with real historical hit rate >=80% at n>=30
 // (score.prop_outcome_history, is_goblin=1, trailing 14 days as of 2026-08-17).
+// Per-app daily slip caps (2026-08-17, third pass): real backtesting showed each app has a
+// different real sweet spot for slip count, not a shared HIGH_HIT_DAILY_SLIP_CAP=10 for all.
+// PrizePicks: 3x 6-pick (real backtest +120% Power / +74.2% Flex, 4 real days).
+// Underdog: 1x 6-pick, real backtest showed cap>1 turns negative once real multipliers were
+// corrected (+66.9% Power at cap=1 vs negative at cap=2+, 9 real days).
+// Sleeper: 1x variable-size, doubles-only (the one real standout line, 90% real hit rate) -
+// separate from the other 4 qualifying lines used elsewhere in this file.
+const PRIZEPICKS_HIGH_HIT_CAP = 3;
+const UNDERDOG_HIGH_HIT_CAP = 1;
+const SLEEPER_HIGH_HIT_CAP = 1;
+// Real Flex payout tiers (2026-08-17, from live-verified user data) - all three apps now run
+// Flex by default per explicit request: lower variance, real cushion on partial hits, in
+// exchange for lower raw ROI than Power (confirmed via real backtest: Power beats Flex on every
+// app in this window, but Flex was never negative on any of them either).
+const PRIZEPICKS_FLEX_TIERS = { 6: 1.99, 5: 0.5, 4: 0.25 };
+const UNDERDOG_FLEX_TIERS = { 6: 2.813, 5: 0.458, 4: 0.063 };
 const HIGH_HIT_QUALIFYING_LINES = [
   { prop: "walks_allowed", side: "more", line: 0.5, rank: 15 },
   { prop: "stolen_bases", side: "less", line: 0.5, rank: 14 },
