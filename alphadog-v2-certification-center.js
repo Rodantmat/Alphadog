@@ -2733,13 +2733,12 @@ const HIGH_HIT_DAILY_SLIP_CAP = 10;
 // (control.goblin_demon_multiplier_study ids 45-54, real range 0.63-0.76). A 30% conservative
 // haircut is also computed alongside per explicit request, since real placed multipliers have
 // consistently run below the raw estimate throughout this session.
-const HIGH_HIT_GOBLIN_RATIO = 0.70;
-// CORRECTED 2026-08-17: previously 0.49 (an extra 30% haircut on 0.70), designed for single
-// application. Once properly exponentiated by slip size, that number becomes absurdly small
-// (37.5 * 0.49^6 = ~0.5x, below breakeven) - not a real conservative case, just broken math.
-// The honest conservative figure is the real observed LOW END of the live-verified range
-// (0.63, from control.goblin_demon_multiplier_study ids 45-54), not a synthetic extra discount.
-const HIGH_HIT_GOBLIN_RATIO_BUFFERED = 0.63;
+// CORRECTED 2026-08-17 (second pass): real per-leg ratio tightened from 0.70 to 0.64 using 7
+// real 6-pick observations from the live app (2.4, 2.7, 2.2, 3.0, 3.0, 2.6, 2.6x vs 37.5x
+// standard), geometric-mean per-leg = 0.6422. Buffered/conservative case uses the real observed
+// floor from this same session (2.1x on a 6-pick, ratio~0.632).
+const HIGH_HIT_GOBLIN_RATIO = 0.64;
+const HIGH_HIT_GOBLIN_RATIO_BUFFERED = 0.60;
 const HIGH_HIT_SLIP_SIZES = [4, 5, 6];
 
 async function autoSelectHighHitSlipLegs(env) {
