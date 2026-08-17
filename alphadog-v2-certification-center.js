@@ -2928,9 +2928,9 @@ function buildSleeperHighHitSlips(legs) {
   // Thin-day game cap boost (2026-08-17) - same real, dynamic logic as the other two apps.
   const distinctGames = new Set(legs.map(l => l.game_pk)).size;
   const maxPerGame = distinctGames < 5 ? 4 : 3;
-  while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
+  while (slips.length < SLEEPER_HIGH_HIT_CAP) {
     let built = null;
-    for (const size of [6, 5, 4, 3]) {
+    for (const size of [6, 5, 4, 3, 2]) {
       const slipLegs = [];
       const gameCounts = new Map();
       const propTypeCounts = new Map();
