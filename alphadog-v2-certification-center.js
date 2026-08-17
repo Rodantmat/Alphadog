@@ -2777,7 +2777,11 @@ function buildHighHitSlips(legs) {
     // Largest-size-first: the real backtest showed larger structures had the best buffered ROI,
     // and correctly shrinks to a smaller size only when the remaining pool can't fill 6.
     let built = null;
-    for (const size of [...HIGH_HIT_SLIP_SIZES].reverse()) {
+    // Thin-day fallback (2026-08-17): try every size 6 down to 3, not just the fixed 4/5/6 set -
+    // a day with genuinely low real qualifying volume should still produce the largest slip the
+    // actual available legs support, rather than zero slips just because 6 (or even 4) isn't
+    // reachable. Never below 3 - that's PrizePicks' real minimum pick size.
+    for (const size of [6, 5, 4, 3]) {
       const slipLegs = [];
       const gameCounts = new Map();
       const propTypeCounts = new Map();
