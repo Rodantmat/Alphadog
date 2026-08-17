@@ -5065,7 +5065,7 @@
         "stat_display_name": "Ks",
         "stat_type": "Pitcher Strikeouts",
         "status": "pre_game",
-        "trending_count": 367,
+        "trending_count": 368,
         "tv_channel": null,
         "updated_at": "2026-08-16T17:27:54.236-04:00"
       },
@@ -29230,7 +29230,7 @@
         "stat_display_name": "Hits",
         "stat_type": "Hits",
         "status": "pre_game",
-        "trending_count": 177,
+        "trending_count": 178,
         "tv_channel": null,
         "updated_at": "2026-08-16T17:59:59.855-04:00"
       },
@@ -122136,6 +122136,388 @@
   ],
   "included": [
     {
+      "type": "team",
+      "id": "4048",
+      "attributes": {
+        "abbreviation": "AZ",
+        "logo": "https://static.prizepicks.com/production/zb5e6wmb976p1a4aht3qdfcvha80-image%20%2811%29.png",
+        "market": "Arizona",
+        "name": "Diamondbacks",
+        "primary_color": "A71930",
+        "secondary_color": "A71930",
+        "tertiary_color": "E3D4AD"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "309888",
+      "attributes": {
+        "combo": false,
+        "display_name": "Michael Conforto",
+        "image_url": "https://static.prizepicks.com/images/manual/Michael Conforto.png",
+        "jersey_number": "20",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Michael Conforto",
+        "position": "DH",
+        "ppid": "MLB_player_FiWz4wSi83IbMY62IOSolJ3X",
+        "team": "CHC",
+        "team_name": "Cubs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "231",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Earned Runs Allowed",
+        "rank": 21
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "282",
+      "attributes": {
+        "lfg_ignored_leagues": [
+          10
+        ],
+        "name": "Hits+Runs+RBIs",
+        "rank": 3
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "194083",
+      "attributes": {
+        "combo": false,
+        "display_name": "Jackson Holliday",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jackson_Holliday_MLB_player_Ya1j8weKCsVR3vaFREboSaB8-450.webp",
+        "jersey_number": "7",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Baltimore",
+        "name": "Jackson Holliday",
+        "position": "IF",
+        "ppid": "MLB_player_Ya1j8weKCsVR3vaFREboSaB8",
+        "team": "BAL",
+        "team_name": "Orioles"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
+          }
+        }
+      }
+    },
+    {
+      "type": "game",
+      "id": "173415",
+      "attributes": {
+        "created_at": "2026-07-18T00:11:05.165-04:00",
+        "end_time": null,
+        "external_game_id": "MLB_game_nF7jpV5pPdb7ycpApjOHAGR4",
+        "is_live": false,
+        "metadata": {
+          "game_id": "MLB_game_nF7jpV5pPdb7ycpApjOHAGR4",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "AZ"
+              },
+              "home": {
+                "abbreviation": "BOS"
+              }
+            }
+          },
+          "league_name": "MLB",
+          "status": "scheduled"
+        },
+        "start_time": "2026-08-17T19:10:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-08-15T11:41:09.997-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "4048"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2658"
+          }
+        }
+      }
+    },
+    {
+      "type": "team",
+      "id": "2651",
+      "attributes": {
+        "abbreviation": "ATL",
+        "logo": "https://static.prizepicks.com/production/qf4lvwu9iirtn4klgv3k4a5yokwh-image%20%2810%29.png",
+        "market": "Atlanta",
+        "name": "Braves",
+        "primary_color": "CE1141",
+        "secondary_color": "13274F",
+        "tertiary_color": "CE1141"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "332009",
+      "attributes": {
+        "combo": false,
+        "display_name": "Kaelen Culpepper",
+        "image_url": "https://static.prizepicks.com/images/manual/Kaelen Culpepper.png",
+        "jersey_number": "12",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Minnesota",
+        "name": "Kaelen Culpepper",
+        "position": "IF",
+        "ppid": "MLB_player_zbjhilR8OincAwBrSRzBe3l1",
+        "team": "MIN",
+        "team_name": "Twins"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "313403",
+      "attributes": {
+        "combo": false,
+        "display_name": "Ryan Kreidler",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ryan_Kreidler_MLB_player_7zQviGKa0ymhFFKzZsaepq9Q-450.webp",
+        "jersey_number": "5",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Minnesota",
+        "name": "Ryan Kreidler",
+        "position": "IF",
+        "ppid": "MLB_player_7zQviGKa0ymhFFKzZsaepq9Q",
+        "team": "MIN",
+        "team_name": "Twins"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "319847",
+      "attributes": {
+        "combo": false,
+        "display_name": "Pedro Ramirez",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Pedro_Ramirez_MLB_player_sfr37ghXbRLvSr13pBBvWfX8-450.webp",
+        "jersey_number": "75",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Pedro Ramirez",
+        "position": "IF",
+        "ppid": "MLB_player_sfr37ghXbRLvSr13pBBvWfX8",
+        "team": "CHC",
+        "team_name": "Cubs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection_type",
+      "id": "2",
+      "attributes": {
+        "name": "Single Stat"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "193265",
+      "attributes": {
+        "combo": false,
+        "display_name": "Richie Palacios",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Richard_Palacios_MLB_player_r9wnGukNjranDLsVGDoWHRzC-450.webp",
+        "jersey_number": "1",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Richie Palacios",
+        "position": "IF",
+        "ppid": "MLB_player_r9wnGukNjranDLsVGDoWHRzC",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "281",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Hitter Strikeouts",
+        "rank": 23
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "234",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Walks Allowed",
+        "rank": 22
+      }
+    },
+    {
+      "type": "team",
+      "id": "2640",
+      "attributes": {
+        "abbreviation": "MIN",
+        "logo": "https://static.prizepicks.com/production/5qo7q4sd0j8mqqp48okglkii569r-image%20%2826%29.png",
+        "market": "Minnesota",
+        "name": "Twins",
+        "primary_color": "002b5c",
+        "secondary_color": "d31145",
+        "tertiary_color": "D31145"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "312182",
+      "attributes": {
+        "combo": false,
+        "display_name": "Martín Pérez",
+        "image_url": "https://static.prizepicks.com/images/manual/MartPerez.png",
+        "jersey_number": "33",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Atlanta",
+        "name": "Martín Pérez",
+        "position": "P",
+        "ppid": "MLB_player_PKKSjPRb6pLz5e0ReDetiLrc",
+        "team": "ATL",
+        "team_name": "Braves"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2651"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "316660",
+      "attributes": {
+        "combo": false,
+        "display_name": "Randal Grichuk",
+        "image_url": "https://static.prizepicks.com/images/manual/Randal Grichuk.png",
+        "jersey_number": "34",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Randal Grichuk",
+        "position": "DH",
+        "ppid": "MLB_player_p43wvw4UzcrHIv7vKEehZHrw",
+        "team": "CWS",
+        "team_name": "White Sox"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        }
+      }
+    },
+    {
       "type": "new_player",
       "id": "235491",
       "attributes": {
@@ -122168,28 +122550,96 @@
       }
     },
     {
-      "type": "stat_type",
-      "id": "372",
+      "type": "team",
+      "id": "2638",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Stolen Bases",
-        "rank": 16
+        "abbreviation": "TB",
+        "logo": "https://static.prizepicks.com/production/4wqaz5ijl32r8j5je1nog454nmlz-image%20%2834%29.png",
+        "market": "Tampa Bay",
+        "name": "Rays",
+        "primary_color": "90bce6",
+        "secondary_color": "092c5c",
+        "tertiary_color": "092c5c"
       }
     },
     {
       "type": "new_player",
-      "id": "310133",
+      "id": "69680",
       "attributes": {
         "combo": false,
-        "display_name": "Framber Valdez",
-        "image_url": "https://static.prizepicks.com/images/manual/Framber_Valdez.png",
-        "jersey_number": "59",
+        "display_name": "Taylor Walls",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Taylor_Walls_MLB_player_p2JtgcyBh0o3IU1PVzXHqhRG-450.webp",
+        "jersey_number": "6",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Taylor Walls",
+        "position": "IF",
+        "ppid": "MLB_player_p2JtgcyBh0o3IU1PVzXHqhRG",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "196362",
+      "attributes": {
+        "combo": false,
+        "display_name": "Jonny DeLuca",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jonathan_DeLuca_MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI-450.webp",
+        "jersey_number": "21",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Jonny DeLuca",
+        "position": "OF",
+        "ppid": "MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "192760",
+      "attributes": {
+        "combo": false,
+        "display_name": "Colt Keith",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Colten_Keith_MLB_player_yT0CL67R1KKuD9HFwZ2EWDA-450.webp",
+        "jersey_number": "33",
         "league": "MLB",
         "league_id": 2,
         "market": "Detroit",
-        "name": "Framber Valdez",
-        "position": "P",
-        "ppid": "MLB_player_7qXxSuoRDSkrF7QRQUZ4XFIy",
+        "name": "Colt Keith",
+        "position": "IF",
+        "ppid": "MLB_player_yT0CL67R1KKuD9HFwZ2EWDA",
         "team": "DET",
         "team_name": "Tigers"
       },
@@ -122242,61 +122692,18 @@
     },
     {
       "type": "new_player",
-      "id": "192365",
+      "id": "319674",
       "attributes": {
         "combo": false,
-        "display_name": "Corbin Carroll",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Corbin_Carroll_MLB_player_ykMD1TIURiKWuqV1ZmIUIETk-450.webp",
-        "jersey_number": "7",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Arizona",
-        "name": "Corbin Carroll",
-        "position": "OF",
-        "ppid": "MLB_player_ykMD1TIURiKWuqV1ZmIUIETk",
-        "team": "AZ",
-        "team_name": "Diamondbacks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "4048"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "282",
-      "attributes": {
-        "lfg_ignored_leagues": [
-          10
-        ],
-        "name": "Hits+Runs+RBIs",
-        "rank": 3
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "308573",
-      "attributes": {
-        "combo": false,
-        "display_name": "Brandon Lowe",
-        "image_url": "https://static.prizepicks.com/images/manual/Brandon_Lowe-.png",
-        "jersey_number": "5",
+        "display_name": "Esmerlyn Valdez",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Esmerlyn_Valdez_MLB_player_29jWvpMkrnbgwBcuaDLk5wp3-450.webp",
+        "jersey_number": "55",
         "league": "MLB",
         "league_id": 2,
         "market": "Pittsburgh",
-        "name": "Brandon Lowe",
-        "position": "IF",
-        "ppid": "MLB_player_NexgqpTXiSb80HrWtRJjOCdz",
+        "name": "Esmerlyn Valdez",
+        "position": "OF",
+        "ppid": "MLB_player_29jWvpMkrnbgwBcuaDLk5wp3",
         "team": "PIT",
         "team_name": "Pirates"
       },
@@ -122317,82 +122724,59 @@
     },
     {
       "type": "new_player",
-      "id": "236062",
+      "id": "331055",
       "attributes": {
         "combo": false,
-        "display_name": "Luke Keaschall",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Luke_Keaschall_MLB_player_9p2I68MMV3uyUt5w5LjU1GiL-450.webp",
-        "jersey_number": "15",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Minnesota",
-        "name": "Luke Keaschall",
-        "position": "IF",
-        "ppid": "MLB_player_9p2I68MMV3uyUt5w5LjU1GiL",
-        "team": "MIN",
-        "team_name": "Twins"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2640"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "67530",
-      "attributes": {
-        "combo": false,
-        "display_name": "Shane McClanahan",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Shane_McClanahan_MLB_player_7z5ZG70VqtbqFfFdCn3zLRXr-450.webp",
-        "jersey_number": "18",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Shane McClanahan",
-        "position": "P",
-        "ppid": "MLB_player_7z5ZG70VqtbqFfFdCn3zLRXr",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "309859",
-      "attributes": {
-        "combo": false,
-        "display_name": "Kevin McGonigle",
-        "image_url": "https://static.prizepicks.com/images/manual/McGonigle.png",
+        "display_name": "Brenton Doyle",
+        "image_url": "https://static.prizepicks.com/images/manual/Brenton Doyle.png",
         "jersey_number": "7",
         "league": "MLB",
         "league_id": 2,
+        "market": "Chicago",
+        "name": "Brenton Doyle",
+        "position": "OF",
+        "ppid": "MLB_player_FwRj3jQIJznnMuc1YcAmoyLE",
+        "team": "CWS",
+        "team_name": "White Sox"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "232",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Hits Allowed",
+        "rank": 7
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "191208",
+      "attributes": {
+        "combo": false,
+        "display_name": "Dillon Dingler",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Francis_Dingler_MLB_player_mVau03uxSwBdvCsJlJSOMSn1-450.webp",
+        "jersey_number": "13",
+        "league": "MLB",
+        "league_id": 2,
         "market": "Detroit",
-        "name": "Kevin McGonigle",
-        "position": "IF",
-        "ppid": "MLB_player_W3OmWRm4XJx5HwjYqPWWw729",
+        "name": "Dillon Dingler",
+        "position": "C",
+        "ppid": "MLB_player_mVau03uxSwBdvCsJlJSOMSn1",
         "team": "DET",
         "team_name": "Tigers"
       },
@@ -122407,427 +122791,6 @@
           "data": {
             "type": "team",
             "id": "2636"
-          }
-        }
-      }
-    },
-    {
-      "type": "game",
-      "id": "173640",
-      "attributes": {
-        "created_at": "2026-07-19T00:11:07.460-04:00",
-        "end_time": null,
-        "external_game_id": "MLB_game_xIC9YPPcB7eQo9Xz3R3pSrNW",
-        "is_live": false,
-        "metadata": {
-          "game_id": "MLB_game_xIC9YPPcB7eQo9Xz3R3pSrNW",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "CWS"
-              },
-              "home": {
-                "abbreviation": "CHC"
-              }
-            }
-          },
-          "league_name": "MLB",
-          "status": "scheduled"
-        },
-        "start_time": "2026-08-17T20:05:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-08-15T11:41:10.059-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "316660",
-      "attributes": {
-        "combo": false,
-        "display_name": "Randal Grichuk",
-        "image_url": "https://static.prizepicks.com/images/manual/Randal Grichuk.png",
-        "jersey_number": "34",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Randal Grichuk",
-        "position": "DH",
-        "ppid": "MLB_player_p43wvw4UzcrHIv7vKEehZHrw",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "67504",
-      "attributes": {
-        "combo": false,
-        "display_name": "Yandy Díaz",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Yandy_D%C3%ADaz_MLB_player_Cch3vlbebMU8pRXLKpyAvvED-450.webp",
-        "jersey_number": "2",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Yandy Díaz",
-        "position": "DH",
-        "ppid": "MLB_player_Cch3vlbebMU8pRXLKpyAvvED",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "640",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Singles",
-        "rank": 24
-      }
-    },
-    {
-      "type": "team",
-      "id": "2640",
-      "attributes": {
-        "abbreviation": "MIN",
-        "logo": "https://static.prizepicks.com/production/5qo7q4sd0j8mqqp48okglkii569r-image%20%2826%29.png",
-        "market": "Minnesota",
-        "name": "Twins",
-        "primary_color": "002b5c",
-        "secondary_color": "d31145",
-        "tertiary_color": "D31145"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "68832",
-      "attributes": {
-        "combo": false,
-        "display_name": "Michael Harris II",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Michael_Harris_MLB_player_ZkXYVk5eP3OK6w4UecYW3tdb-450.webp",
-        "jersey_number": "23",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Atlanta",
-        "name": "Michael Harris II",
-        "position": "OF",
-        "ppid": "MLB_player_ZkXYVk5eP3OK6w4UecYW3tdb",
-        "team": "ATL",
-        "team_name": "Braves"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2651"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "67525",
-      "attributes": {
-        "combo": false,
-        "display_name": "Bryan Reynolds",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Bryan_Reynolds_MLB_player_1usS4K7W3EkfZqvyLDglHLo-450.webp",
-        "jersey_number": "10",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Pittsburgh",
-        "name": "Bryan Reynolds",
-        "position": "OF",
-        "ppid": "MLB_player_1usS4K7W3EkfZqvyLDglHLo",
-        "team": "PIT",
-        "team_name": "Pirates"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2644"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "329025",
-      "attributes": {
-        "combo": false,
-        "display_name": "Christian Encarnacion-Strand",
-        "image_url": "https://static.prizepicks.com/images/manual/Christian_Encarnacion-StrandBAL.webp",
-        "jersey_number": "32",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Baltimore",
-        "name": "Christian Encarnacion-Strand",
-        "position": "IF",
-        "ppid": "MLB_player_g6JwAJXnxt17rdtj5clNJO0a",
-        "team": "BAL",
-        "team_name": "Orioles"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "league",
-      "id": "2",
-      "attributes": {
-        "active": true,
-        "f2p_enabled": true,
-        "full_logo": null,
-        "has_live_projections": false,
-        "icon": "baseball",
-        "image_url": "https://static.prizepicks.com/images/leagues/production/25.svg",
-        "last_five_games_enabled": true,
-        "league_icon_id": 25,
-        "logo": null,
-        "name": "MLB",
-        "parent_id": null,
-        "parent_name": null,
-        "player_headshot_fallback": null,
-        "projections_count": 0,
-        "rank": 15,
-        "show_trending": true
-      },
-      "relationships": {
-        "projection_filters": {
-          "data": []
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "74215",
-      "attributes": {
-        "combo": false,
-        "display_name": "Gunnar Henderson",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Gunnar_Henderson_MLB_player_08g9Bx0vwnAwqOg09FdFebSQ-450.webp",
-        "jersey_number": "2",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Baltimore",
-        "name": "Gunnar Henderson",
-        "position": "IF",
-        "ppid": "MLB_player_08g9Bx0vwnAwqOg09FdFebSQ",
-        "team": "BAL",
-        "team_name": "Orioles"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "194083",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jackson Holliday",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jackson_Holliday_MLB_player_Ya1j8weKCsVR3vaFREboSaB8-450.webp",
-        "jersey_number": "7",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Baltimore",
-        "name": "Jackson Holliday",
-        "position": "IF",
-        "ppid": "MLB_player_Ya1j8weKCsVR3vaFREboSaB8",
-        "team": "BAL",
-        "team_name": "Orioles"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "323131",
-      "attributes": {
-        "combo": false,
-        "display_name": "Braden Montgomery",
-        "image_url": "https://static.prizepicks.com/images/manual/Braden Montgomery.png",
-        "jersey_number": "24",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Braden Montgomery",
-        "position": "OF",
-        "ppid": "MLB_player_ohL9Ei4COX9Js41Pu5h8PDKd",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "303400",
-      "attributes": {
-        "combo": false,
-        "display_name": "Alex Bregman",
-        "image_url": "https://static.prizepicks.com/images/manual/Alex_Bregman.png",
-        "jersey_number": "3",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Alex Bregman",
-        "position": "IF",
-        "ppid": "MLB_player_PDoaatd6HmfY5evLt5claSIT",
-        "team": "CHC",
-        "team_name": "Cubs"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "game",
-      "id": "173413",
-      "attributes": {
-        "created_at": "2026-07-18T00:11:05.135-04:00",
-        "end_time": null,
-        "external_game_id": "MLB_game_PBd63cZN3Cth5rKsDb5OjvAu",
-        "is_live": false,
-        "metadata": {
-          "game_id": "MLB_game_PBd63cZN3Cth5rKsDb5OjvAu",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "DET"
-              },
-              "home": {
-                "abbreviation": "PIT"
-              }
-            }
-          },
-          "league_name": "MLB",
-          "status": "scheduled"
-        },
-        "start_time": "2026-08-17T19:05:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-08-15T11:41:09.980-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2636"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2644"
           }
         }
       }
@@ -122866,18 +122829,50 @@
     },
     {
       "type": "new_player",
-      "id": "330812",
+      "id": "67504",
       "attributes": {
         "combo": false,
-        "display_name": "Max Clark",
-        "image_url": "https://static.prizepicks.com/images/manual/Max Clark.png",
-        "jersey_number": "15",
+        "display_name": "Yandy Díaz",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Yandy_D%C3%ADaz_MLB_player_Cch3vlbebMU8pRXLKpyAvvED-450.webp",
+        "jersey_number": "2",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Yandy Díaz",
+        "position": "DH",
+        "ppid": "MLB_player_Cch3vlbebMU8pRXLKpyAvvED",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "127661",
+      "attributes": {
+        "combo": false,
+        "display_name": "Zach McKinstry",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Zachary_McKinstry_MLB_player_Ywekaye9zng03s9yQXNOAWYR-450.webp",
+        "jersey_number": "39",
         "league": "MLB",
         "league_id": 2,
         "market": "Detroit",
-        "name": "Max Clark",
-        "position": "OF",
-        "ppid": "MLB_player_j3SQejvVKZ5RWYFNR3e3skLI",
+        "name": "Zach McKinstry",
+        "position": "IF",
+        "ppid": "MLB_player_Ywekaye9zng03s9yQXNOAWYR",
         "team": "DET",
         "team_name": "Tigers"
       },
@@ -122898,18 +122893,146 @@
     },
     {
       "type": "new_player",
-      "id": "199188",
+      "id": "317207",
       "attributes": {
         "combo": false,
-        "display_name": "Carmen Mlodzinski",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Carmen_Mlodzinski_MLB_player_YKbuZEWkykpZ3sWEUzHvBVSC-450.webp",
-        "jersey_number": "50",
+        "display_name": "Ryan Waldschmidt",
+        "image_url": "https://static.prizepicks.com/images/manual/Ryan Waldschmidt.png",
+        "jersey_number": "15",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Arizona",
+        "name": "Ryan Waldschmidt",
+        "position": "OF",
+        "ppid": "MLB_player_agopJfgAoRP5OSHgEcXgh6Mx",
+        "team": "AZ",
+        "team_name": "Diamondbacks"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "4048"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "192366",
+      "attributes": {
+        "combo": false,
+        "display_name": "Ketel Marte",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ketel_Marte_MLB_player_2sTVqUbmkR5kwZQXnIVsVcsR-450.webp",
+        "jersey_number": "4",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Arizona",
+        "name": "Ketel Marte",
+        "position": "IF",
+        "ppid": "MLB_player_2sTVqUbmkR5kwZQXnIVsVcsR",
+        "team": "AZ",
+        "team_name": "Diamondbacks"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "4048"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "329025",
+      "attributes": {
+        "combo": false,
+        "display_name": "Christian Encarnacion-Strand",
+        "image_url": "https://static.prizepicks.com/images/manual/Christian_Encarnacion-StrandBAL.webp",
+        "jersey_number": "32",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Baltimore",
+        "name": "Christian Encarnacion-Strand",
+        "position": "IF",
+        "ppid": "MLB_player_g6JwAJXnxt17rdtj5clNJO0a",
+        "team": "BAL",
+        "team_name": "Orioles"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "309111",
+      "attributes": {
+        "combo": false,
+        "display_name": "Munetaka Murakami",
+        "image_url": "https://static.prizepicks.com/images/manual/Munetaka_Murakami.png",
+        "jersey_number": "5",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Munetaka Murakami",
+        "position": "IF",
+        "ppid": "MLB_player_cQR8bfsl2m55Xv9s0Llkia9n",
+        "team": "CWS",
+        "team_name": "White Sox"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "263779",
+      "attributes": {
+        "combo": false,
+        "display_name": "Rafael Flores Jr.",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Rafael_Flores_MLB_player_RKvE2leZoZBKjzCTu1kcj1nB-450.webp",
+        "jersey_number": "43",
         "league": "MLB",
         "league_id": 2,
         "market": "Pittsburgh",
-        "name": "Carmen Mlodzinski",
-        "position": "P",
-        "ppid": "MLB_player_YKbuZEWkykpZ3sWEUzHvBVSC",
+        "name": "Rafael Flores Jr.",
+        "position": "C",
+        "ppid": "MLB_player_RKvE2leZoZBKjzCTu1kcj1nB",
         "team": "PIT",
         "team_name": "Pirates"
       },
@@ -122929,34 +123052,21 @@
       }
     },
     {
-      "type": "team",
-      "id": "2657",
-      "attributes": {
-        "abbreviation": "CHC",
-        "logo": "https://static.prizepicks.com/production/c0heg9hsz959rlndd21ohyoex80h-image%20%2814%29.png",
-        "market": "Chicago",
-        "name": "Cubs",
-        "primary_color": "0E3386",
-        "secondary_color": "0E3386",
-        "tertiary_color": "CC3433"
-      }
-    },
-    {
       "type": "new_player",
-      "id": "309068",
+      "id": "67525",
       "attributes": {
         "combo": false,
-        "display_name": "Mauricio Dubón",
-        "image_url": "https://static.prizepicks.com/images/manual/Mauricio Dubón.png",
-        "jersey_number": "14",
+        "display_name": "Bryan Reynolds",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Bryan_Reynolds_MLB_player_1usS4K7W3EkfZqvyLDglHLo-450.webp",
+        "jersey_number": "10",
         "league": "MLB",
         "league_id": 2,
-        "market": "Atlanta",
-        "name": "Mauricio Dubón",
+        "market": "Pittsburgh",
+        "name": "Bryan Reynolds",
         "position": "OF",
-        "ppid": "MLB_player_6uhTVfpe2ndFx7lHwRaA8IEX",
-        "team": "ATL",
-        "team_name": "Braves"
+        "ppid": "MLB_player_1usS4K7W3EkfZqvyLDglHLo",
+        "team": "PIT",
+        "team_name": "Pirates"
       },
       "relationships": {
         "league": {
@@ -122968,25 +123078,57 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2651"
+            "id": "2644"
           }
         }
       }
     },
     {
       "type": "new_player",
-      "id": "195540",
+      "id": "189676",
       "attributes": {
         "combo": false,
-        "display_name": "Pete Crow-Armstrong",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Pete_Crow-Armstrong_MLB_player_UnB1HaNGBKO0blvUoRnB6VvF-450.webp",
-        "jersey_number": "4",
+        "display_name": "Shota Imanaga",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Shota_Imanaga_MLB_player_cSkyD2vaPEImXEPWHFp0iafC-450.webp",
+        "jersey_number": "18",
         "league": "MLB",
         "league_id": 2,
         "market": "Chicago",
-        "name": "Pete Crow-Armstrong",
-        "position": "OF",
-        "ppid": "MLB_player_UnB1HaNGBKO0blvUoRnB6VvF",
+        "name": "Shota Imanaga",
+        "position": "P",
+        "ppid": "MLB_player_cSkyD2vaPEImXEPWHFp0iafC",
+        "team": "CHC",
+        "team_name": "Cubs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "192997",
+      "attributes": {
+        "combo": false,
+        "display_name": "Michael Busch",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Michael_Busch_MLB_player_LYWqcDk5CrqBVMGQVUGClrD-450.webp",
+        "jersey_number": "29",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Michael Busch",
+        "position": "IF",
+        "ppid": "MLB_player_LYWqcDk5CrqBVMGQVUGClrD",
         "team": "CHC",
         "team_name": "Cubs"
       },
@@ -123038,283 +123180,19 @@
       }
     },
     {
-      "type": "duration",
-      "id": "11",
-      "attributes": {
-        "name": "Full"
-      }
-    },
-    {
-      "type": "projection_type",
-      "id": "2",
-      "attributes": {
-        "name": "Single Stat"
-      }
-    },
-    {
       "type": "new_player",
-      "id": "67494",
+      "id": "67555",
       "attributes": {
         "combo": false,
-        "display_name": "Javier Báez",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ednel_B%C3%A1ez_MLB_player_XE8WbMUUxkOKtOb0OUgFCdaV-450.webp",
-        "jersey_number": "28",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Detroit",
-        "name": "Javier Báez",
-        "position": "IF",
-        "ppid": "MLB_player_XE8WbMUUxkOKtOb0OUgFCdaV",
-        "team": "DET",
-        "team_name": "Tigers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2636"
-          }
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "2658",
-      "attributes": {
-        "abbreviation": "BOS",
-        "logo": "https://static.prizepicks.com/production/rerf043avc1wotdw67t44rj87iva-image%20%2841%29.png",
-        "market": "Boston",
-        "name": "Red Sox",
-        "primary_color": "bd3039",
-        "secondary_color": "0b2341",
-        "tertiary_color": "BD3039"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "331625",
-      "attributes": {
-        "combo": false,
-        "display_name": "Luis Castillo",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Luis_Castillo_MLB_player_arqTHPTBQKnEOSQbfmOSdBM8-450.webp",
-        "jersey_number": "58",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Luis Castillo",
-        "position": "P",
-        "ppid": "MLB_player_arqTHPTBQKnEOSQbfmOSdBM8",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "192997",
-      "attributes": {
-        "combo": false,
-        "display_name": "Michael Busch",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Michael_Busch_MLB_player_LYWqcDk5CrqBVMGQVUGClrD-450.webp",
-        "jersey_number": "29",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Michael Busch",
-        "position": "IF",
-        "ppid": "MLB_player_LYWqcDk5CrqBVMGQVUGClrD",
-        "team": "CHC",
-        "team_name": "Cubs"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "315527",
-      "attributes": {
-        "combo": false,
-        "display_name": "Drew Romo",
-        "image_url": "https://static.prizepicks.com/images/manual/Drew Romo.png",
-        "jersey_number": "36",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Drew Romo",
-        "position": "C",
-        "ppid": "MLB_player_4J5E0et1KoyazwIBtYwwcca9",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "193265",
-      "attributes": {
-        "combo": false,
-        "display_name": "Richie Palacios",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Richard_Palacios_MLB_player_r9wnGukNjranDLsVGDoWHRzC-450.webp",
-        "jersey_number": "1",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Richie Palacios",
-        "position": "IF",
-        "ppid": "MLB_player_r9wnGukNjranDLsVGDoWHRzC",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "331438",
-      "attributes": {
-        "combo": false,
-        "display_name": "Christian Franklin",
-        "image_url": "https://static.prizepicks.com/images/manual/Christian Franklin.png",
-        "jersey_number": "27",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Baltimore",
-        "name": "Christian Franklin",
-        "position": "OF",
-        "ppid": "MLB_player_N8rFKzTPxYRX0mLEvMW5MRe8",
-        "team": "BAL",
-        "team_name": "Orioles"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "2636",
-      "attributes": {
-        "abbreviation": "DET",
-        "logo": "https://static.prizepicks.com/production/ewc790b4sw2vwnz2p3vkkz1h6nv7-image%20%2821%29.png",
-        "market": "Detroit",
-        "name": "Tigers",
-        "primary_color": "0c2340",
-        "secondary_color": "fa4617",
-        "tertiary_color": "FA4616"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "192366",
-      "attributes": {
-        "combo": false,
-        "display_name": "Ketel Marte",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ketel_Marte_MLB_player_2sTVqUbmkR5kwZQXnIVsVcsR-450.webp",
-        "jersey_number": "4",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Arizona",
-        "name": "Ketel Marte",
-        "position": "IF",
-        "ppid": "MLB_player_2sTVqUbmkR5kwZQXnIVsVcsR",
-        "team": "AZ",
-        "team_name": "Diamondbacks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "4048"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "127250",
-      "attributes": {
-        "combo": false,
-        "display_name": "Ozzie Albies",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ozhaino_Albies_MLB_player_G3gl7zvDUXIaQWzRdOQkGkTS-450.webp",
-        "jersey_number": "1",
+        "display_name": "Ronald Acuña Jr.",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ronald_Acu%C3%B1a_MLB_player_tUwoDZ2wW0mEiTxchuRbbAHl-450.webp",
+        "jersey_number": "13",
         "league": "MLB",
         "league_id": 2,
         "market": "Atlanta",
-        "name": "Ozzie Albies",
-        "position": "IF",
-        "ppid": "MLB_player_G3gl7zvDUXIaQWzRdOQkGkTS",
+        "name": "Ronald Acuña Jr.",
+        "position": "OF",
+        "ppid": "MLB_player_tUwoDZ2wW0mEiTxchuRbbAHl",
         "team": "ATL",
         "team_name": "Braves"
       },
@@ -123335,161 +123213,20 @@
     },
     {
       "type": "new_player",
-      "id": "310126",
+      "id": "68832",
       "attributes": {
         "combo": false,
-        "display_name": "Mike Yastrzemski",
-        "image_url": "https://static.prizepicks.com/images/manual/Mike Yastrzemski.png",
-        "jersey_number": "18",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Atlanta",
-        "name": "Mike Yastrzemski",
-        "position": "OF",
-        "ppid": "MLB_player_gL7ox7ZEs9oErXUbNRU9daDW",
-        "team": "ATL",
-        "team_name": "Braves"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2651"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "194120",
-      "attributes": {
-        "combo": false,
-        "display_name": "Austin Martin",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Christopher_Martin_MLB_player_YlhSnt16UdSK3mVvYiFX7SHI-450.webp",
-        "jersey_number": "16",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Minnesota",
-        "name": "Austin Martin",
-        "position": "OF",
-        "ppid": "MLB_player_YlhSnt16UdSK3mVvYiFX7SHI",
-        "team": "MIN",
-        "team_name": "Twins"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2640"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "189676",
-      "attributes": {
-        "combo": false,
-        "display_name": "Shota Imanaga",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Shota_Imanaga_MLB_player_cSkyD2vaPEImXEPWHFp0iafC-450.webp",
-        "jersey_number": "18",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Shota Imanaga",
-        "position": "P",
-        "ppid": "MLB_player_cSkyD2vaPEImXEPWHFp0iafC",
-        "team": "CHC",
-        "team_name": "Cubs"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "242657",
-      "attributes": {
-        "combo": false,
-        "display_name": "Ildemaro Vargas",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ildemaro_Vargas_MLB_player_geNkBlGLhJQyr6GoMC6Gz0nt-450.webp",
-        "jersey_number": "6",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Arizona",
-        "name": "Ildemaro Vargas",
-        "position": "IF",
-        "ppid": "MLB_player_geNkBlGLhJQyr6GoMC6Gz0nt",
-        "team": "AZ",
-        "team_name": "Diamondbacks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "4048"
-          }
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "2651",
-      "attributes": {
-        "abbreviation": "ATL",
-        "logo": "https://static.prizepicks.com/production/qf4lvwu9iirtn4klgv3k4a5yokwh-image%20%2810%29.png",
-        "market": "Atlanta",
-        "name": "Braves",
-        "primary_color": "CE1141",
-        "secondary_color": "13274F",
-        "tertiary_color": "CE1141"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "142007",
-      "attributes": {
-        "combo": false,
-        "display_name": "Royce Lewis",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Royce_Lewis_MLB_player_dofpjqKPXuiwmUAdGhxhgmX3-450.webp",
+        "display_name": "Michael Harris II",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Michael_Harris_MLB_player_ZkXYVk5eP3OK6w4UecYW3tdb-450.webp",
         "jersey_number": "23",
         "league": "MLB",
         "league_id": 2,
-        "market": "Minnesota",
-        "name": "Royce Lewis",
-        "position": "IF",
-        "ppid": "MLB_player_dofpjqKPXuiwmUAdGhxhgmX3",
-        "team": "MIN",
-        "team_name": "Twins"
+        "market": "Atlanta",
+        "name": "Michael Harris II",
+        "position": "OF",
+        "ppid": "MLB_player_ZkXYVk5eP3OK6w4UecYW3tdb",
+        "team": "ATL",
+        "team_name": "Braves"
       },
       "relationships": {
         "league": {
@@ -123501,27 +123238,27 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2640"
+            "id": "2651"
           }
         }
       }
     },
     {
       "type": "new_player",
-      "id": "309573",
+      "id": "234610",
       "attributes": {
         "combo": false,
-        "display_name": "Luisangel Acuña",
-        "image_url": "https://static.prizepicks.com/images/manual/Luisangel Acuña.png",
-        "jersey_number": "0",
+        "display_name": "Carson Kelly",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Carson_Kelly_MLB_player_jzNSeeHI0DcRWgfsZdotm28-450.webp",
+        "jersey_number": "15",
         "league": "MLB",
         "league_id": 2,
         "market": "Chicago",
-        "name": "Luisangel Acuña",
-        "position": "IF",
-        "ppid": "MLB_player_70Ur7m7hPOQBFv1gx9dm5dRS",
-        "team": "CWS",
-        "team_name": "White Sox"
+        "name": "Carson Kelly",
+        "position": "C",
+        "ppid": "MLB_player_jzNSeeHI0DcRWgfsZdotm28",
+        "team": "CHC",
+        "team_name": "Cubs"
       },
       "relationships": {
         "league": {
@@ -123533,97 +123270,22 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2642"
+            "id": "2657"
           }
         }
       }
     },
     {
       "type": "team",
-      "id": "2638",
+      "id": "2639",
       "attributes": {
-        "abbreviation": "TB",
-        "logo": "https://static.prizepicks.com/production/4wqaz5ijl32r8j5je1nog454nmlz-image%20%2834%29.png",
-        "market": "Tampa Bay",
-        "name": "Rays",
-        "primary_color": "90bce6",
-        "secondary_color": "092c5c",
-        "tertiary_color": "092c5c"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "263779",
-      "attributes": {
-        "combo": false,
-        "display_name": "Rafael Flores Jr.",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Rafael_Flores_MLB_player_RKvE2leZoZBKjzCTu1kcj1nB-450.webp",
-        "jersey_number": "43",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Pittsburgh",
-        "name": "Rafael Flores Jr.",
-        "position": "C",
-        "ppid": "MLB_player_RKvE2leZoZBKjzCTu1kcj1nB",
-        "team": "PIT",
-        "team_name": "Pirates"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2644"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "233407",
-      "attributes": {
-        "combo": false,
-        "display_name": "Gleyber Torres",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Gleyber_Torres_MLB_player_b1eZdNNzVgo5E5NtEPbqDT5E-450.webp",
-        "jersey_number": "25",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Detroit",
-        "name": "Gleyber Torres",
-        "position": "IF",
-        "ppid": "MLB_player_b1eZdNNzVgo5E5NtEPbqDT5E",
-        "team": "DET",
-        "team_name": "Tigers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2636"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "42",
-      "attributes": {
-        "lfg_ignored_leagues": [
-          10
-        ],
-        "name": "Total Bases",
-        "rank": 2
+        "abbreviation": "BAL",
+        "logo": "https://static.prizepicks.com/production/qg7ko0lur387nqebszuaqm335jp0-image%20%2812%29.png",
+        "market": "Baltimore",
+        "name": "Orioles",
+        "primary_color": "DF4601",
+        "secondary_color": "000000",
+        "tertiary_color": "DF4601"
       }
     },
     {
@@ -123654,243 +123316,6 @@
           "data": {
             "type": "team",
             "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "312182",
-      "attributes": {
-        "combo": false,
-        "display_name": "Martín Pérez",
-        "image_url": "https://static.prizepicks.com/images/manual/MartPerez.png",
-        "jersey_number": "33",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Atlanta",
-        "name": "Martín Pérez",
-        "position": "P",
-        "ppid": "MLB_player_PKKSjPRb6pLz5e0ReDetiLrc",
-        "team": "ATL",
-        "team_name": "Braves"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2651"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "235562",
-      "attributes": {
-        "combo": false,
-        "display_name": "Brandon Young",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Brandon_Young_MLB_player_QEc3REqGe1i59vO7SCWhfTgD-450.webp",
-        "jersey_number": "63",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Baltimore",
-        "name": "Brandon Young",
-        "position": "P",
-        "ppid": "MLB_player_QEc3REqGe1i59vO7SCWhfTgD",
-        "team": "BAL",
-        "team_name": "Orioles"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "67614",
-      "attributes": {
-        "combo": false,
-        "display_name": "Matt Olson",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Matthew_Olson_MLB_player_NDhzwn6hkBC70gLyFChsulYT-450.webp",
-        "jersey_number": "28",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Atlanta",
-        "name": "Matt Olson",
-        "position": "IF",
-        "ppid": "MLB_player_NDhzwn6hkBC70gLyFChsulYT",
-        "team": "ATL",
-        "team_name": "Braves"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2651"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "127661",
-      "attributes": {
-        "combo": false,
-        "display_name": "Zach McKinstry",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Zachary_McKinstry_MLB_player_Ywekaye9zng03s9yQXNOAWYR-450.webp",
-        "jersey_number": "39",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Detroit",
-        "name": "Zach McKinstry",
-        "position": "IF",
-        "ppid": "MLB_player_Ywekaye9zng03s9yQXNOAWYR",
-        "team": "DET",
-        "team_name": "Tigers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2636"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "325232",
-      "attributes": {
-        "combo": false,
-        "display_name": "Mitch Bratt",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Mitchell_Bratt_MLB_player_vjI1jFkTAqGXNtju5CXp3O1P-450.webp",
-        "jersey_number": "60",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Arizona",
-        "name": "Mitch Bratt",
-        "position": "P",
-        "ppid": "MLB_player_vjI1jFkTAqGXNtju5CXp3O1P",
-        "team": "AZ",
-        "team_name": "Diamondbacks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "4048"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "237888",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jordan Lawlar",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jordan_Lawlar_MLB_player_gWk0GOqfCoOXrv6750nEw43h-450.webp",
-        "jersey_number": "10",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Arizona",
-        "name": "Jordan Lawlar",
-        "position": "OF",
-        "ppid": "MLB_player_gWk0GOqfCoOXrv6750nEw43h",
-        "team": "AZ",
-        "team_name": "Diamondbacks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "4048"
-          }
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "2642",
-      "attributes": {
-        "abbreviation": "CWS",
-        "logo": "https://static.prizepicks.com/production/t8ts5h9lz4xo8n6f48gn6u3jmjua-image%20%2822%29.png",
-        "market": "Chicago",
-        "name": "White Sox",
-        "primary_color": "C4CED4",
-        "secondary_color": "27251F",
-        "tertiary_color": "C4CED4"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "162220",
-      "attributes": {
-        "combo": false,
-        "display_name": "Junior Caminero",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Junior_Caminero_MLB_player_kMEY3512DjRv76TVQ3JAv1L5-450.webp",
-        "jersey_number": "13",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Junior Caminero",
-        "position": "IF",
-        "ppid": "MLB_player_kMEY3512DjRv76TVQ3JAv1L5",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
           }
         }
       }
@@ -123929,18 +123354,168 @@
     },
     {
       "type": "new_player",
-      "id": "317207",
+      "id": "309068",
       "attributes": {
         "combo": false,
-        "display_name": "Ryan Waldschmidt",
-        "image_url": "https://static.prizepicks.com/images/manual/Ryan Waldschmidt.png",
-        "jersey_number": "15",
+        "display_name": "Mauricio Dubón",
+        "image_url": "https://static.prizepicks.com/images/manual/Mauricio Dubón.png",
+        "jersey_number": "14",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Atlanta",
+        "name": "Mauricio Dubón",
+        "position": "OF",
+        "ppid": "MLB_player_6uhTVfpe2ndFx7lHwRaA8IEX",
+        "team": "ATL",
+        "team_name": "Braves"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2651"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "127250",
+      "attributes": {
+        "combo": false,
+        "display_name": "Ozzie Albies",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ozhaino_Albies_MLB_player_G3gl7zvDUXIaQWzRdOQkGkTS-450.webp",
+        "jersey_number": "1",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Atlanta",
+        "name": "Ozzie Albies",
+        "position": "IF",
+        "ppid": "MLB_player_G3gl7zvDUXIaQWzRdOQkGkTS",
+        "team": "ATL",
+        "team_name": "Braves"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2651"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "205264",
+      "attributes": {
+        "combo": false,
+        "display_name": "Miguel Vargas",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Miguel_Vargas_MLB_player_G8lSuTxbs8GHQpczU4L0qDkR-450.webp",
+        "jersey_number": "20",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Miguel Vargas",
+        "position": "IF",
+        "ppid": "MLB_player_G8lSuTxbs8GHQpczU4L0qDkR",
+        "team": "CWS",
+        "team_name": "White Sox"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        }
+      }
+    },
+    {
+      "type": "league",
+      "id": "2",
+      "attributes": {
+        "active": true,
+        "f2p_enabled": true,
+        "full_logo": null,
+        "has_live_projections": false,
+        "icon": "baseball",
+        "image_url": "https://static.prizepicks.com/images/leagues/production/25.svg",
+        "last_five_games_enabled": true,
+        "league_icon_id": 25,
+        "logo": null,
+        "name": "MLB",
+        "parent_id": null,
+        "parent_name": null,
+        "player_headshot_fallback": null,
+        "projections_count": 0,
+        "rank": 15,
+        "show_trending": true
+      },
+      "relationships": {
+        "projection_filters": {
+          "data": []
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "69",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "RBIs",
+        "rank": 13
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "58",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Runs",
+        "rank": 12
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "639",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Doubles",
+        "rank": 25
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "325232",
+      "attributes": {
+        "combo": false,
+        "display_name": "Mitch Bratt",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Mitchell_Bratt_MLB_player_vjI1jFkTAqGXNtju5CXp3O1P-450.webp",
+        "jersey_number": "60",
         "league": "MLB",
         "league_id": 2,
         "market": "Arizona",
-        "name": "Ryan Waldschmidt",
-        "position": "OF",
-        "ppid": "MLB_player_agopJfgAoRP5OSHgEcXgh6Mx",
+        "name": "Mitch Bratt",
+        "position": "P",
+        "ppid": "MLB_player_vjI1jFkTAqGXNtju5CXp3O1P",
         "team": "AZ",
         "team_name": "Diamondbacks"
       },
@@ -123955,6 +123530,166 @@
           "data": {
             "type": "team",
             "id": "4048"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "67614",
+      "attributes": {
+        "combo": false,
+        "display_name": "Matt Olson",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Matthew_Olson_MLB_player_NDhzwn6hkBC70gLyFChsulYT-450.webp",
+        "jersey_number": "28",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Atlanta",
+        "name": "Matt Olson",
+        "position": "IF",
+        "ppid": "MLB_player_NDhzwn6hkBC70gLyFChsulYT",
+        "team": "ATL",
+        "team_name": "Braves"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2651"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "331625",
+      "attributes": {
+        "combo": false,
+        "display_name": "Luis Castillo",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Luis_Castillo_MLB_player_arqTHPTBQKnEOSQbfmOSdBM8-450.webp",
+        "jersey_number": "58",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Luis Castillo",
+        "position": "P",
+        "ppid": "MLB_player_arqTHPTBQKnEOSQbfmOSdBM8",
+        "team": "CWS",
+        "team_name": "White Sox"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "233212",
+      "attributes": {
+        "combo": false,
+        "display_name": "Tyler O'Neill",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Tyler_O'Neill_MLB_player_1X6UJsM7EPjVfBtBspQtHqTc-450.webp",
+        "jersey_number": "9",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Baltimore",
+        "name": "Tyler O'Neill",
+        "position": "OF",
+        "ppid": "MLB_player_1X6UJsM7EPjVfBtBspQtHqTc",
+        "team": "BAL",
+        "team_name": "Orioles"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "310133",
+      "attributes": {
+        "combo": false,
+        "display_name": "Framber Valdez",
+        "image_url": "https://static.prizepicks.com/images/manual/Framber_Valdez.png",
+        "jersey_number": "59",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Detroit",
+        "name": "Framber Valdez",
+        "position": "P",
+        "ppid": "MLB_player_7qXxSuoRDSkrF7QRQUZ4XFIy",
+        "team": "DET",
+        "team_name": "Tigers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2636"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "67494",
+      "attributes": {
+        "combo": false,
+        "display_name": "Javier Báez",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ednel_B%C3%A1ez_MLB_player_XE8WbMUUxkOKtOb0OUgFCdaV-450.webp",
+        "jersey_number": "28",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Detroit",
+        "name": "Javier Báez",
+        "position": "IF",
+        "ppid": "MLB_player_XE8WbMUUxkOKtOb0OUgFCdaV",
+        "team": "DET",
+        "team_name": "Tigers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2636"
           }
         }
       }
@@ -123993,18 +123728,18 @@
     },
     {
       "type": "new_player",
-      "id": "332009",
+      "id": "202333",
       "attributes": {
         "combo": false,
-        "display_name": "Kaelen Culpepper",
-        "image_url": "https://static.prizepicks.com/images/manual/Kaelen Culpepper.png",
-        "jersey_number": "12",
+        "display_name": "Brooks Lee",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Brooks_Lee_MLB_player_vUwRlgYgxFtFNpC5VeMpCZ3J-450.webp",
+        "jersey_number": "22",
         "league": "MLB",
         "league_id": 2,
         "market": "Minnesota",
-        "name": "Kaelen Culpepper",
+        "name": "Brooks Lee",
         "position": "IF",
-        "ppid": "MLB_player_zbjhilR8OincAwBrSRzBe3l1",
+        "ppid": "MLB_player_vUwRlgYgxFtFNpC5VeMpCZ3J",
         "team": "MIN",
         "team_name": "Twins"
       },
@@ -124019,6 +123754,102 @@
           "data": {
             "type": "team",
             "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "69425",
+      "attributes": {
+        "combo": false,
+        "display_name": "Nico Hoerner",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Nicholas_Hoerner_MLB_player_Uxffin1HK9Vkb7O2iv6zbA9B-450.webp",
+        "jersey_number": "2",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Nico Hoerner",
+        "position": "IF",
+        "ppid": "MLB_player_Uxffin1HK9Vkb7O2iv6zbA9B",
+        "team": "CHC",
+        "team_name": "Cubs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "235562",
+      "attributes": {
+        "combo": false,
+        "display_name": "Brandon Young",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Brandon_Young_MLB_player_QEc3REqGe1i59vO7SCWhfTgD-450.webp",
+        "jersey_number": "63",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Baltimore",
+        "name": "Brandon Young",
+        "position": "P",
+        "ppid": "MLB_player_QEc3REqGe1i59vO7SCWhfTgD",
+        "team": "BAL",
+        "team_name": "Orioles"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "311475",
+      "attributes": {
+        "combo": false,
+        "display_name": "Leody Taveras",
+        "image_url": "https://static.prizepicks.com/images/manual/Leody Taveras.png",
+        "jersey_number": "30",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Baltimore",
+        "name": "Leody Taveras",
+        "position": "OF",
+        "ppid": "MLB_player_vQrcH8Qeq4qUNc3TW092MQ8R",
+        "team": "BAL",
+        "team_name": "Orioles"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
           }
         }
       }
@@ -124057,111 +123888,6 @@
     },
     {
       "type": "new_player",
-      "id": "196362",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jonny DeLuca",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jonathan_DeLuca_MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI-450.webp",
-        "jersey_number": "21",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Jonny DeLuca",
-        "position": "OF",
-        "ppid": "MLB_player_8TrY0i5gf2wiLOnCJVL3CJFI",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "232",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Hits Allowed",
-        "rank": 7
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "202333",
-      "attributes": {
-        "combo": false,
-        "display_name": "Brooks Lee",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Brooks_Lee_MLB_player_vUwRlgYgxFtFNpC5VeMpCZ3J-450.webp",
-        "jersey_number": "22",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Minnesota",
-        "name": "Brooks Lee",
-        "position": "IF",
-        "ppid": "MLB_player_vUwRlgYgxFtFNpC5VeMpCZ3J",
-        "team": "MIN",
-        "team_name": "Twins"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2640"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "309107",
-      "attributes": {
-        "combo": false,
-        "display_name": "Josh Bell",
-        "image_url": "https://static.prizepicks.com/images/manual/Josh_Bell-.png",
-        "jersey_number": "56",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Minnesota",
-        "name": "Josh Bell",
-        "position": "DH",
-        "ppid": "MLB_player_DLyWvb8chBNPJlnoCtIsimDB",
-        "team": "MIN",
-        "team_name": "Twins"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2640"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
       "id": "331100",
       "attributes": {
         "combo": false,
@@ -124194,18 +123920,299 @@
     },
     {
       "type": "new_player",
-      "id": "192458",
+      "id": "315527",
       "attributes": {
         "combo": false,
-        "display_name": "Gabriel Moreno",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Gabriel_Moreno_MLB_player_GS6qU6xnczyIQ259DTUsMpcR-450.webp",
-        "jersey_number": "14",
+        "display_name": "Drew Romo",
+        "image_url": "https://static.prizepicks.com/images/manual/Drew Romo.png",
+        "jersey_number": "36",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Drew Romo",
+        "position": "C",
+        "ppid": "MLB_player_4J5E0et1KoyazwIBtYwwcca9",
+        "team": "CWS",
+        "team_name": "White Sox"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "638",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Triples",
+        "rank": null
+      }
+    },
+    {
+      "type": "team",
+      "id": "2658",
+      "attributes": {
+        "abbreviation": "BOS",
+        "logo": "https://static.prizepicks.com/production/rerf043avc1wotdw67t44rj87iva-image%20%2841%29.png",
+        "market": "Boston",
+        "name": "Red Sox",
+        "primary_color": "bd3039",
+        "secondary_color": "0b2341",
+        "tertiary_color": "BD3039"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "192631",
+      "attributes": {
+        "combo": false,
+        "display_name": "Geraldo Perdomo",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Geraldo_Perdomo_MLB_player_JEWenDhlFgI3GPgPqmrbcSZW-450.webp",
+        "jersey_number": "2",
         "league": "MLB",
         "league_id": 2,
         "market": "Arizona",
-        "name": "Gabriel Moreno",
-        "position": "C",
-        "ppid": "MLB_player_GS6qU6xnczyIQ259DTUsMpcR",
+        "name": "Geraldo Perdomo",
+        "position": "IF",
+        "ppid": "MLB_player_JEWenDhlFgI3GPgPqmrbcSZW",
+        "team": "AZ",
+        "team_name": "Diamondbacks"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "4048"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "242657",
+      "attributes": {
+        "combo": false,
+        "display_name": "Ildemaro Vargas",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ildemaro_Vargas_MLB_player_geNkBlGLhJQyr6GoMC6Gz0nt-450.webp",
+        "jersey_number": "6",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Arizona",
+        "name": "Ildemaro Vargas",
+        "position": "IF",
+        "ppid": "MLB_player_geNkBlGLhJQyr6GoMC6Gz0nt",
+        "team": "AZ",
+        "team_name": "Diamondbacks"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "4048"
+          }
+        }
+      }
+    },
+    {
+      "type": "team",
+      "id": "2657",
+      "attributes": {
+        "abbreviation": "CHC",
+        "logo": "https://static.prizepicks.com/production/c0heg9hsz959rlndd21ohyoex80h-image%20%2814%29.png",
+        "market": "Chicago",
+        "name": "Cubs",
+        "primary_color": "0E3386",
+        "secondary_color": "0E3386",
+        "tertiary_color": "CC3433"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "67941",
+      "attributes": {
+        "combo": false,
+        "display_name": "Seiya Suzuki",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Seiya_Suzuki_MLB_player_5cbMghmuue1QlHOufpQe0D3c-450.webp",
+        "jersey_number": "27",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Seiya Suzuki",
+        "position": "OF",
+        "ppid": "MLB_player_5cbMghmuue1QlHOufpQe0D3c",
+        "team": "CHC",
+        "team_name": "Cubs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "162220",
+      "attributes": {
+        "combo": false,
+        "display_name": "Junior Caminero",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Junior_Caminero_MLB_player_kMEY3512DjRv76TVQ3JAv1L5-450.webp",
+        "jersey_number": "13",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Junior Caminero",
+        "position": "IF",
+        "ppid": "MLB_player_kMEY3512DjRv76TVQ3JAv1L5",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "640",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Singles",
+        "rank": 24
+      }
+    },
+    {
+      "type": "team",
+      "id": "2636",
+      "attributes": {
+        "abbreviation": "DET",
+        "logo": "https://static.prizepicks.com/production/ewc790b4sw2vwnz2p3vkkz1h6nv7-image%20%2821%29.png",
+        "market": "Detroit",
+        "name": "Tigers",
+        "primary_color": "0c2340",
+        "secondary_color": "fa4617",
+        "tertiary_color": "FA4616"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "233407",
+      "attributes": {
+        "combo": false,
+        "display_name": "Gleyber Torres",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Gleyber_Torres_MLB_player_b1eZdNNzVgo5E5NtEPbqDT5E-450.webp",
+        "jersey_number": "25",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Detroit",
+        "name": "Gleyber Torres",
+        "position": "IF",
+        "ppid": "MLB_player_b1eZdNNzVgo5E5NtEPbqDT5E",
+        "team": "DET",
+        "team_name": "Tigers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2636"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "143767",
+      "attributes": {
+        "combo": false,
+        "display_name": "Nick Gonzales",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Nicholas_Gonzales_MLB_player_U4wShEtUcKnbJbEC0pMFMd-450.webp",
+        "jersey_number": "3",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Pittsburgh",
+        "name": "Nick Gonzales",
+        "position": "IF",
+        "ppid": "MLB_player_U4wShEtUcKnbJbEC0pMFMd",
+        "team": "PIT",
+        "team_name": "Pirates"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2644"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "234678",
+      "attributes": {
+        "combo": false,
+        "display_name": "Tim Tawa",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Timothy_Tawa_MLB_player_Ha3515pvrlzhYAW02rwpKTw8-450.webp",
+        "jersey_number": "13",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Arizona",
+        "name": "Tim Tawa",
+        "position": "OF",
+        "ppid": "MLB_player_Ha3515pvrlzhYAW02rwpKTw8",
         "team": "AZ",
         "team_name": "Diamondbacks"
       },
@@ -124226,15 +124233,6 @@
     },
     {
       "type": "stat_type",
-      "id": "281",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Hitter Strikeouts",
-        "rank": 23
-      }
-    },
-    {
-      "type": "stat_type",
       "id": "70",
       "attributes": {
         "lfg_ignored_leagues": [],
@@ -124243,21 +124241,63 @@
       }
     },
     {
+      "type": "game",
+      "id": "173413",
+      "attributes": {
+        "created_at": "2026-07-18T00:11:05.135-04:00",
+        "end_time": null,
+        "external_game_id": "MLB_game_PBd63cZN3Cth5rKsDb5OjvAu",
+        "is_live": false,
+        "metadata": {
+          "game_id": "MLB_game_PBd63cZN3Cth5rKsDb5OjvAu",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "DET"
+              },
+              "home": {
+                "abbreviation": "PIT"
+              }
+            }
+          },
+          "league_name": "MLB",
+          "status": "scheduled"
+        },
+        "start_time": "2026-08-17T19:05:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-08-15T11:41:09.980-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2636"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2644"
+          }
+        }
+      }
+    },
+    {
       "type": "new_player",
-      "id": "192760",
+      "id": "194120",
       "attributes": {
         "combo": false,
-        "display_name": "Colt Keith",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Colten_Keith_MLB_player_yT0CL67R1KKuD9HFwZ2EWDA-450.webp",
-        "jersey_number": "33",
+        "display_name": "Austin Martin",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Christopher_Martin_MLB_player_YlhSnt16UdSK3mVvYiFX7SHI-450.webp",
+        "jersey_number": "16",
         "league": "MLB",
         "league_id": 2,
-        "market": "Detroit",
-        "name": "Colt Keith",
-        "position": "IF",
-        "ppid": "MLB_player_yT0CL67R1KKuD9HFwZ2EWDA",
-        "team": "DET",
-        "team_name": "Tigers"
+        "market": "Minnesota",
+        "name": "Austin Martin",
+        "position": "OF",
+        "ppid": "MLB_player_YlhSnt16UdSK3mVvYiFX7SHI",
+        "team": "MIN",
+        "team_name": "Twins"
       },
       "relationships": {
         "league": {
@@ -124269,7 +124309,145 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2636"
+            "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "game",
+      "id": "173640",
+      "attributes": {
+        "created_at": "2026-07-19T00:11:07.460-04:00",
+        "end_time": null,
+        "external_game_id": "MLB_game_xIC9YPPcB7eQo9Xz3R3pSrNW",
+        "is_live": false,
+        "metadata": {
+          "game_id": "MLB_game_xIC9YPPcB7eQo9Xz3R3pSrNW",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "CWS"
+              },
+              "home": {
+                "abbreviation": "CHC"
+              }
+            }
+          },
+          "league_name": "MLB",
+          "status": "scheduled"
+        },
+        "start_time": "2026-08-17T20:05:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-08-15T11:41:10.059-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2642"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "310332",
+      "attributes": {
+        "combo": false,
+        "display_name": "Jake Mangum",
+        "image_url": "https://static.prizepicks.com/images/manual/Jake Mangum.png",
+        "jersey_number": "28",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Pittsburgh",
+        "name": "Jake Mangum",
+        "position": "OF",
+        "ppid": "MLB_player_EhgERsgitpqBZ53fPsCBZKly",
+        "team": "PIT",
+        "team_name": "Pirates"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2644"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "192365",
+      "attributes": {
+        "combo": false,
+        "display_name": "Corbin Carroll",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Corbin_Carroll_MLB_player_ykMD1TIURiKWuqV1ZmIUIETk-450.webp",
+        "jersey_number": "7",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Arizona",
+        "name": "Corbin Carroll",
+        "position": "OF",
+        "ppid": "MLB_player_ykMD1TIURiKWuqV1ZmIUIETk",
+        "team": "AZ",
+        "team_name": "Diamondbacks"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "4048"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "67509",
+      "attributes": {
+        "combo": false,
+        "display_name": "Byron Buxton",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Byron_Buxton_MLB_player_Ns1Ub7sY89wW0dPjrefEOudB-450.webp",
+        "jersey_number": "25",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Minnesota",
+        "name": "Byron Buxton",
+        "position": "OF",
+        "ppid": "MLB_player_Ns1Ub7sY89wW0dPjrefEOudB",
+        "team": "MIN",
+        "team_name": "Twins"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2640"
           }
         }
       }
@@ -124307,105 +124485,30 @@
       }
     },
     {
-      "type": "new_player",
-      "id": "234610",
-      "attributes": {
-        "combo": false,
-        "display_name": "Carson Kelly",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Carson_Kelly_MLB_player_jzNSeeHI0DcRWgfsZdotm28-450.webp",
-        "jersey_number": "15",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Carson Kelly",
-        "position": "C",
-        "ppid": "MLB_player_jzNSeeHI0DcRWgfsZdotm28",
-        "team": "CHC",
-        "team_name": "Cubs"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "205264",
-      "attributes": {
-        "combo": false,
-        "display_name": "Miguel Vargas",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Miguel_Vargas_MLB_player_G8lSuTxbs8GHQpczU4L0qDkR-450.webp",
-        "jersey_number": "20",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Miguel Vargas",
-        "position": "IF",
-        "ppid": "MLB_player_G8lSuTxbs8GHQpczU4L0qDkR",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
       "type": "stat_type",
-      "id": "638",
+      "id": "42",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Triples",
-        "rank": null
-      }
-    },
-    {
-      "type": "team",
-      "id": "2644",
-      "attributes": {
-        "abbreviation": "PIT",
-        "logo": "https://static.prizepicks.com/production/7vmrsx30ivggpuv7cogbkp3b3yo8-image%20%2840%29.png",
-        "market": "Pittsburgh",
-        "name": "Pirates",
-        "primary_color": "FDB827",
-        "secondary_color": "27251F",
-        "tertiary_color": "FDB827"
+        "lfg_ignored_leagues": [
+          10
+        ],
+        "name": "Total Bases",
+        "rank": 2
       }
     },
     {
       "type": "new_player",
-      "id": "310332",
+      "id": "144513",
       "attributes": {
         "combo": false,
-        "display_name": "Jake Mangum",
-        "image_url": "https://static.prizepicks.com/images/manual/Jake Mangum.png",
-        "jersey_number": "28",
+        "display_name": "Jared Triolo",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jared_Triolo_MLB_player_2gnCozG69WInwDjAwYJ8uav-450.webp",
+        "jersey_number": "19",
         "league": "MLB",
         "league_id": 2,
         "market": "Pittsburgh",
-        "name": "Jake Mangum",
-        "position": "OF",
-        "ppid": "MLB_player_EhgERsgitpqBZ53fPsCBZKly",
+        "name": "Jared Triolo",
+        "position": "IF",
+        "ppid": "MLB_player_2gnCozG69WInwDjAwYJ8uav",
         "team": "PIT",
         "team_name": "Pirates"
       },
@@ -124426,18 +124529,18 @@
     },
     {
       "type": "new_player",
-      "id": "192631",
+      "id": "192458",
       "attributes": {
         "combo": false,
-        "display_name": "Geraldo Perdomo",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Geraldo_Perdomo_MLB_player_JEWenDhlFgI3GPgPqmrbcSZW-450.webp",
-        "jersey_number": "2",
+        "display_name": "Gabriel Moreno",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Gabriel_Moreno_MLB_player_GS6qU6xnczyIQ259DTUsMpcR-450.webp",
+        "jersey_number": "14",
         "league": "MLB",
         "league_id": 2,
         "market": "Arizona",
-        "name": "Geraldo Perdomo",
-        "position": "IF",
-        "ppid": "MLB_player_JEWenDhlFgI3GPgPqmrbcSZW",
+        "name": "Gabriel Moreno",
+        "position": "C",
+        "ppid": "MLB_player_GS6qU6xnczyIQ259DTUsMpcR",
         "team": "AZ",
         "team_name": "Diamondbacks"
       },
@@ -124458,91 +124561,18 @@
     },
     {
       "type": "new_player",
-      "id": "313403",
+      "id": "236062",
       "attributes": {
         "combo": false,
-        "display_name": "Ryan Kreidler",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ryan_Kreidler_MLB_player_7zQviGKa0ymhFFKzZsaepq9Q-450.webp",
-        "jersey_number": "5",
+        "display_name": "Luke Keaschall",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Luke_Keaschall_MLB_player_9p2I68MMV3uyUt5w5LjU1GiL-450.webp",
+        "jersey_number": "15",
         "league": "MLB",
         "league_id": 2,
         "market": "Minnesota",
-        "name": "Ryan Kreidler",
+        "name": "Luke Keaschall",
         "position": "IF",
-        "ppid": "MLB_player_7zQviGKa0ymhFFKzZsaepq9Q",
-        "team": "MIN",
-        "team_name": "Twins"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2640"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "231",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Earned Runs Allowed",
-        "rank": 21
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "311475",
-      "attributes": {
-        "combo": false,
-        "display_name": "Leody Taveras",
-        "image_url": "https://static.prizepicks.com/images/manual/Leody Taveras.png",
-        "jersey_number": "30",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Baltimore",
-        "name": "Leody Taveras",
-        "position": "OF",
-        "ppid": "MLB_player_vQrcH8Qeq4qUNc3TW092MQ8R",
-        "team": "BAL",
-        "team_name": "Orioles"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "79046",
-      "attributes": {
-        "combo": false,
-        "display_name": "Bailey Ober",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/John_Ober_MLB_player_FWOWIxXJseUMD04BpGSLgxP-450.webp",
-        "jersey_number": "17",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Minnesota",
-        "name": "Bailey Ober",
-        "position": "P",
-        "ppid": "MLB_player_FWOWIxXJseUMD04BpGSLgxP",
+        "ppid": "MLB_player_9p2I68MMV3uyUt5w5LjU1GiL",
         "team": "MIN",
         "team_name": "Twins"
       },
@@ -124594,145 +124624,6 @@
       }
     },
     {
-      "type": "team",
-      "id": "2639",
-      "attributes": {
-        "abbreviation": "BAL",
-        "logo": "https://static.prizepicks.com/production/qg7ko0lur387nqebszuaqm335jp0-image%20%2812%29.png",
-        "market": "Baltimore",
-        "name": "Orioles",
-        "primary_color": "DF4601",
-        "secondary_color": "000000",
-        "tertiary_color": "DF4601"
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "58",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Runs",
-        "rank": 12
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "67941",
-      "attributes": {
-        "combo": false,
-        "display_name": "Seiya Suzuki",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Seiya_Suzuki_MLB_player_5cbMghmuue1QlHOufpQe0D3c-450.webp",
-        "jersey_number": "27",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Seiya Suzuki",
-        "position": "OF",
-        "ppid": "MLB_player_5cbMghmuue1QlHOufpQe0D3c",
-        "team": "CHC",
-        "team_name": "Cubs"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "309111",
-      "attributes": {
-        "combo": false,
-        "display_name": "Munetaka Murakami",
-        "image_url": "https://static.prizepicks.com/images/manual/Munetaka_Murakami.png",
-        "jersey_number": "5",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Munetaka Murakami",
-        "position": "IF",
-        "ppid": "MLB_player_cQR8bfsl2m55Xv9s0Llkia9n",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
-      "type": "game",
-      "id": "173410",
-      "attributes": {
-        "created_at": "2026-07-18T00:11:05.084-04:00",
-        "end_time": null,
-        "external_game_id": "MLB_game_G6VgY8R6WmOiQWUo63rmmctR",
-        "is_live": false,
-        "metadata": {
-          "game_id": "MLB_game_G6VgY8R6WmOiQWUo63rmmctR",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "BAL"
-              },
-              "home": {
-                "abbreviation": "TB"
-              }
-            }
-          },
-          "league_name": "MLB",
-          "status": "scheduled"
-        },
-        "start_time": "2026-08-17T18:05:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-08-15T11:41:09.942-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2639"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "311",
-      "attributes": {
-        "lfg_ignored_leagues": [
-          10
-        ],
-        "name": "Pitcher Strikeouts",
-        "rank": 1
-      }
-    },
-    {
       "type": "new_player",
       "id": "78732",
       "attributes": {
@@ -124766,59 +124657,18 @@
     },
     {
       "type": "new_player",
-      "id": "69680",
+      "id": "67584",
       "attributes": {
         "combo": false,
-        "display_name": "Taylor Walls",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Taylor_Walls_MLB_player_p2JtgcyBh0o3IU1PVzXHqhRG-450.webp",
-        "jersey_number": "6",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Taylor Walls",
-        "position": "IF",
-        "ppid": "MLB_player_p2JtgcyBh0o3IU1PVzXHqhRG",
-        "team": "TB",
-        "team_name": "Rays"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2638"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "69",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "RBIs",
-        "rank": 13
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "319847",
-      "attributes": {
-        "combo": false,
-        "display_name": "Pedro Ramirez",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Pedro_Ramirez_MLB_player_sfr37ghXbRLvSr13pBBvWfX8-450.webp",
-        "jersey_number": "75",
+        "display_name": "Ian Happ",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Ian_Happ_MLB_player_OiFrF1YxnFLK4aWy4gm1j4G-450.webp",
+        "jersey_number": "8",
         "league": "MLB",
         "league_id": 2,
         "market": "Chicago",
-        "name": "Pedro Ramirez",
-        "position": "IF",
-        "ppid": "MLB_player_sfr37ghXbRLvSr13pBBvWfX8",
+        "name": "Ian Happ",
+        "position": "OF",
+        "ppid": "MLB_player_OiFrF1YxnFLK4aWy4gm1j4G",
         "team": "CHC",
         "team_name": "Cubs"
       },
@@ -124833,157 +124683,6 @@
           "data": {
             "type": "team",
             "id": "2657"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "331055",
-      "attributes": {
-        "combo": false,
-        "display_name": "Brenton Doyle",
-        "image_url": "https://static.prizepicks.com/images/manual/Brenton Doyle.png",
-        "jersey_number": "7",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Chicago",
-        "name": "Brenton Doyle",
-        "position": "OF",
-        "ppid": "MLB_player_FwRj3jQIJznnMuc1YcAmoyLE",
-        "team": "CWS",
-        "team_name": "White Sox"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2642"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "191208",
-      "attributes": {
-        "combo": false,
-        "display_name": "Dillon Dingler",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Francis_Dingler_MLB_player_mVau03uxSwBdvCsJlJSOMSn1-450.webp",
-        "jersey_number": "13",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Detroit",
-        "name": "Dillon Dingler",
-        "position": "C",
-        "ppid": "MLB_player_mVau03uxSwBdvCsJlJSOMSn1",
-        "team": "DET",
-        "team_name": "Tigers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2636"
-          }
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "4048",
-      "attributes": {
-        "abbreviation": "AZ",
-        "logo": "https://static.prizepicks.com/production/zb5e6wmb976p1a4aht3qdfcvha80-image%20%2811%29.png",
-        "market": "Arizona",
-        "name": "Diamondbacks",
-        "primary_color": "A71930",
-        "secondary_color": "A71930",
-        "tertiary_color": "E3D4AD"
-      }
-    },
-    {
-      "type": "game",
-      "id": "173415",
-      "attributes": {
-        "created_at": "2026-07-18T00:11:05.165-04:00",
-        "end_time": null,
-        "external_game_id": "MLB_game_nF7jpV5pPdb7ycpApjOHAGR4",
-        "is_live": false,
-        "metadata": {
-          "game_id": "MLB_game_nF7jpV5pPdb7ycpApjOHAGR4",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "AZ"
-              },
-              "home": {
-                "abbreviation": "BOS"
-              }
-            }
-          },
-          "league_name": "MLB",
-          "status": "scheduled"
-        },
-        "start_time": "2026-08-17T19:10:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-08-15T11:41:09.997-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "4048"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "2658"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "317035",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jim Jarvis",
-        "image_url": "https://static.prizepicks.com/images/manual/Jim Jarvis.png",
-        "jersey_number": "74",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Atlanta",
-        "name": "Jim Jarvis",
-        "position": "IF",
-        "ppid": "MLB_player_VRF4kokNrr5thzkw0CZJNit7",
-        "team": "ATL",
-        "team_name": "Braves"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2651"
           }
         }
       }
@@ -125031,20 +124730,20 @@
     },
     {
       "type": "new_player",
-      "id": "143767",
+      "id": "309859",
       "attributes": {
         "combo": false,
-        "display_name": "Nick Gonzales",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Nicholas_Gonzales_MLB_player_U4wShEtUcKnbJbEC0pMFMd-450.webp",
-        "jersey_number": "3",
+        "display_name": "Kevin McGonigle",
+        "image_url": "https://static.prizepicks.com/images/manual/McGonigle.png",
+        "jersey_number": "7",
         "league": "MLB",
         "league_id": 2,
-        "market": "Pittsburgh",
-        "name": "Nick Gonzales",
+        "market": "Detroit",
+        "name": "Kevin McGonigle",
         "position": "IF",
-        "ppid": "MLB_player_U4wShEtUcKnbJbEC0pMFMd",
-        "team": "PIT",
-        "team_name": "Pirates"
+        "ppid": "MLB_player_W3OmWRm4XJx5HwjYqPWWw729",
+        "team": "DET",
+        "team_name": "Tigers"
       },
       "relationships": {
         "league": {
@@ -125056,27 +124755,27 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2644"
+            "id": "2636"
           }
         }
       }
     },
     {
       "type": "new_player",
-      "id": "309888",
+      "id": "323131",
       "attributes": {
         "combo": false,
-        "display_name": "Michael Conforto",
-        "image_url": "https://static.prizepicks.com/images/manual/Michael Conforto.png",
-        "jersey_number": "20",
+        "display_name": "Braden Montgomery",
+        "image_url": "https://static.prizepicks.com/images/manual/Braden Montgomery.png",
+        "jersey_number": "24",
         "league": "MLB",
         "league_id": 2,
         "market": "Chicago",
-        "name": "Michael Conforto",
-        "position": "DH",
-        "ppid": "MLB_player_FiWz4wSi83IbMY62IOSolJ3X",
-        "team": "CHC",
-        "team_name": "Cubs"
+        "name": "Braden Montgomery",
+        "position": "OF",
+        "ppid": "MLB_player_ohL9Ei4COX9Js41Pu5h8PDKd",
+        "team": "CWS",
+        "team_name": "White Sox"
       },
       "relationships": {
         "league": {
@@ -125088,27 +124787,116 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2657"
+            "id": "2642"
           }
         }
       }
     },
     {
       "type": "stat_type",
-      "id": "639",
+      "id": "311",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Doubles",
-        "rank": 25
+        "lfg_ignored_leagues": [
+          10
+        ],
+        "name": "Pitcher Strikeouts",
+        "rank": 1
       }
     },
     {
-      "type": "stat_type",
-      "id": "410",
+      "type": "new_player",
+      "id": "67530",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Walks",
-        "rank": 15
+        "combo": false,
+        "display_name": "Shane McClanahan",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Shane_McClanahan_MLB_player_7z5ZG70VqtbqFfFdCn3zLRXr-450.webp",
+        "jersey_number": "18",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Shane McClanahan",
+        "position": "P",
+        "ppid": "MLB_player_7z5ZG70VqtbqFfFdCn3zLRXr",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "235841",
+      "attributes": {
+        "combo": false,
+        "display_name": "Chandler Simpson",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Chandler_Simpson_MLB_player_FKTub2L5snVNM4hhPUL5oBrz-450.webp",
+        "jersey_number": "14",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Tampa Bay",
+        "name": "Chandler Simpson",
+        "position": "OF",
+        "ppid": "MLB_player_FKTub2L5snVNM4hhPUL5oBrz",
+        "team": "TB",
+        "team_name": "Rays"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "331438",
+      "attributes": {
+        "combo": false,
+        "display_name": "Christian Franklin",
+        "image_url": "https://static.prizepicks.com/images/manual/Christian Franklin.png",
+        "jersey_number": "27",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Baltimore",
+        "name": "Christian Franklin",
+        "position": "OF",
+        "ppid": "MLB_player_N8rFKzTPxYRX0mLEvMW5MRe8",
+        "team": "BAL",
+        "team_name": "Orioles"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
+          }
+        }
       }
     },
     {
@@ -125154,30 +124942,21 @@
       }
     },
     {
-      "type": "stat_type",
-      "id": "234",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Walks Allowed",
-        "rank": 22
-      }
-    },
-    {
       "type": "new_player",
-      "id": "319674",
+      "id": "309573",
       "attributes": {
         "combo": false,
-        "display_name": "Esmerlyn Valdez",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Esmerlyn_Valdez_MLB_player_29jWvpMkrnbgwBcuaDLk5wp3-450.webp",
-        "jersey_number": "55",
+        "display_name": "Luisangel Acuña",
+        "image_url": "https://static.prizepicks.com/images/manual/Luisangel Acuña.png",
+        "jersey_number": "0",
         "league": "MLB",
         "league_id": 2,
-        "market": "Pittsburgh",
-        "name": "Esmerlyn Valdez",
-        "position": "OF",
-        "ppid": "MLB_player_29jWvpMkrnbgwBcuaDLk5wp3",
-        "team": "PIT",
-        "team_name": "Pirates"
+        "market": "Chicago",
+        "name": "Luisangel Acuña",
+        "position": "IF",
+        "ppid": "MLB_player_70Ur7m7hPOQBFv1gx9dm5dRS",
+        "team": "CWS",
+        "team_name": "White Sox"
       },
       "relationships": {
         "league": {
@@ -125189,25 +124968,70 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2644"
+            "id": "2642"
           }
         }
       }
     },
     {
       "type": "new_player",
-      "id": "69425",
+      "id": "303400",
       "attributes": {
         "combo": false,
-        "display_name": "Nico Hoerner",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Nicholas_Hoerner_MLB_player_Uxffin1HK9Vkb7O2iv6zbA9B-450.webp",
-        "jersey_number": "2",
+        "display_name": "Alex Bregman",
+        "image_url": "https://static.prizepicks.com/images/manual/Alex_Bregman.png",
+        "jersey_number": "3",
         "league": "MLB",
         "league_id": 2,
         "market": "Chicago",
-        "name": "Nico Hoerner",
+        "name": "Alex Bregman",
         "position": "IF",
-        "ppid": "MLB_player_Uxffin1HK9Vkb7O2iv6zbA9B",
+        "ppid": "MLB_player_PDoaatd6HmfY5evLt5claSIT",
+        "team": "CHC",
+        "team_name": "Cubs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2657"
+          }
+        }
+      }
+    },
+    {
+      "type": "team",
+      "id": "2644",
+      "attributes": {
+        "abbreviation": "PIT",
+        "logo": "https://static.prizepicks.com/production/7vmrsx30ivggpuv7cogbkp3b3yo8-image%20%2840%29.png",
+        "market": "Pittsburgh",
+        "name": "Pirates",
+        "primary_color": "FDB827",
+        "secondary_color": "27251F",
+        "tertiary_color": "FDB827"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "195540",
+      "attributes": {
+        "combo": false,
+        "display_name": "Pete Crow-Armstrong",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Pete_Crow-Armstrong_MLB_player_UnB1HaNGBKO0blvUoRnB6VvF-450.webp",
+        "jersey_number": "4",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Chicago",
+        "name": "Pete Crow-Armstrong",
+        "position": "OF",
+        "ppid": "MLB_player_UnB1HaNGBKO0blvUoRnB6VvF",
         "team": "CHC",
         "team_name": "Cubs"
       },
@@ -125228,18 +125052,18 @@
     },
     {
       "type": "new_player",
-      "id": "233212",
+      "id": "74215",
       "attributes": {
         "combo": false,
-        "display_name": "Tyler O'Neill",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Tyler_O'Neill_MLB_player_1X6UJsM7EPjVfBtBspQtHqTc-450.webp",
-        "jersey_number": "9",
+        "display_name": "Gunnar Henderson",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Gunnar_Henderson_MLB_player_08g9Bx0vwnAwqOg09FdFebSQ-450.webp",
+        "jersey_number": "2",
         "league": "MLB",
         "league_id": 2,
         "market": "Baltimore",
-        "name": "Tyler O'Neill",
-        "position": "OF",
-        "ppid": "MLB_player_1X6UJsM7EPjVfBtBspQtHqTc",
+        "name": "Gunnar Henderson",
+        "position": "IF",
+        "ppid": "MLB_player_08g9Bx0vwnAwqOg09FdFebSQ",
         "team": "BAL",
         "team_name": "Orioles"
       },
@@ -125260,20 +125084,20 @@
     },
     {
       "type": "new_player",
-      "id": "235841",
+      "id": "237888",
       "attributes": {
         "combo": false,
-        "display_name": "Chandler Simpson",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Chandler_Simpson_MLB_player_FKTub2L5snVNM4hhPUL5oBrz-450.webp",
-        "jersey_number": "14",
+        "display_name": "Jordan Lawlar",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Jordan_Lawlar_MLB_player_gWk0GOqfCoOXrv6750nEw43h-450.webp",
+        "jersey_number": "10",
         "league": "MLB",
         "league_id": 2,
-        "market": "Tampa Bay",
-        "name": "Chandler Simpson",
+        "market": "Arizona",
+        "name": "Jordan Lawlar",
         "position": "OF",
-        "ppid": "MLB_player_FKTub2L5snVNM4hhPUL5oBrz",
-        "team": "TB",
-        "team_name": "Rays"
+        "ppid": "MLB_player_gWk0GOqfCoOXrv6750nEw43h",
+        "team": "AZ",
+        "team_name": "Diamondbacks"
       },
       "relationships": {
         "league": {
@@ -125285,27 +125109,27 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2638"
+            "id": "4048"
           }
         }
       }
     },
     {
       "type": "new_player",
-      "id": "67509",
+      "id": "310126",
       "attributes": {
         "combo": false,
-        "display_name": "Byron Buxton",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Byron_Buxton_MLB_player_Ns1Ub7sY89wW0dPjrefEOudB-450.webp",
-        "jersey_number": "25",
+        "display_name": "Mike Yastrzemski",
+        "image_url": "https://static.prizepicks.com/images/manual/Mike Yastrzemski.png",
+        "jersey_number": "18",
         "league": "MLB",
         "league_id": 2,
-        "market": "Minnesota",
-        "name": "Byron Buxton",
+        "market": "Atlanta",
+        "name": "Mike Yastrzemski",
         "position": "OF",
-        "ppid": "MLB_player_Ns1Ub7sY89wW0dPjrefEOudB",
-        "team": "MIN",
-        "team_name": "Twins"
+        "ppid": "MLB_player_gL7ox7ZEs9oErXUbNRU9daDW",
+        "team": "ATL",
+        "team_name": "Braves"
       },
       "relationships": {
         "league": {
@@ -125317,39 +125141,7 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2640"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "144513",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jared Triolo",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Jared_Triolo_MLB_player_2gnCozG69WInwDjAwYJ8uav-450.webp",
-        "jersey_number": "19",
-        "league": "MLB",
-        "league_id": 2,
-        "market": "Pittsburgh",
-        "name": "Jared Triolo",
-        "position": "IF",
-        "ppid": "MLB_player_2gnCozG69WInwDjAwYJ8uav",
-        "team": "PIT",
-        "team_name": "Pirates"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "2"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "2644"
+            "id": "2651"
           }
         }
       }
@@ -125419,21 +125211,30 @@
       }
     },
     {
+      "type": "stat_type",
+      "id": "410",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Walks",
+        "rank": 15
+      }
+    },
+    {
       "type": "new_player",
-      "id": "234678",
+      "id": "199188",
       "attributes": {
         "combo": false,
-        "display_name": "Tim Tawa",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Timothy_Tawa_MLB_player_Ha3515pvrlzhYAW02rwpKTw8-450.webp",
-        "jersey_number": "13",
+        "display_name": "Carmen Mlodzinski",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Carmen_Mlodzinski_MLB_player_YKbuZEWkykpZ3sWEUzHvBVSC-450.webp",
+        "jersey_number": "50",
         "league": "MLB",
         "league_id": 2,
-        "market": "Arizona",
-        "name": "Tim Tawa",
-        "position": "OF",
-        "ppid": "MLB_player_Ha3515pvrlzhYAW02rwpKTw8",
-        "team": "AZ",
-        "team_name": "Diamondbacks"
+        "market": "Pittsburgh",
+        "name": "Carmen Mlodzinski",
+        "position": "P",
+        "ppid": "MLB_player_YKbuZEWkykpZ3sWEUzHvBVSC",
+        "team": "PIT",
+        "team_name": "Pirates"
       },
       "relationships": {
         "league": {
@@ -125445,25 +125246,67 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "4048"
+            "id": "2644"
+          }
+        }
+      }
+    },
+    {
+      "type": "game",
+      "id": "173410",
+      "attributes": {
+        "created_at": "2026-07-18T00:11:05.084-04:00",
+        "end_time": null,
+        "external_game_id": "MLB_game_G6VgY8R6WmOiQWUo63rmmctR",
+        "is_live": false,
+        "metadata": {
+          "game_id": "MLB_game_G6VgY8R6WmOiQWUo63rmmctR",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "BAL"
+              },
+              "home": {
+                "abbreviation": "TB"
+              }
+            }
+          },
+          "league_name": "MLB",
+          "status": "scheduled"
+        },
+        "start_time": "2026-08-17T18:05:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-08-15T11:41:09.942-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2639"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "2638"
           }
         }
       }
     },
     {
       "type": "new_player",
-      "id": "67555",
+      "id": "317035",
       "attributes": {
         "combo": false,
-        "display_name": "Ronald Acuña Jr.",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ronald_Acu%C3%B1a_MLB_player_tUwoDZ2wW0mEiTxchuRbbAHl-450.webp",
-        "jersey_number": "13",
+        "display_name": "Jim Jarvis",
+        "image_url": "https://static.prizepicks.com/images/manual/Jim Jarvis.png",
+        "jersey_number": "74",
         "league": "MLB",
         "league_id": 2,
         "market": "Atlanta",
-        "name": "Ronald Acuña Jr.",
-        "position": "OF",
-        "ppid": "MLB_player_tUwoDZ2wW0mEiTxchuRbbAHl",
+        "name": "Jim Jarvis",
+        "position": "IF",
+        "ppid": "MLB_player_VRF4kokNrr5thzkw0CZJNit7",
         "team": "ATL",
         "team_name": "Braves"
       },
@@ -125484,20 +125327,20 @@
     },
     {
       "type": "new_player",
-      "id": "67584",
+      "id": "330812",
       "attributes": {
         "combo": false,
-        "display_name": "Ian Happ",
-        "image_url": "https://static.prizepicks.com/images/players/MLB/Ian_Happ_MLB_player_OiFrF1YxnFLK4aWy4gm1j4G-450.webp",
-        "jersey_number": "8",
+        "display_name": "Max Clark",
+        "image_url": "https://static.prizepicks.com/images/manual/Max Clark.png",
+        "jersey_number": "15",
         "league": "MLB",
         "league_id": 2,
-        "market": "Chicago",
-        "name": "Ian Happ",
+        "market": "Detroit",
+        "name": "Max Clark",
         "position": "OF",
-        "ppid": "MLB_player_OiFrF1YxnFLK4aWy4gm1j4G",
-        "team": "CHC",
-        "team_name": "Cubs"
+        "ppid": "MLB_player_j3SQejvVKZ5RWYFNR3e3skLI",
+        "team": "DET",
+        "team_name": "Tigers"
       },
       "relationships": {
         "league": {
@@ -125509,7 +125352,164 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "2657"
+            "id": "2636"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "142007",
+      "attributes": {
+        "combo": false,
+        "display_name": "Royce Lewis",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/Royce_Lewis_MLB_player_dofpjqKPXuiwmUAdGhxhgmX3-450.webp",
+        "jersey_number": "23",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Minnesota",
+        "name": "Royce Lewis",
+        "position": "IF",
+        "ppid": "MLB_player_dofpjqKPXuiwmUAdGhxhgmX3",
+        "team": "MIN",
+        "team_name": "Twins"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "309107",
+      "attributes": {
+        "combo": false,
+        "display_name": "Josh Bell",
+        "image_url": "https://static.prizepicks.com/images/manual/Josh_Bell-.png",
+        "jersey_number": "56",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Minnesota",
+        "name": "Josh Bell",
+        "position": "DH",
+        "ppid": "MLB_player_DLyWvb8chBNPJlnoCtIsimDB",
+        "team": "MIN",
+        "team_name": "Twins"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "372",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Stolen Bases",
+        "rank": 16
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "79046",
+      "attributes": {
+        "combo": false,
+        "display_name": "Bailey Ober",
+        "image_url": "https://static.prizepicks.com/images/players/MLB/John_Ober_MLB_player_FWOWIxXJseUMD04BpGSLgxP-450.webp",
+        "jersey_number": "17",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Minnesota",
+        "name": "Bailey Ober",
+        "position": "P",
+        "ppid": "MLB_player_FWOWIxXJseUMD04BpGSLgxP",
+        "team": "MIN",
+        "team_name": "Twins"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2640"
+          }
+        }
+      }
+    },
+    {
+      "type": "team",
+      "id": "2642",
+      "attributes": {
+        "abbreviation": "CWS",
+        "logo": "https://static.prizepicks.com/production/t8ts5h9lz4xo8n6f48gn6u3jmjua-image%20%2822%29.png",
+        "market": "Chicago",
+        "name": "White Sox",
+        "primary_color": "C4CED4",
+        "secondary_color": "27251F",
+        "tertiary_color": "C4CED4"
+      }
+    },
+    {
+      "type": "duration",
+      "id": "11",
+      "attributes": {
+        "name": "Full"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "308573",
+      "attributes": {
+        "combo": false,
+        "display_name": "Brandon Lowe",
+        "image_url": "https://static.prizepicks.com/images/manual/Brandon_Lowe-.png",
+        "jersey_number": "5",
+        "league": "MLB",
+        "league_id": 2,
+        "market": "Pittsburgh",
+        "name": "Brandon Lowe",
+        "position": "IF",
+        "ppid": "MLB_player_NexgqpTXiSb80HrWtRJjOCdz",
+        "team": "PIT",
+        "team_name": "Pirates"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "2"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "2644"
           }
         }
       }
