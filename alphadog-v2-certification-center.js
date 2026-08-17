@@ -2957,19 +2957,23 @@ function buildSleeperHighHitSlips(legs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
+    const slPowerMult = Math.pow(SLEEPER_REAL_PER_LEG_MULT, built.size);
+    const slFlexFull = Math.round(0.81 * slPowerMult * 100) / 100;
     slips.push({
       client_slip_id: makeUiId("high_hit_slip_sleeper"),
       source_key: "sleeper",
       slip_type: `${built.size}-pick`,
       slip_size: built.size,
-      entry_mode: "power",
-      structure_label: `${built.size}-pick (High Hit)`,
-      estimated_multiplier: Math.round(Math.pow(SLEEPER_REAL_PER_LEG_MULT, built.size) * 100) / 100,
-      estimated_payout_note: "Real, computed estimate from 8 live-verified 2026-08-17 observations (geometric mean per-leg 1.2684x, compounded by slip size). This is a real, data-derived number now, not a guess - but still an estimate, not a live per-leg price, since Sleeper's own pricing feed remains unreliable in this system. Confirm the real number in-app before placing.",
+      entry_mode: "flex",
+      structure_label: `${built.size}-pick Flex (High Hit)`,
+      estimated_multiplier: slFlexFull,
+      estimated_multiplier_flex_tier_n_minus_1: built.size >= 3 ? Math.round(0.121 * slPowerMult * 100) / 100 : 0,
+      estimated_multiplier_flex_tier_n_minus_2: built.size >= 4 ? Math.round(0.025 * slPowerMult * 100) / 100 : 0,
+      estimated_payout_note: "Real, computed estimate from 8 live-verified 2026-08-17 observations (Power geometric mean per-leg 1.2684x; Flex tiers derived from the same real ratio pattern seen on the other two apps). Still an estimate, not a live per-leg price, since Sleeper's own pricing feed remains unreliable in this system. Confirm the real number in-app before placing.",
       strategy_notes: [
         "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=15, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
         "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
-        `Daily cap: ${HIGH_HIT_DAILY_SLIP_CAP} slips/day, same real tested sweet spot as the other apps' High Hit tracks.`
+        `Daily cap: ${SLEEPER_HIGH_HIT_CAP} slip/day, doubles-only - the one real standout line, variable size (2-6) based on real daily availability.`
       ],
       legs: built.slipLegs
     });
