@@ -2740,7 +2740,7 @@ const HIGH_HIT_SLIP_SIZES = [4, 5, 6];
 async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
-    const propSideList = HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
+    const propSideLineList = HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
     const rows = await queryAllPg(pg, `
       SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
         canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
@@ -2748,16 +2748,16 @@ async function autoSelectHighHitSlipLegs(env) {
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND source_key = 'prizepicks' AND is_goblin = 1
-        AND (canonical_prop_key, selected_side) IN (${propSideList})
+        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
-    // Real-reliability rank across qualifying buckets, NOT hit_probability_0_100 - explicitly
-    // validated this session that HP-based selection within a qualifying bucket does not
+    // Real-reliability rank across qualifying (prop,side,line) buckets, NOT hit_probability_0_100 -
+    // explicitly validated this session that HP-based selection within a qualifying bucket does not
     // reproduce the bucket's real historical hit rate (see session notes 2026-08-17).
-    const rankByPropSide = new Map(HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}`, q.rank]));
+    const rankByPropSideLine = new Map(HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
     return rows
-      .map(r => ({ ...r, _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0 }))
+      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
       .sort((a, b) => b._rank - a._rank);
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
