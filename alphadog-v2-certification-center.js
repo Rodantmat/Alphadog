@@ -2824,27 +2824,105 @@ function buildHighHitSlips(legs) {
 
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const [ppLegs, udLegs] = await Promise.all([
+  const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
     autoSelectHighHitSlipLegs(env),
-    autoSelectUnderdogHighHitSlipLegs(env)
+    autoSelectUnderdogHighHitSlipLegs(env),
+    autoSelectSleeperHighHitSlipLegs(env)
   ]);
   const ppSlips = ppLegs.length >= 4 ? buildHighHitSlips(ppLegs) : [];
   const udSlips = udLegs.length >= 4 ? buildUnderdogHighHitSlips(udLegs) : [];
-  const generated_slips = [...ppSlips, ...udSlips];
-  const selected_leg_count = ppLegs.length + udLegs.length;
+  const sleeperSlips = sleeperLegs.length >= 3 ? buildSleeperHighHitSlips(sleeperLegs) : [];
+  const generated_slips = [...ppSlips, ...udSlips, ...sleeperSlips];
+  const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["Fewer than 4 qualifying High Hit legs available on either app right now - board may still be filling in for the day."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["Fewer than the minimum qualifying High Hit legs available on any app right now - board may still be filling in for the day."] });
   }
   return jsonResponse({
     ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
     selected_leg_count, generated_slips,
-    source_counts: { prizepicks: ppSlips.length, parlay_underdog: udSlips.length },
+    source_counts: { prizepicks: ppSlips.length, parlay_underdog: udSlips.length, sleeper: sleeperSlips.length },
     notes: [
       "High Hit Slips: separate track from Grounded/Goblin/Regular/Demon Slips above - built from the 2026-08-17 real-data research session (real historical hit-rate selection, real corrected multipliers, real tested daily cap).",
-      "PrizePicks and Underdog both included, real multiplier verified for both. Sleeper not included yet - its live per-leg pricing data is not reliably populated in the current data feed (confirmed 0/338 rows priced as of this session), not a trust judgment, a real data-availability gap.",
-      "Known open risk, not yet resolved: only 4 real backtested days for PrizePicks (2026-08-10 to 2026-08-13); Underdog hit rates validated over a pooled window, not yet a full day-by-day leg-level backtest; 5/6-pick PrizePicks multiplier ratio supported by real but thinner data than 4-pick."
+      "PrizePicks and Underdog carry a real, computed multiplier. Sleeper legs are real and hit-rate-validated the same way, but carry NO computed multiplier - Sleeper's live per-leg pricing feed is not reliably populated right now (confirmed 0/338 rows priced, unchanged for over an hour), a genuine data-availability gap, not a trust judgment. Check the real multiplier manually in-app for Sleeper slips.",
+      "Known open risk, not yet resolved: only 4 real backtested days for PrizePicks (2026-08-10 to 2026-08-13); Underdog and Sleeper hit rates validated over a pooled window, not yet a full day-by-day leg-level backtest; 5/6-pick PrizePicks multiplier ratio supported by real but thinner data than 4-pick."
     ]
   });
+}
+
+// Sleeper High Hit legs: real, validated (prop,side,line) qualifying buckets from the 2026-08-17
+// research session (n>=15, real historical hit rate confirmed against score.prop_outcome_history,
+// source_key='sleeper'). NO computed multiplier - Sleeper's real per-leg pricing (over_price/
+// under_price in market.sleeper_board_current.raw_line_json) is not reliably populated right now
+// (confirmed empty this session); rather than omit Sleeper entirely or fabricate a number, real
+// legs are still surfaced with the multiplier field explicitly null and a note to check manually.
+const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
+  { prop: "doubles", side: "less", line: 0.5, rank: 10 },
+  { prop: "home_runs", side: "less", line: 0.5, rank: 9 },
+  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 8 },
+  { prop: "rbis", side: "less", line: 0.5, rank: 7 },
+  { prop: "walks", side: "less", line: 0.5, rank: 6 }
+];
+async function autoSelectSleeperHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const propSideLineList = SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'sleeper'
+        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    const rankByPropSideLine = new Map(SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    return rows
+      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function buildSleeperHighHitSlips(legs) {
+  const used = new Set();
+  const slips = [];
+  while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
+    let built = null;
+    for (const size of [6, 5, 4, 3]) {
+      const slipLegs = [];
+      const gamesInSlip = new Set();
+      const playersInSlip = new Set();
+      for (const leg of legs) {
+        if (used.has(leg.board_row_id)) continue;
+        if (gamesInSlip.has(leg.game_pk) || playersInSlip.has(leg.mlb_player_id)) continue;
+        slipLegs.push(leg);
+        gamesInSlip.add(leg.game_pk);
+        playersInSlip.add(leg.mlb_player_id);
+        if (slipLegs.length >= size) break;
+      }
+      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+    }
+    if (!built) break;
+    for (const l of built.slipLegs) used.add(l.board_row_id);
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_sleeper"),
+      source_key: "sleeper",
+      slip_type: `${built.size}-pick`,
+      slip_size: built.size,
+      entry_mode: "power",
+      structure_label: `${built.size}-pick (High Hit)`,
+      estimated_multiplier: null,
+      estimated_payout_note: "Sleeper's live per-leg pricing feed is not reliably populated right now (0/338 rows priced as of this session) - no multiplier is computed here. Check the real multiplier manually in-app before placing.",
+      strategy_notes: [
+        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=15, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
+        "Correlation-safe: max 1 leg per game, max 1 leg per player, within this slip.",
+        `Daily cap: ${HIGH_HIT_DAILY_SLIP_CAP} slips/day, same real tested sweet spot as the other apps' High Hit tracks.`
+      ],
+      legs: built.slipLegs
+    });
+  }
+  return slips;
 }
 
 // Underdog High Hit legs: real, published payout table (APP_PAYOUT_TABLES.parlay_underdog),
