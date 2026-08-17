@@ -563,55 +563,61 @@ async function reconcileHpBoardSubsetConstraints(pgClient, hpBatchId) {
     const [aliasProp, aliasLineRaw, aliasSide] = aliasKeySide.split("|");
     const [targetProp, targetLineRaw, targetSide] = String(targetKeySide).split("|");
     const aliasLine = Number(aliasLineRaw), targetLine = Number(targetLineRaw);
+    // Doubleheader fix (2026-08-17): these correlated subqueries matched player+prop+line+side+
+    // source only, omitting game_pk. A player appearing in both games of a doubleheader (e.g.
+    // Eugenio Suarez, CIN vs STL 2026-08-17) legitimately has two hp_board_current rows for the
+    // same prop/line/side/source (one per game_pk), which made the bare (non-aggregate) scalar
+    // subqueries below throw "more than one row returned by a subquery used as an expression".
+    // Adding s.game_pk = h.game_pk restores the intended one-row-per-game correlation.
     const res = await pgClient`
       UPDATE score.hp_board_current AS h
       SET estimated_hit_probability_0_100 = (
         SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+          AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
       ),
       probability_confidence_0_100 = (
         SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
         WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-          AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+          AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
       ),
       board_tier = CASE WHEN (
           SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         ) >= 70 AND (
           SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         ) >= 55 THEN 'PRIMARY' ELSE 'REVIEW' END,
       live_playable = CASE WHEN (
           SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         ) >= 70 AND (
           SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         ) >= 55 THEN 1 ELSE 0 END,
       review_playable = CASE WHEN (
           SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         ) >= 70 AND (
           SELECT s.probability_confidence_0_100 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         ) >= 55 THEN 0 ELSE 1 END,
       score_grade = CASE
-          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 80 THEN 'BIN_ELITE'
-          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 70 THEN 'BIN_STRONG'
-          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key) >= 60 THEN 'BIN_QUALIFIED'
+          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk) >= 80 THEN 'BIN_ELITE'
+          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk) >= 70 THEN 'BIN_STRONG'
+          WHEN (SELECT s.estimated_hit_probability_0_100 FROM score.hp_board_current s WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk) >= 60 THEN 'BIN_QUALIFIED'
           ELSE 'BIN_LOW' END
       WHERE h.hp_board_batch_id = ${hpBatchId} AND h.canonical_prop_key = ${aliasProp} AND h.line_value = ${aliasLine} AND h.selected_side = ${aliasSide}
         AND EXISTS (
           SELECT 1 FROM score.hp_board_current s
           WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
-            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key
+            AND s.canonical_prop_key = ${targetProp} AND s.line_value = ${targetLine} AND s.selected_side = ${targetSide} AND s.source_key = h.source_key AND s.game_pk = h.game_pk
         )`;
     const changed = res.count || 0;
     totalClamped += changed;
