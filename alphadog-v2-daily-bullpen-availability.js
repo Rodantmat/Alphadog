@@ -342,14 +342,24 @@ async function writePitchers(pg, batchId, classifiedTargets, sourceSnapshotAt, p
     }
   }
   if (!rows.length) return 0;
+  // Doubleheader fix (2026-08-17): makeTargets() emits one target per (game_pk, team), so a team
+  // playing twice today (doubleheader) produces two classifiedTargets entries. Since this key is
+  // official_date_team_id_pitcher_id (game_pk-agnostic, matching relieverMetrics which is computed
+  // from team+date only, not game_pk), both targets yield identical rows for the same key, which
+  // Postgres rejects within a single INSERT..ON CONFLICT batch ("cannot affect row a second time").
+  // Dedupe by key first; metrics are identical across duplicate targets for the same team+date, so
+  // this is lossless.
+  const dedupedByKey = new Map();
+  for (const r of rows) { if (!dedupedByKey.has(r.pitcher_availability_key)) dedupedByKey.set(r.pitcher_availability_key, r); }
+  const dedupedRows = Array.from(dedupedByKey.values());
   const cols = ["pitcher_availability_key", "batch_id", "official_date", "team_id", "pitcher_id", "pitcher_name", "pitcher_hand", "role_hint", "availability_status", "availability_confidence", "pitches_last_1_day", "pitches_last_2_days", "pitches_last_3_days", "outs_last_1_day", "outs_last_2_days", "outs_last_3_days", "appearances_last_1_day", "appearances_last_2_days", "appearances_last_3_days", "back_to_back_flag", "high_pitch_recent_flag", "likely_unavailable_flag", "notes", "source_snapshot_at", "details_json"];
-  await pg`INSERT INTO daily.bullpen_pitcher_availability_current ${pg(rows, ...cols)}
+  await pg`INSERT INTO daily.bullpen_pitcher_availability_current ${pg(dedupedRows, ...cols)}
     ON CONFLICT (pitcher_availability_key) DO UPDATE SET batch_id=excluded.batch_id, pitcher_name=excluded.pitcher_name, pitcher_hand=excluded.pitcher_hand, availability_status=excluded.availability_status,
     availability_confidence=excluded.availability_confidence, pitches_last_1_day=excluded.pitches_last_1_day, pitches_last_2_days=excluded.pitches_last_2_days, pitches_last_3_days=excluded.pitches_last_3_days,
     outs_last_1_day=excluded.outs_last_1_day, outs_last_2_days=excluded.outs_last_2_days, outs_last_3_days=excluded.outs_last_3_days, appearances_last_1_day=excluded.appearances_last_1_day,
     appearances_last_2_days=excluded.appearances_last_2_days, appearances_last_3_days=excluded.appearances_last_3_days, back_to_back_flag=excluded.back_to_back_flag, high_pitch_recent_flag=excluded.high_pitch_recent_flag,
     likely_unavailable_flag=excluded.likely_unavailable_flag, notes=excluded.notes, source_snapshot_at=excluded.source_snapshot_at, details_json=excluded.details_json, updated_at=now()`;
-  return rows.length;
+  return dedupedRows.length;
 }
 
 async function runBullpen(env, input) {
