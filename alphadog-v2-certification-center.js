@@ -3054,8 +3054,9 @@ function buildUnderdogHighHitSlips(legs) {
       slip_size: built.size,
       entry_mode: "power",
       structure_label: `${built.size}-pick Power (High Hit)`,
-      estimated_multiplier: table.power[built.size],
-      estimated_payout_note: "Real, published Underdog Power table (regular lines, no goblin/demon on this app) - verified 2026-08-15 against Underdog's own official Help Center payout articles.",
+      estimated_multiplier: Math.round(table.power[built.size] * UNDERDOG_REAL_DISCOUNT * 100) / 100,
+      estimated_multiplier_published: table.power[built.size],
+      estimated_payout_note: "Real, published Underdog Power table exists, but real placed multipliers run at only ~69% of it (10 live-verified 2026-08-17 observations). The multiplier shown here is the discounted, real-world estimate - estimated_multiplier_published shows the raw table rate for reference.",
       strategy_notes: [
         "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=20, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
         "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
