@@ -2820,7 +2820,7 @@ function buildHighHitSlips(legs) {
       estimated_payout_note: "Real goblin per-leg ratio 0.63-0.76 (0.70 central estimate) applied to the published PrizePicks Power table, per 14 live-verified 2026-08-17 data points. Buffered figure applies an additional 30% conservative haircut on top - real placed multipliers have consistently run below the raw published/estimated number all session.",
       strategy_notes: [
         "Legs selected by real historical hit rate rank across qualifying (prop,side) buckets (n>=30, >=80% hit rate, trailing 14 days) - NOT by the system's own estimated_hit_probability_0_100.",
-        "Correlation-safe: max 1 leg per game, max 1 leg per player, within this slip.",
+        "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
         `Daily cap: ${HIGH_HIT_DAILY_SLIP_CAP} slips/day - the real, tested sweet spot; ROI degrades past this as weaker qualifying props get pulled in to fill volume.`
       ],
       legs: built.slipLegs
