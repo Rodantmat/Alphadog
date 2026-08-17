@@ -2827,28 +2827,23 @@ function buildHighHitSlips(legs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
-    const rawMult = table.power[built.size];
-    // CORRECTED 2026-08-17: the real per-leg ratio compounds across every leg in the slip
-    // (ratio^size), NOT applied once - confirmed via user's real observed 6-pick power (~2.6x)
-    // vs the broken single-application result (26.25x), a ~10x overstatement. This matches
-    // exactly how the ratios in control.goblin_demon_multiplier_study were originally derived
-    // (implied_per_leg_ratio = (real_multiplier/standard_multiplier)^(1/slip_size)).
-    const realMult = Math.round(rawMult * Math.pow(HIGH_HIT_GOBLIN_RATIO, built.size) * 100) / 100;
-    const bufferedMult = Math.round(rawMult * Math.pow(HIGH_HIT_GOBLIN_RATIO_BUFFERED, built.size) * 100) / 100;
+    const flexTiers = PRIZEPICKS_FLEX_TIERS;
+    const hitsAssumed = built.size; // placeholder resolved at grading time; multiplier shown is the full-hit tier
+    const flexFullMult = flexTiers[built.size] || 0;
     slips.push({
       client_slip_id: makeUiId("high_hit_slip"),
       source_key: "prizepicks",
       slip_type: `${built.size}-pick`,
       slip_size: built.size,
-      entry_mode: "power",
-      structure_label: `${built.size}-pick Power (High Hit)`,
-      estimated_multiplier: realMult,
-      estimated_multiplier_buffered_30pct: bufferedMult,
-      estimated_payout_note: "Real goblin per-leg ratio 0.63-0.76 (0.70 central estimate) applied to the published PrizePicks Power table, per 14 live-verified 2026-08-17 data points. Buffered figure applies an additional 30% conservative haircut on top - real placed multipliers have consistently run below the raw published/estimated number all session.",
+      entry_mode: "flex",
+      structure_label: `${built.size}-pick Flex (High Hit)`,
+      estimated_multiplier: flexFullMult,
+      estimated_multiplier_flex_tiers: flexTiers,
+      estimated_payout_note: "Real Flex payout tiers from live-verified 2026-08-17 data (full-hit " + flexFullMult + "x; partial tiers shown in estimated_multiplier_flex_tiers). Flex chosen over Power per explicit request: lower variance, real cushion on partial hits (Power beat Flex on every app in the real 7-day backtest, but Flex was never negative on any of them).",
       strategy_notes: [
         "Legs selected by real historical hit rate rank across qualifying (prop,side) buckets (n>=30, >=80% hit rate, trailing 14 days) - NOT by the system's own estimated_hit_probability_0_100.",
         "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
-        `Daily cap: ${HIGH_HIT_DAILY_SLIP_CAP} slips/day - the real, tested sweet spot; ROI degrades past this as weaker qualifying props get pulled in to fill volume.`
+        `Daily cap: ${PRIZEPICKS_HIGH_HIT_CAP} slips/day - the real, tested sweet spot for this app.`
       ],
       legs: built.slipLegs
     });
