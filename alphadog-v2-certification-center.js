@@ -2707,19 +2707,21 @@ async function apiGoblinSlips(env, request) {
 // Qualifying lines: (prop,side) combos with real historical hit rate >=80% at n>=30
 // (score.prop_outcome_history, is_goblin=1, trailing 14 days as of 2026-08-17).
 const HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "walks_allowed", side: "more", rank: 15 },
-  { prop: "stolen_bases", side: "less", rank: 14 },
-  { prop: "hits_allowed", side: "more", rank: 13 },
-  { prop: "hits_allowed", side: "less", rank: 13 },
-  { prop: "hits_runs_rbis", side: "less", rank: 12 },
-  { prop: "pitcher_strikeouts", side: "less", rank: 11 },
-  { prop: "pitcher_outs", side: "more", rank: 10 },
-  { prop: "total_bases", side: "less", rank: 9 },
-  { prop: "home_runs", side: "less", rank: 8 },
-  { prop: "doubles", side: "less", rank: 7 },
-  { prop: "singles", side: "less", rank: 6 },
-  { prop: "earned_runs", side: "more", rank: 5 },
-  { prop: "runs", side: "less", rank: 4 }
+  { prop: "walks_allowed", side: "more", line: 0.5, rank: 15 },
+  { prop: "stolen_bases", side: "less", line: 0.5, rank: 14 },
+  { prop: "hits_allowed", side: "more", line: 2.5, rank: 13 },
+  { prop: "hits_allowed", side: "less", line: 6.5, rank: 13 },
+  { prop: "hits_runs_rbis", side: "less", line: 4.5, rank: 12 },
+  { prop: "pitcher_strikeouts", side: "less", line: 6.5, rank: 11 },
+  { prop: "pitcher_outs", side: "more", line: 11.5, rank: 10 },
+  { prop: "pitcher_outs", side: "more", line: 14.5, rank: 10 },
+  { prop: "total_bases", side: "less", line: 3.5, rank: 9 },
+  { prop: "home_runs", side: "less", line: 0.5, rank: 8 },
+  { prop: "doubles", side: "less", line: 0.5, rank: 7 },
+  { prop: "singles", side: "less", line: 1.5, rank: 6 },
+  { prop: "earned_runs", side: "more", line: 0.5, rank: 5 },
+  { prop: "runs", side: "less", line: 1.5, rank: 4 },
+  { prop: "hits_runs_rbis", side: "less", line: 3.5, rank: 4 }
 ];
 // Real, tested daily cap - 5/10/15/20/25/30/40/uncapped were all backtested; 10 is the real ROI
 // peak. Past 10, progressively weaker qualifying props get pulled in to fill volume and ROI
