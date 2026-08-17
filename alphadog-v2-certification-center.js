@@ -2824,18 +2824,25 @@ function buildHighHitSlips(legs) {
 
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectHighHitSlipLegs(env);
-  if (legs.length < 4) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying High Hit legs available right now - board may still be filling in for the day."] });
+  const [ppLegs, udLegs] = await Promise.all([
+    autoSelectHighHitSlipLegs(env),
+    autoSelectUnderdogHighHitSlipLegs(env)
+  ]);
+  const ppSlips = ppLegs.length >= 4 ? buildHighHitSlips(ppLegs) : [];
+  const udSlips = udLegs.length >= 4 ? buildUnderdogHighHitSlips(udLegs) : [];
+  const generated_slips = [...ppSlips, ...udSlips];
+  const selected_leg_count = ppLegs.length + udLegs.length;
+  if (!generated_slips.length) {
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["Fewer than 4 qualifying High Hit legs available on either app right now - board may still be filling in for the day."] });
   }
-  const slips = buildHighHitSlips(legs);
   return jsonResponse({
     ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
-    selected_leg_count: legs.length, generated_slips: slips,
+    selected_leg_count, generated_slips,
+    source_counts: { prizepicks: ppSlips.length, parlay_underdog: udSlips.length },
     notes: [
-      "High Hit Slips: separate track from Grounded/Goblin/Regular/Demon Slips above - built from the 2026-08-17 real-data research session (real historical hit-rate selection, real corrected goblin multiplier ratio, real tested daily cap).",
-      "PrizePicks only for now - Underdog and Sleeper real multiplier data is not yet complete enough to trust for this track.",
-      "Known open risk, not yet resolved: only 4 real backtested days (2026-08-10 to 2026-08-13); 2026-08-14/15 have a real goblin/demon grading gap in prop_outcome_history; 5/6-pick multiplier ratio is supported by real but thinner data than 4-pick."
+      "High Hit Slips: separate track from Grounded/Goblin/Regular/Demon Slips above - built from the 2026-08-17 real-data research session (real historical hit-rate selection, real corrected multipliers, real tested daily cap).",
+      "PrizePicks and Underdog both included, real multiplier verified for both. Sleeper not included yet - its live per-leg pricing data is not reliably populated in the current data feed (confirmed 0/338 rows priced as of this session), not a trust judgment, a real data-availability gap.",
+      "Known open risk, not yet resolved: only 4 real backtested days for PrizePicks (2026-08-10 to 2026-08-13); Underdog hit rates validated over a pooled window, not yet a full day-by-day leg-level backtest; 5/6-pick PrizePicks multiplier ratio supported by real but thinner data than 4-pick."
     ]
   });
 }
