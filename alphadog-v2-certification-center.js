@@ -4284,7 +4284,7 @@ async function autoCreateSlips(){
 }
 function setActiveSlipTab(tabName){
   document.querySelectorAll('.slipTab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabName));
-  const filterRow=$('slipSourceFilterRow');if(filterRow)filterRow.classList.toggle('hidden',tabName!=='grounded');
+  const filterRow=$('slipSourceFilterRow');if(filterRow)filterRow.classList.toggle('hidden',tabName!=='grounded'&&tabName!=='highhit');
 }
 function bindAutoCreateSlips(){
   const b=$('autoCreateSlipsBtn');if(b)b.onclick=()=>{setActiveSlipTab('grounded');autoCreateSlips()};
