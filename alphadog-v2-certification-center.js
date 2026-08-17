@@ -2858,9 +2858,9 @@ async function apiHighHitSlips(env, request) {
     autoSelectUnderdogHighHitSlipLegs(env),
     autoSelectSleeperHighHitSlipLegs(env)
   ]);
-  const ppSlips = ppLegs.length >= 4 ? buildHighHitSlips(ppLegs) : [];
-  const udSlips = udLegs.length >= 4 ? buildUnderdogHighHitSlips(udLegs) : [];
-  const sleeperSlips = sleeperLegs.length >= 3 ? buildSleeperHighHitSlips(sleeperLegs) : [];
+  const ppSlips = ppLegs.length >= 3 ? buildHighHitSlips(ppLegs) : [];
+  const udSlips = udLegs.length >= 3 ? buildUnderdogHighHitSlips(udLegs) : [];
+  const sleeperSlips = sleeperLegs.length >= 2 ? buildSleeperHighHitSlips(sleeperLegs) : [];
   const generated_slips = [...ppSlips, ...udSlips, ...sleeperSlips];
   const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
   if (!generated_slips.length) {
