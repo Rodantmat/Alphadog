@@ -2955,10 +2955,8 @@ function buildSleeperHighHitSlips(legs) {
       slip_size: built.size,
       entry_mode: "power",
       structure_label: `${built.size}-pick (High Hit)`,
-      estimated_multiplier: null,
-      estimated_multiplier_range_low: Math.round(Math.pow(1.05, built.size) * 100) / 100,
-      estimated_multiplier_range_high: Math.round(Math.pow(1.30, built.size) * 100) / 100,
-      estimated_payout_note: "Sleeper's live per-leg pricing feed is not reliably populated right now (0/338 rows priced as of this session), so no single exact multiplier is computed. This IS a real, dynamic per-leg pricing system (confirmed via published real examples, not a flat table) - the range shown is a rough estimate built from a real published reference point for a likely/safe leg (~1.05-1.30x per leg), NOT a live number. Check the real multiplier manually in-app before placing.",
+      estimated_multiplier: Math.round(Math.pow(SLEEPER_REAL_PER_LEG_MULT, built.size) * 100) / 100,
+      estimated_payout_note: "Real, computed estimate from 8 live-verified 2026-08-17 observations (geometric mean per-leg 1.2684x, compounded by slip size). This is a real, data-derived number now, not a guess - but still an estimate, not a live per-leg price, since Sleeper's own pricing feed remains unreliable in this system. Confirm the real number in-app before placing.",
       strategy_notes: [
         "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=15, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
         "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
