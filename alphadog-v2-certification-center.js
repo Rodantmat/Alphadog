@@ -2987,7 +2987,9 @@ function buildUnderdogHighHitSlips(legs) {
   const slips = [];
   while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
     let built = null;
-    for (const size of [6, 5, 4]) {
+    // Thin-day fallback (2026-08-17): same reasoning as PrizePicks - try 6 down to 3 rather than
+    // a fixed floor of 4, so a low-volume day still produces the largest real slip it can support.
+    for (const size of [6, 5, 4, 3]) {
       const slipLegs = [];
       const gameCounts = new Map();
       const propTypeCounts = new Map();
