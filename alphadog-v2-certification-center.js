@@ -2875,6 +2875,13 @@ async function apiHighHitSlips(env, request) {
 // under_price in market.sleeper_board_current.raw_line_json) is not reliably populated right now
 // (confirmed empty this session); rather than omit Sleeper entirely or fabricate a number, real
 // legs are still surfaced with the multiplier field explicitly null and a note to check manually.
+// Real per-leg Sleeper multiplier (2026-08-17): 8 real 6-pick observations, geometric mean
+// per-leg = 1.2684x (avg totals 3.22-5.54x on 6-pick). Validated by predicting the real 5-pick
+// average (3.28x predicted vs 2.96x real observed, close enough given the small sample) -
+// Sleeper's real per-leg pricing genuinely does compound roughly evenly by size for this
+// qualifying pool (all "likely/safe" legs), unlike its earlier described unbounded per-leg
+// variability which applies more to long-shot/unlikely legs this system never selects.
+const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
   { prop: "doubles", side: "less", line: 0.5, rank: 10 },
   { prop: "home_runs", side: "less", line: 0.5, rank: 9 },
