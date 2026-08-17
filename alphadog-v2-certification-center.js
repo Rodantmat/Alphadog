@@ -2696,6 +2696,138 @@ async function apiGoblinSlips(env, request) {
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [slip] });
 }
 
+// ===== High Hit Slips (2026-08-17) =====
+// Separate, dedicated track from Grounded/Goblin/Regular/Demon Slips above - NOT a reuse or
+// wrapper. Built from an extensive real-data research session covering: which (prop,side) combos
+// have a real, repeatable, large-sample historical hit rate (not the system's own estimated
+// probability); goblin tier normalization for variable-threshold props; the real, tested daily
+// slip-volume sweet spot; and the real, corrected goblin payout ratio (verified live, in-app,
+// across 14 real data points spanning sizes 2-6, both sides, pure and mixed prop composition).
+//
+// Qualifying lines: (prop,side) combos with real historical hit rate >=80% at n>=30
+// (score.prop_outcome_history, is_goblin=1, trailing 14 days as of 2026-08-17).
+const HIGH_HIT_QUALIFYING_LINES = [
+  { prop: "walks_allowed", side: "more", rank: 15 },
+  { prop: "stolen_bases", side: "less", rank: 14 },
+  { prop: "hits_allowed", side: "more", rank: 13 },
+  { prop: "hits_allowed", side: "less", rank: 13 },
+  { prop: "hits_runs_rbis", side: "less", rank: 12 },
+  { prop: "pitcher_strikeouts", side: "less", rank: 11 },
+  { prop: "pitcher_outs", side: "more", rank: 10 },
+  { prop: "total_bases", side: "less", rank: 9 },
+  { prop: "home_runs", side: "less", rank: 8 },
+  { prop: "doubles", side: "less", rank: 7 },
+  { prop: "singles", side: "less", rank: 6 },
+  { prop: "earned_runs", side: "more", rank: 5 },
+  { prop: "runs", side: "less", rank: 4 }
+];
+// Real, tested daily cap - 5/10/15/20/25/30/40/uncapped were all backtested; 10 is the real ROI
+// peak. Past 10, progressively weaker qualifying props get pulled in to fill volume and ROI
+// degrades monotonically.
+const HIGH_HIT_DAILY_SLIP_CAP = 10;
+// Real, corrected goblin per-leg payout ratio (Nth-root of real_multiplier/standard_multiplier,
+// NOT the naive un-rooted ratio which understates it by conflating total-slip and per-leg
+// discount). 0.70 is the central estimate from 14 live-verified 2026-08-17 data points
+// (control.goblin_demon_multiplier_study ids 45-54, real range 0.63-0.76). A 30% conservative
+// haircut is also computed alongside per explicit request, since real placed multipliers have
+// consistently run below the raw estimate throughout this session.
+const HIGH_HIT_GOBLIN_RATIO = 0.70;
+const HIGH_HIT_GOBLIN_RATIO_BUFFERED = 0.49;
+const HIGH_HIT_SLIP_SIZES = [4, 5, 6];
+
+async function autoSelectHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const propSideList = HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
+        confidence_0_100, is_goblin, is_demon
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'prizepicks' AND is_goblin = 1
+        AND (canonical_prop_key, selected_side) IN (${propSideList})
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    // Real-reliability rank across qualifying buckets, NOT hit_probability_0_100 - explicitly
+    // validated this session that HP-based selection within a qualifying bucket does not
+    // reproduce the bucket's real historical hit rate (see session notes 2026-08-17).
+    const rankByPropSide = new Map(HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}`, q.rank]));
+    return rows
+      .map(r => ({ ...r, _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+function buildHighHitSlips(legs) {
+  const table = APP_PAYOUT_TABLES.prizepicks;
+  const used = new Set();
+  const slips = [];
+  while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
+    // Largest-size-first: the real backtest showed larger structures had the best buffered ROI,
+    // and correctly shrinks to a smaller size only when the remaining pool can't fill 6.
+    let built = null;
+    for (const size of [...HIGH_HIT_SLIP_SIZES].reverse()) {
+      const slipLegs = [];
+      const gamesInSlip = new Set();
+      const playersInSlip = new Set();
+      for (const leg of legs) {
+        if (used.has(leg.board_row_id)) continue;
+        if (gamesInSlip.has(leg.game_pk) || playersInSlip.has(leg.mlb_player_id)) continue;
+        slipLegs.push(leg);
+        gamesInSlip.add(leg.game_pk);
+        playersInSlip.add(leg.mlb_player_id);
+        if (slipLegs.length >= size) break;
+      }
+      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+    }
+    if (!built) break;
+    for (const l of built.slipLegs) used.add(l.board_row_id);
+    const rawMult = table.power[built.size];
+    const realMult = Math.round(rawMult * HIGH_HIT_GOBLIN_RATIO * 100) / 100;
+    const bufferedMult = Math.round(rawMult * HIGH_HIT_GOBLIN_RATIO_BUFFERED * 100) / 100;
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip"),
+      source_key: "prizepicks",
+      slip_type: `${built.size}-pick`,
+      slip_size: built.size,
+      entry_mode: "power",
+      structure_label: `${built.size}-pick Power (High Hit)`,
+      estimated_real_multiplier: realMult,
+      estimated_real_multiplier_buffered_30pct: bufferedMult,
+      estimated_payout_note: "Real goblin per-leg ratio 0.63-0.76 (0.70 central estimate) applied to the published PrizePicks Power table, per 14 live-verified 2026-08-17 data points. Buffered figure applies an additional 30% conservative haircut on top - real placed multipliers have consistently run below the raw published/estimated number all session.",
+      strategy_notes: [
+        "Legs selected by real historical hit rate rank across qualifying (prop,side) buckets (n>=30, >=80% hit rate, trailing 14 days) - NOT by the system's own estimated_hit_probability_0_100.",
+        "Correlation-safe: max 1 leg per game, max 1 leg per player, within this slip.",
+        `Daily cap: ${HIGH_HIT_DAILY_SLIP_CAP} slips/day - the real, tested sweet spot; ROI degrades past this as weaker qualifying props get pulled in to fill volume.`
+      ],
+      legs: built.slipLegs
+    });
+  }
+  return slips;
+}
+
+async function apiHighHitSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  const legs = await autoSelectHighHitSlipLegs(env);
+  if (legs.length < 4) {
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying High Hit legs available right now - board may still be filling in for the day."] });
+  }
+  const slips = buildHighHitSlips(legs);
+  return jsonResponse({
+    ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
+    selected_leg_count: legs.length, generated_slips: slips,
+    notes: [
+      "High Hit Slips: separate track from Grounded/Goblin/Regular/Demon Slips above - built from the 2026-08-17 real-data research session (real historical hit-rate selection, real corrected goblin multiplier ratio, real tested daily cap).",
+      "PrizePicks only for now - Underdog and Sleeper real multiplier data is not yet complete enough to trust for this track.",
+      "Known open risk, not yet resolved: only 4 real backtested days (2026-08-10 to 2026-08-13); 2026-08-14/15 have a real goblin/demon grading gap in prop_outcome_history; 5/6-pick multiplier ratio is supported by real but thinner data than 4-pick."
+    ]
+  });
+}
+
 // Demon Slips: PP-only, flexible 2-6 pick, one slip a day. FIXED 2026-08-05: restricted to the
 // 'more' side only - this is the genuine, meaningful Demon side (elevated threshold, the actual
 // source of a Demon's difficulty and boosted payout). Allowing 'less' let the selector gravitate
