@@ -2773,14 +2773,18 @@ function buildHighHitSlips(legs) {
   const table = APP_PAYOUT_TABLES.prizepicks;
   const used = new Set();
   const slips = [];
+  // Thin-day game cap boost (2026-08-17): on a genuinely thin board (few distinct games in the
+  // real qualifying pool), the normal max-3-per-game limit can make it impossible to reach a
+  // useful slip size at all. Real, dynamic check - not a manual toggle: if the qualifying legs
+  // span fewer than 5 distinct games, allow up to 4 legs from the same game instead of 3. On a
+  // normal, healthy multi-game day this never engages (game count check fails), same behavior
+  // as before.
+  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
+  const maxPerGame = distinctGames < 5 ? 4 : 3;
   while (slips.length < HIGH_HIT_DAILY_SLIP_CAP) {
     // Largest-size-first: the real backtest showed larger structures had the best buffered ROI,
     // and correctly shrinks to a smaller size only when the remaining pool can't fill 6.
     let built = null;
-    // Thin-day fallback (2026-08-17): try every size 6 down to 3, not just the fixed 4/5/6 set -
-    // a day with genuinely low real qualifying volume should still produce the largest slip the
-    // actual available legs support, rather than zero slips just because 6 (or even 4) isn't
-    // reachable. Never below 3 - that's PrizePicks' real minimum pick size.
     for (const size of [6, 5, 4, 3]) {
       const slipLegs = [];
       const gameCounts = new Map();
@@ -2790,7 +2794,7 @@ function buildHighHitSlips(legs) {
         if (used.has(leg.board_row_id)) continue;
         if (playersInSlip.has(leg.mlb_player_id)) continue;
         const gameCount = gameCounts.get(leg.game_pk) || 0;
-        if (gameCount >= 3) continue;
+        if (gameCount >= maxPerGame) continue;
         const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
         const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
         if (propTypeCount >= 3) continue;
