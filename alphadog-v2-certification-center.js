@@ -4337,20 +4337,6 @@ async function highHitSlips(){
     applySlipSourceFilter();
   }finally{if(btn)btn.disabled=false}
 }
-async function highHitSlipsUnderdog(){
-  const btn=$('highHitUnderdogSlipsBtn');const results=$('autoCreateResults');
-  if(btn)btn.disabled=true;
-  results.innerHTML='<div class="empty">Building Underdog High Hit Slips from real-hit-rate qualifying lines...</div>';
-  try{
-    const j=await (await fetch('/api/slips/high-hit-underdog',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
-    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
-    const slips=j.generated_slips||[];
-    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Underdog High Hit legs right now.')+'</div>';return}
-    lastRawSlips=slips;lastSlipsHeading='Underdog High Hit Slip';
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Underdog High Hit legs. '+esc((j.notes||[])[0]||'')+'</div>';
-    applySlipSourceFilter();
-  }finally{if(btn)btn.disabled=false}
-}
 async function demonSlips(){
   const btn=$('demonSlipsBtn');const results=$('autoCreateResults');
   if(btn)btn.disabled=true;
