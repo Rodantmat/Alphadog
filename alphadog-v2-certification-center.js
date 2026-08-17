@@ -2998,6 +2998,9 @@ function buildUnderdogHighHitSlips(legs) {
   const table = APP_PAYOUT_TABLES.parlay_underdog;
   const used = new Set();
   const slips = [];
+  // Cross-slip player cap (2026-08-17) - same real fix as PrizePicks: cap each player at 2
+  // slips/day across the whole batch, not just 1/slip within a single slip.
+  const dailyPlayerUsage = new Map();
   // Thin-day game cap boost (2026-08-17) - same real, dynamic logic as PrizePicks: fewer than 5
   // distinct games in the qualifying pool allows up to 4 legs from the same game instead of 3.
   const distinctGames = new Set(legs.map(l => l.game_pk)).size;
@@ -3014,6 +3017,7 @@ function buildUnderdogHighHitSlips(legs) {
       for (const leg of legs) {
         if (used.has(leg.board_row_id)) continue;
         if (playersInSlip.has(leg.mlb_player_id)) continue;
+        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
         const gameCount = gameCounts.get(leg.game_pk) || 0;
         if (gameCount >= maxPerGame) continue;
         const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
@@ -3028,7 +3032,10 @@ function buildUnderdogHighHitSlips(legs) {
       if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
     }
     if (!built) break;
-    for (const l of built.slipLegs) used.add(l.board_row_id);
+    for (const l of built.slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
     slips.push({
       client_slip_id: makeUiId("high_hit_slip_ud"),
       source_key: "parlay_underdog",
