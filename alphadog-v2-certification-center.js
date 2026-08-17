@@ -2789,8 +2789,13 @@ function buildHighHitSlips(legs) {
     if (!built) break;
     for (const l of built.slipLegs) used.add(l.board_row_id);
     const rawMult = table.power[built.size];
-    const realMult = Math.round(rawMult * HIGH_HIT_GOBLIN_RATIO * 100) / 100;
-    const bufferedMult = Math.round(rawMult * HIGH_HIT_GOBLIN_RATIO_BUFFERED * 100) / 100;
+    // CORRECTED 2026-08-17: the real per-leg ratio compounds across every leg in the slip
+    // (ratio^size), NOT applied once - confirmed via user's real observed 6-pick power (~2.6x)
+    // vs the broken single-application result (26.25x), a ~10x overstatement. This matches
+    // exactly how the ratios in control.goblin_demon_multiplier_study were originally derived
+    // (implied_per_leg_ratio = (real_multiplier/standard_multiplier)^(1/slip_size)).
+    const realMult = Math.round(rawMult * Math.pow(HIGH_HIT_GOBLIN_RATIO, built.size) * 100) / 100;
+    const bufferedMult = Math.round(rawMult * Math.pow(HIGH_HIT_GOBLIN_RATIO_BUFFERED, built.size) * 100) / 100;
     slips.push({
       client_slip_id: makeUiId("high_hit_slip"),
       source_key: "prizepicks",
