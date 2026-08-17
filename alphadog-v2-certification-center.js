@@ -2891,12 +2891,12 @@ async function apiHighHitSlips(env, request) {
 // qualifying pool (all "likely/safe" legs), unlike its earlier described unbounded per-leg
 // variability which applies more to long-shot/unlikely legs this system never selects.
 const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
+// Restricted to doubles-only (2026-08-17, real backtest): the real, standout single line (90%
+// real hit rate this window, matching the 81.8% real rate in the original 14-day study). The
+// other 4 lines (home_runs/rfi_nrfi/rbis/walks) are removed from this track - real backtesting
+// showed mixing them in performed worse than doubles alone.
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "doubles", side: "less", line: 0.5, rank: 10 },
-  { prop: "home_runs", side: "less", line: 0.5, rank: 9 },
-  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 8 },
-  { prop: "rbis", side: "less", line: 0.5, rank: 7 },
-  { prop: "walks", side: "less", line: 0.5, rank: 6 }
+  { prop: "doubles", side: "less", line: 0.5, rank: 10 }
 ];
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
