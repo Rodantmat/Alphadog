@@ -2779,18 +2779,21 @@ function buildHighHitSlips(legs) {
     let built = null;
     for (const size of [...HIGH_HIT_SLIP_SIZES].reverse()) {
       const slipLegs = [];
-      const gamesInSlip = new Set();
+      const gameCounts = new Map();
+      const propTypeCounts = new Map();
       const playersInSlip = new Set();
-      const propTypesInSlip = new Set();
       for (const leg of legs) {
         if (used.has(leg.board_row_id)) continue;
-        if (gamesInSlip.has(leg.game_pk) || playersInSlip.has(leg.mlb_player_id)) continue;
+        if (playersInSlip.has(leg.mlb_player_id)) continue;
+        const gameCount = gameCounts.get(leg.game_pk) || 0;
+        if (gameCount >= 3) continue;
         const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
-        if (propTypesInSlip.has(propTypeKey)) continue;
+        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
+        if (propTypeCount >= 3) continue;
         slipLegs.push(leg);
-        gamesInSlip.add(leg.game_pk);
+        gameCounts.set(leg.game_pk, gameCount + 1);
+        propTypeCounts.set(propTypeKey, propTypeCount + 1);
         playersInSlip.add(leg.mlb_player_id);
-        propTypesInSlip.add(propTypeKey);
         if (slipLegs.length >= size) break;
       }
       if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
