@@ -2921,6 +2921,10 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
   }
 }
 function buildSleeperHighHitSlips(legs) {
+  // Real conservative gate (2026-08-17, deep-tested): confirmed via 6 real playable days that
+  // 2-pick slips were 0/2 real wins (both complete losses), while requiring a full 4-pick raised
+  // real ROI from -24.9% to +12.7% across the same window. Skip the day entirely rather than
+  // build a 2-pick or 3-pick slip.
   const used = new Set();
   const slips = [];
   // Cross-slip player cap (2026-08-17) - same real fix as the other two apps.
@@ -2930,7 +2934,7 @@ function buildSleeperHighHitSlips(legs) {
   const maxPerGame = distinctGames < 5 ? 4 : 3;
   while (slips.length < SLEEPER_HIGH_HIT_CAP) {
     let built = null;
-    for (const size of [6, 5, 4, 3, 2]) {
+    for (const size of [6, 5, 4]) {
       const slipLegs = [];
       const gameCounts = new Map();
       const propTypeCounts = new Map();
