@@ -12,22 +12,22 @@
   ],
   "output_json": "prizepicks_mlb_current.json",
   "output_meta": "prizepicks_mlb_current_meta.json",
-  "started_at": "2026-08-17T22:31:09Z",
-  "finished_at": "2026-08-17T22:31:31Z",
-  "github_run_id": "32076334194",
+  "started_at": "2026-08-18T00:05:02Z",
+  "finished_at": "2026-08-18T00:05:26Z",
+  "github_run_id": "32083073895",
   "github_run_attempt": "1",
-  "github_event_name": "schedule",
-  "alphadog_request_id": "",
+  "github_event_name": "repository_dispatch",
+  "alphadog_request_id": "pp_scrape_dispatch_msxwhrb4_7v0xyu",
   "alphadog_chain_id": "",
-  "alphadog_slate_date": "",
+  "alphadog_slate_date": "2026-08-17",
   "fetch": {
     "attempt": 1,
     "url": "https://partner-api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
-    "started_at": "2026-08-17T22:31:26Z",
-    "finished_at": "2026-08-17T22:31:28Z",
+    "started_at": "2026-08-18T00:05:22Z",
+    "finished_at": "2026-08-18T00:05:24Z",
     "http_status": 200,
     "content_type": "application/json",
-    "response_size_bytes": 6078686,
+    "response_size_bytes": 2816481,
     "proxy_configured": true,
     "proxy_masked": "http://d8ro...rnia:***@rp.scrapegw.com:6060"
   },
@@ -51,30 +51,30 @@
     "fetch": {
       "attempt": 1,
       "url": "https://partner-api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
-      "started_at": "2026-08-17T22:31:26Z",
-      "finished_at": "2026-08-17T22:31:28Z",
+      "started_at": "2026-08-18T00:05:22Z",
+      "finished_at": "2026-08-18T00:05:24Z",
       "http_status": 200,
       "content_type": "application/json",
-      "response_size_bytes": 6078686,
+      "response_size_bytes": 2816481,
       "proxy_configured": true,
       "proxy_masked": "http://d8ro...rnia:***@rp.scrapegw.com:6060"
     },
     "collection_name": "data",
-    "row_count": 5295,
+    "row_count": 2482,
     "freshness": {
-      "row_count": 5295,
-      "future_pickable_rows": 5295,
+      "row_count": 2482,
+      "future_pickable_rows": 2482,
       "started_or_expired_rows": 0,
       "missing_or_invalid_start_rows": 0,
       "status_blocked_rows": 0,
-      "min_start_time_utc": "2026-08-17T22:40:00Z",
-      "max_start_time_utc": "2026-08-18T00:40:00Z",
+      "min_start_time_utc": "2026-08-18T00:10:00Z",
+      "max_start_time_utc": "2026-08-19T00:40:00Z",
       "min_board_time": "2026-06-28T10:54:00.000-04:00",
-      "max_board_time": "2026-08-17T17:56:06.275-04:00",
+      "max_board_time": "2026-08-17T20:02:48.923-04:00",
       "status_distribution": [
         {
           "value": "pre_game",
-          "count": 5295
+          "count": 2482
         }
       ]
     },
@@ -88,15 +88,15 @@
       "fetch": {
         "attempt": 1,
         "url": "https://api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
-        "started_at": "2026-08-17T22:31:24Z",
-        "finished_at": "2026-08-17T22:31:25Z",
+        "started_at": "2026-08-18T00:05:03Z",
+        "finished_at": "2026-08-18T00:05:22Z",
         "http_status": 403,
         "content_type": "application/json;charset=utf-8",
         "response_size_bytes": 501,
         "proxy_configured": true,
         "proxy_masked": "http://d8ro...rnia:***@rp.scrapegw.com:6060"
       },
-      "error": "HTTP 403: {\"url\":\"https://geo.captcha-delivery.com/interstitial/?initialCid=AHrlqAAAAAMA1CBWe4m5hgwAYiQFKQ==&cid=wwjAxELq96SWHajcTDwPHvRtOC7xa0NctXdrU8FTTy7Drkwf2qjYqj~y5bN0H0_hGLxMFmBZ4r~M99rIGYlKCU23uXtw13_Nxb4o6uJJgK_MGE1F0PVW0GgH3fiwKqtg&referer=https%3A%2F%2Fapi.prizepicks.com%2Fprojections%3Fleague_id%3",
+      "error": "HTTP 403: {\"url\":\"https://geo.captcha-delivery.com/interstitial/?initialCid=AHrlqAAAAAMAy_nOL3LkQoIAL5_O6g==&cid=beApPAkN7Cy1bqS42RQV6YS9drTit_EqK0n8a2Dw8wf16gqGZ4cs1mdH3aXsunCw4Uaymjk22TR6pnHR6SwXjihKqR3liAs25468tGsBzYdMmKrUyqSzA_PLvp2sdmRd&referer=https%3A%2F%2Fapi.prizepicks.com%2Fprojections%3Fleague_id%3",
       "row_count": 0,
       "freshness": {
         "future_pickable_rows": 0
@@ -108,15 +108,15 @@
       "fetch": {
         "attempt": 1,
         "url": "https://api.prizepicks.com/projections?league_id=2&per_page=5000",
-        "started_at": "2026-08-17T22:31:25Z",
-        "finished_at": "2026-08-17T22:31:26Z",
+        "started_at": "2026-08-18T00:05:22Z",
+        "finished_at": "2026-08-18T00:05:22Z",
         "http_status": 403,
         "content_type": "application/json;charset=utf-8",
         "response_size_bytes": 480,
         "proxy_configured": true,
         "proxy_masked": "http://d8ro...rnia:***@rp.scrapegw.com:6060"
       },
-      "error": "HTTP 403: {\"url\":\"https://geo.captcha-delivery.com/interstitial/?initialCid=AHrlqAAAAAMACmaBzMlsHa4AL5nSXQ==&cid=~Bwe7gqS7CTJUXmYk3JnN9YQbg0hFsb1aRSIxi~0FP_Rpm_osmtvBwbjO_035HUl5J_24VoSJLWeGm2ns6NDthuXY~RMyLMg0Ti8_qWGlROhWzSVStCFJd61GkhY6i3X&referer=https%3A%2F%2Fapi.prizepicks.com%2Fprojections%3Fleague_id%3",
+      "error": "HTTP 403: {\"url\":\"https://geo.captcha-delivery.com/interstitial/?initialCid=AHrlqAAAAAMARNtHFW7Y5XIAF_Nypg==&cid=2whGjHHkkTxM1SHYbgtrQyEsmGUrsWKIzqJ1tQMPONBXklXbu8oHZ06memBmkNY66r3JpDASSQ12i5J6Lfx4mCbaMXlW5nn7TkBcKFuGwKLkcCNdz8iWkamW9X21NZtj&referer=https%3A%2F%2Fapi.prizepicks.com%2Fprojections%3Fleague_id%3",
       "row_count": 0,
       "freshness": {
         "future_pickable_rows": 0
@@ -128,30 +128,30 @@
       "fetch": {
         "attempt": 1,
         "url": "https://partner-api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
-        "started_at": "2026-08-17T22:31:26Z",
-        "finished_at": "2026-08-17T22:31:28Z",
+        "started_at": "2026-08-18T00:05:22Z",
+        "finished_at": "2026-08-18T00:05:24Z",
         "http_status": 200,
         "content_type": "application/json",
-        "response_size_bytes": 6078686,
+        "response_size_bytes": 2816481,
         "proxy_configured": true,
         "proxy_masked": "http://d8ro...rnia:***@rp.scrapegw.com:6060"
       },
       "collection_name": "data",
-      "row_count": 5295,
+      "row_count": 2482,
       "freshness": {
-        "row_count": 5295,
-        "future_pickable_rows": 5295,
+        "row_count": 2482,
+        "future_pickable_rows": 2482,
         "started_or_expired_rows": 0,
         "missing_or_invalid_start_rows": 0,
         "status_blocked_rows": 0,
-        "min_start_time_utc": "2026-08-17T22:40:00Z",
-        "max_start_time_utc": "2026-08-18T00:40:00Z",
+        "min_start_time_utc": "2026-08-18T00:10:00Z",
+        "max_start_time_utc": "2026-08-19T00:40:00Z",
         "min_board_time": "2026-06-28T10:54:00.000-04:00",
-        "max_board_time": "2026-08-17T17:56:06.275-04:00",
+        "max_board_time": "2026-08-17T20:02:48.923-04:00",
         "status_distribution": [
           {
             "value": "pre_game",
-            "count": 5295
+            "count": 2482
           }
         ]
       },
@@ -164,30 +164,30 @@
       "fetch": {
         "attempt": 1,
         "url": "https://partner-api.prizepicks.com/projections?league_id=2&per_page=5000",
-        "started_at": "2026-08-17T22:31:28Z",
-        "finished_at": "2026-08-17T22:31:30Z",
+        "started_at": "2026-08-18T00:05:24Z",
+        "finished_at": "2026-08-18T00:05:26Z",
         "http_status": 200,
         "content_type": "application/json",
-        "response_size_bytes": 6078664,
+        "response_size_bytes": 2816459,
         "proxy_configured": true,
         "proxy_masked": "http://d8ro...rnia:***@rp.scrapegw.com:6060"
       },
       "collection_name": "data",
-      "row_count": 5295,
+      "row_count": 2482,
       "freshness": {
-        "row_count": 5295,
-        "future_pickable_rows": 5295,
+        "row_count": 2482,
+        "future_pickable_rows": 2482,
         "started_or_expired_rows": 0,
         "missing_or_invalid_start_rows": 0,
         "status_blocked_rows": 0,
-        "min_start_time_utc": "2026-08-17T22:40:00Z",
-        "max_start_time_utc": "2026-08-18T00:40:00Z",
+        "min_start_time_utc": "2026-08-18T00:10:00Z",
+        "max_start_time_utc": "2026-08-19T00:40:00Z",
         "min_board_time": "2026-06-28T10:54:00.000-04:00",
-        "max_board_time": "2026-08-17T17:56:06.275-04:00",
+        "max_board_time": "2026-08-17T20:02:48.923-04:00",
         "status_distribution": [
           {
             "value": "pre_game",
-            "count": 5295
+            "count": 2482
           }
         ]
       },
@@ -211,6 +211,7 @@
     ],
     "first_data_attribute_keys": [
       "adjusted_odds",
+      "allowed_wager_types",
       "board_time",
       "custom_image",
       "description",
@@ -251,46 +252,36 @@
     "first_included_keys": [
       "attributes",
       "id",
-      "relationships",
       "type"
     ],
     "first_included_attribute_keys": [
-      "combo",
-      "display_name",
-      "image_url",
-      "jersey_number",
-      "league",
-      "league_id",
-      "market",
+      "lfg_ignored_leagues",
       "name",
-      "position",
-      "ppid",
-      "team",
-      "team_name"
+      "rank"
     ]
   },
   "primary_collection": "data",
-  "row_count": 5295,
-  "included_count": 259,
-  "likely_mlb_rows": 5295,
+  "row_count": 2482,
+  "included_count": 156,
+  "likely_mlb_rows": 2482,
   "freshness": {
-    "row_count": 5295,
-    "future_pickable_rows": 5295,
+    "row_count": 2482,
+    "future_pickable_rows": 2482,
     "started_or_expired_rows": 0,
     "missing_or_invalid_start_rows": 0,
     "status_blocked_rows": 0,
-    "min_start_time_utc": "2026-08-17T22:40:00Z",
-    "max_start_time_utc": "2026-08-18T00:40:00Z",
+    "min_start_time_utc": "2026-08-18T00:10:00Z",
+    "max_start_time_utc": "2026-08-19T00:40:00Z",
     "min_board_time": "2026-06-28T10:54:00.000-04:00",
-    "max_board_time": "2026-08-17T17:56:06.275-04:00",
+    "max_board_time": "2026-08-17T20:02:48.923-04:00",
     "status_distribution": [
       {
         "value": "pre_game",
-        "count": 5295
+        "count": 2482
       }
     ]
   },
-  "sha256": "c7b16045e33caf9e6ac8684f3cd7b505cd20e48238dc365efac25a0018dcc5fe",
+  "sha256": "b10e96be1f10500a8efbe4150da297a27d9d4b8e1b5c972f3a0d185ca6e6ba3d",
   "stale_overwrite_guard": "passed_future_pickable_gate_before_overwrite",
   "no_d1_write": true,
   "no_scoring": true,
