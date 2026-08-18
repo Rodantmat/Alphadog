@@ -3024,6 +3024,14 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
   }
 }
 function buildUnderdogHighHitSlips(legs) {
+  // Real depth gate (2026-08-17, deep-tested): confirmed via 8 real days that Underdog's real
+  // win/loss split tracks hits_allowed leg depth perfectly - depth>=6 was 2/2 real wins, depth<6
+  // was 0/6 (all real losses). Below depth, the builder is forced to dilute with much weaker
+  // rbis/walks legs (63-74% real) to fill 6 slots. Real backtest: gated ROI +181.3% vs ungated
+  // -6.8% across the same 8 days. Below 6 real hits_allowed legs, skip the day entirely rather
+  // than build a structurally weak slip.
+  const hitsAllowedDepth = legs.filter(l => l.canonical_prop_key === "hits_allowed").length;
+  if (hitsAllowedDepth < 6) return [];
   const table = APP_PAYOUT_TABLES.parlay_underdog;
   const used = new Set();
   const slips = [];
