@@ -87,9 +87,15 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
   // set entirely via the INNER JOIN - never graded, never stored, permanently stuck as invisible
   // "ungraded" rather than the genuine push/void it actually is. Confirmed live via real research:
   // multiple real players (rest days, unused relievers) were affected by exactly this gap.
+  // REAL FIX (2026-08-17): DISTINCT ON did not include is_goblin/is_demon, so whenever a
+  // goblin (or demon) row shared the exact same (player, prop, line, side) as the standard
+  // variant, the dedup silently collapsed them into one row and the other variant's outcome_id
+  // was never created - not graded, not even a placeholder, permanently invisible. Confirmed
+  // live: Ronald Acuña Jr.'s total_bases|less|3.5 goblin row had zero outcome rows at all while
+  // the identical-line standard row graded fine, because they collided in this exact dedup key.
   const rows = await sql.unsafe(`
     WITH deduped AS (
-      SELECT DISTINCT ON (mlb_player_id, canonical_prop_key, line_value, selected_side)
+      SELECT DISTINCT ON (mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon)
         final_board_row_id, prepared_row_id, source_key, game_pk, official_date, mlb_player_id,
         player_name, canonical_prop_key, line_value, selected_side,
         estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, board_tier,
