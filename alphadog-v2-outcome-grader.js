@@ -242,7 +242,7 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
     const hasData = r.selected_side === "more" ? r.rfi_sl_more_hit !== null : r.rfi_sl_less_hit !== null;
     const isPush = !hasData;
     return {
-      outcome_id: `grade_rfi_${r.mlb_player_id}_rfi_nrfi_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
+      outcome_id: `grade_rfi_${r.mlb_player_id}_rfi_nrfi_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${r.is_goblin ? "gob" : (r.is_demon ? "dem" : "std")}_${targetDate}`,
       final_board_row_id: r.final_board_row_id || null,
       prepared_row_id: r.prepared_row_id || null,
       source_key: r.source_key || null,
