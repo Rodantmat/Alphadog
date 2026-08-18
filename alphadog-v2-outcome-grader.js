@@ -143,7 +143,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
     const isPush = isDnpPush || isTiePush;
     const enrichment = extractEnrichmentSignal(r.calibration_json);
     return {
-      outcome_id: `grade_${entityType}_${r.mlb_player_id}_${r.canonical_prop_key}_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${targetDate}`,
+      outcome_id: `grade_${entityType}_${r.mlb_player_id}_${r.canonical_prop_key}_${String(r.line_value).replace(".", "p")}_${r.selected_side}_${r.is_goblin ? "gob" : (r.is_demon ? "dem" : "std")}_${targetDate}`,
       final_board_row_id: r.final_board_row_id || null,
       prepared_row_id: r.prepared_row_id || null,
       source_key: r.source_key || null,
