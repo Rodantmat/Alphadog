@@ -104,7 +104,7 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
       WHERE official_date::date = $1::date
         AND board_tier IN ('PRIMARY','REVIEW')
         AND canonical_prop_key = ANY($2::text[])
-      ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, created_at DESC
+      ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon, created_at DESC
     ),
     graded AS (
       SELECT f.*,
