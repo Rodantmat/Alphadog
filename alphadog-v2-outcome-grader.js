@@ -206,7 +206,7 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
   // broken calibration all the way back to having no working outcome-grading path at all.
   const rows = await sql.unsafe(`
     WITH deduped AS (
-      SELECT DISTINCT ON (mlb_player_id, canonical_prop_key, line_value, selected_side)
+      SELECT DISTINCT ON (mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon)
         final_board_row_id, prepared_row_id, source_key, game_pk, official_date, mlb_player_id,
         player_name, canonical_prop_key, line_value, selected_side,
         estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, board_tier,
@@ -215,7 +215,7 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
       WHERE official_date::date = $1::date
         AND board_tier IN ('PRIMARY','REVIEW')
         AND canonical_prop_key = 'rfi_nrfi'
-      ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, created_at DESC
+      ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon, created_at DESC
     ),
     graded AS (
       SELECT f.*, fip.rfi_sl_more_hit, fip.rfi_sl_less_hit, gs.is_final
