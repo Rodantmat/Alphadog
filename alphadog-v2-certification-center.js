@@ -2864,7 +2864,138 @@ function buildHighHitSlips(legs) {
   return slips;
 }
 
-async function apiHighHitSlips(env, request) {
+// Real qualifying lines for PrizePicks Regular Slips (2026-08-19, standard variant, is_goblin=0,
+// is_demon=0) - validated against what's ACTUALLY typically offered on the board (corrected from
+// an earlier mistake that researched rare/unusual-day lines that don't normally appear). Real
+// hit rates over the trailing 9-day window: total_bases less 1.5 (66.2%, n=1474), runs less 0.5
+// (62.7%, n=1463), singles less 0.5 (56.4%, n=1026), hits_runs_rbis less 1.5 (55.1%, n=1401).
+const REGULAR_HIGH_HIT_QUALIFYING_LINES = [
+  { prop: "total_bases", side: "less", line: 1.5, rank: 10 },
+  { prop: "runs", side: "less", line: 0.5, rank: 9 },
+  { prop: "singles", side: "less", line: 0.5, rank: 8 },
+  { prop: "hits_runs_rbis", side: "less", line: 1.5, rank: 7 }
+];
+const REGULAR_HIGH_HIT_CAP = 2;
+// Real qualifying lines for PrizePicks Demon Slips (is_demon=1) - the two strongest real,
+// typically-available demon lines: runs less 0.5 (58.6%, n=157), singles less 0.5 (45.9%,
+// n=111). Real hit rate is meaningfully lower than goblin/regular by design (demon = harder
+// side), so this track carries more real risk even at its best qualifying lines.
+const DEMON_HIGH_HIT_QUALIFYING_LINES = [
+  { prop: "runs", side: "less", line: 0.5, rank: 10 },
+  { prop: "singles", side: "less", line: 0.5, rank: 9 }
+];
+const DEMON_HIGH_HIT_CAP = 2;
+// Real, conservative per-leg ratio for demon (2026-08-18/19): from control.goblin_demon_multiplier_study,
+// real common-prop no-standard demon observations ranged 1.08-1.26 per leg. Using the LOWEST real
+// observed value (1.08) as the conservative estimate, per explicit request, until real qualified-leg
+// multiplier data is available to sharpen this further.
+const DEMON_REAL_RATIO = 1.08;
+
+async function autoSelectRegularHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const propSideLineList = REGULAR_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
+        confidence_0_100, is_goblin, is_demon
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'prizepicks' AND is_goblin = 0 AND is_demon = 0
+        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    const rankByPropSideLine = new Map(REGULAR_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    return rows
+      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+async function autoSelectDemonHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const propSideLineList = DEMON_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
+        confidence_0_100, is_goblin, is_demon
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'prizepicks' AND is_demon = 1
+        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    const rankByPropSideLine = new Map(DEMON_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    return rows
+      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
+function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, payoutNote) {
+  const used = new Set();
+  const dailyPlayerUsage = new Map();
+  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
+  const maxPerGame = distinctGames < 5 ? 4 : 3;
+  const slips = [];
+  while (slips.length < cap) {
+    let built = null;
+    for (const size of [4, 3]) {
+      const slipLegs = [];
+      const gameCounts = new Map();
+      const propTypeCounts = new Map();
+      const playersInSlip = new Set();
+      for (const leg of legs) {
+        if (used.has(leg.board_row_id)) continue;
+        if (playersInSlip.has(leg.mlb_player_id)) continue;
+        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+        const gameCount = gameCounts.get(leg.game_pk) || 0;
+        if (gameCount >= maxPerGame) continue;
+        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
+        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
+        if (propTypeCount >= 3) continue;
+        slipLegs.push(leg);
+        gameCounts.set(leg.game_pk, gameCount + 1);
+        propTypeCounts.set(propTypeKey, propTypeCount + 1);
+        playersInSlip.add(leg.mlb_player_id);
+        if (slipLegs.length >= size) break;
+      }
+      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+    }
+    if (!built) break;
+    for (const l of built.slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
+    const flexFull = multiplierFn(built.size);
+    slips.push({
+      client_slip_id: makeUiId(`high_hit_slip_${sourceLabel}`),
+      source_key: `prizepicks_${sourceLabel}`,
+      slip_type: `${built.size}-pick`,
+      slip_size: built.size,
+      entry_mode: "flex",
+      structure_label: `${built.size}-pick Flex (High Hit - ${sourceLabel === "regular" ? "Regular" : "Demon"})`,
+      estimated_multiplier: Math.round(flexFull * 100) / 100,
+      estimated_payout_note: payoutNote,
+      strategy_notes: [
+        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets - NOT by the system's own estimated_hit_probability_0_100.",
+        "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
+        `Daily cap: ${cap} slips/day for this track.`
+      ],
+      legs: built.slipLegs
+    });
+  }
+  return slips;
+}
+
+
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
     autoSelectHighHitSlipLegs(env),
