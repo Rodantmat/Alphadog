@@ -584,7 +584,7 @@ export default {
             results.push({ game_pk: g.game_pk, status: "found", umpire: ext.home_plate_umpire_name });
           } catch (err) { errors++; results.push({ game_pk: g.game_pk, status: "exception", error: String(err && err.message ? err.message : err) }); }
         }
-        const permanentBackfill = await permanentlyRecordConfirmedAssignments(pg).catch(() => ({ copied: 0, checked: 0, error: true }));
+        const permanentBackfill = await permanentlyRecordConfirmedAssignments(pg).catch((e) => ({ copied: 0, checked: 0, error: true, error_message: String(e && e.message ? e.message : e) }));
         return jsonResponse({ total_missing: missing.length, found, not_found: notFound, errors, permanent_backfill: permanentBackfill, results: results.slice(0, 30) });
       } catch (err) {
         return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
