@@ -634,12 +634,20 @@ async function runMatrixBuilder(request, env, pgClient) {
       // Raw, unflipped label - matches what PrizePicks actually displays on both sides of this
       // line (the label belongs to the line, not the side). Used for display only; scoring keeps
       // using the flipped sideIsGoblin/sideIsDemon below, which is correct for value calculation.
-      const sourceVariantLabel = sideVariation.is_goblin ? "goblin" : sideVariation.is_demon ? "demon" : (sideVariation.is_standard ? "standard" : null);
       if (isTwoSided && emitSide === "less" && (sideIsGoblin || sideIsDemon)) {
         const wasGoblin = sideIsGoblin;
         sideIsGoblin = sideIsDemon ? 1 : 0;
         sideIsDemon = wasGoblin ? 1 : 0;
       }
+      // REAL fix (2026-08-19): sourceVariantLabel was being computed from sideVariation.is_goblin/
+      // is_demon (the raw, PRE-flip values, describing the More side / raw odds_type) BEFORE the
+      // complement-flip above ran for two-sided "less" rows. sideIsGoblin/sideIsDemon correctly
+      // received the flip and were used correctly everywhere else in the matrix payload, but
+      // source_variant_label was already frozen with the stale pre-flip value - e.g. a two-sided
+      // Demon line's real "less" row (correctly is_goblin=1 post-flip) was still getting
+      // source_variant_label="demon", contradicting its own is_goblin/is_demon flags. Moved below
+      // the flip so both agree.
+      const sourceVariantLabel = sideIsGoblin ? "goblin" : sideIsDemon ? "demon" : (sideVariation.is_standard ? "standard" : null);
       matrixRows.push({
         matrix_id: sideMatrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk,
         official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: row.team, opponent_team_id: row.opponent,
