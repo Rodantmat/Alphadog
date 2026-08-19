@@ -8959,7 +8959,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       // this ceiling allows regardless of how extreme the raw z-score looks, because a thin sample
       // can't rule out model misspecification or rare real events. Ceiling grows with n (100 real
       // games earns high trust; 23 does not) and applies symmetrically to the low tail.
-      const hpSampleCeiling = Math.min(0.99, 0.55 + 0.40 * (1 - Math.exp(-nForVariance / 40)));
+      const hpSampleCeiling = Math.min(0.99, 0.99 - 0.30 * Math.exp(-nForVariance / 25));
       const hp = Math.max(1 - hpSampleCeiling, Math.min(hpSampleCeiling, wilsonClampedHp));
       const confidence = sampleAwareConfidencePg(effectiveGamesSample, psCfg, 1.0);
       baselineRows.push({
