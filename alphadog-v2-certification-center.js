@@ -2658,6 +2658,12 @@ async function apiRegularSlips(env, request) {
 async function apiGoblinSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectGoblinSlipLegs(env, {});
+  // REAL fix (2026-08-19): same is_demon/is_goblin correction as Demon - see comment there.
+  for (const l of legs) {
+    const lbl = String(l.source_variant_label || "").toLowerCase();
+    l.is_demon = lbl === "demon" ? 1 : 0;
+    l.is_goblin = lbl === "goblin" ? 1 : 0;
+  }
   if (legs.length < 2) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Goblin legs available right now - check back after the board refreshes."] });
   }
