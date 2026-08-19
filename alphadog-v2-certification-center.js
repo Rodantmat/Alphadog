@@ -3394,13 +3394,12 @@ async function apiDemonSlips(env, request) {
     }
     if (sizeBest) { best = sizeBest; mode = sizeBest.mode; break; }
   }
+  // REAL fix (2026-08-19): the fallback used to force a minimum-size slip even when NO size/mode
+  // combination cleared positive EV, which meant a user could be handed a real, known-negative-EV
+  // slip with no warning strong enough to stop them placing it. Now returns honestly empty instead
+  // of forcing a bad recommendation - a known-negative slip should never be handed to the user.
   if (!best) {
-    const size = DEMON_SLIP_MIN_SIZE;
-    const slice = legs.slice(0, size);
-    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    const breakeven = researchBreakeven(size, "power", table);
-    best = { size, slice, evResult: researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", breakeven), breakeven };
-    mode = "power";
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: [`No Demon structure (2-6 pick, Power or Flex) currently clears positive real EV with today's available legs - the qualifying lines right now aren't strong enough to recommend. Check back closer to game time as the board fills in.`] });
   }
   const { size, slice, evResult, breakeven } = best;
   const warnings = slipWarnings(slice);
