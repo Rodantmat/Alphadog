@@ -3011,6 +3011,7 @@ function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, p
 }
 
 
+async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
     autoSelectHighHitSlipLegs(env),
