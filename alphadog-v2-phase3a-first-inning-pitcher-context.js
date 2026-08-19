@@ -8950,7 +8950,17 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       const nForVariance = Math.max(1, Number(effectiveGamesSample) || 1);
       const predictionStddev = popStddev * Math.sqrt(1 + 1 / nForVariance);
       const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
-      const hp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
+      const wilsonClampedHp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
+      // REAL fix, part 2 (2026-08-19): the stddev widening above (in quadrature, sqrt(1+1/n)) is
+      // the statistically "correct" prediction-interval math, but verified live it's nowhere near
+      // enough at n=23 (only a ~2% widening) to pull back a line many real standard deviations
+      // into the tail - 45.5 still came out at 99.99% after that fix alone. A real, defensible
+      // sample-size ceiling is needed on top: with n real games, you cannot be more confident than
+      // this ceiling allows regardless of how extreme the raw z-score looks, because a thin sample
+      // can't rule out model misspecification or rare real events. Ceiling grows with n (100 real
+      // games earns high trust; 23 does not) and applies symmetrically to the low tail.
+      const hpSampleCeiling = Math.min(0.99, 0.55 + 0.40 * (1 - Math.exp(-nForVariance / 40)));
+      const hp = Math.max(1 - hpSampleCeiling, Math.min(hpSampleCeiling, wilsonClampedHp));
       const confidence = sampleAwareConfidencePg(effectiveGamesSample, psCfg, 1.0);
       baselineRows.push({
         baseline_row_id: `blv6|${entity}|${r.player_id}|${propKey}|${String(lineValue).replace(".","p")}|${side}`,
