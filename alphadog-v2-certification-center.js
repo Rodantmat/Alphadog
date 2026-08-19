@@ -3363,6 +3363,18 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
 async function apiDemonSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectDemonSlipLegs(env, {});
+  // REAL fix (2026-08-19): score.final_board_current's is_demon/is_goblin booleans are swapped
+  // relative to source_variant_label for the vast majority of rows (verified against PrizePicks'
+  // own raw odds_type field - source_variant_label is the correct one). Selection already uses
+  // source_variant_label, but the raw booleans were still being passed through unchanged in the
+  // response, so any consumer reading is_demon/is_goblin (rather than the label) displayed the
+  // wrong tag. Correcting both fields here so every consumer of this response - not just this
+  // slip-selection query - gets the right value.
+  for (const l of legs) {
+    const lbl = String(l.source_variant_label || "").toLowerCase();
+    l.is_demon = lbl === "demon" ? 1 : 0;
+    l.is_goblin = lbl === "goblin" ? 1 : 0;
+  }
   if (legs.length < DEMON_SLIP_MIN_SIZE) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Demon (more-side) legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
   }
