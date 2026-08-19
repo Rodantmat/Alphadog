@@ -2634,11 +2634,11 @@ async function apiRegularSlips(env, request) {
     }
     if (evResult) break;
   }
+  // REAL fix (2026-08-19): same as Demon - the fallback used to force a minimum-size slip even
+  // when nothing cleared positive EV. A known-negative-EV slip should never be handed to the
+  // user; return honestly empty instead.
   if (!evResult) {
-    size = REGULAR_SLIP_MIN_SIZE; sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE); mode = "power";
-    breakeven = researchBreakeven(size, "power", table);
-    const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: [`No Regular structure (2-6 pick, Power or Flex) currently clears positive real EV with today's available bottom-of-order legs. Check back closer to game time.`] });
   }
   const warnings = slipWarnings(sorted);
   const slip = {
