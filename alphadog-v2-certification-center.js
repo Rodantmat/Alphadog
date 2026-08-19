@@ -3374,12 +3374,25 @@ async function apiDemonSlips(env, request) {
   // not remotely realistic). Smallest-size-first matches the pattern already used in the main
   // research-grounded engine and the explicit ask for a 2-pick baseline; only grows beyond 2 if
   // a larger size still clears real positive EV without compounding into something implausible.
+  // REAL fix (2026-08-19): same Flex-comparison fix as Regular - previously power-only, missing
+  // the real partial-credit value of a near-miss (a 4/5 or 5/6 pays real money in Flex where
+  // Power pays zero). Demon's ratio compounds into both tables identically via
+  // researchSlipEvAdjusted, so the same multiplier<50 sanity guard against implausible results
+  // still applies to whichever mode wins.
+  let mode = "power";
   for (let size = DEMON_SLIP_MIN_SIZE; size <= Math.min(DEMON_SLIP_MAX_SIZE, legs.length); size++) {
     const slice = legs.slice(0, size);
     const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    const breakeven = researchBreakeven(size, "power", table);
-    const evResult = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", breakeven);
-    if (evResult && evResult.ev > 0 && evResult.multiplier < 50) { best = { size, slice, evResult, breakeven }; break; }
+    let sizeBest = null;
+    for (const tryMode of ["power", "flex"]) {
+      const breakeven = researchBreakeven(size, tryMode, table);
+      if (breakeven == null) continue;
+      const evResult = researchSlipEvAdjusted(slice, probs01, tryMode, table, "prizepicks", breakeven);
+      if (evResult && evResult.ev > 0 && evResult.multiplier < 50 && (!sizeBest || evResult.ev > sizeBest.evResult.ev)) {
+        sizeBest = { size, slice, evResult, breakeven, mode: tryMode };
+      }
+    }
+    if (sizeBest) { best = sizeBest; mode = sizeBest.mode; break; }
   }
   if (!best) {
     const size = DEMON_SLIP_MIN_SIZE;
@@ -3387,19 +3400,20 @@ async function apiDemonSlips(env, request) {
     const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
     const breakeven = researchBreakeven(size, "power", table);
     best = { size, slice, evResult: researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", breakeven), breakeven };
+    mode = "power";
   }
   const { size, slice, evResult, breakeven } = best;
   const warnings = slipWarnings(slice);
   const slip = {
     client_slip_id: makeUiId("demon_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
-    entry_mode: "power", structure_label: `${size}-pick Power (Demon)`,
+    entry_mode: mode, structure_label: `${size}-pick ${mode === "flex" ? "Flex" : "Power"} (Demon)`,
     estimated_hit_probability_0_100: slipProb(slice), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
     estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
     breakeven_hit_rate_0_100: breakeven,
     multiplier_estimated: true,
     estimated_payout_note: "PrizePicks doesn't publish the exact Demon multiplier - this is estimated using a fair-odds-preserving model (Demons pay ~1.9x the standard per-leg rate, per prior research). Check the real multiplier in-app before placing.",
     strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Demons are inherently harder - sized to the safest structure the day's legs genuinely support.`, ...warnings].filter(Boolean).join(" "),
+    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Demons are inherently harder - sized to the safest structure the day's legs genuinely support, comparing Power vs Flex and picking whichever has the better real EV.`, ...warnings].filter(Boolean).join(" "),
     legs: slice
   };
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [slip] });
