@@ -479,7 +479,19 @@ async function writeConfirmedLineupsIfGateOpen(pg, summary, cert, writeSafety) {
     source_mode=excluded.source_mode, data_source_level=excluded.data_source_level, is_temporary_derived=excluded.is_temporary_derived,
     fetched_at_utc=excluded.fetched_at_utc, updated_at=now()`;
 
-  return { schema_bootstrap_performed: true, batch_id: batchId, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: gateStatus, ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: rows.length, writes_performed: rows.length, write_error: null };
+  // Real permanent history copy (2026-08-19, added per explicit request): daily.lineups_current
+  // is a "current" table subject to non-destructive window-replacement pruning (today/tomorrow
+  // retention only), so any lineup data older than that window is permanently lost unless copied
+  // out first. Mirrors the exact same proven pattern already used for weather and umpire.
+  const permanentHistory = await pg`
+    INSERT INTO context.history_game_lineup (lineup_row_id, game_pk, official_date, player_id, player_name, team_id, team_name, team_side, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, data_source_level, source_endpoint)
+    SELECT lineup_row_id, game_pk, official_date, player_id, player_name, team_id, team_name, team_side, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, data_source_level, source_endpoint
+    FROM daily.lineups_current
+    ON CONFLICT (lineup_row_id) DO NOTHING
+    RETURNING lineup_row_id
+  `.catch((e) => { throw new Error(`permanent_history_copy_failed: ${e && e.message ? e.message : e}`); });
+
+  return { schema_bootstrap_performed: true, batch_id: batchId, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: gateStatus, ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: rows.length, writes_performed: rows.length, write_error: null, permanent_history_rows_copied: permanentHistory.length };
 }
 
 async function readJsonSafe(request) {
