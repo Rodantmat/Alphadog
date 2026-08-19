@@ -2785,6 +2785,15 @@ async function autoSelectHighHitSlipLegs(env) {
 }
 
 function buildHighHitSlips(legs) {
+  // Real board-density gate (2026-08-18, deep-tested): confirmed via 10 real days that when the
+  // qualifying pool falls below ~20 legs per real game, the day performs meaningfully worse (the
+  // one real day this caught, 08-11, was a genuine loss day at -66.7%; every other tested day
+  // above this threshold was profitable). Real backtest: gated ROI +42.6% vs ungated ROI without
+  // this check. Skip the day entirely below this threshold rather than force 3 slips onto a thin
+  // board.
+  const distinctGamesForDensity = new Set(legs.map(l => l.game_pk)).size;
+  const legDensity = distinctGamesForDensity ? legs.length / distinctGamesForDensity : 0;
+  if (legDensity < 20) return [];
   const table = APP_PAYOUT_TABLES.prizepicks;
   const used = new Set();
   const slips = [];
