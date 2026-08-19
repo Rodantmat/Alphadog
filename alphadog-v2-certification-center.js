@@ -2716,11 +2716,15 @@ async function apiGoblinSlips(env, request) {
 const PRIZEPICKS_HIGH_HIT_CAP = 3;
 const UNDERDOG_HIGH_HIT_CAP = 1;
 const SLEEPER_HIGH_HIT_CAP = 1;
-// Real Flex payout tiers (2026-08-17, from live-verified user data) - all three apps now run
+// Real Flex payout tiers (2026-08-17/18, from live-verified user data) - all three apps now run
 // Flex by default per explicit request: lower variance, real cushion on partial hits, in
 // exchange for lower raw ROI than Power (confirmed via real backtest: Power beats Flex on every
 // app in this window, but Flex was never negative on any of them either).
-const PRIZEPICKS_FLEX_TIERS = { 6: 1.99, 5: 0.5, 4: 0.25 };
+// PrizePicks 6/6 tier lowered from 1.99x (raw average of 10 observations) to 1.85x - a real
+// placed slip on 2026-08-18 paid ~1.76x, meaningfully below the average, confirming real
+// multipliers run lower than the raw average implies. 1.85x is a conservative point between the
+// average and the observed real floor, not the optimistic raw average.
+const PRIZEPICKS_FLEX_TIERS = { 6: 1.85, 5: 0.5, 4: 0.25 };
 const UNDERDOG_FLEX_TIERS = { 6: 2.813, 5: 0.458, 4: 0.063 };
 const HIGH_HIT_QUALIFYING_LINES = [
   { prop: "walks_allowed", side: "more", line: 0.5, rank: 15 },
