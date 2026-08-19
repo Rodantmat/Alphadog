@@ -63,34 +63,34 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 // preserved in the table for reference/audit trail, but stay permanently inert unless
 // explicitly re-validated and re-tagged - reapplying them now would layer stale corrections on
 // top of a baseline they were never fit against.
-const CALIBRATION_MIN_SAMPLE_GAMES = 100;
+// REAL fix (2026-08-19): the previous approach (additive step-function deltas from raw-p decile
+// bins) was independently audited (Gemini, second-opinion review) and confirmed statistically
+// unsound - it creates discontinuities, can produce non-monotonic output, and can push results
+// outside [0,1]. Replaced with real Platt scaling: C(P) = sigmoid(A*logit(P) + B), a standard,
+// continuous, monotonic-by-construction calibration function (monotonic whenever A>0), fit via
+// weighted logistic regression against real historical outcomes aggregated by raw-probability
+// bucket. Only 7 of 11 candidate prop/side pairs passed validation (monotonic AND max shift
+// <=0.15 AND n>=1000 real graded games) - the other 4 (doubles/less, fantasy_score/less,
+// hits_runs_rbis/less, rbis/less) are correctly NOT calibrated (pass through unchanged) because
+// their real data either showed no fittable pattern or an implausibly large required shift -
+// forcing a correction there would repeat the same mistake, not fix it.
+const CALIBRATION_MIN_SAMPLE_GAMES = 1000;
 async function loadCalibrationMap(pgClient) {
-  const rows = await pgClient`SELECT canonical_prop_key, selected_side, tier_key, variant_key, raw_p_bin_low, raw_p_bin_high, correction_delta, n_test_games FROM score.calibration_correction_map WHERE n_test_games >= ${CALIBRATION_MIN_SAMPLE_GAMES} AND methodology LIKE '%post_rootfix%'`.catch(() => []);
+  const rows = await pgClient`SELECT canonical_prop_key, selected_side, platt_a, platt_b, n_fit_games FROM score.platt_calibration_v2 WHERE n_fit_games >= ${CALIBRATION_MIN_SAMPLE_GAMES}`.catch(() => []);
   const map = new Map();
-  for (const r of rows) {
-    const key = `${r.canonical_prop_key}|${r.selected_side || ""}`;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(r);
-  }
+  for (const r of rows) map.set(`${r.canonical_prop_key}|${r.selected_side || ""}`, r);
   return map;
 }
-// Tier-aware lookup (2026-08-13): a tier-specific bin (tier_key matches the player's own
-// baseline_v6 tier) is preferred over a prop-level bin (tier_key IS NULL) when both exist for the
-// same raw-probability range. This is additive only - every prop with only prop-level rows (the
-// entire pre-existing correction map) behaves identically to before, since those rows all have
-// tier_key IS NULL and are only ever reached via the fallback branch below.
-function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap, playerTierKey, playerVariantKey) {
+function applyCalibrationCorrection(propKey, side, rawHpPct, calibrationMap) {
   if (rawHpPct == null || !calibrationMap) return { correctedHp: rawHpPct, applied: false };
-  const bins = calibrationMap.get(`${propKey}|${side || ""}`);
-  if (!bins || !bins.length) return { correctedHp: rawHpPct, applied: false };
-  const rawP = rawHpPct / 100;
-  let bin = null;
-  if (playerVariantKey) bin = bins.find(b => b.variant_key === playerVariantKey && !b.tier_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
-  if (!bin && playerTierKey) bin = bins.find(b => b.tier_key === playerTierKey && !b.variant_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
-  if (!bin) bin = bins.find(b => !b.tier_key && !b.variant_key && rawP >= Number(b.raw_p_bin_low) && rawP < Number(b.raw_p_bin_high));
-  if (!bin) return { correctedHp: rawHpPct, applied: false };
-  const corrected = clamp(rawHpPct + Number(bin.correction_delta) * 100, 1, 99);
-  return { correctedHp: corrected, applied: true, delta_applied: Number(bin.correction_delta) * 100, bin_n_test_games: bin.n_test_games, tier_specific: Boolean(bin.tier_key), variant_specific: Boolean(bin.variant_key) };
+  const fit = calibrationMap.get(`${propKey}|${side || ""}`);
+  if (!fit) return { correctedHp: rawHpPct, applied: false };
+  const p = clamp(rawHpPct / 100, 0.005, 0.995);
+  const logitP = Math.log(p / (1 - p));
+  const A = Number(fit.platt_a), B = Number(fit.platt_b);
+  const calibratedP = 1 / (1 + Math.exp(-(A * logitP + B)));
+  const corrected = clamp(calibratedP * 100, 1, 99);
+  return { correctedHp: corrected, applied: true, delta_applied: corrected - rawHpPct, bin_n_test_games: fit.n_fit_games, tier_specific: false, variant_specific: false };
 }
 
 // Second-stage residual correction, applied AFTER the first stage above, operating directly on
