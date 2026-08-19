@@ -2606,7 +2606,7 @@ async function apiRegularSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectRegularSlipLegs(env, {});
   if (legs.length < REGULAR_SLIP_MIN_SIZE) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying PrizePicks standard legs available right now - check back after the board refreshes."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying bottom-of-order (batting spots 7-9) total_bases<1.5 legs available right now - lineups may not be posted yet, check back closer to game time."] });
   }
   const table = APP_PAYOUT_TABLES.prizepicks;
   const maxSize = Math.min(REGULAR_SLIP_MAX_SIZE, legs.length);
