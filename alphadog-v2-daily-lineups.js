@@ -483,15 +483,25 @@ async function writeConfirmedLineupsIfGateOpen(pg, summary, cert, writeSafety) {
   // is a "current" table subject to non-destructive window-replacement pruning (today/tomorrow
   // retention only), so any lineup data older than that window is permanently lost unless copied
   // out first. Mirrors the exact same proven pattern already used for weather and umpire.
-  const permanentHistory = await pg`
-    INSERT INTO context.history_game_lineup (lineup_row_id, game_pk, official_date, player_id, player_name, team_id, team_name, team_side, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, data_source_level, source_endpoint)
-    SELECT lineup_row_id, game_pk, official_date, player_id, player_name, team_id, team_name, team_side, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, data_source_level, source_endpoint
-    FROM daily.lineups_current
-    ON CONFLICT (lineup_row_id) DO NOTHING
-    RETURNING lineup_row_id
-  `.catch((e) => { throw new Error(`permanent_history_copy_failed: ${e && e.message ? e.message : e}`); });
+  // Error handling deliberately does NOT throw here - this is a secondary archival concern, not
+  // the primary lineup-write feature; a real failure here must be visible (unlike the earlier
+  // silently-swallowed umpire bug) but must never block or break the primary write path above.
+  let permanentHistoryCopied = 0;
+  let permanentHistoryError = null;
+  try {
+    const permanentHistory = await pg`
+      INSERT INTO context.history_game_lineup (lineup_row_id, game_pk, official_date, player_id, player_name, team_id, team_name, team_side, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, data_source_level, source_endpoint)
+      SELECT lineup_row_id, game_pk, official_date, player_id, player_name, team_id, team_name, team_side, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, data_source_level, source_endpoint
+      FROM daily.lineups_current
+      ON CONFLICT (lineup_row_id) DO NOTHING
+      RETURNING lineup_row_id
+    `;
+    permanentHistoryCopied = permanentHistory.length;
+  } catch (e) {
+    permanentHistoryError = String(e && e.message ? e.message : e);
+  }
 
-  return { schema_bootstrap_performed: true, batch_id: batchId, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: gateStatus, ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: rows.length, writes_performed: rows.length, write_error: null, permanent_history_rows_copied: permanentHistory.length };
+  return { schema_bootstrap_performed: true, batch_id: batchId, write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED, write_gate_status: gateStatus, ...retentionPrune, lineup_rows_ready_to_write: rows.length, rows_written: rows.length, writes_performed: rows.length, write_error: null, permanent_history_rows_copied: permanentHistoryCopied, permanent_history_error: permanentHistoryError };
 }
 
 async function readJsonSafe(request) {
