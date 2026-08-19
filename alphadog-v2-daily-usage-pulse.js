@@ -492,7 +492,7 @@ async function runUmpireContext(pg, input) {
     }
 
     const replacementCleanup = { skipped: true, reason: "finalizeWindowReplacement_removed_2026-08-01_was_deleting_valid_skip_optimized_rows_every_run_date_window_pruning_already_handles_cleanup", current_old_window_deleted_after_success: 0, snapshots_old_window_deleted_after_success: 0, issues_old_window_deleted_after_success: 0, replacement_batch_id: batchId };
-    const permanentBackfill = await permanentlyRecordConfirmedAssignments(pg).catch(() => ({ copied: 0, checked: 0, error: true }));
+    const permanentBackfill = await permanentlyRecordConfirmedAssignments(pg).catch((e) => ({ copied: 0, checked: 0, error: true, error_message: String(e && e.message ? e.message : e) }));
     const postPrune = await postPruneRetention(pg, retention);
     const warningRows = await pg`SELECT COUNT(*) AS c FROM daily.umpire_context_issues WHERE batch_id=${batchId} AND severity='warning'`;
     const blockerRows = await pg`SELECT COUNT(*) AS c FROM daily.umpire_context_issues WHERE batch_id=${batchId} AND severity='blocker'`;
