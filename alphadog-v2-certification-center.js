@@ -2528,7 +2528,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
         hit_probability_0_100, confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label, goblin_tier_rank,
         (standard_line_value IS NOT NULL) AS has_standard_sibling
       FROM ladder
-      WHERE source_key = 'prizepicks' AND source_variant_label = 'goblin' AND hit_probability_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
+      WHERE source_key = 'prizepicks' AND is_goblin = 1 AND hit_probability_0_100 >= ${GOBLIN_SLIP_MIN_CONFIDENCE}
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = ladder.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
