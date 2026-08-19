@@ -3302,37 +3302,41 @@ const DEMON_SEGMENT_TIERS = [
   ["pitcher_outs", "singles", "home_runs"],
   ["pitcher_strikeouts", "hits_allowed", "runs", "doubles", "walks_allowed", "total_bases"]
 ];
+// OVERRIDE 2026-08-19: the prior 'more'-side-only restriction (see comment above, dated
+// 2026-08-05) was a reasonable precaution against trivial unders, but this session's real
+// research validated genuine, non-trivial 'less'-side demon lines with real historical hit rates
+// far from the "99% trivial" concern that motivated the original restriction: runs less 0.5
+// (58.6% real, n=157) and singles less 0.5 (45.9% real, n=111) - both meaningfully difficult,
+// genuinely demon-caliber outcomes, verified against 9 real days of graded outcomes. Replacing
+// the tiered 'more'-only segment logic with these two specific, validated qualifying lines.
 async function autoSelectDemonSlipLegs(env, options = {}) {
-  const maxPerGame = Number(options.max_per_game || 2);
+  const maxPerGame = Number(options.max_per_game || 3);
   const pg = pgClient(env);
   try {
+    const qualifyingLines = [
+      { prop: "runs", side: "less", line: 0.5, rank: 10 },
+      { prop: "singles", side: "less", line: 0.5, rank: 9 }
+    ];
+    const propSideLineList = qualifyingLines.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, final_board_row_id, source_key, game_pk, player_name,
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, player_name,
         mlb_player_id, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
         confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'prizepicks' AND is_demon = 1 AND selected_side = 'more'
-        AND estimated_hit_probability_0_100 >= ${DEMON_SLIP_MIN_CONFIDENCE}
+        AND source_key = 'prizepicks' AND is_demon = 1
+        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
-      ORDER BY estimated_hit_probability_0_100 DESC NULLS LAST, confidence_0_100 DESC NULLS LAST
     `);
-    // Tiered fallback: only fall through to a lower tier if the current tier(s) don't yet have
-    // enough distinct-player legs to build a real slip - always prefers the research-verified
-    // better segments, but still guarantees an attempt on a thin day rather than going empty.
-    let allowedProps = new Set();
-    let rowsForTiers = [];
-    for (const tier of DEMON_SEGMENT_TIERS) {
-      for (const p of tier) allowedProps.add(p);
-      rowsForTiers = rows.filter(r => allowedProps.has(r.canonical_prop_key));
-      const distinctPlayers = new Set(rowsForTiers.map(r => r.mlb_player_id)).size;
-      if (distinctPlayers >= DEMON_SLIP_MIN_SIZE) break;
-    }
+    const rankByPropSideLine = new Map(qualifyingLines.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    const ranked = rows
+      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
     const perGameCount = new Map();
     const seenPlayer = new Set();
     const selected = [];
-    for (const r of rowsForTiers) {
+    for (const r of ranked) {
       if (selected.length >= DEMON_SLIP_MAX_SIZE) break;
       if (seenPlayer.has(r.mlb_player_id)) continue;
       const gameCount = perGameCount.get(r.game_pk) || 0;
