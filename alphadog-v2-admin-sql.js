@@ -1049,6 +1049,27 @@ export default {
     const handled = await handleOAuthAndAdminRoutes(request, env);
     if (handled) return handled;
 
+    if (path === "/gemini-proxy") {
+      if (request.method !== "POST") return jsonResponse({ ok: false, error: "POST required" }, 405);
+      if (!env.GEMINI_API_KEY) return jsonResponse({ ok: false, error: "GEMINI_API_KEY not bound" }, 500);
+      try {
+        const body = await request.json();
+        const prompt = body.prompt || "";
+        const model = body.model || "gemini-2.0-flash";
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+        const geminiResp = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const geminiJson = await geminiResp.json();
+        const text = geminiJson?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || null;
+        return jsonResponse({ ok: geminiResp.ok, status: geminiResp.status, text, raw: geminiJson });
+      } catch (e) {
+        return jsonResponse({ ok: false, error: String(e) }, 500);
+      }
+    }
+
     if (path === "/mcp") {
       if (!isAuthorized(request, env)) {
         return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
