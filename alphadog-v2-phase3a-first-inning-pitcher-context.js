@@ -8933,7 +8933,23 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         ? (opponentTierByPlayer.has(String(r.player_id)) ? `opp_tier${opponentTierByPlayer.get(String(r.player_id))}_skill${skillTierFor3(rankByPlayerId.get(String(r.player_id)) || 0)}` : r.tier_key)
         : (roleAware && roleTierByPlayer.has(String(r.player_id))) ? roleTierByPlayer.get(String(r.player_id)) : r.tier_key;
       const empiricalHp = empiricalEnabled ? hpFromEmpiricalDistribution(lookupTierKey, Math.floor(lineValue), side) : null;
-      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, popStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
+      // REAL fix (2026-08-19): hpFromNormalModelPg was using ONLY population-level popStddev,
+      // treating shrunkRate as if it were the player's true, known mean rather than an ESTIMATE
+      // from a real, thin sample (effectiveGamesSample, often n<25 for pitcher_fantasy_score).
+      // This let the Gaussian CDF extrapolate far into its tail with false confidence - verified
+      // live: n=23 real games produced 95-100% HP at high lines, with the SAME n=23 constant
+      // across every line from 12.5 to 45.5, because clampHpToSampleSupportedRangePg only
+      // Wilson-clamps the ALREADY-extreme output, it never widens the model's own uncertainty.
+      // Real, standard statistical fix: this needs a genuine PREDICTION interval (uncertainty in
+      // a new outcome), not just a confidence interval - which requires including the real
+      // sampling uncertainty of the estimated mean itself (standard error = popStddev/sqrt(n)) in
+      // quadrature with the population-level game-to-game variance, not just the latter alone.
+      // Widening the effective stddev this way naturally pulls back extreme-tail probabilities
+      // for thin-sample players without an arbitrary hard cap - a real n=23 sample correctly
+      // produces meaningfully wider, more honest uncertainty than n=100 would.
+      const nForVariance = Math.max(1, Number(effectiveGamesSample) || 1);
+      const predictionStddev = popStddev * Math.sqrt(1 + 1 / nForVariance);
+      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
       const hp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
       const confidence = sampleAwareConfidencePg(effectiveGamesSample, psCfg, 1.0);
       baselineRows.push({
