@@ -2571,17 +2571,21 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
     // ROI +837.5%. Stacking umpire tendency and narrowing to spot-9-only were both tested and
     // ruled out (no real improvement) - this single-signal, spots-7-9 version is what's deployed.
     const rows = await queryAllPg(pg, `
-      SELECT fb.final_board_row_id AS board_row_id, fb.source_key, fb.game_pk, fb.official_game_time_utc, fb.player_name, fb.mlb_player_id,
-        fb.canonical_prop_key, fb.line_value, fb.selected_side, fb.estimated_hit_probability_0_100 AS hit_probability_0_100,
-        fb.confidence_0_100, fb.score_0_100, fb.board_tier, fb.is_goblin, fb.is_demon, fb.source_variant_label, lc.lineup_slot
-      FROM score.final_board_current fb
-      JOIN daily.lineups_current lc ON lc.player_id::text = fb.mlb_player_id::text AND lc.game_pk::text = fb.game_pk::text
-      WHERE fb.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND fb.source_key = 'prizepicks' AND COALESCE(fb.is_goblin,0) = 0 AND COALESCE(fb.is_demon,0) = 0
-        AND fb.canonical_prop_key = 'total_bases' AND fb.selected_side = 'less' AND fb.line_value = 1.5
-        AND lc.lineup_slot >= 7 AND lc.lineup_slot <= 9
-        AND fb.official_game_time_utc IS NOT NULL AND fb.official_game_time_utc::timestamptz > now() + interval '10 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = fb.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      WITH ranked_by_line AS (
+        SELECT fb.final_board_row_id AS board_row_id, fb.source_key, fb.game_pk, fb.official_game_time_utc, fb.player_name, fb.mlb_player_id,
+          fb.canonical_prop_key, fb.line_value, fb.selected_side, fb.estimated_hit_probability_0_100 AS hit_probability_0_100,
+          fb.confidence_0_100, fb.score_0_100, fb.board_tier, fb.is_goblin, fb.is_demon, fb.source_variant_label, lc.lineup_slot,
+          rank() OVER (ORDER BY fb.line_value DESC) AS line_rank
+        FROM score.final_board_current fb
+        JOIN daily.lineups_current lc ON lc.player_id::text = fb.mlb_player_id::text AND lc.game_pk::text = fb.game_pk::text
+        WHERE fb.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+          AND fb.source_key = 'prizepicks' AND COALESCE(fb.is_goblin,0) = 0 AND COALESCE(fb.is_demon,0) = 0
+          AND fb.canonical_prop_key = 'total_bases' AND fb.selected_side = 'less' AND fb.line_value >= 1.5
+          AND lc.lineup_slot >= 7 AND lc.lineup_slot <= 9
+          AND fb.official_game_time_utc IS NOT NULL AND fb.official_game_time_utc::timestamptz > now() + interval '10 minutes'
+          AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = fb.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      )
+      SELECT * FROM ranked_by_line WHERE line_rank = 1
     `);
     const perGameCount = new Map();
     const seenPlayer = new Set();
