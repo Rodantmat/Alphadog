@@ -2614,16 +2614,28 @@ async function apiRegularSlips(env, request) {
   // 1.0x per-leg ratios (no compounding risk), so a strong night correctly produces a full
   // 6-pick and a thinner night correctly shrinks toward the 4-pick floor instead of padding
   // with weak legs to hit a fixed target.
-  let size = REGULAR_SLIP_MIN_SIZE, sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE), evResult = null, breakeven = null;
+  // REAL fix (2026-08-19): previously only ever tried "power" mode, silently ignoring Flex's
+  // real partial-credit value - a 4/5 or 5/6 result pays real money in Flex (breakeven-or-better)
+  // where Power pays zero. Now tries both modes at each size and picks whichever gives the best
+  // real, risk-adjusted EV, so a leg pool that's strong-but-not-perfect correctly favors Flex
+  // instead of being scored as a total loss.
+  let size = REGULAR_SLIP_MIN_SIZE, sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE), evResult = null, breakeven = null, mode = "power";
+  let bestScore = -Infinity;
   for (let trySize = maxSize; trySize >= REGULAR_SLIP_MIN_SIZE; trySize--) {
     const slice = legs.slice(0, trySize);
     const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    const tryBreakeven = researchBreakeven(trySize, "power", table);
-    const tryEv = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", tryBreakeven);
-    if (tryEv && tryEv.ev > 0) { size = trySize; sorted = slice; evResult = tryEv; breakeven = tryBreakeven; break; }
+    for (const tryMode of ["power", "flex"]) {
+      const tryBreakeven = researchBreakeven(trySize, tryMode, table);
+      if (tryBreakeven == null) continue;
+      const tryEv = researchSlipEvAdjusted(slice, probs01, tryMode, table, "prizepicks", tryBreakeven);
+      if (tryEv && tryEv.ev > 0 && tryEv.ev > bestScore) {
+        bestScore = tryEv.ev; size = trySize; sorted = slice; evResult = tryEv; breakeven = tryBreakeven; mode = tryMode;
+      }
+    }
+    if (evResult) break;
   }
   if (!evResult) {
-    size = REGULAR_SLIP_MIN_SIZE; sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE);
+    size = REGULAR_SLIP_MIN_SIZE; sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE); mode = "power";
     breakeven = researchBreakeven(size, "power", table);
     const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
     evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
@@ -2631,14 +2643,14 @@ async function apiRegularSlips(env, request) {
   const warnings = slipWarnings(sorted);
   const slip = {
     client_slip_id: makeUiId("regular_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
-    entry_mode: "power", structure_label: `${size}-pick Power (Regular)`,
+    entry_mode: mode, structure_label: `${size}-pick ${mode === "flex" ? "Flex" : "Power"} (Regular)`,
     estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
     estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
     breakeven_hit_rate_0_100: breakeven,
     multiplier_estimated: false,
-    estimated_payout_note: "Standard PrizePicks Power table - no Goblin/Demon adjustment applied.",
+    estimated_payout_note: mode === "flex" ? "Standard PrizePicks Flex table - partial-hit payouts included (e.g. a near-miss at n-1 still pays)." : "Standard PrizePicks Power table - no Goblin/Demon adjustment applied.",
     strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Sized to the strongest structure the day's standard legs genuinely support (4-6 pick).`, ...warnings].filter(Boolean).join(" "),
+    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Sized to the strongest structure the day's standard legs genuinely support (2-6 pick), comparing Power vs Flex and picking whichever has the better real EV.`, ...warnings].filter(Boolean).join(" "),
     legs: sorted
   };
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [slip] });
