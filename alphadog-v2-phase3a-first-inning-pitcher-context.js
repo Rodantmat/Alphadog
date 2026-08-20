@@ -9093,7 +9093,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       const withinPlayerStddev = (indexOfDispersion != null && shrunkRate > 0) ? Math.sqrt(indexOfDispersion * Math.max(shrunkRate, varianceFloorMean)) : popStddev;
       const nForVariance = Math.max(1, Number(effectiveGamesSample) || 1);
       const predictionStddev = withinPlayerStddev * Math.sqrt(1 + 1 / nForVariance);
-      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
+      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : (HR_MIXTURE_PROPS.has(propKey) && hrRateByPlayerId ? hpFromHrMixtureModelPg(shrunkRate, lineValue, side, dispersion, hrRateByPlayerId.get(String(r.player_id))) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion)));
       const wilsonClampedHp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
       // REAL fix, part 2 (2026-08-19): the stddev widening above (in quadrature, sqrt(1+1/n)) is
       // the statistically "correct" prediction-interval math, but verified live it's nowhere near
