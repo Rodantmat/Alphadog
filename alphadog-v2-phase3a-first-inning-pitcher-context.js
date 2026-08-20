@@ -10323,6 +10323,14 @@ async function runRemineArmAngleToPostgresV2(env, input) {
         player_name=excluded.player_name, arm_angle_degrees=excluded.arm_angle_degrees,
         pitches_tracked=excluded.pitches_tracked, active=1, raw_json=excluded.raw_json, updated_at=now()
     `;
+    // REAL fix (2026-08-20): archive a dated snapshot on every mine, same pattern as batter_quality_of_contact_history.
+    // This is the live V2 (CSV-fetch) path - the earlier non-V2 runRemineArmAngleToPostgres is dead code, shadowed
+    // by this V2 function in the mode dispatcher, so the fix belongs here, not there.
+    await sql`
+      INSERT INTO ref.arm_angle_history (arm_angle_history_id, snapshot_date, mlb_player_id, arm_angle_degrees)
+      SELECT 'aah_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, arm_angle_degrees
+      FROM ref.arm_angle WHERE active=1 AND mlb_player_id = ANY(${"{" + rows.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
+      ON CONFLICT (arm_angle_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_arm_angle_to_postgres", pitchers_written: rows.length, sample_raw_row: fetched.rows[0] };
   } catch (err) {
