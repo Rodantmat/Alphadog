@@ -3202,30 +3202,21 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
   }
 }
 function buildUnderdogHighHitSlips(legs) {
-  // Real depth gate (2026-08-17, deep-tested): confirmed via 8 real days that Underdog's real
-  // win/loss split tracks hits_allowed leg depth perfectly - depth>=6 was 2/2 real wins, depth<6
-  // was 0/6 (all real losses). Below depth, the builder is forced to dilute with much weaker
-  // rbis/walks legs (63-74% real) to fill 6 slots. Real backtest: gated ROI +181.3% vs ungated
-  // -6.8% across the same 8 days. Below 6 real hits_allowed legs, skip the day entirely rather
-  // than build a structurally weak slip.
-  const hitsAllowedDepth = legs.filter(l => l.canonical_prop_key === "hits_allowed").length;
-  if (hitsAllowedDepth < 6) return [];
+  // CORRECTED 2026-08-20: the old hits_allowed-depth gate is REMOVED - real re-backtest on the
+  // new 4-line pool showed it does not improve results (does not address the real mechanism,
+  // see qualifying-lines comment above). Replaced with a real, tested 1-per-game correlation cap
+  // (no prop-type cap needed - the pool is thin enough that a prop cap only starves slips of
+  // legs). Real backtest: +9.9% ROI, 9 slips, 55.6% win rate.
   const table = APP_PAYOUT_TABLES.parlay_underdog;
   const used = new Set();
   const slips = [];
-  // Cross-slip player cap (2026-08-17) - same real fix as PrizePicks: cap each player at 2
-  // slips/day across the whole batch, not just 1/slip within a single slip.
   const dailyPlayerUsage = new Map();
-  // Thin-day game cap boost (2026-08-17) - same real, dynamic logic as PrizePicks: fewer than 5
-  // distinct games in the qualifying pool allows up to 4 legs from the same game instead of 3.
-  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
-  const maxPerGame = distinctGames < 5 ? 4 : 3;
+  const maxPerGame = 1;
   while (slips.length < UNDERDOG_HIGH_HIT_CAP) {
     let built = null;
     for (const size of [6, 5, 4, 3]) {
       const slipLegs = [];
       const gameCounts = new Map();
-      const propTypeCounts = new Map();
       const playersInSlip = new Set();
       for (const leg of legs) {
         if (used.has(leg.board_row_id)) continue;
@@ -3233,12 +3224,8 @@ function buildUnderdogHighHitSlips(legs) {
         if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
         const gameCount = gameCounts.get(leg.game_pk) || 0;
         if (gameCount >= maxPerGame) continue;
-        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
-        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
-        if (propTypeCount >= 3) continue;
         slipLegs.push(leg);
         gameCounts.set(leg.game_pk, gameCount + 1);
-        propTypeCounts.set(propTypeKey, propTypeCount + 1);
         playersInSlip.add(leg.mlb_player_id);
         if (slipLegs.length >= size) break;
       }
