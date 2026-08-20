@@ -9629,6 +9629,12 @@ async function runRemineCatcherFramingToPostgres(env, input) {
         framing_runs_total=excluded.framing_runs_total, framing_pct_total=excluded.framing_pct_total,
         raw_json=excluded.raw_json, updated_at=now()
     `;
+    // REAL fix (2026-08-20): archive a dated snapshot on every mine, same pattern as batter_quality_of_contact_history.
+    await sql`
+      INSERT INTO ref.catcher_framing_poptime_history (framing_history_id, snapshot_date, player_id, framing_pct_total, pop_time_2b_sba)
+      SELECT 'cfh_'||player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, player_id, framing_pct_total, pop_time_2b_sba
+      FROM ref.catcher_framing_poptime WHERE player_id = ANY(${rows.map(r => r.player_id)})
+      ON CONFLICT (framing_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_catcher_framing_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
   } catch (err) {
