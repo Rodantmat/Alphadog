@@ -3166,14 +3166,18 @@ function buildSleeperHighHitSlips(legs) {
 // exponentiated - this is a flat table discount, not a compounding per-leg ratio like PrizePicks
 // goblin).
 const UNDERDOG_REAL_DISCOUNT = 0.6865;
+// CORRECTED 2026-08-20: full re-backtest against real board history (14-day window). Real
+// qualifying lines re-derived fresh from the corrected pipeline's own graded outcomes (n>=25,
+// >=72% real hit rate) - the previous 7-line pool above is replaced with these 4, which held up
+// under the same rigor. Gemini-assisted stress test found the real driving mechanism: these are
+// largely pitcher/game-script props that correlate across DIFFERENT players sharing the same
+// game (e.g. hits_allowed and runs_allowed both move together when a start goes badly) - the old
+// hits_allowed-depth gate does not address this and was dropped; a real 1-per-game cap does.
 const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "rbis", side: "less", line: 0.5, rank: 10 },
-  { prop: "walks", side: "less", line: 0.5, rank: 9 },
-  { prop: "hits", side: "less", line: 1.5, rank: 8 },
-  { prop: "hits_allowed", side: "less", line: 5.5, rank: 7 },
-  { prop: "hits_allowed", side: "more", line: 0.5, rank: 6 },
-  { prop: "hits_allowed", side: "more", line: 1.5, rank: 6 },
-  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 5 }
+  { prop: "hits_allowed", side: "more", line: 1.5, rank: 4 },
+  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 3 },
+  { prop: "walks", side: "more", line: 0.5, rank: 2 },
+  { prop: "runs_allowed", side: "more", line: 1.5, rank: 1 }
 ];
 async function autoSelectUnderdogHighHitSlipLegs(env) {
   const pg = pgClient(env);
