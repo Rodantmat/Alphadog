@@ -2580,7 +2580,7 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
         AND fb.source_key = 'prizepicks' AND COALESCE(fb.is_goblin,0) = 0 AND COALESCE(fb.is_demon,0) = 0
         AND fb.canonical_prop_key = 'total_bases' AND fb.selected_side = 'less' AND fb.line_value = 1.5
         AND lc.lineup_slot >= 7 AND lc.lineup_slot <= 9
-        AND fb.official_game_time_utc IS NOT NULL AND fb.official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND fb.official_game_time_utc IS NOT NULL AND fb.official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = fb.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
     const perGameCount = new Map();
