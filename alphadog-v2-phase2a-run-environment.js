@@ -659,7 +659,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     wind_speed_mph: weather.wind_speed_mph ?? null,
     wind_context: weather.wind_context ?? null,
     roof_status: weather.roof_status ?? null,
-    catcher_framing_runs_per_game: catcher.framing_runs_total ?? null,
+    catcher_framing_pct: catcher.framing_pct_total ?? null,
     implied_team_total: (() => {
       const homeId = market.home_team ? ctxMaps.teamIdByFullName.get(String(market.home_team).toUpperCase()) : null;
       const awayId = market.away_team ? ctxMaps.teamIdByFullName.get(String(market.away_team).toUpperCase()) : null;
