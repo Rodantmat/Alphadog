@@ -2931,7 +2931,7 @@ async function autoSelectRegularHighHitSlipLegs(env) {
         AND f.source_key = 'prizepicks' AND f.is_goblin = 0 AND f.is_demon = 0
         AND f.canonical_prop_key = 'total_bases' AND f.selected_side = 'less' AND f.line_value = ${REGULAR_TOTAL_BASES_LINE}
         AND lu.batting_order_code BETWEEN 700 AND 900
-        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
     return rows.map(r => ({ ...r, _rank: 1 }));
