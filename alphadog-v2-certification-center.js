@@ -3248,8 +3248,8 @@ function buildUnderdogHighHitSlips(legs) {
       estimated_multiplier_flex_tiers: UNDERDOG_FLEX_TIERS,
       estimated_payout_note: "Real Flex payout tiers from live-verified 2026-08-17 data (full-hit " + udFlexFull + "x; partial tiers shown in estimated_multiplier_flex_tiers). Flex chosen over Power per explicit request: lower variance, real cushion on partial hits.",
       strategy_notes: [
-        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=20, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
-        "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
+        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=25, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
+        "Correlation limits (2026-08-20, corrected): max 1 leg from the same game (addresses real pitcher/game-script correlation across different players), max 1 leg per player, within this slip.",
         `Daily cap: ${UNDERDOG_HIGH_HIT_CAP} slip/day - real backtest showed cap>1 turns negative once real multipliers were confirmed.`
       ],
       legs: built.slipLegs
