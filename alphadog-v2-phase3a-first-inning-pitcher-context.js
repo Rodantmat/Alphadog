@@ -12552,6 +12552,7 @@ async function runMode(env,input={}){
   if(mode==="remine_prizepicks_board_to_postgres") return runRemineePrizepicksBoardToPostgres(env,input);
   if(mode==="derive_board_prepared_from_postgres") return runDeriveBoardPreparedFromPostgres(env,input);
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
+  if(mode==="backfill_qoc_history_for_date") return runBackfillQualityOfContactHistoryForDate(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
   if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
