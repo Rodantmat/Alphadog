@@ -9403,7 +9403,7 @@ async function runRemineArmAngleToPostgres(env, input) {
     await sql`
       INSERT INTO ref.arm_angle_history (arm_angle_history_id, snapshot_date, mlb_player_id, arm_angle_degrees)
       SELECT 'aah_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, arm_angle_degrees
-      FROM ref.arm_angle WHERE active=1 AND mlb_player_id = ANY(${rows.map(r => r.mlb_player_id)})
+      FROM ref.arm_angle WHERE active=1 AND mlb_player_id = ANY(${"{" + rows.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
       ON CONFLICT (arm_angle_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_arm_angle_to_postgres", pitchers_written: rows.length, sample_raw_row: data.rows[0] };
