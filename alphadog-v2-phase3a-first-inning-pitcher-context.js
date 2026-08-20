@@ -9480,7 +9480,7 @@ async function runRemineQualityOfContactToPostgres(env, input) {
       await sql`
         INSERT INTO ref.batter_quality_of_contact_history (qoc_history_id, snapshot_date, mlb_player_id, season_year, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, iso)
         SELECT 'qoc_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, season_year, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, iso
-        FROM ref.batter_quality_of_contact WHERE active=1 AND mlb_player_id = ANY(${chunk.map(r => r.mlb_player_id)})
+        FROM ref.batter_quality_of_contact WHERE active=1 AND mlb_player_id = ANY(${"{" + chunk.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
         ON CONFLICT (qoc_history_id) DO NOTHING`;
     }
     await sql.end();
