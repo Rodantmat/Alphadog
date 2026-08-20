@@ -2762,11 +2762,11 @@ const UNDERDOG_FLEX_TIERS = { 6: 2.813, 5: 0.458, 4: 0.063 };
 const HIGH_HIT_QUALIFYING_LINES = [
   { prop: "walks_allowed", side: "more", line: 0.5, rank: 14 },
   { prop: "stolen_bases", side: "less", line: 0.5, rank: 13 },
-  { prop: "earned_runs", side: "more", line: 0.5, rank: 12 },
+  { prop: "earned_runs", side: "more", line: 0.5, rank: 9 },
   { prop: "hits_runs_rbis", side: "less", line: 4.5, rank: 6 },
   { prop: "doubles", side: "less", line: 0.5, rank: 5 },
   { prop: "hits_allowed", side: "more", line: 2.5, rank: 3 },
-  { prop: "home_runs", side: "less", line: 0.5, rank: 3 },
+  { prop: "home_runs", side: "less", line: 0.5, rank: 5 },
   { prop: "pitcher_outs", side: "more", line: 11.5, rank: 8 },
   { prop: "pitcher_outs", side: "more", line: 14.5, rank: 3 },
   { prop: "singles", side: "less", line: 1.5, rank: 5 },
