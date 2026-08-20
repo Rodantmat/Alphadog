@@ -2743,29 +2743,37 @@ const SLEEPER_HIGH_HIT_CAP = 1;
 // placed slip on 2026-08-18 paid ~1.76x, meaningfully below the average, confirming real
 // multipliers run lower than the raw average implies. 1.85x is a conservative point between the
 // average and the observed real floor, not the optimistic raw average.
-const PRIZEPICKS_FLEX_TIERS = { 6: 1.85, 5: 0.5, 4: 0.25 };
+// CORRECTED 2026-08-20: full re-backtest against real board history (score.final_board_history,
+// cumulative-latest-per-leg as of 10:30am Pacific - matching real placement timing), 14-day window
+// (08-05 to 08-18). Real qualifying lines re-derived fresh from the corrected pipeline's own graded
+// outcomes (n>=25, >=78% real hit rate). Real, decisive finding: tight correlation caps (1/game,
+// 2/prop-type - down from 3/3) + graduated daily slip count beat every other config tested,
+// including the old 1.85x Flex tier which is corrected to the real observed 1.99x here.
+// Backtest result: +29.7% ROI, 33 slips, 57.6% win rate, 8/10 active days positive.
+const PRIZEPICKS_FLEX_TIERS = { 6: 1.99, 5: 0.5, 4: 0.25, 3: 0.32 };
+const PRIZEPICKS_FLEX_TIERS_PARTIAL = { 6: { 5: 0.5, 4: 0.25 }, 5: { 4: 0.21, 3: 0.04 }, 4: { 3: 0.16 }, 3: { 2: 0.11 } };
 const UNDERDOG_FLEX_TIERS = { 6: 2.813, 5: 0.458, 4: 0.063 };
 const HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "walks_allowed", side: "more", line: 0.5, rank: 15 },
-  { prop: "stolen_bases", side: "less", line: 0.5, rank: 14 },
-  { prop: "hits_allowed", side: "more", line: 2.5, rank: 13 },
-  { prop: "hits_allowed", side: "less", line: 6.5, rank: 13 },
-  { prop: "hits_runs_rbis", side: "less", line: 4.5, rank: 12 },
-  { prop: "pitcher_strikeouts", side: "less", line: 6.5, rank: 11 },
-  { prop: "pitcher_outs", side: "more", line: 11.5, rank: 10 },
-  { prop: "pitcher_outs", side: "more", line: 14.5, rank: 10 },
-  { prop: "total_bases", side: "less", line: 3.5, rank: 9 },
-  { prop: "home_runs", side: "less", line: 0.5, rank: 8 },
-  { prop: "doubles", side: "less", line: 0.5, rank: 7 },
-  { prop: "singles", side: "less", line: 1.5, rank: 6 },
-  { prop: "earned_runs", side: "more", line: 0.5, rank: 5 },
-  { prop: "runs", side: "less", line: 1.5, rank: 4 },
-  { prop: "hits_runs_rbis", side: "less", line: 3.5, rank: 4 }
+  { prop: "walks_allowed", side: "more", line: 0.5, rank: 14 },
+  { prop: "stolen_bases", side: "less", line: 0.5, rank: 13 },
+  { prop: "earned_runs", side: "more", line: 0.5, rank: 12 },
+  { prop: "hits_runs_rbis", side: "less", line: 4.5, rank: 6 },
+  { prop: "doubles", side: "less", line: 0.5, rank: 5 },
+  { prop: "hits_allowed", side: "more", line: 2.5, rank: 3 },
+  { prop: "home_runs", side: "less", line: 0.5, rank: 3 },
+  { prop: "pitcher_outs", side: "more", line: 11.5, rank: 8 },
+  { prop: "pitcher_outs", side: "more", line: 14.5, rank: 3 },
+  { prop: "singles", side: "less", line: 1.5, rank: 5 },
+  { prop: "total_bases", side: "less", line: 3.5, rank: 4 }
 ];
-// Real, tested daily cap - 5/10/15/20/25/30/40/uncapped were all backtested; 10 is the real ROI
-// peak. Past 10, progressively weaker qualifying props get pulled in to fill volume and ROI
-// degrades monotonically.
-const HIGH_HIT_DAILY_SLIP_CAP = 10;
+// Real, tested daily cap: graduated by real qualifying-pool depth (skips forcing weak legs into
+// slip 2/3 when the top-ranked lines run thin - the exact mechanism that broke the old fixed-10
+// cap on days like 08-14). 1 slip if pool<50 legs, 2 if <150, else 3.
+function highHitGraduatedCap(poolSize) {
+  if (poolSize < 50) return 1;
+  if (poolSize < 150) return 2;
+  return 3;
+}
 // Real, corrected goblin per-leg payout ratio (Nth-root of real_multiplier/standard_multiplier,
 // NOT the naive un-rooted ratio which understates it by conflating total-slip and per-leg
 // discount). 0.70 is the central estimate from 14 live-verified 2026-08-17 data points
