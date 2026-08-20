@@ -9365,7 +9365,7 @@ async function runRemineSprintSpeedToPostgres(env, input) {
     await sql`
       INSERT INTO ref.sprint_speed_history (sprint_history_id, snapshot_date, mlb_player_id, sprint_speed_ft_per_sec)
       SELECT 'ssh_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, sprint_speed_ft_per_sec
-      FROM ref.sprint_speed WHERE active=1 AND mlb_player_id = ANY(${rows.map(r => r.mlb_player_id)})
+      FROM ref.sprint_speed WHERE active=1 AND mlb_player_id = ANY(${"{" + rows.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
       ON CONFLICT (sprint_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_sprint_speed_to_postgres", players_written: rows.length, sample_raw_row: data.rows[0] };
