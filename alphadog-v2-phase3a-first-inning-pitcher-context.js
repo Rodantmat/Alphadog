@@ -9470,7 +9470,6 @@ async function runRemineQualityOfContactToPostgres(env, input) {
         SELECT 'qoc_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, season_year, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, iso
         FROM ref.batter_quality_of_contact WHERE active=1 AND mlb_player_id = ANY(${chunk.map(r => r.mlb_player_id)})
         ON CONFLICT (qoc_history_id) DO NOTHING`;
-      `;
     }
     await sql.end();
     return { ok: true, mode: "remine_quality_of_contact_to_postgres", players_written: rows.length };
