@@ -10366,6 +10366,16 @@ async function runReminePitcherArsenalToPostgresV2(env, input) {
           run_value_per_100=excluded.run_value_per_100, active=1, raw_json=excluded.raw_json, updated_at=now()
       `;
     }
+    // REAL fix (2026-08-20): archive a dated snapshot on every mine, same pattern as batter_quality_of_contact_history.
+    // This is the live V2 (CSV-fetch) path - the earlier non-V2 runReminePitcherArsenalToPostgres is dead code,
+    // shadowed by this V2 function in the mode dispatcher, so the fix belongs here, not there.
+    await sql`
+      INSERT INTO ref.pitcher_arsenal_history (arsenal_history_id, snapshot_date, mlb_player_id, run_value_per_100, pitch_usage)
+      SELECT 'arh_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id,
+        AVG(run_value_per_100), SUM(pitch_usage)
+      FROM ref.pitcher_arsenal WHERE active=1 AND mlb_player_id = ANY(${"{" + rows.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
+      GROUP BY mlb_player_id
+      ON CONFLICT (arsenal_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_pitcher_arsenal_to_postgres", rows_written: rows.length, sample_raw_row: fetched.rows[0] };
   } catch (err) {
