@@ -8801,6 +8801,13 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     let dispersion = Infinity;
     let pooledWithinPlayerVariance = null;
     let tierDispersionMap = null;
+    let hrRateByPlayerId = null;
+    if (HR_MIXTURE_PROPS.has(propKey)) {
+      try {
+        const hrRows = await sql.unsafe(`SELECT player_id, SUM(COALESCE(home_runs,0))::float/NULLIF(COUNT(*),0) AS hr_rate FROM stats_hitter.game_logs WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
+        hrRateByPlayerId = new Map(hrRows.map(r => [String(r.player_id), Number(r.hr_rate)]));
+      } catch (err) { hrRateByPlayerId = null; }
+    }
     // REAL fix (2026-08-20): Gemini second-opinion audit + exact math confirmed a real, serious
     // bug - Math.min(rawDispersion, 0.65) is backwards. When real data shows underdispersion
     // (pooledVar <= pooledMean, e.g. pitcher_outs: real pooled mean=6.31, pooled variance=5.34
