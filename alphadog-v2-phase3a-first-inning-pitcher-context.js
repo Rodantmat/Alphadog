@@ -10266,6 +10266,88 @@ async function runDiagnoseSavantCsvExport(env, input) {
   }
 }
 
+// REAL point-in-time backfill (2026-08-20): backtest.baseline_v6_asof requires genuinely
+// historical batter_quality_of_contact values for each past day, which never existed anywhere
+// (only a single current-state row per player). Confirmed feasible via /statcast_search/csv,
+// which supports real game_date_gt/game_date_lt filtering on raw per-batted-ball events -
+// unlike the leaderboard endpoints (season-cumulative only, no date-cutoff support). This
+// fetches raw events for ONE target date, aggregates a real xwOBA-family proxy per batter
+// (average estimated_woba_using_speedangle over in-play events, real barrel rate from
+// launch_speed_angle=6, real sweet-spot rate from launch_angle 8-32), and writes ONE dated
+// snapshot row per batter into batter_quality_of_contact_history for that date. Call once per
+// target date with {"target_date":"YYYY-MM-DD"}; loop the 14-day range from outside.
+async function runBackfillQualityOfContactHistoryForDate(env, input) {
+  const targetDate = String(input.target_date || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) return { ok: false, mode: "backfill_qoc_history_for_date", error: "target_date required, YYYY-MM-DD" };
+  try {
+    const nextDate = new Date(targetDate + "T00:00:00Z");
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    const nextDateStr = nextDate.toISOString().slice(0, 10);
+    const prevDate = new Date(targetDate + "T00:00:00Z");
+    prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const prevDateStr = prevDate.toISOString().slice(0, 10);
+    const u = new URL(`https://baseballsavant.mlb.com/statcast_search/csv`);
+    u.searchParams.set("all", "true");
+    u.searchParams.set("hfGT", "R|");
+    u.searchParams.set("hfSea", "2026|");
+    u.searchParams.set("player_type", "batter");
+    u.searchParams.set("game_date_gt", prevDateStr);
+    u.searchParams.set("game_date_lt", nextDateStr);
+    u.searchParams.set("type", "details");
+    const resp = await fetch(u.toString(), { method: "GET", headers: { "accept": "text/csv,*/*", "user-agent": "AlphaDogV2SavantBackfill/0.1" } });
+    if (!resp.ok) return { ok: false, mode: "backfill_qoc_history_for_date", target_date: targetDate, error: `http_${resp.status}` };
+    const text = await resp.text();
+    const rows = parseSavantCsv(text);
+    const onDate = rows.filter(r => r.game_date === targetDate);
+    if (!onDate.length) return { ok: true, mode: "backfill_qoc_history_for_date", target_date: targetDate, players_written: 0, note: "no_rows_for_date" };
+
+    const byBatter = new Map();
+    for (const r of onDate) {
+      const bid = Number(r.batter);
+      if (!bid) continue;
+      if (!byBatter.has(bid)) byBatter.set(bid, { xwoba_sum: 0, xwoba_n: 0, barrel_n: 0, sweetspot_n: 0, bip_n: 0 });
+      const acc = byBatter.get(bid);
+      const isBip = r.type === "X";
+      if (isBip) {
+        acc.bip_n++;
+        const xwoba = r.estimated_woba_using_speedangle != null && r.estimated_woba_using_speedangle !== "" ? Number(r.estimated_woba_using_speedangle) : null;
+        if (xwoba != null && Number.isFinite(xwoba)) { acc.xwoba_sum += xwoba; acc.xwoba_n++; }
+        const lsa = r.launch_speed_angle != null && r.launch_speed_angle !== "" ? Number(r.launch_speed_angle) : null;
+        if (lsa === 6) acc.barrel_n++;
+        const la = r.launch_angle != null && r.launch_angle !== "" ? Number(r.launch_angle) : null;
+        if (la != null && la >= 8 && la <= 32) acc.sweetspot_n++;
+      }
+    }
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+    const snapRows = [];
+    for (const [bid, acc] of byBatter.entries()) {
+      if (acc.bip_n < 1) continue;
+      snapRows.push({
+        qoc_history_id: `qocbf_${bid}_${targetDate}`,
+        snapshot_date: targetDate,
+        mlb_player_id: bid,
+        season_year: 2026,
+        xwoba: acc.xwoba_n ? Math.round((acc.xwoba_sum / acc.xwoba_n) * 1000) / 1000 : null,
+        xwobacon: acc.xwoba_n ? Math.round((acc.xwoba_sum / acc.xwoba_n) * 1000) / 1000 : null,
+        sweet_spot_percent: Math.round((acc.sweetspot_n / acc.bip_n) * 1000) / 10,
+        barrel_batted_rate: Math.round((acc.barrel_n / acc.bip_n) * 1000) / 10,
+        iso: null
+      });
+    }
+    if (!snapRows.length) { await sql.end({ timeout: 1 }); return { ok: true, mode: "backfill_qoc_history_for_date", target_date: targetDate, players_written: 0 }; }
+    const cols = ["qoc_history_id", "snapshot_date", "mlb_player_id", "season_year", "xwoba", "xwobacon", "sweet_spot_percent", "barrel_batted_rate", "iso"];
+    const CHUNK = 200;
+    for (let i = 0; i < snapRows.length; i += CHUNK) {
+      const chunk = snapRows.slice(i, i + CHUNK);
+      await sql`INSERT INTO ref.batter_quality_of_contact_history ${sql(chunk, ...cols)} ON CONFLICT (qoc_history_id) DO NOTHING`;
+    }
+    await sql.end({ timeout: 1 });
+    return { ok: true, mode: "backfill_qoc_history_for_date", target_date: targetDate, players_written: snapRows.length, raw_rows_fetched: onDate.length };
+  } catch (err) {
+    return { ok: false, mode: "backfill_qoc_history_for_date", target_date: targetDate, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 function parseSavantCsv(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim().length);
   if (lines.length < 2) return [];
