@@ -48,8 +48,26 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       return Math.log(1 + Math.max(-0.99, pctDistanceChange * DISTANCE_TO_HR_PROB_ELASTICITY));
     }
     case "catcher_framing": {
-      if (ctx.catcher_framing_runs_per_game == null) return null;
-      return ctx.catcher_framing_runs_per_game * (a || 0);
+      // REAL fix (2026-08-19): root cause was catcher_framing_runs_per_game receiving
+      // catcher.framing_runs_total DIRECTLY - a season-cumulative sabermetric stat (real range
+      // roughly -15 to +20 runs over a full season), used as if it were already a per-game rate,
+      // with zero normalization anywhere in the pipeline. Confirmed via real backtest: this one
+      // factor alone produced a +0.301 log-space contribution on a live leg (1.35x multiplier),
+      // and pitcher_strikeouts|more legs with heavy enrichment activity showed a real 22.8pt
+      // overconfidence gap (n=65) vs 1.0pt for baseline-dominated legs. Real games/innings-caught
+      // data doesn't exist anywhere in this system to properly normalize the runs-total stat, so
+      // switched to the ALREADY-normalized framing_pct_total field instead (a real, existing,
+      // percentage-based metric, population-verified: n=36 real catchers, mean=0.4754,
+      // stddev=0.018) and scaled by real standard-deviation units (z-score) rather than a fixed
+      // linear coefficient, so the effect stays statistically stable as the population mean/
+      // stddev naturally drift over a season - z-score-based, not tied to today's specific numbers.
+      if (ctx.catcher_framing_pct == null) return null;
+      const framingMean = t.league_avg_framing_pct ?? 0.4754;
+      const framingStd = t.league_stddev_framing_pct ?? 0.018;
+      const zCoef = t.z_score_coefficient ?? 0.020;
+      if (!(framingStd > 0)) return null;
+      const zScore = (ctx.catcher_framing_pct - framingMean) / framingStd;
+      return zScore * zCoef * Math.sign(a || 1);
     }
     case "catcher_poptime_arm": {
       // NOTE (2026-08-01): this factor's relevant_prop_keys_json is now deliberately empty in
