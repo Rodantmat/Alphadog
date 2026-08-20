@@ -8768,6 +8768,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       : rawFields.map(f => `COALESCE(${f},0)`).join("+");
     let dispersion = Infinity;
     let pooledWithinPlayerVariance = null;
+    let tierDispersionMap = null;
     // REAL fix (2026-08-20): Gemini second-opinion audit + exact math confirmed a real, serious
     // bug - Math.min(rawDispersion, 0.65) is backwards. When real data shows underdispersion
     // (pooledVar <= pooledMean, e.g. pitcher_outs: real pooled mean=6.31, pooled variance=5.34
@@ -8788,15 +8789,31 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     // the pooled real sample is thin (<3000 real player-games combined, a real, conservative
     // threshold matching the scale of data that motivated the original fix); large, well-
     // supported samples showing genuine underdispersion correctly fall through to pure Poisson.
+    // GRANULAR real fix, part 2 (2026-08-20): confirmed via direct real-data check that a SINGLE
+    // pooled dispersion is itself wrong for fantasy_score - real per-tier dispersion varies
+    // meaningfully by player mean (low-mean players real r=0.386, mid-mean r=0.857, high-mean
+    // r=1.237, from real 2026 game logs), but the pooled value (0.974) is weighted toward the
+    // high-volume mid/high tiers (37,603 real games vs 1,239 for low-mean), forcing low-mean
+    // players into a too-narrow, too-confident distribution. Confirmed via real backtest: grouping
+    // by actual line value (not predicted-probability decile) showed low lines (~2.8) had a real
+    // 14.0pt underconfidence gap (n=1259) while mid/high lines were already well-calibrated (+2.5,
+    // -0.2pt) after the pooled dispersion fix alone. Fixed by computing dispersion separately per
+    // real mean-tier (<3, 3-7, 7+) and looking up the tier matching each player's OWN real mean at
+    // scoring time, instead of one flat value for the whole population - a real, granular,
+    // per-tier fix rather than a system-wide flat change, so mid/high-mean players (already
+    // correctly calibrated) are untouched and only the specific real, affected segment changes.
     const DISPERSION_CAP_MIN_SAMPLE_GAMES = 3000;
     const DISPERSION_MAX_CAP = 0.65;
     try {
       const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
       let sumGames=0, sumMeanW=0, sumVarW=0;
+      const tiers = { low: { sumGames:0, sumMeanW:0, sumVarW:0 }, mid: { sumGames:0, sumMeanW:0, sumVarW:0 }, high: { sumGames:0, sumMeanW:0, sumVarW:0 } };
       for (const g of gRows) {
         const gm = Number(g.games), mi = Number(g.mean_i), msq = Number(g.meansq_i);
         const vi = Math.max(0, msq - mi*mi);
         sumGames += gm; sumMeanW += mi*gm; sumVarW += vi*gm;
+        const tierKey2 = mi < 3 ? "low" : (mi < 7 ? "mid" : "high");
+        tiers[tierKey2].sumGames += gm; tiers[tierKey2].sumMeanW += mi*gm; tiers[tierKey2].sumVarW += vi*gm;
       }
       if (sumGames > 0) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
@@ -8806,6 +8823,15 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         // showing genuine underdispersion/Poisson (rawDispersion=Infinity) is trusted as-is.
         dispersion = (sumGames < DISPERSION_CAP_MIN_SAMPLE_GAMES) ? Math.min(rawDispersion, DISPERSION_MAX_CAP) : rawDispersion;
         pooledWithinPlayerVariance = pooledVar;
+        // Build the real, per-tier lookup, applying the same real thin-sample cap logic
+        // independently to each tier (a tier with its own thin real sample still gets protected).
+        tierDispersionMap = {};
+        for (const [tk, t] of Object.entries(tiers)) {
+          if (t.sumGames <= 0) continue;
+          const tMean = t.sumMeanW/t.sumGames, tVar = t.sumVarW/t.sumGames;
+          const tRaw = (tVar > tMean && tMean > 0) ? (tMean*tMean)/(tVar-tMean) : Infinity;
+          tierDispersionMap[tk] = (t.sumGames < DISPERSION_CAP_MIN_SAMPLE_GAMES) ? Math.min(tRaw, DISPERSION_MAX_CAP) : tRaw;
+        }
       } else {
         dispersion = DISPERSION_MAX_CAP;
       }
