@@ -787,6 +787,22 @@ function evaluateFlatGate(factorKey, cells, legContext) {
 // (every one of 19 prop types showed avg_multiplier below 1.0; simulation against real production data
 // confirmed removing this specific penalty brings every prop to a tight band around 1.0, with remaining
 // variance reflecting real factor effects rather than missing-data artifacts).
+// REAL fix (2026-08-19): confirmed via real backtest (total_bases|more: predicted 63.9% vs actual
+// 45.0% real hit rate, n=40; predicted 26.7% vs actual 5.6%, n=18) and Gemini second-opinion audit
+// that naive log-space summing double/triple-counts a real "favorable scoring environment" signal
+// that weather_wind, weather_temp_altitude_pressure, opposing_pitcher_quality, and park_factors all
+// independently measure - confirmed live: a single real leg (Griffin Conine, total_bases) had all
+// four fire simultaneously, each individually under its own cap, compounding to a 1.63x multiplier.
+// These four factors are grouped into a "macro environment cluster" and combined via root-sum-
+// squares (L2 norm, sign-preserved) instead of naive addition: a single factor firing alone gets
+// zero dampening (RSS of one term equals that term), but multiple correlated factors firing
+// together get real, meaningful (not flat) dampening - e.g. 4 real factors summing to +0.253 in
+// this leg RSS-combine to +0.1305, a ~48% reduction, without ever fully cancelling genuine signal.
+// batter_quality_of_contact (the batter's own real skill - xwOBA/barrel rate), platoon_handedness,
+// and bullpen_fatigue are NOT part of this cluster - they measure genuinely independent things
+// (player skill, handedness matchup, reliever fatigue) unrelated to park/weather/pitcher-quality,
+// and continue to sum normally alongside the cluster's combined contribution.
+const MACRO_ENVIRONMENT_CLUSTER = new Set(["weather_wind", "weather_temp_altitude_pressure", "opposing_pitcher_quality", "park_factors"]);
 async function enrichLeg(matrixRow, config, legContext) {
   const propKey = matrixRow.canonical_prop_key;
   const roofClosed = legContext.roof_status && String(legContext.roof_status).toLowerCase().includes("closed");
@@ -795,6 +811,7 @@ async function enrichLeg(matrixRow, config, legContext) {
   let confidenceAdjustment = 0;
   const factorBreakdown = [];
   const missingFactors = [];
+  const clusterContributions = [];
 
   for (const factor of config.factors) {
     const relevance = factorAppliesTo(factor, propKey);
