@@ -8967,7 +8967,15 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         player_type: entity, player_id: r.player_id, canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
         tier_key: r.tier_key, hit_probability_0_100: Math.round(hp*10000)/100, confidence_0_100: confidence,
         non_push_sample: effectiveGamesSample, prior_strength: Math.round(priorStrength*100)/100,
-        recency_blended_rate_0_100: Math.round(shrunkRate*10000)/100, formula_version: freshOverride ? "postgres_v1_exact_port+discontinuity_fresh_sample" : "postgres_v1_exact_port"
+        // REAL fix (2026-08-20): this field is named "_0_100" implying a 0-100 percentage scale,
+        // correct for usesNormalModel props where shrunkRate genuinely is a 0-1 rate. But for
+        // count-model props (pitcher_outs, pitches_thrown etc - anything using the Poisson/
+        // NegBinomial path), shrunkRate is a raw mean COUNT (e.g. ~15.5 outs), not a 0-1 rate -
+        // multiplying it by 100 produced absurd stored values (1867, 2012+) confirmed live.
+        // Diagnostic-only field (not used to compute hit_probability_0_100 itself, which is
+        // correctly computed from the unscaled shrunkRate above), but stores nonsense for count
+        // props - only apply the x100 scale when it actually represents a 0-1 rate.
+        recency_blended_rate_0_100: Math.round((usesNormalModel ? shrunkRate*100 : shrunkRate)*100)/100, formula_version: freshOverride ? "postgres_v1_exact_port+discontinuity_fresh_sample" : "postgres_v1_exact_port"
       });
     }
     for (let i = 0; i < baselineRows.length; i += 500) {
