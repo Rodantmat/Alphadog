@@ -8556,26 +8556,27 @@ function hpFromCountModelPg(mean, lineValue, side, dispersion) {
 }
 function hpFromNormalModelPg(mean, lineValue, side, stddev) { const pUnder = normalCDFPg(lineValue, mean, stddev); return side === "more" ? (1 - pUnder) : pUnder; }
 // REAL fix (2026-08-20): fantasy_score-family props are a weighted SUM of several right-skewed,
-// zero-inflated counting stats (hits, runs, RBIs, etc). Real backtest confirmed a symmetric Normal
-// model produces exactly the mathematical signature of this mismatch: severe underconfidence in
-// the 16-54% predicted range (real actual hit rates running 12-15pt higher than predicted, large
-// real samples n=166-729), reversing to mild overconfidence above ~63%. Gemini second-opinion
-// confirmed the mechanism: rare high-score games inflate stddev, which flattens the Gaussian CDF
-// and makes it under-accumulate probability in the low-to-mid range relative to the true, right-
-// skewed distribution. Fixed via a log-normal transform of the existing mean/stddev (reuses the
-// same normalCDFPg/erfPg already in this file - no new dependencies), which is inherently right-
-// skewed and bounded below at 0, matching the real shape of a summed counting-stat distribution
-// far better than a symmetric Normal. Only applied to fantasy_score-family props - every other
-// normal-model prop is unaffected.
-function hpFromLogNormalModelPg(mean, lineValue, side, stddev) {
-  if (!(mean > 0) || !(lineValue > 0)) return hpFromNormalModelPg(mean, lineValue, side, stddev);
-  const variance = stddev * stddev;
-  const sigmaL = Math.sqrt(Math.log(1 + variance / (mean * mean)));
-  const muL = Math.log(mean) - 0.5 * sigmaL * sigmaL;
-  const pUnder = normalCDFPg(Math.log(lineValue), muL, sigmaL);
-  return side === "more" ? (1 - pUnder) : pUnder;
+// zero-inflated counting stats (hits, runs, RBIs, etc), and can never be negative. Real backtest
+// confirmed a plain Normal model produces severe underconfidence in the 16-54% predicted range
+// (real actual hit rates running 12-15pt higher, large real samples n=166-729). Root cause:
+// standard Normal assumes the outcome can extend to -infinity, which artificially flattens the CDF
+// near common lines. A log-normal transform was tried first and CONFIRMED WRONG via direct
+// simulation before deploy - moment-matching a log-normal pulls its median well below the mean,
+// which DECREASES predictions in exactly this range (verified: at mean=9,std=7,line=8.5, log-
+// normal gave 39.7% vs the real-data-required increase). Reverted that attempt. The correct,
+// verified fix is a zero-truncated Normal: condition the existing Normal CDF on the real, physical
+// constraint that the outcome is >=0, which correctly rescales probability upward (verified via
+// direct simulation: consistent +2 to +8pt real shifts in the correct direction across the
+// affected line range, using the SAME mean/stddev already computed - no new data needed).
+function hpFromZeroTruncatedNormalPg(mean, lineValue, side, stddev) {
+  const effLine = Math.max(0, lineValue);
+  const pOverLine = 1 - normalCDFPg(effLine, mean, stddev);
+  const pOverZero = 1 - normalCDFPg(0, mean, stddev);
+  if (!(pOverZero > 0)) return 0.5;
+  const pMore = Math.min(1, pOverLine / pOverZero);
+  return side === "more" ? pMore : (1 - pMore);
 }
-const LOG_NORMAL_PROPS = new Set(["fantasy_score", "pitcher_fantasy_score", "pitcher_fantasy_score_ud"]);
+const TRUNCATED_NORMAL_PROPS = new Set(["fantasy_score", "pitcher_fantasy_score", "pitcher_fantasy_score_ud"]);
 function propCanGoNegativePg(propConfig) { return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0)); }
 function wilsonIntervalPg(pHat, n, z) {
   if (n <= 0) return { lower: 0, upper: 1 };
