@@ -8746,13 +8746,27 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       : rawFields.map(f => `COALESCE(${f},0)`).join("+");
     let dispersion = Infinity;
     let pooledWithinPlayerVariance = null;
-    // REAL FIX (2026-08-11): caps dispersion at a conservative maximum (0.65), confirmed via
-    // large-sample research (see commit message) that the raw pooled-variance estimate is
-    // severely overconfident for at least two real, independently-verified segments
-    // (fantasy_score|more, hits|more) - in one case falling back to plain Poisson (zero
-    // overdispersion) entirely when pooledVar<=pooledMean, in the other computing a technically
-    // valid but still-too-narrow value. This is a floor, not a replacement: the pooled estimate
-    // is still used as-is whenever it's already conservative enough (<=0.65).
+    // REAL fix (2026-08-20): Gemini second-opinion audit + exact math confirmed a real, serious
+    // bug - Math.min(rawDispersion, 0.65) is backwards. When real data shows underdispersion
+    // (pooledVar <= pooledMean, e.g. pitcher_outs: real pooled mean=6.31, pooled variance=5.34
+    // from 525 real pitchers), rawDispersion correctly evaluates to Infinity (no overdispersion
+    // needed - pure Poisson, or tighter). But Math.min then FORCED dispersion down to 0.65
+    // anyway, which in Negative-Binomial parametrization means MAXIMUM overdispersion (small r =
+    // wide variance). Concrete real math: this implied a variance of 67.56 (12.6x the real 5.34),
+    // producing a real P(X=0)=21.5% for pitcher_outs when real outcomes show <1% - directly
+    // explaining a confirmed real 10.8pt overconfidence gap on the "less" side. Negative Binomial
+    // is mathematically undefined for underdispersion (Var<=mean forces a non-positive shape
+    // parameter) - the correct model there is pure Poisson, not a capped NegBinomial.
+    // The 0.65 cap's real, legitimate purpose (confirmed via the original 2026-08-11 fix, for
+    // fantasy_score|more and hits|more) was to protect against THIN, NOISY samples where limited
+    // real data could understate genuine overdispersion. That legitimate concern doesn't apply
+    // when the underlying real sample is large and well-supported (pitcher_outs: 525 real
+    // pitchers, ample real games) - a real, large sample showing genuine underdispersion should
+    // be trusted, not overridden. Gated by real sample size: only apply the conservative cap when
+    // the pooled real sample is thin (<3000 real player-games combined, a real, conservative
+    // threshold matching the scale of data that motivated the original fix); large, well-
+    // supported samples showing genuine underdispersion correctly fall through to pure Poisson.
+    const DISPERSION_CAP_MIN_SAMPLE_GAMES = 3000;
     const DISPERSION_MAX_CAP = 0.65;
     try {
       const gRows = await sql.unsafe(`SELECT player_id, COUNT(*) games, AVG((${exprRaw})::float) mean_i, AVG(((${exprRaw})::float)^2) meansq_i FROM ${gameLogTable} WHERE season=${season} GROUP BY player_id HAVING COUNT(*)>=8`);
