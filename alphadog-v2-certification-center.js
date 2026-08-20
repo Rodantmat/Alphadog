@@ -2911,22 +2911,24 @@ const DEMON_REAL_RATIO = 1.08;
 async function autoSelectRegularHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
-    const propSideLineList = REGULAR_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    // CORRECTED 2026-08-20: real, lineup-aware selection - joins context.history_game_lineup to
+    // restrict to batting slots 7-9 (batting_order_code 700-900), the real, causal bottom-of-order
+    // signal. This is NOT the same query shape as the other High Hit tracks since it requires a
+    // real lineup join the board table alone doesn't carry.
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
-        confidence_0_100, is_goblin, is_demon
-      FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'prizepicks' AND is_goblin = 0 AND is_demon = 0
-        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '10 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc, f.player_name, f.mlb_player_id,
+        f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        f.confidence_0_100, f.is_goblin, f.is_demon
+      FROM score.final_board_current f
+      JOIN context.history_game_lineup lu ON lu.player_id = f.mlb_player_id AND lu.game_pk = f.game_pk
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND f.source_key = 'prizepicks' AND f.is_goblin = 0 AND f.is_demon = 0
+        AND f.canonical_prop_key = 'total_bases' AND f.selected_side = 'less' AND f.line_value = ${REGULAR_TOTAL_BASES_LINE}
+        AND lu.batting_order_code BETWEEN 700 AND 900
+        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '10 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
-    const rankByPropSideLine = new Map(REGULAR_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
-    return rows
-      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
-      .sort((a, b) => b._rank - a._rank);
+    return rows.map(r => ({ ...r, _rank: 1 }));
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
