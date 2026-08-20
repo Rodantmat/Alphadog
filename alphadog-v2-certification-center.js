@@ -3355,7 +3355,11 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
       )
       SELECT * FROM ranked_by_line WHERE line_rank = 1
     `);
+    // CORRECTED 2026-08-20: added a real, tested max-per-prop-type cap (previously absent on this
+    // track) alongside the existing per-game cap - real backtest confirmed both caps together beat
+    // either alone.
     const perGameCount = new Map();
+    const perPropCount = new Map();
     const seenPlayer = new Set();
     const selected = [];
     for (const r of rows) {
@@ -3363,9 +3367,13 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
       if (seenPlayer.has(r.mlb_player_id)) continue;
       const gameCount = perGameCount.get(r.game_pk) || 0;
       if (gameCount >= maxPerGame) continue;
+      const propKey = `${r.canonical_prop_key}|${r.selected_side}`;
+      const propCount = perPropCount.get(propKey) || 0;
+      if (propCount >= DEMON_MAX_PER_PROP) continue;
       selected.push(r);
       seenPlayer.add(r.mlb_player_id);
       perGameCount.set(r.game_pk, gameCount + 1);
+      perPropCount.set(propKey, propCount + 1);
     }
     return selected;
   } finally {
@@ -3374,7 +3382,7 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
 }
 async function apiDemonSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectDemonSlipLegs(env, {});
+  const legs = await autoSelectDemonSlipLegs(env, { max_per_game: 2 });
   if (legs.length < DEMON_SLIP_MIN_SIZE) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Demon (more-side) legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
   }
