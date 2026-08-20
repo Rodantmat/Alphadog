@@ -10348,6 +10348,109 @@ async function runBackfillQualityOfContactHistoryForDate(env, input) {
   }
 }
 
+// REAL point-in-time backfill (2026-08-20): same approach and same raw-data source as
+// runBackfillQualityOfContactHistoryForDate above - bb_type (ground_ball/fly_ball/line_drive/
+// popup) is a literal per-batted-ball column in the raw statcast_search/csv export, so
+// ground_ball_pct/air_pct can be genuinely reconstructed per player per historical day, not
+// approximated. air_pct = 1 - ground_ball_pct (fly_ball+line_drive+popup), matching the only
+// two fields buildLegContextReal actually reads from this table (air_pct/ground_ball_pct, used
+// for defensive_quality_oaa's air/ground weighting).
+async function runBackfillBattedBallProfileHistoryForDate(env, input) {
+  const targetDate = String(input.target_date || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) return { ok: false, mode: "backfill_bbp_history_for_date", error: "target_date required, YYYY-MM-DD" };
+  try {
+    const nextDate = new Date(targetDate + "T00:00:00Z"); nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    const prevDate = new Date(targetDate + "T00:00:00Z"); prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const u = new URL(`https://baseballsavant.mlb.com/statcast_search/csv`);
+    u.searchParams.set("all", "true"); u.searchParams.set("hfGT", "R|"); u.searchParams.set("hfSea", "2026|");
+    u.searchParams.set("player_type", "batter");
+    u.searchParams.set("game_date_gt", prevDate.toISOString().slice(0, 10));
+    u.searchParams.set("game_date_lt", nextDate.toISOString().slice(0, 10));
+    u.searchParams.set("type", "details");
+    const resp = await fetch(u.toString(), { method: "GET", headers: { "accept": "text/csv,*/*", "user-agent": "AlphaDogV2SavantBackfill/0.1" } });
+    if (!resp.ok) return { ok: false, mode: "backfill_bbp_history_for_date", target_date: targetDate, error: `http_${resp.status}` };
+    const text = await resp.text();
+    const rows = parseSavantCsv(text);
+    const onDate = rows.filter(r => r.game_date === targetDate && r.type === "X" && r.bb_type);
+    if (!onDate.length) return { ok: true, mode: "backfill_bbp_history_for_date", target_date: targetDate, players_written: 0, note: "no_rows_for_date" };
+    const byBatter = new Map();
+    for (const r of onDate) {
+      const bid = Number(r.batter); if (!bid) continue;
+      if (!byBatter.has(bid)) byBatter.set(bid, { total: 0, ground: 0 });
+      const acc = byBatter.get(bid);
+      acc.total++;
+      if (r.bb_type === "ground_ball") acc.ground++;
+    }
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+    const snapRows = [];
+    for (const [bid, acc] of byBatter.entries()) {
+      if (acc.total < 1) continue;
+      const gbPct = Math.round((acc.ground / acc.total) * 1000) / 10;
+      snapRows.push({ profile_history_id: `bbpbf_${bid}_${targetDate}`, snapshot_date: targetDate, mlb_player_id: bid, ground_ball_pct: gbPct, air_pct: Math.round((100 - gbPct) * 10) / 10 });
+    }
+    if (!snapRows.length) { await sql.end({ timeout: 1 }); return { ok: true, mode: "backfill_bbp_history_for_date", target_date: targetDate, players_written: 0 }; }
+    const cols = ["profile_history_id", "snapshot_date", "mlb_player_id", "ground_ball_pct", "air_pct"];
+    const CHUNK = 200;
+    for (let i = 0; i < snapRows.length; i += CHUNK) {
+      const chunk = snapRows.slice(i, i + CHUNK);
+      await sql`INSERT INTO ref.batted_ball_profile_history ${sql(chunk, ...cols)} ON CONFLICT (profile_history_id) DO NOTHING`;
+    }
+    await sql.end({ timeout: 1 });
+    return { ok: true, mode: "backfill_bbp_history_for_date", target_date: targetDate, players_written: snapRows.length, raw_rows_fetched: onDate.length };
+  } catch (err) {
+    return { ok: false, mode: "backfill_bbp_history_for_date", target_date: targetDate, error: String(err && err.message ? err.message : err) };
+  }
+}
+
+// REAL point-in-time backfill (2026-08-20): same approach - arm_angle is a literal per-pitch
+// column in the raw statcast_search/csv export (for the pitcher throwing that pitch), so a
+// genuine per-pitcher-per-day average can be reconstructed, not approximated. Uses player_type
+// pitcher (not batter) since arm_angle is a pitching-side attribute.
+async function runBackfillArmAngleHistoryForDate(env, input) {
+  const targetDate = String(input.target_date || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) return { ok: false, mode: "backfill_arm_angle_history_for_date", error: "target_date required, YYYY-MM-DD" };
+  try {
+    const nextDate = new Date(targetDate + "T00:00:00Z"); nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    const prevDate = new Date(targetDate + "T00:00:00Z"); prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+    const u = new URL(`https://baseballsavant.mlb.com/statcast_search/csv`);
+    u.searchParams.set("all", "true"); u.searchParams.set("hfGT", "R|"); u.searchParams.set("hfSea", "2026|");
+    u.searchParams.set("player_type", "pitcher");
+    u.searchParams.set("game_date_gt", prevDate.toISOString().slice(0, 10));
+    u.searchParams.set("game_date_lt", nextDate.toISOString().slice(0, 10));
+    u.searchParams.set("type", "details");
+    const resp = await fetch(u.toString(), { method: "GET", headers: { "accept": "text/csv,*/*", "user-agent": "AlphaDogV2SavantBackfill/0.1" } });
+    if (!resp.ok) return { ok: false, mode: "backfill_arm_angle_history_for_date", target_date: targetDate, error: `http_${resp.status}` };
+    const text = await resp.text();
+    const rows = parseSavantCsv(text);
+    const onDate = rows.filter(r => r.game_date === targetDate && r.arm_angle != null && r.arm_angle !== "");
+    if (!onDate.length) return { ok: true, mode: "backfill_arm_angle_history_for_date", target_date: targetDate, players_written: 0, note: "no_rows_for_date" };
+    const byPitcher = new Map();
+    for (const r of onDate) {
+      const pid = Number(r.pitcher); if (!pid) continue;
+      const angle = Number(r.arm_angle); if (!Number.isFinite(angle)) continue;
+      if (!byPitcher.has(pid)) byPitcher.set(pid, { sum: 0, n: 0 });
+      const acc = byPitcher.get(pid); acc.sum += angle; acc.n++;
+    }
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
+    const snapRows = [];
+    for (const [pid, acc] of byPitcher.entries()) {
+      if (acc.n < 1) continue;
+      snapRows.push({ arm_angle_history_id: `aabf_${pid}_${targetDate}`, snapshot_date: targetDate, mlb_player_id: pid, arm_angle_degrees: Math.round((acc.sum / acc.n) * 10) / 10 });
+    }
+    if (!snapRows.length) { await sql.end({ timeout: 1 }); return { ok: true, mode: "backfill_arm_angle_history_for_date", target_date: targetDate, players_written: 0 }; }
+    const cols = ["arm_angle_history_id", "snapshot_date", "mlb_player_id", "arm_angle_degrees"];
+    const CHUNK = 200;
+    for (let i = 0; i < snapRows.length; i += CHUNK) {
+      const chunk = snapRows.slice(i, i + CHUNK);
+      await sql`INSERT INTO ref.arm_angle_history ${sql(chunk, ...cols)} ON CONFLICT (arm_angle_history_id) DO NOTHING`;
+    }
+    await sql.end({ timeout: 1 });
+    return { ok: true, mode: "backfill_arm_angle_history_for_date", target_date: targetDate, players_written: snapRows.length, raw_rows_fetched: onDate.length };
+  } catch (err) {
+    return { ok: false, mode: "backfill_arm_angle_history_for_date", target_date: targetDate, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 function parseSavantCsv(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim().length);
   if (lines.length < 2) return [];
