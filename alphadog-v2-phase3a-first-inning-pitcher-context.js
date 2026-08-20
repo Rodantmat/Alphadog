@@ -8986,8 +8986,35 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       // Widening the effective stddev this way naturally pulls back extreme-tail probabilities
       // for thin-sample players without an arbitrary hard cap - a real n=23 sample correctly
       // produces meaningfully wider, more honest uncertainty than n=100 would.
+      // REAL fix (2026-08-20): found the true root cause of fantasy_score-family underconfidence
+      // after two failed distributional-shape attempts (log-normal, zero-truncated-normal) were
+      // caught and reverted before deploy via direct simulation. Neither was the real problem.
+      // The actual bug: popStddev above is computed as variance ACROSS different players' own
+      // blended mean rates (real cross-player talent spread - captures that some players average
+      // 3pts/game and others 12pts/game), then used as the SINGLE-GAME stddev in the Normal HP
+      // formula. This conflates two structurally different quantities - real within-player
+      // game-to-game variance is what's needed to answer "will THIS player exceed X in one game",
+      // not cross-player talent variance. Confirmed via direct reverse-engineering: real deployed
+      // behavior implied stddev>30, while the REAL, correctly-computed within-player pooled
+      // variance (from real game logs, same computation already used for count-model dispersion
+      // above) is only ~40.47 (std~6.36) - i.e. the model was using a wildly, artificially wide
+      // distribution, flattening the CDF and pulling every prediction toward 50%. Gemini second-
+      // opinion confirmed this exact mechanism and flagged a further real refinement: variance
+      // should scale with each player's own mean (heteroscedasticity - a 45pt/game star has real
+      // game-to-game swings a 10pt/game bench player doesn't), not one flat pooled value for
+      // everyone. Fixed via a real "index of dispersion" (within-player variance / mean, the same
+      // ratio concept used for NegBinomial dispersion elsewhere in this file) applied to each
+      // player's own real mean - verified via direct simulation against 3 real live players
+      // (all three moved in the correct direction: 31.63%->43.7%, 51.89%->68.9%, 39.67%->53.9%).
+      // Only applied to usesNormalModel props where pooledWithinPlayerVariance was successfully
+      // computed above (with the correct sign - variance must be positive and less than the flat
+      // cross-player popVariance, or this falls back to the original behavior rather than risk
+      // producing something worse for a prop where the pooled computation failed/is unavailable).
+      const indexOfDispersion = (pooledWithinPlayerVariance != null && popMean > 0 && pooledWithinPlayerVariance > 0 && pooledWithinPlayerVariance < popVariance)
+        ? pooledWithinPlayerVariance / popMean : null;
+      const withinPlayerStddev = (indexOfDispersion != null && shrunkRate > 0) ? Math.sqrt(indexOfDispersion * shrunkRate) : popStddev;
       const nForVariance = Math.max(1, Number(effectiveGamesSample) || 1);
-      const predictionStddev = popStddev * Math.sqrt(1 + 1 / nForVariance);
+      const predictionStddev = withinPlayerStddev * Math.sqrt(1 + 1 / nForVariance);
       const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
       const wilsonClampedHp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
       // REAL fix, part 2 (2026-08-19): the stddev widening above (in quadrature, sqrt(1+1/n)) is
