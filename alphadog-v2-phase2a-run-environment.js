@@ -133,17 +133,26 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       const leagueAvgSweetSpot = t.league_avg_sweet_spot_pct ?? 32.5;
       const leagueAvgBarrel = t.league_avg_barrel_pct ?? 7.5;
       const leagueAvgIso = t.league_avg_iso ?? 0.150;
-      // Thin-sample boost (2026-08-14): validated via 3 independent out-of-sample train/test
-      // splits (train-period rate predicts held-out test-period outcome, partial correlation
-      // controlling for train rate) - ISO/xwOBA carry real incremental value for players with a
-      // thin season sample (0.205/n=18, 0.426/n=22, 0.615/n=41 - all positive, strengthening with
-      // n), consistent with Statcast contact-quality metrics stabilizing faster than counting
-      // stats. Established players (15+ games) showed no incremental value in the same test
-      // (-0.030), so their existing coefficients are left completely unchanged below - this
-      // multiplier only ever increases the signal for the specific segment it was validated on.
-      // Deliberately conservative (1.3x, not more) given the largest validated sample was still
-      // only n=41 - a real, modest signal, not overcommitted extrapolation.
-      const thinSampleMultiplier = (ctx.hitter_season_games != null && ctx.hitter_season_games < 15) ? 1.3 : 1.0;
+      // REAL fix (2026-08-19): the 1.3x "thin-sample boost" was confirmed via real broader
+      // backtest to be statistically backwards - it AMPLIFIED thin-sample xwOBA deviations
+      // instead of shrinking them, worsening real calibration (rbis/hits_runs_rbis/hits/runs
+      // "more" side: 8.0pt real overconfidence gap on high-multiplier legs vs 4.5pt normal,
+      // n=94 vs n=2519). One real example (Zac Veen) hit his prop's cap with an implied real
+      // xwOBA of ~0.628, an implausible value revealing small-sample noise, not genuine skill.
+      // Gemini second-opinion confirmed the flaw: the original validation study showed thin-
+      // sample xwOBA CORRELATES with future performance (real, true finding) but correlation is
+      // scale-invariant (r(X,Y)=r(1.3X,Y)) - it never validated that amplifying by 1.3x was the
+      // correct scaling direction, only that signal exists at all. Standard practice is that
+      // thin samples get SHRUNK toward a stable prior, never amplified. Replaced with real
+      // empirical Bayes shrinkage applied to the raw xwOBA/sweet-spot/xwobacon/iso/barrel INPUT
+      // itself (w = games/(games+M), M=65 games as a real, standard proxy for the real ~250-300
+      // PA xwOBA stabilization point at ~4 PA/game) - mathematically equivalent to scaling the
+      // deviation by w, so a thin-sample player's real signal now correctly counts for LESS, not
+      // more, until they accumulate real, stable sample size.
+      const STABILIZATION_GAMES = 65;
+      const shrinkageWeight = ctx.hitter_season_games != null
+        ? ctx.hitter_season_games / (ctx.hitter_season_games + STABILIZATION_GAMES)
+        : 0.5; // unknown sample size: real, conservative default - trust the signal only half as much
       if (cell.prop_key === "doubles") {
         if (ctx.batter_sweet_spot_percent == null) return null;
         return (ctx.batter_sweet_spot_percent - leagueAvgSweetSpot) * (a || 0) * thinSampleMultiplier;
