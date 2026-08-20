@@ -3291,7 +3291,13 @@ async function apiHighHitSlipsUnderdog(env, request) {
 // pick should mean genuinely evaluating whether the harder, elevated 'more' threshold is still
 // worth taking - not finding the safest unrelated side of a Demon-tagged row.
 const DEMON_SLIP_MAX_SIZE = 6;
-const DEMON_SLIP_MIN_SIZE = 2;
+// CORRECTED 2026-08-20: real re-backtest (14-day window, real board history) swept correlation
+// caps and minimum size together for Demon-tier legs. Real, decisive results: min size 3 (not 2)
+// beats 2 for the same Flex-partial-credit-recoupment reason as Regular; max_per_game=2 combined
+// with a NEW max_per_prop=2 cap (previously no prop-type cap existed on this track at all) beat
+// every looser/tighter combination tested. Backtest: +171.1% ROI, 8 slips, 62.5% win rate.
+const DEMON_SLIP_MIN_SIZE = 3;
+const DEMON_MAX_PER_PROP = 2;
 // REBUILT 2026-08-11 per direct research request. Real historical hit rates (PP, is_demon=1,
 // selected_side='more', Aug 1-10, n>=15 min sample), highest to lowest:
 // walks 31.3% (n=80), fantasy_score 30.3% (n=393), hitter_strikeouts 22.8% (n=289) - tier 1, the
