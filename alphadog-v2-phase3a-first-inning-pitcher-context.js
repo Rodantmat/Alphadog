@@ -9557,7 +9557,7 @@ async function runReminePitcherArsenalToPostgres(env, input) {
         INSERT INTO ref.pitcher_arsenal_history (arsenal_history_id, snapshot_date, mlb_player_id, run_value_per_100, pitch_usage)
         SELECT 'arh_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id,
           AVG(run_value_per_100), SUM(pitch_usage)
-        FROM ref.pitcher_arsenal WHERE active=1 AND mlb_player_id = ANY(${chunk.map(r => r.mlb_player_id)})
+        FROM ref.pitcher_arsenal WHERE active=1 AND mlb_player_id = ANY(${"{" + chunk.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
         GROUP BY mlb_player_id
         ON CONFLICT (arsenal_history_id) DO NOTHING`;
     }
