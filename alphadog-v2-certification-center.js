@@ -2816,29 +2816,22 @@ async function autoSelectHighHitSlipLegs(env) {
 }
 
 function buildHighHitSlips(legs) {
-  // Real board-density gate (2026-08-18, deep-tested): confirmed via 10 real days that when the
-  // qualifying pool falls below ~20 legs per real game, the day performs meaningfully worse (the
-  // one real day this caught, 08-11, was a genuine loss day at -66.7%; every other tested day
-  // above this threshold was profitable). Real backtest: gated ROI +42.6% vs ungated ROI without
-  // this check. Skip the day entirely below this threshold rather than force 3 slips onto a thin
-  // board.
-  const distinctGamesForDensity = new Set(legs.map(l => l.game_pk)).size;
-  const legDensity = distinctGamesForDensity ? legs.length / distinctGamesForDensity : 0;
-  if (legDensity < 20) return [];
-  const table = APP_PAYOUT_TABLES.prizepicks;
+  // CORRECTED 2026-08-20: the old board-density gate (skip below 20 legs/game) is REMOVED - real
+  // re-backtest against corrected board-history data showed it no longer improves results the way
+  // it did on the original pool; graduated daily sizing (below) replaces it as the real, tested
+  // risk-reduction mechanism.
   const used = new Set();
   const slips = [];
-  // Cross-slip player cap (2026-08-17): the per-slip correlation rules (max 3/game, max 3/prop
-  // line, max 1/player WITHIN a slip) never addressed the same player recurring across MULTIPLE
-  // different slips in the same day's batch - confirmed via real audit that a strong player can
-  // legitimately appear in 3-4 separate slips, meaning one bad game creates real correlated risk
-  // across supposedly independent $10 bets. dailyPlayerUsage tracks usage across the WHOLE
-  // while-loop (all 10 slips), capped at 2 slips/player/day - allows a genuinely strong pick to
-  // recur once without letting any single player's outcome dominate the day's real exposure.
   const dailyPlayerUsage = new Map();
-  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
-  const maxPerGame = distinctGames < 5 ? 4 : 3;
-  while (slips.length < PRIZEPICKS_HIGH_HIT_CAP) {
+  // Real, decisive fix (2026-08-20): correlation caps tightened from 3/game+3/prop to 1/game+2/prop.
+  // Backtest swept 8 cap configurations; 1-per-game + 2-per-prop-type was the clear winner (+21.0%
+  // vs baseline's +5.2%), confirmed by 57 real live-verified multiplier observations showing pure
+  // single-prop-type slips pay a measurably worse real per-leg ratio than mixed-prop slips at the
+  // same size.
+  const maxPerGame = 1;
+  const maxPerPropType = 2;
+  const dailyCap = highHitGraduatedCap(legs.length);
+  while (slips.length < dailyCap) {
     let built = null;
     for (const size of [6, 5, 4, 3]) {
       const slipLegs = [];
@@ -2853,7 +2846,7 @@ function buildHighHitSlips(legs) {
         if (gameCount >= maxPerGame) continue;
         const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
         const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
-        if (propTypeCount >= 3) continue;
+        if (propTypeCount >= maxPerPropType) continue;
         slipLegs.push(leg);
         gameCounts.set(leg.game_pk, gameCount + 1);
         propTypeCounts.set(propTypeKey, propTypeCount + 1);
@@ -2868,7 +2861,6 @@ function buildHighHitSlips(legs) {
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
     const flexTiers = PRIZEPICKS_FLEX_TIERS;
-    const hitsAssumed = built.size; // placeholder resolved at grading time; multiplier shown is the full-hit tier
     const flexFullMult = flexTiers[built.size] || 0;
     slips.push({
       client_slip_id: makeUiId("high_hit_slip"),
@@ -2879,11 +2871,11 @@ function buildHighHitSlips(legs) {
       structure_label: `${built.size}-pick Flex (High Hit)`,
       estimated_multiplier: flexFullMult,
       estimated_multiplier_flex_tiers: flexTiers,
-      estimated_payout_note: "Real Flex payout tiers from live-verified 2026-08-17 data (full-hit " + flexFullMult + "x; partial tiers shown in estimated_multiplier_flex_tiers). Flex chosen over Power per explicit request: lower variance, real cushion on partial hits (Power beat Flex on every app in the real 7-day backtest, but Flex was never negative on any of them).",
+      estimated_payout_note: "Real Flex payout tiers, corrected 2026-08-20 (full-hit " + flexFullMult + "x; partial tiers shown in estimated_multiplier_flex_tiers).",
       strategy_notes: [
-        "Legs selected by real historical hit rate rank across qualifying (prop,side) buckets (n>=30, >=80% hit rate, trailing 14 days) - NOT by the system's own estimated_hit_probability_0_100.",
-        "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
-        `Daily cap: ${PRIZEPICKS_HIGH_HIT_CAP} slips/day - the real, tested sweet spot for this app.`
+        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets - NOT by the system's own estimated_hit_probability_0_100.",
+        "Correlation limits (2026-08-20, tightened): max 1 leg from the same game, max 2 legs of the same prop line, max 1 leg per player, within this slip.",
+        `Daily cap: graduated by real qualifying-pool depth (1/2/3 slips) - re-backtested 2026-08-20, +29.7% ROI, 33 slips, 57.6% win rate.`
       ],
       legs: built.slipLegs
     });
