@@ -9597,7 +9597,7 @@ async function runRemineDefensiveQualityToPostgres(env, input) {
     await sql`
       INSERT INTO ref.defensive_quality_history (oaa_history_id, snapshot_date, mlb_player_id, outs_above_average, primary_position)
       SELECT 'oaah_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, outs_above_average, primary_position
-      FROM ref.defensive_quality WHERE active=1 AND mlb_player_id = ANY(${rows.map(r => r.mlb_player_id)})
+      FROM ref.defensive_quality WHERE active=1 AND mlb_player_id = ANY(${"{" + rows.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
       ON CONFLICT (oaa_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_defensive_quality_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
