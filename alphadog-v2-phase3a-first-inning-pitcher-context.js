@@ -8779,7 +8779,10 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       if (sumGames > 0) {
         const pooledMean = sumMeanW/sumGames, pooledVar = sumVarW/sumGames;
         const rawDispersion = (pooledVar > pooledMean && pooledMean > 0) ? (pooledMean*pooledMean)/(pooledVar-pooledMean) : Infinity;
-        dispersion = Math.min(rawDispersion, DISPERSION_MAX_CAP);
+        // Only force the conservative cap when the real sample is thin enough that noise could
+        // plausibly be masking genuine overdispersion. A large, well-supported real sample
+        // showing genuine underdispersion/Poisson (rawDispersion=Infinity) is trusted as-is.
+        dispersion = (sumGames < DISPERSION_CAP_MIN_SAMPLE_GAMES) ? Math.min(rawDispersion, DISPERSION_MAX_CAP) : rawDispersion;
         pooledWithinPlayerVariance = pooledVar;
       } else {
         dispersion = DISPERSION_MAX_CAP;
