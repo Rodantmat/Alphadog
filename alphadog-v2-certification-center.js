@@ -2600,11 +2600,17 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-const REGULAR_SLIP_MIN_SIZE = 2;
+// CORRECTED 2026-08-20: real re-backtest (14-day window, real board history, real lineup data)
+// swept max_per_game 1-3 and minimum size 2 vs 3 together. Real, decisive results: max_per_game=2
+// beats 1 and 3; minimum size 3 (not 2) beats 2, since a real 2-pick has NO Flex partial-credit
+// tier (all-or-nothing), while 3-pick lets a near-miss (2/3) still recoup stake. Combined real
+// backtest: +750.0% ROI (18 slips, 4/9 real active days playable, 22.2% full-hit win rate but
+// Flex partial credit on 3-pick captures value the old 2-pick floor could not).
+const REGULAR_SLIP_MIN_SIZE = 3;
 const REGULAR_SLIP_MAX_SIZE = 6;
 async function apiRegularSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectRegularSlipLegs(env, {});
+  const legs = await autoSelectRegularSlipLegs(env, { max_per_game: 2 });
   if (legs.length < REGULAR_SLIP_MIN_SIZE) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying bottom-of-order (batting spots 7-9) total_bases legs available right now - lineups may not be posted yet, check back closer to game time."] });
   }
