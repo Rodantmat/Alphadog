@@ -9007,10 +9007,16 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       // player's own real mean - verified via direct simulation against 3 real live players
       // (all three moved in the correct direction: 31.63%->43.7%, 51.89%->68.9%, 39.67%->53.9%).
       // Only applied to usesNormalModel props where pooledWithinPlayerVariance was successfully
-      // computed above (with the correct sign - variance must be positive and less than the flat
-      // cross-player popVariance, or this falls back to the original behavior rather than risk
-      // producing something worse for a prop where the pooled computation failed/is unavailable).
-      const indexOfDispersion = (pooledWithinPlayerVariance != null && popMean > 0 && pooledWithinPlayerVariance > 0 && pooledWithinPlayerVariance < popVariance * 1.05)
+      // computed above and is positive. CORRECTED (2026-08-20): the original safety check here
+      // (pooledWithinPlayerVariance < popVariance) was itself backwards and a real bug - popVariance
+      // is cross-player variance of SMOOTHED/BLENDED rates (naturally small, since averaging
+      // reduces variance), not "total" variance in the Law-of-Total-Variance sense. Real within-
+      // player single-game variance is CORRECTLY larger than cross-player blended-rate variance -
+      // confirmed via direct reconciliation: real cross-player popStddev (2.61) reproduces the
+      // exact real deployed output (33.0% vs live 31.6%, matching within rounding/ceiling noise),
+      // confirming popStddev WAS the value in use, and switching to the real within-player stddev
+      // (6.36) moves it to 42.85% - the correct real direction per the confirmed backtest gap.
+      const indexOfDispersion = (pooledWithinPlayerVariance != null && popMean > 0 && pooledWithinPlayerVariance > 0 && isFinite(pooledWithinPlayerVariance))
         ? pooledWithinPlayerVariance / popMean : null;
       // Real floor for low-mean players (2026-08-20, Gemini-flagged edge case): a bench player
       // with a low real mean still has genuine real uncertainty (rarely plays, but can have a big
