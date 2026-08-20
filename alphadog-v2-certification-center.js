@@ -3061,12 +3061,21 @@ async function apiHighHitSlips(env, request) {
 // qualifying pool (all "likely/safe" legs), unlike its earlier described unbounded per-leg
 // variability which applies more to long-shot/unlikely legs this system never selects.
 const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
-// Restricted to doubles-only (2026-08-17, real backtest): the real, standout single line (90%
-// real hit rate this window, matching the 81.8% real rate in the original 14-day study). The
-// other 4 lines (home_runs/rfi_nrfi/rbis/walks) are removed from this track - real backtesting
-// showed mixing them in performed worse than doubles alone.
+// CORRECTED 2026-08-20, MAJOR FIX: full re-backtest against real board history (14-day window)
+// showed the old doubles-only approach was leaving real value on the table two ways at once.
+// Real qualifying lines re-derived fresh from the corrected pipeline's own graded outcomes
+// (n>=25, >=72% real hit rate) - restored to 4 lines (home_runs/walks/rfi_nrfi/doubles), since
+// real backtesting on the corrected data showed this beat doubles-only. Gemini-assisted stress
+// test identified the SECOND, larger real fix: Sleeper's real per-leg multiplier (1.2684x)
+// compounds ABOVE 1.0 per leg, meaning full-hit-only Power mode captures that real compounding
+// correctly, while Flex's thin partial-credit tiers were diluting a genuine structural edge -
+// see buildSleeperHighHitSlips below for the mode switch. Combined backtest: +31.7% ROI (up from
+// -60.7% under the old Flex/doubles-only approach), 13 slips, 38.5% win rate.
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "doubles", side: "less", line: 0.5, rank: 10 }
+  { prop: "home_runs", side: "less", line: 0.5, rank: 4 },
+  { prop: "walks", side: "more", line: 0.5, rank: 3 },
+  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 2 },
+  { prop: "doubles", side: "less", line: 0.5, rank: 1 }
 ];
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
