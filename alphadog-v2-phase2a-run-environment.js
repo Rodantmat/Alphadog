@@ -892,8 +892,25 @@ async function enrichLeg(matrixRow, config, legContext) {
       factorBreakdown.push({ factor_key: factor.factor_key, status: "applied_confidence_modifier_only", cell_id: cellUsed, contribution, relevance });
       continue;
     }
+    if (MACRO_ENVIRONMENT_CLUSTER.has(factor.factor_key)) {
+      clusterContributions.push(contribution);
+      factorBreakdown.push({ factor_key: factor.factor_key, status: "applied_macro_cluster_member", cell_id: cellUsed, contribution, relevance });
+      continue;
+    }
     logRateAdjustmentSum += contribution;
     factorBreakdown.push({ factor_key: factor.factor_key, status: "applied", cell_id: cellUsed, contribution, relevance });
+  }
+
+  // Real RSS (root-sum-squares) combination of the macro environment cluster, sign-preserved: a
+  // single member firing alone passes through with zero dampening (sqrt(x^2)=|x|), multiple
+  // correlated members firing together get real, non-flat dampening. See comment above enrichLeg.
+  if (clusterContributions.length) {
+    const sumOfSquares = clusterContributions.reduce((s, x) => s + x * x, 0);
+    const sumSigned = clusterContributions.reduce((s, x) => s + x, 0);
+    const rss = Math.sqrt(sumOfSquares);
+    const clusterCombined = sumSigned >= 0 ? rss : -rss;
+    logRateAdjustmentSum += clusterCombined;
+    factorBreakdown.push({ factor_key: "macro_environment_cluster_combined", status: "rss_combined", contribution: clusterCombined, member_count: clusterContributions.length, naive_sum_would_have_been: sumSigned });
   }
 
   return {
