@@ -9894,7 +9894,7 @@ async function runRemineBattedBallProfileToPostgres(env, input) {
     await sql`
       INSERT INTO ref.batted_ball_profile_history (profile_history_id, snapshot_date, mlb_player_id, ground_ball_pct, air_pct)
       SELECT 'bbph_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, ground_ball_pct, air_pct
-      FROM ref.batted_ball_profile WHERE mlb_player_id = ANY(${rows.map(r => r.mlb_player_id)})
+      FROM ref.batted_ball_profile WHERE mlb_player_id = ANY(${"{" + rows.map(r => r.mlb_player_id).join(",") + "}"}::bigint[])
       ON CONFLICT (profile_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_batted_ball_profile_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
