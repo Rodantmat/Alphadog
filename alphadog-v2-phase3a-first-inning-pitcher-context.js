@@ -9890,6 +9890,12 @@ async function runRemineBattedBallProfileToPostgres(env, input) {
         player_name=excluded.player_name, ground_ball_pct=excluded.ground_ball_pct, air_pct=excluded.air_pct,
         pulled_air_pct=excluded.pulled_air_pct, batted_ball_events=excluded.batted_ball_events, raw_json=excluded.raw_json, updated_at=now()
     `;
+    // REAL fix (2026-08-20): archive a dated snapshot on every mine, same pattern as batter_quality_of_contact_history.
+    await sql`
+      INSERT INTO ref.batted_ball_profile_history (profile_history_id, snapshot_date, mlb_player_id, ground_ball_pct, air_pct)
+      SELECT 'bbph_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, ground_ball_pct, air_pct
+      FROM ref.batted_ball_profile WHERE mlb_player_id = ANY(${rows.map(r => r.mlb_player_id)})
+      ON CONFLICT (profile_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_batted_ball_profile_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
   } catch (err) {
