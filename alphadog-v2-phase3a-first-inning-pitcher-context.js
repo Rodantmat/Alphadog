@@ -9459,7 +9459,17 @@ async function runRemineQualityOfContactToPostgres(env, input) {
           poorly_topped_percent=excluded.poorly_topped_percent, poorly_under_percent=excluded.poorly_under_percent,
           whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, bb_percent=excluded.bb_percent,
           ba=excluded.ba, slg=excluded.slg, ba_minus_xba_diff=excluded.ba_minus_xba_diff, slg_minus_xslg_diff=excluded.slg_minus_xslg_diff,
-          woba_minus_xwoba_diff=excluded.woba_minus_xwoba_diff, active=1, raw_json=excluded.raw_json, updated_at=now()
+          woba_minus_xwoba_diff=excluded.woba_minus_xwoba_diff, active=1, raw_json=excluded.raw_json, updated_at=now()`;
+      // REAL fix (2026-08-20): archive a real, permanent, DATED snapshot of this Statcast data
+      // every time it's mined, so future point-in-time backtests can reconstruct what these
+      // values genuinely were on any past day - confirmed live this data previously had NO
+      // historical record (only a single current-state row per player, silently overwritten on
+      // every re-mine), making faithful point-in-time reconstruction structurally impossible.
+      await sql`
+        INSERT INTO ref.batter_quality_of_contact_history (qoc_history_id, snapshot_date, mlb_player_id, season_year, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, iso)
+        SELECT 'qoc_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, season_year, xwoba, xwobacon, sweet_spot_percent, barrel_batted_rate, iso
+        FROM ref.batter_quality_of_contact WHERE active=1 AND mlb_player_id = ANY(${chunk.map(r => r.mlb_player_id)})
+        ON CONFLICT (qoc_history_id) DO NOTHING`;
       `;
     }
     await sql.end();
