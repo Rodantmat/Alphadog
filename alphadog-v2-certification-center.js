@@ -3384,7 +3384,7 @@ async function apiDemonSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectDemonSlipLegs(env, { max_per_game: 2 });
   if (legs.length < DEMON_SLIP_MIN_SIZE) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Demon (more-side) legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 3 qualifying PrizePicks Demon legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
   }
   const table = APP_PAYOUT_TABLES.prizepicks;
   let best = null;
