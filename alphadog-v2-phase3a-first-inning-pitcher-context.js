@@ -9539,6 +9539,15 @@ async function runReminePitcherArsenalToPostgres(env, input) {
           k_percent=excluded.k_percent, hard_hit_percent=excluded.hard_hit_percent, est_woba=excluded.est_woba,
           run_value_per_100=excluded.run_value_per_100, active=1, raw_json=excluded.raw_json, updated_at=now()
       `;
+      // REAL fix (2026-08-20): archive a dated snapshot on every mine, same pattern/reasoning as
+      // batter_quality_of_contact_history - this data previously had no historical record.
+      await sql`
+        INSERT INTO ref.pitcher_arsenal_history (arsenal_history_id, snapshot_date, mlb_player_id, run_value_per_100, pitch_usage)
+        SELECT 'arh_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id,
+          AVG(run_value_per_100), SUM(pitch_usage)
+        FROM ref.pitcher_arsenal WHERE active=1 AND mlb_player_id = ANY(${chunk.map(r => r.mlb_player_id)})
+        GROUP BY mlb_player_id
+        ON CONFLICT (arsenal_history_id) DO NOTHING`;
     }
     await sql.end();
     return { ok: true, mode: "remine_pitcher_arsenal_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
