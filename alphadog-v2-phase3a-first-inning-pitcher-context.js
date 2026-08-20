@@ -9054,12 +9054,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       const withinPlayerStddev = (indexOfDispersion != null && shrunkRate > 0) ? Math.sqrt(indexOfDispersion * Math.max(shrunkRate, varianceFloorMean)) : popStddev;
       const nForVariance = Math.max(1, Number(effectiveGamesSample) || 1);
       const predictionStddev = withinPlayerStddev * Math.sqrt(1 + 1 / nForVariance);
-      // Real, granular per-tier dispersion lookup (2026-08-20): use the tier matching THIS
-      // player's own real mean when available, instead of the flat pooled value - see the
-      // detailed real comment above the dispersion computation block for why this matters.
-      const playerDispersionTier = shrunkRate < 3 ? "low" : (shrunkRate < 7 ? "mid" : "high");
-      const playerDispersion = (tierDispersionMap && tierDispersionMap[playerDispersionTier] != null) ? tierDispersionMap[playerDispersionTier] : dispersion;
-      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, playerDispersion));
+      const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
       const wilsonClampedHp = clampHpToSampleSupportedRangePg(rawHp, effectiveGamesSample);
       // REAL fix, part 2 (2026-08-19): the stddev widening above (in quadrature, sqrt(1+1/n)) is
       // the statistically "correct" prediction-interval math, but verified live it's nowhere near
