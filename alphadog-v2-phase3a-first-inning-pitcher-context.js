@@ -9010,9 +9010,16 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       // computed above (with the correct sign - variance must be positive and less than the flat
       // cross-player popVariance, or this falls back to the original behavior rather than risk
       // producing something worse for a prop where the pooled computation failed/is unavailable).
-      const indexOfDispersion = (pooledWithinPlayerVariance != null && popMean > 0 && pooledWithinPlayerVariance > 0 && pooledWithinPlayerVariance < popVariance)
+      const indexOfDispersion = (pooledWithinPlayerVariance != null && popMean > 0 && pooledWithinPlayerVariance > 0 && pooledWithinPlayerVariance < popVariance * 1.05)
         ? pooledWithinPlayerVariance / popMean : null;
-      const withinPlayerStddev = (indexOfDispersion != null && shrunkRate > 0) ? Math.sqrt(indexOfDispersion * shrunkRate) : popStddev;
+      // Real floor for low-mean players (2026-08-20, Gemini-flagged edge case): a bench player
+      // with a low real mean still has genuine real uncertainty (rarely plays, but can have a big
+      // game when they do) - sqrt(indexOfDispersion*mean) shouldn't collapse toward zero just
+      // because mean is small. Floors the effective mean used for this calc at 10% of the real
+      // population mean, so low-mean players get a real, non-collapsing variance estimate instead
+      // of an unrealistic near-zero stddev or a cliff-edge fallback to the flawed popStddev.
+      const varianceFloorMean = popMean * 0.1;
+      const withinPlayerStddev = (indexOfDispersion != null && shrunkRate > 0) ? Math.sqrt(indexOfDispersion * Math.max(shrunkRate, varianceFloorMean)) : popStddev;
       const nForVariance = Math.max(1, Number(effectiveGamesSample) || 1);
       const predictionStddev = withinPlayerStddev * Math.sqrt(1 + 1 / nForVariance);
       const rawHp = empiricalHp != null ? empiricalHp : (usesNormalModel ? hpFromNormalModelPg(shrunkRate, lineValue, side, predictionStddev) : hpFromCountModelPg(shrunkRate, lineValue, side, dispersion));
