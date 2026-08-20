@@ -155,24 +155,24 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
         : 0.5; // unknown sample size: real, conservative default - trust the signal only half as much
       if (cell.prop_key === "doubles") {
         if (ctx.batter_sweet_spot_percent == null) return null;
-        return (ctx.batter_sweet_spot_percent - leagueAvgSweetSpot) * (a || 0) * thinSampleMultiplier;
+        return (ctx.batter_sweet_spot_percent - leagueAvgSweetSpot) * (a || 0) * shrinkageWeight;
       }
       if (cell.prop_key === "total_bases") {
         if (ctx.batter_xwobacon == null && ctx.batter_iso == null) return null;
         const xwobaconTerm = ctx.batter_xwobacon != null ? (ctx.batter_xwobacon - leagueAvgXwobacon) * (a || 0) : 0;
         const isoTerm = ctx.batter_iso != null ? (ctx.batter_iso - leagueAvgIso) * (c || 0) : 0;
-        return (xwobaconTerm + isoTerm) * thinSampleMultiplier;
+        return (xwobaconTerm + isoTerm) * shrinkageWeight;
       }
       if (cell.prop_key === "home_runs") {
         if (ctx.batter_xwoba == null && ctx.batter_barrel_batted_rate == null && ctx.batter_iso == null) return null;
         const xwobaTerm = ctx.batter_xwoba != null ? (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0) : 0;
         const barrelTerm = ctx.batter_barrel_batted_rate != null ? (ctx.batter_barrel_batted_rate - leagueAvgBarrel) * (b || 0) : 0;
         const isoTerm = ctx.batter_iso != null ? (ctx.batter_iso - leagueAvgIso) * (c || 0) : 0;
-        return (xwobaTerm + barrelTerm + isoTerm) * thinSampleMultiplier;
+        return (xwobaTerm + barrelTerm + isoTerm) * shrinkageWeight;
       }
       // hits_runs_rbis and partial-relevance props (hits, runs, rbis) all use plain xwOBA deviation
       if (ctx.batter_xwoba == null) return null;
-      return (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0) * thinSampleMultiplier;
+      return (ctx.batter_xwoba - leagueAvgXwoba) * (a || 0) * shrinkageWeight;
     }
     default:
       return null;
