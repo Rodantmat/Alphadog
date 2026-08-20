@@ -9361,6 +9361,12 @@ async function runRemineSprintSpeedToPostgres(env, input) {
         player_name=excluded.player_name, sprint_speed_ft_per_sec=excluded.sprint_speed_ft_per_sec,
         competitive_runs=excluded.competitive_runs, active=1, raw_json=excluded.raw_json, updated_at=now()
     `;
+    // REAL fix (2026-08-20): archive a dated snapshot on every mine, same pattern as batter_quality_of_contact_history.
+    await sql`
+      INSERT INTO ref.sprint_speed_history (sprint_history_id, snapshot_date, mlb_player_id, sprint_speed_ft_per_sec)
+      SELECT 'ssh_'||mlb_player_id||'_'||CURRENT_DATE::text, CURRENT_DATE, mlb_player_id, sprint_speed_ft_per_sec
+      FROM ref.sprint_speed WHERE active=1 AND mlb_player_id = ANY(${rows.map(r => r.mlb_player_id)})
+      ON CONFLICT (sprint_history_id) DO NOTHING`;
     await sql.end();
     return { ok: true, mode: "remine_sprint_speed_to_postgres", players_written: rows.length, sample_raw_row: data.rows[0] };
   } catch (err) {
