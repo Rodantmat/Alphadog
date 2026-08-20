@@ -3071,10 +3071,13 @@ const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
 // correctly, while Flex's thin partial-credit tiers were diluting a genuine structural edge -
 // see buildSleeperHighHitSlips below for the mode switch. Combined backtest: +31.7% ROI (up from
 // -60.7% under the old Flex/doubles-only approach), 13 slips, 38.5% win rate.
+// Rank order matches EXACTLY what was backtested (+31.7% ROI result) - not re-ordered by hit
+// rate, since the backtest's rank priority (from an earlier research pass) is what was actually
+// validated end-to-end.
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "home_runs", side: "less", line: 0.5, rank: 4 },
   { prop: "walks", side: "more", line: 0.5, rank: 3 },
   { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 2 },
+  { prop: "home_runs", side: "less", line: 0.5, rank: 1 },
   { prop: "doubles", side: "less", line: 0.5, rank: 1 }
 ];
 async function autoSelectSleeperHighHitSlipLegs(env) {
