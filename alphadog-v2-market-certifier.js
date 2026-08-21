@@ -6,7 +6,7 @@ const JOB_KEY = "market-certifier";
 
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8, connection: { statement_timeout: 60000, idle_in_transaction_session_timeout: 60000 } }); }
 function nowUtc() { return new Date().toISOString(); }
-function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}${Math.random().toString(36).slice(2, 8)}`; }
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
