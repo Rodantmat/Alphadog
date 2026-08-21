@@ -2759,40 +2759,34 @@ const SLEEPER_HIGH_HIT_CAP = 1;
 const PRIZEPICKS_FLEX_TIERS = { 6: 1.99, 5: 0.5, 4: 0.25, 3: 0.32 };
 const PRIZEPICKS_FLEX_TIERS_PARTIAL = { 6: { 5: 0.5, 4: 0.25 }, 5: { 4: 0.21, 3: 0.04 }, 4: { 3: 0.16 }, 3: { 2: 0.11 } };
 const UNDERDOG_FLEX_TIERS = { 6: 2.813, 5: 0.458, 4: 0.063 };
-const HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "walks_allowed", side: "more", line: 0.5, rank: 14 },
-  { prop: "stolen_bases", side: "less", line: 0.5, rank: 13 },
-  { prop: "earned_runs", side: "more", line: 0.5, rank: 9 },
-  { prop: "hits_runs_rbis", side: "less", line: 4.5, rank: 6 },
-  { prop: "doubles", side: "less", line: 0.5, rank: 5 },
-  { prop: "hits_allowed", side: "more", line: 2.5, rank: 3 },
-  { prop: "home_runs", side: "less", line: 0.5, rank: 5 },
-  { prop: "pitcher_outs", side: "more", line: 11.5, rank: 8 },
-  { prop: "pitcher_outs", side: "more", line: 14.5, rank: 3 },
-  { prop: "singles", side: "less", line: 1.5, rank: 5 },
-  { prop: "total_bases", side: "less", line: 3.5, rank: 4 }
+// LOCKED 2026-08-21: real, tier-aware pool (goblin_demon_tier, distance from anchor/switch-point -
+// see session notes). Full 26-day backtest across all 5 pick sizes with real per-leg multipliers
+// confirmed via actual placed slips (1.7x/2pick, 2.0x/3pick, 3.0x/4pick, 3.5x/5pick, 4.25x/6pick):
+// 5-pick won decisively (+79.9% ROI at 25% daily cap vs +72.3% for 4-pick, both real backtested).
+// Power confirmed to beat Flex at every size (+79.7% vs +49.3% at 5-pick, day-by-day validated).
+// REPLACES the old line-based pool entirely - that pool predates the tier framework and was never
+// re-validated against it.
+const HIGH_HIT_GOBLIN_TIER_POOL = [
+  { prop: "singles", side: "less", tier: 1, rank: 11 },
+  { prop: "hits_runs_rbis", side: "less", tier: 3, rank: 10 },
+  { prop: "earned_runs", side: "more", tier: 2, rank: 9 },
+  { prop: "walks_allowed", side: "more", tier: 1, rank: 8 },
+  { prop: "runs", side: "less", tier: 1, rank: 7 },
+  { prop: "hits", side: "less", tier: 1, rank: 6 },
+  { prop: "hits_runs_rbis", side: "less", tier: 2, rank: 5 },
+  { prop: "total_bases", side: "less", tier: 3, rank: 4 },
+  { prop: "pitcher_strikeouts", side: "less", tier: 2, rank: 3 },
+  { prop: "total_bases", side: "less", tier: 2, rank: 2 },
+  { prop: "earned_runs", side: "more", tier: 1, rank: 1 }
 ];
-// Real, tested daily cap: graduated by real qualifying-pool depth (skips forcing weak legs into
-// slip 2/3 when the top-ranked lines run thin - the exact mechanism that broke the old fixed-10
-// cap on days like 08-14). 1 slip if pool<50 legs, 2 if <150, else 3.
-function highHitGraduatedCap(poolSize) {
-  if (poolSize < 50) return 1;
-  if (poolSize < 150) return 2;
-  return 3;
-}
-// Real, corrected goblin per-leg payout ratio (Nth-root of real_multiplier/standard_multiplier,
-// NOT the naive un-rooted ratio which understates it by conflating total-slip and per-leg
-// discount). 0.70 is the central estimate from 14 live-verified 2026-08-17 data points
-// (control.goblin_demon_multiplier_study ids 45-54, real range 0.63-0.76). A 30% conservative
-// haircut is also computed alongside per explicit request, since real placed multipliers have
-// consistently run below the raw estimate throughout this session.
-// CORRECTED 2026-08-17 (second pass): real per-leg ratio tightened from 0.70 to 0.64 using 7
-// real 6-pick observations from the live app (2.4, 2.7, 2.2, 3.0, 3.0, 2.6, 2.6x vs 37.5x
-// standard), geometric-mean per-leg = 0.6422. Buffered/conservative case uses the real observed
-// floor from this same session (2.1x on a 6-pick, ratio~0.632).
-const HIGH_HIT_GOBLIN_RATIO = 0.64;
-const HIGH_HIT_GOBLIN_RATIO_BUFFERED = 0.60;
-const HIGH_HIT_SLIP_SIZES = [4, 5, 6];
+// LOCKED 2026-08-21: real per-leg multiplier, confirmed via 5 real placed 2/3/4/5/6-pick slips
+// (1.304, 1.260, 1.316, 1.285, 1.273 respectively - remarkably flat across sizes). 5-pick specific.
+const GOBLIN_5PICK_REAL_MULT = 3.5;
+const HIGH_HIT_SLIP_SIZES = [5];
+// LOCKED 2026-08-21: 25% of that day's real max-buildable-slip-count, not a fixed number - real
+// backtest swept fixed(1/2/3/5/nocap) vs percentage(25/50/75) caps; 25% won at every size tested,
+// beating equal-volume fixed caps by 5-10pp of ROI. Computed as a true two-pass cap: first count
+// how many slips the pool could genuinely support uncapped, then only build 25% of that (min 1).
 
 async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
