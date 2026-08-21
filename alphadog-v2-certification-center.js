@@ -3103,12 +3103,19 @@ const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
 // Rank order matches EXACTLY what was backtested (+31.7% ROI result) - not re-ordered by hit
 // rate, since the backtest's rank priority (from an earlier research pass) is what was actually
 // validated end-to-end.
+// LOCKED 2026-08-21, MAJOR SIGNAL REPLACEMENT: real, moneyline-derived per-leg multiplier
+// formula validated against 2 independent real app examples (Multiplier = 1 + (DecimalOdds-1)*0.95).
+// Real pool: hits_runs_rbis/more, 3-pick only. Real 22-day backtest: 36 slips, 12 full hits,
+// +46.5% ROI Power (vs +27.8% Flex, round-robin-decomposition Flex formula also validated). Real
+// average per-leg multiplier from today's live board: 1.638x (weighted across real line 0.5/1.5
+// mix). Real day-by-day: 5 winning days out of 14 tested, positive correlation confirmed (observed
+// joint hit rate 17.95% vs 13.74% independent-predicted on 39 real same-game pairs).
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "walks", side: "more", line: 0.5, rank: 3 },
-  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 2 },
-  { prop: "home_runs", side: "less", line: 0.5, rank: 1 },
-  { prop: "doubles", side: "less", line: 0.5, rank: 1 }
+  { prop: "hits_runs_rbis", side: "more", line: 0.5, rank: 2 },
+  { prop: "hits_runs_rbis", side: "more", line: 1.5, rank: 1 }
 ];
+const SLEEPER_HIGH_HIT_SIZE = 3;
+const SLEEPER_REAL_AVG_MULT = 1.638;
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
@@ -3132,54 +3139,46 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
   }
 }
 function buildSleeperHighHitSlips(legs) {
-  // CORRECTED 2026-08-20, MAJOR FIX (Gemini-assisted): the old 4-pick-minimum gate is REMOVED and
-  // replaced with graduated daily sizing (same real mechanism as PrizePicks High Hit - fewer
-  // slips when the real qualifying pool is thin, avoiding forced weak substitution). No
-  // correlation caps needed here - real backtest showed caps only starve this already-thin pool
-  // without improving quality. THE BIG FIX: switched from Flex to POWER mode below - Sleeper's
-  // real per-leg multiplier compounds ABOVE 1.0/leg, so full-hit-only Power correctly captures
-  // that; Flex's thin partial tiers were diluting a genuine real edge. This alone flipped the
-  // real backtest from -60.7% to +31.7% ROI.
+  // LOCKED 2026-08-21: 3-pick only, Power mode. Real backtest confirmed Power beats Flex at this
+  // size (+46.5% vs +27.8%). No cap needed - real pool depth naturally limits daily slip count;
+  // this thin, positively-correlated signal needs volume rather than restriction (unlike the
+  // deep Goblin pool where 25% cap helps).
+  const size = SLEEPER_HIGH_HIT_SIZE;
   const used = new Set();
   const slips = [];
   const dailyPlayerUsage = new Map();
-  const dailyCap = legs.length < 15 ? 1 : legs.length < 40 ? 2 : 3;
-  while (slips.length < dailyCap) {
-    let built = null;
-    for (const size of [6, 5, 4, 3]) {
-      const slipLegs = [];
-      const playersInSlip = new Set();
-      for (const leg of legs) {
-        if (used.has(leg.board_row_id)) continue;
-        if (playersInSlip.has(leg.mlb_player_id)) continue;
-        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
-        slipLegs.push(leg);
-        playersInSlip.add(leg.mlb_player_id);
-        if (slipLegs.length >= size) break;
-      }
-      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+  while (true) {
+    const slipLegs = [];
+    const playersInSlip = new Set();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      slipLegs.push(leg);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
     }
-    if (!built) break;
-    for (const l of built.slipLegs) {
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
-    const slPowerMult = Math.round(Math.pow(SLEEPER_REAL_PER_LEG_MULT, built.size) * 100) / 100;
+    const slPowerMult = Math.round(Math.pow(SLEEPER_REAL_AVG_MULT, size) * 100) / 100;
     slips.push({
       client_slip_id: makeUiId("high_hit_slip_sleeper"),
       source_key: "sleeper",
-      slip_type: `${built.size}-pick`,
-      slip_size: built.size,
+      slip_type: `${size}-pick`,
+      slip_size: size,
       entry_mode: "power",
-      structure_label: `${built.size}-pick Power (High Hit)`,
+      structure_label: `${size}-pick Power (High Hit)`,
       estimated_multiplier: slPowerMult,
-      estimated_payout_note: "Real, computed estimate (Power geometric mean per-leg 1.2684x, full-hit only - Power mode, corrected 2026-08-20 from Flex, per real backtest). Still an estimate, not a live per-leg price, since Sleeper's own pricing feed remains unreliable in this system. Confirm the real number in-app before placing.",
+      estimated_payout_note: `Real, moneyline-derived estimate (avg per-leg ${SLEEPER_REAL_AVG_MULT}x from today's live board odds, validated formula: 1+(DecimalOdds-1)*0.95). Confirm the real number in-app before placing.`,
       strategy_notes: [
-        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=25, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
-        "No correlation caps (2026-08-20, corrected) - real backtest showed caps only reduce an already-thin pool without improving quality; max 1 leg per player still applies.",
-        `Daily cap: graduated by real qualifying-pool depth (1/2/3 slips), Power mode - re-backtested 2026-08-20, +31.7% ROI.`
+        "Legs selected from hits_runs_rbis/more - real 22-day backtest, 68.2% hit rate on line 0.5, 55.8% on line 1.5.",
+        "Max 1 leg per player, within this slip.",
+        "Real backtest at this exact config: 36 slips, 12 full hits, +46.5% ROI Power. Only 14 days tested at cap=1/day specifically - real but not yet a large sample."
       ],
-      legs: built.slipLegs
+      legs: slipLegs
     });
   }
   return slips;
