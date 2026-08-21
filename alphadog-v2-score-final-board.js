@@ -284,7 +284,28 @@ function annotateGoblinDemonTier(rows) {
   }
   for (const group of groups.values()) {
     const anchorRow = group.find(r => Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0 && r.line_value != null);
-    const anchorLine = anchorRow ? Number(anchorRow.line_value) : null;
+    let anchorLine = anchorRow ? Number(anchorRow.line_value) : null;
+
+    // FALLBACK (2026-08-21): when no explicit regular/standard row exists for this
+    // player+prop+game+source, PrizePicks still has an implied "switch point" - the
+    // boundary where goblin/demon direction flips. Below the switch: More=Goblin,
+    // Less=Demon. Above the switch: Less=Goblin, More=Demon. The implied anchor sits
+    // at the midpoint between the highest "below" line and the lowest "above" line.
+    // Confirmed live and precisely, real example (Jacob Misiorowski, pitcher_strikeouts,
+    // 2026-08-21): 6.5/7.5/8.5 all More=Goblin/Less=Demon, 9.5/10.5/11.5 all
+    // Less=Goblin/More=Demon, no regular line anywhere - implied switch/anchor = 9.0,
+    // giving 8.5/9.5 = tier 1, 7.5/10.5 = tier 2, 6.5/11.5 = tier 3, matching exactly
+    // what the person confirmed live in the app.
+    if (anchorLine == null) {
+      const belowLines = group.filter(r => norm(r.selected_side) === "more" && Number(r.is_goblin) === 1).map(r => Number(r.line_value));
+      const aboveLines = group.filter(r => norm(r.selected_side) === "less" && Number(r.is_goblin) === 1).map(r => Number(r.line_value));
+      if (belowLines.length && aboveLines.length) {
+        const highestBelow = Math.max(...belowLines);
+        const lowestAbove = Math.min(...aboveLines);
+        if (lowestAbove > highestBelow) anchorLine = (highestBelow + lowestAbove) / 2;
+      }
+    }
+
     for (const r of group) {
       r.goblin_demon_anchor_line = anchorLine;
       if (Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0) { r.goblin_demon_tier = 0; continue; }
