@@ -170,9 +170,16 @@ function splitList(value) {
 }
 
 function clampLimit(value) {
-  const n = Number(value || 500);
-  if (!Number.isFinite(n) || n <= 0) return 500;
-  return Math.max(1, Math.min(1000, Math.floor(n)));
+  // HARD CAP (2026-08-21): the query that consumes this limit runs 4 separate window-function
+  // passes (quota_prop_rank, quota_type_rank, quota_source_type_rank, quota_side_rank) over the
+  // ENTIRE filtered row set before the LIMIT is ever applied - a high default/max here does not
+  // reduce that upstream cost, it only trims the final output. Confirmed live 2026-08-21:
+  // repeated HARD_QUERY_TIMEOUT_8000MS failures on the Review Board even with score filters
+  // applied. Capped at 200 per explicit request - combine with a real min-score filter (applied
+  // in the WHERE clause, which DOES reduce the upstream row count) for meaningfully faster loads.
+  const n = Number(value || 200);
+  if (!Number.isFinite(n) || n <= 0) return 200;
+  return Math.max(1, Math.min(200, Math.floor(n)));
 }
 
 function safeJsonParse(str) {
