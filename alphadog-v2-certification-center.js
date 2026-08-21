@@ -4436,7 +4436,7 @@ async function refetchWithFilters(){
   try{
     const params=new URLSearchParams({limit:'200',t:String(Date.now())});
     if(filters.score>0)params.set('min_score',String(filters.score));
-    if(filters.hp>0)params.set('min_hp',String(filters.hp));
+    if(filters.hp>0)params.set('min_hit_probability',String(filters.hp));
     const j=await (await fetchWithTimeout('/api/main-board/current?'+params.toString(),{cache:'no-store'},15000)).json();
     if(!j.ok)throw Error(j.error||'board failed');
     rows=Array.isArray(j.rows)?j.rows:[];
