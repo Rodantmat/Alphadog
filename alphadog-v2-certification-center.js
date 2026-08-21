@@ -4696,6 +4696,11 @@ const REAL_MULT_TABLES = {
   pp_regular_flex: { 3: 3, 4: 6, 5: 10, 6: 25 },
   underdog_power: { 2: 2.40, 3: 4.46, 4: 8.24, 5: 13.73, 6: 24.03 }
 };
+// Real, official PrizePicks Flex tiers by size (full breakdown, not just full-hit) - used to
+// recompute the multiplier fields live when a leg is unchecked and the slip shrinks to a
+// different size. Demon only has a real confirmed table at size 3 - other sizes fall back to a
+// single estimated field rather than presenting an unconfirmed number as if it were real.
+const PP_REGULAR_FLEX_BY_SIZE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } };
 function recomputeMultiplier(sourceKey, entryMode, size){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
@@ -4708,18 +4713,47 @@ function recomputeMultiplier(sourceKey, entryMode, size){
 }
 const DEMON_FLEX_TIERS_UI = { 3: { 3: 15, 2: 1.5 } };
 function legRowHtml(leg,slipIdx,legIdx){
-  return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
+  return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked onchange="refreshRealMultFields('+slipIdx+')"></label>';
 }
-function realMultFieldsHtml(s,idx){
-  const tiers=s.estimated_multiplier_flex_tiers;
-  if(s.entry_mode!=='flex'||!tiers){
-    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(s.estimated_multiplier||''))+'"></div>';
+// Returns the real (or best-available) tiered Flex table for a slip at a GIVEN size - not
+// necessarily its original size. Falls back to a single estimated field when no real table
+// exists for that size (e.g. Demon shrunk below/above its one confirmed size).
+function flexTiersForSizeLive(sourceKey, size){
+  const k=String(sourceKey||'').toLowerCase();
+  if(k==='prizepicks_regular')return PP_REGULAR_FLEX_BY_SIZE[size]||null;
+  if(k==='prizepicks_demon')return DEMON_FLEX_TIERS_UI[size]||null;
+  return null;
+}
+function realMultFieldsHtmlForSize(s,idx,size){
+  if(s.entry_mode!=='flex'){
+    const mult=recomputeMultiplier(s.source_key,s.entry_mode,size);
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(mult||''))+'"></div>';
   }
-  const size=s.slip_size;
+  const tiers=flexTiersForSizeLive(s.source_key,size);
+  if(!tiers){
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick, no confirmed table - estimate)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'"></div>';
+  }
   const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
-  return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers</span><div class="realMultFields">'+keys.map(k=>
+  return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick)</span><div class="realMultFields">'+keys.map(k=>
     '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" placeholder="'+esc(String(tiers[k]||''))+'"></label>'
   ).join('')+'</div></div>';
+}
+// Called on every leg checkbox toggle - recounts how many legs are still checked for this slip
+// and swaps in the correct multiplier fields for that NEW effective size, live.
+function refreshRealMultFields(slipIdx){
+  const slip=lastRawSlips[slipIdx];if(!slip)return;
+  const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+  const keptCount=Array.from(keepBoxes).filter(cb=>cb.checked).length;
+  const card=keepBoxes[0]&&keepBoxes[0].closest('.slipCard');if(!card)return;
+  const multArea=card.querySelector('.realMultRow,.realMultGroup');if(!multArea)return;
+  if(keptCount<2){
+    multArea.outerHTML='<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
+    return;
+  }
+  multArea.outerHTML=realMultFieldsHtmlForSize(slip,slipIdx,keptCount);
+}
+function realMultFieldsHtml(s,idx){
+  return realMultFieldsHtmlForSize(s,idx,s.slip_size);
 }
 function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'}
 async function saveSelectedSlips(){
