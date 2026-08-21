@@ -4770,61 +4770,18 @@ function bindSlipSourceFilters(){const ids=['filterDemon','filterGoblin','filter
 function bindAutoCreateSlips(){
   bindSlipSourceFilters()
 }
-async function regularSlips(){
-  const btn=$('regularSlipsBtn');const results=$('autoCreateResults');
-  if(btn)btn.disabled=true;
-  results.innerHTML='<div class="empty">Finding the strongest PrizePicks standard legs...</div>';
-  try{
-    const j=await (await fetch('/api/slips/regular',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
-    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
-    const slips=j.generated_slips||[];
-    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying standard legs right now.')+'</div>';return}
-    lastRawSlips=slips;lastSlipsHeading='Regular Slip';
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' standard legs.</div>';
-    applySlipSourceFilter();
-  }finally{if(btn)btn.disabled=false}
-}
-async function goblinSlips(){
-  const btn=$('goblinSlipsBtn');const results=$('autoCreateResults');
-  if(btn)btn.disabled=true;
-  results.innerHTML='<div class="empty">Finding the safest PrizePicks Goblins...</div>';
-  try{
-    const j=await (await fetch('/api/slips/goblin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
-    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
-    const slips=j.generated_slips||[];
-    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Goblin legs right now.')+'</div>';return}
-    lastRawSlips=slips;lastSlipsHeading='Goblin Slip';
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Goblin legs.</div>';
-    applySlipSourceFilter();
-  }finally{if(btn)btn.disabled=false}
-}
 async function highHitSlips(){
-  const btn=$('highHitSlipsBtn');const results=$('autoCreateResults');
-  if(btn)btn.disabled=true;
-  results.innerHTML='<div class="empty">Building High Hit Slips from real-hit-rate qualifying lines...</div>';
+  const results=$('autoCreateResults');
+  results.innerHTML='<div class="empty">Building High Hit Slips from real, backtested strategies...</div>';
   try{
     const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
     if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
     const slips=j.generated_slips||[];
     if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying High Hit legs right now.')+'</div>';return}
-    lastRawSlips=slips;lastSlipsHeading='High Hit Slip';
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' High Hit legs. '+esc((j.notes||[])[0]||'')+'</div>';
+    lastRawSlips=slips;
+    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs → built '+slips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>';
     applySlipSourceFilter();
-  }finally{if(btn)btn.disabled=false}
-}
-async function demonSlips(){
-  const btn=$('demonSlipsBtn');const results=$('autoCreateResults');
-  if(btn)btn.disabled=true;
-  results.innerHTML='<div class="empty">Finding the safest PrizePicks Demons today...</div>';
-  try{
-    const j=await (await fetch('/api/slips/demon',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
-    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
-    const slips=j.generated_slips||[];
-    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying Demon legs right now.')+'</div>';return}
-    lastRawSlips=slips;lastSlipsHeading='Demon Slip';
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' Demon legs.</div>';
-    applySlipSourceFilter();
-  }finally{if(btn)btn.disabled=false}
+  }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
 }
 function openPlayerProfile(){setScreen('playerProfile');$('playerProfileBody').innerHTML='<div class="empty">Type at least 3 letters.</div>';$('playerSearch').focus()}
 async function searchPlayers(){const q=$('playerSearch').value.trim();if(q.length<3){$('playerSearchResults').innerHTML='';return}const j=await (await fetch('/api/player-search?q='+encodeURIComponent(q)+'&t='+Date.now(),{cache:'no-store'})).json();$('playerSearchResults').innerHTML=(j.rows||[]).map(r=>'<button class="searchResult" data-player-id="'+esc(r.player_id)+'">'+esc(r.player_name)+' <span class="small">'+esc(r.primary_position||'')+'</span></button>').join('')||'<div class="small">No matches.</div>';document.querySelectorAll('.searchResult[data-player-id]').forEach(b=>b.onclick=()=>loadPlayerProfile(b.dataset.playerId))}
