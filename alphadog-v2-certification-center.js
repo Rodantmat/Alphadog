@@ -4749,7 +4749,7 @@ async function highHitSlips(){
     const slips=j.generated_slips||[];
     if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying High Hit legs right now.')+'</div>';return}
     lastRawSlips=slips;
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs → built '+slips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>';
+    lastSlipsNoteHtml='';
     applySlipSourceFilter();
   }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
 }
