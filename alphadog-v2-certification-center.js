@@ -4304,6 +4304,12 @@ const MAIN_HTML = `<!doctype html>
 .legRow:has(.legKeepBox:not(:checked)){opacity:.4}
 .legRow:has(.legKeepBox:not(:checked)) .legRowText{text-decoration:line-through}
 .realMultRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(244,201,93,.06);border:1px dashed rgba(244,201,93,.35)}
+.realMultGroup{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(244,201,93,.06);border:1px dashed rgba(244,201,93,.35)}
+.realMultFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin-top:8px}
+.realMultField{display:flex;flex-direction:column;align-items:center;gap:4px}
+.realMultField span{font-size:11px;font-weight:900;color:var(--muted)}
+.realMultField input{width:100%;text-align:center;background:rgba(5,14,26,.5);border:1px solid rgba(244,201,93,.35);color:#ffe7a3;border-radius:8px;padding:6px 4px;font-size:13px;font-weight:900}
+.realMultField input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,201,93,.18)}
 .realMultLabel{font-size:11.5px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--gold)}
 .realMultInput{width:88px;text-align:right;background:rgba(5,14,26,.5);border:1px solid rgba(244,201,93,.35);color:#ffe7a3;border-radius:8px;padding:6px 9px;font-size:14px;font-weight:900}
 .realMultInput:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,201,93,.18)}
