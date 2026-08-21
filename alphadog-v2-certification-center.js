@@ -3243,6 +3243,7 @@ const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
   { prop: "rbis", side: "less", line: 0.5, rank: 2 },
   { prop: "walks", side: "less", line: 0.5, rank: 1 }
 ];
+const UNDERDOG_REAL_DISCOUNT = 0.6865;
 const UNDERDOG_6PICK_REAL_MULT = 24.03;
 async function autoSelectUnderdogHighHitSlipLegs(env) {
   const pg = pgClient(env);
