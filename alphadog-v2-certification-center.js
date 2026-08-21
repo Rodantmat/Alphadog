@@ -4757,6 +4757,15 @@ function refreshRealMultFields(slipIdx){
   const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
   const keptCount=Array.from(keepBoxes).filter(cb=>cb.checked).length;
   const card=keepBoxes[0]&&keepBoxes[0].closest('.slipCard');if(!card)return;
+  const badge=card.querySelector('.multiplierTag[data-slip-idx="'+slipIdx+'"]');
+  if(badge){
+    if(keptCount<2){
+      badge.textContent='—';
+    }else{
+      const topMult=recomputeMultiplier(slip.source_key,slip.entry_mode,keptCount);
+      badge.textContent=multiplierLabel(topMult);
+    }
+  }
   const multArea=card.querySelector('.realMultRow,.realMultGroup');if(!multArea)return;
   if(keptCount<2){
     multArea.outerHTML='<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
