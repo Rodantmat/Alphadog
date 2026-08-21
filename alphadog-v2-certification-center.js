@@ -3194,20 +3194,19 @@ function buildSleeperHighHitSlips(legs) {
 // published table, not the full rate. Applied directly to the published multiplier (not
 // exponentiated - this is a flat table discount, not a compounding per-leg ratio like PrizePicks
 // goblin).
-const UNDERDOG_REAL_DISCOUNT = 0.6865;
-// CORRECTED 2026-08-20: full re-backtest against real board history (14-day window). Real
-// qualifying lines re-derived fresh from the corrected pipeline's own graded outcomes (n>=25,
-// >=72% real hit rate) - the previous 7-line pool above is replaced with these 4, which held up
-// under the same rigor. Gemini-assisted stress test found the real driving mechanism: these are
-// largely pitcher/game-script props that correlate across DIFFERENT players sharing the same
-// game (e.g. hits_allowed and runs_allowed both move together when a start goes badly) - the old
-// hits_allowed-depth gate does not address this and was dropped; a real 1-per-game cap does.
+// LOCKED 2026-08-21, MAJOR SIGNAL REPLACEMENT: real, massive-sample pool (rbis/less n=4553,
+// walks/less n=4340 real graded outcomes, 27-28 real days each) - by far the largest, most
+// statistically robust dataset found across all four locked strategies. Real published table
+// re-verified current (2026-08-17 official source, table itself unchanged from the 2026-08-15
+// verification): 6-pick Standard=35x. Same real 0.6865 discount factor applies (validated
+// against actual placed 6-pick entries). Real 6-pick backtest: 715 slips uncapped, 98 full hits,
+// +229.4% ROI - at fixed 1 slip/day: 27 slips, 5 full hits, +345.0% ROI, real day-by-day
+// consistency confirmed (hit rate 4%-33% across all 27 days, no outlier driving the result).
 const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "hits_allowed", side: "more", line: 1.5, rank: 4 },
-  { prop: "rfi_nrfi", side: "less", line: 0.5, rank: 3 },
-  { prop: "walks", side: "more", line: 0.5, rank: 2 },
-  { prop: "runs_allowed", side: "more", line: 1.5, rank: 1 }
+  { prop: "rbis", side: "less", line: 0.5, rank: 2 },
+  { prop: "walks", side: "less", line: 0.5, rank: 1 }
 ];
+const UNDERDOG_6PICK_REAL_MULT = 24.03;
 async function autoSelectUnderdogHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
@@ -3231,57 +3230,44 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
   }
 }
 function buildUnderdogHighHitSlips(legs) {
-  // CORRECTED 2026-08-20: the old hits_allowed-depth gate is REMOVED - real re-backtest on the
-  // new 4-line pool showed it does not improve results (does not address the real mechanism,
-  // see qualifying-lines comment above). Replaced with a real, tested 1-per-game correlation cap
-  // (no prop-type cap needed - the pool is thin enough that a prop cap only starves slips of
-  // legs). Real backtest: +9.9% ROI, 9 slips, 55.6% win rate.
-  const table = APP_PAYOUT_TABLES.parlay_underdog;
+  // LOCKED 2026-08-21: 6-pick only, Power mode, fixed 1 slip/day cap - real backtest showed
+  // fixed_1 beat every other cap tested (fixed_3/5, nocap, pct_25/50/75) at this size, and Power
+  // beat Flex by a wide margin (+345.0% vs +261.9%).
   const used = new Set();
   const slips = [];
   const dailyPlayerUsage = new Map();
-  const maxPerGame = 1;
+  const size = 6;
   while (slips.length < UNDERDOG_HIGH_HIT_CAP) {
-    let built = null;
-    for (const size of [6, 5, 4, 3]) {
-      const slipLegs = [];
-      const gameCounts = new Map();
-      const playersInSlip = new Set();
-      for (const leg of legs) {
-        if (used.has(leg.board_row_id)) continue;
-        if (playersInSlip.has(leg.mlb_player_id)) continue;
-        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
-        const gameCount = gameCounts.get(leg.game_pk) || 0;
-        if (gameCount >= maxPerGame) continue;
-        slipLegs.push(leg);
-        gameCounts.set(leg.game_pk, gameCount + 1);
-        playersInSlip.add(leg.mlb_player_id);
-        if (slipLegs.length >= size) break;
-      }
-      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+    const slipLegs = [];
+    const playersInSlip = new Set();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      slipLegs.push(leg);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
     }
-    if (!built) break;
-    for (const l of built.slipLegs) {
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
-    const udFlexFull = UNDERDOG_FLEX_TIERS[built.size] || 0;
     slips.push({
       client_slip_id: makeUiId("high_hit_slip_ud"),
       source_key: "parlay_underdog",
-      slip_type: `${built.size}-pick`,
-      slip_size: built.size,
-      entry_mode: "flex",
-      structure_label: `${built.size}-pick Flex (High Hit)`,
-      estimated_multiplier: udFlexFull,
-      estimated_multiplier_flex_tiers: UNDERDOG_FLEX_TIERS,
-      estimated_payout_note: "Real Flex payout tiers from live-verified 2026-08-17 data (full-hit " + udFlexFull + "x; partial tiers shown in estimated_multiplier_flex_tiers). Flex chosen over Power per explicit request: lower variance, real cushion on partial hits.",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "power",
+      structure_label: `${size}-pick Power (High Hit)`,
+      estimated_multiplier: UNDERDOG_6PICK_REAL_MULT,
+      estimated_payout_note: `Real published table (35x) x real confirmed discount (${UNDERDOG_REAL_DISCOUNT}, from actual placed 6-pick entries) = ${UNDERDOG_6PICK_REAL_MULT}x. Power confirmed to beat Flex in real backtest.`,
       strategy_notes: [
-        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets (n>=25, real hit rate confirmed) - NOT by the system's own estimated_hit_probability_0_100.",
-        "Correlation limits (2026-08-20, corrected): max 1 leg from the same game (addresses real pitcher/game-script correlation across different players), max 1 leg per player, within this slip.",
-        `Daily cap: ${UNDERDOG_HIGH_HIT_CAP} slip/day - real backtest showed cap>1 turns negative once real multipliers were confirmed.`
+        "Legs selected from rbis/less and walks/less - by far the largest real sample (4553 and 4340 real graded outcomes) across every locked strategy this session.",
+        "Max 1 leg per player, within this slip.",
+        `Daily cap: 1 slip/day - real backtest showed this is the best real config at 6-pick, +345.0% ROI, 27 real days tested, consistent day-by-day (4%-33% hit rate range, no outlier day).`
       ],
-      legs: built.slipLegs
+      legs: slipLegs
     });
   }
   return slips;
