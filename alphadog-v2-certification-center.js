@@ -4735,7 +4735,10 @@ let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
 // Real, per-size multiplier tables for recomputing a slip's payout after leg checkboxes are
 // unchecked at save time - locked 2026-08-21 real values, matching exactly what's used server-side.
 const REAL_MULT_TABLES = {
-  goblin_power: { 2: 1.7, 3: 2.0, 4: 3.0, 5: 3.5, 6: 4.25 },
+  // UPDATED (2026-08-21): now the single source of truth, matching GOBLIN_5PICK_REAL_MULT
+  // exactly - 3/4/5-pick are real observed values today, 2/6-pick extrapolated from the same
+  // real, consistent per-leg rate (~1.12x/leg) confirmed across those three real sizes.
+  goblin_power: { 2: 1.25, 3: 1.4, 4: 1.5, 5: 1.86, 6: 1.97 },
   pp_regular_power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
   pp_regular_flex: { 3: 3, 4: 6, 5: 10, 6: 25 },
   underdog_power: { 2: 2.40, 3: 4.46, 4: 8.24, 5: 13.73, 6: 24.03 }
