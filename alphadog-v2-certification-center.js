@@ -4893,7 +4893,7 @@ async function saveSelectedSlips(){
       realMultInputs.forEach(inp=>{if(inp.value)realMultFlexTiers[inp.dataset.tierHits]=Number(inp.value)});
       if(Object.keys(realMultFlexTiers).length===0)realMultFlexTiers=null;
     }
-    const computedMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length);
+    const computedMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length,keptLegs);
     return {...orig, legs:keptLegs, slip_size:keptLegs.length, slip_type:keptLegs.length+'-pick',
       estimated_multiplier:computedMult||orig.estimated_multiplier,
       real_multiplier:realMult,
