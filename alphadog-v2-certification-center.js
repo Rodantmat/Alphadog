@@ -4657,7 +4657,21 @@ function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
   if(!boxes.length){alert('Check at least one slip to save.');return}
-  const selected=Array.from(boxes).map(b=>lastRawSlips[Number(b.dataset.slipIdx)]).filter(Boolean);
+  // For each selected slip, keep only the legs whose checkbox is still checked, then recompute
+  // the real multiplier for the resulting size before saving - never save the original
+  // multiplier against a leg count that no longer matches it.
+  const selected=Array.from(boxes).map(b=>{
+    const slipIdx=Number(b.dataset.slipIdx);
+    const orig=lastRawSlips[slipIdx];if(!orig)return null;
+    const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+    const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>orig.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+    if(keptLegs.length<2)return null; // no app allows a 1-leg slip
+    const newMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length);
+    return {...orig, legs:keptLegs, slip_size:keptLegs.length, slip_type:keptLegs.length+'-pick',
+      estimated_multiplier:newMult||orig.estimated_multiplier,
+      structure_label:keptLegs.length+'-pick '+(orig.entry_mode==='power'?'Power':'Flex')+(orig.structure_label&&orig.structure_label.includes('High Hit')?' (High Hit)':'')};
+  }).filter(Boolean);
+  if(!selected.length){alert('Each selected slip needs at least 2 legs kept.');return}
   const btn=$('saveSelectedSlipsBtn');if(btn){btn.disabled=true;btn.textContent='Saving...'}
   try{
     const j=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slips:selected,selected_leg_count:selected.reduce((a,s)=>a+(s.legs||[]).length,0),saved_by:'main_ui'})})).json();
