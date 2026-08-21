@@ -4731,16 +4731,22 @@ async function saveSelectedSlips(){
   if(!boxes.length){alert('Check at least one slip to save.');return}
   // For each selected slip, keep only the legs whose checkbox is still checked, then recompute
   // the real multiplier for the resulting size before saving - never save the original
-  // multiplier against a leg count that no longer matches it.
+  // multiplier against a leg count that no longer matches it. If a real multiplier was typed in
+  // (the field on each slip card), that always wins over any computed/estimated number - it's
+  // real, ground-truth data straight from the app, and the whole point is to keep sharpening
+  // future estimates against it.
   const selected=Array.from(boxes).map(b=>{
     const slipIdx=Number(b.dataset.slipIdx);
     const orig=lastRawSlips[slipIdx];if(!orig)return null;
     const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
     const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>orig.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
     if(keptLegs.length<2)return null; // no app allows a 1-leg slip
-    const newMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length);
+    const realMultInput=document.querySelector('.realMultInput[data-slip-idx="'+slipIdx+'"]');
+    const realMult=realMultInput&&realMultInput.value?Number(realMultInput.value):null;
+    const computedMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length);
     return {...orig, legs:keptLegs, slip_size:keptLegs.length, slip_type:keptLegs.length+'-pick',
-      estimated_multiplier:newMult||orig.estimated_multiplier,
+      estimated_multiplier:computedMult||orig.estimated_multiplier,
+      real_multiplier:realMult,
       structure_label:keptLegs.length+'-pick '+(orig.entry_mode==='power'?'Power':'Flex')+(orig.structure_label&&orig.structure_label.includes('High Hit')?' (High Hit)':'')};
   }).filter(Boolean);
   if(!selected.length){alert('Each selected slip needs at least 2 legs kept.');return}
