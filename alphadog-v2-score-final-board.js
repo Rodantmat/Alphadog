@@ -154,6 +154,8 @@ async function fetchHpFinalBoardCandidateRows(pgClient, sourceEngineBatchId, pag
       FROM score.hp_board_current h
       LEFT JOIN score.scoring_engine_current e
         ON e.batch_id = h.source_engine_batch_id AND e.prepared_row_id = h.prepared_row_id AND e.source_line_id = h.source_line_id
+      LEFT JOIN score.board_prepared_current bp
+        ON bp.prepared_row_id = h.prepared_row_id
       WHERE h.hp_board_batch_id = ${hpSource.hp_board_batch_id}
         AND h.source_engine_batch_id = ${sourceEngineBatchId}
         AND COALESCE(h.blocker_count, 0) = 0
