@@ -4767,7 +4767,7 @@ function refreshRealMultFields(slipIdx){
 function realMultFieldsHtml(s,idx){
   return realMultFieldsHtmlForSize(s,idx,s.slip_size);
 }
-function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'}
+function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'}
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
   if(!boxes.length){alert('Check at least one slip to save.');return}
