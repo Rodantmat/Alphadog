@@ -4759,13 +4759,31 @@ async function saveSelectedSlips(){
   }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
 }
 function activeSourceFilters(){const m={prizepicks_demon:$('filterDemon'),prizepicks_goblin:$('filterGoblin'),prizepicks_regular:$('filterRegular'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+const SOURCE_LABELS={prizepicks_demon:'PP Demon',prizepicks_goblin:'PP Goblin',prizepicks_regular:'PP Regular',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+function slipSummaryHtml(filtered){
+  const groups=new Map();
+  for(const x of filtered){
+    const src=String(x.s.source_key||'').toLowerCase();
+    const label=SOURCE_LABELS[src]||src.toUpperCase();
+    const mode=x.s.entry_mode==='power'?'Power':'Flex';
+    const key=label+'|'+x.s.slip_size+'-Pick '+mode;
+    groups.set(key,(groups.get(key)||0)+1);
+  }
+  const bySource=new Map();
+  for(const [key,count] of groups){
+    const [label,structure]=key.split('|');
+    if(!bySource.has(label))bySource.set(label,[]);
+    bySource.get(label).push(count+' '+structure);
+  }
+  const lines=Array.from(bySource.entries()).map(([label,parts])=>'<div class="slipSummaryLine"><b>'+label+':</b> '+parts.join(', ')+'</div>');
+  return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines.join('')+'</div>';
+}
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
-  const counterHtml='<div class="slipCounter">'+filtered.length+' slip'+(filtered.length===1?'':'s')+'</div>';
-  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+counterHtml+'<div class="empty">No slips match the selected apps.</div>';return}
-  results.innerHTML=lastSlipsNoteHtml+counterHtml+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
+  results.innerHTML=lastSlipsNoteHtml+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
 function bindSlipSourceFilters(){const ids=['filterDemon','filterGoblin','filterRegular','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
