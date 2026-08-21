@@ -3022,11 +3022,7 @@ function buildRegularHighHitSlips(legs) {
       estimated_multiplier_flex_tiers: PP_STANDARD_FLEX_6PICK,
       estimated_multiplier_power_reference: PP_STANDARD_POWER_6PICK,
       estimated_payout_note: `Standard PrizePicks Flex table (no goblin/demon adjustment - real, structurally mispriced regular line). Real backtest: Power (${PP_STANDARD_POWER_6PICK}x) beat Flex, +1105.4% vs +779.3% ROI - starting on Flex per explicit request for lower variance.`,
-      strategy_notes: [
-        "Legs selected from pitcher_fantasy_score/less - PrizePicks' own regular line runs genuinely too high for this prop, confirmed across 12 real days (11 positive, 07-06 to 08-18).",
-        "Max 1 leg per player, within this slip.",
-        "Real 28-day backtest at this exact 6-pick config: 8 real full-hit slips out of many attempts, day-level detail available on request."
-      ],
+      strategy_notes: [],
       legs: slipLegs
     });
   }
