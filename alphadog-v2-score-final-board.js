@@ -888,8 +888,14 @@ async function generateFinalBoard(pgClient, input) {
   }
 
   await upsertBoardHistoryRows(pgClient, batchId, simBatchId, rows, 900);
-  await pgClient`DELETE FROM score.final_board_current`;
-  await insertBoardRowsBatched(pgClient, "score.final_board_current", batchId, simBatchId, rows, 900);
+  // ATOMICITY FIX (2026-08-21): same fix as copyHistoryToCurrent above - DELETE and the batched
+  // INSERT (3 separate round-trips for a 2700-row board) were not transactional, giving readers a
+  // real window of an empty or partially-populated table. This is the exact path the 1pm run used
+  // when a "0 of 0 qualified legs" report came in. Wrapped in a transaction now.
+  await pgClient.begin(async sql => {
+    await sql`DELETE FROM score.final_board_current`;
+    await insertBoardRowsBatched(sql, "score.final_board_current", batchId, simBatchId, rows, 900);
+  });
 
   const byTierSource = await pgClient`SELECT board_tier, review_playable, source_key, COUNT(*) AS rows, COUNT(DISTINCT canonical_prop_key) AS prop_families, COUNT(DISTINCT mlb_player_id) AS players, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
     FROM score.final_board_current WHERE final_board_batch_id = ${batchId} GROUP BY board_tier, review_playable, source_key ORDER BY board_tier, rows DESC`;
