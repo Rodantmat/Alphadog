@@ -154,9 +154,20 @@ async function fetchHpFinalBoardCandidateRows(pgClient, sourceEngineBatchId, pag
         e.blocking_for_scoring, e.blocker_count AS engine_blocker_count, e.warning_count AS engine_warning_count
       FROM score.hp_board_current h
       LEFT JOIN score.scoring_engine_current e
-        ON e.batch_id = h.source_engine_batch_id AND e.prepared_row_id = h.prepared_row_id AND e.source_line_id = h.source_line_id
+        ON e.batch_id = h.source_engine_batch_id AND e.prepared_row_id = h.prepared_row_id AND e.source_line_id = h.source_line_id AND e.selected_side = h.selected_side
       LEFT JOIN score.board_prepared_current bp
         ON bp.prepared_row_id = h.prepared_row_id
+      -- FIX (2026-08-21, AUTOMATED_master_run_supervisor): the join to scoring_engine_current was
+      -- missing a selected_side match. score.scoring_engine_current can carry both a "more" and a
+      -- "less" matrix row for the same (prepared_row_id, source_line_id) (they share source_line_id
+      -- but differ by matrix_id/selected_side), so without this condition every hp_board_current row
+      -- was fanned out to every side-variant engine row sharing its source_line_id - confirmed live
+      -- 2026-08-21: 16,650 hp rows became 25,085 joined candidates (~+51%) for a 15-game slate, and
+      -- score-final-board then died before writing a single final_board_history row on 5 consecutive
+      -- invocations (~effective non-blocking timeout), leaving score.final_board_current stuck on a
+      -- stale 19:35 UTC / 3,600-row snapshot while every upstream layer had already refreshed. Adding
+      -- the selected_side match restores the intended one-engine-row-per-hp-row join (verified:
+      -- 25,085 -> 15,809 candidates, in line with the 16,650 hp source rows under a LEFT JOIN).
       WHERE h.hp_board_batch_id = ${hpSource.hp_board_batch_id}
         AND h.source_engine_batch_id = ${sourceEngineBatchId}
         AND COALESCE(h.blocker_count, 0) = 0
