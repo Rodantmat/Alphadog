@@ -4633,17 +4633,27 @@ function removeLegFromGeneratedSlip(slipIdx,legIdx){
 async function generateSlips(){const ids=[...selectedLegIds];$('generatedSlips').innerHTML='<div class="empty">Generating...</div>';const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids,structures:customStructures})})).json();if(!j.ok){$('generatedSlips').innerHTML='<div class="empty err">Generate failed: '+esc(j.error||'unknown')+'</div>';return}lastGeneratedSlips=j.generated_slips||[];renderGenerated()}
 let lastAutoCreatedSlips=[];
 let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
-function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b><span class="legRemoveX" title="Remove this leg" onclick="removeLegFromSlip('+idx+','+li+')">✕</span></div>').join('')+'</div></div>'}
-// Removes one leg from a track slip (lastRawSlips[slipIdx]) and re-renders in place. If the slip
-// drops below 2 legs it's removed entirely, since no app allows a 1-leg slip.
-function removeLegFromSlip(slipIdx,legIdx){
-  const slip=lastRawSlips[slipIdx];if(!slip||!slip.legs)return;
-  slip.legs=slip.legs.filter((_,i)=>i!==legIdx);
-  slip.slip_size=slip.legs.length;
-  slip.slip_type=slip.slip_size+'-pick';
-  if(slip.slip_size<2){lastRawSlips=lastRawSlips.filter((_,i)=>i!==slipIdx)}
-  applySlipSourceFilter();
+// Real, per-size multiplier tables for recomputing a slip's payout after leg checkboxes are
+// unchecked at save time - locked 2026-08-21 real values, matching exactly what's used server-side.
+const REAL_MULT_TABLES = {
+  goblin_power: { 2: 1.7, 3: 2.0, 4: 3.0, 5: 3.5, 6: 4.25 },
+  pp_regular_power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
+  pp_regular_flex: { 3: 3, 4: 6, 5: 10, 6: 25 },
+  underdog_power: { 2: 2.40, 3: 4.46, 4: 8.24, 5: 13.73, 6: 24.03 }
+};
+function recomputeMultiplier(sourceKey, entryMode, size){
+  const k=String(sourceKey||'').toLowerCase();
+  if(size<2)return 0;
+  if(k==='sleeper')return Math.round(Math.pow(1.638,size)*100)/100;
+  if(k==='prizepicks')return REAL_MULT_TABLES.goblin_power[size]||0;
+  if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
+  if(k==='parlay_underdog'||k==='underdog')return REAL_MULT_TABLES.underdog_power[size]||0;
+  return 0;
 }
+function legRowHtml(leg,slipIdx,legIdx){
+  return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
+}
+function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div></div>'}
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
   if(!boxes.length){alert('Check at least one slip to save.');return}
