@@ -2788,16 +2788,17 @@ const HIGH_HIT_GOBLIN_TIER_POOL = [
 ];
 // LOCKED 2026-08-21: real per-leg multiplier, confirmed via 5 real placed 2/3/4/5/6-pick slips
 // (1.304, 1.260, 1.316, 1.285, 1.273 respectively - remarkably flat across sizes). 5-pick specific.
-// CORRECTED 2026-08-21 (same day, hours later): the 3.5x above was real, but only for ONE
-// specific prop mix (hits_runs_rbis/more only, 5-leg). Two fresh real tests on this actual
-// mixed-prop pool (earned_runs+walks_allowed+hits legs) came back at 2.5x and 2.2x - 30-37%
-// lower. Flattening one confirmed number across a genuinely mixed-prop pool was the same mistake
-// flagged and fixed earlier this session for other apps - reverted here to an honest average of
-// the two fresh real tests (2.35x) rather than either the stale 3.5x or overfitting to 2 thin-
-// board data points. NEEDS REVALIDATION once the board finishes its 9am Pacific run - both real
-// tests were taken on a thin pre-9am board.
-const GOBLIN_5PICK_REAL_MULT = 2.35;
-const GOBLIN_5PICK_MULT_CONFIRMED = false;
+// UPDATED (2026-08-21, real placed-slip data): real observed today across three different
+// sizes (3-pick=1.4x, 4-pick=1.5x, 5-pick=1.86x avg of 10 real observations) gave a remarkably
+// consistent real per-leg rate (~1.12x/leg across all three). 2-pick and 6-pick are extrapolated
+// from that same real rate since no real observation exists at those sizes yet - flagged
+// separately from the confirmed 3/4/5-pick numbers. This REPLACES the old flat 3.5x/2.35x
+// estimates, and is now the SINGLE source of truth for both the slip badge and the real-
+// multiplier input placeholder, so they can never disagree with each other again (confirmed
+// live bug 2026-08-21: badge read GOBLIN_5PICK_REAL_MULT while the input field read this table,
+// which still had the stale 3.5x).
+const GOBLIN_5PICK_REAL_MULT = 1.86;
+const GOBLIN_5PICK_MULT_CONFIRMED = true;
 const HIGH_HIT_SLIP_SIZES = [5];
 // LOCKED 2026-08-21: 25% of that day's real max-buildable-slip-count, not a fixed number - real
 // backtest swept fixed(1/2/3/5/nocap) vs percentage(25/50/75) caps; 25% won at every size tested,
