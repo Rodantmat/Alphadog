@@ -2902,19 +2902,24 @@ function buildHighHitSlips(legs) {
   // review or place. Capping at 12 regardless of pool depth until this is validated at real scale.
   const dailyCap = Math.min(12, Math.max(1, Math.ceil(maxPossibleSlips * 0.25)));
   const builtGroups = buildGoblinSlipsAtCap(legs, size, dailyCap);
-  const slips = builtGroups.map(slipLegs => ({
-    client_slip_id: makeUiId("high_hit_slip"),
-    source_key: "prizepicks_goblin",
-    slip_type: `${size}-pick`,
-    slip_size: size,
-    entry_mode: "power",
-    structure_label: `${size}-pick Power (High Hit)`,
-    estimated_multiplier: GOBLIN_5PICK_REAL_MULT,
-    multiplier_confirmed: GOBLIN_5PICK_MULT_CONFIRMED,
-    estimated_payout_note: `~${GOBLIN_5PICK_REAL_MULT}x - UNCONFIRMED, varies by prop mix. Enter the real number below once you place it.`,
-    strategy_notes: [],
-    legs: slipLegs
-  }));
+  const slips = builtGroups.map(slipLegs => {
+    const legMult = goblinSlipEstimatedMultiplier(slipLegs);
+    return {
+      client_slip_id: makeUiId("high_hit_slip"),
+      source_key: "prizepicks_goblin",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "power",
+      structure_label: `${size}-pick Power (High Hit)`,
+      estimated_multiplier: legMult.multiplier,
+      multiplier_confirmed: legMult.confirmed,
+      estimated_payout_note: legMult.confirmed
+        ? `${legMult.multiplier}x - real per-leg rates confirmed for every leg in this exact slip.`
+        : `~${legMult.multiplier}x - some legs use a fallback estimate (no real data yet for that exact prop/side/tier). Enter the real number below once you place it.`,
+      strategy_notes: [],
+      legs: slipLegs
+    };
+  });
   return slips;
 }
 
