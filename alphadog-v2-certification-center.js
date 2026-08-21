@@ -4623,7 +4623,17 @@ function renderGenerated(){const el=$('generatedSlips');if(!lastGeneratedSlips.l
 async function generateSlips(){const ids=[...selectedLegIds];$('generatedSlips').innerHTML='<div class="empty">Generating...</div>';const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids,structures:customStructures})})).json();if(!j.ok){$('generatedSlips').innerHTML='<div class="empty err">Generate failed: '+esc(j.error||'unknown')+'</div>';return}lastGeneratedSlips=j.generated_slips||[];renderGenerated()}
 let lastAutoCreatedSlips=[];
 let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
-function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>'}
+function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>'<div class="legMini"><span>'+legLine(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b><span class="legRemoveX" title="Remove this leg" onclick="removeLegFromSlip('+idx+','+li+')">✕</span></div>').join('')+'</div></div>'}
+// Removes one leg from a track slip (lastRawSlips[slipIdx]) and re-renders in place. If the slip
+// drops below 2 legs it's removed entirely, since no app allows a 1-leg slip.
+function removeLegFromSlip(slipIdx,legIdx){
+  const slip=lastRawSlips[slipIdx];if(!slip||!slip.legs)return;
+  slip.legs=slip.legs.filter((_,i)=>i!==legIdx);
+  slip.slip_size=slip.legs.length;
+  slip.slip_type=slip.slip_size+'-pick';
+  if(slip.slip_size<2){lastRawSlips=lastRawSlips.filter((_,i)=>i!==slipIdx)}
+  applySlipSourceFilter();
+}
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
   if(!boxes.length){alert('Check at least one slip to save.');return}
