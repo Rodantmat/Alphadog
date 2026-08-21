@@ -4033,17 +4033,34 @@ async function apiSaveSlips(env, request) {
   const input = await readJsonSafe(request);
   const slips = Array.isArray(input.slips) ? input.slips : [];
   const saved = [];
+  const skipped_duplicates = [];
   const pg = pgClient(env);
   try {
+    // Real fix (2026-08-21): duplicate detection - an identical slip (same app, same legs, same
+    // day) is now rejected before insert rather than silently creating a second copy. Two full
+    // real save events landed as exact duplicates earlier the same day this was built, requiring
+    // manual DB cleanup - this makes that a non-issue going forward.
     for (const s of slips.slice(0, 50)) {
-      const slipId = makeUiId("slip");
       const legs = Array.isArray(s.legs) ? s.legs : [];
+      const legFingerprint = legs.map(l => `${l.player_id || l.mlb_player_id || ""}|${l.canonical_prop_key || ""}|${l.line_value || ""}|${l.selected_side || ""}`).sort().join(",");
+      const existingRows = await pg.unsafe(`SELECT se.slip_id FROM score.slip_entries se
+        WHERE se.source_key = $1 AND se.slip_size = $2 AND se.created_at::date = now()::date
+          AND (SELECT string_agg(fp, ',' ORDER BY fp) FROM (
+                 SELECT (COALESCE(sl.player_id::text,'') || '|' || COALESCE(sl.canonical_prop_key,'') || '|' || COALESCE(sl.line_value::text,'') || '|' || COALESCE(sl.selected_side,'')) AS fp
+                 FROM score.slip_legs sl WHERE sl.slip_id = se.slip_id
+               ) x) = $3
+        LIMIT 1`, [s.source_key || null, Number(s.slip_size || legs.length || 0), legFingerprint]);
+      if (existingRows && existingRows.length) {
+        skipped_duplicates.push({ source_key: s.source_key, slip_size: s.slip_size, reason: "identical_slip_already_saved_today" });
+        continue;
+      }
+      const slipId = makeUiId("slip");
       const edge = (s.estimated_hit_probability_0_100 != null && s.breakeven_hit_rate_0_100 != null)
         ? Number(s.estimated_hit_probability_0_100) - Number(s.breakeven_hit_rate_0_100) : null;
       await pg.unsafe(`INSERT INTO score.slip_entries
-        (slip_id, source_key, slip_type, slip_size, structure_label, entry_mode, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, estimated_payout_note, breakeven_hit_rate_0_100, edge_vs_breakeven_0_100, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
-        [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, s.entry_mode || null, Number(input.selected_leg_count || legs.length || 0), Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.estimated_payout_note || null, s.breakeven_hit_rate_0_100 == null ? null : Number(s.breakeven_hit_rate_0_100), edge, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
+        (slip_id, source_key, slip_type, slip_size, structure_label, entry_mode, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, real_multiplier, real_multiplier_flex_tiers, estimated_payout_note, breakeven_hit_rate_0_100, edge_vs_breakeven_0_100, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, s.entry_mode || null, Number(input.selected_leg_count || legs.length || 0), Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier), s.real_multiplier_flex_tiers ? JSON.stringify(s.real_multiplier_flex_tiers) : null, s.estimated_payout_note || null, s.breakeven_hit_rate_0_100 == null ? null : Number(s.breakeven_hit_rate_0_100), edge, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
       let idx = 1;
       for (const l of legs) {
         await pg.unsafe(`INSERT INTO score.slip_legs
@@ -4056,7 +4073,7 @@ async function apiSaveSlips(env, request) {
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
-  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/save", saved_count:saved.length, saved_slips:saved });
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/save", saved_count:saved.length, saved_slips:saved, skipped_duplicates });
 }
 async function apiSlipsRecent(env, url) {
   await ensureArchiveSlipSchema(env);
