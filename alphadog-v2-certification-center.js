@@ -4846,14 +4846,15 @@ function realMultFieldsHtmlForSize(s,idx,size){
 function refreshRealMultFields(slipIdx){
   const slip=lastRawSlips[slipIdx];if(!slip)return;
   const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
-  const keptCount=Array.from(keepBoxes).filter(cb=>cb.checked).length;
+  const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+  const keptCount=keptLegs.length;
   const card=keepBoxes[0]&&keepBoxes[0].closest('.slipCard');if(!card)return;
   const badge=card.querySelector('.multiplierTag[data-slip-idx="'+slipIdx+'"]');
   if(badge){
     if(keptCount<2){
       badge.textContent='—';
     }else{
-      const topMult=recomputeMultiplier(slip.source_key,slip.entry_mode,keptCount);
+      const topMult=recomputeMultiplier(slip.source_key,slip.entry_mode,keptCount,keptLegs);
       badge.textContent=multiplierLabel(topMult);
     }
   }
@@ -4862,7 +4863,7 @@ function refreshRealMultFields(slipIdx){
     multArea.outerHTML='<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
     return;
   }
-  multArea.outerHTML=realMultFieldsHtmlForSize(slip,slipIdx,keptCount);
+  multArea.outerHTML=realMultFieldsHtmlForSize({...slip,legs:keptLegs},slipIdx,keptCount);
 }
 function realMultFieldsHtml(s,idx){
   return realMultFieldsHtmlForSize(s,idx,s.slip_size);
