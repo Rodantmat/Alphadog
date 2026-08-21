@@ -755,7 +755,7 @@ async function generateFinalBoard(pgClient, input) {
   }
 
   const hpAllRaw = hpRead.rows;
-  const mappedRows = annotateCorrelation(hpAllRaw.map(r => mapHpCurrentRowToFinalBoardRow(r, activeProfileKey)));
+  const mappedRows = annotateGoblinDemonTier(annotateCorrelation(hpAllRaw.map(r => mapHpCurrentRowToFinalBoardRow(r, activeProfileKey))));
   const nowMs = Date.now();
   const baseVisibleRows = mappedRows.filter(r =>
     num(r.estimated_hit_probability_0_100, 0) >= 60
