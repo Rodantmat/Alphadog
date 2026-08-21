@@ -4856,7 +4856,11 @@ async function saveSelectedSlips(){
   try{
     const j=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slips:selected,selected_leg_count:selected.reduce((a,s)=>a+(s.legs||[]).length,0),saved_by:'main_ui'})})).json();
     if(!j.ok){alert('Save failed: '+(j.error||'unknown'));return}
-    alert('Saved '+(j.saved||[]).length+' slip(s).');
+    const savedCount=(j.saved_slips||[]).length;
+    const dupCount=(j.skipped_duplicates||[]).length;
+    let msg='✅ Saved '+savedCount+' slip(s) with real multipliers recorded.';
+    if(dupCount)msg+=' ('+dupCount+' skipped - identical slip already saved today.)';
+    alert(msg);
   }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
 }
 function activeSourceFilters(){const m={prizepicks_demon:$('filterDemon'),prizepicks_goblin:$('filterGoblin'),prizepicks_regular:$('filterRegular'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
