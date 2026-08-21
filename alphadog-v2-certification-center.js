@@ -4715,15 +4715,17 @@ function recomputeMultiplier(sourceKey, entryMode, size){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
   if(k==='sleeper')return Math.round(Math.pow(1.638,size)*100)/100;
-  if(k==='prizepicks')return REAL_MULT_TABLES.goblin_power[size]||0;
+  if(k==='prizepicks_goblin')return REAL_MULT_TABLES.goblin_power[size]||0;
+  if(k==='prizepicks_demon')return (DEMON_FLEX_TIERS_UI[size]&&DEMON_FLEX_TIERS_UI[size][size])||0;
   if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
   if(k==='parlay_underdog'||k==='underdog')return REAL_MULT_TABLES.underdog_power[size]||0;
   return 0;
 }
+const DEMON_FLEX_TIERS_UI = { 3: { 3: 15, 2: 1.5 } };
 function legRowHtml(leg,slipIdx,legIdx){
   return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
 }
-function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div></div>'}
+function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div><div class="realMultRow"><span class="realMultLabel">Real multiplier</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(s.estimated_multiplier||''))+'"></div></div>'}
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
   if(!boxes.length){alert('Check at least one slip to save.');return}
