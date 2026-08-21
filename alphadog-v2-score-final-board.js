@@ -252,6 +252,43 @@ function annotateCorrelation(rows) {
   return rows;
 }
 
+// ADDED (2026-08-20): computes each row's goblin/demon tier relative to that specific
+// player+prop+game's own real regular/standard line (the "anchor"), not the raw line_value -
+// the same numeric line can be tier 1 goblin for one player and tier 2 demon for another,
+// depending on where that player's own anchor sits (variable props like total_bases,
+// hits_runs_rbis, pitcher_strikeouts do not share a fixed anchor across players the way
+// static props like doubles/stolen_bases/home_runs do, which always anchor at 0.5).
+// Only computed when an explicit regular row (is_goblin=0 AND is_demon=0) exists among the
+// sibling rows for that exact player+prop+game+source - never inferred, to avoid the documented
+// goblin/demon mislabeling issues seen on thin-inventory days. tier=0 for the regular row itself;
+// null when no sibling anchor is present that day (leg is still fully usable, just untiered).
+function annotateGoblinDemonTier(rows) {
+  const groups = new Map();
+  for (const r of rows) {
+    const key = `${r.source_key || ""}|${r.mlb_player_id || ""}|${r.canonical_prop_key || ""}|${r.game_pk || ""}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+  for (const group of groups.values()) {
+    const anchorRow = group.find(r => Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0 && r.line_value != null);
+    const anchorLine = anchorRow ? Number(anchorRow.line_value) : null;
+    for (const r of group) {
+      r.goblin_demon_anchor_line = anchorLine;
+      if (Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0) { r.goblin_demon_tier = 0; continue; }
+      if (anchorLine == null || r.line_value == null) { r.goblin_demon_tier = null; continue; }
+      const side = norm(r.selected_side);
+      const line = Number(r.line_value);
+      let tier = null;
+      if (side === "less" && Number(r.is_goblin) === 1) tier = Math.round(line - anchorLine);
+      else if (side === "less" && Number(r.is_demon) === 1) tier = -Math.round(anchorLine - line);
+      else if (side === "more" && Number(r.is_goblin) === 1) tier = Math.round(anchorLine - line);
+      else if (side === "more" && Number(r.is_demon) === 1) tier = -Math.round(line - anchorLine);
+      r.goblin_demon_tier = tier;
+    }
+  }
+  return rows;
+}
+
 function finalBoardCandidateComparator(a, b) {
   const tierA = String(a.board_tier || "REVIEW") === "PRIMARY" ? 1 : 0;
   const tierB = String(b.board_tier || "REVIEW") === "PRIMARY" ? 1 : 0;
