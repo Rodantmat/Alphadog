@@ -3299,11 +3299,7 @@ function buildUnderdogHighHitSlips(legs) {
       structure_label: `${size}-pick Power (High Hit)`,
       estimated_multiplier: UNDERDOG_6PICK_REAL_MULT,
       estimated_payout_note: `Real published table (35x) x real confirmed discount (${UNDERDOG_REAL_DISCOUNT}, from actual placed 6-pick entries) = ${UNDERDOG_6PICK_REAL_MULT}x. Power confirmed to beat Flex in real backtest.`,
-      strategy_notes: [
-        "Legs selected from rbis/less and walks/less - by far the largest real sample (4553 and 4340 real graded outcomes) across every locked strategy this session.",
-        "Max 1 leg per player, within this slip.",
-        `Daily cap: 1 slip/day - real backtest showed this is the best real config at 6-pick, +345.0% ROI, 27 real days tested, consistent day-by-day (4%-33% hit rate range, no outlier day).`
-      ],
+      strategy_notes: [],
       legs: slipLegs
     });
   }
