@@ -3214,11 +3214,7 @@ function buildSleeperHighHitSlips(legs) {
       structure_label: `${size}-pick Power (High Hit)`,
       estimated_multiplier: slPowerMult,
       estimated_payout_note: `Real, moneyline-derived estimate (avg per-leg ${SLEEPER_REAL_AVG_MULT}x from today's live board odds, validated formula: 1+(DecimalOdds-1)*0.95). Confirm the real number in-app before placing.`,
-      strategy_notes: [
-        "Legs selected from hits_runs_rbis/more - real 22-day backtest, 68.2% hit rate on line 0.5, 55.8% on line 1.5.",
-        "Max 1 leg per player, within this slip.",
-        "Real backtest at this exact config: 36 slips, 12 full hits, +46.5% ROI Power. Only 14 days tested at cap=1/day specifically - real but not yet a large sample."
-      ],
+      strategy_notes: [],
       legs: slipLegs
     });
   }
