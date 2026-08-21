@@ -4713,7 +4713,19 @@ function recomputeMultiplier(sourceKey, entryMode, size){
 }
 const DEMON_FLEX_TIERS_UI = { 3: { 3: 15, 2: 1.5 } };
 function legRowHtml(leg,slipIdx,legIdx){
-  return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked onchange="refreshRealMultFields('+slipIdx+')"></label>';
+  return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
+}
+// One delegated listener on the results container instead of inline onchange="" attributes -
+// inline handlers on dynamically-injected HTML do not resolve to top-level functions in this
+// WebView (confirmed live 2026-08-21, same failure mode as the earlier leg-removal bug).
+function bindLegKeepBoxDelegation(){
+  const results=$('autoCreateResults');if(!results||results._legKeepBoundAlready)return;
+  results._legKeepBoundAlready=true;
+  results.addEventListener('change',e=>{
+    if(e.target&&e.target.classList&&e.target.classList.contains('legKeepBox')){
+      refreshRealMultFields(Number(e.target.dataset.slipIdx));
+    }
+  });
 }
 // Returns the real (or best-available) tiered Flex table for a slip at a GIVEN size - not
 // necessarily its original size. Falls back to a single estimated field when no real table
