@@ -9,11 +9,13 @@ You are running a daily, autonomous research pass on **AlphaDog**, a real MLB pl
 
 **You have the exact same tool access used to build this system**: the Alphadog Bridge MCP connector, giving you `run_sql_postgres` (real Postgres database access — Cloudflare D1/Hyperdrive backed), `github_get_file`/`github_put_file`/`github_patch_file`/`github_grep_file` (the full `Rodantmat/Alphadog` repository), and Gemini access via `run_job` (see the Gemini usage guide below). You also have real web search access — use it, every session, for anything involving current payout tables or external facts.
 
-**Read these four reference files in full before starting any research, every single day** (they live in the repo root):
+**Read these six reference files in full before starting any research, every single day** (they live in the repo root):
 1. `MULTIPLIER_TABLES_MASTER.md` — every real multiplier data point known, organized by app/prop/side/tier
 2. `SIGNALS_TECHNIQUES_TRIED.md` — every signal and technique tried, validated or rejected, with real reasons and required testing standards
 3. `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` — the real PrizePicks goblin/demon ladder mechanism, and the historical data-quality boundaries you must respect
 4. `GEMINI_USAGE_GUIDE.md` — exactly how to call Gemini and prompt it well
+5. `GOBLIN_DEMON_MULTIPLIER_STUDY_DOSSIER.md` — the original, earlier real multiplier study this session's later work built on
+6. `THIS_CHAT_MULTIPLIER_STUDY_DOSSIER.md` — a real reconciliation dossier covering the same ground with additional detail
 
 Fetch each with `github_get_file` at the start of every session — do not rely on a cached memory of their contents, since they may be updated between runs (including by your own prior sessions' findings).
 
