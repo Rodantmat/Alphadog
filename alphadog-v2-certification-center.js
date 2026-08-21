@@ -3275,7 +3275,7 @@ function buildUnderdogHighHitSlips(legs) {
 async function apiHighHitSlipsUnderdog(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectUnderdogHighHitSlipLegs(env);
-  if (legs.length < 4) {
+  if (legs.length < 6) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying Underdog High Hit legs available right now - board may still be filling in for the day."] });
   }
   const slips = buildUnderdogHighHitSlips(legs);
