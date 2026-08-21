@@ -2880,20 +2880,86 @@ const REGULAR_PFS_PROP = "pitcher_fantasy_score";
 const REGULAR_PFS_SIDE = "less";
 const REGULAR_HIGH_HIT_SIZE = 6;
 const REGULAR_HIGH_HIT_CAP = 10; // ceiling; real pool depth (10-25 legs/day) self-limits below this
-// Real qualifying lines for PrizePicks Demon Slips (is_demon=1) - the two strongest real,
-// typically-available demon lines: runs less 0.5 (58.6%, n=157), singles less 0.5 (45.9%,
-// n=111). Real hit rate is meaningfully lower than goblin/regular by design (demon = harder
-// side), so this track carries more real risk even at its best qualifying lines.
-const DEMON_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "runs", side: "less", line: 0.5, rank: 10 },
-  { prop: "singles", side: "less", line: 0.5, rank: 9 }
+// LOCKED 2026-08-21: real, tier-2 pitcher_strikeouts/less demon signal - confirmed via real
+// placed slip (Power 865x on a 6-pick, implied per-leg 3.087x, within 6.5% of the tier-scaling
+// estimate) and a real Flex slip (3/3=15x, 2/3=1.5x, real implied ratio 0.510 vs power - NOT the
+// 0.815 borrowed-from-tier1 estimate originally used, corrected after real confirmation). Real
+// 19-slip backtest, 5 real active days, +657.9% ROI Flex, no cap (nocap beat every fixed/pct cap
+// tested - opposite pattern from Goblin, likely because 08-11 alone drove most of the real edge
+// and any cap cuts into that day before it can pay off). Thinnest, newest of all five locked
+// strategies - flagged honestly, not battle-tested the way the other four are.
+const DEMON_HIGH_HIT_TIER_POOL = [
+  { prop: "pitcher_strikeouts", side: "less", tier: 2, rank: 1 }
 ];
-const DEMON_HIGH_HIT_CAP = 2;
-// Real, conservative per-leg ratio for demon (2026-08-18/19): from control.goblin_demon_multiplier_study,
-// real common-prop no-standard demon observations ranged 1.08-1.26 per leg. Using the LOWEST real
-// observed value (1.08) as the conservative estimate, per explicit request, until real qualified-leg
-// multiplier data is available to sharpen this further.
-const DEMON_REAL_RATIO = 1.08;
+const DEMON_HIGH_HIT_SIZE = 3;
+const DEMON_FLEX_TIERS = { 3: { 3: 15, 2: 1.5 } };
+async function autoSelectDemonHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const tierList = DEMON_HIGH_HIT_TIER_POOL.map(q => `('${q.prop}','${q.side}',${q.tier})`).join(",");
+    const rows = await queryAllPg(pg, `
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
+        canonical_prop_key, line_value, selected_side, goblin_demon_tier, estimated_hit_probability_0_100 AS hit_probability_0_100,
+        confidence_0_100, is_goblin, is_demon
+      FROM score.final_board_current
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND source_key = 'prizepicks' AND is_demon = 1
+        AND (canonical_prop_key, selected_side, goblin_demon_tier) IN (${tierList})
+        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    return rows.map(r => ({ ...r, _rank: 1 }));
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function buildDemonHighHitSlips(legs) {
+  const size = DEMON_HIGH_HIT_SIZE;
+  const used = new Set();
+  const slips = [];
+  const dailyPlayerUsage = new Map();
+  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
+  const maxPerGame = distinctGames < 5 ? 4 : 3;
+  while (true) {
+    const slipLegs = [];
+    const gameCounts = new Map();
+    const playersInSlip = new Set();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      const gameCount = gameCounts.get(leg.game_pk) || 0;
+      if (gameCount >= maxPerGame) continue;
+      slipLegs.push(leg);
+      gameCounts.set(leg.game_pk, gameCount + 1);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
+    }
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_demon"),
+      source_key: "prizepicks_demon",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "flex",
+      structure_label: `${size}-pick Flex (High Hit - Demon)`,
+      estimated_multiplier: DEMON_FLEX_TIERS[size][size],
+      estimated_multiplier_flex_tiers: DEMON_FLEX_TIERS[size],
+      estimated_payout_note: `Real, confirmed Flex table (3/3=${DEMON_FLEX_TIERS[size][size]}x, 2/3=${DEMON_FLEX_TIERS[size][size-1]}x) from an actual placed slip, 2026-08-21. Real per-leg multiplier varies meaningfully player by player - confirm in-app before placing.`,
+      strategy_notes: [
+        "Legs selected from pitcher_strikeouts/less/Tier2 - real 71.6% hit rate, n=67, but the newest and thinnest of all locked strategies (19 real slips, 5 real active days).",
+        "Max 1 leg per player, within this slip.",
+        "No daily cap - real backtest showed nocap beat every fixed/percentage cap tested (opposite of Goblin's pattern)."
+      ],
+      legs: slipLegs
+    });
+  }
+  return slips;
+}
 
 async function autoSelectRegularHighHitSlipLegs(env) {
   const pg = pgClient(env);
