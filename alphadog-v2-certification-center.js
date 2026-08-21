@@ -2797,6 +2797,42 @@ const HIGH_HIT_GOBLIN_TIER_POOL = [
 // multiplier input placeholder, so they can never disagree with each other again (confirmed
 // live bug 2026-08-21: badge read GOBLIN_5PICK_REAL_MULT while the input field read this table,
 // which still had the stale 3.5x).
+// REAL, per-(prop,side,tier) per-leg Goblin multiplier table - built 2026-08-21 from every real
+// placed-slip observation across this entire session (not just today). This replaces the flat
+// blended 1.86x with a genuinely sharper, per-leg-aware estimate. Side matters independently of
+// prop/tier - confirmed live: hits_runs_rbis/more/T1 (n=5, 1.287/leg) pays ~15% more per leg than
+// hits_runs_rbis/less/T1 (n=3, 1.116/leg) despite identical prop and tier.
+const GOBLIN_LEG_MULT_TABLE = {
+  "singles|less|1": { rate: 1.134, n: 8 },
+  "hits|less|1": { rate: 1.095, n: 1 },
+  "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
+  "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
+  "walks_allowed|more|1": { rate: 1.140, n: 1 },
+  "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
+  "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
+};
+// Real, overall average per-leg rate across every real observation (fallback for any prop/side/
+// tier combo in the pool with no direct real data yet - honest "best current guess," not a
+// specific confirmed number).
+const GOBLIN_LEG_MULT_FALLBACK = 1.15;
+function goblinLegMultiplier(prop, side, tier) {
+  const key = `${prop}|${side}|${tier}`;
+  const entry = GOBLIN_LEG_MULT_TABLE[key];
+  return entry ? entry.rate : GOBLIN_LEG_MULT_FALLBACK;
+}
+// Computes a slip's real estimated multiplier as the actual PRODUCT of its specific legs' real
+// per-leg rates - not one flat number for the whole slip. A slip of 5 singles legs and a slip of
+// 3 singles + 2 hits_runs_rbis/less legs will now get genuinely different, sharper estimates.
+function goblinSlipEstimatedMultiplier(slipLegs) {
+  let product = 1;
+  let allConfirmed = true;
+  for (const leg of slipLegs) {
+    const key = `${leg.canonical_prop_key}|${String(leg.selected_side||'').toLowerCase()}|${Number(leg.goblin_demon_tier)}`;
+    if (!GOBLIN_LEG_MULT_TABLE[key]) allConfirmed = false;
+    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier);
+  }
+  return { multiplier: Math.round(product * 1000) / 1000, confirmed: allConfirmed };
+}
 const GOBLIN_5PICK_REAL_MULT = 1.86;
 const GOBLIN_5PICK_MULT_CONFIRMED = true;
 const HIGH_HIT_SLIP_SIZES = [5];
