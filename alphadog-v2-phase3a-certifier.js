@@ -128,10 +128,28 @@ async function runScoringEngine(pgClient, input) {
     });
     written++;
   }
+
+  // FIXED 2026-08-21: hpRows is selected via "score_0_100 IS NULL" on hp_board_current, but that
+  // column is only updated (marking a row as claimed) row-by-row in the loop above, AFTER hpRows
+  // was already read. A retry/overlapping invocation of this same chain_id (expected and common:
+  // probe_timeout callers keep re-triggering while a prior invocation is still finishing in the
+  // background) can therefore re-select rows the prior invocation already scored but hadn't yet
+  // marked, and this INSERT had no duplicate guard - confirmed live: batch
+  // scoring_engine_batch_sched-20260821-r1-hpboard-chain-03 accumulated 19598 mirror rows for only
+  // 11368 distinct (prepared_row_id, source_line_id) pairs, which fanned out score-final-board's
+  // downstream join to 30848 candidates and stalled it for 10+ minutes. Filter out pairs already
+  // written for this batch_id immediately before insert - narrows the race to the single
+  // SELECT-to-INSERT window instead of "every retry duplicates its whole chunk."
+  let dedupedMirrorRows = mirrorRows;
+  if (mirrorRows.length) {
+    const existingPairs = await pgClient`SELECT prepared_row_id, source_line_id FROM score.scoring_engine_current WHERE batch_id=${batchId}`;
+    const existingKeys = new Set(existingPairs.map(r => `${r.prepared_row_id}|${r.source_line_id}`));
+    dedupedMirrorRows = mirrorRows.filter(r => !existingKeys.has(`${r.prepared_row_id}|${r.source_line_id}`));
+  }
   const mirrorCols = ["score_row_id", "batch_id", "matrix_id", "prepared_row_id", "source_line_id", "source_key", "game_pk", "official_date", "official_game_time_utc", "mlb_player_id", "player_name", "canonical_prop_key", "line_value", "side_mode", "selected_side", "more_score_0_100", "less_score_0_100", "score_0_100", "score_status", "score_grade", "side_eligibility_status", "side_availability_status", "profile_key", "profile_version", "thresholds_locked", "archive_score_threshold", "archive_eligible", "archive_written", "calculation_json", "matrix_payload_json_snapshot", "matrix_status", "blocking_for_scoring", "warning_count", "missing_component_count", "confidence_0_100", "confidence_status", "live_playable", "model_deferred", "score_sort_0_100"];
   const MIRROR_INSERT_CHUNK_SIZE = 500;
-  for (let i = 0; i < mirrorRows.length; i += MIRROR_INSERT_CHUNK_SIZE) {
-    const chunk = mirrorRows.slice(i, i + MIRROR_INSERT_CHUNK_SIZE);
+  for (let i = 0; i < dedupedMirrorRows.length; i += MIRROR_INSERT_CHUNK_SIZE) {
+    const chunk = dedupedMirrorRows.slice(i, i + MIRROR_INSERT_CHUNK_SIZE);
     await pgClient`INSERT INTO score.scoring_engine_current ${pgClient(chunk, ...mirrorCols)}`;
   }
 
