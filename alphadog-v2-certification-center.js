@@ -4695,7 +4695,18 @@ const DEMON_FLEX_TIERS_UI = { 3: { 3: 15, 2: 1.5 } };
 function legRowHtml(leg,slipIdx,legIdx){
   return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
 }
-function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div><div class="realMultRow"><span class="realMultLabel">Real multiplier</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(s.estimated_multiplier||''))+'"></div></div>'}
+function realMultFieldsHtml(s,idx){
+  const tiers=s.estimated_multiplier_flex_tiers;
+  if(s.entry_mode!=='flex'||!tiers){
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(s.estimated_multiplier||''))+'"></div>';
+  }
+  const size=s.slip_size;
+  const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
+  return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers</span><div class="realMultFields">'+keys.map(k=>
+    '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" placeholder="'+esc(String(tiers[k]||''))+'"></label>'
+  ).join('')+'</div></div>';
+}
+function slipCardHtml(s,idx){return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'}
 async function saveSelectedSlips(){
   const boxes=document.querySelectorAll('.slipSelectBox:checked');
   if(!boxes.length){alert('Check at least one slip to save.');return}
