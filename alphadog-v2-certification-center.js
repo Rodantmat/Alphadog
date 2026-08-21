@@ -2850,28 +2850,21 @@ function buildGoblinSlipsAtCap(legs, size, cap) {
 }
 
 function buildHighHitSlips(legs) {
-  // LOCKED 2026-08-21: 5-pick only, Power mode, 25% daily cap - real 26-day backtest across all
-  // configurations tested (see session notes). Real per-leg multiplier confirmed via 5 actual
-  // placed slips at 1.7x/2.0x/3.0x/3.5x/4.25x for 2/3/4/5/6-pick - remarkably flat, meaning the
-  // 5-pick total (3.5x) is a real, confirmed number, not derived.
   const size = HIGH_HIT_SLIP_SIZES[0];
   const maxPossibleSlips = buildGoblinSlipsAtCap(legs, size, 999).length;
   const dailyCap = Math.max(1, Math.ceil(maxPossibleSlips * 0.25));
   const builtGroups = buildGoblinSlipsAtCap(legs, size, dailyCap);
   const slips = builtGroups.map(slipLegs => ({
     client_slip_id: makeUiId("high_hit_slip"),
-    source_key: "prizepicks",
+    source_key: "prizepicks_goblin",
     slip_type: `${size}-pick`,
     slip_size: size,
     entry_mode: "power",
     structure_label: `${size}-pick Power (High Hit)`,
     estimated_multiplier: GOBLIN_5PICK_REAL_MULT,
-    estimated_payout_note: `Real, confirmed 5-pick Power multiplier (${GOBLIN_5PICK_REAL_MULT}x) from an actual placed slip, 2026-08-21. Power confirmed to beat Flex at this size in real day-by-day backtest.`,
-    strategy_notes: [
-      "Legs selected by real tier (distance from anchor/switch-point), NOT by the system's own estimated_hit_probability_0_100 - see goblin_demon_tier.",
-      "Daily cap: 25% of today's true max-buildable-slip-count (min 1) - real backtest showed this beats every fixed-number cap and every other percentage tested, at every pick size.",
-      "Real 26-day backtest at this exact config: +79.9% ROI, 37 slips."
-    ],
+    multiplier_confirmed: GOBLIN_5PICK_MULT_CONFIRMED,
+    estimated_payout_note: `~${GOBLIN_5PICK_REAL_MULT}x - UNCONFIRMED, varies by prop mix. Enter the real number below once you place it.`,
+    strategy_notes: [],
     legs: slipLegs
   }));
   return slips;
