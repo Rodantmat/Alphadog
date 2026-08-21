@@ -295,3 +295,136 @@ Per `GEMINI_USAGE_GUIDE.md`, its hypothesis was not treated as validated on plau
 **Nothing was deployed, patched, or modified. All recommendations above are for user review only.**
 
 ---
+
+# ===== 2026-08-21 (Fri) — Session 1 CORRECTIONS — issued after user review =====
+
+The user flagged three defects in the entry above. All three were valid. Corrections below **supersede** the corresponding sections.
+
+## C1. RETRACTED: "§3 BLOCKER — tier analysis is impossible on all historical data"
+
+**That section was wrong, and the error was methodological, not incidental.** I queried `information_schema.tables` with a hardcoded schema list (`context, daily, score, control, scoring`) and never enumerated the schemas themselves. The database has **40 schemas**. I never looked at 35 of them.
+
+The `backtest` schema alone contains **72 relations**, including a complete, working tier reconstruction:
+
+| Table | Rows | Rows with tier | Days | Range |
+|---|---|---|---|---|
+| `backtest.tiered_full_fixed` | 30,355 | **10,700** | 26 | 2026-07-25 → 2026-08-19 |
+| `backtest.snapshot_tiered_clean` | 30,376 | 6,270 | 26 | 2026-07-25 → 2026-08-19 |
+| `backtest.snapshot_tiered_all` | 30,566 | 6,460 | 26 | 2026-07-25 → 2026-08-19 |
+| `backtest.tiered_sameday_test` | 30,376 | 6,270 | 26 | 2026-07-25 → 2026-08-19 |
+
+All fully graded, with `anchor_line` and `tier` columns. There is also `backtest.nine_am_batches` — a purpose-built table of the 9am Pacific batch for each of 22 days — which makes the board-reconstruction work in §7 largely redundant.
+
+**Everything in §3 that followed from "the tier cannot be reconstructed" is withdrawn.** The raw-snapshot stub observation remains factually true, but the conclusion drawn from it — that tier backtesting is therefore impossible — does not follow, because the reconstruction had already been done and materialised.
+
+### Real tier data (from `tiered_full_fixed`, 26 days)
+
+| Tier | Demon n | Demon hit % | Goblin n | Goblin hit % |
+|---|---|---|---|---|
+| 0 | 402 | 28.1% | 4,010 | 76.6% |
+| 1 | 202 | 21.3% | 2,308 | 71.2% |
+| 2 | 115 | 15.7% | 2,404 | 79.3% |
+| 3 | 68 | 5.9% | 293 | 85.0% |
+| 4 | 314 | 8.3% | 24 | 79.2% |
+| 5 | 123 | 4.9% | 2 | 0.0% |
+
+Demon declines monotonically with tier exactly as `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` describes. Note this table is **0-indexed** (tier 0 = closest to anchor) while the documentation is 1-indexed — the doc's "Tier2" is this table's **tier 1**.
+
+*Anomaly worth a future look:* Goblin tiers 6–10 (n=19–75 each) hit only 31.6–46.2%, against 71–85% at tiers 0–4. That cliff is inconsistent with the goblin mechanism (farther = easier) and suggests mislabelling at high tiers.
+
+### PP Demon — the test I wrongly said was impossible
+
+`hits_runs_rbis/less/demon`, 3-pick, ranked by hp, uncapped, on `tiered_full_fixed`:
+
+| Pool | Slips | Days | Full hits | Slip hit % | ROI Power (15x) | ROI Flex (15x/1.5x) |
+|---|---|---|---|---|---|---|
+| tier 0 | 30 | 7 | 5 | 16.7% | **+150.0%** | **+180.0%** |
+| **tier 1 (= doc's "Tier2", the LOCKED config)** | 16 | 5 | **0** | **0.0%** | **−100.0%** | **−43.8%** |
+| tier 0+1 combined | 50 | 9 | 5 | 10.0% | +50.0% | +80.0% |
+
+**The locked Demon configuration produces zero full hits in 16 slips across 5 days.** Stepping one tier closer to the anchor (tier 0) instead gives +150% Power / +180% Flex on 30 slips.
+
+The documented 71.6% hit rate for this pool does not appear anywhere in the tier-reconstructed data. The same doc concedes a re-confirmation at "36.2%/n=58", which matches tier 1 here exactly (36.2%, n=58). Tier 0 gives 42.9% (n=105). **The 71.6% figure should be discarded**; at 36.2% the per-leg EV against the documented 3.087x multiplier is 1.12, not the documented 2.21.
+
+**Revised recommendation:** the Demon track should move from tier 1 to tier 0, or be suspended. This supersedes the "UNTESTABLE" row in §2.
+
+## C2. RECONCILIATION: my PP Regular ROI vs the documented +1105.4% / +779.3%
+
+Both documented figures were located and **reproduced exactly**:
+
+- `backtest.regular_size_compare`, pick_size 6: 28 slips, 9 full hits, staked 28, returned 337.50 → (337.50−28)/28 = **+1105.4%** ✅
+- `backtest.regular_flex_slips`, sz 6: 28 slips, 9 full + 9 one-off + 8 two-off → 9(25) + 9(2) + 8(0.4) = 246.20 → **+779.3%** ✅
+
+Rebuilding 6-pick slips directly from their own leg table `backtest.regular_pfs_legs` reproduces 28 slips / 9 full hits / +1105.4% precisely. Correlation caps were tested and are **not** the difference (max-2-per-game gives an identical result; max-1-per-game gives +561.8%).
+
+**The difference is the window, and only the window.** Day-by-day comparison of their leg table against my reconstruction:
+
+| | Their `regular_pfs_legs` | My reconstruction |
+|---|---|---|
+| Days | **12** (2026-08-06 → 2026-08-18) | **18** (2026-07-28 → 2026-08-20) |
+| Legs | 204 | ~300 |
+| Leg hit rate | 79.4% | 78.5% overall; **79.4% on their window** |
+| 6-pick slips | 28 | 50 |
+| Power ROI | **+1105.4%** | +725.0% |
+
+On the 10 days both cover, the leg counts and hit rates are **identical or near-identical** (08-06: 12/12 legs at 91.7%/91.7%; 08-07: 24/24 at 79.2%/79.2%; 08-08: 32/32 at 78.1%; 08-09: 23/23 at 82.6%; 08-11: 40/40 at 85.0%; 08-12: 21/21 at 85.7%; 08-13: 16/16 at 68.8%; 08-18: 25/25 at 72.0%). The underlying data agrees.
+
+Their table simply **omits 10 days that exist in the graded record**: 07-28, 07-30, 07-31, 08-01, 08-02, 08-04, 08-05, 08-15, 08-19, 08-20. Several are materially worse than the retained set — 08-05 (17 legs, 58.8%), 07-28 (8 legs, 62.5%), 08-20 (17 legs, 70.6%). Excluding them raises ROI.
+
+**Neither number is wrong; they measure different windows.** +1105.4% is correct for 08-06→08-18. +725% is correct for the full 07-28→08-20 record. The full-window figure is the one to carry forward, because the master prompt requires using the complete available window and expanding it daily.
+
+**Two documentation errors found in `MULTIPLIER_TABLES_MASTER.md` §4:**
+1. It calls this a *"Real 28-day backtest"*. The underlying table spans **12 days**. "28" is the slip count, not the day count.
+2. It cites the range *"07-06 to 08-18"*. Graded data begins **2026-07-24**; 07-06 does not exist in the database.
+
+## C3. CORRECTED: schedule findings in §7 (items 1 and 2 were partly filter artifacts)
+
+I filtered `score.final_board_batches` on `status LIKE 'completed%'` and on a UTC lower bound. Both distorted the result.
+
+- **Retracted:** "the 9am run is missing on 08-13." It is not. 08-13 has completed batches at 09:44, 09:55, 09:57 and 09:58 Pacific. My earlier listing showed only "17:21, 20:06" because a UTC-midnight lower bound cut off that Pacific day's daytime batches. `backtest.nine_am_batches` independently records 08-13's 9am batch at 09:58.
+- **Stands:** 2026-08-15 genuinely has no batch before 12:01 Pacific.
+- **Stands, but narrowed:** no batch anywhere near 01:00 Pacific appears on any day from 08-11 to 08-21. On the unfiltered data the 1am run is absent across that span.
+- **New and more serious than the original finding:** `orphaned_stale_no_rows_written` accounts for **41 batches**, and they cluster in the 9am window as retry storms. On 2026-08-18 there were **16 consecutive orphaned batches from 09:43 to 10:01** before one finally succeeded at 10:02. On 08-21: 09:51, 09:53, 09:57 all orphaned before 10:03 succeeded. On 08-16: six orphaned between 09:53 and 10:39. The 9am run is not usually *missing* — it is **failing repeatedly and recovering late**, which pushes the real board past the 10:00–10:30 placement window.
+
+## C4. `backtest.deployed_configs` disagrees with the master prompt's locked-config table
+
+A table of saved configs exists (written 2026-08-20) and does not match the master prompt's §2:
+
+| Track | `deployed_configs` ROI | n slips | Config summary | Master prompt says |
+|---|---|---|---|---|
+| pp_regular | 750.0% | 18 | **bottom-of-order 7-9, `total_bases<1.5`** | `pitcher_fantasy_score/less`, +1105.4% |
+| pp_high_hit (goblin) | 29.7% | 33 | flex, graduated cap, 1/game | +79.9% |
+| pp_demon | 171.1% | 8 | graduated, 2/game, 2/prop | +80.0% / +657.9% |
+| sleeper | 31.7% | 13 | Power, per_leg 1.2684 | +46.5% |
+| underdog | 9.9% | 9 | flex, 1/game | +345.0% |
+
+Notably the saved `pp_regular` config is the **Generation-1 bottom-of-order signal**, which `SIGNALS_TECHNIQUES_TRIED.md` lists as "status unclear / organically replaced". It is what is actually recorded as deployed. The master prompt's table and this table need reconciling by the user — I cannot tell from the data which reflects live behaviour.
+
+## C5. The §0 Underdog headline — independently confirmed, and now traceable
+
+The flat-vs-geometric finding **survives** contact with the backtest schema, and is now traceable to a stored artifact. `backtest.ud_cap_results`, pick_size 6, config `fixed_1`: 27 slips, 5 full hits, returned **120.15**.
+
+120.15 ÷ 5 winning slips = **24.03x per win** — which is exactly `35 × 0.6865`, the flat model. The documented +345.0% is reproduced exactly from that row, and is definitively built on the flat application.
+
+Under the corrected geometric model the same 5 wins return 5 × (35 × 0.6865⁶) = 18.28 against 27 staked → **−32.3%**. (Less severe than the −66.9% in §0, because that stored leg pool caught 5 winning slips where my reconstruction caught 3 — the sign is unchanged.)
+
+## C6. What this episode says about the method
+
+The §3 error and the §7 errors share one cause: **I drew conclusions from the absence of evidence without first establishing that I had looked everywhere.** "Impossible" was asserted after querying five hardcoded schemas out of forty. Two schedule claims were asserted from a filtered query without checking what the filter removed.
+
+Standing rule added to the daily task prompt: **enumerate all schemas and inspect `backtest` before any analysis, and never state that something cannot be done without first showing the search that establishes it.**
+
+## C7. Revised standings (superseding §2)
+
+| Track | Config | Corrected ROI | Confidence |
+|---|---|---|---|
+| **PP Regular** | `pitcher_fantasy_score/less`, 6-pick | **+725%** full window / +1105.4% on 08-06→08-18 | High — multiplier verified at 1.000, both windows reproduce |
+| **PP Demon (tier 0)** | `hits_runs_rbis/less`, tier 0, 3-pick | **+150% Power / +180% Flex** | Medium — 30 slips, 7 days |
+| **Sleeper (new pool)** | `rbis`+`walks`+`rfi_nrfi` /less, 6-pick | +198.8% at per-leg 1.628 | Medium — multiplier from 2 real slips |
+| PP Goblin | flag-level, 5-pick | −25.4% at per-leg 0.620 | Medium |
+| **PP Demon (tier 1, LOCKED)** | `hits_runs_rbis/less`, tier 1, 3-pick | **−100% Power** | High — 0 hits in 16 slips |
+| **Underdog (LOCKED)** | `rbis`+`walks` /less, 6-pick | **−32% to −67%** | High — multiplier error confirmed three ways |
+
+**Nothing was deployed, patched, or modified.**
+
+---
