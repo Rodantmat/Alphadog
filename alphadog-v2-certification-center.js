@@ -4757,47 +4757,17 @@ async function saveSelectedSlips(){
     alert('Saved '+(j.saved||[]).length+' slip(s).');
   }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
 }
-function activeSourceFilters(){const m={sleeper:$('filterSleeper'),prizepicks:$('filterPrizepicks'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+function activeSourceFilters(){const m={prizepicks_demon:$('filterDemon'),prizepicks_goblin:$('filterGoblin'),prizepicks_regular:$('filterRegular'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   if(!lastRawSlips.length){return}
-  const filterRow=$('slipSourceFilterRow');
-  const filterVisible=filterRow && !filterRow.classList.contains('hidden');
-  const filtered=filterVisible
-    ? lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()))
-    : lastRawSlips.map((s,i)=>({s,i}));
+  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
-  results.innerHTML=lastSlipsNoteHtml+'<h3>'+esc(lastSlipsHeading)+'</h3>'+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  results.innerHTML=lastSlipsNoteHtml+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
-function bindSlipSourceFilters(){const ids=['filterSleeper','filterPrizepicks','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
-async function autoCreateSlips(){
-  const btn=$('autoCreateSlipsBtn');const results=$('autoCreateResults');
-  if(btn)btn.disabled=true;
-  results.innerHTML='<div class="empty">Selecting best legs and building slips...</div>';
-  try{
-    const j=await (await fetch('/api/slips/research-create',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
-    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
-    lastAutoCreatedSlips=j.generated_slips||[];
-    const missingApps=(j.apps_with_no_qualifying_legs||[]).join(', ');
-    if(!lastAutoCreatedSlips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying legs right now.')+(missingApps?' No legs found for: '+esc(missingApps)+'.':'')+'</div>';return}
-    const counts=j.source_counts||{};
-    const countsLine=Object.keys(counts).map(k=>k.toUpperCase()+': '+counts[k]).join(' • ');
-    lastRawSlips=lastAutoCreatedSlips;lastSlipsHeading='Auto-Created Slips';
-    lastSlipsNoteHtml='<div class="dossierNote">Selected '+esc(j.selected_leg_count)+' legs ('+esc(countsLine)+') → built '+lastAutoCreatedSlips.length+' slips. '+esc((j.notes||[])[0]||'')+'</div>';
-    applySlipSourceFilter();
-  }finally{if(btn)btn.disabled=false}
-}
-function setActiveSlipTab(tabName){
-  document.querySelectorAll('.slipTab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabName));
-  const filterRow=$('slipSourceFilterRow');if(filterRow)filterRow.classList.toggle('hidden',tabName!=='grounded'&&tabName!=='highhit');
-}
+function bindSlipSourceFilters(){const ids=['filterDemon','filterGoblin','filterRegular','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
 function bindAutoCreateSlips(){
-  const b=$('autoCreateSlipsBtn');if(b)b.onclick=()=>{setActiveSlipTab('grounded');autoCreateSlips()};
-  const h=$('highHitSlipsBtn');if(h)h.onclick=()=>{setActiveSlipTab('highhit');highHitSlips()};
-  const g=$('goblinSlipsBtn');if(g)g.onclick=()=>{setActiveSlipTab('goblin');goblinSlips()};
-  const r=$('regularSlipsBtn');if(r)r.onclick=()=>{setActiveSlipTab('regular');regularSlips()};
-  const d=$('demonSlipsBtn');if(d)d.onclick=()=>{setActiveSlipTab('demon');demonSlips()};
   bindSlipSourceFilters()
 }
 async function regularSlips(){
