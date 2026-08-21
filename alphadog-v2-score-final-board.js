@@ -842,6 +842,20 @@ async function generateFinalBoard(pgClient, input) {
   await writeIssue(pgClient, batchId, simBatchId, "HP_FIRST_SOURCE_LOCKED", "INFO", rows.length, { note: "Final Board consumes locked hp_board_current directly, applies same-app dedupe, adds quota reserve review rows.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, final_rows_written: rows.length, primary_rows_written: primaryRows.length, review_rows_written: reviewRows.length });
 
   await pgClient`UPDATE score.final_board_batches SET status=${output.status}, certification=${output.certification}, certification_grade=${output.certification_grade}, matrix_rows_read=${output.matrix_rows_read}, live_rows_read=${output.live_rows_read}, final_rows_written=${output.final_rows_written}, current_rows_written=${output.current_rows_written}, finished_at=now(), output_json=${safeJson(output)} WHERE final_board_batch_id=${batchId}`;
+
+  // ADDED (2026-08-21): precisely and permanently record the FIRST successfully completed
+  // board snapshot of each calendar day. This is the snapshot the person actually places
+  // slips against (~10am ET, right after the 9am master run) and must never be silently
+  // overwritten by later same-day runs the way score.final_board_current correctly is.
+  // ON CONFLICT DO NOTHING guarantees only the true first run of the day ever gets recorded,
+  // regardless of how many additional runs happen later that day.
+  try {
+    const todayEt = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" })).toISOString().slice(0, 10);
+    await pgClient`INSERT INTO score.daily_first_snapshot_batches (official_date, final_board_batch_id, captured_at)
+      VALUES (${todayEt}, ${batchId}, now())
+      ON CONFLICT (official_date) DO NOTHING`;
+  } catch (_) {}
+
   return output;
 }
 
