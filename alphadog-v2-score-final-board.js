@@ -728,8 +728,71 @@ async function reconcileStaleRunningFinalBoard(pgClient, input, engine, started)
   return output;
 }
 
+// PERMANENT FIX (2026-08-21): reconcileStaleRunningFinalBoard above only catches a stale batch
+// tied to the SAME engine.batch_id as the current invocation. A worker killed before its final
+// status UPDATE (e.g. CF Worker timeout, or a caller retry racing an in-flight run) leaves a
+// 'running' row whose engine_batch_id may never be requested again once scoring moves on to a
+// newer batch - that row then stays 'running'/finished_at=NULL forever, with no future call ever
+// matching it. This is a genuine, real, recurring class of bug (confirmed live 2026-08-21: 3
+// batches stuck simultaneously after a troubleshooting session's retries). Fix: a second,
+// independent sweep that finds ANY batch stuck 'running' for more than 10 real minutes,
+// regardless of which engine batch it belongs to, and applies the exact same two hard-won safety
+// checks already proven above (stability-across-a-wait, and tier-composition-plausibility against
+// upstream hp_board_current for THAT row's own engine_batch_id) before finalizing it. Never
+// blindly marks anything finished - if either check fails, the row is left alone rather than
+// risk silently truncating a genuinely still-writing batch.
+async function reconcileAnyStaleRunningFinalBoardBatches(pgClient) {
+  const staleRows = await pgClient`SELECT final_board_batch_id, source_engine_batch_id, worker_version, profile_key, started_at
+    FROM score.final_board_batches
+    WHERE status = 'running' AND finished_at IS NULL AND started_at < now() - interval '10 minutes'
+    ORDER BY started_at ASC LIMIT 5`;
+  for (const stale of staleRows) {
+    const staleBatchId = stale.final_board_batch_id;
+    const engineBatchId = stale.source_engine_batch_id;
+    try {
+      const firstCountRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_history WHERE final_board_batch_id = ${staleBatchId}`;
+      const firstCount = Number(firstCountRows[0] && firstCountRows[0].rows || 0);
+      if (firstCount <= 0) {
+        // Never wrote anything real - safe to mark as a genuine dead run, not a truncation risk.
+        await pgClient`UPDATE score.final_board_batches SET status='orphaned_stale_no_rows_written', certification='SCORE_FINAL_BOARD_ORPHANED_STALE_NO_ROWS', certification_grade='FAILED', finished_at=now() WHERE final_board_batch_id=${staleBatchId} AND status='running' AND finished_at IS NULL`;
+        continue;
+      }
+      await new Promise(resolve => setTimeout(resolve, 4000));
+      const secondCountRows = await pgClient`SELECT COUNT(*) AS rows FROM score.final_board_history WHERE final_board_batch_id = ${staleBatchId}`;
+      const historyCount = Number(secondCountRows[0] && secondCountRows[0].rows || 0);
+      if (historyCount !== firstCount) continue; // still actively being written - leave alone, next sweep will catch it
+      if (engineBatchId) {
+        const upstreamTierCounts = await pgClient`SELECT
+            SUM(CASE WHEN h.board_tier='PRIMARY' THEN 1 ELSE 0 END) AS primary_candidates,
+            SUM(CASE WHEN h.board_tier='REVIEW' THEN 1 ELSE 0 END) AS review_candidates
+          FROM score.hp_board_current h
+          WHERE h.source_engine_batch_id = ${engineBatchId} AND COALESCE(h.blocker_count, 0) = 0
+            AND h.canonical_prop_key <> 'pitches_thrown' AND h.estimated_hit_probability_0_100 >= 60
+            AND h.score_0_100 IS NOT NULL AND h.selected_side IS NOT NULL AND h.line_value IS NOT NULL
+            AND h.player_name IS NOT NULL AND h.canonical_prop_key IS NOT NULL AND h.source_key IS NOT NULL AND h.mlb_player_id IS NOT NULL`;
+        const upstreamPrimary = Number(upstreamTierCounts[0] && upstreamTierCounts[0].primary_candidates || 0);
+        const upstreamReview = Number(upstreamTierCounts[0] && upstreamTierCounts[0].review_candidates || 0);
+        const recoveredTierCounts = await pgClient`SELECT
+            SUM(CASE WHEN board_tier='PRIMARY' THEN 1 ELSE 0 END) AS primary_rows,
+            SUM(CASE WHEN board_tier='REVIEW' THEN 1 ELSE 0 END) AS review_rows
+          FROM score.final_board_history WHERE final_board_batch_id = ${staleBatchId}`;
+        const recoveredPrimary = Number(recoveredTierCounts[0] && recoveredTierCounts[0].primary_rows || 0);
+        const recoveredReview = Number(recoveredTierCounts[0] && recoveredTierCounts[0].review_rows || 0);
+        const implausible = (upstreamReview >= 100 && recoveredReview === 0) || (upstreamPrimary >= 100 && recoveredPrimary === 0);
+        if (implausible) continue; // looks like a died-mid-write, not a genuine finish - leave for manual review
+      }
+      // Passed both checks: this batch genuinely wrote a stable, plausible set of rows and its
+      // status row simply never got its final UPDATE. Finalize the metadata only - never touches
+      // score.final_board_current, since that table is independently replaced by whichever run
+      // genuinely completes last, and this sweep must never fight that.
+      await pgClient`UPDATE score.final_board_batches SET status='completed_final_board_history_reconciled_orphaned', certification='SCORE_FINAL_BOARD_CERTIFIED_HISTORY_RECONCILED_ORPHANED', certification_grade='PASS_WITH_REVIEW_WARNINGS', final_rows_written=${historyCount}, finished_at=now() WHERE final_board_batch_id=${staleBatchId} AND status='running' AND finished_at IS NULL`;
+    } catch (_) { /* leave this one alone, next sweep retries */ }
+  }
+}
+
 async function generateFinalBoard(pgClient, input) {
   await ensureSchema(pgClient);
+  await reconcileAnyStaleRunningFinalBoardBatches(pgClient).catch(() => {});
   const started = Date.now();
   const batchId = rid("score_final_board_batch");
   const requestId = input.request_id || null;
