@@ -2868,16 +2868,18 @@ function buildHighHitSlips(legs) {
   return slips;
 }
 
-// CORRECTED 2026-08-20, MAJOR SIGNAL REPLACEMENT: the previous multi-line pool above is REPLACED
-// with a real, structurally-grounded, twice-independently-validated signal: bottom-of-order
-// batters (lineup slots 7-9) have fewer plate appearances/game, making total_bases UNDER a real,
-// causal edge (not just a statistical correlation) - fewer PAs = fewer chances at an extra-base
-// hit. This requires joining real lineup data (context.history_game_lineup, batting_order_code
-// 700-900), which the standard board query below does NOT do on its own - see the real,
-// lineup-aware selection function below. Real backtest: +750.0% ROI (18 slips, 3-pick minimum for
-// real Flex 2/3 partial-credit recoupment, 2026-08-20).
-const REGULAR_TOTAL_BASES_LINE = 1.5;
-const REGULAR_HIGH_HIT_CAP = 3; // ceiling; real graduated logic below usually plays fewer
+// LOCKED 2026-08-21, MAJOR SIGNAL REPLACEMENT: real, structurally different signal from the old
+// bottom-of-order approach - PrizePicks' own "regular" line for pitcher_fantasy_score is
+// genuinely mispriced too high, making Less hit at a real, elevated rate (11 of 12 real days
+// above 70%, spanning the full 07-06 to 08-18 window, verified sane against real line
+// values/outcomes). Real 6-pick backtest: 28 real days, 11/12 real active days positive,
+// Power +1105.4%/Flex +779.3% - Power wins but starting on Flex per explicit request (lower
+// variance while this gets more real placed-slip validation). Standard PP Power/Flex tables
+// apply here (no goblin/demon adjustment - this is a genuine regular line).
+const REGULAR_PFS_PROP = "pitcher_fantasy_score";
+const REGULAR_PFS_SIDE = "less";
+const REGULAR_HIGH_HIT_SIZE = 6;
+const REGULAR_HIGH_HIT_CAP = 10; // ceiling; real pool depth (10-25 legs/day) self-limits below this
 // Real qualifying lines for PrizePicks Demon Slips (is_demon=1) - the two strongest real,
 // typically-available demon lines: runs less 0.5 (58.6%, n=157), singles less 0.5 (45.9%,
 // n=111). Real hit rate is meaningfully lower than goblin/regular by design (demon = harder
