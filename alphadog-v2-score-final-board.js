@@ -163,6 +163,7 @@ async function fetchHpFinalBoardCandidateRows(pgClient, sourceEngineBatchId, pag
         AND h.canonical_prop_key <> 'pitches_thrown'
         AND h.score_0_100 IS NOT NULL AND h.selected_side IS NOT NULL AND h.line_value IS NOT NULL
         AND h.player_name IS NOT NULL AND h.canonical_prop_key IS NOT NULL AND h.source_key IS NOT NULL AND h.mlb_player_id IS NOT NULL
+        AND NOT (h.source_key = 'prizepicks' AND (h.is_goblin = 1 OR h.is_demon = 1) AND h.selected_side = 'less' AND bp.is_under_allowed = 0)
       ORDER BY COALESCE(h.hp_sort_0_100, (0.72 * COALESCE(h.estimated_hit_probability_0_100,0)) + (0.28 * COALESCE(h.score_0_100,0))) DESC,
                h.estimated_hit_probability_0_100 DESC, h.score_0_100 DESC, h.probability_confidence_0_100 DESC, h.hp_rank ASC NULLS LAST, h.hp_board_row_id ASC
       LIMIT ${limit} OFFSET ${offset}`;
