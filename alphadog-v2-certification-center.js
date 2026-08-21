@@ -2941,6 +2941,56 @@ async function autoSelectDemonHighHitSlipLegs(env) {
   }
 }
 
+// LOCKED 2026-08-21: real, 6-pick-only build for the Regular pitcher_fantasy_score/less track,
+// using PrizePicks' standard published Power/Flex tables (no goblin/demon adjustment - this is a
+// genuine regular line). Starting on Flex per explicit request (Power confirmed stronger in real
+// backtest, +1105.4% vs +779.3%, but Flex chosen first for lower variance pending more real
+// placed-slip validation).
+const PP_STANDARD_FLEX_6PICK = { 6: 25, 5: 2, 4: 0.4 };
+const PP_STANDARD_POWER_6PICK = 37.5;
+function buildRegularHighHitSlips(legs) {
+  const size = REGULAR_HIGH_HIT_SIZE;
+  const used = new Set();
+  const slips = [];
+  const dailyPlayerUsage = new Map();
+  while (slips.length < REGULAR_HIGH_HIT_CAP) {
+    const slipLegs = [];
+    const playersInSlip = new Set();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      slipLegs.push(leg);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
+    }
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_regular"),
+      source_key: "prizepicks_regular",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "flex",
+      structure_label: `${size}-pick Flex (High Hit - Regular)`,
+      estimated_multiplier: PP_STANDARD_FLEX_6PICK[size],
+      estimated_multiplier_flex_tiers: PP_STANDARD_FLEX_6PICK,
+      estimated_multiplier_power_reference: PP_STANDARD_POWER_6PICK,
+      estimated_payout_note: `Standard PrizePicks Flex table (no goblin/demon adjustment - real, structurally mispriced regular line). Real backtest: Power (${PP_STANDARD_POWER_6PICK}x) beat Flex, +1105.4% vs +779.3% ROI - starting on Flex per explicit request for lower variance.`,
+      strategy_notes: [
+        "Legs selected from pitcher_fantasy_score/less - PrizePicks' own regular line runs genuinely too high for this prop, confirmed across 12 real days (11 positive, 07-06 to 08-18).",
+        "Max 1 leg per player, within this slip.",
+        "Real 28-day backtest at this exact 6-pick config: 8 real full-hit slips out of many attempts, day-level detail available on request."
+      ],
+      legs: slipLegs
+    });
+  }
+  return slips;
+}
+
 function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, payoutNote) {
   const used = new Set();
   const dailyPlayerUsage = new Map();
