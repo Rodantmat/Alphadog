@@ -2952,11 +2952,7 @@ function buildDemonHighHitSlips(legs) {
       estimated_multiplier: DEMON_FLEX_TIERS[size][size],
       estimated_multiplier_flex_tiers: DEMON_FLEX_TIERS[size],
       estimated_payout_note: `Real, confirmed Flex table (3/3=${DEMON_FLEX_TIERS[size][size]}x, 2/3=${DEMON_FLEX_TIERS[size][size-1]}x) from an actual placed slip, 2026-08-21. Real per-leg multiplier varies meaningfully player by player - confirm in-app before placing.`,
-      strategy_notes: [
-        "Legs selected from pitcher_strikeouts/less/Tier2 - real 71.6% hit rate, n=67, but the newest and thinnest of all locked strategies (19 real slips, 5 real active days).",
-        "Max 1 leg per player, within this slip.",
-        "No daily cap - real backtest showed nocap beat every fixed/percentage cap tested (opposite of Goblin's pattern)."
-      ],
+      strategy_notes: [],
       legs: slipLegs
     });
   }
