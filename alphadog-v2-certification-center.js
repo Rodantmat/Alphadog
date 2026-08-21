@@ -4829,6 +4829,7 @@ function slipSummaryHtml(filtered){
 }
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
+  bindLegKeepBoxDelegation();
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
