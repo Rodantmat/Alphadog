@@ -645,10 +645,17 @@ async function copyHistoryToCurrent(pgClient, batchId) {
   // to this third column (surfaced 2026-08-12 when reconcileStaleRunningFinalBoard hit it).
   const CAST_SELECT_COLS = { official_date: "official_date::date", official_game_time_utc: "official_game_time_utc::timestamptz", details_json_snapshot: "details_json_snapshot::jsonb" };
   const selectCols = BOARD_ROW_COLS.map(c => CAST_SELECT_COLS[c] || c).join(", ");
-  await pgClient`DELETE FROM score.final_board_current`;
-  await pgClient`INSERT INTO score.final_board_current (${pgClient.unsafe(cols)})
-    SELECT ${pgClient.unsafe(selectCols)} FROM score.final_board_history WHERE final_board_batch_id = ${batchId}
-    ON CONFLICT (final_board_row_id) DO NOTHING`;
+  // ATOMICITY FIX (2026-08-21): DELETE and INSERT were two separate statements, giving any
+  // concurrent reader (e.g. the main board API) a real window where the table was empty or
+  // partially repopulated - confirmed live as the direct cause of a "0 of 0 qualified legs"
+  // report during the 1pm run. Wrapped in a transaction so readers only ever see the old
+  // complete data or the new complete data, never a gap.
+  await pgClient.begin(async sql => {
+    await sql`DELETE FROM score.final_board_current`;
+    await sql`INSERT INTO score.final_board_current (${sql.unsafe(cols)})
+      SELECT ${sql.unsafe(selectCols)} FROM score.final_board_history WHERE final_board_batch_id = ${batchId}
+      ON CONFLICT (final_board_row_id) DO NOTHING`;
+  });
   return { ok: true };
 }
 
