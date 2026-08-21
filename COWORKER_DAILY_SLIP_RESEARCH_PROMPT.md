@@ -70,13 +70,15 @@ The real backtest data grows by one real day approximately every 24 hours, but w
 
 ---
 
-## 3b. THE REAL SNAPSHOT TIMING PROBLEM — how to get the board state that actually matters
+## 3b. TIME CONVENTIONS AND THE REAL DAILY RUN SCHEDULE
 
-**Real, important context on how this system is actually used**: the master full run kicks off ~9am Pacific and finishes ~9:30-9:45am Pacific. The real slips get placed ~10-10:30am Pacific, against whatever the board looked like right after that run. **Any backtest of Goblin/Regular/Demon must reconstruct the board as it looked at that real ~9-10am Pacific moment on each historical day** — not "whatever `final_board_current` shows right now" (which only ever holds the LATEST run, possibly from hours or days later) and not naively "the first batch tagged with that `official_date`" either.
+**Hard rule: every time the user gives you, in any conversation, is Pacific time.** The system's own internal clocks and database timestamps are UTC. Never assume a time the user states is already UTC — always convert (Pacific is UTC-7 during PDT / UTC-8 during PST; check which applies to your target date).
 
-**A real, confirmed trap, found and verified while building this prompt — do not repeat it**: this system also has a table, `score.daily_first_snapshot_batches` (columns: `official_date`, `final_board_batch_id`, `captured_at`), that was built specifically to solve this problem — but it does NOT reliably work as intended. Checked directly: the batch it captured for `official_date=2026-08-21` started at **00:15 UTC on 2026-08-21**, which is **5:15pm Pacific on 2026-08-20** — a preliminary evening pre-run that happened to be the first to tag rows with tomorrow's `official_date`, not the real 9am run on the 21st itself. **Do not trust this table's "first snapshot" as the real 9-10am board state without independently verifying it the way described below.**
+**The real, complete daily schedule**: the master full run executes **four times a day, at 1am, 9am, 1pm, and 5pm Pacific** — not once. The **9am Pacific run is the one that matters for backtesting against what the user actually acts on**: it finishes ~9:30-9:45am Pacific, and real slips get placed ~10-10:30am Pacific against that specific run's output. The other three real runs (1am, 1pm, 5pm) happen for other reasons (keeping the board fresh throughout the day) but are NOT the one to reconstruct when building a historical "what would this strategy have done" backtest.
 
-**The verified, correct method**: find the real batch whose `started_at` falls within a genuine 9-10:30am Pacific window on the SAME calendar day you're reconstructing:
+**This directly explains a real trap already found and fixed while building this prompt**: this system has a table, `score.daily_first_snapshot_batches` (columns: `official_date`, `final_board_batch_id`, `captured_at`), built to capture "the first snapshot of each day" — but checked directly, the batch it captured for `official_date=2026-08-21` started at 00:15 UTC on 2026-08-21, which is **5:15pm Pacific on 2026-08-20 — the real, regularly-scheduled 5pm run from the PREVIOUS day**, which happened to be the first to write rows tagged with tomorrow's `official_date` (early games' official dates can roll over ahead of the real 9am run for that calendar day). **Do not trust this table's "first snapshot" as the real 9am board state.**
+
+**The verified, correct method**: of the four real daily runs, explicitly target the 9am Pacific one on the SAME calendar day you're reconstructing:
 ```sql
 -- Pacific 9:00am-10:30am = UTC 16:00-17:30 during PDT (UTC-7), or UTC 17:00-18:30 during PST (UTC-8)
 -- Always check which offset applies to your target date before running this.
@@ -88,9 +90,9 @@ ORDER BY started_at ASC LIMIT 1;
 ```
 Then reconstruct that day's real board using `score.final_board_history` (which retains every batch, unlike `final_board_current` which only ever holds the latest) filtered to that specific `final_board_batch_id`.
 
-**If no batch falls in that window for a given date**: say so explicitly in your report rather than silently substituting a different batch — this is a real gap worth flagging, not papering over.
+**If no batch falls in that window for a given date**: say so explicitly in your report rather than silently substituting one of the other three daily runs — this is a real gap worth flagging, not papering over.
 
-**A real, worthwhile follow-up for a coworker session to flag back to the user** (not to fix yourself — this is research-only): the `daily_first_snapshot_batches` capture mechanism itself could be corrected to filter by a real Pacific-time window rather than "first batch for this official_date" — but that's a live code change, out of scope for a dry-run research session. Report the finding; do not patch it.
+**A real, worthwhile follow-up for a coworker session to flag back to the user** (not to fix yourself — this is research-only): the `daily_first_snapshot_batches` capture mechanism itself could be corrected to specifically target the real 9am Pacific run rather than "first batch for this official_date" — but that's a live code change, out of scope for a dry-run research session. Report the finding; do not patch it.
 
 ---
 
