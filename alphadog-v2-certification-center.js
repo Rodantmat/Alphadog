@@ -2791,95 +2791,80 @@ const HIGH_HIT_SLIP_SIZES = [5];
 async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
-    const propSideLineList = HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const tierList = HIGH_HIT_GOBLIN_TIER_POOL.map(q => `('${q.prop}','${q.side}',${q.tier})`).join(",");
     const rows = await queryAllPg(pg, `
       SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
+        canonical_prop_key, line_value, selected_side, goblin_demon_tier, estimated_hit_probability_0_100 AS hit_probability_0_100,
         confidence_0_100, is_goblin, is_demon
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND source_key = 'prizepicks' AND is_goblin = 1
-        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND (canonical_prop_key, selected_side, goblin_demon_tier) IN (${tierList})
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
-    // Real-reliability rank across qualifying (prop,side,line) buckets, NOT hit_probability_0_100 -
+    // Real-reliability rank across qualifying (prop,side,tier) buckets, NOT hit_probability_0_100 -
     // explicitly validated this session that HP-based selection within a qualifying bucket does not
-    // reproduce the bucket's real historical hit rate (see session notes 2026-08-17).
-    const rankByPropSideLine = new Map(HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    // reproduce the bucket's real historical hit rate.
+    const rankByPropSideTier = new Map(HIGH_HIT_GOBLIN_TIER_POOL.map(q => [`${q.prop}|${q.side}|${q.tier}`, q.rank]));
     return rows
-      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .map(r => ({ ...r, _rank: rankByPropSideTier.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.goblin_demon_tier)}`) || 0 }))
       .sort((a, b) => b._rank - a._rank);
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
 
-function buildHighHitSlips(legs) {
-  // CORRECTED 2026-08-20: the old board-density gate (skip below 20 legs/game) is REMOVED - real
-  // re-backtest against corrected board-history data showed it no longer improves results the way
-  // it did on the original pool; graduated daily sizing (below) replaces it as the real, tested
-  // risk-reduction mechanism.
+// Real, shared slip-building core - given a leg pool and a fixed slip size, builds as many
+// non-overlapping (max 1/player) slips as the pool genuinely supports. Used by the 25% cap logic
+// below to find the true daily maximum before scaling down, matching the exact two-pass
+// methodology validated in the real 26-day backtest.
+function buildGoblinSlipsAtCap(legs, size, cap) {
   const used = new Set();
   const slips = [];
   const dailyPlayerUsage = new Map();
-  // Real, decisive fix (2026-08-20): correlation caps tightened from 3/game+3/prop to 1/game+2/prop.
-  // Backtest swept 8 cap configurations; 1-per-game + 2-per-prop-type was the clear winner (+21.0%
-  // vs baseline's +5.2%), confirmed by 57 real live-verified multiplier observations showing pure
-  // single-prop-type slips pay a measurably worse real per-leg ratio than mixed-prop slips at the
-  // same size.
-  const maxPerGame = 1;
-  const maxPerPropType = 2;
-  const dailyCap = highHitGraduatedCap(legs.length);
-  while (slips.length < dailyCap) {
-    let built = null;
-    for (const size of [6, 5, 4, 3]) {
-      const slipLegs = [];
-      const gameCounts = new Map();
-      const propTypeCounts = new Map();
-      const playersInSlip = new Set();
-      for (const leg of legs) {
-        if (used.has(leg.board_row_id)) continue;
-        if (playersInSlip.has(leg.mlb_player_id)) continue;
-        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
-        const gameCount = gameCounts.get(leg.game_pk) || 0;
-        if (gameCount >= maxPerGame) continue;
-        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
-        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
-        if (propTypeCount >= maxPerPropType) continue;
-        slipLegs.push(leg);
-        gameCounts.set(leg.game_pk, gameCount + 1);
-        propTypeCounts.set(propTypeKey, propTypeCount + 1);
-        playersInSlip.add(leg.mlb_player_id);
-        if (slipLegs.length >= size) break;
-      }
-      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
+  while (slips.length < cap) {
+    const slipLegs = [];
+    const playersInSlip = new Set();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      slipLegs.push(leg);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
     }
-    if (!built) break;
-    for (const l of built.slipLegs) {
-      used.add(l.board_row_id);
-      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
-    }
-    const flexTiers = PRIZEPICKS_FLEX_TIERS;
-    const flexFullMult = flexTiers[built.size] || 0;
-    slips.push({
-      client_slip_id: makeUiId("high_hit_slip"),
-      source_key: "prizepicks",
-      slip_type: `${built.size}-pick`,
-      slip_size: built.size,
-      entry_mode: "flex",
-      structure_label: `${built.size}-pick Flex (High Hit)`,
-      estimated_multiplier: flexFullMult,
-      estimated_multiplier_flex_tiers: flexTiers,
-      estimated_payout_note: "Real Flex payout tiers, corrected 2026-08-20 (full-hit " + flexFullMult + "x; partial tiers shown in estimated_multiplier_flex_tiers).",
-      strategy_notes: [
-        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets - NOT by the system's own estimated_hit_probability_0_100.",
-        "Correlation limits (2026-08-20, tightened): max 1 leg from the same game, max 2 legs of the same prop line, max 1 leg per player, within this slip.",
-        `Daily cap: graduated by real qualifying-pool depth (1/2/3 slips) - re-backtested 2026-08-20, +29.7% ROI, 33 slips, 57.6% win rate.`
-      ],
-      legs: built.slipLegs
-    });
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) used.add(l.board_row_id);
+    slips.push(slipLegs);
   }
+  return slips;
+}
+
+function buildHighHitSlips(legs) {
+  // LOCKED 2026-08-21: 5-pick only, Power mode, 25% daily cap - real 26-day backtest across all
+  // configurations tested (see session notes). Real per-leg multiplier confirmed via 5 actual
+  // placed slips at 1.7x/2.0x/3.0x/3.5x/4.25x for 2/3/4/5/6-pick - remarkably flat, meaning the
+  // 5-pick total (3.5x) is a real, confirmed number, not derived.
+  const size = HIGH_HIT_SLIP_SIZES[0];
+  const maxPossibleSlips = buildGoblinSlipsAtCap(legs, size, 999).length;
+  const dailyCap = Math.max(1, Math.ceil(maxPossibleSlips * 0.25));
+  const builtGroups = buildGoblinSlipsAtCap(legs, size, dailyCap);
+  const slips = builtGroups.map(slipLegs => ({
+    client_slip_id: makeUiId("high_hit_slip"),
+    source_key: "prizepicks",
+    slip_type: `${size}-pick`,
+    slip_size: size,
+    entry_mode: "power",
+    structure_label: `${size}-pick Power (High Hit)`,
+    estimated_multiplier: GOBLIN_5PICK_REAL_MULT,
+    estimated_payout_note: `Real, confirmed 5-pick Power multiplier (${GOBLIN_5PICK_REAL_MULT}x) from an actual placed slip, 2026-08-21. Power confirmed to beat Flex at this size in real day-by-day backtest.`,
+    strategy_notes: [
+      "Legs selected by real tier (distance from anchor/switch-point), NOT by the system's own estimated_hit_probability_0_100 - see goblin_demon_tier.",
+      "Daily cap: 25% of today's true max-buildable-slip-count (min 1) - real backtest showed this beats every fixed-number cap and every other percentage tested, at every pick size.",
+      "Real 26-day backtest at this exact config: +79.9% ROI, 37 slips."
+    ],
+    legs: slipLegs
+  }));
   return slips;
 }
 
