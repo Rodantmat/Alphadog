@@ -4722,12 +4722,20 @@ async function saveSelectedSlips(){
     const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
     const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>orig.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
     if(keptLegs.length<2)return null; // no app allows a 1-leg slip
-    const realMultInput=document.querySelector('.realMultInput[data-slip-idx="'+slipIdx+'"]');
-    const realMult=realMultInput&&realMultInput.value?Number(realMultInput.value):null;
+    const realMultInputs=document.querySelectorAll('.realMultInput[data-slip-idx="'+slipIdx+'"]');
+    let realMult=null,realMultFlexTiers=null;
+    if(realMultInputs.length===1&&!realMultInputs[0].dataset.tierHits){
+      realMult=realMultInputs[0].value?Number(realMultInputs[0].value):null;
+    }else if(realMultInputs.length>1){
+      realMultFlexTiers={};
+      realMultInputs.forEach(inp=>{if(inp.value)realMultFlexTiers[inp.dataset.tierHits]=Number(inp.value)});
+      if(Object.keys(realMultFlexTiers).length===0)realMultFlexTiers=null;
+    }
     const computedMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length);
     return {...orig, legs:keptLegs, slip_size:keptLegs.length, slip_type:keptLegs.length+'-pick',
       estimated_multiplier:computedMult||orig.estimated_multiplier,
       real_multiplier:realMult,
+      real_multiplier_flex_tiers:realMultFlexTiers,
       structure_label:keptLegs.length+'-pick '+(orig.entry_mode==='power'?'Power':'Flex')+(orig.structure_label&&orig.structure_label.includes('High Hit')?' (High Hit)':'')};
   }).filter(Boolean);
   if(!selected.length){alert('Each selected slip needs at least 2 legs kept.');return}
