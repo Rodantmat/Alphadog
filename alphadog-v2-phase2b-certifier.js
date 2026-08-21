@@ -468,6 +468,24 @@ async function runMatrixBuilder(request, env, pgClient) {
   const runId = input.run_id || rid("run");
   const sourceTables = { scoring: ["prop_matrix_batches", "prop_matrix_issues", "prop_matrix_coverage_current", "prop_factor_coverage_current", "prop_factor_hitter_packets", "prop_factor_pitcher_packets", "prop_factor_issues", "prop_factor_batches"], score: ["board_prepared_current", "prop_matrix_current"], market: ["context_probe_batches", "context_probe_coverage", "context_probe_player_props", "context_probe_game_market_summary"], context_cert: ["readiness_current", "readiness_batches"], calendar: ["game_calendar"] };
 
+  // FIXED 2026-08-21: findResumeMatrixBatch only ever matches status LIKE 'running%', so a
+  // request_id call that arrives AFTER the batch already reached completed_with_certified_matrix_rows
+  // (e.g. a slow/backgrounded invocation whose caller timed out client-side before seeing the
+  // completion response, then retried with the same request_id) fell through to the "no resumable
+  // batch" branch below, which runs retentionCleanup (deleting all of today/tomorrow's
+  // score.prop_matrix_current rows) and starts an entirely new batch from scratch - silently
+  // discarding a just-finished, fully-certified matrix. Confirmed live: matrix_rows_written grew
+  // 3550 -> 6339 -> 11998 -> 16841 across successive same-request_id calls, then dropped back to a
+  // fresh 3550 with a brand new batch_id once the prior batch had quietly completed. A request_id
+  // call must be idempotent once certified, so check for an already-completed batch for this exact
+  // request_id/window first and short-circuit by replaying its stored output instead of restarting.
+  if (input.request_id) {
+    const alreadyDone = await pgClient`SELECT output_json FROM scoring.prop_matrix_batches WHERE request_id=${input.request_id} AND window_start=${dates[0]} AND window_end=${dates[dates.length - 1]} AND status='completed_with_certified_matrix_rows' ORDER BY updated_at DESC LIMIT 1`;
+    if (alreadyDone[0] && alreadyDone[0].output_json) {
+      return jsonResponse(JSON.parse(alreadyDone[0].output_json));
+    }
+  }
+
   const resumeBatch = await findResumeMatrixBatch(pgClient, input, dates);
   let batchId;
   let resumedExistingBatch = false;
