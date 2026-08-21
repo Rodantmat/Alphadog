@@ -4789,11 +4789,14 @@ const REAL_MULT_TABLES = {
 // different size. Demon only has a real confirmed table at size 3 - other sizes fall back to a
 // single estimated field rather than presenting an unconfirmed number as if it were real.
 const PP_REGULAR_FLEX_BY_SIZE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } };
-function recomputeMultiplier(sourceKey, entryMode, size){
+function recomputeMultiplier(sourceKey, entryMode, size, legs){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
   if(k==='sleeper')return Math.round(Math.pow(1.638,size)*100)/100;
-  if(k==='prizepicks_goblin')return REAL_MULT_TABLES.goblin_power[size]||0;
+  if(k==='prizepicks_goblin'){
+    if(legs&&legs.length)return goblinSlipEstimatedMultiplier(legs).multiplier;
+    return REAL_MULT_TABLES.goblin_power[size]||0;
+  }
   if(k==='prizepicks_demon')return (DEMON_FLEX_TIERS_UI[size]&&DEMON_FLEX_TIERS_UI[size][size])||0;
   if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
   if(k==='parlay_underdog'||k==='underdog')return REAL_MULT_TABLES.underdog_power[size]||0;
