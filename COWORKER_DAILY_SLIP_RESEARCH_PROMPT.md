@@ -70,6 +70,30 @@ The real backtest data grows by one real day approximately every 24 hours, but w
 
 ---
 
+## 3b. THE REAL SNAPSHOT TIMING PROBLEM — how to get the board state that actually matters
+
+**Real, important context on how this system is actually used**: the master full run kicks off ~9am Pacific and finishes ~9:30-9:45am Pacific. The real slips get placed ~10-10:30am Pacific, against whatever the board looked like right after that run. **Any backtest of Goblin/Regular/Demon must reconstruct the board as it looked at that real ~9-10am Pacific moment on each historical day** — not "whatever `final_board_current` shows right now" (which only ever holds the LATEST run, possibly from hours or days later) and not naively "the first batch tagged with that `official_date`" either.
+
+**A real, confirmed trap, found and verified while building this prompt — do not repeat it**: this system also has a table, `score.daily_first_snapshot_batches` (columns: `official_date`, `final_board_batch_id`, `captured_at`), that was built specifically to solve this problem — but it does NOT reliably work as intended. Checked directly: the batch it captured for `official_date=2026-08-21` started at **00:15 UTC on 2026-08-21**, which is **5:15pm Pacific on 2026-08-20** — a preliminary evening pre-run that happened to be the first to tag rows with tomorrow's `official_date`, not the real 9am run on the 21st itself. **Do not trust this table's "first snapshot" as the real 9-10am board state without independently verifying it the way described below.**
+
+**The verified, correct method**: find the real batch whose `started_at` falls within a genuine 9-10:30am Pacific window on the SAME calendar day you're reconstructing:
+```sql
+-- Pacific 9:00am-10:30am = UTC 16:00-17:30 during PDT (UTC-7), or UTC 17:00-18:30 during PST (UTC-8)
+-- Always check which offset applies to your target date before running this.
+SELECT final_board_batch_id, started_at, status
+FROM score.final_board_batches
+WHERE started_at >= '<target_date>T16:00:00Z' AND started_at <= '<target_date>T17:30:00Z'
+  AND status LIKE 'completed%'
+ORDER BY started_at ASC LIMIT 1;
+```
+Then reconstruct that day's real board using `score.final_board_history` (which retains every batch, unlike `final_board_current` which only ever holds the latest) filtered to that specific `final_board_batch_id`.
+
+**If no batch falls in that window for a given date**: say so explicitly in your report rather than silently substituting a different batch — this is a real gap worth flagging, not papering over.
+
+**A real, worthwhile follow-up for a coworker session to flag back to the user** (not to fix yourself — this is research-only): the `daily_first_snapshot_batches` capture mechanism itself could be corrected to filter by a real Pacific-time window rather than "first batch for this official_date" — but that's a live code change, out of scope for a dry-run research session. Report the finding; do not patch it.
+
+---
+
 ## 4. WHERE TO LOOK FOR NEW SIGNALS — THE FULL DATA SURFACE
 
 Beyond the currently-used props, actively mine these real layers every session (a non-exhaustive starting list — invent more):
