@@ -4762,8 +4762,9 @@ function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
-  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
-  results.innerHTML=lastSlipsNoteHtml+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  const counterHtml='<div class="slipCounter">'+filtered.length+' slip'+(filtered.length===1?'':'s')+'</div>';
+  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+counterHtml+'<div class="empty">No slips match the selected apps.</div>';return}
+  results.innerHTML=lastSlipsNoteHtml+counterHtml+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
 function bindSlipSourceFilters(){const ids=['filterDemon','filterGoblin','filterRegular','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
