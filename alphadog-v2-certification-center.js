@@ -3050,27 +3050,29 @@ function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, p
 
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
+  const [ppLegs, udLegs, sleeperLegs, regularLegs] = await Promise.all([
     autoSelectHighHitSlipLegs(env),
     autoSelectUnderdogHighHitSlipLegs(env),
-    autoSelectSleeperHighHitSlipLegs(env)
+    autoSelectSleeperHighHitSlipLegs(env),
+    autoSelectRegularHighHitSlipLegs(env)
   ]);
-  const ppSlips = ppLegs.length >= 3 ? buildHighHitSlips(ppLegs) : [];
+  const ppSlips = ppLegs.length >= 5 ? buildHighHitSlips(ppLegs) : [];
   const udSlips = udLegs.length >= 3 ? buildUnderdogHighHitSlips(udLegs) : [];
   const sleeperSlips = sleeperLegs.length >= 3 ? buildSleeperHighHitSlips(sleeperLegs) : [];
-  const generated_slips = [...ppSlips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
+  const regularSlips = regularLegs.length >= 6 ? buildRegularHighHitSlips(regularLegs) : [];
+  const generated_slips = [...ppSlips, ...udSlips, ...sleeperSlips, ...regularSlips];
+  const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length + regularLegs.length;
   if (!generated_slips.length) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["Fewer than the minimum qualifying High Hit legs available on any app right now - board may still be filling in for the day."] });
   }
   return jsonResponse({
     ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
     selected_leg_count, generated_slips,
-    source_counts: { prizepicks: ppSlips.length, parlay_underdog: udSlips.length, sleeper: sleeperSlips.length },
+    source_counts: { prizepicks: ppSlips.length, prizepicks_regular: regularSlips.length, parlay_underdog: udSlips.length, sleeper: sleeperSlips.length },
     notes: [
-      "High Hit Slips: separate track from Grounded/Goblin/Regular/Demon Slips above - built from the 2026-08-17 real-data research session (real historical hit-rate selection, real corrected multipliers, real tested daily cap).",
-      "PrizePicks and Underdog carry a real, computed multiplier. Sleeper legs are real and hit-rate-validated the same way, but carry NO computed multiplier - Sleeper's live per-leg pricing feed is not reliably populated right now (confirmed 0/338 rows priced, unchanged for over an hour), a genuine data-availability gap, not a trust judgment. Check the real multiplier manually in-app for Sleeper slips.",
-      "Known open risk, not yet resolved: only 4 real backtested days for PrizePicks (2026-08-10 to 2026-08-13); Underdog and Sleeper hit rates validated over a pooled window, not yet a full day-by-day leg-level backtest; 5/6-pick PrizePicks multiplier ratio supported by real but thinner data than 4-pick."
+      "High Hit Slips: LOCKED 2026-08-21 - PrizePicks Goblin (5-pick Power, 25% daily cap), PrizePicks Regular (6-pick Flex, pitcher_fantasy_score/less), Sleeper (3-pick Power, hits_runs_rbis/more), Underdog (6-pick Power, 1 slip/day, rbis/less+walks/less). All four real, backtested, day-by-day validated this session. PrizePicks Demon is deferred - not included here.",
+      "PrizePicks Goblin, Regular, and Underdog carry a real, confirmed or computed multiplier. Sleeper legs are real and hit-rate-validated the same way, but carry NO computed multiplier - Sleeper's live per-leg pricing feed is not reliably populated right now, a genuine data-availability gap. Check the real multiplier manually in-app for Sleeper slips.",
+      "Regular is on Flex mode to start (real backtest shows Power stronger, +1105.4% vs +779.3%) - will move to Power once more real placed Flex slips validate the current numbers."
     ]
   });
 }
