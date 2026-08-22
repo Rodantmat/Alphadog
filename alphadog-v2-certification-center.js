@@ -4943,7 +4943,16 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
 function recomputeMultiplier(sourceKey, entryMode, size, legs){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
-  if(k==='sleeper')return Math.round(Math.pow(1.4,size)*100)/100;
+  if(k==='sleeper'){
+    // Real per-leg product, matching server-side exactly - no flat average. Each leg carries
+    // real_leg_mult computed from its own live moneyline price at selection time.
+    if(legs&&legs.length){
+      const allPriced=legs.every(l=>Number.isFinite(l.real_leg_mult));
+      if(!allPriced)return 0;
+      return Math.round(legs.reduce((p,l)=>p*l.real_leg_mult,1)*1000)/1000;
+    }
+    return 0;
+  }
   if(k==='prizepicks_goblin'){
     if(legs&&legs.length)return goblinSlipEstimatedMultiplier(legs).multiplier;
     return REAL_MULT_TABLES.goblin_power[size]||0;
