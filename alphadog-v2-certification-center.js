@@ -4796,6 +4796,36 @@ const REAL_MULT_TABLES = {
 // different size. Demon only has a real confirmed table at size 3 - other sizes fall back to a
 // single estimated field rather than presenting an unconfirmed number as if it were real.
 const PP_REGULAR_FLEX_BY_SIZE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } };
+// CLIENT-SIDE COPY (2026-08-22 hotfix): this script runs in the browser, a separate JS context
+// from the server-side Worker code - the server-side GOBLIN_LEG_MULT_TABLE/goblinLegMultiplier/
+// goblinSlipEstimatedMultiplier defined earlier in this file are NOT visible here, causing a real
+// live "Can't find variable: goblinSlipEstimatedMultiplier" break. Duplicated here, kept in sync
+// with the server-side copy - update both together on any future real multiplier change.
+const GOBLIN_LEG_MULT_TABLE_CLIENT = {
+  "singles|less|1": { rate: 1.134, n: 8 },
+  "hits|less|1": { rate: 1.095, n: 1 },
+  "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
+  "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
+  "walks_allowed|more|1": { rate: 1.506, n: 2 },
+  "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
+  "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
+};
+const GOBLIN_LEG_MULT_FALLBACK_CLIENT = 1.15;
+function goblinLegMultiplier(prop, side, tier) {
+  const key = `${prop}|${side}|${tier}`;
+  const entry = GOBLIN_LEG_MULT_TABLE_CLIENT[key];
+  return entry ? entry.rate : GOBLIN_LEG_MULT_FALLBACK_CLIENT;
+}
+function goblinSlipEstimatedMultiplier(slipLegs) {
+  let product = 1;
+  let allConfirmed = true;
+  for (const leg of slipLegs) {
+    const key = `${leg.canonical_prop_key}|${String(leg.selected_side||'').toLowerCase()}|${Number(leg.goblin_demon_tier)}`;
+    if (!GOBLIN_LEG_MULT_TABLE_CLIENT[key]) allConfirmed = false;
+    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier);
+  }
+  return { multiplier: Math.round(product * 1000) / 1000, confirmed: allConfirmed };
+}
 function recomputeMultiplier(sourceKey, entryMode, size, legs){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
