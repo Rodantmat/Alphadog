@@ -3361,7 +3361,7 @@ function buildSleeperHighHitSlips(legs) {
     }
     allSlips.push(slipLegs);
   }
-  const cappedGroups = allSlips.slice(0, SLEEPER_HIGH_HIT_CAP);
+  const cappedGroups = allSlips.slice(0, SLEEPER_HIGH_HIT_SLIP_CAP);
   const slips = cappedGroups.map(slipLegs => {
     // Real per-leg product - a slip of 6 legs with different real prices gets a genuinely
     // different multiplier than another slip of 6 legs at different prices, matching the same
