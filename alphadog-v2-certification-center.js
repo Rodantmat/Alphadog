@@ -4834,23 +4834,28 @@ const GOBLIN_LEG_MULT_TABLE_CLIENT = {
   "hits|less|1": { rate: 1.095, n: 1 },
   "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
   "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
-  "walks_allowed|more|1": { rate: 1.506, n: 2 },
+  "walks_allowed|more|1|0.5": { rate: 1.140, n: 3 },
+  "walks_allowed|more|1|1.5": { rate: 1.483, n: 2 },
   "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
   "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
 };
 const GOBLIN_LEG_MULT_FALLBACK_CLIENT = 1.15;
-function goblinLegMultiplier(prop, side, tier) {
-  const key = prop+'|'+side+'|'+tier;
-  const entry = GOBLIN_LEG_MULT_TABLE_CLIENT[key];
+function goblinLegMultiplier(prop, side, tier, line) {
+  const lineKey = prop+'|'+side+'|'+tier+'|'+line;
+  const tierKey = prop+'|'+side+'|'+tier;
+  const entry = GOBLIN_LEG_MULT_TABLE_CLIENT[lineKey] || GOBLIN_LEG_MULT_TABLE_CLIENT[tierKey];
   return entry ? entry.rate : GOBLIN_LEG_MULT_FALLBACK_CLIENT;
 }
 function goblinSlipEstimatedMultiplier(slipLegs) {
   let product = 1;
   let allConfirmed = true;
   for (const leg of slipLegs) {
-    const key = leg.canonical_prop_key+'|'+String(leg.selected_side||'').toLowerCase()+'|'+Number(leg.goblin_demon_tier);
-    if (!GOBLIN_LEG_MULT_TABLE_CLIENT[key]) allConfirmed = false;
-    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier);
+    const tier = Number(leg.goblin_demon_tier);
+    const side = String(leg.selected_side||'').toLowerCase();
+    const lineKey = leg.canonical_prop_key+'|'+side+'|'+tier+'|'+leg.line_value;
+    const tierKey = leg.canonical_prop_key+'|'+side+'|'+tier;
+    if (!GOBLIN_LEG_MULT_TABLE_CLIENT[lineKey] && !GOBLIN_LEG_MULT_TABLE_CLIENT[tierKey]) allConfirmed = false;
+    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier, leg.line_value);
   }
   return { multiplier: Math.round(product * 1000) / 1000, confirmed: allConfirmed };
 }
