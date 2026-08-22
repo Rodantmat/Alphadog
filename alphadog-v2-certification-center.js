@@ -5013,24 +5013,31 @@ function realMultFieldsHtmlForSize(s,idx,size){
   if(String(s.source_key||'').toLowerCase()==='prizepicks_goblin'){
     // Goblin Flex tiers are leg-composition-dependent (real per-leg product), not a fixed
     // published table like Regular/Demon - compute live from the actual kept legs every time.
+    // FIXED 2026-08-22: was only showing 2 fields (n/n, n-1/n) - real placed slips confirm a real
+    // n-2/n tier exists too (e.g. 4/6 on a 6-pick) - now shows 3, matching Regular.
     const fullMult=(s.legs&&s.legs.length)?goblinSlipEstimatedMultiplier(s.legs).multiplier:0;
     const partialMult=Math.round(fullMult*0.10*1000)/1000;
-    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partial is an ESTIMATE)</span><div class="realMultFields">'
+    const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
+    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES)</span><div class="realMultFields">'
       +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" placeholder="'+esc(String(fullMult||''))+'"></label>'
       +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" placeholder="'+esc(String(partial2Mult||''))+'"></label>'
       +'</div></div>';
   }
   if(String(s.source_key||'').toLowerCase()==='sleeper'){
     // Sleeper Flex tiers are also leg-composition-dependent (real per-leg product from each
     // leg's own live moneyline price) - never a flat average, same discipline as Goblin.
+    // FIXED 2026-08-22: same missing-field bug as Goblin above - now shows 3 tiers.
     const legs=s.legs||[];
     const allPriced=legs.length>0&&legs.every(l=>Number.isFinite(l.real_leg_mult));
     const fullMult=allPriced?Math.round(legs.reduce((p,l)=>p*l.real_leg_mult,1)*1000)/1000:0;
     const partialMult=Math.round(fullMult*0.10*1000)/1000;
+    const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
     const noteLabel=allPriced?'':' - real price missing for a leg, showing 0';
-    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partial is an ESTIMATE'+noteLabel+')</span><div class="realMultFields">'
+    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES'+noteLabel+')</span><div class="realMultFields">'
       +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" placeholder="'+esc(String(fullMult||''))+'"></label>'
       +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" placeholder="'+esc(String(partial2Mult||''))+'"></label>'
       +'</div></div>';
   }
   const tiers=flexTiersForSizeLive(s.source_key,size);
