@@ -77,6 +77,6 @@ The fixed/tiered split above was built from an earlier, smaller sample. A later 
 
 ---
 
-## 3. WHY THIS DOCUMENT EXISTS NOW
+## 4. WHY THIS DOCUMENT EXISTS
 
 This distinction was debated at real length earlier in this session's history and is easy to re-lose without being told directly. A 2026-08-22 coworker research pass correctly re-derived that the locked Goblin pool (leaning on fixed-threshold props) tests negative under the real per-leg discount — a real, valid, independent finding — but without this document, a future session could mistake that for a contradiction of the original "fixed lines are the strongest legs on the board" finding, when both are true statements about different things (hit rate vs. real priced ROI). Read this document alongside `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` before drawing any conclusion about why a pool tests the way it does.
