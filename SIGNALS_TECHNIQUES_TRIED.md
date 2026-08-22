@@ -28,7 +28,28 @@
 
 ---
 
-## TESTED AND EXPLICITLY REJECTED (real, honest reasons — do not redeploy without new real evidence)
+## MANDATORY COVERAGE MATRIX — updated every session, gaps must shrink over time
+
+**This matrix exists because the same real gaps survived three full coworker research sessions untouched (verified 2026-08-22).** Every session must update this table with real results, not just add new rows elsewhere and leave this one stale. A ✅ means genuinely tested against the CURRENT locked pool for that track with a real, reported result. A ❌ means genuinely never done. Do not mark ✅ without a real result you can cite.
+
+| Technique | Goblin | Regular | Demon | Sleeper | Underdog |
+|---|---|---|---|---|---|
+| Granular per-(prop,side,tier) multiplier (never a flat blended ratio) | ❌ (used flat 0.620 three sessions running) | N/A (single prop, flat published table confirmed at 1.000) | ✅ | N/A (dynamic per-leg formula) | ✅ (compounding model confirmed) |
+| Multi-layer stacking (weather / bullpen fatigue / park factors / schedule fatigue) | ❌ | ❌ (only tested on the retired Gen-1 signal, never on the current one) | ❌ | ❌ | ❌ |
+| Shrink/expand adaptive sizing | ❌ | ❌ (template exists, built for retired Gen-1 signal, never re-applied to current signal) | ❌ | ❌ | ❌ |
+| Pool-composition alternatives tested (not just size/cap sweeps on one fixed pool) | ⚠️ partial | ⚠️ partial (rare-event pool tried, not fully resolved) | ✅ (Pool I) | ✅ (rbis+walks+rfi_nrfi found) | ❌ (35 configs swept, all one pool) |
+| Cap sweep (fixed AND percentage, multiple values) | ⚠️ partial | ✅ | ⚠️ partial (percentage vs fixed shown, not a full multi-value sweep) | ✅ | ✅ |
+| Cross-app signal transfer attempted | — | ❌ | — | ✅ (Underdog pool ported in) | — |
+| Void/DNP-adjusted real pricing applied to backtest ROI | N/A (pitcher-heavy) | N/A (zero void exposure, confirmed) | N/A (pitcher props) | ❌ (real ~7% void rate found, never applied to reprice) | ❌ (hitter props, void rate never applied) |
+| Gemini consulted for a NEW, previously-untested hypothesis (not fact-checking an existing claim) | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+**Every session must move at least two ❌ cells to ✅ or ⚠️→✅, with a real cited result.** A session that adds new findings elsewhere but leaves this matrix unchanged has not met the exhaustiveness bar. If a cell is genuinely blocked (e.g., by the lineup-join failure below), say so explicitly in that cell rather than leaving it silently blank.
+
+**Standing blocker, unfixed after three sessions of being flagged**: `context.history_game_lineup` joins to the graded board on only ~2-5% of legs. This blocks bottom-of-order re-testing (Regular row above) AND real void/DNP modeling (both hitter-prop rows above), since `batting_order_position` / participation data would resolve both. **Diagnosing and fixing this join is now the single highest-priority open item in this entire document** — it is the root blocker behind four separate ❌ cells above.
+
+---
+
+
 
 | Signal | App | Real result | Why rejected |
 |---|---|---|---|
