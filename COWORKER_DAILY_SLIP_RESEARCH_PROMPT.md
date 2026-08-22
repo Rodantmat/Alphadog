@@ -39,9 +39,13 @@ This is the most important instruction in this entire document. Every day, appro
 - Do **not** give the currently-locked approach an easier bar than a brand-new idea. Test both with the exact same rigor.
 - Actively look in genuinely new places every day: different prop lines not yet in any locked pool, different apps' cross-pollinated ideas (a signal that worked for one app but was never tried on another), entirely new external data layers, different combinations of the daily-context/market layers (see Section 4).
 
----
+## 1c. MANDATORY: close at least one open item from `SIGNALS_TECHNIQUES_TRIED.md` every session
 
-## 2. THE FOUR SUB-STRATEGIES — CURRENT REAL STATE (starting point only, not a target to protect)
+The "VALIDATED, HISTORICAL, STATUS UNCLEAR" table in `SIGNALS_TECHNIQUES_TRIED.md` names specific, real, already-identified work this system has not yet done (e.g., testing whether bottom-of-order combines with the current Regular signal, comparing Sleeper's doubles-only line against the current pool in parallel). **This list must not simply persist untouched. Every session must make real, direct progress on at least one item from it** — either resolving it (test it, report the real result, remove or update the entry) or explicitly stating why it genuinely couldn't be addressed this session (not "ran out of time" — a real, substantive blocker). A session that finds brand-new things but leaves this entire list untouched has not met the freshness/exhaustiveness bar this document requires.
+
+**Standing, explicit open item, not yet resolved by any session**: `MULTIPLIER_TABLES_MASTER.md` documents PrizePicks Regular's real ROI as +725% (full 18-day record) and separately +1105.4% (a narrower 12-day window) — a 2026-08-22 coworker session independently computed +1020.1% on what it called "the full window" using a "clean pitcher pool." These three numbers have never been reconciled against each other in one place. Resolve this — determine whether the discrepancy is real day-window differences, real pool-composition differences (contaminated legs excluded), or something else, and update the documentation with one clear, current, correctly-labeled number.
+
+---
 
 | Track | App | Current locked config | Real backtest ROI |
 |---|---|---|---|
