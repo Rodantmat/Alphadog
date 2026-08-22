@@ -2802,7 +2802,13 @@ const GOBLIN_LEG_MULT_TABLE = {
   "hits|less|1": { rate: 1.095, n: 1 },
   "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
   "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
-  "walks_allowed|more|1": { rate: 1.506, n: 2 }, // two real n=1 observations (1.140, 1.871) - 64% spread, real variance not yet resolved, needs a 3rd real slip
+  // REAL, line-specific split (2026-08-22): walks_allowed/more/Tier1 real pricing genuinely
+  // differs by the exact line value, not just prop/side/tier - confirmed real 2-pick observations:
+  // line 0.5 -> 1.5x total (per-leg 1.225), line 1.5 -> 3.5x total (per-leg 1.871). The earlier
+  // flat "1.506" blended these two different real lines together, which is exactly the kind of
+  // flattening this table exists to avoid. Key format for this entry only: prop|side|tier|line.
+  "walks_allowed|more|1|0.5": { rate: 1.183, n: 2 },
+  "walks_allowed|more|1|1.5": { rate: 1.871, n: 1 },
   "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
   "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
 };
@@ -2810,9 +2816,10 @@ const GOBLIN_LEG_MULT_TABLE = {
 // tier combo in the pool with no direct real data yet - honest "best current guess," not a
 // specific confirmed number).
 const GOBLIN_LEG_MULT_FALLBACK = 1.15;
-function goblinLegMultiplier(prop, side, tier) {
-  const key = `${prop}|${side}|${tier}`;
-  const entry = GOBLIN_LEG_MULT_TABLE[key];
+function goblinLegMultiplier(prop, side, tier, line) {
+  const lineKey = `${prop}|${side}|${tier}|${line}`;
+  const tierKey = `${prop}|${side}|${tier}`;
+  const entry = GOBLIN_LEG_MULT_TABLE[lineKey] || GOBLIN_LEG_MULT_TABLE[tierKey];
   return entry ? entry.rate : GOBLIN_LEG_MULT_FALLBACK;
 }
 // Computes a slip's real estimated multiplier as the actual PRODUCT of its specific legs' real
@@ -2822,9 +2829,12 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
   let product = 1;
   let allConfirmed = true;
   for (const leg of slipLegs) {
-    const key = `${leg.canonical_prop_key}|${String(leg.selected_side||'').toLowerCase()}|${Number(leg.goblin_demon_tier)}`;
-    if (!GOBLIN_LEG_MULT_TABLE[key]) allConfirmed = false;
-    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier);
+    const tier = Number(leg.goblin_demon_tier);
+    const side = String(leg.selected_side||'').toLowerCase();
+    const lineKey = `${leg.canonical_prop_key}|${side}|${tier}|${leg.line_value}`;
+    const tierKey = `${leg.canonical_prop_key}|${side}|${tier}`;
+    if (!GOBLIN_LEG_MULT_TABLE[lineKey] && !GOBLIN_LEG_MULT_TABLE[tierKey]) allConfirmed = false;
+    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier, leg.line_value);
   }
   return { multiplier: Math.round(product * 1000) / 1000, confirmed: allConfirmed };
 }
