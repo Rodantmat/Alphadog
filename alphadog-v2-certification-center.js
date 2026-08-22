@@ -3292,25 +3292,47 @@ const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
 ];
 const SLEEPER_HIGH_HIT_SIZE = 6;
 const SLEEPER_HIGH_HIT_CAP = 3;
-const SLEEPER_REAL_AVG_MULT = 1.4;
 const SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10; // established pattern, unconfirmed for Sleeper specifically
+// Real, confirmed formula (validated against 2 independent real app examples this session):
+// Decimal Odds = 1 + price/100 (price>0) or 1 + 100/abs(price) (price<0); Multiplier = 1 +
+// (Decimal Odds - 1) * 0.95. Computed PER LEG from that leg's own real live price - never a flat
+// average applied across the whole slip, matching the exact discipline already enforced for
+// Goblin's per-leg table.
+function sleeperLegMultiplier(overOrUnderPrice) {
+  const p = Number(overOrUnderPrice);
+  if (!Number.isFinite(p) || p === 0) return null;
+  const decimalOdds = p > 0 ? 1 + p / 100 : 1 + 100 / Math.abs(p);
+  return 1 + (decimalOdds - 1) * 0.95;
+}
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
     const propSideList = SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
+    // Real per-leg price join (2026-08-22): market.sleeper_board_current.raw_line_json is a
+    // JSON-encoded STRING inside a jsonb column - must unwrap with #>>'{}' before a second jsonb
+    // cast (confirmed live failure mode otherwise - a direct ->> cast silently returns NULL).
+    // side='more' maps to the real over_price field.
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
-      FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'sleeper'
-        AND (canonical_prop_key, selected_side) IN (${propSideList})
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc, f.player_name, f.mlb_player_id,
+        f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.confidence_0_100,
+        ((m.raw_line_json #>> '{}')::jsonb->>'over_price')::int AS real_over_price,
+        ((m.raw_line_json #>> '{}')::jsonb->>'under_price')::int AS real_under_price
+      FROM score.final_board_current f
+      LEFT JOIN market.sleeper_board_current m
+        ON m.player_name = f.player_name AND m.canonical_prop_key = f.canonical_prop_key AND m.line_value = f.line_value
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND f.source_key = 'sleeper'
+        AND (f.canonical_prop_key, f.selected_side) IN (${propSideList})
+        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
     const rankByPropSide = new Map(SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}`, q.rank]));
     return rows
-      .map(r => ({ ...r, _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0 }))
+      .map(r => ({
+        ...r,
+        _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0,
+        real_leg_mult: sleeperLegMultiplier(String(r.selected_side || "").toLowerCase() === "more" ? r.real_over_price : r.real_under_price)
+      }))
       .sort((a, b) => b._rank - a._rank);
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
@@ -3340,21 +3362,31 @@ function buildSleeperHighHitSlips(legs) {
     allSlips.push(slipLegs);
   }
   const cappedGroups = allSlips.slice(0, SLEEPER_HIGH_HIT_CAP);
-  const fullMult = Math.round(Math.pow(SLEEPER_REAL_AVG_MULT, size) * 100) / 100;
-  const partialMult = Math.round(fullMult * SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE * 100) / 100;
-  const slips = cappedGroups.map(slipLegs => ({
-    client_slip_id: makeUiId("high_hit_slip_sleeper"),
-    source_key: "sleeper",
-    slip_type: `${size}-pick`,
-    slip_size: size,
-    entry_mode: "flex",
-    structure_label: `${size}-pick Flex (High Hit)`,
-    estimated_multiplier: fullMult,
-    estimated_flex_tiers: { [size]: fullMult, [size - 1]: partialMult },
-    estimated_payout_note: `Full-hit ~${fullMult}x (real moneyline-derived estimate, avg per-leg ${SLEEPER_REAL_AVG_MULT}x from today's live board odds). Partial-hit (${size - 1}/${size}) ~${partialMult}x is an ESTIMATE (10% of full-hit ratio, not confirmed real for Sleeper). Confirm both real numbers in-app before placing.`,
-    strategy_notes: [],
-    legs: slipLegs
-  }));
+  const slips = cappedGroups.map(slipLegs => {
+    // Real per-leg product - a slip of 6 legs with different real prices gets a genuinely
+    // different multiplier than another slip of 6 legs at different prices, matching the same
+    // per-leg-product discipline used for Goblin. No leg's real price falls back to any flat
+    // average; a leg with no real price on this specific board simply can't be priced yet.
+    const allPriced = slipLegs.every(l => Number.isFinite(l.real_leg_mult));
+    const fullMult = allPriced ? Math.round(slipLegs.reduce((p, l) => p * l.real_leg_mult, 1) * 1000) / 1000 : null;
+    const partialMult = fullMult != null ? Math.round(fullMult * SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000 : null;
+    return {
+      client_slip_id: makeUiId("high_hit_slip_sleeper"),
+      source_key: "sleeper",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "flex",
+      structure_label: `${size}-pick Flex (High Hit)`,
+      estimated_multiplier: fullMult,
+      estimated_flex_tiers: fullMult != null ? { [size]: fullMult, [size - 1]: partialMult } : null,
+      multiplier_confirmed: false,
+      estimated_payout_note: fullMult != null
+        ? `Full-hit ~${fullMult}x - real, computed as the product of this exact slip's own live moneyline prices (not a flat average). Partial-hit (${size - 1}/${size}) ~${partialMult}x is an ESTIMATE (10% of full-hit ratio, not confirmed real for Sleeper). Confirm both real numbers in-app before placing.`
+        : `Real per-leg price unavailable for one or more legs on today's board - cannot estimate. Confirm real numbers in-app before placing.`,
+      strategy_notes: [],
+      legs: slipLegs
+    };
+  });
   return slips;
 }
 
