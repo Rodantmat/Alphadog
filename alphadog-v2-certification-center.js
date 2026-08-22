@@ -3224,7 +3224,7 @@ async function apiHighHitSlips(env, request) {
   const udSlips = udLegs.length >= 3 ? buildUnderdogHighHitSlips(udLegs) : [];
   const sleeperSlips = sleeperLegs.length >= 3 ? buildSleeperHighHitSlips(sleeperLegs) : [];
   const regularSlips = regularLegs.length >= 6 ? buildRegularHighHitSlips(regularLegs) : [];
-  const demonSlips = demonLegs.length >= 3 ? buildDemonHighHitSlips(demonLegs) : [];
+  const demonSlips = demonLegs.length >= 2 ? buildDemonHighHitSlips(demonLegs) : [];
   ppSlips.forEach(s => s.source_key = "prizepicks_goblin");
   const generated_slips = [...demonSlips, ...ppSlips, ...regularSlips, ...sleeperSlips, ...udSlips];
   const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length + regularLegs.length + demonLegs.length;
