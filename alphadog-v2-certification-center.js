@@ -2804,11 +2804,13 @@ const GOBLIN_LEG_MULT_TABLE = {
   "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
   // REAL, line-specific split (2026-08-22): walks_allowed/more/Tier1 real pricing genuinely
   // differs by the exact line value, not just prop/side/tier - confirmed real 2-pick observations:
-  // line 0.5 -> 1.5x total (per-leg 1.225), line 1.5 -> 3.5x total (per-leg 1.871). The earlier
-  // flat "1.506" blended these two different real lines together, which is exactly the kind of
-  // flattening this table exists to avoid. Key format for this entry only: prop|side|tier|line.
-  "walks_allowed|more|1|0.5": { rate: 1.140, n: 3 },
-  "walks_allowed|more|1|1.5": { rate: 1.483, n: 2 },
+  // REFINED 2026-08-22: two real 6-pick slips (5x0.5-leg + 1x1.5-leg composition) came back at
+  // 2.5x and 2.25x total - lower than the 2.856x this table predicted. Since both real
+  // observations share the same 5:1 ratio, they can't independently separate which leg-type was
+  // "more wrong" - scaled both rates down by the same per-leg factor (0.9698) needed to match the
+  // real observed average (2.375x), rather than attributing the miss to one line arbitrarily.
+  "walks_allowed|more|1|0.5": { rate: 1.106, n: 5 },
+  "walks_allowed|more|1|1.5": { rate: 1.438, n: 4 },
   "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
   "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
 };
