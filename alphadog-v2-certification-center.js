@@ -4382,6 +4382,7 @@ async function apiSaveSlips(env, request) {
       }
       saved.push({ slip_id: slipId, leg_count: legs.length });
       await recordRealPricingObservation(pg, slipId, s, legs);
+      await recordRealUnderdogPricingObservation(pg, slipId, s, legs);
     }
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
