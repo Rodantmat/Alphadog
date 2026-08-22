@@ -2840,11 +2840,12 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
 }
 const GOBLIN_5PICK_REAL_MULT = 1.86;
 const GOBLIN_5PICK_MULT_CONFIRMED = true;
-const HIGH_HIT_SLIP_SIZES = [5];
-// LOCKED 2026-08-21: 25% of that day's real max-buildable-slip-count, not a fixed number - real
-// backtest swept fixed(1/2/3/5/nocap) vs percentage(25/50/75) caps; 25% won at every size tested,
-// beating equal-volume fixed caps by 5-10pp of ROI. Computed as a true two-pass cap: first count
-// how many slips the pool could genuinely support uncapped, then only build 25% of that (min 1).
+const HIGH_HIT_SLIP_SIZES = [2];
+// UPDATED 2026-08-21->2026-08-22: size changed from 5 to 2, matching the real, validated backtest
+// for the new walks_allowed/more/Tier1 pool (349 real slips, 16/16 active days positive at 2-pick).
+// The 25% cap below was validated for the OLD, weaker, multi-prop pool where capping controlled
+// real downside risk. This new pool has zero losing real days in its whole backtest - there is no
+// real downside to control, so capping would only needlessly cut into a clean signal. No cap.
 
 async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
