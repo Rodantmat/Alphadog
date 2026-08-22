@@ -4976,7 +4976,7 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
   }
   if(k==='prizepicks_demon')return Math.round(Math.pow(DEMON_PER_LEG_REAL_MULT_CLIENT,size)*1000)/1000;
   if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
-  if(k==='parlay_underdog'||k==='underdog')return REAL_MULT_TABLES.underdog_power[size]||0;
+  if(k==='parlay_underdog'||k==='underdog')return (size===6?UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT[6]:REAL_MULT_TABLES.underdog_power[size])||0;
   return 0;
 }
 const DEMON_PER_LEG_REAL_MULT_CLIENT = 2.375; // real, confirmed Tier1 per-leg rate - matches server-side DEMON_PER_LEG_REAL_MULT
