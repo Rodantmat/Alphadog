@@ -4911,7 +4911,7 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
 function recomputeMultiplier(sourceKey, entryMode, size, legs){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
-  if(k==='sleeper')return Math.round(Math.pow(1.638,size)*100)/100;
+  if(k==='sleeper')return Math.round(Math.pow(1.4,size)*100)/100;
   if(k==='prizepicks_goblin'){
     if(legs&&legs.length)return goblinSlipEstimatedMultiplier(legs).multiplier;
     return REAL_MULT_TABLES.goblin_power[size]||0;
