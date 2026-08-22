@@ -1483,3 +1483,564 @@ This is the precise mechanism behind the reconciliation the document describes. 
 **Nothing was deployed, patched, or modified.**
 
 ---
+
+# ===== 2026-08-21 (Fri) — Session 5 — run 19:15 PT (2026-08-22 02:15 UTC) =====
+
+**Run type:** dry run, research only. Nothing deployed, patched, or modified.
+**Scope:** directed at open item (1) — "re-test the top standard-lane buckets as an actual PP Regular pool". That item turned out to rest on a data defect, and unwinding it re-opened all five tracks.
+
+---
+
+## 0. FRESHNESS — there is no grading gap, and Session 4's flag is RETRACTED
+
+| Check | Value |
+|---|---|
+| Wall clock | `2026-08-22T02:15:33Z` = **2026-08-21 19:15 PDT** |
+| `max(official_date) WHERE outcome_hit IS NOT NULL` | **2026-08-20** |
+| Graded rows | **137,888** — byte-identical to Sessions 2, 3 and 4 |
+| Rows for 2026-08-21 | **0** (any status) |
+
+The master prompt §3 states the rule plainly: *"if today is the 21st, the most recent trustworthy day is the 20th."* Today **is** the 21st in Pacific time. 08-21's games were in progress at run time.
+
+**Session 4's "⚠️ latest graded day is 2026-08-20, but today is 2026-08-22 — a one-day gap" is RETRACTED.** It read the UTC date as the Pacific date — the same error Session 2 §0 documented and Session 3 §A0 caught once already. This is now the third occurrence. **Open item (7), "the 08-21 grading gap", is closed: there is no gap.**
+
+Consequence: this session has **no new graded data** relative to Session 4, which closed ~75 minutes earlier. Everything below is therefore method work on the existing record, not new-day work. Stated plainly rather than dressed up.
+
+## 0b. STEP 0 — schema census and table profiling
+
+18 schemas (**not ~40** — the standing prompt is still wrong here, as Session 2 §12 already noted). `backtest` holds **73** relations.
+
+`backtest.demon_full_history_dedup_v2` profiled before use: 3,351 rows, 26 days (07-26 → 08-20), **0** NULL tier, **0** NULL outcome, tier range 1–11 (1-indexed), overall 20.4%. Clean on every structural check — and nonetheless carrying a real contamination, see §2.
+
+---
+
+## 1. THE HEADLINE — `prop_outcome_history.is_goblin`/`is_demon` is not the lane, and the "standard lane" finding collapses
+
+Open item (1) asked me to build real PP Regular pools from the four standard-lane buckets pricing above +1250% implied. Building the bucket table reproduced them, and then produced three buckets that cannot exist: **demon-lane** `singles/less/1.5` at 90.2%, `doubles/less/0.5` at 87.2%, `total_bases/less/3.5` at 86.2%. A demon leg is the hard side by construction; it cannot hit at 90%.
+
+Chasing that led to the defect. Full evidence is now written into `SIGNALS_TECHNIQUES_TRIED.md`; the short form:
+
+- `score.prop_outcome_history` has **two writers**. `outcome_final|…` rows (41,593 PP) have `matrix_id` populated and lane flags **unpopulated — 99.0% read 0/0**. `grade_*` rows (57,168 PP) have `matrix_id` NULL and carry the real lane flags.
+- The same leg appears under both. Bryce Harper, `hits_runs_rbis/less/3.5`, 08-18: identical `final_board_row_id`, identical `prepared_row_id`, identical hp of 67.76, identical outcome — one row `is_goblin=0`, the other `outcome_id = grade_hitter_547180_..._less_gob_2026-08-18` with `is_goblin=1`, written 50 seconds later.
+- Across the 36,465 keys present in both writers: **28,505 (78.2%) are "neither"→goblin, 7,131 (19.6%) are "neither"→demon**, 782 are neither→neither, 47 agree.
+
+**97.9% of what Session 4 counted as standard-lane legs are goblin or demon legs with unpopulated flags.**
+
+### 1a. The fix, and the lane split it produces
+
+Restrict to `outcome_id LIKE 'outcome_final|%'` and join `score.final_board_history` on `final_board_row_id` (**98.6%** join rate), taking the lane from the board:
+
+| Lane (authoritative) | legs | hit % | days |
+|---|---|---|---|
+| goblin | 29,647 | **73.3%** | 24 |
+| standard | 3,236 | **54.6%** | 24 |
+| demon | 8,078 | **34.6%** | 25 |
+
+Goblin > standard > demon. Coherent for the first time. Under the old assignment "standard" sat at 84.8% — **above** goblin — which is the structural impossibility that should have caught this earlier.
+
+Note `score.final_board_history.odds_type` and `payout_variant` are **100% NULL** across all 61,200 PP rows, so `is_goblin`/`is_demon` on that table is the only authoritative lane source available.
+
+### 1b. What is retracted
+
+**`HIGH_HIT_RATE_METHODOLOGY.md` §3 — "THE DOMINANT EV AXIS IS THE LANE" — is retracted as stated.** Its exact worked example (`doubles/less/0.5` at +1298.7% standard-lane vs −13.0% Goblin-lane, "the identical leg, identical ~85% real hit rate") is not two market offerings priced differently. It is **one set of legs duplicated across two lane labels and then priced with two different multipliers**. The tell was in the table all along: standard 84.8% vs goblin 85.0%, standard 84.7% vs goblin 84.9%, standard 84.5% vs goblin 84.6% — those near-identical pairs are the duplication, not a finding.
+
+Also retracted with it: the Session 4 addendum's "**Actionable consequence: these buckets should be played in the standard/Regular lane, not the Goblin lane**", and its claim that four Goblin buckets clear per-leg EV 1.0 where score-ranking found one.
+
+**Rule B0a survives and is strengthened** — lane really is decisive, which is exactly why reading it from the wrong column mattered so much. What does not survive is the specific +1298.7% figure and the pool recommendation built on it.
+
+### 1c. Open item (1), answered: those buckets do not exist
+
+Foundational bucket method per `HIGH_HIT_RATE_METHODOLOGY.md` §1 (real per-(prop, side, line, lane) buckets from graded outcomes, n≥30, ≥80%), full window 07-24 → 08-20, authoritative lane, deduplicated:
+
+**Standard lane: ZERO buckets clear n≥30 and 80%.** The best are:
+
+| Bucket | Lane | Class | n | Hit % | Days |
+|---|---|---|---|---|---|
+| `pitcher_fantasy_score/less/24.5` | standard | TIERED | 29 | 89.7% | 16 |
+| `pitcher_fantasy_score/less/23.5` | standard | TIERED | 28 | 85.7% | 15 |
+| `pitcher_fantasy_score/less/26.5` | standard | TIERED | 21 | 85.7% | 10 |
+| `pitcher_fantasy_score/less/27.5` | standard | TIERED | 28 | 82.1% | 14 |
+| `fantasy_score/less/4` | standard | TIERED | 63 | 68.3% | 14 |
+| `singles/less/0.5` | standard | FIXED | 337 | 54.3% | 22 |
+
+Twelve **goblin**-lane buckets do clear the bar (§3). Three "demon" buckets appear to and are corruption (§2).
+
+**The standard-lane pool the open item asked me to build cannot be built.** The four buckets it named — `stolen_bases/less/0.5`, `earned_runs/more/0.5`, `walks_allowed/more/0.5`, `doubles/less/0.5` — are all goblin-lane legs on the authoritative labels. Their real EV is the Goblin-lane EV, computed in §3.
+
+The one genuinely encouraging piece: the standard-lane top is **`pitcher_fantasy_score/less`, which is exactly the locked PP Regular pool**, and **all 376 of its graded legs are standard-lane, zero goblin, zero demon**. The locked Regular track is the only track whose lane assumption survives this session intact.
+
+---
+
+## 2. THE SECOND DEFECT — demon `less` legs are corrupted on four dated days, and 2026-08-11 is one of them
+
+Demon legs are the hard side; they must hit well below 50%. By side and day:
+
+| Date | demon `less` n | demon `less` hit % | demon `more` n | demon `more` hit % |
+|---|---|---|---|---|
+| 08-03 / 08-04 | **0** | — | 334 / 320 | 12.0% / 15.9% |
+| **08-05** | 810 | **84.9%** | 218 | 11.9% |
+| **08-06** | 510 | **68.2%** | 258 | 12.0% |
+| **08-07** | 789 | **76.2%** | 264 | 13.3% |
+| 08-08 → 08-10 | 28 / 34 / 86 | 28.6 / 47.1 / 43.0% | 266 / 283 / 540 | 10.2 / 11.0 / 14.8% |
+| **08-11** | 2,812 | **75.1%** | 569 | 9.8% |
+| 08-12 → 08-14 | 640 / 231 / 310 | 40.3 / 34.2 / 41.9% | 488 / 448 / 247 | 8.2 / 10.5 / 9.7% |
+
+The `more` side is stable at 8–16% on every day in the record. Only the `less` complement is affected, and only on **08-05, 08-06, 08-07 and 08-11**. This is the "blanket Less→flip rule mislabelled 1,752 legs" bug that `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` §4a records as fixed on 08-12 — now localised to exact dates.
+
+**It is inside the TRUSTED table.** In `backtest.demon_full_history_dedup_v2`, demon `less` runs 78.2% (08-05), 88.5% (08-06), 60.6% (08-07), 72.8% (08-11) against 11.5–50% on every other day. The v2 rebuild fixed the rounding convention; it did not and could not fix the upstream side labels.
+
+**2026-08-11 is a corrupted day, not a legitimate outlier.** Session 1's clearance of it — *"independently checked and cleared as legitimate (normal batch count, not a data artifact)"* — is **RETRACTED**. The batch count was normal; the labels were not. This also supplies the mechanism for why 08-11 has behaved pathologically across every session: it sank `runs+singles<0.5`, it held 31 of 36 legs behind the locked Demon config, and it carried 39,711 of Pool I's 48,610 combos.
+
+---
+
+## 3. PP GOBLIN — exhaustive enumeration on authoritative lane labels
+
+**Class/lane labelling.** Every bucket below is **goblin lane**. Class, verified empirically per the 08-22 line-count measurement: `stolen_bases` FIXED (1.06), `doubles` FIXED (1.00), `home_runs` FIXED (1.01), `singles` FIXED (1.17), `runs` FIXED (1.10); `total_bases` TIERED (2.95), `hits_runs_rbis` TIERED (3.49), `walks_allowed` TIERED (2.36), `hits_allowed` TIERED (3.82), `earned_runs` TIERED (4.34), `pitcher_outs` TIERED (2.07).
+
+**Per-leg multipliers** are the granular `GOBLIN_LEG_MULT_TABLE` per (prop, side) — never a flat ratio. Slip multiplier = product of per-leg rates. Rates carrying a real placed-slip observation are marked `table`; the rest use the **1.15 fallback**, which is the single largest source of fragility in everything below.
+
+**Method:** exhaustive enumeration of *every* possible combination of every size on every day (no ranking, no cap). This is a floor, not a ceiling — a ranked builder should beat it.
+
+| Bucket | mult | source | days | legs | hit % | 2-pk | 3-pk | 4-pk | 5-pk | 6-pk |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `doubles/less/0.5` | 1.150 | FALLBACK | 12 | 1,892 | 84.6% | −5.6% | −8.5% | −11.5% | −14.4% | −17.2% |
+| `earned_runs/more/0.5` | 1.150 | FALLBACK | 14 | 230 | 88.3% | +2.5% | +3.3% | +4.0% | +4.6% | **+5.1%** |
+| `hits_allowed/more/2.5` | 1.150 | FALLBACK | 14 | 144 | 85.4% | −1.7% | +1.7% | +8.2% | +17.0% | **+27.0%** |
+| `hits_runs_rbis/less/3.5` | 1.116 | table | 12 | 1,551 | 81.8% | −16.3% | −22.8% | −28.6% | −33.8% | −38.6% |
+| `hits_runs_rbis/less/4.5` | 1.116 | table | 12 | 365 | 84.9% | −10.0% | −12.8% | −14.4% | −15.6% | −16.8% |
+| `home_runs/less/0.5` | 1.150 | FALLBACK | 13 | 813 | 84.1% | −6.2% | −9.0% | −11.6% | −14.2% | −16.6% |
+| `pitcher_outs/more/11.5` | 1.150 | FALLBACK | 14 | 75 | 81.3% | −8.2% | −4.9% | −0.2% | +2.0% | −1.3% |
+| `runs/less/1.5` | 1.150 | FALLBACK | 12 | 160 | 83.8% | −11.5% | −20.1% | −28.0% | −35.1% | −41.3% |
+| `singles/less/1.5` | 1.134 | table | 12 | 513 | 84.4% | −8.4% | −12.7% | −17.1% | −21.5% | −25.8% |
+| `stolen_bases/less/0.5` | 1.150 | FALLBACK | 9 | 353 | 87.5% | +1.2% | +1.6% | +1.8% | +1.9% | +1.8% |
+| `total_bases/less/2.5` | 1.150 | FALLBACK | 12 | 1,875 | 80.1% | −14.4% | −20.3% | −25.7% | −30.7% | −35.3% |
+| `total_bases/less/3.5` | 1.150 | FALLBACK | 12 | 1,247 | 84.5% | −5.2% | −7.3% | −9.1% | −10.4% | −11.6% |
+| `walks_allowed/more/0.5` | 1.140 | table | 14 | 194 | 89.7% | +2.9% | +1.9% | −1.1% | −5.9% | −12.5% |
+
+### Pool-composition sweep — 10 genuinely different pools × 5 sizes
+
+| Pool | 2-pk | 3-pk | 4-pk | 5-pk | 6-pk |
+|---|---|---|---|---|---|
+| **P1 LOCKED-like** (tb2.5 + tb3.5 + hrr3.5 + singles) | −12.1% | −17.0% | −21.5% | −25.6% | **−29.5%** |
+| P2 `stolen_bases` only | +1.2% | +1.6% | +1.8% | +1.9% | +1.8% |
+| P3 `earned_runs/more` only | +2.5% | +3.3% | +4.0% | +4.6% | +5.1% |
+| P4 `hits_allowed/more` only | −1.7% | +1.7% | +8.2% | +17.0% | +27.0% |
+| P5 pitcher-supply trio (er+ha+wa) | +1.4% | +1.7% | +2.2% | +2.8% | +3.6% |
+| P6 pitcher trio + `pitcher_outs` | −0.1% | −0.3% | −0.5% | −0.5% | −0.5% |
+| **P7 `earned_runs/more` + `hits_allowed/more`** | +0.6% | +1.6% | +3.4% | +5.8% | **+8.4%** |
+| P8 rare hitter trio (sb+hr+doubles) | −4.9% | −7.6% | −10.3% | −12.9% | −15.4% |
+| P9 sb + pitcher trio | +0.9% | +0.6% | +0.0% | −0.7% | −1.5% |
+| P10 er+ha+sb | +0.2% | −0.1% | −0.4% | −0.7% | −1.1% |
+
+### Leave-one-day-out on every positive
+
+| Candidate | all-days | days supp. | combos | LODO band | folds neg. |
+|---|---|---|---|---|---|
+| P4 `hits_allowed/more/2.5` 6-pk | +27.0% | 13 | 20,245 | −7.2% … +42.7% | 1/14 |
+| P4 5-pk | +17.0% | 13 | 13,279 | −7.6% … +26.0% | 1/14 |
+| P3 `earned_runs/more/0.5` 6-pk | +5.1% | 14 | 258,184 | −1.1% … +10.6% | 2/14 |
+| **P7 er+ha 6-pk** | **+8.4%** | **14** | **8,055,022** | **+3.0% … +12.1%** | **0/14** |
+| P5 pitcher trio 6-pk | +3.6% | 14 | 109,456,131 | −2.4% … +6.4% | 1/14 |
+| P2 `stolen_bases` 5-pk | +1.9% | 9 | 7,358,758 | −9.5% … +7.9% | 2/9 |
+
+P4's headline is an artifact of one perfect day — 08-08 went 15 legs / 15 hits, contributing 5,005 of the 20,245 combos and all of them winning. Only 3 of its 13 supporting days are positive. **Rejected.**
+
+**P7 is the first Goblin pool in this system's history to survive full leave-one-day-out with zero negative folds** — 14 supporting days, 8.0M combinations, band +3.0% to +12.1%. Both legs are pitcher-supply `more` props.
+
+### Multiplier sensitivity — and why P7 is not actionable yet
+
+| Pool | per-leg 1.05 | 1.10 | **1.15** | 1.20 | 1.265 |
+|---|---|---|---|---|---|
+| `hits_allowed/more/2.5` 6-pk | −26.4% | −2.7% | +27.0% | +64.0% | +125.1% |
+| `earned_runs/more/0.5` 6-pk | −39.1% | −19.5% | +5.1% | +35.7% | +86.2% |
+| `stolen_bases/less/0.5` 5-pk | −35.3% | −18.4% | +1.9% | +26.0% | +64.1% |
+
+**Neither `earned_runs/more` nor `hits_allowed/more` has a single real placed-slip observation.** Both sit on the 1.15 fallback, and both flip negative at 1.10. P7's entire +8.4% lives inside the uncertainty of a number that has never been measured.
+
+**Verdict: Goblin remains negative as deployed (−12.1% to −29.5% on the locked-like pool). P7 is the best candidate ever found for the track and is NOT promotable on this evidence. The action it justifies is a data request, not a config change: place one real Goblin slip containing `earned_runs/more/0.5` and one containing `hits_allowed/more/2.5`, and report the multipliers.**
+
+---
+
+## 4. PP REGULAR — locked pool confirmed, on cleaner legs and a lower number
+
+**Pool:** `pitcher_fantasy_score/less`. **Class: TIERED** (3.02 lines/player-day). **Lane: STANDARD — verified, 376 of 376 legs, zero goblin, zero demon.** Per-leg multiplier 1.830 = 37.5^(1/6), the published Power table at ratio 1.000.
+
+Legs: `outcome_final` rows only, joined to `final_board_history`, deduplicated. 376 legs, 22 days, 78.5% leg hit rate. This prop has **zero** `grade_*` rows, so it carries none of §1's duplication.
+
+### Size and correlation-treatment sweep
+
+| Variant | 3-pk | 4-pk | 5-pk | 6-pk |
+|---|---|---|---|---|
+| unrestricted | +212.6% | +279.3% | +597.0% | +890.6% |
+| **max 1 leg/player** | +200.0% | +264.7% | +576.9% | **+782.4%** |
+| max 1/player + max 2/game | +200.0% | +264.7% | +576.9% | +782.4% |
+| max 1 leg/game | +179.3% | +285.5% | +525.0% | +741.8% |
+
+`pitcher_fantasy_score` is a real ladder, so an unrestricted builder puts two lines on the same pitcher in one slip — which PrizePicks does not allow. **Max-1-per-player is the honest constraint and it costs 108pp.**
+
+### Day-by-day — 6-pick Power, max 1 leg/player, uncapped, score-ranked
+
+| Date | Slip outcomes | Slips | Full hits | ROI |
+|---|---|---|---|---|
+| 2026-07-28 | 4/6 | 1 | 0 | −100.0% |
+| 2026-08-04 | 6/6✅ | 1 | 1 | +3650.0% |
+| 2026-08-05 | 5/6 2/6 | 2 | 0 | −100.0% |
+| 2026-08-06 | 5/6 6/6✅ | 2 | 1 | +1775.0% |
+| 2026-08-07 | 5/6 5/6 4/6 | 3 | 0 | −100.0% |
+| 2026-08-08 | 5/6 4/6 5/6 6/6✅ 4/6 | 5 | 1 | +650.0% |
+| 2026-08-09 | 6/6✅ 5/6 5/6 | 3 | 1 | +1150.0% |
+| 2026-08-10 | 2/6 3/6 | 2 | 0 | −100.0% |
+| 2026-08-11 | 5/6 6/6✅ 4/6 4/6 5/6 6/6✅ | 6 | 2 | +1150.0% |
+| 2026-08-12 | 5/6 5/6 5/6 | 3 | 0 | −100.0% |
+| 2026-08-13 | 4/6 4/6 | 2 | 0 | −100.0% |
+| 2026-08-14 | 4/6 6/6✅ 6/6✅ 4/6 | 4 | 2 | +1775.0% |
+| 2026-08-15 | 6/6✅ 3/6 5/6 4/6 | 4 | 1 | +837.5% |
+| 2026-08-16 | 4/6 6/6✅ 4/6 | 3 | 1 | +1150.0% |
+| 2026-08-17 | 6/6✅ 5/6 | 2 | 1 | +1775.0% |
+| 2026-08-18 | 4/6 5/6 4/6 5/6 | 4 | 0 | −100.0% |
+| 2026-08-19 | 3/6 6/6✅ | 2 | 1 | +1775.0% |
+| 2026-08-20 | 5/6 5/6 | 2 | 0 | −100.0% |
+| **TOTAL** | | **51** | **12** | **+782.4% Power / +574.5% Flex** |
+
+**Days supporting: 18. LODO band +697.9% to +857.4%, zero of 18 folds negative.** Still the most concentration-robust result in the log.
+
+**Reconciliation.** Session 2 reported +1020.1% on 77 slips over 24 days. This session gets +782.4% on 51 slips over 18 days. Two named causes, both mine being the stricter: (a) restricting to `outcome_final` rows joined to a real board row loses 39 of 415 legs (9.4%) and the six thinnest days; (b) enforcing max-1-leg-per-player, which Session 2 did not. Without (b) I get +890.6%. **Neither figure is wrong; +782.4% is the one that reflects a slip PrizePicks would actually accept, and is the figure to carry forward.**
+
+### Cap sweep — Session 2's answer amended
+
+| Cap/day | 1 | 2 | 3 | 4 | 5 | **6** | 8 | 10 | 12 | 15 | ∞ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Slips | 18 | 34 | 43 | 48 | 50 | **51** | 51 | 51 | 51 | 51 | 51 |
+| Power ROI | +733.3% | **+892.6%** | +772.1% | +759.4% | +725.0% | +782.4% | +782.4% | +782.4% | +782.4% | +782.4% | +782.4% |
+
+Saturates at **6/day, not 8** — under the same-player constraint no day supports a 7th slip. cap=2 is nominally best (+892.6%) but that is 34 slips of noise, not a robust optimum. **Open item (6) is closed: the 10–15 band changes nothing, as Session 2 found.** Ranker sensitivity: `score_0_100` +782.4% vs `estimated_hit_probability` +693.3% — `score` retained.
+
+### B6 — the load-bearing multiplier assumption, quantified
+
+| assumed per-leg ratio | 6-pick payout | ROI |
+|---|---|---|
+| **1.000 (published, assumed)** | 37.50x | **+782.4%** |
+| 0.95 | 27.57x | +548.6% |
+| 0.90 | 19.93x | +368.9% |
+| 0.85 | 14.14x | +232.8% |
+| 0.80 | 9.83x | +131.3% |
+
+12 full hits in 51 slips = 23.53%, so break-even needs 4.25x, i.e. a per-leg rate of 1.2645 against the published 1.830 — **a break-even discount ratio of 0.691.**
+
+**That number is the whole ballgame. PP Goblin's measured discount is ~0.620. If PP Regular Power carries a Goblin-sized haircut, this track goes negative.** It survives anything down to 0.691 and dies below it. The assumption rests on four real Flex observations and **zero** real Power observations. **Standing request, now with a specific threshold attached: one real 6-pick PP Regular Power slip.**
+
+---
+
+## 5. PP DEMON — the track does not survive removal of the corrupted days
+
+**Class: TIERED** (`pitcher_strikeouts` 4.74 lines/player-day, `earned_runs` 4.34, `hits_runs_rbis` 3.49). **Lane: DEMON** throughout. Source: `backtest.demon_full_history_dedup_v2`, profiled clean (§0b). Payout: deployed demon table 3/3 = 15x, 2/3 = 1.5x. Exhaustive 3-combination enumeration, no ranking.
+
+| Pool | Scope | Days supp. | Combos | Full-hit % | ROI @15x | Break-even mult |
+|---|---|---|---|---|---|---|
+| A. `hits_runs_rbis/less/T2` (doc-legacy) | all days | 1 | 4,495 | 57.8% | +767.6% | 1.73x |
+| A. | **ex-corrupt** | **0** | — | — | **no slip buildable** | — |
+| **B. `pitcher_strikeouts/less/T2` (DEPLOYED)** | all days | 5 | 1,946 | 55.2% | +728.6% | 1.81x |
+| **B.** | **ex-corrupt** | **1** | **10** | **10.0%** | **+50.0%** | 10.00x |
+| I. `pitcher_strikeouts`+`earned_runs` /less T1+T2 | all days | 14 | 50,563 | 33.7% | +406.2% | 2.96x |
+| **I.** | **ex-corrupt** | **10** | 1,352 | 21.4% | **+220.6%** | 4.68x |
+| K. `pitcher_strikeouts`/less T1+T2 | ex-corrupt | 9 | 873 | 25.4% | **+281.4%** | 3.93x |
+| L. `hits_runs_rbis`/less T1+T2 | ex-corrupt | 7 | 4,007 | 6.3% | **−5.7%** | 15.90x |
+| M. all-pitcher T1+T2 (ps+er+ha+wa) | ex-corrupt | 10 | 1,916 | 15.3% | +130.2% | 6.52x |
+
+"ex-corrupt" removes **08-05, 08-06, 08-07 and 08-11** per §2.
+
+**The deployed pool's five supporting days are 08-05, 08-06, 08-07, 08-11 and 08-12 — four of the five are corrupted.** One clean day remains, with ten possible slips.
+
+### LODO on the ex-corruption survivors, 3-pick
+
+| Pool | base | LODO band | folds neg. |
+|---|---|---|---|
+| I. ps+er T1+T2 | +220.6% | −78.8% … +251.9% | 1/12 |
+| K. ps T1+T2 | +281.4% | −47.4% … +290.4% | 1/12 |
+| N. ps T1+T2+T3 | +278.8% | −52.4% … +287.7% | 1/12 |
+| M. all-pitcher T1+T2 | +130.2% | −68.1% … +151.0% | 1/12 |
+
+### Per-day, Pool K ex-corruption — the whole thing is one day
+
+| Date | legs | hits | combos | winning | day ROI |
+|---|---|---|---|---|---|
+| 08-08 | 4 | 2 | 4 | 0 | −100.0% |
+| 08-09 | 5 | 3 | 10 | 1 | +50.0% |
+| **08-12** | **18** | **12** | **816** | **220** | **+304.4%** |
+| 08-14 | 4 | 0 | 4 | 0 | −100.0% |
+| 08-15 | 3 | 1 | 1 | 0 | −100.0% |
+| 08-16 | 4 | 0 | 4 | 0 | −100.0% |
+| 08-17 | 4 | 3 | 4 | 1 | +275.0% |
+| 08-18 | 5 | 2 | 10 | 0 | −100.0% |
+| 08-19 | 6 | 2 | 20 | 0 | −100.0% |
+
+**816 of 873 combos and 220 of 222 winners come from 2026-08-12.** Remove it and the pool is −47.4%. Six of nine supporting days are −100%. And 08-12 is itself the day the flip bug was fixed — its demon `less` legs still hit 45.9% against 11.5% on 08-14, so it may be partially contaminated too.
+
+**Verdict — this is a retraction. Sessions 2 and 3 recommended Demon Pool I for promotion ("real, credible, worth strong consideration"). That recommendation is WITHDRAWN.** Pool I's 14 supporting days and +397.3% were carried by the four corrupted days; on clean data it has 10 nominal supporting days, one of which carries everything, and it is one day away from negative. **Recommendation: suspend the Demon track. It has no clean evidence base.** Open item (5) — moving the deployed pool from `hits_runs_rbis` to `pitcher_strikeouts` — is now moot: on clean data neither pool is supportable.
+
+---
+
+## 6. SLEEPER — the locked pool is negative and a much better one is sitting next to it
+
+**Lane: N/A** (Sleeper has no goblin/demon lane; dynamic per-leg moneyline pricing). **Class:** `rbis` FIXED (1.10 lines/player-day), `walks` FIXED (1.02), `runs` FIXED (1.10), `hits_runs_rbis` TIERED (3.49), `doubles` FIXED (1.00), `home_runs` FIXED (1.01). Per-leg 1.628 (compounding), break-even p = 1/1.628 = **61.4%** at any size.
+
+Exhaustive enumeration, all sizes:
+
+| Pool | 2-pk | 3-pk | 4-pk | 5-pk | 6-pk |
+|---|---|---|---|---|---|
+| **S-LOCKED `hits_runs_rbis/more`** | +3.8% | **−5.8%** | −18.9% | −34.0% | −49.6% |
+| S2 rbis+walks+runs /less | +21.7% | +34.8% | +49.7% | +66.8% | +86.2% |
+| **S2b rbis+walks /less** | +30.5% | +50.7% | +75.4% | +105.4% | **+141.2%** |
+| **S3 `rbis/less` only** | +34.4% | +55.2% | +79.5% | +108.0% | **+141.0%** |
+| S4 doubles+home_runs /less | +39.4% | +42.2% | +30.9% | +12.9% | −6.7% |
+| S7 hits/more + hrr/more + tb/more | −2.5% | −9.4% | −16.4% | −23.0% | −29.2% |
+| S8 rbis/less + hrr/more | +32.5% | +51.8% | +74.4% | +100.9% | +131.9% |
+| S9 all-less (rbis,walks,runs,dbl,hr) | +22.3% | +35.5% | +50.4% | +67.2% | +86.3% |
+
+### LODO
+
+| Pool / size | all-days | days | combos | LODO band | folds neg. |
+|---|---|---|---|---|---|
+| **S3 `rbis/less` 6-pk** | **+141.0%** | 18 | 11,757,387,553 | **+111.4% … +159.6%** | **0/19** |
+| S3 `rbis/less` 3-pk | +55.2% | 19 | 1,530,903 | +49.7% … +57.7% | 0/19 |
+| **S2b rbis+walks 6-pk** | **+141.2%** | 18 | 663,591,070,192 | **+123.2% … +145.4%** | **0/19** |
+| S2 rbis+walks+runs 6-pk | +86.2% | 18 | 5.23 × 10¹² | +79.3% … +97.9% | 0/19 |
+| S4 doubles+home_runs 3-pk | +42.2% | 14 | 1,742 | +27.5% … +68.8% | 0/16 |
+| **S-LOCKED `hrr/more` 3-pk** | **−5.8%** | 11 | 3,881 | −16.3% … +15.4% | **14/15** |
+
+**The locked Sleeper configuration is negative on exhaustive enumeration and negative in 14 of 15 folds.** Its documented +46.5% came from a ranked builder on a top slice; enumerating every buildable slip on the same pool gives −5.8%. `rbis/less` and `rbis+walks/less` at 6-pick are +141% with the tightest LODO bands anywhere in this system.
+
+Note S2 here is not identical to Session 4's S2 — `rfi_nrfi` is not in the graded outcome record under that key, so this is `rbis+walks+runs`. The direction agrees with Session 4; the level is lower because exhaustive enumeration includes every combination rather than the ranked top.
+
+### Multiplier sensitivity — the one thing that could kill this
+
+| per-leg | 1.400 | 1.500 | **1.628** | 1.700 | 1.800 |
+|---|---|---|---|---|---|
+| S3 `rbis/less` 6-pk | −2.5% | +47.4% | **+141.0%** | +212.4% | +340.2% |
+
+Break-even is ≈1.41. **`MULTIPLIER_TABLES_MASTER.md` carries two Sleeper per-leg figures: 1.628/1.638 (from live board moneylines, adopted by Session 2 on a 2.650x-vs-2.65x match) and 1.2684 (geometric mean of 8 real 6-pick placed observations).** At 1.2684 this pool is roughly −46%. The two numbers are not reconciled, and **the entire Sleeper case depends on which is right.** The 1.2684 figure is explicitly caveated in the dossier as applying to the "likely/safe leg pool" — which is exactly this pool. **This is the second-highest-value missing data point after the PP Regular Power slip: one real Sleeper 6-pick on `rbis/less` legs, multiplier recorded.**
+
+---
+
+## 7. UNDERDOG — locked config conclusively dead; first-ever positive pool found, and it is blocked
+
+**Lane: N/A.** **Class:** `rbis` FIXED, `walks` FIXED, `runs` FIXED, `hits` TIERED-borderline, `pitcher_fantasy_score` TIERED.
+
+Payout model = published × 0.6865^n (compounding). The arithmetic behind that, stated once so it stops being re-litigated: the documented derivation is *"10 real 6-pick observations averaging 3.75x actual against a 35x published rate"*. 35 × 0.6865 = **24.03**, not 3.75. 35 × 0.6865⁶ = **3.66** ≈ 3.75. **The 0.6865 is a per-leg compounding ratio; `MULTIPLIER_TABLES_MASTER.md` §6 mislabels it as a flat discount, and the flat application is the bug.**
+
+| Size | Published | Real (compounding) | Break-even per-leg |
+|---|---|---|---|
+| 2 | 3.5x | 1.65x | 77.9% |
+| 3 | 6.5x | 2.10x | 78.1% |
+| 4 | 12x | 2.67x | 78.3% |
+| 5 | 20x | 3.05x | 80.0% |
+| 6 | 35x | 3.66x | 80.5% |
+
+| Pool | legs | hit % | 2-pk | 3-pk | 4-pk | 5-pk | 6-pk |
+|---|---|---|---|---|---|---|---|
+| **U-LOCKED rbis+walks /less** | 5,583 | 70.1% | −18.6% | −26.7% | −34.4% | −47.2% | **−55.4%** |
+| U2 rbis only | 2,937 | 71.5% | −15.9% | −23.5% | −30.9% | −43.9% | −52.2% |
+| **U9 `pitcher_fantasy_score/less` (NEW)** | 147 | **79.6%** | **+4.1%** | **+4.8%** | **+5.2%** | −4.1% | −8.1% |
+| U10 pfs + rbis | 3,084 | 71.9% | −15.4% | −23.0% | −30.3% | −43.2% | −51.4% |
+| U11 hits/more | 434 | 62.2% | −37.1% | −51.0% | −62.5% | −74.5% | −82.0% |
+| U12 rbis+walks+runs | 7,804 | 68.5% | −22.4% | −31.9% | −40.7% | −53.4% | −61.7% |
+
+**Locked config: −55.4% at 6-pick, 18 of 18 LODO folds negative.** Fourth independent confirmation. For contrast, the flat model would report the same pool at **+192.2%** — that gap is the entire Underdog story.
+
+**U9 is the first positive Underdog pool ever found**, and it is a **cross-app transfer**: `pitcher_fantasy_score/less` is the locked PP Regular signal, never before tested on Underdog. LODO at 2-pick: **+0.2% to +8.3%, 0 of 13 folds negative**. At 3- and 4-pick, 2 of 13 folds go negative.
+
+**But it is blocked.** Underdog `pitcher_fantasy_score` legs stop dead after 2026-08-09:
+
+| Date | pfs legs | all pitcher legs | all UD legs |
+|---|---|---|---|
+| 08-08 | 21 | 30 | 1,011 |
+| 08-09 | 19 | 34 | 1,105 |
+| **08-10** | **0** | 12 | 724 |
+| 08-11 → 08-20 | **0 every day** | 24–46/day | 660–1,505/day |
+
+Other pitcher props keep flowing. **Only `pitcher_fantasy_score` stopped, on 2026-08-10, and has produced zero graded legs for eleven consecutive days.** That is a real ingestion or mapping defect and it is the thing standing between Underdog and its only positive signal. **Reported for the user; not fixed here — this is a dry run.**
+
+---
+
+## 8. VOID / DNP-ADJUSTED REPRICING — executed at last, and it is a no-op
+
+The #1 carried-forward item. Measured directly against real plate appearances (`stats_hitter.game_logs` with `pa > 0`) rather than inferred from zero-stat rows, on all graded hitter legs from 2026-08-04:
+
+| Metric | Value |
+|---|---|
+| Graded hitter legs | 25,909 |
+| Legs whose player has **no PA** that day | **15** |
+| Void rate | **0.06%** |
+| Hit rate among those 15 | 100.0% |
+| Hit rate among players who did play | 66.1% |
+
+On Sleeper `rbis/less` specifically: **1 void in 1,067 legs** from 08-04 onward. (07-27 and 07-28 show 100% "void" — that is absent `stats_hitter` coverage on those two dates, not real DNPs, and is excluded.)
+
+**The pipeline already excludes non-participants before grading.** The documented "~7% true DNP/void exposure on hitter props" (itself a correction of an earlier ~24% claim) is **too high by two orders of magnitude** when measured against actual plate appearances. Repricing every hitter-prop backtest for voids moves no headline figure by as much as half a point.
+
+Honest scope: this measures *our graded record*. It does not measure PrizePicks' own void handling on legs we never graded — but since a backtest can only use legs we graded, that is the relevant population. **Matrix cell closed for Sleeper and Underdog with a well-powered negative.**
+
+---
+
+## 9. GEMINI AS IDEA PARTNER — first proactive use on Goblin; hypothesis tested and REJECTED
+
+Track rotated off Sleeper per §1e. Gemini was given the Goblin track's real state (lane-verified hit rates, the granular multiplier table, every exhaustive per-bucket ROI, the P7 result) plus the full already-rejected list, and told that any hypothesis which FILTERS the pool is inadmissible.
+
+### Raw call
+
+```
+run_job(job="direct_worker_probe", extra={
+  method: "POST",
+  url: "https://alphadog-v2-admin-sql.rodolfoaamattos.workers.dev/gemini-proxy",
+  body: "{\"model\": \"gemini-3.6-flash\", \"prompt\": \"PrizePicks GOBLIN track. Give ONE new falsifiable
+   hypothesis with a specific baseball mechanism. Be concise (under 300 words).\n\nREAL STATE (28 days
+   graded, lane-verified): Goblin lane 29,647 legs at 73.3%. Goblin pays a per-leg multiplier ~1.15, so
+   break-even per-leg hit rate is ~87.0%. Exhaustive per-bucket 6-pick ROI: doubles/less/0.5 84.6%
+   -17.2%; home_runs/less/0.5 84.1% -16.6%; total_bases/less/3.5 84.5% -11.6%; hits_runs_rbis/less/3.5
+   81.8% -38.6%; stolen_bases/less/0.5 87.5% +1.8%; earned_runs/more/0.5 88.3% +5.1%;
+   hits_allowed/more/2.5 85.4% +27.0%; walks_allowed/more/0.5 89.7% -12.5%. Best pool:
+   earned_runs/more + hits_allowed/more, 6-pick, +8.4%, LODO +3.0% to +12.1%, 0 negative folds. Both
+   are pitcher-supply MORE-side props.\n\nALREADY REJECTED, do not repeat: ranking by the platform
+   internal score; same-game correlation control; pitcher-dominance stacking; umpire strike-zone
+   re-ranking; weather or bullpen-fatigue gating; bottom-of-order batting slot; board-density or
+   leg-density day gating; narrowing a pool to its best sub-slice. ANY hypothesis that FILTERS the pool
+   has failed on pool thinning - only re-ranking or pool REDEFINITION is acceptable.\n\nTestable only
+   with: per-leg graded outcomes (player, prop, line, side, date, game) plus weather (97.2% join),
+   umpire (95.2%), bullpen (39.4%), lineup slot (80.4%), park factors.\n\nAnswer: (1) hypothesis in one
+   sentence, (2) mechanism, (3) exact test and what falsifies it, (4) why it survives pool thinning.\"}"
+})
+```
+
+*(A first attempt with a longer prompt returned `probe_timeout` at 40,000 ms. The shortened prompt returned in 16,384 ms. Worth knowing: the Gemini proxy has a hard ~40s ceiling.)*
+
+### Raw response
+
+> **(1) Hypothesis**
+> Re-ranking the existing pitcher MORE pool (`earned_runs/more/0.5` and `hits_allowed/more/2.5`) by the opposing team's top-4 lineup slots' combined past-30-day On-Base Percentage (OBP) monotonically orders leg hit rates without discarding volume.
+>
+> **(2) Baseball Mechanism**
+> High-OBP top-of-the-order batters extend plate appearances and elevate pitch counts per inning. This accelerates starting pitchers into their 2nd and 3rd Time-Through-the-Order (TTO) efficiency degradation phases earlier in the game, directly increasing baseline hit and earned run yield before manager bullpen intervention.
+>
+> **(3) Exact Test & Falsification**
+> * **Test:** Join confirmed batting orders (80.4% coverage) to assign each pitcher MORE leg a continuous score equal to the sum of the opposing 1–4 lineup slots' rolling 30-day OBP. Sort the complete pitcher MORE leg pool into deciles (10 equal-volume buckets) and calculate the per-leg hit rate and 6-pick entry ROI per decile.
+> * **Falsification:** Falsified if Kendall's tau rank correlation between decile rank and per-leg hit rate is non-positive (p ≥ 0.05), or if the top 2 deciles fail to maintain a per-leg hit rate above the 87.0% Goblin break-even threshold.
+>
+> **(4) Why It Survives Pool Thinning**
+> It uses a continuous ordinal re-ranking across 100% of the target leg population rather than applying a binary threshold filter. Zero legs are discarded or thinned from the universe; it merely alters entry selection precedence to maximize expected value within 6-pick slip construction.
+
+Genuinely new, mechanistically specific, not in `SIGNALS_TECHNIQUES_TRIED.md`, and correctly framed as a re-rank rather than a gate.
+
+### Real test
+
+374 pitcher-supply MORE legs → 100% joined to `stats_pitcher.game_logs` for the opposing team → opposing lineup slots 1–4 from `context.history_game_lineup` (using the posted/derived lineup, known pre-game, so no leakage) → those players' **prior-30-day** on-base proxy `(hits + walks) / PA` from `stats_hitter.game_logs`, strictly `game_date < leg date`. Requiring ≥100 prior PA leaves 225 legs across 8 days. Quintiles rather than deciles, since deciles would give 22 legs each.
+
+| Quintile | n | opposing top-4 OBP range | leg hit % |
+|---|---|---|---|
+| 1 (lowest OBP) | 45 | 0.2476 – 0.3054 | 88.9% |
+| 2 | 45 | 0.3057 – 0.3185 | 73.3% |
+| 3 | 45 | 0.3186 – 0.3323 | 88.9% |
+| 4 | 45 | 0.3324 – 0.3445 | **95.6%** |
+| 5 (highest OBP) | 45 | 0.3445 – 0.3932 | 75.6% |
+
+Leg-level Pearson r between opposing top-4 OBP and outcome: **−0.036** (n = 165 distinct pitcher-days). Mean opposing OBP when the leg hits: **0.3239**. When it misses: **0.3262** — a 0.2pp difference, in the *opposite* direction to the prediction.
+
+**REJECTED, on both of Gemini's own falsification criteria.** The rank correlation is non-positive, and the top quintile (75.6%) sits well below the 87.0% Goblin break-even. Non-monotonic in the middle too — up, down, up, down.
+
+**Power caveat, stated honestly:** 225 of 374 legs scored, 8 days. A negative at this power is suggestive, not decisive. The mechanism is sound baseball; it just does not show up in this pool at this sample size.
+
+### Byproduct: the `lineup_slot` dual-encoding defect
+
+Building this test surfaced a real defect in Session 4's own resolution. `WHERE lineup_slot BETWEEN 1 AND 4` returned **zero rows on all 14 dates from 2026-08-05 to 2026-08-18**. The column carries two encodings:
+
+| Window | `lineup_slot` values | rows/slot |
+|---|---|---|
+| Outside 08-05 → 08-18 | **1–9** | 488 each |
+| **08-05 → 08-18** | **100–900** | 158 each |
+
+Session 4's guidance ("use `lineup_slot`, they're equivalent, `boc = lineup_slot × 100`") is correct where both columns exist but **silently drops 14 days** for anyone who filters or buckets on 1–9. Correct normalisation: `CASE WHEN lineup_slot >= 100 THEN lineup_slot/100 ELSE lineup_slot END`. **Session 4's Gen-1 bottom-of-order refutation should be re-run under the normalised slot** — its "24 usable days" claim would have excluded 08-05 → 08-18.
+
+---
+
+## 10. FIRST-PITCH-STRIKE RATE — BLOCKED, with the search shown
+
+Open item (4) asked me to mine `stats_pitcher.game_logs`/`splits` for first-pitch-strike rate to finish the 0-1 tailwind test. Three searches, all negative:
+
+1. Every `stats_pitcher` column matching `%first%`, `%fps%`, `%strike_pct%`, `%zone%` → **2 hits, both irrelevant**: `game_log_player_outcomes.first_promoted_game_date`, `.first_raw_game_date`.
+2. All **70** distinct keys of `stats_pitcher.game_logs.raw_json->'stat'` across 4,039 object-typed rows → `strikes`, `strikePercentage`, `numberOfPitches`, `pitchesThrown`, `balls`. **Overall strike rate only; no per-count or first-pitch breakdown anywhere.**
+3. Every `stats_pitcher` and `context` column matching `%pitch%` → `strikes_per_pitch_calculated`, `pitches_per_out_calculated`, `bullpen_pitches_last_{1,2,3}_day(s)`, `pitches_sum`. No FPS.
+
+**FPS% does not exist in this database.** The nearest available quantity is overall `strikePercentage`, which is a materially different statistic and would not test the hypothesis. **Marked BLOCKED in the coverage matrix with this evidence, rather than left silently open.**
+
+---
+
+## 11. EXTERNAL RESEARCH (performed fresh this session)
+
+- **PrizePicks** — Power `2:3x, 3:6x, 4:10x, 5:20x, 6:37.5x`; Flex `2:{2x,0.5x}`, `3:{3x,1x}`, `4:{6x,1.5x}`, `5:{10x,2x,0.4x}`, `6:{25x,2x,0.4x}`. Source last verified 2026-08-17. ✅ **matches repo, unchanged.** One new detail worth recording: the source stresses that *"PrizePicks discloses the payout for each contest on its individual details screen. Review that displayed payout before submitting because it controls over this general calculator"* — a first-party-adjacent confirmation that the published table is not what a specific slip actually pays, which is precisely the Goblin/Demon discount this system measures.
+- **Underdog** (help.underdogsports.com, first-party) — Standard `2:3.5, 3:6.5, 4:12, 5:20, 6:35, 7:65, 8:120`; Flex 0-loss `3:3.25, 4:6, 5:10, 6:25, 7:40, 8:80`; 1-loss `1.09/1.5/2.5/2.6/2.75/3`; 2-loss `6:0.25, 7:0.5, 8:1`. ✅ **matches repo, unchanged.** Per-selection pricing re-confirmed first-party: *"If you choose a pick with a 0.7x multiplier, your total payout decreases to reflect that lower difficulty"* — direct support for the compounding model over the flat one.
+- **Sleeper** — no published fixed table found; confirmed to use dynamic per-pick pricing. ✅ consistent with the repo's moneyline-conversion model.
+- No evidence of any payout change since the 2025-06-02 PrizePicks 3/4-pick Flex increase already on record.
+
+Sources: [propellerpicks PrizePicks calculator](https://propellerpicks.com/tools/prizepicks-payout-calculator/) · [Underdog Pick'em Standard & Flex payouts](https://help.underdogsports.com/en/articles/13780101-pick-em-standard-flex-entry-payouts) · [Stokastic on Underdog multipliers](https://www.stokastic.com/articles/dfs-strategy/how-underdog-fantasy-multipliers-work) · [OddsShopper on Sleeper Picks](https://www.oddsshopper.com/articles/comparisons/how-to-play-sleeper-picks)
+
+---
+
+## 12. MULTIPLIER TABLE — nothing new
+
+`score.slip_entries` holds **19** rows with a real multiplier, timestamps unchanged at 2026-08-21T20:11 — identical to Sessions 2, 3 and 4. No new placed slips. The table cannot sharpen this session.
+
+**The three multipliers this system most needs, ranked by how much rests on each:**
+1. **PP Regular Power, 6-pick** — the entire +782.4% dies below a 0.691 discount ratio; Goblin's measured ratio is 0.620. Zero Power observations exist.
+2. **Sleeper `rbis/less` 6-pick** — +141.0% at per-leg 1.628, roughly −46% at 1.2684, and both figures are in the docs unreconciled.
+3. **Goblin `earned_runs/more/0.5` and `hits_allowed/more/2.5`** — the only Goblin pool ever to survive LODO cleanly, resting entirely on the 1.15 fallback and negative at 1.10.
+
+---
+
+## 13. HONEST SUMMARY
+
+**Genuinely new this session:**
+1. **`prop_outcome_history.is_goblin`/`is_demon` is not the lane.** Two writers; the `outcome_final` writer leaves the flags at 0/0 on 99.0% of rows. 97.9% of "standard-lane" legs are goblin or demon. Authoritative lane must be joined from `final_board_history` (98.6% join). Corrected lane split: goblin 73.3% / standard 54.6% / demon 34.6%.
+2. **Demon `less` legs are corrupted on exactly 08-05, 08-06, 08-07 and 08-11** — 68–85% where demon must be under 50%, while the `more` side stays at 8–16% throughout. Present inside `demon_full_history_dedup_v2`.
+3. **No standard-lane bucket clears n≥30 and 80%.** The pool open item (1) asked for does not exist.
+4. **The locked PP Regular pool is 100% standard-lane (376/376)** and its break-even discount ratio is **0.691**, against Goblin's measured 0.620.
+5. **First Goblin pool ever to survive LODO with zero negative folds**: `earned_runs/more/0.5` + `hits_allowed/more/2.5`, 6-pick, +8.4%, band +3.0% to +12.1%, 14 days — and it is not promotable, because both legs sit on the unmeasured 1.15 fallback.
+6. **The locked Sleeper pool is −5.8% on exhaustive enumeration**, 14 of 15 folds negative; `rbis/less` 6-pick is +141.0% with all 19 folds positive.
+7. **First positive Underdog pool ever found** — `pitcher_fantasy_score/less`, a cross-app transfer of the PP Regular signal — and it is blocked by an ingestion gap that stopped the prop dead on 2026-08-10.
+8. **Void/DNP exposure is 0.06%, not ~7%.** Repricing is a no-op.
+9. **`lineup_slot` carries two encodings** and silently drops 08-05 → 08-18 for anyone filtering 1–9.
+10. **First-pitch-strike rate does not exist in this database**, established across three searches.
+11. **Gemini's opposing-top-4-OBP re-rank tested and rejected** on its own falsification criteria.
+12. The Gemini proxy has a hard ~40 s timeout.
+
+**Re-confirmed:** Underdog broken as deployed (−55.4%, 18/18 folds negative — fourth independent line of evidence); PP Goblin's locked-like pool negative (−12.1% to −29.5%); PP Regular robust and the strongest clean track; both published payout tables unchanged.
+
+**RETRACTED this session:**
+1. **`HIGH_HIT_RATE_METHODOLOGY.md` §3's lane finding as stated** — `doubles/less/0.5` at "+1298.7% standard vs −13.0% Goblin, identical leg" is one set of legs duplicated across two lane labels, not two market offerings.
+2. **The Session 4 addendum's four "priced-positive standard-lane buckets"** and its instruction to play them in the Regular lane.
+3. **Sessions 2 and 3's recommendation to promote Demon Pool I.** Its support was the four corrupted days; on clean data it is one day from negative.
+4. **Session 1's clearance of 2026-08-11 as a legitimate outlier.** It is a corrupted day.
+5. **Session 4's "one-day grading gap" flag.** Third UTC-for-Pacific error in the log; there is no gap.
+6. **The documented ~7% hitter void rate.** Real figure 0.06%.
+7. **Session 4's `lineup_slot` guidance as sufficient.** It is not; two encodings exist.
+8. **Session 2's "+1020.1%, saturates at 8 slips/day"** — amended to +782.4% and saturation at 6 under the same-player constraint PrizePicks actually enforces.
+
+**Needs the user's decision:**
+- **Suspend the Demon track?** It has no clean evidence base once the four corrupted days are removed.
+- **Move Sleeper from `hits_runs_rbis/more` 3-pick to `rbis/less` (or `rbis+walks/less`) 6-pick?** −5.8% → +141.0%, all folds positive — conditional on the 1.628-vs-1.2684 multiplier question.
+- **Suspend Underdog staking?** Fourth confirmation it is broken as deployed.
+- **Place three slips and report the real multipliers** (§12): PP Regular Power 6-pick; Sleeper 6-pick on `rbis/less`; one Goblin slip containing `earned_runs/more/0.5` or `hits_allowed/more/2.5`.
+- **Two live defects reported, not touched** (dry run): the `outcome_final` writer not populating lane flags; and Underdog `pitcher_fantasy_score` producing zero graded legs since 2026-08-10.
+
+**Stopping condition: NOT met — stated plainly.** Twelve structurally distinct passes ran. The first one overturned the premise of the session's own top-priority open item and forced five retractions, which is the opposite of exhaustion. This session closes on budget, not on the five-consecutive-null rule. **This is not the final report in the sense the master prompt defines.**
+
+**Open items carried forward:**
+1. Re-run Session 4's Gen-1 bottom-of-order refutation under the normalised `lineup_slot`.
+2. Multi-layer stacking and adaptive sizing on Regular, Demon, Underdog (Goblin and Sleeper now covered).
+3. Gemini generative hypothesis on Regular, Demon, Underdog.
+4. Reconcile the Sleeper per-leg conflict (1.628 vs 1.2684) against a real placed slip.
+5. Determine whether 2026-08-12 is partially inside the demon `less` corruption window (its 45.9% still looks high).
+6. Rebuild the Goblin analysis once `goblin_demon_tier` is populated on graded days — 08-21 is the first such day and grades out tonight.
+7. Audit the `pitcher_fantasy_score` goblin anchor derivation (carried from Session 2, still open).
+
+**Nothing was deployed, patched, or modified.**
+
+---
