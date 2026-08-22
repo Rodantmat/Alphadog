@@ -5001,6 +5001,7 @@ function bindLegKeepBoxDelegation(){
 function flexTiersForSizeLive(sourceKey, size){
   const k=String(sourceKey||'').toLowerCase();
   if(k==='prizepicks_regular')return PP_REGULAR_FLEX_BY_SIZE[size]||null;
+  if((k==='parlay_underdog'||k==='underdog')&&size===6)return UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT;
   // Demon moved to Power mode 2026-08-22 - no Flex tier table needed here anymore.
   return null;
 }
