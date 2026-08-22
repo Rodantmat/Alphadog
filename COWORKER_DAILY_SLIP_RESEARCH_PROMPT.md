@@ -140,11 +140,26 @@ Beyond the currently-used props, actively mine these real layers every session (
 
 ## 5. THE MULTIPLIER TABLE — YOUR RESPONSIBILITY TO SHARPEN, NOT JUST READ
 
-`MULTIPLIER_TABLES_MASTER.md` documents the current real per-(app, prop, side, tier) multiplier data. This table is explicitly designed to sharpen over time as more real placed-slip data accumulates (via `score.slip_entries.real_multiplier`). Every session:
-1. Pull any NEW real multiplier observations saved since the last session (`score.slip_entries` ordered by `created_at`).
-2. Update your working understanding of the per-leg rates for any prop/side/tier combination with new real data.
-3. Flag in your report any place where a new real observation meaningfully disagrees with the documented table (a genuine, real correction worth making), distinguishing this from ordinary sample noise.
-4. Never flatten a genuinely per-prop/per-side/per-tier real pattern into a single blended number in your reporting — always show the real breakdown.
+`MULTIPLIER_TABLES_MASTER.md` documents the current real per-(app, prop, side, tier) multiplier data. As of 2026-08-22, this is no longer the only or most current source — real per-leg Goblin/Demon/Sleeper pricing now accumulates automatically in three live database tables:
+- `score.pricing_layer1_prop_line` — real per-leg rate by (source_key, prop, side, line_value) only
+- `score.pricing_layer2_tier` — adds Goblin/Demon tier as an independent signal (a given line_value can map to different tiers for different players, since tier = distance from THAT player's own anchor)
+- `score.pricing_layer3_player` — adds the specific player, since real market pricing varies by player reliability (confirmed directly: two real Goblin slips with identical composition returned different real totals, 2.5x and 2.25x)
+
+Every session:
+1. Query all three tables fresh (`SELECT * FROM score.pricing_layerN_... ORDER BY last_updated_at DESC`) — this is real, ground-truth data written automatically every time the user saves a real slip with a real multiplier (`recordRealPricingObservation` in `alphadog-v2-certification-center.js`), and it grows daily.
+2. A layer only "wins" (is more trustworthy than a coarser layer) once it has `n_observations >= 2` — a single real slip cannot separate the contribution of multiple legs of different real rates from each other. Report entries by their real n, never treat n=1 as settled.
+3. Cross-reference against `MULTIPLIER_TABLES_MASTER.md` — if the two disagree meaningfully, that is itself a real finding worth reporting (which one is more current, and why).
+4. Never flatten a genuinely per-prop/per-side/per-tier/per-player real pattern into a single blended number in your reporting — always show the real breakdown. See Rules B0b and B0c in `HIGH_HIT_RATE_METHODOLOGY.md` §3a, added 2026-08-22 directly because a coworker session violated this exact rule and overstated a Sleeper pool's ROI by ~6.5x as a direct result.
+
+---
+
+## 0a. OPERATE AUTONOMOUSLY — NEVER PAUSE TO ASK PERMISSION
+
+This is a DRY RUN task (Section 9 below): nothing you do here deploys, patches, or modifies live code. Because of that, there is no real reason to ever stop and ask the user whether to proceed, the same way the scheduled master-run and delta-run workers never pause mid-run to ask before retrying a timeout, healing a stale batch, or continuing a multi-step chain — they retry and self-heal automatically and only report at the end. Apply that exact same standing enforcement here:
+- Never ask "should I continue?", "do you want me to test X?", or "should I proceed with Y?" mid-session. Decide, proceed, and report what you found at the end.
+- If a step times out or returns a partial/continuation result, retry it yourself per the documented self-healing patterns (same as a master-run/delta-run) rather than surfacing the interruption as a question.
+- The only things that ever require the user's explicit action are listed in Section 7's report format (real slips to place, a config change to approve) — surface those as clearly-labeled requests in the final report, not as an early stopping point.
+- If you are ever uncertain whether something is in scope, default to doing the research and noting the uncertainty in the report, rather than pausing to ask.
 
 ---
 
