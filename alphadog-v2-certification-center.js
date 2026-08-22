@@ -2873,7 +2873,26 @@ async function autoSelectHighHitSlipLegs(env) {
         fbc.canonical_prop_key, fbc.line_value, fbc.selected_side,
         COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int) AS goblin_demon_tier,
         fbc.estimated_hit_probability_0_100 AS hit_probability_0_100,
-        fbc.confidence_0_100, fbc.is_goblin, fbc.is_demon
+        fbc.confidence_0_100, fbc.is_goblin, fbc.is_demon,
+        -- Real, three-layer pricing hierarchy (2026-08-22): Layer 3 (this exact player, n>=2) ->
+        -- Layer 2 (this tier, n>=2) -> Layer 1 (prop+line only) -> NULL (caller falls back to the
+        -- static in-code table). Each layer only "wins" once it has at least 2 real observations -
+        -- a single real slip can't separate composition-shared legs, so n=1 stays unreliable.
+        COALESCE(
+          (SELECT p3.avg_leg_rate FROM score.pricing_layer3_player p3
+           WHERE p3.source_key='prizepicks_goblin' AND p3.canonical_prop_key=fbc.canonical_prop_key
+             AND p3.selected_side=lower(fbc.selected_side) AND p3.line_value=fbc.line_value
+             AND p3.tier=COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int)
+             AND p3.mlb_player_id=fbc.mlb_player_id::text AND p3.n_observations>=2),
+          (SELECT p2.avg_leg_rate FROM score.pricing_layer2_tier p2
+           WHERE p2.source_key='prizepicks_goblin' AND p2.canonical_prop_key=fbc.canonical_prop_key
+             AND p2.selected_side=lower(fbc.selected_side) AND p2.line_value=fbc.line_value
+             AND p2.tier=COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int)
+             AND p2.n_observations>=2),
+          (SELECT p1.avg_leg_rate FROM score.pricing_layer1_prop_line p1
+           WHERE p1.source_key='prizepicks_goblin' AND p1.canonical_prop_key=fbc.canonical_prop_key
+             AND p1.selected_side=lower(fbc.selected_side) AND p1.line_value=fbc.line_value)
+        ) AS real_layer_rate
       FROM score.final_board_current fbc
       LEFT JOIN standards s ON s.mlb_player_id = fbc.mlb_player_id AND s.canonical_prop_key = fbc.canonical_prop_key
       WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
