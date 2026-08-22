@@ -2914,23 +2914,33 @@ function buildGoblinSlipsAtCap(legs, size, cap) {
   return slips;
 }
 
+// FLEX_PARTIAL_RATIO_ESTIMATE (2026-08-22): real Flex partial-hit payout for this pool has not
+// been confirmed at any size - this uses the same ~10% of full-hit ratio pattern observed on
+// other real PrizePicks Flex tables (e.g. Demon's confirmed 15x/1.5x = 10%). Flagged explicitly
+// as an estimate in the payout note below; place a real 6-pick Flex slip missing exactly one leg
+// to confirm or correct this.
+const GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10;
 function buildHighHitSlips(legs) {
   const size = HIGH_HIT_SLIP_SIZES[0];
   const builtGroups = buildGoblinSlipsAtCap(legs, size, 999);
   const slips = builtGroups.map(slipLegs => {
     const legMult = goblinSlipEstimatedMultiplier(slipLegs);
+    const fullMult = legMult.multiplier;
+    const partialMult = Math.round(fullMult * GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000;
     return {
       client_slip_id: makeUiId("high_hit_slip"),
       source_key: "prizepicks_goblin",
       slip_type: `${size}-pick`,
       slip_size: size,
-      entry_mode: "power",
-      structure_label: `${size}-pick Power (High Hit)`,
-      estimated_multiplier: legMult.multiplier,
+      entry_mode: "flex",
+      structure_label: `${size}-pick Flex (High Hit)`,
+      estimated_multiplier: fullMult,
+      estimated_flex_tiers: { [size]: fullMult, [size - 1]: partialMult },
       multiplier_confirmed: legMult.confirmed,
-      estimated_payout_note: legMult.confirmed
-        ? `${legMult.multiplier}x - real per-leg rates confirmed for every leg in this exact slip.`
-        : `~${legMult.multiplier}x - some legs use a fallback estimate (no real data yet for that exact prop/side/tier). Enter the real number below once you place it.`,
+      estimated_payout_note: (legMult.confirmed
+        ? `Full-hit ${fullMult}x - real per-leg rates confirmed for every leg in this exact slip.`
+        : `Full-hit ~${fullMult}x - some legs use a fallback estimate (no real data yet for that exact prop/side/tier).`)
+        + ` Partial-hit (${size - 1}/${size}) ~${partialMult}x is an ESTIMATE (10% of full-hit ratio, not yet confirmed real for this pool) - enter both real numbers below once you place it.`,
       strategy_notes: [],
       legs: slipLegs
     };
