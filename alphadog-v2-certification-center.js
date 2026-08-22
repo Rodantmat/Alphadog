@@ -4908,8 +4908,15 @@ const REAL_MULT_TABLES = {
   goblin_power: { 2: 1.25, 3: 1.4, 4: 1.5, 5: 1.86, 6: 1.97 },
   pp_regular_power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
   pp_regular_flex: { 3: 3, 4: 6, 5: 10, 6: 25 },
-  underdog_power: { 2: 2.40, 3: 4.46, 4: 8.24, 5: 13.73, 6: 24.03 }
+  // CORRECTED 2026-08-22: the 6-pick entry (24.03) was wrong - it came from a generic
+  // discount-of-published-table formula that does not match this specific prop's real,
+  // user-confirmed pricing (6/6=8.5x). Kept for other Underdog props/sizes with no real data yet;
+  // for hits_allowed/more specifically, UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT below is authoritative.
+  underdog_power: { 2: 2.40, 3: 4.46, 4: 8.24, 5: 13.73, 6: 8.5 }
 };
+// Real, user-confirmed Flex tiers for the deployed hits_allowed/more, 6-pick pool - matches
+// server-side UNDERDOG_REAL_FLEX_TIERS_6PICK exactly. NOT the generic discount-model estimate.
+const UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT = { 6: 8.5, 5: 1.05, 4: 0.1 };
 // Real, official PrizePicks Flex tiers by size (full breakdown, not just full-hit) - used to
 // recompute the multiplier fields live when a leg is unchecked and the slip shrinks to a
 // different size. Demon only has a real confirmed table at size 3 - other sizes fall back to a
