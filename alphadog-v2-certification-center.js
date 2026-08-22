@@ -3221,7 +3221,7 @@ async function apiHighHitSlips(env, request) {
     autoSelectDemonHighHitSlipLegs(env)
   ]);
   const ppSlips = ppLegs.length >= 5 ? buildHighHitSlips(ppLegs) : [];
-  const udSlips = udLegs.length >= 3 ? buildUnderdogHighHitSlips(udLegs) : [];
+  const udSlips = udLegs.length >= 6 ? buildUnderdogHighHitSlips(udLegs) : [];
   const sleeperSlips = sleeperLegs.length >= 6 ? buildSleeperHighHitSlips(sleeperLegs) : [];
   const regularSlips = regularLegs.length >= 6 ? buildRegularHighHitSlips(regularLegs) : [];
   const demonSlips = demonLegs.length >= 2 ? buildDemonHighHitSlips(demonLegs) : [];
