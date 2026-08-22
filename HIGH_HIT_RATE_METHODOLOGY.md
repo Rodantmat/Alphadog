@@ -63,6 +63,39 @@ The fixed/tiered split above was built from an earlier, smaller sample. A later 
 
 ## 3. THE DOMINANT EV AXIS IS THE LANE, NOT THE CLASS — the real reconciliation
 
+> ## 🛑 RETRACTION NOTICE — added 2026-08-21 (session 5), re-verified 2026-08-21 (session 6). READ BEFORE §3.
+>
+> **The worked example below is an artifact of a data defect, and the "+1298.7% standard-lane" figure must not be used.**
+>
+> `score.prop_outcome_history` has two writers. The `outcome_final|…` writer leaves `is_goblin`/`is_demon` **unpopulated at 0/0 on 99.0% of its rows** — that is a default, not a "standard lane" tag. The `grade_*` writer carries the real flags. Cross-tabulated over the 36,465 keys present in both writers: **28,505 (78.2%) read "neither" but are goblin, 7,131 (19.6%) read "neither" but are demon.** Only 782 (2.1%) are genuinely neither.
+>
+> So §3's `doubles/less/0.5` comparison is **not** the same leg priced two ways in two market lanes. It is **one set of legs duplicated across two lane labels and then priced with two different multipliers.** The tell is inside §3's own source table: standard 84.8% vs goblin 85.0%, standard 84.7% vs goblin 84.9%, standard 84.5% vs goblin 84.6% — near-identical pairs, because they are the same legs.
+>
+> **Read the lane from `score.final_board_history`**, joined on `final_board_row_id` (98.6% join rate), restricting the outcome table to `outcome_id LIKE 'outcome_final|%'`. Note `final_board_history.odds_type` and `payout_variant` are 100% NULL, so `is_goblin`/`is_demon` on that table is the only authoritative source. Doing this gives a structurally coherent split for the first time — **goblin 73.3% (n=29,647) > standard 54.6% (n=3,236) > demon 34.6% (n=8,078)**. The old assignment put "standard" at 84.8%, *above* goblin, which is impossible and was the signal that something was wrong.
+>
+> **Directly verified on §3's own named buckets (session 6).** All eight buckets this document and its addendum called "top standard-lane" are, on authoritative labels, **88–98% goblin lane**, with **2 standard-lane legs in total across 5,874 legs (0.03%)**:
+>
+> | Bucket | legs | goblin | demon | standard |
+> |---|---|---|---|---|
+> | `doubles/less/0.5` | 1,952 | 1,892 (96.9%) | 60 | 0 |
+> | `total_bases/less/3.5` | 1,270 | 1,247 (98.2%) | 23 | 0 |
+> | `home_runs/less/0.5` | 861 | 813 (94.4%) | 48 | 0 |
+> | `singles/less/1.5` | 582 | 513 (88.1%) | 69 | 0 |
+> | `stolen_bases/less/0.5` | 387 | 353 (91.2%) | 34 | 0 |
+> | `hits_runs_rbis/less/4.5` | 386 | 365 (94.6%) | 21 | 0 |
+> | `earned_runs/more/0.5` | 235 | 230 (97.9%) | 4 | **1** |
+> | `walks_allowed/more/0.5` | 201 | 194 (96.5%) | 6 | **1** |
+>
+> **There is no standard-lane version of these buckets to build slips from.** Their real EV is Goblin-lane EV. Under real slip construction with the granular per-leg table, the eight-bucket pool runs **−4.9% (2-pick) to −12.8% (6-pick)**.
+>
+> **On the corrected labels, ZERO standard-lane buckets clear the §1 bar (n≥30 and 80%).** The best standard-lane bucket in the whole record is `pitcher_fantasy_score/less/24.5` at 89.7% with n=29 — just under the sample bar. The standard lane is only 7.9% of PrizePicks graded legs, not the ~42% the defect implied.
+>
+> **What survives:** Rule B0 (build real buckets, never rank by the platform's internal score) and Rule B0a (label class AND lane on every pool) both stand — B0a is *strengthened*, since reading the lane from the wrong column is exactly what produced this error. The demon rows in the table above are themselves contaminated: demon `less` legs are mislabelled on 2026-08-05, 08-06, 08-07 and 08-11 (they hit 68–85% where a demon leg must hit under 50%), which also means **2026-08-11 is a corrupted day, not a legitimate outlier**.
+>
+> **What does not survive:** the +1298.7% figure, the claim that lane alone swings the same leg by 1,300 points, and the instruction to play these buckets in the Regular lane. Full evidence in `SIGNALS_TECHNIQUES_TRIED.md` and the 2026-08-21 Session 5 and Session 6 entries of `control/daily_slip_research_log.md`.
+
+*The original text of §3 is preserved below for the record. It is superseded by the notice above.*
+
 **This is the single most important structural finding this document contains, discovered by a coworker research pass 2026-08-22 and independently verified.** Whether a leg is offered in the **Standard lane** (no discount — real per-leg at 6-pick is `37.5^(1/6) ≈ 1.83`) versus the **Goblin lane** (real ~0.62 discount, per-leg 1.116-1.265) matters far more to real EV than whether the underlying prop is fixed-threshold or tiered.
 
 **The exact real example that makes this concrete**: `doubles/less/0.5` — the identical leg, identical ~85% real hit rate, identical prop — prices at **+1298.7% in the Standard lane and −13.0% in the Goblin lane**, a swing of over 1,300 percentage points from lane alone. Verified independently: `37.5^(1/6) ≈ 1.830`; at 85% hit rate over 6 picks, Standard-lane ROI computes to roughly +1300%, Goblin-lane ROI (per-leg ~1.15) to roughly −13%. The two documented, seemingly-contradictory 2026-08-17 and 2026-08-22 findings about fixed-line props were **both correct** — one measured the Standard lane (implicitly, via the published table), the other measured the real Goblin lane. Neither the hit rate nor the fixed/tiered class changed the sign; the lane did.
