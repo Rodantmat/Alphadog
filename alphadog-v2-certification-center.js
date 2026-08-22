@@ -4904,12 +4904,12 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
     if(legs&&legs.length)return goblinSlipEstimatedMultiplier(legs).multiplier;
     return REAL_MULT_TABLES.goblin_power[size]||0;
   }
-  if(k==='prizepicks_demon')return (DEMON_FLEX_TIERS_UI[size]&&DEMON_FLEX_TIERS_UI[size][size])||0;
+  if(k==='prizepicks_demon')return Math.round(Math.pow(DEMON_PER_LEG_REAL_MULT_CLIENT,size)*1000)/1000;
   if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
   if(k==='parlay_underdog'||k==='underdog')return REAL_MULT_TABLES.underdog_power[size]||0;
   return 0;
 }
-const DEMON_FLEX_TIERS_UI = { 3: { 3: 15, 2: 1.5 } };
+const DEMON_PER_LEG_REAL_MULT_CLIENT = 2.375; // real, confirmed Tier1 per-leg rate - matches server-side DEMON_PER_LEG_REAL_MULT
 function legRowHtml(leg,slipIdx,legIdx){
   return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
 }
