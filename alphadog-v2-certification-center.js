@@ -2840,12 +2840,11 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
 }
 const GOBLIN_5PICK_REAL_MULT = 1.86;
 const GOBLIN_5PICK_MULT_CONFIRMED = true;
-const HIGH_HIT_SLIP_SIZES = [2];
-// UPDATED 2026-08-21->2026-08-22: size changed from 5 to 2, matching the real, validated backtest
-// for the new walks_allowed/more/Tier1 pool (349 real slips, 16/16 active days positive at 2-pick).
-// The 25% cap below was validated for the OLD, weaker, multi-prop pool where capping controlled
-// real downside risk. This new pool has zero losing real days in its whole backtest - there is no
-// real downside to control, so capping would only needlessly cut into a clean signal. No cap.
+const HIGH_HIT_SLIP_SIZES = [3];
+// CORRECTED 2026-08-22 (same day): initial deployment used size 2 based on a flawed blended-rate
+// backtest. Redone with the correct real per-line pricing (0.5->1.183/leg, 1.5->1.871/leg, not a
+// single blended average) - 3-pick clearly beats 2-pick (+56.4% vs +29.2% total, same one losing
+// day at both sizes: 08-19). No cap - every real active day but one is positive.
 
 async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
