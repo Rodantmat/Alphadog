@@ -60,9 +60,17 @@ That file now contains a **MANDATORY COVERAGE MATRIX** (Technique × Track), bui
 
 Every consultation so far has been reactive — checking whether an existing finding holds up (the DNP catch was excellent, real, and exactly the right use of Gemini for that purpose). **But zero sessions have used Gemini proactively to generate a brand-new, previously-untested hypothesis.** Every session must include at least one Gemini consultation of this shape: describe the current real state of a track (its locked config, its real hit rate, what's already been tried and rejected — pull this from `SIGNALS_TECHNIQUES_TRIED.md`) and ask Gemini to propose a genuinely new angle not yet in that file, with a specific real mechanism. Then test it against real data before reporting it either way. See `GEMINI_USAGE_GUIDE.md` for exact prompting patterns that have worked well.
 
+## 1f. RULES B0 / B0a — build real buckets, and label class AND lane on every pool
+
+**Rule B0**: build real per-(prop, side, line) buckets from actual graded outcomes at n≥30, per `HIGH_HIT_RATE_METHODOLOGY.md` §1 — do NOT rank or select legs by the platform's internal `score_0_100` or `estimated_hit_probability_0_100`. A 2026-08-22 session found its own prior Goblin work had done exactly this by mistake, re-ran it properly, and found real, priced-positive buckets it had missed as a direct result.
+
+**Rule B0a**: every proposed pool must state, for each prop in it, both its real **class** (fixed-threshold or tiered — verified empirically, not assumed) and its real **lane** (Standard, Goblin, or Demon). Lane is the dominant driver of real EV — see `HIGH_HIT_RATE_METHODOLOGY.md` §3 for the exact real example (`doubles/less/0.5` prices at +1298.7% Standard-lane vs −13.0% Goblin-lane, same leg, same hit rate). A report that gives a pool's ROI without stating its lane is incomplete.
+
+**Standing per-session request, now formalized**: request that the user place and record one real 6-pick PrizePicks Regular **Power** slip. Every Standard-lane ROI figure in this system currently assumes Regular Power pays the published table undiscounted — that rests on 4 real Flex observations and zero real Power observations. If Regular Power carries a Goblin-like haircut, the entire Standard-lane column collapses the way Underdog did. This is the single highest-value real data point currently missing from the whole system.
+
 ---
 
-| Track | App | Current locked config | Real backtest ROI |
+
 |---|---|---|---|
 | Goblin | PrizePicks | 5-pick Power, 25% daily cap (max 12/day), tier-based pool | +79.9% (backtest), real per-leg multiplier table being actively sharpened — see MULTIPLIER_TABLES_MASTER.md |
 | Regular | PrizePicks | `pitcher_fantasy_score/less`, 6-pick, starting Flex | +1105.4% Power / +779.3% Flex |
