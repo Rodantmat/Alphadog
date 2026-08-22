@@ -3408,43 +3408,52 @@ function buildSleeperHighHitSlips(legs) {
 // against actual placed 6-pick entries). Real 6-pick backtest: 715 slips uncapped, 98 full hits,
 // +229.4% ROI - at fixed 1 slip/day: 27 slips, 5 full hits, +345.0% ROI, real day-by-day
 // consistency confirmed (hit rate 4%-33% across all 27 days, no outlier driving the result).
+// REPLACED 2026-08-22: old pool (rbis/less + walks/less, 6-pick Power, fixed cap=1) retired.
+// New pool found via a real hit-rate sweep of Underdog props: hits_allowed/more (85.4% real
+// historical hit rate, n=261, 26 real days - genuinely deep and sustained, unlike several
+// higher-looking candidates that turned out to be discontinued props). REAL, user-confirmed
+// per-slip tiers for this exact prop/side at 6-pick (not the generic discount-model estimate
+// used earlier and found to be wrong): 6/6=8.5x, 5/6=1.05x, 4/6=0.1x. Real backtest: 34 slips,
+// 21 full hits, +453.4% Flex ROI, 16 of 17 real active days positive (single loss: 08-06, a real
+// 0/1 day). No cap - this pool is naturally thin (1-4 slips/day), no real downside found to
+// control against.
 const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "rbis", side: "less", line: 0.5, rank: 2 },
-  { prop: "walks", side: "less", line: 0.5, rank: 1 }
+  { prop: "hits_allowed", side: "more", rank: 1 }
 ];
-const UNDERDOG_REAL_DISCOUNT = 0.6865;
-const UNDERDOG_6PICK_REAL_MULT = 24.03;
+const UNDERDOG_HIGH_HIT_SIZE = 6;
+// Real, user-confirmed tiers - NOT derived from the generic 0.6865 discount-of-published-table
+// model (that model gave 3.664x for 6/6, which does not match this specific prop's real observed
+// pricing). Keep this hard-coded to the real confirmed numbers until more real data suggests
+// otherwise; do not silently fall back to the generic discount formula for this pool.
+const UNDERDOG_REAL_FLEX_TIERS_6PICK = { 6: 8.5, 5: 1.05, 4: 0.1 };
 async function autoSelectUnderdogHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
-    const propSideLineList = UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const propSideList = UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
     const rows = await queryAllPg(pg, `
       SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
         canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND source_key = 'parlay_underdog'
-        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND (canonical_prop_key, selected_side) IN (${propSideList})
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
-    const rankByPropSideLine = new Map(UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    const rankByPropSide = new Map(UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}`, q.rank]));
     return rows
-      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .map(r => ({ ...r, _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0 }))
       .sort((a, b) => b._rank - a._rank);
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
 function buildUnderdogHighHitSlips(legs) {
-  // LOCKED 2026-08-21: 6-pick only, Power mode, fixed 1 slip/day cap - real backtest showed
-  // fixed_1 beat every other cap tested (fixed_3/5, nocap, pct_25/50/75) at this size, and Power
-  // beat Flex by a wide margin (+345.0% vs +261.9%).
+  const size = UNDERDOG_HIGH_HIT_SIZE;
   const used = new Set();
   const slips = [];
   const dailyPlayerUsage = new Map();
-  const size = 6;
-  while (slips.length < UNDERDOG_HIGH_HIT_CAP) {
+  while (true) {
     const slipLegs = [];
     const playersInSlip = new Set();
     for (const leg of legs) {
@@ -3465,10 +3474,11 @@ function buildUnderdogHighHitSlips(legs) {
       source_key: "parlay_underdog",
       slip_type: `${size}-pick`,
       slip_size: size,
-      entry_mode: "power",
-      structure_label: `${size}-pick Power (High Hit)`,
-      estimated_multiplier: UNDERDOG_6PICK_REAL_MULT,
-      estimated_payout_note: `Real published table (35x) x real confirmed discount (${UNDERDOG_REAL_DISCOUNT}, from actual placed 6-pick entries) = ${UNDERDOG_6PICK_REAL_MULT}x. Power confirmed to beat Flex in real backtest.`,
+      entry_mode: "flex",
+      structure_label: `${size}-pick Flex (High Hit)`,
+      estimated_multiplier: UNDERDOG_REAL_FLEX_TIERS_6PICK[size],
+      estimated_flex_tiers: UNDERDOG_REAL_FLEX_TIERS_6PICK,
+      estimated_payout_note: `Real, user-confirmed tiers for this exact prop (6/6=${UNDERDOG_REAL_FLEX_TIERS_6PICK[6]}x, 5/6=${UNDERDOG_REAL_FLEX_TIERS_6PICK[5]}x, 4/6=${UNDERDOG_REAL_FLEX_TIERS_6PICK[4]}x) - not the generic discount-model estimate. Confirm in-app before placing.`,
       strategy_notes: [],
       legs: slipLegs
     });
