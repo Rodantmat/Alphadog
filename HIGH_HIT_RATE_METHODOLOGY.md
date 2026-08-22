@@ -108,6 +108,10 @@ The fixed/tiered split above was built from an earlier, smaller sample. A later 
 
 **Open, high-priority item this finding creates**: the top Standard-lane buckets implied by this analysis have not yet had real slip construction or leave-one-day-out testing run against them — they are an implied EV ranking, not yet a validated backtest. This is the current #1 open item.
 
+> **✅ CLOSED 2026-08-21 (session 6).** Real slip construction was run — ranked greedy, sizes 2–6, six pool-composition variants, cap sweep 1→∞, three correlation treatments, leave-one-day-out on every positive. The finding: **those buckets are goblin-lane, not standard-lane** (see the retraction notice above), so the item as posed had no valid pool. Built as goblin-lane pools with the granular per-leg table, the eight-bucket pool is **−4.9% to −12.8%** across sizes and every hitter-led variant is negative.
+>
+> One configuration did come out positive and robust: **`earned_runs/more/0.5` + `walks_allowed/more/0.5`** (both TIERED class, both **goblin** lane, both pitcher-supply MORE-side), 3-pick, **max 1 leg per game**, ranked: **+17.8%**, 51 slips, 14 supporting days, 78.4% full-hit, **LODO +14.9% to +22.1% with 0 of 14 folds negative**, break-even per-leg **1.084** against a documented 1.140 for `walks_allowed/more` and the 1.15 fallback for `earned_runs/more`. It is the best-supported Goblin configuration ever found and is **still not promotable** — `earned_runs/more` has no real placed-slip observation, and the +10.8pp gained by the max-1-per-game rule is a 63% pool reduction whose edge does **not** come from same-game correlation (measured at −1.77pp excess on 128 same-game pairs, i.e. nil). That is the shape of filter that has repeatedly failed validation in this system. Treat as a data request, not a config change.
+
 ---
 
 ## 4. WHY THIS DOCUMENT EXISTS
