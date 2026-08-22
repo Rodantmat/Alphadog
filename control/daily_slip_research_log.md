@@ -428,3 +428,105 @@ Standing rule added to the daily task prompt: **enumerate all schemas and inspec
 **Nothing was deployed, patched, or modified.**
 
 ---
+
+# ===== 2026-08-21 Session 1 — DEMON RE-RUN (corrected source) =====
+
+User flagged that `backtest.tiered_full_fixed` is stale. Verified and confirmed. **All Demon results in section C1 above are retracted.**
+
+## D1. `tiered_full_fixed` is unusable for tier work — confirmed
+
+On `hits_runs_rbis`/`less` alone:
+
+| Check | Result |
+|---|---|
+| Total rows | 4,250 |
+| `tier IS NULL` | **2,088 (49.1%)** |
+| Demon rows with `anchor_line IS NULL` | **752** |
+| Demon rows at `tier = 0` | 105 |
+| — of those, with `line_value = anchor_line` | **98 (93%)** |
+
+A demon leg sits *away* from the anchor by definition, so `tier = round(abs(line − anchor))` can never be 0 for a genuine demon leg. 98 of the 105 tier-0 demon rows have `line_value` equal to `anchor_line`, meaning the anchor was derived as the leg's own line. That bucket is fabricated, not observed.
+
+**Consequence:** the "tier 0 = +150% Power / +180% Flex, move Demon to tier 0" recommendation in C1 was built on that fabricated bucket and is **withdrawn**. The tier-indexing conclusion in C1 (that the docs' "Tier2" maps to tier 1) was also an artifact of the stale table's 0-indexing and is withdrawn — see D2.
+
+## D2. `backtest.demon_full_history_dedup` — the correct source
+
+| Property | Value |
+|---|---|
+| Rows | 3,155 |
+| Days | 26 (2026-07-26 → **2026-08-20**, one day fresher than `tiered_full_fixed`) |
+| `tier IS NULL` | **0** |
+| `outcome_hit IS NULL` | **0** |
+| Tier range | **1 – 11 (1-indexed)** |
+
+Tier numbering here **matches the documentation directly** — the docs' "Tier2" is this table's `tier = 2`. No re-mapping needed.
+
+Clean monotone decay, consistent with `GOBLIN_DEMON_MECHANISM_EXPLAINED.md`:
+
+| Tier | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|
+| n | 487 | 562 | 284 | 889 | 345 | 175 | 122 | 209 | 70 |
+| Hit % | 39.4 | 28.6 | 13.4 | 11.2 | 11.0 | 15.4 | 6.6 | 9.6 | 2.9 |
+
+## D3. The documented 71.6% / n=67 belongs to a DIFFERENT PROP
+
+`MULTIPLIER_TABLES_MASTER.md` §3 attributes "71.6% hit rate (n=67)" to `hits_runs_rbis/less/Tier2`. In the clean table:
+
+| Prop | Side | Tier | n | Hit % | Days |
+|---|---|---|---|---|---|
+| **`pitcher_strikeouts`** | less | 2 | **67** | **71.6%** | 10 |
+| `hits_runs_rbis` | less | 2 | 36 | 75.0% | 5 |
+| `hits_runs_rbis` | less | 1 | 139 | 41.0% | 10 |
+
+**The 71.6% / n=67 pair matches `pitcher_strikeouts/less/Tier2` exactly.** The documentation carried the right statistics onto the wrong prop. The deployed Demon track is `hits_runs_rbis`, whose actual Tier2 sample is n=36 over 5 days — not the n=67 over 10 days that the documentation cites as its justification.
+
+## D4. The locked Demon config is a single-day artifact
+
+Per-day leg counts for `hits_runs_rbis/less/Tier2` (the locked pool):
+
+| Date | Legs | Hits | Hit % |
+|---|---|---|---|
+| **2026-08-11** | **31** | **26** | **83.9%** |
+| 2026-08-12 | 1 | 0 | 0.0% |
+| 2026-08-17 | 2 | 0 | 0.0% |
+| 2026-08-18 | 1 | 1 | 100.0% |
+| 2026-08-19 | 1 | 0 | 0.0% |
+
+**2026-08-11 holds 31 of 36 legs (86%).** The other four days contribute 5 legs and 1 hit combined (20%). **Only 08-11 has enough legs to build a single 3-pick slip.**
+
+2026-08-11 is the exact date `SIGNALS_TECHNIQUES_TRIED.md` records as the outlier that got `runs+singles<0.5` rejected — *"Entirely driven by one outlier day (08-11); 7 of 8 real days were losses."* **The same day is carrying the locked Demon strategy.**
+
+### Exhaustive 3-combination enumeration (every possible 3-pick per day, no arbitrary ranking)
+
+Payouts: deployed Demon table `3/3 = 15x`, `2/3 = 1.5x`.
+
+| Pool | Days supporting a 3-pick | Combos | 3-of-3 % | ROI Power | ROI Flex |
+|---|---|---|---|---|---|
+| **A. `hits_runs_rbis/less/T2` (LOCKED)** — all days | **1** | 4,495 | 57.8% | +767.6% | +821.9% |
+| **A. LOCKED — excluding 08-11** | **0** | — | — | **no slip buildable** | **no slip buildable** |
+| B. `pitcher_strikeouts/less/T2` — all days | 5 | 2,665 | 56.5% | +747.7% | +799.2% |
+| **B. — excluding 08-11** | **4** | 641 | 27.5% | **+311.9%** | **+378.5%** |
+| D. Both props, T2 — all days | 6 | 26,887 | 61.0% | +814.4% | +864.3% |
+| D. — excluding 08-11 | 5 | 652 | 27.0% | +304.9% | +371.2% |
+
+**Remove one day and the locked configuration ceases to exist** — not "performs worse", but cannot construct a single slip. Its cited +80.0% Power / +657.9% Flex rests entirely on 2026-08-11.
+
+The mis-attributed pool survives the same test: `pitcher_strikeouts/less/Tier2` still builds slips on 4 independent days (08-05 60%, 08-06 100%, 08-07 70%, 08-12 60%) and returns **+311.9% Power / +378.5% Flex** with 08-11 removed.
+
+*Correlation note:* ex-08-11 the per-leg rate for pool B is 71.1% (27/38), which under independence implies 0.711³ = 35.9% of 3-picks landing. Observed is 27.5%. Real slips underperform independence, so ROI figures assuming leg independence are optimistic.
+
+## D5. Revised Demon recommendation (supersedes C1 and §2)
+
+| | Locked | Recommended |
+|---|---|---|
+| Pool | `hits_runs_rbis/less/Tier2` | `pitcher_strikeouts/less/Tier2` |
+| Sample | 36 legs, 5 days, **1 usable day** | 67 legs, 10 days, **5 usable days** |
+| ROI excluding 08-11 | **not buildable** | **+311.9% Power / +378.5% Flex** |
+
+The Demon track should move to `pitcher_strikeouts/less/Tier2`, or be suspended pending more days. The documentation's own evidence (71.6%, n=67) was always describing that pool — the config appears to have been locked onto the wrong prop.
+
+**Open:** what does the tier reconstruction in `demon_full_history_dedup` do differently from `tiered_full_fixed`? The latter should be dropped or rebuilt so no future session reads it. Neither table's tier logic was compared against the current live formula this session.
+
+**Nothing was deployed, patched, or modified.**
+
+---
