@@ -4198,6 +4198,79 @@ async function apiGenerateSlips(env, request) {
   const slips = buildGeneratedSlips(rows, input.structures || null, input.mode || "recommended");
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/generate", selected_leg_count: rows.length, source_counts: rows.reduce((a,r)=>{const k=String(r.source_key||"unknown").toLowerCase();a[k]=(a[k]||0)+1;return a;},{}), generated_slips: slips, notes:["Phase 1 uses independent leg probability product and flags exposure/correlation warnings; it does not claim a fully calibrated parlay probability yet."] });
 }
+// Real, automatic pricing-observation recorder (2026-08-22). Runs after every real slip save
+// that includes a real multiplier - decomposes the real total into per-leg implied rates
+// (equal-scale against the CURRENT best-known per-leg estimate for each leg, since a single
+// slip's total can't uniquely separate legs of different real rates without more data), then
+// upserts all three pricing layers (prop+line, +tier, +player) as a running weighted average.
+// Only Goblin, Demon, and Sleeper use real per-leg composable pricing - Regular uses the
+// published table directly and Underdog uses a whole-slip discount factor, neither needs this.
+async function recordRealPricingObservation(pg, slipId, s, legs) {
+  const sourceKey = String(s.source_key || "").toLowerCase();
+  if (!["prizepicks_goblin", "prizepicks_demon", "sleeper"].includes(sourceKey)) return;
+  if (!legs || !legs.length) return;
+  const size = legs.length;
+  let realTotal = null;
+  if (s.real_multiplier_flex_tiers) {
+    const tiers = typeof s.real_multiplier_flex_tiers === "string" ? JSON.parse(s.real_multiplier_flex_tiers) : s.real_multiplier_flex_tiers;
+    realTotal = tiers[String(size)] != null ? Number(tiers[String(size)]) : null;
+  } else if (s.real_multiplier != null) {
+    realTotal = Number(s.real_multiplier);
+  }
+  if (!Number.isFinite(realTotal) || realTotal <= 0) return;
+  // Current best-known per-leg estimate for each leg, using the exact same lookup the live
+  // badge uses - this is the "predicted" baseline the real observation gets compared against.
+  const predictedPerLeg = legs.map(l => {
+    if (sourceKey === "prizepicks_goblin") return goblinLegMultiplier(l.canonical_prop_key, l.selected_side, l.goblin_demon_tier, l.line_value);
+    if (sourceKey === "prizepicks_demon") return DEMON_PER_LEG_REAL_MULT;
+    if (sourceKey === "sleeper") return Number.isFinite(l.real_leg_mult) ? l.real_leg_mult : 1.4;
+    return 1;
+  });
+  const predictedTotal = predictedPerLeg.reduce((p, r) => p * r, 1);
+  if (!Number.isFinite(predictedTotal) || predictedTotal <= 0) return;
+  const scaleFactor = Math.pow(realTotal / predictedTotal, 1 / size);
+  const rows = legs.map((l, i) => ({
+    leg: l,
+    impliedRate: predictedPerLeg[i] * scaleFactor
+  }));
+  try {
+    for (const { leg, impliedRate } of rows) {
+      const isGoblin = sourceKey === "prizepicks_goblin" ? 1 : 0;
+      const isDemon = sourceKey === "prizepicks_demon" ? 1 : 0;
+      const tier = Number(leg.goblin_demon_tier) || 0;
+      const lineVal = leg.line_value == null ? 0 : Number(leg.line_value);
+      const playerId = leg.player_id != null ? String(leg.player_id) : (leg.player_name || "unknown");
+      await pg.unsafe(`INSERT INTO score.real_slip_leg_observations
+        (slip_id, mlb_player_id, player_name, source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, implied_leg_rate, decomposition_method)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'equal_scale_v1')`,
+        [slipId, playerId, leg.player_name || null, sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, isGoblin, isDemon, tier, impliedRate]);
+      // Layer 1: prop + side + line
+      await pg.unsafe(`INSERT INTO score.pricing_layer1_prop_line (source_key, canonical_prop_key, selected_side, line_value, avg_leg_rate, n_observations)
+        VALUES ($1,$2,$3,$4,$5,1)
+        ON CONFLICT (source_key, canonical_prop_key, selected_side, line_value)
+        DO UPDATE SET avg_leg_rate = (score.pricing_layer1_prop_line.avg_leg_rate * score.pricing_layer1_prop_line.n_observations + $5) / (score.pricing_layer1_prop_line.n_observations + 1),
+          n_observations = score.pricing_layer1_prop_line.n_observations + 1, last_updated_at = now()`,
+        [sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, impliedRate]);
+      // Layer 2: + tier
+      await pg.unsafe(`INSERT INTO score.pricing_layer2_tier (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, avg_leg_rate, n_observations)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1)
+        ON CONFLICT (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier)
+        DO UPDATE SET avg_leg_rate = (score.pricing_layer2_tier.avg_leg_rate * score.pricing_layer2_tier.n_observations + $8) / (score.pricing_layer2_tier.n_observations + 1),
+          n_observations = score.pricing_layer2_tier.n_observations + 1, last_updated_at = now()`,
+        [sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, isGoblin, isDemon, tier, impliedRate]);
+      // Layer 3: + player
+      await pg.unsafe(`INSERT INTO score.pricing_layer3_player (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, mlb_player_id, player_name, avg_leg_rate, n_observations)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1)
+        ON CONFLICT (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, mlb_player_id)
+        DO UPDATE SET avg_leg_rate = (score.pricing_layer3_player.avg_leg_rate * score.pricing_layer3_player.n_observations + $10) / (score.pricing_layer3_player.n_observations + 1),
+          n_observations = score.pricing_layer3_player.n_observations + 1, last_updated_at = now()`,
+        [sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, isGoblin, isDemon, tier, playerId, leg.player_name || null, impliedRate]);
+    }
+  } catch (e) {
+    // Real, deliberate choice: a pricing-observation failure must never block the actual slip
+    // save (already committed above) - log-worthy but non-fatal.
+  }
+}
 async function apiSaveSlips(env, request) {
   await ensureArchiveSlipSchema(env);
   const input = await readJsonSafe(request);
