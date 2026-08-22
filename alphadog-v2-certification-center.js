@@ -2851,16 +2851,32 @@ async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
     const tierList = HIGH_HIT_GOBLIN_TIER_POOL.map(q => `('${q.prop}','${q.side}',${q.tier})`).join(",");
+    // FIX (2026-08-22): goblin_demon_tier is frequently NULL on real, live Goblin rows even when a
+    // real standard line exists for that player+prop - confirmed live: 93.8% of NULL-tier
+    // walks_allowed/more rows had a real standard line available, just not matched by the core
+    // pipeline's per-(source,player,prop,game_pk) grouping (likely a game_pk mismatch between the
+    // standard row and the goblin row for the same player+prop - not yet root-caused in the
+    // pipeline itself). Reconstructing the anchor directly here, independent of game_pk, exactly
+    // matching the approach that unlocked the real backtest from 42 to 707 real Tier1 legs.
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-        canonical_prop_key, line_value, selected_side, goblin_demon_tier, estimated_hit_probability_0_100 AS hit_probability_0_100,
-        confidence_0_100, is_goblin, is_demon
-      FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'prizepicks' AND is_goblin = 1
-        AND (canonical_prop_key, selected_side, goblin_demon_tier) IN (${tierList})
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      WITH standards AS (
+        SELECT mlb_player_id, canonical_prop_key, line_value AS anchor_line
+        FROM score.final_board_current
+        WHERE is_goblin = 0 AND is_demon = 0
+        GROUP BY 1, 2, 3
+      )
+      SELECT fbc.final_board_row_id AS board_row_id, fbc.source_key, fbc.game_pk, fbc.official_game_time_utc, fbc.player_name, fbc.mlb_player_id,
+        fbc.canonical_prop_key, fbc.line_value, fbc.selected_side,
+        COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int) AS goblin_demon_tier,
+        fbc.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        fbc.confidence_0_100, fbc.is_goblin, fbc.is_demon
+      FROM score.final_board_current fbc
+      LEFT JOIN standards s ON s.mlb_player_id = fbc.mlb_player_id AND s.canonical_prop_key = fbc.canonical_prop_key
+      WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND fbc.source_key = 'prizepicks' AND fbc.is_goblin = 1
+        AND (fbc.canonical_prop_key, fbc.selected_side, COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int)) IN (${tierList})
+        AND fbc.official_game_time_utc IS NOT NULL AND fbc.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = fbc.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
     // Real-reliability rank across qualifying (prop,side,tier) buckets, NOT hit_probability_0_100 -
     // explicitly validated this session that HP-based selection within a qualifying bucket does not
