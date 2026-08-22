@@ -3082,3 +3082,125 @@ The Goblin/Demon half is already measured (that is the 0.620 ratio). **The same-
 **Nothing was deployed, patched, or modified. `SIGNALS_TECHNIQUES_TRIED.md` was updated as the task requires.**
 
 ---
+
+# ===== 2026-08-22 (Sat) — Session 9 — first run under the updated master prompt =====
+
+**Run type:** dry run, research only. Nothing deployed, patched, or modified. `SIGNALS_TECHNIQUES_TRIED.md` updated as required.
+**Trigger:** user-directed run after the master prompt, `HIGH_HIT_RATE_METHODOLOGY.md`, and all five locked configs were updated.
+**Data freshness:** ✅ **the gap has closed.** Latest graded day is now **2026-08-21** (29 graded days), which is yesterday relative to this run. The one-day gap flagged in Session 4 is resolved without intervention.
+**Operating mode:** Section 0a — ran autonomously start to finish, no permission checkpoints.
+
+---
+
+## 1. I INDEPENDENTLY RE-VERIFIED THE LANE RETRACTION AGAINST MY OWN PRIOR CLAIM
+
+Session 4's ADDENDUM (my own entry) reported the "+1298.7% standard-lane vs −13.0% goblin-lane" finding. Sessions 5–7 retracted it as a writer-default artifact. Rather than accept that on the document's word, I re-derived it:
+
+| Writer | PrizePicks graded rows | % reading `is_goblin=0 AND is_demon=0` |
+|---|---|---|
+| `grade_*` | 60,782 | **4.5%** |
+| `outcome_final\|…` | 45,512 | **99.0%** |
+
+Of the 45,076 `outcome_final` rows reading 0/0, **44,820 join to `final_board_history`** and the authoritative board labels them:
+
+| Board label | Rows | Share |
+|---|---|---|
+| goblin | 32,976 | 73.6% |
+| demon | 8,364 | 18.7% |
+| **genuinely standard** | **3,480** | **7.8%** |
+
+**92.2% of what my Session 4 entry called "standard lane" is goblin or demon.** This reproduces the documented 92.1% on one extra day of data. **My +1298.7% figure is void, confirmed by my own query, not merely by assertion.** The retraction stands in full.
+
+---
+
+## 2. LIVE PRICING LAYERS — queried fresh, and they supersede the static table
+
+| Layer | Rows | Total obs | Rows at n≥2 | Latest write |
+|---|---|---|---|---|
+| `pricing_layer1_prop_line` | 5 | 38 | **5** | 2026-08-22 17:35 UTC |
+| `pricing_layer2_tier` | 14 | 45 | **8** | 2026-08-22 17:35 UTC |
+| `pricing_layer3_player` | 18 | 18 | **0** | 2026-08-22 17:27 UTC |
+
+**Layer 3 outranks nothing yet** — all 18 rows sit at n=1, below the n≥2 bar. Reported by real n as required, not treated as settled.
+
+**The live layers validate the new Goblin config's own design rationale.** The config specifies pricing "split by exact line value (0.5 vs 1.5, NOT a flat average)":
+
+| Bucket | Live rate | n |
+|---|---|---|
+| `prizepicks_goblin / walks_allowed / more / **0.5**` | **1.1053** | 10 |
+| `prizepicks_goblin / walks_allowed / more / **1.5**` | **1.4379** | 2 |
+
+A **30.1% spread** inside one (prop, side, tier). Blending them would be materially wrong — Rule B0b confirmed empirically on the exact bucket the rule was written for.
+
+**New disagreement worth recording (per §5.3):** the live 0.5 rate of **1.1053** is *below* the static `MULTIPLIER_TABLES_MASTER.md` figure of **1.140** for `walks_allowed/more`. The live layer is fresher (n=10, written today) and should supersede the static entry for this bucket.
+
+**Sleeper layer1 spread, for B0b:** `hits_runs_rbis/more` 1.638 (n=12), `hits/more/0.5` 1.3740 (n=6), `doubles/more` 1.2684 (n=8) — a **34% spread** across props in the Sleeper candidate space. Any multi-prop Sleeper pool must price per-prop.
+
+---
+
+## 3. PP GOBLIN — the new locked config (`walks_allowed/more/Tier1`, 6-pick Flex, no cap)
+
+**Pool classification (Rule B0a):** `walks_allowed` — **class TIERED** (2.36 lines/player-day, max 4; a `/0.5` line here is a ladder rung, not a fixed threshold, per §2c); **lane GOBLIN**, read authoritatively from `final_board_history`, not from the outcome table's flags.
+
+**Real buckets (Rule B0, n≥30 bar), authoritative lane, 16 days:**
+
+| Bucket | n | Days | Hit % | Live per-leg | Per-leg EV |
+|---|---|---|---|---|---|
+| `walks_allowed/more/0.5` goblin | 215 | 15 | **89.3%** | 1.1053 | **0.9870** |
+| `walks_allowed/more/1.5` goblin | 48 | 15 | 66.7% | 1.4379 | **0.9591** |
+
+**Both buckets are below per-leg EV 1.0.** On a Power basis the config cannot clear; its entire edge has to come from Flex partial credit.
+
+### Rule B0c — tie-break sensitivity. **The config fails this bar.**
+
+Same legs, same pricing, three deterministic orderings (no `score_0_100` used anywhere, per B0):
+
+| Pick size | A: pid asc | B: pid desc | C: line asc, pid asc | Spread |
+|---|---|---|---|---|
+| 2 | −1.2% | +0.9% | +1.2% | 2.4pp |
+| 3 | +1.2% | +1.5% | +3.5% | 2.3pp |
+| 4 | −1.7% | +1.0% | 0.0% | 2.7pp |
+| **5** | **+12.9%** | **+16.4%** | **−5.4%** | **21.8pp — sign flips** |
+| **6 (locked)** | **+21.8%** | **+14.7%** | **+0.8%** | **21.0pp** |
+
+*(Flex partial tiers modelled at 5/6 = 0.08× and 4/6 = 0.016× of the full-hit product, the standard PP Flex ratio structure; goblin-specific 6-pick partial tiers have no real observation. Stated as an assumption, not a measurement.)*
+
+**Model validation:** my computed 6/6 full-hit multiplier averages **2.29–2.61** across orderings, bracketing the two real observed 6/6 values of **2.25x and 2.50x** cited in the master prompt. The per-line product model is sound; the instability is in leg *selection*, not pricing.
+
+**Leave-one-day-out, best ordering (A):** band **+11.1% to +28.3%**, **0 of 15 folds negative**, all-days +21.8%. So the config is genuinely **day-robust** — this is not a single-day artifact. The problem is purely that which six legs you take out of ~15 available changes the answer by 21 points.
+
+**I cannot reproduce the documented +74.4% under any of the three orderings** (best: +21.8%). The gap is unexplained; likely candidates are a different Flex partial-tier assumption or a Tier1 restriction I could not apply — see below.
+
+### The `Tier1` qualifier is unenforceable on the historical record
+
+`goblin_demon_tier` is populated on **25 of 264** `walks_allowed/more` goblin legs (9.5%), covering **1 of 16 days**. Every figure above is therefore the *whole* `walks_allowed/more` goblin pool, not Tier1 specifically. **A locked config that specifies a filter validatable on one day in sixteen should be treated as provisional.** This will self-resolve as the live tier column accumulates.
+
+---
+
+## 4. HONEST SUMMARY
+
+**Genuinely new:**
+1. The 08-21 grading gap closed on its own — 29 graded days, freshness restored.
+2. Live pricing layers queried for the first time; layer3 confirmed to outrank nothing (all n=1).
+3. The 30.1% within-bucket line spread on `walks_allowed/more` — B0b empirically confirmed on its originating bucket.
+4. Live layer1 (1.1053, n=10) supersedes the static table (1.140) for that bucket.
+5. **The new locked Goblin config fails Rule B0c** — 21-point tie-break swing at both 5- and 6-pick, with a sign flip at 5-pick.
+6. Both of its buckets price below per-leg EV 1.0 (0.987 and 0.959).
+7. The config's `Tier1` restriction is unverifiable on 15 of 16 days.
+
+**Re-confirmed by my own independent query:** the lane retraction, and with it the voiding of my own Session 4 +1298.7% claim.
+
+**Retracted/superseded by others, acknowledged here:** my Session 4 Sleeper pool ROI (+216.5% → +32.9% real when priced per-prop, a 6.5x overstatement) — the direct cause of Rule B0b. I have applied B0b throughout this session.
+
+**Needs the user's action:**
+- **Place and record one real 6-pick PrizePicks Regular POWER slip.** Standing request, still unmet. Every standard-lane figure in the system rests on 4 Flex observations and zero Power observations.
+- **Record one real 6-pick Goblin Flex slip with a 5/6 or 4/6 outcome.** The goblin Flex partial tiers are currently modelled from the standard-lane ratio structure with no real observation — and on this config, partial credit is the entire source of edge.
+- **Treat the new Goblin config as provisional**, not settled: it is day-robust but ordering-unstable, both buckets are per-leg EV negative, and its Tier1 filter is unvalidated.
+
+**Documentation conflict to resolve:** the master prompt's §1c still lists the lineup join as "~2-5% of legs, never diagnosed" (resolved Session 4 — it was a filter artifact; use `lineup_slot`), and §1f still cites the retracted "+1298.7% Standard-lane" example as live guidance while `HIGH_HIT_RATE_METHODOLOGY.md` §3 retracts it. Both should be corrected so a future session isn't sent to re-derive a void figure.
+
+**Stopping condition: NOT met.** This session was directed at verifying the retraction and validating the newly-changed locked configs. Four tracks (Regular, Demon, Sleeper, Underdog) were not re-backtested under their new configs this session; Gemini generative and the void/DNP repricing were not reached. Stated plainly rather than claimed.
+
+**Nothing was deployed, patched, or modified.**
+
+---
