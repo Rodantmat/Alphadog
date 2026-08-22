@@ -3222,7 +3222,7 @@ async function apiHighHitSlips(env, request) {
   ]);
   const ppSlips = ppLegs.length >= 5 ? buildHighHitSlips(ppLegs) : [];
   const udSlips = udLegs.length >= 3 ? buildUnderdogHighHitSlips(udLegs) : [];
-  const sleeperSlips = sleeperLegs.length >= 3 ? buildSleeperHighHitSlips(sleeperLegs) : [];
+  const sleeperSlips = sleeperLegs.length >= 6 ? buildSleeperHighHitSlips(sleeperLegs) : [];
   const regularSlips = regularLegs.length >= 6 ? buildRegularHighHitSlips(regularLegs) : [];
   const demonSlips = demonLegs.length >= 2 ? buildDemonHighHitSlips(demonLegs) : [];
   ppSlips.forEach(s => s.source_key = "prizepicks_goblin");
