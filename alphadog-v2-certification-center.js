@@ -5002,6 +5002,19 @@ function realMultFieldsHtmlForSize(s,idx,size){
       +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
       +'</div></div>';
   }
+  if(String(s.source_key||'').toLowerCase()==='sleeper'){
+    // Sleeper Flex tiers are also leg-composition-dependent (real per-leg product from each
+    // leg's own live moneyline price) - never a flat average, same discipline as Goblin.
+    const legs=s.legs||[];
+    const allPriced=legs.length>0&&legs.every(l=>Number.isFinite(l.real_leg_mult));
+    const fullMult=allPriced?Math.round(legs.reduce((p,l)=>p*l.real_leg_mult,1)*1000)/1000:0;
+    const partialMult=Math.round(fullMult*0.10*1000)/1000;
+    const noteLabel=allPriced?'':' - real price missing for a leg, showing 0';
+    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partial is an ESTIMATE'+noteLabel+')</span><div class="realMultFields">'
+      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" placeholder="'+esc(String(fullMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
+      +'</div></div>';
+  }
   const tiers=flexTiersForSizeLive(s.source_key,size);
   if(!tiers){
     return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick, no confirmed table - estimate)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'"></div>';
