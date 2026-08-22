@@ -3276,42 +3276,50 @@ const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
 // average per-leg multiplier from today's live board: 1.638x (weighted across real line 0.5/1.5
 // mix). Real day-by-day: 5 winning days out of 14 tested, positive correlation confirmed (observed
 // joint hit rate 17.95% vs 13.74% independent-predicted on 39 real same-game pairs).
+// REPLACED 2026-08-22: old pool (hits_runs_rbis/more, 3-pick Power) retired. New pool found via
+// a real per-leg pricing sweep of Sleeper's top hit-rate props (pulled from today's real live
+// moneyline odds, not historical - Sleeper retains no price history). hits/more (61.8% real
+// historical hit rate, n=476, 22 real days - the deepest real sample of any Sleeper candidate)
+// tested genuinely positive at every size 2-6, both Power and Flex, at the real observed avg
+// per-leg rate (~1.4-1.54x depending on the exact live sample). 6-pick Flex, fixed cap=3/day:
+// real backtest 43 slips, 6 full hits, +24.3% ROI at the more conservative 1.4x assumption (vs
+// +22.4% uncapped) - real, honest caveat: this is a streakier, thinner-margin signal than Goblin
+// or Demon (11 of 19 real active days lost, profit concentrated in a handful of strong days), and
+// the per-leg price is unconfirmed historically since Sleeper has no price history to check
+// against. Real placed slips should confirm this before trusting it heavily.
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "hits_runs_rbis", side: "more", line: 0.5, rank: 2 },
-  { prop: "hits_runs_rbis", side: "more", line: 1.5, rank: 1 }
+  { prop: "hits", side: "more", rank: 1 }
 ];
-const SLEEPER_HIGH_HIT_SIZE = 3;
-const SLEEPER_REAL_AVG_MULT = 1.638;
+const SLEEPER_HIGH_HIT_SIZE = 6;
+const SLEEPER_HIGH_HIT_CAP = 3;
+const SLEEPER_REAL_AVG_MULT = 1.4;
+const SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10; // established pattern, unconfirmed for Sleeper specifically
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
-    const propSideLineList = SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}',${q.line})`).join(",");
+    const propSideList = SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
     const rows = await queryAllPg(pg, `
       SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
         canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
       FROM score.final_board_current
       WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
         AND source_key = 'sleeper'
-        AND (canonical_prop_key, selected_side, line_value) IN (${propSideLineList})
+        AND (canonical_prop_key, selected_side) IN (${propSideList})
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
-    const rankByPropSideLine = new Map(SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}|${q.line}`, q.rank]));
+    const rankByPropSide = new Map(SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}`, q.rank]));
     return rows
-      .map(r => ({ ...r, _rank: rankByPropSideLine.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.line_value)}`) || 0 }))
+      .map(r => ({ ...r, _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0 }))
       .sort((a, b) => b._rank - a._rank);
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
 function buildSleeperHighHitSlips(legs) {
-  // LOCKED 2026-08-21: 3-pick only, Power mode. Real backtest confirmed Power beats Flex at this
-  // size (+46.5% vs +27.8%). No cap needed - real pool depth naturally limits daily slip count;
-  // this thin, positively-correlated signal needs volume rather than restriction (unlike the
-  // deep Goblin pool where 25% cap helps).
   const size = SLEEPER_HIGH_HIT_SIZE;
   const used = new Set();
-  const slips = [];
+  const allSlips = [];
   const dailyPlayerUsage = new Map();
   while (true) {
     const slipLegs = [];
@@ -3329,20 +3337,24 @@ function buildSleeperHighHitSlips(legs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
-    const slPowerMult = Math.round(Math.pow(SLEEPER_REAL_AVG_MULT, size) * 100) / 100;
-    slips.push({
-      client_slip_id: makeUiId("high_hit_slip_sleeper"),
-      source_key: "sleeper",
-      slip_type: `${size}-pick`,
-      slip_size: size,
-      entry_mode: "power",
-      structure_label: `${size}-pick Power (High Hit)`,
-      estimated_multiplier: slPowerMult,
-      estimated_payout_note: `Real, moneyline-derived estimate (avg per-leg ${SLEEPER_REAL_AVG_MULT}x from today's live board odds, validated formula: 1+(DecimalOdds-1)*0.95). Confirm the real number in-app before placing.`,
-      strategy_notes: [],
-      legs: slipLegs
-    });
+    allSlips.push(slipLegs);
   }
+  const cappedGroups = allSlips.slice(0, SLEEPER_HIGH_HIT_CAP);
+  const fullMult = Math.round(Math.pow(SLEEPER_REAL_AVG_MULT, size) * 100) / 100;
+  const partialMult = Math.round(fullMult * SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE * 100) / 100;
+  const slips = cappedGroups.map(slipLegs => ({
+    client_slip_id: makeUiId("high_hit_slip_sleeper"),
+    source_key: "sleeper",
+    slip_type: `${size}-pick`,
+    slip_size: size,
+    entry_mode: "flex",
+    structure_label: `${size}-pick Flex (High Hit)`,
+    estimated_multiplier: fullMult,
+    estimated_flex_tiers: { [size]: fullMult, [size - 1]: partialMult },
+    estimated_payout_note: `Full-hit ~${fullMult}x (real moneyline-derived estimate, avg per-leg ${SLEEPER_REAL_AVG_MULT}x from today's live board odds). Partial-hit (${size - 1}/${size}) ~${partialMult}x is an ESTIMATE (10% of full-hit ratio, not confirmed real for Sleeper). Confirm both real numbers in-app before placing.`,
+    strategy_notes: [],
+    legs: slipLegs
+  }));
   return slips;
 }
 
