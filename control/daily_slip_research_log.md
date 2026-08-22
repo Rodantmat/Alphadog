@@ -2352,3 +2352,239 @@ The assumption was correct and now has a real number under it. **Void/DNP repric
 **Nothing was deployed, patched, or modified.**
 
 ---
+
+# ===== 2026-08-21 (Fri) — Session 7 — user challenge: reconcile the 97.9% figure, root-cause the Demon clustering =====
+
+**Run type:** dry run, research only. Nothing deployed, patched, or modified.
+**Trigger:** the user independently re-ran the lane cross-tabulation, got 40–56%, and asked for the exact query and full result set behind 97.9% before the retraction stands as final. Also asked for the demon `less`-only date clustering to be root-caused to the same standard as the lineup-join and rounding bugs before the Demon suspension recommendation is finalised.
+
+**Outcome: the user is right. The 97.9% figure is wrong and is corrected to 92.1%. The retraction itself survives unaltered. The Demon root cause is established, and it materially changes the *reason* for the suspension recommendation without changing the recommendation.**
+
+---
+
+## 1. THE EXACT QUERY BEHIND 97.9%, AND ITS FULL RESULT
+
+```sql
+WITH f AS (
+  SELECT official_date, mlb_player_id, canonical_prop_key, selected_side, line_value,
+         max(CASE WHEN is_goblin=1 THEN 1 ELSE 0 END) g, max(CASE WHEN is_demon=1 THEN 1 ELSE 0 END) d
+  FROM score.prop_outcome_history
+  WHERE outcome_hit IS NOT NULL AND source_key='prizepicks' AND outcome_id LIKE 'outcome_final|%'
+  GROUP BY 1,2,3,4,5),
+g AS (
+  SELECT official_date, mlb_player_id, canonical_prop_key, selected_side, line_value,
+         max(CASE WHEN is_goblin=1 THEN 1 ELSE 0 END) g, max(CASE WHEN is_demon=1 THEN 1 ELSE 0 END) d
+  FROM score.prop_outcome_history
+  WHERE outcome_hit IS NOT NULL AND source_key='prizepicks' AND outcome_id LIKE 'grade_%'
+  GROUP BY 1,2,3,4,5)
+SELECT
+ CASE WHEN f.g=1 THEN 'goblin' WHEN f.d=1 THEN 'demon' ELSE 'neither' END AS final_lane,
+ CASE WHEN g.g=1 THEN 'goblin' WHEN g.d=1 THEN 'demon' ELSE 'neither' END AS grade_lane,
+ count(*) keys
+FROM f JOIN g USING (official_date, mlb_player_id, canonical_prop_key, selected_side, line_value)
+GROUP BY 1,2 ORDER BY 3 DESC
+```
+
+Full result set, re-run this session, reproduces exactly:
+
+| final_lane | grade_lane | keys |
+|---|---|---|
+| neither | goblin | 28,505 |
+| neither | demon | 7,131 |
+| neither | neither | 782 |
+| demon | demon | 43 |
+| goblin | goblin | 4 |
+
+35,636 / 36,415 = 97.9%. **The arithmetic is right. The population is wrong.**
+
+### Why it is wrong
+
+This is `prop_outcome_history` against **itself** — the `outcome_final` writer versus the `grade_*` writer — and it is an **INNER JOIN**. It is not a join to the authoritative board at all. Key counts:
+
+| | keys |
+|---|---|
+| `outcome_final` distinct keys | 41,055 |
+| `grade_*` distinct keys | 47,909 |
+| **in both (the 97.9% denominator)** | **36,465** |
+| **`outcome_final` only — silently dropped** | **4,590** |
+
+The denominator is conditioned on *"a `grade_*` row exists"*, and that condition is itself correlated with being goblin or demon. Splitting on exactly it:
+
+| `outcome_final` key | keys | joined to board | goblin/demon on board | neither on board | **% goblin/demon** |
+|---|---|---|---|---|---|
+| has a `grade_*` row | 36,465 | 36,272 | 35,357 | 915 | **97.5%** |
+| **no `grade_*` row** | **4,590** | 4,219 | 2,038 | **2,181** | **48.3%** |
+
+**Conditioning on the join doubles the rate.** This is the same failure mode as the `WHERE batting_order_code IS NOT NULL` filter placed inside the lineup join CTE — the one this file already records as producing a bogus "2–5% lineup join rate" across three sessions. Standing rule B7 exists to catch precisely this and I did not apply it to my own query.
+
+## 2. THE CORRECT MEASUREMENT — 92.1%
+
+Denominator = all PrizePicks graded `outcome_final` rows reading 0/0. Lane from `score.final_board_history`:
+
+| Method | population | joined | goblin | demon | neither | **% relabelled (of joined)** |
+|---|---|---|---|---|---|---|
+| Row level, join on `final_board_row_id` | 41,157 | 40,901 | 29,649 | 8,009 | 3,243 | **92.1%** |
+| Distinct key, join on player/prop/side/line/game | 40,724 | 40,719 | — | — | 3,060 | **92.5%** |
+
+**The two join keys agree to within 0.4pp.** Average board rows per key is **1.01**, so fan-out is negligible. The join key was never the source of disagreement — the denominator was.
+
+**92.1% is the figure that should be quoted. Every prior statement of 97.9% is corrected.**
+
+## 3. RECONCILING THE USER'S 40–56%
+
+Reproduced exactly. The dominant driver is **not restricting `source_key='prizepicks'`**. Sleeper and Underdog have no goblin/demon lane at all — PrizePicks is the only app with the mechanic — so their legs correctly read 0/0 on both sides of the join and are legitimately standard. They enter the denominator and can never enter the numerator:
+
+| Variant | 0/0 rows | joined | relabelled | % of joined | % of all |
+|---|---|---|---|---|---|
+| A. PP only, graded, `outcome_final` only | 41,157 | 40,901 | 37,658 | **92.1%** | 91.5% |
+| B. ALL APPS, graded, `outcome_final` only | 63,262 | 62,539 | 37,658 | 60.2% | 59.5% |
+| C. ALL APPS, graded, any writer | 83,043 | 81,678 | 37,658 | **46.1%** | 45.3% |
+| D. ALL APPS, graded + ungraded, any writer | 86,762 | 85,394 | 37,658 | 44.1% | 43.4% |
+
+**The numerator is fixed at 37,658 in every variant. Only the denominator moves.** Variants C and D land squarely in the user's 40–56% band; variant B sits at its top edge. Adding the `grade_*` writer's own 0/0 rows to the population (B→C) is the secondary driver, worth another ~14pp.
+
+**Standing rule to add: always restrict to `source_key='prizepicks'` before measuring anything lane-related.**
+
+## 4. CROSS-VALIDATION — the two lane sources agree perfectly
+
+Joining the `grade_*` writer to `final_board_history` on `final_board_row_id`:
+
+| `grade_*` says | board says | rows |
+|---|---|---|
+| goblin | goblin | 32,463 |
+| demon | demon | 13,142 |
+| neither | neither | 2,332 |
+
+**47,937 rows, zero disagreements, zero off-diagonal.** The question was never which lane source to trust. Both are right; my denominator was wrong.
+
+## 5. WHAT THIS DOES AND DOES NOT CHANGE
+
+**Corrected:** the headline figure, 97.9% → **92.1%**, in `SIGNALS_TECHNIQUES_TRIED.md` and in the `HIGH_HIT_RATE_METHODOLOGY.md` §3 retraction notice.
+
+**Unchanged — every downstream conclusion was computed from the board join, never from the 97.9% figure:**
+- the corrected lane split (goblin 73.3% / standard 54.6% / demon 34.6%) — from the board join;
+- the genuinely-standard share at **7.9%** of PP legs — from the board join, and consistent with 92.1%;
+- zero standard-lane buckets clearing n≥30 & 80% — from the board join;
+- the eight-bucket audit (88–98% goblin, 2 standard legs in 5,874) — from the board join;
+- PP Regular's 376/376 standard-lane legs — from the board join;
+- the Bryce Harper row-level duplication example — a direct row inspection.
+
+**The retraction of the +1298.7% standard-vs-goblin comparison stands unaltered.** Its evidence is the duplication itself plus the structural incoherence of a "standard" lane hitting 84.8% while goblin hits 73.3%, neither of which depends on the disputed percentage.
+
+---
+
+## 6. DEMON `less`-ONLY CLUSTERING — ROOT-CAUSED
+
+Traced to the same standard as the lineup-join and rounding bugs.
+
+### Step 1 — the grading is not the bug
+
+For every graded PrizePicks demon row with a recorded stat, 08-03 → 08-14, tested whether `outcome_hit` equals `(actual_stat_value < line_value)` for `less` and `(actual_stat_value > line_value)` for `more`:
+
+| Date | rows | `less` consistent | `less` INCONSISTENT | `more` consistent | `more` INCONSISTENT |
+|---|---|---|---|---|---|
+| 08-03 | 334 | 0 | **0** | 334 | **0** |
+| 08-05 | 1,028 | 810 | **0** | 218 | **0** |
+| 08-06 | 768 | 510 | **0** | 258 | **0** |
+| 08-07 | 1,053 | 789 | **0** | 264 | **0** |
+| 08-11 | 3,381 | 2,812 | **0** | 569 | **0** |
+| 08-12 | 1,128 | 640 | **0** | 488 | **0** |
+| 08-13 | 679 | 231 | **0** | 448 | **0** |
+| 08-14 | 557 | 310 | **0** | 247 | **0** |
+
+**Zero inconsistencies across 8,485 rows, every day, both sides.** Outcomes are graded correctly; the hit rates are real; the lines are real.
+
+### Step 2 — the label is inverted
+
+On clean days the `less`-side tag is monotone in line value: `less` at 0.5 is hard (demon), `less` at 2.5/3.5 is easy (goblin). `total_bases`, distinct (player, prop, line) board keys:
+
+| Date | 0.5→demon | 0.5→goblin | 2.5→demon | 2.5→goblin | 3.5→demon | 3.5→goblin |
+|---|---|---|---|---|---|---|
+| **08-13 (clean)** | **60** | 2 | 0 | **140** | 0 | **89** |
+| **08-07 (affected)** | 1 | **10** | **66** | 0 | **13** | 0 |
+| **08-11 (partial)** | 24 | 67 | 130 | 41 | 53 | 16 |
+
+08-07 is the exact mirror of 08-13. The whole-prop line averages agree:
+
+| Date | goblin-`less` n | goblin-`less` avg line | demon-`less` n | demon-`less` avg line |
+|---|---|---|---|---|
+| 08-05 | **0** | — | 166 | **2.68** |
+| 08-06 | 1 | 0.50 | 68 | **2.38** |
+| 08-07 | 6 | 0.50 | 98 | **2.40** |
+| 08-08 | 75 | **2.54** | 7 | 0.50 |
+| 08-09 | 224 | **2.21** | 4 | 0.50 |
+| 08-10 | 369 | **2.17** | 26 | 0.65 |
+| **08-11** | 291 | 1.57 | 679 | **2.18** |
+| **08-12** | 1,225 | **2.44** | 299 | **0.51** |
+| 08-13 | 658 | **2.41** | 112 | 0.50 |
+| 08-14 | 557 | **2.41** | 77 | 0.50 |
+
+Same pattern on `hits_runs_rbis` demon-`less` (4.50 / 3.09 / 2.80 affected vs 0.75–0.93 clean) and `singles` (1.13 / 0.96 vs 0.50).
+
+### Step 3 — scope and shape
+
+The `more` side is stable at 8–16% throughout with no inversion. Across all tested dates and lines, `more=goblin & less=demon` and `more=demon & less=goblin` pairings both number **zero** — each (player, prop, line) carries only one side on the board. **This is a sign error in deriving the `less`-side complement tag from the line's position relative to the anchor, not a swap of a materialised pair.**
+
+### Step 4 — boundary, and 08-12 is CLEAN
+
+The inversion ends after 08-11. **08-12's demon-`less` sits at avg line 0.51 (n=299), matching the clean steady state exactly.** Session 5 flagged 08-12 as possibly partially contaminated on the strength of its 45.9% demon-`less` hit rate; that suspicion is **resolved — 08-12 is clean**, and 45.9% is simply a good demon day. 08-11 is a *partial* inversion (both labels present at every line), consistent with a mid-day deploy or an overlapping batch reprocess.
+
+### Step 5 — writer signature, exactly like the lineup case
+
+`source_variant_label` on `less` rows: **NULL on every row through 08-12**, 69 rows on 08-13, **3,555 from 08-14** onward. A writer-generation boundary lands immediately after the inversion window, matching the documented 2026-08-12 "blanket Less→flip rule mislabeled 1,752 real legs" fix in `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` §4a.
+
+### Step 6 — where the code is
+
+`alphadog-v2-score-final-board.js` only passes the flags through (line 259: `is_goblin: Number(rawRow.is_goblin || 0) === 1 ? 1 : 0`), and its own comment at lines 282–284 states they *"come straight from the verified `odds_type` + `allowed_wager_types` mechanism at raw ingestion"*. **The defect is upstream of the final-board worker, in score-prep / raw ingestion, and was fixed there on 2026-08-12.** The window is historical and already closed — no live change needed or recommended.
+
+### Step 7 — whole-day exclusion is right; row-level salvage is not
+
+Relabelling only the rows whose line exceeds the clean-day demon-`less` ceiling would recover 42–61% of affected rows. But the **remaining below-ceiling rows still hit 63.1–75.1%**, against a clean-day demon-`less` rate of 34–42%:
+
+| Date | demon-`less` rows | above clean ceiling | % | hit % above ceiling | hit % below ceiling |
+|---|---|---|---|---|---|
+| 08-05 | 563 | 342 | 60.7% | 89.5% | **75.1%** |
+| 08-06 | 443 | 218 | 49.2% | 73.9% | **63.1%** |
+| 08-07 | 634 | 340 | 53.6% | 80.9% | **68.4%** |
+| 08-11 | 2,403 | 1,019 | 42.4% | 82.5% | **68.7%** |
+
+The contamination is not confined to rows a line threshold can identify. **Drop 08-05, 08-06, 08-07 and 08-11 entirely. Do not attempt row-level repair.**
+
+---
+
+## 7. WHAT THIS DOES TO THE DEMON SUSPENSION RECOMMENDATION
+
+**The recommendation stands. Its stated reason was wrong and is corrected.**
+
+Session 5 said Demon has *"no clean evidence base."* That overstated it. The correct statement:
+
+- The four affected days are genuinely unusable — confirmed, with a mechanism.
+- **08-12 is clean**, so the ex-corruption evidence is *real*, not corrupt.
+- But it is *thin and concentrated*: at 3-pick, Pool K ex-corruption has 9 supporting days, of which **08-12 alone supplies 816 of 873 combinations and 220 of 222 winners** — because it had 18 qualifying legs against 1–6 on every other day. Six of the nine supporting days are −100%. Removing 08-12 gives **−47.4%**.
+
+So the concentration is a **pool-depth** artifact, not a corruption artifact. That distinction matters for what would resolve it: **not "wait for uncorrupted data" — the data from 08-12 onward is already clean — but "wait for more deep Demon days."** Given 08-21 has 4,379 tier-bearing board rows grading tonight, that may arrive quickly.
+
+**Recommendation, restated precisely: suspend Demon staking pending more deep days, not because the evidence is corrupt but because the clean evidence is one deep day and eight thin ones.**
+
+---
+
+## 8. HONEST SUMMARY
+
+**Corrected this session:**
+1. **97.9% → 92.1%.** My denominator was conditioned on `grade_*` existence — a selection effect worth 5.8pp, dropping 4,590 keys that are 48.3% goblin/demon rather than 97.5%. Same class of error as the lineup-join filter this very file documents. Patched in both reference docs.
+2. **Session 5's "08-12 may be partially contaminated"** — it is not; avg demon-`less` line 0.51 matches clean steady state exactly.
+3. **Session 5's "Demon has no clean evidence base"** — overstated. The evidence from 08-12 on is clean; it is thin and depth-concentrated.
+
+**Established this session:**
+4. The demon anomaly is a **sign inversion in the `less`-side complement tag**, `less`-side only, with grading verified correct across 8,485 rows and zero inconsistencies.
+5. Boundary is **08-05 → 08-11**, with 08-11 partial; `source_variant_label` marks the adjacent writer generation change at 08-13/08-14.
+6. The defect is **upstream of the final-board worker** and was fixed 2026-08-12; nothing live to change.
+7. **Whole-day exclusion is required** — below-ceiling rows on affected days still hit 63–75%, so a line-threshold repair leaves substantial contamination.
+8. The two lane sources (`grade_*` and `final_board_history`) **agree on 47,937 rows with zero disagreements.**
+9. New standing rule: **always restrict `source_key='prizepicks'` before measuring lane** — omitting it moves the headline from 92.1% to ~46%.
+
+**Unchanged:** the lane retraction itself, the corrected lane split, the empty standard-lane bucket set, the eight-bucket audit, PP Regular's lane purity, and every track-level conclusion in Sessions 5 and 6.
+
+**Nothing was deployed, patched, or modified.**
+
+---
