@@ -2901,13 +2901,7 @@ function buildGoblinSlipsAtCap(legs, size, cap) {
 
 function buildHighHitSlips(legs) {
   const size = HIGH_HIT_SLIP_SIZES[0];
-  const maxPossibleSlips = buildGoblinSlipsAtCap(legs, size, 999).length;
-  // Real, practical ceiling added 2026-08-21: the 25% figure was validated on a 26-day backtest
-  // where daily pool depth ranged ~8-166 legs. Today's real pool hit 900 legs (full pipeline,
-  // full slate) - far beyond anything tested - and 25% of that produces 46 slips, impractical to
-  // review or place. Capping at 12 regardless of pool depth until this is validated at real scale.
-  const dailyCap = Math.min(12, Math.max(1, Math.ceil(maxPossibleSlips * 0.25)));
-  const builtGroups = buildGoblinSlipsAtCap(legs, size, dailyCap);
+  const builtGroups = buildGoblinSlipsAtCap(legs, size, 999);
   const slips = builtGroups.map(slipLegs => {
     const legMult = goblinSlipEstimatedMultiplier(slipLegs);
     return {
