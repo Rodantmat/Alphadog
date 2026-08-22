@@ -2976,29 +2976,59 @@ const REGULAR_HIGH_HIT_CAP = 10; // ceiling; real pool depth (10-25 legs/day) se
 // using the confirmed real per-leg multiplier (~2.375x, from real placed-slip data), and unlike
 // the old pool, real day-by-day support is broad - 11 of 11 active days positive on a real 3-pick
 // Flex backtest (+692.4% total ROI), not concentrated in one outlier day.
+// REPLACED 2026-08-22 (same day as the Goblin replacement): old single-prop pool
+// (hits/hits_runs_rbis/total_bases, all /less/Tier1, 3-pick Flex) is retired. A comprehensive
+// sweep of the OPPOSITE side (/more/Tier1) found five real props all clearing real breakeven
+// (~42.1% at the confirmed 2.375x/leg Tier1 rate) with genuine depth: hits_runs_rbis (66.3%,
+// n=1254, 18 days), earned_runs (64.8%, n=176), runs (63.5%, n=455), hits_allowed (63.2%, n=163),
+// singles (63.0%, n=975, 26 days - the deepest). Combined into one real pool, ranked by real hit
+// rate (highest first, matching this system's established selection method - never HP-score
+// ranked), 2-pick Power, 10% cap: real backtest 141 slips, 72 full hits, +188.0% total ROI, 15 of
+// 16 real active days positive once hits_runs_rbis enters the data (08-06 on) - the pre-08-06
+// window is a real, structural cold start (that prop simply has no data yet that early), not a
+// recurring risk.
 const DEMON_HIGH_HIT_TIER_POOL = [
-  { prop: "hits", side: "less", tier: 1, rank: 1 },
-  { prop: "hits_runs_rbis", side: "less", tier: 1, rank: 1 },
-  { prop: "total_bases", side: "less", tier: 1, rank: 1 }
+  { prop: "hits_runs_rbis", side: "more", tier: 1, rank: 5 },
+  { prop: "earned_runs", side: "more", tier: 1, rank: 4 },
+  { prop: "runs", side: "more", tier: 1, rank: 3 },
+  { prop: "hits_allowed", side: "more", tier: 1, rank: 2 },
+  { prop: "singles", side: "more", tier: 1, rank: 1 }
 ];
-const DEMON_HIGH_HIT_SIZE = 3;
-const DEMON_FLEX_TIERS = { 3: { 3: 15, 2: 1.5 } };
+const DEMON_HIGH_HIT_SIZE = 2;
+const DEMON_PER_LEG_REAL_MULT = 2.375; // real, confirmed Tier1 per-leg rate
 async function autoSelectDemonHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
     const tierList = DEMON_HIGH_HIT_TIER_POOL.map(q => `('${q.prop}','${q.side}',${q.tier})`).join(",");
+    // Same real fix as Goblin's query (2026-08-22): goblin_demon_tier is frequently NULL even
+    // when a real standard line exists for that player+prop - reconstruct at query time.
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-        canonical_prop_key, line_value, selected_side, goblin_demon_tier, estimated_hit_probability_0_100 AS hit_probability_0_100,
-        confidence_0_100, is_goblin, is_demon
-      FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
-        AND source_key = 'prizepicks' AND is_demon = 1
-        AND (canonical_prop_key, selected_side, goblin_demon_tier) IN (${tierList})
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      WITH standards AS (
+        SELECT mlb_player_id, canonical_prop_key, line_value AS anchor_line
+        FROM score.final_board_current
+        WHERE is_goblin = 0 AND is_demon = 0
+        GROUP BY 1, 2, 3
+      )
+      SELECT fbc.final_board_row_id AS board_row_id, fbc.source_key, fbc.game_pk, fbc.official_game_time_utc, fbc.player_name, fbc.mlb_player_id,
+        fbc.canonical_prop_key, fbc.line_value, fbc.selected_side,
+        COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int) AS goblin_demon_tier,
+        fbc.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        fbc.confidence_0_100, fbc.is_goblin, fbc.is_demon
+      FROM score.final_board_current fbc
+      LEFT JOIN standards s ON s.mlb_player_id = fbc.mlb_player_id AND s.canonical_prop_key = fbc.canonical_prop_key
+      WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        AND fbc.source_key = 'prizepicks' AND fbc.is_demon = 1
+        AND (fbc.canonical_prop_key, fbc.selected_side, COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int)) IN (${tierList})
+        AND fbc.official_game_time_utc IS NOT NULL AND fbc.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = fbc.game_pk::text AND (c.is_live = true OR c.is_final = true))
     `);
-    return rows.map(r => ({ ...r, _rank: 1 }));
+    // Real-reliability rank across the five real qualifying props, highest real hit rate first -
+    // never HP-score ranked (explicitly validated elsewhere in this system that HP-based
+    // selection does not reproduce a bucket's real historical hit rate).
+    const rankByPropSideTier = new Map(DEMON_HIGH_HIT_TIER_POOL.map(q => [`${q.prop}|${q.side}|${q.tier}`, q.rank]));
+    return rows
+      .map(r => ({ ...r, _rank: rankByPropSideTier.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}|${Number(r.goblin_demon_tier)}`) || 0 }))
+      .sort((a, b) => b._rank - a._rank);
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
@@ -3006,7 +3036,7 @@ async function autoSelectDemonHighHitSlipLegs(env) {
 function buildDemonHighHitSlips(legs) {
   const size = DEMON_HIGH_HIT_SIZE;
   const used = new Set();
-  const slips = [];
+  const allSlips = [];
   const dailyPlayerUsage = new Map();
   const distinctGames = new Set(legs.map(l => l.game_pk)).size;
   const maxPerGame = distinctGames < 5 ? 4 : 3;
@@ -3030,21 +3060,28 @@ function buildDemonHighHitSlips(legs) {
       used.add(l.board_row_id);
       dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
     }
-    slips.push({
-      client_slip_id: makeUiId("high_hit_slip_demon"),
-      source_key: "prizepicks_demon",
-      slip_type: `${size}-pick`,
-      slip_size: size,
-      entry_mode: "flex",
-      structure_label: `${size}-pick Flex (High Hit - Demon)`,
-      estimated_multiplier: DEMON_FLEX_TIERS[size][size],
-      estimated_multiplier_flex_tiers: DEMON_FLEX_TIERS[size],
-      estimated_payout_note: `Real, confirmed Flex table (3/3=${DEMON_FLEX_TIERS[size][size]}x, 2/3=${DEMON_FLEX_TIERS[size][size-1]}x) from an actual placed slip, 2026-08-21. Real per-leg multiplier varies meaningfully player by player - confirm in-app before placing.`,
-      strategy_notes: [],
-      legs: slipLegs
-    });
+    allSlips.push(slipLegs);
   }
-  return slips;
+  // LOCKED 2026-08-22: 10% of the real max-buildable-slip-count for the day, min 1 - real backtest
+  // swept fixed(1/2/3/5/10/20/nocap) vs percentage(10/25/50) on this exact pool; no-cap had the
+  // single highest ROI, but 10% was chosen deliberately for a first live rollout of a brand-new
+  // pool - smaller real exposure while more real placed-slip data accumulates on the actual
+  // per-leg pricing (only confirmed at 2-pick so far). Revisit once more real slips are in.
+  const cap = Math.max(1, Math.ceil(allSlips.length * 0.10));
+  const cappedSlips = allSlips.slice(0, cap);
+  const totalMult = Math.round(Math.pow(DEMON_PER_LEG_REAL_MULT, size) * 1000) / 1000;
+  return cappedSlips.map(slipLegs => ({
+    client_slip_id: makeUiId("high_hit_slip_demon"),
+    source_key: "prizepicks_demon",
+    slip_type: `${size}-pick`,
+    slip_size: size,
+    entry_mode: "power",
+    structure_label: `${size}-pick Power (High Hit - Demon)`,
+    estimated_multiplier: totalMult,
+    estimated_payout_note: `${totalMult}x - real per-leg rate (${DEMON_PER_LEG_REAL_MULT}x) confirmed at Tier1, this exact size. Enter the real number below once you place it.`,
+    strategy_notes: [],
+    legs: slipLegs
+  }));
 }
 
 async function autoSelectRegularHighHitSlipLegs(env) {
