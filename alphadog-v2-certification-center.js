@@ -4934,8 +4934,8 @@ const GOBLIN_LEG_MULT_TABLE_CLIENT = {
   "hits|less|1": { rate: 1.095, n: 1 },
   "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
   "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
-  "walks_allowed|more|1|0.5": { rate: 1.140, n: 3 },
-  "walks_allowed|more|1|1.5": { rate: 1.483, n: 2 },
+  "walks_allowed|more|1|0.5": { rate: 1.106, n: 5 },
+  "walks_allowed|more|1|1.5": { rate: 1.438, n: 4 },
   "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
   "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
 };
