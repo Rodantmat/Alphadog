@@ -34,18 +34,64 @@
 
 | Technique | Goblin | Regular | Demon | Sleeper | Underdog |
 |---|---|---|---|---|---|
-| Granular per-(prop,side,tier) multiplier (never a flat blended ratio) | ❌ (used flat 0.620 three sessions running) | N/A (single prop, flat published table confirmed at 1.000) | ✅ | N/A (dynamic per-leg formula) | ✅ (compounding model confirmed) |
-| Multi-layer stacking (weather / bullpen fatigue / park factors / schedule fatigue) | ❌ | ❌ (only tested on the retired Gen-1 signal, never on the current one) | ❌ | ❌ | ❌ |
-| Shrink/expand adaptive sizing | ❌ | ❌ (template exists, built for retired Gen-1 signal, never re-applied to current signal) | ❌ | ❌ | ❌ |
-| Pool-composition alternatives tested (not just size/cap sweeps on one fixed pool) | ⚠️ partial | ⚠️ partial (rare-event pool tried, not fully resolved) | ✅ (Pool I) | ✅ (rbis+walks+rfi_nrfi found) | ❌ (35 configs swept, all one pool) |
+| Granular per-(prop,side,tier) multiplier (never a flat blended ratio) | ✅ **(08-22 s2)** applied `GOBLIN_LEG_MULT_TABLE` per (prop,side); only `stolen_bases/less` clears per-leg EV 1.0 (1.0093); locked-like pool 5-pick = **−45.3%** | N/A (single prop, flat published table confirmed at 1.000) | ✅ | N/A (dynamic per-leg formula) | ✅ (compounding model confirmed) |
+| Multi-layer stacking (weather / bullpen fatigue / park factors / schedule fatigue) | ❌ | ❌ (only tested on the retired Gen-1 signal, never on the current one) | ❌ | ✅ **(08-22 s2) REJECTED** — leg-level lift real (+4.3–5.5pp low bullpen fatigue) but does NOT survive slip construction: ungated +451.6% → bullpen-gate +272.4% → temp-gate +244.8% → both +86.2% | ❌ |
+| Shrink/expand adaptive sizing | ❌ | ❌ (template exists, built for retired Gen-1 signal, never re-applied to current signal) | ❌ | ✅ **(08-22 s2)** no-op where pools are always ≥6 legs (identical to fixed_6); on the thin `doubles+home_runs` pool it buys +6 days coverage (19→25) at a lower ROI (+487.9% → +392.2%) | ❌ |
+| Pool-composition alternatives tested (not just size/cap sweeps on one fixed pool) | ✅ **(08-22 s2)** 5 pools × 4 sizes; only `stolen_bases/less` positive (6-pick +9.3%), all others −5% to −50% | ⚠️ partial (rare-event pool tried, not fully resolved) | ✅ (Pool I) | ✅ (rbis+walks+rfi_nrfi found; re-confirmed vs 6 pools 08-22 s2) | ✅ **(08-22 s2) FIRST TIME** — 8 pool compositions × 5 pick sizes = 40 configs, **every one negative**; best −7.6% (more-side-only 2-pick) |
 | Cap sweep (fixed AND percentage, multiple values) | ⚠️ partial | ✅ | ⚠️ partial (percentage vs fixed shown, not a full multi-value sweep) | ✅ | ✅ |
 | Cross-app signal transfer attempted | — | ❌ | — | ✅ (Underdog pool ported in) | — |
-| Void/DNP-adjusted real pricing applied to backtest ROI | N/A (pitcher-heavy) | N/A (zero void exposure, confirmed) | N/A (pitcher props) | ❌ (real ~7% void rate found, never applied to reprice) | ❌ (hitter props, void rate never applied) |
-| Gemini consulted for a NEW, previously-untested hypothesis (not fact-checking an existing claim) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Void/DNP-adjusted real pricing applied to backtest ROI | N/A (pitcher-heavy) | N/A (zero void exposure, confirmed) | N/A (pitcher props) | ❌ (real ~7% void rate found, never applied to reprice) — **now UNBLOCKED, see below** | ❌ (hitter props, void rate never applied) — **now UNBLOCKED, see below** |
+| Gemini consulted for a NEW, previously-untested hypothesis (not fact-checking an existing claim) | ❌ | ❌ | ❌ | ✅ **(08-22 s2) REJECTED** — "0-1 count tailwind" re-rank (umpire called-strike z-score, γ sweep). Monotonically worse: γ=0 +451.6%, γ=0.05 +382.7%, γ=0.15 +313.7%, γ=0.40 +244.8% | ❌ |
 
-**Every session must move at least two ❌ cells to ✅ or ⚠️→✅, with a real cited result.** A session that adds new findings elsewhere but leaves this matrix unchanged has not met the exhaustiveness bar. If a cell is genuinely blocked (e.g., by the lineup-join failure below), say so explicitly in that cell rather than leaving it silently blank.
+**Every session must move at least two ❌ cells to ✅ or ⚠️→✅, with a real cited result.** A session that adds new findings elsewhere but leaves this matrix unchanged has not met the exhaustiveness bar. If a cell is genuinely blocked, say so explicitly in that cell rather than leaving it silently blank.
 
-**Standing blocker, unfixed after three sessions of being flagged**: `context.history_game_lineup` joins to the graded board on only ~2-5% of legs. This blocks bottom-of-order re-testing (Regular row above) AND real void/DNP modeling (both hitter-prop rows above), since `batting_order_position` / participation data would resolve both. **Diagnosing and fixing this join is now the single highest-priority open item in this entire document** — it is the root blocker behind four separate ❌ cells above.
+### ✅ RESOLVED 2026-08-22 (session 2) — the lineup-join blocker
+
+**It was never a join failure.** `context.history_game_lineup` joins to the graded board on **43–85% of legs (mean ~70%)**, verified per-day across 14 days. The "~2-5%" figure reported across three sessions was an artifact of a `WHERE batting_order_code IS NOT NULL` filter applied inside the join CTE.
+
+**Actual root cause — a silent writer-format change on 2026-08-05.** The table has four write generations:
+
+| Dates | lineup_status / source | Rows | `batting_order_code` | `lineup_slot` |
+|---|---|---|---|---|
+| 07-24 → 08-04 | `posted_lineup` / real / high | 2,970 | ✅ populated | ✅ populated |
+| 08-05 → 08-12 | all-NULL metadata | 1,419 | ❌ NULL | ❌ NULL |
+| 08-13 → 08-18 | real, no status | 1,422 | ❌ NULL | ✅ populated |
+| 08-19 → 08-24 | `derived_likely_lineup` / derived / LOW | 1,395 | ❌ NULL | ✅ populated |
+| 08-19 only | `OFFICIAL_BATTING_ORDER_POSTED` | 27 | ✅ populated | ✅ populated |
+
+`batting_order_code` is populated on only **41.4%** of rows and stopped being written on 2026-08-05. `lineup_slot` is populated on **80.4%**.
+
+**The fix: use `lineup_slot`, not `batting_order_code`.** They are exactly equivalent where both exist — `batting_order_code = lineup_slot × 100`, verified on all 2,997 overlapping rows (333 rows per slot, perfectly uniform, zero exceptions). Switching raises usable coverage from **12 days to 24 days**. The 08-05 → 08-12 window (8 days) has neither column and is genuinely lost. The 08-19 → 08-24 window is `derived`, LOW confidence — usable but flag it.
+
+### ❌ REFUTED 2026-08-22 (session 2) — the Gen-1 bottom-of-order signal
+
+With the join fixed, the "status unclear" bottom-of-order signal was re-tested at real scale for the first time. **It does not replicate — it runs the opposite direction.**
+
+Raw, by batting slot, PrizePicks standard `less` legs (24 days):
+
+| Prop | Slots 1-3 | Slots 4-6 | Slots 7-9 | Bottom − Top |
+|---|---|---|---|---|
+| `total_bases/less` (n=4,111) | 81.9% | 82.2% | 68.9% | **−13.0pp** |
+| `hits/less` (n=1,814) | 83.3% | 78.6% | 59.5% | **−23.8pp** |
+| `singles/less` (n=1,553) | 69.0% | 56.1% | 52.4% | **−16.6pp** |
+| `hits_runs_rbis/less` (n=4,382) | 70.5% | 73.3% | 62.4% | −8.2pp |
+| `rbis/less` (n=1,452) | 67.5% | 77.3% | 74.0% | +6.4pp |
+| `runs/less` (n=1,425) | 60.1% | 72.0% | 63.9% | +3.7pp |
+
+The documented Gen-1 claim was that hit rate *climbs* from 57% (leadoff) to 75–83% (bottom of order) on `total_bases<1.5`. Real data says the reverse.
+
+**Roughly half the raw effect is a line-value confound** — top-of-order hitters get higher lines, and a "less 3.5" is far easier than a "less 1.5". Controlling for line value, a consistent residual remains, still negative:
+
+| Prop | Line | Slots 1-3 | Slots 7-9 | Bottom − Top |
+|---|---|---|---|---|
+| `total_bases/less` | 1.5 | 72.2% | 65.5% | −6.7pp |
+| `total_bases/less` | 2.5 | 85.2% | 81.3% | −4.0pp |
+| `total_bases/less` | 3.5 | 91.0% | 84.8% | −6.2pp |
+| `hits_runs_rbis/less` | 1.5 | 43.8% | 51.6% | +7.9pp |
+| `hits_runs_rbis/less` | 2.5 | 72.3% | 72.3% | 0.0pp |
+| `hits_runs_rbis/less` | 3.5 | 85.7% | 79.6% | −6.1pp |
+
+**Bottom-of-order is genuinely worse for `total_bases/less` at every line tested.** `hits_runs_rbis` shows no consistent direction. The only genuinely positive pairings are `rbis/less` and `runs/less` (+6.4pp / +3.7pp), which is mechanically sensible — bottom-of-order hitters get fewer RBI and run opportunities, so the "less" side hits more often. **Move the Gen-1 bottom-of-order row out of "status unclear" and into the rejected table.**
 
 ---
 
