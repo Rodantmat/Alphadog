@@ -3291,7 +3291,7 @@ const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
   { prop: "hits", side: "more", rank: 1 }
 ];
 const SLEEPER_HIGH_HIT_SIZE = 6;
-const SLEEPER_HIGH_HIT_CAP = 3;
+const SLEEPER_HIGH_HIT_SLIP_CAP = 3;
 const SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10; // established pattern, unconfirmed for Sleeper specifically
 // Real, confirmed formula (validated against 2 independent real app examples this session):
 // Decimal Odds = 1 + price/100 (price>0) or 1 + 100/abs(price) (price<0); Multiplier = 1 +
