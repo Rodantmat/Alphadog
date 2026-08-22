@@ -45,12 +45,35 @@ Other props (`hits_runs_rbis`, `pitcher_strikeouts`, `total_bases`, `pitcher_fan
 
 **This is the mechanism that should be the primary object of understanding**, not fixed-line testing. Real, repeatable structure — the farther from anchor for Goblin, the safer (and, separately, the lower the real per-leg payout — see the mechanism doc). The original session found the genuinely usable "sweet spot" is **not the theoretical deepest tier** (those are almost always n=1-2, one-off, unreliable) but **the deepest tier that still carries real volume (n≥10-20)** — `pitcher_strikeouts` tier 3 and `hits_runs_rbis` tier 3 were the two found to be both deep AND reliably volumed.
 
-### 2c. What this means for a coworker session, concretely
+### 2c. Real classification corrections (found by a coworker research pass, 2026-08-22, verified against real line-count data)
+
+The fixed/tiered split above was built from an earlier, smaller sample. A later session checked it empirically (real lines-per-player-day counts) and found three real refinements:
+- **`hits`** is borderline-tiered, not fixed as grouped above — real 1.37 lines/player-day, only 64.8% single-line days.
+- **`walks_allowed`** is genuinely tiered (real 2.36 lines/player-day, max 4), despite its `/0.5` line appearing in the fixed-line table above — that line is a ladder rung, not a standalone fixed threshold. This is a pitcher prop, and pitcher props on this board tend to carry real ladders more often than hitter props do.
+- **`rbis`** is fixed (real 1.10 lines/player-day) but was never classified in this document — it sits in both the Underdog locked pool and a Sleeper candidate pool, so its classification matters.
+
+### 2d. What this means for a coworker session, concretely
 
 - **Do not treat "high hit rate" as sufficient on its own for a fixed-line prop.** Always cross-check against the real, current per-leg multiplier for that exact prop/side/tier (see `MULTIPLIER_TABLES_MASTER.md`) before concluding a pool is genuinely +EV.
 - **The tier ladder is the real, structural mechanism worth building sharper models around** — it's repeatable, has real depth, and its EV can be computed cleanly once the real per-tier multiplier curve is known (see `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` §2-3 for the anchor/switch-point derivation this session spent real, extended effort getting right — read that document in full, this is not optional).
 - **A prop with no real tier ladder (fixed-threshold) should not be force-fit into tier-based analysis.** If a coworker session finds itself computing a "tier" for `stolen_bases` or `home_runs` and getting a degenerate or trivial result, that's expected — these props genuinely don't have a meaningful ladder, and that's a real structural fact, not a data gap to chase.
-- **Any newly-proposed pool must state explicitly which category each prop falls into** (fixed-threshold or tiered) in its report, since the correct way to validate EV differs structurally between the two.
+- **Any newly-proposed pool must state explicitly which category each prop falls into** (fixed-threshold or tiered), verified empirically against real line-count data rather than assumed from this document — this document has already been wrong twice (see §2c), so treat its classifications as a starting point to check, not a final answer.
+
+---
+
+## 3. THE DOMINANT EV AXIS IS THE LANE, NOT THE CLASS — the real reconciliation
+
+**This is the single most important structural finding this document contains, discovered by a coworker research pass 2026-08-22 and independently verified.** Whether a leg is offered in the **Standard lane** (no discount — real per-leg at 6-pick is `37.5^(1/6) ≈ 1.83`) versus the **Goblin lane** (real ~0.62 discount, per-leg 1.116-1.265) matters far more to real EV than whether the underlying prop is fixed-threshold or tiered.
+
+**The exact real example that makes this concrete**: `doubles/less/0.5` — the identical leg, identical ~85% real hit rate, identical prop — prices at **+1298.7% in the Standard lane and −13.0% in the Goblin lane**, a swing of over 1,300 percentage points from lane alone. Verified independently: `37.5^(1/6) ≈ 1.830`; at 85% hit rate over 6 picks, Standard-lane ROI computes to roughly +1300%, Goblin-lane ROI (per-leg ~1.15) to roughly −13%. The two documented, seemingly-contradictory 2026-08-17 and 2026-08-22 findings about fixed-line props were **both correct** — one measured the Standard lane (implicitly, via the published table), the other measured the real Goblin lane. Neither the hit rate nor the fixed/tiered class changed the sign; the lane did.
+
+**This also explains the session-1 "rare-event pool" finding (+1245.7%)**: those legs were priced in the Standard lane, not Goblin — the same underlying legs tested Goblin-lane are structurally different in EV.
+
+**Practical consequence — two new standing rules**:
+- **Rule B0**: build real per-(prop, side, line) buckets from actual graded outcomes at n≥30 as described in §1 — do NOT rank or select legs by the platform's internal `score_0_100` or `estimated_hit_probability_0_100`. A 2026-08-22 session found its own prior Goblin work had done exactly this, re-ran it properly, and found real, priced-positive buckets it had missed as a direct result.
+- **Rule B0a**: every proposed pool must label each prop's real **class** (fixed-threshold or tiered, verified empirically per §2c) **and** its real **lane** (Standard, Goblin, or Demon) — lane is not optional context, it is the dominant driver of real EV and must be stated explicitly for every pool in every report.
+
+**Open, high-priority item this finding creates**: the top Standard-lane buckets implied by this analysis have not yet had real slip construction or leave-one-day-out testing run against them — they are an implied EV ranking, not yet a validated backtest. This is the current #1 open item.
 
 ---
 
