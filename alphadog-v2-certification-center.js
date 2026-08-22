@@ -4312,6 +4312,7 @@ async function apiSaveSlips(env, request) {
           [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), l.official_date || null, l.official_game_time_utc || null, l.player_id == null ? null : Number(l.player_id), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading" })]);
       }
       saved.push({ slip_id: slipId, leg_count: legs.length });
+      await recordRealPricingObservation(pg, slipId, s, legs);
     }
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
