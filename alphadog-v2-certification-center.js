@@ -4931,7 +4931,7 @@ function bindLegKeepBoxDelegation(){
 function flexTiersForSizeLive(sourceKey, size){
   const k=String(sourceKey||'').toLowerCase();
   if(k==='prizepicks_regular')return PP_REGULAR_FLEX_BY_SIZE[size]||null;
-  if(k==='prizepicks_demon')return DEMON_FLEX_TIERS_UI[size]||null;
+  // Demon moved to Power mode 2026-08-22 - no Flex tier table needed here anymore.
   return null;
 }
 function realMultFieldsHtmlForSize(s,idx,size){
