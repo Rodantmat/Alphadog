@@ -1225,3 +1225,183 @@ A live, real-time illustration of the same robustness gap the 26-day backtest sh
 **Nothing was deployed, patched, or modified.**
 
 ---
+
+# ===== 2026-08-22 (Sat) — Session 4 — coverage-matrix session =====
+
+**Run type:** dry run, research only. Nothing deployed, patched, or modified.
+**Scope:** directed at the specific gaps identified by the deep review that produced sections 1c/1d/1e and the mandatory coverage matrix.
+**Data freshness:** ⚠️ **latest graded day is 2026-08-20, but today is 2026-08-22 — a one-day gap.** 08-21 should have graded by now and has not. Flagged, not papered over. All figures below therefore run to 08-20.
+**Coverage matrix:** 9 cells moved, all with cited results. Matrix updated in `SIGNALS_TECHNIQUES_TRIED.md`.
+
+---
+
+## A. THE LINEUP-JOIN BLOCKER — RESOLVED (flagged and unfixed across three prior sessions)
+
+**It was never a join failure.** `context.history_game_lineup` joins to the graded board on **43–85% of legs (mean ~70%)**, verified per-day over 14 days (e.g. 08-18: 6,446 of 7,548 legs = 85.4%; 08-20: 3,239 of 4,767 = 67.9%).
+
+The "~2-5%" figure repeated across three sessions came from a **`WHERE batting_order_code IS NOT NULL` filter placed inside the join CTE** — my own error in session 1, propagated forward.
+
+**The real defect is a silent writer-format change on 2026-08-05** that stopped populating `batting_order_code`:
+
+| Dates | Generation | Rows | `batting_order_code` | `lineup_slot` |
+|---|---|---|---|---|
+| 07-24 → 08-04 | `posted_lineup` / real / high | 2,970 | ✅ | ✅ |
+| 08-05 → 08-12 | all-NULL metadata | 1,419 | ❌ | ❌ |
+| 08-13 → 08-18 | real, no status | 1,422 | ❌ | ✅ |
+| 08-19 → 08-24 | `derived_likely_lineup` / LOW | 1,395 | ❌ | ✅ |
+| 08-19 only | `OFFICIAL_BATTING_ORDER_POSTED` | 27 | ✅ | ✅ |
+
+`batting_order_code`: 41.4% populated. `lineup_slot`: 80.4% populated.
+
+**Fix: use `lineup_slot`.** Exactly equivalent where both exist — `batting_order_code = lineup_slot × 100`, verified on all 2,997 overlapping rows, 333 per slot, perfectly uniform, zero exceptions. Usable coverage goes **12 days → 24 days**. The 08-05 → 08-12 window (8 days) has neither column and is genuinely lost.
+
+**Recommended (user review, NOT deployed):** restore `batting_order_code` in the lineup writer, or standardise consumers on `lineup_slot`. Also note `official_date` is TEXT in two different formats (`2026-07-24` and `2026-08-24 00:00:00+00`) — cast with `::date` always.
+
+## B. GEN-1 BOTTOM-OF-ORDER — REFUTED (was "status unclear" for three sessions)
+
+With the join fixed, tested at real scale for the first time. **It does not replicate, and runs the opposite direction.**
+
+`total_bases/less` (n=4,111): slots 1-3 **81.9%**, slots 4-6 82.2%, slots 7-9 **68.9%** → **−13.0pp for bottom-of-order.** Same for `hits/less` (−23.8pp), `singles/less` (−16.6pp), `hits_runs_rbis/less` (−8.2pp). Documented claim was a *climb* from 57% to 75–83%.
+
+**About half the raw effect is a line-value confound** — top-of-order hitters carry higher lines, and "less 3.5" is far easier than "less 1.5". Controlling for line, the residual stays negative:
+
+| Prop | Line 1.5 | Line 2.5 | Line 3.5 |
+|---|---|---|---|
+| `total_bases/less` bottom − top | −6.7pp | −4.0pp | −6.2pp |
+| `hits_runs_rbis/less` bottom − top | +7.9pp | 0.0pp | −6.1pp |
+
+Only `rbis/less` (+6.4pp) and `runs/less` (+3.7pp) favour bottom-of-order — mechanically sensible, since those hitters get fewer RBI and run chances so the "less" side lands more often. **Moved to the rejected table.**
+
+## C. GOBLIN — granular multiplier applied (flat ratio retired)
+
+Per §1d this is the third session in which Goblin had been analysed with a flat blended ratio. Re-run with `GOBLIN_LEG_MULT_TABLE` applied per (prop, side), slip multiplier = product of per-leg rates. Window 08-12 → 08-20 (tier-clean boundary), 9 days.
+
+**Per-leg EV (top-40 ranked legs × table rate) — only one pool clears 1.0:**
+
+| Prop / side | n | Hit % (top-40) | Table rate | Per-leg EV |
+|---|---|---|---|---|
+| **`stolen_bases/less`** | 353 | 87.8% | 1.15 (fallback) | **1.0093** |
+| `home_runs/less` | 703 | 85.6% | 1.15 | 0.9839 |
+| `doubles/less` | 1,650 | 85.3% | 1.15 | 0.9807 |
+| `total_bases/less` | 4,447 | 83.6% | 1.15 | 0.9615 |
+| `singles/less` | 1,306 | 81.9% | 1.134 | 0.9292 |
+| `hits_runs_rbis/less` | 4,167 | 81.9% | 1.116 | 0.9145 |
+| `hits/less` | 1,690 | 82.8% | 1.095 | 0.9064 |
+
+**Pool-composition sweep, 5 pools × 4 sizes:**
+
+| Pool | 3-pick | 4-pick | 5-pick | 6-pick |
+|---|---|---|---|---|
+| **G2 `stolen_bases` only** | −0.8% | **+2.0%** | **+0.6%** | **+9.3%** |
+| G5 sb+hr | −5.0% | −5.5% | −9.6% | −9.1% |
+| G3 rare trio | −5.9% | −7.5% | −6.7% | −6.3% |
+| G4 rare trio + tb | −18.9% | −23.8% | −27.0% | −30.1% |
+| **G1 LOCKED-like** | −31.8% | −39.5% | **−45.3%** | −50.3% |
+
+**The deployed Goblin pool tests at −45.3% at its locked 5-pick size** (2,319 slips, 9 days) once the granular table is applied.
+
+**LODO on the sole positive candidate (G2, 6-pick):** all-days +9.3%, band **−3.6% to +15.7%**, with 2 of 9 folds negative. Not robust enough to promote. It also rests entirely on the **1.15 fallback** — `stolen_bases` has no real placed-slip observation anywhere, making it the least-supported number in the analysis. At a per-leg rate of 1.10 it turns negative.
+
+**Honest verdict: Goblin has no genuinely positive pool. Do not promote G2 on this evidence; place one real `stolen_bases/less` Goblin slip to pin the multiplier first.**
+
+## D. UNDERDOG — first-ever pool-composition alternatives (never attempted in 3 sessions)
+
+8 genuinely different pool compositions × 5 pick sizes = **40 configs. Every single one negative.**
+
+| Pool | Top-4 leg hit % | Best config | Best ROI |
+|---|---|---|---|
+| U5 more-side only | 79.3% | 2-pick | **−7.6%** |
+| U1 LOCKED rbis+walks | 74.1% | 2-pick | −19.3% |
+| U3 rbis+walks+runs | 75.0% | 2-pick | −19.3% |
+| U6 rbis+walks+fantasy | 68.5% | 2-pick | −19.3% |
+| U4 all `less` | 69.6% | 2-pick | −23.0% |
+| U2 rbis only | 74.1% | 2-pick | −28.4% |
+| U8 rbis+runs | 74.1% | 2-pick | −28.4% |
+| U7 pitcher props | 70.5% | 3-pick | −28.5% |
+
+**Conclusive: the problem is not the pool, it is the payout structure.** Under the compounding model, break-even needs ~82% per-leg at 2-pick and ~85% at 6-pick. The best top-4 hit rate any Underdog pool achieves is **79.3%**. No pool composition can close that gap. This closes the matrix cell with a well-powered negative and independently corroborates the flat-vs-compounding finding from session 1.
+
+## E. SLEEPER — pool alternatives, adaptive sizing, full LODO
+
+6 pools × (4 fixed sizes + adaptive), cap=1, per-leg 1.628.
+
+| Pool / mode | Slips | Days | Full hits | ROI |
+|---|---|---|---|---|
+| S4 `doubles+home_runs` fixed_6 | 19 | 19 | 6 | **+487.9%** |
+| **S2 `rbis+walks+rfi_nrfi` fixed_6** | 27 | **27** | 8 | **+451.6%** |
+| S4 adaptive | 25 | 25 | 8 | +392.2% |
+| S2 fixed_5 | 27 | 27 | 9 | +281.2% |
+| S3 rbis only fixed_6 | 26 | 26 | 5 | +258.0% |
+| S5 5-prop mix fixed_6 | 27 | 27 | 5 | +244.8% |
+| S6 walks only fixed_6 | 27 | 27 | 4 | +175.8% |
+
+**LODO on S2 6-pick: band +401.2% to +472.9%, ALL 27 folds positive.** Wins spread across 8 separate days, no single-day dependence. This is the best-supported live candidate in the system.
+
+**Adaptive shrink/expand sizing (matrix cell closed):** a **no-op** where pools are always ≥6 legs (identical to fixed_6 on S2/S3/S5/S6). On the thin `doubles+home_runs` pool it buys **+6 days of coverage (19→25)** at a **lower ROI (+487.9% → +392.2%)**. Real, modest, and a genuine coverage/return trade — not the free win the technique's framing implies.
+
+## F. MULTI-LAYER STACKING — tested and REJECTED (matrix cell closed)
+
+Context-layer join coverage against the graded board: **weather 97.2%**, **umpire 95.2%**, **bullpen 39.4%**, **schedule fatigue 4.2% (genuinely unusable — reported as blocked, not silently skipped)**.
+
+Leg-level effects on the S2 pool are real but small:
+- Temperature: mild 65-74°F **71.7%**, warm 75-84°F 69.6%, hot 85°F+ 69.4% — a **2.3pp** spread, the same magnitude as the umpire test previously rejected as noise.
+- Bullpen fatigue: low-fatigue beats high-fatigue by **+4.3pp** (mild) and **+5.5pp** (hot) — larger than the umpire precedent.
+
+**But none of it survives slip construction:**
+
+| Variant | Slips | Days | ROI |
+|---|---|---|---|
+| **V0 ungated** | 27 | **27** | **+451.6%** |
+| V1 low bullpen fatigue | 10 | 10 | +272.4% |
+| V2 temp < 85°F | 27 | 27 | +244.8% |
+| V3 both gates | 10 | 10 | +86.2% |
+
+**Mechanism of failure — the same one that killed spot-9-only narrowing:** every gate thins the pool, forcing the builder deeper into weaker legs to fill 6 slots, and the bullpen gate additionally cuts usable days from 27 to 10. A +4-5pp per-leg edge cannot pay for that.
+
+## G. GEMINI AS IDEA PARTNER — first proactive use, hypothesis REJECTED (matrix cell closed)
+
+Per §1e, Gemini was given the S2 track's real state plus the full already-tried-and-rejected list and asked for one new hypothesis that **re-ranks rather than filters** (since every filter had failed on pool depth).
+
+**Its hypothesis — "0-1 count tailwind":** all three S2 props suppress offensive production, and the strongest micro-event suppressing walks/runs/first-inning scoring is falling behind 0-1. Drive that from opposing-pitcher first-pitch-strike rate and home-plate-umpire called-strike rate, z-scored per slate, applied as a continuous multiplier `score × (1 + γ·T)` — preserving pool depth by construction.
+
+Genuinely new and not in `SIGNALS_TECHNIQUES_TRIED.md`. **Tested, with walk-forward umpire tendency (prior dates only, ≥10 prior legs, to avoid leakage):**
+
+| γ | Slips | Days | Full hits | ROI |
+|---|---|---|---|---|
+| 0 (baseline) | 27 | 27 | 8 | **+451.6%** |
+| 0.05 | 27 | 27 | 7 | +382.7% |
+| 0.15 | 27 | 27 | 6 | +313.7% |
+| 0.40 | 27 | 27 | 5 | +244.8% |
+
+**Monotonically worse. Rejected.** Note this is a *cleaner* rejection than the gating tests: the re-rank preserved all 27 days exactly as designed, so it failed on merit rather than on pool thinning.
+
+**Honest power caveat:** only the umpire half was testable. Pitcher first-pitch-strike rate is not available in usable form (`stats_pitcher` has `game_logs`/`splits`/`metric_snapshots`, none surfacing FPS% directly — would need mining). And umpire tendency rests on 88 umpires averaging **5.5 appearances each**, walk-forward, so early dates have almost no prior data. A negative result at this power is suggestive, not decisive.
+
+## H. HONEST SUMMARY
+
+**Genuinely new this session:**
+1. Lineup-join blocker resolved — never a join failure, a filter artifact over a writer-format change; `lineup_slot` doubles usable coverage.
+2. Gen-1 bottom-of-order refuted, with the line-value confound quantified.
+3. Goblin re-run on the granular table: locked pool −45.3%; only `stolen_bases/less` positive, and not robustly.
+4. Underdog's first pool-composition sweep: 40 configs, all negative; the ceiling is structural (79.3% best vs ~82-85% required).
+5. Adaptive sizing characterised: coverage/return trade, not a free win.
+6. Multi-layer stacking rejected with the failure mechanism identified.
+7. First proactive Gemini hypothesis, tested and rejected.
+8. Sleeper S2 LODO: all 27 folds positive, +401% to +473%.
+
+**Re-confirmed:** Sleeper S2 as the strongest live candidate; Underdog broken as deployed.
+
+**Not done / carried forward:**
+1. **Void/DNP-adjusted repricing** — now unblocked by the lineup fix but not executed this session. Highest-priority remaining cell.
+2. Multi-layer stacking on Goblin, Regular, Demon, Underdog (only Sleeper tested).
+3. Adaptive sizing on the other four tracks.
+4. Gemini generative hypothesis on the other four tracks.
+5. Pitcher first-pitch-strike rate — mine `stats_pitcher.game_logs` / `splits` to complete the 0-1 tailwind test properly.
+6. The 08-21 grading gap.
+7. PP Regular cap sweep in the 10–15 band.
+
+**Stopping condition: NOT met.** This session was directed at named gaps rather than run to exhaustion. Stated plainly rather than claimed.
+
+**Nothing was deployed, patched, or modified.**
+
+---
