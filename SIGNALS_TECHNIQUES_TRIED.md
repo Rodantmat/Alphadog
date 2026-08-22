@@ -155,6 +155,48 @@ The `more` side is stable at 8–16% throughout. Only the `less` complement side
 
 **Consequence: 2026-08-11 is not a "legitimate outlier day". It is a corrupted day**, and Session 1's clearance of it ("normal batch count, not a data artifact") is retracted. Every Demon result that leans on 08-05/06/07/11 — which is all of them — is built on mislabelled legs. **Exclude those four days from all Demon analysis.**
 
+### 🔬 ROOT-CAUSED 2026-08-21 (session 7) — it is a sign inversion in the less-side complement tag
+
+Traced the same way the lineup and rounding bugs were, rather than left as a dated pattern.
+
+**Step 1 — the grading is not the bug.** For every graded PrizePicks demon row with a recorded stat, 08-03 → 08-14, checked whether `outcome_hit` equals `(actual_stat_value < line_value)` for `less` and `(actual_stat_value > line_value)` for `more`:
+
+| Date | rows | `less` consistent | `less` INCONSISTENT | `more` consistent | `more` INCONSISTENT |
+|---|---|---|---|---|---|
+| 08-05 | 1,028 | 810 | **0** | 218 | **0** |
+| 08-07 | 1,053 | 789 | **0** | 264 | **0** |
+| 08-11 | 3,381 | 2,812 | **0** | 569 | **0** |
+| 08-13 | 679 | 231 | **0** | 448 | **0** |
+
+**Zero inconsistencies on any day, either side, across 8,485 rows.** The outcomes are correctly graded and the hit rates are real. The lines are real too.
+
+**Step 2 — the label is the bug, and it is inverted.** On clean days the `less`-side tag is monotone in line value: a `less` at 0.5 is hard (demon), a `less` at 2.5 or 3.5 is easy (goblin). `total_bases`, by line, counting distinct (player, prop, line) board keys:
+
+| Date | line 0.5 → less=demon | line 0.5 → less=goblin | line 2.5 → less=demon | line 2.5 → less=goblin | line 3.5 → less=demon | line 3.5 → less=goblin |
+|---|---|---|---|---|---|---|
+| **08-13 (clean)** | **60** | 2 | 0 | **140** | 0 | **89** |
+| **08-07 (affected)** | 1 | **10** | **66** | 0 | **13** | 0 |
+| **08-11 (partial)** | 24 | 67 | 130 | 41 | 53 | 16 |
+
+08-07 is the exact mirror image of 08-13. The whole-prop averages say the same thing — `total_bases` demon-`less` sits at avg line **2.68 / 2.38 / 2.40 / 2.18** on 08-05/06/07/11 and at **0.50–0.51** on every clean day, while goblin-`less` holds the high lines (2.17–2.54) on clean days and is empty or at 0.50 on affected days. `hits_runs_rbis` demon-`less`: 4.50 / 3.09 / 2.80 affected vs 0.75–0.93 clean. `singles`: 1.13 / 0.96 vs 0.50.
+
+**Step 3 — scope and shape.** The `more` side is stable at 8–16% throughout and shows no inversion. Across all three dates and all three lines, `more=goblin & less=demon` and `more=demon & less=goblin` pairings number **zero** — each (player, prop, line) carries only one side on the board. So this is **a sign error in deriving the `less`-side complement tag from the line's position relative to the anchor, not a swap of a materialised pair.**
+
+**Step 4 — boundary, and 08-12 is CLEAN.** The inversion ends after 08-11. 08-12's demon-`less` sits at avg line **0.51 (n=299)**, matching the clean steady state exactly. **Session 5's suspicion that 08-12 might be partially contaminated is resolved: it is not.** 08-11 is a *partial* inversion — both labels present at every line — consistent with a mid-day deploy or an overlapping batch reprocess.
+
+**Step 5 — writer signature, exactly like the lineup case.** `source_variant_label` on `less` rows: **NULL on every row through 08-12**, then 69 rows on 08-13, then 3,555 from 08-14 onward. A writer generation boundary lands immediately after the inversion window, consistent with the documented 2026-08-12 "blanket Less→flip rule mislabeled 1,752 real legs" fix in `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` §4a.
+
+**Step 6 — where the code is.** `alphadog-v2-score-final-board.js` only passes the flags through (`is_goblin: Number(rawRow.is_goblin || 0)…`, line 259), and its own comment at lines 282–284 states they "come straight from the verified `odds_type` + `allowed_wager_types` mechanism at raw ingestion". **The defect is upstream of the final-board worker, in score-prep / raw ingestion, and was fixed there on 2026-08-12.** No live change made or recommended here — the window is historical and already closed.
+
+**Step 7 — whole-day exclusion is the correct remedy, not row-level salvage.** Relabelling only the rows whose line exceeds the clean-day demon-`less` ceiling would recover 42–61% of the affected rows, but the *remaining* below-ceiling rows on those days still hit **63.1–75.1%** against a clean-day demon-`less` rate of 34–42%. The contamination is not confined to the rows a line threshold can identify. **Drop 08-05, 08-06, 08-07 and 08-11 entirely; do not attempt row-level repair.**
+
+| Date | demon-`less` rows | above clean ceiling | % | hit % above ceiling | hit % below ceiling |
+|---|---|---|---|---|---|
+| 08-05 | 563 | 342 | 60.7% | 89.5% | **75.1%** |
+| 08-06 | 443 | 218 | 49.2% | 73.9% | **63.1%** |
+| 08-07 | 634 | 340 | 53.6% | 80.9% | **68.4%** |
+| 08-11 | 2,403 | 1,019 | 42.4% | 82.5% | **68.7%** |
+
 ### ❌ REFUTED 2026-08-21 (session 5) — Session 4's `lineup_slot` guidance is incomplete and silently drops 14 days
 
 Session 4's rule was "use `lineup_slot`, not `batting_order_code`; `batting_order_code = lineup_slot × 100`." That is true where both exist, but `lineup_slot` itself carries **two encodings**:
