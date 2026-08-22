@@ -4902,6 +4902,16 @@ function realMultFieldsHtmlForSize(s,idx,size){
     const mult=recomputeMultiplier(s.source_key,s.entry_mode,size,s.legs);
     return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(mult||''))+'"></div>';
   }
+  if(String(s.source_key||'').toLowerCase()==='prizepicks_goblin'){
+    // Goblin Flex tiers are leg-composition-dependent (real per-leg product), not a fixed
+    // published table like Regular/Demon - compute live from the actual kept legs every time.
+    const fullMult=(s.legs&&s.legs.length)?goblinSlipEstimatedMultiplier(s.legs).multiplier:0;
+    const partialMult=Math.round(fullMult*0.10*1000)/1000;
+    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partial is an ESTIMATE)</span><div class="realMultFields">'
+      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" placeholder="'+esc(String(fullMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
+      +'</div></div>';
+  }
   const tiers=flexTiersForSizeLive(s.source_key,size);
   if(!tiers){
     return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick, no confirmed table - estimate)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'"></div>';
