@@ -2770,21 +2770,16 @@ const UNDERDOG_FLEX_TIERS = { 6: 2.813, 5: 0.458, 4: 0.063 };
 // see session notes). Full 26-day backtest across all 5 pick sizes with real per-leg multipliers
 // confirmed via actual placed slips (1.7x/2pick, 2.0x/3pick, 3.0x/4pick, 3.5x/5pick, 4.25x/6pick):
 // 5-pick won decisively (+79.9% ROI at 25% daily cap vs +72.3% for 4-pick, both real backtested).
-// Power confirmed to beat Flex at every size (+79.7% vs +49.3% at 5-pick, day-by-day validated).
-// REPLACES the old line-based pool entirely - that pool predates the tier framework and was never
-// re-validated against it.
+// REPLACED 2026-08-22: old multi-prop pool tested weak-to-negative across every real Tier1
+// candidate (see SIGNALS_TECHNIQUES_TRIED.md and HIGH_HIT_RATE_METHODOLOGY.md). Root cause found
+// same day: 93.8% of NULL-tier Goblin/Demon legs had a real, available standard line that was
+// never being matched - a genuine tier-assignment gap, not a data-availability one. Reconstructing
+// tiers properly unlocked `walks_allowed/more/Tier1` from a thin 42-leg sample to a real 707-leg
+// one (87.4% hit rate), and the resulting 2-pick backtest is now the strongest, most consistent
+// real Goblin signal ever found this session: 349 real slips, 16 of 16 active days positive,
+// +89.8% total ROI. This REPLACES the entire old 11-bucket pool.
 const HIGH_HIT_GOBLIN_TIER_POOL = [
-  { prop: "singles", side: "less", tier: 1, rank: 11 },
-  { prop: "hits_runs_rbis", side: "less", tier: 3, rank: 10 },
-  { prop: "earned_runs", side: "more", tier: 2, rank: 9 },
-  { prop: "walks_allowed", side: "more", tier: 1, rank: 8 },
-  { prop: "runs", side: "less", tier: 1, rank: 7 },
-  { prop: "hits", side: "less", tier: 1, rank: 6 },
-  { prop: "hits_runs_rbis", side: "less", tier: 2, rank: 5 },
-  { prop: "total_bases", side: "less", tier: 3, rank: 4 },
-  { prop: "pitcher_strikeouts", side: "less", tier: 2, rank: 3 },
-  { prop: "total_bases", side: "less", tier: 2, rank: 2 },
-  { prop: "earned_runs", side: "more", tier: 1, rank: 1 }
+  { prop: "walks_allowed", side: "more", tier: 1, rank: 1 }
 ];
 // LOCKED 2026-08-21: real per-leg multiplier, confirmed via 5 real placed 2/3/4/5/6-pick slips
 // (1.304, 1.260, 1.316, 1.285, 1.273 respectively - remarkably flat across sizes). 5-pick specific.
