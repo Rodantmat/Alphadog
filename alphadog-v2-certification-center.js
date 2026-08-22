@@ -4298,6 +4298,48 @@ async function recordRealPricingObservation(pg, slipId, s, legs) {
     // save (already committed above) - log-worthy but non-fatal.
   }
 }
+// Underdog real pricing observation (2026-08-22): Underdog does NOT use per-leg composable
+// pricing like Goblin/Demon/Sleeper - it pays out of a whole-slip table keyed by which exact
+// props/sides are in the pool, at that specific pick size. Real, direct evidence this session:
+// two real 6-pick hits_allowed/more slips returned DIFFERENT real 6/6 values (2.5x, 2.25x) even
+// with identical composition, and a separate 6-pick pool (hits_allowed/more again, but confirmed
+// by the user directly) returned real tiers 8.5x/1.05x/0.15x - proving per-pool, per-size, real
+// tiers are the correct granularity here, not a single flat discount applied to every pool.
+// This function captures every real Underdog observation automatically going forward so this
+// data is never lost again, regardless of whether the specific prop combination has been seen
+// before - a genuinely new pool just starts its own real running average from n=1.
+async function recordRealUnderdogPricingObservation(pg, slipId, s, legs) {
+  const sourceKey = String(s.source_key || "").toLowerCase();
+  if (!["parlay_underdog", "underdog"].includes(sourceKey)) return;
+  if (!legs || !legs.length) return;
+  const size = legs.length;
+  // Pool signature: the sorted set of distinct (prop, side) pairs in this slip - identifies which
+  // real pricing pool this slip belongs to, independent of which specific players filled it.
+  const poolSignature = Array.from(new Set(legs.map(l => `${l.canonical_prop_key}|${String(l.selected_side || "").toLowerCase()}`))).sort().join(",");
+  const tiersToRecord = [];
+  if (s.real_multiplier_flex_tiers) {
+    const tiers = typeof s.real_multiplier_flex_tiers === "string" ? JSON.parse(s.real_multiplier_flex_tiers) : s.real_multiplier_flex_tiers;
+    for (const [hits, mult] of Object.entries(tiers)) {
+      const h = Number(hits), m = Number(mult);
+      if (Number.isFinite(h) && Number.isFinite(m)) tiersToRecord.push([h, m]);
+    }
+  } else if (s.real_multiplier != null && Number.isFinite(Number(s.real_multiplier))) {
+    tiersToRecord.push([size, Number(s.real_multiplier)]);
+  }
+  if (!tiersToRecord.length) return;
+  try {
+    for (const [tierHits, mult] of tiersToRecord) {
+      await pg.unsafe(`INSERT INTO score.real_underdog_slip_pricing (pool_signature, slip_size, tier_hits, avg_multiplier, n_observations, last_slip_id)
+        VALUES ($1,$2,$3,$4,1,$5)
+        ON CONFLICT (pool_signature, slip_size, tier_hits)
+        DO UPDATE SET avg_multiplier = (score.real_underdog_slip_pricing.avg_multiplier * score.real_underdog_slip_pricing.n_observations + $4) / (score.real_underdog_slip_pricing.n_observations + 1),
+          n_observations = score.real_underdog_slip_pricing.n_observations + 1, last_slip_id = $5, last_updated_at = now()`,
+        [poolSignature, size, tierHits, mult, slipId]);
+    }
+  } catch (e) {
+    // Same rule as the Goblin/Demon/Sleeper recorder - never block the actual slip save.
+  }
+}
 async function apiSaveSlips(env, request) {
   await ensureArchiveSlipSchema(env);
   const input = await readJsonSafe(request);
