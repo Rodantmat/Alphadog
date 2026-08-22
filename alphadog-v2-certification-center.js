@@ -2840,11 +2840,14 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
 }
 const GOBLIN_5PICK_REAL_MULT = 1.86;
 const GOBLIN_5PICK_MULT_CONFIRMED = true;
-const HIGH_HIT_SLIP_SIZES = [3];
-// CORRECTED 2026-08-22 (same day): initial deployment used size 2 based on a flawed blended-rate
-// backtest. Redone with the correct real per-line pricing (0.5->1.183/leg, 1.5->1.871/leg, not a
-// single blended average) - 3-pick clearly beats 2-pick (+56.4% vs +29.2% total, same one losing
-// day at both sizes: 08-19). No cap - every real active day but one is positive.
+const HIGH_HIT_SLIP_SIZES = [6];
+// CORRECTED AGAIN 2026-08-22 (same day): moved from 3-pick Power to 6-pick Flex after a full
+// 2-6 pick sweep, both modes, real per-line pricing (0.5->1.140/leg, 1.5->1.483/leg). ROI climbs
+// steadily with size for this pool (Power: +13.9% at 2-pick -> +71.8% at 6-pick), Flex edges out
+// Power slightly at every size from partial credit. 6-pick Flex, no cap: 108 real slips, 71 full
+// hits, +74.4% total ROI, 14 of 15 real active days positive (same single loser at every size:
+// 08-19). No cap - a 25% cap edged this out marginally (+77.8%) but the difference is thin on a
+// modest sample; uncapped chosen for simplicity and to keep gathering real data across more slips.
 
 async function autoSelectHighHitSlipLegs(env) {
   const pg = pgClient(env);
