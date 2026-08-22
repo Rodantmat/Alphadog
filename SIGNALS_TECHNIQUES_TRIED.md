@@ -64,6 +64,75 @@
 
 **The fix: use `lineup_slot`, not `batting_order_code`.** They are exactly equivalent where both exist — `batting_order_code = lineup_slot × 100`, verified on all 2,997 overlapping rows (333 rows per slot, perfectly uniform, zero exceptions). Switching raises usable coverage from **12 days to 24 days**. The 08-05 → 08-12 window (8 days) has neither column and is genuinely lost. The 08-19 → 08-24 window is `derived`, LOW confidence — usable but flag it.
 
+### 🛑 CRITICAL DATA DEFECT FOUND 2026-08-21 (session 5) — `prop_outcome_history.is_goblin` / `is_demon` are NOT the lane
+
+**Do not read the lane from `score.prop_outcome_history`. Read it from `score.final_board_history`, joined on `final_board_row_id`.**
+
+The graded-outcome table has **two writers** and they disagree:
+
+| Writer (by `outcome_id` prefix) | PP rows | goblin | demon | neither | `matrix_id` |
+|---|---|---|---|---|---|
+| `outcome_final\|…` | 41,593 | 170 | 266 | **41,157 (99.0%)** | always populated |
+| `grade_*` | 57,168 | 38,626 | 15,783 | 2,759 | always NULL |
+
+The `outcome_final` rows carry **unpopulated lane flags defaulting to 0/0** — that is not a "standard lane" tag. Cross-tabulated over the 36,465 keys present in both writers:
+
+| `outcome_final` says | `grade_*` says | keys |
+|---|---|---|
+| neither | **goblin** | 28,505 (78.2%) |
+| neither | **demon** | 7,131 (19.6%) |
+| neither | neither | 782 (2.1%) |
+| agree on a lane | | 47 |
+
+**97.9% of legs that read as "standard lane" in `prop_outcome_history` are actually goblin or demon legs.** Worked example: Bryce Harper, `hits_runs_rbis/less/3.5`, 2026-08-18 — two rows, same `final_board_row_id`, same `prepared_row_id`, same hp 67.76, same outcome. One is `outcome_final|…` with `is_goblin=0`; the other is `grade_hitter_547180_hits_runs_rbis_3p5_less_gob_2026-08-18` with `is_goblin=1`, written 50 seconds later. Same leg, two lane labels.
+
+**The correct method, verified:** join `score.prop_outcome_history` (restricted to `outcome_id LIKE 'outcome_final|%'`) to `score.final_board_history` on `final_board_row_id` — **98.6% join rate** — and take `is_goblin`/`is_demon` from the board. Doing so gives a structurally coherent lane split for the first time:
+
+| Lane (authoritative) | legs | hit % | days |
+|---|---|---|---|
+| goblin | 29,647 | **73.3%** | 24 |
+| standard | 3,236 | **54.6%** | 24 |
+| demon | 8,078 | **34.6%** | 25 |
+
+Goblin > standard > demon, exactly as the mechanism requires. The previous assignment had "standard" at 84.8% — above goblin — which is structurally impossible and was the tell.
+
+**What this retracts:** the `HIGH_HIT_RATE_METHODOLOGY.md` §3 headline (`doubles/less/0.5` at "+1298.7% standard-lane vs −13.0% Goblin-lane, same leg, same hit rate") is not two market offerings priced differently — it is **one set of legs, duplicated across two lane labels, then priced with two different multipliers**. The "same hit rate" in that table (84.8 vs 85.0, 84.7 vs 84.9) is the duplication signature, not a finding. See the session-5 log entry.
+
+### 🛑 SECOND DATA DEFECT FOUND 2026-08-21 (session 5) — demon `less` legs are corrupted on four specific days
+
+Demon legs must hit well below 50% by construction. Measured by side and day on PrizePicks:
+
+| Date | demon `less` n | demon `less` hit % | demon `more` n | demon `more` hit % |
+|---|---|---|---|---|
+| 08-03 / 08-04 | **0** | — | 334 / 320 | 12.0% / 15.9% |
+| **2026-08-05** | 810 | **84.9%** | 218 | 11.9% |
+| **2026-08-06** | 510 | **68.2%** | 258 | 12.0% |
+| **2026-08-07** | 789 | **76.2%** | 264 | 13.3% |
+| 08-08 → 08-10 | 28 / 34 / 86 | 28.6 / 47.1 / 43.0% | 266 / 283 / 540 | 10.2 / 11.0 / 14.8% |
+| **2026-08-11** | 2,812 | **75.1%** | 569 | 9.8% |
+| 08-12 → 08-14 | 640 / 231 / 310 | 40.3 / 34.2 / 41.9% | 488 / 448 / 247 | 8.2 / 10.5 / 9.7% |
+
+The `more` side is stable at 8–16% throughout. Only the `less` complement side is affected, and only on **2026-08-05, 08-06, 08-07 and 08-11**. This is the "blanket Less→flip" mislabelling that `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` §4a records as fixed on 2026-08-12, now localised to exact dates and quantified.
+
+**It propagates into `backtest.demon_full_history_dedup_v2`** (the designated TRUSTED table). Within that table, demon `less` runs 78.2% / 88.5% / 60.6% / 72.8% on those four days against 11.5–50% elsewhere.
+
+**Consequence: 2026-08-11 is not a "legitimate outlier day". It is a corrupted day**, and Session 1's clearance of it ("normal batch count, not a data artifact") is retracted. Every Demon result that leans on 08-05/06/07/11 — which is all of them — is built on mislabelled legs. **Exclude those four days from all Demon analysis.**
+
+### ❌ REFUTED 2026-08-21 (session 5) — Session 4's `lineup_slot` guidance is incomplete and silently drops 14 days
+
+Session 4's rule was "use `lineup_slot`, not `batting_order_code`; `batting_order_code = lineup_slot × 100`." That is true where both exist, but `lineup_slot` itself carries **two encodings**:
+
+| Window | `lineup_slot` values | rows per slot |
+|---|---|---|
+| Outside 2026-08-05 → 2026-08-18 | **1–9** | 488 each |
+| **2026-08-05 → 2026-08-18** | **100–900** | 158 each |
+
+Any query filtering `lineup_slot BETWEEN 1 AND 9`, or bucketing slots 1–3 / 7–9, **silently drops the entire 08-05 → 08-18 window** (14 days, 1,422 rows) with no error and no NULLs. Verified: `WHERE lineup_slot BETWEEN 1 AND 4` returns exactly 0 rows on each of those 14 dates.
+
+**Correct rule:** `slot = CASE WHEN lineup_slot >= 100 THEN lineup_slot/100 ELSE lineup_slot END`.
+
+Session 4's Gen-1 bottom-of-order refutation should be re-run under the normalised slot before its "24 usable days" claim is trusted — its slot buckets would have excluded 08-05 → 08-18 entirely.
+
 ### ❌ REFUTED 2026-08-22 (session 2) — the Gen-1 bottom-of-order signal
 
 With the join fixed, the "status unclear" bottom-of-order signal was re-tested at real scale for the first time. **It does not replicate — it runs the opposite direction.**
