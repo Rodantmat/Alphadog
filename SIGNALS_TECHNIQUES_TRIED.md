@@ -75,7 +75,11 @@ The graded-outcome table has **two writers** and they disagree:
 | `outcome_final\|…` | 41,593 | 170 | 266 | **41,157 (99.0%)** | always populated |
 | `grade_*` | 57,168 | 38,626 | 15,783 | 2,759 | always NULL |
 
-The `outcome_final` rows carry **unpopulated lane flags defaulting to 0/0** — that is not a "standard lane" tag. Cross-tabulated over the 36,465 keys present in both writers:
+The `outcome_final` rows carry **unpopulated lane flags defaulting to 0/0** — that is not a "standard lane" tag.
+
+### ⚠️ FIGURE CORRECTED 2026-08-21 (session 7) — the headline was 97.9%, the correct number is 92.1%
+
+The original cross-tabulation was `outcome_final` rows against `grade_*` rows, **inner-joined**, over the 36,465 keys present in both writers:
 
 | `outcome_final` says | `grade_*` says | keys |
 |---|---|---|
@@ -84,7 +88,40 @@ The `outcome_final` rows carry **unpopulated lane flags defaulting to 0/0** — 
 | neither | neither | 782 (2.1%) |
 | agree on a lane | | 47 |
 
-**97.9% of legs that read as "standard lane" in `prop_outcome_history` are actually goblin or demon legs.** Worked example: Bryce Harper, `hits_runs_rbis/less/3.5`, 2026-08-18 — two rows, same `final_board_row_id`, same `prepared_row_id`, same hp 67.76, same outcome. One is `outcome_final|…` with `is_goblin=0`; the other is `grade_hitter_547180_hits_runs_rbis_3p5_less_gob_2026-08-18` with `is_goblin=1`, written 50 seconds later. Same leg, two lane labels.
+That arithmetic is right — 35,636 / 36,415 = 97.9% — but **the denominator is conditioned on "a `grade_*` row exists", which is itself correlated with being goblin or demon.** The inner join silently dropped **4,590** `outcome_final` keys that have no `grade_*` counterpart. Splitting on exactly that condition shows the size of the selection effect:
+
+| `outcome_final` key | keys | joined to board | goblin/demon on board | neither on board | **% goblin/demon** |
+|---|---|---|---|---|---|
+| has a `grade_*` row | 36,465 | 36,272 | 35,357 | 915 | **97.5%** |
+| **no `grade_*` row** | **4,590** | 4,219 | 2,038 | 2,181 | **48.3%** |
+
+This is the same class of error as the `batting_order_code IS NOT NULL` filter inside the lineup join CTE — a filter applied inside the join that removes exactly the rows that would change the answer. Rule B7 exists to catch it and did not get applied here.
+
+**The correct measurement uses the authoritative board as the denominator, unconditioned.** All PrizePicks graded `outcome_final` rows reading 0/0:
+
+| Method | population | joined | goblin | demon | neither | **% relabelled** |
+|---|---|---|---|---|---|---|
+| Row level, join on `final_board_row_id` | 41,157 | 40,901 | 29,649 | 8,009 | 3,243 | **92.1%** |
+| Distinct key, join on player/prop/side/line/game | 40,724 | 40,719 | — | — | 3,060 | **92.5%** |
+
+**92.1% is the figure that should be quoted.** The two join keys agree to within 0.4pp (fan-out is negligible: 1.01 board rows per key), so the join key was never the issue — the denominator was.
+
+**Where other numbers come from, for reproducibility.** A cross-check that does not restrict `source_key='prizepicks'` lands in the 40–56% band, because Sleeper and Underdog have no goblin/demon lane at all — their legs correctly read 0/0 on both sides and are legitimately standard:
+
+| Variant | 0/0 rows | relabelled | % of joined |
+|---|---|---|---|
+| PP only, graded, `outcome_final` only | 41,157 | 37,658 | **92.1%** |
+| ALL APPS, graded, `outcome_final` only | 63,262 | 37,658 | 60.2% |
+| ALL APPS, graded, any writer | 83,043 | 37,658 | **46.1%** |
+| ALL APPS, graded + ungraded, any writer | 86,762 | 37,658 | 44.1% |
+
+The numerator is fixed at 37,658 in every variant; only the denominator moves. **Always restrict to `source_key='prizepicks'` before measuring lane.**
+
+**The two lane sources agree perfectly**, which is worth recording: joining the `grade_*` writer to `final_board_history` on `final_board_row_id` gives 32,463 goblin/goblin, 13,142 demon/demon, 2,332 neither/neither — **47,937 rows, zero disagreements**. The problem was never which source to trust.
+
+**Nothing downstream changes.** The lane split, the bucket table, the eight-bucket audit and the PP Regular lane check were all computed from the board join, not from the 97.9% figure. The retraction of the +1298.7% standard-vs-goblin comparison stands unaltered.
+
+Worked example of the duplication itself: Bryce Harper, `hits_runs_rbis/less/3.5`, 2026-08-18 — two rows, same `final_board_row_id`, same `prepared_row_id`, same hp 67.76, same outcome. One is `outcome_final|…` with `is_goblin=0`; the other is `grade_hitter_547180_hits_runs_rbis_3p5_less_gob_2026-08-18` with `is_goblin=1`, written 50 seconds later. Same leg, two lane labels.
 
 **The correct method, verified:** join `score.prop_outcome_history` (restricted to `outcome_id LIKE 'outcome_final|%'`) to `score.final_board_history` on `final_board_row_id` — **98.6% join rate** — and take `is_goblin`/`is_demon` from the board. Doing so gives a structurally coherent lane split for the first time:
 
