@@ -1405,3 +1405,81 @@ Genuinely new and not in `SIGNALS_TECHNIQUES_TRIED.md`. **Tested, with walk-forw
 **Nothing was deployed, patched, or modified.**
 
 ---
+
+# ===== 2026-08-22 — Session 4 ADDENDUM — after reading HIGH_HIT_RATE_METHODOLOGY.md =====
+
+`HIGH_HIT_RATE_METHODOLOGY.md` added to required reading. Two things follow: my Session 4 Goblin analysis used the wrong selection method, and applying the right one changes the conclusion materially.
+
+## A1. Method correction — I ranked by the platform's own score, which §1 says not to do
+
+§1 is explicit that the foundational method is **real per-(prop, side, line-or-tier) hit-rate buckets at n≥30 with a real 80%+ bar**, *"independent of whatever the platform's own internal `estimated_hit_probability_0_100` score says."* My Session 4 Goblin work ranked legs by `score_0_100` and reported "top-40" hit rates. That is the thing the document warns against. Re-run below on the foundational bucket method.
+
+## A2. Fixed vs tiered — verified empirically, not assumed
+
+Rather than take the document's list on faith, I measured distinct lines offered per (player, prop, date) on PrizePicks, 08-12 → 08-20:
+
+| Prop | Avg lines/player-day | % single-line | Class |
+|---|---|---|---|
+| doubles | 1.00 | 99.9% | **FIXED** |
+| triples | 1.00 | 100.0% | **FIXED** |
+| home_runs | 1.01 | 98.7% | **FIXED** |
+| walks | 1.02 | 97.6% | **FIXED** |
+| stolen_bases | 1.06 | 93.6% | **FIXED** |
+| runs | 1.10 | 91.1% | **FIXED** |
+| rbis | 1.10 | 90.8% | **FIXED** |
+| singles | 1.17 | 83.3% | **FIXED** |
+| hits | 1.37 | 64.8% | TIERED (borderline) |
+| fantasy_score | 1.64 | 55.3% | TIERED |
+| hitter_strikeouts | 1.73 | 54.2% | TIERED |
+| pitcher_outs | 2.07 | 32.0% | TIERED |
+| walks_allowed | 2.36 | 26.2% | TIERED |
+| total_bases | 2.95 | 9.1% | TIERED |
+| pitcher_fantasy_score | 3.02 | 9.3% | TIERED |
+| hits_runs_rbis | 3.49 | 7.3% | TIERED |
+| hits_allowed | 3.82 | 4.6% | TIERED |
+| earned_runs | 4.34 | 3.0% | TIERED |
+| pitcher_strikeouts | 4.74 | 5.9% | TIERED |
+
+**Matches the document, with three refinements:**
+1. **`hits` is not fixed-threshold** — 1.37 lines/player-day, only 64.8% single-line. The doc groups it with the fixed props "at the standard/regular level"; empirically it carries a real, if shallow, ladder.
+2. **`walks_allowed` is genuinely TIERED** (2.36 lines, max 4) — yet the doc's original fixed-line table lists `walks_allowed/more/0.5` at 88.3% as a fixed-threshold star. That 0.5 line is one rung of a real ladder, not a fixed threshold.
+3. **`rbis` is FIXED** (1.10) and was unclassified in the doc. Relevant because `rbis` sits in both the Underdog locked pool and the Sleeper S2 pool.
+
+## A3. The foundational bucket table, repriced — and the real dominant axis
+
+27 buckets clear the original bar (n≥30, hit rate ≥80%) on 08-12 → 08-20. Priced per-leg EV, at 6-pick, using the real per-leg multipliers:
+
+| Bucket | Lane | Class | n | Hit % | Per-leg mult | Priced EV | Implied 6-pk ROI |
+|---|---|---|---|---|---|---|---|
+| `stolen_bases/less/0.5` | **standard** | FIXED | 356 | 87.6% | 1.830 | **1.603** | **+1599.3%** |
+| `earned_runs/more/0.5` | **standard** | TIERED | 157 | 87.3% | 1.830 | 1.596 | +1555.6% |
+| `walks_allowed/more/0.5` | **standard** | TIERED | 121 | 86.8% | 1.830 | 1.588 | +1501.2% |
+| `doubles/less/0.5` | **standard** | FIXED | 1656 | 84.8% | 1.830 | 1.552 | +1298.7% |
+| `total_bases/less/3.5` | **standard** | TIERED | 1189 | 84.7% | 1.830 | 1.549 | +1283.9% |
+| `singles/less/1.5` | **standard** | FIXED | 444 | 84.7% | 1.830 | 1.549 | +1283.1% |
+| `home_runs/less/0.5` | **standard** | FIXED | 704 | 84.5% | 1.830 | 1.546 | +1266.8% |
+| `hits_runs_rbis/less/4.5` | **standard** | TIERED | 335 | 83.9% | 1.830 | 1.535 | +1206.2% |
+| `pitcher_strikeouts/less/6.5` | goblin | TIERED | 109 | 82.6% | 1.265 | 1.044 | +29.8% |
+| `walks_allowed/more/0.5` | goblin | TIERED | 136 | **91.2%** | 1.140 | 1.039 | +26.1% |
+| `pitcher_strikeouts/more/2.5` | goblin | TIERED | 94 | 81.9% | 1.265 | 1.036 | +23.8% |
+| `stolen_bases/less/0.5` | goblin | FIXED | 428 | 87.6% | 1.150 | 1.008 | +4.6% |
+| `doubles/less/0.5` | goblin | FIXED | 1995 | 85.0% | 1.150 | 0.977 | **−13.0%** |
+| `home_runs/less/0.5` | goblin | FIXED | 861 | 84.9% | 1.150 | 0.976 | −13.4% |
+| `total_bases/less/3.5` | goblin | TIERED | 1427 | 84.9% | 1.150 | 0.976 | −13.5% |
+| `hits_runs_rbis/less/3.5` | goblin | TIERED | 1697 | 81.7% | 1.116 | 0.912 | −42.5% |
+
+**The dominant axis is not fixed-vs-tiered — it is the LANE.** Standard-lane legs carry ~1.830 per leg (37.5^(1/6)); Goblin-lane legs carry 1.116–1.265. Look at `doubles/less/0.5`: **the same prop, the same line, the same 84.8–85.0% hit rate, priced at +1298.7% in the standard lane and −13.0% in the Goblin lane.**
+
+This is the precise mechanism behind the reconciliation the document describes. The original 2026-08-17 finding measured these buckets against the published table — i.e. implicitly standard-lane pricing — and was right. My Session 4 finding applied the real Goblin discount and was also right. **Neither the fixed/tiered axis nor the hit rate flips the sign; the lane does.** The document's phrasing ("PrizePicks appears to price these easy, high-hit-rate legs with an especially aggressive real haircut") is confirmed and can now be stated exactly: the haircut is the Goblin lane itself, and it is worth roughly a factor of 1.6x per leg.
+
+**Actionable consequence: these buckets should be played in the standard/Regular lane, not the Goblin lane.** This is also the underlying reason the Session 1 "rare-event pool" (`doubles` + `home_runs` + `stolen_bases`, all standard-lane `less`) tested at +1245.7% — same legs, correct lane.
+
+**Load-bearing caveat, restated:** every standard-lane figure above assumes the published Power table pays undiscounted (per-leg ratio 1.000). That rests on **four real Flex observations and zero real Power observations**. If PP Regular Power carries a Goblin-like haircut, this whole column collapses the way Underdog did. **One real placed 6-pick PP Regular Power slip remains the highest-value single data point available.**
+
+**Correction to my own earlier framing:** in Session 4 §C I reported `stolen_bases/less` as the only Goblin pool clearing per-leg EV 1.0. On the foundational bucket method it is one of **four** — and the other three (`pitcher_strikeouts/less/6.5`, `walks_allowed/more/0.5`, `pitcher_strikeouts/more/2.5`) are all TIERED props with higher priced EV than the fixed one, which supports the document's §2b claim that the tier ladder is the mechanism worth modelling. My score-ranked method missed them.
+
+**Going forward:** every proposed pool states each prop's class (FIXED / TIERED) and its lane, since EV validation differs by both.
+
+**Nothing was deployed, patched, or modified.**
+
+---
