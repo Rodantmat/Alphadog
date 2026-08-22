@@ -72,13 +72,13 @@ Every consultation so far has been reactive — checking whether an existing fin
 
 
 |---|---|---|---|
-| Goblin | PrizePicks | 5-pick Power, 25% daily cap (max 12/day), tier-based pool | +79.9% (backtest), real per-leg multiplier table being actively sharpened — see MULTIPLIER_TABLES_MASTER.md |
-| Regular | PrizePicks | `pitcher_fantasy_score/less`, 6-pick, starting Flex | +1105.4% Power / +779.3% Flex |
-| Demon | PrizePicks | `hits_runs_rbis/less/Tier2`, 3-pick Flex, no cap | +80.0% Power / +657.9% Flex — thin sample, NOT fully trusted, actively deferred pending more real data |
-| Sleeper | — | `hits_runs_rbis/more`, 3-pick Power, no cap | +46.5% |
-| Underdog | — | `rbis/less` + `walks/less`, 6-pick Power, cap=1/day | +345.0% — largest real sample of any locked strategy |
+| Goblin | PrizePicks | `walks_allowed/more/Tier1`, 6-pick Flex, no cap, real per-leg pricing split by exact line value (0.5 vs 1.5, NOT a flat average) | Real backtest +74.4% (6-pick Flex); real per-composition variance found live (two real 6/6 observations, same 5:1 composition, came back 2.5x and 2.25x — see `MULTIPLIER_TABLES_MASTER.md` and the three-layer pricing tables below) |
+| Regular | PrizePicks | `pitcher_fantasy_score/less`, 6-pick, starting Flex | +1105.4% Power / +779.3% Flex (narrow window) / +725% (full record) — see the unreconciled-figure note below, still not fully closed |
+| Demon | PrizePicks | Combined 5-prop pool (`hits_runs_rbis`, `earned_runs`, `runs`, `hits_allowed`, `singles`, all `/more/Tier1`), ranked by real hit rate, 2-pick Power, 10% cap | Real backtest +188.0% at 10% cap (chosen conservatively over a higher-ROI no-cap option for a first live rollout of a brand-new pool) |
+| Sleeper | — | `hits/more`, 6-pick Flex, fixed cap=3/day, real per-leg pricing from live moneyline (never a flat average) | Real backtest +24.3% at cap=3 (vs +22.4% uncapped) — genuinely thinner margin than the other four tracks, 11 of 19 real active days lost |
+| Underdog | — | `hits_allowed/more`, 6-pick Flex, no cap, real user-confirmed tiers (6/6=8.5x, 5/6=1.05x, 4/6=0.15x — NOT the generic 0.6865-discount-of-published-table formula, which was found wrong for this specific prop) | Real backtest +453.4% — 16 of 17 real active days positive |
 
-**Every one of these five rows is a real, live, current starting point for you to try to beat, refine, or replace — not a fact to protect.**
+**Every one of these five rows is a real, live, current starting point for you to try to beat, refine, or replace — not a fact to protect.** All five were replaced on 2026-08-22 from their prior configs (documented in `MULTIPLIER_TABLES_MASTER.md` history) — do not reference the old locked configs as current.
 
 ---
 
