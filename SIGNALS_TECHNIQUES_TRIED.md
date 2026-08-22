@@ -45,7 +45,13 @@
 
 ---
 
-## REQUIRED TESTING STANDARDS (apply to every new hypothesis)
+## NEW REAL FINDINGS — 2026-08-22 coworker session (independently verified by me where noted)
+
+- **Rounding-mode bug — VERIFIED REAL by direct testing.** Postgres `round()` on a `double precision` column uses banker's/round-half-to-even (0.5→0, 2.5→2); the live deployed system's JavaScript `Math.round()` uses round-half-up (0.5→1, 2.5→3). I tested this myself directly and confirmed it. `backtest.demon_full_history_dedup`'s `tier` column was `double precision`, meaning it silently used the wrong rounding convention on every X.5-distance leg — 940 of 6,488 rows (14.5%) were affected. **Rebuilt as `backtest.demon_full_history_dedup_v2` using `numeric` rounding (matches live `Math.round()`) — use this table going forward, not the original.** Note: my rebuild produced 3,351 rows vs. the coworker's own reconciled 3,155 — a small, unresolved discrepancy worth a future session checking, not yet fully explained.
+- **Demon "Pool I"**: `pitcher_strikeouts` + `earned_runs`, both `/less`, tiers 1+2 combined — beats the single-prop deployed pool on every axis once corrected for the rounding bug: 13-14 real supporting days (vs. the deployed pool's 4 ex-08-11), LOO band +384.3% to +404.5%. **Real, credible, worth strong consideration for promotion — needs your explicit decision, not yet deployed.**
+- **Underdog reconfirmed negative** by a second, independent research pass (35 configs swept, none positive, locked config worse than -34%) — converges with the flat-vs-compounding discount bug independently verified the session before. Two separate lines of evidence now agree this track is broken as deployed.
+- **Sleeper cap=1 refinement**: nearly doubles the deployed pool's ROI (+198.8% at cap=3 → +382.7% at cap=1, real 27/27 real days) — real, credible, worth considering.
+- **Hard rule, added after a real gap found**: any Goblin analysis MUST use the granular per-(prop,side,tier) `GOBLIN_LEG_MULT_TABLE` (see `MULTIPLIER_TABLES_MASTER.md`), never a single flat per-leg ratio. A 2026-08-22 research pass used a flat "0.620" ratio for its entire Goblin analysis, directly contradicting this document's own core lesson (multipliers are never flat) — that specific finding should be re-run with the granular table before being trusted.
 
 ### 1. Depth of simulation
 Every real finding that held up in this session came from testing **at real scale, not a handful of examples**. Concrete real precedents to match or exceed:
