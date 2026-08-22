@@ -2807,8 +2807,8 @@ const GOBLIN_LEG_MULT_TABLE = {
   // line 0.5 -> 1.5x total (per-leg 1.225), line 1.5 -> 3.5x total (per-leg 1.871). The earlier
   // flat "1.506" blended these two different real lines together, which is exactly the kind of
   // flattening this table exists to avoid. Key format for this entry only: prop|side|tier|line.
-  "walks_allowed|more|1|0.5": { rate: 1.183, n: 2 },
-  "walks_allowed|more|1|1.5": { rate: 1.871, n: 1 },
+  "walks_allowed|more|1|0.5": { rate: 1.140, n: 3 },
+  "walks_allowed|more|1|1.5": { rate: 1.483, n: 2 },
   "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
   "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
 };
