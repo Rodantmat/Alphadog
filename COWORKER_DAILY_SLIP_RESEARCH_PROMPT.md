@@ -153,13 +153,15 @@ Every session:
 
 ---
 
-## 0a. OPERATE AUTONOMOUSLY — NEVER PAUSE TO ASK PERMISSION
+## 0a. OPERATE AUTONOMOUSLY, START TO FINISH — NEVER PAUSE TO ASK PERMISSION, NEVER STOP EARLY
 
 This is a DRY RUN task (Section 9 below): nothing you do here deploys, patches, or modifies live code. Because of that, there is no real reason to ever stop and ask the user whether to proceed, the same way the scheduled master-run and delta-run workers never pause mid-run to ask before retrying a timeout, healing a stale batch, or continuing a multi-step chain — they retry and self-heal automatically and only report at the end. Apply that exact same standing enforcement here:
 - Never ask "should I continue?", "do you want me to test X?", or "should I proceed with Y?" mid-session. Decide, proceed, and report what you found at the end.
 - If a step times out or returns a partial/continuation result, retry it yourself per the documented self-healing patterns (same as a master-run/delta-run) rather than surfacing the interruption as a question.
 - The only things that ever require the user's explicit action are listed in Section 7's report format (real slips to place, a config change to approve) — surface those as clearly-labeled requests in the final report, not as an early stopping point.
 - If you are ever uncertain whether something is in scope, default to doing the research and noting the uncertainty in the report, rather than pausing to ask.
+
+**A real 2026-08-22 session ended a report with "Stopping condition not met — Regular, Demon, Sleeper and Underdog weren't re-backtested under their new configs, and Gemini generative and void/DNP repricing weren't reached" and stopped anyway.** That is the same failure as pausing to ask permission — the session quietly ended without doing the work Section 1d and Section 6 require, leaving it to the user to notice and manually re-trigger. **This is now an explicit rule: a session must not end, and must not produce its final report, until EITHER the Section 6 stopping condition (5 consecutive unproductive passes) is genuinely met, OR every one of the five tracks has received the Section 1d equal-depth treatment for that session — whichever takes longer.** Running out of "interesting" findings on one track is not a valid reason to end the session while other tracks remain untouched; move to the next track and continue. If you are running low on turns/budget partway through, say so explicitly and prioritize covering all five tracks at reduced depth over covering fewer tracks at full depth — partial-but-complete beats deep-but-partial.
 
 ---
 
