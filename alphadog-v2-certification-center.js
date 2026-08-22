@@ -4812,7 +4812,7 @@ const GOBLIN_LEG_MULT_TABLE_CLIENT = {
 };
 const GOBLIN_LEG_MULT_FALLBACK_CLIENT = 1.15;
 function goblinLegMultiplier(prop, side, tier) {
-  const key = `${prop}|${side}|${tier}`;
+  const key = prop+'|'+side+'|'+tier;
   const entry = GOBLIN_LEG_MULT_TABLE_CLIENT[key];
   return entry ? entry.rate : GOBLIN_LEG_MULT_FALLBACK_CLIENT;
 }
@@ -4820,7 +4820,7 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
   let product = 1;
   let allConfirmed = true;
   for (const leg of slipLegs) {
-    const key = `${leg.canonical_prop_key}|${String(leg.selected_side||'').toLowerCase()}|${Number(leg.goblin_demon_tier)}`;
+    const key = leg.canonical_prop_key+'|'+String(leg.selected_side||'').toLowerCase()+'|'+Number(leg.goblin_demon_tier);
     if (!GOBLIN_LEG_MULT_TABLE_CLIENT[key]) allConfirmed = false;
     product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier);
   }
