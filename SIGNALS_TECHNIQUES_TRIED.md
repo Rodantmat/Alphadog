@@ -46,6 +46,123 @@
 
 **Every session must move at least two ❌ cells to ✅ or ⚠️→✅, with a real cited result.** A session that adds new findings elsewhere but leaves this matrix unchanged has not met the exhaustiveness bar. If a cell is genuinely blocked, say so explicitly in that cell rather than leaving it silently blank.
 
+### 🛑 HEADLINE FINDING 2026-08-22 (session 8) — `score_0_100` has NO within-pool predictive power. Every ranked-greedy ROI in this log is overstated.
+
+Rule B0 already says *do not rank by the platform's internal score*. This is the measurement of how much that matters, and it is larger than anyone assumed. Leg-level Pearson correlation between `score_0_100` and `outcome_hit`, PrizePicks graded legs, four corrupted days excluded, deduped by (date, player, prop, side, line, game):
+
+| Scope | n | corr(`score_0_100`, `outcome_hit`) |
+|---|---|---|
+| Whole PrizePicks board | 48,219 | **+0.414** |
+| Demon lane only | 9,120 | +0.338 |
+| Goblin lane only | 34,768 | +0.126 |
+| `goblin` / `total_bases` only | 6,291 | +0.129 |
+| `goblin` / `doubles` / `less` / 0.5 only | 2,094 | **+0.001** |
+| `standard` / `pitcher_fantasy_score` / `less` (the locked PP Regular pool) | 348 | **−0.005** |
+
+**The score's apparent power is almost entirely lane separation.** It sorts goblin from demon — a fact already carried explicitly by `is_goblin`/`is_demon` — and once the pool is a single (prop, side, line) bucket, which is the situation *every one of the five locked strategies is in*, the correlation is zero. Session 1's "+15.0pp top-30 lift, PrizePicks scoring is healthy" is **not refuted but is re-scoped**: it was measured across the whole board, where the score is re-discovering the lane.
+
+**Two direct consequences, both standing rules from now on:**
+
+- **The pool is the strategy. Ranking within it adds nothing measurable.** A track's EV should be quoted as its pool's binomial expectation, with the ranked-greedy figure reported alongside as an *observation*, not as the estimate. Worked example, PP Regular: pool hit rate 79.7%, so a 6-pick under independence expects `0.797⁶ × 37.5 − 1 = +861%`; ranked-greedy construction observes +993.8%. The +133pp gap is sampling noise on 48 slips, not selection skill.
+- **Corollary: cap sweeps on a homogeneous pool are measuring noise.** Any cap ranking that moves ROI by less than the pool's own binomial standard error should be reported as inert rather than as a preference.
+
+### 🛑 SECOND FINDING (session 8) — ranked-greedy Goblin results are TIE-BREAK SENSITIVE, by roughly ±7pp
+
+`score_0_100` takes only **37 distinct values** across the 777-leg `earned_runs/more/0.5` + `walks_allowed/more/0.5` goblin pool, and **539 of 777 legs (69.4%) sit inside a same-day tie group.** Ranked-greedy construction is therefore dominated by how ties are broken. The identical config (6-pick, max-1-per-game) returned **+25.9%, +19.3% and +12.5%** across three runs differing only in tie-break order.
+
+**Exhaustive enumeration removes the dependency and is the honest number.** All combinations over the max-1-per-game pool, granular `GOBLIN_LEG_MULT_TABLE` per leg (`walks_allowed/more` 1.140 real; `earned_runs/more` **1.15 fallback, no real placed-slip observation**):
+
+| Size | Combinations | Days | Full hits | ROI | LODO band | Negative folds |
+|---|---|---|---|---|---|---|
+| 2 | 1,304 | 24 | 1,029 | **+3.4%** | +1.7% … +6.0% | 0 / 24 |
+| 3 | 4,358 | 24 | 3,044 | **+4.9%** | +1.7% … +8.4% | 0 / 24 |
+| 4 | 10,325 | 23 | 6,311 | **+5.1%** | +0.2% … +9.2% | 0 / 23 |
+| 6 | 24,611 | 22 | 11,023 | **+1.1%** | **−8.2% … +7.3%** | **4 / 22** |
+
+**This retracts Session 6's "+17.8%, the best-supported Goblin configuration ever found."** The pool is real but marginal: +4.9% at 3-pick, break-even per-leg **1.127** against an assumed **1.145** — a 1.6% margin sitting entirely inside the uncertainty of a fallback multiplier that has zero real observations. Within-day score quartiles on this pool are non-monotonic (92.4 / 83.1 / 90.7 / 88.5%), consistent with the headline finding above. **Treat as a data request, not a config change** — unchanged in substance from Session 6's own verdict, but at a quarter of the claimed size.
+
+### ✅ RESOLVED (session 8) — neither outcome writer is complete. Use the UNION, not either alone.
+
+Sessions 5, 6 and 7 all restricted to `outcome_id LIKE 'outcome_final|%'`. That writer's rows only join to the authoritative board from **2026-08-05 onward** (5–128 legs/day before that, vs 2,000–4,000 after), which silently costs **11 days** of history. But the `grade_*` writer is not a drop-in replacement either: it carries **zero rows** for `pitcher_fantasy_score`, i.e. the entire PP Regular locked pool.
+
+| Method | days with usable lane | carries PP Regular pool? |
+|---|---|---|
+| `outcome_final` only (sessions 5–7) | 13 clean | ✅ |
+| `grade_*` only | 25 clean | ❌ **misses the locked pool entirely** |
+| **UNION, deduped by (date, player, prop, side, line, game), lane from `final_board_history`** | **25 clean** | ✅ |
+
+Under the union, only **367 of 48,219 legs (0.8%)** fail to resolve a lane. Resulting split, four corrupted days excluded — the cleanest yet recorded, and the first where demon sits where the mechanism requires:
+
+| Lane | legs | hit % | days |
+|---|---|---|---|
+| goblin | 34,769 | **73.4%** | 25 |
+| standard | 3,965 | **51.3%** | 24 |
+| demon | 9,118 | **19.3%** | 24 |
+
+Session 5–7's demon figure of 34.6% **included** the four corrupted days; 19.3% is the clean number. **Standing rule: build the leg set from both writers, dedupe, and take the lane from `final_board_history`.**
+
+### ✅ B0 BUCKET TABLE REBUILT ON THE UNION (session 8) — still zero standard-lane buckets
+
+n≥30 and ≥80%, 25 clean days: **13 qualifying buckets, all goblin lane, zero standard, zero demon.** Best standard-lane bucket in the whole record at n≥15 is `hits/more/0.5` at **71.2% (n=59)** — nowhere near the bar. Session 6's finding survives a near-doubling of the window.
+
+| Bucket (all **goblin** lane) | class | n | hit % | days |
+|---|---|---|---|---|
+| `walks_allowed/more/0.5` | TIERED | 311 | 88.1% | 24 |
+| `stolen_bases/less/0.5` | FIXED | 398 | 87.4% | 10 |
+| `hits_runs_rbis/less/4.5` | TIERED | 399 | 84.7% | 13 |
+| `hits_allowed/more/2.5` | TIERED | 202 | 84.7% | 25 |
+| `doubles/less/0.5` | FIXED | 2,094 | 84.6% | 13 |
+| `home_runs/less/0.5` | FIXED | 896 | 84.0% | 13 |
+| `total_bases/less/3.5` | TIERED | 1,415 | 84.0% | 13 |
+| `pitcher_outs/more/11.5` | TIERED | 98 | 83.7% | 21 |
+| `singles/less/1.5` | FIXED | 561 | 83.6% | 13 |
+| `runs/less/1.5` | FIXED | 173 | 83.2% | 13 |
+| `earned_runs/more/0.5` | TIERED | 338 | 83.1% | 25 |
+| `hits_runs_rbis/less/3.5` | TIERED | 1,736 | 81.7% | 13 |
+| `pitcher_strikeouts/less/6.5` | TIERED | 131 | 80.9% | 13 |
+
+Note the day-coverage split: the **pitcher-supply `more` buckets carry 21–25 days**, every hitter `less` bucket only 13. That asymmetry, not hit rate, is why the pitcher-supply pools keep surfacing as the only testable Goblin candidates.
+
+### ✅ RESOLVED (session 8) — the live `goblin_demon_tier` column, validated for the first time, and the first live-tier backtest
+
+Carried as an open item since Session 1. `goblin_demon_tier` is populated on PrizePicks rows for exactly **two dates: 2026-08-21 (graded) and 2026-08-22 (today, ungraded)** — 4,766 rows, zero NULL anchors.
+
+**Formula validation, 4,762 of 4,766 = 99.92% exact** against `round(abs(line_value − goblin_demon_anchor_line))` — *but only under `numeric` (half-up) rounding*. Under Postgres `double precision` (banker's) rounding only **2,464 of 4,766 = 51.7%** match. This independently re-confirms the rounding-mode bug at a far higher rate than the 14.5% found in the demon table, because switch-point anchors land on `.5` boundaries constantly. `floor()` matches 31.1%, `ceil()` matches the same 4,762.
+
+**First live-tier backtest (2026-08-21, single day, 2,644 graded tier-bearing legs).** The goblin ladder is confirmed monotone on live data for the first time:
+
+| Lane | T1 | T2 | T3 | T4 | T6 | T7 | T8 | T9 |
+|---|---|---|---|---|---|---|---|---|
+| **goblin** | 69.0% (n=1,118) | 76.6% (n=629) | **83.5% (n=375)** | 75.0% (n=8) | 33.3% (n=6) | 22.2% (n=9) | 38.5% (n=13) | 16.7% (n=6) |
+| **demon** | 51.6% (n=62) | 7.1% (n=14) | 11.1% (n=18) | 15.8% (n=38) | 13.0% (n=23) | 12.5% (n=16) | 0.0% (n=10) | 0.0% (n=8) |
+
+Standard (tier 0): 61.1% (n=216). Tiers 1–3 behave exactly as `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` §3 predicts. **Tiers 4+ are degenerate and should be excluded from any tier-based selection**: 34 of the 42 high-tier goblin legs are `pitcher_fantasy_score`, confirming Session 2's diagnosis (tier is a raw line-unit distance, not comparable across props) on live-tier data rather than on a reconstruction. Demon T1 at 51.6% is anomalously high for a hard-side leg and is worth watching as more tier days accumulate.
+
+### ❌ RETRACTED (session 8) — Underdog `pitcher_fantasy_score` was NOT discontinued. It was RENAMED.
+
+Session 5 reported the only positive Underdog pool ever found as *"BLOCKED for live use: the prop stopped being graded on Underdog after 2026-08-09 (0 rows for 11 straight days)"* and reported it to the user as a live defect. **That is wrong.** The prop key changed:
+
+| `canonical_prop_key` | side | n | days | window | hit % | avg line |
+|---|---|---|---|---|---|---|
+| `pitcher_fantasy_score` | less | 147 | 13 | 07-27 → **08-09** | **79.6%** | 31.90 |
+| `pitcher_fantasy_score_ud` | less | 111 | 12 | **08-10** → 08-21 | **60.4%** | 32.09 |
+
+Identical average line, unbroken date coverage across the boundary, no gap. **No live defect exists; retract that report to the user.** The pool is still unplayable, but for a different and honest reason: the hit rate decayed from 79.6% to **60.4%**, against a 6-pick Underdog break-even of ~84.9% under the geometric model. B7 applies — a filter (the literal prop key) removed exactly the rows that would have changed the answer.
+
+**Related, and a real mechanism for the documented ~88% Underdog edge decay:** Underdog's two best buckets ever recorded, `home_runs/less/0.5` (**90.5%**, n=455) and `stolen_bases/less/0.5` (**90.3%**, n=259), exist on **four days only, 2026-07-25 → 07-28**, and have zero rows since. Only the `more` side survives, at 13.3% and 10.9%. **Underdog withdrew the easy side of its rare-event props** — which is precisely where the +EV was. This is a market-structure explanation, not a selection-model one, and no re-ranking can recover it.
+
+### ✅ NEW CAPABILITY (session 8) — the PrizePicks pitcher fantasy-score formula, reconstructed exactly
+
+Derived from real data, not assumed:
+
+```
+pitcher_fantasy_score = outs_recorded + 3×strikeouts − 3×earned_runs − hits_allowed − walks_allowed
+```
+
+Validated against every overlapping row of `stats_pitcher.game_logs` and graded `actual_stat_value`: **429 of 429 exact, MAE 0.000, max error 0.** Wins contribute **zero** (two rows identical on every component except `wins` returned identical scores).
+
+**Why this matters far beyond the hypothesis that produced it.** `score.prop_outcome_history` only reaches back to 2026-07-24, so any prior-form window built from graded outcomes averaged **1.29 prior starts per leg** — useless. `stats_pitcher.game_logs` spans **2026-03-25 → 08-21, 15,973 rows, 759 pitchers**, so the same window now averages **9.27 prior starts at 99.7% coverage**. Every pitcher-prop prior-form, rolling-percentile, or regression-to-mean signal is now testable on a full season instead of three weeks. Nothing in this repo previously used it.
+
 ### ✅ RESOLVED 2026-08-22 (session 2) — the lineup-join blocker
 
 **It was never a join failure.** `context.history_game_lineup` joins to the graded board on **43–85% of legs (mean ~70%)**, verified per-day across 14 days. The "~2-5%" figure reported across three sessions was an artifact of a `WHERE batting_order_code IS NOT NULL` filter applied inside the join CTE.
