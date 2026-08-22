@@ -2827,12 +2827,20 @@ function goblinLegMultiplier(prop, side, tier, line) {
 // Computes a slip's real estimated multiplier as the actual PRODUCT of its specific legs' real
 // per-leg rates - not one flat number for the whole slip. A slip of 5 singles legs and a slip of
 // 3 singles + 2 hits_runs_rbis/less legs will now get genuinely different, sharper estimates.
+// UPDATED 2026-08-22: prefers leg.real_layer_rate (the three-layer, real-observation-derived rate
+// attached by the query in autoSelectHighHitSlipLegs) over the static in-code table whenever
+// present - this is what makes pricing sharpen automatically as more real slips get saved,
+// without needing another manual table edit each time.
 function goblinSlipEstimatedMultiplier(slipLegs) {
   let product = 1;
   let allConfirmed = true;
   for (const leg of slipLegs) {
     const tier = Number(leg.goblin_demon_tier);
     const side = String(leg.selected_side||'').toLowerCase();
+    if (Number.isFinite(leg.real_layer_rate)) {
+      product *= leg.real_layer_rate;
+      continue;
+    }
     const lineKey = `${leg.canonical_prop_key}|${side}|${tier}|${leg.line_value}`;
     const tierKey = `${leg.canonical_prop_key}|${side}|${tier}`;
     if (!GOBLIN_LEG_MULT_TABLE[lineKey] && !GOBLIN_LEG_MULT_TABLE[tierKey]) allConfirmed = false;
