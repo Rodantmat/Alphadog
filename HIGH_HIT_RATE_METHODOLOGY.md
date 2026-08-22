@@ -67,7 +67,11 @@ The fixed/tiered split above was built from an earlier, smaller sample. A later 
 >
 > **The worked example below is an artifact of a data defect, and the "+1298.7% standard-lane" figure must not be used.**
 >
-> `score.prop_outcome_history` has two writers. The `outcome_final|…` writer leaves `is_goblin`/`is_demon` **unpopulated at 0/0 on 99.0% of its rows** — that is a default, not a "standard lane" tag. The `grade_*` writer carries the real flags. Cross-tabulated over the 36,465 keys present in both writers: **28,505 (78.2%) read "neither" but are goblin, 7,131 (19.6%) read "neither" but are demon.** Only 782 (2.1%) are genuinely neither.
+> `score.prop_outcome_history` has two writers. The `outcome_final|…` writer leaves `is_goblin`/`is_demon` **unpopulated at 0/0 on 99.0% of its rows** — that is a default, not a "standard lane" tag. The `grade_*` writer carries the real flags, and agrees with the board on all 47,937 rows where both exist, with zero disagreements.
+>
+> **Measured against the authoritative board, unconditioned: of the 41,157 PrizePicks graded `outcome_final` rows reading 0/0, 40,901 join to `final_board_history` and 37,658 of those — 92.1% — carry a goblin or demon label there.** Only 3,243 (7.9%) are genuinely standard.
+>
+> *(Figure corrected 2026-08-21 session 7. An earlier version of this notice said 97.9%. That came from an inner join between the two writers, whose denominator is conditioned on "a `grade_*` row exists" — a condition correlated with being goblin/demon, and which dropped 4,590 `outcome_final`-only keys that are 48.3% goblin/demon rather than 97.5%. Same class of error as the `batting_order_code IS NOT NULL` filter in the lineup join. Also note: any measurement that does not restrict `source_key='prizepicks'` lands near 46%, because Sleeper and Underdog have no goblin/demon lane and their legs are legitimately 0/0. Full reconciliation in `SIGNALS_TECHNIQUES_TRIED.md`.)*
 >
 > So §3's `doubles/less/0.5` comparison is **not** the same leg priced two ways in two market lanes. It is **one set of legs duplicated across two lane labels and then priced with two different multipliers.** The tell is inside §3's own source table: standard 84.8% vs goblin 85.0%, standard 84.7% vs goblin 84.9%, standard 84.5% vs goblin 84.6% — near-identical pairs, because they are the same legs.
 >
