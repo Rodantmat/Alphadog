@@ -1088,3 +1088,140 @@ Both published tables re-verified live. **Both unchanged.**
 **Nothing was deployed, patched, or modified.**
 
 ---
+
+# ===== 2026-08-21 (Fri) — Session 3 ADDENDUM — manual on-demand run at 18:00 PT (2026-08-22 01:00 UTC) =====
+
+**Run type:** dry run, research only. Nothing deployed, patched or modified.
+**Trigger:** manual fire, 20 minutes after Session 2 closed.
+
+## A0. The trigger payload's premise was false — verified, not assumed
+
+The manual-fire payload stated: *"this is the first run since the 2026-08-21 session, so 2026-08-21 should now be the latest fully-graded day."* **Both claims are wrong**, and for exactly the reason documented in Session 2 §0 — the UTC date (2026-08-22) was read as the Pacific date.
+
+| Check | Result |
+|---|---|
+| Wall clock at run time | `2026-08-22T01:00:06Z` = **2026-08-21 18:00:06 PDT** |
+| Time since Session 2 closed | **20 minutes** — not a day |
+| `max(official_date) WHERE outcome_hit IS NOT NULL` | **2026-08-20** — unchanged |
+| Graded rows for 2026-08-21 | **0** |
+| Total graded rows | **137,888** — byte-identical to Session 2 |
+| New rows in `score.slip_entries` with a real multiplier | **0** (still 19, same timestamps 2026-08-21T20:11) |
+
+**There is no new graded data.** 08-21's games were still in progress. Grading is due ~2026-08-22T05:23Z (~22:23 PDT), still ~4h 20m away. Re-running the five-track backtests would have reproduced Session 2's numbers exactly, so they were not re-run.
+
+**Open item (1) cannot be advanced today.** The payload asked to confirm the Demon pool choice "on fresh data"; there is none. The live-code confirmation from Session 2 §2 stands unchanged (`DEMON_HIGH_HIT_TIER_POOL = [{prop:"pitcher_strikeouts", side:"less", tier:2}]`).
+
+## A1. But the payload was right about one thing, and it produced a real correction
+
+The payload correctly noted that 2026-08-21 is the first day with a populated live `goblin_demon_tier`. **Tier *values* can be validated without outcomes**, and doing so overturns Session 2 §2's answer to open item (2).
+
+### The live column vs the documented formula
+
+`score.final_board_history`, 2026-08-21, 4,379 rows with both `goblin_demon_tier` and `goblin_demon_anchor_line` populated:
+
+| Test | Matches |
+|---|---|
+| `tier = round(abs(line − anchor))` evaluated in **`double precision`** (Postgres banker's rounding, half-to-even) | 3,038 / 4,379 — **69.4%** |
+| `tier = round(abs(line − anchor))` evaluated in **`numeric`** (half-away-from-zero = JavaScript `Math.round`) | **4,375 / 4,379 — 99.91%** |
+| Rows whose distance is a half-integer (where the two modes diverge) | 1,879 (42.9%) |
+
+**The live system is correct.** The apparent 30.5% "off-by-one" was a rounding artifact in my own SQL. The live tier column faithfully implements `Math.round(abs(line − anchor))`.
+
+### CORRECTION to Session 2 §2 — the trusted table does *not* match the live formula
+
+Session 2 reported *"`demon_full_history` matches the live formula 6,488/6,488, zero off-by-one."* That check used `round(double precision)` — the same banker's-rounding bug. Re-run both ways:
+
+| `backtest.demon_full_history` (tier IS NOT NULL, n=6,488) | Matches |
+|---|---|
+| vs `round(double)` — banker's | **6,488 / 6,488 (100%)** |
+| vs `round(numeric)` — half-up, i.e. **the live convention** | **5,548 / 6,488 (85.5%)** |
+| Half-integer distances | 1,838 (28.3%) |
+
+**The backtest reconstruction and the live system use opposite rounding conventions.** Session 2's check confirmed the backtest table matched *itself*, not the live system. The disagreement is perfectly systematic — it occurs at, and only at, **even+0.5** distances:
+
+| Distance | n | Backtest tier | **Live tier** |
+|---|---|---|---|
+| 0.50 | 253 | 0 | **1** |
+| 1.50 | 275 | 2 | 2 (agree) |
+| 2.50 | 273 | 2 | **3** |
+| 3.50 | 523 | 4 | 4 (agree) |
+| 4.50 | 391 | 4 | **5** |
+| 6.50 | 23 | 6 | **7** |
+
+**940 of 6,488 rows (14.5%) carry a tier the live system would label differently.** Two consequences for the table the standing prompt designates TRUSTED:
+
+1. **`demon_full_history_dedup` is missing 253 legitimate live-tier-1 legs.** It dropped all 844 tier-0 rows as "structurally impossible for a demon" — correct reasoning, but 253 of them sit at distance 0.5 and are **live tier 1**, not tier 0.
+2. **Any tier-2 pool built on it is contaminated with 273 live-tier-3 legs.**
+
+Both affect the deployed pool and Session 2's Pool I recommendation.
+
+**Revised trust-list entry:** `backtest.demon_full_history_dedup` remains the best available Demon source, but its `tier` column is **not** the live tier. Recompute as `round(abs(line − anchor)::numeric)` from `backtest.demon_full_history` — note the explicit `::numeric` cast, without which Postgres silently applies banker's rounding.
+
+## A2. Pool I re-validated under the corrected live-tier definition — it survives and gets more robust
+
+Re-run with live tiers, exhaustive 3-combination enumeration, same-tier outcome collisions excluded (reconciles to dedup exactly: 3,170 reconstructed − 15 conflicting keys = 3,155 = dedup's row count ✅).
+
+| Pool | Scope | Days supporting | Combos | Full-hit % | ROI Power | ROI Flex | Day-wtd ROI |
+|---|---|---|---|---|---|---|---|
+| **B. DEPLOYED** `pitcher_strikeouts/less` live-T2 | all days | 5 | 1,946 | 55.2% | +728.6% | +783.2% | +441.5% |
+| **B. — ex 08-11** | | **4** | 406 | 26.1% | **+291.6%** | +363.7% | +340.9% |
+| **I.** `pitcher_strikeouts`+`earned_runs` /less live-T1+T2 | all days | **14** | 48,610 | 33.2% | +397.3% | +464.7% | +144.7% |
+| **I. — ex 08-11** | | **13** | 8,899 | 32.3% | **+384.3%** | +449.1% | +125.0% |
+| J. + `hits_allowed`+`walks_allowed` live-T1+T2 | ex 08-11 | 13 | 14,492 | 34.5% | +416.9% | +481.5% | +80.3% |
+
+**Full leave-one-day-out for Pool I across all 14 days: ROI never leaves +384.3% to +404.5%** — a tighter band than Session 2's +470.3%–+507.1%, on 4 more supporting days.
+
+| Date | Legs | Hits | Combos | Day ROI | LOO ROI Power |
+|---|---|---|---|---|---|
+| 08-05 | 32 | 22 | 4,960 | +365.7% | +400.9% |
+| 08-06 | 18 | 17 | 816 | +1150.0% | +384.5% |
+| 08-07 | 23 | 14 | 1,771 | +208.3% | +404.5% |
+| 08-08 | 4 | 2 | 4 | −100.0% | +397.4% |
+| 08-09 | 6 | 3 | 20 | −25.0% | +397.5% |
+| 08-10 | 4 | 2 | 4 | −100.0% | +397.4% |
+| 08-11 | 63 | 44 | 39,711 | +400.3% | **+384.3%** |
+| 08-12 | 20 | 13 | 1,140 | +276.3% | +400.2% |
+| 08-14 | 5 | 0 | 10 | −100.0% | +397.4% |
+| 08-15 | 6 | 3 | 20 | −25.0% | +397.5% |
+| 08-16 | 5 | 1 | 10 | −100.0% | +397.4% |
+| 08-17 | 4 | 3 | 4 | +275.0% | +397.3% |
+| 08-18 | 6 | 2 | 20 | −100.0% | +397.5% |
+| 08-19 | 10 | 2 | 120 | −100.0% | +398.6% |
+| **TOTAL** | **206** | **128** | **48,610** | **+397.3%** | |
+
+**What changed from Session 2:** Pool I's ROI is **lower** than reported yesterday (+397.3% vs +478.1%; ex-08-11 +384.3% vs +507.1%) — yesterday's figures were inflated by the tier misassignment. Its **day support is higher** (14 vs 10 all-days; 13 vs 9 ex-08-11), because the 253 distance-0.5 legs are restored. **The recommendation stands and is better supported than before**: ex-08-11 it beats the deployed pool +384.3% vs +291.6% on **13 supporting days against 4**.
+
+Pool J (adding `hits_allowed`+`walks_allowed`) gives a marginally higher combo-weighted ex-08-11 ROI but a much worse day-weighted figure (+80.3% vs +125.0%). **Not adopted** — no clear improvement.
+
+## A3. Forward-looking pool depth on tonight's live board (possible without grading)
+
+`score.final_board_history`, 2026-08-21, `is_demon=1`, side `less`, live tier:
+
+| Prop | Live tier | Distinct legs |
+|---|---|---|
+| `earned_runs` | 1 | 4 |
+| `earned_runs` | 2 | 1 |
+| `pitcher_strikeouts` | 1 | 2 |
+| `pitcher_strikeouts` | 2 | 1 |
+
+- **Deployed pool** (`pitcher_strikeouts/less/T2`): **1 leg — cannot build a 3-pick slip tonight.**
+- **Pool I** (both props, tiers 1+2): **8 legs → 56 buildable 3-picks.**
+
+A live, real-time illustration of the same robustness gap the 26-day backtest shows.
+
+## A4. Summary
+
+**New this run:**
+1. **The live `goblin_demon_tier` column is correct** — 4,375/4,379 match `Math.round(abs(line − anchor))`.
+2. **Session 2's answer to open item (2) is CORRECTED**: the backtest tier reconstruction uses Postgres banker's rounding, the live system uses JS half-up. They disagree on 14.5% of rows, systematically at even+0.5 distances. Session 2's "6,488/6,488 exact match" was an artifact of testing with the same wrong rounding mode.
+3. **`demon_full_history_dedup` omits 253 legitimate live-tier-1 legs and contaminates tier-2 with 273 live-tier-3 legs.** New trust-list caveat.
+4. **Pool I survives the correction**: ROI down to +397.3% (ex-08-11 +384.3%), day support up to 14 (ex-08-11 13), LOO band +384.3%–+404.5%.
+5. **Tonight's live board**: deployed pool unplayable (1 leg); Pool I has 8.
+
+**Not advanced (no data):** open item (1) on fresh outcomes; all five-track backtests; multiplier table (zero new placed slips).
+
+**Re-run worth doing after ~22:23 PDT tonight**, when 08-21 grades out — that is the first day where the *live* tier column and graded outcomes coexist, enabling a tier backtest with no reconstruction at all.
+
+**Nothing was deployed, patched, or modified.**
+
+---
