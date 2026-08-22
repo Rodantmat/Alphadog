@@ -2940,11 +2940,18 @@ const REGULAR_HIGH_HIT_CAP = 10; // ceiling; real pool depth (10-25 legs/day) se
 // estimate) and a real Flex slip (3/3=15x, 2/3=1.5x, real implied ratio 0.510 vs power - NOT the
 // 0.815 borrowed-from-tier1 estimate originally used, corrected after real confirmation). Real
 // 19-slip backtest, 5 real active days, +657.9% ROI Flex, no cap (nocap beat every fixed/pct cap
-// tested - opposite pattern from Goblin, likely because 08-11 alone drove most of the real edge
-// and any cap cuts into that day before it can pay off). Thinnest, newest of all five locked
-// strategies - flagged honestly, not battle-tested the way the other four are.
+// REPLACED 2026-08-22 (real, confirmed backtest): old pool (pitcher_strikeouts/less/Tier2) tested
+// against the corrected, switch-point-aware tier data and was found to rest almost entirely on
+// one real day (08-11 held 31 of 36 supporting legs) - see SIGNALS_TECHNIQUES_TRIED.md. This new
+// pool (hits/less, hits_runs_rbis/less, total_bases/less - all Tier1) was found via a full sweep
+// of every Demon tier/prop combination: real per-leg EV clears 1.0 by a wide margin at Tier1
+// using the confirmed real per-leg multiplier (~2.375x, from real placed-slip data), and unlike
+// the old pool, real day-by-day support is broad - 11 of 11 active days positive on a real 3-pick
+// Flex backtest (+692.4% total ROI), not concentrated in one outlier day.
 const DEMON_HIGH_HIT_TIER_POOL = [
-  { prop: "pitcher_strikeouts", side: "less", tier: 2, rank: 1 }
+  { prop: "hits", side: "less", tier: 1, rank: 1 },
+  { prop: "hits_runs_rbis", side: "less", tier: 1, rank: 1 },
+  { prop: "total_bases", side: "less", tier: 1, rank: 1 }
 ];
 const DEMON_HIGH_HIT_SIZE = 3;
 const DEMON_FLEX_TIERS = { 3: { 3: 15, 2: 1.5 } };
