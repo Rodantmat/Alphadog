@@ -5053,6 +5053,10 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
   for (const leg of slipLegs) {
     const tier = Number(leg.goblin_demon_tier);
     const side = String(leg.selected_side||'').toLowerCase();
+    if (Number.isFinite(leg.real_layer_rate)) {
+      product *= leg.real_layer_rate;
+      continue;
+    }
     const lineKey = leg.canonical_prop_key+'|'+side+'|'+tier+'|'+leg.line_value;
     const tierKey = leg.canonical_prop_key+'|'+side+'|'+tier;
     if (!GOBLIN_LEG_MULT_TABLE_CLIENT[lineKey] && !GOBLIN_LEG_MULT_TABLE_CLIENT[tierKey]) allConfirmed = false;
