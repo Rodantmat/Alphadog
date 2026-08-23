@@ -1151,5 +1151,55 @@ session doesn't have to rediscover that they're still open:
 
 ---
 
+---
+
+## PART 10 — SCOPE CORRECTION AND FRESHNESS CAVEAT (added after user redirect)
+
+Mid-sweep, the user redirected: stay focused on the original list of topics (multipliers,
+calibration, slip building, backtest, test data, goblin/demon parsing, hit rate, hit
+probability calibration, board snapshots, enrichment/baseline factor dissection, outcome
+engine) and explicitly flagged that many of the standalone `.md` docs at the repo root
+(`FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md`, `CORE_LOGIC_CALIBRATION_DOSSIER.md`,
+`QUALITY_OF_CONTACT_METRICS_EXPANSION.md`, `GOBLIN_DEMON_MECHANISM_EXPLAINED.md`, and by
+extension likely others) **were written by old chat sessions and may be outdated** — not to be
+treated as necessarily-current fact just because they exist and read as authoritative.
+
+**This directly changes how Parts 3, 4, and the two companion documents
+(`CALIBRATION_ENRICHMENT_AUDIT.md`, `FACTOR_REDESIGN_AND_QOC_FINDINGS.md`) should be weighted**:
+- Content sourced from **direct, live database queries run in THIS session** (real row counts,
+  real hit rates, real code read fresh from the repo via `github_get_file`) is the most
+  trustworthy tier — it reflects the system as it actually is right now.
+- Content sourced from the **coworker's `daily_slip_research_log.md`** is the second most
+  trustworthy tier — it's continuously updated (dated sessions, self-corrections preserved),
+  so it's much fresher than a static design doc, even though any single entry is a snapshot in
+  time.
+- Content sourced from **standalone design/dossier `.md` files** (the calibration/enrichment
+  redesign docs, the mechanism-explainer docs) is the least trustworthy tier for "what is true
+  right now" — these were confirmed this session to sometimes describe forward-looking plans
+  rather than current state (e.g. `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md` explicitly
+  says "for the eventual... rebuild"), and per the user's explicit warning, may simply be
+  stale artifacts of an earlier chat that were never updated as the system continued to change.
+  Anything sourced from this tier in this document family should be treated as "this is what
+  a prior session found and believed to be true as of its own writing," not as "this is
+  confirmed current."
+
+**Also explicitly out of scope, flagged and abandoned mid-sweep**: `ALPHADOG_SYSTEM_MAP.md`
+(worker orchestration/job_key multiplexing/cleanup-session content). This was not part of the
+original request; reading it and starting to draft a document from it was a real drift this
+session, caught and corrected by the user before a document was written. No content from that
+file appears anywhere in this document family, and none should be added under the current
+scope.
+
+**Practical implication for a future session**: if a fact from Part 3/4 of this log or from
+`CALIBRATION_ENRICHMENT_AUDIT.md`/`FACTOR_REDESIGN_AND_QOC_FINDINGS.md` conflicts with a fresh,
+direct database query, trust the fresh query — do not assume the documented fact is still
+accurate just because it's written down at length. The goblin/demon tier mechanism and
+multiplier facts in Parts 3 and 6 of this document are the exception: those were verified via
+direct live code reads and live database queries in THIS session specifically (not merely
+cited from an older doc), so they carry the higher trust tier despite living in the same file
+as some lower-tier, doc-sourced content elsewhere.
+
+---
+
 *End of log. This document should be extended, not replaced, as future sessions add findings —
 append new dated sections rather than editing history out of the record established above.*
