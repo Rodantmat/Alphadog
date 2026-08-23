@@ -2419,7 +2419,7 @@ async function autoSelectBestLegs(env, options) {
             ORDER BY line_value ASC
           ) AS goblin_tier_rank
         FROM score.final_board_current
-        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
       )
       SELECT
         l.final_board_row_id AS board_row_id,
