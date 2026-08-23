@@ -733,7 +733,16 @@ function rowToApi(row) {
 
 function buildCurrentSql(url) {
   const where = [
-    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)"
+    // FIXED (2026-08-23): a newly-STARTED but not-yet-FINISHED batch has finished_at=NULL, so
+    // COALESCE(finished_at, started_at) falls back to its started_at - which can be more recent
+    // than the last fully-completed batch's finished_at, causing this subquery to select the
+    // in-progress (often still-empty) batch instead of the last good, fully-populated one.
+    // Real, live, confirmed impact: batch ...jhfchl started at 16:40:49 UTC with finished_at
+    // still NULL had 0 rows in final_board_current, while the previous, fully-finished batch
+    // ...7ah346 (finished 16:39:46 UTC) had all 5,448 real rows - this subquery was picking the
+    // empty one, making the entire live board show "0 of 0 qualified legs" despite healthy data.
+    // Fix: only ever select from batches that have actually finished.
+    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)"
   ];
   const params = [];
   const propKeys = splitList(url.searchParams.get("prop_keys"));
