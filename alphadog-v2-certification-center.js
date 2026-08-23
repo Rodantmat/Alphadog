@@ -4387,6 +4387,14 @@ async function apiSaveSlips(env, request) {
       await pg.unsafe(`INSERT INTO score.slip_entries
         (slip_id, source_key, slip_type, slip_size, structure_label, entry_mode, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, real_multiplier, real_multiplier_flex_tiers, estimated_payout_note, breakeven_hit_rate_0_100, edge_vs_breakeven_0_100, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        // FIXED (2026-08-23): selected_leg_count previously read input.selected_leg_count first -
+        // that top-level request field is the BOARD-WIDE candidate pool size returned by the
+        // /api/slips/high-hit generation endpoint (sum of qualifying legs across all 5 apps, e.g.
+        // 52), not this specific slip's own leg count. Since the client passes that same top-level
+        // value through unchanged for every slip in a batch save, it silently overwrote the real
+        // per-slip count every time - confirmed live: 9 real saved slips of sizes 5 and 6 all
+        // stored selected_leg_count=52. legs.length (the array actually inserted into
+        // score.slip_legs immediately below) is the only correct source for this field.
         [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, s.entry_mode || null, legs.length, Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier), s.real_multiplier_flex_tiers ? JSON.stringify(s.real_multiplier_flex_tiers) : null, s.estimated_payout_note || null, s.breakeven_hit_rate_0_100 == null ? null : Number(s.breakeven_hit_rate_0_100), edge, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
       let idx = 1;
       for (const l of legs) {
