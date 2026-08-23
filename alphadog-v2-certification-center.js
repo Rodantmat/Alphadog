@@ -2592,7 +2592,7 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
         fb.confidence_0_100, fb.score_0_100, fb.board_tier, fb.is_goblin, fb.is_demon, fb.source_variant_label, lc.lineup_slot
       FROM score.final_board_current fb
       JOIN daily.lineups_current lc ON lc.player_id::text = fb.mlb_player_id::text AND lc.game_pk::text = fb.game_pk::text
-      WHERE fb.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      WHERE fb.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND fb.source_key = 'prizepicks' AND COALESCE(fb.is_goblin,0) = 0 AND COALESCE(fb.is_demon,0) = 0
         AND fb.canonical_prop_key = 'total_bases' AND fb.selected_side = 'less' AND fb.line_value = 1.5
         AND lc.lineup_slot >= 7 AND lc.lineup_slot <= 9
