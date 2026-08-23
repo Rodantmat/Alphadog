@@ -297,9 +297,9 @@ function annotateGoblinDemonTier(rows) {
     const anchorRow = group.find(r => Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0 && r.line_value != null);
     let anchorLine = anchorRow ? Number(anchorRow.line_value) : null;
 
-    // FALLBACK (2026-08-21): when no explicit regular/standard row exists for this
-    // player+prop+game+source, PrizePicks still has an implied "switch point" - the
-    // boundary where goblin/demon direction flips. Below the switch: More=Goblin,
+    // FALLBACK (2026-08-21, extended 2026-08-23): when no explicit regular/standard row
+    // exists for this player+prop+game+source, PrizePicks still has an implied "switch point" -
+    // the boundary where goblin/demon direction flips. Below the switch: More=Goblin,
     // Less=Demon. Above the switch: Less=Goblin, More=Demon. The implied anchor sits
     // at the midpoint between the highest "below" line and the lowest "above" line.
     // Confirmed live and precisely, real example (Jacob Misiorowski, pitcher_strikeouts,
@@ -307,9 +307,29 @@ function annotateGoblinDemonTier(rows) {
     // Less=Goblin/More=Demon, no regular line anywhere - implied switch/anchor = 9.0,
     // giving 8.5/9.5 = tier 1, 7.5/10.5 = tier 2, 6.5/11.5 = tier 3, matching exactly
     // what the person confirmed live in the app.
+    // EXTENDED (2026-08-23): the original version only looked at Goblin rows to find the
+    // switch point, silently ignoring Demon rows that carry the exact same directional
+    // information (More+Demon=above anchor, Less+Demon=below anchor - the mirror image of
+    // More+Goblin=below/Less+Goblin=above). Confirmed live: of 232 real no-plain-anchor
+    // groups on today's board, 35 were already recoverable via Goblin-only data, and a
+    // further 9 real groups have a valid switch point ONLY derivable once Demon rows are
+    // included too (e.g. Goblin-more paired with Demon-more on the same side, or Demon-only
+    // coverage on both sides). Real, confirmed screenshot example (Jackson Chourio,
+    // hits_runs_rbis, 2026-08-23): 0.5/1.5 both More=Goblin/Less=Demon, 2.5/3.5 both
+    // Less=Goblin/More=Demon - implied anchor=2.0 - this already worked via Goblin data
+    // alone since both directions had Goblin coverage, but the fix below also handles the
+    // case where one direction only has Demon coverage.
     if (anchorLine == null) {
-      const belowLines = group.filter(r => norm(r.selected_side) === "more" && Number(r.is_goblin) === 1).map(r => Number(r.line_value));
-      const aboveLines = group.filter(r => norm(r.selected_side) === "less" && Number(r.is_goblin) === 1).map(r => Number(r.line_value));
+      const belowLines = group.filter(r => norm(r.selected_side) === "more" && (Number(r.is_goblin) === 1 || Number(r.is_demon) === 1)).map(r => Number(r.line_value));
+      const aboveLines = group.filter(r => norm(r.selected_side) === "less" && (Number(r.is_goblin) === 1 || Number(r.is_demon) === 1)).map(r => Number(r.line_value));
+      // Guard: a row only tells us "below" or "above" the switch if we know which side of the
+      // switch it's actually on. More+Goblin and More+Demon both correctly imply "somewhere on
+      // the More side of the ladder" only when paired with confirmed knowledge that Less exists
+      // as the opposite type on at least one real line - otherwise a lone More+Demon row alone
+      // (no Less counterpart anywhere) could just as easily be explained by a real, pickable
+      // plain anchor that simply isn't in this batch. Requiring at least one real row on each
+      // side (More and Less) before trusting the derived midpoint keeps this fallback from
+      // firing on the genuinely one-sided, anchor-less cases it can't actually resolve.
       if (belowLines.length && aboveLines.length) {
         const highestBelow = Math.max(...belowLines);
         const lowestAbove = Math.min(...aboveLines);
