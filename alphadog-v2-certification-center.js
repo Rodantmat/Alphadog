@@ -2912,7 +2912,7 @@ async function autoSelectHighHitSlipLegs(env) {
         ) AS real_layer_rate
       FROM score.final_board_current fbc
       LEFT JOIN standards s ON s.mlb_player_id = fbc.mlb_player_id AND s.canonical_prop_key = fbc.canonical_prop_key
-      WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND fbc.source_key = 'prizepicks' AND fbc.is_goblin = 1
         AND (fbc.canonical_prop_key, fbc.selected_side, COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int)) IN (${tierList})
         AND fbc.official_game_time_utc IS NOT NULL AND fbc.official_game_time_utc::timestamptz > now() + interval '30 minutes'
