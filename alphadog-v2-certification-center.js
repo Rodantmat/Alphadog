@@ -1514,7 +1514,7 @@ async function apiFilters(env) {
       MIN(confidence_0_100) AS min_certainty, MAX(confidence_0_100) AS max_certainty,
       MAX(updated_at) AS latest_updated_at
     FROM score.final_board_current
-    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
   `);
   const sourceMap = new Map();
   const propMap = new Map();
