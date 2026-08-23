@@ -339,10 +339,20 @@ function annotateGoblinDemonTier(rows) {
 
     for (const r of group) {
       r.goblin_demon_anchor_line = anchorLine;
-      if (Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0) { r.goblin_demon_tier = 0; continue; }
-      if (anchorLine == null || r.line_value == null) { r.goblin_demon_tier = null; continue; }
+      if (Number(r.is_goblin || 0) === 0 && Number(r.is_demon || 0) === 0) { r.goblin_demon_tier = 0; r.goblin_demon_tier_direction = null; continue; }
+      if (anchorLine == null || r.line_value == null) { r.goblin_demon_tier = null; r.goblin_demon_tier_direction = null; continue; }
       const line = Number(r.line_value);
       r.goblin_demon_tier = line === anchorLine ? 0 : Math.round(Math.abs(line - anchorLine));
+      // ADDED (2026-08-23): explicit over/under label, so a reader never has to re-derive
+      // direction from (type, side) themselves - confirmed real, direct screenshot examples
+      // (Shane Drohan pitcher_strikeouts anchor=4.5: 5.5/6.5/7.5="over" ladder, 2.5/3.5="under"
+      // ladder) validate this matches line-vs-anchor exactly. Mathematically this is fully
+      // determined by (is_goblin/is_demon, selected_side) - Demon+more and Goblin+less are
+      // always "over", Demon+less and Goblin+more are always "under" - but storing it
+      // explicitly avoids every future reader (human or code) having to re-derive that
+      // bijection correctly every single time, which is exactly what caused real confusion
+      // earlier this same week.
+      r.goblin_demon_tier_direction = line === anchorLine ? null : (line > anchorLine ? "over" : "under");
     }
   }
   return rows;
