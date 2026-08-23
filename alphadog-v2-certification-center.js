@@ -4513,7 +4513,7 @@ async function apiPlayerProfile(env, url) {
   const legs = idPlaceholders ? await safeQuery(`
     SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
     FROM score.final_board_current
-    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
       AND mlb_player_id IN (${idPlaceholders})
     ORDER BY rank_order ASC
     LIMIT 80
