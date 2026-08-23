@@ -3364,7 +3364,7 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
       FROM score.final_board_current f
       LEFT JOIN market.sleeper_board_current m
         ON m.player_name = f.player_name AND m.canonical_prop_key = f.canonical_prop_key AND m.line_value = f.line_value
-      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND f.source_key = 'sleeper'
         AND (f.canonical_prop_key, f.selected_side) IN (${propSideList})
         AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
