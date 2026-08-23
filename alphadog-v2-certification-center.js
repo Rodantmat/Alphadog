@@ -3610,7 +3610,7 @@ async function autoSelectDemonSlipLegs(env, options = {}) {
           confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label,
           rank() OVER (PARTITION BY canonical_prop_key ORDER BY line_value DESC) AS line_rank
         FROM score.final_board_current
-        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
           AND source_key = 'prizepicks' AND is_demon = 1 AND selected_side = 'less'
           AND canonical_prop_key IN (${propList}) AND line_value > 0.5
           AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
