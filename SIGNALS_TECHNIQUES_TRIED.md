@@ -48,6 +48,65 @@
 
 **Every session must move at least two ❌ cells to ✅ or ⚠️→✅, with a real cited result.** A session that adds new findings elsewhere but leaves this matrix unchanged has not met the exhaustiveness bar. If a cell is genuinely blocked, say so explicitly in that cell rather than leaving it silently blank.
 
+### 🛑 HEADLINE FINDING 2026-08-23 (session 10) — every payout model in this system reduces to the per-leg product `p × m`. That single number decides each track, and it explains every result in this log.
+
+Derived, not asserted, for each app's real payout structure:
+
+| App / mode | Slip EV as a function of pool hit rate `p` and real per-leg rate `m` | Break-even condition |
+|---|---|---|
+| PrizePicks Power (any lane) | slip payout = `∏ mᵢ`, so EV = `(p·m)ⁿ` | **`p·m ≥ 1`**, independent of size |
+| Sleeper Flex (round-robin) | EV = `(p·m)^(n−1)` exactly — the (n−1)-sub-combo decomposition collapses | **`p·m ≥ 1`**, independent of size |
+| PrizePicks Flex | `(25/37.5)·∏mᵢ` full-hit + flat partials | `p·m ≥ 1` plus a small partial-credit offset |
+| Underdog Flex (geometric) | `published_tier × ρⁿ` | ρ ≥ pool-specific threshold |
+
+**Consequence: when `p·m < 1`, no size, cap, correlation rule or ranking can produce a positive track.** Size only compounds the sign already present. This retro-explains why every cap sweep, adaptive-sizing test and correlation control in this log moved ROI by single digits and never flipped a sign — they were all operating on a quantity that cannot change the sign.
+
+**Applied to the whole Goblin ladder, using live-tier data (2 graded days) and the real per-tier multipliers:**
+
+| Goblin tier | real hit rate `p` | real per-leg `m` | `p × m` | verdict |
+|---|---|---|---|---|
+| T1 | 69.6% (n=2,083) | ~1.30 | **0.905** | negative |
+| T2 | 77.4% (n=1,228) | 1.265 | **0.979** | negative |
+| T3 | 83.6% (n=720) | 1.140 | **0.953** | negative |
+| best bucket ever (`walks_allowed/more/0.5`) | 87.4% (n=396) | **1.1053 (live, n=10)** | **0.966** | negative |
+
+**The goblin ladder is priced to a 2–10% house edge at every single rung.** The tier mechanism is real and monotone, and the market prices it correctly — the multiplier falls exactly as fast as the hit rate rises. **This is a structural verdict on the whole Goblin track, not a verdict on one pool**, and it supersedes pool-by-pool Goblin testing: the only thing that could make Goblin playable is a per-leg rate above `1/p`, i.e. better than 1.144 on the best bucket in the record.
+
+### ✅ NEW REAL SIGNAL 2026-08-23 (session 10) — Sleeper lineup slot is a genuine, large, unpriced leg-quality gradient on `more`-side hitter props
+
+Found while testing a Gemini hypothesis that was itself falsified (see below). `sleeper / hits / more / 0.5`, joined to `context.history_game_lineup` on the normalised slot (`CASE WHEN lineup_slot>=100 THEN lineup_slot/100 ELSE lineup_slot END`):
+
+| Lineup slot | n | real hit rate | `p × m` at the live 1.3740 |
+|---|---|---|---|
+| **1** | 41 | **78.0%** | **1.0724** |
+| **2** | 44 | **79.5%** | **1.0930** |
+| 3 | 40 | 55.0% | 0.7557 |
+| 4 | 41 | 56.1% | 0.7708 |
+| 5 | 38 | 60.5% | 0.8316 |
+| 6 | 19 | 63.2% | 0.8678 |
+| 7 | 16 | 56.3% | 0.7729 |
+| 8 | 19 | **36.8%** | 0.5062 |
+| 9 | 12 | 66.7% | 0.9160 |
+
+**Slots 1–2 are the only pool found anywhere in this system's history that clears `p·m > 1` on Sleeper.** Whole-pool baseline is 61.2% (`p·m` = 0.841). Real slip construction, slots 1–2 only: 2-pick Power **+9.3% / +19.2%**, 3-pick Power **+24.1% / +24.1%** (tie-break invariant), 4-pick **+11.4% / +33.7%**. 3-pick LODO **+0.9% … +50.2%, 0 of 10 folds negative**.
+
+**The effect is direction-correct and prop-specific** — it appears on `more`-side hitter props and vanishes or reverses on `less`-side, exactly as a plate-appearance mechanism predicts:
+
+| Bucket | slots 1–2 | rest | delta |
+|---|---|---|---|
+| `hits/more/0.5` | 78.8% (n=85) | 56.2% (n=185) | **+22.6pp** |
+| `total_bases/more/0.5` | 73.5% (n=34) | 55.1% (n=138) | **+18.4pp** |
+| `rbis/less/0.5` | 70.7% (n=297) | 71.3% (n=912) | −0.6pp |
+| `walks/less/0.5` | 66.3% (n=368) | 71.3% (n=1,118) | −5.0pp |
+| `runs/less/0.5` | 54.9% (n=195) | 62.1% (n=655) | −7.2pp |
+| `hits_runs_rbis/less/1.5` | 50.5% (n=198) | 58.2% (n=572) | −7.7pp |
+
+**The load-bearing assumption, stated plainly: this is only exploitable if Sleeper prices `hits/more/0.5` FLAT across lineup slots.** `pricing_layer3_player` holds 6 Sleeper `hits/more/0.5` rows (Lowe, Seager, Donovan, Bichette, Durbin, Bregman) and **all six carry the identical 1.3740** — suggestive of flat pricing, but every one is at `n_observations = 1`, below the n≥2 bar, so it settles nothing. If Sleeper's moneyline shortens for leadoff hitters, the entire finding collapses. **One placed Sleeper slip on a slot-1/2 `hits/more/0.5` leg, with the real multiplier recorded, resolves it.**
+
+### ⚠️ CORRECTION 2026-08-23 (session 10) to `GEMINI_USAGE_GUIDE.md` — the truncation-recovery pattern did NOT work this time
+
+The guide states the continuation prompt *"has worked reliably every time it was needed."* On this session's consultation it failed: the follow-up call ignored the supplied context entirely and answered about "e-processes", "optional stopping" and "Direction 3: Unhedged High-Moment Volatility-Scaled E-Processes" — none of which appears anywhere in the original prompt or its own first response. **Treat continuation output as suspect and re-verify it against the first response before using it; if it drifts, re-issue the full original prompt rather than a continuation.** The first response was intact and usable, so nothing was lost here.
+
 ### 🛑 HEADLINE FINDING 2026-08-22 (session 8) — `score_0_100` has NO within-pool predictive power. Every ranked-greedy ROI in this log is overstated.
 
 Rule B0 already says *do not rank by the platform's internal score*. This is the measurement of how much that matters, and it is larger than anyone assumed. Leg-level Pearson correlation between `score_0_100` and `outcome_hit`, PrizePicks graded legs, four corrupted days excluded, deduped by (date, player, prop, side, line, game):
