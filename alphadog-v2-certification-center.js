@@ -3253,7 +3253,13 @@ async function apiHighHitSlips(env, request) {
   const udSlips = udLegs.length >= 6 ? buildUnderdogHighHitSlips(udLegs) : [];
   const sleeperSlips = sleeperLegs.length >= 6 ? buildSleeperHighHitSlips(sleeperLegs) : [];
   const regularSlips = regularLegs.length >= 6 ? buildRegularHighHitSlips(regularLegs) : [];
-  const demonSlips = demonLegs.length >= 2 ? buildDemonHighHitSlips(demonLegs) : [];
+  const demonSlips = []; // SUSPENDED 2026-08-22: real, exhaustive testing (control.goblin_demon_multiplier_study,
+  // 30 actually-placed slip observations, real multipliers 1.3x-62x depending on prop rarity)
+  // confirmed Demon stays negative EV under every real multiplier scenario tested, including the
+  // most generous real observation (62x, rare triples pair). This is not a data gap or pricing
+  // uncertainty - it's a closed, exhaustively confirmed finding. Do not re-enable without new real
+  // evidence that changes this conclusion. autoSelectDemonHighHitSlipLegs/buildDemonHighHitSlips
+  // remain in the file for reference but their output is discarded here.
   ppSlips.forEach(s => s.source_key = "prizepicks_goblin");
   const generated_slips = [...demonSlips, ...ppSlips, ...regularSlips, ...sleeperSlips, ...udSlips];
   const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length + regularLegs.length + demonLegs.length;
