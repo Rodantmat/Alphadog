@@ -2538,7 +2538,7 @@ async function autoSelectGoblinSlipLegs(env, options = {}) {
             ORDER BY line_value ASC
           ) AS goblin_tier_rank
         FROM score.final_board_current
-        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
       )
       SELECT board_row_id, source_key, game_pk, player_name, mlb_player_id, canonical_prop_key, line_value, selected_side,
         hit_probability_0_100, confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label, goblin_tier_rank,
