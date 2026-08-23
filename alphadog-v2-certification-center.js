@@ -3478,7 +3478,7 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
       SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
         canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
       FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND source_key = 'parlay_underdog'
         AND (canonical_prop_key, selected_side) IN (${propSideList})
         AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
