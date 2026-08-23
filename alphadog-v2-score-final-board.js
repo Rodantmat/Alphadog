@@ -635,7 +635,7 @@ async function upsertBoardHistoryRows(pgClient, batchId, sourceEngineBatchId, ro
         END,
         line_value=EXCLUDED.line_value, selected_side=EXCLUDED.selected_side, is_goblin=EXCLUDED.is_goblin,
         is_demon=EXCLUDED.is_demon, is_more_only=EXCLUDED.is_more_only,
-        goblin_demon_tier=EXCLUDED.goblin_demon_tier, goblin_demon_anchor_line=EXCLUDED.goblin_demon_anchor_line`;
+        goblin_demon_tier=EXCLUDED.goblin_demon_tier, goblin_demon_anchor_line=EXCLUDED.goblin_demon_anchor_line, goblin_demon_tier_direction=EXCLUDED.goblin_demon_tier_direction`;
     written += chunk.length;
   }
   return written;
