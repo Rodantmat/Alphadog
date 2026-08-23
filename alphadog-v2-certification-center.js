@@ -3132,7 +3132,7 @@ async function autoSelectRegularHighHitSlipLegs(env) {
         f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100,
         f.confidence_0_100, f.is_goblin, f.is_demon
       FROM score.final_board_current f
-      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches ORDER BY COALESCE(finished_at, started_at) DESC LIMIT 1)
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND f.source_key = 'prizepicks' AND f.is_goblin = 0 AND f.is_demon = 0
         AND f.canonical_prop_key = '${REGULAR_PFS_PROP}' AND f.selected_side = '${REGULAR_PFS_SIDE}'
         AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
