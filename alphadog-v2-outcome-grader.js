@@ -219,9 +219,30 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
       ORDER BY mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon, created_at DESC
     ),
     graded AS (
-      SELECT f.*, fip.rfi_sl_more_hit, fip.rfi_sl_less_hit, gs.is_final
+      SELECT f.*,
+        COALESCE(fip_direct.rfi_sl_more_hit, fip_team.rfi_sl_more_hit) as rfi_sl_more_hit,
+        COALESCE(fip_direct.rfi_sl_less_hit, fip_team.rfi_sl_less_hit) as rfi_sl_less_hit,
+        gs.is_final
       FROM deduped f
-      LEFT JOIN context.first_inning_pitcher fip ON fip.pitcher_id::text = f.mlb_player_id::text AND fip.game_pk = f.game_pk
+      LEFT JOIN context.first_inning_pitcher fip_direct ON fip_direct.pitcher_id::text = f.mlb_player_id::text AND fip_direct.game_pk = f.game_pk
+      -- FIX (2026-08-24): the direct pitcher-id join silently fails whenever the probable
+      -- starter the leg was originally posted against gets scratched before game time (injury,
+      -- rotation shuffle, weather) - the game and its real first-inning outcome still happened
+      -- and is fully recorded in this same table, just filed under the ACTUAL starter's
+      -- pitcher_id. Confirmed real, concrete example: leg posted against Kyle Freeland
+      -- (player 607536) for game_pk 823184 on 2026-08-15 had zero rows via the direct join,
+      -- but Michael Lorenzen (the real, actual starter, team_id 115, same game_pk,
+      -- started_game=1) had the fully graded outcome (rfi_sl_less_hit=1) sitting right there.
+      -- Real, measured recovery from this fallback: 124 of 134 (92.5%) of currently-ungraded
+      -- rfi_nrfi legs. Falls back to whichever pitcher on the LEG's own team actually started
+      -- that specific game, rather than requiring the originally-posted pitcher_id to match.
+      LEFT JOIN LATERAL (
+        SELECT rfi_sl_more_hit, rfi_sl_less_hit FROM context.first_inning_pitcher fip2
+        WHERE fip2.game_pk = f.game_pk AND fip2.team_id::text = (
+          SELECT p.current_mlb_team_id::text FROM ref.players p WHERE p.player_id::text = f.mlb_player_id::text
+        ) AND fip2.started_game = 1
+        LIMIT 1
+      ) fip_team ON true
       LEFT JOIN LATERAL (
         SELECT bool_or(((raw_json#>>'{}')::jsonb->'status'->>'abstractGameState') = 'Final') as is_final
         FROM team.game_logs tgl WHERE tgl.game_pk = f.game_pk
