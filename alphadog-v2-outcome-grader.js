@@ -462,8 +462,8 @@ function identity(env) {
     ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
     status: "ready",
     reads: ["score.final_board_history", "stats_hitter.game_logs", "stats_pitcher.game_logs", "context.first_inning_pitcher"],
-    writes: ["score.prop_outcome_history"],
-    safety_note: "Isolated worker - never writes to any table read by the live scoring/board path. A bug here can only produce wrong or missing calibration training data, which calibration_report's own held-out validation checks before anything is applied.",
+    writes: ["score.prop_outcome_history", "backtest.ready_dataset"],
+    safety_note: "Isolated worker - never writes to any table read by the live scoring/board path. A bug here can only produce wrong or missing calibration training data or backtest dataset rows, both isolated outputs checked by calibration_report's own held-out validation and by direct backtest queries respectively, before anything is applied.",
     supported_props: { hitter: Object.keys(HITTER_PROP_EXPR), pitcher: [...Object.keys(PITCHER_PROP_EXPR), "rfi_nrfi"] },
     known_gaps: ["pitcher_fantasy_score (formula not yet validated against a confirmed scoring spec)"]
   };
