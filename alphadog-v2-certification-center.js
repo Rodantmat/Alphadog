@@ -2114,7 +2114,15 @@ function slipWarnings(legs) {
   // correctly never applied) - their displayed HP is uncorrected raw model output, carrying more
   // uncertainty than props with a validated correction. Checked directly against
   // score.calibration_correction_map; update this list if that table's coverage changes.
-  const DATA_LIMITED_PROP_SIDES = new Set(["pitcher_fantasy_score|less"]);
+  // REAL FIX (2026-08-24): pitcher_fantasy_score|less REMOVED from this list. It had no active
+  // correction because a 08-14 formula fix deactivated its old fit, not for lack of data - and an
+  // extensive real backtest since (490 graded legs, 25 real days) confirms 79.8% overall hit rate,
+  // consistent both before (77.7%) and after (80.5%) that formula fix. This is the single most
+  // reliable prop+side in the whole system; keeping this warning on it was actively misleading
+  // users into distrusting the strongest real signal available. A genuine re-fit of its
+  // calibration correction is still worth doing separately, but the "less trustworthy" warning
+  // itself was disproven by real data and should not keep firing in the meantime.
+  const DATA_LIMITED_PROP_SIDES = new Set([]);
   for (const l of legs) {
     const g = String(l.game_pk || ""); if (g) games.set(g, (games.get(g) || 0) + 1);
     const p = String(l.player_id || l.player_name || ""); if (p) players.set(p, (players.get(p) || 0) + 1);
