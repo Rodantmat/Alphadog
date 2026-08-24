@@ -117,10 +117,14 @@ async function gradeForDate(sql, targetDate, entityType, propExprMap, sourceTabl
         SELECT bool_or(((raw_json#>>'{}')::jsonb->'status'->>'abstractGameState') = 'Final') as is_final
         FROM team.game_logs tgl WHERE tgl.game_pk = f.game_pk
       ) gs ON true
-      LEFT JOIN score.prop_outcome_history existing ON existing.mlb_player_id = f.mlb_player_id
-        AND existing.canonical_prop_key = f.canonical_prop_key AND existing.line_value = f.line_value
-        AND existing.selected_side = f.selected_side AND existing.official_date::date = f.official_date::date
-        AND existing.is_goblin = f.is_goblin AND existing.is_demon = f.is_demon
+      LEFT JOIN LATERAL (
+        SELECT outcome_id FROM score.prop_outcome_history existing
+        WHERE existing.mlb_player_id = f.mlb_player_id
+          AND existing.canonical_prop_key = f.canonical_prop_key AND existing.line_value = f.line_value
+          AND existing.selected_side = f.selected_side AND existing.official_date::date = f.official_date::date
+          AND existing.is_goblin = f.is_goblin AND existing.is_demon = f.is_demon
+        LIMIT 1
+      ) existing ON true
     )
     SELECT *,
       CASE
