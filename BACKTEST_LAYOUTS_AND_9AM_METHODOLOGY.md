@@ -1,0 +1,1 @@
+$(cat /home/claude/BACKTEST_LAYOUTS_AND_9AM_METHODOLOGY.md)
