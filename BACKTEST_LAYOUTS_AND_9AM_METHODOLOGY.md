@@ -71,7 +71,19 @@ ROI/volume tradeoff worth highlighting.
 
 ---
 
-## 9am Snapshot Extraction Methodology (validated 2026-08-24)
+## 9am Snapshot Extraction Methodology (corrected 2026-08-24)
+
+**CORRECTED 2026-08-24, same day**: a real, existing, already-validated table
+`backtest.nine_am_batches` (day, batch_id, started_at) was built in a prior session (2026-08-20)
+and already solves this correctly — check for and use it FIRST before reconstructing anything.
+It selects exactly ONE canonical batch_id per real day (not a multi-batch cluster). Join board
+legs by `final_board_batch_id = batch_id` directly; do not additionally filter by matching
+`official_date` to the batch's `day` — a single morning batch can legitimately carry legs for
+more than one game date. The cluster-based reconstruction originally documented below undercounted
+real legs on multiple real dates and should not be used when this table is available. Real,
+measured coverage: 20 calendar days (2026-07-24 to 2026-08-18 in the current build).
+
+### Superseded (original) methodology below — kept for context only, do not use
 
 **Why this matters**: `score.final_board_history` accumulates MULTIPLE real batches per day as the
 board gets rebuilt/expanded throughout the day (typically a morning run, then a larger midday run,
