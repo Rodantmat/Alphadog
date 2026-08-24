@@ -6,11 +6,16 @@ const JOB_KEY = "outcome-grader";
 
 // SAFETY NOTE: this worker is deliberately isolated. It only ever:
 //   READS from score.final_board_history, stats_hitter.game_logs, stats_pitcher.game_logs
-//   WRITES to score.prop_outcome_history
+//   WRITES to score.prop_outcome_history and backtest.ready_dataset
 // It never writes to score.final_board_current, score.hp_board_current, classification.*,
 // or any table read by the live scoring path. A bug here cannot affect today's live board -
-// it can only produce wrong/missing calibration training data, which is itself checked by
-// calibration_report's held-out validation before anything is ever applied.
+// it can only produce wrong/missing calibration training data or a stale/wrong backtest
+// dataset row, both of which are dedicated, isolated outputs with no live-path readers.
+// ADDED 2026-08-24: backtest.ready_dataset mirrors each graded date's board legs (with their
+// as-posted baseline/classification/enrichment/goblin-demon state, already historically
+// accurate in final_board_history at posting time) joined with the real outcome, refreshed
+// automatically at the end of every grading run - keeps a single, always-current, backtest-
+// ready table with zero manual re-derivation needed.
 
 function pg(env) {
   return postgres(env.HYPERDRIVE.connectionString, {
