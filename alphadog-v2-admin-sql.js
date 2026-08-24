@@ -899,6 +899,36 @@ export class AlphadogMcp extends McpAgent {
         };
       }
     );
+
+    this.server.tool(
+      "call_gemini",
+      "Call the Gemini API directly from inside this worker (same real logic as the existing /gemini-proxy HTTP route, now exposed as a proper MCP tool). Runs server-side, so it uses this worker's own outbound fetch access, not the calling agent's sandboxed network - use this instead of trying to reach /gemini-proxy over HTTP from a restricted environment.",
+      {
+        prompt: z.string().describe("The prompt to send to Gemini."),
+        model: z.string().optional().describe("Gemini model name. Defaults to gemini-2.0-flash.")
+      },
+      async (args) => {
+        const { prompt, model } = args || {};
+        if (!this.env.GEMINI_API_KEY) {
+          return { content: [{ type: "text", text: JSON.stringify({ ok: false, error: "GEMINI_API_KEY not bound" }) }], isError: true };
+        }
+        try {
+          const useModel = model || "gemini-2.0-flash";
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${useModel}:generateContent?key=${this.env.GEMINI_API_KEY}`;
+          const geminiResp = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+          const geminiJson = await geminiResp.json();
+          const text = geminiJson?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || null;
+          const result = { ok: geminiResp.ok, status: geminiResp.status, text, model: useModel };
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }], isError: !geminiResp.ok };
+        } catch (err) {
+          return { content: [{ type: "text", text: JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err) }) }], isError: true };
+        }
+      }
+    );
   }
 }
 
