@@ -315,6 +315,79 @@ async function gradeRfiNrfiForDate(sql, targetDate) {
   return { entity_type: "pitcher_rfi_nrfi", candidates_found: rows.length, rows_inserted: inserted };
 }
 
+async function refreshBacktestReadyDataset(sql, targetDate) {
+  // ADDED 2026-08-24: after grading completes for a date, mirror the full picture - board legs'
+  // as-posted classification/baseline/enrichment state (score.final_board_history already
+  // captures this historically-accurately at posting time, so no re-derivation needed) plus the
+  // real graded outcome - into backtest.ready_dataset. One row per (source, date, player, prop,
+  // line, side, is_goblin, is_demon). Upsert, so safe to re-run for the same date repeatedly as
+  // outcomes fill in over time (e.g. late games, or a subsequent day's re-run recovering a
+  // previously-scratched-starter push). Deliberately still writes to ONLY this one dedicated
+  // backtest table, nothing that any live scoring path reads - same isolation guarantee as
+  // prop_outcome_history itself, just a second, equally-isolated output.
+  const res = await sql.unsafe(`
+    WITH deduped AS (
+      SELECT DISTINCT ON (source_key, mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon)
+        source_key, official_date, game_pk, mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
+        is_goblin, is_demon, goblin_demon_tier, goblin_demon_anchor_line, goblin_demon_tier_direction,
+        board_tier, score_0_100, score_grade, confidence_0_100,
+        estimated_hit_probability_0_100, probability_confidence_0_100, probability_band, probability_grade,
+        hp_lane, sample_size, non_push_sample, hit_count, miss_count, push_count,
+        calibration_json, calculation_json, correlation_risk_tier, live_playable, created_at
+      FROM score.final_board_history
+      WHERE official_date::date = $1::date AND board_tier IN ('PRIMARY','REVIEW')
+      ORDER BY source_key, mlb_player_id, canonical_prop_key, line_value, selected_side, is_goblin, is_demon, created_at DESC
+    )
+    SELECT d.*, p.actual_stat_value, p.outcome_result, p.outcome_hit, p.brier_component, p.resolved_at
+    FROM deduped d
+    LEFT JOIN score.prop_outcome_history p ON p.mlb_player_id = d.mlb_player_id AND p.canonical_prop_key = d.canonical_prop_key
+      AND p.line_value = d.line_value AND p.selected_side = d.selected_side AND p.is_goblin = d.is_goblin
+      AND p.is_demon = d.is_demon AND p.official_date::date = d.official_date::date AND p.source_key = d.source_key
+  `, [targetDate]);
+
+  if (!res.length) return { candidates_found: 0, rows_upserted: 0 };
+
+  const rows = res.map(r => ({
+    row_key: `${r.source_key}|${targetDate}|${r.mlb_player_id}|${r.canonical_prop_key}|${String(r.line_value).replace(".", "p")}|${r.selected_side}|${r.is_goblin ? "gob" : (r.is_demon ? "dem" : "std")}`,
+    source_key: r.source_key, official_date: targetDate, game_pk: r.game_pk,
+    mlb_player_id: r.mlb_player_id, player_name: r.player_name, canonical_prop_key: r.canonical_prop_key,
+    line_value: r.line_value, selected_side: r.selected_side,
+    is_goblin: r.is_goblin || 0, is_demon: r.is_demon || 0,
+    goblin_demon_tier: r.goblin_demon_tier, goblin_demon_anchor_line: r.goblin_demon_anchor_line,
+    goblin_demon_tier_direction: r.goblin_demon_tier_direction,
+    board_tier: r.board_tier, score_0_100: r.score_0_100, score_grade: r.score_grade, confidence_0_100: r.confidence_0_100,
+    estimated_hit_probability_0_100: r.estimated_hit_probability_0_100, probability_confidence_0_100: r.probability_confidence_0_100,
+    probability_band: r.probability_band, probability_grade: r.probability_grade,
+    hp_lane: r.hp_lane, sample_size: r.sample_size, non_push_sample: r.non_push_sample,
+    hit_count: r.hit_count, miss_count: r.miss_count, push_count: r.push_count,
+    calibration_json: r.calibration_json, calculation_json: r.calculation_json,
+    correlation_risk_tier: r.correlation_risk_tier, live_playable: r.live_playable,
+    actual_stat_value: r.actual_stat_value, outcome_result: r.outcome_result, outcome_hit: r.outcome_hit,
+    brier_component: r.brier_component, final_board_created_at: r.created_at, outcome_resolved_at: r.resolved_at,
+    refreshed_at: nowUtc()
+  }));
+
+  const cols = ["row_key", "source_key", "official_date", "game_pk", "mlb_player_id", "player_name", "canonical_prop_key",
+    "line_value", "selected_side", "is_goblin", "is_demon", "goblin_demon_tier", "goblin_demon_anchor_line",
+    "goblin_demon_tier_direction", "board_tier", "score_0_100", "score_grade", "confidence_0_100",
+    "estimated_hit_probability_0_100", "probability_confidence_0_100", "probability_band", "probability_grade",
+    "hp_lane", "sample_size", "non_push_sample", "hit_count", "miss_count", "push_count",
+    "calibration_json", "calculation_json", "correlation_risk_tier", "live_playable",
+    "actual_stat_value", "outcome_result", "outcome_hit", "brier_component",
+    "final_board_created_at", "outcome_resolved_at", "refreshed_at"];
+
+  let upserted = 0;
+  const CHUNK = 150;
+  const updateSet = cols.filter(c => c !== "row_key").map(c => `${c}=EXCLUDED.${c}`).join(", ");
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    const r2 = await sql`INSERT INTO backtest.ready_dataset ${sql(chunk, ...cols)}
+      ON CONFLICT (row_key) DO UPDATE SET ${sql.unsafe(updateSet)}`;
+    upserted += r2.count || 0;
+  }
+  return { candidates_found: res.length, rows_upserted: upserted };
+}
+
 async function logExecution(sql, result, input) {
   try {
     await sql.unsafe(
