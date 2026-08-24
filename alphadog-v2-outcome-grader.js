@@ -345,9 +345,15 @@ async function refreshBacktestReadyDataset(sql, targetDate) {
     )
     SELECT d.*, p.actual_stat_value, p.outcome_result, p.outcome_hit, p.brier_component, p.resolved_at
     FROM deduped d
-    LEFT JOIN score.prop_outcome_history p ON p.mlb_player_id = d.mlb_player_id AND p.canonical_prop_key = d.canonical_prop_key
-      AND p.line_value = d.line_value AND p.selected_side = d.selected_side AND p.is_goblin = d.is_goblin
-      AND p.is_demon = d.is_demon AND p.official_date::date = d.official_date::date AND p.source_key = d.source_key
+    LEFT JOIN LATERAL (
+      SELECT actual_stat_value, outcome_result, outcome_hit, brier_component, resolved_at
+      FROM score.prop_outcome_history p
+      WHERE p.mlb_player_id = d.mlb_player_id AND p.canonical_prop_key = d.canonical_prop_key
+        AND p.line_value = d.line_value AND p.selected_side = d.selected_side AND p.is_goblin = d.is_goblin
+        AND p.is_demon = d.is_demon AND p.official_date::date = d.official_date::date AND p.source_key = d.source_key
+      ORDER BY p.resolved_at DESC NULLS LAST
+      LIMIT 1
+    ) p ON true
   `, [targetDate]);
 
   if (!res.length) return { candidates_found: 0, rows_upserted: 0 };
