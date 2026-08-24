@@ -2451,7 +2451,20 @@ async function autoSelectBestLegs(env, options) {
         (p.row_payload_json#>>'{}')::jsonb->'source_prices'->>'under_price' AS sleeper_under_price
       FROM ladder l
       LEFT JOIN score.board_prepared_current p ON p.prepared_row_id = l.prepared_row_id
-      WHERE l.board_tier = 'PRIMARY'
+      WHERE (
+        l.board_tier = 'PRIMARY'
+        -- REAL FIX (2026-08-24): pitcher_fantasy_score|less is confirmed via extensive backtest
+        -- (490 legs, 25 real days) to hit 79.8% overall, with its REVIEW-tier half (248 legs)
+        -- performing at 74.6% - nearly identical to its PRIMARY-tier half (79.2%). Ranking by
+        -- hit probability, score, and confidence all came back flat/non-monotonic for this
+        -- specific prop+side (confirmed: it has zero enrichment factors ever applied, so its HP
+        -- carries no real leg-to-leg differentiation to rank on). The flat, uniformly-strong hit
+        -- rate is real signature of a systematically mispriced line, not a signal needing further
+        -- filtering - so excluding its REVIEW-tier half was leaving real, verified value on the
+        -- table for no real reason. Scoped to this exact prop+side only; every other prop keeps
+        -- the strict PRIMARY-only gate unchanged.
+        OR (l.board_tier = 'REVIEW' AND l.canonical_prop_key = 'pitcher_fantasy_score' AND l.selected_side = 'less' AND COALESCE(l.is_goblin,0) = 0 AND COALESCE(l.is_demon,0) = 0)
+      )
         AND l.estimated_hit_probability_0_100 >= ${minConfidence}
         AND l.official_game_time_utc IS NOT NULL
         AND l.official_game_time_utc::timestamptz > now() + interval '30 minutes'
