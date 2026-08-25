@@ -1108,9 +1108,25 @@ function canonicalFromHistMarketKey(marketKey) {
   };
   return Object.prototype.hasOwnProperty.call(map, marketKey) ? map[marketKey] : null;
 }
-async function backfillHistoricalDayForFamily(pgClient, env, dateStr, config, teamAliases, playerAliases, gameLookup) {
+async function realParlayApiKey(env) {
+  if (env.HYPERDRIVE) {
+    const client = pg(env);
+    try {
+      const rows = await client.unsafe("SELECT credential_value_encrypted FROM config.external_credentials WHERE credential_key='parlay_api_key'");
+      if (rows && rows[0] && rows[0].credential_value_encrypted) {
+        const parsed = JSON.parse(rows[0].credential_value_encrypted);
+        if (parsed && parsed.password) return String(parsed.password);
+      }
+    } catch (_) {
+    } finally {
+      await client.end({ timeout: 1 }).catch(() => {});
+    }
+  }
+  return sourceHas(env, "PARLAY_API_KEY") ? String(env.PARLAY_API_KEY) : "";
+}
+async function backfillHistoricalDayForFamily(pgClient, env, dateStr, config, teamAliases, playerAliases, gameLookup, apiKey) {
   const marketsParam = config.parlay_markets.join(",");
-  const url = `https://parlay-api.com/v1/historical/sports/baseball_mlb/closing-odds?apiKey=${encodeURIComponent(env.PARLAY_API_KEY || "")}&markets=${encodeURIComponent(marketsParam)}&date=${dateStr}`;
+  const url = `https://parlay-api.com/v1/historical/sports/baseball_mlb/closing-odds?apiKey=${encodeURIComponent(apiKey || "")}&markets=${encodeURIComponent(marketsParam)}&date=${dateStr}`;
   let rows = [];
   try {
     const resp = await fetchWithTimeout(url, { method: "GET" }, 25000);
