@@ -3332,6 +3332,11 @@ const MIXED_TOP55_REAL_TABLES = {
   "hits_runs_rbis|less": { 2:{power:1.7,flex:{2:1.5,1:0.25}}, 3:{power:2.3,flex:{3:1.9,2:0.5}}, 4:{power:2.9,flex:{4:2.25,3:0.5}}, 5:{power:3.75,flex:{5:3.0,4:0.5,3:0.25}}, 6:{power:5.25,flex:{6:4.0,5:0.5,4:0.25}} },
   "total_bases|less": { 2:{power:2.0,flex:{2:1.7,1:0.25}}, 3:{power:3.0,flex:{3:2.5,2:0.5}}, 4:{power:4.75,flex:{4:3.0,3:0.75}}, 5:{power:6.25,flex:{5:5.0,4:0.5,3:0.25}}, 6:{power:10.5,flex:{6:6.0,5:1.25,4:0.4}} }
 };
+// UPDATED 2026-08-25: two real, independent 5-pick observations both showed identical absolute
+// partial tiers (4/5=0.5, 3/5=0.25), matching the confirmed 6-pick tiers for hits/hits_runs_rbis.
+// Using confirmed flat values for partial tiers rather than a per-prop-ratio estimate - only 2
+// real 5-pick data points so far, keep watching for a case where this doesn't hold.
+const MIXED_TOP55_FLAT_PARTIALS = { oneBelow: 0.5, twoBelow: 0.25 };
 function mixedTop55FlexPayout(slipLegs, hits) {
   const size = slipLegs.length;
   if (hits === size) {
@@ -3343,19 +3348,9 @@ function mixedTop55FlexPayout(slipLegs, hits) {
     }
     return Math.round(product * 1000) / 1000;
   }
-  let fullVal = 1;
-  for (const l of slipLegs) {
-    const tbl = MIXED_TOP55_REAL_TABLES[`${l.canonical_prop_key}|${l.selected_side}`];
-    fullVal *= Math.pow(tbl[6].power, 1 / 6);
-  }
-  const ratios = [];
-  for (const l of slipLegs) {
-    const tbl = MIXED_TOP55_REAL_TABLES[`${l.canonical_prop_key}|${l.selected_side}`];
-    if (tbl[6].flex[hits] != null && tbl[6].flex[6] != null) ratios.push(tbl[6].flex[hits] / tbl[6].flex[6]);
-  }
-  if (!ratios.length) return 0;
-  const avgRatio = ratios.reduce((a, b) => a + b, 0) / ratios.length;
-  return Math.round(fullVal * avgRatio * 1000) / 1000;
+  if (hits === size - 1) return MIXED_TOP55_FLAT_PARTIALS.oneBelow;
+  if (hits === size - 2) return MIXED_TOP55_FLAT_PARTIALS.twoBelow;
+  return 0;
 }
 // Real, backtested build logic: 6-pick only, round-robin diversity across games AND across the
 // three props (max 3 legs of any single prop per slip), max 1 leg per player per slip, max 2
