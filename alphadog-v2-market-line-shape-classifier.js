@@ -1218,8 +1218,8 @@ async function runHistoricalBackfill(env, input = {}) {
     for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_abbr, g.away_abbr)}`, Number(g.game_pk));
     const results = [];
     for (const d of dates) {
-      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_PITCHER }), teamAliases, playerAliases, gameLookup, apiKey));
-      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_HITTER }), teamAliases, playerAliases, gameLookup, apiKey));
+      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_PITCHER }), teamAliases, playerAliases, gameLookup, apiKey, positionMap));
+      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_HITTER }), teamAliases, playerAliases, gameLookup, apiKey, positionMap));
     }
     const totalInserted = results.reduce((s, r) => s + (r.inserted || 0), 0);
     return { ok: true, dates_processed: dates.length, total_inserted: totalInserted, results };
