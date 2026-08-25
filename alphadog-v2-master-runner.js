@@ -220,6 +220,39 @@ async function runMasterFullRunLocked(env, input, runId, startedAt) {
   };
 }
 
+// Automatic daily refresh of the "100% Historical" High Hit slip pool (2026-08-25): after
+// scoring completes and score.prop_outcome_history reflects today's real graded outcomes, this
+// calls the certification-center's live slip-builder (which itself always recomputes the
+// qualifying n>10/100%-hit-rate pool fresh - never a static list) and auto-saves whatever real
+// slips it finds, so a genuinely refreshed slate is waiting without anyone needing to open the
+// app. Uses a plain public-URL fetch rather than a new service binding to avoid touching wrangler
+// config for this. Never blocks or fails the main pipeline - a failure here is logged but the
+// master run itself still reports success based on the four real data runners above.
+async function refreshAndSaveHighHitSlips(runId) {
+  const base = "https://alphadog-v2-certification-center.rodolfoaamattos.workers.dev";
+  try {
+    const buildResp = await fetch(`${base}/api/slips/high-hit`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
+    const built = await buildResp.json();
+    if (!built.ok || !Array.isArray(built.generated_slips) || !built.generated_slips.length) {
+      return { ok: true, slips_found: 0, slips_saved: 0, note: (built.notes || [])[0] || "no qualifying legs today" };
+    }
+    const saveResp = await fetch(`${base}/api/slips/save`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slips: built.generated_slips, selected_leg_count: built.selected_leg_count, saved_by: `master_runner_auto_${runId}` })
+    });
+    const saved = await saveResp.json();
+    return {
+      ok: !!saved.ok,
+      slips_found: built.generated_slips.length,
+      slips_saved: Array.isArray(saved.saved_slips) ? saved.saved_slips.length : 0,
+      skipped_duplicates: Array.isArray(saved.skipped_duplicates) ? saved.skipped_duplicates.length : 0,
+      error: saved.ok ? null : (saved.error || "save_failed")
+    };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runMasterFullRun(env, { trigger: "cron", cron: event.cron }));
