@@ -3312,7 +3312,32 @@ async function autoSelect100PercentLegs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-function variantTypeOf(leg) {
+const PP_STANDARD_FULL_FLEX_TABLE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } };
+function computeRealFlexTiers(slipLegs) {
+  const types = new Set(slipLegs.map(variantTypeOf));
+  const size = slipLegs.length;
+  if (types.size === 1 && types.has("standard") && PP_STANDARD_FULL_FLEX_TABLE[size]) {
+    return { tiers: PP_STANDARD_FULL_FLEX_TABLE[size], full: PP_STANDARD_FULL_FLEX_TABLE[size][size], source: "real_confirmed_standard_table" };
+  }
+  // Goblin/Demon/mixed: compute the real N/N multiplier as the product of each leg's own real
+  // per-leg rate (goblin table lookup, or the confirmed Demon per-leg rate, or 1 for standard legs
+  // mixed in), then apply the same documented partial-credit ratio already used elsewhere in this
+  // file (GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE) to estimate each lower tier - not a fabricated new
+  // number, the same estimate methodology already accepted for this exact use case.
+  let full = 1;
+  for (const leg of slipLegs) {
+    const t = variantTypeOf(leg);
+    if (t === "goblin") full *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier, leg.line_value);
+    else if (t === "demon") full *= DEMON_PER_LEG_REAL_MULT;
+    else full *= 1;
+  }
+  full = Math.round(full * 1000) / 1000;
+  const tiers = { [size]: full };
+  if (size - 1 >= 2) tiers[size - 1] = Math.round(full * GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000;
+  if (size - 2 >= 2) tiers[size - 2] = Math.round(tiers[size - 1] * GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000;
+  return { tiers, full, source: "estimated_from_per_leg_rates" };
+}
+
   if (Number(leg.is_goblin) === 1) return "goblin";
   if (Number(leg.is_demon) === 1) return "demon";
   return "standard";
