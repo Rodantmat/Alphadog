@@ -1194,8 +1194,8 @@ async function runHistoricalBackfill(env, input = {}) {
     const gameRows = await pgClient`
       SELECT gc.official_date::text as d, gc.game_pk, th.abbreviation as home_abbr, ta.abbreviation as away_abbr
       FROM calendar.game_calendar gc
-      LEFT JOIN ref.teams th ON th.team_id = gc.home_team_id
-      LEFT JOIN ref.teams ta ON ta.team_id = gc.away_team_id
+      LEFT JOIN ref.teams th ON th.team_id::text = gc.home_team_id::text
+      LEFT JOIN ref.teams ta ON ta.team_id::text = gc.away_team_id::text
       WHERE gc.official_date::text IN ${pgClient(dates)}`;
     const gameLookup = new Map();
     for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_abbr, g.away_abbr)}`, Number(g.game_pk));
