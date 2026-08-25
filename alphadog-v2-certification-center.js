@@ -3338,6 +3338,7 @@ function computeRealFlexTiers(slipLegs) {
   return { tiers, full, source: "estimated_from_per_leg_rates" };
 }
 
+function variantTypeOf(leg) {
   if (Number(leg.is_goblin) === 1) return "goblin";
   if (Number(leg.is_demon) === 1) return "demon";
   return "standard";
