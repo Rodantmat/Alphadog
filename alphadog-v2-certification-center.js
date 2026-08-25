@@ -5474,8 +5474,8 @@ async function saveSelectedSlips(){
     alert(msg);
   }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
 }
-function activeSourceFilters(){const m={prizepicks_demon:$('filterDemon'),prizepicks_goblin:$('filterGoblin'),prizepicks_regular:$('filterRegular'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
-const SOURCE_LABELS={prizepicks_demon:'PP Demon',prizepicks_goblin:'PP Goblin',prizepicks_regular:'PP Regular',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+function activeSourceFilters(){const m={prizepicks:$('filterPrizepicks'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+const SOURCE_LABELS={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
 function slipSummaryHtml(filtered){
   const groups=new Map();
   for(const x of filtered){
