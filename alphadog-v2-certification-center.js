@@ -5403,8 +5403,7 @@ function realMultFieldsHtmlForSize(s,idx,size){
   if(s.estimated_multiplier_flex_tiers&&Object.keys(s.estimated_multiplier_flex_tiers).length&&size===s.slip_size){
     const tiers=s.estimated_multiplier_flex_tiers;
     const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
-    const isConfirmed=String(s.estimated_payout_note||'').toLowerCase().includes('real, confirmed');
-    const label=isConfirmed?'Real multipliers ('+size+'-pick)':'Real multipliers ('+size+'-pick, ESTIMATE - confirm in-app before placing)';
+    const label='Real multipliers ('+size+'-pick)';
     return '<div class="realMultGroup"><span class="realMultLabel">'+esc(label)+'</span><div class="realMultFields">'+keys.map(k=>
       '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" placeholder="'+esc(String(tiers[k]||''))+'"></label>'
     ).join('')+'</div></div>';
