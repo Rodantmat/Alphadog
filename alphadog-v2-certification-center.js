@@ -5374,6 +5374,54 @@ function bindLegKeepBoxDelegation(){
     }
   });
 }
+// Real, calibrated per-prop Power tables (Goblin, less side) for the live Mixed Top-55/92%
+// strategy, mirrored client-side from the backend's MIXED_TOP55_REAL_TABLES so the multiplier
+// fields can be recomputed dynamically for ANY effective size (2-6) as legs get unchecked, not
+// just the slip's original generated size.
+const MIXED_TOP55_CLIENT_TABLES={
+  'hits|less':5.25, 'hits_runs_rbis|less':5.25, 'total_bases|less':10.5
+};
+const MIXED_TOP55_CLIENT_RATIOS={
+  // [size][hits] -> ratio of that tier's real Flex payout to the full-hit (6/6) payout, per prop,
+  // from the same real 6-pick calibration used server-side.
+  'hits|less':{5:0.5/4.0,4:0.25/4.0},
+  'hits_runs_rbis|less':{5:0.5/4.0,4:0.25/4.0},
+  'total_bases|less':{5:1.25/6.0,4:0.4/6.0}
+};
+function computeMixedTop55FlexTiersLive(legs,size){
+  if(!legs||!legs.length||legs.length!==size)return null;
+  for(const l of legs){
+    const key=String(l.canonical_prop_key||'')+'|'+String(l.selected_side||'');
+    if(!MIXED_TOP55_CLIENT_TABLES[key]||Number(l.is_goblin)!==1)return null;
+  }
+  let full=1;
+  for(const l of legs){
+    const key=String(l.canonical_prop_key||'')+'|'+String(l.selected_side||'');
+    full*=Math.pow(MIXED_TOP55_CLIENT_TABLES[key],1/6);
+  }
+  full=Math.round(full*1000)/1000;
+  // Real spec: 2/3/4-pick show 2 fields (full, full-1); 5/6-pick show 3 fields (full, full-1, full-2).
+  const tierCount=size>=5?3:2;
+  const tiers={[size]:full};
+  const ratiosAt=(hitsBelow)=>{
+    const rs=[];
+    for(const l of legs){
+      const key=String(l.canonical_prop_key||'')+'|'+String(l.selected_side||'');
+      const r=MIXED_TOP55_CLIENT_RATIOS[key];
+      if(r&&r[hitsBelow]!=null)rs.push(r[hitsBelow]);
+    }
+    return rs.length?rs.reduce((a,b)=>a+b,0)/rs.length:null;
+  };
+  if(tierCount>=2){
+    const r5=ratiosAt(5);
+    tiers[size-1]=r5!=null?Math.round(full*r5*1000)/1000:Math.round(full*0.10*1000)/1000;
+  }
+  if(tierCount>=3){
+    const r4=ratiosAt(4);
+    tiers[size-2]=r4!=null?Math.round(full*r4*1000)/1000:Math.round(tiers[size-1]*0.10*1000)/1000;
+  }
+  return tiers;
+}
 // Returns the real (or best-available) tiered Flex table for a slip at a GIVEN size - not
 // necessarily its original size. Falls back to a single estimated field when no real table
 // exists for that size (e.g. Demon shrunk below/above its one confirmed size).
