@@ -3411,6 +3411,7 @@ function build100PercentSlips(legs) {
     }
     for (const s of slipsForSource) {
       const types = new Set(s.legs.map(variantTypeOf));
+      const flexCalc = computeRealFlexTiers(s.legs);
       allSlips.push({
         client_slip_id: makeUiId("high_hit_slip_100pct"),
         source_key: sourceKey,
@@ -3418,15 +3419,17 @@ function build100PercentSlips(legs) {
         slip_size: s.legs.length,
         entry_mode: "flex",
         structure_label: `${s.legs.length}-pick Flex (100% Historical - ${s.variant_composition})`,
-        estimated_payout_note: types.size > 1
-          ? "Mixed goblin/demon/standard legs - real per-leg multiplier varies by variant, check each leg's real price in-app before placing."
-          : `All legs are ${[...types][0]} variant - use the app's real ${[...types][0]} multiplier table for this size.`,
+        estimated_multiplier: flexCalc.full,
+        estimated_multiplier_flex_tiers: flexCalc.tiers,
+        estimated_payout_note: flexCalc.source === "real_confirmed_standard_table"
+          ? "Real, confirmed PrizePicks standard Flex table for this size."
+          : `Estimated from real per-leg rates (${[...types].join("+")}); partial-hit tiers use the same documented ~10% partial-credit ratio already validated elsewhere in this system - confirm against the app's real displayed multiplier before placing.`,
         strategy_notes: [
           "Every leg has a real historical n>10 and a 100% historical hit rate against score.prop_outcome_history, recomputed fresh each run - not a static list.",
           "This is the unified replacement for the separate Goblin/Regular/Demon High Hit tracks (retired 2026-08-25).",
           "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day.",
           "Slip composition prefers a single variant type (all-standard, all-goblin, or all-demon) - only mixes types when a pure-type pool can't fill a slip alone.",
-          "As many full 6-pick slips are built per day as the qualifying pool supports, plus one final slip from any 2+ leftover legs."
+          "As many full 6-pick slips are built per day as the qualifying pool supports, followed by progressively smaller slips from any remaining legs until fewer than 2 remain."
         ],
         legs: s.legs
       });
