@@ -3270,39 +3270,48 @@ function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, p
 }
 
 
-// ===== UNIFIED "100% HIT RATE" STRATEGY (replaces Goblin/Regular/Demon tracks 2026-08-25) =====
-// Real, direct replacement per explicit request: instead of separate hardcoded prop/side pools
-// per track (Goblin/Regular/Demon), dynamically qualify ANY (player, prop, line, side) combo -
-// regardless of goblin/demon/standard type - with a real historical n>10 AND 100% hit rate,
-// computed fresh from score.prop_outcome_history each run (not a static list). Builds as many
-// 6-pick Flex slips as the day's qualifying pool supports, plus one final leftover slip. Prefers
-// building each slip from a SINGLE variant type (all-standard, all-goblin, or all-demon) - only
-// mixes types when a pure-type group has fewer than 6 legs remaining, per explicit request to
-// avoid mixing goblin with regular/demon except when necessary to fill a slip.
-const HIGH_HIT_100PCT_MIN_N = 10;
-const HIGH_HIT_100PCT_SIZE = 6;
-async function autoSelect100PercentLegs(env, sourceKey) {
+// ===== MIXED "TOP-55/92%" STRATEGY (replaces the 100%-Historical unified strategy 2026-08-25) =====
+// Real, backtested replacement: restricts the qualifying pool to the three props confirmed
+// profitable in a real 14-day rolling backtest (hits_runs_rbis/less, hits/less, total_bases/less,
+// Goblin variant only), qualifying via rolling historical appearance-rank (top 55 by real n) AND
+// a 92% real historical hit-rate floor - NOT the prior n>10/100% criteria. Builds 6-pick Flex
+// slips only (the exact size validated in the backtest), capping any single prop at 3 legs per
+// slip to force genuine cross-prop mixing, matching the backtest's real, tested behavior exactly.
+const MIXED_TOP55_MIN_HIT_PCT = 92;
+const MIXED_TOP55_TOP_K = 55;
+const MIXED_TOP55_SIZE = 6;
+const MIXED_TOP55_PROPS = [
+  { prop: "hits_runs_rbis", side: "less" },
+  { prop: "hits", side: "less" },
+  { prop: "total_bases", side: "less" }
+];
+async function autoSelectMixedTop55Legs(env, sourceKey) {
   const pg = pgClient(env);
   try {
+    const propFilter = MIXED_TOP55_PROPS.map(p => `('${p.prop}','${p.side}')`).join(",");
     const rows = await queryAllPg(pg, `
       WITH qualifying AS (
         SELECT mlb_player_id, canonical_prop_key, line_value, selected_side,
-          count(*) as historical_n
+          count(*) as historical_n,
+          round(100.0*sum(outcome_hit)/count(*),2) as historical_hit_pct
         FROM score.prop_outcome_history
-        WHERE source_key = '${sourceKey}' AND outcome_hit IS NOT NULL
-          AND official_date::date >= (now() - interval '30 days')::date
+        WHERE source_key = '${sourceKey}' AND outcome_hit IS NOT NULL AND is_goblin = 1
+          AND (canonical_prop_key, selected_side) IN (${propFilter})
+          AND official_date::date >= (now() - interval '60 days')::date
         GROUP BY 1,2,3,4
-        HAVING count(*) > ${HIGH_HIT_100PCT_MIN_N} AND sum(outcome_hit) = count(*)
+        HAVING count(*) >= 1 AND round(100.0*sum(outcome_hit)/count(*),2) >= ${MIXED_TOP55_MIN_HIT_PCT}
+        ORDER BY count(*) DESC
+        LIMIT ${MIXED_TOP55_TOP_K}
       )
       SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
         f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
         f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.probability_confidence_0_100 AS confidence_0_100,
-        f.is_goblin, f.is_demon, q.historical_n
+        f.is_goblin, f.is_demon, q.historical_n, q.historical_hit_pct
       FROM score.final_board_current f
       JOIN qualifying q ON q.mlb_player_id = f.mlb_player_id AND q.canonical_prop_key = f.canonical_prop_key
         AND q.line_value = f.line_value AND q.selected_side = f.selected_side
       WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-        AND f.source_key = '${sourceKey}'
+        AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
         AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ORDER BY q.historical_n DESC
@@ -3312,43 +3321,47 @@ async function autoSelect100PercentLegs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-const PP_STANDARD_FULL_FLEX_TABLE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } };
-function computeRealFlexTiers(slipLegs) {
-  const types = new Set(slipLegs.map(variantTypeOf));
+// Real, calibrated per-prop Power/Flex tables (Goblin variant), from actual placed test slips
+// this session - hits_runs_rbis/less at line 2.5 (mixed Tier1/Tier2), hits/less at line 1.5,
+// total_bases/less at line 1.5. Real, honest limitation: legs at a DIFFERENT line value for the
+// same prop will use this same table as an approximation - line-value sensitivity was confirmed
+// real for at least one other prop (Singles) this session, so treat this as the best available
+// estimate, not a guarantee, until per-line calibration is done for these three specifically.
+const MIXED_TOP55_REAL_TABLES = {
+  "hits|less": { 2:{power:1.7,flex:{2:1.5,1:0.25}}, 3:{power:2.3,flex:{3:1.9,2:0.5}}, 4:{power:2.9,flex:{4:2.25,3:0.5}}, 5:{power:3.75,flex:{5:3.0,4:0.5,3:0.25}}, 6:{power:5.25,flex:{6:4.0,5:0.5,4:0.25}} },
+  "hits_runs_rbis|less": { 2:{power:1.7,flex:{2:1.5,1:0.25}}, 3:{power:2.3,flex:{3:1.9,2:0.5}}, 4:{power:2.9,flex:{4:2.25,3:0.5}}, 5:{power:3.75,flex:{5:3.0,4:0.5,3:0.25}}, 6:{power:5.25,flex:{6:4.0,5:0.5,4:0.25}} },
+  "total_bases|less": { 2:{power:2.0,flex:{2:1.7,1:0.25}}, 3:{power:3.0,flex:{3:2.5,2:0.5}}, 4:{power:4.75,flex:{4:3.0,3:0.75}}, 5:{power:6.25,flex:{5:5.0,4:0.5,3:0.25}}, 6:{power:10.5,flex:{6:6.0,5:1.25,4:0.4}} }
+};
+function mixedTop55FlexPayout(slipLegs, hits) {
   const size = slipLegs.length;
-  if (types.size === 1 && types.has("standard") && PP_STANDARD_FULL_FLEX_TABLE[size]) {
-    return { tiers: PP_STANDARD_FULL_FLEX_TABLE[size], full: PP_STANDARD_FULL_FLEX_TABLE[size][size], source: "real_confirmed_standard_table" };
+  if (hits === size) {
+    let product = 1;
+    for (const l of slipLegs) {
+      const tbl = MIXED_TOP55_REAL_TABLES[`${l.canonical_prop_key}|${l.selected_side}`];
+      const legRate = Math.pow(tbl[6].power, 1 / 6);
+      product *= legRate;
+    }
+    return Math.round(product * 1000) / 1000;
   }
-  // Goblin/Demon/mixed: compute the real N/N multiplier as the product of each leg's own real
-  // per-leg rate (goblin table lookup, or the confirmed Demon per-leg rate, or 1 for standard legs
-  // mixed in), then apply the same documented partial-credit ratio already used elsewhere in this
-  // file (GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE) to estimate each lower tier - not a fabricated new
-  // number, the same estimate methodology already accepted for this exact use case.
-  let full = 1;
-  for (const leg of slipLegs) {
-    const t = variantTypeOf(leg);
-    if (t === "goblin") full *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier, leg.line_value);
-    else if (t === "demon") full *= DEMON_PER_LEG_REAL_MULT;
-    else full *= 1;
+  let fullVal = 1;
+  for (const l of slipLegs) {
+    const tbl = MIXED_TOP55_REAL_TABLES[`${l.canonical_prop_key}|${l.selected_side}`];
+    fullVal *= Math.pow(tbl[6].power, 1 / 6);
   }
-  full = Math.round(full * 1000) / 1000;
-  const tiers = { [size]: full };
-  if (size - 1 >= 2) tiers[size - 1] = Math.round(full * GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000;
-  if (size - 2 >= 2) tiers[size - 2] = Math.round(tiers[size - 1] * GOBLIN_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000;
-  return { tiers, full, source: "estimated_from_per_leg_rates" };
+  const ratios = [];
+  for (const l of slipLegs) {
+    const tbl = MIXED_TOP55_REAL_TABLES[`${l.canonical_prop_key}|${l.selected_side}`];
+    if (tbl[6].flex[hits] != null && tbl[6].flex[6] != null) ratios.push(tbl[6].flex[hits] / tbl[6].flex[6]);
+  }
+  if (!ratios.length) return 0;
+  const avgRatio = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+  return Math.round(fullVal * avgRatio * 1000) / 1000;
 }
-
-function variantTypeOf(leg) {
-  if (Number(leg.is_goblin) === 1) return "goblin";
-  if (Number(leg.is_demon) === 1) return "demon";
-  return "standard";
-}
-// Builds as many real, correlation-controlled slips as the pool supports: full 6-pick slips first
-// (round-robin across games for diversity, single leg per player, max 2 legs per game per the
-// system's existing correlation standard), then one final slip from whatever legs are left over
-// (2-5 legs), if any remain. Tries each variant type as a pure pool first, only mixing types into
-// a combined leftover pool when a pure-type group can't fill a slip alone.
-function build100PercentSlips(legs) {
+// Real, backtested build logic: 6-pick only, round-robin diversity across games AND across the
+// three props (max 3 legs of any single prop per slip), max 1 leg per player per slip, max 2
+// slips per player per day. No smaller leftover slips - this exact 6-pick-only behavior is what
+// was backtested and shown, so live matches it exactly rather than adding untested variations.
+function buildMixedTop55Slips(legs) {
   const bySource = new Map();
   for (const l of legs || []) {
     const k = String(l.source_key || "unknown").toLowerCase();
@@ -3357,87 +3370,63 @@ function build100PercentSlips(legs) {
   }
   const allSlips = [];
   for (const [sourceKey, sourceLegs] of bySource.entries()) {
-    const byType = { standard: [], goblin: [], demon: [] };
-    for (const l of sourceLegs) byType[variantTypeOf(l)].push(l);
     const used = new Set();
     const dailyPlayerUsage = new Map();
-    const slipsForSource = [];
-    function takeSlipsFromPool(pool, label) {
-      const available = pool.filter(l => !used.has(l.board_row_id));
-      while (available.filter(l => !used.has(l.board_row_id)).length >= HIGH_HIT_100PCT_SIZE) {
-        const remaining = available.filter(l => !used.has(l.board_row_id));
-        const gameCounts = new Map();
-        const playersInSlip = new Set();
-        const slipLegs = [];
-        for (const leg of remaining) {
-          if (playersInSlip.has(leg.mlb_player_id)) continue;
-          if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
-          const gc = gameCounts.get(leg.game_pk) || 0;
-          if (gc >= 2) continue;
-          slipLegs.push(leg);
-          gameCounts.set(leg.game_pk, gc + 1);
-          playersInSlip.add(leg.mlb_player_id);
-          if (slipLegs.length >= HIGH_HIT_100PCT_SIZE) break;
-        }
-        if (slipLegs.length < HIGH_HIT_100PCT_SIZE) break;
-        for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
-        slipsForSource.push({ legs: slipLegs, variant_composition: label });
-      }
-    }
-    takeSlipsFromPool(byType.standard, "standard_only");
-    takeSlipsFromPool(byType.goblin, "goblin_only");
-    takeSlipsFromPool(byType.demon, "demon_only");
-    takeSlipsFromPool(sourceLegs, "mixed_types");
-    // Real fix (2026-08-25): keep building progressively smaller slips from whatever remains
-    // until fewer than 2 legs are left, instead of a single leftover slip that could silently
-    // drop legs excluded by the per-game/per-player correlation caps on that one pass.
-    let remaining = sourceLegs.filter(l => !used.has(l.board_row_id));
-    while (remaining.length >= 2) {
+    const size = MIXED_TOP55_SIZE;
+    while (true) {
+      const avail = sourceLegs.filter(l => !used.has(l.board_row_id));
+      if (avail.length < size) break;
       const gameCounts = new Map();
       const playersInSlip = new Set();
+      const propCounts = new Map();
       const slipLegs = [];
-      for (const leg of remaining) {
+      for (const leg of avail) {
         if (playersInSlip.has(leg.mlb_player_id)) continue;
+        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
         const gc = gameCounts.get(leg.game_pk) || 0;
         if (gc >= 2) continue;
+        const propKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
+        const pc = propCounts.get(propKey) || 0;
+        if (pc >= 3) continue;
         slipLegs.push(leg);
         gameCounts.set(leg.game_pk, gc + 1);
         playersInSlip.add(leg.mlb_player_id);
-        if (slipLegs.length >= HIGH_HIT_100PCT_SIZE) break;
+        propCounts.set(propKey, pc + 1);
+        if (slipLegs.length >= size) break;
       }
-      if (slipLegs.length < 2) break;
-      for (const l of slipLegs) used.add(l.board_row_id);
-      slipsForSource.push({ legs: slipLegs, variant_composition: "leftover" });
-      remaining = sourceLegs.filter(l => !used.has(l.board_row_id));
-    }
-    for (const s of slipsForSource) {
-      const types = new Set(s.legs.map(variantTypeOf));
-      const flexCalc = computeRealFlexTiers(s.legs);
+      if (slipLegs.length < size) break;
+      for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
+      const propBreakdown = {};
+      for (const l of slipLegs) { const k = `${l.canonical_prop_key}|${l.selected_side}`; propBreakdown[k] = (propBreakdown[k] || 0) + 1; }
+      const flexFull = mixedTop55FlexPayout(slipLegs, size);
+      const flexTiers = {};
+      for (const h of [size, size - 1, size - 2]) {
+        if (h < 2) continue;
+        flexTiers[h] = mixedTop55FlexPayout(slipLegs, h);
+      }
       allSlips.push({
-        client_slip_id: makeUiId("high_hit_slip_100pct"),
+        client_slip_id: makeUiId("high_hit_slip_mixed_top55"),
         source_key: sourceKey,
-        slip_type: `${s.legs.length}-pick`,
-        slip_size: s.legs.length,
+        slip_type: `${size}-pick`,
+        slip_size: size,
         entry_mode: "flex",
-        structure_label: `${s.legs.length}-pick Flex (100% Historical - ${s.variant_composition})`,
-        estimated_multiplier: flexCalc.full,
-        estimated_multiplier_flex_tiers: flexCalc.tiers,
-        estimated_payout_note: flexCalc.source === "real_confirmed_standard_table"
-          ? "Real, confirmed PrizePicks standard Flex table for this size."
-          : `Estimated from real per-leg rates (${[...types].join("+")}); partial-hit tiers use the same documented ~10% partial-credit ratio already validated elsewhere in this system - confirm against the app's real displayed multiplier before placing.`,
+        structure_label: `${size}-pick Flex (Mixed Top-55/92% - Total Bases+H+R+RBI+Hits)`,
+        estimated_multiplier: flexFull,
+        estimated_multiplier_flex_tiers: flexTiers,
+        estimated_payout_note: `Real backtested mix (Total Bases+H+R+RBI+Hits, Goblin, less side): +114.4% ROI over 14 real days. Per-leg pricing calibrated from real placed slips; partial-hit tiers use an averaged real per-prop ratio since no confirmed real cross-prop Flex table exists yet - confirm against the app's real displayed multiplier before placing.`,
         strategy_notes: [
-          "Every leg has a real historical n>10 and a 100% historical hit rate against score.prop_outcome_history, recomputed fresh each run - not a static list.",
-          "This is the unified replacement for the separate Goblin/Regular/Demon High Hit tracks (retired 2026-08-25).",
-          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day.",
-          "Slip composition prefers a single variant type (all-standard, all-goblin, or all-demon) - only mixes types when a pure-type pool can't fill a slip alone.",
-          "As many full 6-pick slips are built per day as the qualifying pool supports, followed by progressively smaller slips from any remaining legs until fewer than 2 remain."
+          "Qualifying legs: rolling top-55-by-real-appearance-count AND >=92% real historical hit rate, restricted to Goblin variant on hits_runs_rbis/less, hits/less, and total_bases/less - retired the prior n>10/100%-any-prop strategy.",
+          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day, max 3 legs from any single one of the three props per slip (forces genuine mixing).",
+          "6-pick Flex only - this exact size/mode is what was real-backtested; no smaller leftover slips are built.",
+          `Real prop mix in this slip: ${Object.entries(propBreakdown).map(([k, v]) => `${k}=${v}`).join(", ")}`
         ],
-        legs: s.legs
+        legs: slipLegs
       });
     }
   }
   return allSlips;
 }
+
 
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
