@@ -207,6 +207,12 @@ async function runMasterFullRunLocked(env, input, runId, startedAt) {
   const allOk = runners.every(r => r.ok);
   const lastOk = runners.length && runners[runners.length - 1].data_ok;
 
+  // Real, automatic daily refresh of the High Hit slip pool - runs after scoring so it reads
+  // today's real graded outcomes, regardless of whether every upstream runner reported ok:true
+  // (a non-critical hiccup earlier in the chain shouldn't block today's slip refresh from at
+  // least attempting to run against whatever data landed).
+  const high_hit_slip_refresh = await refreshAndSaveHighHitSlips(runId);
+
   return {
     ok: allOk,
     data_ok: lastOk,
@@ -216,7 +222,8 @@ async function runMasterFullRunLocked(env, input, runId, startedAt) {
     started_at: startedAt,
     finished_at: nowIso(),
     certification: allOk ? "MASTER_FULL_RUN_COMPLETE" : "MASTER_FULL_RUN_PARTIAL_OR_FAILED",
-    runners
+    runners,
+    high_hit_slip_refresh
   };
 }
 
