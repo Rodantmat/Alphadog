@@ -1190,13 +1190,14 @@ async function runHistoricalBackfill(env, input = {}) {
     await pgClient`CREATE UNIQUE INDEX IF NOT EXISTS market_prop_context_history_stable_key_uq ON archive.market_prop_context_history (stable_key)`.catch(() => {});
     const teamAliases = await loadTeamAliasMap(pgClient);
     const playerAliases = await loadPlayerAliasMap(pgClient);
+    const apiKey = await realParlayApiKey(env);
     const gameRows = await pgClient`SELECT official_date::text as d, game_pk, home_team_id, away_team_id FROM calendar.game_calendar WHERE official_date::text IN ${pgClient(dates)}`;
     const gameLookup = new Map();
     for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_team_id, g.away_team_id)}`, Number(g.game_pk));
     const results = [];
     for (const d of dates) {
-      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_PITCHER }), teamAliases, playerAliases, gameLookup));
-      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_HITTER }), teamAliases, playerAliases, gameLookup));
+      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_PITCHER }), teamAliases, playerAliases, gameLookup, apiKey));
+      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_HITTER }), teamAliases, playerAliases, gameLookup, apiKey));
     }
     const totalInserted = results.reduce((s, r) => s + (r.inserted || 0), 0);
     return { ok: true, dates_processed: dates.length, total_inserted: totalInserted, results };
