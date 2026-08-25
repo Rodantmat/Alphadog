@@ -3387,12 +3387,15 @@ function build100PercentSlips(legs) {
     takeSlipsFromPool(byType.goblin, "goblin_only");
     takeSlipsFromPool(byType.demon, "demon_only");
     takeSlipsFromPool(sourceLegs, "mixed_types");
-    const leftover = sourceLegs.filter(l => !used.has(l.board_row_id));
-    if (leftover.length >= 2) {
+    // Real fix (2026-08-25): keep building progressively smaller slips from whatever remains
+    // until fewer than 2 legs are left, instead of a single leftover slip that could silently
+    // drop legs excluded by the per-game/per-player correlation caps on that one pass.
+    let remaining = sourceLegs.filter(l => !used.has(l.board_row_id));
+    while (remaining.length >= 2) {
       const gameCounts = new Map();
       const playersInSlip = new Set();
       const slipLegs = [];
-      for (const leg of leftover) {
+      for (const leg of remaining) {
         if (playersInSlip.has(leg.mlb_player_id)) continue;
         const gc = gameCounts.get(leg.game_pk) || 0;
         if (gc >= 2) continue;
@@ -3401,7 +3404,10 @@ function build100PercentSlips(legs) {
         playersInSlip.add(leg.mlb_player_id);
         if (slipLegs.length >= HIGH_HIT_100PCT_SIZE) break;
       }
-      if (slipLegs.length >= 2) slipsForSource.push({ legs: slipLegs, variant_composition: "leftover" });
+      if (slipLegs.length < 2) break;
+      for (const l of slipLegs) used.add(l.board_row_id);
+      slipsForSource.push({ legs: slipLegs, variant_composition: "leftover" });
+      remaining = sourceLegs.filter(l => !used.has(l.board_row_id));
     }
     for (const s of slipsForSource) {
       const types = new Set(s.legs.map(variantTypeOf));
