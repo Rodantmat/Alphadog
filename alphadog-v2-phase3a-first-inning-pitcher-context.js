@@ -1944,11 +1944,13 @@ async function runResolvePropOutcomes(env, input = {}) {
       SELECT f.final_board_row_id, f.hp_board_batch_id, f.matrix_id, f.prepared_row_id, f.source_key,
         f.game_pk, f.official_date::text AS official_date, f.mlb_player_id, f.player_name,
         f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100,
-        f.probability_confidence_0_100, f.score_0_100, f.score_grade, f.board_tier, f.live_playable
+        f.probability_confidence_0_100, f.score_0_100, f.score_grade, f.board_tier, f.live_playable,
+        COALESCE(f.is_goblin,0) AS is_goblin, COALESCE(f.is_demon,0) AS is_demon
       FROM score.final_board_history f
       LEFT JOIN score.prop_outcome_history o ON o.mlb_player_id = f.mlb_player_id
         AND o.canonical_prop_key = f.canonical_prop_key AND o.line_value = f.line_value
         AND o.selected_side = f.selected_side AND o.official_date::date = f.official_date::date
+        AND o.is_goblin = COALESCE(f.is_goblin,0) AND o.is_demon = COALESCE(f.is_demon,0)
       WHERE o.outcome_id IS NULL
         AND f.official_date::date >= (CURRENT_DATE - (${lookbackDays} || ' days')::interval)
         AND f.official_date::date < CURRENT_DATE
