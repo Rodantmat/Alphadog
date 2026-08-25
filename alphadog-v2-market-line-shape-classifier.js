@@ -1191,9 +1191,14 @@ async function runHistoricalBackfill(env, input = {}) {
     const teamAliases = await loadTeamAliasMap(pgClient);
     const playerAliases = await loadPlayerAliasMap(pgClient);
     const apiKey = await realParlayApiKey(env);
-    const gameRows = await pgClient`SELECT official_date::text as d, game_pk, home_team_id, away_team_id FROM calendar.game_calendar WHERE official_date::text IN ${pgClient(dates)}`;
+    const gameRows = await pgClient`
+      SELECT gc.official_date::text as d, gc.game_pk, th.abbreviation as home_abbr, ta.abbreviation as away_abbr
+      FROM calendar.game_calendar gc
+      LEFT JOIN ref.teams th ON th.team_id = gc.home_team_id
+      LEFT JOIN ref.teams ta ON ta.team_id = gc.away_team_id
+      WHERE gc.official_date::text IN ${pgClient(dates)}`;
     const gameLookup = new Map();
-    for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_team_id, g.away_team_id)}`, Number(g.game_pk));
+    for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_abbr, g.away_abbr)}`, Number(g.game_pk));
     const results = [];
     for (const d of dates) {
       results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_PITCHER }), teamAliases, playerAliases, gameLookup, apiKey));
