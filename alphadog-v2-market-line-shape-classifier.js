@@ -1201,6 +1201,15 @@ export default {
       const input = await readJsonSafe(request);
       return jsonResponse(baseIdentity(env, { route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, mode: input.mode || null }, writes_performed: 0, external_calls_performed: 0 }));
     }
+    if (method === "POST" && path === "/backfill-historical") {
+      const input = await readJsonSafe(request);
+      try {
+        const output = await runHistoricalBackfill(env, input);
+        return jsonResponse(output, output.ok !== false ? 200 : 500);
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      }
+    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       if (input.mode && ![MODE_HITTER, MODE_PITCHER, "hitter_props", "pitcher_props", "market_pitcher_props"].includes(String(input.mode))) return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", supported_modes: [MODE_HITTER, MODE_PITCHER], received_mode: input.mode }, 400);
