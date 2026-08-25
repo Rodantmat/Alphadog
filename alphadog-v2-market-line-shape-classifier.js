@@ -1174,7 +1174,7 @@ async function runHistoricalBackfill(env, input = {}) {
     await pgClient`CREATE UNIQUE INDEX IF NOT EXISTS market_prop_context_history_stable_key_uq ON archive.market_prop_context_history (stable_key)`.catch(() => {});
     const teamAliases = await loadTeamAliasMap(pgClient);
     const playerAliases = await loadPlayerAliasMap(pgClient);
-    const gameRows = await pgClient`SELECT official_date::text as d, game_pk, home_team_id, away_team_id FROM calendar.game_calendar WHERE official_date::text = ANY(${dates})`;
+    const gameRows = await pgClient`SELECT official_date::text as d, game_pk, home_team_id, away_team_id FROM calendar.game_calendar WHERE official_date::text = ANY(${dates}::text[])`;
     const gameLookup = new Map();
     for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_team_id, g.away_team_id)}`, Number(g.game_pk));
     const results = [];
