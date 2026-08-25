@@ -1206,6 +1206,7 @@ async function runHistoricalBackfill(env, input = {}) {
     await pgClient`CREATE UNIQUE INDEX IF NOT EXISTS market_prop_context_history_stable_key_uq ON archive.market_prop_context_history (stable_key)`.catch(() => {});
     const teamAliases = await loadTeamAliasMap(pgClient);
     const playerAliases = await loadPlayerAliasMap(pgClient);
+    const positionMap = await loadPlayerPositionMap(pgClient);
     const apiKey = await realParlayApiKey(env);
     const gameRows = await pgClient`
       SELECT gc.official_date::text as d, gc.game_pk, th.abbreviation as home_abbr, ta.abbreviation as away_abbr
