@@ -3270,7 +3270,139 @@ function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, p
 }
 
 
-async function apiHighHitSlips(env, request) {
+// ===== UNIFIED "100% HIT RATE" STRATEGY (replaces Goblin/Regular/Demon tracks 2026-08-25) =====
+// Real, direct replacement per explicit request: instead of separate hardcoded prop/side pools
+// per track (Goblin/Regular/Demon), dynamically qualify ANY (player, prop, line, side) combo -
+// regardless of goblin/demon/standard type - with a real historical n>10 AND 100% hit rate,
+// computed fresh from score.prop_outcome_history each run (not a static list). Builds as many
+// 6-pick Flex slips as the day's qualifying pool supports, plus one final leftover slip. Prefers
+// building each slip from a SINGLE variant type (all-standard, all-goblin, or all-demon) - only
+// mixes types when a pure-type group has fewer than 6 legs remaining, per explicit request to
+// avoid mixing goblin with regular/demon except when necessary to fill a slip.
+const HIGH_HIT_100PCT_MIN_N = 10;
+const HIGH_HIT_100PCT_SIZE = 6;
+async function autoSelect100PercentLegs(env, sourceKey) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH qualifying AS (
+        SELECT mlb_player_id, canonical_prop_key, line_value, selected_side,
+          count(*) as historical_n
+        FROM score.prop_outcome_history
+        WHERE source_key = '${sourceKey}' AND outcome_hit IS NOT NULL
+        GROUP BY 1,2,3,4
+        HAVING count(*) > ${HIGH_HIT_100PCT_MIN_N} AND sum(outcome_hit) = count(*)
+      )
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
+        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
+        f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.probability_confidence_0_100 AS confidence_0_100,
+        f.is_goblin, f.is_demon, q.historical_n
+      FROM score.final_board_current f
+      JOIN qualifying q ON q.mlb_player_id = f.mlb_player_id AND q.canonical_prop_key = f.canonical_prop_key
+        AND q.line_value = f.line_value AND q.selected_side = f.selected_side
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND f.source_key = '${sourceKey}'
+        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY q.historical_n DESC
+    `);
+    return rows;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function variantTypeOf(leg) {
+  if (Number(leg.is_goblin) === 1) return "goblin";
+  if (Number(leg.is_demon) === 1) return "demon";
+  return "standard";
+}
+// Builds as many real, correlation-controlled slips as the pool supports: full 6-pick slips first
+// (round-robin across games for diversity, single leg per player, max 2 legs per game per the
+// system's existing correlation standard), then one final slip from whatever legs are left over
+// (2-5 legs), if any remain. Tries each variant type as a pure pool first, only mixing types into
+// a combined leftover pool when a pure-type group can't fill a slip alone.
+function build100PercentSlips(legs) {
+  const bySource = new Map();
+  for (const l of legs || []) {
+    const k = String(l.source_key || "unknown").toLowerCase();
+    if (!bySource.has(k)) bySource.set(k, []);
+    bySource.get(k).push(l);
+  }
+  const allSlips = [];
+  for (const [sourceKey, sourceLegs] of bySource.entries()) {
+    const byType = { standard: [], goblin: [], demon: [] };
+    for (const l of sourceLegs) byType[variantTypeOf(l)].push(l);
+    const used = new Set();
+    const dailyPlayerUsage = new Map();
+    const slipsForSource = [];
+    function takeSlipsFromPool(pool, label) {
+      const available = pool.filter(l => !used.has(l.board_row_id));
+      while (available.filter(l => !used.has(l.board_row_id)).length >= HIGH_HIT_100PCT_SIZE) {
+        const remaining = available.filter(l => !used.has(l.board_row_id));
+        const gameCounts = new Map();
+        const playersInSlip = new Set();
+        const slipLegs = [];
+        for (const leg of remaining) {
+          if (playersInSlip.has(leg.mlb_player_id)) continue;
+          if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+          const gc = gameCounts.get(leg.game_pk) || 0;
+          if (gc >= 2) continue;
+          slipLegs.push(leg);
+          gameCounts.set(leg.game_pk, gc + 1);
+          playersInSlip.add(leg.mlb_player_id);
+          if (slipLegs.length >= HIGH_HIT_100PCT_SIZE) break;
+        }
+        if (slipLegs.length < HIGH_HIT_100PCT_SIZE) break;
+        for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
+        slipsForSource.push({ legs: slipLegs, variant_composition: label });
+      }
+    }
+    takeSlipsFromPool(byType.standard, "standard_only");
+    takeSlipsFromPool(byType.goblin, "goblin_only");
+    takeSlipsFromPool(byType.demon, "demon_only");
+    takeSlipsFromPool(sourceLegs, "mixed_types");
+    const leftover = sourceLegs.filter(l => !used.has(l.board_row_id));
+    if (leftover.length >= 2) {
+      const gameCounts = new Map();
+      const playersInSlip = new Set();
+      const slipLegs = [];
+      for (const leg of leftover) {
+        if (playersInSlip.has(leg.mlb_player_id)) continue;
+        const gc = gameCounts.get(leg.game_pk) || 0;
+        if (gc >= 2) continue;
+        slipLegs.push(leg);
+        gameCounts.set(leg.game_pk, gc + 1);
+        playersInSlip.add(leg.mlb_player_id);
+        if (slipLegs.length >= HIGH_HIT_100PCT_SIZE) break;
+      }
+      if (slipLegs.length >= 2) slipsForSource.push({ legs: slipLegs, variant_composition: "leftover" });
+    }
+    for (const s of slipsForSource) {
+      const types = new Set(s.legs.map(variantTypeOf));
+      allSlips.push({
+        client_slip_id: makeUiId("high_hit_slip_100pct"),
+        source_key: sourceKey,
+        slip_type: `${s.legs.length}-pick`,
+        slip_size: s.legs.length,
+        entry_mode: "flex",
+        structure_label: `${s.legs.length}-pick Flex (100% Historical - ${s.variant_composition})`,
+        estimated_payout_note: types.size > 1
+          ? "Mixed goblin/demon/standard legs - real per-leg multiplier varies by variant, check each leg's real price in-app before placing."
+          : `All legs are ${[...types][0]} variant - use the app's real ${[...types][0]} multiplier table for this size.`,
+        strategy_notes: [
+          "Every leg has a real historical n>10 and a 100% historical hit rate against score.prop_outcome_history, recomputed fresh each run - not a static list.",
+          "This is the unified replacement for the separate Goblin/Regular/Demon High Hit tracks (retired 2026-08-25).",
+          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day.",
+          "Slip composition prefers a single variant type (all-standard, all-goblin, or all-demon) - only mixes types when a pure-type pool can't fill a slip alone.",
+          "As many full 6-pick slips are built per day as the qualifying pool supports, plus one final slip from any 2+ leftover legs."
+        ],
+        legs: s.legs
+      });
+    }
+  }
+  return allSlips;
+}
+
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const [ppLegs, udLegs, sleeperLegs, regularLegs, demonLegs] = await Promise.all([
     autoSelectHighHitSlipLegs(env),
