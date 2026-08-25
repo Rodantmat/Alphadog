@@ -1150,13 +1150,21 @@ async function backfillHistoricalDayForFamily(pgClient, env, dateStr, config, te
   const built = [];
   let unresolvedPlayer = 0, unresolvedGame = 0;
   for (const r of rows) {
-    let canonical = canonicalFromHistMarketKey(r.market_key);
-    if (!canonical && r.market_key === "player_strikeouts") canonical = config.prop_family === "pitcher" ? "pitcher_strikeouts" : "hitter_strikeouts";
-    if (!canonical || !config.prop_keys.includes(canonical)) continue;
     const nameNorm = normalizeHistPlayerName(r.player);
     const aliasIds = playerAliases.get(nameNorm);
     const playerId = aliasIds && aliasIds.size ? [...aliasIds][0] : null;
     if (!playerId) { unresolvedPlayer++; continue; }
+    let canonical = canonicalFromHistMarketKey(r.market_key);
+    if (!canonical && r.market_key === "player_strikeouts") {
+      // REAL FIX (2026-08-25): this raw market key is genuinely ambiguous - Parlay's historical
+      // archive returns it for BOTH hitter and pitcher strikeout props regardless of which
+      // family was requested in the query (confirmed live: Freddie Freeman, Corbin Carroll -
+      // real hitters - came back tagged under a pitcher-scoped fetch). Disambiguate using the
+      // player's own real, resolved position instead of trusting the fetch mode.
+      const pos = positionMap.get(playerId) || "";
+      canonical = pos === "P" ? "pitcher_strikeouts" : "hitter_strikeouts";
+    }
+    if (!canonical || !config.prop_keys.includes(canonical)) continue;
     const homeId = teamAliases.get(normalizeText(r.home_team)) || null;
     const awayId = teamAliases.get(normalizeText(r.away_team)) || null;
     const gameKey = `${dateStr}|${teamPairKey(homeId, awayId)}`;
