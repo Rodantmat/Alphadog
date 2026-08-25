@@ -3290,6 +3290,7 @@ async function autoSelect100PercentLegs(env, sourceKey) {
           count(*) as historical_n
         FROM score.prop_outcome_history
         WHERE source_key = '${sourceKey}' AND outcome_hit IS NOT NULL
+          AND official_date::date >= (now() - interval '60 days')::date
         GROUP BY 1,2,3,4
         HAVING count(*) > ${HIGH_HIT_100PCT_MIN_N} AND sum(outcome_hit) = count(*)
       )
