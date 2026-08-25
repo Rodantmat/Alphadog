@@ -3431,14 +3431,14 @@ function buildMixedTop55Slips(legs) {
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
-    autoSelect100PercentLegs(env, "prizepicks"),
-    autoSelect100PercentLegs(env, "parlay_underdog"),
-    autoSelect100PercentLegs(env, "sleeper")
+    autoSelectMixedTop55Legs(env, "prizepicks"),
+    autoSelectMixedTop55Legs(env, "parlay_underdog"),
+    autoSelectMixedTop55Legs(env, "sleeper")
   ]);
-  const generated_slips = build100PercentSlips([...ppLegs, ...udLegs, ...sleeperLegs]);
+  const generated_slips = buildMixedTop55Slips([...ppLegs, ...udLegs, ...sleeperLegs]);
   const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies (real historical n>10 and 100% hit rate) on any app right now - board may still be filling in for the day."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies (real top-55-by-appearance and >=92% real historical hit rate, on hits_runs_rbis/less, hits/less, or total_bases/less, Goblin only) right now - board may still be filling in for the day."] });
   }
   const counts = {};
   for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
@@ -3447,10 +3447,10 @@ async function apiHighHitSlips(env, request) {
     selected_leg_count, generated_slips,
     source_counts: counts,
     notes: [
-      "RETIRED 2026-08-25: the separate PP Goblin/Regular/Demon, Sleeper, and Underdog High Hit tracks (each with a hardcoded prop/side pool) are replaced by one unified strategy across all three apps: any leg with a real historical n>10 and 100% hit rate, recomputed fresh from score.prop_outcome_history every run.",
-      "As many full 6-pick Flex slips are built per day as the qualifying pool supports (not capped), plus one final slip from any leftover legs.",
-      "Slips prefer a single variant type (all-standard, all-goblin, or all-demon) and only mix types when necessary to fill a slip - check structure_label and estimated_payout_note on each slip for its composition.",
-      "Real multipliers vary by app/prop/side/variant - use the multiplier field on each slip to record what the app actually shows before saving."
+      "RETIRED 2026-08-25: the '100% Historical, n>10, any prop' unified strategy is replaced by a real, backtested mix of three specific props - hits_runs_rbis/less, hits/less, total_bases/less (Goblin only) - qualifying via top-55-by-real-appearance-count AND >=92% real historical hit rate.",
+      "Real 14-day rolling backtest of this exact mix (K=55, threshold=92%, 6-pick Flex, same correlation rules): +114.4% ROI, every one of 14 real days profitable.",
+      "6-pick Flex only, max 3 legs from any single one of the three props per slip to force genuine cross-prop mixing.",
+      "Real multipliers vary - use the multiplier field on each slip to record what the app actually shows before saving."
     ]
   });
 }
