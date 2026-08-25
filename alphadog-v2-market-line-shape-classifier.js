@@ -1124,7 +1124,15 @@ async function realParlayApiKey(env) {
   }
   return sourceHas(env, "PARLAY_API_KEY") ? String(env.PARLAY_API_KEY) : "";
 }
-async function backfillHistoricalDayForFamily(pgClient, env, dateStr, config, teamAliases, playerAliases, gameLookup, apiKey) {
+async function loadPlayerPositionMap(pgClient) {
+  const out = new Map();
+  try {
+    const rows = await pgClient`SELECT player_id, primary_position FROM ref.players`;
+    for (const r of rows) out.set(Number(r.player_id), String(r.primary_position || ""));
+  } catch (_) {}
+  return out;
+}
+async function backfillHistoricalDayForFamily(pgClient, env, dateStr, config, teamAliases, playerAliases, gameLookup, apiKey, positionMap) {
   const marketsParam = config.parlay_markets.join(",");
   const url = `https://parlay-api.com/v1/historical/sports/baseball_mlb/closing-odds?apiKey=${encodeURIComponent(apiKey || "")}&markets=${encodeURIComponent(marketsParam)}&date=${dateStr}`;
   let rows = [];
