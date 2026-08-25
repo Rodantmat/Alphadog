@@ -5503,7 +5503,7 @@ function applySlipSourceFilter(){
   results.innerHTML=lastSlipsNoteHtml+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
-function bindSlipSourceFilters(){const ids=['filterDemon','filterGoblin','filterRegular','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
+function bindSlipSourceFilters(){const ids=['filterPrizepicks','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
 function bindAutoCreateSlips(){
   bindSlipSourceFilters()
 }
