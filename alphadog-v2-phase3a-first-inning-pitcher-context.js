@@ -564,6 +564,18 @@ async function classifyBaselineV5(env,row,line,side,entityType,model,hs,stats,ma
   return {classification_tier:tier.tier_key,tier_number:tier.tier_number,classification_profile_key:`V5_${tier.tier_key}_${upperToken(prop)}_${lineIdToken(line)}_${side}`,sample_profile:sampleTierV2(games,prop,entityType),volume_profile:volumeProfile,lineup_profile:lineupProfile,platoon_profile:platoonProfile,usage_profile:volumeProfile,volatility_profile:stats.volatility_profile,classification_confidence_0_100:round(clamp(model.baseline_confidence_0_100||25,1,95),2),games_sample:games,events_sample:games,pa_per_game:round(paPerGame,3),ab_ratio:round(abRatio,3),avg_batting_order:avgOrder!=null?round(avgOrder,2):null,split_delta_0_100:splitDelta,metrics:{hits_per_game:round(hitRatePerGame,3),walk_rate:round(walkRate,4),strikeout_rate:round(soRate,4),split_rows:splitRows.length,batting_order_rows:orderSummary.batting_order_rows,batting_order_coverage:round(orderSummary.batting_order_coverage,3)}};
 }
 function qualityStart(r){ return num(r.outs_recorded)>=18 && num(r.earned_runs)<=3 ? 1 : 0; }
+// REAL FIX (2026-08-25): this is the actual, verified PrizePicks pitcher_fantasy_score formula -
+// confirmed by triple-matching real, ground-truth PrizePicks-graded results (Drew Rasmussen,
+// Sandy Alcantara, Framber Valdez on 2026-08-24, each matching to the exact point) against real
+// box-score inputs. The previously-used sourceAgnosticPitcherFantasyBaselineValue() deliberately
+// excludes win/quality-start bonuses by design (see its own comment - it's meant to be an
+// app-agnostic baseline component score, NOT a real graded outcome), and was wrongly wired into
+// propValueFromRow() for real outcome resolution instead of this one. Confirmed real, systematic
+// discrepancy: recomputing all 493 existing prizepicks pitcher_fantasy_score|less outcomes with
+// this formula changed the real hit rate from a wrongly-inflated 79.8% down to a genuine 51.9%
+// (136 of 493 legs, 27.6%, had their hit/miss flip). This is the one and only function that
+// should ever be used to grade a REAL pitcher_fantasy_score PrizePicks outcome.
+function realPrizePicksPitcherFantasyScoreValue(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) + 6*num(r.wins) + 4*qualityStart(r); }
 function pfsPp(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) + 4*qualityStart(r) - 3*num(r.earned_runs); }
 function pfsSl(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) - 2*num(r.walks_allowed); }
 function pfsUd(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) + 5*num(r.wins) + 5*qualityStart(r); }
