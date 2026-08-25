@@ -3403,6 +3403,7 @@ function build100PercentSlips(legs) {
   return allSlips;
 }
 
+async function apiHighHitSlipsOld_RETIRED_20260825(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const [ppLegs, udLegs, sleeperLegs, regularLegs, demonLegs] = await Promise.all([
     autoSelectHighHitSlipLegs(env),
