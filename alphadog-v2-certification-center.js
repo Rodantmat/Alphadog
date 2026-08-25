@@ -3403,6 +3403,33 @@ function build100PercentSlips(legs) {
   return allSlips;
 }
 
+async function apiHighHitSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
+    autoSelect100PercentLegs(env, "prizepicks"),
+    autoSelect100PercentLegs(env, "parlay_underdog"),
+    autoSelect100PercentLegs(env, "sleeper")
+  ]);
+  const generated_slips = build100PercentSlips([...ppLegs, ...udLegs, ...sleeperLegs]);
+  const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
+  if (!generated_slips.length) {
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies (real historical n>10 and 100% hit rate) on any app right now - board may still be filling in for the day."] });
+  }
+  const counts = {};
+  for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
+  return jsonResponse({
+    ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
+    selected_leg_count, generated_slips,
+    source_counts: counts,
+    notes: [
+      "RETIRED 2026-08-25: the separate PP Goblin/Regular/Demon, Sleeper, and Underdog High Hit tracks (each with a hardcoded prop/side pool) are replaced by one unified strategy across all three apps: any leg with a real historical n>10 and 100% hit rate, recomputed fresh from score.prop_outcome_history every run.",
+      "As many full 6-pick Flex slips are built per day as the qualifying pool supports (not capped), plus one final slip from any leftover legs.",
+      "Slips prefer a single variant type (all-standard, all-goblin, or all-demon) and only mix types when necessary to fill a slip - check structure_label and estimated_payout_note on each slip for its composition.",
+      "Real multipliers vary by app/prop/side/variant - use the multiplier field on each slip to record what the app actually shows before saving."
+    ]
+  });
+}
+
 async function apiHighHitSlipsOld_RETIRED_20260825(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const [ppLegs, udLegs, sleeperLegs, regularLegs, demonLegs] = await Promise.all([
