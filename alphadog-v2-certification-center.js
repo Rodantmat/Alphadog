@@ -5400,6 +5400,15 @@ function realMultFieldsHtmlForSize(s,idx,size){
     const mult=recomputeMultiplier(s.source_key,s.entry_mode,size,s.legs);
     return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(mult||''))+'"></div>';
   }
+  if(s.estimated_multiplier_flex_tiers&&Object.keys(s.estimated_multiplier_flex_tiers).length&&size===s.slip_size){
+    const tiers=s.estimated_multiplier_flex_tiers;
+    const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
+    const isConfirmed=String(s.estimated_payout_note||'').toLowerCase().includes('real, confirmed');
+    const label=isConfirmed?'Real multipliers ('+size+'-pick)':'Real multipliers ('+size+'-pick, ESTIMATE - confirm in-app before placing)';
+    return '<div class="realMultGroup"><span class="realMultLabel">'+esc(label)+'</span><div class="realMultFields">'+keys.map(k=>
+      '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" placeholder="'+esc(String(tiers[k]||''))+'"></label>'
+    ).join('')+'</div></div>';
+  }
   if(String(s.source_key||'').toLowerCase()==='prizepicks_goblin'){
     // Goblin Flex tiers are leg-composition-dependent (real per-leg product), not a fixed
     // published table like Regular/Demon - compute live from the actual kept legs every time.
