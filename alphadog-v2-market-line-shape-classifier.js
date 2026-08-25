@@ -1089,6 +1089,106 @@ async function runPlayerPropContext(env, input = {}) {
   }
 }
 
+function normalizeHistPlayerName(value) {
+  return normalizeText(value);
+}
+function canonicalFromHistMarketKey(marketKey) {
+  const map = {
+    player_strikeouts: null, // ambiguous - disambiguated by prop_family context below
+    player_pitcher_strikeouts: "pitcher_strikeouts",
+    player_outs: "pitcher_outs",
+    player_hits_allowed: "hits_allowed",
+    player_walks_allowed: "walks_allowed",
+    player_earned_runs: "earned_runs",
+    player_runs_allowed: "runs_allowed",
+    player_hits: "hits", player_rbis: "rbis", player_runs: "runs", player_singles: "singles",
+    player_doubles: "doubles", player_triples: "triples", player_home_runs: "home_runs",
+    player_total_bases: "total_bases", player_hits_runs_rbis: "hits_runs_rbis",
+    player_stolen_bases: "stolen_bases", player_walks: "walks", player_hitter_strikeouts: "hitter_strikeouts"
+  };
+  return Object.prototype.hasOwnProperty.call(map, marketKey) ? map[marketKey] : null;
+}
+async function backfillHistoricalDayForFamily(pgClient, env, dateStr, config, teamAliases, playerAliases, gameLookup) {
+  const marketsParam = config.parlay_markets.join(",");
+  const url = `https://parlay-api.com/v1/historical/sports/baseball_mlb/closing-odds?apiKey=${encodeURIComponent(env.PARLAY_API_KEY || "")}&markets=${encodeURIComponent(marketsParam)}&date=${dateStr}`;
+  let rows = [];
+  try {
+    const resp = await fetchWithTimeout(url, { method: "GET" }, 25000);
+    if (!resp.ok) return { date: dateStr, prop_family: config.prop_family, ok: false, http_status: resp.status, inserted: 0 };
+    rows = await resp.json();
+  } catch (err) {
+    return { date: dateStr, prop_family: config.prop_family, ok: false, error: safeText(err && err.message ? err.message : err), inserted: 0 };
+  }
+  if (!Array.isArray(rows) || !rows.length) return { date: dateStr, prop_family: config.prop_family, ok: true, seen: 0, inserted: 0 };
+
+  const propCols = ["probe_row_id", "batch_id", "slate_window_key", "official_date", "prepared_row_id", "source_key", "source_event_id", "source_line_id", "game_pk", "resolved_mlb_player_id", "source_player_name", "canonical_prop_key", "source_market_key", "line_value", "price_american", "price_decimal", "outcome_side", "mapping_status", "coverage_status", "raw_json", "created_at", "captured_at", "stable_key"];
+  const batchId = rid(`backfill_${config.prop_family}_props`);
+  const built = [];
+  let unresolvedPlayer = 0, unresolvedGame = 0;
+  for (const r of rows) {
+    let canonical = canonicalFromHistMarketKey(r.market_key);
+    if (!canonical && r.market_key === "player_strikeouts") canonical = config.prop_family === "pitcher" ? "pitcher_strikeouts" : "hitter_strikeouts";
+    if (!canonical || !config.prop_keys.includes(canonical)) continue;
+    const nameNorm = normalizeHistPlayerName(r.player);
+    const aliasIds = playerAliases.get(nameNorm);
+    const playerId = aliasIds && aliasIds.size ? [...aliasIds][0] : null;
+    if (!playerId) { unresolvedPlayer++; continue; }
+    const homeId = teamAliases.get(normalizeText(r.home_team)) || null;
+    const awayId = teamAliases.get(normalizeText(r.away_team)) || null;
+    const gameKey = `${dateStr}|${teamPairKey(homeId, awayId)}`;
+    const gamePk = gameLookup.get(gameKey) || null;
+    if (!gamePk) { unresolvedGame++; continue; }
+    for (const side of [["over", r.over_odds], ["under", r.under_odds]]) {
+      if (side[1] === null || side[1] === undefined) continue;
+      const stableKey = ["backfill", r.bookmaker, dateStr, gamePk, playerId, canonical, r.line, side[0]].join("|");
+      built.push({
+        probe_row_id: rid("backfill_row"), batch_id: batchId, slate_window_key: `${dateStr}_${dateStr}`, official_date: dateStr,
+        prepared_row_id: null, source_key: `parlay_hist_${r.bookmaker}_${config.source_suffix}`, source_event_id: null, source_line_id: null,
+        game_pk: gamePk, resolved_mlb_player_id: playerId, source_player_name: r.player, canonical_prop_key: canonical,
+        source_market_key: r.market_key, line_value: numberOrNull(r.line), price_american: numberOrNull(side[1]),
+        price_decimal: americanToDecimal(side[1]), outcome_side: side[0], mapping_status: "matched_historical_backfill",
+        coverage_status: "historical_backfill_2026_08_25", raw_json: compactRawJson(r), created_at: nowUtc(), captured_at: nowUtc(),
+        stable_key: stableKey
+      });
+    }
+  }
+  const dedupedByKey = new Map();
+  for (const b of built) dedupedByKey.set(b.stable_key, b);
+  const deduped = [...dedupedByKey.values()];
+  const CHUNK = 200;
+  let inserted = 0;
+  for (let i = 0; i < deduped.length; i += CHUNK) {
+    const chunk = deduped.slice(i, i + CHUNK);
+    await pgClient`INSERT INTO archive.market_prop_context_history ${pgClient(chunk, ...propCols)}
+      ON CONFLICT (stable_key) DO NOTHING`.catch(() => {});
+    inserted += chunk.length;
+  }
+  return { date: dateStr, prop_family: config.prop_family, ok: true, seen: rows.length, inserted, unresolved_player: unresolvedPlayer, unresolved_game: unresolvedGame };
+}
+async function runHistoricalBackfill(env, input = {}) {
+  const dates = Array.isArray(input.dates) ? input.dates : [];
+  if (!dates.length) return { ok: false, error: "no_dates_provided" };
+  const pgClient = pg(env);
+  try {
+    await pgClient`CREATE TABLE IF NOT EXISTS archive.market_prop_context_history (probe_row_id TEXT PRIMARY KEY, batch_id TEXT, slate_window_key TEXT, official_date TEXT, prepared_row_id TEXT, source_key TEXT, source_event_id TEXT, source_line_id TEXT, game_pk BIGINT, resolved_mlb_player_id BIGINT, source_player_name TEXT, canonical_prop_key TEXT, source_market_key TEXT, line_value DOUBLE PRECISION, price_american DOUBLE PRECISION, price_decimal DOUBLE PRECISION, outcome_side TEXT, mapping_status TEXT, coverage_status TEXT, raw_json TEXT, created_at TIMESTAMPTZ, captured_at TIMESTAMPTZ DEFAULT now(), stable_key TEXT)`.catch(() => {});
+    await pgClient`CREATE UNIQUE INDEX IF NOT EXISTS market_prop_context_history_stable_key_uq ON archive.market_prop_context_history (stable_key)`.catch(() => {});
+    const teamAliases = await loadTeamAliasMap(pgClient);
+    const playerAliases = await loadPlayerAliasMap(pgClient);
+    const gameRows = await pgClient`SELECT official_date::text as d, game_pk, home_team_id, away_team_id FROM calendar.game_calendar WHERE official_date::text = ANY(${dates})`;
+    const gameLookup = new Map();
+    for (const g of gameRows) gameLookup.set(`${g.d}|${teamPairKey(g.home_team_id, g.away_team_id)}`, Number(g.game_pk));
+    const results = [];
+    for (const d of dates) {
+      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_PITCHER }), teamAliases, playerAliases, gameLookup));
+      results.push(await backfillHistoricalDayForFamily(pgClient, env, d, modeConfig({ mode: MODE_HITTER }), teamAliases, playerAliases, gameLookup));
+    }
+    const totalInserted = results.reduce((s, r) => s + (r.inserted || 0), 0);
+    return { ok: true, dates_processed: dates.length, total_inserted: totalInserted, results };
+  } finally {
+    await pgClient.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
