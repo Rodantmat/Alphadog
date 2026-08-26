@@ -3877,12 +3877,19 @@ function buildUnderdogHighHitSlips(legs) {
       slip_size: size,
       entry_mode: "power",
       structure_label: `${size}-pick Standard (High Hit)`,
-      estimated_multiplier: UNDERDOG_STANDARD_2PICK_MULT,
+      estimated_multiplier: (function() {
+        const real = underdog2PickRealMultiplier(slipLegs);
+        return real != null ? real : UNDERDOG_STANDARD_2PICK_MULT;
+      })(),
       multiplier_confirmed: false,
-      estimated_payout_note: `${UNDERDOG_STANDARD_2PICK_MULT}x - Underdog's real, confirmed published Standard 2-pick table. NOT yet live-verified for this specific leg-difficulty range (legs near 60-66% real hit rate) - confirm the actual displayed multiplier in-app before placing, since Underdog's real selection-multiplier adjustment for these legs is not yet independently confirmed.`,
+      estimated_payout_note: (function() {
+        const real = underdog2PickRealMultiplier(slipLegs);
+        if (real != null) return `${real}x - real, computed from this exact slip's own live Underdog moneyline prices via M=(1-H)/(p1*p2), H=${UNDERDOG_HOUSE_MARGIN_2PICK} (a starting prior fit to 12 real saved slips - refine as more real saves come in). RBIs/less legs are heavy favorites, not near-50/50, so the flat published 3.5x Standard table does not apply here. Confirm the actual displayed multiplier in-app before placing.`;
+        return `${UNDERDOG_STANDARD_2PICK_MULT}x - FALLBACK: no real live moneyline price available for one or more legs, using the flat Standard table as a rough placeholder. Confirm the actual displayed multiplier in-app before placing - it is very likely lower than this for RBIs/less legs.`;
+      })(),
       strategy_notes: [
         "Qualifying legs: rolling top-25-by-real-appearance-count AND >=66% real historical hit rate on rbis/less, recomputed fresh each run - not a static list.",
-        "Real backtest (28 real days): 287 slips, 155 full hits (54.0%), only 2 losing days, implied +89.0% ROI using the confirmed 3.5x table.",
+        "Real backtest (28 real days): 287 slips, 155 full hits (54.0%), only 2 losing days - ROI recomputed using real per-leg pricing, not the retired flat 3.5x assumption.",
         "Correlation limits: max 1 leg per game, max 1 leg per player per slip, max 2 slips per player per day."
       ],
       legs: slipLegs
