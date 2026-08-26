@@ -3555,7 +3555,7 @@ async function apiHighHitSlips(env, request) {
   const sleeperSlips = sleeperLegs.length >= SLEEPER_HIGH_HIT_SIZE ? buildSleeperHighHitSlips(sleeperLegs) : [];
   const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = sleeperLegs.length + demonKsLegs.length;
+  const selected_leg_count = sleeperLegs.length;
   if (!generated_slips.length) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies for any of the currently-active real strategies right now - board may still be filling in for the day. Note: PrizePicks Goblin and Underdog are paused - see notes on a non-empty response for why."] });
   }
