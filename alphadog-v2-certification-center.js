@@ -3099,61 +3099,9 @@ function buildRegularHighHitSlips(legs) {
   return slips;
 }
 
-function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, payoutNote) {
-  const used = new Set();
-  const dailyPlayerUsage = new Map();
-  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
-  const maxPerGame = distinctGames < 5 ? 4 : 3;
-  const slips = [];
-  while (slips.length < cap) {
-    let built = null;
-    for (const size of [4, 3]) {
-      const slipLegs = [];
-      const gameCounts = new Map();
-      const propTypeCounts = new Map();
-      const playersInSlip = new Set();
-      for (const leg of legs) {
-        if (used.has(leg.board_row_id)) continue;
-        if (playersInSlip.has(leg.mlb_player_id)) continue;
-        if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
-        const gameCount = gameCounts.get(leg.game_pk) || 0;
-        if (gameCount >= maxPerGame) continue;
-        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
-        const propTypeCount = propTypeCounts.get(propTypeKey) || 0;
-        if (propTypeCount >= 3) continue;
-        slipLegs.push(leg);
-        gameCounts.set(leg.game_pk, gameCount + 1);
-        propTypeCounts.set(propTypeKey, propTypeCount + 1);
-        playersInSlip.add(leg.mlb_player_id);
-        if (slipLegs.length >= size) break;
-      }
-      if (slipLegs.length >= size) { built = { size, slipLegs }; break; }
-    }
-    if (!built) break;
-    for (const l of built.slipLegs) {
-      used.add(l.board_row_id);
-      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
-    }
-    const flexFull = multiplierFn(built.size);
-    slips.push({
-      client_slip_id: makeUiId(`high_hit_slip_${sourceLabel}`),
-      source_key: `prizepicks_${sourceLabel}`,
-      slip_type: `${built.size}-pick`,
-      slip_size: built.size,
-      entry_mode: "flex",
-      structure_label: `${built.size}-pick Flex (High Hit - ${sourceLabel === "regular" ? "Regular" : "Demon"})`,
-      estimated_multiplier: Math.round(flexFull * 100) / 100,
-      estimated_payout_note: payoutNote,
-      strategy_notes: [
-        "Legs selected by real historical hit rate rank across qualifying (prop,side,line) buckets - NOT by the system's own estimated_hit_probability_0_100.",
-        "Correlation limits: max 3 legs from the same game, max 3 legs of the same prop line, max 1 leg per player, within this slip.",
-        `Daily cap: ${cap} slips/day for this track.`
-      ],
-      legs: built.slipLegs
-    });
-  }
-  return slips;
-}
+// (buildRegularOrDemonHighHitSlips removed 2026-08-26 - a generic Regular/Demon builder with zero
+// call sites, superseded by the dedicated buildRegularHighHitSlips above and the now-removed
+// Demon-specific builders.)
 
 
 // ===== TB+HITS UNCAPPED STRATEGY (replaces Mixed Top-55/92% 2026-08-26) =====
