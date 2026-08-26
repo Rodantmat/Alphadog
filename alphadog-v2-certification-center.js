@@ -3423,15 +3423,23 @@ function buildMixedTop55Slips(legs) {
 
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  // FIXED 2026-08-26: previously called autoSelectMixedTop55Legs (PrizePicks-only, Goblin
+  // hits/total_bases qualifying) for all three source keys, including Underdog and Sleeper -
+  // neither has a Goblin variant at all, so those two always returned zero legs and zero slips
+  // regardless of real board state. Each platform has its own real, correctly-calibrated
+  // strategy and build function; call each on its own terms and merge the results.
   const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
     autoSelectMixedTop55Legs(env, "prizepicks"),
-    autoSelectMixedTop55Legs(env, "parlay_underdog"),
-    autoSelectMixedTop55Legs(env, "sleeper")
+    autoSelectUnderdogHighHitSlipLegs(env),
+    autoSelectSleeperHighHitSlipLegs(env)
   ]);
-  const generated_slips = buildMixedTop55Slips([...ppLegs, ...udLegs, ...sleeperLegs]);
+  const ppSlips = buildMixedTop55Slips(ppLegs);
+  const udSlips = udLegs.length >= UNDERDOG_HIGH_HIT_SIZE ? buildUnderdogHighHitSlips(udLegs) : [];
+  const sleeperSlips = sleeperLegs.length >= SLEEPER_HIGH_HIT_SIZE ? buildSleeperHighHitSlips(sleeperLegs) : [];
+  const generated_slips = [...ppSlips, ...udSlips, ...sleeperSlips];
   const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies (real top-55-by-appearance and >=92% real historical hit rate, on hits/less or total_bases/less, Goblin only) right now - board may still be filling in for the day."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies for any of the three platforms' real strategies right now - board may still be filling in for the day."] });
   }
   const counts = {};
   for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
@@ -3440,10 +3448,10 @@ async function apiHighHitSlips(env, request) {
     selected_leg_count, generated_slips,
     source_counts: counts,
     notes: [
-      "UPDATED 2026-08-26: dropped hits_runs_rbis/less and removed the max-3-per-prop cap - a real, correlation-constrained day-by-day backtest (10am-Pacific board snapshots, real per-leg rates, full game/player caps) showed hits/less + total_bases/less uncapped beats the prior 3-prop capped mix on both ROI and consistency, qualifying via top-55-by-real-appearance-count AND >=92% real historical hit rate.",
-      "Real backtest of this exact config, correlation-constrained, 9 real active days: 61 slips, 21 full hits (34.4%), +194.0% ROI, only 1 losing day (vs the prior config's 80 slips, 27 hits, +126.0% ROI, 3 losing days on the identical window).",
-      "6-pick Flex only, no per-prop cap - a single prop can fill all 6 slots if it has enough real, correlation-clean legs that day.",
-      "Real multipliers vary - use the multiplier field on each slip to record what the app actually shows before saving."
+      "PrizePicks: real top-55-by-appearance-count AND >=92% real historical hit rate, Goblin only, hits/less + total_bases/less, no per-prop cap.",
+      "Underdog: real top-25-by-appearance-count AND >=66% real historical hit rate on rbis/less, 2-pick Standard.",
+      "Sleeper: real >=55% rolling historical hit rate (60-day, min 3 obs), ranked by real per-leg multiplier from live moneyline prices.",
+      "Real multipliers vary by platform and leg mix - use the multiplier field on each slip to record what the app actually shows before saving."
     ]
   });
 }
