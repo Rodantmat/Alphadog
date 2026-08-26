@@ -139,6 +139,29 @@ Given the scope of a full system re-verification, this pass focused on the highe
 
 ---
 
+## 11. PERMANENT RESEARCH STANDARD — the floor for every strategy in this system, no exceptions
+
+Established 2026-08-26 after a real, costly failure: a Demon strategy was deployed live based on a single unverified SQL query, then had to be reverted hours later once proper methodology revealed the underlying data was 83% contaminated and the remainder wasn't day-robust. This section exists so no future session — including this one, later — regresses to that shortcut. Any strategy proposed for deployment must clear all six items below. None are optional, and none get skipped "just this once" for time pressure.
+
+**1. Gemini as a genuine adversary, not a rubber stamp.** Every hypothesis gets a real `run_job` call to the gemini-proxy in which Gemini is asked to set its *own* falsification bar — minimum sample size, required monotonicity, minimum ROI over baseline — *before* being told whether the hypothesis passes. If the result doesn't clear the bar Gemini itself set, it's rejected. This is the exact pattern that correctly killed the "opposing top-4 lineup OBP" and "0-1 count tailwind" hypotheses documented in `SIGNALS_TECHNIQUES_TRIED.md` — reuse it, don't reinvent a weaker version of it.
+
+**2. Multiple genuinely different research passes per strategy, not repeated queries with a different threshold.** A "pass" must test something structurally different from the prior pass on the same strategy — e.g., raw historical hit rate vs. the model's own `estimated_hit_probability_0_100` as the qualifying signal; player-level pooling vs. prop-line-level pooling; different pool compositions (adding/removing props, sides, tiers); different correlation treatments; multi-layer signal stacking. Re-running the same qualification logic at a different cutoff percentage does not count as a second pass.
+
+**3. Three-check discipline on every number before it is reported or acted on.**
+   - **Correct lane.** Never trust `score.prop_outcome_history`'s own `is_goblin`/`is_demon` flags directly — join to `score.final_board_history` on `final_board_row_id` and take the lane from there. The two outcome-writers in this system are confirmed to disagree (`SIGNALS_TECHNIQUES_TRIED.md`, session 5).
+   - **Known-corrupted-day exclusion.** PrizePicks Demon `/less` legs are confirmed mislabeled on **2026-08-05, 08-06, 08-07, and 08-11** (sign-inversion bug in raw ingestion, fixed 08-12) — exclude these from any Demon analysis. Check this document and `SIGNALS_TECHNIQUES_TRIED.md` for other known-corrupted windows before trusting any date range at face value, and add newly-discovered corrupted windows here as they're found.
+   - **Day-robustness / leave-one-day-out.** An aggregate n and hit rate is not sufficient. Break the result down by day and confirm it isn't being carried by one or two days — the exact failure that invalidated the `pitcher_strikeouts/less/Tier2` re-verification on 2026-08-26 (83% of the sample came from corrupted days, and even the clean remainder was carried entirely by a single day). Report the LODO band, not just the point estimate.
+
+**4. The `p×m` sanity gate, checked before any ROI is reported.** Per `SIGNALS_TECHNIQUES_TRIED.md`'s headline finding: every payout model in this system reduces to the per-leg product of real hit rate `p` and real per-leg multiplier `m`. When `p×m < 1`, no size, cap, correlation rule, or ranking method can produce a positive track — size only compounds whichever sign is already present. State `p`, `m`, and `p×m` explicitly before reporting any slip-construction ROI; if `p×m < 1`, stop there rather than continuing to a full backtest.
+
+**5. Mandatory per-strategy transcript re-check, every time a strategy is picked up — not just once per session.** Before starting fresh research on a specific strategy, search chat history and any reachable transcripts for that strategy by name/prop/signal, to avoid re-discovering something already tested and rejected, or missing something already found promising that was never followed through on. If transcripts for the relevant window aren't reachable (a standing, documented limitation as of this session — see Section 10), say so explicitly and fall back to committed docs (`SIGNALS_TECHNIQUES_TRIED.md` above all — it is the single most information-dense source found so far) rather than skipping the check.
+
+**6. No finding gets finalized on an estimated or table-based multiplier alone.** Once a pool clears walk-forward with a genuinely positive, day-robust `p×m`, the next step is always a handful of real, current, placeable slips built from that exact pool against today's live board — for the user to actually place, so the real app-displayed multiplier can be extracted and compared against whatever rate the backtest assumed. This is exactly how the exhaustive multiplier list, the Underdog EV-parity formula, and the Sleeper Flex-discount formula were all originally derived — a backtest number is a hypothesis about the real multiplier, not a substitute for observing it.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all six items is itself a violation of this standard.
+
+---
+
 ## 10. WHY TRANSCRIPT ACCESS FAILED THIS SESSION
 
 `/mnt/transcripts/` was empty. `conversation_search`/`recent_chats` surfaced nothing past 2026-08-21. The handoff's own citations are dated 2026-08-22 through 2026-08-26 — entirely outside what this session could reach. This is a standing environment limitation, not a choice — if a future session has access restored, the items in the questionnaire tagged "transcript needed" should be revisited against the actual source material rather than left as permanently unverified.
