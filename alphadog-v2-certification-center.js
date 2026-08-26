@@ -3440,9 +3440,9 @@ async function apiHighHitSlips(env, request) {
     selected_leg_count, generated_slips,
     source_counts: counts,
     notes: [
-      "RETIRED 2026-08-25: the '100% Historical, n>10, any prop' unified strategy is replaced by a real, backtested mix of three specific props - hits_runs_rbis/less, hits/less, total_bases/less (Goblin only) - qualifying via top-55-by-real-appearance-count AND >=92% real historical hit rate.",
-      "Real 14-day rolling backtest of this exact mix (K=55, threshold=92%, 6-pick Flex, same correlation rules): +114.4% ROI, every one of 14 real days profitable.",
-      "6-pick Flex only, max 3 legs from any single one of the three props per slip to force genuine cross-prop mixing.",
+      "UPDATED 2026-08-26: dropped hits_runs_rbis/less and removed the max-3-per-prop cap - a real, correlation-constrained day-by-day backtest (10am-Pacific board snapshots, real per-leg rates, full game/player caps) showed hits/less + total_bases/less uncapped beats the prior 3-prop capped mix on both ROI and consistency, qualifying via top-55-by-real-appearance-count AND >=92% real historical hit rate.",
+      "Real backtest of this exact config, correlation-constrained, 9 real active days: 61 slips, 21 full hits (34.4%), +194.0% ROI, only 1 losing day (vs the prior config's 80 slips, 27 hits, +126.0% ROI, 3 losing days on the identical window).",
+      "6-pick Flex only, no per-prop cap - a single prop can fill all 6 slots if it has enough real, correlation-clean legs that day.",
       "Real multipliers vary - use the multiplier field on each slip to record what the app actually shows before saving."
     ]
   });
