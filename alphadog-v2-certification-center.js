@@ -3821,10 +3821,7 @@ async function apiHighHitSlipsUnderdog(env, request) {
   });
 }
 
-// (Demon Slips section fully removed 2026-08-26 - see the DISABLED note above apiDemonSlips.)
-// clear best performers, far ahead of the rest. pitcher_outs 20.4%, singles 20.0%, home_runs
-// 16.7% - tier 2 fallback. pitcher_strikeouts 13.6%, hits_allowed 9.6%, runs 9.5%, doubles 9.4%,
-// walks_allowed 8.6%, total_bases 8.3% - tier 3, last-resort fallback only. The remaining segments
+// (Demon Slips section fully removed 2026-08-26 - see the DISABLED note below, above apiDemonSlips.)
 // DISABLED 2026-08-26: Demon retired entirely across this system after a comprehensive real,
 // walk-forward, Gemini-adversarial-verified sweep found every prop/side/tier1/tier2 combination
 // negative EV (see ALPHADOG_SESSION_LOG.md and ALPHADOG_REALIGNMENT.md Section 10 for the full
