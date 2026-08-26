@@ -5513,7 +5513,7 @@ function realMultFieldsHtmlForSize(s,idx,size){
     const label='Real multipliers ('+size+'-pick)';
     const keys=Object.keys(mixedTiers).map(Number).sort((a,b)=>b-a);
     return '<div class="realMultGroup"><span class="realMultLabel">'+esc(label)+'</span><div class="realMultFields">'+keys.map(k=>
-      '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" placeholder="'+esc(String(mixedTiers[k]||''))+'"></label>'
+      '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(mixedTiers[k]||''))+'"></label>'
     ).join('')+'</div></div>';
   }
   if(s.estimated_multiplier_flex_tiers&&Object.keys(s.estimated_multiplier_flex_tiers).length&&size===s.slip_size){
