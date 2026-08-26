@@ -130,7 +130,12 @@ export default {
       // prop data, live and historical, before building a full Fliff board pipeline. Only runs
       // when explicitly requested via mode - all other /run behavior is untouched dummy echo.
       if (input.mode === "probe_fliff") {
-        const baseUrl = String(env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").trim().replace(/\/+$/, "");
+        // Real fix: this worker's configured PARLAY_API_BASE_URL is set to .../v4, but the real
+        // ParlayAPI docs confirm every endpoint (including this one) lives under /v1 - the /v4
+        // reference in ParlayAPI's own docs is only a historical TOA-migration example, and even
+        // that note says the correct replacement base is /v1, not /v4. Forcing /v1 explicitly
+        // rather than trusting the env var, to avoid a false negative from hitting the wrong path.
+        const baseUrl = "https://parlay-api.com/v1";
         const apiKey = env.PARLAY_API_KEY;
         if (!apiKey) {
           return jsonResponse({ ok: false, error: "PARLAY_API_KEY not present on this worker", worker_name: WORKER_NAME, timestamp_utc: nowUtc() }, 500);
