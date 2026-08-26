@@ -3533,14 +3533,27 @@ async function apiHighHitSlips(env, request) {
   // RE-ENABLED 2026-08-26: PrizePicks Demon, pitcher_strikeouts/less/Tier2 (see
   // autoSelectDemonKsTier2Legs/buildDemonKsTier2Slips above for the full real-data justification -
   // re-verified today directly against live code and live data, not a transcript claim).
-  const [sleeperLegs, demonKsLegs] = await Promise.all([
-    autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectDemonKsTier2Legs(env)
+  // RE-PAUSED 2026-08-26 (same day as the re-enable above): the pitcher_strikeouts/less/Tier2
+  // re-verification that justified enabling this was itself flawed. Two real, confirmed problems
+  // found on proper re-check: (1) score.prop_outcome_history's own is_goblin/is_demon flags are
+  // unreliable - the authoritative lane must come from joining to score.final_board_history on
+  // final_board_row_id (per SIGNALS_TECHNIQUES_TRIED.md, session 5's two-writer-disagreement
+  // finding); (2) PrizePicks Demon /less legs are confirmed mislabeled on four specific days -
+  // 2026-08-05, 08-06, 08-07, and 2026-08-11 (sign-inversion bug in raw ingestion, fixed 08-12) -
+  // and 180 of the 216 legs (83%) used to justify re-enabling this came from exactly those four
+  // corrupted days (86.11% hit rate on the corrupted subset vs 42.86% on the clean n=35). Worse,
+  // even that clean n=35 is not day-robust: one single day (08-12, 17 of 35 legs) carries a 52.9%
+  // hit rate while every other clean day combined (n=18) sits at 27.8% - below the ~32.4%
+  // breakeven at the confirmed 3.087x per-leg rate. Neither Demon pool (this one or the original
+  // 5-prop/more/Tier1) currently holds up under correct methodology. Paused pending a properly
+  // re-verified replacement, built to the full standard in Section 11 of ALPHADOG_REALIGNMENT.md.
+  const [sleeperLegs] = await Promise.all([
+    autoSelectSleeperHighHitSlipLegs(env)
   ]);
-  const ppSlips = []; // PAUSED - see comment above.
-  const udSlips = []; // PAUSED - see comment above.
+  const ppSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
+  const udSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
   const sleeperSlips = sleeperLegs.length >= SLEEPER_HIGH_HIT_SIZE ? buildSleeperHighHitSlips(sleeperLegs) : [];
-  const demonSlips = demonKsLegs.length >= DEMON_KS_TIER2_SIZE ? buildDemonKsTier2Slips(demonKsLegs) : [];
+  const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
   const selected_leg_count = sleeperLegs.length + demonKsLegs.length;
   if (!generated_slips.length) {
