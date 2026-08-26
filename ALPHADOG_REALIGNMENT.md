@@ -162,6 +162,6 @@ Established 2026-08-26 after a real, costly failure: a Demon strategy was deploy
 
 ---
 
-## 10. WHY TRANSCRIPT ACCESS FAILED THIS SESSION
+## 11. WHY TRANSCRIPT ACCESS FAILED THIS SESSION
 
 `/mnt/transcripts/` was empty. `conversation_search`/`recent_chats` surfaced nothing past 2026-08-21. The handoff's own citations are dated 2026-08-22 through 2026-08-26 — entirely outside what this session could reach. This is a standing environment limitation, not a choice — if a future session has access restored, the items in the questionnaire tagged "transcript needed" should be revisited against the actual source material rather than left as permanently unverified.
