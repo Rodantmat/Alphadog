@@ -3324,15 +3324,13 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-// Real, calibrated per-prop Power/Flex tables (Goblin variant), from actual placed test slips
-// this session - hits_runs_rbis/less at line 2.5 (mixed Tier1/Tier2), hits/less at line 1.5,
-// total_bases/less at line 1.5. Real, honest limitation: legs at a DIFFERENT line value for the
-// same prop will use this same table as an approximation - line-value sensitivity was confirmed
-// real for at least one other prop (Singles) this session, so treat this as the best available
-// estimate, not a guarantee, until per-line calibration is done for these three specifically.
+// Real, calibrated per-prop Power/Flex tables (Goblin variant), from actual placed test slips -
+// hits/less at line 1.5, total_bases/less at line 1.5. Real, honest limitation: legs at a
+// DIFFERENT line value for the same prop use this same table as an approximation - line-value
+// sensitivity was confirmed real for at least one other prop (Singles), so treat this as the
+// best available estimate, not a guarantee, until per-line calibration is done for these two.
 const MIXED_TOP55_REAL_TABLES = {
   "hits|less": { 2:{power:1.7,flex:{2:1.5,1:0.25}}, 3:{power:2.3,flex:{3:1.9,2:0.5}}, 4:{power:2.9,flex:{4:2.25,3:0.5}}, 5:{power:3.75,flex:{5:3.0,4:0.5,3:0.25}}, 6:{power:5.25,flex:{6:4.0,5:0.5,4:0.25}} },
-  "hits_runs_rbis|less": { 2:{power:1.7,flex:{2:1.5,1:0.25}}, 3:{power:2.3,flex:{3:1.9,2:0.5}}, 4:{power:2.9,flex:{4:2.25,3:0.5}}, 5:{power:3.75,flex:{5:3.0,4:0.5,3:0.25}}, 6:{power:5.25,flex:{6:4.0,5:0.5,4:0.25}} },
   "total_bases|less": { 2:{power:2.0,flex:{2:1.7,1:0.25}}, 3:{power:3.0,flex:{3:2.5,2:0.5}}, 4:{power:4.75,flex:{4:3.0,3:0.75}}, 5:{power:6.25,flex:{5:5.0,4:0.5,3:0.25}}, 6:{power:10.5,flex:{6:6.0,5:1.25,4:0.4}} }
 };
 // UPDATED 2026-08-25: two real, independent 5-pick observations both showed identical absolute
