@@ -139,7 +139,7 @@ Given the scope of a full system re-verification, this pass focused on the highe
 
 ---
 
-## 11. PERMANENT RESEARCH STANDARD — the floor for every strategy in this system, no exceptions
+## 10. PERMANENT RESEARCH STANDARD — the floor for every strategy in this system, no exceptions
 
 Established 2026-08-26 after a real, costly failure: a Demon strategy was deployed live based on a single unverified SQL query, then had to be reverted hours later once proper methodology revealed the underlying data was 83% contaminated and the remainder wasn't day-robust. This section exists so no future session — including this one, later — regresses to that shortcut. Any strategy proposed for deployment must clear all six items below. None are optional, and none get skipped "just this once" for time pressure.
 
