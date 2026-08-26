@@ -5968,53 +5968,6 @@ export default {
         const secrets = varPresence(env, REQUIRED_SECRETS);
         return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: db, vars, secrets_present_only: secrets }, safe_secret_note: "Secret values are intentionally never printed." });
       }
-      // Real, standalone diagnostic probe (2026-08-25) - checks whether ParlayAPI has real Fliff
-      // MLB player prop data, both live (today's board) and historical (closing-odds ~30 days
-      // back), before committing to building a full Fliff board pipeline like Underdog/Sleeper.
-      // Read-only, no writes - purely a real data-availability check.
-      if (method === "GET" && path === "/api/probe-fliff") {
-        const baseUrl = String(env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").trim().replace(/\/+$/, "");
-        const apiKey = env.PARLAY_API_KEY;
-        if (!apiKey) return jsonResponse({ ok: false, error: "PARLAY_API_KEY not present on this worker" }, 500);
-        const daysBack = Number(new URL(request.url).searchParams.get("days_back")) || 30;
-        const histDate = new Date(Date.now() - daysBack * 86400000).toISOString().slice(0, 10);
-        const headers = { "X-API-Key": apiKey };
-        const results = {};
-        try {
-          const liveUrl = `${baseUrl}/sports/baseball_mlb/props?bookmakers=fliff&limit=200`;
-          const liveResp = await fetch(liveUrl, { headers });
-          const liveBody = await liveResp.text();
-          let liveJson = null;
-          try { liveJson = JSON.parse(liveBody); } catch (_) {}
-          results.live = {
-            url: liveUrl.replace(apiKey, "REDACTED"),
-            http_status: liveResp.status,
-            row_count: Array.isArray(liveJson) ? liveJson.length : null,
-            sample_rows: Array.isArray(liveJson) ? liveJson.slice(0, 3) : null,
-            raw_preview: liveJson ? null : liveBody.slice(0, 500)
-          };
-        } catch (e) {
-          results.live = { error: String(e && e.message || e) };
-        }
-        try {
-          const histUrl = `${baseUrl}/historical/sports/baseball_mlb/closing-odds?date=${histDate}&bookmakers=fliff&markets=player_total_bases,player_hits,player_rbis`;
-          const histResp = await fetch(histUrl, { headers });
-          const histBody = await histResp.text();
-          let histJson = null;
-          try { histJson = JSON.parse(histBody); } catch (_) {}
-          results.historical = {
-            url: histUrl.replace(apiKey, "REDACTED"),
-            date_checked: histDate,
-            http_status: histResp.status,
-            row_count: Array.isArray(histJson) ? histJson.length : (histJson && Array.isArray(histJson.data) ? histJson.data.length : null),
-            sample_rows: Array.isArray(histJson) ? histJson.slice(0, 3) : (histJson && Array.isArray(histJson.data) ? histJson.data.slice(0, 3) : null),
-            raw_preview: histJson ? null : histBody.slice(0, 500)
-          };
-        } catch (e) {
-          results.historical = { error: String(e && e.message || e) };
-        }
-        return jsonResponse({ ok: true, version: VERSION, route: "/api/probe-fliff", checked_at: nowUtc(), results });
-      }
       if (method === "GET" && path === "/api/main-board/current") return await apiCurrent(env, url);
       if (method === "GET" && path === "/api/main-board/dossier") return await apiDossier(env, url);
       if (method === "GET" && path === "/api/main-board/filters") return await apiFilters(env);
