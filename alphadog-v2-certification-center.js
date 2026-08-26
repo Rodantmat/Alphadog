@@ -5357,11 +5357,12 @@ const REAL_MULT_TABLES = {
   goblin_power: { 2: 1.25, 3: 1.4, 4: 1.5, 5: 1.86, 6: 1.97 },
   pp_regular_power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
   pp_regular_flex: { 3: 3, 4: 6, 5: 10, 6: 25 },
-  // CORRECTED 2026-08-22: the 6-pick entry (24.03) was wrong - it came from a generic
-  // discount-of-published-table formula that does not match this specific prop's real,
-  // user-confirmed pricing (6/6=8.5x). Kept for other Underdog props/sizes with no real data yet;
-  // for hits_allowed/more specifically, UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT below is authoritative.
-  underdog_power: { 2: 2.40, 3: 4.46, 4: 8.24, 5: 13.73, 6: 8.5 }
+  // CORRECTED 2026-08-25: 2-pick updated to 3.5 (real, confirmed published Underdog Standard
+  // 2-pick table, used by the new rbis/less/appearance-ranked track) - the old 2.40 value was
+  // extrapolated from the now-retired hits_allowed/more 6-pick pricing and does not apply to the
+  // current live track. 3/4/5-pick values are unchanged (kept for any other Underdog reference,
+  // not currently used by a live-generated track).
+  underdog_power: { 2: 3.5, 3: 4.46, 4: 8.24, 5: 13.73, 6: 8.5 }
 };
 // Real, user-confirmed Flex tiers for the deployed hits_allowed/more, 6-pick pool - matches
 // server-side UNDERDOG_REAL_FLEX_TIERS_6PICK exactly. NOT the generic discount-model estimate.
