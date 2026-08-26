@@ -3522,23 +3522,29 @@ function buildMixedTop55Slips(legs) {
 
 async function apiHighHitSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  // FIXED 2026-08-26: previously called autoSelectMixedTop55Legs (PrizePicks-only, Goblin
-  // hits/total_bases qualifying) for all three source keys, including Underdog and Sleeper -
-  // neither has a Goblin variant at all, so those two always returned zero legs and zero slips
-  // regardless of real board state. Each platform has its own real, correctly-calibrated
-  // strategy and build function; call each on its own terms and merge the results.
-  const [ppLegs, udLegs, sleeperLegs] = await Promise.all([
-    autoSelectMixedTop55Legs(env, "prizepicks"),
-    autoSelectUnderdogHighHitSlipLegs(env),
-    autoSelectSleeperHighHitSlipLegs(env)
+  // PAUSED 2026-08-26 (explicit user decision): PrizePicks Goblin Sim A (hits/less+total_bases/less,
+  // 6-pick Flex, via autoSelectMixedTop55Legs/buildMixedTop55Slips) and Underdog rbis/less (2-pick
+  // Standard, via autoSelectUnderdogHighHitSlipLegs/buildUnderdogHighHitSlips) are both confirmed
+  // negative EV once priced with real, corrected multipliers (-27.4% and -14.0% respectively per
+  // the 2026-08-26 handoff). Paused pending a replacement signal for each - the selection/build
+  // functions are left intact and unused below so this can be un-paused by simply restoring their
+  // two calls to the Promise.all/merge below once a replacement is found or a decision is made to
+  // resume these anyway.
+  // RE-ENABLED 2026-08-26: PrizePicks Demon, pitcher_strikeouts/less/Tier2 (see
+  // autoSelectDemonKsTier2Legs/buildDemonKsTier2Slips above for the full real-data justification -
+  // re-verified today directly against live code and live data, not a transcript claim).
+  const [sleeperLegs, demonKsLegs] = await Promise.all([
+    autoSelectSleeperHighHitSlipLegs(env),
+    autoSelectDemonKsTier2Legs(env)
   ]);
-  const ppSlips = buildMixedTop55Slips(ppLegs);
-  const udSlips = udLegs.length >= UNDERDOG_HIGH_HIT_SIZE ? buildUnderdogHighHitSlips(udLegs) : [];
+  const ppSlips = []; // PAUSED - see comment above.
+  const udSlips = []; // PAUSED - see comment above.
   const sleeperSlips = sleeperLegs.length >= SLEEPER_HIGH_HIT_SIZE ? buildSleeperHighHitSlips(sleeperLegs) : [];
-  const generated_slips = [...ppSlips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
+  const demonSlips = demonKsLegs.length >= DEMON_KS_TIER2_SIZE ? buildDemonKsTier2Slips(demonKsLegs) : [];
+  const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
+  const selected_leg_count = sleeperLegs.length + demonKsLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies for any of the three platforms' real strategies right now - board may still be filling in for the day."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies for any of the currently-active real strategies right now - board may still be filling in for the day. Note: PrizePicks Goblin and Underdog are paused - see notes on a non-empty response for why."] });
   }
   const counts = {};
   for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
@@ -3547,8 +3553,8 @@ async function apiHighHitSlips(env, request) {
     selected_leg_count, generated_slips,
     source_counts: counts,
     notes: [
-      "PrizePicks: real top-55-by-appearance-count AND >=92% real historical hit rate, Goblin only, hits/less + total_bases/less, no per-prop cap.",
-      "Underdog: real top-25-by-appearance-count AND >=66% real historical hit rate on rbis/less, 2-pick Standard.",
+      "PAUSED 2026-08-26: PrizePicks Goblin Sim A and Underdog rbis/less are both paused (confirmed negative EV on real, corrected pricing: -27.4% and -14.0% respectively). No slips generated for either until a replacement signal is confirmed.",
+      "PrizePicks Demon: RE-ENABLED 2026-08-26, pitcher_strikeouts/less/Tier2, 3-pick Flex, no cap - real, confirmed positive on live data today (78.70% hit rate, n=216, vs ~32.4% breakeven at the confirmed 3.087x per-leg multiplier; 69.84%, n=126, even excluding the 2026-08-11 outlier day).",
       "Sleeper: real >=55% rolling historical hit rate (60-day, min 3 obs), ranked by real per-leg multiplier from live moneyline prices.",
       "Real multipliers vary by platform and leg mix - use the multiplier field on each slip to record what the app actually shows before saving."
     ]
