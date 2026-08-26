@@ -3681,8 +3681,24 @@ function buildSleeperHighHitSlips(legs) {
     // per-leg-product discipline used for Goblin. No leg's real price falls back to any flat
     // average; a leg with no real price on this specific board simply can't be priced yet.
     const allPriced = slipLegs.every(l => Number.isFinite(l.real_leg_mult));
-    const fullMult = allPriced ? Math.round(slipLegs.reduce((p, l) => p * l.real_leg_mult, 1) * 1000) / 1000 : null;
-    const partialMult = fullMult != null ? Math.round(fullMult * SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE * 1000) / 1000 : null;
+    // REAL FIX 2026-08-26: naive per-leg product (powerEquivalentMult) confirmed to over-predict
+    // the real Flex full-hit payout by 12-39% - Sleeper discounts the top payout to fund partial
+    // (insurance) tiers, which independent-leg multiplication ignores. Apply the Gemini-derived,
+    // EV-parity flex factor using each leg's own real implied probability (from its own price,
+    // devigged-approximate via 1/decimalOdds), not a flat assumption.
+    const powerEquivalentMult = allPriced ? slipLegs.reduce((p, l) => p * l.real_leg_mult, 1) : null;
+    const impliedProbs = slipLegs.map(l => {
+      const price = String(l.selected_side || "").toLowerCase() === "more" ? l.real_over_price : l.real_under_price;
+      const p = Number(price);
+      if (!Number.isFinite(p) || p === 0) return null;
+      const decimalOdds = p > 0 ? 1 + p / 100 : 1 + 100 / Math.abs(p);
+      return 1 / decimalOdds;
+    }).filter(Number.isFinite);
+    const pBar = impliedProbs.length ? impliedProbs.reduce((a, b) => a + b, 0) / impliedProbs.length : null;
+    const flexFactor = (allPriced && pBar != null) ? sleeperFlexFactor(size, pBar) : 1;
+    const fullMult = allPriced ? Math.round(powerEquivalentMult * flexFactor * 1000) / 1000 : null;
+    const partialRatios = SLEEPER_FLEX_PARTIAL_RATIOS_BY_SIZE[size] || { oneBelow: SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE };
+    const partialMult = fullMult != null ? Math.round(fullMult * partialRatios.oneBelow * 1000) / 1000 : null;
     return {
       client_slip_id: makeUiId("high_hit_slip_sleeper"),
       source_key: "sleeper",
@@ -3694,7 +3710,7 @@ function buildSleeperHighHitSlips(legs) {
       estimated_flex_tiers: fullMult != null ? { [size]: fullMult, [size - 1]: partialMult } : null,
       multiplier_confirmed: false,
       estimated_payout_note: fullMult != null
-        ? `Full-hit ~${fullMult}x - real, computed as the product of this exact slip's own live moneyline prices (not a flat average). Partial-hit (${size - 1}/${size}) ~${partialMult}x is an ESTIMATE (10% of full-hit ratio, not confirmed real for Sleeper). Confirm both real numbers in-app before placing.`
+        ? `Full-hit ~${fullMult}x - real per-leg product (${Math.round(powerEquivalentMult * 1000) / 1000}x) discounted by a real, EV-parity Flex factor (${Math.round(flexFactor * 1000) / 1000}) that accounts for Sleeper funding partial-hit tiers - this factor is still an early estimate (7 real observations), refine as more real saves come in. Partial-hit (${size - 1}/${size}) ~${partialMult}x uses a real, size-specific ratio from actual saved slips. Confirm both real numbers in-app before placing.`
         : `Real per-leg price unavailable for one or more legs on today's board - cannot estimate. Confirm real numbers in-app before placing.`,
       strategy_notes: [],
       legs: slipLegs
