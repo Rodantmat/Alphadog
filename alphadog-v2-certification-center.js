@@ -3353,10 +3353,12 @@ function mixedTop55FlexPayout(slipLegs, hits) {
   if (hits === size - 2) return MIXED_TOP55_FLAT_PARTIALS.twoBelow;
   return 0;
 }
-// Real, backtested build logic: 6-pick only, round-robin diversity across games AND across the
-// three props (max 3 legs of any single prop per slip), max 1 leg per player per slip, max 2
-// slips per player per day. No smaller leftover slips - this exact 6-pick-only behavior is what
-// was backtested and shown, so live matches it exactly rather than adding untested variations.
+// Real, backtested build logic: 6-pick only, round-robin diversity across games, max 1 leg per
+// player per slip, max 2 slips per player per day. NO per-prop cap (removed 2026-08-26) - a real
+// correlation-constrained backtest confirmed removing the forced-3+3 split beats it on both ROI
+// and consistency (see header comment above), so a single prop can fill all 6 slots if it has
+// enough real, correlation-clean legs that day. No smaller leftover slips - this exact 6-pick-only
+// behavior is what was backtested and shown, so live matches it exactly.
 function buildMixedTop55Slips(legs) {
   const bySource = new Map();
   for (const l of legs || []) {
@@ -3374,20 +3376,15 @@ function buildMixedTop55Slips(legs) {
       if (avail.length < size) break;
       const gameCounts = new Map();
       const playersInSlip = new Set();
-      const propCounts = new Map();
       const slipLegs = [];
       for (const leg of avail) {
         if (playersInSlip.has(leg.mlb_player_id)) continue;
         if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
         const gc = gameCounts.get(leg.game_pk) || 0;
         if (gc >= 2) continue;
-        const propKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
-        const pc = propCounts.get(propKey) || 0;
-        if (pc >= 3) continue;
         slipLegs.push(leg);
         gameCounts.set(leg.game_pk, gc + 1);
         playersInSlip.add(leg.mlb_player_id);
-        propCounts.set(propKey, pc + 1);
         if (slipLegs.length >= size) break;
       }
       if (slipLegs.length < size) break;
