@@ -1295,6 +1295,6 @@ export default {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: input.run_id || null, mode: input.mode || null, status: "market_line_shape_classifier_exception", certification: "MARKET_LINE_SHAPE_CLASSIFIER_EXCEPTION", certification_grade: "FAILED", error: String(err && err.stack ? err.stack : err), external_calls_performed: 0 }, 500);
       }
     }
-    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic", "POST /backfill-historical", "POST /capture-sleeper-source-prices"], timestamp_utc: nowUtc() }, 404);
   }
 };
