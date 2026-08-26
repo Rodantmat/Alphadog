@@ -4053,138 +4053,17 @@ const DEMON_MAX_PER_PROP = 2;
 // clear best performers, far ahead of the rest. pitcher_outs 20.4%, singles 20.0%, home_runs
 // 16.7% - tier 2 fallback. pitcher_strikeouts 13.6%, hits_allowed 9.6%, runs 9.5%, doubles 9.4%,
 // walks_allowed 8.6%, total_bases 8.3% - tier 3, last-resort fallback only. The remaining segments
-// (pitcher_fantasy_score, hits_runs_rbis, stolen_bases, hits, earned_runs, rbis, triples, all
-// under 8%) are deliberately excluded even as a fallback - real data shows they're too far below
-// breakeven-with-demon-payout to be worth including under any circumstance.
-// MIN_CONFIDENCE fixed from 80 to a real, achievable floor: verified live that the single best
-// leg across the ENTIRE board on a representative night only reached 46.3% HP - genuine hard-side
-// Demons structurally cannot clear 80%, so that bar produced an empty result almost every day
-// (the same class of bug just fixed on the Goblin tab). 12 is low enough to let the tiered
-// fallback actually reach tier 3 on a thin night without admitting genuinely bad legs, since the
-// segment restriction above - not this floor - is what does the real quality gating now.
-const DEMON_SLIP_MIN_CONFIDENCE = 12;
-const DEMON_SEGMENT_TIERS = [
-  ["walks", "fantasy_score", "hitter_strikeouts"],
-  ["pitcher_outs", "singles", "home_runs"],
-  ["pitcher_strikeouts", "hits_allowed", "runs", "doubles", "walks_allowed", "total_bases"]
-];
-// OVERRIDE 2026-08-19: the prior 'more'-side-only restriction (see comment above, dated
-// 2026-08-05) was a reasonable precaution against trivial unders, but this session's real
-// research validated genuine, non-trivial 'less'-side demon lines with real historical hit rates
-// far from the "99% trivial" concern that motivated the original restriction: runs less 0.5
-// (58.6% real, n=157) and singles less 0.5 (45.9% real, n=111) - both meaningfully difficult,
-// genuinely demon-caliber outcomes, verified against 9 real days of graded outcomes. Replacing
-// the tiered 'more'-only segment logic with these two specific, validated qualifying lines.
-async function autoSelectDemonSlipLegs(env, options = {}) {
-  const maxPerGame = Number(options.max_per_game || 3);
-  const pg = pgClient(env);
-  try {
-    // REAL, validated signal (2026-08-19 deep session, real leg-level backtest across 4 real
-    // days: 100% day-win-rate, +2775% Power ROI): within ANY demon prop, the HIGHEST currently
-    // offered line dramatically outperforms the standard 0.5 threshold - real, universal,
-    // confirmed across hits (0.5:40.6% -> 1.5:81.2%), singles (0.5:48.6% -> 1.5:90.2%),
-    // total_bases (0.5:37.6% -> 3.5:86.2%), hits_runs_rbis (0.5:38.6% -> 4.5:84.8%). The specific
-    // line offered varies day to day, so this selects whichever highest line is LIVE right now
-    // per prop, rather than hardcoding one - a fixed line broke the moment the board shifted
-    // (confirmed: the 08-05/08-11 winning combo had zero legs on 08-19's live board).
-    const demonProps = ["hits", "total_bases", "hits_runs_rbis", "singles", "runs", "rbis", "walks"];
-    const propList = demonProps.map(p => `'${p}'`).join(",");
-    const rows = await queryAllPg(pg, `
-      WITH ranked_by_line AS (
-        SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-          canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100,
-          confidence_0_100, score_0_100, board_tier, is_goblin, is_demon, source_variant_label,
-          rank() OVER (PARTITION BY canonical_prop_key ORDER BY line_value DESC) AS line_rank
-        FROM score.final_board_current
-        WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-          AND source_key = 'prizepicks' AND is_demon = 1 AND selected_side = 'less'
-          AND canonical_prop_key IN (${propList}) AND line_value > 0.5
-          AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
-          AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
-      )
-      SELECT * FROM ranked_by_line WHERE line_rank = 1
-    `);
-    // CORRECTED 2026-08-20: added a real, tested max-per-prop-type cap (previously absent on this
-    // track) alongside the existing per-game cap - real backtest confirmed both caps together beat
-    // either alone.
-    const perGameCount = new Map();
-    const perPropCount = new Map();
-    const seenPlayer = new Set();
-    const selected = [];
-    for (const r of rows) {
-      if (selected.length >= DEMON_SLIP_MAX_SIZE) break;
-      if (seenPlayer.has(r.mlb_player_id)) continue;
-      const gameCount = perGameCount.get(r.game_pk) || 0;
-      if (gameCount >= maxPerGame) continue;
-      const propKey = `${r.canonical_prop_key}|${r.selected_side}`;
-      const propCount = perPropCount.get(propKey) || 0;
-      if (propCount >= DEMON_MAX_PER_PROP) continue;
-      selected.push(r);
-      seenPlayer.add(r.mlb_player_id);
-      perGameCount.set(r.game_pk, gameCount + 1);
-      perPropCount.set(propKey, propCount + 1);
-    }
-    return selected;
-  } finally {
-    await pg.end({ timeout: 1 }).catch(() => {});
-  }
-}
+// DISABLED 2026-08-26: Demon retired entirely across this system after a comprehensive real,
+// walk-forward, Gemini-adversarial-verified sweep found every prop/side/tier1/tier2 combination
+// negative EV (see ALPHADOG_SESSION_LOG.md and ALPHADOG_REALIGNMENT.md Section 10 for the full
+// evidence). autoSelectDemonSlipLegs (the "highest live line" selector this function used) and its
+// supporting constants (DEMON_SLIP_MIN_CONFIDENCE, DEMON_SEGMENT_TIERS) have been fully removed,
+// not just disabled in place - this route previously generated real recommendations based on an
+// unconfirmed flat 1.9x multiplier assumption that never held up under real-data testing. Do not
+// re-add without new evidence that changes this conclusion, and if re-adding, use a real,
+// per-prop-tier-confirmed multiplier, not a flat assumption.
 async function apiDemonSlips(env, request) {
-  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectDemonSlipLegs(env, { max_per_game: 2 });
-  if (legs.length < DEMON_SLIP_MIN_SIZE) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 3 qualifying PrizePicks Demon legs available right now - Demons are inherently harder to find safely, check back after the board refreshes."] });
-  }
-  const table = APP_PAYOUT_TABLES.prizepicks;
-  let best = null;
-  // FIXED 2026-08-11: was largest-size-first (6 down to 2), which let per-leg demon ratios
-  // compound multiplicatively into implausible results at larger sizes (a real 6-pick test
-  // produced a 3721x multiplier / +1728% EV - mathematically following from the formula but
-  // not remotely realistic). Smallest-size-first matches the pattern already used in the main
-  // research-grounded engine and the explicit ask for a 2-pick baseline; only grows beyond 2 if
-  // a larger size still clears real positive EV without compounding into something implausible.
-  // REAL fix (2026-08-19): same Flex-comparison fix as Regular - previously power-only, missing
-  // the real partial-credit value of a near-miss (a 4/5 or 5/6 pays real money in Flex where
-  // Power pays zero). Demon's ratio compounds into both tables identically via
-  // researchSlipEvAdjusted, so the same multiplier<50 sanity guard against implausible results
-  // still applies to whichever mode wins.
-  let mode = "power";
-  for (let size = DEMON_SLIP_MIN_SIZE; size <= Math.min(DEMON_SLIP_MAX_SIZE, legs.length); size++) {
-    const slice = legs.slice(0, size);
-    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    let sizeBest = null;
-    for (const tryMode of ["power", "flex"]) {
-      const breakeven = researchBreakeven(size, tryMode, table);
-      if (breakeven == null) continue;
-      const evResult = researchSlipEvAdjusted(slice, probs01, tryMode, table, "prizepicks", breakeven);
-      if (evResult && evResult.ev > 0 && evResult.multiplier < 50 && (!sizeBest || evResult.ev > sizeBest.evResult.ev)) {
-        sizeBest = { size, slice, evResult, breakeven, mode: tryMode };
-      }
-    }
-    if (sizeBest) { best = sizeBest; mode = sizeBest.mode; break; }
-  }
-  // REAL fix (2026-08-19): the fallback used to force a minimum-size slip even when NO size/mode
-  // combination cleared positive EV, which meant a user could be handed a real, known-negative-EV
-  // slip with no warning strong enough to stop them placing it. Now returns honestly empty instead
-  // of forcing a bad recommendation - a known-negative slip should never be handed to the user.
-  if (!best) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [], notes: [`No Demon structure (2-6 pick, Power or Flex) currently clears positive real EV with today's available legs - the qualifying lines right now aren't strong enough to recommend. Check back closer to game time as the board fills in.`] });
-  }
-  const { size, slice, evResult, breakeven } = best;
-  const warnings = slipWarnings(slice);
-  const slip = {
-    client_slip_id: makeUiId("demon_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
-    entry_mode: mode, structure_label: `${size}-pick ${mode === "flex" ? "Flex" : "Power"} (Demon)`,
-    estimated_hit_probability_0_100: slipProb(slice), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
-    estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
-    breakeven_hit_rate_0_100: breakeven,
-    multiplier_estimated: true,
-    estimated_payout_note: "PrizePicks doesn't publish the exact Demon multiplier - this is estimated using a fair-odds-preserving model (Demons pay ~1.9x the standard per-leg rate, per prior research). Check the real multiplier in-app before placing.",
-    strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Demons are inherently harder - sized to the safest structure the day's legs genuinely support, comparing Power vs Flex and picking whichever has the better real EV.`, ...warnings].filter(Boolean).join(" "),
-    legs: slice
-  };
-  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: legs.length, generated_slips: [slip] });
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: 0, generated_slips: [], notes: ["PrizePicks Demon is disabled system-wide as of 2026-08-26. A comprehensive real-data sweep across every prop/side/tier combination found none clear breakeven against their real, confirmed per-leg multipliers - see the repo's ALPHADOG_SESSION_LOG.md for the full evidence."] });
 }
 async function apiAutoCreateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
