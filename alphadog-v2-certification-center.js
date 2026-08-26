@@ -2646,116 +2646,25 @@ async function autoSelectRegularSlipLegs(env, options = {}) {
 const REGULAR_SLIP_MIN_SIZE = 3;
 const REGULAR_SLIP_MAX_SIZE = 6;
 async function apiRegularSlips(env, request) {
-  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectRegularSlipLegs(env, { max_per_game: 2 });
-  if (legs.length < REGULAR_SLIP_MIN_SIZE) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 3 qualifying bottom-of-order (batting spots 7-9) total_bases legs available right now - lineups may not be posted yet, check back closer to game time."] });
-  }
-  const table = APP_PAYOUT_TABLES.prizepicks;
-  const maxSize = Math.min(REGULAR_SLIP_MAX_SIZE, legs.length);
-  // Same largest-size-first-then-shrink direction as the Goblin fix - standard legs use flat
-  // 1.0x per-leg ratios (no compounding risk), so a strong night correctly produces a full
-  // 6-pick and a thinner night correctly shrinks toward the 4-pick floor instead of padding
-  // with weak legs to hit a fixed target.
-  // REAL fix (2026-08-19): previously only ever tried "power" mode, silently ignoring Flex's
-  // real partial-credit value - a 4/5 or 5/6 result pays real money in Flex (breakeven-or-better)
-  // where Power pays zero. Now tries both modes at each size and picks whichever gives the best
-  // real, risk-adjusted EV, so a leg pool that's strong-but-not-perfect correctly favors Flex
-  // instead of being scored as a total loss.
-  let size = REGULAR_SLIP_MIN_SIZE, sorted = legs.slice(0, REGULAR_SLIP_MIN_SIZE), evResult = null, breakeven = null, mode = "power";
-  let bestScore = -Infinity;
-  for (let trySize = maxSize; trySize >= REGULAR_SLIP_MIN_SIZE; trySize--) {
-    const slice = legs.slice(0, trySize);
-    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    for (const tryMode of ["power", "flex"]) {
-      const tryBreakeven = researchBreakeven(trySize, tryMode, table);
-      if (tryBreakeven == null) continue;
-      const tryEv = researchSlipEvAdjusted(slice, probs01, tryMode, table, "prizepicks", tryBreakeven);
-      if (tryEv && tryEv.ev > 0 && tryEv.ev > bestScore) {
-        bestScore = tryEv.ev; size = trySize; sorted = slice; evResult = tryEv; breakeven = tryBreakeven; mode = tryMode;
-      }
-    }
-    if (evResult) break;
-  }
-  // REAL fix (2026-08-19): same as Demon - the fallback used to force a minimum-size slip even
-  // when nothing cleared positive EV. A known-negative-EV slip should never be handed to the
-  // user; return honestly empty instead.
-  if (!evResult) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [], notes: [`No Regular structure (2-6 pick, Power or Flex) currently clears positive real EV with today's available bottom-of-order legs. Check back closer to game time.`] });
-  }
-  const warnings = slipWarnings(sorted);
-  const slip = {
-    client_slip_id: makeUiId("regular_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
-    entry_mode: mode, structure_label: `${size}-pick ${mode === "flex" ? "Flex" : "Power"} (Regular)`,
-    estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
-    estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
-    breakeven_hit_rate_0_100: breakeven,
-    multiplier_estimated: false,
-    estimated_payout_note: mode === "flex" ? "Standard PrizePicks Flex table - partial-hit payouts included (e.g. a near-miss at n-1 still pays)." : "Standard PrizePicks Power table - no Goblin/Demon adjustment applied.",
-    strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [`Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg. Sized to the strongest structure the day's standard legs genuinely support (2-6 pick), comparing Power vs Flex and picking whichever has the better real EV.`, ...warnings].filter(Boolean).join(" "),
-    legs: sorted
-  };
-  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: legs.length, generated_slips: [slip] });
+  // PAUSED 2026-08-26: this is Regular Gen1 (bottom-of-order batting spots 7-9 + total_bases<1.5),
+  // last verified 2026-08-19 (+837.5% ROI, 79 games) and never re-checked against this session's
+  // stricter walk-forward/lane-join/corrupted-day/p×m-gate standard. Found live and serving real
+  // recommendations during the full endpoint sweep on 2026-08-26 - it had been running this whole
+  // session under the mistaken belief that Regular had no live signal (the separate High Hit
+  // Regular track correctly uses the confirmed-dead pitcher_fantasy_score and has no live signal,
+  // but this endpoint is a fully separate path). Paused pending full re-verification.
+  // autoSelectRegularSlipLegs is left intact and unused so this can be un-paused once re-verified.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/regular", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26 pending re-verification against this session's walk-forward/three-check/p×m-gate standard - see ALPHADOG_SESSION_LOG.md. Last validated 2026-08-19, before this standard existed."] });
 }
 async function apiGoblinSlips(env, request) {
-  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectGoblinSlipLegs(env, {});
-  if (legs.length < 2) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 2 qualifying PrizePicks Goblin legs available right now - check back after the board refreshes."] });
-  }
-  const maxSize = Math.min(GOBLIN_SLIP_TARGET_SIZE, legs.length);
-  // FIXED 2026-08-12: was a fixed target size (always 6 legs, capped only by availability) -
-  // per direct request, sizing now reflects real board quality instead. Goblin's ratio is always
-  // <1, so compounding across more legs only shrinks the multiplier (unlike Demon, which needed
-  // smallest-first specifically because ITS >1 ratios compound explosively) - largest-size-first
-  // is the correct, safe direction here: start at the largest size the board supports, shrink
-  // down only if that size's real EV goes negative, so a thin night with only 2-3 genuinely
-  // strong legs correctly produces a smaller slip instead of padding out to 6 with weak legs.
-  const table = APP_PAYOUT_TABLES.prizepicks;
-  let size = 2, sorted = legs.slice(0, 2), evResult = null, breakeven = null;
-  for (let trySize = maxSize; trySize >= 2; trySize--) {
-    const slice = legs.slice(0, trySize);
-    const probs01 = slice.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    const tryBreakeven = researchBreakeven(trySize, "power", table);
-    const tryEv = researchSlipEvAdjusted(slice, probs01, "power", table, "prizepicks", tryBreakeven);
-    if (tryEv && tryEv.ev > 0) { size = trySize; sorted = slice; evResult = tryEv; breakeven = tryBreakeven; break; }
-  }
-  if (!evResult) {
-    size = 2; sorted = legs.slice(0, 2);
-    breakeven = researchBreakeven(size, "power", table);
-    const probs01 = sorted.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || 0) / 100)));
-    evResult = researchSlipEvAdjusted(sorted, probs01, "power", table, "prizepicks", breakeven);
-  }
-  const warnings = slipWarnings(sorted);
-  const hasLessLeg = sorted.some(l => String(l.selected_side || "").toLowerCase() === "less");
-  const allLessLegs = sorted.every(l => String(l.selected_side || "").toLowerCase() === "less");
-  // FIXED 2026-08-06: real user confusion this session - a Goblin Slip full of 'less' picks is
-  // correctly tagged (a Goblin's lowered threshold makes 'more' easier but 'less' genuinely
-  // harder, demon-like), but looked like a mislabeling since PrizePicks' own tag says 'Goblin'
-  // while the picks read 'LESS' with demon-caliber odds. The mechanism was already explained in
-  // the long payout note, but that's easy to skim past - this adds a short, impossible-to-miss
-  // clarification up front and reflects it directly in the label.
-  const sideClarityNote = allLessLegs
-    ? "All legs here are the 'LESS' side of Goblin-tagged lines - this is correctly labeled Goblin per PrizePicks' own data, but 'less' on a lowered-threshold Goblin line is the functionally harder, demon-like side (not the easy side the Goblin name usually implies). "
-    : (hasLessLeg
-        ? "This slip mixes 'more' (the traditional, easier Goblin side) and 'less' (the functionally harder, demon-like side of the same Goblin-tagged lines) legs. "
-        : "");
-  const slip = {
-    client_slip_id: makeUiId("goblin_slip"), source_key: "prizepicks", slip_type: `${size}-pick`, slip_size: size,
-    entry_mode: "power", structure_label: `${size}-pick Power (Goblin${allLessLegs ? " - Less/Harder Side" : (hasLessLeg ? " - Mixed Sides" : "")})`,
-    estimated_hit_probability_0_100: slipProb(sorted), hit_all_probability_0_100: evResult.hit_all_probability_0_100,
-    estimated_multiplier: evResult.multiplier, estimated_ev_per_unit_stake: Math.round(evResult.ev * 1000) / 1000,
-    breakeven_hit_rate_0_100: breakeven,
-    multiplier_estimated: true,
-    estimated_payout_note: hasLessLeg
-      ? "PrizePicks doesn't publish the exact Goblin multiplier. 'More'-side legs use real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). 'Less'-side legs (the genuinely harder side of a Goblin-tagged line) are estimated using the Demon boost ratio (~1.9x) as the closest directional analog - this direction is confirmed correct, but the exact magnitude has not yet been validated against real in-app data the way the standard Goblin ratios were. Check the real multiplier in-app before placing."
-      : "PrizePicks doesn't publish the exact Goblin multiplier - this is estimated using a fair-odds-preserving model based on real, validated Goblin payout ratios (~0.55x-0.97x standard, confirmed against real in-app test data). Check the real multiplier in-app before placing.",
-    strategy_grade: warnings.length ? "REVIEW" : (evResult.ev > 0 ? "STRONG" : "STANDARD"),
-    strategy_notes: [sideClarityNote, `Estimated EV: ${evResult.ev >= 0 ? "+" : ""}${Math.round(evResult.ev * 100)}% per unit staked, vs a ${breakeven}% breakeven hit rate needed per leg.`, ...warnings].filter(Boolean).join(" "),
-    legs: sorted
-  };
-  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: legs.length, generated_slips: [slip] });
+  // PAUSED 2026-08-26: found live during the full endpoint sweep. Uses an internal EV model
+  // (estimated_hit_probability_0_100 x an assumed Goblin/Demon-boost ratio for 'less' legs, per
+  // its own payout note "not yet validated against real in-app data") rather than a walk-forward-
+  // validated real historical hit rate - the exact kind of unconfirmed-multiplier assumption this
+  // session's work has repeatedly found to be wrong (Demon's flat 1.9x, the mixed-pool blended
+  // 1.150 rate). Never audited against this session's standard. Paused pending that verification.
+  // autoSelectGoblinSlipLegs is left intact and unused so this can be un-paused once re-verified.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/goblin", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26 pending verification against this session's walk-forward/three-check/p×m-gate standard - see ALPHADOG_SESSION_LOG.md. Uses an unconfirmed multiplier model, never real-data validated."] });
 }
 
 // ===== High Hit Slips (2026-08-17) =====
