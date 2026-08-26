@@ -3431,7 +3431,7 @@ async function apiHighHitSlips(env, request) {
   const generated_slips = buildMixedTop55Slips([...ppLegs, ...udLegs, ...sleeperLegs]);
   const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies (real top-55-by-appearance and >=92% real historical hit rate, on hits_runs_rbis/less, hits/less, or total_bases/less, Goblin only) right now - board may still be filling in for the day."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies (real top-55-by-appearance and >=92% real historical hit rate, on hits/less or total_bases/less, Goblin only) right now - board may still be filling in for the day."] });
   }
   const counts = {};
   for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
