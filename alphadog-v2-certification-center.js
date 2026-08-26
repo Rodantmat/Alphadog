@@ -5456,7 +5456,7 @@ function bindLegKeepBoxDelegation(){
 // fields can be recomputed dynamically for ANY effective size (2-6) as legs get unchecked, not
 // just the slip's original generated size.
 const MIXED_TOP55_CLIENT_TABLES={
-  'hits|less':5.25, 'hits_runs_rbis|less':5.25, 'total_bases|less':10.5
+  'hits|less':5.25, 'total_bases|less':10.5
 };
 // UPDATED 2026-08-25: two real, independent 5-pick observations (different leg compositions,
 // both real mixes of these three props) both showed identical absolute partial tiers: 4/5=0.5,
