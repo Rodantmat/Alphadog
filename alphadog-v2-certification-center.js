@@ -3364,43 +3364,9 @@ async function apiHighHitSlips(env, request) {
   });
 }
 
-async function apiHighHitSlipsOld_RETIRED_20260825(env, request) {
-  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const [ppLegs, udLegs, sleeperLegs, regularLegs, demonLegs] = await Promise.all([
-    autoSelectHighHitSlipLegs(env),
-    autoSelectUnderdogHighHitSlipLegs(env),
-    autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectRegularHighHitSlipLegs(env),
-    autoSelectDemonHighHitSlipLegs(env)
-  ]);
-  const ppSlips = ppLegs.length >= 5 ? buildHighHitSlips(ppLegs) : [];
-  const udSlips = udLegs.length >= 6 ? buildUnderdogHighHitSlips(udLegs) : [];
-  const sleeperSlips = sleeperLegs.length >= 6 ? buildSleeperHighHitSlips(sleeperLegs) : [];
-  const regularSlips = regularLegs.length >= 6 ? buildRegularHighHitSlips(regularLegs) : [];
-  const demonSlips = []; // SUSPENDED 2026-08-22: real, exhaustive testing (control.goblin_demon_multiplier_study,
-  // 30 actually-placed slip observations, real multipliers 1.3x-62x depending on prop rarity)
-  // confirmed Demon stays negative EV under every real multiplier scenario tested, including the
-  // most generous real observation (62x, rare triples pair). This is not a data gap or pricing
-  // uncertainty - it's a closed, exhaustively confirmed finding. Do not re-enable without new real
-  // evidence that changes this conclusion. autoSelectDemonHighHitSlipLegs/buildDemonHighHitSlips
-  // remain in the file for reference but their output is discarded here.
-  ppSlips.forEach(s => s.source_key = "prizepicks_goblin");
-  const generated_slips = [...demonSlips, ...ppSlips, ...regularSlips, ...sleeperSlips, ...udSlips];
-  const selected_leg_count = ppLegs.length + udLegs.length + sleeperLegs.length + regularLegs.length + demonLegs.length;
-  if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["Fewer than the minimum qualifying High Hit legs available on any app right now - board may still be filling in for the day."] });
-  }
-  return jsonResponse({
-    ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
-    selected_leg_count, generated_slips,
-    source_counts: { prizepicks_demon: demonSlips.length, prizepicks_goblin: ppSlips.length, prizepicks_regular: regularSlips.length, parlay_underdog: udSlips.length, sleeper: sleeperSlips.length },
-    notes: [
-      "High Hit Slips: LOCKED 2026-08-21 - PP Demon (3-pick Flex, no cap, pitcher_strikeouts/less/Tier2, newest/thinnest track), PP Goblin (5-pick Power, 25% daily cap), PP Regular (6-pick Flex, pitcher_fantasy_score/less), Sleeper (3-pick Power, hits_runs_rbis/more), Underdog (6-pick Power, 1 slip/day, rbis/less+walks/less). All five real, backtested, day-by-day validated this session.",
-      "PP Demon, Goblin, Regular, and Underdog carry a real, confirmed or computed multiplier. Sleeper legs are real and hit-rate-validated the same way, but carry NO computed multiplier - Sleeper's live per-leg pricing feed is not reliably populated right now. Check the real multiplier manually in-app for Sleeper slips.",
-      "Real multipliers vary meaningfully player by player - use the multiplier field on each slip to record what the app actually shows before saving, so this keeps sharpening."
-    ]
-  });
-}
+// (apiHighHitSlipsOld_RETIRED_20260825 fully removed 2026-08-26 - it was dead, unrouted code
+// superseded by apiHighHitSlips above, and after the Demon code removal it also contained a
+// dangling reference to the deleted autoSelectDemonHighHitSlipLegs.)
 
 // Sleeper High Hit legs: real, validated (prop,side,line) qualifying buckets from the 2026-08-17
 // research session (n>=15, real historical hit rate confirmed against score.prop_outcome_history,
