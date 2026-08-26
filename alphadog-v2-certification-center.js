@@ -5560,7 +5560,7 @@ function realMultFieldsHtmlForSize(s,idx,size){
   }
   const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
   return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick)</span><div class="realMultFields">'+keys.map(k=>
-    '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" placeholder="'+esc(String(tiers[k]||''))+'"></label>'
+    '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(tiers[k]||''))+'"></label>'
   ).join('')+'</div></div>';
 }
 // Called on every leg checkbox toggle - recounts how many legs are still checked for this slip
