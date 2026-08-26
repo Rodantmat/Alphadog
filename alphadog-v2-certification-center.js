@@ -3324,14 +3324,17 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-// Real, calibrated per-prop Power/Flex tables (Goblin variant), from actual placed test slips -
-// hits/less at line 1.5, total_bases/less at line 1.5. Real, honest limitation: legs at a
-// DIFFERENT line value for the same prop use this same table as an approximation - line-value
-// sensitivity was confirmed real for at least one other prop (Singles), so treat this as the
-// best available estimate, not a guarantee, until per-line calibration is done for these two.
+// REAL FIX 2026-08-26: the prior table (5.25/10.5 at 6-pick) was confirmed WRONG via 7 real
+// saved slips - actual PrizePicks payouts for this mixed hits+total_bases Flex pool clustered at
+// 2.25-2.5x for 6-pick regardless of composition, not 6.6-10.5x. 1.15^6=2.313 lands right in the
+// middle of that real range - this matches this system's own pre-existing, independently-
+// established Goblin fallback rate, which an earlier session's calibration incorrectly overrode.
+// The lack of a clean composition-based split between 2.25 and 2.5 (e.g. all-total_bases showed
+// 2.25, a 4TB+2Hits mix showed 2.5) suggests hits/less and total_bases/less share approximately
+// the SAME real per-leg rate here (~1.15), not the differentiated 1.318/1.480 previously assumed.
 const MIXED_TOP55_REAL_TABLES = {
-  "hits|less": { 2:{power:1.7,flex:{2:1.5,1:0.25}}, 3:{power:2.3,flex:{3:1.9,2:0.5}}, 4:{power:2.9,flex:{4:2.25,3:0.5}}, 5:{power:3.75,flex:{5:3.0,4:0.5,3:0.25}}, 6:{power:5.25,flex:{6:4.0,5:0.5,4:0.25}} },
-  "total_bases|less": { 2:{power:2.0,flex:{2:1.7,1:0.25}}, 3:{power:3.0,flex:{3:2.5,2:0.5}}, 4:{power:4.75,flex:{4:3.0,3:0.75}}, 5:{power:6.25,flex:{5:5.0,4:0.5,3:0.25}}, 6:{power:10.5,flex:{6:6.0,5:1.25,4:0.4}} }
+  "hits|less": { 2:{power:1.322,flex:{2:1.1,1:0.25}}, 3:{power:1.521,flex:{3:1.3,2:0.5}}, 4:{power:1.749,flex:{4:1.5,3:0.5}}, 5:{power:2.011,flex:{5:1.7,4:0.5,3:0.25}}, 6:{power:2.313,flex:{6:2.0,5:0.5,4:0.25}} },
+  "total_bases|less": { 2:{power:1.322,flex:{2:1.1,1:0.25}}, 3:{power:1.521,flex:{3:1.3,2:0.5}}, 4:{power:1.749,flex:{4:1.5,3:0.5}}, 5:{power:2.011,flex:{5:1.7,4:0.5,3:0.25}}, 6:{power:2.313,flex:{6:2.0,5:0.5,4:0.25}} }
 };
 // UPDATED 2026-08-25: two real, independent 5-pick observations both showed identical absolute
 // partial tiers (4/5=0.5, 3/5=0.25), matching the confirmed 6-pick tiers for hits/hits_runs_rbis.
