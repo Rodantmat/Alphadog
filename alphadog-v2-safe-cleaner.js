@@ -126,6 +126,55 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
 
+      // Real, one-off diagnostic (2026-08-25): checks whether ParlayAPI has real Fliff MLB player
+      // prop data, live and historical, before building a full Fliff board pipeline. Only runs
+      // when explicitly requested via mode - all other /run behavior is untouched dummy echo.
+      if (input.mode === "probe_fliff") {
+        const baseUrl = String(env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").trim().replace(/\/+$/, "");
+        const apiKey = env.PARLAY_API_KEY;
+        if (!apiKey) {
+          return jsonResponse({ ok: false, error: "PARLAY_API_KEY not present on this worker", worker_name: WORKER_NAME, timestamp_utc: nowUtc() }, 500);
+        }
+        const daysBack = Number(input.days_back) || 30;
+        const histDate = new Date(Date.now() - daysBack * 86400000).toISOString().slice(0, 10);
+        const headers = { "X-API-Key": apiKey };
+        const results = {};
+        try {
+          const liveUrl = `${baseUrl}/sports/baseball_mlb/props?bookmakers=fliff&limit=200`;
+          const liveResp = await fetch(liveUrl, { headers });
+          const liveBody = await liveResp.text();
+          let liveJson = null;
+          try { liveJson = JSON.parse(liveBody); } catch (_) {}
+          results.live = {
+            url: liveUrl,
+            http_status: liveResp.status,
+            row_count: Array.isArray(liveJson) ? liveJson.length : null,
+            sample_rows: Array.isArray(liveJson) ? liveJson.slice(0, 3) : null,
+            raw_preview: liveJson ? null : liveBody.slice(0, 500)
+          };
+        } catch (e) {
+          results.live = { error: String(e && e.message || e) };
+        }
+        try {
+          const histUrl = `${baseUrl}/historical/sports/baseball_mlb/closing-odds?date=${histDate}&bookmakers=fliff&markets=player_total_bases,player_hits,player_rbis`;
+          const histResp = await fetch(histUrl, { headers });
+          const histBody = await histResp.text();
+          let histJson = null;
+          try { histJson = JSON.parse(histBody); } catch (_) {}
+          results.historical = {
+            url: histUrl,
+            date_checked: histDate,
+            http_status: histResp.status,
+            row_count: Array.isArray(histJson) ? histJson.length : (histJson && Array.isArray(histJson.data) ? histJson.data.length : null),
+            sample_rows: Array.isArray(histJson) ? histJson.slice(0, 3) : (histJson && Array.isArray(histJson.data) ? histJson.data.slice(0, 3) : null),
+            raw_preview: histJson ? null : histBody.slice(0, 500)
+          };
+        } catch (e) {
+          results.historical = { error: String(e && e.message || e) };
+        }
+        return jsonResponse({ ok: true, version: VERSION, worker_name: WORKER_NAME, mode: "probe_fliff", checked_at: nowUtc(), results });
+      }
+
       return jsonResponse({
         ok: true,
         data_ok: true,
