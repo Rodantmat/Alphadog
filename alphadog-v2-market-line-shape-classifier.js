@@ -34,7 +34,7 @@ const PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION = ["prizepicks", "sleeper"];
 const PARLAY_PICKEM_BOOKS_QUARANTINE = ["underdog", "betr", "pick6", "parlayplay", "dabble"];
 const PARLAY_PICKEM_BOOKS_COMPARISON = ["underdog", "pick6"];
 const PARLAY_PRIMARY_BOOK_GROUPS = [
-  { probe_id: "props_core_us_books", endpoint_kind: "props", bookmakers: ["draftkings", "fanduel", "fanatics", "betmgm", "caesars", "espnbet", "betrivers", "pointsbet", "hardrockbet", "fliff"] },
+  { probe_id: "props_core_us_books", endpoint_kind: "props", bookmakers: ["draftkings", "fanduel", "fanatics", "betmgm", "caesars", "espnbet", "betrivers", "pointsbet", "hardrockbet", "fliff", "sleeper"] },
   { probe_id: "props_secondary_and_international_books", endpoint_kind: "props", bookmakers: ["bet365", "bovada", "pinnacle", "williamhill_us", "betus", "lowvig"] },
   { probe_id: "props_exchange_books", endpoint_kind: "props", bookmakers: ["novig", "prophetx", "kalshi"] },
   { probe_id: "props_pickem_quarantine_books", endpoint_kind: "props", bookmakers: PARLAY_PICKEM_BOOKS_QUARANTINE }
