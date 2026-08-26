@@ -5503,16 +5503,35 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
   if(k==='sleeper'){
-    // Real per-leg product, matching server-side exactly - no flat average. Each leg carries
-    // real_leg_mult computed from its own live moneyline price at selection time.
+    // REAL FIX 2026-08-26: previously returned the naive per-leg product with no Flex discount -
+    // this is the exact same over-confident number the badge/prefill fix was supposed to remove.
+    // Mirror the corrected server-side formula: naive product * EV-parity flex factor, using each
+    // leg's own real implied probability. 2-pick is Power (no discount needed, matches real data).
     if(legs&&legs.length){
       const allPriced=legs.every(l=>Number.isFinite(l.real_leg_mult));
       if(!allPriced)return 0;
-      return Math.round(legs.reduce((p,l)=>p*l.real_leg_mult,1)*1000)/1000;
+      const powerEquivalentMult=legs.reduce((p,l)=>p*l.real_leg_mult,1);
+      if(size===2)return Math.round(powerEquivalentMult*1000)/1000;
+      const SLEEPER_C1=0.10, SLEEPER_C2=0.01;
+      const impliedProbs=legs.map(l=>{
+        const price=String(l.selected_side||'').toLowerCase()==='more'?l.real_over_price:l.real_under_price;
+        const p=Number(price);
+        if(!Number.isFinite(p)||p===0)return null;
+        const dec=p>0?1+p/100:1+100/Math.abs(p);
+        return 1/dec;
+      }).filter(x=>Number.isFinite(x));
+      const pBar=impliedProbs.length?impliedProbs.reduce((a,b)=>a+b,0)/impliedProbs.length:null;
+      let flexFactor=1;
+      if(pBar!=null){
+        const x=(1-pBar)/pBar;
+        const denom=1+SLEEPER_C1*size*x+SLEEPER_C2*(size*(size-1)/2)*(x*x);
+        flexFactor=Math.max(0.50,Math.min(0.95,1/denom));
+      }
+      return Math.round(powerEquivalentMult*flexFactor*1000)/1000;
     }
     return 0;
   }
-  if(k==='prizepicks_goblin'){
+  if(k==='prizepicks_goblin'||k==='prizepicks'){
     if(legs&&legs.length)return goblinSlipEstimatedMultiplier(legs).multiplier;
     return REAL_MULT_TABLES.goblin_power[size]||0;
   }
