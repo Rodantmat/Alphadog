@@ -3654,24 +3654,14 @@ async function apiDemonSlips(env, request) {
   return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: 0, generated_slips: [], notes: ["PrizePicks Demon is disabled system-wide as of 2026-08-26. A comprehensive real-data sweep across every prop/side/tier combination found none clear breakeven against their real, confirmed per-leg multipliers - see the repo's ALPHADOG_SESSION_LOG.md for the full evidence."] });
 }
 async function apiAutoCreateSlips(env, request) {
-  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
-  const input = await readJsonSafe(request);
-  const legs = await autoSelectBestLegs(env, input);
-  if (!legs.length) {
-    return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/auto-create", selected_leg_count:0, generated_slips:[], notes:["No legs currently clear the confidence/quality bar for auto-selection. Lower min_confidence or check back after the board refreshes."] });
-  }
-  // No explicit structures passed - lets the existing recommendAllocation engine choose sizes
-  // per the same research: it already favors smaller, risk-adjusted structures over raw EV-max,
-  // which is exactly what this research pass confirmed is correct.
-  const slips = buildGeneratedSlips(legs, null, "recommended");
-  return jsonResponse({
-    ok:true, data_ok:true, version:VERSION, route:"/api/slips/auto-create",
-    selected_leg_count: legs.length,
-    source_counts: legs.reduce((a,r)=>{const k=String(r.source_key||"unknown").toLowerCase();a[k]=(a[k]||0)+1;return a;},{}),
-    generated_slips: slips,
-    selection_criteria: { min_confidence: Number(input.min_confidence || 65), max_per_game: Number(input.max_per_game || 2), board_tier_required: "PRIMARY" },
-    notes: ["Legs auto-selected: board_tier=PRIMARY, confidence >= min_confidence, max 2 legs per game per app. Structures chosen by the existing risk-adjusted EV engine (favors smaller Flex structures per the slip-strategy research), not a fixed rule."]
-  });
+  // PAUSED 2026-08-26: found live during the full endpoint sweep. Cross-app (PrizePicks/
+  // Underdog/Sleeper), autonomously selects legs via autoSelectBestLegs gated only by a raw
+  // model-confidence threshold (input.min_confidence) - the exact kind of signal (score-model-
+  // based, not real historical/walk-forward validated) this session's Signal A test proved
+  // carries no real out-of-sample predictive power on this system. Never audited this session.
+  // autoSelectBestLegs/buildGeneratedSlips are left intact and unused so this can be un-paused
+  // once verified.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/auto-create", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26 pending verification against this session's walk-forward/three-check/p×m-gate standard - see ALPHADOG_SESSION_LOG.md. Uses raw model confidence, not a validated real historical signal."] });
 }
 // ===== Dedicated research-grounded slip engine (2026-08) =====
 // Built specifically per the exhaustive slip-strategy research done this session, NOT a wrapper
