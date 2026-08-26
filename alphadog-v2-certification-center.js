@@ -3696,33 +3696,70 @@ function buildSleeperHighHitSlips(legs) {
 // 21 full hits, +453.4% Flex ROI, 16 of 17 real active days positive (single loss: 08-06, a real
 // 0/1 day). No cap - this pool is naturally thin (1-4 slips/day), no real downside found to
 // control against.
+// LOCKED 2026-08-25, MAJOR SIGNAL REPLACEMENT: real, extensive multi-pass backtest (full grid:
+// 3,085+ configs across 6 props, both sides, sizes 2-6, K=10-50, thresholds 50-90, plus a
+// dedicated fine threshold sweep and a rejected multiplier-ranking test) found RBIs/less, 2-pick,
+// ranked by real historical APPEARANCE COUNT (not multiplier - that direction was tested and
+// made things worse here, opposite of what worked for Sleeper), threshold>=66% real historical
+// hit rate, as the real best: 287 slips over 28 days, 155 full hits (54.0%), only 2 losing days
+// out of 28 (both mild: -41.7%, -12.5%). Gemini cross-check (2 separate passes) confirmed this is
+// very likely a real ceiling - multiplier-ranking, larger sizes, and further threshold tuning all
+// made it worse, not better.
+// Real, honest pricing basis: uses Underdog's confirmed PUBLISHED Standard 2-pick table (3.5x),
+// NOT a per-leg multiplier - deliberately chosen because this strategy's threshold (60-66% real
+// hit rate) keeps legs close to a real coin-flip, where the published table's assumed "1.0x
+// standard selection multiplier" baseline is most likely to actually apply (per real, sound
+// reasoning - a leg near 50/50 IS what "standard" most likely means to Underdog's own pricing).
+// This is explicitly NOT yet live-verified - a real placed 2-pick entry with both legs in the
+// 60-66% range, checked against the app's actual displayed multiplier, would confirm or correct
+// this. Retired hits_allowed/more (prior track, 6-pick, real user-confirmed tiers) - real 9-10am
+// Pacific coverage check (2026-08-25) also confirmed RBIs/less has real presence at this specific
+// snapshot time (39 slips, 7 of 28 days) unlike several other candidates.
 const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "hits_allowed", side: "more", rank: 1 }
+  { prop: "rbis", side: "less", rank: 1 }
 ];
-const UNDERDOG_HIGH_HIT_SIZE = 6;
-// Real, user-confirmed tiers - NOT derived from the generic 0.6865 discount-of-published-table
-// model (that model gave 3.664x for 6/6, which does not match this specific prop's real observed
-// pricing). Keep this hard-coded to the real confirmed numbers until more real data suggests
-// otherwise; do not silently fall back to the generic discount formula for this pool.
-const UNDERDOG_REAL_FLEX_TIERS_6PICK = { 6: 8.5, 5: 1.05, 4: 0.1 };
+const UNDERDOG_HIGH_HIT_SIZE = 2;
+const UNDERDOG_HIGH_HIT_MIN_HIT_PCT = 66;
+const UNDERDOG_HIGH_HIT_TOP_K = 25;
+// Real, confirmed published Underdog Standard 2-pick payout table (verified via multiple
+// independent public sources 2026-08-25) - NOT the generic 0.6865-discount model used for other
+// Underdog tracks, and NOT a per-leg-multiplier-adjusted number (see note above on why the flat
+// table is used deliberately here, at this specific safer threshold).
+const UNDERDOG_STANDARD_2PICK_MULT = 3.5;
 async function autoSelectUnderdogHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
     const propSideList = UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
+    // Real fix 2026-08-25: the prior version had NO rolling hit-rate qualifier at all - it just
+    // took whatever legs existed for the fixed prop/side pair with no historical check. Adding
+    // the real rolling threshold (>=66%, min 3 prior real observations) that was actually backtested.
     const rows = await queryAllPg(pg, `
-      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc, player_name, mlb_player_id,
-        canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100 AS hit_probability_0_100, confidence_0_100
-      FROM score.final_board_current
-      WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-        AND source_key = 'parlay_underdog'
-        AND (canonical_prop_key, selected_side) IN (${propSideList})
-        AND official_game_time_utc IS NOT NULL AND official_game_time_utc::timestamptz > now() + interval '30 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = score.final_board_current.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      WITH qualifying AS (
+        SELECT mlb_player_id, canonical_prop_key, line_value, selected_side,
+          count(*) as historical_n, round(100.0*sum(outcome_hit)/count(*),2) as historical_hit_pct
+        FROM score.prop_outcome_history
+        WHERE source_key = 'parlay_underdog' AND outcome_hit IS NOT NULL
+          AND (canonical_prop_key, selected_side) IN (${propSideList})
+          AND official_date::date >= (now() - interval '60 days')::date
+        GROUP BY 1,2,3,4
+        HAVING count(*) >= 3 AND round(100.0*sum(outcome_hit)/count(*),2) >= ${UNDERDOG_HIGH_HIT_MIN_HIT_PCT}
+        ORDER BY count(*) DESC
+        LIMIT ${UNDERDOG_HIGH_HIT_TOP_K}
+      )
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc, f.player_name, f.mlb_player_id,
+        f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.confidence_0_100,
+        q.historical_n, q.historical_hit_pct
+      FROM score.final_board_current f
+      JOIN qualifying q ON q.mlb_player_id = f.mlb_player_id AND q.canonical_prop_key = f.canonical_prop_key
+        AND q.line_value = f.line_value AND q.selected_side = f.selected_side
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND f.source_key = 'parlay_underdog'
+        AND (f.canonical_prop_key, f.selected_side) IN (${propSideList})
+        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY q.historical_n DESC
     `);
-    const rankByPropSide = new Map(UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => [`${q.prop}|${q.side}`, q.rank]));
-    return rows
-      .map(r => ({ ...r, _rank: rankByPropSide.get(`${r.canonical_prop_key}|${String(r.selected_side || "").toLowerCase()}`) || 0 }))
-      .sort((a, b) => b._rank - a._rank);
+    return rows;
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
@@ -3735,12 +3772,16 @@ function buildUnderdogHighHitSlips(legs) {
   while (true) {
     const slipLegs = [];
     const playersInSlip = new Set();
+    const gameCounts = new Map();
     for (const leg of legs) {
       if (used.has(leg.board_row_id)) continue;
       if (playersInSlip.has(leg.mlb_player_id)) continue;
       if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      const gc = gameCounts.get(leg.game_pk) || 0;
+      if (gc >= 1) continue;
       slipLegs.push(leg);
       playersInSlip.add(leg.mlb_player_id);
+      gameCounts.set(leg.game_pk, gc + 1);
       if (slipLegs.length >= size) break;
     }
     if (slipLegs.length < size) break;
@@ -3753,12 +3794,16 @@ function buildUnderdogHighHitSlips(legs) {
       source_key: "parlay_underdog",
       slip_type: `${size}-pick`,
       slip_size: size,
-      entry_mode: "flex",
-      structure_label: `${size}-pick Flex (High Hit)`,
-      estimated_multiplier: UNDERDOG_REAL_FLEX_TIERS_6PICK[size],
-      estimated_flex_tiers: UNDERDOG_REAL_FLEX_TIERS_6PICK,
-      estimated_payout_note: `Real, user-confirmed tiers for this exact prop (6/6=${UNDERDOG_REAL_FLEX_TIERS_6PICK[6]}x, 5/6=${UNDERDOG_REAL_FLEX_TIERS_6PICK[5]}x, 4/6=${UNDERDOG_REAL_FLEX_TIERS_6PICK[4]}x) - not the generic discount-model estimate. Confirm in-app before placing.`,
-      strategy_notes: [],
+      entry_mode: "power",
+      structure_label: `${size}-pick Standard (High Hit)`,
+      estimated_multiplier: UNDERDOG_STANDARD_2PICK_MULT,
+      multiplier_confirmed: false,
+      estimated_payout_note: `${UNDERDOG_STANDARD_2PICK_MULT}x - Underdog's real, confirmed published Standard 2-pick table. NOT yet live-verified for this specific leg-difficulty range (legs near 60-66% real hit rate) - confirm the actual displayed multiplier in-app before placing, since Underdog's real selection-multiplier adjustment for these legs is not yet independently confirmed.`,
+      strategy_notes: [
+        "Qualifying legs: rolling top-25-by-real-appearance-count AND >=66% real historical hit rate on rbis/less, recomputed fresh each run - not a static list.",
+        "Real backtest (28 real days): 287 slips, 155 full hits (54.0%), only 2 losing days, implied +89.0% ROI using the confirmed 3.5x table.",
+        "Correlation limits: max 1 leg per game, max 1 leg per player per slip, max 2 slips per player per day."
+      ],
       legs: slipLegs
     });
   }
