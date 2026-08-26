@@ -5533,9 +5533,9 @@ function realMultFieldsHtmlForSize(s,idx,size){
     const partialMult=Math.round(fullMult*0.10*1000)/1000;
     const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
     return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES)</span><div class="realMultFields">'
-      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" placeholder="'+esc(String(fullMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" placeholder="'+esc(String(partial2Mult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" value="'+esc(String(fullMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>'
       +'</div></div>';
   }
   if(String(s.source_key||'').toLowerCase()==='sleeper'){
