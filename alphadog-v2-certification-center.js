@@ -3812,8 +3812,8 @@ function buildUnderdogHighHitSlips(legs) {
 async function apiHighHitSlipsUnderdog(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
   const legs = await autoSelectUnderdogHighHitSlipLegs(env);
-  if (legs.length < 6) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than 4 qualifying Underdog High Hit legs available right now - board may still be filling in for the day."] });
+  if (legs.length < UNDERDOG_HIGH_HIT_SIZE) {
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than the minimum qualifying Underdog High Hit legs (real top-25-by-appearance-count AND >=66% real historical hit rate on rbis/less) available right now - board may still be filling in for the day."] });
   }
   const slips = buildUnderdogHighHitSlips(legs);
   return jsonResponse({
