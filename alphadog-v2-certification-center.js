@@ -3720,19 +3720,15 @@ function buildUnderdogHighHitSlips(legs) {
   return slips;
 }
 async function apiHighHitSlipsUnderdog(env, request) {
-  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
-  const legs = await autoSelectUnderdogHighHitSlipLegs(env);
-  if (legs.length < UNDERDOG_HIGH_HIT_SIZE) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: legs.length, generated_slips: [], notes: ["Fewer than the minimum qualifying Underdog High Hit legs (real top-25-by-appearance-count AND >=66% real historical hit rate on rbis/less) available right now - board may still be filling in for the day."] });
-  }
-  const slips = buildUnderdogHighHitSlips(legs);
-  return jsonResponse({
-    ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog",
-    selected_leg_count: legs.length, generated_slips: slips,
-    notes: [
-      "Underdog High Hit Slips: real published payout table, real validated qualifying lines. Known open risk: fewer real backtested days than the PrizePicks track (Underdog hit-rate data was validated over a 14-day pooled window, not a full day-by-day leg-level backtest yet)."
-    ]
-  });
+  // PAUSED 2026-08-26: this standalone route called autoSelectUnderdogHighHitSlipLegs/
+  // buildUnderdogHighHitSlips directly, bypassing the pause already applied to this same strategy
+  // inside apiHighHitSlips (Underdog rbis/less, confirmed negative EV: -14.0% on real, corrected
+  // pricing). Found during the post-Demon full-endpoint sweep - this route had been generating
+  // real recommendations for the same confirmed-negative strategy via a separate path the whole
+  // time the merged endpoint's pause was in effect. autoSelectUnderdogHighHitSlipLegs/
+  // buildUnderdogHighHitSlips are left intact and unused so this can be un-paused by restoring
+  // the logic below once a replacement is found.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26: Underdog rbis/less is confirmed negative EV (-14.0% on real, corrected pricing) and paused system-wide, same as in /api/slips/high-hit."] });
 }
 
 // (Demon Slips section fully removed 2026-08-26 - see the DISABLED note below, above apiDemonSlips.)
