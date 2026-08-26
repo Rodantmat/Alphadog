@@ -5518,7 +5518,28 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
   }
   if(k==='prizepicks_demon')return Math.round(Math.pow(DEMON_PER_LEG_REAL_MULT_CLIENT,size)*1000)/1000;
   if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
-  if(k==='parlay_underdog'||k==='underdog')return (size===6?UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT[6]:REAL_MULT_TABLES.underdog_power[size])||0;
+  if(k==='parlay_underdog'||k==='underdog'){
+    if(size===6)return UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT[6]||0;
+    // Real fix 2026-08-26: 2-pick RBIs/less legs are heavy favorites, not near-50/50 - the flat
+    // published 3.5x Standard table (REAL_MULT_TABLES.underdog_power) does not apply. Recompute
+    // live from each leg's own real moneyline price via M=(1-H)/(p1*p2), same formula as server-side.
+    if(size===2&&legs&&legs.length===2){
+      const H=0.0766;
+      const probs=legs.map(l=>{
+        const raw=l.underdog_raw_line_json?(typeof l.underdog_raw_line_json==='string'?JSON.parse(l.underdog_raw_line_json):l.underdog_raw_line_json):null;
+        if(!raw)return null;
+        const price=String(l.selected_side||'').toLowerCase()==='more'?raw.over_price:raw.under_price;
+        const p=Number(price);
+        if(!Number.isFinite(p)||p===0)return null;
+        return p>0?100/(p+100):Math.abs(p)/(Math.abs(p)+100);
+      });
+      if(probs.every(p=>p!=null)){
+        const jointP=probs.reduce((a,b)=>a*b,1);
+        if(jointP>0)return Math.round(((1-H)/jointP)*1000)/1000;
+      }
+    }
+    return REAL_MULT_TABLES.underdog_power[size]||0;
+  }
   return 0;
 }
 const DEMON_PER_LEG_REAL_MULT_CLIENT = 2.375; // real, confirmed Tier1 per-leg rate - matches server-side DEMON_PER_LEG_REAL_MULT
