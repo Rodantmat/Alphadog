@@ -3733,6 +3733,11 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
     // Real fix 2026-08-25: the prior version had NO rolling hit-rate qualifier at all - it just
     // took whatever legs existed for the fixed prop/side pair with no historical check. Adding
     // the real rolling threshold (>=66%, min 3 prior real observations) that was actually backtested.
+    // Real bug fix (same day): the top-K limit must apply AFTER joining to today's actual board,
+    // not inside the qualifying CTE - limiting globally-qualifying candidates before the join would
+    // rank by historical_n across the ENTIRE qualifying pool (hundreds of players) and could exclude
+    // every player actually on today's board, since today's board is a small subset. The backtest
+    // ranked top-K only among candidates present that specific day - this must match exactly.
     const rows = await queryAllPg(pg, `
       WITH qualifying AS (
         SELECT mlb_player_id, canonical_prop_key, line_value, selected_side,
@@ -3743,8 +3748,6 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
           AND official_date::date >= (now() - interval '60 days')::date
         GROUP BY 1,2,3,4
         HAVING count(*) >= 3 AND round(100.0*sum(outcome_hit)/count(*),2) >= ${UNDERDOG_HIGH_HIT_MIN_HIT_PCT}
-        ORDER BY count(*) DESC
-        LIMIT ${UNDERDOG_HIGH_HIT_TOP_K}
       )
       SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc, f.player_name, f.mlb_player_id,
         f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.confidence_0_100,
@@ -3758,6 +3761,7 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
         AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ORDER BY q.historical_n DESC
+      LIMIT ${UNDERDOG_HIGH_HIT_TOP_K}
     `);
     return rows;
   } finally {
