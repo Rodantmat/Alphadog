@@ -4364,7 +4364,6 @@ async function recordRealPricingObservation(pg, slipId, s, legs) {
   // badge uses - this is the "predicted" baseline the real observation gets compared against.
   const predictedPerLeg = legs.map(l => {
     if (sourceKey === "prizepicks_goblin") return goblinLegMultiplier(l.canonical_prop_key, l.selected_side, l.goblin_demon_tier, l.line_value);
-    if (sourceKey === "prizepicks_demon") return DEMON_PER_LEG_REAL_MULT;
     if (sourceKey === "sleeper") return Number.isFinite(l.real_leg_mult) ? l.real_leg_mult : 1.4;
     return 1;
   });
