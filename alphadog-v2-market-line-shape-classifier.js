@@ -1249,6 +1249,42 @@ export default {
         return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
       }
     }
+    if (method === "POST" && path === "/capture-sleeper-source-prices") {
+      const pgClient = pg(env);
+      try {
+        // Real, permanent capture of Sleeper's own board-prep moneyline prices (score.board_prepared_current
+        // is current-only and gets overwritten every cycle - this preserves it historically). Confirmed live
+        // 2026-08-26: this is the real, authoritative source (row_payload_json->source_prices), distinct from
+        // and more direct than the ParlayAPI-sourced sleeper capture also running in this worker's main /run path.
+        await pgClient`CREATE TABLE IF NOT EXISTS archive.sleeper_source_prices_history (
+          captured_at timestamptz NOT NULL DEFAULT now(), official_date date, prepared_row_id text, mlb_player_id bigint,
+          player_name text, canonical_prop_key text, line_value double precision, game_pk bigint,
+          over_price integer, under_price integer, implied_probability double precision,
+          real_over_leg_mult double precision, real_under_leg_mult double precision, stable_key text PRIMARY KEY)`;
+        await pgClient`CREATE INDEX IF NOT EXISTS idx_sleeper_src_prices_date ON archive.sleeper_source_prices_history(official_date)`;
+        const result = await pgClient`
+          INSERT INTO archive.sleeper_source_prices_history
+            (official_date, prepared_row_id, mlb_player_id, player_name, canonical_prop_key, line_value, game_pk,
+             over_price, under_price, implied_probability, real_over_leg_mult, real_under_leg_mult, stable_key)
+          SELECT official_date::date, prepared_row_id, resolved_mlb_player_id, player_name, canonical_prop_key, line_value, official_game_pk,
+            (sp->>'over_price')::int, (sp->>'under_price')::int, (sp->>'implied_probability')::double precision,
+            CASE WHEN (sp->>'over_price')::numeric IS NOT NULL THEN
+              1 + ((CASE WHEN (sp->>'over_price')::numeric > 0 THEN 1 + (sp->>'over_price')::numeric/100 ELSE 1 + 100/abs((sp->>'over_price')::numeric) END) - 1) * 0.95 END,
+            CASE WHEN (sp->>'under_price')::numeric IS NOT NULL THEN
+              1 + ((CASE WHEN (sp->>'under_price')::numeric > 0 THEN 1 + (sp->>'under_price')::numeric/100 ELSE 1 + 100/abs((sp->>'under_price')::numeric) END) - 1) * 0.95 END,
+            prepared_row_id || '|' || official_date::text
+          FROM (SELECT *, (row_payload_json#>>'{}')::jsonb->'source_prices' as sp FROM score.board_prepared_current WHERE source_key='sleeper') x
+          WHERE sp->>'over_price' IS NOT NULL OR sp->>'under_price' IS NOT NULL
+          ON CONFLICT (stable_key) DO UPDATE SET over_price=EXCLUDED.over_price, under_price=EXCLUDED.under_price,
+            real_over_leg_mult=EXCLUDED.real_over_leg_mult, real_under_leg_mult=EXCLUDED.real_under_leg_mult, captured_at=now()`;
+        const countRows = await pgClient`SELECT count(*) as n FROM archive.sleeper_source_prices_history`;
+        return jsonResponse({ ok: true, rows_affected: result.count, total_archived_rows: Number(countRows[0].n), timestamp_utc: nowUtc() });
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.stack ? err.stack : err) }, 500);
+      } finally {
+        await pgClient.end({ timeout: 1 }).catch(() => {});
+      }
+    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       if (input.mode && ![MODE_HITTER, MODE_PITCHER, "hitter_props", "pitcher_props", "market_pitcher_props"].includes(String(input.mode))) return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", supported_modes: [MODE_HITTER, MODE_PITCHER], received_mode: input.mode }, 400);
