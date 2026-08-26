@@ -3821,25 +3821,7 @@ async function apiHighHitSlipsUnderdog(env, request) {
   });
 }
 
-// Demon Slips: PP-only, flexible 2-6 pick, one slip a day. FIXED 2026-08-05: restricted to the
-// 'more' side only - this is the genuine, meaningful Demon side (elevated threshold, the actual
-// source of a Demon's difficulty and boosted payout). Allowing 'less' let the selector gravitate
-// to trivial, low-information unders on rare-event props (e.g. stolen_bases/home_runs, where
-// almost any non-elite player clears 'under 0.5' regardless of Demon/Goblin/standard tagging),
-// producing 99%-probability legs that don't represent anything demon-caliber at all. A Demon
-// pick should mean genuinely evaluating whether the harder, elevated 'more' threshold is still
-// worth taking - not finding the safest unrelated side of a Demon-tagged row.
-const DEMON_SLIP_MAX_SIZE = 6;
-// CORRECTED 2026-08-20: real re-backtest (14-day window, real board history) swept correlation
-// caps and minimum size together for Demon-tier legs. Real, decisive results: min size 3 (not 2)
-// beats 2 for the same Flex-partial-credit-recoupment reason as Regular; max_per_game=2 combined
-// with a NEW max_per_prop=2 cap (previously no prop-type cap existed on this track at all) beat
-// every looser/tighter combination tested. Backtest: +171.1% ROI, 8 slips, 62.5% win rate.
-const DEMON_SLIP_MIN_SIZE = 3;
-const DEMON_MAX_PER_PROP = 2;
-// REBUILT 2026-08-11 per direct research request. Real historical hit rates (PP, is_demon=1,
-// selected_side='more', Aug 1-10, n>=15 min sample), highest to lowest:
-// walks 31.3% (n=80), fantasy_score 30.3% (n=393), hitter_strikeouts 22.8% (n=289) - tier 1, the
+// (Demon Slips section fully removed 2026-08-26 - see the DISABLED note above apiDemonSlips.)
 // clear best performers, far ahead of the rest. pitcher_outs 20.4%, singles 20.0%, home_runs
 // 16.7% - tier 2 fallback. pitcher_strikeouts 13.6%, hits_allowed 9.6%, runs 9.5%, doubles 9.4%,
 // walks_allowed 8.6%, total_bases 8.3% - tier 3, last-resort fallback only. The remaining segments
