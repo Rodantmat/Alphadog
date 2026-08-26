@@ -5470,8 +5470,8 @@ const PP_REGULAR_FLEX_BY_SIZE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5
 // with the server-side copy - update both together on any future real multiplier change.
 const GOBLIN_LEG_MULT_TABLE_CLIENT = {
   "singles|less|1": { rate: 1.134, n: 8 },
-  "hits|less|1": { rate: 1.318, n: 53 },
-  "total_bases|less|1": { rate: 1.480, n: 53 },
+  "hits|less|1": { rate: 1.15, n: 53 },
+  "total_bases|less|1": { rate: 1.15, n: 53 },
   "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
   "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
   "walks_allowed|more|1|0.5": { rate: 1.106, n: 5 },
