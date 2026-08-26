@@ -5549,9 +5549,9 @@ function realMultFieldsHtmlForSize(s,idx,size){
     const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
     const noteLabel=allPriced?'':' - real price missing for a leg, showing 0';
     return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES'+noteLabel+')</span><div class="realMultFields">'
-      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" placeholder="'+esc(String(fullMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" placeholder="'+esc(String(partialMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" placeholder="'+esc(String(partial2Mult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" value="'+esc(String(fullMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>'
       +'</div></div>';
   }
   const tiers=flexTiersForSizeLive(s.source_key,size);
