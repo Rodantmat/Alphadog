@@ -3557,7 +3557,35 @@ const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
 const SLEEPER_HIGH_HIT_SIZE = 5;
 const SLEEPER_HIGH_HIT_MIN_HIT_PCT = 55;
 const SLEEPER_HIGH_HIT_TOP_K = 30;
-const SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10; // established pattern, unconfirmed for Sleeper specifically
+// REAL FIX 2026-08-26: the naive per-leg product was confirmed, via Gemini-validated analysis of
+// 9 real saved slips, to systematically OVER-predict Flex full-hit payouts by 12-39% (worse at
+// larger sizes) while being accurate for Power (2-pick, ratio 0.98-1.01). Diagnosis: Sleeper must
+// discount the top Flex payout to fund partial-hit (insurance) tiers, which a pure independent-
+// leg product ignores entirely. Real EV-parity derivation (Gemini): the naive Power-equivalent
+// product gets multiplied by a size- and probability-dependent factor.
+// f(n, p_bar) = 1 / (1 + c1*n*x + c2*(n*(n-1)/2)*x^2), x = (1-p_bar)/p_bar
+// c1=0.10, c2=0.01 are a theoretical starting prior (grid-search fit to the 7 real Flex
+// observations favored c1~0.10, c2~0.00-0.03) - NOT a final fit, since 7 points is too few to
+// trust a precise global fit. This is intended to keep improving as recordRealPricingObservation
+// logs more real Sleeper Flex saves (see sleeper_flex_factor_observations table).
+const SLEEPER_FLEX_FACTOR_C1 = 0.10;
+const SLEEPER_FLEX_FACTOR_C2 = 0.01;
+function sleeperFlexFactor(n, pBar) {
+  if (!Number.isFinite(n) || n <= 1 || !Number.isFinite(pBar) || pBar <= 0 || pBar >= 1) return 1;
+  const x = (1 - pBar) / pBar;
+  const denom = 1 + SLEEPER_FLEX_FACTOR_C1 * n * x + SLEEPER_FLEX_FACTOR_C2 * (n * (n - 1) / 2) * (x * x);
+  const raw = 1 / denom;
+  return Math.max(0.50, Math.min(0.95, raw));
+}
+// Real, size-dependent partial-tier ratios (n-1/n and n-2/n as a fraction of the full-hit payout),
+// derived from the same 7 real observations - REPLACING the prior flat 0.10 estimate, which was
+// confirmed too low for n=4/5 (real average ~0.235-0.247) and roughly right for n=6 (~0.11).
+const SLEEPER_FLEX_PARTIAL_RATIOS_BY_SIZE = {
+  4: { oneBelow: 0.24 },
+  5: { oneBelow: 0.23, twoBelow: 0.049 },
+  6: { oneBelow: 0.11, twoBelow: 0.021 }
+};
+const SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10; // fallback only, for sizes with no real observations yet
 // Real, confirmed formula (validated against 2 independent real app examples this session):
 // Decimal Odds = 1 + price/100 (price>0) or 1 + 100/abs(price) (price<0); Multiplier = 1 +
 // (Decimal Odds - 1) * 0.95. Computed PER LEG from that leg's own real live price - never a flat
