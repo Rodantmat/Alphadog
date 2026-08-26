@@ -160,6 +160,8 @@ Established 2026-08-26 after a real, costly failure: a Demon strategy was deploy
 
 **7. Mandatory endpoint sweep, before starting research on any strategy AND before re-enabling anything paused.** Enumerate every route in the router's actual dispatch table (grep the literal `if (method === ... && path === ...)` chain, not a remembered or documented list) that can generate or serve a real slip recommendation, and trace each to its current live logic. This is not optional and not a one-time check - it found a real, live, real-money-exposed problem twice in a row in this system's history (a duplicate Demon endpoint bypassing a believed-complete pause, then a duplicate Underdog endpoint doing the same, then three more autonomous engines - Goblin, Regular Gen1, and two model-confidence-gated cross-app generators - that had never been touched by this session's work at all). Do not assume the picture is complete after finding one unaccounted-for path; re-run the sweep until it comes back with nothing new. See `ALPHADOG_SESSION_LOG.md`'s 2026-08-26 entries for the full history of what this has already found.
 
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all seven items is itself a violation of this standard.
+
 ---
 
 ## 12. CURRENT LIVE/PAUSED STATE OF EVERY SLIP-GENERATING ROUTE (source of truth — supersedes any prior section describing a route's status)
