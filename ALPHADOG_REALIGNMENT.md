@@ -158,7 +158,28 @@ Established 2026-08-26 after a real, costly failure: a Demon strategy was deploy
 
 **6. No finding gets finalized on an estimated or table-based multiplier alone.** Once a pool clears walk-forward with a genuinely positive, day-robust `p×m`, the next step is always a handful of real, current, placeable slips built from that exact pool against today's live board — for the user to actually place, so the real app-displayed multiplier can be extracted and compared against whatever rate the backtest assumed. This is exactly how the exhaustive multiplier list, the Underdog EV-parity formula, and the Sleeper Flex-discount formula were all originally derived — a backtest number is a hypothesis about the real multiplier, not a substitute for observing it.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all six items is itself a violation of this standard.
+**7. Mandatory endpoint sweep, before starting research on any strategy AND before re-enabling anything paused.** Enumerate every route in the router's actual dispatch table (grep the literal `if (method === ... && path === ...)` chain, not a remembered or documented list) that can generate or serve a real slip recommendation, and trace each to its current live logic. This is not optional and not a one-time check - it found a real, live, real-money-exposed problem twice in a row in this system's history (a duplicate Demon endpoint bypassing a believed-complete pause, then a duplicate Underdog endpoint doing the same, then three more autonomous engines - Goblin, Regular Gen1, and two model-confidence-gated cross-app generators - that had never been touched by this session's work at all). Do not assume the picture is complete after finding one unaccounted-for path; re-run the sweep until it comes back with nothing new. See `ALPHADOG_SESSION_LOG.md`'s 2026-08-26 entries for the full history of what this has already found.
+
+---
+
+## 12. CURRENT LIVE/PAUSED STATE OF EVERY SLIP-GENERATING ROUTE (source of truth — supersedes any prior section describing a route's status)
+
+Verified 2026-08-26 by enumerating the actual router dispatch table in `alphadog-v2-certification-center.js`, not a prior document's account. Update this table, not a new one, every time a route's status changes.
+
+| Route | Function | Strategy | Status | Notes |
+|---|---|---|---|---|
+| `POST /api/slips/high-hit` | `apiHighHitSlips` | Merged: PP Goblin Sim A, Underdog rbis/less, Sleeper singles/less, Demon (removed) | **Goblin/Underdog PAUSED, Demon REMOVED, Sleeper LIVE** | Sleeper not yet re-verified this session |
+| `POST /api/slips/high-hit-underdog` | `apiHighHitSlipsUnderdog` | Underdog rbis/less (standalone duplicate of the above) | **PAUSED** | Was bypassing the pause in the merged endpoint until found 2026-08-26 |
+| `POST /api/slips/goblin` | `apiGoblinSlips` | Goblin, internal EV model (unconfirmed multiplier assumption) | **PAUSED** | Never walk-forward validated |
+| `POST /api/slips/regular` | `apiRegularSlips` | Regular Gen1 (bottom-of-order + total_bases<1.5) | **PAUSED** | Last verified 2026-08-19, live and serving the entire session until found 2026-08-26 |
+| `POST /api/slips/demon` | `apiDemonSlips` | Demon, all variants | **DISABLED, dead code removed entirely** | See Section 10 |
+| `POST /api/slips/auto-create` | `apiAutoCreateSlips` | Cross-app, raw model-confidence threshold | **PAUSED** | Confidence-based selection proven to carry no real out-of-sample power (Signal A test, PP Goblin Sim A research) |
+| `POST /api/slips/research-create` | `apiResearchCreateSlips` | Cross-app, same selector as auto-create + app-priority balancing | **PAUSED** | Same reason as auto-create |
+| `POST /api/slips/generate` | `apiGenerateSlips` | Manual - takes caller-supplied `leg_ids` | **N/A, not autonomous** | Lower risk by design; not a strategy-generation path |
+| `POST /api/slips/save` | `apiSaveSlips` | Saves already-built slips | **N/A, not a generator** | |
+| `GET /api/slips/recent` | `apiSlipsRecent` | Reads slip history | **N/A, not a generator** | |
+
+**Net result as of 2026-08-26: every autonomous, real-money-generating slip route in this system is paused or removed except Sleeper's leg within `apiHighHitSlips`**, which has not yet been through this session's full standard either and should be treated as the next item to verify or pause, not assumed safe by default.
 
 ---
 
