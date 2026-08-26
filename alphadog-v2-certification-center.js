@@ -3270,18 +3270,21 @@ function buildRegularOrDemonHighHitSlips(legs, cap, sourceLabel, multiplierFn, p
 }
 
 
-// ===== MIXED "TOP-55/92%" STRATEGY (replaces the 100%-Historical unified strategy 2026-08-25) =====
-// Real, backtested replacement: restricts the qualifying pool to the three props confirmed
-// profitable in a real 14-day rolling backtest (hits_runs_rbis/less, hits/less, total_bases/less,
-// Goblin variant only), qualifying via rolling historical appearance-rank (top 55 by real n) AND
-// a 92% real historical hit-rate floor - NOT the prior n>10/100% criteria. Builds 6-pick Flex
-// slips only (the exact size validated in the backtest), capping any single prop at 3 legs per
-// slip to force genuine cross-prop mixing, matching the backtest's real, tested behavior exactly.
+// ===== TB+HITS UNCAPPED STRATEGY (replaces Mixed Top-55/92% 2026-08-26) =====
+// Real, backtested replacement: drops hits_runs_rbis/less from the qualifying pool (weakest real
+// p*m of the three at 1.059, vs 1.074 for hits/less and 1.191 for total_bases/less - all measured
+// on 470-645 real observations each) and removes the max-3-per-prop cap. A real, correlation-
+// constrained day-by-day backtest (10am-Pacific real board snapshots, real per-leg rates, full
+// game/player caps enforced, 9 real active days out of the available window) showed this beats
+// the prior capped 3-prop mix on both ROI and consistency: 61 slips, 21 full hits (34.4%),
+// +194.0% ROI, only 1 losing day of 9 - vs the prior config's 80 slips, 27 hits (33.8%), +126.0%
+// ROI, 3 losing days on the identical real window. Qualifying criteria unchanged: rolling
+// historical appearance-rank (top 55 by real n) AND a 92% real historical hit-rate floor.
+// Builds 6-pick Flex slips only.
 const MIXED_TOP55_MIN_HIT_PCT = 92;
 const MIXED_TOP55_TOP_K = 55;
 const MIXED_TOP55_SIZE = 6;
 const MIXED_TOP55_PROPS = [
-  { prop: "hits_runs_rbis", side: "less" },
   { prop: "hits", side: "less" },
   { prop: "total_bases", side: "less" }
 ];
