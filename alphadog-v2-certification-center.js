@@ -5571,16 +5571,20 @@ function realMultFieldsHtmlForSize(s,idx,size){
   if(String(s.source_key||'').toLowerCase()==='prizepicks_goblin'){
     // Goblin Flex tiers are leg-composition-dependent (real per-leg product), not a fixed
     // published table like Regular/Demon - compute live from the actual kept legs every time.
-    // FIXED 2026-08-22: was only showing 2 fields (n/n, n-1/n) - real placed slips confirm a real
-    // n-2/n tier exists too (e.g. 4/6 on a 6-pick) - now shows 3, matching Regular.
+    // FIXED 2026-08-26: tier count now matches real slip size - 3/4-pick show 2 fields (n/n,
+    // n-1/n), 5/6-pick show 3 fields (n/n, n-1/n, n-2/n) - previously always showed 3 regardless
+    // of size, producing a nonexistent (n-2)/n field on a 4-pick.
     const fullMult=(s.legs&&s.legs.length)?goblinSlipEstimatedMultiplier(s.legs).multiplier:0;
     const partialMult=Math.round(fullMult*0.10*1000)/1000;
-    const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
-    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES)</span><div class="realMultFields">'
+    let html='<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES)</span><div class="realMultFields">'
       +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" value="'+esc(String(fullMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>'
-      +'</div></div>';
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>';
+    if(size>=5){
+      const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
+      html+='<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>';
+    }
+    html+='</div></div>';
+    return html;
   }
   if(String(s.source_key||'').toLowerCase()==='sleeper'){
     // Sleeper Flex tiers are leg-composition-dependent (real per-leg product from each leg's own
