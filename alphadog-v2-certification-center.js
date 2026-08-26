@@ -3639,8 +3639,9 @@ function buildSleeperHighHitSlips(legs) {
     }
     allSlips.push(slipLegs);
   }
-  const cappedGroups = allSlips.slice(0, SLEEPER_HIGH_HIT_SLIP_CAP);
-  const slips = cappedGroups.map(slipLegs => {
+  // Real 2026-08-25: no artificial daily cap - legs already arrive pre-limited to the real
+  // backtested top-30-by-multiplier pool, so slips built here directly match what was validated.
+  const slips = allSlips.map(slipLegs => {
     // Real per-leg product - a slip of 6 legs with different real prices gets a genuinely
     // different multiplier than another slip of 6 legs at different prices, matching the same
     // per-leg-product discipline used for Goblin. No leg's real price falls back to any flat
