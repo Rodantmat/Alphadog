@@ -3771,11 +3771,35 @@ const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
 const UNDERDOG_HIGH_HIT_SIZE = 2;
 const UNDERDOG_HIGH_HIT_MIN_HIT_PCT = 66;
 const UNDERDOG_HIGH_HIT_TOP_K = 25;
-// Real, confirmed published Underdog Standard 2-pick payout table (verified via multiple
-// independent public sources 2026-08-25) - NOT the generic 0.6865-discount model used for other
-// Underdog tracks, and NOT a per-leg-multiplier-adjusted number (see note above on why the flat
-// table is used deliberately here, at this specific safer threshold).
-const UNDERDOG_STANDARD_2PICK_MULT = 3.5;
+// REAL FIX 2026-08-26: the flat 3.5x table was confirmed WRONG via 12 real saved slips - real
+// multipliers ranged 1.49-1.86x (mean 1.62x), roughly HALF the assumed 3.5x, every single
+// observation. Root cause (Gemini-validated, mandatory analysis): 3.5x only applies to genuinely
+// balanced, near-50/50 legs (e.g. standard total_bases/strikeouts O/U) - RBIs/less/0.5 legs are
+// heavy favorites (real market-implied probability 65-85%+ per leg, confirmed via Underdog's own
+// live moneyline in market.underdog_board_current), which Underdog prices as a real, dynamic,
+// probability-sensitive payout (like a real sportsbook parlay), not the flat "standard" rate.
+// Real formula (EV-parity, Gemini-derived): M = (1-H) / (p1*p2), H = target house margin.
+// H=0.0766 is a starting prior fit to the 12 real observations (avg implied p per leg ~0.755,
+// mean real M=1.62 -> H = 1 - 1.62*0.755^2 = 0.0766) - refine as more real saves come in.
+const UNDERDOG_STANDARD_2PICK_MULT = 3.5; // kept only as a legacy fallback when no real leg price is available
+const UNDERDOG_HOUSE_MARGIN_2PICK = 0.0766;
+function underdogImpliedProb(price) {
+  const p = Number(price);
+  if (!Number.isFinite(p) || p === 0) return null;
+  return p > 0 ? 100 / (p + 100) : Math.abs(p) / (Math.abs(p) + 100);
+}
+function underdog2PickRealMultiplier(legs) {
+  const probs = (legs || []).map(l => {
+    const raw = l.underdog_raw_line_json ? (typeof l.underdog_raw_line_json === "string" ? JSON.parse(l.underdog_raw_line_json) : l.underdog_raw_line_json) : null;
+    if (!raw) return null;
+    const price = String(l.selected_side || "").toLowerCase() === "more" ? raw.over_price : raw.under_price;
+    return underdogImpliedProb(price);
+  });
+  if (probs.some(p => p == null)) return null;
+  const jointP = probs.reduce((a, b) => a * b, 1);
+  if (jointP <= 0) return null;
+  return Math.round(((1 - UNDERDOG_HOUSE_MARGIN_2PICK) / jointP) * 1000) / 1000;
+}
 async function autoSelectUnderdogHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
@@ -3801,10 +3825,13 @@ async function autoSelectUnderdogHighHitSlipLegs(env) {
       )
       SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc, f.player_name, f.mlb_player_id,
         f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.confidence_0_100,
-        q.historical_n, q.historical_hit_pct
+        q.historical_n, q.historical_hit_pct,
+        (m.raw_line_json #>> '{}')::text AS underdog_raw_line_json
       FROM score.final_board_current f
       JOIN qualifying q ON q.mlb_player_id = f.mlb_player_id AND q.canonical_prop_key = f.canonical_prop_key
         AND q.line_value = f.line_value AND q.selected_side = f.selected_side
+      LEFT JOIN market.underdog_board_current m
+        ON m.player_name = f.player_name AND m.canonical_prop_key = f.canonical_prop_key AND m.line_value = f.line_value
       WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND f.source_key = 'parlay_underdog'
         AND (f.canonical_prop_key, f.selected_side) IN (${propSideList})
