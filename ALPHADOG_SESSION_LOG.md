@@ -115,6 +115,8 @@ Re-ran the Demon Tier2 check with both corrections applied: of the 216 legs orig
 - **Verified clean**: full-file grep for every removed symbol name shows zero remaining references outside of historical/narrative comments (which are accurate and harmless, not dangling). Deploy confirmed successful.
 - `DEMON_PER_LEG_REAL_MULT_CLIENT` (client-side JS constant) left in place — it's self-consistent (defined and used together, describes a disabled feature cosmetically) and not a crash risk; noted but not removed given no functional benefit to touching it.
 
+**[2026-08-26] Scope change from Rodolfo — cross-variant pools now in scope, and every remaining candidate reopened.** No longer treating Goblin/Demon/Regular as separate validated tracks — the goal is one real, positive-ROI strategy confirmed by an actual placed slip, variant-agnostic. New mandatory items: (1) test cross-variant pools (mixing legs across Goblin/Demon/Regular within one slip) as a genuine angle, not just cross-prop within one variant; (2) Regular Gen1, Underdog's older 6-pick dual-prop pool, and a full stress-test of Sleeper's live singles/less config are all back in scope, none yet run through the full PP-Sim-A/Demon standard; (3) real placed slips required before any finding is reported, no exceptions - a backtest-positive number is a hypothesis, not a result, until an actual slip confirms it.
+
 **[2026-08-26] FULL ENDPOINT SWEEP, per explicit user instruction after the second unaccounted-for live path was found.** Enumerated every route in the router matching `/api/slips/*` and traced each to its actual current logic - not assuming any document's account of what "should" be running.
 
 Complete route inventory and findings:
