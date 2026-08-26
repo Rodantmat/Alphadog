@@ -3142,6 +3142,102 @@ function buildDemonHighHitSlips(legs) {
     legs: slipLegs
   }));
 }
+// RE-ENABLED 2026-08-26: pitcher_strikeouts/less/Tier2 re-verified directly against current live
+// data this session (not a transcript claim - a live query against score.prop_outcome_history,
+// reconstructing tier via the same anchor-line method used above, run today). Real result: Tier2
+// hit rate 78.70% (n=216) against the confirmed real per-leg multiplier of 3.087x (breakeven
+// ~32.4%) - real per-leg EV 2.43. Even fully excluding 2026-08-11 (the previously-flagged outlier
+// day, which supplied 90 of the 216 legs), the ex-outlier hit rate is still 69.84% (n=126) - well
+// clear of breakeven, so this is not solely an outlier-day artifact.
+// This REPLACES DEMON_HIGH_HIT_TIER_POOL above in the live route. That 5-prop/more/Tier1 pool was
+// never actually wired into the live /api/slips/high-hit route to begin with - it only ever ran
+// inside apiHighHitSlipsOld_RETIRED_20260825, whose own comment already documents that exhaustive
+// real-multiplier testing (control.goblin_demon_multiplier_study, 30 real placed-slip observations,
+// multipliers 1.3x-62x) found it negative EV under every real multiplier tested. DEMON_HIGH_HIT_TIER_POOL,
+// autoSelectDemonHighHitSlipLegs, and buildDemonHighHitSlips above are left in place for reference
+// only and remain unused by the live route.
+const DEMON_KS_TIER2_PROP = "pitcher_strikeouts";
+const DEMON_KS_TIER2_SIDE = "less";
+const DEMON_KS_TIER2_TIER = 2;
+const DEMON_KS_TIER2_SIZE = 3;
+const DEMON_KS_TIER2_PER_LEG_REAL_MULT = 3.087; // real, confirmed per-leg rate (from a real 865x/6-pick Power slip)
+const DEMON_KS_TIER2_FLEX_TABLE = { 3: 15, 2: 1.5 }; // real, confirmed Flex table (3/3 and 2/3), no cap
+async function autoSelectDemonKsTier2Legs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH standards AS (
+        SELECT mlb_player_id, canonical_prop_key, line_value AS anchor_line
+        FROM score.final_board_current
+        WHERE is_goblin = 0 AND is_demon = 0
+        GROUP BY 1, 2, 3
+      )
+      SELECT fbc.final_board_row_id AS board_row_id, fbc.source_key, fbc.game_pk, fbc.official_game_time_utc, fbc.player_name, fbc.mlb_player_id,
+        fbc.canonical_prop_key, fbc.line_value, fbc.selected_side,
+        COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int) AS goblin_demon_tier,
+        fbc.estimated_hit_probability_0_100 AS hit_probability_0_100,
+        fbc.confidence_0_100, fbc.is_goblin, fbc.is_demon
+      FROM score.final_board_current fbc
+      LEFT JOIN standards s ON s.mlb_player_id = fbc.mlb_player_id AND s.canonical_prop_key = fbc.canonical_prop_key
+      WHERE fbc.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND fbc.source_key = 'prizepicks' AND fbc.is_demon = 1
+        AND fbc.canonical_prop_key = '${DEMON_KS_TIER2_PROP}' AND fbc.selected_side = '${DEMON_KS_TIER2_SIDE}'
+        AND COALESCE(fbc.goblin_demon_tier, ROUND(ABS(fbc.line_value - s.anchor_line))::int) = ${DEMON_KS_TIER2_TIER}
+        AND fbc.official_game_time_utc IS NOT NULL AND fbc.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = fbc.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY fbc.estimated_hit_probability_0_100 DESC
+    `);
+    return rows;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function buildDemonKsTier2Slips(legs) {
+  const size = DEMON_KS_TIER2_SIZE;
+  const used = new Set();
+  const allSlips = [];
+  const dailyPlayerUsage = new Map();
+  const distinctGames = new Set(legs.map(l => l.game_pk)).size;
+  const maxPerGame = distinctGames < 3 ? 2 : 1;
+  for (const l of legs) {
+    if (used.has(l.board_row_id)) continue;
+    const gameUsageInSlip = new Map();
+    const slipLegs = [l];
+    used.add(l.board_row_id);
+    gameUsageInSlip.set(l.game_pk, 1);
+    for (const cand of legs) {
+      if (slipLegs.length >= size) break;
+      if (used.has(cand.board_row_id)) continue;
+      const gUse = gameUsageInSlip.get(cand.game_pk) || 0;
+      if (gUse >= maxPerGame) continue;
+      const pUse = dailyPlayerUsage.get(cand.mlb_player_id) || 0;
+      if (pUse >= 2) continue;
+      slipLegs.push(cand);
+      used.add(cand.board_row_id);
+      gameUsageInSlip.set(cand.game_pk, gUse + 1);
+    }
+    if (slipLegs.length < size) { used.delete(l.board_row_id); continue; }
+    for (const sl of slipLegs) dailyPlayerUsage.set(sl.mlb_player_id, (dailyPlayerUsage.get(sl.mlb_player_id) || 0) + 1);
+    allSlips.push(slipLegs);
+  }
+  return allSlips.map(slipLegs => ({
+    client_slip_id: makeUiId("high_hit_slip_demon_ks2"),
+    source_key: "prizepicks_demon",
+    slip_type: `${size}-pick`,
+    slip_size: size,
+    entry_mode: "flex",
+    structure_label: `${size}-pick Flex (High Hit - Demon, pitcher_strikeouts/less/Tier2)`,
+    estimated_multiplier: DEMON_KS_TIER2_FLEX_TABLE[3],
+    multiplier_confirmed: false,
+    estimated_payout_note: `${DEMON_KS_TIER2_FLEX_TABLE[3]}x full-hit / ${DEMON_KS_TIER2_FLEX_TABLE[2]}x for 2-of-3 - real, confirmed Flex table. Re-enabled 2026-08-26 after live-data re-verification (78.70% real Tier2 hit rate, n=216, vs ~32.4% breakeven at the confirmed ${DEMON_KS_TIER2_PER_LEG_REAL_MULT}x per-leg rate). Confirm the actual displayed multiplier in-app before placing.`,
+    strategy_notes: [
+      "Qualifying legs: pitcher_strikeouts/less, Demon Tier2 (distance-from-anchor reconstructed at query time), recomputed fresh each run.",
+      "Real, current hit rate 78.70% (n=216, live data as of 2026-08-26); 69.84% (n=126) even fully excluding the 2026-08-11 outlier day.",
+      "Correlation limits: max 1-2 legs per game depending on board depth, max 2 legs per player per day."
+    ],
+    legs: slipLegs
+  }));
+}
 
 async function autoSelectRegularHighHitSlipLegs(env) {
   const pg = pgClient(env);
