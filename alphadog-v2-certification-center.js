@@ -5506,7 +5506,7 @@ function flexTiersForSizeLive(sourceKey, size){
 function realMultFieldsHtmlForSize(s,idx,size){
   if(s.entry_mode!=='flex'){
     const mult=recomputeMultiplier(s.source_key,s.entry_mode,size,s.legs);
-    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" placeholder="'+esc(String(mult||''))+'"></div>';
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" value="'+esc(String(mult||''))+'"></div>';
   }
   const mixedTiers=computeMixedTop55FlexTiersLive(s.legs,size);
   if(mixedTiers){
