@@ -4126,6 +4126,13 @@ function rebalanceSlipsAcrossApps(slipsBySource) {
 }
 async function apiResearchCreateSlips(env, request) {
   if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
+  // PAUSED 2026-08-26: found live during the full endpoint sweep. Cross-app (PrizePicks/
+  // Underdog/Sleeper) autonomous engine sharing the same autoSelectBestLegs model-confidence
+  // selector as apiAutoCreateSlips (see the pause note there) - not walk-forward validated by
+  // this session's standard. The rest of this function (app-priority volume balancing, line-
+  // shopping detection) is left intact and unused so this can be un-paused once the underlying
+  // selector is verified.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/research-create", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26 pending verification against this session's walk-forward/three-check/p×m-gate standard - see ALPHADOG_SESSION_LOG.md. Uses the same unvalidated model-confidence selector as /api/slips/auto-create."] });
   const input = await readJsonSafe(request);
   const minConfidence = input.min_confidence || RESEARCH_MIN_CONFIDENCE;
   // Per-app priority-ordered fetch (2026-08-11), grounded in the real win-rate/sample-depth
