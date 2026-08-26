@@ -3403,13 +3403,13 @@ function buildMixedTop55Slips(legs) {
         slip_type: `${size}-pick`,
         slip_size: size,
         entry_mode: "flex",
-        structure_label: `${size}-pick Flex (Mixed Top-55/92% - Total Bases+H+R+RBI+Hits)`,
+        structure_label: `${size}-pick Flex (TB+Hits Uncapped - Total Bases+Hits)`,
         estimated_multiplier: flexFull,
         estimated_multiplier_flex_tiers: flexTiers,
-        estimated_payout_note: `Real backtested mix (Total Bases+H+R+RBI+Hits, Goblin, less side): +114.4% ROI over 14 real days. Per-leg pricing calibrated from real placed slips; partial-hit tiers use an averaged real per-prop ratio since no confirmed real cross-prop Flex table exists yet - confirm against the app's real displayed multiplier before placing.`,
+        estimated_payout_note: `Real backtested mix (Total Bases+Hits, Goblin, less side, no per-prop cap): +194.0% ROI, 61 slips, 21 full hits (34.4%) over 9 real active days, only 1 losing day. Per-leg pricing calibrated from real placed slips; partial-hit tiers use confirmed flat values - confirm against the app's real displayed multiplier before placing.`,
         strategy_notes: [
-          "Qualifying legs: rolling top-55-by-real-appearance-count AND >=92% real historical hit rate, restricted to Goblin variant on hits_runs_rbis/less, hits/less, and total_bases/less - retired the prior n>10/100%-any-prop strategy.",
-          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day, max 3 legs from any single one of the three props per slip (forces genuine mixing).",
+          "Qualifying legs: rolling top-55-by-real-appearance-count AND >=92% real historical hit rate, restricted to Goblin variant on hits/less and total_bases/less - dropped hits_runs_rbis/less (weakest real p*m of the three) and removed the max-3-per-prop cap.",
+          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day - no per-prop cap, a single prop can fill up to all 6 slots if it has enough real, correlation-clean legs that day.",
           "6-pick Flex only - this exact size/mode is what was real-backtested; no smaller leftover slips are built.",
           `Real prop mix in this slip: ${Object.entries(propBreakdown).map(([k, v]) => `${k}=${v}`).join(", ")}`
         ],
