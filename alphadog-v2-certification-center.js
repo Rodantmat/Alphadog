@@ -5583,20 +5583,51 @@ function realMultFieldsHtmlForSize(s,idx,size){
       +'</div></div>';
   }
   if(String(s.source_key||'').toLowerCase()==='sleeper'){
-    // Sleeper Flex tiers are also leg-composition-dependent (real per-leg product from each
-    // leg's own live moneyline price) - never a flat average, same discipline as Goblin.
-    // FIXED 2026-08-22: same missing-field bug as Goblin above - now shows 3 tiers.
+    // Sleeper Flex tiers are leg-composition-dependent (real per-leg product from each leg's own
+    // live moneyline price), discounted by the real, EV-parity Flex factor (see
+    // sleeperFlexFactor server-side - mirrored here for live recompute as legs get unchecked).
+    // FIXED 2026-08-26: (1) applies the corrected Flex-discount formula instead of the naive
+    // per-leg product, which was confirmed to over-predict full-hit payouts by 12-39%; (2) fixes
+    // tier count - 2-pick is POWER ONLY on Sleeper (no Flex tiers exist below 3 legs), 3/4-pick
+    // show 2 fields (n/n, n-1/n), 5/6-pick show 3 fields (n/n, n-1/n, n-2/n) - previously always
+    // showed 3 fields regardless of size, producing a nonexistent (n-2)/n field on a 4-pick.
     const legs=s.legs||[];
     const allPriced=legs.length>0&&legs.every(l=>Number.isFinite(l.real_leg_mult));
-    const fullMult=allPriced?Math.round(legs.reduce((p,l)=>p*l.real_leg_mult,1)*1000)/1000:0;
-    const partialMult=Math.round(fullMult*0.10*1000)/1000;
-    const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
+    const powerEquivalentMult=allPriced?legs.reduce((p,l)=>p*l.real_leg_mult,1):0;
+    if(size===2){
+      const mult=allPriced?Math.round(powerEquivalentMult*1000)/1000:0;
+      return '<div class="realMultRow"><span class="realMultLabel">Real multiplier (2-pick Power)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" value="'+esc(String(mult||''))+'"></div>';
+    }
+    const SLEEPER_C1=0.10, SLEEPER_C2=0.01;
+    const impliedProbs=legs.map(l=>{
+      const price=String(l.selected_side||'').toLowerCase()==='more'?l.real_over_price:l.real_under_price;
+      const p=Number(price);
+      if(!Number.isFinite(p)||p===0)return null;
+      const dec=p>0?1+p/100:1+100/Math.abs(p);
+      return 1/dec;
+    }).filter(x=>Number.isFinite(x));
+    const pBar=impliedProbs.length?impliedProbs.reduce((a,b)=>a+b,0)/impliedProbs.length:null;
+    let flexFactor=1;
+    if(allPriced&&pBar!=null&&size>1){
+      const x=(1-pBar)/pBar;
+      const denom=1+SLEEPER_C1*size*x+SLEEPER_C2*(size*(size-1)/2)*(x*x);
+      flexFactor=Math.max(0.50,Math.min(0.95,1/denom));
+    }
+    const fullMult=allPriced?Math.round(powerEquivalentMult*flexFactor*1000)/1000:0;
+    const PARTIAL_RATIOS={4:{oneBelow:0.24},5:{oneBelow:0.23,twoBelow:0.049},6:{oneBelow:0.11,twoBelow:0.021}};
+    const ratios=PARTIAL_RATIOS[size]||{oneBelow:0.10};
+    const partialMult=Math.round(fullMult*ratios.oneBelow*1000)/1000;
     const noteLabel=allPriced?'':' - real price missing for a leg, showing 0';
-    return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES'+noteLabel+')</span><div class="realMultFields">'
+    const tierCount=size>=5?3:2;
+    let html='<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES'+noteLabel+')</span><div class="realMultFields">'
       +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" value="'+esc(String(fullMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>'
-      +'<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>'
-      +'</div></div>';
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>';
+    if(tierCount>=3){
+      const partial2Mult=Math.round(fullMult*(ratios.twoBelow||0.02)*1000)/1000;
+      html+='<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>';
+    }
+    html+='</div></div>';
+    return html;
   }
   const tiers=flexTiersForSizeLive(s.source_key,size);
   if(!tiers){
