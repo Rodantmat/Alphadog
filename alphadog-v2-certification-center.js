@@ -3058,6 +3058,13 @@ const BASELINE_HP_MIN = 90;
 const BASELINE_HP_SIZE = 6;
 const BASELINE_HP_PER_LEG_RATE = 1.1417; // real, measured 2026-08-27 (conservative of two reads)
 const BASELINE_HP_FLAT_PARTIALS = { oneBelow: 0.5, twoBelow: 0.25 };
+// Daily slip cap. Real cap sweep on the backtest (ranked best-first, 9 days):
+//   uncapped +97.4% (101 slips) | cap 12 +100.3% | cap 8 +109.0% | cap 5 +109.5% | cap 3 +103.8%
+// ROI is flat from cap 3 to cap 12 - cap 5 is the top of a ~10-point noisy band on 9 days, NOT a
+// sharp optimum. It also trades volume for rate: cap 5 yields $40.53 profit vs $98.35 uncapped on
+// the same window. Note the cap hides variance - at cap 5 the only two imperfect days were the two
+// days that could not build 5 slips at all.
+const BASELINE_HP_MAX_SLIPS_PER_DAY = 5;
 async function autoSelectMixedTop55Legs(env, sourceKey) {
   const pg = pgClient(env);
   try {
