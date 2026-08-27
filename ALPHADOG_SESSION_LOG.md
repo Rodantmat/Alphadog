@@ -378,4 +378,27 @@ PP Goblin Sim A (rejected), Demon (rejected, code removed), Regular Gen1 (falsif
 
 **ITEM 4 NET RESULT:** Power combinatorics comprehensively dead (cross-variant pooling closed as a corollary). Flex blocked on corrupted data, mechanism proven real, exact required observation specified. No new candidate. Item 4 also produced a new general diagnostic (STNAP) that is the Flex-side counterpart to item 11's fair-odds check.
 
-**Items 5-7 (enrichment-layer dissection; market-context signals; unconstrained strategy shapes) not yet started.**
+**[2026-08-26] ITEM 5 — enrichment-layer dissection (individual factors tested directly against real outcomes). COMPLETE. All factors killed; the more important finding is a structural data limitation.**
+
+Transcript re-check done — prior sessions researched these factors' *mechanisms* extensively (park factors handedness-split, weather microfactors, jet-lag asymmetry from the Northwestern/PNAS study, catcher framing, times-through-order) and wired them into the scoring engine, but never tested any of them **directly against real graded betting outcomes**. That is what Item 5 does for the first time.
+
+**Fair-odds gate applied FIRST to pick the target, per instruction.** Since Item 4 established every well-observed cell prices at or below fair, a factor only matters if it can lift a cell *over* breakeven. Highest-leverage target identified: **`walks_allowed/more/0.5/GoblinT1`** — real p=88.24%, m=1.1362 (n=26, best-observed multiplier in the system), breakeven 88.01%, **gap of only 0.23pp**. Nothing else in the system is this close to flipping.
+
+**Available factor data (discovered, not assumed):** `context.history_game_weather` (467 rows), `history_bullpen_availability` (706), `history_game_umpire` (476), `history_probable_pitchers` (628), `history_team_schedule_spot` (816), `history_catcher_context` (392), `history_game_lineup`. Coverage 2026-07-19 to 08-26, unevenly.
+
+**METHODOLOGY BUG CAUGHT AND CORRECTED MID-ANALYSIS — recorded because it would silently corrupt any future factor work.** My first schedule query joined `history_team_schedule_spot` on `game_pk` alone. That table has **one row per TEAM per game**, so the join fanned out every leg across both teams — counting the OPPONENT's schedule as often as the player's own. Detected by noticing the joined row count (68,562) was exactly 2× the leg population (34,593). Corrected by joining player→team via `context.history_game_lineup`, then team→schedule. **Any factor table keyed at team or game level must be checked for fan-out before use; row-count doubling is the tell.**
+
+**FACTOR RESULTS (corrected joins, correct lane, corrupted days excluded):**
+1. **Weather (temp/roof)**: hot ≥85°F 77.10% (n=10,228, 16d); warm 75-84°F 75.84% (n=15,772, 17d); mild 65-74°F 75.20% (n=8,593, 15d). Spread only 1.9pp — and **backwards from its own physical mechanism**: hotter air is less dense, ball carries further, more offense, so `less`-side props should hit LESS often at high temps, not more. **KILLED as confounding** (Gemini: this is measuring venue infrastructure — roof-closed stadiums concentrated in hot climates — not weather).
+2. **Back-to-back**: 73.00% (n=6,859) vs 75.90% (n=25,621), 11 days. Spread +2.9pp. **KILLED** — within slate-to-slate noise, and confounded by home/away and series structure.
+3. **Eastward travel**: 75.95% (n=29,407, 11d) vs 67.87% (n=2,549, **3 days**). Spread −8.1pp. **KILLED on day-concentration.**
+4. **Timezone transition**: 77.21% (n=13,473, 7d) vs 68.57% (n=2,609, **3 days**). Spread −8.6pp, the largest found. **KILLED by day-by-day breakdown**: 08-14 gap −10.6pp, **08-17 gap +0.2pp (effect entirely absent)**, 08-18 gap −18.5pp. Two of three days carry it, one is null. Gemini computed effective sample size properly: with n=2,609 clustered into k=3 days, design effect ≈ 44, **N_eff ≈ 59 independent observations**, standard error rising from a naive 0.88pp to ≈6.1pp. The apparent effect is a single-slate artifact.
+
+**THE MORE IMPORTANT FINDING — ITEM 5 IS NOT ANSWERABLE WITH THE CURRENT DATA, and this is the honest verdict rather than a null result.** The precision required and the precision available are orders of magnitude apart:
+- Lift needed to flip the best target cell: **+0.23pp**
+- Slate-to-slate noise floor across an 11-day factor sample: **±2.5 to ±5.0pp**
+Gemini's framing, which is exact: *"equivalent to trying to measure a millimeter deficit on a scale that oscillates by centimeters."* Establishing a 0.23pp structural lift would need on the order of **100+ days** of factor coverage; the enrichment history tables hold 11 usable days for schedule and 3 for timezone.
+
+**ITEM 5 NET RESULT:** No factor shows real, day-robust predictive power against real outcomes. But the correct conclusion is **"insufficient data to test," not "no factors matter"** — the enrichment history simply lacks the temporal depth to resolve effects at the precision the market's pricing demands. **Actionable consequence: if factor-level research is ever to be viable, the enrichment history tables need to accumulate substantially more days.** They are currently retention-bounded (the umpire table was explicitly built with 10-day bounded retention), which caps this permanently unless changed. That is a system-design decision for Rodolfo, not a research finding.
+
+**Items 6-7 (market-context signals; unconstrained strategy shapes) not yet started.**
