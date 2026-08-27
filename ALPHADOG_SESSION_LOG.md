@@ -888,7 +888,44 @@ Flex outperforms Power here (0.784 vs 0.715) but both are decisively negative. *
 
 ---
 
-## 🟢 [2026-08-27] FIRST CANDIDATE TO CLEAR EVERY GATE — `walks_allowed/more/0.5` GOBLIN
+## 🟢🟢 [2026-08-27] STRONGEST RESULT OF THE PROGRAM — `walks_allowed/more/0.5` GOBLIN, UMPIRE-FILTERED
+
+**First candidate to clear day-robustness, the gate that killed all 17 predecessors.**
+
+**FILTER: bottom tercile of `umpire_tendency`** (pitcher-unfriendly / tight strike zone).
+**Result: 74/80 = 92.5% over 18 days** (vs 86.92% unfiltered).
+- Day-level: **13 of 18 days positive** (sign test p = 0.048); mean p×m **1.1014**, SD 0.154, SE 0.0363, **t = 2.79** (17 df) — clears one-tailed (1.740) and two-tailed (2.110) uncorrected bars. **95% CI [1.0248, 1.1780], entirely above 1.0.**
+- Pooled p×m: **1.1107 at live m=1.2007**, **1.0510 at stored m=1.1362**. Positive under both.
+- Wilson CI on hit rate [84.59%, 96.52%]; lower bound clears the live breakeven (83.28%) but not the stored one (88.01%).
+
+**THE MECHANISM — confirmed by a directional reversal test, which is why this is not a fit.**
+Start length vs hit rate, all MORE-side Goblin pitcher props:
+| Cell | ≤4 IP | 5 IP | 6+ IP | Direction |
+|---|---|---|---|---|
+| `walks_allowed/0.5` | 93.44 | 92.21 | 82.22 | ↓ monotone |
+| `earned_runs/0.5` | 93.33 | 88.89 | 79.14 | ↓ monotone |
+| `hits_allowed/2.5` | 81.48 | 89.83 | 84.68 | inverted-U |
+| **`pitcher_strikeouts/2.5`** | 62.22 | 78.26 | **89.74** | **↑ REVERSED** |
+**Walks and earned runs are STRUGGLE props — a pitcher issuing walks and allowing runs gets pulled early. Strikeouts are a VOLUME prop — more innings means more batters faced.** The reversal is exactly what physics predicts, and a spurious correlation would not flip direction on cue. `hits_allowed` sits between because it is both struggle-driven and volume-driven, which explains its inverted-U without special pleading.
+
+**THREE INDEPENDENT ROUTES TO THE SAME MECHANISM — the losing legs are efficient, good-control pitchers in wide-zone games:**
+1. **Start length** (retrospective): 6+ IP = 82.22% vs ≤4 IP = 93.44%
+2. **Trailing walk profile** (prospective): <1 BB/start control pitchers = 80.00%, worst bucket. The 1-2 BB band gives 89.29% (n=56) → p×m 1.0721 live / **1.0146 stored**
+3. **Umpire tendency** (prospective): pitcher-friendly zone = 84.1% vs tight zone = 92.8%
+`umpire_tendency` is **negative in both `walks_allowed` (−8.6pp) and `earned_runs` (−5.6pp)** — same direction, both exceeding the ±4pp noise floor. `times_through_order` flips sign between props (+7.8 / −1.9) and is noise.
+
+**⚠️ HONEST LIMITS — none of these are resolved:**
+1. **Volume is brutal: n=80 over 18 days = 4.4 legs/day.** Daily n ranges 2-8, so 12 of 18 days sit at exactly 100% purely because the sample is tiny. **That discretization likely inflates the apparent day-level consistency and the t-statistic.**
+2. **The multiplier conflict is still unresolved.** At stored 1.1362 the Wilson lower bound (84.59%) does not clear breakeven (88.01%). Positive on point estimates under both, but only robust under the live figure.
+3. **Individual filters are not significant on their own** (umpire −8.6pp is Z=1.75; trailing-walk band is n=56). **The evidence is the mechanistic agreement across three routes, not any single statistic.**
+4. **Multiple comparisons:** ~8 factor×prop combinations were searched to find `umpire_tendency`. It does not survive a Bonferroni bar in isolation.
+
+**SIGNAL LAYERS — CONFIRMED USELESS, one actively harmful.** Across 10 cells / 12,802 legs, top-tercile lift over cell baseline: `score_0_100` +1.23pp (7/10 cells), `estimated_hit_probability` +0.89pp (6/10), **`confidence` −0.29pp (positive in only 3/10)**. All inside the ±4pp placebo noise floor. **Strip `confidence` from selection logic — its top tercile underperforms baseline in 7 of 10 cells.**
+**Data-hygiene bug:** `estimated_hit_probability` ≡ `raw_score` and the three confidence columns are rank-identical — six named columns are three signals.
+
+**NOT YET DONE — the same full dissection must be run on HITTER prop lines**, using every available signal without exception: final hit probability, score, confidence, baseline layer, and every individual enrichment factor and sub-factor.
+
+---
 
 **Status: POSITIVE on every test run, contingent on one unresolved multiplier conflict. Not yet deployable.**
 
