@@ -207,7 +207,18 @@ Secondary sanity check on the same tables: compare each partial tier against the
 
 **Important — STNAP kills bad DATA, not the Flex mechanism itself.** Flex EV is the sum of probability-weighted tier payouts, not the product of single-leg fair odds. It is genuinely possible for a Flex structure to be positive-EV while every constituent leg is Power-negative, if an operator applies tier scalars calibrated for standard props (p≈0.52) to high-probability Goblin legs (p≈0.70+): probability mass shifts into the upper partial tiers. This remains a real, open, unfalsified route and requires a **verified real Flex payout matrix (full-hit plus every partial tier) for an actual Goblin slip** to test. Do not treat the Flex branch as closed because a corrupted table was rejected.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all twelve items is itself a violation of this standard.
+**13. EXHAUSTIVE TABLE ENUMERATION — never declare anything "untestable," "no real data exists," or "extrapolated because nothing better is available" without first enumerating every table in the schema that could plausibly hold the data.** Checking the one or two tables already known from earlier work is not sufficient and has already produced a serious failure.
+
+Required procedure before any such declaration:
+1. **Read the code for what gets recorded where, and what gets explicitly SKIPPED.** Writers frequently cover only a subset of sources. The tell in this system: `recordRealPricingObservation`'s own comment states it processes only Goblin, Demon and Sleeper and deliberately skips Underdog and Regular — meaning real Underdog observations could (and did) exist while being absent from every pricing layer.
+2. **Query `information_schema.tables` with wildcard patterns on the concept**, not on table names already in use (`%slip%`, `%pricing%`, `%observation%`, `%histor%`, `%real%`). Search every schema, including `backtest`, `archive`, `control` and other non-production schemas — data that answers a live question is routinely parked outside the tables serving production.
+3. **Check row counts on everything returned before dismissing any of it.** A table with an unfamiliar name in an unfamiliar schema may hold far more of the needed data than the "official" one.
+
+**The worked example that produced this rule:** Underdog's house margin H had been fitted from **12** real observations, and the question "does H vary by prop pairing?" was declared untestable from stored data on the basis that `parlay_underdog` has zero rows in any pricing layer — which was true, and irrelevant. `backtest.ud_sleeper_real_slips` held **624 real slip observations with real recorded multipliers and real outcomes** (255 Underdog, 369 Sleeper) spanning a month. The entire session's Underdog analysis ran on 12 observations while 255 sat unused one table away. Using them confirmed the rejection at a 21x larger sample, validated the EV-parity model to within 0.8 percentage points, and converted the H-constancy question from "untestable" to "partially answered — H is NOT constant for Underdog."
+
+**The deeper point: "no data exists" is a claim requiring evidence, exactly like any other claim in this standard.** It is the one class of claim that has repeatedly been asserted without verification, and it is uniquely damaging because it terminates inquiry rather than merely misdirecting it.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all thirteen items is itself a violation of this standard.
 
 ---
 
