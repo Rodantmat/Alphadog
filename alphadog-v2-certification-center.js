@@ -3227,7 +3227,7 @@ async function apiHighHitSlips(env, request) {
     notes: [
       "PAUSED 2026-08-26: PrizePicks Goblin Sim A and Underdog rbis/less are both paused (confirmed negative EV on real, corrected pricing: -27.4% and -14.0% respectively). No slips generated for either until a replacement signal is confirmed.",
       "PrizePicks Demon: RE-PAUSED 2026-08-26 (same day as a brief re-enable) - the pitcher_strikeouts/less/Tier2 re-verification that justified re-enabling it was itself flawed (83% of the sample came from four now-confirmed-corrupted days; the clean remainder is not day-robust). No slips generated until a properly re-verified replacement clears the full standard in ALPHADOG_REALIGNMENT.md Section 11.",
-      "Sleeper: real >=55% rolling historical hit rate (60-day, min 3 obs), ranked by real per-leg multiplier from live moneyline prices.",
+      "Sleeper: PAUSED 2026-08-26 - real breakeven (78.84% at the confirmed 1.2684x per-leg multiplier) was not cleared by any of four separately Gemini-adversarial-verified signals (raw trailing hit rate, model probability, lineup-slot gradient, multi-layer combination). Best result across all combinations was 71.84%, still 7 points short. See ALPHADOG_SESSION_LOG.md for the full research.",
       "Real multipliers vary by platform and leg mix - use the multiplier field on each slip to record what the app actually shows before saving."
     ]
   });
