@@ -3013,7 +3013,81 @@ function buildRegularHighHitSlips(legs) {
 // Demon-specific builders.)
 
 
-// ===== TB+HITS UNCAPPED STRATEGY (replaces Mixed Top-55/92% 2026-08-26) =====
+// ===== BASELINE-HP GOBLIN STRATEGY (replaces TB+Hits Uncapped 2026-08-27) =====
+// Real, backtested replacement. Selection is driven by the BASELINE layer
+// (classification.baseline_v6_current.hit_probability_0_100), NOT by the enriched board score.
+//
+// WHY: a full head-to-head on 36,644 identical graded legs over 26 days found the baseline layer
+// separates winning from losing legs by 39.9pp (top-quartile 92.4% vs bottom-quartile 52.5%),
+// while the post-enrichment estimated_hit_probability_0_100 separates them by only 4.8pp - inside
+// the +/-4pp placebo noise floor measured on a zero-information factor. Both layers are calibrated
+// on average (baseline -1.0pp, enriched +1.3pp); the damage is entirely to RANKING. The enrichment
+// stage is compressing ~40 points of real discrimination down to ~5. That is a live engine defect,
+// logged separately - this strategy simply bypasses it by selecting on the clean baseline.
+//
+// Baseline calibration in the band we bet (36,644 legs): predicted 75.0 -> actual 75.8 (+0.8pp),
+// 84.5 -> 87.8 (+3.3pp), 92.3 -> 96.8 (+4.5pp), 96.6 -> 99.6 (+2.9pp). It is UNDER-confident at the
+// top, which is the opposite of a leakage signature. Also passes a first-appearance test: legs from
+// players with zero prior history show the same +40.0pp spread, so it is built from underlying MLB
+// stats, not from this system's own prior outcomes.
+//
+// REAL BACKTEST (slip-construction, not expected-value): board snapshots pinned to ONE batch per
+// day using morning-first (7-11am PT) -> early-PM (12-2pm) -> late-PM (3-5pm), legs excluded if
+// their game had already started at snapshot time. Slips built deterministically by ranking each
+// pure (prop,line,side) cell by baseline and grouping into non-overlapping 6-picks, then graded
+// against real outcomes: 101 slips, 90 full hits (89.11%), 9 active days, +97.3% ROI at the
+// conservative real per-leg rate of 1.1417. All 11 misses were exactly 5/6 - not one slip ever
+// finished 2+ legs short, at any size, across 1,071 slips in the full sweep.
+//
+// MULTIPLIER, MEASURED NOT ASSUMED: a matched-pair live read on 2026-08-27 tested whether
+// PrizePicks prices the baseline signal. Two pure-doubles 6-picks, same line, matched game spread,
+// 3.5x difference in failure probability: HIGH baseline (avg 97.7) paid 2.3x, LOW baseline (avg
+// 91.9) paid 2.2x. The high-quality slip paid MORE, not less. PrizePicks does not price this
+// signal. 1.1417 (the lower read) is used here deliberately.
+//
+// HONEST LIMITS, stated in-code so they are not lost:
+//  1. NINE DAYS. The >=90 pool does not exist in usable size before 2026-08-12 (baseline pipeline
+//     change, not a market change). Four days hold 73 of 101 slips; 08-14 alone went 24-for-24.
+//     Excluding 08-14 the backtest is +91.1% - no single day flips it negative, but it is thin.
+//  2. ZERO LOSING DAYS across 9 days is the least trustworthy part. Real strategies lose days.
+//  3. The 1.1417 per-leg rate is measured on DOUBLES only and applied to every prop here.
+//     home_runs / stolen_bases / rbis legs are unmeasured and likely price lower. Every ROI figure
+//     above is optimistic by an unknown amount until per-prop reads exist.
+// Recommend minimum stake until real placed results accumulate.
+const BASELINE_HP_MIN = 90;
+const BASELINE_HP_SIZE = 6;
+const BASELINE_HP_PER_LEG_RATE = 1.1417; // real, measured 2026-08-27 (conservative of two reads)
+const BASELINE_HP_FLAT_PARTIALS = { oneBelow: 0.5, twoBelow: 0.25 };
+async function autoSelectMixedTop55Legs(env, sourceKey) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
+        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
+        b.hit_probability_0_100 AS hit_probability_0_100,
+        f.probability_confidence_0_100 AS confidence_0_100,
+        f.is_goblin, f.is_demon,
+        b.non_push_sample AS historical_n,
+        round(b.hit_probability_0_100::numeric,1) AS historical_hit_pct
+      FROM score.final_board_current f
+      JOIN classification.baseline_v6_current b
+        ON b.player_id = f.mlb_player_id::text
+       AND b.canonical_prop_key = f.canonical_prop_key
+       AND b.line_value = f.line_value
+       AND b.selected_side = f.selected_side
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
+        AND b.hit_probability_0_100 >= ${BASELINE_HP_MIN}
+        AND f.official_game_time_utc IS NOT NULL
+        AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY b.hit_probability_0_100 DESC, f.player_name
+    `);
+    return rows;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
 // Real, backtested replacement: drops hits_runs_rbis/less from the qualifying pool (weakest real
 // p*m of the three at 1.059, vs 1.074 for hits/less and 1.191 for total_bases/less - all measured
 // on 470-645 real observations each) and removes the max-3-per-prop cap. A real, correlation-
