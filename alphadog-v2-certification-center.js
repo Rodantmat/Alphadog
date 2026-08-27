@@ -3265,9 +3265,9 @@ async function apiHighHitSlips(env, request) {
   const sleeperSlips = [];
   const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = sleeperLegs.length;
+  const selected_leg_count = sleeperLegs.length + ppLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: ["No leg currently on the board qualifies for any of the currently-active real strategies right now - board may still be filling in for the day. Note: PrizePicks Goblin and Underdog are paused - see notes on a non-empty response for why."] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: [`No leg currently on the board qualifies right now - board may still be filling in for the day. PrizePicks Goblin (baseline>=${BASELINE_HP_MIN}) found ${ppLegs.length} qualifying leg(s); it needs at least ${BASELINE_HP_SIZE} to build a slip. Underdog, Demon and Sleeper remain paused.`] });
   }
   const counts = {};
   for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
