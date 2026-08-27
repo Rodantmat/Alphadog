@@ -3103,16 +3103,6 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
 // floor on the ENRICHED board score; it is replaced by baseline-layer selection. The builder,
 // multiplier plumbing and all UI wiring below are unchanged and shared.)
 const MIXED_TOP55_SIZE = BASELINE_HP_SIZE;
-  const pg = pgClient(env);
-  try {
-    const propFilter = MIXED_TOP55_PROPS.map(p => `('${p.prop}','${p.side}')`).join(",");
-    const rows = await queryAllPg(pg, `
-      WITH qualifying AS (
-        SELECT mlb_player_id, canonical_prop_key, line_value, selected_side,
-          count(*) as historical_n,
-          round(100.0*sum(outcome_hit)/count(*),2) as historical_hit_pct
-        FROM score.prop_outcome_history
-        WHERE source_key = '${sourceKey}' AND outcome_hit IS NOT NULL AND is_goblin = 1
           AND (canonical_prop_key, selected_side) IN (${propFilter})
           AND official_date::date >= (now() - interval '60 days')::date
         GROUP BY 1,2,3,4
