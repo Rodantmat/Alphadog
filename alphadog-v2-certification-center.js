@@ -5270,7 +5270,7 @@ function bindLegKeepBoxDelegation(){
   results._legKeepBoundAlready=true;
   results.addEventListener('change',e=>{
     if(e.target&&e.target.classList&&e.target.classList.contains('legKeepBox')){
-      refreshRealMultFields(Number(e.target.dataset.slipIdx));
+      handleLegToggle(Number(e.target.dataset.slipIdx),Number(e.target.dataset.legIdx),!!e.target.checked);
     }
   });
 }
