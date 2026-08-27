@@ -269,7 +269,19 @@ Required procedure before any such declaration:
 
 **A process that only hunts optimistic errors will systematically under-call real effects.** That is the same one-directional bias item 14 exists to prevent, appearing at the level of statistical machinery rather than at the level of which hypotheses get scrutinised. Both directions, every time.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all sixteen items is itself a violation of this standard.
+**17. ANY CROSS-APP OR CROSS-SOURCE COMPARISON MUST EXCLUDE FORMULA-DEPENDENT PROPS AS A PRECONDITION — decided before the query is written, never discovered mid-analysis.** Different apps compute composite statistics differently. Comparing them treats two different quantities as the same prop and manufactures phantom edges.
+
+**Excluded from any cross-app comparison, always:** `fantasy_score`, `pitcher_fantasy_score`, and any composite or derived stat whose definition could differ between operators. **Permitted:** props with unambiguous, operator-independent definitions — `hits`, `total_bases`, `rbis`, `runs`, `walks`, `singles`, `doubles`, `home_runs`, `stolen_bases`, `pitcher_strikeouts`, `hits_allowed`, `walks_allowed`, `earned_runs`, `pitcher_outs`.
+
+**Also verify scope, not just the stat name.** This system has separately documented that Underdog's `market_key` is ambiguous between full-game and 1st-inning-only variants. A matching prop name does not guarantee a matching event window.
+
+**This rule exists because a fantasy-score formula mismatch has now produced a phantom result TWICE:**
+1. **First occurrence** — `pitcher_fantasy_score` graded with the PrizePicks formula (`outs + 3K − 3ER + 6W + 4QS`) applied to 163 Underdog rows, producing an apparent **79.59%** hit rate. Re-graded with Underdog's own `pfsUd()` formula, the real rate was **52.15%**.
+2. **Second occurrence** — a cross-app line-shopping candidate showed a clean monotonic dose-response (42.52% → 50.00% → 59.33%), an exact-0.00 same-line control, a coherent mechanism (PrizePicks' fixed payout table cannot reprice per leg), and the most favourable Gemini verdict any candidate received: *"structurally sound and fundamentally superior... a genuine category change."* **It was an artifact.** Decomposing the aggregate by prop revealed that **245 of 418 legs — 80% of the signal — were `fantasy_score/more`, where PrizePicks' average line was 5.47 and Underdog's was 9.86.** A 4.4-point gap on the same nominal stat is not a soft line; it is two different scoring formulas. Removing `fantasy_score` left an incoherent remainder: `hits_runs_rbis/less` 14.3%, `total_bases/less` 33.3%, `pitcher_outs/less` 16.7% — all far below breakeven — plus a handful of n=2-10 cells at 100%. **No dose-response survived.**
+
+**The generalisable procedure that caught it, and which is now mandatory for any strong-looking aggregate: DECOMPOSE THE AGGREGATE BY EVERY PLAUSIBLE CONFOUNDING DIMENSION BEFORE BELIEVING IT** — prop definition, line value, tier, variant, side, day, and source. A single dominant sub-population hiding inside a clean aggregate is the most common failure mode in this program. A dose-response gradient is *not* sufficient evidence of a mechanism if one sub-population dominates every bucket.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all seventeen items is itself a violation of this standard.
 
 ---
 
