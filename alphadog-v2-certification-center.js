@@ -5236,22 +5236,6 @@ function computeMixedTop55FlexTiersLive(legs,size){
   if(tierCount>=3)tiers[size-2]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.twoBelow;
 
 // UPDATED 2026-08-25: two real, independent 5-pick observations (different leg compositions,
-// both real mixes of these three props) both showed identical absolute partial tiers: 4/5=0.5,
-// 3/5=0.25 - and those exact numbers also match the confirmed 6-pick tiers for hits/hits_runs_rbis
-// (5/6=0.5, 4/6=0.25). This suggests Goblin Flex partial-credit tiers in this mixed pool may be
-// FLAT, CONSTANT values rather than a ratio of the full-hit product - using confirmed flat values
-// now for one-below and two-below tiers rather than the earlier per-prop-ratio estimate. Only 2
-// real 5-pick data points so far though - keep watching for a case where this doesn't hold.
-const MIXED_TOP55_CLIENT_FLAT_PARTIALS={oneBelow:0.5,twoBelow:0.25};
-function computeMixedTop55FlexTiersLive(legs,size){
-  if(!legs||!legs.length||legs.length!==size)return null;
-  for(const l of legs){
-    const key=String(l.canonical_prop_key||'')+'|'+String(l.selected_side||'');
-    if(!MIXED_TOP55_CLIENT_TABLES[key]||Number(l.is_goblin)!==1)return null;
-  }
-  let full=1;
-  for(const l of legs){
-    const key=String(l.canonical_prop_key||'')+'|'+String(l.selected_side||'');
     full*=Math.pow(MIXED_TOP55_CLIENT_TABLES[key],1/6);
   }
   full=Math.round(full*1000)/1000;
