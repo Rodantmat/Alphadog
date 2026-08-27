@@ -551,7 +551,36 @@ Checking honestly *when* each severity test entered the program:
 
 **CORRECTIVE ACTIONS TAKEN:** all thirteen standards are now written into `ALPHADOG_REALIGNMENT.md`, so they are pre-specified for everything from here forward rather than re-derived reactively. Going forward, every rejection must also state explicitly whether a defensible alternative treatment exists that would flip it — the same question asked of every survivor.
 
-**NOT YET PURSUED, and explicitly queued rather than assumed dead (per the audit's point 3-4):**
+---
+
+**[2026-08-26] PRIORITY 1 — `total_bases/less/0.5` GOBLIN evaluated as a full candidate. VERDICT: INSUFFICIENT DATA, not dead. And I have to correct an error I made in surfacing it.**
+
+**Fair-odds gate applied first, per standard — and it caught my own mistake.** Last turn I flagged this cell on the basis of a per-leg multiplier of **1.4832**, describing it as "the highest Goblin ratio ever observed." That is accurate but it is the **maximum of a five-observation sample, not the expected value** — and using a sample maximum as the multiplier is exactly the optimistic selection that item 11 exists to prevent. I did the thing the standard warns about, one turn after writing the standard.
+All five real observations at this exact prop+line+variant, from `control.goblin_demon_multiplier_study` (all 2-pick, all line 0.5, all Goblin, all line-confirmed):
+| Slip | Total | Per-leg | Ratio |
+|---|---|---|---|
+| McCarthy + Abreu ("ladder") | 1.5x | 1.2247 | 0.7071 |
+| McCarthy(hot) + Kirk(cold) | 1.9x | 1.3784 | 0.7958 |
+| Tatis(hot) + Kirk(cold) | 2.0x | 1.4142 | 0.8165 |
+| McCarthy(hot) + Bateman(cold) | 2.0x | 1.4142 | 0.8165 |
+| McNeil(cold) + Rengifo(cold) | 2.2x | 1.4832 | 0.8563 |
+**Mean per-leg = 1.3829.** Breakeven at the mean = **72.3%**.
+
+**REAL HIT RATE AT THE CELL:** n=40 graded legs, 14 days, **70.00%** (plus 7 tier-unclassified at 57.14%). This is why the cell never appeared in Item 1's grid — it fell below the n≥100 threshold.
+- At the mean multiplier (1.3829): **p×m = 0.968 — NEGATIVE.**
+- At the max multiplier (1.4832): p×m = 1.038 — marginally positive, but this figure is not defensible.
+- **95% CI on the hit rate: [55.8%, 84.2%].** Breakeven sits comfortably inside. Z = 0.36 against breakeven. The sample cannot distinguish positive from negative in either direction.
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time, as now required):** *Is there a defensible alternative treatment that flips this?* **The only treatment that flips it is using the maximum observed multiplier instead of the mean — and that is NOT defensible**, being straightforward optimistic selection from a five-point sample. No legitimate alternative exists. **Verdict: insufficient data, cannot be resolved without more graded legs at this cell. Not a candidate, and not dead — genuinely untested at usable depth.**
+
+**HOWEVER — these five observations contain something genuinely important, and it bears directly on standing observation #3.** The slip descriptions record player form, and the multiplier tracks it:
+- both players **cold** → **2.2x** (highest)
+- one hot, one cold → 1.9x-2.0x
+- "ladder" (context differs) → 1.5x
+For `total_bases/less/0.5`, a **cold** hitter is *more* likely to go hitless, so the under has a **higher** true probability. **The highest-probability pairing received the highest multiplier.** If PrizePicks priced per leg efficiently, higher p should attract a *lower* multiplier — the observed direction is the opposite.
+**This is weak evidence (n=5, confounded, form labels are informal) but it points the same way as the market signal's core assumption:** that PrizePicks does not fully price individual leg probability into its Goblin multipliers. If that holds, it is the mechanism the Item 6 signal depends on. **It does not replace standing observation #3 — a controlled high-vs-low implied-probability slip pair is still required — but it is the first independent hint that the assumption may be correct rather than merely convenient.** Flagged explicitly as a hypothesis to be confirmed or killed by that observation, not as support for the signal.
+
+**Priorities 2-4 (closing-line movement as its own signal; timestamp/look-ahead check; near-miss combinations) not yet started.**
 1. **Closing-line MOVEMENT (open→close direction and magnitude) rather than closing-price LEVEL.** The look-ahead concern is about *timing*, not about market data being useless. Line movement is a genuinely different signal and has never been tested.
 2. **Cells from the newly-found 57-observation study with decent p×m that were only ever used to confirm or kill something else, never pursued as candidates in their own right.** Notably the highest Goblin ratio ever observed (0.8563, `total_bases` 2-pick at 2.2x → per-leg 1.483, breakeven 67.4%) — `total_bases/less/0.5` Goblin was never measured in Item 1's grid and has never been evaluated as its own candidate.
 3. **Deliberate combinations of near-misses**: Demon Flex (pending, not dead) layered with anything else here; and the market signal — if it survives the look-ahead check — applied to a *specific favourable cell* rather than as a blanket effect.
