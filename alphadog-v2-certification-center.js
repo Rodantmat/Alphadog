@@ -5605,6 +5605,10 @@ async function highHitSlips(){
     const slips=j.generated_slips||[];
     if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying High Hit legs right now.')+'</div>';return}
     lastRawSlips=slips;
+    // Reset substitution state on every fresh build, then load the shared backup pool.
+    backupPool=(j.backup_pool||[]).slice();
+    slipSubs.clear();
+    slipUnchecked.clear();
     lastSlipsNoteHtml='';
     applySlipSourceFilter();
   }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
