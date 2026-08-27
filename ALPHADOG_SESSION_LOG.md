@@ -859,7 +859,40 @@ Difference **+0.98pp, SE 2.79, t = 0.35, p ≈ 0.73.** **The scatter is also ess
 
 ---
 
-**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+**[2026-08-27] 🔒 `singles/less/1.5` RESOLVED BY LIVE READ. The last open question in the program is closed. Candidate REJECTED.**
+
+**Real reads, two independent 6-pick slips, every leg `singles/less/1.5` Goblin:**
+| Slip | Power | Flex (6/6, 5/6, 4/6) | Implied per-leg |
+|---|---|---|---|
+| 1 | **2.1x** | 1.6 / 0.5 / 0.25 | **1.1316** |
+| 2 | **2.2x** | 1.6 / 0.5 / 0.25 | **1.1404** |
+
+**Pre-stated criterion, set before the read: ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it. Observed mean 2.15x, per-leg 1.136 against a predicted 1.134 — accurate to within 0.2%.**
+
+**VERDICT: the 1.604 attribution was WRONG and is now definitively retired. `singles/less/1.5` Goblin pays ≈1.136 per leg.** The 17x 6-pick recorded as "Block B" belonged to **line 0.5**, not 1.5 — the line-attribution error that started this whole thread is confirmed and closed.
+
+**EV at the real measured hit rate (83.24%):**
+- **Power:** breakeven per-leg = 1/1.136 = **88.03%** vs 83.24% observed → p×m = 0.9456 per leg → 6-pick EV = **0.715 (−28.5%)**
+- **Flex:** P(6)=0.33265, P(5)=0.40187, P(4)=0.20228 → EV = 0.532 + 0.201 + 0.051 = **0.784 (−21.6%)**
+- STNAP on the real Flex table: STEV₆ = 0.532, STEV₅ = 0.201, STEV₄ = 0.051 — all < 1.0, **table internally valid.**
+Flex outperforms Power here (0.784 vs 0.715) but both are decisively negative. **No structure rescues this cell.**
+
+**THREE INDEPENDENT METHODS NOW AGREE on 1.134, which is the strongest multi-method convergence in the program:**
+1. **Fair-odds structural reasoning** (item 11) predicted ~1.134 from a 5.65% implied house edge at the observed 83.2% hit rate.
+2. **The empirical Goblin ratio distribution** across 33 real observations spans 0.6325–0.8563; 1.604 would have required a ratio of **0.8785 — higher than any Goblin ratio ever recorded in this system**, while 1.134 implies 0.6211, sitting inside the observed band.
+3. **This live read**, at 1.1316 and 1.1404.
+
+**Secondary observation supporting Fact 1:** the two slips returned *different* multipliers (2.1x vs 2.2x) despite identical prop, line, side and variant — differing only in leg composition. **PrizePicks does vary the Goblin multiplier with leg identity, but only slightly (4.8% here)** — consistent with the standing finding that it prices probability directionally but not proportionally.
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):** *Does any defensible alternative flip this?* No. The multiplier is now a **direct live measurement**, not an inference, and the gap to breakeven is 4.79pp (83.24% vs 88.03%) — far outside any plausible measurement error. Neither Power nor Flex structure clears it. **This is a point-estimate kill of the strongest class (item 14 category one): no statistical choice was used to reach it, so none can undo it.**
+
+---
+
+## 🏁 PROGRAM STATUS: SEVENTEEN CANDIDATES TESTED, ZERO CONFIRMED POSITIVE, NO OPEN LIVE QUESTIONS.
+
+Every candidate that could be resolved with available data or a free live read has been resolved. **What remains is five items in Section 13 that are unresolved for lack of data — not disproven — with explicit unblock conditions and live distance counts (H2: 39 days short; `total_bases/less/0.5`: 102 legs short; Candidate 11: 0.87pp short; cross-app: ~340 legs short; PP line movement: blocked on a join fix that is actionable now).**
+
+**This is a complete and honestly-earned answer for this phase, not a dead end.** The three measurements in Section 00 — `p×m` flat at 0.89–0.97 across 14,423 real legs, the best-observed multiplier at 1.003, and low- and high-liquidity props both sitting at breakeven — are direct observations of market structure rather than verdicts from tests, and they are why the overall picture is what it is. Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
 
 ---
 
