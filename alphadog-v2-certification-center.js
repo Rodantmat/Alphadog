@@ -5398,6 +5398,56 @@ function realMultFieldsHtmlForSize(s,idx,size){
     '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(tiers[k]||''))+'"></label>'
   ).join('')+'</div></div>';
 }
+// ===== LEG SUBSTITUTION ENGINE (2026-08-27) =====
+// Legs regularly go unavailable between generation and placement (line moved, prop pulled, player
+// scratched). Letting a slip shrink 6->5->4 materially cuts ROI because the multiplier compounds,
+// so instead we hold the slip at its original size by swapping in a spare.
+//
+// Behaviour:
+//  - backupPool is ONE shared pool across every slip in the order, ranked by baseline descending.
+//  - Uncheck a leg -> the best still-available pool leg is appended to the BOTTOM of that slip and
+//    auto-checked. The slip keeps 6 checked legs; 7 rows render, one unchecked.
+//  - That leg leaves the pool globally, so no other slip can also use it.
+//  - Re-check the original -> its substitute is removed and returned to the pool, available again
+//    to any slip. This makes an accidental uncheck fully reversible.
+//  - Uncheck N legs -> N substitutes, one per uncheck, in order.
+//
+// Guard not in the original spec but required for correctness: a pool leg is SKIPPED if it would
+// duplicate a player already in that slip, or become a 3rd leg from the same game. Both would
+// break the correlation limits the backtest enforced (max 1 leg/player per slip, max 2 legs/game),
+// and a slip that violates them is not the thing that was validated. We walk down the pool to the
+// first leg that is legal for that specific slip.
+let backupPool=[];
+const slipSubs=new Map(); // slipIdx -> Map(originalLegIdx -> substituteLeg)
+function poolLegIsLegalForSlip(leg,keptLegs){
+  if(!leg)return false;
+  for(const l of keptLegs){
+    if(String(l.mlb_player_id)===String(leg.mlb_player_id))return false;
+  }
+  let sameGame=0;
+  for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
+  return sameGame<2;
+}
+function takeBestPoolLeg(keptLegs){
+  for(let i=0;i<backupPool.length;i++){
+    if(poolLegIsLegalForSlip(backupPool[i],keptLegs)){
+      return backupPool.splice(i,1)[0];
+    }
+  }
+  return null;
+}
+function returnLegToPool(leg){
+  if(!leg)return;
+  if(backupPool.some(l=>String(l.board_row_id)===String(leg.board_row_id)))return;
+  backupPool.push(leg);
+  // Keep the pool ordered by baseline so "best available" stays meaningful after returns.
+  backupPool.sort((a,b)=>Number(b.hit_probability_0_100||0)-Number(a.hit_probability_0_100||0));
+}
+function poolStatusHtml(){
+  if(!backupPool.length)return '<div class="poolStatus" style="opacity:0.7;font-size:12px;margin:6px 0">Backup pool: empty - unchecking a leg will now shrink the slip.</div>';
+  const top=backupPool.slice(0,3).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' '+esc(String(l.selected_side||'').toUpperCase())+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(' &middot; ');
+  return '<div class="poolStatus" style="opacity:0.8;font-size:12px;margin:6px 0"><b>Backup pool: '+backupPool.length+' leg'+(backupPool.length===1?'':'s')+'</b> - next up: '+top+'</div>';
+}
 // Called on every leg checkbox toggle - recounts how many legs are still checked for this slip
 // and swaps in the correct multiplier fields for that NEW effective size, live.
 function refreshRealMultFields(slipIdx){
