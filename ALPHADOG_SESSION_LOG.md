@@ -402,3 +402,44 @@ Gemini's framing, which is exact: *"equivalent to trying to measure a millimeter
 **ITEM 5 NET RESULT:** No factor shows real, day-robust predictive power against real outcomes. But the correct conclusion is **"insufficient data to test," not "no factors matter"** — the enrichment history simply lacks the temporal depth to resolve effects at the precision the market's pricing demands. **Actionable consequence: if factor-level research is ever to be viable, the enrichment history tables need to accumulate substantially more days.** They are currently retention-bounded (the umpire table was explicitly built with 10-day bounded retention), which caps this permanently unless changed. That is a system-design decision for Rodolfo, not a research finding.
 
 **Items 6-7 (market-context signals; unconstrained strategy shapes) not yet started.**
+
+---
+
+**[2026-08-26] ⚠️ FIVE PRIOR CLOSES REOPENED AND CONTESTED, per instruction. Two significant corrections to my own earlier conclusions; one strategy genuinely revived.**
+
+**REOPENING #3 (multiplier coverage audit) — MAJOR CORRECTION TO ITEM 4. My "Power combinatorics closed at the root" claim was OVERSTATED.**
+Pulled the complete real-multiplier universe (`pricing_layer1_prop_line` + `pricing_layer2_tier`). It is **13 cells total**:
+- PrizePicks Goblin: `hits/less/T1` (n=1), `hits_runs_rbis/less/T1` (n=3), `hits_runs_rbis/more/T1` (n=5), `pitcher_strikeouts/less` T1 (n=1)/T2 (n=2)/T3 (n=1), `singles/less/T1` (n=8), `walks_allowed/more/0.5/T1` (n=26), `walks_allowed/more/1.5/T1` (n=10)
+- PrizePicks Demon: generic `__any_prop__` T1 (n=3)/T2 (n=1)/T4 (n=1), `pitcher_strikeouts/less/T2` (n=1)
+- Sleeper: `doubles/more` (n=8), `hits/more/0.5` (n=23), `hits_runs_rbis/more` (n=12), `singles/less/0.5` (n=14)
+- **Underdog: ZERO rows.** Plus one direct session observation: `total_bases/less/3.5` Goblin = 1.1447.
+**Critically, only TWO PrizePicks cells carry a confirmed line value** (`walks_allowed/more` at 0.5 and 1.5). Every other PrizePicks row has `line_value = "0"` — the exact placeholder ambiguity that produced the `singles/less/1.5` disaster. Against roughly 100 cells with real hit-rate data in Item 1's matrix, that is **~13% multiplier coverage and ~2% line-confirmed coverage.**
+**Corrected conclusion:** the Power branch is confirmed dead only for the observed subset. For the ~87% of cells with no real observation, the honest status is **PREDICTED negative (the house-edge corridor model implies p×m = 0.90-0.98 for any cell obeying it) but UNTESTED**. A cell can only be positive if the corridor is violated somewhere unobserved — which is exactly what cannot be ruled out without observations. This is weaker than "everything is dead" and must not be restated as such.
+
+**REOPENING #2 (Demon under Flex/STNAP) — GENUINELY REVIVED. This is the most important result of the reopening pass.**
+Demon was rejected on POWER structure only; Flex was never tested because STNAP did not exist yet. Demon legs sit at p≈0.35-0.43, precisely the regime STNAP identified as capable of producing positive Flex EV on Power-negative legs.
+Using the real confirmed 3-pick Demon Flex table (3/3 = 15x, 2/3 = 1.5x):
+- p=0.3712 (`total_bases/less` T1, n=617, 17 days — best-sampled Demon cell): EV = 0.767 + 0.390 = **1.157 (+15.7%)**. STNAP passes on both tiers.
+- p=0.3846 (`pitcher_strikeouts/less` T1): EV = **1.263 (+26.3%)**. STNAP passes.
+- p=0.4286 (`pitcher_strikeouts/less` T2, thin/non-day-robust): EV = 1.653 but **STEV₃ = 1.181 VIOLATES STNAP**.
+For contrast, the same cell under Power: 0.3712³ × 13.395 = **0.685 (−31.5%)**. The Flex structure genuinely changes the sign, because P(2 of 3) = 26.0% captures far more probability mass than P(3 of 3) = 5.1%, and the 1.5x consolation contributes +39% EV on its own.
+**BUT — Gemini caught me repeating the exact error that killed `singles/less/1.5`:** the 15x/1.5x table was observed on a **Tier 2** slip, and Demon multipliers RISE with tier distance (opposite to Goblin). Applying a T2 table to T1 hit rates is cross-tier mis-attribution. Sensitivity analysis at p=0.3712: T2 table (15x/1.5x) → +15.7%; conservative T1 scale (10x/1.2x) → **−17.6%**; proportional T1 (8x/1.2x) → **−27.9%**; floor T1 (7x/1.0x) → **−38.2%**.
+**Gemini's STNAP diagnosis of the p=0.4286 violation is also instructive**: for M₃=15x, the ceiling before STNAP breaks is p_max = (1/15)^(1/3) = 40.54%. An observed 42.86% exceeding that mathematical ceiling flags the *hit rate* as overstated (n=35, one day carrying 64% of wins), not the payout table. STNAP is functioning as a sample-convergence detector, not just a data-corruption detector — a genuinely new use.
+**STATUS: Demon Flex is REOPENED and UNRESOLVED — not confirmed, not dead.** It hinges entirely on one unobserved number, with a clean pre-committed decision threshold:
+> **Record a real 3-pick FLEX slip of Demon TIER 1 legs** (`total_bases/less` or `hits_runs_rbis/less`), capturing M₃ and M₂.
+> **M₃ ≥ 12.0x AND M₂ ≥ 1.5x → strategy VALIDATED** (EV ≥ 1.003 at p=0.3712).
+> **M₃ ≤ 10.0x OR M₂ ≤ 1.2x → strategy REJECTED** (EV ≤ 0.824).
+This is now the **second-highest-value pending observation** in the system, behind only the `singles/less/1.5` Flex matrix.
+
+**REOPENING #5 (partial) — significance test on `walks_allowed/more/0.5/T1`, the cell I called "0.23pp above breakeven."**
+p = 88.24%, n = 374, breakeven = 88.01%. SE = √(0.8824×0.1176/374) = 0.01666. **Z = 0.0023/0.01666 = 0.138, p ≈ 0.445.** 95% CI = **[84.97%, 91.51%]**, which contains the breakeven. **The cell is statistically indistinguishable from breakeven in either direction — the "0.23pp gap" was never a real margin, and I should not have framed it as a near-miss.** This also means Item 5's premise ("a factor only needs +0.23pp to flip this cell") was itself wrong: the true requirement is a lift large enough to clear the confidence interval, i.e. several percentage points, which makes the sparse-factor-data problem worse, not better.
+
+**REOPENING #4 (Underdog H by prop combination) — CANNOT BE TESTED FROM STORED DATA; flagged as untested rather than assumed.**
+Refitting H per prop pairing requires per-slip payout observations broken down by composition. `parlay_underdog` has **zero rows in any pricing layer** — the 12 real 2-pick observations that produced H=0.0766 were all `rbis/less` only. There is no stored data for any other Underdog prop pairing, so H's constancy across combinations is **assumed, not established**. The rejection of `rbis/less`+`walks/less` used H=0.0766 fitted on `rbis/less`-only slips; if `walks/less` pairings carry a materially lower H, that specific pairing needs its own fair-odds and p×m check. **Testable only via live moneyline data (`underdog_raw_line_json`) or new real slips — logged as an open gap, not a closed question.**
+
+**REOPENING #1 (PP Sim A's other lines) — PARTIALLY ADDRESSED, correctly downgraded to UNTESTED.**
+Real hit rates are in hand from Item 1's grid: `total_bases/less` at 1.5 (T1 70.49%, n=1220 / T0 64.99%, n=2451), at 2.5 (T1 78.40%, n=2653 / T2 84.00%, n=1250), at 3.5 (T2 84.59%, n=2194 / T3 86.62%, n=680); `hits/less/1.5` (T1 79.19%, n=2417 / T0 68.09%, n=517). **Only line 3.5 has a real, line-confirmed multiplier (1.1447).** For the others, the multiplier needed for positive EV is exactly the fair-odds value (e.g. `total_bases/less/2.5/T2` at 84.00% needs m > 1.190 = fair, i.e. a zero house edge), which the corridor says will not occur — but per reopening #3 this is a **prediction, not a confirmation**. Status: PREDICTED negative, UNTESTED. Only `total_bases/less/3.5` is genuinely confirmed dead.
+
+**NET EFFECT OF THE REOPENING PASS:** one strategy revived to unresolved (Demon Flex), one overstated conclusion corrected (Item 4 coverage), one false near-miss retracted (`walks_allowed` significance), one open gap identified (Underdog H constancy), and one set of closes correctly downgraded from "dead" to "predicted negative, untested" (PP Sim A's other lines). **The scoreboard is no longer "8 rejected, 0 surviving" — it is "1 confirmed dead by real slip, ~7 rejected on evidence of varying strength, 1 revived and pending a single cheap observation, and the large majority of the cell matrix formally untested."**
+
+**Remaining from reopening #5, not yet done:** batting order, park factors, bullpen fatigue, matchup/handedness, recent form, lineup protection, opposing starter quality — each with per-factor data-depth checked individually rather than under one blanket retention argument.
