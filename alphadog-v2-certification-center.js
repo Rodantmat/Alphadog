@@ -5448,6 +5448,35 @@ function poolStatusHtml(){
   const top=backupPool.slice(0,3).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' '+esc(String(l.selected_side||'').toUpperCase())+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(' &middot; ');
   return '<div class="poolStatus" style="opacity:0.8;font-size:12px;margin:6px 0"><b>Backup pool: '+backupPool.length+' leg'+(backupPool.length===1?'':'s')+'</b> - next up: '+top+'</div>';
 }
+function handleLegToggle(slipIdx,legIdx,isChecked){
+  const slip=lastRawSlips[slipIdx];if(!slip)return;
+  if(!slipSubs.has(slipIdx))slipSubs.set(slipIdx,new Map());
+  const subs=slipSubs.get(slipIdx);
+  if(!isChecked){
+    // A leg was just unchecked. If we have not already substituted for THIS leg, pull the best
+    // legal leg out of the shared pool and append it, keeping the slip at its original size.
+    if(!subs.has(legIdx)){
+      const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+      const kept=Array.from(boxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+      const sub=takeBestPoolLeg(kept);
+      if(sub){
+        slip.legs.push(sub);
+        subs.set(legIdx,sub);
+      }
+    }
+  }else{
+    // A leg was re-checked. If it had a substitute, remove that substitute and hand it back to the
+    // pool so any slip can use it again - an accidental uncheck is fully reversible.
+    if(subs.has(legIdx)){
+      const sub=subs.get(legIdx);
+      const pos=slip.legs.findIndex(l=>String(l.board_row_id)===String(sub.board_row_id));
+      if(pos>=0)slip.legs.splice(pos,1);
+      subs.delete(legIdx);
+      returnLegToPool(sub);
+    }
+  }
+  applySlipSourceFilter();
+}
 // Called on every leg checkbox toggle - recounts how many legs are still checked for this slip
 // and swaps in the correct multiplier fields for that NEW effective size, live.
 function refreshRealMultFields(slipIdx){
