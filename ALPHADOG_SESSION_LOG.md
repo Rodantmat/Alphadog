@@ -442,7 +442,33 @@ Real hit rates are in hand from Item 1's grid: `total_bases/less` at 1.5 (T1 70.
 
 **NET EFFECT OF THE REOPENING PASS:** one strategy revived to unresolved (Demon Flex), one overstated conclusion corrected (Item 4 coverage), one false near-miss retracted (`walks_allowed` significance), one open gap identified (Underdog H constancy), and one set of closes correctly downgraded from "dead" to "predicted negative, untested" (PP Sim A's other lines). **The scoreboard is no longer "8 rejected, 0 surviving" — it is "1 confirmed dead by real slip, ~7 rejected on evidence of varying strength, 1 revived and pending a single cheap observation, and the large majority of the cell matrix formally untested."**
 
-**Remaining from reopening #5, not yet done:** batting order, park factors, bullpen fatigue, matchup/handedness, recent form, lineup protection, opposing starter quality — each with per-factor data-depth checked individually rather than under one blanket retention argument.
+**[2026-08-26] ITEM 5 RE-DONE PROPERLY AND COMPLETED — my earlier "insufficient data to test" verdict was WRONG, caught by applying the new enumeration standard to my own conclusion.**
+
+Enumerated all tables matching factor concepts (`%park%`, `%split%`, `%hand%`, `%form%`, `%starter%`, `%bullpen%`, `%lineup%`, `%arsenal%`, `%defen%`, `%factor%`, `%enrich%`) — **55 tables**, including nine `backtest.recomputed_*` tables covering exactly the factors I had declared untestable, plus **`backtest.factor_contributions_asof_v2` (229,690 rows)** and `enrichment_leg_asof_v2` (63,515). The first is per-leg, per-factor, **point-in-time** contribution values keyed on player/prop/line/side/date — precisely the walk-forward factor dataset Item 5 required. **It existed the entire time. My earlier verdict rested on checking only `context.history_*`, which is the same error as the 12-vs-624 Underdog failure, committed by me one item earlier.** The retention-bound argument I made was true of those tables and irrelevant to the question.
+
+**PER-FACTOR DEPTH (checked individually as instructed, not under one blanket argument):** market_implied_total 74,948 rows/29 days; schedule_travel_fatigue 27,074/26; opposing_pitcher_quality 26,387/29; weather_temp_altitude_pressure 14,770/29; park_factors 14,528/30; lineup_slot 14,291/21; umpire_tendency 13,204/29; defensive_quality 11,625/29; times_through_order 9,422/30; recent_form_trend 9,358/30; bullpen_fatigue 4,392/11; platoon_handedness 3,790/18; weather_wind 2,574/13; catcher_framing 2,447/26; stolen_base_family 880/29.
+
+**TWO DEFECTS FOUND IN THE FACTOR LAYER ITSELF (independent of any strategy question):**
+- **`stolen_base_family` has ZERO variance — every contribution is exactly 0.0000 across all 880 rows.** The factor is wired into the scoring engine and contributes literally nothing. This is a real, live defect worth fixing regardless of research outcomes.
+- **`schedule_travel_fatigue` has max = 0.0000** (range −0.05 to 0.00): it can only ever penalize, never reward. Possibly intended, but asymmetric by construction and worth confirming.
+
+**TEST DESIGN:** each factor quintiled WITHIN factor AND WITHIN prop (controlling for the documented lane-separation artifact), Q1 vs Q5 real hit rate, Goblin `less`-side pool, correct lane join, corrupted days excluded. Bonferroni for 13 factors: α = 0.0038, Z ≥ 2.89.
+
+**POOLED RESULTS:** recent_form_trend −6.04pp (n=3,518); weather_wind +4.75 (4,593); park_factors −4.59 (13,891); opposing_pitcher_quality +4.46 (27,894); stolen_base_family +4.06 (846); schedule_travel_fatigue +3.39 (33,202); weather_temp +2.63 (19,645); lineup_slot −1.84 (14,895); platoon_handedness +1.15 (4,217); market_implied_total −0.77 (80,528); defensive_quality −0.42 (13,733); times_through_order −0.21 (3,549); umpire_tendency +0.15 (6,363).
+Two cleared the pooled bar, **both with coherent mechanisms**: `opposing_pitcher_quality` (Z≈5.52 — better opposing pitcher suppresses the hitter, so an under hits more) and `park_factors` (Z≈3.87 — higher park factor means more offense, so an under fails more).
+
+**BOTH KILLED ON CLUSTER-ROBUST ANALYSIS.** Day-by-day spreads:
+- `opposing_pitcher_quality`: −6.6, +25.4, −8.9, +8.4, +22.3, +16.2, +16.2, −4.1, +24.0, +18.8, −3.4, −20.2, +2.9, +1.7 → 9 positive / 5 negative, sign test p=0.21. Daily mean +4.84pp but daily SD **13.11pp** → clustered SE 3.50pp → **clustered t = 1.38** versus the required 2.89.
+- `park_factors`: 7 positive / 7 negative — **exactly chance**, sign test p=0.60. Daily mean −3.34pp, SD 12.01pp → **clustered t = −1.04**.
+**The pooled Z of 5.52 was a phantom produced by pseudo-replication** — treating correlated same-day legs as independent shrinks the SE by √N_legs instead of √N_days, inflating Z by 3-5x. The clustered t is the only sound statistic here.
+
+**THE PLACEBO IS THE MOST VALUABLE OUTPUT OF ITEM 5.** `stolen_base_family` carries zero information by construction, yet its arbitrary tie-break quintiles produced a **+4.06pp** Q1→Q5 spread. **That empirically calibrates the noise floor of this entire test design at roughly ±4pp.** The two "real" signals measured 4.46pp and 4.59pp — a signal-to-noise ratio of **1.09**, indistinguishable from the noise floor. Gemini's threshold: a factor would need ≥8pp to clear a 2x safety margin. **Every factor tested in Item 5, including the two that passed pooled significance, sits at or below the noise floor of the measurement itself.**
+
+**Confirming diagnostic:** on the single highest-volume day (n=1,707 in Q1 alone, versus 86-674 elsewhere), `opposing_pitcher_quality` ran **opposite** to its aggregate (−3.4pp). Variance compresses toward the true mean as volume rises, so the highest-density day flipping negative confirms the positive aggregate was leverage from low-volume tail variance, not a persistent edge.
+
+**ITEM 5 FINAL VERDICT: no enrichment factor shows real, day-robust, noise-clearing predictive power against real outcomes.** This is now a genuine null result on adequate data (229,690 point-in-time contributions across up to 30 days per factor), NOT the "insufficient data" non-answer I gave earlier. Two live defects found in the factor layer as a by-product. **Standing lesson reinforced: I applied the enumeration standard to everyone else's conclusions before applying it to my own — check your own "untestable" verdicts first, they are the ones you are least likely to revisit.**
+
+**Item 6 (market-context signals) not yet started — and now has real data available: `backtest.real_market_lines` and `real_market_diffs` (2,786 rows each), plus `market_implied_total` already confirmed present in the factor table at 74,948 rows across 29 days.**
 
 ---
 
