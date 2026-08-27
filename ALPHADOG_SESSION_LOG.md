@@ -175,6 +175,10 @@ Transcript re-check: searched "Sleeper singles less Flex EV parity discount form
 
 **[2026-08-26] Sleeper paused immediately upon confirmation**, per explicit instruction to act on a live, confirmed problem right away rather than wait for the full write-up. Patched `apiHighHitSlips`: `sleeperSlips = []`, full comment citing all four passes. Fixed the route's `notes` array, which still described Sleeper as live. `autoSelectSleeperHighHitSlipLegs`/`buildSleeperHighHitSlips` left intact and unused (not stripped - a genuinely different signal, not another filter permutation, could still revive this). Deploy confirmed successful.
 
+**[2026-08-26] Sleeper paused immediately upon confirmation**, per explicit instruction to act on a live, confirmed problem right away rather than wait for the full write-up. Patched `apiHighHitSlips`: `sleeperSlips = []`, full comment citing all four passes. Fixed the route's `notes` array, which still described Sleeper as live. `autoSelectSleeperHighHitSlipLegs`/`buildSleeperHighHitSlips` left intact and unused (not stripped - a genuinely different signal, not another filter permutation, could still revive this). Deploy confirmed successful.
+
+**[2026-08-26] SLEEPER — FINAL VERDICT: REJECTED, closed without a real-slip check** (the first strategy this session where Gemini's own bar explicitly ruled out spending a real-slip check at all, rather than the finding surviving to that stage and then failing). System-wide status update: every autonomous slip-generation route in this system is now paused or removed - `apiHighHitSlips` currently returns empty for all three of its remaining legs (Goblin, Underdog, Sleeper), with only Demon's removal being permanent.
+
 **[2026-08-26] Underdog rbis/less + walks/less (older 6-pick dual-prop pool) — research at full standard, correct multi-pass Gemini discipline throughout.**
 
 Transcript re-check: searched "Underdog rbis less walks less 6-pick dual prop pool" - same wall as always, nothing new past 2026-08-21.
