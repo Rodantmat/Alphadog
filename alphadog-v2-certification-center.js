@@ -5479,6 +5479,7 @@ function handleLegToggle(slipIdx,legIdx,isChecked){
       }
     }
   }else{
+    un.delete(legIdx);
     // A leg was re-checked. If it had a substitute, remove that substitute and hand it back to the
     // pool so any slip can use it again - an accidental uncheck is fully reversible.
     if(subs.has(legIdx)){
