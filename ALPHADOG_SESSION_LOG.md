@@ -835,7 +835,27 @@ Largest spreads: `hits_runs_rbis/less/1.5` demon **−19.38** · `earned_runs/mo
 
 ---
 
-**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+---
+
+**[2026-08-27] FINAL THREE COVERAGE-GAP ITEMS CLOSED — promotional overlays, low-liquidity niches, stale-line timing.**
+
+**#3 PROMOTIONAL OVERLAYS — UNTESTABLE, not rejected.** `archive.board_leg_history` carries both `is_promo` and `flash_sale_line_score` in the board JSON. **Both fire on exactly 2 rows out of 307,351 (0.0007%), covering one prop on one day.** Promotions are effectively absent from every board this system has captured. **This is a data-availability limit, not a finding** — if PrizePicks runs promos meaningfully, this archive did not capture them, and the question stays open pending data that contains them.
+*Self-caught error:* the first `flash_sale` check used `LIKE '%flash_sale_line_score%'`, which matched the field **name** on all 307,349 rows rather than a non-null **value**, appearing to show universal flash sales. Redone with regex extraction comparing against `'null'`. Same family as the American-odds averaging error — a check that appears to measure one thing and measures another.
+
+**#4 LOW-LIQUIDITY NICHES — REJECTED. Threshold pre-registered before searching, per instruction.**
+Pre-registered definition, stated before any query ran and not adjusted afterward: *low-liquidity = `canonical_prop_key` with <3,000 total graded legs; high-liquidity = ≥3,000; minimum 300 legs per cell to be measurable. Test: do low-liquidity Goblin cells sit systematically further above the ~75% breakeven implied by the standard 0.73 Goblin ratio?*
+| | Cells | Legs | Mean hit% | SD | vs 75% breakeven | Above breakeven |
+|---|---|---|---|---|---|---|
+| High-liquidity | 23 | 76,386 | 73.69% | 8.35 | **−1.31** | 10/23 (43%) |
+| Low-liquidity | 16 | 13,216 | 74.67% | 8.73 | **−0.33** | 8/16 (50%) |
+Difference **+0.98pp, SE 2.79, t = 0.35, p ≈ 0.73.** **The scatter is also essentially identical (SD 8.73 vs 8.35)** — the hypothesis specifically predicted low-liquidity props would be *more dispersed* if less carefully priced. They are not. **Both groups sit at the breakeven line (−1.31pp and −0.33pp), which is another direct measurement of efficient pricing: PrizePicks prices thin props as carefully as heavy ones.**
+
+**#2 STALE-LINE TIMING — REJECTED, AND THIS IS THE BEST-POWERED NULL OF THE SESSION.**
+*Item 18 check first, and it caught a real problem before the analysis.* `board_time` extraction from the board JSON succeeds on 100% of rows but produced implausible magnitudes: average 107.6 hours before game time, max **3,856 hours (160 days)**. Per item 18, implausible magnitude means suspect the key, not the market. Distribution check: **275,958 rows (89.8%) fall in a plausible 0-48h window with median 23.87 hours** — correct for MLB props posted ~a day ahead — with zero impossible negatives and **27,376 rows (8.9%) beyond one week, contaminated.** Restricted to the 0-48h band on provable-impossibility grounds, not convenience.
+*Residual caveat carried forward:* the JSON timestamps include `-04:00` offsets that the regex drops, so absolute times may be shifted ~4 hours. **The shift is uniform, so relative staleness rankings remain valid** — which is all this test requires.
+**RESULT: n = 113,900 legs, 30 days, quintiled by hours-posted-before-game within each prop × line × side × variant cell.** Latest-posted quintile **65.41%**, earliest-posted **64.16%** → **spread −1.25pp.** Well inside the ±4pp noise floor established by the zero-variance placebo, and **in the wrong direction** — the hypothesis predicts earliest-posted lines are softest and should hit *more*.
+**ITEM 14/16 ALTERNATIVE-TREATMENT CHECK, BOTH DIRECTIONS (stated at the time):** the pooled Z on the −1.25pp gap is 2.79, which would read as "significant" — but the effect is negative, inside the noise floor, and pooled Z is known in this program to overstate by 3-5x under day clustering, so it does not rescue the hypothesis in either direction. Including the contaminated >1-week tail is not defensible (those timestamps are provably impossible). Correcting the timezone offset would shift all values uniformly and cannot change a ranking. **No defensible alternative flips it.**
+**Critically — unlike most nulls in this program, this one is NOT underpowered.** At n=113,900 across 30 days, power to detect a +2pp effect is essentially 100%. **This belongs in REJECTED, not Section 13.** Stale-line timing does not exist as an exploitable effect in PrizePicks board data at day-scale resolution. (It remains untested at *intra-day* resolution — minute-level line movement following news — which would require repeated same-leg captures the archive does not contain, the same gap that blocks the line-movement test.) Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
 
 ---
 
