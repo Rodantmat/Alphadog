@@ -3056,7 +3056,51 @@ function buildRegularHighHitSlips(legs) {
 // Recommend minimum stake until real placed results accumulate.
 const BASELINE_HP_MIN = 90;
 const BASELINE_HP_SIZE = 6;
-const BASELINE_HP_PER_LEG_RATE = 1.1417; // real, measured 2026-08-27 (conservative of two reads)
+const BASELINE_HP_PER_LEG_RATE = 1.1417; // legacy flat fallback - superseded by the per-prop table
+// ===== GRANULAR PER-PROP MULTIPLIER TABLE (2026-08-27) =====
+// Multipliers are NOT flat across props. Fitted by least squares over 23 real multiplier
+// observations (every pure single-prop read plus every mixed slip whose exact composition is
+// known, including the 5 real placed slips of 2026-08-27 with operator-entered real multipliers).
+// A slip's payout is the PRODUCT of its legs' individual rates, so in log-space this is linear and
+// solvable. Mean absolute error of the fit: 5.10%.
+//
+// The spread is large - 1.0655 (stolen_bases) to 1.3698 (runs), a 29% gap - so the previous flat
+// 1.1417 was materially wrong at both ends: it overpriced stolen_bases legs by ~7% and underpriced
+// runs legs by ~20%. A 6-pick of pure stolen_bases is really 1.0655^6 = 1.463x, not 2.215x.
+//
+// Directionally this is exactly what it should be: rarer events (runs, rbis) pay more per leg,
+// near-certain events (stolen_bases, home_runs on low-power hitters) pay less.
+//
+// REFINE THIS CONTINUOUSLY. Every real placed slip with a recorded multiplier is another equation
+// in the system - re-run the fit as observations accumulate. Props with few observations
+// (stolen_bases, singles, rbis, hits_runs_rbis appear in only 1-3 slips each) carry the widest
+// error bars and should be trusted least.
+const BASELINE_HP_PROP_RATES = {
+  runs: 1.3698,
+  rbis: 1.2864,
+  walks_allowed: 1.2045,
+  singles: 1.2038,
+  total_bases: 1.1926,
+  hits_allowed: 1.1741,
+  doubles: 1.1594,
+  earned_runs: 1.1583,
+  hits: 1.1421,
+  hits_runs_rbis: 1.1305,
+  home_runs: 1.1187,
+  stolen_bases: 1.0655
+};
+// Fallback for a prop with no fitted rate yet. Deliberately the CONSERVATIVE end of the observed
+// range rather than the mean - an unmeasured prop should not be assumed generous.
+const BASELINE_HP_PROP_RATE_FALLBACK = 1.12;
+function baselineHpLegRate(leg) {
+  const k = String(leg && leg.canonical_prop_key || "").toLowerCase();
+  return BASELINE_HP_PROP_RATES[k] || BASELINE_HP_PROP_RATE_FALLBACK;
+}
+function baselineHpSlipMultiplier(slipLegs) {
+  let product = 1;
+  for (const l of slipLegs || []) product *= baselineHpLegRate(l);
+  return Math.round(product * 1000) / 1000;
+}
 const BASELINE_HP_FLAT_PARTIALS = { oneBelow: 0.5, twoBelow: 0.25 };
 // Daily slip cap. Real cap sweep on the backtest (ranked best-first, 9 days):
 //   uncapped +97.4% (101 slips) | cap 12 +100.3% | cap 8 +109.0% | cap 5 +109.5% | cap 3 +103.8%
