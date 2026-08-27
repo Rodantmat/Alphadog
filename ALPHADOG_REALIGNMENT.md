@@ -193,7 +193,21 @@ Then compare `implied_edge` against the realistic corridor for that market:
 
 **Asymmetry to be aware of:** this check reliably catches *inflated* multipliers (the dangerous direction — it produces phantom edges). It is weaker at catching *suppressed* ones, since some markets genuinely run steep edges. A high implied edge is a prompt to verify provenance, not automatic proof the number is wrong.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all eleven items is itself a violation of this standard.
+**12. SINGLE-TIER NON-ARBITRAGE PRINCIPLE (STNAP) — the Flex-side counterpart to item 11, run on every partial-credit payout table before use.** For any Flex/partial-credit structure, no individual tier may carry an expected-value contribution at or above 1.0 on its own:
+
+```
+STEV_k = P(X = k) × M_k        must be < 1.0 for every tier k
+```
+
+If any single tier violates this, the payout table is corrupted or mislabeled — a bettor could ignore every other outcome as worthless and still hold an edge from that one tier, which no risk engine permits. **A STNAP violation means bad data, not a discovery.**
+
+Secondary sanity check on the same tables: compare each partial tier against the full-hit payout. Standard PrizePicks 6-pick Flex pays roughly 2x for 5/6 against 25x for 6/6 — the 5/6 tier is about **8%** of full-hit. Recorded tiers at 50-80% of full-hit are a strong corruption signal.
+
+**Why this exists:** the recorded Goblin 6-pick Flex table implied +205% EV. Its 5/6 tier alone had STEV = 1.64. Same failure class as item 11's multiplier mis-attribution, caught by the same style of structural check rather than by more hit-rate analysis.
+
+**Important — STNAP kills bad DATA, not the Flex mechanism itself.** Flex EV is the sum of probability-weighted tier payouts, not the product of single-leg fair odds. It is genuinely possible for a Flex structure to be positive-EV while every constituent leg is Power-negative, if an operator applies tier scalars calibrated for standard props (p≈0.52) to high-probability Goblin legs (p≈0.70+): probability mass shifts into the upper partial tiers. This remains a real, open, unfalsified route and requires a **verified real Flex payout matrix (full-hit plus every partial tier) for an actual Goblin slip** to test. Do not treat the Flex branch as closed because a corrupted table was rejected.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all twelve items is itself a violation of this standard.
 
 ---
 
