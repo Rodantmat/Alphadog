@@ -306,6 +306,25 @@ Verified 2026-08-26 by enumerating the actual router dispatch table in `alphadog
 
 ---
 
+## 13. 🟡 UNDERPOWERED / UNRESOLVED — the third bucket. NOT rejected, NOT confirmed. Revisit on cadence.
+
+**Why this bucket exists.** A process audit found three candidates written up in rejection language while their confidence intervals contained materially positive values. The binding constraint on all of them is **sample size, not evidence of absence.** Detecting a realistic +3% edge against the observed daily SD of ~0.19 at 80% power requires roughly **249 days**; this system has 17-18. **The program is structurally underpowered for the size of edge that could plausibly survive in a competitive market, and "inconclusive" must never be recorded as "dead."**
+
+**REVISIT CADENCE: weekly, or whenever ~10+ new graded days have accumulated.** Re-run each entry's original test unchanged — same cell, same estimator, same gates — and record the updated CI. **Do not re-specify the test after seeing new data;** that converts an honest re-check into a search.
+
+| Candidate | Point estimate | 95% CI | Re-test condition |
+|---|---|---|---|
+| **H2 same-game correlation** (`hits_runs_rbis/less/2.5`) | daily mean **+8.21%** | **[−5.1%, +21.5%]** | Needs ~57 days at 80% power; 16 available. **Note: H2's *platform* question is separately CLOSED — PrizePicks discounts same-game slips 37%, so even a confirmed correlation benefit is unexploitable via stacking. Re-test only if that discount changes.** |
+| **Candidate 11 — cross-game `rbis/less/0.5` Goblin 6-pick FLEX** | daily mean EV **1.0135** | **[0.918, 1.110]** | Re-test if the pool rate moves decisively above **~72%** AND the 6/6 Flex tier holds at **≥6.0x**. Breakeven 70.92% vs observed 71.08% — margin smaller than pre-lock multiplier drift. |
+| **`total_bases/less/0.5` Goblin** | hit rate **70.00%** (n=40, 14 days) | **[55.8%, 84.2%]** | Needs graded legs, not multiplier reads. Breakeven **72.3%** at the mean of five real line-confirmed observations (1.3829). Re-test at n≥150. |
+| **Cross-app line shopping (definition-controlled)** | not yet validly measured | — | **The first test was INVALID** — formula-dependent props contaminated it (see item 17). A valid re-test excludes `fantasy_score`/`pitcher_fantasy_score` and uses only operator-independent props, leaving ~60 legs today. **Re-test at n≥400 definition-clean legs.** Mechanism remains structurally plausible: PrizePicks' fixed payout table cannot reprice per leg. |
+
+**Rule for this bucket:** an entry moves to REJECTED only when a test with adequate power returns a negative result, or when a structural fact makes it unexploitable regardless of magnitude (as happened to H2's stacking route). It moves to CONFIRMED only on the full standard including a real placed-slip multiplier. **Sitting here indefinitely is an acceptable state; silently dropping out is not.**
+
+---
+
+---
+
 ## 11. WHY TRANSCRIPT ACCESS FAILED THIS SESSION
 
 `/mnt/transcripts/` was empty. `conversation_search`/`recent_chats` surfaced nothing past 2026-08-21. The handoff's own citations are dated 2026-08-22 through 2026-08-26 — entirely outside what this session could reach. This is a standing environment limitation, not a choice — if a future session has access restored, the items in the questionnaire tagged "transcript needed" should be revisited against the actual source material rather than left as permanently unverified.
