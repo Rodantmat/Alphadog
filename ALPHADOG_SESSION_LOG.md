@@ -614,7 +614,35 @@ For `total_bases/less/0.5`, a **cold** hitter is *more* likely to go hitless, so
 
 **Note on Standing Thread H1:** this outcome does NOT weaken H1. The look-ahead question concerns whether *sportsbook prices predict outcomes* (evidence line 1's validity), not whether *PrizePicks prices leg probability into its multiplier* (H1 itself). H1's controlled test — standing observation #3 — is unaffected and remains the decisive experiment.
 
-**PRIORITY 2 (closing-line MOVEMENT) NOT YET STARTED — and a structural obstacle was discovered above that bears directly on it.** Movement requires two prices at two timestamps for the same leg. The `hist` family has a single capture per leg (one backfill run), and `hist`/`api` do not overlap — so open-to-close movement may not be constructible from these tables at all. **Per item 13, enumeration for a table holding repeated captures of the same leg over time must come FIRST, before concluding movement is or is not testable.**
+**PRIORITY 2 (closing-line MOVEMENT) — ENUMERATED PER ITEM 13, AND CONFIRMED NOT CONSTRUCTIBLE FOR SPORTSBOOK PRICES. Checked rather than assumed.**
+- `archive.market_prop_context_history` (the sportsbook price table): **126,006 legs have exactly ONE capture; only 109 have two.** Sportsbook open-to-close movement cannot be built from it.
+- `backtest.real_market_diffs` (2,786 rows) — inspected, and it is NOT price movement. It holds `prior_avg` and `n_prior`: a player's **real recent-form average versus the line**. Not useful for movement — **but directly useful for Standing Thread H1's queued follow-up**, which needs exactly this (real trailing form crossed against real multiplier). Logged for that purpose.
+- `archive.board_leg_history` (**433,218 rows**, the largest board dataset in the system): **4,685 PrizePicks legs have 2 captures and 42 have 3.** This makes **PrizePicks line movement** partially constructible — a genuinely different and untested signal from sportsbook price movement — but it does not solve the sportsbook-movement question.
+- Board `*_batches` tables are batch metadata; `*_current` tables are overwritten per run and hold no history.
+**STATABLE LIMITATION, confirmed by looking rather than assuming: sportsbook closing-line movement is not constructible from any table in this system. PrizePicks own-line movement IS partially constructible (n=4,685) and has never been tested — queued as a distinct new candidate signal.**
+
+**PRIORITY 1 (single-book matching) — RUN, AND IT SUBSTANTIALLY WEAKENS THE MARKET SIGNAL.**
+**First, correcting my own framing from last turn:** I suggested single-book matching would *raise* n. That was wrong — the consensus aggregation already includes any book that priced a given leg, so restricting to one book strictly *lowers* n. The legitimate version of the test is different and more useful: **does a SHARPER book show a STRONGER effect?** If the signal is genuine information (sharp books knowing true probability better than PrizePicks), sharpness and effect size must move together.
+**They move in opposite directions:**
+| Book tier | n | 14 days | Q1 | Q5 | Spread |
+|---|---|---|---|---|---|
+| Pinnacle (sharpest) | 725 | 14 | 54.04% | 60.94% | **+6.90** |
+| Novig (sharp exchange) | 2,631 | 14 | 58.91% | 70.38% | +11.47 |
+| DraftKings/FanDuel | 2,723 | 14 | 61.46% | 72.19% | +10.73 |
+| Mainstream | 8,322 | 14 | 57.78% | 72.61% | +14.83 |
+| Soft (Bovada/Fliff/Parx) | 1,610 | 14 | 52.68% | 75.57% | **+22.89** |
+**The effect is inversely related to book sharpness.** Pinnacle — the sharpest book in the world for this purpose — produces the weakest spread of any tier, and at **Z = 1.19 it is not statistically significant on its own**. The softest books produce more than three times Pinnacle's effect.
+**This is the opposite of what an information-based edge predicts** and is a serious mark against the signal. The most likely benign explanation is mechanical rather than informational: soft books price with wider, less efficient dispersion, so their implied probabilities span a broader range and generate larger quintile separation mechanically, while sharp books price tightly and compress the quintiles. Under that reading the "signal" is substantially measuring **pricing dispersion, not information content** — and dispersion is not tradeable.
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):** *Does a defensible alternative treatment rescue the sharp-book result?*
+- Pinnacle's n=725 is thin; a wider Pinnacle window would help, but Pinnacle's coverage in this archive is genuinely small (hist n=384 hitter / 3,150 pitcher) — **not a treatment choice, a data limit.**
+- Weighting books by sharpness instead of tiering them — **legitimate, untried**, but it cannot reverse the direction of an inverse relationship; it would at best moderate the consensus figure downward toward the sharp-book result. **Would weaken, not rescue.**
+- Testing sharpness within a single cell rather than pooled — legitimate and untried, though power at Pinnacle's n makes it unlikely to resolve anything.
+**No defensible alternative rescues it. The inverse-sharpness finding stands.**
+
+**MARKET SIGNAL STATUS — DOWNGRADED. Now suspended for THREE independent reasons:** (1) confirmed selection-bias artifact (8.3% match rate, matched subset 14.3pp worse than the full pool); (2) unverifiable pricing timestamp on the primary dataset, with the only clean alternative underpowered and non-monotonic (n=410, 7 days, Z=1.85); and now (3) **the effect runs inversely to book sharpness, which contradicts the information mechanism the whole signal depends on.** Taken together this is no longer "the strongest candidate the program has produced" — it is a result with a strong pooled statistic and three separate structural problems. **It is not yet formally rejected, because none of the three individually proves the underlying effect false, but it should no longer be described as promising.**
+
+**Standing Thread H1 is NOT weakened by this.** The inverse-sharpness finding concerns whether *sportsbook prices carry information PrizePicks lacks* (evidence line 1). H1 is the separate claim that *PrizePicks does not price leg probability into its multiplier* — which would be true or false regardless of where that probability estimate comes from. **H1's controlled test (standing observation #3) is unaffected and is now, by a wide margin, the single most valuable outstanding action in the program:** it is forward-looking, requires no stake, depends on none of this historical-data ambiguity, and resolves the mechanism directly.
 
 ---
 
