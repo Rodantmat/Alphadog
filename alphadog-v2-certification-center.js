@@ -5331,7 +5331,9 @@ function bindLegKeepBoxDelegation(){
 // The 1.1417 rate is real and measured (matched-pair live read, 2026-08-27) but was measured on
 // DOUBLES. Other props are unmeasured and likely price lower - treat the prefill as a starting
 // estimate and always overwrite it with the app's real displayed multiplier before saving.
-const BASELINE_HP_CLIENT_PER_LEG=1.1417;
+// (BASELINE_HP_CLIENT_PER_LEG removed 2026-08-27 - the flat 1.1417 rate is superseded by the
+// per-prop table below. Left this note so nobody reintroduces a flat rate: multipliers are NOT
+// flat across props, the observed spread is 1.0655 to 1.3698.)
 // Client mirror of the backend's BASELINE_HP_PROP_RATES. Keep these two tables in sync - if they
 // drift, the badge and the prefilled real-multiplier fields will disagree with what the server
 // computed. Fitted by least squares over 23 real multiplier observations; mean abs error 5.10%.
