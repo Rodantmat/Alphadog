@@ -215,6 +215,8 @@ Transcript re-check: searched for the specific referenced session ("2026-08-23-2
 
 **p×m gate, explicit**: p=83.24% (pool-wide) or 81.06% (weakest real sub-bucket found across all tests) × m=1.604x (direct real observation) = 1.34 (pool-wide) or 1.30 (conservative floor). Comfortably positive under every real cut of the data tested.
 
+**[2026-08-26] SINGLES/LESS/1.5 GOBLIN — second strategy this session to survive the full standard with zero rejections across any pass (Underdog rbis/less+walks/less was the first).** Per explicit instruction, no real slip generated and no live board checked this pass - purely backtest-validated. Real multiplier confirmation (per Standard item 6) remains held until live-board work resumes, per instruction.
+
 **[2026-08-26] EXHAUSTIVE RESEARCH PROGRAM — begun per user's expanded mandate (7 dimensions, all mandatory). This entry logs Item 1 (full prop × line × side × variant × tier matrix) and the findings it produced.**
 
 **Item 1a — full hitter grid.** All 9 remaining hitter props (doubles, home_runs, rbis, runs, stolen_bases, walks, hits, total_bases, hits_runs_rbis), crossed with every real line value, side, variant, and anchor-join-reconstructed tier. Correct lane join, four corrupted days excluded, n≥100 and ≥8 days per cell. 60 qualifying cells returned. p×m applied per cell against the exhaustive real multiplier list (never a blended rate). Notable: several very high raw hit rates are killed by the multiplier once applied correctly — e.g. `home_runs/less/0.5` 85.32% × 1.149 = 0.980 (negative); `doubles/less/0.5` 84.85% × 1.157 = 0.982 (negative); `hits/less/1.5/T1` 79.19% × 1.232 = 0.976 (negative). Confirms the pattern this session keeps finding: high hit rate alone is never the finding, p×m is.
