@@ -888,7 +888,36 @@ Flex outperforms Power here (0.784 vs 0.715) but both are decisively negative. *
 
 ---
 
-## 🟢🟢 [2026-08-27] STRONGEST RESULT OF THE PROGRAM — `walks_allowed/more/0.5` GOBLIN, UMPIRE-FILTERED
+## 🔬 [2026-08-27] GRANULAR PER-PROP MULTIPLIER TABLE — fitted, not assumed. Supersedes every flat rate in this document.
+
+**Method:** a slip's payout is the PRODUCT of its legs' individual rates, so `log(M) = Σ log(rate_prop)` is linear and solvable. Least-squares fit over **23 real observations**: every pure single-prop read, every mixed slip with known composition, and the **5 real placed slips of 2026-08-27** with operator-entered real multipliers. **Mean absolute error 5.10%.**
+
+| Prop | Per-leg rate |
+|---|---|
+| `runs` | **1.3698** |
+| `rbis` | 1.2864 |
+| `walks_allowed` | 1.2045 |
+| `singles` | 1.2038 |
+| `total_bases` | 1.1926 |
+| `hits_allowed` | 1.1741 |
+| `doubles` | 1.1594 |
+| `earned_runs` | 1.1583 |
+| `hits` | 1.1421 |
+| `hits_runs_rbis` | 1.1305 |
+| `home_runs` | 1.1187 |
+| `stolen_bases` | **1.0655** |
+
+**The spread is 29% end to end, so no flat rate can be right.** The previously deployed flat 1.1417 overpriced `stolen_bases` legs by ~7% and underpriced `runs` legs by ~20%. **A pure 6-pick of `stolen_bases` is 1.463x, not 2.215x** — a 34% error on a real slip.
+
+**Direction is mechanistically correct**: rarer events (`runs`, `rbis`) pay more per leg; near-certain ones (`stolen_bases`, `home_runs`) pay less. The market prices difficulty, which is the same finding as the `runs/less/0.5` rejection (5.75x on a 66.4% base rate).
+
+**Deployed both server-side (`BASELINE_HP_PROP_RATES`) and client-side (`BASELINE_HP_CLIENT_PROP_RATES`), verified byte-identical.** The client mirror is what makes leg substitution price correctly — swapping a `stolen_bases` leg for a `runs` leg moves the slip multiplier 29% on that leg alone.
+
+**⚠️ CONFIDENCE VARIES SHARPLY BY PROP.** `doubles`, `runs` and `walks_allowed` each appear in 4+ independent observations. `stolen_bases`, `singles`, `rbis` and `hits_runs_rbis` appear in only **1–3 slips each** and carry the widest error bars — treat those four as provisional. Largest single residuals are same-game vs cross-game effects (same-game pure doubles 6-pick read 2.9 vs 2.43 fitted, +16%), which this table does not model.
+
+**This is a living table. Every placed slip with a recorded multiplier is another equation — re-run the fit as observations accumulate.**
+
+---
 
 **First candidate to clear day-robustness, the gate that killed all 17 predecessors.**
 
