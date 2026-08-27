@@ -515,6 +515,8 @@ Additionally, the matched subset's mean implied probability (0.7042) **overestim
 
 ---
 
+**🔴 STANDING REAL-OBSERVATION REQUEST (third, alongside the two Flex captures):** build two PrizePicks slips from the SAME cell (`rbis/less/0.5` Goblin or `walks/less/0.5` Goblin), one using legs with HIGH sportsbook implied probability and one with LOW, same size and structure, and record both offered multipliers. **If the multipliers differ materially, PrizePicks prices per leg and this signal is dead. If they match, the core assumption holds and the signal goes live.** Cheap, needs no stake to read (the slip quote displays before placing), and decisive.
+
 **[2026-08-26] 🔍 PROCESS AUDIT — "has this program become biased toward killing findings?" Asked directly by Rodolfo. Answer: MOSTLY NO, but with two real and specific failures that I am recording rather than defending.**
 
 **FIRST — the 32-day window test (requested as part of this).** The market signal was previously measured only on the clean 16-day `parlay_hist_*` slice. Re-run across ALL sources and all available days (22 days with data, 07-25 to 08-25, accepting noisier matching): daily spreads 0.0, +32.1, 0.0, +10.0, −4.2, +29.2, +5.3, +22.6, +38.0, +17.1, +17.2, +3.6, +12.8, −1.6, +29.5, +28.6, +21.9, +15.6, +5.1, +25.6, +28.4, +2.6. **18 positive, 2 zero (both tiny-n), 2 negative — sign test on non-zero days 18/20, p=0.0002.** Daily mean +15.43pp, SD 12.76 → **clustered t = 5.67, slightly STRONGER than the 16-day result (5.44).** The signal does not decay on the broader, noisier window. The clean-window choice was not inflating it.
