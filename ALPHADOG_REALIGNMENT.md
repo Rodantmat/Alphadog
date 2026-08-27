@@ -281,7 +281,29 @@ Required procedure before any such declaration:
 
 **The generalisable procedure that caught it, and which is now mandatory for any strong-looking aggregate: DECOMPOSE THE AGGREGATE BY EVERY PLAUSIBLE CONFOUNDING DIMENSION BEFORE BELIEVING IT** — prop definition, line value, tier, variant, side, day, and source. A single dominant sub-population hiding inside a clean aggregate is the most common failure mode in this program. A dose-response gradient is *not* sufficient evidence of a mechanism if one sub-population dominates every bucket.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all seventeen items is itself a violation of this standard.
+**18. VERIFY THAT YOUR GROUPING/JOIN KEY ACTUALLY ISOLATES THE INTENDED UNIT — BEFORE running the substantive analysis, not after something looks suspicious. This is the dominant failure mode in this program by a wide margin.**
+
+Every one of the following was the same mistake wearing a different costume: **a grouping key that failed to isolate the thing being measured, so the analysis silently measured something else.** Six occurrences, all in one session:
+
+| # | What the key failed to isolate | What got measured instead | How it surfaced |
+|---|---|---|---|
+| 1 | `game_pk` alone on `history_team_schedule_spot` (one row per TEAM per game) | Every leg fanned out 2x, counting the opponent's schedule | Row count doubled |
+| 2 | Benchmark conditioned on each game's own rate | The correlation being tested was erased by the baseline | Spurious −0.5% |
+| 3 | One pooled marginal across props with different base rates | Prop-composition heterogeneity (Jensen) | Effect changed sign with the benchmark |
+| 4 | Player+prop without line — nested lines for the same player | Near-deterministic nesting (under 1.5 implies under 2.5) | k=2 excess didn't match the distinct-player pairwise figure |
+| 5 | Prop key without checking the operators' *definitions* matched | Two different fantasy-score formulas | 245 of 418 legs were one prop with a 4.4-point line gap |
+| 6 | Player+prop+date without variant on `board_leg_history` | The simultaneous Goblin/Standard/Demon **ladder**, not movement over time | 99.66% of legs "moved" by 2.27 units |
+
+**MANDATORY PRE-ANALYSIS CHECK on any new table.** Before the substantive query, run a sanity check designed to fail loudly if the key is wrong:
+- **Row-count check.** Does the join change the row count in a way you did not intend? Fan-out is the tell (bug 1).
+- **Plausibility-of-magnitude check.** Is the measured quantity a size that could physically occur? A betting line does not move 2.27 units; a prop line gap of 4.4 points is not a soft line. **If the magnitude is implausible, the key is wrong — do not look for a market explanation first** (bugs 5, 6).
+- **Distribution-shape check.** Does the composition look structurally right for what it claims to be? `demon` outnumbering `standard` 223,326 to 27,025 is inverted from any real board; that alone condemned the tagging before any analysis ran (bug 6).
+- **Null-effect control.** Construct a case where the answer must be zero and confirm it is. The `same_line` control returning **exactly 0.00pp** proved a cross-app join compared genuinely identical events; a zero-variance placebo factor returning +4.06pp calibrated a test's noise floor at ±4pp.
+- **Decompose before believing.** Any clean aggregate must be broken out by every plausible confounding dimension — prop, line, tier, variant, side, day, source — before it is trusted. One dominant sub-population hiding inside a tidy aggregate is how bug 5 survived a full adversarial pass and the most favourable Gemini verdict any candidate received.
+
+**The generalisable rule: an implausible result is far more often a broken key than a real discovery.** Check the key first, every time, on every new table.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all eighteen items is itself a violation of this standard.
 
 ---
 
