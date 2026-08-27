@@ -1,6 +1,66 @@
 # ALPHADOG_REALIGNMENT.md
 *Anchor document. Compiled 2026-08-26. If a conversation with Claude starts to drift from established facts, point it back to this file by name.*
 
+---
+
+## 00. ⭐ FINAL ACCOUNTING — READ THIS FIRST
+*Complete as of 2026-08-27. A future session should be able to understand exactly where this program stands from this section alone, without re-deriving anything.*
+
+### Bottom line
+**Sixteen strategy candidates tested to the full standard. Zero confirmed positive. Five items unresolved for lack of data (not disproven). One live coin flip outstanding.** The convergent evidence is that these markets are efficiently priced at the resolution this system can measure — but that conclusion rests on measurements, not on the rejections themselves.
+
+### The three measurements that carry the most weight
+These are direct observations of market structure, not verdicts produced by a test, and they are why the overall picture is what it is:
+1. **Underdog and Sleeper price per leg almost exactly efficiently.** Across a 24-point probability range on **14,423 real legs with real recorded per-leg multipliers**, `p×m` is flat at **0.89–0.97** with no trend. The multiplier falls almost exactly as probability rises. No within-cell leg-selection strategy on either app can work at any probability level.
+2. **The best-observed multiplier in the entire system prices to `p×m = 1.003`** — dead fair (`walks_allowed/more/0.5/T1`, n=26 real observations).
+3. **Low- and high-liquidity PrizePicks props both sit at breakeven** (−0.33pp and −1.31pp vs the ~75% Goblin breakeven, t=0.35 between them). PrizePicks prices thin props as carefully as heavy ones.
+
+### All sixteen rejections, by cause of death
+**Died at the multiplier (5)** — the multiplier was directly measured and the gap was decisive, so no statistical treatment can flip these:
+| Candidate | Kill |
+|---|---|
+| PP Sim A (`total_bases/less/3.5`) | Real slip m=1.1447 → breakeven 87.36% vs 84.17% observed |
+| PP Sim A mixed pool | Real 6-pick 2.64x (7 obs) → breakeven 85.27% vs ~76.7% |
+| Demon Power | Hit rates 12.5–38.5% vs 42.1% breakeven; real multipliers *lower* than assumed |
+| Demon Flex | Real Tier-1 M₃ = **4.5x** vs ≥12x required — 2.7x short. EV 0.555 |
+| Sleeper / Underdog | Realized ROI 0.8868 / 0.9317 across 624 real slips |
+
+**Died because selection failed walk-forward (4)** — trailing hit rate has now failed out-of-sample three separate times:
+Regular Gen1 (effect *reversed sign*) · appearance-frequency filters (best p=0.459) · model-probability gating (miscalibrated up to 23pp) · H1 exploitation (100%-historical legs regress to 72.6%).
+
+**Died on artifacts (3)** — each caught by decomposition, not by significance testing:
+T2 rung (ecological fallacy) · Item 6 market signal (8.3% match rate, matched subset 14.3pp worse; effect ran *inverse* to book sharpness) · cross-app line shopping (**245 of 418 legs were `fantasy_score`, where two operators use different formulas**).
+
+**Died on day-level significance (4)** — all showed large, coherent pooled effects that vanished under clustering:
+Item 5's 13 enrichment factors (best clustered t=1.38) · H2 stacking (**PrizePicks discounts same-game slips 37%**) · game-level Vegas signals (t=0.90, and direction incoherent — sign *flipped between adjacent lines*) · Candidate 11 Flex (t=0.30).
+
+**Untestable, not rejected (1):** promotional overlays — `is_promo` and `flash_sale_line_score` fire on **2 rows of 307,351**.
+
+**Well-powered null worth distinguishing:** stale-line timing at **n=113,900 over 30 days**, effect −1.25pp inside the noise floor and in the wrong direction. Power to detect +2pp ≈ 100%. **This is a real negative, not an underpowered one.**
+
+### Section 13 bucket — live counts as of 2026-08-27
+| Item | Current | Target | Distance |
+|---|---|---|---|
+| H2 correlation | **18 days** | 57 days | **39 days short** |
+| `total_bases/less/0.5` | **48 clean legs**, 68.75%, p×m 0.9507, CI [55.6%, 81.9%] | 150 legs | **102 legs short** |
+| Candidate 11 Flex | pool rate **71.13%**, 19 days | >72.0% AND 6/6 tier ≥6.0x | **0.87pp short** |
+| Cross-app line shopping | ~60 definition-clean legs | 400 | **~340 short** |
+| PP line movement | blocked | join `prepared_row_id` → inherit variant flags | fixable now |
+*Cadence caution learned on first run: a raw count that does not exclude corrupted days overstates progress — `total_bases/less/0.5` read as 201 legs unfiltered but is 48 clean. Apply the same filters to cadence counts as to the analysis.*
+
+### The one live question
+**`singles/less/1.5` Goblin — the 1.604 vs 1.134 multiplier question.** Capture a 6-pick Power quote whenever the line appears. **~17x revives the candidate; ~2.13x closes it.** Costs nothing to resolve. Not on the board 2026-08-27 (that day carried `singles` only at line 0.5).
+
+### Three standing facts about how these platforms price
+1. **PrizePicks prices Goblin leg probability directionally but NOT proportionally** — a 15% multiplier move for a ~2.6x probability difference (2.0x vs 2.3x on real reads). Efficient pricing would have required ~35x. **Opposite of Underdog/Sleeper.** Money is genuinely left on the table; the unsolved problem is *identifying* high-probability legs.
+2. **PrizePicks discounts same-game slips 37%** (4.75x vs 7.5x, matched leg quality). Correlation stacking is priced out. **Always build cross-game.**
+3. **External research verified in both directions** — published DFS sources were right that fixed-multiplier platforms underprice correlation *and* right that operators added decreased payouts to defend it. Eleven internally-generated hypotheses died; the external one produced a verified structural fact in a single read.
+
+### Six pipeline defects found — all one shape (see item 18)
+Schedule-join fan-out · zero-variance `stolen_base_family` factor · 624 unused real slip rows · Tier-2/Tier-1 Demon table mixup · fantasy-score formula mismatch · ladder-vs-movement in `board_leg_history`. **Every one was a grouping key that failed to isolate what was being measured.** This is the dominant failure mode in the program and the check is now mandatory before any analysis on a new table.
+
+---
+
 ## 0. How this document was built, and its evidence standard
 
 This document uses a strict, three-tier evidence standard. Every claim below is tagged with how it was verified:
