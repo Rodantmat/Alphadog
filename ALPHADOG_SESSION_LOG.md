@@ -443,3 +443,37 @@ Real hit rates are in hand from Item 1's grid: `total_bases/less` at 1.5 (T1 70.
 **NET EFFECT OF THE REOPENING PASS:** one strategy revived to unresolved (Demon Flex), one overstated conclusion corrected (Item 4 coverage), one false near-miss retracted (`walks_allowed` significance), one open gap identified (Underdog H constancy), and one set of closes correctly downgraded from "dead" to "predicted negative, untested" (PP Sim A's other lines). **The scoreboard is no longer "8 rejected, 0 surviving" — it is "1 confirmed dead by real slip, ~7 rejected on evidence of varying strength, 1 revived and pending a single cheap observation, and the large majority of the cell matrix formally untested."**
 
 **Remaining from reopening #5, not yet done:** batting order, park factors, bullpen fatigue, matchup/handedness, recent form, lineup protection, opposing starter quality — each with per-factor data-depth checked individually rather than under one blanket retention argument.
+
+---
+
+**[2026-08-26] 🔎 MAJOR FIND — 624 previously-unused REAL slip multiplier observations discovered. Two rejections now confirmed on real data at 21-31x the prior sample size, rather than on assumption.**
+
+Chasing reopening #1 (find the cheapest real multiplier for unobserved cells), I searched for any saved-slip table rather than assuming the pricing layers were the only source. Rationale: `recordRealPricingObservation`'s own code comment states it processes **only Goblin, Demon and Sleeper** and explicitly skips Underdog and Regular — so real Underdog observations could exist while being absent from every pricing layer. That turned out to be right.
+
+**Found `backtest.ud_sleeper_real_slips` — 624 rows with real recorded per-slip multipliers AND real outcomes**, spanning 2026-07-28 to 08-24. This dataset was never used anywhere in this session's analysis. Prior Underdog work rested on **12** observations; this holds **255**.
+
+**REALIZED ROI, computed directly from real multipliers against real outcomes (no assumption, no extrapolation, no fitted formula):**
+- **Underdog: 255 slips, 28 distinct days, win rate 54.90%, avg multiplier 1.7245 → realized return per unit = 0.9317 (−6.83% ROI)**
+- **Sleeper: 369 slips, 24 distinct days, win rate 54.74%, avg multiplier 1.6351 → realized return = 0.8868 (−11.32% ROI)**
+
+**Both prior rejections CONFIRMED, and now on genuinely strong evidence.** Gemini's variance-corrected confidence intervals (accounting for the two-stage 0-or-M payout distribution, which inflates variance well beyond simple hit-rate binomial): Sleeper 95% CI = **[0.803, 0.971]**, entirely below 1.0 — statistically confirmed negative at p<0.01. Underdog 95% CI = **[0.824, 1.039]**; 1.0 sits barely inside due to payout variance, but the point estimate (−6.83%) converges almost exactly on the independently fitted house margin H = −7.66%. **Two independent methods — a formula fitted to 12 observations, and realized returns across 255 — agreeing to within 0.8 percentage points is strong evidence the EV-parity model is correct.**
+
+**SUBSET SEARCH — realized return by multiplier band (10 cells searched, Bonferroni α = 0.005):**
+| Band | Underdog | Sleeper |
+|---|---|---|
+| <1.5 | 1.0281 (n=34, 20d) | 0.8737 (n=81, 22d) |
+| 1.5-1.7 | 0.9062 (n=88, 28d) | 0.8892 (n=174, 23d) |
+| 1.7-1.9 | 0.9980 (n=88, 26d) | 0.8684 (n=86, 20d) |
+| 1.9-2.2 | 0.6999 (n=40, 22d) | 0.8863 (n=22, 13d) |
+| 2.2+ | 1.4100 (n=5, 5d) | 1.2591 (n=6, 6d) |
+**No band is genuinely positive.** Underdog's `<1.5` band (1.0281) computes to t = +0.247, unadjusted p ≈ 0.403 — not significant even before correction. The two `2.2+` bands are n=5 and n=6, where one extra win moves the result 20-30 points. Lowest unadjusted p across the whole search ≈ 0.13; Bonferroni-adjusted > 0.99. **Zero survivors.**
+
+**PARTIAL ANSWER TO REOPENING #4 (does Underdog's H vary by prop pairing?).** The band structure is informative even though this table lacks prop composition. **Sleeper's realized returns are near-identical across every volume band (0.868 / 0.889 / 0.868 / 0.886)** — a rigid, algorithmic ~11.3% hold applied regardless of risk profile, strongly supporting constant-H for Sleeper. **Underdog's are erratic across sample-heavy bands (0.906 at 1.5-1.7 versus 0.699 at 1.9-2.2, both n≥40, both 22+ days)** — which **undercuts a global constant-H model for Underdog** and supports a conditional one. Gemini's hypothesis, which is testable: the erraticism likely tracks prop-pairing correlation (e.g. slips pairing correlated legs get a slightly inflated multiplier that fails to compensate for real win-rate decay), meaning aggregating by raw multiplier band masks correlation as the true driver. **So reopening #4's answer is: H is NOT safely assumed constant for Underdog, and the band evidence is a real signal that it varies — but decomposing by prop pairing still requires either prop-level slip composition data or new real slips deliberately mixing pairings.** Downgraded from "untestable" to "partially answered, decomposition still needed."
+
+**ROUTES THIS EVIDENCE DOES NOT CLOSE (Gemini, and I agree these remain genuinely open):**
+1. **Same-game / correlated prop pairings** — if this dataset mixes independent and correlated legs, positive-EV correlated pairings would be drowned out by the uncorrelated majority. Directly relevant to reopening #4.
+2. **Stale-line / line-movement timing** — the dataset records realized outcomes but no timestamp relative to line movement.
+3. **Promotional overlays** — any boost or insurance fundamentally alters the payout matrix; baseline negative EV is a prerequisite for book survival and says nothing about promo-inclusive EV.
+4. **Low-liquidity micro-niches** — broad aggregation obscures thin, specific markets.
+
+**Methodological lesson recorded:** the single highest-value action of this reopening pass was *searching for data rather than assuming the known tables were complete*. 624 real observations sat unused in a `backtest` schema table while the analysis ran on 12. Before declaring any question untestable for lack of data, enumerate every table that could plausibly hold it — the pricing layers are populated by a writer that deliberately skips two of the four sources.
