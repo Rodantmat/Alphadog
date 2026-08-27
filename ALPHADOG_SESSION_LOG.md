@@ -642,7 +642,37 @@ For `total_bases/less/0.5`, a **cold** hitter is *more* likely to go hitless, so
 
 **MARKET SIGNAL STATUS — DOWNGRADED. Now suspended for THREE independent reasons:** (1) confirmed selection-bias artifact (8.3% match rate, matched subset 14.3pp worse than the full pool); (2) unverifiable pricing timestamp on the primary dataset, with the only clean alternative underpowered and non-monotonic (n=410, 7 days, Z=1.85); and now (3) **the effect runs inversely to book sharpness, which contradicts the information mechanism the whole signal depends on.** Taken together this is no longer "the strongest candidate the program has produced" — it is a result with a strong pooled statistic and three separate structural problems. **It is not yet formally rejected, because none of the three individually proves the underlying effect false, but it should no longer be described as promising.**
 
-**Standing Thread H1 is NOT weakened by this.** The inverse-sharpness finding concerns whether *sportsbook prices carry information PrizePicks lacks* (evidence line 1). H1 is the separate claim that *PrizePicks does not price leg probability into its multiplier* — which would be true or false regardless of where that probability estimate comes from. **H1's controlled test (standing observation #3) is unaffected and is now, by a wide margin, the single most valuable outstanding action in the program:** it is forward-looking, requires no stake, depends on none of this historical-data ambiguity, and resolves the mechanism directly.
+---
+
+**[2026-08-26] 🧵 THREAD H1 — TESTED AT SCALE FOR THE FIRST TIME (on Underdog and Sleeper). H1 is definitively FALSE for both. Whether that transfers to PrizePicks is a separate question, and the answer is no.**
+
+**Queued item 2 first — `real_market_diffs` as H1's scaled form dataset: REJECTED as unusable.** Inspected: n=2,786, 183 players, 20 days — but `avg(n_prior) = 1.28`. The "prior average" is computed over roughly ONE prior observation. That is a single-game lookback, not a form measure. Not the larger, less-confounded dataset the hypothesis needed.
+
+**Enumerated for a better source rather than concluding (item 13) — and found the right one.** `backtest.ud_sleeper_real_mult_v2` (**14,423 rows**) carries, per leg: `mlb_player_id`, `canonical_prop_key`, `line_value`, `selected_side`, **`real_leg_mult` (a REAL recorded per-leg multiplier)**, `relevant_price` (the book's own price), `prior_n`/`prior_hit_pct`, and **`outcome_hit`**. This permits the first direct, large-scale test of H1's core economic claim: *when true probability rises, does the multiplier fall to offset it?*
+
+**RESULT — quintiled by book implied probability, 28 days:**
+| | Q1 | Q2 | Q3 | Q4 | Q5 |
+|---|---|---|---|---|---|
+| **Underdog** implied | 0.5500 | 0.6507 | 0.7070 | 0.7527 | 0.8076 |
+| real hit % | 53.51 | 64.04 | 65.90 | 70.96 | 77.01 |
+| avg multiplier | 1.7987 | 1.5110 | 1.3942 | 1.3125 | 1.2272 |
+| **p×m** | **0.9624** | **0.9677** | **0.9188** | **0.9313** | **0.9452** |
+| **Sleeper** implied | 0.5857 | 0.6823 | 0.7400 | 0.7852 | 0.8392 |
+| real hit % | 53.17 | 64.09 | 68.27 | 70.27 | 77.51 |
+| avg multiplier | 1.6851 | 1.4436 | 1.3342 | 1.2603 | 1.1825 |
+| **p×m** | **0.8960** | **0.9251** | **0.9109** | **0.8856** | **0.9166** |
+Across a 24-point probability range the multiplier falls almost exactly in compensation and **p×m stays flat with no trend** (UD 0.919-0.968, Sleeper 0.886-0.925). **This is efficient per-leg pricing. H1 is FALSE for Underdog and Sleeper, and no within-cell leg-selection strategy on either app can work at any probability level.** That is a stronger and more general result than the earlier realized-ROI finding, and it closes an entire strategy class.
+
+**GEMINI ADVERSARIAL PASS — three corrections, two accepted, one rebutted by direct check.**
+1. **ACCEPTED — I overstated the calibration.** I wrote that real hit rate "tracks implied probability closely." It does not: Sleeper Q1 implied 58.57% vs real 53.17% (**−5.40pp**), Q5 implied 83.92% vs real 77.51% (**−6.41pp**). A 5-6 point systematic error across ~4,000 legs is a genuine calibration failure, not close tracking. The flat p×m arises partly because the multiplier decay offsets that *overconfidence*, not purely because pricing is well-calibrated. My reading was too generous to the books.
+2. **ACCEPTED, AND IT MATTERS — extrapolating this to PrizePicks would be a CATEGORY ERROR.** Underdog and Sleeper use continuous, moneyline-derived pricing where m adjusts to every small probability move. PrizePicks Goblin uses **discrete step-function pricing** — fixed tier/variant values. Testing a continuous engine proves nothing about a step-function engine: if PP maps a wide band of sharp probabilities onto one quantized multiplier, p×m rises directly with p inside that band, which is exactly H1. **I had been about to record this as "raising the bar for believing H1." That reasoning was wrong and is withdrawn. H1 for PrizePicks is untouched by this result.**
+3. **REBUTTED BY DIRECT CHECK — Gemini claimed H1 could be settled historically, making live observation "unnecessary." It cannot, in this system.** The proposed test needs PP Goblin lines *and their multipliers* logged at timestamp T. Checked `archive.board_leg_history`'s raw PrizePicks payload directly: it contains `odds_type: "goblin"`, `line_score`, `adjusted_odds`, `board_time`, `projection_type` — **and no multiplier or payout field of any kind.** PrizePicks does not publish per-leg multipliers via its API; that is precisely why the 57-observation manual study exists. The lines are logged (433,218 rows); the multipliers are not, anywhere. **The historical route is closed and the live slip pair remains strictly necessary.**
+
+**RESIDUAL EXPLOITS Gemini raised for UD/Sleeper — checked, and none produce positive EV:** latency arbitrage (not testable, no intra-day repeated captures — 109 legs only); correlation-engine underpricing (untested, genuinely open); push distortions on whole-number lines; and asymmetric juice across quintiles. On that last one Gemini suggested selecting "peak-purity windows" — but **the single best quintile anywhere in the table is Underdog Q2 at p×m = 0.9677, still −3.2%.** No quintile selection makes either app positive. Closed.
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):** *Does a defensible alternative flip "H1 false for UD/Sleeper"?* The mechanical dependency between m and implied probability (both derived from the same book quote) makes p_implied×m flat by construction — but the test uses **p_real from independent graded outcomes**, which rescues it from tautology. Binning by realized outcome rather than implied probability would be the alternative; it introduces its own selection problem (conditioning on the outcome) and is not defensible. **No alternative flips it.**
+
+**NET: H1 remains open for PrizePicks and is now the program's central unresolved question.** Two of three apps are confirmed to price efficiently per leg — but by a mechanism PrizePicks demonstrably does not use. **Standing observation #3 (the high-vs-low implied-probability slip pair) is confirmed as the only route to settling it, and is the highest-value outstanding action in the program.** Historical context to be retained but NOT counted as evidence for H1: the `total_bases/less/0.5` five-slip form pattern (suspended), and the market signal's inverse-sharpness/dispersion finding (downgraded).
 
 ---
 
