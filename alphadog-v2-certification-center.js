@@ -5332,13 +5332,30 @@ function bindLegKeepBoxDelegation(){
 // DOUBLES. Other props are unmeasured and likely price lower - treat the prefill as a starting
 // estimate and always overwrite it with the app's real displayed multiplier before saving.
 const BASELINE_HP_CLIENT_PER_LEG=1.1417;
+// Client mirror of the backend's BASELINE_HP_PROP_RATES. Keep these two tables in sync - if they
+// drift, the badge and the prefilled real-multiplier fields will disagree with what the server
+// computed. Fitted by least squares over 23 real multiplier observations; mean abs error 5.10%.
+// This is what makes leg SUBSTITUTION price correctly: swapping a stolen_bases leg (1.0655) for a
+// runs leg (1.3698) changes the slip multiplier by 29% on that leg alone, and the badge must move.
+const BASELINE_HP_CLIENT_PROP_RATES={
+  runs:1.3698, rbis:1.2864, walks_allowed:1.2045, singles:1.2038, total_bases:1.1926,
+  hits_allowed:1.1741, doubles:1.1594, earned_runs:1.1583, hits:1.1421, hits_runs_rbis:1.1305,
+  home_runs:1.1187, stolen_bases:1.0655
+};
+const BASELINE_HP_CLIENT_RATE_FALLBACK=1.12;
+function baselineHpClientLegRate(leg){
+  const k=String(leg&&leg.canonical_prop_key||'').toLowerCase();
+  return BASELINE_HP_CLIENT_PROP_RATES[k]||BASELINE_HP_CLIENT_RATE_FALLBACK;
+}
 const MIXED_TOP55_CLIENT_FLAT_PARTIALS={oneBelow:0.5,twoBelow:0.25};
 function computeMixedTop55FlexTiersLive(legs,size){
   if(!legs||!legs.length||legs.length!==size)return null;
   for(const l of legs){
     if(Number(l.is_goblin)!==1)return null;
   }
-  const full=Math.round(Math.pow(BASELINE_HP_CLIENT_PER_LEG,size)*1000)/1000;
+  let full=1;
+  for(const l of legs)full*=baselineHpClientLegRate(l);
+  full=Math.round(full*1000)/1000;
   // Real spec: 2/3/4-pick show 2 fields (full, full-1); 5/6-pick show 3 fields (full, full-1, full-2).
   const tierCount=size>=5?3:2;
   const tiers={[size]:full};
