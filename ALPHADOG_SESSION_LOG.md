@@ -468,7 +468,24 @@ Two cleared the pooled bar, **both with coherent mechanisms**: `opposing_pitcher
 
 **ITEM 5 FINAL VERDICT: no enrichment factor shows real, day-robust, noise-clearing predictive power against real outcomes.** This is now a genuine null result on adequate data (229,690 point-in-time contributions across up to 30 days per factor), NOT the "insufficient data" non-answer I gave earlier. Two live defects found in the factor layer as a by-product. **Standing lesson reinforced: I applied the enumeration standard to everyone else's conclusions before applying it to my own — check your own "untestable" verdicts first, they are the ones you are least likely to revisit.**
 
-**Item 6 (market-context signals) not yet started — and now has real data available: `backtest.real_market_lines` and `real_market_diffs` (2,786 rows each), plus `market_implied_total` already confirmed present in the factor table at 74,948 rows across 29 days.**
+---
+
+**[2026-08-26] 🐛 LIVE SCORING-ENGINE DEFECTS — logged separately from strategy research. These are real bugs in the enrichment layer, worth fixing regardless of what any strategy search concludes. Found as a by-product of Item 5's factor dissection; recorded here so they are not buried inside a research log that a future session might skip as "no strategy found."**
+
+**DEFECT 1 — `stolen_base_family` factor contributes literally nothing. Zero variance across every observation.**
+- Evidence: `backtest.factor_contributions_asof_v2`, factor_key = `stolen_base_family`, n=880 rows across 29 distinct days and 196 players. `MIN(contribution) = 0.0000`, `AVG = 0.0000`, `MAX = 0.0000`, `STDDEV = 0.0000`.
+- Every other factor in the table shows real variance (e.g. `opposing_pitcher_quality` sd=0.3152, `lineup_slot` sd=0.4004, `market_implied_total` sd=0.2161).
+- **Impact**: the factor is wired into the scoring engine and consumes a slot in the enrichment profile, but can never move a probability estimate in either direction for any player, prop, or day. Any leg whose probability should depend on stolen-base context is being scored as though that context does not exist. Whether the correct fix is to populate it or to remove it is a design decision, but the current state — present, running, and inert — is wrong either way.
+- **Diagnostic value already realised**: because this factor is known-zero by construction, it functioned as an accidental placebo in Item 5, empirically calibrating the test design's noise floor at ~±4pp. That is useful, but it is a silver lining on a defect, not a justification for leaving it broken. **If it is fixed, note that Item 5 loses its placebo control** — a replacement zero-information control should be constructed deliberately (e.g. a shuffled-contribution column) rather than relying on a bug.
+
+**DEFECT 2 — `schedule_travel_fatigue` is one-directional by construction: it can only penalise, never reward.**
+- Evidence: same table, factor_key = `schedule_travel_fatigue`, n=27,074 rows across 26 days and 438 players. Range is `MIN = −0.0500` to **`MAX = 0.0000`**, `AVG = −0.0059`, sd = 0.0151.
+- Every value is ≤ 0. A team that is unusually well-rested, at home, with no travel, receives exactly the same contribution (0.0000) as a team in a neutral schedule spot.
+- **Impact**: this may be intentional (modelling fatigue as a pure penalty), but it is asymmetric in a way no other continuous factor in the table is, and it means genuine rest/schedule *advantages* are invisible to the scoring engine. Prior sessions explicitly researched the Northwestern/PNAS eastward-vs-westward jet-lag asymmetry and wired it in — that research describes a directional effect, which a penalty-only implementation can only half-capture. **Worth confirming against the original design intent rather than assuming either way.**
+
+**Neither defect affects any conclusion reached in this session's strategy research** (Item 5's null result holds with or without them, since the factors were tested as they actually behave, not as intended). Both are flagged purely as engine correctness issues for Rodolfo to triage.
+
+---
 
 ---
 
