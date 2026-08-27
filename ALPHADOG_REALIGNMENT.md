@@ -168,7 +168,32 @@ Established 2026-08-26 after a real, costly failure: a Demon strategy was deploy
 
 **10. Never apply a single tier-level (or prop-level, or variant-level) multiplier to a compositionally heterogeneous population. EV must be computed at the cell level and volume-weighted up.** A "tier" is a line-distance grouping, not a uniform pricing bucket — real per-leg rates within one tier vary by 30%+ depending on prop and line value (confirmed: `walks_allowed/more` at line 0.5 = 1.136 with n=26 real observations, versus the same prop and side at line 1.5 = 1.482 with n=10 — same tier, same prop, 30% apart). Always compute `Σ wᵢ(pᵢ·mᵢ)` across the real cells that actually make up the population, never `p_aggregate × m_point_estimate`. This session produced a textbook failure of exactly this: a Tier-2 rung aggregate appeared to be +2.7% EV by pairing an 81.2% aggregate hit rate (driven by ultra-safe, low-payout hitter cells) with a 1.265 multiplier sourced from a different cell representing ~6% of the rung's volume and backed by 2 observations. The correct volume-weighted answer was −3% to −6%. Gemini's diagnosis of the error class: an **ecological fallacy**. Before computing any aggregate EV, always check what actually composes the population — if the top two cells are >50% of volume, that population is not homogeneous and cannot carry a single multiplier.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all nine items is itself a violation of this standard.
+**11. FAIR-ODDS SANITY CHECK — run on every multiplier BEFORE it is used in a p×m gate, never as a post-hoc diagnostic after a suspicious result.** This is mechanical, not a judgment call. Back-calculate the implied house edge from the multiplier and the cell's own measured hit rate:
+
+```
+fair_per_leg   = 1 / p_measured
+implied_edge   = 1 − (m_claimed / fair_per_leg)
+```
+
+Then compare `implied_edge` against the realistic corridor for that market:
+
+| Market | Realistic house-edge corridor | Interpretation outside it |
+|---|---|---|
+| PrizePicks Goblin | **2% – 10%** | Negative implied edge (m > fair) = attribution is wrong. >20% = check provenance, may still be real |
+| PrizePicks Demon | **20% – 35%** | Demon is genuinely steeply priced; a low or negative implied edge is the red flag here |
+| PrizePicks Regular/Standard | **5% – 15%** | Published tables; large deviations mean the wrong table was applied |
+| Underdog (adjusted/heavy-favorite props) | **8% – 20%** | Underdog prices heavy favorites dynamically, NOT off the flat published table |
+| Sleeper | **10% – 26%** | Dynamic moneyline-derived; compare only against the same leg population the multiplier was measured on |
+
+**The decision rule: if `p × m` implies the book is handing out a large, systematic edge to the bettor on a repeatable, high-volume line, the MULTIPLIER'S ATTRIBUTION is the suspect — not the hit rate, and not the market.** Books do not systematically offer positive EV on recurring lines. A phantom edge is always the more likely explanation than a genuine one.
+
+**Why this is a standing gate:** it was added after `singles/less/1.5` Goblin — a candidate that had survived FOUR Gemini adversarial passes, an 18-day day-robustness check, and three independent player-level analyses — was falsified in a single step by this check alone. Every one of those prior checks tested the *hit rate*; none of them could test the *multiplier's provenance*. The claimed multiplier implied a 6-pick returning 17x against a 33.2% real hit probability = **+464% EV per slip**, which is structurally impossible. The correct multiplier (1.134) put the strategy at −5% EV. Applied retroactively, the same check then killed the only other surviving candidate (Underdog `rbis/less`+`walks/less`), whose assumed 1.50-1.55 per-leg *exceeded fair value* at 1.4128 — implying Underdog gifts bettors 6-10% per leg.
+
+**Corollary — never extrapolate a per-leg rate across slip sizes.** When the house takes a proportional cut, per-leg rates do not transfer between 2-pick and 6-pick. If a fitted pricing formula exists for a market (e.g. Underdog's `M = (1−H)/∏p`), use the formula — do not substitute a hand-estimated per-leg figure. That substitution is exactly what produced the false Underdog pass; the fitted formula is EV-parity by construction and can never yield a positive result.
+
+**Asymmetry to be aware of:** this check reliably catches *inflated* multipliers (the dangerous direction — it produces phantom edges). It is weaker at catching *suppressed* ones, since some markets genuinely run steep edges. A high implied edge is a prompt to verify provenance, not automatic proof the number is wrong.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all eleven items is itself a violation of this standard.
 
 ---
 
