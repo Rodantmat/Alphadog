@@ -487,6 +487,36 @@ Two cleared the pooled bar, **both with coherent mechanisms**: `opposing_pitcher
 
 ---
 
+**[2026-08-26] ITEM 6 — market-context signals. IN PROGRESS. Found the strongest signal of the entire program, then found a confirmed artifact that suspends it. Not confirmed, not dead.**
+
+**Enumeration applied FIRST, per instruction** — 95 tables matching market/odds concepts before any analysis. Key finds: **`archive.market_prop_context_history` (144,622 rows)** — real sportsbook prop prices from ~15 books (Pinnacle, Novig, DraftKings, FanDuel, BetMGM, Caesars, Fanatics, Hard Rock, Bet365, Fliff and others) keyed to `resolved_mlb_player_id` + prop + line + side + date; `archive.game_odds_context_history` (11,770); `backtest.crossapp_lines` (4,100); `score.market_divergence_diagnostic` (34); `archive.sleeper_source_prices_history` (639). The `parlay_hist_*` sources carry clean 16-day coverage (08-07 to 08-22) at 100% usable rows.
+
+**THE SIGNAL — sportsbook consensus implied probability predicting PrizePicks Goblin outcomes.** Joined on exact player + prop + line + side + date, American odds converted to implied probability and averaged across books, quintiled within cell:
+Q1 implied 0.5633 → real 56.91% (n=1,815); Q2 0.6046 → 64.89%; Q3 0.6301 → 67.85%; Q4 0.6636 → 73.56%; Q5 0.7225 → 74.22% (n=1,753). **Perfectly monotonic, spread +17.31pp — roughly 4x the ±4pp noise floor the Item 5 placebo established.**
+
+**IT PASSED THE CHECK THAT KILLED EVERYTHING ELSE.** Day-level spreads across 14 days: +6.1, +19.7, +36.5, +17.4, +16.9, +2.4, +9.5, **−2.6**, +31.9, +28.8, +21.9, +14.5, +6.5, +24.0 — **13 of 14 positive**. Sign test **p = 0.00092**. Daily mean +16.68pp, daily SD 11.47pp, clustered SE 3.07pp, **clustered t = 5.44** against the required 2.89. For contrast, Item 5's two best factors scored clustered t of 1.38 and −1.04.
+
+**WITHIN-CELL (multiplier held fixed), low vs high tertile of implied probability:** `hits/less/1.5` 31.97%→87.67% (+55.70, n=440); `walks/less/0.5` 57.54%→81.01% (+23.46, n=537); `runs/less/0.5` 48.56%→71.60% (+23.05, n=729); `rbis/less/0.5` 60.27%→78.85% (+18.57, n=1,094); `total_bases/less/1.5` 54.55%→68.26% (+13.72, n=691); `hits_allowed/more/3.5` +1.25 (n=415); `doubles/less/0.5` −2.26 (n=554).
+Proposed mechanism: PrizePicks appears to set Goblin multipliers per prop/tier rather than per leg, so within a cell m is fixed while true p varies enormously — selecting high-implied legs raises p with m unchanged.
+
+**🛑 CONFIRMED ARTIFACT — SEVERE SELECTION BIAS IN THE JOIN. This suspends the finding.**
+Gemini flagged that sportsbooks post alternate lines selectively, so matching on exact line value filters to a non-representative subset. **Tested directly and confirmed:**
+- Full `hits/less/1.5` Goblin pool: **n=5,299, hit rate 78.18%**
+- Subset with a sportsbook price match: **n=440, hit rate 63.86%**
+- **Only 8.3% of legs match, and the matched subset hits 14.3pp WORSE than the full pool.**
+Additionally, the matched subset's mean implied probability (0.7042) **overestimates** its own realised outcome (63.86%) by 6.6pp — the opposite direction from a "sharp books know better than PrizePicks" story. And this explains the implausible 31.97% low tertile Gemini flagged: that bucket is not a normally-behaving Goblin population, it is a filtered oddity. A genuine Goblin cell does not hit 32%.
+
+**THREE OUTSTANDING FALSIFICATION CHECKS before this can be believed or killed:**
+1. **Timestamp / closing-odds look-ahead (Gemini's primary kill check).** If the archived prices are *closing* odds rather than prices at the time the PrizePicks line was posted, the entire spread is explained by sharp line movement absorbing late lineup/weather/scratch news that PP's earlier-posted static line could not contain — pure look-ahead, no edge. `captured_at` exists on the table and must be compared against game start and against PP board post time. **NOT YET RUN — this is the next action on Item 6.**
+2. **Whether the residual signal survives inside the biased subset.** Selection bias does not automatically kill executability — a strategy could bet only legs that *have* a book match. But the effect must be re-measured against the correct baseline (the matched subset's own 63.86%, not the full pool's 78.18%), and the low-tertile anomaly resolved.
+3. **The load-bearing multiplier assumption.** Everything depends on PrizePicks' Goblin multiplier being constant within a cell. If PP prices each leg individually off the same market data, m falls as p rises and the edge vanishes entirely. Gemini's recommended discount until tested: **80%**.
+
+**VERDICT: SUSPENDED — the strongest candidate the program has produced, on the strongest statistical evidence, with a confirmed artifact attached. Not reported as a finding.** It has exactly the profile of the five strategies that died at the multiplier, and is being treated with the same suspicion.
+
+**🔴 NEW STANDING REAL-OBSERVATION REQUEST (third, alongside the two Flex captures):** build two PrizePicks slips from the SAME cell (`rbis/less/0.5` Goblin or `walks/less/0.5` Goblin), one using legs with HIGH sportsbook implied probability and one with LOW, same size and structure, and record both offered multipliers. **If the multipliers differ materially, PrizePicks prices per leg and this signal is dead. If they match, the core assumption holds and the signal goes live.** Cheap, needs no stake to read (the slip quote displays before placing), and decisive.
+
+---
+
 ---
 
 **[2026-08-26] 🔎 MAJOR FIND — 624 previously-unused REAL slip multiplier observations discovered. Two rejections now confirmed on real data at 21-31x the prior sample size, rather than on assumption.**
