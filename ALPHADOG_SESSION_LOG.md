@@ -553,6 +553,13 @@ Checking honestly *when* each severity test entered the program:
 
 ---
 
+**NOT YET PURSUED, and explicitly queued rather than assumed dead (per the audit's point 3-4):**
+1. **Closing-line MOVEMENT (open→close direction and magnitude) rather than closing-price LEVEL.** The look-ahead concern is about *timing*, not about market data being useless. Line movement is a genuinely different signal and has never been tested.
+2. **Cells from the newly-found 57-observation study with decent p×m that were only ever used to confirm or kill something else, never pursued as candidates in their own right.**
+3. **Deliberate combinations of near-misses**: Demon Flex (pending, not dead) layered with anything else here; and the market signal — if it survives the look-ahead check — applied to a *specific favourable cell* rather than as a blanket effect.
+
+---
+
 **[2026-08-26] PRIORITY 1 — `total_bases/less/0.5` GOBLIN evaluated as a full candidate. VERDICT: INSUFFICIENT DATA, not dead. And I have to correct an error I made in surfacing it.**
 
 **Fair-odds gate applied first, per standard — and it caught my own mistake.** Last turn I flagged this cell on the basis of a per-leg multiplier of **1.4832**, describing it as "the highest Goblin ratio ever observed." That is accurate but it is the **maximum of a five-observation sample, not the expected value** — and using a sample maximum as the multiplier is exactly the optimistic selection that item 11 exists to prevent. I did the thing the standard warns about, one turn after writing the standard.
