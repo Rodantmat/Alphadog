@@ -5462,8 +5462,11 @@ function poolStatusHtml(){
 function handleLegToggle(slipIdx,legIdx,isChecked){
   const slip=lastRawSlips[slipIdx];if(!slip)return;
   if(!slipSubs.has(slipIdx))slipSubs.set(slipIdx,new Map());
+  if(!slipUnchecked.has(slipIdx))slipUnchecked.set(slipIdx,new Set());
   const subs=slipSubs.get(slipIdx);
+  const un=slipUnchecked.get(slipIdx);
   if(!isChecked){
+    un.add(legIdx);
     // A leg was just unchecked. If we have not already substituted for THIS leg, pull the best
     // legal leg out of the shared pool and append it, keeping the slip at its original size.
     if(!subs.has(legIdx)){
