@@ -3199,7 +3199,19 @@ async function apiHighHitSlips(env, request) {
   ]);
   const ppSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
   const udSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
-  const sleeperSlips = sleeperLegs.length >= SLEEPER_HIGH_HIT_SIZE ? buildSleeperHighHitSlips(sleeperLegs) : [];
+  // PAUSED 2026-08-26: singles/less real breakeven is 78.84% (confirmed 1.2684x real per-leg
+  // multiplier, 8 real 6-pick observations). Four separate, independently Gemini-adversarial-
+  // verified passes all falsified: (1) raw walk-forward trailing hit rate, 64.03% (n=392); (2)
+  // model-probability quintiles, best 65.91% (n=264), non-monotonic; (3) lineup-slot gradient
+  // alone, best 63.25% (n=117), no clean pattern (unlike a real, documented analogous gradient on
+  // 'more'-side Sleeper props); (4) multi-layer (top slots + model prob>=70%), best 71.84%
+  // (n=103) - still short of breakeven by 7 points even under this most generous combination.
+  // Gemini's final verdict across all four passes: "CLOSE OUT ENTIRELY... do not conduct a real-
+  // money placed-slip check... the strategy loses money against the platform hurdle." Paused
+  // immediately per explicit instruction rather than waiting to finish reporting.
+  // autoSelectSleeperHighHitSlipLegs/buildSleeperHighHitSlips left intact and unused so this can
+  // be un-paused if a genuinely different signal (not another filter combination) is found.
+  const sleeperSlips = [];
   const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
   const selected_leg_count = sleeperLegs.length;
