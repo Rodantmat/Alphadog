@@ -218,7 +218,18 @@ Required procedure before any such declaration:
 
 **The deeper point: "no data exists" is a claim requiring evidence, exactly like any other claim in this standard.** It is the one class of claim that has repeatedly been asserted without verification, and it is uniquely damaging because it terminates inquiry rather than merely misdirecting it.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all thirteen items is itself a violation of this standard.
+**14. NO REJECTION IS FINAL WITHOUT AN EXPLICIT ALTERNATIVE-TREATMENT CHECK, STATED AT THE TIME THE VERDICT IS MADE — never retrospectively when challenged.** Every kill must carry an answer to: *is there a defensible, non-cherry-picked alternative statistical treatment under which this verdict flips?* That means a different but legitimate clustering unit, a less severe multiple-comparisons correction, a different reasonable definition of day-robustness, or a different but honest baseline. Three possible answers, and the verdict must state which:
+- **"No alternative exists"** — because the kill is a point-estimate kill (`p×m < 1` by a margin, with `m` directly measured), so no statistical choice was used to reach it and none can undo it. This is the strongest class of rejection.
+- **"An alternative exists, I tested it, it also fails"** — state the alternative and its result. (Worked example: Item 5's factors were killed on day-clustered t; game-level clustering is arguably more appropriate for player props and yields ~15x more clusters, so it was tested — `opposing_pitcher_quality` came back at t=1.52, still short of the 2.89 bar. Verdict held, but only because the alternative was actually run.)
+- **"An alternative exists and it flips the verdict"** — then the rejection is not valid and the candidate reopens.
+
+**COROLLARY — the moving-goalpost guard.** If you find yourself introducing a stricter test *because* something survived the existing tests, stop immediately and ask whether that same test was applied to everything already rejected. A test introduced reactively is not thereby wrong, but its timing is a warning sign that must be checked, not explained away.
+
+**Why this exists — the audit that produced it.** A process audit of this program's first nine verdicts found that every severity test had been introduced at the exact moment a result looked promising: Bonferroni at Item 1 when two cells passed; clustered standard errors at Item 5 when two factors passed; the selection-bias check at Item 6 when the market signal passed everything else. Each test was independently correct and, where testable, was subsequently verified rather than merely asserted. **But every test ever introduced was a KILL test — the question "is there a treatment under which a rejected finding revives?" was never once asked spontaneously.** When it was finally asked, it immediately produced three real results: Demon Flex reopened from dead to pending, the "13 cells / 2 line-confirmed" multiplier-coverage correction, and the discovery that a stated kill (Underdog's realized ROI of 0.9317) had been reported as "confirmed negative" when its 95% CI of [0.824, 1.039] actually contains 1.0.
+
+**A well-calibrated search points its rigor in both directions. Killing what is dead and finding what is alive are the same discipline, and a process that only does the first is not more rigorous — it is biased.**
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all fourteen items is itself a violation of this standard.
 
 ---
 
