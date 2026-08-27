@@ -3103,12 +3103,6 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
 // floor on the ENRICHED board score; it is replaced by baseline-layer selection. The builder,
 // multiplier plumbing and all UI wiring below are unchanged and shared.)
 const MIXED_TOP55_SIZE = BASELINE_HP_SIZE;
-          AND (canonical_prop_key, selected_side) IN (${propFilter})
-          AND official_date::date >= (now() - interval '60 days')::date
-        GROUP BY 1,2,3,4
-        HAVING count(*) >= 1 AND round(100.0*sum(outcome_hit)/count(*),2) >= ${MIXED_TOP55_MIN_HIT_PCT}
-        ORDER BY count(*) DESC
-        LIMIT ${MIXED_TOP55_TOP_K}
       )
       SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
         f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
