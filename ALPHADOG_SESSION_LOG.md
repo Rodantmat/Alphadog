@@ -797,7 +797,11 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 **Coverage note:** 79,976 joinable keys against 307,351 PrizePicks rows means the join covers roughly 26% of the archive. **Quantify actual post-join sample before concluding anything about power** — this may land in the underpowered bucket rather than producing a verdict.
 
-**Status: UNTESTED, blocked on the above. Recorded in Section 13 (underpowered / unresolved), not in the rejection list.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+**Status: UNTESTED, blocked on the above. Recorded in Section 13 (underpowered / unresolved), not in the rejection list.**
+
+---
+
+**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
 
 ---
 
