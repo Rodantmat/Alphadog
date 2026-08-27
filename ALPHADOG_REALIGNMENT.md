@@ -229,7 +229,27 @@ Required procedure before any such declaration:
 
 **A well-calibrated search points its rigor in both directions. Killing what is dead and finding what is alive are the same discipline, and a process that only does the first is not more rigorous — it is biased.**
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all fourteen items is itself a violation of this standard.
+**15. THE CANONICAL FALSE-POSITIVE CASE STUDY — read this before trusting any effect that required a benchmark choice.** One hypothesis in this system (H2, same-game correlation on DFS pick'em) went through **six sequential benchmark-contamination errors**, and the measured effect shrank at every single correction until it failed the standard entirely. This is the clearest illustration in the program of what a false positive looks like while it is slowly failing, and it is recorded here because the shape is more instructive than any individual fix.
+
+**The sequence, with the effect size at each stage:**
+| # | Contamination | Effect after correcting |
+|---|---|---|
+| — | Initial (units bug: percentage compared against proportion) | meaningless |
+| 1 | Fixed units | +2.51% at k=2 |
+| 2 | Used each game's OWN rate as the baseline — conditions on the game, erasing the very correlation being measured | spurious −0.5% |
+| 3 | Used a single pooled marginal across props with different base rates — prop heterogeneity masquerading as correlation | +31.88% at k=6 |
+| 4 | Included multiple LINES for the same player (nested, near-deterministic outcomes, unexploitable) | +32.68% |
+| 5 | Game set changed with k (only games with n≥k qualified at each k), shifting the population across the curve | +34.12% |
+| 6 | Line-threshold heterogeneity WITHIN the prop (Jensen's inequality across lines 0.5-4.5) **and** unweighted game averaging instead of combination-weighting | **+14.21% pooled, +8.21% daily mean** |
+| — | Day-level significance test | **clustered t = 1.31 vs required 2.89 — FAILS** |
+
+**Every correction that made the benchmark stricter made the effect smaller.** That monotone relationship between benchmark rigor and effect size is itself the diagnostic: a real effect is roughly invariant to how carefully you define its baseline; an artifact shrinks as the baseline tightens.
+
+**The "mechanistically coherent" trap — the most important lesson here.** At one stage the prop ordering (`hits_runs_rbis` +34%, `total_bases` +12%, `rbis` +8%, `hits` +5%) was recorded as mechanistically coherent, on the reasoning that a composite offensive stat should track game run-environment most strongly. **That reasoning was wrong, and the ordering was actually the artifact's signature**: it tracked each prop's *line-threshold variance* (`hits`/`rbis` sit almost uniformly at 0.5; `hits_runs_rbis` spans 0.5-4.5). The decisive counter-argument came from physics, not statistics: **runs and RBIs cannot occur without hits**, so a low-scoring game must suppress `hits` and `hits_runs_rbis` at the same physical rate — HRR showing ~7x the correlation of `hits` is evidence *against* a game-correlation mechanism, not for it. **A plausible causal story is not evidence. Always ask what else would produce the same ordering.**
+
+**On who caught what, recorded honestly:** four of the six contaminations were self-caught; the fifth and sixth were caught by the Gemini adversarial pass. **That is not a failure of the internal process — it is precisely why the adversarial pass is mandatory.** An analyst cannot reliably audit the benchmark they themselves chose. The pass exists to catch exactly the errors that survive self-review, and on this thread it did.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all fifteen items is itself a violation of this standard.
 
 ---
 
