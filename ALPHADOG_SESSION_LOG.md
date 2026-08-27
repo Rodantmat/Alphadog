@@ -745,6 +745,45 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 ---
 
+**[2026-08-27] CANDIDATE #11 — cross-game `rbis/less/0.5` Goblin 6-pick FLEX. FULL STANDARD RUN. VERDICT: REJECTED — not because it is wrong, but because the margin is smaller than every source of error acting on it.**
+
+**Day-robustness (hypergeometric draw of 6 from each day's real pool, 17 days):** 0.770, 0.944, 0.757, 0.698, 1.249, 1.228, 1.148, 1.006, 0.777, 1.117, 1.177, 1.111, 1.242, 1.025, 0.941, 0.868, 1.173. **10 of 17 above 1.0, sign test p = 0.31. Mean daily EV 1.0135, SD 0.187, SE 0.045, t = 0.30. 95% CI [0.918, 1.110].** Indistinguishable from breakeven.
+
+**Fair-odds gate — flagged correctly.** EV 1.0115 implies a **negative house edge (−1.15%)** on a repeatable high-volume line, outside the documented 2-10% positive corridor. Per item 11 that makes it suspect on its face; the multiplier here is a live observation, so suspicion falls on the hit rate.
+
+**The decisive numbers are the sensitivity thresholds, not the point estimate:**
+- **The 6/6 tier need only fall from 6.0x to 5.908x — a 0.092x move — to erase the entire edge.** Rodolfo's own caveat is that multipliers drift before lock. **The drift is larger than the edge.**
+- **The pool rate need only fall from 71.08% to 70.92% — 0.16pp — to erase it.** Breakeven and observed are the same number within measurement error.
+
+**GEMINI'S CENTRAL REFRAME, accepted:** *"requires no selection edge"* is **not** a structural advantage — it **trades selection risk for parameter fragility.** In a selection strategy a bad pick costs one leg; in an unfiltered-pool strategy a 0.16pp shift in the global mean destroys everything. A 6-leg Flex payout is hyper-convex in `p`, concentrating 100% of risk in one parameter estimated from 17 days. **I framed "no selection required" as why this was different in kind from the ten before it. It IS different in kind — but not favourably.**
+
+**GEMINI'S OBJECTION #1 CHECKED AND REFUTED (the adversarial pass gets audited too).** Gemini claimed excluding 4 of 21 days was a 19% truncation inflating the rate. **Checked: only ONE of the four corrupted days contains Goblin `rbis` legs — 96 legs of 6,486, a 1.5% truncation.** Including them: 71.045% vs 71.080% (0.035pp), EV 1.0088 vs 1.0115. The documented corruption was a sign-inversion on **Demon** `/less` legs; this is **Goblin**, so the exclusion was largely inapplicable. **Wrong on the facts — but it made the right point regardless: a 0.035pp data-handling choice moved the margin by 24% of its own size. That is the definition of fragile.**
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):**
+- Including the excluded day: EV 1.0088. No change to verdict.
+- Power instead of Flex: EV = 0.1286 × 7.5 = **0.964**. Worse.
+- Longer window: only 18 days exist — data limit, not a treatment choice.
+- **Layering the trail ≥80% filter (72.68%) onto Flex: EV = 1.128 (+12.8%)** — the one materially positive variant, **but the +1.60pp lift it rests on is not significant (Z = 0.67) and is the same trailing-rate signal that has failed walk-forward three times (Sleeper, Item 2, H1). Not defensible.**
+**No defensible alternative flips it to deployable.**
+
+**STATED PRECISELY per item 16 (do not overstate a negative):** this is **not** "no effect exists." The 95% CI is [0.918, 1.110] with a point estimate above 1.0. It is **indistinguishable from breakeven on 17 days and too fragile to deploy** — the margin (+0.88% to +1.15%) is smaller than pre-lock multiplier drift, smaller than measurement error, and far below the ~+5% buffer a real deployment needs. **Re-testable if the pool rate moves decisively above ~72% AND the 6/6 tier holds at ≥6.0x. Dormant, not dead.**
+
+---
+
+**[2026-08-27] 📌 THREE STANDING FACTS FROM THE LIVE-READ BATCH — recorded separately from the individual rejections, because each outlives the slip that produced it.**
+
+**FACT 1 — PrizePicks prices Goblin leg probability DIRECTIONALLY BUT NOT PROPORTIONALLY (H1's mechanism, CONFIRMED).** Real read: a 3-pick averaging 100% historical hit rate paid **2.0x**; an identical-structure 3-pick averaging 32.4% paid **2.3x**. PrizePicks moved the multiplier **15%** for a ~**2.6x** probability difference; efficient pricing would have required ~35x. **This is the opposite of Underdog and Sleeper, which price per leg almost exactly efficiently (p×m flat at 0.89-0.97 across a 24-point probability range, n=14,423).** Practical consequence: within a PrizePicks Goblin cell, p×m rises steeply with true probability — **the money is left on the table; the unsolved problem is identifying which legs are genuinely high-probability, which has failed walk-forward three times.**
+
+**FACT 2 — THE EXTERNAL-RESEARCH APPROACH PAID OFF, AND ITS CLAIM VERIFIED IN BOTH DIRECTIONS.** Published sources (FTN Fantasy especially) asserted both that fixed-multiplier platforms structurally underprice same-game correlation **and** that operators responded with "decreased payouts" as a safeguard. **Our live read confirms the safeguard exactly: same-game 6-pick 4.75x vs cross-game 7.5x — a 37% discount.** Right about the mechanism *and* the countermeasure. **Eleven internally-generated hypotheses have died; the external one produced a verified structural fact in a single read.** Other published claims deserving the same direct treatment: cross-app line shopping, stale-line timing, promotional overlays, low-liquidity niche props.
+
+**FACT 3 — Demon multiplier-table correction, applied directly to `MULTIPLIER_TABLES_MASTER.md` so it cannot recur** (Tier-2 Flex observation was being carried as if it applied to Tier 1).
+
+---
+
+**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+
+---
+
 **[2026-08-26] H2 — CLEAN ESTIMATOR COMPLETE. VERDICT: the correlation effect FAILS day-level significance. The magnitude that made H2 exciting does not survive.**
 
 Corrected estimator, all six contaminations removed: **single line only** (kills line-threshold heterogeneity), **combination-weighted** across games (kills the unweighted-average distortion), one leg per player, fixed corrupted-day exclusion, marginal computed on the same population. Run on `hits_runs_rbis/less/2.5` Goblin — the highest-volume line (2,798 legs, 203 games with ≥4).
