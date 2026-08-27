@@ -730,11 +730,28 @@ Corrected estimator, all six contaminations removed: **single line only** (kills
 - Testing a different line — line 1.5 showed +52.95% at k=4, but on 1,272 legs versus 2,798, and selecting it *after* seeing the four-line table would be exactly the cherry-pick that killed `earned_runs/more/T2` in Item 1. **Not defensible.**
 **No defensible alternative flips it. The verdict stands.**
 
-**H2 BACKTEST VERDICT, stated plainly including that it is now too small to matter:** the same-game correlation effect on `hits_runs_rbis/less/2.5` is **+8.21% at the daily mean, statistically indistinguishable from zero (clustered t = 1.31, sign test p = 0.227).** Two withdrawn claims are formally retracted: (a) the **+32.68% / +34.12%** figure, invalid; (b) the assertion that the prop ordering was **"mechanistically coherent"** — it was the artifact's signature, and the physics argument (runs and RBIs cannot occur without hits) runs against it.
+**H2 BACKTEST VERDICT — CORRECTED. Previously written as "fails"; the accurate verdict is INCONCLUSIVE at n=16 days.** Two things were wrong in the original framing: (a) the 2.89 bar came from Bonferroni α=0.05/13 for the Item 5 *scan* and should not have been carried into a **single pre-registered confirmatory test** — the correct bar is uncorrected α=0.05, t≈2.13, which it still does not clear but by a much smaller margin; (b) 16 noisy days cannot establish absence. Daily mean **+8.21%**, SD 25.04, **95% CI [−5.1%, +21.5%]** — containing both zero and a substantial edge. Detecting an effect that size at 80% power needs **~57 days; 16 exist. Sample size, not absence of effect, is the likely reason this looks shut. Re-check once more days accumulate.**
+Two retractions stand unchanged and are genuinely invalid: the **+32.68%/+34.12%** figure, and the **"mechanistically coherent"** reading of the prop ordering.
 
-**WHAT REMAINS LIVE:** H2's *platform-pricing* question is untouched by this and still gets its live read — **whether PrizePicks discounts same-game slips is a fact about the platform's pricing mechanism, not something a backtest can settle.** But the read now goes in with the honest magnitude at stake: **~+8% and not significant, not the +32% originally reported.** If PrizePicks does NOT discount same-game slips, the correlation available to exploit is small and unproven; if it DOES discount, H2 is dead outright. **Either way H2 is no longer the program's best lead**, and it should not be described as one.
+**WHAT REMAINS LIVE:** H2's *platform-pricing* question is untouched — **whether PrizePicks discounts same-game slips is a fact about the platform, not something a backtest can settle.** The read now goes in with the honest stake: **~+8%, inconclusive**, not +32%.
 
-**Standing observation #4 remains queued** (two 6-picks, same cell/prop, one all-same-game vs one all-different-game, compare quoted multipliers) — now framed as settling a platform mechanism rather than unlocking a large edge.
+---
+
+**[2026-08-26] 📋 CONSOLIDATED REAL-OBSERVATION QUEUE — every leg/slip still needed to close out what has been found. Capture in one pass the moment the board is live; decisions locked same day.**
+
+**1. H1 PAIR — settles whether PrizePicks prices leg probability per leg.** Two 3-pick slips, both `rbis/less/0.5` Goblin (or `walks/less/0.5`). Slip A = the 3 legs with the HIGHEST sportsbook implied probability; Slip B = the 3 LOWEST. Same size, same structure. **Record both quoted multipliers. Quote only, no stake.** Different → PP prices per leg, H1 false, within-cell selection dead. Same → H1 true.
+
+**2. `singles/less/1.5` GOBLIN — settles the 1.604 vs 1.134 multiplier question AND the Flex matrix.** 6-pick, every leg `Singles LESS 1.5 Goblin`. **Record BOTH: (a) Power 6/6 — this is what resolves 1.604 vs 1.134; and (b) Flex 6/6, 5/6, 4/6, 3/6.** Power ~17x → 1.604 confirmed, candidate revives. Power ~2.13x → 1.134 confirmed, candidate stays dead. Flex tiers additionally test STNAP and the last open Flex route.
+
+**3. DEMON TIER-1 3-PICK FLEX — settles whether Demon survives via Flex.** Three `total_bases/less` or `hits_runs_rbis/less` Demon **Tier 1** legs, Flex mode. **Record M₃ and M₂.** M₃ ≥ 12x AND M₂ ≥ 1.5x → validated (EV ≥ 1.003 at the measured 37.12%). M₃ ≤ 10x OR M₂ ≤ 1.2x → rejected. **Also resolves `hh_payout_ref`'s semantic ambiguity by giving a real Demon Flex value to compare against.**
+
+**4. H2 SAME-VS-CROSS-GAME — settles whether PrizePicks discounts correlation.** Two 6-picks, same prop and cell, identical structure: **Slip A all 6 legs from ONE game; Slip B 6 legs from SIX different games.** Record both quoted multipliers. Materially lower for A → PP discounts correlation, H2 dead outright. Equal → correlation unpriced (magnitude ~+8%, inconclusive).
+
+**5. `hits_runs_rbis/more/0.5` GOBLIN TIER-2 — NEWLY ADDED.** Item 1 flagged this cell at **p×m = 1.044 (78.00% hit rate, n=250, 26 days)** using a claimed multiplier of 1.339 that was **never confirmed at tier level**. It is one of only two cells in the entire matrix with a positive p×m that was never resolved. **Build any slip containing these legs and record the implied per-leg multiplier.**
+
+**6. `stolen_bases/less/0.5` GOBLIN — NEWLY ADDED.** Item 1 flagged at **p×m = 1.012 (87.49% hit rate, n=1,103, 14 days)** on a claimed 1.157 that was never confirmed. The margin is thinner than the plausible error in the estimate, so a real read decides it. **Build any slip containing these legs and record the implied per-leg multiplier.**
+
+**Nothing else requires a live observation.** Everything else still open is blocked on data accumulation rather than a slip: `total_bases/less/0.5` needs more graded legs (n=40, not more multiplier reads); H2's magnitude needs ~57 days; the Item 6 market signal is blocked on selection bias and unverifiable timestamps, which no slip resolves; Underdog/Sleeper are settled negative on 624 real slips.
 
 ---
 
