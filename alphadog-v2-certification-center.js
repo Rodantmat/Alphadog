@@ -3255,7 +3255,19 @@ async function apiHighHitSlips(env, request) {
   //  - The 1.1417 per-leg rate is measured on DOUBLES and applied to every prop; home_runs /
   //    stolen_bases / rbis are unmeasured and likely price lower, so ROI is optimistic.
   // Minimum stake until real placed results accumulate.
-  const ppSlips = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
+  const ppSlipsAll = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
+  // Apply the daily cap the same way the backtest did: rank every buildable slip by its AVERAGE
+  // baseline probability (descending) and keep the top N. Ranking by average - not by build order -
+  // is what was measured, and legs arrive already sorted by baseline so build order is close but
+  // not identical once the max-2-per-game and max-2-slips-per-player limits start skipping legs.
+  const ppSlips = ppSlipsAll
+    .map(s => ({
+      s,
+      avgBaseline: (s.legs || []).reduce((a, l) => a + Number(l.hit_probability_0_100 || 0), 0) / Math.max(1, (s.legs || []).length)
+    }))
+    .sort((a, b) => b.avgBaseline - a.avgBaseline)
+    .slice(0, BASELINE_HP_MAX_SLIPS_PER_DAY)
+    .map(x => x.s);
   // NOTE: do NOT rewrite source_key here. The client-side filter (activeSourceFilters) only
   // recognises 'prizepicks' | 'sleeper' | 'parlay_underdog'. An earlier version of this call site
   // set source_key='prizepicks_goblin', copied from long-retired code that used a different
