@@ -5248,8 +5248,19 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
   return 0;
 }
 const DEMON_PER_LEG_REAL_MULT_CLIENT = 2.375; // real, confirmed Tier1 per-leg rate - matches server-side DEMON_PER_LEG_REAL_MULT
+const slipUnchecked=new Map(); // slipIdx -> Set(legIdx) - survives the re-render in applySlipSourceFilter
+function isLegSubstitute(slipIdx,leg){
+  const subs=slipSubs.get(slipIdx);if(!subs)return false;
+  for(const s of subs.values()){ if(String(s.board_row_id)===String(leg.board_row_id))return true; }
+  return false;
+}
 function legRowHtml(leg,slipIdx,legIdx){
-  return '<label class="legRow"><span class="legRowText">'+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'" checked></label>';
+  const un=slipUnchecked.get(slipIdx);
+  const checked=(un&&un.has(legIdx))?'':' checked';
+  const isSub=isLegSubstitute(slipIdx,leg);
+  const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
+  const style=isSub?' style="background:rgba(255,200,0,0.10)"':'';
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
 }
 // One delegated listener on the results container instead of inline onchange="" attributes -
 // inline handlers on dynamically-injected HTML do not resolve to top-level functions in this
