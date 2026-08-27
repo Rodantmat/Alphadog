@@ -5228,17 +5228,7 @@ function computeMixedTop55FlexTiersLive(legs,size){
   for(const l of legs){
     if(Number(l.is_goblin)!==1)return null;
   }
-  let full=Math.round(Math.pow(BASELINE_HP_CLIENT_PER_LEG,size)*1000)/1000;
-  // Real spec: 2/3/4-pick show 2 fields (full, full-1); 5/6-pick show 3 fields (full, full-1, full-2).
-  const tierCount=size>=5?3:2;
-  const tiers={[size]:full};
-  if(tierCount>=2)tiers[size-1]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.oneBelow;
-  if(tierCount>=3)tiers[size-2]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.twoBelow;
-
-// UPDATED 2026-08-25: two real, independent 5-pick observations (different leg compositions,
-    full*=Math.pow(MIXED_TOP55_CLIENT_TABLES[key],1/6);
-  }
-  full=Math.round(full*1000)/1000;
+  const full=Math.round(Math.pow(BASELINE_HP_CLIENT_PER_LEG,size)*1000)/1000;
   // Real spec: 2/3/4-pick show 2 fields (full, full-1); 5/6-pick show 3 fields (full, full-1, full-2).
   const tierCount=size>=5?3:2;
   const tiers={[size]:full};
