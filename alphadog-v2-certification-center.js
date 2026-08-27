@@ -3314,6 +3314,7 @@ async function apiHighHitSlips(env, request) {
     ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit",
     selected_leg_count, generated_slips,
     source_counts: counts,
+    backup_pool: backupPool,
     notes: [
       `PrizePicks Goblin: LIVE 2026-08-27, new BASELINE_HP strategy. Legs selected on the baseline layer (classification.baseline_v6_current >= ${BASELINE_HP_MIN}), NOT the enriched board score - a 36,644-leg head-to-head found the baseline separates winners from losers by 39.9pp vs the enriched score's 4.8pp (inside the noise floor). Real slip-construction backtest: 101 slips, 90 full hits (89.11%), +97.3% ROI over 9 active days, zero losing days. RISKS: only 9 days of data (the >=90 pool does not exist before 2026-08-12); zero losing days is the least trustworthy part; the ${BASELINE_HP_PER_LEG_RATE} per-leg rate was measured on DOUBLES and is applied to every prop, so slips containing home_runs/stolen_bases/rbis legs are priced optimistically. Use minimum stake until real placed results accumulate, and always overwrite the prefilled multiplier with what the app actually shows.`,
       "Underdog: PAUSED 2026-08-26 - rbis/less confirmed negative EV on real, corrected pricing (-14.0%). No slips until a replacement signal is confirmed.",
