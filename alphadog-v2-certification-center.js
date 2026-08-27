@@ -5210,9 +5210,31 @@ function bindLegKeepBoxDelegation(){
 // strategy, mirrored client-side from the backend's MIXED_TOP55_REAL_TABLES so the multiplier
 // fields can be recomputed dynamically for ANY effective size (2-6) as legs get unchecked, not
 // just the slip's original generated size.
-const MIXED_TOP55_CLIENT_TABLES={
-  'hits|less':2.313, 'total_bases|less':2.313
-};
+// Client-side mirror of the backend's BASELINE_HP_PER_LEG_RATE so the multiplier badge and the
+// real-multiplier fields recompute dynamically for ANY effective size (2-6) as legs get unchecked,
+// not just the slip's original generated size.
+// REPLACED 2026-08-27: the previous mirror was a per-prop lookup containing ONLY hits|less and
+// total_bases|less. The baseline_hp pool spans every Goblin prop (doubles, home_runs, rbis,
+// singles, stolen_bases, runs, hits_runs_rbis, total_bases, hits), so any slip containing a prop
+// outside those two hit the null-guard below and the badge/prefill went BLANK. Replaced with a
+// flat per-leg rate that applies to every prop.
+// The 1.1417 rate is real and measured (matched-pair live read, 2026-08-27) but was measured on
+// DOUBLES. Other props are unmeasured and likely price lower - treat the prefill as a starting
+// estimate and always overwrite it with the app's real displayed multiplier before saving.
+const BASELINE_HP_CLIENT_PER_LEG=1.1417;
+const MIXED_TOP55_CLIENT_FLAT_PARTIALS={oneBelow:0.5,twoBelow:0.25};
+function computeMixedTop55FlexTiersLive(legs,size){
+  if(!legs||!legs.length||legs.length!==size)return null;
+  for(const l of legs){
+    if(Number(l.is_goblin)!==1)return null;
+  }
+  let full=Math.round(Math.pow(BASELINE_HP_CLIENT_PER_LEG,size)*1000)/1000;
+  // Real spec: 2/3/4-pick show 2 fields (full, full-1); 5/6-pick show 3 fields (full, full-1, full-2).
+  const tierCount=size>=5?3:2;
+  const tiers={[size]:full};
+  if(tierCount>=2)tiers[size-1]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.oneBelow;
+  if(tierCount>=3)tiers[size-2]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.twoBelow;
+
 // UPDATED 2026-08-25: two real, independent 5-pick observations (different leg compositions,
 // both real mixes of these three props) both showed identical absolute partial tiers: 4/5=0.5,
 // 3/5=0.25 - and those exact numbers also match the confirmed 6-pick tiers for hits/hits_runs_rbis
