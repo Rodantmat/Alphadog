@@ -831,7 +831,11 @@ Largest spreads: `hits_runs_rbis/less/1.5` demon **−19.38** · `earned_runs/mo
 - Pooling quintiles into halves to raise daily n — **legitimate and untried**; it would reduce daily variance but cannot plausibly move t from 0.90 to 3.28. Noted, not pursued.
 **No defensible alternative flips it.**
 
-**VERDICT: REJECTED.** And note the convergence — Item 5 tested the `market_implied_total` enrichment factor and found **−0.77pp across 80,528 legs**, essentially nothing. **Two independent methods, on different data representations, now agree that game-level market signals carry no exploitable information for these props.** That convergence is worth more than either result alone. Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+**VERDICT: REJECTED.** And note the convergence — Item 5 tested the `market_implied_total` enrichment factor and found **−0.77pp across 80,528 legs**, essentially nothing. **Two independent methods, on different data representations, now agree that game-level market signals carry no exploitable information for these props.** That convergence is worth more than either result alone.
+
+---
+
+**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
 
 ---
 
