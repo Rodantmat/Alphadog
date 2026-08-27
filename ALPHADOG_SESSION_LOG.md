@@ -513,7 +513,46 @@ Additionally, the matched subset's mean implied probability (0.7042) **overestim
 
 **VERDICT: SUSPENDED — the strongest candidate the program has produced, on the strongest statistical evidence, with a confirmed artifact attached. Not reported as a finding.** It has exactly the profile of the five strategies that died at the multiplier, and is being treated with the same suspicion.
 
-**🔴 NEW STANDING REAL-OBSERVATION REQUEST (third, alongside the two Flex captures):** build two PrizePicks slips from the SAME cell (`rbis/less/0.5` Goblin or `walks/less/0.5` Goblin), one using legs with HIGH sportsbook implied probability and one with LOW, same size and structure, and record both offered multipliers. **If the multipliers differ materially, PrizePicks prices per leg and this signal is dead. If they match, the core assumption holds and the signal goes live.** Cheap, needs no stake to read (the slip quote displays before placing), and decisive.
+---
+
+**[2026-08-26] 🔍 PROCESS AUDIT — "has this program become biased toward killing findings?" Asked directly by Rodolfo. Answer: MOSTLY NO, but with two real and specific failures that I am recording rather than defending.**
+
+**FIRST — the 32-day window test (requested as part of this).** The market signal was previously measured only on the clean 16-day `parlay_hist_*` slice. Re-run across ALL sources and all available days (22 days with data, 07-25 to 08-25, accepting noisier matching): daily spreads 0.0, +32.1, 0.0, +10.0, −4.2, +29.2, +5.3, +22.6, +38.0, +17.1, +17.2, +3.6, +12.8, −1.6, +29.5, +28.6, +21.9, +15.6, +5.1, +25.6, +28.4, +2.6. **18 positive, 2 zero (both tiny-n), 2 negative — sign test on non-zero days 18/20, p=0.0002.** Daily mean +15.43pp, SD 12.76 → **clustered t = 5.67, slightly STRONGER than the 16-day result (5.44).** The signal does not decay on the broader, noisier window. The clean-window choice was not inflating it.
+
+**CATEGORY 1 — KILLS THAT DO NOT DEPEND ON ANY STATISTICAL TREATMENT (six of nine). These are point-estimate kills: `p×m < 1` by a margin, with `m` directly measured. No clustering assumption, correction severity, or robustness definition can flip them, because none was used to reach them.**
+- `total_bases/less/3.5`: real measured m=1.1447 from an actual placed slip → breakeven 87.36% vs 84.17% observed.
+- Sim A mixed pool: real m from 7 observed slips (2.64x avg) → breakeven 85.27% vs ~76.7%. Gap 8.6pp.
+- Demon Power: hit rates 12.5-38.5% against a 42.1% breakeven. Gap 4-30pp — and the newly-found study data shows real Demon multipliers are *lower* than assumed (1.87-2.18 vs 2.375), widening the gap.
+- Sleeper: breakeven 78.84% vs 71.84% best filtered result; independently corroborated by 369 real slips realizing −11.32%.
+- `singles/less/1.5`: breakeven 88.18% vs 83.24%, confirmed two independent ways (fair-odds structure, and 33 observed Goblin ratios where the claimed rate exceeds every one ever recorded).
+- Regular Gen1: the claimed effect *reversed sign* at the only line with real depth (46.61% vs 62.50%).
+**Verdict on Category 1: solid. No defensible alternative treatment exists that flips any of them.**
+
+**CATEGORY 2 — KILLS THAT DID DEPEND ON A STATISTICAL CHOICE (three). I tested the more lenient alternative in each case rather than defending the one that killed first.**
+- Item 2 appearance thresholds: best result 84.23% vs an 83.24% baseline. Unadjusted p=0.459 — it fails under *no* correction at all, not just under Bonferroni. Does not flip.
+- Item 5 factors: killed on day-clustered t (1.38, −1.04). **The obvious lenient alternative is game-level clustering** — arguably more appropriate for player props, since correlation is primarily within-game, and it yields ~15x more clusters. **Tested it: `opposing_pitcher_quality` game-clustered t = 1.52, still short of 2.89; `recent_form_trend` t = −1.13.** (`park_factors` showed t = −3.64 but that result is structurally invalid — park factor is constant within a game, so within-game quintiles are meaningless.) **Does not flip.**
+- T2 rung: killed on compositional grounds (ecological fallacy), which is a correctness issue rather than a severity setting — applying a 1.265 multiplier to a rung 52% composed of cells with a *measured* 1.1447 is simply wrong arithmetic. Does not flip.
+
+**CATEGORY 3 — WHERE I OVERSTATED A KILL. One real instance, recorded plainly.**
+**Underdog.** I reported the realized ROI of 0.9317 across 255 real slips as "confirming" the rejection. But the variance-corrected 95% CI on that figure is **[0.824, 1.039] — 1.0 sits inside it.** Strictly, the 2-pick Underdog evidence shows *not significantly different from breakeven*, not *confirmed negative*. The point estimate is negative and converges on the independently fitted H (−7.66%), which is genuine corroboration — but my language was more certain than the statistics support. **The specific candidate (6-pick dual-prop) remains dead on separate grounds** (−37.6% under the fitted model, far outside any CI), so the verdict stands; the overclaim was in how I characterised the supporting evidence, and it should not have gone unqualified.
+
+**CATEGORY 4 — THE REAL METHODOLOGICAL WEAKNESS, and it is a genuine one.**
+Checking honestly *when* each severity test entered the program:
+- Bonferroni correction — introduced at Item 1, **at the exact moment two cells looked promising** (`earned_runs`/`hits_allowed` T2).
+- Clustered standard errors — introduced at Item 5, **at the exact moment two factors passed pooled significance.**
+- Selection-bias check — introduced at Item 6, **at the exact moment the market signal passed everything else.**
+**That is the structural signature of a moving goalpost, and I should name it as such rather than explain it away.** Each new test was introduced reactively, in response to something surviving, rather than being pre-specified.
+**The mitigating fact, which is real but does not fully excuse it:** every one of those tests is independently correct, and where testable I have now verified them rather than asserting them — Bonferroni is unambiguously right for a 40-cell search; clustering is right for correlated same-day legs *and the lenient alternative was just tested and still fails*; the selection-bias effect was **measured, not judged** (8.3% match rate, matched subset 14.3pp worse). So the tests were right even though their timing was reactive.
+**The asymmetry that matters most: every test I introduced was a KILL test. I never once spontaneously asked "is there a treatment under which a rejected finding revives?"** That question only entered the program when Rodolfo forced it — and when it did, it immediately produced real results: Demon Flex revived from dead to pending, the "13 cells / 2 line-confirmed" coverage correction, and now the Underdog overclaim above. **A well-calibrated search asks both questions unprompted. This one only asked one.**
+
+**NET VERDICT ON THE AUDIT: the kills are overwhelmingly earned — six of nine are treatment-independent point-estimate kills, and the three that depended on a statistical choice survive the more lenient alternative when it is actually tested. But the process had a genuine one-directional bias in how new tests were introduced, and one specific claim (Underdog's supporting evidence) was stated more strongly than the confidence interval supports. The rigor is not the problem; the asymmetry in where the rigor was pointed was.**
+
+**CORRECTIVE ACTIONS TAKEN:** all thirteen standards are now written into `ALPHADOG_REALIGNMENT.md`, so they are pre-specified for everything from here forward rather than re-derived reactively. Going forward, every rejection must also state explicitly whether a defensible alternative treatment exists that would flip it — the same question asked of every survivor.
+
+**NOT YET PURSUED, and explicitly queued rather than assumed dead (per the audit's point 3-4):**
+1. **Closing-line MOVEMENT (open→close direction and magnitude) rather than closing-price LEVEL.** The look-ahead concern is about *timing*, not about market data being useless. Line movement is a genuinely different signal and has never been tested.
+2. **Cells from the newly-found 57-observation study with decent p×m that were only ever used to confirm or kill something else, never pursued as candidates in their own right.** Notably the highest Goblin ratio ever observed (0.8563, `total_bases` 2-pick at 2.2x → per-leg 1.483, breakeven 67.4%) — `total_bases/less/0.5` Goblin was never measured in Item 1's grid and has never been evaluated as its own candidate.
+3. **Deliberate combinations of near-misses**: Demon Flex (pending, not dead) layered with anything else here; and the market signal — if it survives the look-ahead check — applied to a *specific favourable cell* rather than as a blanket effect.
 
 ---
 
