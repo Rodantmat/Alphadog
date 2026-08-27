@@ -48,8 +48,14 @@ Item 5's 13 enrichment factors (best clustered t=1.38) · H2 stacking (**PrizePi
 | PP line movement | blocked | join `prepared_row_id` → inherit variant flags | fixable now |
 *Cadence caution learned on first run: a raw count that does not exclude corrupted days overstates progress — `total_bases/less/0.5` read as 201 legs unfiltered but is 48 clean. Apply the same filters to cadence counts as to the analysis.*
 
-### The one live question
-**`singles/less/1.5` Goblin — the 1.604 vs 1.134 multiplier question.** Capture a 6-pick Power quote whenever the line appears. **~17x revives the candidate; ~2.13x closes it.** Costs nothing to resolve. Not on the board 2026-08-27 (that day carried `singles` only at line 0.5).
+### The one live question — ✅ RESOLVED 2026-08-27, CLOSED
+**`singles/less/1.5` Goblin — the 1.604 vs 1.134 multiplier question. ANSWERED BY LIVE READ.** Two independent 6-pick slips, every leg `singles/less/1.5` Goblin: **Power 2.1x and 2.2x** (Flex 1.6/0.5/0.25 on both). Implied per-leg **1.1316 and 1.1404**, mean **1.136** — against a pre-stated prediction of **1.134**, accurate to 0.2%. **The 1.604 attribution is definitively retired; the 17x 6-pick belonged to line 0.5, not 1.5.**
+EV at the real 83.24% hit rate: breakeven per-leg **88.03%** → Power 6-pick **0.715 (−28.5%)**, Flex **0.784 (−21.6%)**. STNAP passes on the real Flex table (0.532/0.201/0.051), so the table is valid — the cell is simply negative. **Point-estimate kill of the strongest class: the multiplier is a direct measurement, so no statistical choice can undo it.**
+**Three independent methods converged on 1.134** — fair-odds structural reasoning (item 11), the empirical Goblin ratio distribution across 33 observations (1.604 would need a ratio of 0.8785, higher than any ever recorded; 1.134 implies 0.6211, inside the band), and this live read. **Strongest multi-method convergence in the program.**
+*Secondary observation:* the two slips returned **different multipliers (2.1x vs 2.2x) despite identical prop, line, side and variant**, differing only in leg composition — independent support for Fact 1 below.
+
+### 🏁 PROGRAM STATUS
+**Seventeen candidates tested. Zero confirmed positive. No open live questions.** Every candidate resolvable with available data or a free live read has been resolved. What remains is five Section 13 items unresolved **for lack of data, not disproven**, with live distance counts: H2 **39 days short** · `total_bases/less/0.5` **102 legs short** · Candidate 11 **0.87pp short** · cross-app **~340 legs short** · PP line movement **blocked on a join fix that is actionable now**.
 
 ### Three standing facts about how these platforms price
 1. **PrizePicks prices Goblin leg probability directionally but NOT proportionally** — a 15% multiplier move for a ~2.6x probability difference (2.0x vs 2.3x on real reads). Efficient pricing would have required ~35x. **Opposite of Underdog/Sleeper.** Money is genuinely left on the table; the unsolved problem is *identifying* high-probability legs.
