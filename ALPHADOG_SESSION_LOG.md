@@ -708,7 +708,40 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 **🔴 NEW STANDING OBSERVATION REQUEST #4 (zero stake, quote-only, decisive for H2):** two 6-pick slips, same cell and prop, identical structure — **Slip A: all 6 legs from ONE game. Slip B: 6 legs from SIX different games.** Record both quoted multipliers. **If A is materially lower, PrizePicks discounts same-game correlation and H2 is dead. If they match, the boost is unpriced and H2 is live.**
 
-**Coverage-gap items 2-5 (Underdog/Sleeper full prop grid; player-level aggregate probability; game-level Vegas signals; cross-app testing; `board_leg_history` line movement) not yet started.**
+---
+
+**[2026-08-27] 🔒 ALL FOUR LIVE READS CAPTURED. DECISIONS LOCKED. Real multipliers from the 08-27 board, reported by Rodolfo.**
+
+**#1 — H1 PAIR. Slip A (avg 100% historical) Power 2.0x / Flex 1.7x/0.5x. Slip B (avg 32.4%) Power 2.3x / Flex 1.9x/0.5x.**
+**VERDICT: H1's MECHANISM IS TRUE, BUT IT IS NOT EXPLOITABLE. Cell rejected.**
+- **My pre-stated binary criterion was wrong and is corrected here.** I wrote "multipliers differ → H1 FALSE." They differ — but only by **15%** (2.0x → 2.3x, per-leg 1.2599 → 1.3200) for legs whose true probability differs by roughly **2.6x**. Efficient per-leg pricing would require Slip B to pay ~35x. **PrizePicks prices probability directionally but nowhere near proportionally — which is H1's premise essentially CONFIRMED, not refuted.** The binary criterion could not capture a matter of degree; recorded so the error isn't repeated.
+- **But the exploitation fails at the selection step.** Walk-forward test on this exact cell (`rbis/less/0.5` Goblin, 6,390 legs, 17 days): baseline **71.08%**; trail ≥90% → 71.79%; trail ≥85% → 71.54%; trail ≥80% → 72.68%; top-3/day by trailing rate → 72.63%. **Maximum lift +1.60pp.** The 100%-historical legs are a pure selection artifact — walk-forward they hit ~72.6%.
+- Slip A breakeven per-leg = (1/2.0)^(1/3) = **79.37%**. Real expected rate ≈72.6%. **EV = 0.7263³ × 2.0 = 0.766 → −23.4%.**
+- **Synthesis: PP leaves probability largely unpriced (H1 true), but we cannot identify which legs are genuinely high-probability well enough to collect it.** Third independent confirmation that trailing hit rate has no out-of-sample power in this system (after Sleeper and Item 2).
+
+**#2 — `singles/less/1.5` Goblin: NOT BUILDABLE, prop/line/variant absent from the 08-27 board. The 1.604-vs-1.134 question remains OPEN.** Re-attempt on a future slate.
+
+**#3 — DEMON TIER-1 3-PICK FLEX. Power 7.5x / Flex M₃ = 4.5x, M₂ = 1.25x.**
+**VERDICT: REJECTED. Both pre-stated criteria fail** (required M₃ ≥ 12x AND M₂ ≥ 1.5x; reject at M₃ ≤ 10x OR M₂ ≤ 1.2x). M₃ = 4.5x is less than half the reject threshold.
+- EV at the measured T1 rate (37.12%): P(3/3)=0.05115, P(2/3)=0.25995 → **0.05115×4.5 + 0.25995×1.25 = 0.555 → −44.5%.**
+- **Important correction to the record: the previously "confirmed" Demon 3-pick Flex table of 15x/1.5x was a TIER-2 observation and does not apply to Tier 1.** Real Tier-1 is 4.5x/1.25x. This **confirms the tier-scaling logic** (Demon multipliers rise with tier distance) and vindicates the earlier sensitivity analysis — which predicted T1 Flex at 7-10x. **Actual came in at 4.5x, below even the pessimistic floor case.**
+- STNAP check on the real table at p=0.3712: STEV₃ = 0.230, STEV₂ = 0.325, both < 1.0. **Table is internally valid** — unlike the corrupted 15x figure when misapplied to T1. **Demon is now closed on real data across both Power and Flex.**
+
+**#4 — H2 CORRELATION. Same-game 6-pick Power 4.75x. Cross-game 6-pick Power 7.5x.**
+**VERDICT: H2 IS DEAD. PrizePicks explicitly and heavily discounts same-game slips.**
+- **Same-game pays 37% less** (4.75x vs 7.5x); per-leg 1.2856 vs 1.4057, i.e. **8.5% less per leg**.
+- Measured correlation benefit was **~+8% (inconclusive, CI [−5.1%, +21.5%])**, at most +14% pooled. **A 37% payout discount dwarfs it by 4-5x.** Even the withdrawn +32% figure would not have survived.
+- EV at the cell's real baseline (71.08%): same-game = 0.1289 × 1.08 × 4.75 = **0.661 (−33.9%)**; cross-game = 0.1289 × 7.5 = **0.967 (−3.3%)**. **Same-game is strictly worse.**
+- **This directly confirms FTN's published claim** that pick'em sites added "decreased payouts" as a correlation safeguard. The external research was right about both the mechanism and the countermeasure. **Correlation stacking is priced out on PrizePicks.**
+
+**#5 — `hits_runs_rbis/more/0.5` GOBLIN. 6-pick Power 6.5x / Flex 5 / 0.5 / 0.25.**
+**VERDICT: NEGATIVE at the tier mix actually available. Cell rejected.**
+- Per-leg = 6.5^(1/6) = **1.3554**, which clears the pre-stated 1.339 threshold — but **the threshold was matched to the wrong population.**
+- The 78.00% rate behind the p×m = 1.044 flag was **Tier-2 specific (n=250)**. On the live board only **8 of 76 legs were Tier 1 and 68 were tier-unclassified** — the slip was built almost entirely from tier-null legs, whose real rate is **71.41%** (n=2,844). **p×m = 0.7141 × 1.3554 = 0.968 → −3.2%.**
+- **Independent confirmation the 78% figure is inflated:** STNAP applied to the real Flex table at p=0.78 gives STEV₆ = 0.2252 × 5 = **1.126 > 1.0 — a STNAP violation.** Since the Flex table is now a real observation, the hit rate is the suspect. Consistent with that cell having been cherry-picked from a 40-cell grid and killed by Bonferroni in Item 1.
+
+**⚠️ ONE THREAD NOT DEAD — flagged, not claimed.** Cross-game `rbis/less/0.5` Goblin **6-pick FLEX (6 / 0.5 / 0.25)** at the unfiltered walk-forward baseline of 71.08%: P(6)=0.1290, P(5)=0.3149, P(4)=0.3202 → **EV = 0.774 + 0.157 + 0.080 = 1.0115, i.e. +1.15%.** STNAP passes on all three tiers (0.774 / 0.157 / 0.080). Breakeven for the Power version is 71.82% against a 71.08% baseline — 0.74pp short — but **Flex partial credit closes the gap.**
+**Why this is NOT being reported as a finding:** (a) +1.15% is razor-thin; (b) Rodolfo's own caveat that multipliers drift and the conservative read should be used — at 5.5x for 6/6 instead of 6x, EV falls to **0.947 (−5.3%)**; (c) no day-robustness, no Gemini pass, and the margin is far inside the noise band that killed four prior candidates. **Queued for proper testing, not deployed.**
 
 ---
 
