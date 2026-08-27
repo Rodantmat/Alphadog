@@ -3183,15 +3183,16 @@ function buildMixedTop55Slips(legs) {
         source_key: sourceKey,
         slip_type: `${size}-pick`,
         slip_size: size,
-        entry_mode: "flex",
-        structure_label: `${size}-pick Flex (TB+Hits Uncapped - Total Bases+Hits)`,
+        entry_mode: "power",
+        structure_label: `${size}-pick Power (Baseline HP >= ${BASELINE_HP_MIN})`,
         estimated_multiplier: flexFull,
         estimated_multiplier_flex_tiers: flexTiers,
-        estimated_payout_note: `Real backtested mix (Total Bases+Hits, Goblin, less side, no per-prop cap): +194.0% ROI, 61 slips, 21 full hits (34.4%) over 9 real active days, only 1 losing day. Per-leg pricing calibrated from real placed slips; partial-hit tiers use confirmed flat values - confirm against the app's real displayed multiplier before placing.`,
+        estimated_payout_note: `Real slip-construction backtest (pinned morning-first board snapshots, started games excluded, deterministic ranked 6-picks graded against real outcomes), capped at ${BASELINE_HP_MAX_SLIPS_PER_DAY} slips/day: 37 slips, 35 full hits (94.6%), +109.5% ROI over 9 active days. Multiplier ${Math.round(Math.pow(BASELINE_HP_PER_LEG_RATE,size)*1000)/1000}x is derived from a per-leg rate of ${BASELINE_HP_PER_LEG_RATE} measured on DOUBLES only - this slip may contain props whose real per-leg rate is unmeasured and likely lower, so treat this as an estimate and always overwrite it with the app's real displayed multiplier before saving.`,
         strategy_notes: [
-          "Qualifying legs: rolling top-55-by-real-appearance-count AND >=92% real historical hit rate, restricted to Goblin variant on hits/less and total_bases/less - dropped hits_runs_rbis/less (weakest real p*m of the three) and removed the max-3-per-prop cap.",
-          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day - no per-prop cap, a single prop can fill up to all 6 slots if it has enough real, correlation-clean legs that day.",
-          "6-pick Flex only - this exact size/mode is what was real-backtested; no smaller leftover slips are built.",
+          `Qualifying legs: BASELINE layer (classification.baseline_v6_current) hit probability >= ${BASELINE_HP_MIN}, Goblin variant only. Selection deliberately bypasses the enriched board score - a 36,644-leg head-to-head found the baseline separates winners from losers by 39.9pp vs the enriched score's 4.8pp, which is inside the noise floor.`,
+          `Daily cap: top ${BASELINE_HP_MAX_SLIPS_PER_DAY} slips by average baseline. Cap sweep on the real backtest: uncapped +97.4% (101 slips), cap 12 +100.3%, cap 8 +109.0%, cap 5 +109.5%, cap 3 +103.8%. ROI is flat across caps 3-12 - cap 5 is the top of a noisy band, not a sharp optimum.`,
+          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day.",
+          "HONEST RISKS: only 9 backtest days (the >=90 pool does not exist in usable size before 2026-08-12); zero losing days across those 9 is the least trustworthy part of the result; at cap 5 the two imperfect days were both days that could not build 5 slips, so the cap hides variance rather than removing it. Use minimum stake until real placed results accumulate.",
           `Real prop mix in this slip: ${Object.entries(propBreakdown).map(([k, v]) => `${k}=${v}`).join(", ")}`
         ],
         legs: slipLegs
