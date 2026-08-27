@@ -17,6 +17,44 @@ Any coworker session picking up this system MUST build and update a granular tab
 
 ---
 
+## 1b. ⚠️ VERIFIED LIVE READS, 2026-08-27 — USE THESE OVER ANY EARLIER FIGURE THEY CONTRADICT
+
+All four captured from the live PrizePicks slip builder on 2026-08-27. Quoted values, not inferred.
+
+### CORRECTION — Demon 3-pick Flex: the 15x/1.5x table is TIER 2, NOT TIER 1
+**A Demon 3-pick Flex table of `3/3 = 15x, 2/3 = 1.5x` was previously carried in this system as if it were a general Demon Flex table. It is not. That observation came from a `pitcher_strikeouts/less` TIER 2 slip.** Demon multipliers **rise** with tier distance, so applying a Tier-2 table to Tier-1 legs overstates the payout by roughly 3x and manufactures a false edge.
+
+| Variant | Prop | Tier | Structure | Real multiplier | Source |
+|---|---|---|---|---|---|
+| Demon | `total_bases/less/0.5` | **Tier 1** | 3-pick Power | **7.5x** | live read 2026-08-27 |
+| Demon | `total_bases/less/0.5` | **Tier 1** | 3-pick Flex | **M₃ = 4.5x, M₂ = 1.25x** | live read 2026-08-27 |
+| Demon | `pitcher_strikeouts/less` | **Tier 2** | 3-pick Flex | M₃ = 15x, M₂ = 1.5x | earlier read — **TIER 2 ONLY** |
+
+**Never apply the Tier-2 row to Tier-1 legs.** At the measured Tier-1 hit rate (37.12%), the real table gives EV = 0.555 (−44.5%); the misapplied Tier-2 table would have given ~1.16 (+16%). That single mis-attribution was the entire basis on which Demon Flex looked alive.
+
+### PrizePicks Goblin `rbis/less/0.5` — real structures
+| Structure | Real multiplier |
+|---|---|
+| 3-pick Power (legs avg 100% historical hit rate) | **2.0x** (Flex 1.7x / 0.5x) |
+| 3-pick Power (legs avg 32.4% historical hit rate) | **2.3x** (Flex 1.9x / 0.5x) |
+| 6-pick Power, **all six legs from ONE game** | **4.75x** (Flex 2.5 / 1 / 0.4) |
+| 6-pick Power, **six legs from SIX different games** | **7.5x** (Flex 6 / 0.5 / 0.25) |
+
+### PrizePicks Goblin `hits_runs_rbis/more/0.5`
+| Structure | Real multiplier | Implied per-leg |
+|---|---|---|
+| 6-pick Power | **6.5x** (Flex 5 / 0.5 / 0.25) | 1.3554 |
+
+---
+
+## 1c. TWO STRUCTURAL PRICING FACTS CONFIRMED BY THOSE READS
+
+**FACT A — PrizePicks prices Goblin leg probability DIRECTIONALLY BUT NOT PROPORTIONALLY.** A 3-pick of legs averaging 100% historical hit rate paid 2.0x; an identical-structure 3-pick averaging 32.4% paid 2.3x. **The multiplier moved 15% for a ~2.6x probability difference** — efficient pricing would have required ~35x on the low-probability slip. **This is the opposite of Underdog and Sleeper, which price per leg almost exactly efficiently (p×m flat at 0.89-0.97 across a 24-point probability range, n=14,423 real legs).** Consequence: within a PrizePicks Goblin cell, `p×m` rises steeply with true probability. The money is genuinely left on the table — the unsolved problem is *identifying* which legs are truly high-probability, which has now failed walk-forward three separate times (Sleeper, Item 2, and the H1 read itself: legs at 100% historical regress to ~72.6% out-of-sample).
+
+**FACT B — PrizePicks HEAVILY DISCOUNTS SAME-GAME SLIPS. Do not build correlation stacks.** Identical 6-pick structure, matched average leg quality (79.6% vs 79.2%): **all-one-game = 4.75x, six-different-games = 7.5x. A 37% discount**, or 8.5% less per leg. The measured same-game correlation benefit is only ~+8% (and statistically inconclusive), so **the discount exceeds the benefit by 4-5x — same-game stacking is strictly worse than cross-game on this platform.** This independently confirms published DFS-community reporting that pick'em operators added decreased payouts specifically as a correlation safeguard. **Always build cross-game.**
+
+---
+
 ## 2. PRIZEPICKS GOBLIN — Real Per-Leg Table (current, live in `GOBLIN_LEG_MULT_TABLE`)
 
 Deployed in `alphadog-v2-certification-center.js`, computed as the real per-leg rate from every actual placed-slip observation this session:
