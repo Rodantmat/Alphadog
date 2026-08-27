@@ -801,7 +801,37 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 ---
 
-**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+---
+
+**[2026-08-27] GAME-LEVEL VEGAS SIGNALS (coverage-gap item #6). TESTED AND REJECTED. Also: the first table in this investigation to pass item 18 cleanly.**
+
+**ITEM 18 GROUPING-KEY VERIFICATION — PASSED, and worth recording as the positive example.** `archive.game_odds_context_history` (11,770 rows, 452 games, 35 days, 4 bookmakers):
+- **Distribution-shape check:** `totals` point range 5.50-12.50 (avg 8.40), `spreads` −2.50 to +2.50 (avg 0.00), `h2h` points uniformly NULL. All exactly right for MLB. ~13 games/day.
+- **Apparent anomaly investigated and cleared:** `h2h` showed only 1 distinct `outcome_side`. Not a defect — the team is carried in `outcome_name` (30 distinct = 30 MLB teams) with the side label uniformly "moneyline."
+- **Symmetry check:** both sides present for every market, exactly matched — spreads 1,889/1,889, totals 2,268/2,268.
+- **Overround check (the decisive one for odds data):** h2h 1.0139-1.0530 (avg **3.3%** vig), spreads 1.0379-1.0711 (**4.6%**), totals 1.0242-1.0678 (**4.7%**). **Zero markets sum below 1.0** — no impossible arbitrages. Vig sits in the correct 3-5% band, and h2h being tightest is correct since moneylines are the sharpest market.
+**Key `(game_pk, bookmaker_key, market_key, official_date, captured_at)` genuinely isolates one two-sided market. Verified before any analysis.**
+
+**SELF-CAUGHT ERROR EN ROUTE — averaging American odds is mathematically invalid.** An initial check computed `AVG(price_american)` per market, producing figures like −69.9/−83.2 for the two sides of totals. **The American scale is discontinuous at zero (+150 and −150 average to 0, which is meaningless), so those averages are uninterpretable.** Redone with implied probability, which is also what made the overround check possible. Recorded because it is the same family as the benchmark errors — a summary statistic that does not represent the quantity it appears to.
+
+**THE TEST:** Vegas game total (averaged across books) quintiled **within** each prop × line × side × variant cell, against real graded outcomes. Mechanism: a higher total implies more expected offense, so `more` sides should hit more and `less` sides less.
+
+**RESULT — 48 cells searched (n≥400 each), Bonferroni α = 0.05/48 → Z ≥ 3.28 required.**
+Largest spreads: `hits_runs_rbis/less/1.5` demon **−19.38** · `earned_runs/more/1.5` goblin **+16.26** · `runs/less/1.5` goblin **−15.89** · `hits_allowed/less/6.5` goblin **−15.80** · `hits_runs_rbis/less/4.5` goblin −9.96 · `earned_runs/less/3.5` goblin −9.62.
+
+**DIRECTION COHERENCE IS MIXED — which is itself evidence against a mechanism.** Six cells run the correct way. But three run backwards: `hits/less/0.5` demon **+9.47** and `total_bases/less/0.5` demon **+9.45** — a higher-scoring game making a *zero-hit* outcome **more** likely is physically backwards — and `pitcher_strikeouts/more` **flips sign between adjacent lines** (+7.66 at 2.5, −7.43 at 3.5, same prop, same side). **A real game-environment effect cannot reverse between two adjacent lines of the same prop.** Per item 15, the plausible post-hoc story available for the demon cells (blowouts → early substitutions → fewer PAs → more zero-hit outcomes) is not evidence and is not being credited.
+
+**DAY-LEVEL ON THE STRONGEST COHERENT CELL — FAILS.** `earned_runs/more/1.5` goblin daily spreads: −33.3, 0.0, +50.0, +75.0, +50.0, +40.0, +22.9, −25.0, −40.0, 0.0, +25.0, **−100.0**, 0.0, 0.0, +62.5, +33.3. **8 of 12 non-zero days positive (sign test p = 0.194). Daily mean +10.03, SD 44.81, SE 11.20, clustered t = 0.90** — failing the corrected bar (3.28) and the uncorrected bar (2.13) alike. Daily quintiles contain only 2-4 legs, so a single leg moves a day by 25-100 points. **Same pattern that killed Item 5's factors: large, coherent-looking pooled effects that vanish under day-level clustering.**
+
+**Fair-odds gate:** even taking the best cell at face value, the high-total quintile hits 74.51% against a Goblin breakeven of ~75.0% at the typical 0.73 ratio (per-leg ≈1.333). **Below breakeven before any significance question arises.** And `earned_runs` has no real observed multiplier anywhere in the system, so it sits in the ~87% untested-multiplier majority (item 3).
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):**
+- Dropping the Bonferroni correction — **not defensible**, this was a genuine 48-cell scan. And t = 0.90 fails uncorrected anyway.
+- Selecting a different cell — **not defensible**, that is cherry-picking from 48.
+- Pooling quintiles into halves to raise daily n — **legitimate and untried**; it would reduce daily variance but cannot plausibly move t from 0.90 to 3.28. Noted, not pursued.
+**No defensible alternative flips it.**
+
+**VERDICT: REJECTED.** And note the convergence — Item 5 tested the `market_implied_total` enrichment factor and found **−0.77pp across 80,528 legs**, essentially nothing. **Two independent methods, on different data representations, now agree that game-level market signals carry no exploitable information for these props.** That convergence is worth more than either result alone. Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
 
 ---
 
