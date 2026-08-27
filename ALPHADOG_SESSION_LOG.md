@@ -888,6 +888,52 @@ Flex outperforms Power here (0.784 vs 0.715) but both are decisively negative. *
 
 ---
 
+## 🎯 [2026-08-27] MULTIPLIER MODEL — FIRST GROUNDED EVIDENCE OF WITHIN-CELL VARIATION. Foundation for the next milestone.
+
+**SOURCE FOUND: `score.slip_entries` (62 rows, 33 with `real_multiplier`) + `score.slip_legs` (287 legs)** — carries `real_multiplier`, **`real_multiplier_flex_tiers` (jsonb)**, `slip_size`, `entry_mode`, `source_key`, joinable to full leg composition. Previously unopened.
+
+**FINDING 1 — PER-LEG MULTIPLIER IS ROUGHLY SIZE-INVARIANT. Answers the open 2/3/4/5/6-pick question.** Same cell (`singles/less/1.5` Goblin), real placed slips:
+| Slip size | Real multiplier | Implied per-leg |
+|---|---|---|
+| 3-pick Power | 1.4x | **1.1187** |
+| 4-pick Power | 1.5x | **1.1067** |
+| 5-pick Power | 1.8 / 1.9 / 1.9 / 1.9 / 2.0 / 2.1 | **1.1247 – 1.1600** |
+| 6-pick Power | 2.1 / 2.2 (live read) | **1.1316 – 1.1404** |
+Per-leg sits in a narrow **1.107–1.160** band across sizes 3-6. **Consequence: choose slip size on structure (Power vs Flex tiers), not to hunt a better per-leg rate.**
+
+**FINDING 2 — MULTIPLIERS VARY INVERSELY WITH LEG PROBABILITY *WITHIN* CELL AND SIZE. Rodolfo's hypothesis, confirmed.** Six 5-pick Goblin slips of essentially one cell paid 1.8 to 2.1 — a **17% spread**. Real multiplier vs mean model hit-probability of the legs:
+| Real mult | Mean leg HP |
+|---|---|
+| 1.7x | 96.9, 94.8 |
+| 1.8x | 90.7, 78.3, 76.5 |
+| 1.9x | 88.7, 84.1, 81.5 |
+| 2.0x | 68.9 |
+| 2.1x | 74.0 |
+**Pearson r = −0.74, t = −3.14, p ≈ 0.014 (n=10).** Higher-probability legs → lower multiplier. Same mechanism as the H1 live read (2.0x vs 2.3x) at finer resolution.
+**CONFOUND FLAGGED:** the two 1.7x slips are `hits_runs_rbis/less/3.5-4.5`, most others `singles/less/1.5`. **Prop is partially confounded with multiplier, so r = −0.74 is an upper bound.** Clean re-test needs prop held fixed.
+
+**FINDING 3 — STANDARD PrizePicks Flex tables confirmed from real slips** (the baseline every Goblin/Demon rate should be expressed against):
+- **5-pick Flex standard:** 5/5 = **10x**, 4/5 = **2x**, 3/5 = **0.4x**
+- **4-pick Flex standard:** 4/4 = **6x**, 3/4 = **1.5x**
+- **5-pick Flex Goblin-heavy:** 5/5 = **1.6x / 1.9x**, 4/5 = **0.5x**, 3/5 = **0.25x** — roughly **one-sixth** the standard 5/5 rate.
+
+**FINDING 4 — Underdog and Sleeper same-cell variation:**
+- **Underdog 2-pick `rbis/less/0.5`: 1.49, 1.52, 1.56, 1.56, 1.56, 1.61, 1.63, 1.64, 1.66, 1.66, 1.69, 1.86** — **25% spread within one cell**, consistent with confirmed per-leg moneyline pricing.
+- **Underdog 5-pick same cell: 2.35x** → per-leg **1.1866**, *lower* than the 2-pick per-leg range (1.221–1.364). **Underdog per-leg DECREASES with size — opposite of PrizePicks. The two apps must not share a multiplier model.**
+- **Sleeper 2-pick `hits_runs_rbis/more/0.5`: 2.56x, 2.74x** → per-leg 1.600, 1.655.
+
+**🐛 TWO DATA DEFECTS (item 18 applied to this table):**
+1. **`score.slip_legs.player_id` is NULL on every row** — blocks per-player trailing-form analysis entirely. **Highest-value fix for the multiplier model**, since the form hypothesis can only be tested at player level. Fix: backfill from `prepared_row_id` → `final_board_history` (same join that fixes `board_leg_history`).
+2. **`slip_entries.selected_leg_count` = 85** on rows where `slip_size` is 3-5 and `legs_recorded` matches `slip_size`. Field holds something other than a leg count.
+
+**STILL UNTESTED FROM RODOLFO'S MULTIPLIER HYPOTHESES — both blocked on data:**
+- **Ladder-composition effect** (*ladder containing a standard line → Goblins/Demons pay less per tier; no standard line → slightly more*). Testable once `board_leg_history` variant tagging is fixed, since it needs the full rung set per player/prop/date.
+- **Player-form effect at leg level** (vs slip-mean level): blocked on the `player_id` NULL defect.
+
+**📏 METHODOLOGICAL RULE ADDED — CROSS-APP DUPLICATE HANDLING.** The same real-world event offered on PrizePicks, Underdog and Sleeper is **three distinct bettable legs but ONE probability event.** When computing hit rates, correlation, or any probability quantity, duplicates must be **excluded from the probability pool** so one event isn't counted three times — but the legs themselves **must NOT be deleted**, since each carries its own independent multiplier and is separately playable. **Prior cross-app work in this program did not make this distinction; any pooled probability figure spanning apps should be re-checked against it.**
+
+---
+
 ## 🏁 PROGRAM STATUS: SEVENTEEN CANDIDATES TESTED, ZERO CONFIRMED POSITIVE, NO OPEN LIVE QUESTIONS.
 
 Every candidate that could be resolved with available data or a free live read has been resolved. **What remains is five items in Section 13 that are unresolved for lack of data — not disproven — with explicit unblock conditions and live distance counts (H2: 39 days short; `total_bases/less/0.5`: 102 legs short; Candidate 11: 0.87pp short; cross-app: ~340 legs short; PP line movement: blocked on a join fix that is actionable now).**
