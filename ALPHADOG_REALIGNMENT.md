@@ -257,7 +257,19 @@ Required procedure before any such declaration:
 
 **On who caught what, recorded honestly:** four of the six contaminations were self-caught; the fifth and sixth were caught by the Gemini adversarial pass. **That is not a failure of the internal process — it is precisely why the adversarial pass is mandatory.** An analyst cannot reliably audit the benchmark they themselves chose. The pass exists to catch exactly the errors that survive self-review, and on this thread it did.
 
-**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all fifteen items is itself a violation of this standard.
+**16. BENCHMARK ERRORS RUN IN BOTH DIRECTIONS — check for the conservative ones too, not only the optimistic ones.** Every verification habit in this standard was built to catch errors that *inflate* an effect, because those are the ones that lose money. But a benchmark can be wrong in the deflating direction just as easily, and those errors are far harder to notice because they produce the "safe" answer and never trigger suspicion.
+
+**The worked example:** on the H2 thread, seven benchmark errors were found. **Six inflated the effect** (units bug, game-conditioned baseline, pooled cross-prop marginal, nested same-player lines, k-varying game set, line-threshold heterogeneity plus unweighted game averaging). **The seventh deflated it**: a significance bar of t≥2.89, derived from a Bonferroni correction across thirteen factors in an unrelated scan, was carried into a **single pre-registered confirmatory test on one line** where no multiplicity existed. The correct bar was t≈2.13. That error made a result look decisively dead when the honest verdict was inconclusive — daily mean +8.21%, 95% CI [−5.1%, +21.5%], an interval containing both zero and a substantial edge.
+
+**Concrete checks to run on every verdict, in both directions:**
+- **Is the significance threshold matched to what was actually done?** A scan across k cells needs a multiplicity correction; a single pre-registered confirmatory test does not. Carrying a scan-corrected bar into a confirmatory test manufactures false negatives.
+- **Is "not significant" being reported as "no effect"?** State the confidence interval. If it contains a materially exploitable value, the verdict is *inconclusive*, not negative — and the distinction must appear in the writeup, not just the analyst's head.
+- **Is sample size the real constraint?** Compute the n required to detect the observed effect at 80% power and compare it to the n available. On H2 that was ~57 days needed against 16 available — which is the actual reason the result looked shut.
+- **Is the comparison population the right one?** This cuts both ways: a baseline that already contains the effect deflates it (the game-conditioned benchmark), while one that omits relevant heterogeneity inflates it (the pooled marginal).
+
+**A process that only hunts optimistic errors will systematically under-call real effects.** That is the same one-directional bias item 14 exists to prevent, appearing at the level of statistical machinery rather than at the level of which hypotheses get scrutinised. Both directions, every time.
+
+**Sequencing rule**: strategies are researched one at a time, to the full standard above, not in parallel at reduced depth. Moving to the next strategy before the current one clears all sixteen items is itself a violation of this standard.
 
 ---
 
