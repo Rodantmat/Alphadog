@@ -3123,16 +3123,15 @@ const MIXED_TOP55_FLAT_PARTIALS = { oneBelow: 0.5, twoBelow: 0.25 };
 function mixedTop55FlexPayout(slipLegs, hits) {
   const size = slipLegs.length;
   if (hits === size) {
-    let product = 1;
-    for (const l of slipLegs) {
-      const tbl = MIXED_TOP55_REAL_TABLES[`${l.canonical_prop_key}|${l.selected_side}`];
-      const legRate = Math.pow(tbl[6].power, 1 / 6);
-      product *= legRate;
-    }
-    return Math.round(product * 1000) / 1000;
+    // Real, measured 2026-08-27: per-leg 1.1417 on a matched-pair live read (pure doubles 6-pick,
+    // LOW-baseline slip = 2.2x; the HIGH-baseline slip read 2.3x and is deliberately NOT used).
+    // Applied uniformly across props - home_runs / stolen_bases / rbis legs are UNMEASURED and
+    // likely price lower, so this figure is optimistic for any slip containing them. Overwrite with
+    // the app's real displayed multiplier before placing.
+    return Math.round(Math.pow(BASELINE_HP_PER_LEG_RATE, size) * 1000) / 1000;
   }
-  if (hits === size - 1) return MIXED_TOP55_FLAT_PARTIALS.oneBelow;
-  if (hits === size - 2) return MIXED_TOP55_FLAT_PARTIALS.twoBelow;
+  if (hits === size - 1) return BASELINE_HP_FLAT_PARTIALS.oneBelow;
+  if (hits === size - 2) return BASELINE_HP_FLAT_PARTIALS.twoBelow;
   return 0;
 }
 // Real, backtested build logic: 6-pick only, round-robin diversity across games, max 1 leg per
