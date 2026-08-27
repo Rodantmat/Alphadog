@@ -3103,25 +3103,6 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
 // floor on the ENRICHED board score; it is replaced by baseline-layer selection. The builder,
 // multiplier plumbing and all UI wiring below are unchanged and shared.)
 const MIXED_TOP55_SIZE = BASELINE_HP_SIZE;
-      )
-      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
-        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
-        f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.probability_confidence_0_100 AS confidence_0_100,
-        f.is_goblin, f.is_demon, q.historical_n, q.historical_hit_pct
-      FROM score.final_board_current f
-      JOIN qualifying q ON q.mlb_player_id = f.mlb_player_id AND q.canonical_prop_key = f.canonical_prop_key
-        AND q.line_value = f.line_value AND q.selected_side = f.selected_side
-      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-        AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
-        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
-      ORDER BY q.historical_n DESC
-    `);
-    return rows;
-  } finally {
-    await pg.end({ timeout: 1 }).catch(() => {});
-  }
-}
 // REAL FIX 2026-08-26: the prior table (5.25/10.5 at 6-pick) was confirmed WRONG via 7 real
 // saved slips - actual PrizePicks payouts for this mixed hits+total_bases Flex pool clustered at
 // 2.25-2.5x for 6-pick regardless of composition, not 6.6-10.5x. 1.15^6=2.313 lands right in the
