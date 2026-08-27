@@ -3098,14 +3098,11 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
 // ROI, 3 losing days on the identical real window. Qualifying criteria unchanged: rolling
 // historical appearance-rank (top 55 by real n) AND a 92% real historical hit-rate floor.
 // Builds 6-pick Flex slips only.
-const MIXED_TOP55_MIN_HIT_PCT = 92;
-const MIXED_TOP55_TOP_K = 55;
-const MIXED_TOP55_SIZE = 6;
-const MIXED_TOP55_PROPS = [
-  { prop: "hits", side: "less" },
-  { prop: "total_bases", side: "less" }
-];
-async function autoSelectMixedTop55Legs(env, sourceKey) {
+// (TB+Hits Uncapped selection block removed 2026-08-27 - superseded by the BASELINE_HP strategy
+// above. The old qualifying logic ranked by rolling appearance count + a 92% historical hit-rate
+// floor on the ENRICHED board score; it is replaced by baseline-layer selection. The builder,
+// multiplier plumbing and all UI wiring below are unchanged and shared.)
+const MIXED_TOP55_SIZE = BASELINE_HP_SIZE;
   const pg = pgClient(env);
   try {
     const propFilter = MIXED_TOP55_PROPS.map(p => `('${p.prop}','${p.side}')`).join(",");
