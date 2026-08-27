@@ -3268,6 +3268,17 @@ async function apiHighHitSlips(env, request) {
     .sort((a, b) => b.avgBaseline - a.avgBaseline)
     .slice(0, BASELINE_HP_MAX_SLIPS_PER_DAY)
     .map(x => x.s);
+  // BACKUP POOL (2026-08-27): legs frequently go unavailable between generation and placement
+  // (line moved, prop pulled, player scratched). Rather than let a slip shrink from 6 to 5 or 4 -
+  // which materially cuts ROI, since the multiplier compounds - the UI can swap in a replacement.
+  // Pool = the next BASELINE_HP_BACKUP_POOL_SIZE best-baseline qualifying legs NOT already used in
+  // any generated slip. Shared across all slips in the order; the client removes a leg from the
+  // pool globally once it is consumed and returns it if the original leg is re-selected.
+  const usedRowIds = new Set();
+  for (const s of ppSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
+  const backupPool = ppLegs
+    .filter(l => !usedRowIds.has(l.board_row_id))
+    .slice(0, BASELINE_HP_BACKUP_POOL_SIZE);
   // NOTE: do NOT rewrite source_key here. The client-side filter (activeSourceFilters) only
   // recognises 'prizepicks' | 'sleeper' | 'parlay_underdog'. An earlier version of this call site
   // set source_key='prizepicks_goblin', copied from long-retired code that used a different
