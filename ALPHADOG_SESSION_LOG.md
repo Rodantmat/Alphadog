@@ -676,6 +676,42 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 ---
 
+**[2026-08-26] 🔬 EXTERNAL RESEARCH (item 1) — produced a hypothesis that CONTRADICTS a design choice I made throughout this entire session. Most significant finding of the program to date.**
+
+**Sources:** Unabated (pick'em breakeven analysis), FTN Fantasy (correlation in pick'em), Stokastic, betting-forum correlation-stacking analysis, Outlier, PropsBot. Consistent theme across independent sources.
+
+**HYPOTHESIS H2 (external):** DFS pick'em platforms use **fixed payout multipliers**, which structurally forces pricing legs **as if independent**. Real same-game props are positively correlated (a low-scoring game makes every `under` hit together). Because the multiplier cannot adjust to the joint distribution, deliberately stacking correlated same-game legs raises `P(all hit)` while the payout stays fixed — raising EV. Quoted: *"PrizePicks prices them as if they're independent events, which creates exploitable value... one of the few remaining edges in DFS betting where platforms can't fully price the relationships between props because their business model relies on fixed payout multipliers."* FTN adds that sites have added **safeguards via decreased payouts** for obvious correlation, but "hidden" correlation is *"not (always) penalized."*
+
+**WHY THIS MATTERS HERE: I did the exact opposite, all session, by design.** Every slip-construction rule I wrote capped legs per game (max 1-3) to *control* correlation as a risk, and **every EV calculation in this program — every p×m, every backtest, every rejection — assumed independence (`EV = pⁿ × M`).** If correlation is real and unpriced, all of those understate same-game slip EV.
+
+**MEASURED AGAINST OUR OWN DATA** (PrizePicks Goblin `less`, 5 hitter props, correct lane, corrupted days excluded). Probability that k legs from the SAME game all hit, vs the global independence benchmark p̄ᵏ (p̄ = 0.7463):
+| Legs | Observed same-game | Independence p̄ᵏ | Ratio | Above independence |
+|---|---|---|---|---|
+| 2 | 0.5688 | 0.5549 | 1.0251 | **+2.51%** |
+| 3 | 0.4419 | 0.4133 | 1.0691 | **+6.91%** |
+| 4 | 0.3494 | 0.3079 | 1.1347 | **+13.47%** |
+| 5 | 0.2774 | 0.2294 | 1.2097 | **+20.97%** |
+| 6 | 0.2253 | 0.1708 | 1.3188 | **+31.88%** |
+**Monotonic, strongly compounding — the exact shape the mechanism predicts.** A 6-leg same-game stack hits all-6 roughly **32% more often** than independence implies.
+
+**TWO ERRORS I MADE AND CORRECTED EN ROUTE, recorded so neither recurs:**
+1. **Units bug**: independence printed as a proportion (0.55) while observed printed as a percentage (55.25) — comparison meaningless. Corrected: cross-game pairs −0.19pp (genuinely independent, as expected), same-game +0.46pp.
+2. **Wrong benchmark**: used each game's *own* hit rate cubed as the independence baseline, which conditions on the game and removes the very correlation being measured, producing a spurious −0.5%. Correct benchmark is the **global** marginal p̄ᵏ. **Same class of error as the T2 ecological fallacy — choosing a benchmark that already contains the effect.**
+
+**HARD LIMITS — this is NOT yet a strategy. Four things must be checked:**
+1. **Does PrizePicks discount same-game slips?** FTN states sites added "decreased payouts" as a correlation safeguard. If PP reduces the multiplier for same-game stacks, the edge is priced away and H2 is dead. **Decisive — new observation request #4 below.**
+2. **Constructability**: a 6-leg same-game stack needs 6 qualifying legs in one game. Feasible for hitter props (9+ batters/team); **impossible for pitcher props** (1-2 starters) — ruling it out for `walks_allowed/more/0.5/T1`, the cell nearest breakeven.
+3. **The boost is pool-specific.** +31.88% was measured at p̄=0.7463 on a mixed 5-prop pool; magnitude depends on the marginal rate and must be re-measured inside whichever specific cell a strategy would use, per rule 10.
+4. **Day-robustness and a Gemini adversarial pass have NOT been run.** No verdict recorded.
+
+**Does it rescue any prior rejection? No.** Checked the nearest: **Sim A mixed pool** — real 6-pick M=2.64x, pool 76.7%; independence EV 0.537, with correlation 0.708. **Still deeply negative.** The gap is far too large for a 32% boost to close. Cells with p×m near 1.0 would benefit most, but those are pitcher props, which cannot be same-game stacked. **No prior rejection is overturned — the value here is prospective, for a strategy built deliberately around it.**
+
+**🔴 NEW STANDING OBSERVATION REQUEST #4 (zero stake, quote-only, decisive for H2):** two 6-pick slips, same cell and prop, identical structure — **Slip A: all 6 legs from ONE game. Slip B: 6 legs from SIX different games.** Record both quoted multipliers. **If A is materially lower, PrizePicks discounts same-game correlation and H2 is dead. If they match, the boost is unpriced and H2 is live.**
+
+**Coverage-gap items 2-5 (Underdog/Sleeper full prop grid; player-level aggregate probability; game-level Vegas signals; cross-app testing; `board_leg_history` line movement) not yet started.**
+
+---
+
 **[2026-08-26] 🧵 STANDING THREAD H1 — "PrizePicks does not fully price individual leg probability into its Goblin multiplier."** Tracked as its own line of inquiry, deliberately NOT folded into any single candidate, because two completely independent lines of evidence now point at it and its truth or falsity governs several separate questions at once.
 
 **Statement of the hypothesis:** within a given prop × line × side × variant cell, PrizePicks sets the Goblin multiplier at the cell/tier level rather than per individual leg. If true, a knowably-higher-probability leg inside that cell is priced the same as (or better than) a lower-probability one, and selecting on true probability raises `p` while `m` stays fixed — raising `p×m` proportionally. If false, `m` falls as `p` rises and every strategy built on leg selection within a cell is dead on arrival.
