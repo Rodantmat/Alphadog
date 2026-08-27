@@ -780,7 +780,24 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 ---
 
-**⏳ STILL OPEN, NOT DROPPED: `singles/less/1.5` Goblin — the 1.604 vs 1.134 question.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
+---
+
+**[2026-08-27] 🔧 QUEUED ACTION ITEM — FIX `board_leg_history` VARIANT TAGGING, THEN RE-ATTEMPT THE LINE-MOVEMENT TEST. Blocked on a specific, identified, fixable defect — NOT abandoned.**
+
+**The defect.** `archive.board_leg_history` (307,351 PrizePicks rows) stores `line_value` per row, but the Goblin/Standard/Demon variant exists only inside `raw_source_json`, which is a **stringified** JSON blob rather than real `jsonb`. Regex extraction against that text mis-parses: it returned **223,326 rows tagged `demon` against 27,025 `standard`** — inverted from any real PrizePicks board, where standard dominates and demons are rare specials. Without reliable variant tagging there is no way to identify "the same rung at two different times," so grouping by player+prop+date measures the **simultaneous ladder** instead of movement over time. Symptom: **99.66% of legs appeared to "move," by an average of 2.27 units.** No betting market moves 99.7% of its lines by 2+ units — the magnitude alone condemned the key before any analysis ran (item 18).
+
+**THE FIX — join, don't patch the regex.** `board_leg_history.prepared_row_id` is populated on **100% of rows (307,351 of 307,351)**, and **79,976 distinct keys join successfully** to `score.final_board_history`, which already carries correct, validated `is_goblin` / `is_demon` flags. **Inherit the flags from the authoritative table rather than re-deriving them from a string.**
+
+**Concrete steps, in order:**
+1. Join `archive.board_leg_history b` → `score.final_board_history f` on `f.prepared_row_id = b.prepared_row_id` to attach `is_goblin` / `is_demon`. **Verify the row count does not change** (item 18 fan-out check) — if it does, `prepared_row_id` is not unique in `final_board_history` and the key needs tightening before proceeding.
+2. **Sanity-check the resulting variant distribution before any analysis.** Standard must outnumber Demon by a wide margin. If it does not, the join is still wrong — stop and diagnose rather than continue.
+3. Define a rung as **(player, prop, official_date, variant)** and confirm that a rung maps to **at most one line per capture**. If a rung shows multiple simultaneous lines within a single `captured_at`, the rung definition is incomplete and needs another dimension before movement can be measured.
+4. Only then measure movement: for each rung with ≥2 distinct `captured_at`, count distinct `line_value`. **Expect a small minority to move, by small amounts.** If the result again resembles "nearly everything moves a lot," the key is still wrong — do not look for a market explanation first.
+5. If genuine movement is found, test whether direction/magnitude predicts outcome, under the full standard: fair-odds gate, day-level significance, cell-level p×m, Gemini adversarial pass, item 14/16 alternative-treatment check both directions, and item 17/18 decomposition before believing any clean aggregate.
+
+**Coverage note:** 79,976 joinable keys against 307,351 PrizePicks rows means the join covers roughly 26% of the archive. **Quantify actual post-join sample before concluding anything about power** — this may land in the underpowered bucket rather than producing a verdict.
+
+**Status: UNTESTED, blocked on the above. Recorded in Section 13 (underpowered / unresolved), not in the rejection list.** Not on the 2026-08-27 board (zero legs). It appeared on 18 of the historical days sampled, so it is a normal offering and should reappear. **Capture the 6-pick Power number next time it is available — ~17x confirms 1.604 and revives the candidate; ~2.13x confirms 1.134 and closes it.** The only fully unresolved read from the consolidated queue.
 
 ---
 
