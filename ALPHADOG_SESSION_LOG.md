@@ -589,6 +589,35 @@ For `total_bases/less/0.5`, a **cold** hitter is *more* likely to go hitless, so
 
 ---
 
+**[2026-08-26] ITEM 6 CONTINUED — TIMESTAMP / LOOK-AHEAD CHECK RUN. Result: the signal cannot currently be validated look-ahead-free, which is a second independent reason for suspension. It is NOT confirmed as look-ahead bias either.**
+
+**Finding 1 — the `parlay_hist_*` sources are 100% post-game backfill.** Every row across every `parlay_hist_*` source was captured on **2026-08-25, between 04:04 and 04:31 UTC** — a single backfill run — for games spanning 08-07 to 08-22. That is **52 to 413 hours AFTER game start, for 100% of rows** (`captured_after_start` = n for every source without exception).
+**This does not by itself prove look-ahead bias.** The Odds API's historical endpoint returns odds *as of* a specified past timestamp, so a backfill executed on 08-25 can legitimately retrieve genuine pre-game prices for 08-07. `captured_at` records when *we pulled*, not what the price represents. **But it does mean `captured_at` cannot vindicate these rows either — the entire 16-day result rests on data whose true pricing timestamp is unverified.** Gemini's kill check #1 is therefore neither passed nor failed; it is unresolvable with the fields available on this table.
+
+**Finding 2 — the `parlay_api_*` sources ARE genuinely pre-game, and give a clean test.** Captured live, averaging **3.8 to 9.4 hours before first pitch** depending on book, with a minority captured after start excluded via `captured_at <= game_time_utc`.
+**Look-ahead-free re-run (api sources only, strictly pre-game rows only):** Q1 implied 0.6018 → real 60.87% (n=92); Q2 0.6349 → 54.76%; Q3 0.6585 → 62.50%; Q4 0.6796 → 70.13%; Q5 0.7090 → **74.03%** (n=77).
+- **Direction preserved**, spread **+13.16pp** versus +17.31pp on the suspect data — comparable magnitude.
+- **But NOT monotonic** (Q2 dips to 54.76%, below Q1's 60.87%).
+- **And badly underpowered**: n=410 across only 7 days, versus 8,925 legs across 22 days. Q1-vs-Q5 **Z = 1.85, p ≈ 0.064** — not significant unadjusted, let alone corrected.
+**Honest verdict: the clean test neither confirms nor refutes.** Preserved direction and comparable magnitude are mildly encouraging; non-monotonicity and n=410/7 days mean it establishes nothing.
+
+**Finding 3 — no cross-validation is possible, which weakens the comparison further.** The obvious validation would be checking whether backfilled `hist` prices agree with live `api` prices on the same legs — close agreement would prove the backfill returns genuine pre-game odds. **Attempted: exactly ZERO legs match on (player, prop, line, side, date) between the two families.** Both cover the same prop/line combinations at similar volumes (e.g. `total_bases/1.5`: hist n=5,564 / api n=1,650), so the disjointness arises on the date or player-resolution dimension. **Consequence: the clean api test is measured on an entirely different leg population than the hist result — it is not a replication attempt, and the two cannot be reconciled.**
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):** *Is there a defensible alternative that flips the suspension into a confirmation?*
+- Pooling api + hist to raise power — **not defensible**, hist is the data under suspicion.
+- Relaxing the pre-game filter to include rows captured shortly after first pitch — **not defensible**, that is precisely the look-ahead being tested for.
+- Using single-book rather than consensus prices to raise the match rate — **legitimate and not yet tried**; raises n at the cost of noisier probability estimates. **Queued as a real option.**
+- Extending the api window — already spans 07-24 to 08-26; the constraint is match rate, not date range.
+**Conclusion: one defensible untried alternative exists (single-book matching). The suspension stands but is NOT final, and that is recorded here rather than treated as a closed kill.**
+
+**MARKET SIGNAL STATUS: SUSPENDED, now for two independent reasons** — (1) the confirmed selection-bias artifact (8.3% match rate, matched subset 14.3pp worse than the full pool), and (2) the pricing timestamp on its primary dataset is unverifiable, with the only clean alternative underpowered and non-monotonic. **It remains the strongest statistical result the program has produced and is not dead — but it cannot presently be distinguished from a look-ahead artifact, and will not be reported as a finding.**
+
+**Note on Standing Thread H1:** this outcome does NOT weaken H1. The look-ahead question concerns whether *sportsbook prices predict outcomes* (evidence line 1's validity), not whether *PrizePicks prices leg probability into its multiplier* (H1 itself). H1's controlled test — standing observation #3 — is unaffected and remains the decisive experiment.
+
+**PRIORITY 2 (closing-line MOVEMENT) NOT YET STARTED — and a structural obstacle was discovered above that bears directly on it.** Movement requires two prices at two timestamps for the same leg. The `hist` family has a single capture per leg (one backfill run), and `hist`/`api` do not overlap — so open-to-close movement may not be constructible from these tables at all. **Per item 13, enumeration for a table holding repeated captures of the same leg over time must come FIRST, before concluding movement is or is not testable.**
+
+---
+
 **[2026-08-26] 🧵 STANDING THREAD H1 — "PrizePicks does not fully price individual leg probability into its Goblin multiplier."** Tracked as its own line of inquiry, deliberately NOT folded into any single candidate, because two completely independent lines of evidence now point at it and its truth or falsity governs several separate questions at once.
 
 **Statement of the hypothesis:** within a given prop × line × side × variant cell, PrizePicks sets the Goblin multiplier at the cell/tier level rather than per individual leg. If true, a knowably-higher-probability leg inside that cell is priced the same as (or better than) a lower-probability one, and selecting on true probability raises `p` while `m` stays fixed — raising `p×m` proportionally. If false, `m` falls as `p` rises and every strategy built on leg selection within a cell is dead on arrival.
