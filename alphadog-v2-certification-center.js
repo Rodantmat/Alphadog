@@ -3248,7 +3248,11 @@ async function apiHighHitSlips(env, request) {
   //    stolen_bases / rbis are unmeasured and likely price lower, so ROI is optimistic.
   // Minimum stake until real placed results accumulate.
   const ppSlips = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
-  ppSlips.forEach(s => { s.source_key = "prizepicks_goblin"; });
+  // NOTE: do NOT rewrite source_key here. The client-side filter (activeSourceFilters) only
+  // recognises 'prizepicks' | 'sleeper' | 'parlay_underdog'. An earlier version of this call site
+  // set source_key='prizepicks_goblin', copied from long-retired code that used a different
+  // filter - every slip was generated correctly server-side and then silently dropped by the UI
+  // filter, showing "No slips match the selected apps". Leave the DB's 'prizepicks' value intact.
   const udSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
   // PAUSED 2026-08-26: singles/less real breakeven is 78.84% (confirmed 1.2684x real per-leg
   // multiplier, 8 real 6-pick observations). Four separate, independently Gemini-adversarial-
