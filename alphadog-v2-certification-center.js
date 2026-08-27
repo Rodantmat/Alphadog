@@ -3229,10 +3229,26 @@ async function apiHighHitSlips(env, request) {
   // breakeven at the confirmed 3.087x per-leg rate. Neither Demon pool (this one or the original
   // 5-prop/more/Tier1) currently holds up under correct methodology. Paused pending a properly
   // re-verified replacement, built to the full standard in Section 11 of ALPHADOG_REALIGNMENT.md.
-  const [sleeperLegs] = await Promise.all([
-    autoSelectSleeperHighHitSlipLegs(env)
+  const [sleeperLegs, ppLegs] = await Promise.all([
+    autoSelectSleeperHighHitSlipLegs(env),
+    autoSelectMixedTop55Legs(env, "prizepicks")
   ]);
-  const ppSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
+  // RE-ENABLED 2026-08-27: PrizePicks Goblin returns with an entirely new selection layer. The
+  // pause below was for Sim A (hits/less + total_bases/less ranked by appearance count + a 92%
+  // floor on the ENRICHED board score), confirmed -27.4%. That signal is gone, not resumed.
+  // The replacement selects on the BASELINE layer (classification.baseline_v6_current) at >=90,
+  // which a 36,644-leg head-to-head showed discriminates 39.9pp vs the enriched score's 4.8pp.
+  // Real slip-construction backtest (pinned morning-first snapshots, started games excluded,
+  // deterministic ranked 6-picks graded against real outcomes): 101 slips, 90 full hits (89.11%),
+  // +97.3% ROI, 9 active days, zero losing days.
+  // CARRIED RISKS, deliberately recorded at the call site:
+  //  - NINE days only; the >=90 pool does not exist in usable size before 2026-08-12.
+  //  - Zero losing days across those 9 is the least trustworthy part of the result.
+  //  - The 1.1417 per-leg rate is measured on DOUBLES and applied to every prop; home_runs /
+  //    stolen_bases / rbis are unmeasured and likely price lower, so ROI is optimistic.
+  // Minimum stake until real placed results accumulate.
+  const ppSlips = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
+  ppSlips.forEach(s => { s.source_key = "prizepicks_goblin"; });
   const udSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
   // PAUSED 2026-08-26: singles/less real breakeven is 78.84% (confirmed 1.2684x real per-leg
   // multiplier, 8 real 6-pick observations). Four separate, independently Gemini-adversarial-
