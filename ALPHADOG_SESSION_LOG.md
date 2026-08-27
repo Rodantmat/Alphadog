@@ -349,3 +349,33 @@ Working from the real observed Underdog data instead (12 real saved 2-pick `rbis
 PP Goblin Sim A (rejected), Demon (rejected, code removed), Regular Gen1 (falsified), Sleeper singles/less (rejected), `singles/less/1.5` Goblin (falsified on multiplier attribution), `total_bases/less/3.5` (rejected by real placed slip), T2 rung (falsified as an ecological fallacy), Underdog `rbis/less`+`walks/less` (falsified on retroactive fair-odds). Every autonomous slip-generation route in the system remains paused or removed — which is now demonstrably the correct state, not an overcautious one.
 
 **Five of these eight died at the MULTIPLIER, not the hit rate.** That is the single most important pattern of this entire session, and it is why the fair-odds check is now a standing gate rather than a post-hoc diagnostic.
+
+**[2026-08-26] ITEM 4 — exhaustive combinatorics. Power side RESOLVED (dead). Flex side: data corrupted, but mechanism proven alive and now the single open route in the whole program.**
+
+**Applied the fair-odds gate FIRST, before any hit-rate work, per instruction.** This resolved most of the item without needing Gemini at all. Swept every market cell where a REAL observed multiplier exists (not extrapolated), computing implied house edge against each cell's own measured hit rate:
+
+| Cell | p (real) | m (real, n obs) | Fair | Implied edge | p×m |
+|---|---|---|---|---|---|
+| `walks_allowed/more/0.5/GoblinT1` | 88.24% (n=374, 26d) | 1.1362 (n=26) | 1.1333 | −0.3% | 1.003 |
+| `pitcher_strikeouts/less/6.5/GoblinT2` | 83.62% (n=232) | 1.265 (n=2) | 1.1959 | −5.8% | 1.058 ⚠ |
+| `pitcher_strikeouts/less/7.5/GoblinT2` | 78.92% (n=204) | 1.265 (n=2) | 1.267 | +0.2% | 0.998 |
+| `pitcher_strikeouts/less/5.5/GoblinT2` | 76.19% (n=189) | 1.265 (n=2) | 1.3125 | +3.6% | 0.964 |
+| `pitcher_strikeouts/less/8.5/GoblinT2` | 77.01% (n=87) | 1.265 (n=2) | 1.2985 | +2.6% | 0.974 |
+| `hits_runs_rbis/more/0.5/GoblinT1` | 68.12% (n=2017, 24d) | 1.287 (n=5) | 1.4680 | +12.3% | 0.877 |
+| `hits/less/1.5/GoblinT1` | 79.19% (n=2417, 17d) | 1.095 (n=1) | 1.2628 | +13.3% | 0.867 |
+| `sleeper hits/more/0.5` | 62.68% (n=627, 23d) | 1.3971 (n=23) | 1.5954 | +12.4% | 0.876 |
+| `sleeper singles/less/0.5` | 57.01% (n=1042, 26d) | 1.3939 (n=14) | 1.7541 | +20.5% | 0.795 |
+
+**Nothing with a well-observed multiplier is meaningfully positive.** The two cells clearing 1.0 are exactly the cases item 11 flags as suspect — both show *negative* implied edge (m exceeding fair), and the 1.058 rests on the same n=2 figure already implicated in the T2 ecological fallacy. The whole `pitcher_strikeouts/less/GoblinT2` family across four lines volume-weights to p×m ≈ 1.006 — essentially exactly fair, precisely as the documented "the Goblin ladder is priced correctly" finding predicts.
+**The best-observed multiplier in the entire system (`walks_allowed/more/0.5/T1`, n=26 real observations) prices to p×m = 1.003 — dead fair.** This is the strongest single piece of evidence that these markets are efficiently priced at the leg level.
+
+**POWER COMBINATORICS RESOLVED AT THE ROOT.** Power payouts are multiplicative, so if every constituent leg has p×m ≤ 1.0, no Power combination — any size, any mix, any cap, cross-prop or cross-variant — can be positive. This closes the entire Power branch without enumerating combinations, and **retroactively closes the outstanding "cross-variant pooling" question** from earlier in the session: mixing variants cannot help when every variant's legs are individually ≤1.0.
+
+**FLEX BRANCH — recorded data is CORRUPTED, same signature as the Power block.** Real recorded Goblin 6-pick Flex tiers (now attributed to `singles/less/0.5`, real p=59.6%): Power 6/6 = 17x, Flex 5/6 = 9x, 4/6 = 1.75x, 3/6 = 0.4x. Computing EV gives **+205%**, structurally impossible. Gemini formalized the diagnostic as the **Single-Tier Non-Arbitrage Principle (STNAP)**: no individual partial-credit tier may have `P(X=k) × M_k ≥ 1.0`. Here the 5/6 tier ALONE gives 0.1823 × 9 = **1.64** — a bettor could write off 6/6, 4/6 and 3/6 entirely as worthless and still hold a +64% edge. Corroborating: the 5/6 tier is 53% of full-hit in this block and 77% in the other block, versus roughly 8% in standard PrizePicks Flex (2x against 25x). **Flex tier data is unusable until re-observed.**
+
+**FLEX MECHANISM — theoretically ALIVE. This is now the single open route left in the entire program.** Gemini's structural proof, which I find sound: Flex EV is the sum of probability-weighted tier payouts, not the product of single-leg fair odds. If an operator applies Flex tier scalars calibrated for standard props (p≈0.52) to high-probability Goblin legs (p≈0.70+), probability mass shifts into the upper partial-credit tiers and total EV can exceed 1.0 **even when every leg is individually Power-negative**. Worked example: legs at p=0.70 with a Power multiplier crushed to 7.5x (Power EV = 0.882, −11.8%) placed into a standard 25x/2x/0.4x Flex matrix yield Flex EV = 3.676. To neutralize this, the operator must aggressively scale down *every* tier scalar, not just full-hit.
+**Closing this branch requires exactly one thing: a verified, real Flex payout matrix for an actual Goblin slip** — full-hit plus every partial tier — testable against STNAP and against real measured leg probabilities. **This is now the highest-value single piece of missing data in the system**, and it is obtainable from the same confirmation slip already being placed.
+
+**ITEM 4 NET RESULT:** Power combinatorics comprehensively dead (cross-variant pooling closed as a corollary). Flex blocked on corrupted data, mechanism proven real, exact required observation specified. No new candidate. Item 4 also produced a new general diagnostic (STNAP) that is the Flex-side counterpart to item 11's fair-odds check.
+
+**Items 5-7 (enrichment-layer dissection; market-context signals; unconstrained strategy shapes) not yet started.**
