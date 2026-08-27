@@ -712,6 +712,32 @@ Across a 24-point probability range the multiplier falls almost exactly in compe
 
 ---
 
+**[2026-08-26] H2 — CLEAN ESTIMATOR COMPLETE. VERDICT: the correlation effect FAILS day-level significance. The magnitude that made H2 exciting does not survive.**
+
+Corrected estimator, all six contaminations removed: **single line only** (kills line-threshold heterogeneity), **combination-weighted** across games (kills the unweighted-average distortion), one leg per player, fixed corrupted-day exclusion, marginal computed on the same population. Run on `hits_runs_rbis/less/2.5` Goblin — the highest-volume line (2,798 legs, 203 games with ≥4).
+
+**Clean k-curve (pooled, combination-weighted):** k=2 +2.32% · k=3 +6.87% · k=4 **+14.21%** · k=5 +25.53% · k=6 +42.94%. Monotonic and well-behaved — this is a valid pooled measurement, unlike everything before it.
+
+**DAY-LEVEL ROBUSTNESS AT k=4 — FAILS.** Daily excess across 16 days: −29.4, −30.6, +5.3, +6.8, +53.0, +18.8, −8.0, +39.3, +10.6, +39.8, +37.8, −13.5, +0.4, −0.7, −15.3, +17.1.
+- **10 of 16 days positive — sign test p = 0.227, not significant.**
+- Daily mean **+8.21%**, daily SD 25.04 → clustered SE 6.26 → **clustered t = 1.31 against the required 2.89. FAILS.**
+- **Note the pooled figure (+14.21%) is nearly double the daily mean (+8.21%)** — the pooled estimate is carried by high-volume days, which is exactly the distortion day-clustering exists to correct. Same pattern that killed `opposing_pitcher_quality` in Item 5 (pooled Z=5.52, clustered t=1.38).
+
+**ITEM 14 ALTERNATIVE-TREATMENT CHECK (stated at the time):** *Does a defensible alternative flip this?*
+- Testing at k=6 instead of k=4 (larger nominal effect, +42.94%) — **not defensible as a rescue**: fewer games qualify per day, so daily noise rises faster than the effect, and the choice of k would be made *after* seeing which k looked best. That is the post-hoc selection this standard forbids.
+- Weighting days by volume — **not defensible**: that is precisely what the pooled estimate already does, and what clustering is designed to correct.
+- Longer window — the data is 16 usable days; a data limit, not a treatment choice.
+- Testing a different line — line 1.5 showed +52.95% at k=4, but on 1,272 legs versus 2,798, and selecting it *after* seeing the four-line table would be exactly the cherry-pick that killed `earned_runs/more/T2` in Item 1. **Not defensible.**
+**No defensible alternative flips it. The verdict stands.**
+
+**H2 BACKTEST VERDICT, stated plainly including that it is now too small to matter:** the same-game correlation effect on `hits_runs_rbis/less/2.5` is **+8.21% at the daily mean, statistically indistinguishable from zero (clustered t = 1.31, sign test p = 0.227).** Two withdrawn claims are formally retracted: (a) the **+32.68% / +34.12%** figure, invalid; (b) the assertion that the prop ordering was **"mechanistically coherent"** — it was the artifact's signature, and the physics argument (runs and RBIs cannot occur without hits) runs against it.
+
+**WHAT REMAINS LIVE:** H2's *platform-pricing* question is untouched by this and still gets its live read — **whether PrizePicks discounts same-game slips is a fact about the platform's pricing mechanism, not something a backtest can settle.** But the read now goes in with the honest magnitude at stake: **~+8% and not significant, not the +32% originally reported.** If PrizePicks does NOT discount same-game slips, the correlation available to exploit is small and unproven; if it DOES discount, H2 is dead outright. **Either way H2 is no longer the program's best lead**, and it should not be described as one.
+
+**Standing observation #4 remains queued** (two 6-picks, same cell/prop, one all-same-game vs one all-different-game, compare quoted multipliers) — now framed as settling a platform mechanism rather than unlocking a large edge.
+
+---
+
 **[2026-08-26] 🧵 STANDING THREAD H1 — "PrizePicks does not fully price individual leg probability into its Goblin multiplier."** Tracked as its own line of inquiry, deliberately NOT folded into any single candidate, because two completely independent lines of evidence now point at it and its truth or falsity governs several separate questions at once.
 
 **Statement of the hypothesis:** within a given prop × line × side × variant cell, PrizePicks sets the Goblin multiplier at the cell/tier level rather than per individual leg. If true, a knowably-higher-probability leg inside that cell is priced the same as (or better than) a lower-probability one, and selecting on true probability raises `p` while `m` stays fixed — raising `p×m` proportionally. If false, `m` falls as `p` rises and every strategy built on leg selection within a cell is dead on arrival.
