@@ -888,7 +888,52 @@ Flex outperforms Power here (0.784 vs 0.715) but both are decisively negative. *
 
 ---
 
-## 🎯 [2026-08-27] MULTIPLIER MODEL — FIRST GROUNDED EVIDENCE OF WITHIN-CELL VARIATION. Foundation for the next milestone.
+## 🟢 [2026-08-27] FIRST CANDIDATE TO CLEAR EVERY GATE — `walks_allowed/more/0.5` GOBLIN
+
+**Status: POSITIVE on every test run, contingent on one unresolved multiplier conflict. Not yet deployable.**
+
+**THE MULTIPLIER — three direct live reads, same day, same line, tight cluster:**
+| Slip size | Power | Implied per-leg |
+|---|---|---|
+| 2-pick | 1.4x | **1.1832** |
+| 4-pick | 2.2x | **1.2179** |
+| 6-pick | 3.0x | **1.2009** |
+**Mean 1.2007, spread 2.9%** — far tighter than doubles (6.7%) or runs (13%), and consistent with the size-invariance finding.
+
+**THE HIT RATE — deduplicated, corrupted days excluded, 27 days:** 339 hits / 390 legs = **86.92%**.
+
+**RESULT:** breakeven at m=1.2007 is **83.28%**. Pooled **p×m = 1.0437 (+4.4%)**.
+**Day-level:** 22 of 27 days above 1.0 (**sign test p ≈ 0.001**); mean p×m **1.0511**, SD 0.1127, SE 0.0217, **t = 2.35** (26 df, clears the uncorrected 1.706/2.056 bars for a single pre-registered confirmatory test). **95% CI [1.0065, 1.0957] — entirely above breakeven. First time in the program.**
+Losing days: 07-31 (0.739), 08-25 (0.801), 08-23 (0.867), 08-19 (0.924), 08-03 (0.982). Four days at exactly 100%.
+
+**⚠️ THE DECIDING CONFLICT — a stored multiplier disagrees and would flip the sign.**
+`score.pricing_layer2_tier` carries **1.1362 (n=26)** for this cell. **Breakeven multiplier is 1.1505.** Today's three direct reads (1.1832 / 1.2009 / 1.2179) are all **above** it; the stored reconstruction is **below** it. At 1.1362, p×m = **0.9876 (−1.2%), negative.**
+- Direct live quotes vs a reconstruction from pricing layers — the quotes are more trustworthy in kind, but n=3 vs n=26 in quantity.
+- **Possible explanations, none yet tested:** genuine multiplier drift over time; tier misattribution in the stored value; or the stored figure blending line 0.5 with other rungs.
+- **This is the single question that decides whether the cell is +4.4% or −1.2%.** Resolve before any stake.
+
+**WHY THIS CANDIDATE IS STRUCTURALLY DIFFERENT FROM THE 17 REJECTED:**
+1. **No player selection required.** The +4.4% is the *unfiltered general pool*. Every prior near-miss needed a selection edge that failed walk-forward.
+2. **All three multiplier reads clear breakeven** (worst 1.1832 → +1.0%, best 1.2179 → +4.0%). Candidate 11 flipped on a 0.092x move; this one has margin across its full observed range.
+3. **27 days, not 9 or 16.** The longest window any candidate has cleared.
+
+**REMAINING WORK BEFORE DEPLOYMENT:**
+1. **Resolve the 1.1362 vs 1.2007 conflict** — re-read on a later slate to test drift, and audit whether the stored n=26 mixes lines or tiers.
+2. **Gemini adversarial pass** — not yet run on this candidate.
+3. **Practical constraint:** only 6-8 legs exist per day at this line, so slip size is capped and daily volume is limited. Position sizing must reflect that.
+4. Confirm out-of-sample on slates after 08-27.
+
+---
+
+**[2026-08-27] ⚠️ CORRECTION — the same-game correlation discount (Fact B) is now in doubt.**
+Doubles read **same-game 2.9x vs cross-game 2.5x — same-game paid MORE.** The earlier `rbis` test gave same-game 4.75x vs cross-game 7.5x, a 37% discount the other way. **These contradict.** Most likely explanation: the multiplier tracks individual leg probabilities, not game structure, and the earlier test's legs were matched on *hit rate* — which is not what PrizePicks prices on. **Fact B in `MULTIPLIER_TABLES_MASTER.md` should not be relied on until re-tested with legs matched on multiplier rather than hit rate.**
+
+**[2026-08-27] Two cells killed by real multiplier reads:**
+- **`runs/less/0.5` Goblin — REJECTED.** Four reads (mean per-leg 1.4027) against a **66.40%** general pool (n=2,399) → **−6.9%**. The high multiplier exists *because* the base rate is low. An earlier n=13 filtered sample showed 92.3% and looked like +23.5%; that was a small-sample fluke against a 66.4% base. **The large multiplier was the lure and the thin sample nearly hid it.**
+- **`doubles/less/0.5` Goblin — DOWNGRADED.** Four reads: 1.1942, 1.1832, 1.1650, 1.1187, **mean 1.1653** (not the 1.1942 first reported). Unfiltered **−1.6%**; with the player filter (87.7%) **+2.2%**, not the +4.7% initially claimed from the single highest read.
+- `hits_allowed/more/2.5` (per-leg 1.1741) → −1.6%. `earned_runs/more/0.5` (1.1583) → −4.3%. Both rejected.
+
+---
 
 **SOURCE FOUND: `score.slip_entries` (62 rows, 33 with `real_multiplier`) + `score.slip_legs` (287 legs)** — carries `real_multiplier`, **`real_multiplier_flex_tiers` (jsonb)**, `slip_size`, `entry_mode`, `source_key`, joinable to full leg composition. Previously unopened.
 
