@@ -155,6 +155,8 @@ All four deploys confirmed successful.
 
 **[2026-08-26] Broader-concept check (different pool composition, not just the exact deployed line) before fully closing.** Tested bottom-of-order at every real total_bases line, not just 1.5. At line 0.5 - the line with genuine depth (n=118, 20 real days) - bottom-of-order hit rate is **46.61%, worse than top-of-order's 62.50% at the same line**. This is the opposite direction of the original claimed mechanism, not merely an under-sampled version of it. Line 2.5 has n=1 total, unusable.
 
+**[2026-08-26] REGULAR GEN1 — FINAL VERDICT: COMPREHENSIVELY FALSIFIED.** Not a data-thinness problem alone - at the one line with real sample depth, the effect runs in the opposite direction from what was originally claimed. The original "+837.5% ROI, 79 real games" finding does not replicate under this session's methodology and cannot be explained by normal sampling variance given the reversed sign at n=118. Strategy remains paused; recommend it be removed from consideration entirely (not just left paused pending more data) - this is not a case of "needs more data," it's a case of "the claimed mechanism doesn't exist in the real data available." No real slips warranted - there is no live, real signal to confirm. Regular Gen1 is closed.
+
 **[2026-08-26] Sleeper singles/less — research at full standard, correct multi-pass Gemini discipline this time (user correction applied: adversarial Gemini at every distinct angle, not once at the end).**
 
 Transcript re-check: searched "Sleeper singles less Flex EV parity discount formula" - same wall as always, nothing new past 2026-08-21.
