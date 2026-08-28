@@ -3279,15 +3279,16 @@ function buildSleeperBaselineSlips(legs) {
       slip_type: `${size}-pick`,
       slip_size: size,
       entry_mode: "power",
-      structure_label: `${size}-pick Power (Baseline HP >= ${SL_BASELINE_HP_MIN})`,
+      structure_label: `${size}-pick Power (Top ${Math.round((1-SL_PERCENTILE)*100)}% of board)`,
       estimated_multiplier: slSlipMultiplier(slipLegs),
-      estimated_payout_note: `Real backtest: 17 slips, 13 full hits (76.5%), 9 days, +73.9% ROI. Sleeper has NO base table - the payout is simply the product of each leg's multiplier (${SL_MULT_K}/p_novig from the live moneyline), with an ~${Math.round((1-SL_SAMEGAME_HAIRCUT)*100)}% haircut per same-game group. Structure verified against real in-app slips. Confirm the real multiplier in-app before placing.`,
+      estimated_payout_note: `Real backtest: 29 slips, 18 full hits (62.1%), 15 days, +84.0% ROI. Sleeper has NO base table - the payout is simply the product of each leg's multiplier (${SL_MULT_K}/p_novig from the live moneyline), with an ~${Math.round((1-SL_SAMEGAME_HAIRCUT)*100)}% haircut per same-game group. Structure verified against real in-app slips; live placed slips have run ~14% ABOVE this estimate, so it errs conservative. Confirm the real multiplier in-app before placing.`,
       strategy_notes: [
-        `Qualifying legs: baseline layer >= ${SL_BASELINE_HP_MIN}. Sleeper prices probability directly into the multiplier, so every leg must clear m*p >= 1.0 on its own - there is no base table to carry a weak leg.`,
+        `Qualifying legs: TOP ${Math.round((1-SL_PERCENTILE)*100)}% of the day's board by baseline probability, computed per snapshot. Sleeper prices probability directly into the multiplier, so every leg must clear m*p >= 1.0 on its own - there is no base table to carry a weak leg. Measured: top-10% legs hit 81.54% against a market-implied 66.4%, m*p 1.1550.`,
+        `Percentile rather than a fixed cutoff because the old baseline>=85 produced only 0-4 qualifying legs on most days, limiting the strategy to 9 of 24 days. Percentile adapts to board depth: 29 slips over 15 days vs 17 over 9, and +84.0% vs +73.9%.`,
+        "⚠️ Do NOT lower this threshold toward the 80th percentile. The top-20% band scores m*p 0.9635 - BELOW the 50-80% band's 1.0165. The middle of Sleeper's distribution is genuinely non-monotonic and unreliable.",
         "Power only. Flex is a round-robin (n sub-parlays of size n-1 at 1/n stake) and lost to Power in all 22 cells tested - the consolation is worth less than the product you give up.",
-        `Play ONLY when ${size}+ legs qualify. Slip size does not change EV here, but requiring ${size} legs selects for deep-pool days, which are empirically better: a cascading version that also played thin 2-3 leg days scored +45.5% vs +73.9%, with the thin days going 1-for-5.`,
-        "ROBUSTNESS: volume-weighted t=2.947 (bar 1.860), 8 of 9 days profitable, and leave-one-out across every day keeps ROI in +61.6%..+88.0%. No single day is load-bearing.",
-        "RISKS: 17 slips total, and 6 of 9 days are single-slip days that all won. Sleeper's own historical prices do not exist pre-2026-08-26, so p_novig is derived from sportsbook consensus and the 0.8916 constant is fitted on 7 live reads. Minimum stake."
+        "GATES: day-level block bootstrap 99.6% positive, 95% CI [+26.5%, +123.4%], leave-one-out across all 15 days stays in [+72.2%, +90.6%], 9 of 15 days profitable, best day only 20% of returns.",
+        "RISKS: 29 slips is still a small sample. Sleeper's own historical prices do not exist pre-2026-08-26, so p_novig is derived from sportsbook consensus and the 0.9210 constant is fitted on 2 live reads. Signal is ordinal not cardinal - keep staking flat. Minimum stake."
       ],
       legs: slipLegs
     });
