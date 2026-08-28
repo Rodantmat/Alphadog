@@ -3481,7 +3481,7 @@ async function apiHighHitSlips(env, request) {
   // set source_key='prizepicks_goblin', copied from long-retired code that used a different
   // filter - every slip was generated correctly server-side and then silently dropped by the UI
   // filter, showing "No slips match the selected apps". Leave the DB's 'prizepicks' value intact.
-  const udSlips = []; // PAUSED - see comment above (this file, apiHighHitSlips).
+  // (Underdog un-paused 2026-08-27 - udSlips is built above from the baseline_hp track.)
   // PAUSED 2026-08-26: singles/less real breakeven is 78.84% (confirmed 1.2684x real per-leg
   // multiplier, 8 real 6-pick observations). Four separate, independently Gemini-adversarial-
   // verified passes all falsified: (1) raw walk-forward trailing hit rate, 64.03% (n=392); (2)
