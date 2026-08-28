@@ -3709,11 +3709,26 @@ async function apiHighHitSlips(env, request) {
   // Backup pool spans BOTH platforms. Each leg keeps its own source_key so the client can only
   // substitute a leg into a slip from the same platform - a PrizePicks leg is not placeable on
   // Underdog and vice versa.
-  const backupPool = [
-    ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
-    ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
-    ...slLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE)
-  ];
+  // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
+  const allPlayerIds = [...new Set([...ppSlips, ...udSlips, ...slBaselineSlips]
+    .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
+    .concat(backupPool.map(l => l.mlb_player_id))
+    .filter(Boolean))];
+  const dnpRiskMap = await fetchDnpRisk(env, allPlayerIds);
+  attachDnpRisk(ppSlips, dnpRiskMap);
+  attachDnpRisk(udSlips, dnpRiskMap);
+  attachDnpRisk(slBaselineSlips, dnpRiskMap);
+  for (const l of backupPool) {
+    const r = dnpRiskForLeg(l, dnpRiskMap);
+    l.dnp_risk = r.level; l.dnp_risk_reason = r.reason;
+  }
+  // Prefer LOW-risk legs at the front of the pool so substitutions do not reintroduce scratch risk.
+  backupPool.sort((a, b) => {
+    const ord = { LOW: 0, MEDIUM: 1, HIGH: 2 };
+    const da = ord[a.dnp_risk] ?? 1, db = ord[b.dnp_risk] ?? 1;
+    if (da !== db) return da - db;
+    return Number(b.hit_probability_0_100 || 0) - Number(a.hit_probability_0_100 || 0);
+  });
   // NOTE: do NOT rewrite source_key here. The client-side filter (activeSourceFilters) only
   // recognises 'prizepicks' | 'sleeper' | 'parlay_underdog'. An earlier version of this call site
   // set source_key='prizepicks_goblin', copied from long-retired code that used a different
