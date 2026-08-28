@@ -3894,7 +3894,13 @@ async function apiHighHitSlips(env, request) {
   // pool globally once it is consumed and returns it if the original leg is re-selected.
   const usedRowIds = new Set();
   for (const s of ppSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
-  const udSlips = udLegs.length >= UD_SLIP_SIZE ? buildUnderdogBaselineSlips(udLegs) : [];
+  // Build every buildable slip, then keep only the top UD_MAX_SLIPS_PER_DAY. Legs come in already
+  // ranked by divergence, so slip 0 carries the largest edge - taking the first N is correct.
+  // IMPORTANT: only the KEPT slips' legs are marked used. Legs from slips beyond the cap stay
+  // available and flow into the shared backup pool below, so substitution still has depth and
+  // every substitute is still a leg that passed the strategy's own divergence filter.
+  const udSlipsAll = udLegs.length >= UD_SLIP_SIZE ? buildUnderdogBaselineSlips(udLegs) : [];
+  const udSlips = udSlipsAll.slice(0, UD_MAX_SLIPS_PER_DAY);
   for (const s of udSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
   const slBaselineSlips = slLegs.length >= SL_SLIP_SIZE ? buildSleeperBaselineSlips(slLegs) : [];
   for (const s of slBaselineSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
