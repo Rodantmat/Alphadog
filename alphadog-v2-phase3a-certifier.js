@@ -127,7 +127,9 @@ async function runScoringEngine(pgClient, input) {
     const score = finalScore;
     const grade = gradeForScore(score);
 
-    await pgClient`UPDATE score.hp_board_current SET score_0_100=${score}, score_grade=${grade}, updated_at=now() WHERE hp_board_row_id=${row.hp_board_row_id}`;
+    scoreIds.push(row.hp_board_row_id);
+    scoreValues.push(score);
+    scoreGrades.push(grade);
 
     const scoreRowId = rid("score_row");
     mirrorRows.push({
