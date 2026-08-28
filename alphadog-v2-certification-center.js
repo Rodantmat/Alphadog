@@ -3376,6 +3376,23 @@ function buildSleeperBaselineSlips(legs) {
 //     and lost. Losing days are not predictable from any tested signal.
 const UD_DIVERGENCE_MIN = 0.15;
 const UD_SLIP_SIZE = 2;
+// DAILY CAP ADDED 2026-08-28. Unlike PrizePicks - where slip order is only probability order and
+// ROI is FLAT from cap 5 to no cap (118.2%-120.8%) - on a DIVERGENCE strategy the slip order IS
+// the edge order. Legs are ranked by how far the baseline exceeds the market's own probability, so
+// the top-ranked slips carry the largest disagreement and therefore the largest modifiers. Going
+// deeper adds legs the market prices closer to our view, which pay less.
+// Measured (same 20 days, same legs, only the cap changes):
+//    cap 2   39 slips  full-hit 53.8%  ROI +55.5%
+//    cap 3   55 slips  full-hit 54.5%  ROI +51.8%
+//    cap 5   85 slips  full-hit 54.1%  ROI +42.8%
+//    cap 8  118 slips  full-hit 51.7%  ROI +34.3%
+//    none   205 slips  full-hit 52.2%  ROI +28.6%
+// Full-hit rate is FLAT across every level - this is not a leg-quality effect, it is entirely
+// multiplier. Capping also improves every robustness measure:
+//    uncapped  bootstrap 97.9%  CI [+1.0%, +53.4%]   leave-one-out [+21.0%, +35.6%]  14/20 days
+//    cap 2     bootstrap 99.8%  CI [+16.7%, +95.2%]  leave-one-out [+45.2%, +63.9%]  16/20 days
+// Best single day falls from 20% to 11% of total returns. No days are lost - both use all 20.
+const UD_MAX_SLIPS_PER_DAY = 2;
 const UD_BASE_TABLE = { 2: 3.5, 3: 6.5, 4: 12, 5: 20, 6: 35 };
 // Sportsbook hold by prop, measured from two-sided legs (median overround). Used to devig a
 // single-sided price. Replaces a flat 1.045 that was wrong on nearly every prop.
