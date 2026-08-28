@@ -576,6 +576,22 @@ def make_config(worker_name, include_services=False):
         # and confirmed live that raising that internal budget without also raising this real
         # platform ceiling causes genuine stuck/killed calls. Both must move together.
         cfg["limits"] = {"cpu_ms": 300000}
+    if worker_name == "alphadog-v2-phase2b-certifier":
+        # ADDED 2026-08-28: same missing-cpu_ms-override bug class as alphadog-v2-score-prep and
+        # alphadog-v2-phase3a-first-inning-pitcher-context above. This worker (matrix_build mode,
+        # step 24 of the Cowork master-run sequence) is deliberately chunked/resumable via its own
+        # request_id + prop_matrix_batches bookkeeping, and its fetch handler already correctly
+        # uses ctx.waitUntil() to detach work from the calling client's connection - so client
+        # disconnect was ruled out as the cause here. Confirmed live (2026-08-28 1pm Cowork run,
+        # heavy 15-game slate): score.prop_matrix_current stopped advancing (stuck at the same row
+        # count and updated_at) across 3 consecutive repeat calls with the same request_id, despite
+        # each call legitimately being given time to run - consistent with each invocation's chunk
+        # dying to Cloudflare's real default 30s CPU-time ceiling before it could persist further
+        # progress, since (like its siblings) this worker had never been given an explicit
+        # cfg["limits"] override of its own - only the *caller* runner (alphadog-v2-scoring-runner-
+        # matrix, see below) had one, which does not apply to this worker when Cowork calls it
+        # directly. Same fix, same value as every other stage worker in this family.
+        cfg["limits"] = {"cpu_ms": 300000}
     if worker_name == "alphadog-v2-score-prep":
         # ADDED 2026-08-28: same confirmed bug class as alphadog-v2-phase3a-first-inning-pitcher-context
         # above (2026-08-04) - this worker never had an explicit CPU limit override either, so it was
