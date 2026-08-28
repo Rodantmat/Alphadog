@@ -84,6 +84,11 @@ async function runScoringEngine(pgClient, input) {
 
   let written = 0;
   const mirrorRows = [];
+  // PERF 2026-08-29: accumulated here and flushed in one chunked bulk UPDATE after the loop,
+  // instead of one awaited round trip per row inside it. See the write-back block below.
+  const scoreIds = [];
+  const scoreValues = [];
+  const scoreGrades = [];
   const scoredRows = hpRows.map(row => {
     const hp = row.estimated_hit_probability_0_100;
     const confidence = row.probability_confidence_0_100;
