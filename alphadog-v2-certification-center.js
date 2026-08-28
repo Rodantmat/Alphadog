@@ -3013,6 +3013,98 @@ function buildRegularHighHitSlips(legs) {
 // Demon-specific builders.)
 
 
+// ===== DNP RISK FLAGGING (2026-08-27) =====
+// A scratched player's prop is VOIDED, not lost - but the slip shrinks and pays a smaller
+// multiplier. On 2026-08-27, 24 of 144 board players (17%) did not play, and one void that got
+// through turned a winning 4-pick from 1.6x into 1.4x (-12.5%).
+//
+// SIZE OF THE PROBLEM: simulated on the real band distribution, 43.6% of 6-picks and 31.5% of
+// 4-picks lose at least one leg to a scratch. NO BACKTEST IN THIS PROGRAM HAS EVER MODELLED THIS -
+// ungraded legs never enter the backtest pool (1 true DNP in 13,022 pool legs), so every ROI figure
+// on record is optimistic by this amount.
+//
+// WHY FLAG RATHER THAN FILTER: filtering high-DNP players out of selection was tested and REJECTED.
+// Those players have the HIGHEST baselines (77.13 avg vs 73.51 clean) and the BEST hit rates when
+// they do play (100.00% and 98.17% at >=90 vs 97.96% clean) - platoon/bench players get favourable
+// matchups and fewer PAs, which makes "less" props safer. Filtering removes 38% of the >=90 pool to
+// gain only +2.43 ROI points. Flagging keeps every leg and gains +5.3 to +10.5 points instead, by
+// converting a settlement-time void into a pre-placement substitution via the existing backup pool.
+//
+// RISK MODEL - both inputs are measured, and NEITHER depends on the multiplier tables:
+//   1. Lineup presence (strongest single discriminator found this session, 13x separation):
+//        in lineup slot 1-6  -> 3.9% DNP      slot 7-9 -> 8.6%
+//        NO lineup row       -> 52.9% DNP     (n=7,744 player-days over 27 days)
+//   2. Trailing 7-day DNP rate (monotonic, available on all 31-34 days unlike lineup data):
+//        zero DNPs -> 5.9%   <=15% -> 11.0%   15-35% -> 15.8%   >35% -> 23.2%
+// Lineup data only exists on ~13-15 of 27 days, so trailing DNP is the always-available signal and
+// lineup presence sharpens it when present.
+const DNP_RISK_LOOKBACK_DAYS = 7;
+async function fetchDnpRisk(env, playerIds) {
+  if (!playerIds || !playerIds.length) return new Map();
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH pd AS (
+        SELECT mlb_player_id pid, official_date::date d,
+          MAX(CASE WHEN outcome_result='push_dnp' THEN 1 ELSE 0 END) dnp
+        FROM score.prop_outcome_history
+        WHERE mlb_player_id = ANY(ARRAY[${playerIds.map(Number).filter(Boolean).join(',')}]::int[])
+          AND official_date::date >= (now()::date - interval '${DNP_RISK_LOOKBACK_DAYS} days')
+          AND official_date::date < now()::date
+          AND game_pk IS NOT NULL
+        GROUP BY 1,2
+      ),
+      agg AS (
+        SELECT pid, COUNT(*) n_days, SUM(dnp) n_dnp,
+          ROUND((100.0*SUM(dnp)/NULLIF(COUNT(*),0))::numeric,1) dnp_pct
+        FROM pd GROUP BY 1
+      ),
+      lu AS (
+        SELECT DISTINCT player_id pid, lineup_slot
+        FROM context.history_game_lineup WHERE official_date::date = now()::date
+      )
+      SELECT a.pid, a.n_days, a.n_dnp, a.dnp_pct, lu.lineup_slot,
+        (SELECT COUNT(*) FROM lu) AS lineup_rows_today
+      FROM agg a LEFT JOIN lu ON lu.pid = a.pid
+    `);
+    const m = new Map();
+    for (const r of rows) m.set(String(r.pid), r);
+    return m;
+  } catch (e) {
+    return new Map(); // risk flagging is advisory - never block slip generation on it
+  } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
+}
+function dnpRiskForLeg(leg, riskMap) {
+  const r = riskMap.get(String(leg.mlb_player_id));
+  // No history at all -> unknown, which empirically runs ~10.3% DNP. Treat as MEDIUM, not LOW.
+  if (!r || Number(r.n_days) < 3) return { level: "MEDIUM", pct: null, reason: "no recent history" };
+  const lineupDataExists = Number(r.lineup_rows_today || 0) > 20;
+  const pct = Number(r.dnp_pct || 0);
+  // Lineup absence dominates everything else when lineup data is actually available today.
+  if (lineupDataExists && r.lineup_slot == null) {
+    return { level: "HIGH", pct, reason: "not in today's projected lineup (~53% DNP)" };
+  }
+  if (pct > 35) return { level: "HIGH", pct, reason: `${pct}% DNP last ${DNP_RISK_LOOKBACK_DAYS}d (~23% risk)` };
+  if (pct > 15) return { level: "MEDIUM", pct, reason: `${pct}% DNP last ${DNP_RISK_LOOKBACK_DAYS}d (~16% risk)` };
+  if (pct > 0)  return { level: "MEDIUM", pct, reason: `${pct}% DNP last ${DNP_RISK_LOOKBACK_DAYS}d (~11% risk)` };
+  return { level: "LOW", pct: 0, reason: "no DNP in last " + DNP_RISK_LOOKBACK_DAYS + "d (~6% risk)" };
+}
+function attachDnpRisk(slips, riskMap) {
+  for (const s of slips || []) {
+    let hi = 0, med = 0;
+    for (const l of (s.legs || [])) {
+      const r = dnpRiskForLeg(l, riskMap);
+      l.dnp_risk = r.level; l.dnp_risk_reason = r.reason; l.dnp_dnp_pct = r.pct;
+      if (r.level === "HIGH") hi++; else if (r.level === "MEDIUM") med++;
+    }
+    s.dnp_high_count = hi; s.dnp_medium_count = med;
+    if (hi > 0) {
+      s.strategy_notes = s.strategy_notes || [];
+      s.strategy_notes.push(`⚠️ ${hi} leg(s) flagged HIGH scratch risk. Verify in the app before placing - swap any scratched player from the backup pool rather than letting the slip shrink. A void does not lose the slip but does cut the multiplier (a 6-pick dropping to 5 loses ~12%).`);
+    }
+  }
+  return slips;
+}
 // ===== SLEEPER BASELINE-HP TRACK (deployed 2026-08-27) =====
 // Sleeper's payout structure was reverse-engineered from real in-app screenshots and verified to
 // <0.3% error on 2 independent slips:
