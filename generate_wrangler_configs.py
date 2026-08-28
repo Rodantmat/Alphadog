@@ -576,6 +576,22 @@ def make_config(worker_name, include_services=False):
         # and confirmed live that raising that internal budget without also raising this real
         # platform ceiling causes genuine stuck/killed calls. Both must move together.
         cfg["limits"] = {"cpu_ms": 300000}
+    if worker_name == "alphadog-v2-score-prep":
+        # ADDED 2026-08-28: same confirmed bug class as alphadog-v2-phase3a-first-inning-pitcher-context
+        # above (2026-08-04) - this worker never had an explicit CPU limit override either, so it was
+        # silently running on Cloudflare's actual default (30s on paid tier), not the 5-min ceiling every
+        # other master-run-family worker explicitly configures via this same override. The worker's own
+        # code comment (WRITE_ROWS_PER_INVOCATION, top of alphadog-v2-score-prep.js) already assumed this
+        # override existed ("CPU time... is raised via wrangler limits.cpu_ms for defensive headroom") -
+        # that assumption was false; this key was simply never set for this worker. Confirmed live
+        # (Cowork-supervised run, 2026-08-28 1pm slot): on a heavy 15-game slate (8947 raw PrizePicks rows,
+        # ~2x a typical day), board_prep_enrichment made real progress (score.board_prepared_stage climbed
+        # to 11895 rows for the batch) then went completely silent mid-write-loop with no error and no
+        # further checkpoint update for 8+ minutes - the batch was later reaped by the next invocation's
+        # own 3-minute staleness auto-cleanup (ABANDONED_STALE_AUTO_CLEANUP), never completing to
+        # score.board_prepared_current. That silent mid-loop death is the signature of a platform CPU-time
+        # kill, not application logic. Fix: same override, same value as its sibling stage workers.
+        cfg["limits"] = {"cpu_ms": 300000}
     if worker_name == "alphadog-v2-calibration-scheduler":
         # New, deliberately tiny and separate worker: only job is to call the already-existing,
         # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
