@@ -3285,9 +3285,67 @@ function buildSleeperBaselineSlips(legs) {
 //     separates them. 2026-08-01 had better inputs than most winning days and went 0-for-5.
 //  4. >=82 is the peak of a searched grid. Plan around the +40-50% the whole 76-83 range occupies.
 // Minimum stake until real placed results accumulate.
-const UD_BASELINE_HP_MIN = 82;
-const UD_SLIP_SIZE = 4;
+// ===== REPLACED 2026-08-28: DIVERGENCE SELECTION =====
+// The old baseline>=82 4-pick config is retired. At the recalibrated k it scored +32.8% with a
+// volume-weighted t of 1.494 (bar 1.782 - FAILS), and leave-one-out failed on 12 of 13 days,
+// bottoming at +18.0% / t=0.740.
+//
+// ROOT CAUSE OF ITS WEAKNESS: Underdog prices probability INTO the modifier (m = k / p_novig), so a
+// leg our model likes that the market ALSO likes pays a correspondingly smaller modifier and carries
+// no edge. Ranking by baseline therefore selects legs with no advantage. Measured per prop, the two
+// props that dominated the >=82 pool were the two worst markets on the platform:
+//     rbis/less   459 legs  edge vs market  +0.12pp  m*p 0.4723  (breakeven 0.5373)
+//     walks/less  405 legs  edge vs market  -1.68pp  m*p 0.4633
+// while the edge actually sits in hits/less (+8.70pp, m*p 0.5684) and total_bases/less (+6.02pp).
+//
+// THE REPLACEMENT selects on DIVERGENCE: baseline minus the market's own vig-free probability.
+// It finds legs where we DISAGREE with the market, which is the only place an edge can exist on a
+// platform that prices probability. Measured, monotonic across all five bands:
+//     div >= 20pp   220 legs  actual 67.73% vs market 53.2%  edge +14.53pp  m*p 0.6099
+//     div 12-20pp   386 legs  actual 69.69% vs market 58.3%  edge +11.36pp  m*p 0.5762
+//     div  5-12pp   588 legs  actual 63.61% vs market 60.4%  edge  +3.23pp  m*p 0.5055
+//     div neutral   891 legs  actual 60.16% vs market 62.8%  edge  -2.68pp  m*p 0.4577
+//     div negative  335 legs  actual 53.43% vs market 64.1%  edge -10.66pp  m*p 0.4002
+// Controls are clean: pool-wide edge +1.59pp (calibrated) and the bottom band correctly negative.
+//
+// REAL BACKTEST (snapshot-pinned, same-game haircut, prop-specific hold backfill, modifiers
+// constrained to Underdog's observed 0.55-1.30 range): 205 slips, 107 full hits (52.2%), 20 days,
+// +28.6% ROI. THE ONLY UNDERDOG CONFIG TO CLEAR EVERY GATE:
+//   - day-level block bootstrap: 97.9% of resamples positive (bar 95%)
+//   - 95% CI [+1.0%, +53.4%] - entirely above zero
+//   - leave-one-out across all 20 days never drops below +21.0%
+//   - 14 of 20 days profitable, best day only 20% of returns
+//   - roi on TWO-SIDED-PRICED SLIPS ONLY = +27.7% vs +28.6% overall - the edge does not depend on
+//     inferred prices, which is what killed every previous candidate
+//
+// 2-PICK ONLY. Power only. Flex was tested across 3 thresholds x 3 sizes on this exact pool and is
+// negative in 6 of 9 cells, never beating Power - Underdog's 2-of-3 tier pays 1.09 x the surviving
+// pair (~0.75x with these modifiers), so partial credit does not return the stake. Flex would only
+// win below per-leg p = 54.8%; this pool runs 69.69%.
+//
+// ⚠️ CARRIED RISKS:
+//  1. +28.6% with a CI lower bound of +1.0% - a real edge but not a large one. The true value could
+//     plausibly be near +5%. Do not size as if it were the backtest midpoint.
+//  2. 53% of legs still use single-sided vig removal (now with prop-specific holds, 3.79%-8.40%,
+//     replacing a flat 4.5% guess). The two-sided-only control is what justifies trusting it.
+//  3. Deep boards are not automatically good boards - 2026-08-01 and 08-10 both had high slip counts
+//     and lost. Losing days are not predictable from any tested signal.
+const UD_DIVERGENCE_MIN = 0.15;
+const UD_SLIP_SIZE = 2;
 const UD_BASE_TABLE = { 2: 3.5, 3: 6.5, 4: 12, 5: 20, 6: 35 };
+// Sportsbook hold by prop, measured from two-sided legs (median overround). Used to devig a
+// single-sided price. Replaces a flat 1.045 that was wrong on nearly every prop.
+const UD_PROP_OVERROUND = {
+  runs: 1.0840, singles: 1.0780, total_bases: 1.0760, rbis: 1.0752, hits: 1.0735,
+  hits_runs_rbis: 1.0718, walks: 1.0713, earned_runs: 1.0694, pitcher_outs: 1.0659,
+  stolen_bases: 1.0641, doubles: 1.0639, hits_allowed: 1.0555, walks_allowed: 1.0518,
+  pitcher_strikeouts: 1.0471, home_runs: 1.0445, triples: 1.0379
+};
+const UD_OVERROUND_DEFAULT = 1.070;
+// Underdog's real modifiers never leave this range. Anything outside is a devig artifact, not a
+// price - 11 such legs once carried 70% of a candidate strategy's apparent edge.
+const UD_MODIFIER_MIN = 0.55;
+const UD_MODIFIER_MAX = 1.30;
 // RECALIBRATED 2026-08-28 from 15 real placed slips (all 4-leg, all 4 distinct games, so the
 // same-game haircut is not involved). Measured real/estimated ratio: mean 0.8560, range
 // 0.809-0.941, geometric mean 0.8555 - a TIGHT, systematic ~14.4% OVERESTIMATE, not noise.
