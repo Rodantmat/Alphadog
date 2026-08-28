@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-daily-certifier",
+  "name": "alphadog-v2-daily-certifier", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-daily-certifier.js",
   "compatibility_date": "2026-05-18",
   "observability": {
