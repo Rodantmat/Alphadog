@@ -6,6 +6,15 @@ const JOB_KEY = "scoring-engine-shadow-v1";
 const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.3.0-postgres-rewire";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
 const MAX_LEGS_PER_INVOCATION = 2500;
+// PERF 2026-08-29: array-literal helper, copied verbatim from alphadog-v2-phase2b-certifier.js so
+// the convention is identical across scoring workers - arrays are passed to Postgres as an explicit
+// array-literal string plus an explicit ::type[] cast, never as a raw JS array. Used by the chunked
+// bulk score write-back in runScoringEngine below.
+function arrLit(arr) {
+  if (!arr.length) return null;
+  if (typeof arr[0] === "string") return "{" + arr.map(v => `"${String(v).replace(/"/g, '\\"')}"`).join(",") + "}";
+  return "{" + arr.join(",") + "}";
+}
 
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false, prepare: false, connect_timeout: 8, connection: { statement_timeout: 240000, idle_in_transaction_session_timeout: 240000 } }); }
 function nowUtc() { return new Date().toISOString(); }
