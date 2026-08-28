@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-parlay-underdog-board",
+  "name": "alphadog-v2-parlay-underdog-board", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-parlay-underdog-board.js",
   "compatibility_date": "2026-05-18",
   "observability": {
