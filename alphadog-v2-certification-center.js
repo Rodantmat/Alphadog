@@ -3467,9 +3467,15 @@ async function apiHighHitSlips(env, request) {
   // pool globally once it is consumed and returns it if the original leg is re-selected.
   const usedRowIds = new Set();
   for (const s of ppSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
-  const backupPool = ppLegs
-    .filter(l => !usedRowIds.has(l.board_row_id))
-    .slice(0, BASELINE_HP_BACKUP_POOL_SIZE);
+  const udSlips = udLegs.length >= UD_SLIP_SIZE ? buildUnderdogBaselineSlips(udLegs) : [];
+  for (const s of udSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
+  // Backup pool spans BOTH platforms. Each leg keeps its own source_key so the client can only
+  // substitute a leg into a slip from the same platform - a PrizePicks leg is not placeable on
+  // Underdog and vice versa.
+  const backupPool = [
+    ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
+    ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE)
+  ];
   // NOTE: do NOT rewrite source_key here. The client-side filter (activeSourceFilters) only
   // recognises 'prizepicks' | 'sleeper' | 'parlay_underdog'. An earlier version of this call site
   // set source_key='prizepicks_goblin', copied from long-retired code that used a different
