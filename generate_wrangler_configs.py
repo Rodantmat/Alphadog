@@ -623,6 +623,68 @@ def make_config(worker_name, include_services=False):
         # score.board_prepared_current. That silent mid-loop death is the signature of a platform CPU-time
         # kill, not application logic. Fix: same override, same value as its sibling stage workers.
         cfg["limits"] = {"cpu_ms": 300000}
+    if worker_name in (
+        # LAYER 1 - board
+        "alphadog-v2-prizepicks-github-board",
+        "alphadog-v2-parlay-sleeper-board",
+        "alphadog-v2-parlay-underdog-board",
+        # LAYER 2 - daily context
+        "alphadog-v2-base-game-calendar",
+        "alphadog-v2-daily-certifier",
+        "alphadog-v2-daily-games-status",
+        "alphadog-v2-daily-probable-pitchers",
+        "alphadog-v2-daily-lineups",
+        "alphadog-v2-daily-player-availability",
+        "alphadog-v2-daily-weather",
+        "alphadog-v2-daily-bullpen-availability",
+        "alphadog-v2-daily-schedule",
+        "alphadog-v2-daily-usage-pulse",
+        # LAYER 3 - market
+        "alphadog-v2-market-certifier",
+        "alphadog-v2-market-normalizer",
+        "alphadog-v2-market-line-shape-classifier",
+        # LAYER 4 - scoring
+        "alphadog-v2-phase3b-certifier",
+        "alphadog-v2-phase2b-recent-form",
+        "alphadog-v2-phase2a-run-environment",
+        "alphadog-v2-phase3c-certifier",
+        "alphadog-v2-phase3a-certifier",
+    ):
+        # ADDED 2026-08-29: same missing-cpu_ms-override bug class already confirmed live and
+        # fixed for alphadog-v2-phase3a-first-inning-pitcher-context (2026-08-04) and for
+        # alphadog-v2-score-prep / alphadog-v2-phase2b-certifier / alphadog-v2-score-final-board
+        # (2026-08-28) - this block closes it for the REST of the directly-called stage workers.
+        #
+        # Root cause, verified in this file: the base cfg built at the top of make_config() sets
+        # no "limits" key at all. A worker therefore only gets a raised CPU ceiling if some
+        # explicit `if worker_name == ...` block below assigns one; otherwise it silently runs on
+        # Cloudflare's real default (30s on paid tier), regardless of what the worker's own code
+        # comments assume about its budget.
+        #
+        # Why so many were missed for so long: nearly every pre-existing cpu_ms:300000 override in
+        # this file belongs to an orchestrator RUNNER (board-runner, daily-context-runner,
+        # market-runner, scoring-runner, scoring-runner-matrix, scoring-runner-part2,
+        # master-runner). Those runners were retired from the master-run call path on 2026-08-05,
+        # when the Cowork supervisor switched to calling the ~24 underlying stage workers directly.
+        # A runner's limits never applied to the stage workers it called, and once the runners
+        # stopped being called at all, the raised ceiling stopped applying to anything on the live
+        # path. The stage workers had simply inherited coverage they never actually had.
+        #
+        # Confirmed correlation with the observed 2026-08-28 slowdown (~2h runs vs a normal
+        # 20-35min): every step that burned dozens of retries is a worker on this list -
+        # step 27 alphadog-v2-phase3a-certifier (~26 retries over ~65 minutes, the single largest
+        # time sink), steps 18/19 alphadog-v2-market-line-shape-classifier (stuck 3x at
+        # RUNNING_PARLAY_FETCH, never reaching its own finalize step within one invocation),
+        # steps 22/23 alphadog-v2-phase2b-recent-form (non-monotonic 2->6->3->6 coverage cycling),
+        # step 25 alphadog-v2-phase2a-run-environment (22 chained calls), step 26
+        # alphadog-v2-phase3c-certifier. That is the signature of a chunk being killed by the
+        # platform mid-loop before it can checkpoint, not of application logic.
+        #
+        # Safety: cpu_ms is a ceiling, not a reservation. Cloudflare bills actual CPU consumed, so
+        # raising it cannot increase cost or runtime for work that already finishes inside 30s -
+        # it only stops longer chunks being silently killed before they persist progress. Value
+        # matches every sibling stage worker in this family.
+        cfg["limits"] = {"cpu_ms": 300000}
     if worker_name == "alphadog-v2-calibration-scheduler":
         # New, deliberately tiny and separate worker: only job is to call the already-existing,
         # already-safe calibration_report mode on alphadog-v2-phase3a-first-inning-pitcher-context
