@@ -3013,7 +3013,151 @@ function buildRegularHighHitSlips(legs) {
 // Demon-specific builders.)
 
 
-// ===== BASELINE-HP GOBLIN STRATEGY (replaces TB+Hits Uncapped 2026-08-27) =====
+// ===== UNDERDOG BASELINE-HP TRACK (deployed 2026-08-27) =====
+// Underdog's payout structure was reverse-engineered from real in-app screenshots and verified to
+// <0.3% error (exact once their 2-decimal truncation is applied) on 6 independent slips:
+//   payout = BASE[size] x PRODUCT(per-leg modifiers),  BASE = {2:3.5, 3:6.5, 4:12, 5:20, 6:35}
+//   modifier = 0.4874 / p_novig   (p_novig = vig-removed implied probability from the two-sided
+//                                  moneyline; 0.4874 vs the theoretical 0.5 is Underdog's margin)
+// A same-game pair costs a further ~14.9% on Power (~22.1% on Flex) - so build CROSS-GAME.
+// Flex is structurally worse here for a high-probability pool: the 2-of-3 tier pays BELOW 1.0x
+// (0.90x and 0.99x observed live), so partial credit does not even return the stake. Flex only
+// beats Power when per-leg p < 3.27/(3.27+3.25m), about 52.5% - far below where this pool sits.
+//
+// SELECTION: baseline layer (classification.baseline_v6_current) >= 82, same clean signal used by
+// the PrizePicks track. Underdog DOES price probability into its modifier, unlike PrizePicks
+// Goblin - so this edge exists only because the baseline beats the market's own number. Verified
+// against sharp books (bet365/DraftKings/BetMGM): our legs at >=90 hit 91.67% vs a 70.45%
+// sharp-implied line, +21.2pp, while the overall pool is calibrated (+0.57pp) and the <70 band is
+// correctly negative (-5.28pp). Those controls are what make the top-band edge credible.
+//
+// REAL BACKTEST (snapshot-pinned morning-first, started games excluded, same-game haircut applied,
+// deterministic ranked 4-picks graded against real outcomes): 53 slips, 33 full hits (62.3%),
+// 13 active days, +55.3% ROI. Threshold sweep 76-88 is positive throughout (+27% to +63%), with
+// 4-pick occupying 6 of the top 8 cells - the size result is robust, the exact threshold is not.
+//
+// ⚠️ CARRIED RISKS - read before sizing:
+//  1. Volume-weighted day-robustness t = 2.154 (clears 1.782), but DROPPING 2026-08-26 takes it to
+//     +38.0% and t = 1.335, which FAILS. That single day is load-bearing.
+//  2. Worse, 08-26 is one of two days whose prices come from SINGLE-SIDED vig removal with an
+//     assumed 4.5% hold, not observed two-sided moneylines. The day carrying significance is the
+//     day whose pricing was inferred.
+//  3. 8 of 13 days profitable; losing days are NOT predictable - no signal tested (pool depth,
+//     distinct games, avg baseline, baseline-minus-market, same-game count, two-sided coverage)
+//     separates them. 2026-08-01 had better inputs than most winning days and went 0-for-5.
+//  4. >=82 is the peak of a searched grid. Plan around the +40-50% the whole 76-83 range occupies.
+// Minimum stake until real placed results accumulate.
+const UD_BASELINE_HP_MIN = 82;
+const UD_SLIP_SIZE = 4;
+const UD_BASE_TABLE = { 2: 3.5, 3: 6.5, 4: 12, 5: 20, 6: 35 };
+const UD_MODIFIER_K = 0.4874;
+const UD_SAMEGAME_HAIRCUT = 0.851;
+function udLegModifier(pNovig) {
+  const p = Number(pNovig);
+  if (!(p > 0.02 && p < 0.98)) return null;
+  return Math.round((UD_MODIFIER_K / p) * 10000) / 10000;
+}
+function udSlipMultiplier(slipLegs) {
+  const size = slipLegs.length;
+  const base = UD_BASE_TABLE[size];
+  if (!base) return 0;
+  let prod = 1;
+  for (const l of slipLegs) {
+    const m = udLegModifier(l.p_novig);
+    if (m === null) return 0;
+    prod *= m;
+  }
+  const games = new Set(slipLegs.map(l => String(l.game_pk)));
+  const dupPairs = slipLegs.length - games.size;
+  const mult = base * prod * Math.pow(UD_SAMEGAME_HAIRCUT, dupPairs);
+  return Math.floor(mult * 100) / 100; // Underdog truncates to 2dp, confirmed on 6 real slips
+}
+async function autoSelectUnderdogBaselineLegs(env) {
+  const pg = pgClient(env);
+  try {
+    return await queryAllPg(pg, `
+      WITH mkt AS (
+        SELECT resolved_mlb_player_id pid, canonical_prop_key ck, line_value lv,
+          MAX(CASE WHEN LOWER(outcome_side) IN ('over','more','higher') THEN 1.0/price_decimal END) io,
+          MAX(CASE WHEN LOWER(outcome_side) IN ('under','less','lower') THEN 1.0/price_decimal END) iu
+        FROM market.context_probe_player_props
+        WHERE price_decimal IS NOT NULL AND price_decimal > 1.0 AND resolved_mlb_player_id IS NOT NULL
+        GROUP BY 1,2,3
+      ),
+      novig AS (
+        SELECT pid, ck, lv,
+          CASE WHEN io IS NOT NULL AND iu IS NOT NULL THEN io/(io+iu)
+               WHEN io IS NOT NULL THEN io/1.045 ELSE 1-(iu/1.045) END p_over,
+          CASE WHEN io IS NOT NULL AND iu IS NOT NULL THEN iu/(io+iu)
+               WHEN iu IS NOT NULL THEN iu/1.045 ELSE 1-(io/1.045) END p_under
+        FROM mkt WHERE io IS NOT NULL OR iu IS NOT NULL
+      )
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
+        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
+        b.hit_probability_0_100 AS hit_probability_0_100,
+        f.probability_confidence_0_100 AS confidence_0_100,
+        f.is_goblin, f.is_demon, b.non_push_sample AS historical_n,
+        round(b.hit_probability_0_100::numeric,1) AS historical_hit_pct,
+        (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END) AS p_novig
+      FROM score.final_board_current f
+      JOIN classification.baseline_v6_current b
+        ON b.player_id = f.mlb_player_id::text AND b.canonical_prop_key = f.canonical_prop_key
+       AND b.line_value = f.line_value AND b.selected_side = f.selected_side
+      JOIN novig n ON n.pid = f.mlb_player_id AND n.ck = f.canonical_prop_key AND n.lv = f.line_value
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND f.source_key = 'parlay_underdog'
+        AND b.hit_probability_0_100 >= ${UD_BASELINE_HP_MIN}
+        AND f.official_game_time_utc IS NOT NULL
+        AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY b.hit_probability_0_100 DESC, f.player_name
+    `);
+  } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
+}
+function buildUnderdogBaselineSlips(legs) {
+  const size = UD_SLIP_SIZE;
+  const used = new Set();
+  const dailyPlayerUsage = new Map();
+  const slips = [];
+  while (true) {
+    const avail = (legs || []).filter(l => !used.has(l.board_row_id));
+    if (avail.length < size) break;
+    const gameCounts = new Map();
+    const playersInSlip = new Set();
+    const slipLegs = [];
+    for (const leg of avail) {
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      // Underdog penalises same-game pairs ~14.9%, so cap at 1 leg per game where possible.
+      if ((gameCounts.get(leg.game_pk) || 0) >= 1) continue;
+      slipLegs.push(leg);
+      gameCounts.set(leg.game_pk, (gameCounts.get(leg.game_pk) || 0) + 1);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
+    }
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
+    const mult = udSlipMultiplier(slipLegs);
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_ud_baseline"),
+      source_key: "parlay_underdog",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "power",
+      structure_label: `${size}-pick Power (Baseline HP >= ${UD_BASELINE_HP_MIN})`,
+      estimated_multiplier: mult,
+      estimated_payout_note: `Real backtest: 53 slips, 33 full hits (62.3%), 13 days, +55.3% ROI. Multiplier = BASE[${size}]=${UD_BASE_TABLE[size]} x product of per-leg modifiers (0.4874/p_novig from the live moneyline), with a ${Math.round((1-UD_SAMEGAME_HAIRCUT)*100)}% haircut per same-game pair. Structure verified exact against 6 real in-app slips. Confirm the real multiplier in-app before placing.`,
+      strategy_notes: [
+        `Qualifying legs: baseline layer >= ${UD_BASELINE_HP_MIN}. Underdog DOES price probability into its modifier (unlike PrizePicks Goblin), so this edge exists only because the baseline beats the market's own number - verified against bet365/DraftKings/BetMGM at +21.2pp in the top band, with the overall pool calibrated and the low band correctly negative.`,
+        "Built strictly cross-game (max 1 leg per game) - Underdog applies a ~14.9% same-game haircut on Power.",
+        "Power only. Flex is structurally worse for this pool: the 2-of-3 tier pays BELOW 1.0x, so partial credit does not return the stake.",
+        "RISKS: 8 of 13 backtest days profitable; losing days are NOT predictable from any tested signal. Volume-weighted t=2.15 passes, but excluding 2026-08-26 drops it to +38.0% and t=1.34 (fails) - and that day's prices come from single-sided vig removal, not observed two-sided lines. Threshold 82 is the peak of a searched grid; plan around the +40-50% the whole 76-83 range occupies. Minimum stake."
+      ],
+      legs: slipLegs
+    });
+  }
+  return slips;
+}
 // Real, backtested replacement. Selection is driven by the BASELINE layer
 // (classification.baseline_v6_current.hit_probability_0_100), NOT by the enriched board score.
 //
