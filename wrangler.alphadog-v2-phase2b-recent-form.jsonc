@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-phase2b-recent-form",
+  "name": "alphadog-v2-phase2b-recent-form", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-phase2b-recent-form.js",
   "compatibility_date": "2026-05-18",
   "observability": {
