@@ -576,6 +576,21 @@ def make_config(worker_name, include_services=False):
         # and confirmed live that raising that internal budget without also raising this real
         # platform ceiling causes genuine stuck/killed calls. Both must move together.
         cfg["limits"] = {"cpu_ms": 300000}
+    if worker_name == "alphadog-v2-score-final-board":
+        # ADDED 2026-08-28: same missing-cpu_ms-override bug class as alphadog-v2-phase2b-certifier,
+        # alphadog-v2-score-prep, and alphadog-v2-phase3a-first-inning-pitcher-context above. This
+        # worker (final_board_run mode, step 28 of the Cowork master-run sequence) already uses
+        # ctx.waitUntil() correctly and even has its own stale-batch reconciliation logic for a
+        # background writer that outlives the caller's connection (see the comment at
+        # "REAL FIX (found live 2026-08-14...)" a few hundred lines up in this same file) - so the
+        # architecture already anticipated a caller disconnecting before the real write finishes.
+        # What it never got was its own cfg["limits"] override - only the caller runner
+        # (alphadog-v2-scoring-runner-part2, see below) had one, which does not apply to this
+        # worker when Cowork calls it directly. Confirmed live (2026-08-28 1pm run, heavy 15-game
+        # slate): a final_board_run batch sat in status='running' with zero rows written for 2+
+        # minutes on a slate roughly triple this table's typical historical size. Same fix, same
+        # value as every other stage worker in this family.
+        cfg["limits"] = {"cpu_ms": 300000}
     if worker_name == "alphadog-v2-phase2b-certifier":
         # ADDED 2026-08-28: same missing-cpu_ms-override bug class as alphadog-v2-score-prep and
         # alphadog-v2-phase3a-first-inning-pitcher-context above. This worker (matrix_build mode,
