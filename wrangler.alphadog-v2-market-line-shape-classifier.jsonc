@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-market-line-shape-classifier",
+  "name": "alphadog-v2-market-line-shape-classifier", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-market-line-shape-classifier.js",
   "compatibility_date": "2026-05-18",
   "observability": {
