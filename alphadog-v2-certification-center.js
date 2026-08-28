@@ -3640,7 +3640,9 @@ async function apiHighHitSlips(env, request) {
   // immediately per explicit instruction rather than waiting to finish reporting.
   // autoSelectSleeperHighHitSlipLegs/buildSleeperHighHitSlips left intact and unused so this can
   // be un-paused if a genuinely different signal (not another filter combination) is found.
-  const sleeperSlips = [];
+  // Legacy Sleeper track (singles/less) stays retired - superseded 2026-08-27 by the baseline_hp
+  // track built above, which uses an entirely different signal and correct moneyline pricing.
+  const sleeperSlips = slBaselineSlips;
   const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
   const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length;
