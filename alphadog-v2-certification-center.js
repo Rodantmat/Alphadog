@@ -3611,26 +3611,38 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
   const pg = pgClient(env);
   try {
     const rows = await queryAllPg(pg, `
-      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
-        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
-        b.hit_probability_0_100 AS hit_probability_0_100,
-        f.probability_confidence_0_100 AS confidence_0_100,
-        f.is_goblin, f.is_demon,
-        b.non_push_sample AS historical_n,
-        round(b.hit_probability_0_100::numeric,1) AS historical_hit_pct
-      FROM score.final_board_current f
-      JOIN classification.baseline_v6_current b
-        ON b.player_id = f.mlb_player_id::text
-       AND b.canonical_prop_key = f.canonical_prop_key
-       AND b.line_value = f.line_value
-       AND b.selected_side = f.selected_side
-      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-        AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
-        AND b.hit_probability_0_100 >= ${BASELINE_HP_MIN}
-        AND f.official_game_time_utc IS NOT NULL
-        AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
-        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
-      ORDER BY b.hit_probability_0_100 DESC, f.player_name
+      WITH board AS (
+        SELECT f.final_board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
+          f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
+          f.probability_confidence_0_100, f.is_goblin, f.is_demon,
+          b.hit_probability_0_100, b.non_push_sample
+        FROM score.final_board_current f
+        JOIN classification.baseline_v6_current b
+          ON b.player_id = f.mlb_player_id::text AND b.canonical_prop_key = f.canonical_prop_key
+         AND b.line_value = f.line_value AND b.selected_side = f.selected_side
+        WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+          AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
+          AND f.official_game_time_utc IS NOT NULL
+          AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+          AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ),
+      -- Percentile is computed across THIS snapshot's board, so it adapts automatically to any
+      -- rescaling of the baseline model. Ranked over the full board BEFORE prop exclusion so the
+      -- cutoff reflects the real board, not a filtered subset.
+      ranked AS (
+        SELECT board.*, PERCENT_RANK() OVER (ORDER BY hit_probability_0_100) AS board_pctl
+        FROM board
+      )
+      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc,
+        player_name, mlb_player_id, canonical_prop_key, line_value, selected_side,
+        hit_probability_0_100, probability_confidence_0_100 AS confidence_0_100,
+        is_goblin, is_demon, non_push_sample AS historical_n,
+        round(hit_probability_0_100::numeric,1) AS historical_hit_pct,
+        round((100*board_pctl)::numeric,1) AS board_percentile
+      FROM ranked
+      WHERE board_pctl >= ${BASELINE_HP_PERCENTILE}
+        AND canonical_prop_key NOT IN (${BASELINE_HP_EXCLUDED_PROPS.map(p => `'${p}'`).join(',')})
+      ORDER BY hit_probability_0_100 DESC, player_name
     `);
     return rows;
   } finally {
