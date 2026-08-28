@@ -5642,18 +5642,23 @@ function realMultFieldsHtmlForSize(s,idx,size){
 // first leg that is legal for that specific slip.
 let backupPool=[];
 const slipSubs=new Map(); // slipIdx -> Map(originalLegIdx -> substituteLeg)
-function poolLegIsLegalForSlip(leg,keptLegs){
+function poolLegIsLegalForSlip(leg,keptLegs,slip){
   if(!leg)return false;
+  // A leg can only substitute into a slip on the SAME platform - a PrizePicks leg is not
+  // placeable on Underdog and vice versa. This is permanent for every strategy.
+  if(slip&&String(leg.source_key||'')!==String(slip.source_key||''))return false;
   for(const l of keptLegs){
     if(String(l.mlb_player_id)===String(leg.mlb_player_id))return false;
   }
   let sameGame=0;
   for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
-  return sameGame<2;
+  // Underdog penalises same-game pairs ~14.9%, so it is held to 1 leg per game; PrizePicks allows 2.
+  const gameCap=(String(slip&&slip.source_key||'')==='parlay_underdog')?1:2;
+  return sameGame<gameCap;
 }
-function takeBestPoolLeg(keptLegs){
+function takeBestPoolLeg(keptLegs,slip){
   for(let i=0;i<backupPool.length;i++){
-    if(poolLegIsLegalForSlip(backupPool[i],keptLegs)){
+    if(poolLegIsLegalForSlip(backupPool[i],keptLegs,slip)){
       return backupPool.splice(i,1)[0];
     }
   }
