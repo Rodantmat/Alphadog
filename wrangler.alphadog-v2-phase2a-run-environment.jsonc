@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-phase2a-run-environment",
+  "name": "alphadog-v2-phase2a-run-environment", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-phase2a-run-environment.js",
   "compatibility_date": "2026-05-18",
   "observability": {
