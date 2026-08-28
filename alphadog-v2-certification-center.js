@@ -3144,7 +3144,11 @@ function attachDnpRisk(slips, riskMap) {
 // Minimum stake until real placed results accumulate.
 const SL_BASELINE_HP_MIN = 85;
 const SL_SLIP_SIZE = 4;
-const SL_MULT_K = 0.8916;
+// RECALIBRATED 2026-08-28 from 2 real placed slips: real/estimated ratio 1.106 and 1.173,
+// geometric mean 1.1389 - the model runs ~13.9% CONSERVATIVE (the safe direction).
+// Per-leg correction = 1.1389^(1/4) = 1.0330, so k moves 0.8916 -> 0.9210.
+// ⚠️ Only 2 observations. Revisit as more placed slips accumulate.
+const SL_MULT_K = 0.9210;
 const SL_SAMEGAME_HAIRCUT = 0.887;
 function slLegMultiplier(pNovig) {
   const p = Number(pNovig);
