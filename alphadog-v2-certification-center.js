@@ -3521,13 +3521,14 @@ function buildUnderdogBaselineSlips(legs) {
       entry_mode: "power",
       structure_label: `${size}-pick Power (Divergence >= ${Math.round(UD_DIVERGENCE_MIN*100)}pp)`,
       estimated_multiplier: udSlipMultiplier(slipLegs),
-      estimated_payout_note: `Real backtest: 205 slips, 107 full hits (52.2%), 20 days, +28.6% ROI. Multiplier = BASE[${size}]=${UD_BASE_TABLE[size]} x product of per-leg modifiers (${UD_MODIFIER_K}/p_novig from the live moneyline), with a ${Math.round((1-UD_SAMEGAME_HAIRCUT)*100)}% haircut per same-game pair. Structure verified exact against 6 real in-app slips. Confirm the real multiplier in-app before placing.`,
+      estimated_payout_note: `Real backtest: 39 slips, 21 full hits (53.8%), 20 days, +55.5% ROI at a cap of ${UD_MAX_SLIPS_PER_DAY} slips/day. Multiplier = BASE[${size}]=${UD_BASE_TABLE[size]} x product of per-leg modifiers (${UD_MODIFIER_K}/p_novig from the live moneyline), with a ${Math.round((1-UD_SAMEGAME_HAIRCUT)*100)}% haircut per same-game pair. Structure verified exact against 6 real in-app slips. Confirm the real multiplier in-app before placing.`,
       strategy_notes: [
         `Qualifying legs: DIVERGENCE >= ${Math.round(UD_DIVERGENCE_MIN*100)}pp - the baseline exceeds the market's own vig-free probability by at least that much. Underdog prices probability INTO its modifier, so a leg the market also likes pays less and carries no edge. Selecting on divergence finds the only place an edge can exist: where we disagree with the market. Measured: these legs hit 69.69% against a market-implied 58.3%.`,
-        "THE ONLY Underdog config to clear every robustness gate: day-level block bootstrap 97.9% positive (bar 95%), 95% CI [+1.0%, +53.4%] entirely above zero, leave-one-out across all 20 days never below +21.0%, 14 of 20 days profitable with the best day only 20% of returns.",
-        "Two-sided-priced slips only score +27.7% vs +28.6% overall - the edge does not depend on inferred prices, which is what invalidated every previous Underdog candidate.",
+        `CAPPED AT ${UD_MAX_SLIPS_PER_DAY} SLIPS/DAY. On a divergence strategy the slip order IS the edge order - the top slips carry the biggest disagreement and therefore the biggest modifiers. Full-hit rate is flat across every cap level (52-54%), so this is pure multiplier: cap 2 = +55.5%, cap 5 = +42.8%, uncapped = +28.6%. Legs beyond the cap are NOT discarded - they feed the backup pool, so every substitute is still a leg that passed this filter.`,
+        "GATES (day-level block bootstrap, 20 days): 99.8% of resamples positive, 95% CI [+16.7%, +95.2%], leave-one-out never below +45.2%, 16 of 20 days profitable, best day only 11% of returns. Every measure improves versus the uncapped version.",
+        "Two-sided-priced slips only scored +27.7% vs +28.6% overall on the uncapped version - the edge does not depend on inferred prices, which is what invalidated every previous Underdog candidate.",
         "Power only, 2-pick only. Flex tested across 3 thresholds x 3 sizes on this pool: negative in 6 of 9 cells, never beat Power. Underdog's 2-of-3 tier pays ~0.75x, so partial credit does not return the stake.",
-        "RISKS: +28.6% with a CI lower bound of +1.0% - real but not large; the true value could be near +5%. 53% of legs use single-sided devig (now with prop-specific holds 3.79%-8.40%). Losing days are NOT predictable - 2026-08-01 and 08-10 both had deep boards and lost. Minimum stake."
+        "RISKS: 39 slips is a thin sample even across 20 days. 53% of legs use single-sided devig (with prop-specific holds 3.79%-8.40%). Losing days are NOT predictable - 2026-08-01 and 08-10 both had deep boards and lost. Minimum stake."
       ],
       legs: slipLegs
     });
