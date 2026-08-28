@@ -5689,7 +5689,7 @@ function handleLegToggle(slipIdx,legIdx,isChecked){
     if(!subs.has(legIdx)){
       const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
       const kept=Array.from(boxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
-      const sub=takeBestPoolLeg(kept);
+      const sub=takeBestPoolLeg(kept,slip);
       if(sub){
         slip.legs.push(sub);
         subs.set(legIdx,sub);
