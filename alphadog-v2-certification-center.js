@@ -3612,6 +3612,8 @@ async function apiHighHitSlips(env, request) {
   for (const s of ppSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
   const udSlips = udLegs.length >= UD_SLIP_SIZE ? buildUnderdogBaselineSlips(udLegs) : [];
   for (const s of udSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
+  const slBaselineSlips = slLegs.length >= SL_SLIP_SIZE ? buildSleeperBaselineSlips(slLegs) : [];
+  for (const s of slBaselineSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
   // Backup pool spans BOTH platforms. Each leg keeps its own source_key so the client can only
   // substitute a leg into a slip from the same platform - a PrizePicks leg is not placeable on
   // Underdog and vice versa.
