@@ -145,6 +145,23 @@ async function runScoringEngine(pgClient, input) {
     written++;
   }
 
+  // PERF 2026-08-29: flush all score_0_100/score_grade write-backs in chunked bulk UPDATEs instead
+  // of one awaited UPDATE per row inside the loop above. That loop issued MAX_LEGS_PER_INVOCATION
+  // (2500) separate sequential round trips per invocation - ~14,400 across a full slate - which was
+  // the single largest contributor to Layer 4's runtime (measured 2026-08-28, log_id 637: ~31 min
+  // total, Layer 4 ~24 min of it, this step needing 6 continuations). Same 500-row chunk size and
+  // same arrLit + ::type[] convention already used by the mirror INSERT below.
+  const SCORE_UPDATE_CHUNK_SIZE = 500;
+  for (let i = 0; i < scoreIds.length; i += SCORE_UPDATE_CHUNK_SIZE) {
+    const idChunk = arrLit(scoreIds.slice(i, i + SCORE_UPDATE_CHUNK_SIZE));
+    const scoreChunk = arrLit(scoreValues.slice(i, i + SCORE_UPDATE_CHUNK_SIZE));
+    const gradeChunk = arrLit(scoreGrades.slice(i, i + SCORE_UPDATE_CHUNK_SIZE));
+    await pgClient`UPDATE score.hp_board_current AS h
+      SET score_0_100 = d.score, score_grade = d.grade, updated_at = now()
+      FROM (SELECT * FROM unnest(${idChunk}::text[], ${scoreChunk}::float8[], ${gradeChunk}::text[]) AS t(row_id, score, grade)) AS d
+      WHERE h.hp_board_row_id = d.row_id`;
+  }
+
   // FIXED 2026-08-21: hpRows is selected via "score_0_100 IS NULL" on hp_board_current, but that
   // column is only updated (marking a row as claimed) row-by-row in the loop above, AFTER hpRows
   // was already read. A retry/overlapping invocation of this same chain_id (expected and common:
