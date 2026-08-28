@@ -3458,14 +3458,15 @@ function buildUnderdogBaselineSlips(legs) {
       slip_type: `${size}-pick`,
       slip_size: size,
       entry_mode: "power",
-      structure_label: `${size}-pick Power (Baseline HP >= ${UD_BASELINE_HP_MIN})`,
-      estimated_multiplier: mult,
-      estimated_payout_note: `Real backtest: 53 slips, 33 full hits (62.3%), 13 days, +55.3% ROI. Multiplier = BASE[${size}]=${UD_BASE_TABLE[size]} x product of per-leg modifiers (0.4874/p_novig from the live moneyline), with a ${Math.round((1-UD_SAMEGAME_HAIRCUT)*100)}% haircut per same-game pair. Structure verified exact against 6 real in-app slips. Confirm the real multiplier in-app before placing.`,
+      structure_label: `${size}-pick Power (Divergence >= ${Math.round(UD_DIVERGENCE_MIN*100)}pp)`,
+      estimated_multiplier: udSlipMultiplier(slipLegs),
+      estimated_payout_note: `Real backtest: 205 slips, 107 full hits (52.2%), 20 days, +28.6% ROI. Multiplier = BASE[${size}]=${UD_BASE_TABLE[size]} x product of per-leg modifiers (${UD_MODIFIER_K}/p_novig from the live moneyline), with a ${Math.round((1-UD_SAMEGAME_HAIRCUT)*100)}% haircut per same-game pair. Structure verified exact against 6 real in-app slips. Confirm the real multiplier in-app before placing.`,
       strategy_notes: [
-        `Qualifying legs: baseline layer >= ${UD_BASELINE_HP_MIN}. Underdog DOES price probability into its modifier (unlike PrizePicks Goblin), so this edge exists only because the baseline beats the market's own number - verified against bet365/DraftKings/BetMGM at +21.2pp in the top band, with the overall pool calibrated and the low band correctly negative.`,
-        "Built strictly cross-game (max 1 leg per game) - Underdog applies a ~14.9% same-game haircut on Power.",
-        "Power only. Flex is structurally worse for this pool: the 2-of-3 tier pays BELOW 1.0x, so partial credit does not return the stake.",
-        "RISKS: 8 of 13 backtest days profitable; losing days are NOT predictable from any tested signal. Volume-weighted t=2.15 passes, but excluding 2026-08-26 drops it to +38.0% and t=1.34 (fails) - and that day's prices come from single-sided vig removal, not observed two-sided lines. Threshold 82 is the peak of a searched grid; plan around the +40-50% the whole 76-83 range occupies. Minimum stake."
+        `Qualifying legs: DIVERGENCE >= ${Math.round(UD_DIVERGENCE_MIN*100)}pp - the baseline exceeds the market's own vig-free probability by at least that much. Underdog prices probability INTO its modifier, so a leg the market also likes pays less and carries no edge. Selecting on divergence finds the only place an edge can exist: where we disagree with the market. Measured: these legs hit 69.69% against a market-implied 58.3%.`,
+        "THE ONLY Underdog config to clear every robustness gate: day-level block bootstrap 97.9% positive (bar 95%), 95% CI [+1.0%, +53.4%] entirely above zero, leave-one-out across all 20 days never below +21.0%, 14 of 20 days profitable with the best day only 20% of returns.",
+        "Two-sided-priced slips only score +27.7% vs +28.6% overall - the edge does not depend on inferred prices, which is what invalidated every previous Underdog candidate.",
+        "Power only, 2-pick only. Flex tested across 3 thresholds x 3 sizes on this pool: negative in 6 of 9 cells, never beat Power. Underdog's 2-of-3 tier pays ~0.75x, so partial credit does not return the stake.",
+        "RISKS: +28.6% with a CI lower bound of +1.0% - real but not large; the true value could be near +5%. 53% of legs use single-sided devig (now with prop-specific holds 3.79%-8.40%). Losing days are NOT predictable - 2026-08-01 and 08-10 both had deep boards and lost. Minimum stake."
       ],
       legs: slipLegs
     });
