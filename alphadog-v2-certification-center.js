@@ -5737,13 +5737,20 @@ function isLegSubstitute(slipIdx,leg){
   for(const s of subs.values()){ if(String(s.board_row_id)===String(leg.board_row_id))return true; }
   return false;
 }
+function dnpBadge(leg){
+  const r=String(leg&&leg.dnp_risk||'');
+  if(r==='HIGH')return '<span class="dnpFlag" title="'+esc(String(leg.dnp_risk_reason||''))+'" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">⚠ SCRATCH RISK</span>';
+  if(r==='MEDIUM')return '<span class="dnpFlag" title="'+esc(String(leg.dnp_risk_reason||''))+'" style="font-size:10px;font-weight:700;opacity:0.75;margin-right:6px">⚠</span>';
+  return '';
+}
 function legRowHtml(leg,slipIdx,legIdx){
   const un=slipUnchecked.get(slipIdx);
   const checked=(un&&un.has(legIdx))?'':' checked';
   const isSub=isLegSubstitute(slipIdx,leg);
   const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
-  const style=isSub?' style="background:rgba(255,200,0,0.10)"':'';
-  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+  const hi=String(leg.dnp_risk||'')==='HIGH';
+  const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+dnpBadge(leg)+legLine(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
 }
 // One delegated listener on the results container instead of inline onchange="" attributes -
 // inline handlers on dynamically-injected HTML do not resolve to top-level functions in this
