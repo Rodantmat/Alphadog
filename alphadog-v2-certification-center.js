@@ -6097,13 +6097,32 @@ function slipSummaryHtml(filtered){
   const lines=Array.from(bySource.entries()).map(([label,parts])=>'<div class="slipSummaryLine"><b>'+label+':</b> '+parts.join(', ')+'</div>');
   return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines.join('')+'</div>';
 }
+// Values the operator has typed into the real-multiplier fields, keyed so they survive the
+// full innerHTML rebuild that happens on every leg toggle / filter change.
+// BUG FIXED 2026-08-28: unchecking a leg re-rendered the list and WIPED every entered real
+// multiplier, losing the operator's work. Capture before the rebuild, restore after.
+const realMultCache=new Map();
+function cacheRealMultInputs(){
+  document.querySelectorAll('.realMultInput').forEach(inp=>{
+    const k=inp.dataset.slipIdx+'|'+(inp.dataset.tier||'full');
+    if(inp.value!=='' && inp.value!=null)realMultCache.set(k,inp.value);
+  });
+}
+function restoreRealMultInputs(){
+  document.querySelectorAll('.realMultInput').forEach(inp=>{
+    const k=inp.dataset.slipIdx+'|'+(inp.dataset.tier||'full');
+    if(realMultCache.has(k))inp.value=realMultCache.get(k);
+  });
+}
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
+  cacheRealMultInputs();
   bindLegKeepBoxDelegation();
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
   results.innerHTML=lastSlipsNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  restoreRealMultInputs();
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
 function bindSlipSourceFilters(){const ids=['filterPrizepicks','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
