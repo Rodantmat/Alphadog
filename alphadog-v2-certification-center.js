@@ -3645,9 +3645,9 @@ async function apiHighHitSlips(env, request) {
   const sleeperSlips = slBaselineSlips;
   const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length;
+  const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length + slLegs.length;
   if (!generated_slips.length) {
-    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: [`No leg currently on the board qualifies right now - board may still be filling in for the day. PrizePicks Goblin (baseline>=${BASELINE_HP_MIN}) found ${ppLegs.length} leg(s), needs ${BASELINE_HP_SIZE}. Underdog (baseline>=${UD_BASELINE_HP_MIN}) found ${udLegs.length} leg(s), needs ${UD_SLIP_SIZE}. Demon and Sleeper remain paused.`] });
+    return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: [`No leg currently on the board qualifies right now - board may still be filling in for the day. PrizePicks Goblin (baseline>=${BASELINE_HP_MIN}) found ${ppLegs.length} leg(s), needs ${BASELINE_HP_SIZE}. Underdog (baseline>=${UD_BASELINE_HP_MIN}) found ${udLegs.length} leg(s), needs ${UD_SLIP_SIZE}. Sleeper (baseline>=${SL_BASELINE_HP_MIN}) found ${slLegs.length} leg(s), needs ${SL_SLIP_SIZE}. Demon remains paused.`] });
   }
   const counts = {};
   for (const s of generated_slips) counts[s.source_key] = (counts[s.source_key] || 0) + 1;
