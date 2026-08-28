@@ -5381,6 +5381,22 @@ function goblinSlipEstimatedMultiplier(slipLegs) {
 function recomputeMultiplier(sourceKey, entryMode, size, legs){
   const k=String(sourceKey||'').toLowerCase();
   if(size<2)return 0;
+  if(k==='parlay_underdog'||k==='underdog'){
+    // Mirrors the server's udSlipMultiplier exactly. Verified against 6 real in-app slips:
+    //   payout = BASE[size] x PRODUCT(0.4874 / p_novig) x 0.851^(same-game pairs), truncated to 2dp.
+    const BASE={2:3.5,3:6.5,4:12,5:20,6:35};
+    const base=BASE[size];
+    if(!base||!legs||!legs.length)return 0;
+    let prod=1;
+    for(const l of legs){
+      const p=Number(l.p_novig);
+      if(!(p>0.02&&p<0.98))return 0;
+      prod*=0.4874/p;
+    }
+    const games={};let dup=0;
+    for(const l of legs){const g=String(l.game_pk);if(games[g])dup++;games[g]=1}
+    return Math.floor(base*prod*Math.pow(0.851,dup)*100)/100;
+  }
   if(k==='sleeper'){
     // REAL FIX 2026-08-26: previously returned the naive per-leg product with no Flex discount -
     // this is the exact same over-confident number the badge/prefill fix was supposed to remove.
