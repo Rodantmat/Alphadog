@@ -3743,7 +3743,7 @@ function buildMixedTop55Slips(legs) {
         slip_type: `${size}-pick`,
         slip_size: size,
         entry_mode: "power",
-        structure_label: `${size}-pick Power (Baseline HP >= ${BASELINE_HP_MIN})`,
+        structure_label: `${size}-pick Power (Top ${Math.round((1-BASELINE_HP_PERCENTILE)*100)}% of board)`,
         estimated_multiplier: flexFull,
         estimated_multiplier_flex_tiers: flexTiers,
         estimated_payout_note: `Real slip-construction backtest (pinned morning-first board snapshots, started games excluded, deterministic ranked 6-picks graded against real outcomes), capped at ${BASELINE_HP_MAX_SLIPS_PER_DAY} slips/day: 37 slips, 35 full hits (94.6%), +109.5% ROI over 9 active days. Multiplier ${Math.round(Math.pow(BASELINE_HP_PER_LEG_RATE,size)*1000)/1000}x is derived from a per-leg rate of ${BASELINE_HP_PER_LEG_RATE} measured on DOUBLES only - this slip may contain props whose real per-leg rate is unmeasured and likely lower, so treat this as an estimate and always overwrite it with the app's real displayed multiplier before saving.`,
