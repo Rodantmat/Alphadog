@@ -4,7 +4,7 @@ const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
 const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.2.0-postgres-rewire";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.3.0-postgres-rewire";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.3.1-cpu-limit-fix";
 
 const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo", "pitches_thrown"]);
 
