@@ -6097,26 +6097,32 @@ function slipSummaryHtml(filtered){
   const lines=Array.from(bySource.entries()).map(([label,parts])=>'<div class="slipSummaryLine"><b>'+label+':</b> '+parts.join(', ')+'</div>');
   return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines.join('')+'</div>';
 }
-// Values the operator has typed into the real-multiplier fields, keyed so they survive the
-// full innerHTML rebuild that happens on every leg toggle / filter change.
-// BUG FIXED 2026-08-28: unchecking a leg re-rendered the list and WIPED every entered real
-// multiplier, losing the operator's work. Capture before the rebuild, restore after.
+// Real multipliers the operator has TYPED. Keyed by slip + effective size + tier so that a slip
+// whose size changed (leg unchecked / substituted) correctly recomputes, while every untouched
+// slip keeps the value that was entered.
+// BUG FIXED 2026-08-28: unchecking a single leg re-rendered the whole list and WIPED every real
+// multiplier the operator had entered across all slips. Only user-typed values are preserved -
+// auto-computed values are left to recompute so the badge stays correct.
 const realMultCache=new Map();
-function cacheRealMultInputs(){
+function realMultKey(inp){
+  const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+inp.dataset.slipIdx+'"]');
+  const size=Array.from(boxes).filter(cb=>cb.checked).length;
+  return inp.dataset.slipIdx+'|'+size+'|'+(inp.dataset.tierHits||'full');
+}
+function bindRealMultCapture(){
   document.querySelectorAll('.realMultInput').forEach(inp=>{
-    const k=inp.dataset.slipIdx+'|'+(inp.dataset.tier||'full');
-    if(inp.value!=='' && inp.value!=null)realMultCache.set(k,inp.value);
+    inp.oninput=()=>{ realMultCache.set(realMultKey(inp), inp.value); };
   });
 }
 function restoreRealMultInputs(){
   document.querySelectorAll('.realMultInput').forEach(inp=>{
-    const k=inp.dataset.slipIdx+'|'+(inp.dataset.tier||'full');
+    const k=realMultKey(inp);
     if(realMultCache.has(k))inp.value=realMultCache.get(k);
   });
+  bindRealMultCapture();
 }
 function applySlipSourceFilter(){
   const results=$('autoCreateResults');if(!results)return;
-  cacheRealMultInputs();
   bindLegKeepBoxDelegation();
   if(!lastRawSlips.length){return}
   const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
