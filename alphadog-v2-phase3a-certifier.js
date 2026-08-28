@@ -3,7 +3,7 @@ import postgres from "postgres";
 const WORKER_NAME = "alphadog-v2-phase3a-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
 const JOB_KEY = "scoring-engine-shadow-v1";
-const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.3.0-postgres-rewire";
+const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.3.1-bulk-score-writeback";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
 const MAX_LEGS_PER_INVOCATION = 2500;
 // PERF 2026-08-29: array-literal helper, copied verbatim from alphadog-v2-phase2b-certifier.js so
