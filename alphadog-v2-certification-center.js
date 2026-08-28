@@ -5664,7 +5664,7 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
     for(const l of legs){
       const p=Number(l.p_novig);
       if(!(p>0.02&&p<0.98))return 0;
-      prod*=0.4874/p;
+      prod*=0.4687/p;   // recalibrated 2026-08-28 from 15 real slips - keep in sync with UD_MODIFIER_K
     }
     const games={};let dup=0;
     for(const l of legs){const g=String(l.game_pk);if(games[g])dup++;games[g]=1}
