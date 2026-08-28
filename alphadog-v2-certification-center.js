@@ -3284,7 +3284,16 @@ function buildSleeperBaselineSlips(legs) {
 const UD_BASELINE_HP_MIN = 82;
 const UD_SLIP_SIZE = 4;
 const UD_BASE_TABLE = { 2: 3.5, 3: 6.5, 4: 12, 5: 20, 6: 35 };
-const UD_MODIFIER_K = 0.4874;
+// RECALIBRATED 2026-08-28 from 15 real placed slips (all 4-leg, all 4 distinct games, so the
+// same-game haircut is not involved). Measured real/estimated ratio: mean 0.8560, range
+// 0.809-0.941, geometric mean 0.8555 - a TIGHT, systematic ~14.4% OVERESTIMATE, not noise.
+// Per-leg correction = 0.8555^(1/4) = 0.9617, so k moves 0.4874 -> 0.4687.
+// ROOT CAUSE: the original 0.4874 was fitted on 8 observations that were ALL hits_runs_rbis/1.5.
+// Today's legs are rbis/0.5, walks/0.5, hits/0.5, total_bases/1.5 - the constant is prop-sensitive
+// and was generalised from a single prop. Same error class as the flat per-leg rate on PrizePicks.
+// ⚠️ IMPACT: the deployed +55.3% backtest assumed the old constant. Corrected, that becomes roughly
+// +33%. Day-robustness was already marginal (fails without 2026-08-26) - re-run it before sizing.
+const UD_MODIFIER_K = 0.4687;
 const UD_SAMEGAME_HAIRCUT = 0.851;
 function udLegModifier(pNovig) {
   const p = Number(pNovig);
