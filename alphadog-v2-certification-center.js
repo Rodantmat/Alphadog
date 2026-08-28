@@ -5679,7 +5679,7 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
       for(const l of legs){
         const p=Number(l.p_novig);
         if(!(p>0.02&&p<0.98))return 0;
-        prod*=0.8916/p;
+        prod*=0.9210/p;   // recalibrated 2026-08-28 - keep in sync with SL_MULT_K
       }
       const g={};let dup=0;
       for(const l of legs){const kk=String(l.game_pk);if(g[kk])dup++;g[kk]=1}
