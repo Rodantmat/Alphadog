@@ -5546,6 +5546,20 @@ function recomputeMultiplier(sourceKey, entryMode, size, legs){
     return Math.floor(base*prod*Math.pow(0.851,dup)*100)/100;
   }
   if(k==='sleeper'){
+    // Baseline_hp track (2026-08-27): Sleeper MAX payout is the PURE PRODUCT of per-leg
+    // multipliers, with no base table. Mirrors the server's slSlipMultiplier. Legs carrying
+    // p_novig use this path; older Sleeper legs fall through to the legacy branch below.
+    if(legs&&legs.length&&legs.every(l=>Number.isFinite(Number(l.p_novig)))){
+      let prod=1;
+      for(const l of legs){
+        const p=Number(l.p_novig);
+        if(!(p>0.02&&p<0.98))return 0;
+        prod*=0.8916/p;
+      }
+      const g={};let dup=0;
+      for(const l of legs){const kk=String(l.game_pk);if(g[kk])dup++;g[kk]=1}
+      return Math.round(prod*Math.pow(0.887,dup)*100)/100;
+    }
     // REAL FIX 2026-08-26: previously returned the naive per-leg product with no Flex discount -
     // this is the exact same over-confident number the badge/prefill fix was supposed to remove.
     // Mirror the corrected server-side formula: naive product * EV-parity flex factor, using each
