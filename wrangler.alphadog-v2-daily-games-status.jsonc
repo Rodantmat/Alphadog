@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-daily-games-status",
+  "name": "alphadog-v2-daily-games-status", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-daily-games-status.js",
   "compatibility_date": "2026-05-18",
   "observability": {
