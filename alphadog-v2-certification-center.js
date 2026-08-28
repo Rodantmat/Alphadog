@@ -3427,9 +3427,10 @@ async function apiHighHitSlips(env, request) {
   // breakeven at the confirmed 3.087x per-leg rate. Neither Demon pool (this one or the original
   // 5-prop/more/Tier1) currently holds up under correct methodology. Paused pending a properly
   // re-verified replacement, built to the full standard in Section 11 of ALPHADOG_REALIGNMENT.md.
-  const [sleeperLegs, ppLegs] = await Promise.all([
+  const [sleeperLegs, ppLegs, udLegs] = await Promise.all([
     autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectMixedTop55Legs(env, "prizepicks")
+    autoSelectMixedTop55Legs(env, "prizepicks"),
+    autoSelectUnderdogBaselineLegs(env)
   ]);
   // RE-ENABLED 2026-08-27: PrizePicks Goblin returns with an entirely new selection layer. The
   // pause below was for Sim A (hits/less + total_bases/less ranked by appearance count + a 92%
