@@ -3392,9 +3392,11 @@ async function autoSelectUnderdogBaselineLegs(env) {
       novig AS (
         SELECT pid, ck, lv,
           CASE WHEN io IS NOT NULL AND iu IS NOT NULL THEN io/(io+iu)
-               WHEN io IS NOT NULL THEN io/1.045 ELSE 1-(iu/1.045) END p_over,
+               WHEN io IS NOT NULL THEN io/${UD_OVERROUND_DEFAULT}
+               ELSE 1-(iu/${UD_OVERROUND_DEFAULT}) END p_over,
           CASE WHEN io IS NOT NULL AND iu IS NOT NULL THEN iu/(io+iu)
-               WHEN iu IS NOT NULL THEN iu/1.045 ELSE 1-(io/1.045) END p_under
+               WHEN iu IS NOT NULL THEN iu/${UD_OVERROUND_DEFAULT}
+               ELSE 1-(io/${UD_OVERROUND_DEFAULT}) END p_under
         FROM mkt WHERE io IS NOT NULL OR iu IS NOT NULL
       )
       SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
@@ -3403,7 +3405,9 @@ async function autoSelectUnderdogBaselineLegs(env) {
         f.probability_confidence_0_100 AS confidence_0_100,
         f.is_goblin, f.is_demon, b.non_push_sample AS historical_n,
         round(b.hit_probability_0_100::numeric,1) AS historical_hit_pct,
-        (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END) AS p_novig
+        (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END) AS p_novig,
+        round((b.hit_probability_0_100/100.0 -
+          (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END))::numeric,4) AS divergence
       FROM score.final_board_current f
       JOIN classification.baseline_v6_current b
         ON b.player_id = f.mlb_player_id::text AND b.canonical_prop_key = f.canonical_prop_key
@@ -3411,11 +3415,16 @@ async function autoSelectUnderdogBaselineLegs(env) {
       JOIN novig n ON n.pid = f.mlb_player_id AND n.ck = f.canonical_prop_key AND n.lv = f.line_value
       WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
         AND f.source_key = 'parlay_underdog'
-        AND b.hit_probability_0_100 >= ${UD_BASELINE_HP_MIN}
+        AND (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END) BETWEEN 0.02 AND 0.98
+        AND (${UD_MODIFIER_K} / (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END))
+            BETWEEN ${UD_MODIFIER_MIN} AND ${UD_MODIFIER_MAX}
+        AND (b.hit_probability_0_100/100.0 -
+             (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END)) >= ${UD_DIVERGENCE_MIN}
         AND f.official_game_time_utc IS NOT NULL
         AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
-      ORDER BY b.hit_probability_0_100 DESC, f.player_name
+      ORDER BY (b.hit_probability_0_100/100.0 -
+        (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END)) DESC, f.player_name
     `);
   } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
 }
