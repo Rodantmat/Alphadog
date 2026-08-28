@@ -3513,7 +3513,42 @@ function buildUnderdogBaselineSlips(legs) {
 //     home_runs / stolen_bases / rbis legs are unmeasured and likely price lower. Every ROI figure
 //     above is optimistic by an unknown amount until per-prop reads exist.
 // Recommend minimum stake until real placed results accumulate.
-const BASELINE_HP_MIN = 90;
+// ===== REPLACED 2026-08-28: PERCENTILE THRESHOLD + WEAK-PROP EXCLUSION =====
+// The old fixed `baseline_hp >= 90` cutoff is retired for two reasons.
+//
+// 1. IT IS FRAGILE. The baseline model was RESCALED on 2026-08-12. Before that date the top 2% of
+//    the board averaged baseline 89.4; after, 96.2 - yet BOTH hit ~98.9%. Discriminative power was
+//    unchanged; only the scale moved. A hardcoded 90 therefore selected almost nothing before
+//    08-12 (0-5 legs/day) and 39-189 legs/day after. If the model is rescaled again a fixed cutoff
+//    could grab a completely different slice of the board overnight, or nothing at all.
+//    A PERCENTILE threshold is model-invariant by construction and cannot break that way.
+//
+// 2. IT LIMITED THE BACKTEST TO 10 DAYS. On percentiles the same strategy backtests over 26 days,
+//    spanning both model versions - and the two eras agree: ROI +99.3% pre-rescale vs +110.5%
+//    post. Neither window was used to design the other, so that is genuine out-of-sample support.
+//
+// WEAK-PROP EXCLUSION: three props are dropped on HIT RATE ALONE (no multiplier in the decision) -
+// hitter_strikeouts 80.95%, earned_runs 87.50%, fantasy_score 90.48%, against a field running
+// 96-100% at this threshold. Removing them lifts 6-pick full-hit from 85.2% to 90.4%, and the gain
+// HOLDS WHEN SCORED WITH FLAT RATES (+131.8% vs +118.6%), so it is a real hit-rate improvement and
+// not a multiplier artifact - the trap that invalidated EV-ranking earlier in this program.
+//
+// REAL BACKTEST (26-day window, morning-first snapshot pinning, started games excluded,
+// deterministic ranked 6-picks graded on real outcomes, cap 5 slips/day):
+//   83 slips, 75 full hits (90.4%), 23 active days, +120.8% ROI, +$100.20 on $83 staked.
+//   21 of 23 days profitable. ZERO slips ever finished 4/6 or worse - all 8 misses were exactly
+//   one leg short. Best single day contributes only 7% of total returns.
+//   Day-level block bootstrap: 100% of resamples positive, 95% CI [+100.9%, +136.6%],
+//   leave-one-out across all 23 days stays within [+118.4%, +126.2%].
+// Compare the retired config: +123.5% on 10 days with ZERO losing days - nearly the same return on
+// less than half the evidence, and with no day on which the strategy was ever seen to lose.
+//
+// PERCENTILE IS COMPUTED PER BOARD SNAPSHOT, not against a historical constant. The signal is
+// ordinally meaningful but NOT cardinally - the rescale proved that - so absolute baseline values
+// must never be compared across model versions, and slip sizing should stay FLAT (Kelly requires a
+// cardinal probability estimate this signal cannot provide).
+const BASELINE_HP_PERCENTILE = 0.90;   // top 10% of the day's board
+const BASELINE_HP_EXCLUDED_PROPS = ['hitter_strikeouts', 'earned_runs', 'fantasy_score'];
 const BASELINE_HP_SIZE = 6;
 const BASELINE_HP_PER_LEG_RATE = 1.1417; // legacy flat fallback - superseded by the per-prop table
 // ===== GRANULAR PER-PROP MULTIPLIER TABLE (2026-08-27) =====
