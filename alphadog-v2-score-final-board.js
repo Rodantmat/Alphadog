@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.2.0-postgres-rewire";
+const VERSION = "alphadog-v2-score-final-board-v0.2.1-cpu-limit-fix";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1";
 
