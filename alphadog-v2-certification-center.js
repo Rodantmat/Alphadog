@@ -3142,7 +3142,37 @@ function attachDnpRisk(slips, riskMap) {
 //  3. The 80-85 band came in BELOW breakeven (0.9970) while 70-80 cleared (1.0352) - that
 //     non-monotonicity means the exact 85 cut is less certain than the direction of the signal.
 // Minimum stake until real placed results accumulate.
-const SL_BASELINE_HP_MIN = 85;
+// ===== REPLACED 2026-08-28: PERCENTILE THRESHOLD =====
+// The old fixed `baseline_hp >= 85` cutoff is retired. Unlike PrizePicks, Sleeper's baseline was
+// NOT rescaled - its average holds at 63-70 across the whole window - so the absolute cutoff was
+// never broken. The problem here is POOL DEPTH: >=85 produced only 0-4 qualifying legs on most
+// days, so the strategy could only build 4-picks on 9 of 24 days.
+//
+// A per-snapshot percentile adapts to whatever the board offers, so thin days still contribute:
+//   OLD  baseline >= 85, 4-pick:  17 slips /  9 days, +73.9%  (6 of the 9 were single-slip days,
+//                                                              and all six happened to win)
+//   NEW  top 10%,       4-pick:  29 slips / 15 days, +84.0%  (with 6 genuine losing days)
+// Better return on 67% more days and real adversity in the sample.
+//
+// Percentile bands measured over 18 days (Sleeper breakeven is m*p >= 1.0 - there is NO base
+// table, so every leg must clear on its own):
+//   top  5%   75 legs  actual 86.67% vs market 68.5%  edge +18.16pp  m*p 1.1899
+//   top 10%   65 legs  actual 81.54% vs market 66.4%  edge +15.13pp  m*p 1.1550
+//   top 20%  133 legs  actual 66.17% vs market 64.8%  edge  +1.35pp  m*p 0.9635
+//   50-80%   397 legs  actual 67.76% vs market 62.7%  edge  +5.04pp  m*p 1.0165
+//   bottom50 683 legs  actual 51.68% vs market 56.7%  edge  -4.99pp  m*p 0.8639
+//
+// ⚠️ NON-MONOTONIC: the top-20% band (0.9635) sits BELOW the 50-80% band (1.0165). The same
+// inversion appeared under the absolute threshold at 80-85. The middle of Sleeper's distribution is
+// genuinely noisy - do NOT set a threshold anywhere between the 80th and 90th percentile.
+//
+// GATES (day-level block bootstrap): 99.6% of resamples positive, 95% CI [+26.5%, +123.4%],
+// leave-one-out across all 15 days stays within [+72.2%, +90.6%], 9 of 15 days profitable, best day
+// only 20% of returns.
+//
+// Percentile is computed PER BOARD SNAPSHOT, never against a historical constant. The signal is
+// ordinal, not cardinal - keep staking FLAT.
+const SL_PERCENTILE = 0.90;   // top 10% of the day's board
 const SL_SLIP_SIZE = 4;
 // RECALIBRATED 2026-08-28 from 2 real placed slips: real/estimated ratio 1.106 and 1.173,
 // geometric mean 1.1389 - the model runs ~13.9% CONSERVATIVE (the safe direction).
