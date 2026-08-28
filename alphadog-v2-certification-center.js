@@ -3619,7 +3619,8 @@ async function apiHighHitSlips(env, request) {
   // Underdog and vice versa.
   const backupPool = [
     ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
-    ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE)
+    ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
+    ...slLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE)
   ];
   // NOTE: do NOT rewrite source_key here. The client-side filter (activeSourceFilters) only
   // recognises 'prizepicks' | 'sleeper' | 'parlay_underdog'. An earlier version of this call site
