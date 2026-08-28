@@ -3837,6 +3837,26 @@ async function apiHighHitSlips(env, request) {
   // Backup pool spans BOTH platforms. Each leg keeps its own source_key so the client can only
   // substitute a leg into a slip from the same platform - a PrizePicks leg is not placeable on
   // Underdog and vice versa.
+  // ⚠️ CRITICAL: the backup pool contains ONLY legs that already passed the strategy's own
+  // selection filter. It is the leftover of the qualifying pool, never a fallback to lower-ranked
+  // board legs.
+  //
+  // WHY THIS MATTERS - measured on real money, 2026-08-27. Legs went unavailable at placement and
+  // were substituted from a pool that was ranked by baseline but NOT gated by the strategy's
+  // threshold. Result, by the leg's percentile on that day's board:
+  //     19 legs at percentile 95.8-99.9  ->  19 hits  (100%)
+  //      5 legs at percentile 58.6-85.8  ->   0 hits  (0%)
+  // Every one of the day's five misses was a sub-threshold substitute. The 19 legs the strategy
+  // actually chose went 19-for-19. Two slips that contained no substitute both WON; all three that
+  // contained one or two LOST. This single defect turned a winning day into -38%.
+  //
+  // The percentile gradient measured over 26 days and 12,983 legs shows exactly what a
+  // sub-threshold leg costs:
+  //     98-100th pctl -> 98.89% hit    90-95th -> 95.81%    85-90th -> 93.24%    50-80th -> 83.24%
+  // Swapping a 98th-percentile leg for an 85th-percentile one costs ~6 points of 6-pick full-hit
+  // probability; a 58th-percentile leg costs ~16. The extra leg's multiplier (~15%) never covers
+  // that. IF NOTHING QUALIFIES, LET THE SLIP SHRINK - a smaller slip of qualifying legs beats a
+  // full slip carrying a leg the strategy would never have picked.
   const backupPool = [
     ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
     ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
