@@ -3709,6 +3709,11 @@ async function apiHighHitSlips(env, request) {
   // Backup pool spans BOTH platforms. Each leg keeps its own source_key so the client can only
   // substitute a leg into a slip from the same platform - a PrizePicks leg is not placeable on
   // Underdog and vice versa.
+  const backupPool = [
+    ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
+    ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
+    ...slLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE)
+  ];
   // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
   const allPlayerIds = [...new Set([...ppSlips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
