@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "alphadog-v2-phase3a-certifier",
+  "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-phase3a-certifier.js",
   "compatibility_date": "2026-05-18",
   "observability": {
