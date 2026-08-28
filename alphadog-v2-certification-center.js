@@ -3013,6 +3013,148 @@ function buildRegularHighHitSlips(legs) {
 // Demon-specific builders.)
 
 
+// ===== SLEEPER BASELINE-HP TRACK (deployed 2026-08-27) =====
+// Sleeper's payout structure was reverse-engineered from real in-app screenshots and verified to
+// <0.3% error on 2 independent slips:
+//   MAX (Power) payout = PRODUCT(per-leg multipliers)   -- NO base table, unlike Underdog
+//   multiplier = 0.8916 / p_novig   (fitted on 7 live reads, MAE 0.76%; implies a 10.8% hold)
+// A same-game group costs a further ~11.3%.
+//
+// ⚠️ CORRECTION TO THE EXISTING SLEEPER PRICING CODE: the multiplier is the RAW decimal odds. The
+// previously deployed formula M = 1 + (dec-1)*0.95 applies a 5% haircut that does not exist -
+// against 7 live reads the raw conversion had MAE 0.30% vs 2.38% for the 0.95 version.
+//
+// FLEX IS A ROUND-ROBIN and is WORSE than Power for this pool. An n-pick decomposes into n
+// sub-parlays of size n-1, each at 1/n stake (verified exactly: predicted 3.609 vs 3.61 shown).
+// Power beat Flex in ALL 22 threshold x size cells tested (+73.9% vs +42.9% at this config).
+// Flex only wins when per-leg p is low, which is the opposite of this pool.
+//
+// BECAUSE THERE IS NO BASE TABLE, slip size does not change EV - a 2-pick and a 6-pick of the same
+// legs have identical per-dollar expectation. Every leg must clear m*p >= 1.0 ON ITS OWN. The size
+// choice here is therefore about which DAYS qualify, not about leverage: requiring 4 qualifying
+// legs selects for deep-pool days, which are empirically the better days. A cascading variant that
+// also played thin 2-3 leg days scored +45.5% vs +73.9% for 4-pick-only - the thin days went
+// 1-for-5. So: play ONLY when 4+ legs qualify, sit out otherwise.
+//
+// REAL BACKTEST (snapshot-pinned morning-first, started games excluded, same-game haircut applied):
+// 17 slips, 13 full hits (76.5%), 9 active days, +73.9% ROI.
+// ROBUSTNESS - the strongest in the program so far: volume-weighted t = 2.947 (bar 1.860), 8 of 9
+// days profitable, and LEAVE-ONE-OUT across all 9 days keeps pooled ROI in +61.6%..+88.0% with t
+// from 2.50 to 3.58. No single day is load-bearing (contrast Underdog, which fails without 08-26).
+// Per-leg at >=85 over the full 24-day window: 208 legs, 20 days, m*p = 1.1025, t = 3.017.
+//
+// ⚠️ CARRIED RISKS:
+//  1. 17 slips is a small sample and 6 of the 9 days are single-slip days that all won.
+//  2. Sleeper's OWN historical prices do not exist before 2026-08-26 - p_novig here is derived from
+//     the sportsbook consensus, and the 0.8916 constant is fitted on 7 live reads.
+//  3. The 80-85 band came in BELOW breakeven (0.9970) while 70-80 cleared (1.0352) - that
+//     non-monotonicity means the exact 85 cut is less certain than the direction of the signal.
+// Minimum stake until real placed results accumulate.
+const SL_BASELINE_HP_MIN = 85;
+const SL_SLIP_SIZE = 4;
+const SL_MULT_K = 0.8916;
+const SL_SAMEGAME_HAIRCUT = 0.887;
+function slLegMultiplier(pNovig) {
+  const p = Number(pNovig);
+  if (!(p > 0.02 && p < 0.98)) return null;
+  return Math.round((SL_MULT_K / p) * 10000) / 10000;
+}
+function slSlipMultiplier(slipLegs) {
+  let prod = 1;
+  for (const l of slipLegs) {
+    const m = slLegMultiplier(l.p_novig);
+    if (m === null) return 0;
+    prod *= m;
+  }
+  const games = new Set(slipLegs.map(l => String(l.game_pk)));
+  const dup = slipLegs.length - games.size;
+  return Math.round(prod * Math.pow(SL_SAMEGAME_HAIRCUT, dup) * 100) / 100;
+}
+async function autoSelectSleeperBaselineLegs(env) {
+  const pg = pgClient(env);
+  try {
+    return await queryAllPg(pg, `
+      WITH mkt AS (
+        SELECT resolved_mlb_player_id pid, canonical_prop_key ck, line_value lv,
+          MAX(CASE WHEN LOWER(outcome_side) IN ('over','more','higher') THEN 1.0/price_decimal END) io,
+          MAX(CASE WHEN LOWER(outcome_side) IN ('under','less','lower') THEN 1.0/price_decimal END) iu
+        FROM market.context_probe_player_props
+        WHERE price_decimal IS NOT NULL AND price_decimal > 1.0 AND resolved_mlb_player_id IS NOT NULL
+        GROUP BY 1,2,3
+      ),
+      novig AS (
+        SELECT pid, ck, lv,
+          CASE WHEN io IS NOT NULL AND iu IS NOT NULL THEN io/(io+iu)
+               WHEN io IS NOT NULL THEN io/1.045 ELSE 1-(iu/1.045) END p_over,
+          CASE WHEN io IS NOT NULL AND iu IS NOT NULL THEN iu/(io+iu)
+               WHEN iu IS NOT NULL THEN iu/1.045 ELSE 1-(io/1.045) END p_under
+        FROM mkt WHERE io IS NOT NULL OR iu IS NOT NULL
+      )
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
+        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
+        b.hit_probability_0_100 AS hit_probability_0_100,
+        f.probability_confidence_0_100 AS confidence_0_100,
+        f.is_goblin, f.is_demon, b.non_push_sample AS historical_n,
+        round(b.hit_probability_0_100::numeric,1) AS historical_hit_pct,
+        (CASE WHEN LOWER(f.selected_side) IN ('less','under','lower') THEN n.p_under ELSE n.p_over END) AS p_novig
+      FROM score.final_board_current f
+      JOIN classification.baseline_v6_current b
+        ON b.player_id = f.mlb_player_id::text AND b.canonical_prop_key = f.canonical_prop_key
+       AND b.line_value = f.line_value AND b.selected_side = f.selected_side
+      JOIN novig n ON n.pid = f.mlb_player_id AND n.ck = f.canonical_prop_key AND n.lv = f.line_value
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND f.source_key = 'sleeper'
+        AND b.hit_probability_0_100 >= ${SL_BASELINE_HP_MIN}
+        AND f.official_game_time_utc IS NOT NULL
+        AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY b.hit_probability_0_100 DESC, f.player_name
+    `);
+  } finally { await pg.end({ timeout: 1 }).catch(() => {}); }
+}
+function buildSleeperBaselineSlips(legs) {
+  const size = SL_SLIP_SIZE;
+  const used = new Set();
+  const dailyPlayerUsage = new Map();
+  const slips = [];
+  while (true) {
+    const avail = (legs || []).filter(l => !used.has(l.board_row_id));
+    if (avail.length < size) break;
+    const gameCounts = new Map();
+    const playersInSlip = new Set();
+    const slipLegs = [];
+    for (const leg of avail) {
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      if ((gameCounts.get(leg.game_pk) || 0) >= 2) continue;
+      slipLegs.push(leg);
+      gameCounts.set(leg.game_pk, (gameCounts.get(leg.game_pk) || 0) + 1);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
+    }
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_sl_baseline"),
+      source_key: "sleeper",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "power",
+      structure_label: `${size}-pick Power (Baseline HP >= ${SL_BASELINE_HP_MIN})`,
+      estimated_multiplier: slSlipMultiplier(slipLegs),
+      estimated_payout_note: `Real backtest: 17 slips, 13 full hits (76.5%), 9 days, +73.9% ROI. Sleeper has NO base table - the payout is simply the product of each leg's multiplier (${SL_MULT_K}/p_novig from the live moneyline), with an ~${Math.round((1-SL_SAMEGAME_HAIRCUT)*100)}% haircut per same-game group. Structure verified against real in-app slips. Confirm the real multiplier in-app before placing.`,
+      strategy_notes: [
+        `Qualifying legs: baseline layer >= ${SL_BASELINE_HP_MIN}. Sleeper prices probability directly into the multiplier, so every leg must clear m*p >= 1.0 on its own - there is no base table to carry a weak leg.`,
+        "Power only. Flex is a round-robin (n sub-parlays of size n-1 at 1/n stake) and lost to Power in all 22 cells tested - the consolation is worth less than the product you give up.",
+        `Play ONLY when ${size}+ legs qualify. Slip size does not change EV here, but requiring ${size} legs selects for deep-pool days, which are empirically better: a cascading version that also played thin 2-3 leg days scored +45.5% vs +73.9%, with the thin days going 1-for-5.`,
+        "ROBUSTNESS: volume-weighted t=2.947 (bar 1.860), 8 of 9 days profitable, and leave-one-out across every day keeps ROI in +61.6%..+88.0%. No single day is load-bearing.",
+        "RISKS: 17 slips total, and 6 of 9 days are single-slip days that all won. Sleeper's own historical prices do not exist pre-2026-08-26, so p_novig is derived from sportsbook consensus and the 0.8916 constant is fitted on 7 live reads. Minimum stake."
+      ],
+      legs: slipLegs
+    });
+  }
+  return slips;
+}
 // ===== UNDERDOG BASELINE-HP TRACK (deployed 2026-08-27) =====
 // Underdog's payout structure was reverse-engineered from real in-app screenshots and verified to
 // <0.3% error (exact once their 2-decimal truncation is applied) on 6 independent slips:
