@@ -1800,25 +1800,49 @@ export default {
 
     if (method === "POST" && (path === "/run" || path === "/")) {
       const input = await readJsonSafe(request);
-      try {
-        const output = await runBoardPrep(env, input);
-        if (env.pg) await env.pg.end({ timeout: 5 }).catch(() => {});
-        return jsonResponse(output);
-      } catch (err) {
-        if (env.pg) await env.pg.end({ timeout: 5 }).catch(() => {});
-        await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
-        await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
-        return jsonResponse({
-          ok: false,
-          data_ok: false,
-          version: VERSION,
-          worker_name: WORKER_NAME,
-          job_key: JOB_KEY,
-          status: "FAILED_BOARD_PREP_ENRICHMENT",
-          error: err && err.message ? err.message : String(err),
-          timestamp_utc: nowIso()
-        }, 500);
+      // ADDED 2026-08-28: this handler used to await runBoardPrep() directly and only return
+      // (or error) once it settled. Confirmed live on a heavy 15-game slate (Cowork-supervised
+      // run) that Cloudflare aborts a fetch handler's execution when the calling client
+      // disconnects unless the work is detached via ctx.waitUntil() - the caller here uses a
+      // ~40s probe timeout, and this worker's board_prep_enrichment run genuinely needs longer
+      // than that on a big slate. Evidence: score.board_prep_batches repeatedly got stuck at
+      // PROMOTING_STAGE_TO_CURRENT with the underlying Postgres connection sitting idle
+      // (ClientRead) - i.e. the JS execution itself had stopped, not a slow/blocked query - and
+      // the observed death point tracked the ~40s caller timeout far more closely than it could
+      // possibly track CPU exhaustion (CPU time cannot exceed wall-clock time on a single
+      // isolate, and these deaths occurred well inside the raised 300000ms cpu_ms budget).
+      // Registering the work with ctx.waitUntil() keeps it running to real completion
+      // (DB-verified, per this worker's own certified-completion contract) even if the caller
+      // has already given up waiting - the caller is expected to re-poll the real output tables
+      // either way (see this file's job_key/status contract), so a dropped response body here
+      // is harmless as long as the work itself finishes and is durably written.
+      const workPromise = (async () => {
+        try {
+          const output = await runBoardPrep(env, input);
+          if (env.pg) await env.pg.end({ timeout: 5 }).catch(() => {});
+          return { ok: true, output };
+        } catch (err) {
+          if (env.pg) await env.pg.end({ timeout: 5 }).catch(() => {});
+          await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
+          await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
+          return { ok: false, error: err && err.message ? err.message : String(err) };
+        }
+      })();
+      ctx.waitUntil(workPromise.catch(() => {}));
+      const settled = await workPromise;
+      if (settled.ok) {
+        return jsonResponse(settled.output);
       }
+      return jsonResponse({
+        ok: false,
+        data_ok: false,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        status: "FAILED_BOARD_PREP_ENRICHMENT",
+        error: settled.error,
+        timestamp_utc: nowIso()
+      }, 500);
     }
 
     return jsonResponse({
