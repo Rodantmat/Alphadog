@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alphadog-v2-market-normalizer",
+  "name": "alphadog-v2-market-normalizer", "limits": { "cpu_ms": 300000 },
   "main": "./alphadog-v2-market-normalizer.js",
   "compatibility_date": "2026-05-18",
   "observability": {
