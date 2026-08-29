@@ -3947,7 +3947,31 @@ async function apiHighHitSlips(env, request) {
   // beats more slips that cannot be repaired when a leg goes unavailable - the 2026-08-27 result
   // (sub-threshold substitutes 0-for-5, qualifying legs 19-for-19) is why the pool must never be
   // allowed to fall back below the strategy's own filter.
-  const POOL_RESERVE_PER_SOURCE = 6;   // applied inline at each builder above
+  // ⚠️ POOL RESERVE (2026-08-29, enlarged same day). The builders greedily consume every qualifying
+  // leg, so on a normal slate the backup pool came out EMPTY and unchecking a leg produced no
+  // substitute. Sleeper is the worst case: top-10% of a ~200-leg board is ~20 legs, and six 4-picks
+  // consume 24 - nothing left.
+  //
+  // Reserve is 35% of the qualifying pool, floored at 8 and capped at 15. Proportional rather than
+  // fixed because board depth varies 3-4x day to day; a flat number is either useless on a deep
+  // board or starves slips on a thin one.
+  //
+  // COST: this builds FEWER slips. That is the intended trade. The cap sweep showed PrizePicks ROI
+  // is FLAT from cap 3 to no cap (+109.5% / +120.8% / +118.2%), so dropping a slip costs no
+  // measurable ROI - it costs volume, which is the adjustable lever. Underdog is already capped at
+  // 2 and unaffected. Sleeper loses 1-2 slips per day.
+  //
+  // WHY IT IS WORTH IT: on 2026-08-27 substitutes drawn from BELOW the strategy threshold went
+  // 0-for-5 while the 19 qualifying legs went 19-for-19. A slip that cannot be repaired with a
+  // qualifying leg either shrinks (losing multiplier) or gets a bad leg (losing the slip). Reserve
+  // depth is what prevents both.
+  function poolReserveFor(nLegs) {
+    return Math.min(15, Math.max(8, Math.ceil(nLegs * 0.35)));
+  }
+  function slipsAffordable(nLegs, size, hardCap) {
+    const usable = nLegs - poolReserveFor(nLegs);
+    return Math.min(hardCap, Math.max(1, Math.floor(usable / size)));
+  }
   const backupPool = [
     ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
     ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
