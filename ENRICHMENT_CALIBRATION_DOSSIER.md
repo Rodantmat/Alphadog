@@ -118,7 +118,7 @@ The reduced variant **matches or slightly exceeds plain baseline** and recovers 
 
 ---
 
-## 5. STILL OPEN
+## 6. STILL OPEN
 
 1. **Baseline provenance three-way discrepancy**: `baseline_v6_asof` (+39.76pp) vs live `classification.baseline_v6_current` read today (+17.78pp) vs production's own historically-recorded value at scoring time (+5.21pp), on the identical population of real graded legs. Old-chat search confirmed `baseline_v6_asof` is a deliberately isolated, walk-forward point-in-time reconstruction, structurally separate from live — a plausible root cause for *some* divergence — but the specific 3-way gap has not been directly reconciled anywhere.
 2. `market_implied_total`/`pitcher_strikeouts` coefficient (-1) — present since at least 2026-08-20 (part of a 21-factor Gemini audit that day), no dedicated validation of its own found; zero backtest data exists for this specific factor/prop combination.
