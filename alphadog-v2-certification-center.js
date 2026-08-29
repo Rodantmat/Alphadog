@@ -3668,7 +3668,10 @@ const BASELINE_HP_MAX_SLIPS_PER_DAY = 5;
 // Size of the shared backup-leg pool returned alongside the slips (see apiHighHitSlips).
 // 5 slips x 6 legs = 30 legs placed; 15 spares covers the observed rate of legs going unavailable
 // between generation and placement (6-7 on 2026-08-27, the first live day).
-const BASELINE_HP_BACKUP_POOL_SIZE = 15;
+// Cap on how many spare legs per platform enter the backup pool. Raised 15 -> 25 on 2026-08-29 so
+// it never truncates the 35% reserve on a deep board (top-10% of a large PrizePicks slate can leave
+// 20+ spare qualifying legs).
+const BASELINE_HP_BACKUP_POOL_SIZE = 25;
 async function autoSelectMixedTop55Legs(env, sourceKey) {
   const pg = pgClient(env);
   try {
