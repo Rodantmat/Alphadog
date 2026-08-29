@@ -3932,6 +3932,21 @@ async function apiHighHitSlips(env, request) {
   // probability; a 58th-percentile leg costs ~16. The extra leg's multiplier (~15%) never covers
   // that. IF NOTHING QUALIFIES, LET THE SLIP SHRINK - a smaller slip of qualifying legs beats a
   // full slip carrying a leg the strategy would never have picked.
+  // ⚠️ POOL RESERVE (2026-08-29). The builders greedily consume every qualifying leg, so on a
+  // normal slate the backup pool came out EMPTY or near-empty and unchecking a leg produced no
+  // substitute. Sleeper is the worst case: top-10% of a ~200-leg board is ~20 legs, and six 4-picks
+  // consume 24 - there is nothing left. Underdog's cap leaves more, but divergence>=15pp is a thin
+  // pool to begin with.
+  // Fix: hold back the last RESERVE qualifying legs per platform by trimming the number of slips
+  // built, so substitution always has depth. A slightly smaller number of slips at full quality
+  // beats more slips that cannot be repaired when a leg goes unavailable - the 2026-08-27 result
+  // (sub-threshold substitutes 0-for-5, qualifying legs 19-for-19) is why the pool must never be
+  // allowed to fall back below the strategy's own filter.
+  const POOL_RESERVE_PER_SOURCE = 6;
+  function trimForPoolReserve(slips, totalLegs, size) {
+    const maxSlips = Math.max(0, Math.floor((totalLegs - POOL_RESERVE_PER_SOURCE) / size));
+    return slips.slice(0, Math.max(1, maxSlips));
+  }
   const backupPool = [
     ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
     ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
