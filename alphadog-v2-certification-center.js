@@ -3947,11 +3947,7 @@ async function apiHighHitSlips(env, request) {
   // beats more slips that cannot be repaired when a leg goes unavailable - the 2026-08-27 result
   // (sub-threshold substitutes 0-for-5, qualifying legs 19-for-19) is why the pool must never be
   // allowed to fall back below the strategy's own filter.
-  const POOL_RESERVE_PER_SOURCE = 6;
-  function trimForPoolReserve(slips, totalLegs, size) {
-    const maxSlips = Math.max(0, Math.floor((totalLegs - POOL_RESERVE_PER_SOURCE) / size));
-    return slips.slice(0, Math.max(1, maxSlips));
-  }
+  const POOL_RESERVE_PER_SOURCE = 6;   // applied inline at each builder above
   const backupPool = [
     ...ppLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
     ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
