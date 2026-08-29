@@ -130,10 +130,10 @@ The reduced variant **matches or slightly exceeds plain baseline** and recovers 
 
 ---
 
-## 6. NEXT STEPS (per standing process: research → simulate in backtest → only then consider live)
+## 7. NEXT STEPS (per standing process: research → simulate in backtest → only then consider live)
 
-1. Get more days of data on `lineup_surrounding_quality` before drawing a conclusion (currently only 7 qualifying days).
-2. Backfill `defensive_quality_oaa`/`hits_allowed` if a viable historical opposing-defense-by-pitcher-matchup source can be found.
+1. Run the full day-level block bootstrap (≥95% of resamples positive, 95% CI lower bound above zero, leave-one-out never negative) on the §4 combined variant's improvement before treating it as ready for live consideration.
+2. Consider whether the reduced variant should keep the ~16 zeroed factors at zero permanently, or whether some (e.g. `lineup_surrounding_quality`, directionally suggestive but unproven) deserve continued monitoring as more days of data accumulate, rather than permanent removal.
 3. Any future pooled multi-week finding must be checked for intervening code/config fixes (split at the fix date) **and** against the current live coefficient (§2.5) before being treated as an open, actionable issue — `batter_quality_of_contact` and `lineup_slot` are the two concrete cautionary examples this session produced.
-4. Given the pattern that's emerged (mostly noise-not-signal factors, no dominant villain), consider whether the more valuable next move is a combined re-simulation of "remove/dampen all factors that show no day-level-detectable value" as a single variant, rather than continuing to chase individual factors one at a time.
-5. Investigate the LAYER 2 Daily Context historical coverage gap (§5.3) if a way to reconstruct it is found.
+4. Investigate the LAYER 2 Daily Context historical coverage gap (§6.3) if a way to reconstruct it is found.
+5. If the bootstrap in step 1 holds, the next decision is how to phase a live rollout: e.g. a shadow/parallel run comparing the reduced variant against the current live enrichment on fresh, out-of-sample days before ever touching the production `enrichLeg()` function itself.
