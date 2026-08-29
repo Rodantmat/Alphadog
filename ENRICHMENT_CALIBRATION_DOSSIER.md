@@ -85,21 +85,25 @@ Confirmed twice this session (`batter_quality_of_contact`, `lineup_slot`): a `ba
 
 ---
 
-## 4. COMBINED VARIANT SIMULATION — the strongest result of this investigation
+## 4. COMBINED VARIANT SIMULATION — corrected: avoids destruction, does not yet prove enhancement
 
-Per the standing process (research individual factors → simulate combined effect in backtest → only then consider live), built and tested a "keep only validated factors" variant: baseline + **only** `opposing_pitcher_quality`, `schedule_travel_fatigue`, and `catcher_framing` (the 3 factors with real, residual-validated, positive evidence from §3) — every other factor zeroed out entirely. Tested on the same real graded-leg population as the original Part 1 reproduction (n≈105K, 4 corrupted dates excluded), within-cell quartile spread:
+**Important correction (2026-08-29, later same session)**: the finding below was initially reported as a "success" using a pooled quartile-spread comparison (reduced variant +17.91pp vs. baseline +17.68pp). That comparison does not survive the same day-level rigor applied everywhere else in this dossier. **Testing the metric that actually matters — day-level correlation between the variant and real outcomes, compared directly against baseline's own correlation with real outcomes — shows the reduced variant does NOT provide statistically robust enhancement over baseline.** It beats baseline's correlation on only 9 of 27 days, mean improvement is slightly negative (-0.0039), t=-1.661 (not significant, wrong direction).
 
-| Variant | Q1 | Q2 | Q3 | Q4 | **Spread** |
-|---|---|---|---|---|---|
-| Baseline alone | 58.84 | 64.74 | 69.84 | 76.52 | +17.68pp |
-| **Current live enrichment (all ~19 factors)** | 65.01 | 66.97 | 67.83 | 70.13 | **+5.12pp** |
-| **Reduced variant (baseline + 3 validated factors only)** | 58.38 | 65.03 | 70.24 | 76.29 | **+17.91pp** |
+**What is robustly true**: baseline + only `opposing_pitcher_quality`, `schedule_travel_fatigue`, and `catcher_framing` (every other factor zeroed) avoids the severe destruction the current full ~19-factor enrichment causes (that gap remains real and validated — see below). **What is NOT yet true**: this reduced variant, or any individual factor tested this way, has been shown to *enhance* baseline's own discrimination using real outcomes with day-level rigor.
 
-The reduced variant **matches or slightly exceeds plain baseline** and recovers nearly 13pp of discrimination lost by the current full enrichment. **Day-level robustness confirmed**: comparing within-cell correlation with outcome, day by day, the reduced variant beats the current full-enriched variant on 22 of 27 days, mean improvement +0.056 (correlation units), **day-level t = 5.295** — far beyond the significance bar, the strongest and most robust result produced this session.
+Per-factor breakdown (day-level improvement in correlation-with-outcome, factor added individually to baseline vs. baseline alone):
 
-**Interpretation**: this doesn't prove each of the ~16 zeroed-out factors is individually harmful (most tested as "no detectable effect," not "confirmed harmful" — see §3). It demonstrates that their **cumulative variance**, even when each is individually indistinguishable from noise, is enough to destroy most of the baseline's real discriminative power when summed together in log-odds space. This is the clearest evidence yet for the "death by a thousand cuts" mechanism named in §3's pattern summary.
+| Factor | Days | Mean improvement over baseline | t-stat | Verdict |
+|---|---|---|---|---|
+| `schedule_travel_fatigue` | 17 | +0.00014 | 0.895 | Not significant |
+| `opposing_pitcher_quality` | 21 | -0.00893 | -1.968 | Trending negative, near-significant in the wrong direction — **tension with its prior "best-validated factor" status**, see note below |
+| `catcher_framing` | — | insufficient legs per cell at this threshold | — | Untested at this rigor |
 
-**This is a backtest-only simulation result, not a live change.** Full day-level validation completed 2026-08-29: 95% CI on the day-level improvement ≈ [0.035, 0.077] (from t=5.295, 27 days) — entirely positive; **leave-one-out mean stays positive excluding any single day** (range 0.0517-0.0591, zero non-positive folds). This passes the full bootstrap-equivalent gate from the standing methodology (`CORE_LOGIC_CALIBRATION_DOSSIER.md` / the original handoff's day-level block bootstrap standard). **The combined variant is validated in backtest.** Per standing process, the next decision is how to phase toward live consideration (see §7), not further backtest validation.
+**Note on the `opposing_pitcher_quality` tension**: its prior validation (residual-validated at n≈67,001, a real sign fix caught, from a 2026-08-13 session) tested `corr(factor_contribution, outcome − baseline)` — a legitimate test for "does this factor carry information baseline doesn't already have." That is a different question from "does adding this factor to baseline improve baseline's own correlation with real outcomes," which is the test run here and the one that actually matters for the enrichment mission. A factor can pass the first test while not clearing the second, especially if its true effect size is small relative to baseline's own strength. This is not necessarily a contradiction, but it means the "best-validated factor" label should not be read as "confirmed to enhance baseline" until it clears this second test too.
+
+**What remains robustly, repeatedly validated (unchanged by this correction)**: the current full ~19-factor live enrichment destroys the vast majority of baseline's discrimination (+39.8pp baseline-equivalent down to +5.3pp live, and the reduced-vs-current-full gap of ~13pp, day-level t=5.295, leave-one-out never negative — this specific comparison, "reduced beats current-full," is a different and still-valid claim from "reduced beats baseline," and remains fully validated).
+
+**Honest state of the mission**: it has been robustly proven that the current enrichment is severely destructive. It has NOT yet been proven that any tested factor or combination is a genuine enhancer. Those are both real, important, but distinct findings, and only the first is currently backed by evidence strong enough to act on.
 
 ---
 
