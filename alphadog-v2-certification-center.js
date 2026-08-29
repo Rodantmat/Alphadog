@@ -3806,7 +3806,11 @@ function buildMixedTop55Slips(legs) {
         slip_size: size,
         entry_mode: "power",
         structure_label: `${size}-pick Power (Top ${Math.round((1-BASELINE_HP_PERCENTILE)*100)}% of board)`,
-        estimated_multiplier: flexFull,
+        // FIXED 2026-08-29: was `flexFull`, which reads the legacy hardcoded MIXED_TOP55_REAL_TABLES
+        // (2.313 for EVERY 6-pick regardless of composition). All five slips placed on 08-29 showed
+        // an identical 2.313 estimate, which is impossible with per-prop rates. Use the per-prop
+        // product, which is what the payout actually is.
+        estimated_multiplier: baselineHpSlipMultiplier(slipLegs),
         estimated_multiplier_flex_tiers: flexTiers,
         estimated_payout_note: `Real slip-construction backtest (pinned morning-first board snapshots, started games excluded, deterministic ranked ${size}-picks graded against real outcomes), capped at ${BASELINE_HP_MAX_SLIPS_PER_DAY} slips/day: 83 slips, 75 full hits (90.4%), +120.8% ROI over 23 active days, 21 of 23 days profitable. Multiplier is the PRODUCT of per-prop rates (fitted by least squares over 23 real observations, MAE 5.10%), NOT a flat rate - the real spread runs 1.0655 (stolen_bases) to 1.3698 (runs). Live placed slips have run ~6% above this estimate, so it errs conservative. Always overwrite with the app's real displayed multiplier before saving.`,
         strategy_notes: [
