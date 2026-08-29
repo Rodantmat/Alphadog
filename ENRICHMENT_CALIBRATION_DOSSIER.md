@@ -75,7 +75,7 @@ Any backfill using a historical reference/snapshot table must join **backward-on
 | `player_availability` | flat_gate, real IL-return regex classifier | No dedicated statistical validation found (old-chat search confirmed real code, not a stub, but no backtest study) | ⚫ Never tested |
 | `catcher_poptime_arm`, `weather_roof` | — | Deliberately, correctly disabled (documented double-count/no-op reasoning) | ✅ Correct as-is |
 
-**Pattern**: of ~19 active factors, only 3-4 (`opposing_pitcher_quality`, `schedule_travel_fatigue`, `catcher_framing`, arguably `defensive_quality_oaa`'s one validated prop) have real, day-level-caliber evidence of genuine positive value. Most of the rest are either confirmed-zero-effect-but-real-variance (noise contributors) or genuinely untested. One factor (`batter_quality_of_contact`) is a large, statistically robust, actively harmful signal.
+**Pattern**: of ~19 active factors, only 3-4 (`opposing_pitcher_quality`, `schedule_travel_fatigue`, `catcher_framing`, arguably `defensive_quality_oaa`'s one validated prop) have real, day-level-caliber evidence of genuine positive value. Most of the rest are either confirmed-zero-effect-but-real-variance (noise contributors) or genuinely untested. `batter_quality_of_contact` looked like the largest active problem initially but turned out to be a real, already-fixed historical issue (see table) — no currently-open factor in this audit shows anywhere near that magnitude of confirmed, live, wrong-signed effect. The honest summary is closer to "many weak/undetectable factors contributing noise" than "one dominant villain."
 
 ---
 
