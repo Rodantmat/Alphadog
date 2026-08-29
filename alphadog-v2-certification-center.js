@@ -3922,13 +3922,10 @@ async function apiHighHitSlips(env, request) {
   // available and flow into the shared backup pool below, so substitution still has depth and
   // every substitute is still a leg that passed the strategy's own divergence filter.
   const udSlipsAll = udLegs.length >= UD_SLIP_SIZE ? buildUnderdogBaselineSlips(udLegs) : [];
-  const udSlips = udSlipsAll.slice(0, Math.min(UD_MAX_SLIPS_PER_DAY,
-    Math.max(1, Math.floor((udLegs.length - 6) / UD_SLIP_SIZE))));
+  const udSlips = udSlipsAll.slice(0, slipsAffordable(udLegs.length, UD_SLIP_SIZE, UD_MAX_SLIPS_PER_DAY));
   for (const s of udSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
   const slSlipsAll = slLegs.length >= SL_SLIP_SIZE ? buildSleeperBaselineSlips(slLegs) : [];
-  // Hold back 6 qualifying legs so substitution always has depth (see POOL RESERVE note below).
-  const slBaselineSlips = slSlipsAll.slice(0,
-    Math.max(1, Math.floor((slLegs.length - 6) / SL_SLIP_SIZE)));
+  const slBaselineSlips = slSlipsAll.slice(0, slipsAffordable(slLegs.length, SL_SLIP_SIZE, 99));
   for (const s of slBaselineSlips) for (const l of (s.legs || [])) usedRowIds.add(l.board_row_id);
   // Backup pool spans BOTH platforms. Each leg keeps its own source_key so the client can only
   // substitute a leg into a slip from the same platform - a PrizePicks leg is not placeable on
