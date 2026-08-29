@@ -85,7 +85,25 @@ Confirmed twice this session (`batter_quality_of_contact`, `lineup_slot`): a `ba
 
 ---
 
-## 4. RULED OUT / RESOLVED THIS SESSION
+## 4. COMBINED VARIANT SIMULATION — the strongest result of this investigation
+
+Per the standing process (research individual factors → simulate combined effect in backtest → only then consider live), built and tested a "keep only validated factors" variant: baseline + **only** `opposing_pitcher_quality`, `schedule_travel_fatigue`, and `catcher_framing` (the 3 factors with real, residual-validated, positive evidence from §3) — every other factor zeroed out entirely. Tested on the same real graded-leg population as the original Part 1 reproduction (n≈105K, 4 corrupted dates excluded), within-cell quartile spread:
+
+| Variant | Q1 | Q2 | Q3 | Q4 | **Spread** |
+|---|---|---|---|---|---|
+| Baseline alone | 58.84 | 64.74 | 69.84 | 76.52 | +17.68pp |
+| **Current live enrichment (all ~19 factors)** | 65.01 | 66.97 | 67.83 | 70.13 | **+5.12pp** |
+| **Reduced variant (baseline + 3 validated factors only)** | 58.38 | 65.03 | 70.24 | 76.29 | **+17.91pp** |
+
+The reduced variant **matches or slightly exceeds plain baseline** and recovers nearly 13pp of discrimination lost by the current full enrichment. **Day-level robustness confirmed**: comparing within-cell correlation with outcome, day by day, the reduced variant beats the current full-enriched variant on 22 of 27 days, mean improvement +0.056 (correlation units), **day-level t = 5.295** — far beyond the significance bar, the strongest and most robust result produced this session.
+
+**Interpretation**: this doesn't prove each of the ~16 zeroed-out factors is individually harmful (most tested as "no detectable effect," not "confirmed harmful" — see §3). It demonstrates that their **cumulative variance**, even when each is individually indistinguishable from noise, is enough to destroy most of the baseline's real discriminative power when summed together in log-odds space. This is the clearest evidence yet for the "death by a thousand cuts" mechanism named in §3's pattern summary.
+
+**This is a backtest-only simulation result, not a live change.** Per standing process, this needs to hold up under the full day-level block bootstrap (≥95% of resamples positive, 95% CI lower bound above zero, leave-one-out never negative) before it's presented as ready for the live pipeline.
+
+---
+
+## 5. RULED OUT / RESOLVED THIS SESSION
 
 | Hypothesis | Resolution |
 |---|---|
