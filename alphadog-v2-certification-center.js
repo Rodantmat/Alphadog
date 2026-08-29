@@ -6370,6 +6370,7 @@ function applySlipSourceFilter(){
   if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
   results.innerHTML=lastSlipsNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
   restoreRealMultInputs();
+  bindSlipSelectBoxes();
   const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
 }
 function bindSlipSourceFilters(){const ids=['filterPrizepicks','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
