@@ -6195,8 +6195,22 @@ function returnLegToPool(leg){
 }
 function poolStatusHtml(){
   if(!backupPool.length)return '<div class="poolStatus" style="opacity:0.7;font-size:12px;margin:6px 0">Backup pool: empty - unchecking a leg will now shrink the slip.</div>';
-  const top=backupPool.slice(0,3).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' '+esc(String(l.selected_side||'').toUpperCase())+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(' &middot; ');
-  return '<div class="poolStatus" style="opacity:0.8;font-size:12px;margin:6px 0"><b>Backup pool: '+backupPool.length+' leg'+(backupPool.length===1?'':'s')+'</b> - next up: '+top+'</div>';
+  // Substitution is SOURCE-MATCHED: a Sleeper slip can only draw a Sleeper leg. A combined count
+  // is misleading - the pool can show 7 legs while a given platform has zero legal ones.
+  // BUG FIXED 2026-08-29: operator saw "7 legs" and got no substitute, because all 7 belonged to
+  // other platforms.
+  const bySrc={};
+  for(const l of backupPool){
+    const k=String(l.source_key||'?');
+    (bySrc[k]=bySrc[k]||[]).push(l);
+  }
+  const label={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+  const parts=Object.keys(bySrc).sort().map(k=>{
+    const legs=bySrc[k];
+    const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(', ');
+    return '<b>'+esc(label[k]||k)+': '+legs.length+'</b> ('+top+')';
+  });
+  return '<div class="poolStatus" style="opacity:0.85;font-size:12px;margin:6px 0">Backup pool by app &mdash; '+parts.join(' &nbsp;|&nbsp; ')+'</div>';
 }
 function handleLegToggle(slipIdx,legIdx,isChecked){
   const slip=lastRawSlips[slipIdx];if(!slip)return;
