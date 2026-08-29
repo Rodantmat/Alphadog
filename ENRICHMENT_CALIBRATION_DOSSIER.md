@@ -43,8 +43,11 @@ Established from prior-session `research_notes` on `times_through_order` and `re
 ### 2.3 Day-level significance bar (not pooled correlation)
 A pooled correlation across tens of thousands of legs can look highly significant while being driven by within-day correlation (legs on the same day share slate conditions). The correct test: compute `day_covariance = AVG(contribution × residual)` per day, then t-test the day-level series (`mean / (sd/√n_days)`). Bar used this session: **|t| ≳ 2.0** with **≥15 days** per the existing sample-size posture (`CORE_LOGIC_CALIBRATION_DOSSIER.md` §5/6, and the original slip-calibration handoff Part 6.6). A large pooled correlation that fails this test (e.g. `market_implied_total`, t=-1.42 despite 65K legs) is **not proven**, only directional.
 
-### 2.4 Lookahead check for self-built backfills
-Any backfill using a historical reference/snapshot table must join **backward-only** (`snapshot_date <= leg_date`), never nearest-by-absolute-distance. Verified this mattered in practice: `batter_quality_of_contact`'s backfill showed t=-4.62 with a naive nearest-date join and t=-4.43 with a corrected backward-only join — the finding survived, but only checking this explicitly confirmed it wasn't an artifact.
+### 2.5 Always check the CURRENT live coefficient before trusting a backtest-derived finding
+Confirmed twice this session (`batter_quality_of_contact`, `lineup_slot`): a `backtest.*` reconstruction table can reflect a coefficient or formula that has since been changed live. Before treating any backtest-derived correlation as actionable: (a) pull the current `config.enrichment_profile_cells` coefficient/cap, (b) sanity-check that the backtest table's observed value range is even mathematically reachable under that current coefficient, (c) if not, recompute directly against current config + real historical inputs rather than trusting the backtest table's stored contribution values. `lineup_slot` specifically: the backtest table showed avg contribution ~0.7-0.73 and 27% clamp-saturation at ±1.0 — mathematically impossible under the current live coefficient (0.0257), which bounds the formula to ±0.103. Recomputed fresh against real historical lineup data (`context.history_game_lineup`, itself found to mix two slot-number encodings — see §3 note) and current config: SD 0.067, day-level t=1.19 (11 days) — no detectable effect, not a noise injector.
+
+### 2.6 Day-level test requires ≥15 days per the existing sample-size posture; fewer is directional only
+Applied consistently: `market_implied_total` (28 days, not significant), `lineup_surrounding_quality` (7 days, too thin), `lineup_slot` (11 days, too thin AND not significant anyway).
 
 ---
 
