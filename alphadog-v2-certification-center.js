@@ -3889,7 +3889,8 @@ async function apiHighHitSlips(env, request) {
       avgBaseline: (s.legs || []).reduce((a, l) => a + Number(l.hit_probability_0_100 || 0), 0) / Math.max(1, (s.legs || []).length)
     }))
     .sort((a, b) => b.avgBaseline - a.avgBaseline)
-    .slice(0, BASELINE_HP_MAX_SLIPS_PER_DAY)
+    .slice(0, Math.min(BASELINE_HP_MAX_SLIPS_PER_DAY,
+      Math.max(1, Math.floor((ppLegs.length - 6) / BASELINE_HP_SIZE))))
     .map(x => x.s);
   // BACKUP POOL (2026-08-27): legs frequently go unavailable between generation and placement
   // (line moved, prop pulled, player scratched). Rather than let a slip shrink from 6 to 5 or 4 -
