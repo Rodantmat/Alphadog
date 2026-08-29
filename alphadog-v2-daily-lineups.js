@@ -961,7 +961,12 @@ async function runSourceProbe(env, input) {
     const sourceBase = normalizeMlbOrigin(rawSourceBase);
     const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.2";
     const probeFeedLive = input.probe_feed_live !== false;
-    const todayUtc = nowUtc().slice(0, 10);
+    // FIXED 2026-08-29: was nowUtc().slice(0,10) (bare UTC date), which during evening
+    // Pacific runs (UTC already rolled to next calendar day) filtered getCalendarOnlyProbeRows'
+    // `official_date >= $1` against tomorrow's date and silently excluded today's (Pacific)
+    // slate whenever the calendar-only probe lane was used. Mirrors the existing
+    // formatDateInTimeZone/RETENTION_TIMEZONE pattern already used by retentionDatesToKeep() below.
+    const todayUtc = formatDateInTimeZone(new Date(), RETENTION_TIMEZONE);
 
     await ensureSchema(pg);
     const anchors = await getPreparedGameAnchors(pg);
