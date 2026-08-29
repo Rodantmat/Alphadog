@@ -95,10 +95,10 @@ Any backfill using a historical reference/snapshot table must join **backward-on
 ## 5. STILL OPEN
 
 1. **Baseline provenance three-way discrepancy**: `baseline_v6_asof` (+39.76pp) vs live `classification.baseline_v6_current` read today (+17.78pp) vs production's own historically-recorded value at scoring time (+5.21pp), on the identical population of real graded legs. Old-chat search confirmed `baseline_v6_asof` is a deliberately isolated, walk-forward point-in-time reconstruction, structurally separate from live — a plausible root cause for *some* divergence — but the specific 3-way gap has not been directly reconciled anywhere.
-2. `bullpen_fatigue` — only 10 days of backtest data exist; no additional historical source found.
-3. `market_implied_total`/`pitcher_strikeouts` coefficient (-1) — present since at least 2026-08-20 (part of a 21-factor Gemini audit that day), no dedicated validation of its own found.
-4. Daily Context layer (LAYER 2 of `Master_Full_Run.txt`) coverage history — all 8 tables (lineups, weather, player availability, bullpen, probable pitchers, schedule spot, umpire, catcher context) are live `_current` snapshot tables with no historical retention found. Cannot verify whether any of the 32 backtest days had missing/stale daily-context data that would have caused enrichment factors to silently go "missing" on those specific days.
-5. `defensive_quality_oaa` (singles/doubles/hits_allowed), `lineup_surrounding_quality`, `player_availability` — all confirmed as real, wired code, but none independently residual/day-level validated.
+2. `market_implied_total`/`pitcher_strikeouts` coefficient (-1) — present since at least 2026-08-20 (part of a 21-factor Gemini audit that day), no dedicated validation of its own found; zero backtest data exists for this specific factor/prop combination.
+3. Daily Context layer (LAYER 2 of `Master_Full_Run.txt`) coverage history — all 8 `daily.*_current` tables have no historical retention found. Cannot verify whether any of the 32 backtest days had missing/stale daily-context data that would have caused enrichment factors to silently go "missing" on those specific days.
+4. `weather_precip` — confirmed no usable historical archive exists anywhere in the system (see §3 table). Would need a new data source to ever test.
+5. `player_availability`'s possible regex/intent mismatch (`recent_il_return` tier not matching `activated` status) — flagged, not yet fixed or tested (event too rare either way).
 
 ---
 
