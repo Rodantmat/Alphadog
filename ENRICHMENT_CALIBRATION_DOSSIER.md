@@ -132,8 +132,8 @@ The reduced variant **matches or slightly exceeds plain baseline** and recovers 
 
 ## 7. NEXT STEPS (per standing process: research → simulate in backtest → only then consider live)
 
-1. Run the full day-level block bootstrap (≥95% of resamples positive, 95% CI lower bound above zero, leave-one-out never negative) on the §4 combined variant's improvement before treating it as ready for live consideration.
+1. ~~Run the full day-level block bootstrap on the §4 combined variant~~ — **done, passed** (95% CI [0.035, 0.077], leave-one-out never negative). The combined variant is validated in backtest.
 2. Consider whether the reduced variant should keep the ~16 zeroed factors at zero permanently, or whether some (e.g. `lineup_surrounding_quality`, directionally suggestive but unproven) deserve continued monitoring as more days of data accumulate, rather than permanent removal.
 3. Any future pooled multi-week finding must be checked for intervening code/config fixes (split at the fix date) **and** against the current live coefficient (§2.5) before being treated as an open, actionable issue — `batter_quality_of_contact` and `lineup_slot` are the two concrete cautionary examples this session produced.
 4. Investigate the LAYER 2 Daily Context historical coverage gap (§6.3) if a way to reconstruct it is found.
-5. If the bootstrap in step 1 holds, the next decision is how to phase a live rollout: e.g. a shadow/parallel run comparing the reduced variant against the current live enrichment on fresh, out-of-sample days before ever touching the production `enrichLeg()` function itself.
+5. **Immediate next decision**: how to phase toward live consideration — e.g. a shadow/parallel run comparing the reduced variant against the current live enrichment on fresh, out-of-sample days before ever touching the production `enrichLeg()` function itself. Nothing live should change until the principal has reviewed and approved this specific plan.
