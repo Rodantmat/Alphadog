@@ -3879,6 +3879,23 @@ async function apiHighHitSlips(env, request) {
   //    stolen_bases / rbis are unmeasured and likely price lower, so ROI is optimistic.
   // Minimum stake until real placed results accumulate.
   const ppSlipsAll = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
+  // Reserve helpers - declared before any builder uses them.
+  // Reserve is 35% of the qualifying pool, floored at 8 and capped at 15. Proportional rather than
+  // fixed because board depth varies 3-4x day to day; a flat number is either useless on a deep
+  // board or starves slips on a thin one.
+  // COST: fewer slips. Intended - the cap sweep showed PrizePicks ROI is FLAT from cap 3 to no cap
+  // (+109.5% / +120.8% / +118.2%), so a dropped slip costs volume, not ROI. Underdog is already
+  // capped at 2 and unaffected.
+  // WHY: on 2026-08-27 substitutes drawn from BELOW the threshold went 0-for-5 while the 19
+  // qualifying legs went 19-for-19. A slip that cannot be repaired with a qualifying leg either
+  // shrinks (losing multiplier) or takes a bad leg (losing the slip). Reserve depth prevents both.
+  function poolReserveFor(nLegs) {
+    return Math.min(15, Math.max(8, Math.ceil(nLegs * 0.35)));
+  }
+  function slipsAffordable(nLegs, size, hardCap) {
+    const usable = nLegs - poolReserveFor(nLegs);
+    return Math.min(hardCap, Math.max(1, Math.floor(usable / size)));
+  }
   // Apply the daily cap the same way the backtest did: rank every buildable slip by its AVERAGE
   // baseline probability (descending) and keep the top N. Ranking by average - not by build order -
   // is what was measured, and legs arrive already sorted by baseline so build order is close but
