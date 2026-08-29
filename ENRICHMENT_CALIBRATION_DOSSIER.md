@@ -104,8 +104,8 @@ Any backfill using a historical reference/snapshot table must join **backward-on
 
 ## 6. NEXT STEPS (per standing process: research → simulate in backtest → only then consider live)
 
-1. Build the `batter_quality_of_contact` fix candidate (sign flip vs. remove/dampen for mean-reversion) and day-level bootstrap it properly (≥95% resamples same sign, 95% CI excludes zero, leave-one-out never flips) before considering it proven.
-2. Backfill `defensive_quality_oaa` for singles/doubles/hits_allowed using the same residual methodology already validated for hits.
-3. Recalibrate or remove `lineup_slot`'s cap given its confirmed near-zero true value relative to its variance.
-4. Continue residual-testing the untested-but-wired factors (`lineup_surrounding_quality`, `player_availability`) with real backtest data.
+1. Backfill `defensive_quality_oaa` for singles/doubles/hits_allowed using the same residual methodology already validated for hits.
+2. Recalibrate or remove `lineup_slot`'s cap given its confirmed near-zero true value relative to its variance.
+3. Continue residual-testing the untested-but-wired factors (`lineup_surrounding_quality`, `player_availability`) with real backtest data.
+4. Any future pooled multi-week finding must be checked for intervening code/config fixes (split at the fix date) before being treated as an open, actionable issue — the `batter_quality_of_contact` false alarm (§3) is the concrete cautionary example.
 5. Once individual factor fixes are validated, combine into one full re-simulation (all fixes together) and run the day-level block bootstrap on the *combined* within-cell discrimination improvement — the real bar is the combined effect, not each factor in isolation.
