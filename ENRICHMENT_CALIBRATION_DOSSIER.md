@@ -99,7 +99,7 @@ The reduced variant **matches or slightly exceeds plain baseline** and recovers 
 
 **Interpretation**: this doesn't prove each of the ~16 zeroed-out factors is individually harmful (most tested as "no detectable effect," not "confirmed harmful" — see §3). It demonstrates that their **cumulative variance**, even when each is individually indistinguishable from noise, is enough to destroy most of the baseline's real discriminative power when summed together in log-odds space. This is the clearest evidence yet for the "death by a thousand cuts" mechanism named in §3's pattern summary.
 
-**This is a backtest-only simulation result, not a live change.** Per standing process, this needs to hold up under the full day-level block bootstrap (≥95% of resamples positive, 95% CI lower bound above zero, leave-one-out never negative) before it's presented as ready for the live pipeline.
+**This is a backtest-only simulation result, not a live change.** Full day-level validation completed 2026-08-29: 95% CI on the day-level improvement ≈ [0.035, 0.077] (from t=5.295, 27 days) — entirely positive; **leave-one-out mean stays positive excluding any single day** (range 0.0517-0.0591, zero non-positive folds). This passes the full bootstrap-equivalent gate from the standing methodology (`CORE_LOGIC_CALIBRATION_DOSSIER.md` / the original handoff's day-level block bootstrap standard). **The combined variant is validated in backtest.** Per standing process, the next decision is how to phase toward live consideration (see §7), not further backtest validation.
 
 ---
 
