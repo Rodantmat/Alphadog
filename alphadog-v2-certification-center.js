@@ -6309,7 +6309,7 @@ function realMultFieldsHtml(s,idx){
   return realMultFieldsHtmlForSize(s,idx,s.slip_size);
 }
 // Slips the operator has DESELECTED. Default is SELECTED - every slip is saved unless explicitly
-// unchecked. BUG FIXED 2026-08-29: slipSelectBox rendered with no `checked` attribute, so it
+// unchecked. BUG FIXED 2026-08-29: slipSelectBox rendered with no checked attribute, so it
 // defaulted to unchecked AND every re-render (which fires on every leg toggle) wiped the whole
 // selection. Unchecking one leg deselected all six slips.
 const slipDeselected=new Set();
