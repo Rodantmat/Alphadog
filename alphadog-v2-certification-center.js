@@ -3729,35 +3729,42 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
       WITH board AS (
         SELECT f.final_board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
           f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
-          f.probability_confidence_0_100, f.is_goblin, f.is_demon,
-          b.hit_probability_0_100, b.non_push_sample
+          f.probability_confidence_0_100, f.is_goblin, f.is_demon, f.official_date
         FROM score.final_board_current f
-        JOIN classification.baseline_v6_current b
-          ON b.player_id = f.mlb_player_id::text AND b.canonical_prop_key = f.canonical_prop_key
-         AND b.line_value = f.line_value AND b.selected_side = f.selected_side
         WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
           AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
+          AND f.canonical_prop_key = '${PP_PROP}'
+          AND f.selected_side = '${PP_SIDE}'
+          AND f.line_value IN (${PP_LINES.join(',')})
           AND f.official_game_time_utc IS NOT NULL
           AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
           AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ),
-      -- Percentile is computed across THIS snapshot's board, so it adapts automatically to any
-      -- rescaling of the baseline model. Ranked over the full board BEFORE prop exclusion so the
-      -- cutoff reflects the real board, not a filtered subset.
-      ranked AS (
-        SELECT board.*, PERCENT_RANK() OVER (ORDER BY hit_probability_0_100) AS board_pctl
-        FROM board
+      -- Trailing hit rate for this player on this EXACT line, from their own game log, using only
+      -- games STRICTLY BEFORE today. This is the signal - not baseline_v6, not the enrichment score,
+      -- not the board's own history. All three were tested against it and lost.
+      trail AS (
+        SELECT b.final_board_row_id,
+          COUNT(*) AS n_games,
+          SUM(CASE WHEN g.total_bases < b.line_value THEN 1 ELSE 0 END) AS n_hit
+        FROM board b
+        JOIN stats_hitter.game_logs g
+          ON g.player_id = b.mlb_player_id
+         AND g.game_date::date < b.official_date::date
+        GROUP BY b.final_board_row_id
       )
-      SELECT final_board_row_id AS board_row_id, source_key, game_pk, official_game_time_utc,
-        player_name, mlb_player_id, canonical_prop_key, line_value, selected_side,
-        hit_probability_0_100, probability_confidence_0_100 AS confidence_0_100,
-        is_goblin, is_demon, non_push_sample AS historical_n,
-        round(hit_probability_0_100::numeric,1) AS historical_hit_pct,
-        round((100*board_pctl)::numeric,1) AS board_percentile
-      FROM ranked
-      WHERE board_pctl >= ${BASELINE_HP_PERCENTILE}
-        AND canonical_prop_key NOT IN (${BASELINE_HP_EXCLUDED_PROPS.map(p => `'${p}'`).join(',')})
-      ORDER BY hit_probability_0_100 DESC, player_name
+      SELECT b.final_board_row_id AS board_row_id, b.source_key, b.game_pk, b.official_game_time_utc,
+        b.player_name, b.mlb_player_id, b.canonical_prop_key, b.line_value, b.selected_side,
+        (100.0 * t.n_hit / NULLIF(t.n_games,0)) AS hit_probability_0_100,
+        b.probability_confidence_0_100 AS confidence_0_100,
+        b.is_goblin, b.is_demon,
+        t.n_games AS historical_n,
+        round((100.0 * t.n_hit / NULLIF(t.n_games,0))::numeric,1) AS historical_hit_pct
+      FROM board b
+      JOIN trail t ON t.final_board_row_id = b.final_board_row_id
+      WHERE t.n_games >= ${PP_MIN_GAMES}
+        AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
+      ORDER BY (100.0 * t.n_hit / NULLIF(t.n_games,0)) DESC, b.player_name
     `);
     return rows;
   } finally {
