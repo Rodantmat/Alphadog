@@ -92,6 +92,14 @@ Companion to `ENRICHMENT_CALIBRATION_DOSSIER.md` (the consolidated findings) and
 - Added a critical superseding-finding section to the top of the dossier. The factor-level diagnostic work (config gaps, dead code, confirmed bugs, data-quality issues) remains valid and independent of this — what doesn't survive is any pp-based claim about discrimination "destroyed" or "recovered" relative to the old +39.8pp reference point.
 - Reframed mission, per the sister chat and confirmed independently: build a genuinely clean point-in-time baseline, then fairly re-measure enrichment against it, rather than assuming enrichment is guilty of destroying something that may never have existed.
 
+## Part 14 — Circularity caught via Gemini before more damage was done
+
+- Sister chat instructed "always score with a different table than you selected with" (Part 7.9's circularity trap). Recognized this applied directly: the 3-factor "reduced variant" was selected in a prior session (dated 2026-08-13) using residual-correlation tests on largely the same ~30-day window now being used to evaluate it.
+- Ran this exact concern past Gemini before continuing the day-by-day accumulation, per the standing instruction to consult it on every pass. **Verdict: fatally circular — day-level block bootstrap does not rescue it, it just tightens a CI around a biased estimate.**
+- Fix: `opposing_pitcher_quality`'s selection date (2026-08-13) gives a natural, already-existing temporal split — data from 2026-08-14 onward was not available when that selection was made, making it a genuine, non-artificial holdout window (~15 days, matching Gemini's own suggested split size).
+- **Discarded the 08-10 result (-0.0365) as in-sample/contaminated** (predates the split). **Kept 08-15 (+0.0169) as the first clean, valid data point.** All further day-by-day accumulation restricted to 2026-08-14 onward only.
+- Gemini also suggested a permutation/target-shuffling test (shuffle outcomes 1,000x, check whether the observed 3-factor correlation is in the top 5% of chance results) as a more powerful check given the small-n constraint — noted as a candidate follow-up once the holdout accumulation is further along.
+
 ---
 
 ## Honest assessment of where this stands
