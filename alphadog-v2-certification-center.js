@@ -3714,7 +3714,12 @@ const BASELINE_HP_FLAT_PARTIALS = { oneBelow: 0.5, twoBelow: 0.25 };
 // sharp optimum. It also trades volume for rate: cap 5 yields $40.53 profit vs $98.35 uncapped on
 // the same window. Note the cap hides variance - at cap 5 the only two imperfect days were the two
 // days that could not build 5 slips at all.
-const BASELINE_HP_MAX_SLIPS_PER_DAY = 5;
+// Daily slip cap. The clean rebuild uses cap 2. The qualifying pool after the trailing-rate and
+// sample filters is typically only 6-10 legs on a good day, so slips 3+ would reach below the
+// threshold - which is exactly the failure mode measured on 2026-08-27, where sub-threshold
+// substitutes went 0-for-5 while qualifying legs went 19-for-19.
+// Measured at cap 2: 34 slips / 17 days / +42.8%. Raising the cap adds slips from a thinner pool.
+const BASELINE_HP_MAX_SLIPS_PER_DAY = 2;
 // Size of the shared backup-leg pool returned alongside the slips (see apiHighHitSlips).
 // 5 slips x 6 legs = 30 legs placed; 15 spares covers the observed rate of legs going unavailable
 // between generation and placement (6-7 on 2026-08-27, the first live day).
