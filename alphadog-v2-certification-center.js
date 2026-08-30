@@ -3609,10 +3609,60 @@ function buildUnderdogBaselineSlips(legs) {
 // ordinally meaningful but NOT cardinally - the rescale proved that - so absolute baseline values
 // must never be compared across model versions, and slip sizing should stay FLAT (Kelly requires a
 // cardinal probability estimate this signal cannot provide).
-const BASELINE_HP_PERCENTILE = 0.90;   // top 10% of the day's board
-const BASELINE_HP_EXCLUDED_PROPS = ['hitter_strikeouts', 'earned_runs', 'fantasy_score'];
-const BASELINE_HP_SIZE = 6;
-const BASELINE_HP_PER_LEG_RATE = 1.1417; // legacy flat fallback - superseded by the per-prop table
+// ===== REPLACED 2026-08-30: TRAILING-RATE / total_bases-LESS STRATEGY =====
+// The percentile + prop-exclusion config is retired. Its +120.8% backtest was measured on a
+// LEAKED baseline: `backtest.baseline_v6_asof` with as_of_date = D includes game data FROM day D
+// (confirmed on 51 of 51 players - non_push_sample matches the game count INCLUSIVELY). Re-run with
+// a D-1 baseline, that strategy scores -13.4% ROI at 6-pick, and its leg hit rate is 80.0%, not the
+// 97% the leaked pool showed.
+//
+// THE REPLACEMENT was found by rebuilding everything on clean, point-in-time data:
+//   - full slate from archive.board_leg_history (103,164 legs, 2,948/day, 35 days) rather than the
+//     final board (which is only 41% of the slate)
+//   - era-correct goblin/demon expansion: a row's odds_type is the OVER-side variant and the UNDER
+//     side is the opposite; `under_or_over` rows are TWO legs. Pre-2026-08-03 there are ZERO
+//     two-sided rows, so the expansion is keyed per ROW on awt, never on a cutoff date.
+//   - independent grading from game logs, validated at 100.0000% against the system's own grader
+//     on 52,773 overlapping legs (0 stat mismatches) once the doubleheader game_pk join was fixed
+//   - baseline recomputed point-in-time from trailing game logs (D-1 = exact production equivalence,
+//     since the nightly run uses games through D-1)
+//
+// SIGNAL: the player's own trailing hit rate for that EXACT prop/line/side, from game logs, strictly
+// before today. Median ~67 games. This BEATS every alternative tested on this propline:
+//   raw trailing rate  Q4 = 87.93% hit   (monotonic across quartiles)
+//   baseline_v6 (D-1)  Q4 = 84.05% hit   (NON-monotonic - its Q4 is worse than its Q3)
+// A 410-cell matrix sweep (4 signals x 8 thresholds x 133 proplines, hitters and pitchers, both
+// sides, both variants) found only 6 proplines with p*m > 1, ALL of them `less` side, and
+// total_bases/3.5/less is the strongest (32 positive cells, best p*m 1.0764 at 90.26% hit).
+//
+// REAL BACKTEST: 34 slips, 24 wins, 17 days, 89.7% leg accuracy (122/136), +42.8% ROI.
+//   bootstrap 99.8% positive | 95% CI [+13.0%, +72.5%] | leave-one-out [+39.1%, +51.7%]
+//   16 of 17 days profitable | best day only 8% of returns
+//   threshold-flat: 78 -> +42.8%, 81 -> +41.0%, 84 -> +39.1% (not a knife-edge)
+//   split-half: +47.1% first half / +55.6% second half
+//
+// ⚠️ CARRIED RISKS:
+//  1. 17 days and 34 slips. The CI lower bound of +13.0% is the realistic floor, NOT +42.8%.
+//  2. `less` legs only exist from 2026-08-03 (PrizePicks format change), so 22 days is the hard
+//     ceiling for ANY less-side strategy and the filters take it to 17. This is structural.
+//  3. This is the best of ~1,000 searched configurations. Some of +42.8% is selection.
+//  4. Every day is +102.3% (both slips win), +1.1% (one wins), or -100% (neither). The 4-pick
+//     multiplier of 2.023 means one winner roughly returns the stake and the second is the profit.
+//
+// THINGS TESTED AND REJECTED - do not re-propose without new data:
+//   board-appearance history as a signal (6 tests: split-half corr 0.0726, walk-forward -9.3pp,
+//   stacked -5.1pp, hybrid -3pp, inverted -18.8 ROI pts); enrichment factors (+5.31 vs +5.32pp);
+//   expected-PA decomposition; EV ranking and margin ranking (both circular, lose 12-28 pts on flat
+//   rates); market devig (better discrimination but only 1,661 two-sided legs); pooling proplines
+//   (circular); Flex (consolation never covers the haircut); demons (worse everywhere); pitcher
+//   props (best p*m 0.9734); more-side props (71.2% filtered vs 86% needed).
+const PP_PROP = 'total_bases';
+const PP_LINES = [2.5, 3.5];
+const PP_SIDE = 'less';
+const PP_TRAILING_MIN = 78.0;   // player's own trailing hit rate for this exact prop/line/side
+const PP_MIN_GAMES = 60;        // minimum prior games in that player's log
+const BASELINE_HP_SIZE = 4;     // 4-pick Power
+const BASELINE_HP_PER_LEG_RATE = 1.1926;  // total_bases per-prop rate; 4-pick multiplier = 2.023
 // ===== GRANULAR PER-PROP MULTIPLIER TABLE (2026-08-27) =====
 // Multipliers are NOT flat across props. Fitted by least squares over 23 real multiplier
 // observations (every pure single-prop read plus every mixed slip whose exact composition is
