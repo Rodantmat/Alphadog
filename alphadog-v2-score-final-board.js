@@ -123,7 +123,13 @@ async function latestHpBoardBatchForEngine(pgClient, sourceEngineBatchId) {
 
 async function fetchHpFinalBoardCandidateRows(pgClient, sourceEngineBatchId, pageSize = 500) {
   const rows = [];
-  const limit = Math.max(1, Math.min(1000, Math.trunc(pageSize)));
+  // RAISED 2026-08-30: was capped at 1000, forcing ~13 sequential OFFSET-paginated re-sorts of the
+  // full joined+ORDER-BY result on a 12k+ row slate (confirmed live: final_board_run sat at
+  // status=running with 0 rows written for 7+ min even after the cpu_ms fix, with pg_stat_activity
+  // showing no query in flight between polls - consistent with the OFFSET pagination cost, not a
+  // CPU kill). A single larger page removes the repeated re-scan/re-sort cost for realistic slate
+  // sizes; the while(true) loop below still terminates safely if a slate ever exceeds this.
+  const limit = Math.max(1, Math.min(20000, Math.trunc(pageSize)));
   let offset = 0;
   let pages = 0;
   const hpSource = await latestHpBoardBatchForEngine(pgClient, sourceEngineBatchId);
