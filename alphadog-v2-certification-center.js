@@ -6208,9 +6208,19 @@ const BASELINE_HP_CLIENT_RATE_FALLBACK=1.12;
 // (+1.73 above anchor) pays 1.2251, line 3.5 (+2.74, deeper and easier) pays 1.1416. Measured from
 // two real placed 4-picks on 2026-08-30: pure-3.5 = 1.70, and 3x2.5+1x3.5 = 2.10.
 const PP_CLIENT_LINE_RATES={"2.5":1.2251,"3.5":1.1416};
+// Rung-based rate, mirroring the server. rate = 1.4323 - 0.101*rung, where rung is the leg's
+// position in that player's own LESS ladder (1 = shallowest offered). Measured from 6 real placed
+// slips 2026-08-30. The rung, not the line, sets the multiplier.
+function ppClientRungRate(rung){
+  const r=Number(rung);
+  if(!isFinite(r)||r<1)return 1.1416;
+  return 1.4323-0.101*r;
+}
 function baselineHpClientLegRate(leg){
   const k=String(leg&&leg.canonical_prop_key||'').toLowerCase();
   if(k==='total_bases'){
+    const rg=Number(leg&&leg.goblin_rung);
+    if(isFinite(rg)&&rg>=1)return ppClientRungRate(rg);
     const lv=String(Number(leg&&leg.line_value));
     if(PP_CLIENT_LINE_RATES[lv])return PP_CLIENT_LINE_RATES[lv];
   }
