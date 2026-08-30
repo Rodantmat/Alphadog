@@ -5309,10 +5309,22 @@ async function apiSaveSlips(env, request) {
         [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, s.entry_mode || null, legs.length, Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier), s.real_multiplier_flex_tiers ? JSON.stringify(s.real_multiplier_flex_tiers) : null, s.estimated_payout_note || null, s.breakeven_hit_rate_0_100 == null ? null : Number(s.breakeven_hit_rate_0_100), edge, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
       let idx = 1;
       for (const l of legs) {
+        // FIXED (2026-08-30): player_id and official_date were NULL on EVERY stored leg since launch.
+        // The board query returns `mlb_player_id` (not `player_id`) and has no `official_date` column
+        // at all - it carries `official_game_time_utc`. The insert only read l.player_id and
+        // l.official_date, so both silently wrote NULL on all 22 saved PrizePicks slips and all 45
+        // Sleeper/Underdog slips. Consequence: stored slips could not be joined to game logs and had
+        // to be graded by fuzzy name-matching through ref.players. Now reads every field name the
+        // board actually emits, and derives the date from the game time when absent.
+        const legPlayerId = (l.player_id != null ? l.player_id
+                          : l.mlb_player_id != null ? l.mlb_player_id
+                          : l.resolved_mlb_player_id != null ? l.resolved_mlb_player_id : null);
+        const legDate = (l.official_date || (l.official_game_time_utc
+                          ? String(l.official_game_time_utc).slice(0, 10) : null));
         await pg.unsafe(`INSERT INTO score.slip_legs
           (slip_leg_id, slip_id, leg_index, board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, player_id, player_name, team_id, opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, certainty_0_100, overall_score_0_100, board_grade, result_status, result_json)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`,
-          [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), l.official_date || null, l.official_game_time_utc || null, l.player_id == null ? null : Number(l.player_id), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading" })]);
+          [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), legDate, l.official_game_time_utc || null, legPlayerId == null ? null : Number(legPlayerId), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading", goblin_rung: l.goblin_rung == null ? null : Number(l.goblin_rung) })]);
       }
       saved.push({ slip_id: slipId, leg_count: legs.length });
       await recordRealPricingObservation(pg, slipId, s, legs);
