@@ -3870,7 +3870,16 @@ function buildMixedTop55Slips(legs) {
         slip_type: `${size}-pick`,
         slip_size: size,
         entry_mode: "power",
-        structure_label: `${size}-pick Power (Top ${Math.round((1-BASELINE_HP_PERCENTILE)*100)}% of board)`,
+        structure_label: `${size}-pick Power (total_bases LESS, trailing >= ${PP_TRAILING_MIN}%)`,
+        estimated_multiplier: baselineHpSlipMultiplier(slipLegs),
+        estimated_payout_note: `Every leg is total_bases at 1.1926, so a ${size}-pick pays ${Math.round(Math.pow(1.1926,size)*1000)/1000}x. Real backtest: 34 slips, 24 wins, 17 days, 89.7% leg accuracy (122/136), +42.8% ROI. Live placed slips have run ~6% above the estimate, so it errs conservative. Always overwrite with the app's real displayed multiplier before saving.`,
+        strategy_notes: [
+          `Qualifying legs: canonical_prop_key = total_bases, lines 2.5 and 3.5, LESS side ONLY. The signal is the PLAYER'S OWN TRAILING HIT RATE for that exact prop/line/side, computed from their game log using games strictly before today, requiring >= ${PP_MIN_GAMES} prior games and >= ${PP_TRAILING_MIN}% hit rate. Ranked by that rate descending.`,
+          `This is NOT baseline_v6 and NOT the enriched board score. Both were tested head-to-head on this exact propline and lost: raw trailing rate is monotonic across quartiles and reaches 87.93% at Q4, while baseline_v6 INVERTS - its Q4 (84.05%) is worse than its Q3 (86.27%).`,
+          `A 410-cell matrix sweep (4 signals x 8 thresholds x 133 proplines, hitters and pitchers, both sides, both variants) found only 6 proplines with p*m > 1 and ALL are LESS side. total_bases/3.5/less is the strongest, positive in 32 of its cells.`,
+          `GATES: day-level block bootstrap 99.8% positive, 95% CI [+13.0%, +72.5%], leave-one-out across all 17 days stays in [+39.1%, +51.7%], 16 of 17 days profitable, best day only 8% of returns. Threshold-flat: 78 -> +42.8%, 81 -> +41.0%, 84 -> +39.1%.`,
+          `⚠️ RISKS: 17 days and 34 slips - the CI lower bound of +13.0% is the realistic floor, not +42.8%. LESS legs only exist from 2026-08-03 (PrizePicks format change), so ~22 days is the structural ceiling. This is the best of ~1,000 searched configurations, so some of the headline is selection. Every day resolves to +102.3% (both slips win), +1.1% (one wins), or -100% (neither). Minimum stake.`
+        ],
         // FIXED 2026-08-29: was `flexFull`, which reads the legacy hardcoded MIXED_TOP55_REAL_TABLES
         // (2.313 for EVERY 6-pick regardless of composition). All five slips placed on 08-29 showed
         // an identical 2.313 estimate, which is impossible with per-prop rates. Use the per-prop
