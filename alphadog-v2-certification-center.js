@@ -3662,7 +3662,32 @@ const PP_SIDE = 'less';
 const PP_TRAILING_MIN = 78.0;   // player's own trailing hit rate for this exact prop/line/side
 const PP_MIN_GAMES = 60;        // minimum prior games in that player's log
 const BASELINE_HP_SIZE = 4;     // 4-pick Power
-const BASELINE_HP_PER_LEG_RATE = 1.1926;  // total_bases per-prop rate; 4-pick multiplier = 2.023
+const BASELINE_HP_PER_LEG_RATE = 1.1926;  // legacy fallback - superseded by PP_LINE_RATES below
+// ===== MEASURED PER-LINE RATES (2026-08-30) =====
+// The flat per-prop rate was WRONG for this strategy. PrizePicks prices goblins by DEPTH from the
+// anchor, and total_bases has an anchor averaging 0.77, so:
+//     line 2.5 / less  =  +1.73 above anchor  ->  measured per-leg 1.2251
+//     line 3.5 / less  =  +2.74 above anchor  ->  measured per-leg 1.1416
+// Deeper goblin = easier = pays less. Solved from two real placed 4-picks on 2026-08-30:
+//     pure 3.5 4-pick         = 1.70  ->  1.70^(1/4)          = 1.1416
+//     3x 2.5 + 1x 3.5 4-pick  = 2.10  ->  (2.10/1.1416)^(1/3) = 1.2251
+// The old flat 1.1926 was 4.5% TOO HIGH on 3.5 and 2.7% too low on 2.5 - and the strategy takes
+// 65.4% of its legs from 3.5, the deep cheap side, so the error ran against us.
+//
+// IMPACT: average slip multiplier 2.023 -> 1.875, backtest ROI +42.8% -> +32.7%. Leg accuracy is
+// unchanged at 89.7% (122/136) - the selection was right, only the payout assumption was wrong.
+//
+// The two lines are near-identical in EV, so the current mix needs no reweighting:
+//     2.5:  1.2251 x 0.8511 = 1.0427     3.5:  1.1416 x 0.9213 = 1.0518
+//
+// FLEX CONFIRMED DEAD with real reads: Flex pays 76.4% of Power on a full hit (1.3/1.7 and 1.6/2.1)
+// and a flat 0.5 on 3-of-4. Even if every losing slip were a 3-of-4, Flex returns +15.9% vs Power's
+// +32.7%. That is now confirmed on all three platforms.
+const PP_LINE_RATES = { "2.5": 1.2251, "3.5": 1.1416 };
+function ppLegRate(leg) {
+  const lv = String(Number(leg && leg.line_value));
+  return PP_LINE_RATES[lv] || 1.1416;   // default to the conservative deep-goblin rate
+}
 // ===== GRANULAR PER-PROP MULTIPLIER TABLE (2026-08-27) =====
 // Multipliers are NOT flat across props. Fitted by least squares over 23 real multiplier
 // observations (every pure single-prop read plus every mixed slip whose exact composition is
