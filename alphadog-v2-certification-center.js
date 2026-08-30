@@ -3818,6 +3818,18 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
           ON g.player_id = b.mlb_player_id
          AND g.game_date::date < b.official_date::date
         GROUP BY b.final_board_row_id
+      ),
+      -- Rung = position of this line in THAT PLAYER'S own LESS ladder on today's board, 1 =
+      -- shallowest offered. This is what sets the multiplier (rate = 1.4323 - 0.101*rung), NOT the
+      -- line value: the same line is a different rung for different players depending on where
+      -- their ladder starts.
+      ladder AS (
+        SELECT f.mlb_player_id, f.line_value,
+          ROW_NUMBER() OVER (PARTITION BY f.mlb_player_id ORDER BY f.line_value) AS rung
+        FROM (SELECT DISTINCT mlb_player_id, line_value FROM score.final_board_current
+              WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+                AND source_key = '${sourceKey}' AND canonical_prop_key = '${PP_PROP}'
+                AND selected_side = '${PP_SIDE}' AND is_goblin = 1) f
       )
       SELECT b.final_board_row_id AS board_row_id, b.source_key, b.game_pk, b.official_game_time_utc,
         b.player_name, b.mlb_player_id, b.canonical_prop_key, b.line_value, b.selected_side,
@@ -3825,9 +3837,11 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
         b.probability_confidence_0_100 AS confidence_0_100,
         b.is_goblin, b.is_demon,
         t.n_games AS historical_n,
-        round((100.0 * t.n_hit / NULLIF(t.n_games,0))::numeric,1) AS historical_hit_pct
+        round((100.0 * t.n_hit / NULLIF(t.n_games,0))::numeric,1) AS historical_hit_pct,
+        l.rung AS goblin_rung
       FROM board b
       JOIN trail t ON t.final_board_row_id = b.final_board_row_id
+      LEFT JOIN ladder l ON l.mlb_player_id = b.mlb_player_id AND l.line_value = b.line_value
       WHERE t.n_games >= ${PP_MIN_GAMES}
         AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
       ORDER BY (100.0 * t.n_hit / NULLIF(t.n_games,0)) DESC, b.player_name
