@@ -6157,8 +6157,16 @@ const BASELINE_HP_CLIENT_PROP_RATES={
   home_runs:1.1187, stolen_bases:1.0655
 };
 const BASELINE_HP_CLIENT_RATE_FALLBACK=1.12;
+// Client mirror of PP_LINE_RATES. total_bases is priced by goblin DEPTH, not just prop: line 2.5
+// (+1.73 above anchor) pays 1.2251, line 3.5 (+2.74, deeper and easier) pays 1.1416. Measured from
+// two real placed 4-picks on 2026-08-30: pure-3.5 = 1.70, and 3x2.5+1x3.5 = 2.10.
+const PP_CLIENT_LINE_RATES={"2.5":1.2251,"3.5":1.1416};
 function baselineHpClientLegRate(leg){
   const k=String(leg&&leg.canonical_prop_key||'').toLowerCase();
+  if(k==='total_bases'){
+    const lv=String(Number(leg&&leg.line_value));
+    if(PP_CLIENT_LINE_RATES[lv])return PP_CLIENT_LINE_RATES[lv];
+  }
   return BASELINE_HP_CLIENT_PROP_RATES[k]||BASELINE_HP_CLIENT_RATE_FALLBACK;
 }
 const MIXED_TOP55_CLIENT_FLAT_PARTIALS={oneBelow:0.5,twoBelow:0.25};
