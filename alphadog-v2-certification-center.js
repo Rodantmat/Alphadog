@@ -3683,11 +3683,40 @@ const BASELINE_HP_PER_LEG_RATE = 1.1926;  // legacy fallback - superseded by PP_
 // FLEX CONFIRMED DEAD with real reads: Flex pays 76.4% of Power on a full hit (1.3/1.7 and 1.6/2.1)
 // and a flat 0.5 on 3-of-4. Even if every losing slip were a 3-of-4, Flex returns +15.9% vs Power's
 // +32.7%. That is now confirmed on all three platforms.
-const PP_LINE_RATES = { "2.5": 1.2251, "3.5": 1.1416 };
-function ppLegRate(leg) {
-  const lv = String(Number(leg && leg.line_value));
-  return PP_LINE_RATES[lv] || 1.1416;   // default to the conservative deep-goblin rate
+// ===== RUNG-BASED MULTIPLIER (2026-08-30, from 6 real placed slips) =====
+// The multiplier is set by the leg's RUNG in that player's own LESS ladder - not by the line, and
+// not by the prop. Rung 1 = the shallowest LESS line PrizePicks offers that player.
+//     rate = 1.4323 - 0.101 x rung
+//     rung 1 -> 1.331   rung 2 -> 1.230   rung 3 -> 1.129   rung 4 -> 1.028
+// Each rung down costs ~7.6% of the multiplier.
+//
+// WHY LINE ALONE WAS WRONG: the same line is a different rung for different players. Crow-Armstrong's
+// ladder starts at 2.5 so his 2.5 is rung 1 (1.331); Bregman's starts at 1.5 so his 2.5 is rung 2
+// (1.230). Same line, 8% different rate. The archive confirms it - line 2.5 appears at rungs 1, 2
+// AND 3 across players.
+//
+// FITTED on 6 real placed 4-picks and 2-picks (2026-08-30, Reds @ Cubs):
+//   A 2pk deep 1.20 | B 2pk mid 1.60 | C 2pk shallow 1.70
+//   D 4pk deep 1.70 | E 4pk shallow 3.25 | F 4pk mixed 1.90
+// Model comparison by RMS log error: rung 0.0395 | offset 0.0577 | exponential-in-offset 0.0562.
+// Adding offset on top of rung improves nothing (coefficient 0.0044) - the rung is the whole signal.
+//
+// ⚠️ VALID ONLY WHERE NO STANDARD LINE EXISTS. All six reads came from a board where every rung was
+// goblin or demon with no regular variation. When a standard line is present the goblin rates shift,
+// and there are no reads from that regime yet.
+// ⚠️ 6.3% max residual on 6 observations with 2 parameters - refit as more reads accumulate.
+//
+// IMPACT: backtest ROI 42.8% (flat 1.1926) -> 32.7% (per-line) -> 31.8% (rung). Leg accuracy is
+// unchanged at 89.7% throughout - every correction moved only the payout, never the selection.
+// Average rung played is 2.63, so this strategy lives at the deep, cheap end of the ladder.
+const PP_RUNG_INTERCEPT = 1.4323;
+const PP_RUNG_SLOPE = -0.101;
+function ppRungRate(rung) {
+  const r = Number(rung);
+  if (!Number.isFinite(r) || r < 1) return 1.1416;   // conservative default
+  return PP_RUNG_INTERCEPT + PP_RUNG_SLOPE * r;
 }
+const PP_LINE_RATES = { "2.5": 1.2251, "3.5": 1.1416 };  // legacy fallback when rung is unknown
 // ===== GRANULAR PER-PROP MULTIPLIER TABLE (2026-08-27) =====
 // Multipliers are NOT flat across props. Fitted by least squares over 23 real multiplier
 // observations (every pure single-prop read plus every mixed slip whose exact composition is
