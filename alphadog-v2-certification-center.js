@@ -3757,14 +3757,18 @@ function baselineHpLegRate(leg) {
   return BASELINE_HP_PROP_RATES[k] || BASELINE_HP_PROP_RATE_FALLBACK;
 }
 function baselineHpSlipMultiplier(slipLegs) {
-  // For the total_bases strategy the rate depends on the LINE (goblin depth), not just the prop.
-  // A pure 3.5 4-pick is 1.70; a 2.5-heavy one is materially higher. Falling back to the per-prop
-  // table for any leg outside the strategy's own lines.
+  // Priced by RUNG in the player's own ladder (rate = 1.4323 - 0.101*rung), not by line or prop.
+  // Falls back to the per-line table, then the per-prop table, when rung is unavailable.
   let product = 1;
   for (const l of slipLegs || []) {
-    const lv = String(Number(l && l.line_value));
     const ck = String(l && l.canonical_prop_key || "").toLowerCase();
-    product *= (ck === 'total_bases' && PP_LINE_RATES[lv]) ? PP_LINE_RATES[lv] : baselineHpLegRate(l);
+    const rung = Number(l && l.goblin_rung);
+    if (ck === 'total_bases' && Number.isFinite(rung) && rung >= 1) {
+      product *= ppRungRate(rung);
+    } else {
+      const lv = String(Number(l && l.line_value));
+      product *= (ck === 'total_bases' && PP_LINE_RATES[lv]) ? PP_LINE_RATES[lv] : baselineHpLegRate(l);
+    }
   }
   return Math.round(product * 1000) / 1000;
 }
