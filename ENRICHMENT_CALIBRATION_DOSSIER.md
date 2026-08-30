@@ -170,3 +170,41 @@ Per-factor breakdown (day-level improvement in correlation-with-outcome, factor 
 5. Any future pooled multi-week finding must be checked for intervening code/config fixes (split at the fix date) **and** against the current live coefficient (§2.5) before being treated as an open, actionable issue — `batter_quality_of_contact` and `lineup_slot` are the two concrete cautionary examples this session produced.
 6. Investigate the LAYER 2 Daily Context historical coverage gap (§6.3) if a way to reconstruct it is found.
 7. Nothing live should change until the principal has reviewed and approved a specific plan, and until item 1 above has a real answer.
+
+---
+
+## 8. PRE-REGISTERED HOLDOUT TEST — `market_implied_total`, sign-flipped (2026-08-29)
+
+**Critical context — the baseline used for §0-7 above was superseded mid-session.** All work in this section uses the corrected leakage-free baseline (§ critical superseding finding at the top of this document): `backtest.baseline_v6_asof` joined at `as_of_date = D-1`, confirmed by the sister chat to be exactly production's own baseline for day D (not an approximation).
+
+**Also critical: the 3-factor "reduced variant" from §4 was discarded entirely.** It was selected in a prior session using data overlapping its own evaluation window — a circularity trap. This section re-does factor selection from scratch with a proper temporal split.
+
+**Multiple-comparisons correction applied to training-window selection**: tested ~15 factors on a clean 11-day training window (07-26→08-08, corrupted dates excluded) and found `market_implied_total` as the extreme at t=-1.69. At df=10, P(|t|>1.69)≈0.12, so ~1.8 of 15 factors are expected to exceed this by pure chance — the honest reading of training is **no factor signal at all**, not "one weak candidate." `opposing_pitcher_quality` (this document's previously strongest-claimed factor, §3) sign-flips entirely on removal of one outlier day (07-28), reinforcing this reading.
+
+**Pre-registered before running** (verbatim, stated before seeing any holdout result): factor = `market_implied_total`, sign-flipped; window = 2026-08-09 → 2026-08-23 (14 days, untouched during training); bar = day-level t-test, 95% CI lower bound above zero, leave-one-out never negative; one shot, no re-testing with adjusted parameters. Stated expectation: likely failure, given the selection-noise logic above.
+
+**Result**:
+
+| Gate | Value | Status |
+|---|---|---|
+| Day-level t-stat (14 days) | **2.914** | Clears |
+| 95% CI on mean improvement | **[0.0027, 0.0139]** | Entirely positive — clears |
+| Leave-one-out mean (excl. any 1 of 14 days) | **0.0063 to 0.0091** | Never negative — clears |
+| Raw day-count positive | 11/14 (79%) | Below 95% under this specific reading |
+
+A genuine, unexpected pass under the standard bootstrap-resample-mean reading of "≥95% positive" (≈99.8% via normal approximation from the t-stat, not a true resampling bootstrap — disclosed as an approximation); does not clear under a raw-day-fraction reading (79%). **Per the one-shot pre-registration, this result stands as reported — no further tuning, sign changes, or window adjustments were made after seeing it.**
+
+**Training-window factor selection (07-26 → 08-08, 11 days, corrupted dates excluded), for reference:**
+
+| Factor | Days | t-stat |
+|---|---|---|
+| `market_implied_total` | 11 | -1.69 |
+| `umpire_tendency` | 10 | -1.43 |
+| `bullpen_fatigue` | 10 | -0.89 |
+| `opposing_pitcher_quality` | 11 | 0.63 (unstable — driven entirely by one outlier day; negative without it) |
+| `defensive_quality`, `park_factors`, `weather_temp_altitude_pressure` | ~10-11 | ~0.1-0.3 |
+| `schedule_travel_fatigue` | 10 | ~0 (mostly exact zero — its 08-20 extension postdates this window entirely) |
+| `lineup_slot` | — | Excluded — this table's values for this factor still reflect the stale, superseded coefficient identified in §2.5 |
+| `catcher_framing`, `platoon_handedness`, `recent_form_trend`, `times_through_order`, `weather_wind`, `stolen_base_family` | 1-2 | Too thin to evaluate |
+
+**Methodology note for future sessions**: two real data-quality issues were caught and fixed while building this test — (1) `backtest.factor_contributions_asof_v2` has non-unique `contrib_id` values with conflicting `contribution` figures for the same logical key (resolved via averaging, not picking one); (2) large multi-CTE queries against Hyperdrive were unreliable — the working pattern was materializing each stage as its own verified `backtest.enr_*` table (extract → join → aggregate), never combining steps, always verifying row counts after each `CREATE TABLE` since success is sometimes reported falsely.
