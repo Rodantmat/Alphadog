@@ -1,7 +1,34 @@
 # ENRICHMENT CALIBRATION — DOSSIER
-*Companion to `ENRICHMENT_CALIBRATION_HANDOFF.md` and `CORE_LOGIC_CALIBRATION_DOSSIER.md`. This document covers the enrichment/final-hit-probability layer specifically — the factor-by-factor calibration audit conducted 2026-08-28/29. Everything below is either read directly from live code/config, computed directly against real production data (`backtest.*` and live tables), or sourced from prior-session transcripts with the specific transcript cited. No number here is invented.*
+
+## ⚠️ CRITICAL SUPERSEDING FINDING (2026-08-29, later same day) — READ THIS FIRST
+
+**The entire premise of this document — "baseline has +39.8pp within-cell discrimination, enrichment destroys it to +5.3pp" — does not survive independent verification and is very likely a leakage artifact, not a real finding.**
+
+A sister chat (the original slip-calibration chat that wrote `ENRICHMENT_CALIBRATION_HANDOFF.md`) discovered that `backtest.baseline_v6_asof` at `as_of_date = D` **includes day D's own game** — i.e., every leg's own outcome was baked into its own predictor. Verified on 51/51 players via `non_push_sample` matching game-log counts *inclusively*, not exclusively.
+
+**Independently reproduced in this session, twice:**
+- Two spot-checked players: `non_push_sample` matched the inclusive game count exactly (126 vs. 125 exclusive; 73 vs. 72 exclusive) — both times, not the exclusive count.
+- Rerunning the original Part 1 quartile test with `baseline_v6_asof` joined at `D−1` instead of `D` (light single-join query, n≈50,000): **spread = +5.32pp**, not +39.76pp.
+
+**Four independent measurements now converge on ~5.2-5.8pp as the real baseline discrimination:**
+
+| Source | Method | Spread |
+|---|---|---|
+| Sister chat's lagged baseline | Independent reconstruction | +5.78pp |
+| This session's earlier finding | Production's own historically-recorded baseline value | +5.21pp |
+| **This session, just now** | **`baseline_v6_asof` joined at D−1, n≈50,000** | **+5.32pp** |
+| Current live enrichment | (the original "damaged" number) | +5.31pp |
+
+**The properly-lagged baseline and the current live enrichment are now statistically indistinguishable.** This is not "enrichment destroys a strong baseline" — it's "baseline and enrichment currently perform almost identically, and both are modest." The +39.8pp target that every finding in this document was measured against never existed as a real, achievable number for real-time prediction — it was leakage.
+
+### What this means for everything below
+- The mission is reframed, per the sister chat's proposal: **build a genuinely clean, point-in-time baseline first, then fairly re-measure enrichment against it** — not "restore lost discrimination that was never real."
+- **The factor-level diagnostic work below remains valid and useful as-is**: which factors are wired vs. gapped, which show real vs. no residual signal, the confirmed bugs already fixed (`batter_quality_of_contact`, `lineup_slot`'s stale coefficient), the data-quality findings (mixed lineup-slot encoding, weather archive gaps) — none of that depended on the +39.8pp premise being true, and all of it is still real, independently-verified work.
+- **What does NOT survive**: any claim framed as "X pp of discrimination destroyed/recovered relative to baseline," since the baseline reference point itself was corrupted. The §4 "combined variant simulation" and its correction, and the "does this factor enhance baseline" tests, were all measured against contaminated or inconsistent baseline references (`baseline_v6_asof` leakage, or `classification.baseline_v6_current` joined by exact key ignoring date — its own, different lookahead problem, since it applies a player's full current-season stats to legs from weeks earlier). Those specific pp-based conclusions should be treated as informative about *relative* factor behavior but not trusted for absolute magnitude claims.
+- **New honest state of the mission**: neither baseline nor enrichment currently discriminates well in real time (~5-6pp within-cell, both). The interesting question is no longer "why did enrichment ruin baseline" — it's "how do we build something, baseline or enrichment or both, that actually discriminates meaningfully."
 
 ---
+
 
 ## 0. MISSION AND MANDATE
 
