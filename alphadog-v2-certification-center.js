@@ -7238,7 +7238,10 @@ export default {
   }
 };
 /* ===== ORPHANED DUPLICATE BLOCK, 2026-08-31 =====
-   Created by a bad patch: a ${'
+   Created by a bad patch that used a template placeholder inside new_str. Everything from here
+   to the END marker at the bottom of this file is dead duplicate code, kept commented rather than
+   deleted so the diff stays reviewable. All live definitions are ABOVE this block.
+   DUP_MARK_A
     // POOL FLOOR: thin days are where this loses. Both -100% days in the unfloored backtest had
     // pools of 2 and 3 legs; requiring >=6 removed exactly those and lifted ROI 146.7% -> 167.3%.
     if (scored.length < SLEEPER_SHARP_POOL_FLOOR) return [];
