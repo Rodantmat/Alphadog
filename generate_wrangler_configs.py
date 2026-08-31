@@ -751,6 +751,14 @@ for worker in WORKERS:
     path.write_text(json.dumps(make_config(worker), indent=2), encoding="utf-8")
     generated.append(str(path))
 
+# NBA expansion (additive only): NBA workers' generated wrangler configs live inside nba/ too,
+# keeping every NBA-related file (worker .js, wrangler config, manifest) under one folder,
+# fully separate from MLB's repo-root files, per nba/NBA_SYSTEM_DRAFT.md Section 1.
+for worker in NBA_WORKERS:
+    path = Path(f"nba/wrangler.{worker}.jsonc")
+    path.write_text(json.dumps(make_config(worker), indent=2), encoding="utf-8")
+    generated.append(str(path))
+
 path = Path("wrangler.alphadog-v2-orchestrator.with-services.jsonc")
 path.write_text(json.dumps(make_config("alphadog-v2-orchestrator", include_services=True), indent=2), encoding="utf-8")
 generated.append(str(path))
