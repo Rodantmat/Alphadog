@@ -79,3 +79,15 @@ Do these in order. Do not skip ahead to strategy research before the foundationa
 - Don't build a per-prop "one worker per prop" architecture — MLB tried this, abandoned it in favor of a unified scoring engine, and left 19 dead stub files behind as evidence. Build the unified version from the start.
 - Don't try to port MLB's weather, quality-of-contact, or RFI/NRFI-style factors — they have no basketball analogue and building them would be wasted effort (see Section 2 for the honest mapping).
 - Don't invest in an elaborate auto-scheduling orchestrator before the manual pipeline works end-to-end and has been verified against real data at least once.
+
+## 7. Mandatory step zero for the new chat: finish reading the source repo before writing any NBA code
+
+This transfer package was compiled under real context constraints and does not reflect a complete read of the MLB repo — say so plainly rather than implying otherwise. The following repo documents were **not** read in full while building this package and are likely to contain additional real, transferable lessons in the same vein as what's already captured here (they follow the identical pattern of every document that *was* read: real bugs, real numbers, real fixes, not generic advice):
+
+- `ALPHADOG_DOS_AND_DONTS.md` and `ALPHADOG_SYSTEM_MAP.md` — only section headers/structure were sampled, not full body text. Both are 100KB+ and confirmed (from what was sampled) to contain substantial additional real detail.
+- `CORE_LOGIC_CALIBRATION_DOSSIER.md` — the baseline shrinkage/tier system documentation that `CALIBRATION_ENRICHMENT_AUDIT.md` (already incorporated above) explicitly builds on and cross-references.
+- `OUTCOME_ENGINE_AND_DOC_INDEX.md` — the outcome-grading engine documentation.
+- `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md` and `FACTOR_REDESIGN_AND_QOC_FINDINGS.md` — likely contain more enrichment-factor-specific detail beyond what's captured in Section 4a above.
+- `SESSION_2026-08-22_FULL_LOG.md`, `SESSION_2026-08-29_ENRICHMENT_CALIBRATION_LOG.md`, `LIVING_LOG.md`, `HANDOFF_MASTER_SUMMARY.md` — large session logs, likely containing additional real bugs/fixes/findings not yet surfaced in any topic-specific dossier.
+
+**Before writing any NBA-specific code, read these directly** (they're in the same repo root as this file) and update this transfer package with anything genuinely new, using the same standard every existing section here was held to: real numbers, real bugs, real fixes — not paraphrased impressions. This isn't optional due-diligence; it's a continuation of the same "no shallow study" standard this package was built under, applied to the part of the source material that ran out of budget before it could be finished.
