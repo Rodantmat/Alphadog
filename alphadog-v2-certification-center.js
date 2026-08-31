@@ -4244,11 +4244,34 @@ const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
 // negative) since the edge depends on the payout multiplier compounding faster than hit-rate drops
 // at 5-pick specifically. Retired hits/more (prior track, no real qualifying threshold was ever
 // applied - a real gap in that version, fixed here by adding the rolling hit-rate check below).
+// REPLACED 2026-08-31, FULL CLEAN REBUILD ON MEASURED MULTIPLIERS. Every prior Sleeper track in
+// this file was priced with the old 1+(dec-1)*0.95 formula, which overstates every leg by ~11%
+// (see sleeperLegMultiplier). Re-running the whole search on the corrected k(p) engine, over a
+// rebuilt 36-day pool (20,670 graded legs, snapshot-pinned, started games excluded, market
+// calibration verified at 50.00% actual vs 50.00% implied), collapsed nearly everything:
+//   - singles/less 5-pick (the prior deployed track): negative once repriced
+//   - rbis/0.5/less trail>=75:    p*m 1.0002 - dead level, does not clear
+//   - walks/0.5/less trail>=80:   p*m 1.0044 - too thin
+//   - runs/0.5/less trail>=60/65: p*m 1.0052 / 1.0018 - too thin
+// Exactly one configuration survived, and it survived the flat-rate circularity control too (real
+// ROI 31.3% vs 40.2% on a neutral rate table - the gap is NEGATIVE, meaning the payout table is
+// penalising the selection rather than crediting it, the opposite of a circular result):
+//   runs/0.5/less, player's own trailing hit rate for that exact prop/line/side >= 70 (from game
+//   logs strictly before today), ranked by trailing rate, 2-pick Power, cap 2/day.
+//   Real backtest: 39 slips / 22 days, 83.3% leg accuracy, +31.3% ROI.
+//   Gates: bootstrap 97.7% positive, 95% CI [+0.6%, +60.4%], leave-one-out [+26.8%, +38.4%],
+//   15/22 profitable days, best day 8% of returns.
+// Ranking sweep (6 methods x 3 caps) confirmed trailing rate is the best ranker on the neutral
+// metric (+40.2% flat vs +34.8% for EV/margin ranking), and cap 2 is optimal (cap 1 +25.9%,
+// cap 3 +14.8%). Size 2 beats 3/4/5 once real pricing is applied - the reverse of the old
+// flat-k conclusion, because k shrinks as legs get safer so compounding no longer pays.
+// HONEST CAVEAT: the CI lower bound is +0.6%. This clears by a hair and deserves less stake than
+// the PrizePicks track (+32.7%, CI [+13.0%, +72.5%]).
 const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "singles", side: "less", rank: 1 }
+  { prop: "runs", side: "less", rank: 1 }
 ];
-const SLEEPER_HIGH_HIT_SIZE = 5;
-const SLEEPER_HIGH_HIT_MIN_HIT_PCT = 55;
+const SLEEPER_HIGH_HIT_SIZE = 2;
+const SLEEPER_HIGH_HIT_MIN_HIT_PCT = 70;
 const SLEEPER_HIGH_HIT_TOP_K = 30;
 // REAL FIX 2026-08-26: the naive per-leg product was confirmed, via Gemini-validated analysis of
 // 9 real saved slips, to systematically OVER-predict Flex full-hit payouts by 12-39% (worse at
