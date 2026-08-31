@@ -4,6 +4,12 @@ from pathlib import Path
 
 COMPATIBILITY_DATE = "2026-05-18"
 WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["workers"]
+# NBA expansion (additive only - never touches worker_manifest.json or anything MLB-owned).
+# NBA workers live entirely in nba/, get their own manifest, and are appended to the generation
+# loop below via ALL_WORKERS. WORKERS itself (used for orchestrator service-binding wiring)
+# deliberately stays MLB-only - NBA has no orchestrator per its own operating model.
+_NBA_MANIFEST_PATH = Path("nba/worker_manifest_nba.json")
+NBA_WORKERS = json.loads(_NBA_MANIFEST_PATH.read_text(encoding="utf-8"))["workers"] if _NBA_MANIFEST_PATH.exists() else []
 D1_BINDINGS = []  # CRITICAL FIX 2026-08-12: all 12 D1 databases confirmed deleted (verified by
 # direct query against every single one this session - CONTROL_DB, CONFIG_DB, REF_DB,
 # STATS_HITTER_DB, STATS_PITCHER_DB, TEAM_DB, DAILY_DB, MARKET_DB, CONTEXT_DB, SCORE_DB,
