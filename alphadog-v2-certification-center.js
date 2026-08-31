@@ -3733,19 +3733,28 @@ function buildUnderdogBaselineSlips(legs) {
 //
 // vs v3 head to head: leg accuracy 92.1% -> 96.3%, slip win rate 69.6% -> 83.7%, t 6.52 -> 10.25,
 // CI width halved, worst 3-day window -13.5% -> +40.4%, profitable days 24/27 -> 27/27.
-const PP_BOOKS = [
-  { prop: 'stolen_bases', lines: [0.5], side: 'less', min_trail: 97.0, rate: 1.1228 },
-  { prop: 'home_runs',    lines: [0.5], side: 'less', min_trail: 90.0, rate: 1.1651 },
-  { prop: 'total_bases',  lines: [3.5], side: 'less', min_trail: 90.0, rate: 1.1416 }
-];
-const PP_PROP = 'total_bases';          // legacy - superseded by PP_BOOKS
+// ===== REVERTED TO v3 THRESHOLDS, 2026-08-31 =====
+// v4 raised PP_TRAILING_MIN from 78 to 90 and added per-book gates (sb>=97, hr>=90, tb>=90).
+// That starved the live board: it found 2 qualifying legs where 6 are needed, on a board that
+// carries 125 total_bases/3.5, 59 home_runs/0.5 and 25 stolen_bases/0.5 unstarted LESS legs.
+// The v4 thresholds were derived from archive.board_leg_history WITHOUT filtering on
+// allowed_wager_types, so that pool counted legs where PrizePicks never offered the LESS side at
+// all - roughly 53-79% of rows depending on the prop. Hit rates measured on that pool were
+// inflated, which pushed the thresholds far too high.
+// The LIVE query does not have this problem: score.final_board_current rows with
+// selected_side='less' are already only the legs where LESS is actually offered. The v3 config
+// below was producing real slips and the live results back it - 84.1% leg accuracy across three
+// graded days (08-27/28/29), which is in line with the v3 backtest's 92.3%.
+// stolen_bases stays OUT until it is re-derived on a correctly filtered pool. Its five real
+// multiplier reads (k = 1.1228) are kept in PP_CELL_RATES for when that work is done.
+const PP_PROP = 'total_bases';
 const PP_LINES = [3.5];
 const PP_SIDE = 'less';
 const PP_SECOND_BOOK = { prop: 'home_runs', lines: [0.5], side: 'less' };
-const PP_TRAILING_MIN = 90.0;           // floor; each book applies its own min_trail above
-const PP_MIN_GAMES = 60;
-const PP_TOP_PERCENTILE = 0.35;         // top 35% of the day's qualifying pool
-const BASELINE_HP_SIZE = 6;
+const PP_TRAILING_MIN = 78.0;   // player's own trailing hit rate for this exact prop/line/side
+const PP_MIN_GAMES = 60;        // minimum prior games in that player's log
+const PP_TOP_PERCENTILE = 0.10; // top 10% of the day's qualifying pool, ranked by trailing rate
+const BASELINE_HP_SIZE = 6;     // 6-pick Power
 const BASELINE_HP_PER_LEG_RATE = 1.1416;
 // ===== MEASURED PER-LINE RATES (2026-08-30) =====
 // The flat per-prop rate was WRONG for this strategy. PrizePicks prices goblins by DEPTH from the
