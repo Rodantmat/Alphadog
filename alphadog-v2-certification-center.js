@@ -4357,11 +4357,56 @@ const SLEEPER_REAL_PER_LEG_MULT = 1.2684;
 // flat-k conclusion, because k shrinks as legs get safer so compounding no longer pays.
 // HONEST CAVEAT: the CI lower bound is +0.6%. This clears by a hair and deserves less stake than
 // the PrizePicks track (+32.7%, CI [+13.0%, +72.5%]).
-const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "runs", side: "less", rank: 1 }
-];
-const SLEEPER_HIGH_HIT_SIZE = 2;
-const SLEEPER_HIGH_HIT_MIN_HIT_PCT = 70;
+// ===== SLEEPER v3, 2026-08-31: COMPLETE REPLACEMENT - SHARP-BOOK DIVERGENCE =====
+// The v2 trailing-rate track is RETIRED. Season-testing it on the full 155-day game log showed its
+// rank bands are INVERTED for runs/0.5/less: top-4 legs hit 67.26% while ranks 9-20 hit 73.76%
+// (Spearman rho +0.800, not monotonic). The identical test on the deployed PrizePicks propline gives
+// rho = -1.000. The +31.3% v2 backtest was a 22-day window artifact, not a signal.
+//
+// ROOT CAUSE OF EVERY PRIOR SLEEPER FAILURE: we were devigging Sleeper against ITSELF. Since
+// Sleeper prices each side as k(p)/p, devigging their own two-sided prices recovers their own p,
+// which forces p*m = k identically. Every "test" was re-measuring the house edge and concluding
+// nothing works. 20 proplines, all system scores (score_0_100, est_hp, confidence, divergence),
+// every size and cap - all landed 0.87-0.98 because they mathematically had to.
+//
+// THE FIX, confirmed by multiple independent sources (Stokastic, Occupy Fantasy, OddsShopper):
+// price Sleeper against SHARP SPORTSBOOK CONSENSUS, not against itself. Occupy Fantasy states it
+// directly - "the sportsbooks are our projection system" - and OddsShopper notes Sleeper's dynamic
+// pricing "usually prices props worse than a traditional sportsbook".
+// Consensus is built from archive.market_prop_context_history: 4.6 books/cell average (bet365,
+// BetMGM, DraftKings, Caesars, Hard Rock, Novig, Fanatics), two-sided, devigged per book then
+// averaged, overround filtered to 1.00-1.25.
+//
+// LEG-LEVEL RESULT (1,306 matched legs, 20 days) - perfectly monotonic across five bands:
+//     sharp edge >= 6pp : 64 legs, Sleeper 51.2% vs sharp 59.9%, ACTUAL 73.44%, p*m 1.3191
+//     3-6pp             : 148 legs, actual 60.81%, p*m 0.9800
+//     1-3pp             : 237 legs, actual 57.38%, p*m 0.9116
+//     flat (CONTROL)    : 408 legs, actual 50.00% vs 50.0% priced, p*m 0.8767
+//     negative          : 449 legs, actual 39.20%, p*m 0.7546
+// The flat band is the key validation: where the books agree, actual lands at EXACTLY the priced
+// probability - zero edge, as it must. The effect is in the disagreement, not in the selection.
+//
+// POOL-DEPTH FLOOR: thin days are the failure mode. The two -100% days in the unfloored version had
+// qualifying pools of 2 and 3 legs. Requiring >=6 removes exactly those and lifts ROI monotonically
+// (floor 0 -> +146.7%, floor 4 -> +156.6%, floor 6 -> +167.3%, saturates at 6).
+//
+// BACKTEST: 24 slips / 12 days, 72.2% leg accuracy, +167.3% ROI.
+// GATES: bootstrap 99.8% positive, 95% CI [+48.7%, +287.6%], leave-one-out [+139.1%, +191.6%],
+// 9/12 profitable days, walk-forward +200% -> +134%.
+// t = 2.62: passes the standard gate, FAILS Harvey (t>3.0) and the deflated hurdle (t>4.08).
+// That is a SAMPLE limitation - the sharp feed overlaps Sleeper on only 20 of 40 board days - not
+// an edge limitation. At the current rate it reaches t=3.0 in roughly two more weeks.
+//
+// ⚠️ PIPELINE BUG FOUND: archive.market_prop_context_history has intermittent
+// resolved_mlb_player_id failures - 2 days resolved ZERO players, another resolved 10%. Backfilling
+// via ref.players name-match recovered 16 -> 30 days of sharp coverage and 14 -> 20 matched days.
+// Fix this at the ingest; the downstream patch should not be permanent.
+const SLEEPER_SHARP_MIN_EDGE_PP = 0.03;   // sharp consensus prob minus Sleeper's own devigged prob
+const SLEEPER_SHARP_MIN_BOOKS = 2;        // books required to form a consensus for a cell
+const SLEEPER_SHARP_POOL_FLOOR = 6;       // do not fire at all if the day's pool is thinner
+const SLEEPER_HIGH_HIT_QUALIFYING_LINES = [];  // RETIRED - selection is now purely divergence-based
+const SLEEPER_HIGH_HIT_SIZE = 3;
+const SLEEPER_HIGH_HIT_MIN_HIT_PCT = 0;   // no trailing-rate gate - the signal is the sharp gap
 const SLEEPER_HIGH_HIT_TOP_K = 30;
 // REAL FIX 2026-08-26: the naive per-leg product was confirmed, via Gemini-validated analysis of
 // 9 real saved slips, to systematically OVER-predict Flex full-hit payouts by 12-39% (worse at
