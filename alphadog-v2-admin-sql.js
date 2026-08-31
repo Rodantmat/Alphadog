@@ -400,11 +400,11 @@ async function toolRunJob(env, args) {
   }
 
   try {
-    const resp = await binding.fetch(path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    const method = body === null ? "GET" : "POST";
+    const fetchOpts = method === "GET"
+      ? { method: "GET" }
+      : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) };
+    const resp = await binding.fetch(path, fetchOpts);
     const text = await resp.text();
     let parsed;
     try { parsed = JSON.parse(text); } catch { parsed = text; }
