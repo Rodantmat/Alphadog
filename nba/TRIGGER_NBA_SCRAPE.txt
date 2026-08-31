@@ -1,0 +1,9 @@
+This file's only purpose is to trigger .github/workflows/nba-scrape.yml on demand.
+
+Any commit that changes this file's content fires the "NBA Static Data Scraper" workflow via
+its `push` path filter - this works with plain github_put_file/github_patch_file, which every
+NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
+run this scraper on demand again.
+
+last_triggered_utc: 2026-08-31T22:05:00Z
+trigger_reason: first real trigger - verifying stats.nba.com is reachable from a GitHub Actions runner
