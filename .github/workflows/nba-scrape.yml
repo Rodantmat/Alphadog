@@ -7,6 +7,14 @@ on:
     # 09:00 UTC (matches the general weekly-differential convention already used for MLB).
     - cron: '0 9 * * 1'
   workflow_dispatch: {}
+  push:
+    # Real, working on-demand trigger that needs NO new tool capability and NO connector
+    # reconnect: every chat already has github_put_file/github_patch_file (plain commit
+    # capability), which has worked since the very first NBA worker was built. Bumping
+    # nba/TRIGGER_NBA_SCRAPE.txt (any content change) fires this workflow via a normal push,
+    # sidestepping the workflow_dispatch-API gap entirely (2026-08-31 - see NBA_PROJECT_LOG.md).
+    paths:
+      - 'nba/TRIGGER_NBA_SCRAPE.txt'
 
 permissions:
   contents: write
