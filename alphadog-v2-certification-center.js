@@ -9928,12 +9928,12 @@ export default {
         return jsonResponse({ ...baseIdentity(env), route: "/run", request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || JOB_KEY, status: "MAIN_UI_READ_ONLY_NOOP", certification: "MAIN_UI_READ_ONLY_NOOP", rows_read: 0, rows_written: 0, output_json: { noop: true, logical_app: LOGICAL_APP, message: "Main UI worker slot is read-only and does not run pipeline jobs." } });
       }
       return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /index.html", "GET /health", "POST /run", "POST /diagnostic", "GET /api/main-board/current", "GET /api/main-board/dossier", "GET /api/main-board/filters", "GET /api/main-board/health", "GET /api/player-search", "GET /api/player-profile", "GET /api/slips/recent", "POST /api/slips/generate", "POST /api/slips/save", "GET /main_alphadog_logo.png", "GET /main_alphadog_favicon.png", "GET /main_alphadog_apple_touch_icon.png"], timestamp_utc: nowUtc() }, 404);
-    } catch (error) {
+    } catch (error) { // inert - dead copy 2, inside comment
       return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, error: String(error && error.message ? error.message : error), stack: String(error && error.stack ? error.stack : "").slice(0, 1200), writes_performed: 0, external_calls_performed: 0, queue_calls_performed: 0, timestamp_utc: nowUtc() }, 500);
     }
   }
 };
-} placeholder truncated a line mid-edit and pushed the tail of the
+   DEAD COPY 2 BOUNDARY - text below is the second duplication, also dead
    old autoSelectSleeperHighHitSlipLegs plus a full copy of everything from buildSleeperHighHitSlips
    onward past the module's export default. Two export defaults can never parse. Commented out
    rather than deleted so the diff stays reviewable; the live definitions are all above this line.
