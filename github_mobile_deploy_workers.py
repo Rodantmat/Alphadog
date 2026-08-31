@@ -103,9 +103,20 @@ def worker_from_file(path):
 
     return None
 
+def reorder_admin_sql_last(targets):
+    # Real fix (2026-08-31): admin-sql declares service bindings onto other workers (including
+    # NBA ones), so if it deploys before a brand-new dependency worker exists yet in the same
+    # batch, Cloudflare rejects it with "Worker ... was not found" (confirmed live). Git's
+    # changed-file order is alphabetical by path, which happened to put alphadog-v2-admin-sql.js
+    # before nba/alphadog-v2-nba-static-players.js - deploying admin-sql last, whenever it's in
+    # the same batch as anything else, guarantees every worker it might bind to already exists.
+    if "alphadog-v2-admin-sql" in targets and len(targets) > 1:
+        targets = [w for w in targets if w != "alphadog-v2-admin-sql"] + ["alphadog-v2-admin-sql"]
+    return targets
+
 def targets_for_scope(scope):
     if scope == "all":
-        return WORKERS[:]
+        return reorder_admin_sql_last(WORKERS[:])
 
     if scope == "control-room":
         return ["alphadog-v2-control-room"]
@@ -124,7 +135,7 @@ def targets_for_scope(scope):
 
     if any(Path(f).name in GLOBAL_REDEPLOY_FILES for f in changed):
         print("Global deploy tooling file changed. Deploying all workers.")
-        return WORKERS[:]
+        return reorder_admin_sql_last(WORKERS[:])
 
     targets = []
     for f in changed:
@@ -142,7 +153,7 @@ def targets_for_scope(scope):
         print("No worker JS/config changed. Nothing to deploy.")
         return []
 
-    return targets
+    return reorder_admin_sql_last(targets)
 
 def config_for_worker(worker):
     if worker == "alphadog-v2-orchestrator" and Path("wrangler.alphadog-v2-orchestrator.with-services.jsonc").exists():
