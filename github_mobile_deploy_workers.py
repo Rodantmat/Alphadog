@@ -176,8 +176,9 @@ def main():
         if not Path(cfg).exists():
             print(f"ERROR: missing config {cfg}")
             raise SystemExit(1)
-        if not Path(f"{worker}.js").exists():
-            print(f"ERROR: missing worker file {worker}.js")
+        js_path = worker_js_path(worker)
+        if not Path(js_path).exists():
+            print(f"ERROR: missing worker file {js_path}")
             raise SystemExit(1)
 
         run([npx, "wrangler", "deploy", "--config", cfg, "--secrets-file", str(SECRETS_FILE)])
