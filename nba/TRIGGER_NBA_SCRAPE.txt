@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-08-31T22:16:00Z
-trigger_reason: retry through PROXY_URL (same secret MLB's PrizePicks scraper uses), after two direct attempts both got a consistent 3/3 read-timeout from stats.nba.com on a plain GitHub Actions runner IP (tarpit-style soft block, not a transient blip)
+last_triggered_utc: 2026-08-31T22:20:00Z
+trigger_reason: retry with curl_cffi (Chrome TLS impersonation) after plain requests hung/timed out consistently even through a proxy, ruling out IP-based blocking and pointing at TLS fingerprinting instead
