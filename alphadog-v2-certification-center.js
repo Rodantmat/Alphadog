@@ -4517,19 +4517,20 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
       WITH book_sides AS (
         SELECT m.official_date::date AS d, m.resolved_mlb_player_id AS pid,
           m.canonical_prop_key AS ck, m.line_value AS lv, m.source_key AS book,
-          avg(CASE WHEN lower(m.outcome_side) IN ('over','more')
-                   THEN (CASE WHEN m.price_american < 0 THEN (-m.price_american)/((-m.price_american)+100.0)
-                              ELSE 100.0/(m.price_american+100.0) END) END) AS io,
-          avg(CASE WHEN lower(m.outcome_side) IN ('under','less')
-                   THEN (CASE WHEN m.price_american < 0 THEN (-m.price_american)/((-m.price_american)+100.0)
-                              ELSE 100.0/(m.price_american+100.0) END) END) AS iu
-        FROM archive.market_prop_context_history m
-        WHERE m.price_american IS NOT NULL
+          avg(CASE WHEN lower(m.outcome_side) IN ('over','more','higher')
+                   THEN 1.0/m.price_decimal END) AS io,
+          avg(CASE WHEN lower(m.outcome_side) IN ('under','less','lower')
+                   THEN 1.0/m.price_decimal END) AS iu
+        FROM market.context_probe_player_props m
+        WHERE m.price_decimal IS NOT NULL AND m.price_decimal > 1.0
           AND m.resolved_mlb_player_id IS NOT NULL
-          AND m.official_date::date = (now() - interval '7 hours')::date
           AND m.source_key NOT ILIKE '%sleeper%'
           AND m.source_key NOT ILIKE '%underdog%'
           AND m.source_key NOT ILIKE '%prizepicks%'
+          AND m.source_key NOT ILIKE '%betr%'
+          AND m.source_key NOT ILIKE '%pick6%'
+          AND m.source_key NOT ILIKE '%parlayplay%'
+          AND m.source_key NOT ILIKE '%dabble%'
         GROUP BY 1,2,3,4,5
       ),
       sharp AS (
