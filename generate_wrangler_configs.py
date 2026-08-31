@@ -42,6 +42,8 @@ def service_binding_name(worker_name):
     return worker_name.replace("alphadog-v2-", "").replace("-", "_").upper() + "_WORKER"
 
 def main_file(worker_name):
+    if worker_name.startswith("alphadog-v2-nba-"):
+        return f"./nba/{worker_name}.js" if Path(f"nba/{worker_name}.js").exists() else "./worker.js"
     return f"./{worker_name}.js" if Path(f"{worker_name}.js").exists() else "./worker.js"
 
 def make_config(worker_name, include_services=False):
