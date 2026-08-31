@@ -15,12 +15,15 @@ const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_TIMEZONE", "NBA_STATS_API_BASE_URL"
 // unchanged for decades) and is what this worker will actually certify against until the live
 // fetch path is confirmed working post-deploy.
 const NBA_STATS_REQUIRED_HEADERS = {
-  "accept": "application/json",
-  "referer": "https://www.nba.com/",
-  "origin": "https://www.nba.com",
+  "Host": "stats.nba.com",
+  "Accept": "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Connection": "keep-alive",
+  "Referer": "https://stats.nba.com/",
   "x-nba-stats-origin": "stats",
   "x-nba-stats-token": "true",
-  "user-agent": "Mozilla/5.0 (compatible; AlphaDog-NBA-StaticTeams/0.1)"
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 };
 
 // Certified static fallback - real, current (2026-27 season) 30-team NBA dictionary.
