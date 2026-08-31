@@ -53,7 +53,7 @@ def fetch_teams():
     last_error = None
     for attempt in range(1, 4):
         try:
-            resp = requests.get(URL, headers=STATS_HEADERS, timeout=30, proxies=proxies)
+            resp = requests.get(URL, headers=STATS_HEADERS, timeout=30, proxies=proxies, impersonate="chrome124")
             resp.raise_for_status()
             body = resp.json()
             break
