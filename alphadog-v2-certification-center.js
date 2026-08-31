@@ -4101,12 +4101,35 @@ async function apiHighHitSlips(env, request) {
   // breakeven at the confirmed 3.087x per-leg rate. Neither Demon pool (this one or the original
   // 5-prop/more/Tier1) currently holds up under correct methodology. Paused pending a properly
   // re-verified replacement, built to the full standard in Section 11 of ALPHADOG_REALIGNMENT.md.
-  const [sleeperLegs, ppLegs, udLegs, slLegs] = await Promise.all([
+  // ===== ONE STRATEGY PER APP, 2026-08-31 =====
+  // Four tracks were running at once, two of them superseded. Both are now disabled at the call
+  // site (functions left intact so the diff is reversible).
+  //
+  // DISABLED - autoSelectSleeperBaselineLegs (4-pick, top-10% percentile, SL_MULT_K = 0.9210):
+  //   (a) Its own header admits the band structure is NON-MONOTONIC - the top-20% band (0.9635)
+  //       sits BELOW the 50-80% band (1.0165). Season-testing across 155 days confirmed it:
+  //       ranking Sleeper legs by model percentile is INVERTED (top-4 hit 67.26%, ranks 9-20 hit
+  //       73.76%, Spearman rho +0.800).
+  //   (b) SL_MULT_K = 0.9210 is measurably wrong. Solved from 61 real two-sided board reads across
+  //       10 proplines, Sleeper's engine is k(p) = 0.8928 - 0.0993*|p-0.5|, NOT a flat constant.
+  //       The flat 0.9210 overstates every leg by ~11%, compounding to ~1.5x at 4-pick. Every slip
+  //       this track produced was priced optimistically.
+  //   Replaced by autoSelectSleeperHighHitSlipLegs (sharp-book divergence), which stays enabled.
+  //
+  // DISABLED - autoSelectUnderdogBaselineLegs:
+  //   Superseded by the v3 sharp-divergence + one-leg-per-game spec. The baseline track devigs
+  //   Underdog against itself, which forces p*m = k identically and cannot find mispricing.
+  //
+  // Live tracks after this change:
+  //   PrizePicks -> autoSelectMixedTop55Legs  (total_bases 3.5 + home_runs 0.5, 6-pick, top 10%)
+  //   Sleeper    -> autoSelectSleeperHighHitSlipLegs (sharp divergence >=3pp, pool floor 6, 3-pick)
+  //   Underdog   -> handled by the v3 constants; baseline call removed here
+  const [sleeperLegs, ppLegs] = await Promise.all([
     autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectMixedTop55Legs(env, "prizepicks"),
-    autoSelectUnderdogBaselineLegs(env),
-    autoSelectSleeperBaselineLegs(env)
+    autoSelectMixedTop55Legs(env, "prizepicks")
   ]);
+  const udLegs = [];   // DISABLED - superseded by Underdog v3 sharp divergence
+  const slLegs = [];   // DISABLED - superseded by Sleeper v3 sharp divergence
   // RE-ENABLED 2026-08-27: PrizePicks Goblin returns with an entirely new selection layer. The
   // pause below was for Sim A (hits/less + total_bases/less ranked by appearance count + a 92%
   // floor on the ENRICHED board score), confirmed -27.4%. That signal is gone, not resumed.
