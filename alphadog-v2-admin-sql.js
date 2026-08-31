@@ -375,6 +375,13 @@ async function toolRunJob(env, args) {
   } else if (bindingName === "DAILY_DELTA_RUNNER_WORKER") {
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.daily-delta-runner/run";
+  } else if (bindingName === "NBA_STATIC_TEAMS_WORKER") {
+    // NBA expansion (additive only). Same pattern as BASE_HITTER_GAME_LOGS_WORKER: direct call,
+    // bypasses control_job_queue + orchestrator entirely - NBA has no orchestrator by design
+    // (see nba/NBA_PROJECT_LOG.md, 2026-08-31 operating model). For one-time/manual NBA worker
+    // triggers only, each NBA worker added here needs its own binding + branch, same as this one.
+    body = { ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal/run";
   } else {
     body = {
       job,
