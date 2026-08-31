@@ -17,7 +17,13 @@ import sys
 import time
 from pathlib import Path
 
-import requests
+# Plain `requests` has a recognizable TLS/JA3 fingerprint that bot-management systems flag and
+# silently tarpit (connection accepts, response never comes - exactly what happened here 3x in a
+# row, with and without a proxy, ruling out IP-based blocking). curl_cffi impersonates a real
+# Chrome TLS handshake, which is why MLB's own PrizePicks scraper (main.py, via scrape.yml)
+# installs and uses it instead of plain requests - same real fix, applied here for the same
+# reason (confirmed via direct testing, not assumed - see NBA_PROJECT_LOG.md 2026-08-31).
+from curl_cffi import requests
 
 STATS_HEADERS = {
     "Host": "stats.nba.com",
