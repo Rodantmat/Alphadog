@@ -96,9 +96,10 @@ def fetch_teams():
         if team_id is None or team_id in seen_ids:
             continue
         seen_ids.add(team_id)
+        team_id = int(team_id)
         teams.append({
-            "id": int(team_id),
-            "abbreviation": str(col(row, "TeamAbbreviation") or col(row, "TeamCode") or "").upper(),
+            "id": team_id,
+            "abbreviation": str(col(row, "TeamAbbreviation") or col(row, "TeamCode") or "").upper() or TEAM_ID_TO_ABBREVIATION.get(team_id, ""),
             "city": str(col(row, "TeamCity") or ""),
             "nickname": str(col(row, "TeamName") or ""),
             "conference": str(col(row, "Conference") or ""),
