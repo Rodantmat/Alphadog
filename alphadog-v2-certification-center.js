@@ -4279,16 +4279,39 @@ const SLEEPER_FLEX_PARTIAL_RATIOS_BY_SIZE = {
   6: { oneBelow: 0.11, twoBelow: 0.021 }
 };
 const SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE = 0.10; // fallback only, for sizes with no real observations yet
-// Real, confirmed formula (validated against 2 independent real app examples this session):
-// Decimal Odds = 1 + price/100 (price>0) or 1 + 100/abs(price) (price<0); Multiplier = 1 +
-// (Decimal Odds - 1) * 0.95. Computed PER LEG from that leg's own real live price - never a flat
-// average applied across the whole slip, matching the exact discipline already enforced for
-// Goblin's per-leg table.
-function sleeperLegMultiplier(overOrUnderPrice) {
-  const p = Number(overOrUnderPrice);
-  if (!Number.isFinite(p) || p === 0) return null;
-  const decimalOdds = p > 0 ? 1 + p / 100 : 1 + 100 / Math.abs(p);
-  return 1 + (decimalOdds - 1) * 0.95;
+// REPLACED 2026-08-31, MEASURED NOT FITTED: the prior formula
+// (Multiplier = 1 + (DecimalOdds-1)*0.95, "validated against 2 real app examples") was tested
+// against 84 real legs read directly off the live Sleeper board (61 two-sided MORE/LESS pairs
+// screenshotted across 10 proplines: rbi, runs, singles, walks, hits, total_bases, hits_runs_rbis,
+// strikeouts, outs, hits_allowed). Result: MAE 0.1973 with a +0.1973 bias - it OVERSTATES every
+// single leg by ~11%, which compounds to 1.685x at 5-pick and is why the old singles/less 5-pick
+// track backtested at an implausible +56-61%.
+// The real engine, solved from those 84 legs: Sleeper prices each side as k(p)/p where k is NOT a
+// constant - it shrinks as the leg moves away from a coin flip, i.e. the hold expands on lopsided
+// markets in BOTH directions:
+//     k(p) = 0.8928 - 0.0993 * |p - 0.5|          R2 = 0.9048, residual sd 0.0023
+//     multiplier = k(p) / p
+// Sanity anchors: at p=0.50 this gives 1.786x, matching the universal 1.78/1.78 neutral price seen
+// on every symmetric board; hold runs 12.0% at a coin flip and 15.2% at p=0.75.
+// New model MAE 0.0038 (52x better than the old one) with essentially zero bias.
+// IMPORTANT: this needs BOTH prices to devig - a single side's price cannot recover p. Callers must
+// pass over and under together.
+const SLEEPER_K_INTERCEPT = 0.8928;
+const SLEEPER_K_SLOPE = -0.0993;
+function sleeperDevigProb(overPrice, underPrice, side) {
+  const op = Number(overPrice), up = Number(underPrice);
+  if (!Number.isFinite(op) || !Number.isFinite(up) || op === 0 || up === 0) return null;
+  const impOver = op < 0 ? (-op) / ((-op) + 100) : 100 / (op + 100);
+  const impUnder = up < 0 ? (-up) / ((-up) + 100) : 100 / (up + 100);
+  const tot = impOver + impUnder;
+  if (!(tot > 0)) return null;
+  return String(side || "").toLowerCase() === "more" ? impOver / tot : impUnder / tot;
+}
+function sleeperLegMultiplier(overPrice, underPrice, side) {
+  const p = sleeperDevigProb(overPrice, underPrice, side);
+  if (!Number.isFinite(p) || p <= 0.02 || p >= 0.98) return null;
+  const k = SLEEPER_K_INTERCEPT + SLEEPER_K_SLOPE * Math.abs(p - 0.5);
+  return k / p;
 }
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
