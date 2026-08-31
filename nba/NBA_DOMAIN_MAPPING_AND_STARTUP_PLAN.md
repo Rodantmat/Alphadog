@@ -80,7 +80,47 @@ Do these in order. Do not skip ahead to strategy research before the foundationa
 - Don't try to port MLB's weather, quality-of-contact, or RFI/NRFI-style factors — they have no basketball analogue and building them would be wasted effort (see Section 2 for the honest mapping).
 - Don't invest in an elaborate auto-scheduling orchestrator before the manual pipeline works end-to-end and has been verified against real data at least once.
 
-## 7. Remaining step zero for the new chat: a small, specific list of what's still unread
+## 7. How to work with the person building this — directly transferable, since it's the same person for NBA
+
+This section is not about the MLB system at all — it's about working style and expectations that apply regardless of which sport is being built, confirmed directly from the person's own explicit, stated preferences during the MLB work. Apply this from the very first NBA interaction, not as something to discover gradually.
+
+**Context**: this person owns and operates the entire system alone, working from a phone with no terminal access — the AI assistant is the only interface to the database, repository, and deploy pipeline. They expect a senior technical partner: real root-cause analysis, calibration honesty, and no claims of success without evidence verified directly against live data.
+
+**Output style, confirmed and explicit:**
+- Direct. Lead with the answer. No preamble, no restating the question, no filler.
+- Tables over prose for anything involving more than two numbers.
+- Bold the single number that matters most in any response — they're scanning on a phone screen.
+- A one-word reply like "continue," "yes," or "keep going" means: execute the next concrete step autonomously, no preamble needed first.
+- No over-explanation, no hedging, no unsolicited scope-broadening beyond what was actually asked.
+
+**What they push back on, and are usually right to:**
+- **Language stronger than the evidence actually supports.** If a claim is written as "this proves X," expect to be asked what it actually shows — see item 19 in the lessons document.
+- **Wrong normalization.** A real, confirmed case: comparing profit at a fixed dollar-per-slip rate when capital deployed, not slip count, was the actual real-world constraint. Always identify what's genuinely fixed in the real scenario before choosing what to normalize by.
+- **Accepting a stated limitation too quickly.** A real, confirmed case: being asked "why can't the backtest window be extended, given more days of real data actually exist" — and being right, because an arbitrary threshold had been mistaken for a hard data limit. **When concluding something is impossible or unavailable, check twice before reporting that conclusion.**
+- **Not proactively showing the day-by-day breakdown.** Provide it before being asked, every time a finding is reported.
+
+**How they make decisions:**
+- ROI is the real target, not total profit — profit can be increased simply by wagering more, ROI cannot. Always normalize by capital deployed, not by slip or leg count.
+- They will accept a smaller real sample size in exchange for a materially higher ROI, provided the underlying mechanism is sound — the job is to present the real number and its real risk honestly, then let them choose, not to pre-filter options based on an assumption about what they'd want.
+- When told to run every check before considering something for deployment, that means literally every check, including ones expected to pass — not a subset chosen for efficiency.
+- They track real, operational reality an AI assistant cannot directly observe. **When they report something that looks statistically or logically odd, believe the report and investigate it — don't first assume the report itself must be mistaken.**
+
+**The exact day-by-day table layout they expect for any backtest or real-slip report** (reuse directly for NBA):
+```
+|Date     |Slips |Full hits|5/6 |≤4/6|Staked |Return     |Profit    |ROI        |
+|---------|------|---------|----|----|-------|-----------|----------|-----------|
+|08-12    |5     |3        |2   |0   |$5     |$7.27      |+$2.27    |+45.4%     |
+|**TOTAL**|**83**|**75**   |**8**|**0**|**$83**|**$183.20**|**+$100.20**|**+120.8%**|
+```
+One dollar per slip as the reporting convention, the total row bolded, and partial-hit columns included explicitly so the actual failure mode (how close a miss came to hitting) stays visible rather than being collapsed into a single win/loss count.
+
+**Standing product/UI rules from prior MLB work, apply the same defaults for any NBA-side interface:**
+- Every deployed strategy needs a real backup-leg substitution system for when a specific recommended leg becomes unavailable.
+- Slip-leg checkboxes default to checked in any UI.
+- A real multiplier value the person has manually entered must never be lost or reset on a UI re-render.
+- **Document everything into committed repository files, not only into chat conversation** — this whole NBA transfer package is itself a direct expression of that same standing instruction, and the practice should continue throughout NBA's own build, not just at the outset.
+
+## 8. Remaining step zero for the new chat: a small, specific list of what's still unread
 
 This package went through multiple deep passes, not a single shallow one — eleven full documents were read and integrated (`MULTIPLIER_TABLES_MASTER.md`, `SIGNALS_TECHNIQUES_TRIED.md`, `COWORKER_DAILY_SLIP_RESEARCH_PROMPT.md`, `GOBLIN_DEMON_MECHANISM_EXPLAINED.md`, `HIGH_HIT_RATE_METHODOLOGY.md`, `MASTER_DELTA_SCRUTINY_GUIDE.md`, `GEMINI_USAGE_GUIDE.md`, `CALIBRATION_ENRICHMENT_AUDIT.md`, `CORE_LOGIC_CALIBRATION_DOSSIER.md`, `OUTCOME_ENGINE_AND_DOC_INDEX.md`, `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md`), plus substantial body sections (not just headers) of `ALPHADOG_DOS_AND_DONTS.md` (its full DON'TS catalog, its operating-model section, its infrastructure-mistake narratives) and `ALPHADOG_SYSTEM_MAP.md` (its full architecture-gap root-cause story, its stale-manifest-files warning, its complete stage-by-stage chain mapping). That covers the conceptual core of the whole system in real depth: selection methodology, pricing mechanics, pipeline verification, outcome grading, core scoring mathematics, enrichment-factor design, and infrastructure/deploy discipline.
 
