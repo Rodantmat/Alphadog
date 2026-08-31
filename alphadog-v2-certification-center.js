@@ -3695,15 +3695,58 @@ function buildUnderdogBaselineSlips(legs) {
 //   home/away, sprint speed, opponent K/BB, burst count, walk rate, HFCS (all null - this propline
 //   is broken by POWER, not by opportunity); singles ratio and sub-4-PA rate (fail to replicate
 //   across pool definitions); Statcast barrel rate (leaks without a season_year filter).
-const PP_PROP = 'total_bases';
+// ===== STRATEGY v4, 2026-08-31: THIRD BOOK - STOLEN BASES =====
+// v3 ran total_bases/3.5 + home_runs/0.5 at a flat trail>=78, top 10%, 6-pick: +69.5% ROI,
+// 125 slips / 27 days, 92.1% leg accuracy, t = 6.52 (started-game contamination removed).
+//
+// WHAT CHANGED: stolen_bases/0.5/LESS is now the strongest propline on the board, and it only
+// became visible after a real multiplier read. I had it FITTED at 1.0883 from the 22-slip
+// calibration, which put p*m at 1.0062 - barely above water - so I rejected it twice.
+// Five real placed reads (2/3/4/5/6-pick: 1.2 / 1.3 / 1.6 / 1.8 / 2.1) solve the per-leg rate at
+// k = 1.1228 by least squares in log space (fit error +/-5% on the 2- and 3-pick, which are
+// rounded to one decimal in the app). That is 3.2% higher than the fitted value and moves
+// breakeven from 91.9% to 89.1%.
+//   season validation, 89 days, ranked bands: 98.11 / 98.28 / 97.99 / 92.44 - the top three bands
+//   all sit near 98%, the highest leg accuracy of any propline in the program.
+//   p*m by threshold: >=97 -> 1.0923 (1,032 legs, 28 days) | >=95 -> 1.0808 | >=90 -> 1.0636
+//
+// ⚠️ PER-BOOK THRESHOLDS ARE REQUIRED - a flat threshold is strictly worse. Each propline has its
+// own breakeven, so each needs its own gate:
+//   stolen_bases 0.5 LESS  breakeven 89.1%  ->  trail >= 97  (hit 97.29%, p*m 1.0923)
+//   home_runs    0.5 LESS  breakeven 85.8%  ->  trail >= 90  (hit 91.11%, p*m 1.0615)
+//   total_bases  3.5 LESS  breakeven 87.6%  ->  trail >= 90  (hit 89.02%, p*m 1.0163)
+// NOTE total_bases at the OLD flat >=78 gate is NEGATIVE on its own (86.29% vs 87.6% needed,
+// p*m 0.9851). It only worked in v3 because the top-10% ranking lifted it well past 78. Raising
+// its own gate to 90 makes it stand up independently.
+//
+// VOLUME: top 35%, not 10%. Pool depth supports it - full days carry 140-240 qualifying legs
+// (stolen_bases contributes 30-62 of them, so it is NOT the thin book at this threshold; thin days
+// are thin across all three). 35% gives 8.3 slips/day vs 4.6 at 20%, costs only 2.2 ROI points,
+// and materially strengthens every reliability measure.
+//
+// BACKTEST (started-game contamination excluded, board-availability constrained):
+//   223 slips / 27 days, 96.3% leg accuracy, +71.3% ROI
+// GATES: bootstrap 100.0%, 95% CI [+59.6%, +82.4%], leave-one-out [+69.3%, +73.9%],
+//   t = 10.25 day-clustered, 27 of 27 days profitable (ZERO losing days), best day 7.2%,
+//   worst 3-day window +40.4%, walk-forward +63.6% -> +79.2%.
+//   Clears Harvey (t>3.0) and the Bailey/Lopez de Prado deflated hurdle (t>4.08).
+//
+// vs v3 head to head: leg accuracy 92.1% -> 96.3%, slip win rate 69.6% -> 83.7%, t 6.52 -> 10.25,
+// CI width halved, worst 3-day window -13.5% -> +40.4%, profitable days 24/27 -> 27/27.
+const PP_BOOKS = [
+  { prop: 'stolen_bases', lines: [0.5], side: 'less', min_trail: 97.0, rate: 1.1228 },
+  { prop: 'home_runs',    lines: [0.5], side: 'less', min_trail: 90.0, rate: 1.1651 },
+  { prop: 'total_bases',  lines: [3.5], side: 'less', min_trail: 90.0, rate: 1.1416 }
+];
+const PP_PROP = 'total_bases';          // legacy - superseded by PP_BOOKS
 const PP_LINES = [3.5];
 const PP_SIDE = 'less';
 const PP_SECOND_BOOK = { prop: 'home_runs', lines: [0.5], side: 'less' };
-const PP_TRAILING_MIN = 78.0;   // player's own trailing hit rate for this exact prop/line/side
-const PP_MIN_GAMES = 60;        // minimum prior games in that player's log
-const PP_TOP_PERCENTILE = 0.10; // take the top 10% of the day's qualifying pool, ranked by trail
-const BASELINE_HP_SIZE = 6;     // 6-pick Power
-const BASELINE_HP_PER_LEG_RATE = 1.1926;  // legacy fallback - superseded by PP_LINE_RATES below
+const PP_TRAILING_MIN = 90.0;           // floor; each book applies its own min_trail above
+const PP_MIN_GAMES = 60;
+const PP_TOP_PERCENTILE = 0.35;         // top 35% of the day's qualifying pool
+const BASELINE_HP_SIZE = 6;
+const BASELINE_HP_PER_LEG_RATE = 1.1416;
 // ===== MEASURED PER-LINE RATES (2026-08-30) =====
 // The flat per-prop rate was WRONG for this strategy. PrizePicks prices goblins by DEPTH from the
 // anchor, and total_bases has an anchor averaging 0.77, so:
