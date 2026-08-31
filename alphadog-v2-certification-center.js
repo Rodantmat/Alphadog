@@ -3974,14 +3974,7 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
         FROM board b
         JOIN trail t ON t.final_board_row_id = b.final_board_row_id
         WHERE t.n_games >= ${PP_MIN_GAMES}
-          -- PER-BOOK THRESHOLDS. Each propline has its own breakeven so each needs its own gate;
-          -- a flat threshold is strictly worse. total_bases at the old flat 78 is NEGATIVE on its
-          -- own (86.29% actual vs 87.6% needed) and only survived v3 because the ranking lifted it.
-          AND (
-                (b.canonical_prop_key = 'stolen_bases' AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= 97.0)
-             OR (b.canonical_prop_key = 'home_runs'    AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= 90.0)
-             OR (b.canonical_prop_key = 'total_bases'  AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= 90.0)
-              )
+          AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
       )
       SELECT r.final_board_row_id AS board_row_id, r.source_key, r.game_pk, r.official_game_time_utc,
         r.player_name, r.mlb_player_id, r.canonical_prop_key, r.line_value, r.selected_side,
