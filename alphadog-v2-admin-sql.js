@@ -380,8 +380,14 @@ async function toolRunJob(env, args) {
     // bypasses control_job_queue + orchestrator entirely - NBA has no orchestrator by design
     // (see nba/NBA_PROJECT_LOG.md, 2026-08-31 operating model). For one-time/manual NBA worker
     // triggers only, each NBA worker added here needs its own binding + branch, same as this one.
-    body = { ...(extra && typeof extra === "object" ? extra : {}) };
-    path = "https://internal/run";
+    // job="probe-sources" hits the read-only GET /probe-sources diagnostic instead of /run.
+    if (job === "probe-sources") {
+      body = null;
+      path = "https://internal/probe-sources";
+    } else {
+      body = { ...(extra && typeof extra === "object" ? extra : {}) };
+      path = "https://internal/run";
+    }
   } else {
     body = {
       job,
