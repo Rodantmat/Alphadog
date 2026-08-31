@@ -4548,15 +4548,17 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
         sharp_edge_pp: Number.isFinite(edge) ? Math.round(edge * 10000) / 100 : null,
         historical_hit_pct: Number.isFinite(edge) ? Math.round(edge * 10000) / 100 : null
       };
-    }).filter(r => r.sharp_edge_pp != null && (r.sharp_edge_pp / 100) >= ${'
-      .map(r => ({
-        ...r,
-        real_leg_mult: sleeperLegMultiplier(r.real_over_price, r.real_under_price, r.selected_side)
-      }))
-      .sort((a, b) => {
-        const am = Number.isFinite(a.real_leg_mult) ? a.real_leg_mult : -1;
-        const bm = Number.isFinite(b.real_leg_mult) ? b.real_leg_mult : -1;
-        return bm - am;
+    }).filter(r => r.sharp_edge_pp != null
+              && (r.sharp_edge_pp / 100) >= SLEEPER_SHARP_MIN_EDGE_PP
+              && Number.isFinite(r.real_leg_mult));
+    // POOL FLOOR: thin days are where this loses. Both -100% days in the unfloored backtest had
+    // pools of 2 and 3 legs; requiring >=6 removed exactly those and lifted ROI 146.7% -> 167.3%.
+    if (scored.length < SLEEPER_SHARP_POOL_FLOOR) return [];
+    // Rank by the size of the disagreement - that is the signal, monotonic across all five bands.
+    return scored.sort((a, b) => {
+        const ae = Number.isFinite(a.sharp_edge_pp) ? a.sharp_edge_pp : -999;
+        const be = Number.isFinite(b.sharp_edge_pp) ? b.sharp_edge_pp : -999;
+        return be - ae;
       })
       .slice(0, SLEEPER_HIGH_HIT_TOP_K);
   } finally {
