@@ -669,6 +669,26 @@ async function toolGithubListWorkflowRuns(env, args) {
   return { ok: true, runs };
 }
 
+async function toolGithubTriggerWorkflow(env, args) {
+  // Generic, reusable workflow-dispatch trigger - works for ANY workflow file in the repo, not
+  // just NBA ones. Added 2026-08-31 because this chat had no way to actually press "Run
+  // workflow" on a new GitHub Actions workflow (e.g. nba-scrape.yml) - every prior GitHub tool
+  // here only reads/writes files or reports run status, none of them can start a run. Uses the
+  // same GITHUB_TOKEN already on this worker; requires that token to have `actions: write`
+  // (or classic `workflow`) scope - if it doesn't, this returns a 403 from GitHub directly,
+  // not a guess.
+  const { workflow_file, ref, inputs } = args || {};
+  if (!workflow_file || typeof workflow_file !== "string") {
+    return { ok: false, error: "Missing workflow_file, e.g. 'nba-scrape.yml' (the file name under .github/workflows/)." };
+  }
+  const branch = ref || env.GITHUB_BRANCH || "main";
+  const body = { ref: branch };
+  if (inputs && typeof inputs === "object") body.inputs = inputs;
+  const r = await githubRequest(env, "POST", `/actions/workflows/${encodeURIComponent(workflow_file)}/dispatches`, body);
+  if (!r.ok) return { ok: false, status: r.status, error: r.data, note: "A 404 usually means the workflow_file name is wrong or has no workflow_dispatch trigger. A 403 usually means GITHUB_TOKEN lacks the actions:write/workflow scope." };
+  return { ok: true, status: r.status, workflow_file, ref: branch, note: "Dispatch accepted (GitHub returns no run id synchronously) - check github_list_workflow_runs in a few seconds for the new run." };
+}
+
 async function toolGithubGetWorkflowRunLog(env, args) {
   const runId = args && args.run_id;
   if (!runId) return { ok: false, error: "Missing run_id. Get one from github_list_workflow_runs." };
