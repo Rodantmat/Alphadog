@@ -719,6 +719,25 @@ def make_config(worker_name, include_services=False):
         # workers-sdk/issues/5450) - confirmed live this worker's scheduled() handler still fired
         # today with the old '30 14 * * *' expression despite crons=[] already being deployed.
         cfg["triggers"] = {"crons": ["0 0 30 2 *"]}
+    if worker_name.startswith("alphadog-v2-nba-"):
+        # NBA expansion (additive only): every NBA worker gets its own Hyperdrive binding (same
+        # Postgres instance, but NBA writes exclusively to its own nba_* schemas - see
+        # nba/NBA_SYSTEM_DRAFT.md Section 1) and its own vars, never the shared MLB VARS dict
+        # mutated in place. No D1 (base cfg already sets d1_databases via the untouched logic
+        # above). No services, no triggers - NBA has no orchestrator/cron automation per its own
+        # operating model (nba/NBA_PROJECT_LOG.md, 2026-08-31).
+        cfg["hyperdrive"] = [
+            {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
+        ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["vars"] = {
+            "SYSTEM_ENV": VARS.get("SYSTEM_ENV", "production"),
+            "SYSTEM_TIMEZONE": VARS.get("SYSTEM_TIMEZONE", "America/Los_Angeles"),
+            "ACTIVE_SPORT": "basketball_nba",
+            "NBA_STATS_API_BASE_URL": "https://stats.nba.com/stats",
+            "WORKER_SAFE_MODE": VARS.get("WORKER_SAFE_MODE", "false"),
+            "DEBUG_MODE": VARS.get("DEBUG_MODE", "false")
+        }
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
