@@ -29,7 +29,20 @@
 
 ---
 
-## 2026-08-31 — Session: Phase 1 (recon) complete, operating model locked
+## 2026-08-31 (cont'd 2) — Real fix applied: NBA workers wired into run_job, teams worker confirmed against live DB
+
+Per the prior chat's correct diagnosis (relayed message): the actual blocker wasn't "no HTTP tool" in general — `run_job`'s `target` parameter is a fixed, pre-wired enum in the admin-sql/MCP bridge worker's own code, and a brand-new worker isn't reachable through it until it gets a service binding + a matching branch, same as `BASE_HITTER_GAME_LOGS_WORKER` already has. Applied the permanent fix (not the network-allowlist workaround, which only helps sessions with bash network access):
+- `generate_wrangler_configs.py`: added `{"binding": "NBA_STATIC_TEAMS_WORKER", "service": "alphadog-v2-nba-static-teams"}` to admin-sql's existing `services` list (additive, one line).
+- `alphadog-v2-admin-sql.js`: added `NBA_STATIC_TEAMS_WORKER` to the `run_job` tool's `target` enum, its `bindingMap`, and a new dispatch branch (`body = {...extra}; path = "https://internal/run"`) — exact same direct-call pattern as `BASE_HITTER_GAME_LOGS_WORKER` (bypasses the queue/orchestrator entirely, which NBA has none of by design).
+- Deployed cleanly (targeted redeploy of just `alphadog-v2-admin-sql`, confirmed success in CI).
+- **Triggered `run_job(job="run", target="NBA_STATIC_TEAMS_WORKER")` for real** and got a genuine response: `source_key: "STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR"`, `source_fetch_error: "nba_stats_api_http_520..."` — the live `stats.nba.com` `leaguestandingsv3` fetch failed with a 520 (likely still missing a required header/cookie beyond what's implemented, or blocked at the edge) and the worker correctly fell back to its certified static 30-team list, exactly as designed. **Independently verified directly against Postgres** (not just trusting the worker's own report): `SELECT COUNT(*) FROM nba_ref.teams WHERE active=1` → real 30, `nba_ref.team_aliases` → 157 real rows, sample rows spot-checked and correct.
+- **Net result**: `nba_ref.teams`/`nba_ref.team_aliases` are for-real seeded and correct today, but via the fallback path, not the live NBA API. The live `stats.nba.com` fetch itself is still unverified/broken and needs real debugging (likely needs additional real browser-session-style headers/cookies `leaguestandingsv3` may require beyond the static header set already implemented) before this worker can be trusted to pick up a genuine future roster change (relocation, expansion team, rebrand) without a manual code update to the fallback list.
+- **Separate, confirmed-benign finding, not a bug**: `check_bindings` showing all 12 D1 bindings as `false` on the admin-sql worker is expected, current, correct state — `generate_wrangler_configs.py`'s own `D1_BINDINGS = []` (with an explicit 2026-08-12 comment) confirms D1 was fully decommissioned for the whole system; `run_sql` (the D1 tool) has nothing live to reach, `run_sql_postgres` is the only real data path now. Nothing to fix here, and this doesn't affect NBA work (which is Postgres-only from the start).
+- `nba/NBA_AVAILABLE_TOOLS.md` (started by a related/prior chat this session) is the reference for what's actually reachable from a fresh NBA chat vs. what needs this same wiring pattern repeated per new worker.
+
+**Next**: debug the live `stats.nba.com` fetch (real header/cookie requirements) as a background task, but it's not blocking — proceed to the players worker next, using the exact same wiring pattern (worker file → wrangler generator branch → admin-sql binding/enum/dispatch branch) established here.
+
+---
 
 **Phase 1 (internal research + live verification) — COMPLETE.**
 - Read all three /nba/ reference docs in full (Architecture Blueprint, Lessons Learned, Domain Mapping).
