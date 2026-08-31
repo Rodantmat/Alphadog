@@ -147,7 +147,12 @@ def targets_for_scope(scope):
 def config_for_worker(worker):
     if worker == "alphadog-v2-orchestrator" and Path("wrangler.alphadog-v2-orchestrator.with-services.jsonc").exists():
         return "wrangler.alphadog-v2-orchestrator.with-services.jsonc"
+    if worker in NBA_WORKER_SET:
+        return f"nba/wrangler.{worker}.jsonc"
     return f"wrangler.{worker}.jsonc"
+
+def worker_js_path(worker):
+    return f"nba/{worker}.js" if worker in NBA_WORKER_SET else f"{worker}.js"
 
 def main():
     parser = argparse.ArgumentParser()
