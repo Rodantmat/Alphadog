@@ -3924,10 +3924,9 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
           AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
           AND f.official_game_time_utc IS NOT NULL
           AND (
-                (f.canonical_prop_key = '${PP_PROP}' AND f.selected_side = '${PP_SIDE}'
-                 AND f.line_value IN (${PP_LINES.join(',')}))
-             OR (f.canonical_prop_key = '${PP_SECOND_BOOK.prop}' AND f.selected_side = '${PP_SECOND_BOOK.side}'
-                 AND f.line_value IN (${PP_SECOND_BOOK.lines.join(',')}))
+                (f.canonical_prop_key = 'stolen_bases' AND f.selected_side = 'less' AND f.line_value = 0.5)
+             OR (f.canonical_prop_key = 'home_runs'    AND f.selected_side = 'less' AND f.line_value = 0.5)
+             OR (f.canonical_prop_key = 'total_bases'  AND f.selected_side = 'less' AND f.line_value = 3.5)
               )
           AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
           AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
@@ -3935,14 +3934,14 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
       -- Trailing hit rate for this player on this EXACT prop and line, from their own game log,
       -- using only games STRICTLY BEFORE today. This is the signal - not baseline_v6, not the
       -- enrichment score, not the board's own history. All three were tested against it and lost.
-      -- v3 (2026-08-31): the stat is now selected per prop, since the strategy runs two books
-      -- (total_bases/3.5 and home_runs/0.5). Both validated monotonic on the full 155-day season.
+      -- v4 (2026-08-31): three books now, so the stat is selected per prop.
       trail AS (
         SELECT b.final_board_row_id,
           COUNT(*) AS n_games,
           SUM(CASE WHEN (CASE b.canonical_prop_key
-                           WHEN 'total_bases' THEN g.total_bases
-                           WHEN 'home_runs'   THEN g.home_runs
+                           WHEN 'total_bases'  THEN g.total_bases
+                           WHEN 'home_runs'    THEN g.home_runs
+                           WHEN 'stolen_bases' THEN g.stolen_bases
                          END) < b.line_value THEN 1 ELSE 0 END) AS n_hit
         FROM board b
         JOIN stats_hitter.game_logs g
