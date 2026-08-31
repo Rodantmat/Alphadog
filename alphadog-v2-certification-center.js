@@ -9937,6 +9937,7 @@ export default {
    old autoSelectSleeperHighHitSlipLegs plus a full copy of everything from buildSleeperHighHitSlips
    onward past the module's export default. Two export defaults can never parse. Commented out
    rather than deleted so the diff stays reviewable; the live definitions are all above this line.
+   DUP_MARK_B
     // POOL FLOOR: thin days are where this loses. Both -100% days in the unfloored backtest had
     // pools of 2 and 3 legs; requiring >=6 removed exactly those and lifted ROI 146.7% -> 167.3%.
     if (scored.length < SLEEPER_SHARP_POOL_FLOOR) return [];
