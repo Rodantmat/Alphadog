@@ -9,6 +9,14 @@ from pathlib import Path
 WORKERS = json.loads(Path("worker_manifest.json").read_text(encoding="utf-8"))["workers"]
 SECRETS_FILE = Path(".alphadog_worker_secrets.json")
 
+# NBA expansion (additive only - never touches worker_manifest.json). NBA workers get their own
+# manifest and are appended to WORKERS so worker_from_file()/targets_for_scope("all") recognize
+# them; NBA_WORKER_SET is used below to route the file-existence checks and config path to nba/.
+_NBA_MANIFEST_PATH = Path("nba/worker_manifest_nba.json")
+NBA_WORKERS = json.loads(_NBA_MANIFEST_PATH.read_text(encoding="utf-8"))["workers"] if _NBA_MANIFEST_PATH.exists() else []
+NBA_WORKER_SET = set(NBA_WORKERS)
+WORKERS = WORKERS + [w for w in NBA_WORKERS if w not in WORKERS]
+
 GLOBAL_REDEPLOY_FILES = {
     "github_mobile_deploy_workers.py",
     "github_write_worker_secrets_file.py",
