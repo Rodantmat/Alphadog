@@ -118,7 +118,7 @@ async function fetchNbaTeamsFromGithub(env) {
   const path = "nba/data/nba_teams_current.json";
   const metaPath = "nba/data/nba_teams_current_meta.json";
 
-  const headers = { "Accept": "application/vnd.github.raw+json", "User-Agent": "Alphadog-NBA-StaticTeams" };
+  const headers = { "Accept": "application/vnd.github+json", "User-Agent": "Alphadog-NBA-StaticTeams" };
   if (env.GITHUB_TOKEN) headers["Authorization"] = `Bearer ${env.GITHUB_TOKEN}`;
 
   const apiUrl = (p) => `https://api.github.com/repos/${owner}/${repo}/contents/${p}?ref=${encodeURIComponent(branch)}`;
