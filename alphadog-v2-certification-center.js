@@ -4354,7 +4354,7 @@ async function autoSelectSleeperHighHitSlipLegs(env) {
     return rows
       .map(r => ({
         ...r,
-        real_leg_mult: sleeperLegMultiplier(String(r.selected_side || "").toLowerCase() === "more" ? r.real_over_price : r.real_under_price)
+        real_leg_mult: sleeperLegMultiplier(r.real_over_price, r.real_under_price, r.selected_side)
       }))
       .sort((a, b) => {
         const am = Number.isFinite(a.real_leg_mult) ? a.real_leg_mult : -1;
