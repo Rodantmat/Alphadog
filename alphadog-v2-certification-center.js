@@ -3817,6 +3817,10 @@ function ppRungRate(rung) { return 1.1416; }   // retained as a no-op for any le
 const PP_CELL_RATES = {
   "total_bases|3.5": 1.1416,   // PINNED - direct read
   "total_bases|2.5": 1.2251,   // PINNED - direct read
+  "stolen_bases|0.5":1.1228,   // PINNED 2026-08-31 - solved from 5 real reads (2/3/4/5/6-pick:
+                               // 1.2 / 1.3 / 1.6 / 1.8 / 2.1), least squares in log space.
+                               // Supersedes the fitted 1.0883, which understated it by 3.2% and
+                               // caused this propline to be rejected twice.
   "home_runs|0.5":   1.1651,   // fitted, appears in 18 of 22 slips - best-constrained fitted cell
   "doubles|0.5":     1.1497,
   "singles|1.5":     1.1868,
