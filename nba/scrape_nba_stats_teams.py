@@ -37,16 +37,23 @@ OUTPUT_META_PATH = Path("nba/data/nba_teams_current_meta.json")
 
 
 def fetch_teams():
+    # PROXY_URL is the same repo secret MLB's PrizePicks scraper already uses (see scrape.yml) -
+    # both direct nba.com fetch attempts from a plain GitHub Actions runner IP got a consistent
+    # read-timeout on every attempt (2026-08-31, 3/3 tries at both 30s and 60s) - a tarpit-style
+    # soft block, not a transient blip - so route through the same working proxy instead of
+    # tuning timeouts further.
+    proxy_url = os.environ.get("PROXY_URL", "").strip()
+    proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
     last_error = None
     for attempt in range(1, 4):
         try:
-            resp = requests.get(URL, headers=STATS_HEADERS, timeout=60)
+            resp = requests.get(URL, headers=STATS_HEADERS, timeout=30, proxies=proxies)
             resp.raise_for_status()
             body = resp.json()
             break
         except Exception as exc:  # noqa: BLE001 - retry a few times before giving up for real
             last_error = exc
-            print(f"Attempt {attempt}/3 failed: {exc}", file=sys.stderr)
+            print(f"Attempt {attempt}/3 failed (proxy={'yes' if proxies else 'no'}): {exc}", file=sys.stderr)
             if attempt < 3:
                 time.sleep(5)
     else:
