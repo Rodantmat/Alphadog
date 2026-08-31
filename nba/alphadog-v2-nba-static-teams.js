@@ -312,20 +312,33 @@ function baseIdentity(env) {
 async function runStaticTeams(input, env) {
   const started = Date.now();
   const sql = pg(env);
-  let sourceKey = "NBA_STATSAPI_LEAGUESTANDINGSV3";
+  let sourceKey = "NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE";
   let fetchInfo = null;
   let teams = [];
   let fetchError = null;
+  let fetchMethod = "github_committed_json";
 
   try {
-    fetchInfo = await fetchNbaTeamsLive(env);
+    fetchInfo = await fetchNbaTeamsFromGithub(env);
     teams = fetchInfo.teams;
-  } catch (err) {
-    fetchError = String(err && err.message ? err.message : err);
+  } catch (githubErr) {
+    fetchError = `github_read_failed: ${String(githubErr && githubErr.message ? githubErr.message : githubErr)}`;
+    // Second attempt: direct stats.nba.com call, kept only as a secondary path - known to be
+    // edge-blocked from Cloudflare Workers as of 2026-08-31 (see NBA_PROJECT_LOG.md), so this
+    // is expected to keep failing until/unless that changes, but costs nothing to still try.
+    try {
+      fetchMethod = "direct_stats_nba_com_fetch";
+      fetchInfo = await fetchNbaTeamsLive(env);
+      teams = fetchInfo.teams;
+      fetchError = null;
+    } catch (directErr) {
+      fetchError += ` | direct_fetch_also_failed: ${String(directErr && directErr.message ? directErr.message : directErr)}`;
+    }
   }
 
   if (teams.length !== 30) {
     sourceKey = fetchError ? "STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR" : "STATIC_SEED_FALLBACK_AFTER_COUNT_MISMATCH";
+    fetchMethod = "certified_static_fallback";
     teams = fallbackTeams();
   }
 
