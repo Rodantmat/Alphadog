@@ -43,7 +43,12 @@ def service_binding_name(worker_name):
 
 def main_file(worker_name):
     if worker_name.startswith("alphadog-v2-nba-"):
-        return f"./nba/{worker_name}.js" if Path(f"nba/{worker_name}.js").exists() else "./worker.js"
+        # The generated config for an NBA worker is written to nba/wrangler.<worker>.jsonc
+        # (see the NBA-specific write loop near the bottom of this file), so wrangler resolves
+        # "main" relative to that same nba/ directory - it must NOT be re-prefixed with "nba/"
+        # here or wrangler looks for nba/nba/<worker>.js and fails ("entry-point file ... not
+        # found"), confirmed live 2026-08-31.
+        return f"./{worker_name}.js" if Path(f"nba/{worker_name}.js").exists() else "./worker.js"
     return f"./{worker_name}.js" if Path(f"{worker_name}.js").exists() else "./worker.js"
 
 def make_config(worker_name, include_services=False):
