@@ -44,6 +44,21 @@ Per the prior chat's correct diagnosis (relayed message): the actual blocker was
 
 ---
 
+## 2026-08-31 (cont'd 3) — Source finding: stats.nba.com is edge-blocked from Cloudflare Workers (confirmed, not a header issue)
+
+Rewrote `NBA_STATS_REQUIRED_HEADERS` to the canonical, actively-used set from the `nba_api` Python project (`Host`, `Referer: https://stats.nba.com/`, `Accept-Language`, `Accept-Encoding`, `Connection`, `x-nba-stats-origin`, `x-nba-stats-token`, a real Chrome UA) — the original set used `Referer: https://www.nba.com/` and an `Origin` header, both slightly off from what's confirmed working elsewhere. Redeployed, re-triggered via `run_job(target="NBA_STATIC_TEAMS_WORKER")`.
+
+**Result: still fails, but with a decisive, more specific error this time**: `nba_stats_api_http_520: {"type":".../error-520/","title":"Error 520: Web server is returning an unknown error",...}` — this is Cloudflare's own edge rejecting the request *before* it reaches stats.nba.com's application layer. **Strong, concrete evidence this is an infrastructure-level block (Cloudflare Workers' own egress IPs flagged/rejected by stats.nba.com's own Cloudflare-fronted WAF — a known real pattern for Cloudflare-to-Cloudflare traffic), not a missing header or malformed request.** No further header tuning is likely to fix this from a Cloudflare Workers origin specifically.
+
+**Decision needed from the person before building the players worker (or any other stats.nba.com-dependent NBA worker) on this same assumption**: `stats.nba.com` may not be a viable *live* source for any NBA worker running on Cloudflare Workers, regardless of how correctly it's called. Candidate real alternatives, not yet locked:
+- **balldontlie.io** — real, documented REST API (Teams/Players/Games on the free tier), but now requires an `Authorization` header with a real API key (a recent change — unauthenticated calls now 401). Needs the person to create a free account and provide the key (stored the same way as `PARLAY_API_KEY` — a credentials table or `nba_config.system_settings`). Free tier is rate-limited (5 req/min) — workable for one-time backfill with pacing, less so for anything needing speed.
+- A different, non-Cloudflare-fronted mirror/proxy of NBA data (not yet researched).
+- Keep relying on the certified static fallback for small, rarely-changing entities (teams — already proven fine) while treating anything requiring the live path (players, daily rosters, game logs) as blocked until a working source is chosen.
+
+**Teams data itself is not at risk** — `nba_ref.teams`/`nba_ref.team_aliases` are correctly seeded via the certified fallback regardless of this finding, and team data changes rarely enough that a periodic manual fallback-list update is a reasonable permanent posture even if the live path never gets fixed.
+
+---
+
 **Phase 1 (internal research + live verification) — COMPLETE.**
 - Read all three /nba/ reference docs in full (Architecture Blueprint, Lessons Learned, Domain Mapping).
 - Verified live Postgres: 18 schemas exist (archive, backtest, calendar, certifier, classification, config, context, context_cert, control, daily, market, public, ref, score, scoring, stats_hitter, stats_pitcher, team). Zero NBA-anything exists anywhere yet — confirmed clean slate.
