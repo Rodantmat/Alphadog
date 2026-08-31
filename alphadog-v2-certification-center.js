@@ -3750,14 +3750,49 @@ const BASELINE_HP_PER_LEG_RATE = 1.1926;  // legacy fallback - superseded by PP_
 // IMPACT: backtest ROI 42.8% (flat 1.1926) -> 32.7% (per-line) -> 31.8% (rung). Leg accuracy is
 // unchanged at 89.7% throughout - every correction moved only the payout, never the selection.
 // Average rung played is 2.63, so this strategy lives at the deep, cheap end of the ladder.
-const PP_RUNG_INTERCEPT = 1.4323;
-const PP_RUNG_SLOPE = -0.101;
-function ppRungRate(rung) {
-  const r = Number(rung);
-  if (!Number.isFinite(r) || r < 1) return 1.1416;   // conservative default
-  return PP_RUNG_INTERCEPT + PP_RUNG_SLOPE * r;
+// ===== RETIRED 2026-08-31: THE RUNG MODEL WAS WRONG =====
+// rate = 1.4323 - 0.101*rung was fitted on 6 real placed slips that were ALL total_bases/3.5.
+// Anchor-relative tier analysis (41,498 alternates matched to their visible standard line, plus an
+// inferred anchor validated at 100.00% on 11,721 cells where the standard IS visible) showed those
+// 6 legs sat at genuinely different tiers despite sharing a line: anchors ranged 0.50 to 1.87, so
+// gaps ran +1.63 to +3.00. Two legs the rung model called identical were tier 2 and tier 3.
+// The model is retired rather than refitted - it measured ladder POSITION when the engine prices
+// by DISTANCE FROM ANCHOR, and those coincide only when every player's ladder starts at the anchor.
+function ppRungRate(rung) { return 1.1416; }   // retained as a no-op for any legacy caller
+// ===== PER-CELL CALIBRATED RATE TABLE (2026-08-31) =====
+// Solved by constrained least squares against ALL 22 real placed PrizePicks slips (14 distinct
+// cells, 123 leg-instances), with the two total_bases cells PINNED to their direct reads and
+// monotonicity enforced within each prop (a deeper LESS line is easier and must pay less).
+// Fit quality: MAE 6.31%, and the two cells this strategy actually trades are the two best
+// constrained on the board (each appearing in 8 of 22 slips).
+//
+// A constant-house-take engine (mult = k/P(cell), k = 0.9774) was also fitted and reproduces the
+// two total_bases rates to 0.01% and out-of-sample walks_allowed to within 3.1%. But against all
+// 22 slips it over-predicts 20 of 22 with a mean +17.3% bias, because P(cell) is a POOLED rate
+// while PrizePicks prices per player. The engine is kept for pricing unmeasured cells during
+// exploration; traded cells always use a real read.
+const PP_CELL_RATES = {
+  "total_bases|3.5": 1.1416,   // PINNED - direct read
+  "total_bases|2.5": 1.2251,   // PINNED - direct read
+  "home_runs|0.5":   1.1651,   // fitted, appears in 18 of 22 slips - best-constrained fitted cell
+  "doubles|0.5":     1.1497,
+  "singles|1.5":     1.1868,
+  "hits|1.5":        1.1059,
+  "rbis|0.5":        1.2316,
+  "runs|1.5":        1.0736,
+  "stolen_bases|0.5":1.0883,
+  "hits_runs_rbis|1.5":1.3008,
+  "hits_runs_rbis|2.5":1.1243,
+  "hits_runs_rbis|3.5":1.1085,
+  "hits_runs_rbis|4.5":1.0854,
+  "total_bases|1.5": 1.1938
+};
+function ppCellRate(prop, line) {
+  const k = `${prop}|${line}`;
+  const r = PP_CELL_RATES[k];
+  return Number.isFinite(r) ? r : 1.1416;   // conservative default
 }
-const PP_LINE_RATES = { "2.5": 1.2251, "3.5": 1.1416 };  // legacy fallback when rung is unknown
+const PP_LINE_RATES = { "2.5": 1.2251, "3.5": 1.1416 };  // legacy fallback
 // ===== GRANULAR PER-PROP MULTIPLIER TABLE (2026-08-27) =====
 // Multipliers are NOT flat across props. Fitted by least squares over 23 real multiplier
 // observations (every pure single-prop read plus every mixed slip whose exact composition is
