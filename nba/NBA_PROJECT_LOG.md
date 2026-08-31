@@ -75,6 +75,16 @@ Probed further per the person's direction ("ideally all this should come from nb
 **Also stored, this session**: a real `balldontlie.io` API key the person provided, saved to a new `nba_config.external_credentials` table (mirrors MLB's `config.external_credentials` pattern, fully separate table) as `balldontlie_api_key` — kept as a real, ready fallback source if the nba.com-via-GitHub-Actions path doesn't fully pan out, per the person's stated preference for nba.com as the primary source.
 
 ---
+
+## 2026-08-31 (cont'd 5) — Built a real, reusable "trigger any GitHub Actions workflow" tool, per the person's request ("we will need that multiple times")
+
+Added a genuinely generic capability to the MCP bridge (`alphadog-v2-admin-sql.js`), not a one-off: a new `github_trigger_workflow` MCP tool (`toolGithubTriggerWorkflow`, using the already-present `GITHUB_TOKEN`/`githubRequest` helper — no new secret needed) that POSTs to GitHub's real `workflow_dispatch` API for any workflow file in the repo, not just NBA's. Deployed successfully (confirmed in CI). This directly closes the gap from earlier this session (no tool could actually press "Run workflow") and will be reusable for every future NBA (or MLB) workflow that needs on-demand triggering, exactly as the person asked for.
+
+**Real, honest limitation found immediately when trying to use it**: this chat's own available-tools list was fixed at conversation start and does not include tools added to the MCP server mid-conversation - so this session cannot call its own new `github_trigger_workflow` tool. It will be available starting in a fresh chat/session (or a session that reconnects to the MCP server). Not silently worked around or hidden - flagged directly to the person.
+
+**Until then, the NBA teams scraper (`.github/workflows/nba-scrape.yml`) still needs either**: (a) a fresh chat session to call `github_trigger_workflow(workflow_file="nba-scrape.yml")` directly, or (b) one manual "Run workflow" click from the person in GitHub's Actions tab, or (c) its first scheduled Monday 09:00 UTC run.
+
+---
 - Read all three /nba/ reference docs in full (Architecture Blueprint, Lessons Learned, Domain Mapping).
 - Verified live Postgres: 18 schemas exist (archive, backtest, calendar, certifier, classification, config, context, context_cert, control, daily, market, public, ref, score, scoring, stats_hitter, stats_pitcher, team). Zero NBA-anything exists anywhere yet — confirmed clean slate.
 - Verified `ref.teams` is genuinely MLB-specific (mlb_team_id, AL/NL division, file_code) — needs an NBA-specific counterpart, exactly as the blueprint says.
