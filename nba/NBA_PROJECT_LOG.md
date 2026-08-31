@@ -59,7 +59,22 @@ Rewrote `NBA_STATS_REQUIRED_HEADERS` to the canonical, actively-used set from th
 
 ---
 
-**Phase 1 (internal research + live verification) — COMPLETE.**
+## 2026-08-31 (cont'd 4) — Real fix for the nba.com block: run the scrape from GitHub Actions, not Cloudflare Workers (per the person's explicit preference for nba.com as the primary source)
+
+Probed further per the person's direction ("ideally all this should come from nba.com, just like the MLB API"). Extended `/probe-sources` to test `cdn.nba.com`, `core-api.nba.com`, and `data.nba.net` in addition to `stats.nba.com` — **all four failed** from the Cloudflare Worker origin (two more 403 "Access Denied" edge blocks, one more 520/526). This is decisive: **the entire nba.com/nba.net domain family blocks Cloudflare Workers' egress IPs**, not just one endpoint or a header quirk. No further in-Worker header tuning will fix this.
+
+**Found the real, already-proven fix by studying how MLB's own PrizePicks board scraper actually works**: `.github/workflows/scrape.yml` runs `main.py` on a plain **GitHub Actions runner** (`ubuntu-latest`) — a completely different, non-Cloudflare network origin — and commits the resulting JSON (`prizepicks_mlb_current.json`) straight to the repo. `alphadog-v2-prizepicks-github-board.js` then just reads that committed file via the GitHub Contents API. This sidesteps the block entirely, and is exactly the same architecture NBA needs for anything nba.com-sourced.
+
+**Built the NBA equivalent, fully isolated from MLB's**:
+- `nba/scrape_nba_stats_teams.py` — new script, runs on a GitHub Actions runner, fetches `stats.nba.com/stats/leaguestandingsv3` with the canonical browser-style headers, writes `nba/data/nba_teams_current.json` + a meta file (fetch timestamp, http status, real error if any — honest-failure-recording, not silent).
+- `.github/workflows/nba-scrape.yml` — a brand-new workflow file (does not touch `scrape.yml` at all), weekly cron (Monday 09:00 UTC, matching the person's own "weekly differential" cadence instruction) + manual `workflow_dispatch`, commits the JSON.
+- Confirmed the existing shared `GITHUB_TOKEN`/`GITHUB_OWNER`/`GITHUB_REPO`/`GITHUB_BRANCH` secrets (already flowing to every worker via `github_write_worker_secrets_file.py`, which was NOT touched) are available to `alphadog-v2-nba-static-teams` already — no new secret plumbing needed to read the committed file the same way the PrizePicks worker does.
+
+**Known limitation, stated plainly**: this chat has no tool that can trigger a GitHub Actions `workflow_dispatch` run (no generic authenticated API-call tool for that specific action) — the new workflow needs either its first scheduled Monday run, or one manual "Run workflow" click from the person in GitHub's Actions tab, before the committed JSON exists and the teams worker's read path can be built and verified against it. Not silently worked around or claimed as done.
+
+**Also stored, this session**: a real `balldontlie.io` API key the person provided, saved to a new `nba_config.external_credentials` table (mirrors MLB's `config.external_credentials` pattern, fully separate table) as `balldontlie_api_key` — kept as a real, ready fallback source if the nba.com-via-GitHub-Actions path doesn't fully pan out, per the person's stated preference for nba.com as the primary source.
+
+---
 - Read all three /nba/ reference docs in full (Architecture Blueprint, Lessons Learned, Domain Mapping).
 - Verified live Postgres: 18 schemas exist (archive, backtest, calendar, certifier, classification, config, context, context_cert, control, daily, market, public, ref, score, scoring, stats_hitter, stats_pitcher, team). Zero NBA-anything exists anywhere yet — confirmed clean slate.
 - Verified `ref.teams` is genuinely MLB-specific (mlb_team_id, AL/NL division, file_code) — needs an NBA-specific counterpart, exactly as the blueprint says.
