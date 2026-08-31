@@ -324,6 +324,30 @@ export default {
       });
     }
 
+    if (method === "GET" && path === "/probe-sources") {
+      // Diagnostic-only route (never writes anything): tries several real, candidate NBA-owned
+      // or NBA-official-CDN endpoints in sequence and reports the raw outcome of each, so a
+      // source decision can be made from real evidence instead of one single guess. None of
+      // these calls touch Postgres.
+      const candidates = [
+        { name: "stats.nba.com/stats/leaguestandingsv3", url: "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2025-26&SeasonType=Regular%20Season", headers: NBA_STATS_REQUIRED_HEADERS },
+        { name: "cdn.nba.com/static/json/staticData/teams.json", url: "https://cdn.nba.com/static/json/staticData/teams.json", headers: { "Accept": "application/json", "User-Agent": NBA_STATS_REQUIRED_HEADERS["User-Agent"] } },
+        { name: "core-api.nba.com/cp/api/v1.7/feeds/leaguesInfoFeed", url: "https://core-api.nba.com/cp/api/v1.7/feeds/leaguesInfoFeed", headers: { "Accept": "application/json", "User-Agent": NBA_STATS_REQUIRED_HEADERS["User-Agent"] } },
+        { name: "data.nba.net/prod/v1/2025/teams.json", url: "https://data.nba.net/prod/v1/2025/teams.json", headers: { "Accept": "application/json", "User-Agent": NBA_STATS_REQUIRED_HEADERS["User-Agent"] } }
+      ];
+      const results = [];
+      for (const c of candidates) {
+        try {
+          const resp = await fetch(c.url, { method: "GET", headers: c.headers });
+          const text = await resp.text();
+          results.push({ name: c.name, url: c.url, http_status: resp.status, ok: resp.ok, body_preview: text.slice(0, 300), looks_like_json: text.trim().startsWith("{") || text.trim().startsWith("[") });
+        } catch (err) {
+          results.push({ name: c.name, url: c.url, error: String(err && err.message ? err.message : err) });
+        }
+      }
+      return jsonResponse({ ok: true, probed_at: nowUtc(), results });
+    }
+
     if (method === "GET" && path === "/debug-fetch") {
       // Diagnostic-only route (never writes anything) to see the raw stats.nba.com response
       // during source verification - not part of the certified /run path.
