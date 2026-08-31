@@ -2685,7 +2685,7 @@ async function apiGoblinSlips(env, request) {
 // Sleeper: 1x variable-size, doubles-only (the one real standout line, 90% real hit rate) -
 // separate from the other 4 qualifying lines used elsewhere in this file.
 const PRIZEPICKS_HIGH_HIT_CAP = 3;
-const UNDERDOG_HIGH_HIT_CAP = 1;
+const UNDERDOG_HIGH_HIT_CAP = 2;
 const SLEEPER_HIGH_HIT_CAP = 2;
 // Real Flex payout tiers (2026-08-17/18, from live-verified user data) - all three apps now run
 // Flex by default per explicit request: lower variance, real cushion on partial hits, in
