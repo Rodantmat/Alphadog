@@ -36,9 +36,20 @@ OUTPUT_META_PATH = Path("nba/data/nba_teams_current_meta.json")
 
 
 def fetch_teams():
-    resp = requests.get(URL, headers=STATS_HEADERS, timeout=30)
-    resp.raise_for_status()
-    body = resp.json()
+    last_error = None
+    for attempt in range(1, 4):
+        try:
+            resp = requests.get(URL, headers=STATS_HEADERS, timeout=60)
+            resp.raise_for_status()
+            body = resp.json()
+            break
+        except Exception as exc:  # noqa: BLE001 - retry a few times before giving up for real
+            last_error = exc
+            print(f"Attempt {attempt}/3 failed: {exc}", file=sys.stderr)
+            if attempt < 3:
+                time.sleep(5)
+    else:
+        raise last_error
     result_sets = body.get("resultSets") or []
     if not result_sets:
         raise RuntimeError("nba_stats_api_unexpected_shape: no resultSets")
