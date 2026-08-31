@@ -3872,32 +3872,38 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
          AND g.game_date::date < b.official_date::date
         GROUP BY b.final_board_row_id
       ),
-      -- Rung = position of this line in THAT PLAYER'S own LESS ladder on today's board, 1 =
-      -- shallowest offered. This is what sets the multiplier (rate = 1.4323 - 0.101*rung), NOT the
-      -- line value: the same line is a different rung for different players depending on where
-      -- their ladder starts.
-      ladder AS (
-        SELECT f.mlb_player_id, f.line_value,
-          ROW_NUMBER() OVER (PARTITION BY f.mlb_player_id ORDER BY f.line_value) AS rung
-        FROM (SELECT DISTINCT mlb_player_id, line_value FROM score.final_board_current
-              WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-                AND source_key = '${sourceKey}' AND canonical_prop_key = '${PP_PROP}'
-                AND selected_side = '${PP_SIDE}' AND is_goblin = 1) f
+      -- v3 (2026-08-31): the RUNG model is retired. It was fitted on 6 placed slips that were all
+      -- total_bases/3.5, and anchor-relative tier analysis showed it mislabelled them - two legs it
+      -- called the same rung sat at genuinely different tiers (gap +2.00 vs +2.54 from the anchor).
+      -- Rates are now taken from the per-cell table calibrated against all 22 real placed slips
+      -- (MAE 6.31%), with the two total_bases cells PINNED to their direct reads.
+      ranked AS (
+        SELECT b.final_board_row_id, b.source_key, b.game_pk, b.official_game_time_utc,
+          b.player_name, b.mlb_player_id, b.canonical_prop_key, b.line_value, b.selected_side,
+          b.probability_confidence_0_100, b.is_goblin, b.is_demon,
+          t.n_games, t.n_hit,
+          (100.0 * t.n_hit / NULLIF(t.n_games,0)) AS trail_pct,
+          PERCENT_RANK() OVER (ORDER BY (100.0 * t.n_hit / NULLIF(t.n_games,0)) DESC) AS pr
+        FROM board b
+        JOIN trail t ON t.final_board_row_id = b.final_board_row_id
+        WHERE t.n_games >= ${PP_MIN_GAMES}
+          AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
       )
-      SELECT b.final_board_row_id AS board_row_id, b.source_key, b.game_pk, b.official_game_time_utc,
-        b.player_name, b.mlb_player_id, b.canonical_prop_key, b.line_value, b.selected_side,
-        (100.0 * t.n_hit / NULLIF(t.n_games,0)) AS hit_probability_0_100,
-        b.probability_confidence_0_100 AS confidence_0_100,
-        b.is_goblin, b.is_demon,
-        t.n_games AS historical_n,
-        round((100.0 * t.n_hit / NULLIF(t.n_games,0))::numeric,1) AS historical_hit_pct,
-        l.rung AS goblin_rung
-      FROM board b
-      JOIN trail t ON t.final_board_row_id = b.final_board_row_id
-      LEFT JOIN ladder l ON l.mlb_player_id = b.mlb_player_id AND l.line_value = b.line_value
-      WHERE t.n_games >= ${PP_MIN_GAMES}
-        AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
-      ORDER BY (100.0 * t.n_hit / NULLIF(t.n_games,0)) DESC, b.player_name
+      SELECT r.final_board_row_id AS board_row_id, r.source_key, r.game_pk, r.official_game_time_utc,
+        r.player_name, r.mlb_player_id, r.canonical_prop_key, r.line_value, r.selected_side,
+        r.trail_pct AS hit_probability_0_100,
+        r.probability_confidence_0_100 AS confidence_0_100,
+        r.is_goblin, r.is_demon,
+        r.n_games AS historical_n,
+        round(r.trail_pct::numeric,1) AS historical_hit_pct,
+        NULL::int AS goblin_rung
+      FROM ranked r
+      -- Percentile, not fixed cap. The qualifying pool averages ~385 legs but swings widely by day;
+      -- a fixed cap takes the same count on a thin board as on a deep one. Top 10% beat every fixed
+      -- cap tested (+73.1% vs +68.0% at cap 5) with more slips and a far smoother path - cap 2 had a
+      -- -60% three-day stretch, top-10% never had a negative three-day window in 27 days.
+      WHERE r.pr <= ${PP_TOP_PERCENTILE}
+      ORDER BY r.trail_pct DESC, r.player_name
     `);
     return rows;
   } finally {
