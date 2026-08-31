@@ -880,6 +880,23 @@ export class AlphadogMcp extends McpAgent {
     );
 
     this.server.tool(
+      "github_trigger_workflow",
+      "Trigger a GitHub Actions workflow_dispatch run for any workflow file in the repo (e.g. 'nba-scrape.yml'). Use this to actually run a scraper/workflow on demand instead of waiting for its schedule - needed repeatedly for NBA source-scraping work since those workflows run on GitHub's own runners (a different network origin than this Worker, which is why some sources like stats.nba.com must be scraped from a workflow rather than fetched directly here). Check github_list_workflow_runs a few seconds after calling this to see the new run and its status.",
+      {
+        workflow_file: z.string().describe("The workflow file name under .github/workflows/, e.g. 'nba-scrape.yml'."),
+        ref: z.string().optional().describe("Branch to run on. Defaults to the GITHUB_BRANCH secret (main)."),
+        inputs: z.record(z.any()).optional().describe("Optional workflow_dispatch inputs, if the workflow defines any.")
+      },
+      async (args) => {
+        const result = await toolGithubTriggerWorkflow(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
       "github_get_workflow_run_log",
       "Fetch the actual plain-text log for a failed (or any) GitHub Actions workflow run, using the run_id from github_list_workflow_runs. Use this instead of asking the user to paste deploy errors. Returns per-step status plus the tail of the log text (or, if 'grep' is given, only the matching lines with context) - use grep for something like 'ERROR|Uncaught|Error:' to jump straight to the failure instead of reading the whole log.",
       {
