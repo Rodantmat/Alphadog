@@ -102,6 +102,57 @@ function pg(env) {
   return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false });
 }
 
+async function fetchNbaTeamsFromGithub(env) {
+  // Real, working source (confirmed 2026-08-31): stats.nba.com cannot be called directly from
+  // this Cloudflare Worker (every nba.com/nba.net domain edge-blocks Cloudflare Workers'
+  // egress IPs - see nba/NBA_PROJECT_LOG.md for the full probe history). The real fix, proven
+  // working, is nba/scrape_nba_stats_teams.py running on a GitHub Actions runner (a different
+  // network origin, using curl_cffi Chrome-TLS impersonation) which commits
+  // nba/data/nba_teams_current.json to the repo - this function just reads that committed file,
+  // exactly the same pattern alphadog-v2-prizepicks-github-board.js uses for
+  // prizepicks_mlb_current.json, using the same already-present GITHUB_TOKEN/OWNER/REPO/BRANCH
+  // secrets (no new secret plumbing needed).
+  const owner = env.GITHUB_OWNER || "Rodantmat";
+  const repo = env.GITHUB_REPO || "Alphadog";
+  const branch = env.GITHUB_BRANCH || "main";
+  const path = "nba/data/nba_teams_current.json";
+  const metaPath = "nba/data/nba_teams_current_meta.json";
+
+  const headers = { "Accept": "application/vnd.github.raw+json", "User-Agent": "Alphadog-NBA-StaticTeams" };
+  if (env.GITHUB_TOKEN) headers["Authorization"] = `Bearer ${env.GITHUB_TOKEN}`;
+
+  const apiUrl = (p) => `https://api.github.com/repos/${owner}/${repo}/contents/${p}?ref=${encodeURIComponent(branch)}`;
+
+  const [dataResp, metaResp] = await Promise.all([
+    fetch(apiUrl(path), { headers }),
+    fetch(apiUrl(metaPath), { headers })
+  ]);
+  if (!dataResp.ok) throw new Error(`github_read_failed_http_${dataResp.status}:${(await dataResp.text()).slice(0, 200)}`);
+
+  const dataJson = await dataResp.json();
+  const teamsFile = JSON.parse(atob(String(dataJson.content || "").replace(/\n/g, "")));
+  let meta = null;
+  if (metaResp.ok) {
+    try {
+      const metaJson = await metaResp.json();
+      meta = JSON.parse(atob(String(metaJson.content || "").replace(/\n/g, "")));
+    } catch (_) { /* meta is informational only */ }
+  }
+  if (meta && meta.error) throw new Error(`last_committed_scrape_failed: ${meta.error}`);
+
+  const teams = (teamsFile.teams || []).map(t => ({
+    id: Number(t.id),
+    abbreviation: String(t.abbreviation || "").toUpperCase(),
+    name: `${t.city || ""} ${t.nickname || ""}`.trim(),
+    nickname: String(t.nickname || ""),
+    city: String(t.city || ""),
+    conference: String(t.conference || ""),
+    division: String(t.division || "")
+  })).filter(t => t.id && t.abbreviation);
+
+  return { source_path: path, fetched_at_by_scraper: meta ? meta.fetched_at : null, teams, raw_count: (teamsFile.teams || []).length };
+}
+
 async function fetchNbaTeamsLive(env) {
   const base = String(env.NBA_STATS_API_BASE_URL || "https://stats.nba.com/stats").replace(/\/+$/, "");
   const url = `${base}/leaguestandingsv3?LeagueID=00&Season=2025-26&SeasonType=Regular%20Season`;
