@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-08-31 (cont'd) — Corrections locked, full data universe skeleton created, first NBA worker built
+
+**Corrections from the person, now locked in** (overriding earlier proposals):
+- No shared control-plane after all — the person explicitly overruled it: *"nothing will share same space, tables, folders, all separated for each sport."* NBA gets its own `nba_control`/`nba_config` schemas, not the shared `control.*`/`config.*`. Corrected in NBA_SYSTEM_DRAFT.md Section 1.
+- ParlayAPI: person confirms it should have real NBA historical/backdata plus live board/market data once the season starts — treated as the locked source pending direct verification (still not independently tested — same tooling gap).
+- PrizePicks NBA board: same technique as MLB (`alphadog-v2-prizepicks-github-board.js` reads a scraper-produced JSON committed to the repo) — needs a new NBA-scoped scraper output + a new `alphadog-v2-nba-prizepicks-github-board.js` consumer.
+- Referees: MLB's codebase calls this concept "umpire" (`ref.umpire_tendency`) — this is the concrete reference point for building NBA's officiating-tendency table.
+- Static differential run gets its own weekly re-check cadence — but backfill comes first (recorded as `nba_differential_check_cadence = weekly` in `nba_config.system_settings`, not yet wired to any scheduler since backfill isn't done).
+
+**Full separate NBA data/system universe created in Postgres** (14 new schemas, zero rows or tables shared with MLB): `nba_ref`, `nba_calendar`, `nba_team`, `nba_stats`, `nba_daily`, `nba_context`, `nba_market`, `nba_archive`, `nba_score`, `nba_scoring`, `nba_backtest`, `nba_classification`, `nba_config`, `nba_control`.
+- `nba_ref`: `teams`, `team_aliases`, `players`, `player_aliases`, `arenas`, `officials`, `prop_taxonomy` tables created.
+- `nba_config`: `worker_definitions` (own registry, NOT the shared MLB one), `system_settings` (tunable-variables table — timeouts/retries/chunk size/differential cadence live here now, per the person's explicit "no hardcoded variables" rule).
+- `nba_control`: `worker_run_log`, `job_runs` (own run-history/log tables, NOT the shared MLB ones).
+
+**First real NBA worker built and committed**: `nba/alphadog-v2-nba-static-teams.js` (job_key `nba-static-teams`, registered in `nba_config.worker_definitions`). Static team dictionary (30 teams + aliases) → `nba_ref.teams`/`nba_ref.team_aliases`. Source-locked to `stats.nba.com`'s `leaguestandingsv3` endpoint (NBA's own official API, per blueprint Section 4i discipline) with a certified, verified-correct 30-team hardcoded fallback (current 2026-27 season roster of franchises — confirmed via direct research this session that no relocation/rename/expansion affects this season; a Seattle/Las Vegas expansion vote is only in early stages for 2028-29). **Not yet deploy-tested** — the live stats.nba.com fetch path requires specific browser-like headers (implemented in the worker) that could not be verified from this session's sandboxed network. Real verification only happens once this worker is actually deployed and `/run` is hit for the first time — check `source_key` in its response to see whether the live path or the fallback actually served that run.
+
+**Open item surfaced, not yet resolved**: this worker file alone will not automatically become a live, deployed Cloudflare Worker — MLB's deploy pipeline generates `wrangler.*.jsonc` files via `generate_wrangler_configs.py` (repo root, MLB-owned) from a worker list/template. Given the "no edits to the MLB system" + "fully separate" constraints, NBA needs its own equivalent generator/workflow (or a deliberate, explicit decision to extend the existing generator additively) before any NBA worker can actually go live. Flagging for the person's decision rather than unilaterally touching `generate_wrangler_configs.py`.
+
+---
+
 ## 2026-08-31 — Session: Phase 1 (recon) complete, operating model locked
 
 **Phase 1 (internal research + live verification) — COMPLETE.**
