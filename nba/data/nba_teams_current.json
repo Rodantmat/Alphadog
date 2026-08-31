@@ -1,0 +1,244 @@
+{
+  "teams": [
+    {
+      "id": 1610612760,
+      "abbreviation": "",
+      "city": "Oklahoma City",
+      "nickname": "Thunder",
+      "conference": "West",
+      "division": "Northwest"
+    },
+    {
+      "id": 1610612765,
+      "abbreviation": "",
+      "city": "Detroit",
+      "nickname": "Pistons",
+      "conference": "East",
+      "division": "Central"
+    },
+    {
+      "id": 1610612759,
+      "abbreviation": "",
+      "city": "San Antonio",
+      "nickname": "Spurs",
+      "conference": "West",
+      "division": "Southwest"
+    },
+    {
+      "id": 1610612738,
+      "abbreviation": "",
+      "city": "Boston",
+      "nickname": "Celtics",
+      "conference": "East",
+      "division": "Atlantic"
+    },
+    {
+      "id": 1610612743,
+      "abbreviation": "",
+      "city": "Denver",
+      "nickname": "Nuggets",
+      "conference": "West",
+      "division": "Northwest"
+    },
+    {
+      "id": 1610612752,
+      "abbreviation": "",
+      "city": "New York",
+      "nickname": "Knicks",
+      "conference": "East",
+      "division": "Atlantic"
+    },
+    {
+      "id": 1610612739,
+      "abbreviation": "",
+      "city": "Cleveland",
+      "nickname": "Cavaliers",
+      "conference": "East",
+      "division": "Central"
+    },
+    {
+      "id": 1610612747,
+      "abbreviation": "",
+      "city": "Los Angeles",
+      "nickname": "Lakers",
+      "conference": "West",
+      "division": "Pacific"
+    },
+    {
+      "id": 1610612745,
+      "abbreviation": "",
+      "city": "Houston",
+      "nickname": "Rockets",
+      "conference": "West",
+      "division": "Southwest"
+    },
+    {
+      "id": 1610612761,
+      "abbreviation": "",
+      "city": "Toronto",
+      "nickname": "Raptors",
+      "conference": "East",
+      "division": "Atlantic"
+    },
+    {
+      "id": 1610612737,
+      "abbreviation": "",
+      "city": "Atlanta",
+      "nickname": "Hawks",
+      "conference": "East",
+      "division": "Southeast"
+    },
+    {
+      "id": 1610612750,
+      "abbreviation": "",
+      "city": "Minnesota",
+      "nickname": "Timberwolves",
+      "conference": "West",
+      "division": "Northwest"
+    },
+    {
+      "id": 1610612755,
+      "abbreviation": "",
+      "city": "Philadelphia",
+      "nickname": "76ers",
+      "conference": "East",
+      "division": "Atlantic"
+    },
+    {
+      "id": 1610612756,
+      "abbreviation": "",
+      "city": "Phoenix",
+      "nickname": "Suns",
+      "conference": "West",
+      "division": "Pacific"
+    },
+    {
+      "id": 1610612757,
+      "abbreviation": "",
+      "city": "Portland",
+      "nickname": "Trail Blazers",
+      "conference": "West",
+      "division": "Northwest"
+    },
+    {
+      "id": 1610612753,
+      "abbreviation": "",
+      "city": "Orlando",
+      "nickname": "Magic",
+      "conference": "East",
+      "division": "Southeast"
+    },
+    {
+      "id": 1610612766,
+      "abbreviation": "",
+      "city": "Charlotte",
+      "nickname": "Hornets",
+      "conference": "East",
+      "division": "Southeast"
+    },
+    {
+      "id": 1610612746,
+      "abbreviation": "",
+      "city": "LA",
+      "nickname": "Clippers",
+      "conference": "West",
+      "division": "Pacific"
+    },
+    {
+      "id": 1610612744,
+      "abbreviation": "",
+      "city": "Golden State",
+      "nickname": "Warriors",
+      "conference": "West",
+      "division": "Pacific"
+    },
+    {
+      "id": 1610612748,
+      "abbreviation": "",
+      "city": "Miami",
+      "nickname": "Heat",
+      "conference": "East",
+      "division": "Southeast"
+    },
+    {
+      "id": 1610612749,
+      "abbreviation": "",
+      "city": "Milwaukee",
+      "nickname": "Bucks",
+      "conference": "East",
+      "division": "Central"
+    },
+    {
+      "id": 1610612740,
+      "abbreviation": "",
+      "city": "New Orleans",
+      "nickname": "Pelicans",
+      "conference": "West",
+      "division": "Southwest"
+    },
+    {
+      "id": 1610612741,
+      "abbreviation": "",
+      "city": "Chicago",
+      "nickname": "Bulls",
+      "conference": "East",
+      "division": "Central"
+    },
+    {
+      "id": 1610612742,
+      "abbreviation": "",
+      "city": "Dallas",
+      "nickname": "Mavericks",
+      "conference": "West",
+      "division": "Southwest"
+    },
+    {
+      "id": 1610612751,
+      "abbreviation": "",
+      "city": "Brooklyn",
+      "nickname": "Nets",
+      "conference": "East",
+      "division": "Atlantic"
+    },
+    {
+      "id": 1610612763,
+      "abbreviation": "",
+      "city": "Memphis",
+      "nickname": "Grizzlies",
+      "conference": "West",
+      "division": "Southwest"
+    },
+    {
+      "id": 1610612754,
+      "abbreviation": "",
+      "city": "Indiana",
+      "nickname": "Pacers",
+      "conference": "East",
+      "division": "Central"
+    },
+    {
+      "id": 1610612758,
+      "abbreviation": "",
+      "city": "Sacramento",
+      "nickname": "Kings",
+      "conference": "West",
+      "division": "Pacific"
+    },
+    {
+      "id": 1610612764,
+      "abbreviation": "",
+      "city": "Washington",
+      "nickname": "Wizards",
+      "conference": "East",
+      "division": "Southeast"
+    },
+    {
+      "id": 1610612762,
+      "abbreviation": "",
+      "city": "Utah",
+      "nickname": "Jazz",
+      "conference": "West",
+      "division": "Northwest"
+    }
+  ]
+}
