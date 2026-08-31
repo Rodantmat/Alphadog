@@ -4474,42 +4474,2773 @@ function sleeperLegMultiplier(overPrice, underPrice, side) {
 async function autoSelectSleeperHighHitSlipLegs(env) {
   const pg = pgClient(env);
   try {
-    const propSideList = SLEEPER_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
+    // ===== v3 QUERY, 2026-08-31 =====
+    // The old query gated on a fixed prop/side pair plus a rolling hit-rate threshold from
+    // score.prop_outcome_history. Both are retired: season-testing showed the trailing-rate ranking
+    // is INVERTED on Sleeper (top-4 legs hit 67.26% while ranks 9-20 hit 73.76%), and gating on
+    // Sleeper's own history cannot find mispricing because Sleeper prices each leg by probability -
+    // devigging it against itself forces p*m = k identically.
+    // The signal is now SHARP SPORTSBOOK DIVERGENCE: build a consensus probability per cell from the
+    // real books in archive.market_prop_context_history (bet365, BetMGM, DraftKings, Caesars, Hard
+    // Rock, Novig, Fanatics), devig each book separately, average them, and take legs where the
+    // consensus exceeds Sleeper's own devigged probability by >= SLEEPER_SHARP_MIN_EDGE_PP.
+    // Leg-level result on 1,306 matched legs / 20 days, perfectly monotonic across five bands:
+    //   >=6pp 1.3191 | 3-6pp 0.9800 | 1-3pp 0.9116 | flat 0.8767 | negative 0.7546
+    // The flat band is the control - where the books agree, actual lands at exactly the priced
+    // probability, so the edge is genuinely in the disagreement.
+    // NOTE the pool floor: thin days are the failure mode, so the caller must skip the day entirely
+    // if fewer than SLEEPER_SHARP_POOL_FLOOR legs qualify.
+    const rows = await queryAllPg(pg, `
+      WITH book_sides AS (
+        SELECT m.official_date::date AS d, m.resolved_mlb_player_id AS pid,
+          m.canonical_prop_key AS ck, m.line_value AS lv, m.source_key AS book,
+          avg(CASE WHEN lower(m.outcome_side) IN ('over','more')
+                   THEN (CASE WHEN m.price_american < 0 THEN (-m.price_american)/((-m.price_american)+100.0)
+                              ELSE 100.0/(m.price_american+100.0) END) END) AS io,
+          avg(CASE WHEN lower(m.outcome_side) IN ('under','less')
+                   THEN (CASE WHEN m.price_american < 0 THEN (-m.price_american)/((-m.price_american)+100.0)
+                              ELSE 100.0/(m.price_american+100.0) END) END) AS iu
+        FROM archive.market_prop_context_history m
+        WHERE m.price_american IS NOT NULL
+          AND m.resolved_mlb_player_id IS NOT NULL
+          AND m.official_date::date = (now() - interval '7 hours')::date
+          AND m.source_key NOT ILIKE '%sleeper%'
+          AND m.source_key NOT ILIKE '%underdog%'
+          AND m.source_key NOT ILIKE '%prizepicks%'
+        GROUP BY 1,2,3,4,5
+      ),
+      sharp AS (
+        SELECT d, pid, ck, lv, count(*) AS n_books,
+          avg(io/(io+iu)) AS sharp_p_over,
+          avg(iu/(io+iu)) AS sharp_p_under
+        FROM book_sides
+        WHERE io IS NOT NULL AND iu IS NOT NULL AND (io+iu) BETWEEN 1.00 AND 1.25
+        GROUP BY 1,2,3,4
+        HAVING count(*) >= ${SLEEPER_SHARP_MIN_BOOKS}
+      )
+      SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
+        f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
+        f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.confidence_0_100,
+        ((m.raw_line_json #>> '{}')::jsonb->>'over_price')::int AS real_over_price,
+        ((m.raw_line_json #>> '{}')::jsonb->>'under_price')::int AS real_under_price,
+        s.n_books AS historical_n,
+        round((100.0 * (CASE WHEN lower(f.selected_side)='less' THEN s.sharp_p_under
+                             ELSE s.sharp_p_over END))::numeric, 2) AS sharp_prob_pct
+      FROM score.final_board_current f
+      JOIN sharp s ON s.pid = f.mlb_player_id AND s.ck = f.canonical_prop_key AND s.lv = f.line_value
+      LEFT JOIN market.sleeper_board_current m
+        ON m.player_name = f.player_name AND m.canonical_prop_key = f.canonical_prop_key AND m.line_value = f.line_value
+      WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+        AND f.source_key = 'sleeper'
+        AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
+        AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+    `);
+    // Compute Sleeper's own devigged probability from its real two-sided price, then the edge
+    // against the sharp consensus. Legs without a real live price cannot be evaluated - drop them.
+    const scored = rows.map(r => {
+      const sleeperP = sleeperDevigProb(r.real_over_price, r.real_under_price, r.selected_side);
+      const sharpP = r.sharp_prob_pct == null ? null : Number(r.sharp_prob_pct) / 100;
+      const edge = (Number.isFinite(sleeperP) && Number.isFinite(sharpP)) ? (sharpP - sleeperP) : null;
+      return {
+        ...r,
+        real_leg_mult: sleeperLegMultiplier(r.real_over_price, r.real_under_price, r.selected_side),
+        sleeper_prob_pct: Number.isFinite(sleeperP) ? Math.round(sleeperP * 10000) / 100 : null,
+        sharp_edge_pp: Number.isFinite(edge) ? Math.round(edge * 10000) / 100 : null,
+        historical_hit_pct: Number.isFinite(edge) ? Math.round(edge * 10000) / 100 : null
+      };
+    }).filter(r => r.sharp_edge_pp != null && (r.sharp_edge_pp / 100) >= ${'
+      .map(r => ({
+        ...r,
+        real_leg_mult: sleeperLegMultiplier(r.real_over_price, r.real_under_price, r.selected_side)
+      }))
+      .sort((a, b) => {
+        const am = Number.isFinite(a.real_leg_mult) ? a.real_leg_mult : -1;
+        const bm = Number.isFinite(b.real_leg_mult) ? b.real_leg_mult : -1;
+        return bm - am;
+      })
+      .slice(0, SLEEPER_HIGH_HIT_TOP_K);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function buildSleeperHighHitSlips(legs) {
+  const size = SLEEPER_HIGH_HIT_SIZE;
+  const used = new Set();
+  const allSlips = [];
+  const dailyPlayerUsage = new Map();
+  while (true) {
+    const slipLegs = [];
+    const playersInSlip = new Set();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      slipLegs.push(leg);
+      playersInSlip.add(leg.mlb_player_id);
+      if (slipLegs.length >= size) break;
+    }
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
+    allSlips.push(slipLegs);
+  }
+  // Real 2026-08-25: no artificial daily cap - legs already arrive pre-limited to the real
+  // backtested top-30-by-multiplier pool, so slips built here directly match what was validated.
+  const slips = allSlips.map(slipLegs => {
+    // Real per-leg product - a slip of 6 legs with different real prices gets a genuinely
+    // different multiplier than another slip of 6 legs at different prices, matching the same
+    // per-leg-product discipline used for Goblin. No leg's real price falls back to any flat
+    // average; a leg with no real price on this specific board simply can't be priced yet.
+    const allPriced = slipLegs.every(l => Number.isFinite(l.real_leg_mult));
+    // REAL FIX 2026-08-26: naive per-leg product (powerEquivalentMult) confirmed to over-predict
+    // the real Flex full-hit payout by 12-39% - Sleeper discounts the top payout to fund partial
+    // (insurance) tiers, which independent-leg multiplication ignores. Apply the Gemini-derived,
+    // EV-parity flex factor using each leg's own real implied probability (from its own price,
+    // devigged-approximate via 1/decimalOdds), not a flat assumption.
+    const powerEquivalentMult = allPriced ? slipLegs.reduce((p, l) => p * l.real_leg_mult, 1) : null;
+    const impliedProbs = slipLegs.map(l => {
+      const price = String(l.selected_side || "").toLowerCase() === "more" ? l.real_over_price : l.real_under_price;
+      const p = Number(price);
+      if (!Number.isFinite(p) || p === 0) return null;
+      const decimalOdds = p > 0 ? 1 + p / 100 : 1 + 100 / Math.abs(p);
+      return 1 / decimalOdds;
+    }).filter(Number.isFinite);
+    const pBar = impliedProbs.length ? impliedProbs.reduce((a, b) => a + b, 0) / impliedProbs.length : null;
+    const flexFactor = (allPriced && pBar != null) ? sleeperFlexFactor(size, pBar) : 1;
+    const fullMult = allPriced ? Math.round(powerEquivalentMult * flexFactor * 1000) / 1000 : null;
+    const partialRatios = SLEEPER_FLEX_PARTIAL_RATIOS_BY_SIZE[size] || { oneBelow: SLEEPER_FLEX_PARTIAL_RATIO_ESTIMATE };
+    const partialMult = fullMult != null ? Math.round(fullMult * partialRatios.oneBelow * 1000) / 1000 : null;
+    return {
+      client_slip_id: makeUiId("high_hit_slip_sleeper"),
+      source_key: "sleeper",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "flex",
+      structure_label: `${size}-pick Flex (High Hit)`,
+      estimated_multiplier: fullMult,
+      estimated_flex_tiers: fullMult != null ? { [size]: fullMult, [size - 1]: partialMult } : null,
+      multiplier_confirmed: false,
+      estimated_payout_note: fullMult != null
+        ? `Full-hit ~${fullMult}x - real per-leg product (${Math.round(powerEquivalentMult * 1000) / 1000}x) discounted by a real, EV-parity Flex factor (${Math.round(flexFactor * 1000) / 1000}) that accounts for Sleeper funding partial-hit tiers - this factor is still an early estimate (7 real observations), refine as more real saves come in. Partial-hit (${size - 1}/${size}) ~${partialMult}x uses a real, size-specific ratio from actual saved slips. Confirm both real numbers in-app before placing.`
+        : `Real per-leg price unavailable for one or more legs on today's board - cannot estimate. Confirm real numbers in-app before placing.`,
+      strategy_notes: [],
+      legs: slipLegs
+    };
+  });
+  return slips;
+}
+
+// Underdog High Hit legs: real, published payout table (APP_PAYOUT_TABLES.parlay_underdog),
+// verified 2026-08-15 against Underdog's own official Help Center payout articles - no
+// goblin/demon distinction on this app, just regular lines. Qualifying (prop,side,line) triples
+// are the real, validated ones from the 2026-08-17 research session (n>=20, real historical hit
+// rate confirmed against score.prop_outcome_history, source_key='parlay_underdog').
+// Real discount vs UD's own published table (2026-08-17): 10 real 6-pick observations averaged
+// 3.75x against the 35x published rate - real placed multipliers run at only ~68.65% of the
+// published table, not the full rate. Applied directly to the published multiplier (not
+// exponentiated - this is a flat table discount, not a compounding per-leg ratio like PrizePicks
+// goblin).
+// LOCKED 2026-08-21, MAJOR SIGNAL REPLACEMENT: real, massive-sample pool (rbis/less n=4553,
+// walks/less n=4340 real graded outcomes, 27-28 real days each) - by far the largest, most
+// statistically robust dataset found across all four locked strategies. Real published table
+// re-verified current (2026-08-17 official source, table itself unchanged from the 2026-08-15
+// verification): 6-pick Standard=35x. Same real 0.6865 discount factor applies (validated
+// against actual placed 6-pick entries). Real 6-pick backtest: 715 slips uncapped, 98 full hits,
+// +229.4% ROI - at fixed 1 slip/day: 27 slips, 5 full hits, +345.0% ROI, real day-by-day
+// consistency confirmed (hit rate 4%-33% across all 27 days, no outlier driving the result).
+// REPLACED 2026-08-22: old pool (rbis/less + walks/less, 6-pick Power, fixed cap=1) retired.
+// New pool found via a real hit-rate sweep of Underdog props: hits_allowed/more (85.4% real
+// historical hit rate, n=261, 26 real days - genuinely deep and sustained, unlike several
+// higher-looking candidates that turned out to be discontinued props). REAL, user-confirmed
+// per-slip tiers for this exact prop/side at 6-pick (not the generic discount-model estimate
+// used earlier and found to be wrong): 6/6=8.5x, 5/6=1.05x, 4/6=0.1x. Real backtest: 34 slips,
+// 21 full hits, +453.4% Flex ROI, 16 of 17 real active days positive (single loss: 08-06, a real
+// 0/1 day). No cap - this pool is naturally thin (1-4 slips/day), no real downside found to
+// control against.
+// LOCKED 2026-08-25, MAJOR SIGNAL REPLACEMENT: real, extensive multi-pass backtest (full grid:
+// 3,085+ configs across 6 props, both sides, sizes 2-6, K=10-50, thresholds 50-90, plus a
+// dedicated fine threshold sweep and a rejected multiplier-ranking test) found RBIs/less, 2-pick,
+// ranked by real historical APPEARANCE COUNT (not multiplier - that direction was tested and
+// made things worse here, opposite of what worked for Sleeper), threshold>=66% real historical
+// hit rate, as the real best: 287 slips over 28 days, 155 full hits (54.0%), only 2 losing days
+// out of 28 (both mild: -41.7%, -12.5%). Gemini cross-check (2 separate passes) confirmed this is
+// very likely a real ceiling - multiplier-ranking, larger sizes, and further threshold tuning all
+// made it worse, not better.
+// Real, honest pricing basis: uses Underdog's confirmed PUBLISHED Standard 2-pick table (3.5x),
+// NOT a per-leg multiplier - deliberately chosen because this strategy's threshold (60-66% real
+// hit rate) keeps legs close to a real coin-flip, where the published table's assumed "1.0x
+// standard selection multiplier" baseline is most likely to actually apply (per real, sound
+// reasoning - a leg near 50/50 IS what "standard" most likely means to Underdog's own pricing).
+// This is explicitly NOT yet live-verified - a real placed 2-pick entry with both legs in the
+// 60-66% range, checked against the app's actual displayed multiplier, would confirm or correct
+// this. Retired hits_allowed/more (prior track, 6-pick, real user-confirmed tiers) - real 9-10am
+// Pacific coverage check (2026-08-25) also confirmed RBIs/less has real presence at this specific
+// snapshot time (39 slips, 7 of 28 days) unlike several other candidates.
+// ===== UNDERDOG v3, 2026-08-31: SHARP DIVERGENCE + ONE LEG PER GAME =====
+// The rbis/less trailing-rate track is RETIRED. Same root cause as Sleeper: we were devigging
+// Underdog against ITSELF, which forces p*m = k identically and makes every propline look like the
+// house edge. Measured across all 20 proplines, best self-devigged p*m was 0.9755 - it could not
+// have been otherwise.
+//
+// BASE TABLE NOW VERIFIED EXACTLY (2026-08-31, live board reads, four strikeout legs from four
+// DIFFERENT games so no correlation discount applies):
+//     2-pick: 0.86 x 0.94                    = 0.8084, observed 2.82 -> BASE 3.4884
+//     3-pick: + 1.11                         = 0.8973, observed 5.83 -> BASE 6.4971
+//     4-pick: + 0.84                         = 0.7538, observed 9.04 -> BASE 11.9933
+// => BASE = {2:3.5, 3:6.5, 4:12, 5:20}. The widely-quoted research tables (3/6/10/20 from
+// GamedayMath, OddsJam, Props.com) are WRONG for MLB 2026. Our table also fits our own 19 placed
+// slips 3x more consistently (1.62% vs 4.87% disagreement in k across slip sizes).
+//
+// ⚠️ SAME-GAME CORRELATION DISCOUNT - NEWLY DISCOVERED, was never in the model:
+// A second H+R+RBI set with legs sharing BAL@COL showed the payout falling BELOW BASE x product:
+//     2 legs, 2 different games            -> ratio 0.999  (no discount, BASE re-confirmed)
+//     3 legs, 2 of them same game          -> ratio 0.968
+//     4 legs, 3 of them same game          -> ratio 0.819
+//     5 legs, 3 of them same game          -> ratio 0.819  (tracks the CLUSTER, not slip size)
+// Every prior Underdog backtest overvalued clustered slips by up to 18%.
+//
+// WHY ONE LEG PER GAME IS MANDATORY AND ALSO BETTER:
+// Underdog requires >=2 teams per entry (Establish The Run), so single-game pools are rejected
+// outright. Separately, sharp divergence CLUSTERS BY GAME - on 08-19 ten qualifying legs came from
+// two games, on 08-22 twelve from three. Propeller (49,000+ graded predictions) identifies the
+// mechanism: "the 30-90 minute repricing window after injury announcements is the single most
+// actionable edge on Underdog". The mispricing is game-level, so the divergence is too. Taking the
+// single highest-edge leg per game both satisfies the rule and avoids the discount.
+//
+// SIZE: expectation computed over ALL one-per-game combinations per day (not one chosen slip,
+// which removes selection luck). ROI rises with size but reliability collapses:
+//     2-pick: 7 of 16 days buildable, +37.2% ROI, 4/7 profitable, best day = 36.7% of return
+//     3-pick: 5 days, +38.5%, 3/5 profitable, best day 60.3%
+//     4-pick: 4 days, +88.1%, 2/4 profitable, best day 82.6%
+//     5-pick: 3 days, +189.9%, 1/3 profitable, best day 90.2%  <- one Monday IS the strategy
+// 2-pick chosen: double the volume, lowest concentration, and only 1.3 ROI points behind 3-pick.
+//
+// FLEX: -73.4% at 3-pick, -51.0% at 4-pick, -17.7% at 5-pick. Worst of any platform tested, because
+// the insured bases (1.25/2.0/4.0) are a fraction of standard (6.5/12/20) while leg hit is only
+// ~63%. Flex is now dead on all three platforms across six independent tests.
+//
+// ⚠️ TRAILING RATE HURTS HERE - do not re-add it. Layering trail>=70 on top lifts leg hit rate
+// 62.5% -> 77.3% but drops the average modifier 0.914 -> 0.726, because modifier = k/p means
+// selecting for safety directly destroys the payout. Net effect was negative.
+//
+// PROPLINE: runs/0.5/less is the ONLY one that clears. At >=5pp divergence:
+//     runs/0.5/less        58 legs, hit 67.24%, mod 0.831 -> p*m 0.5587  (k = 0.4704) CLEARS
+//     rbis/0.5/less        16 legs, hit 62.50%, mod 0.741 -> p*m 0.4631  fails
+//     hits/0.5/less         8 legs, hit 37.50%, mod 1.237 -> p*m 0.4639  fails
+//     total_bases/0.5/less 13 legs, hit 23.08%, mod 1.157 -> p*m 0.2670  fails badly
+//
+// HONEST STATUS: 7 slips over 16 days. This is a well-specified candidate with a causal mechanism,
+// NOT a validated strategy. It ranks behind PrizePicks (+73.1%, t=5.95) and Sleeper (+167.3%,
+// t=2.62) and should carry the smallest stake of the three. The binding constraint is sharp-book
+// feed coverage, which currently overlaps Underdog on only ~16 of 42 board days.
+const UNDERDOG_SHARP_MIN_EDGE_PP = 0.05;   // sharp consensus prob minus Underdog's devigged prob
+const UNDERDOG_SHARP_MIN_BOOKS = 2;
+const UNDERDOG_ONE_LEG_PER_GAME = true;    // mandatory: rule compliance AND avoids the discount
+const UNDERDOG_MIN_GAMES_TO_FIRE = 2;      // skip the day entirely if only one game qualifies
+const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
+  { prop: "runs", side: "less", rank: 1 }
+];
+const UNDERDOG_HIGH_HIT_SIZE = 2;
+const UNDERDOG_HIGH_HIT_MIN_HIT_PCT = 0;   // no trailing gate - it is actively harmful here
+const UNDERDOG_HIGH_HIT_TOP_K = 25;
+// REAL FIX 2026-08-26: the flat 3.5x table was confirmed WRONG via 12 real saved slips - real
+// multipliers ranged 1.49-1.86x (mean 1.62x), roughly HALF the assumed 3.5x, every single
+// observation. Root cause (Gemini-validated, mandatory analysis): 3.5x only applies to genuinely
+// balanced, near-50/50 legs (e.g. standard total_bases/strikeouts O/U) - RBIs/less/0.5 legs are
+// heavy favorites (real market-implied probability 65-85%+ per leg, confirmed via Underdog's own
+// live moneyline in market.underdog_board_current), which Underdog prices as a real, dynamic,
+// probability-sensitive payout (like a real sportsbook parlay), not the flat "standard" rate.
+// Real formula (EV-parity, Gemini-derived): M = (1-H) / (p1*p2), H = target house margin.
+// H=0.0766 is a starting prior fit to the 12 real observations (avg implied p per leg ~0.755,
+// mean real M=1.62 -> H = 1 - 1.62*0.755^2 = 0.0766) - refine as more real saves come in.
+const UNDERDOG_STANDARD_2PICK_MULT = 3.5; // kept only as a legacy fallback when no real leg price is available
+const UNDERDOG_HOUSE_MARGIN_2PICK = 0.0766;
+function underdogImpliedProb(price) {
+  const p = Number(price);
+  if (!Number.isFinite(p) || p === 0) return null;
+  return p > 0 ? 100 / (p + 100) : Math.abs(p) / (Math.abs(p) + 100);
+}
+function underdog2PickRealMultiplier(legs) {
+  const probs = (legs || []).map(l => {
+    const raw = l.underdog_raw_line_json ? (typeof l.underdog_raw_line_json === "string" ? JSON.parse(l.underdog_raw_line_json) : l.underdog_raw_line_json) : null;
+    if (!raw) return null;
+    const price = String(l.selected_side || "").toLowerCase() === "more" ? raw.over_price : raw.under_price;
+    return underdogImpliedProb(price);
+  });
+  if (probs.some(p => p == null)) return null;
+  const jointP = probs.reduce((a, b) => a * b, 1);
+  if (jointP <= 0) return null;
+  return Math.round(((1 - UNDERDOG_HOUSE_MARGIN_2PICK) / jointP) * 1000) / 1000;
+}
+async function autoSelectUnderdogHighHitSlipLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const propSideList = UNDERDOG_HIGH_HIT_QUALIFYING_LINES.map(q => `('${q.prop}','${q.side}')`).join(",");
     // Real fix 2026-08-25: the prior version had NO rolling hit-rate qualifier at all - it just
     // took whatever legs existed for the fixed prop/side pair with no historical check. Adding
-    // the real rolling threshold (>=55%, min 3 prior real observations) that was actually backtested.
+    // the real rolling threshold (>=66%, min 3 prior real observations) that was actually backtested.
+    // Real bug fix (same day): the top-K limit must apply AFTER joining to today's actual board,
+    // not inside the qualifying CTE - limiting globally-qualifying candidates before the join would
+    // rank by historical_n across the ENTIRE qualifying pool (hundreds of players) and could exclude
+    // every player actually on today's board, since today's board is a small subset. The backtest
+    // ranked top-K only among candidates present that specific day - this must match exactly.
     const rows = await queryAllPg(pg, `
       WITH qualifying AS (
         SELECT mlb_player_id, canonical_prop_key, line_value, selected_side,
           count(*) as historical_n, round(100.0*sum(outcome_hit)/count(*),2) as historical_hit_pct
         FROM score.prop_outcome_history
-        WHERE source_key = 'sleeper' AND outcome_hit IS NOT NULL
+        WHERE source_key = 'parlay_underdog' AND outcome_hit IS NOT NULL
           AND (canonical_prop_key, selected_side) IN (${propSideList})
           AND official_date::date >= (now() - interval '60 days')::date
         GROUP BY 1,2,3,4
-        HAVING count(*) >= 3 AND round(100.0*sum(outcome_hit)/count(*),2) >= ${SLEEPER_HIGH_HIT_MIN_HIT_PCT}
+        HAVING count(*) >= 3 AND round(100.0*sum(outcome_hit)/count(*),2) >= ${UNDERDOG_HIGH_HIT_MIN_HIT_PCT}
       )
       SELECT f.final_board_row_id AS board_row_id, f.source_key, f.game_pk, f.official_game_time_utc, f.player_name, f.mlb_player_id,
         f.canonical_prop_key, f.line_value, f.selected_side, f.estimated_hit_probability_0_100 AS hit_probability_0_100, f.confidence_0_100,
-        ((m.raw_line_json #>> '{}')::jsonb->>'over_price')::int AS real_over_price,
-        ((m.raw_line_json #>> '{}')::jsonb->>'under_price')::int AS real_under_price,
-        q.historical_n, q.historical_hit_pct
+        q.historical_n, q.historical_hit_pct,
+        (m.raw_line_json #>> '{}')::text AS underdog_raw_line_json
       FROM score.final_board_current f
       JOIN qualifying q ON q.mlb_player_id = f.mlb_player_id AND q.canonical_prop_key = f.canonical_prop_key
         AND q.line_value = f.line_value AND q.selected_side = f.selected_side
-      LEFT JOIN market.sleeper_board_current m
+      LEFT JOIN market.underdog_board_current m
         ON m.player_name = f.player_name AND m.canonical_prop_key = f.canonical_prop_key AND m.line_value = f.line_value
       WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-        AND f.source_key = 'sleeper'
+        AND f.source_key = 'parlay_underdog'
         AND (f.canonical_prop_key, f.selected_side) IN (${propSideList})
         AND f.official_game_time_utc IS NOT NULL AND f.official_game_time_utc::timestamptz > now() + interval '30 minutes'
         AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
+      ORDER BY q.historical_n DESC
+      LIMIT ${UNDERDOG_HIGH_HIT_TOP_K}
     `);
-    // Real, key finding this session: rank by the leg's OWN real per-leg multiplier (highest first),
-    // NOT by historical appearance count - this specific ranking change is what produced the real
-    // ROI improvement (was ~+35.8% on a different prop ranked by appearance count, this method on
-    // Singles reaches +56-61%). Legs without a real live price sort last (can't be ranked by mult).
-    return rows
+    return rows;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+function buildUnderdogHighHitSlips(legs) {
+  const size = UNDERDOG_HIGH_HIT_SIZE;
+  const used = new Set();
+  const slips = [];
+  const dailyPlayerUsage = new Map();
+  while (true) {
+    const slipLegs = [];
+    const playersInSlip = new Set();
+    const gameCounts = new Map();
+    for (const leg of legs) {
+      if (used.has(leg.board_row_id)) continue;
+      if (playersInSlip.has(leg.mlb_player_id)) continue;
+      if ((dailyPlayerUsage.get(leg.mlb_player_id) || 0) >= 2) continue;
+      const gc = gameCounts.get(leg.game_pk) || 0;
+      if (gc >= 1) continue;
+      slipLegs.push(leg);
+      playersInSlip.add(leg.mlb_player_id);
+      gameCounts.set(leg.game_pk, gc + 1);
+      if (slipLegs.length >= size) break;
+    }
+    if (slipLegs.length < size) break;
+    for (const l of slipLegs) {
+      used.add(l.board_row_id);
+      dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1);
+    }
+    slips.push({
+      client_slip_id: makeUiId("high_hit_slip_ud"),
+      source_key: "parlay_underdog",
+      slip_type: `${size}-pick`,
+      slip_size: size,
+      entry_mode: "power",
+      structure_label: `${size}-pick Standard (High Hit)`,
+      estimated_multiplier: (function() {
+        const real = underdog2PickRealMultiplier(slipLegs);
+        return real != null ? real : UNDERDOG_STANDARD_2PICK_MULT;
+      })(),
+      multiplier_confirmed: false,
+      estimated_payout_note: (function() {
+        const real = underdog2PickRealMultiplier(slipLegs);
+        if (real != null) return `${real}x - real, computed from this exact slip's own live Underdog moneyline prices via M=(1-H)/(p1*p2), H=${UNDERDOG_HOUSE_MARGIN_2PICK} (a starting prior fit to 12 real saved slips - refine as more real saves come in). RBIs/less legs are heavy favorites, not near-50/50, so the flat published 3.5x Standard table does not apply here. Confirm the actual displayed multiplier in-app before placing.`;
+        return `${UNDERDOG_STANDARD_2PICK_MULT}x - FALLBACK: no real live moneyline price available for one or more legs, using the flat Standard table as a rough placeholder. Confirm the actual displayed multiplier in-app before placing - it is very likely lower than this for RBIs/less legs.`;
+      })(),
+      strategy_notes: [
+        "Qualifying legs: rolling top-25-by-real-appearance-count AND >=66% real historical hit rate on rbis/less, recomputed fresh each run - not a static list.",
+        "Real backtest (28 real days): 287 slips, 155 full hits (54.0%), only 2 losing days - ROI recomputed using real per-leg pricing, not the retired flat 3.5x assumption.",
+        "Correlation limits: max 1 leg per game, max 1 leg per player per slip, max 2 slips per player per day."
+      ],
+      legs: slipLegs
+    });
+  }
+  return slips;
+}
+async function apiHighHitSlipsUnderdog(env, request) {
+  // PAUSED 2026-08-26: this standalone route called autoSelectUnderdogHighHitSlipLegs/
+  // buildUnderdogHighHitSlips directly, bypassing the pause already applied to this same strategy
+  // inside apiHighHitSlips (Underdog rbis/less, confirmed negative EV: -14.0% on real, corrected
+  // pricing). Found during the post-Demon full-endpoint sweep - this route had been generating
+  // real recommendations for the same confirmed-negative strategy via a separate path the whole
+  // time the merged endpoint's pause was in effect. autoSelectUnderdogHighHitSlipLegs/
+  // buildUnderdogHighHitSlips are left intact and unused so this can be un-paused by restoring
+  // the logic below once a replacement is found.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit-underdog", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26: Underdog rbis/less is confirmed negative EV (-14.0% on real, corrected pricing) and paused system-wide, same as in /api/slips/high-hit."] });
+}
+
+// (Demon Slips section fully removed 2026-08-26 - see the DISABLED note below, above apiDemonSlips.)
+// DISABLED 2026-08-26: Demon retired entirely across this system after a comprehensive real,
+// walk-forward, Gemini-adversarial-verified sweep found every prop/side/tier1/tier2 combination
+// negative EV (see ALPHADOG_SESSION_LOG.md and ALPHADOG_REALIGNMENT.md Section 10 for the full
+// evidence). autoSelectDemonSlipLegs (the "highest live line" selector this function used) and its
+// supporting constants (DEMON_SLIP_MIN_CONFIDENCE, DEMON_SEGMENT_TIERS) have been fully removed,
+// not just disabled in place - this route previously generated real recommendations based on an
+// unconfirmed flat 1.9x multiplier assumption that never held up under real-data testing. Do not
+// re-add without new evidence that changes this conclusion, and if re-adding, use a real,
+// per-prop-tier-confirmed multiplier, not a flat assumption.
+async function apiDemonSlips(env, request) {
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/demon", selected_leg_count: 0, generated_slips: [], notes: ["PrizePicks Demon is disabled system-wide as of 2026-08-26. A comprehensive real-data sweep across every prop/side/tier combination found none clear breakeven against their real, confirmed per-leg multipliers - see the repo's ALPHADOG_SESSION_LOG.md for the full evidence."] });
+}
+async function apiAutoCreateSlips(env, request) {
+  // PAUSED 2026-08-26: found live during the full endpoint sweep. Cross-app (PrizePicks/
+  // Underdog/Sleeper), autonomously selects legs via autoSelectBestLegs gated only by a raw
+  // model-confidence threshold (input.min_confidence) - the exact kind of signal (score-model-
+  // based, not real historical/walk-forward validated) this session's Signal A test proved
+  // carries no real out-of-sample predictive power on this system. Never audited this session.
+  // autoSelectBestLegs/buildGeneratedSlips are left intact and unused so this can be un-paused
+  // once verified.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/auto-create", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26 pending verification against this session's walk-forward/three-check/p×m-gate standard - see ALPHADOG_SESSION_LOG.md. Uses raw model confidence, not a validated real historical signal."] });
+}
+// ===== Dedicated research-grounded slip engine (2026-08) =====
+// Built specifically per the exhaustive slip-strategy research done this session, NOT a wrapper
+// around the generic/manual builder above. The generic engine's bestStructureForPool uses a
+// Sharpe-style EV/stdev score maximized across sizes 2-6 - confirmed live this session that this
+// can and does select 4-5 leg slips when individual legs are high-probability, because Sharpe
+// ratio does not penalize variance the same way Kelly's log-growth criterion does. Real,
+// worked Kelly math (a genuine 55%-edge example, independently sourced) allocates $657.93 to a
+// single-equivalent bet, $38.29 to a 2-leg parlay, and $0.01 to a 5-leg parlay - the same edge,
+// wildly different variance cost. This engine encodes that conclusion directly: hard cap at 2-3
+// legs, per-app real payout tables, and picks the SMALLEST size that clears real breakeven
+// margin rather than whatever scores highest on a Sharpe-style metric.
+
+// Real, per-app published payout tables (regular lines, non-Demon/Goblin). Confirmed via
+// research these genuinely differ by app - using one shared table for all three (as the generic
+// engine above does) misrepresents the actual breakeven math for at least one of them.
+const APP_PAYOUT_TABLES = {
+  // PrizePicks: verified 2026-08-15 against PrizePicks' own official Help Center payout page
+  // (prizepicks.com/help-center/payouts, updated 2026-07-02) via a third-party calculator that
+  // cites it directly. Corrects a real discrepancy in the 3-pick Flex tier: this table previously
+  // had 2.25x/1.25x, the actual published rate is 3x/1x - all other tiers already matched.
+  prizepicks: {
+    power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
+    flex: { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } }
+  },
+  // Underdog: verified 2026-08-15 against Underdog's own official Help Center payout articles
+  // (help.underdogsports.com, Standard & Flex Entry Payouts), also via a third-party calculator
+  // that cites them directly. Replaces a table with multiple real errors - most tellingly, the
+  // old 5-pick Flex full-hit rate (20x) exactly matched the 5-pick Standard rate, which cannot be
+  // correct since Flex always pays less than Standard at the same pick count (true of every other
+  // tier in both apps' real tables). Extended to the full published 2-8 pick range so this stays
+  // honest if RESEARCH_MAX_SLIP_SIZE is ever raised past 3 later.
+  parlay_underdog: {
+    power: { 2: 3.5, 3: 6.5, 4: 10, 5: 20, 6: 35, 7: 65, 8: 120 },
+    flex: { 3: { 3: 3.25, 2: 1.09 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2.5 }, 6: { 6: 25, 5: 2.6, 4: 0.25 }, 7: { 7: 40, 6: 2.75, 5: 0.5 }, 8: { 8: 80, 7: 3, 6: 1 } }
+  },
+  sleeper: {
+    // CONFIRMED VIA RESEARCH (2026-08-02): Sleeper does NOT use a fixed payout table - it uses a
+    // genuine dynamic, per-leg multiplier system where each individual pick is priced based on
+    // its own assessed probability (lower-probability picks carry higher multipliers, higher-
+    // probability picks carry lower ones), and the final payout is the PRODUCT of all leg
+    // multipliers, not a lookup from a fixed size->multiplier table. This directly contradicts
+    // the earlier assumption used here. Public sources conflict on the exact formula (one
+    // describes pure per-leg dynamic pricing, another describes fixed-tier multipliers similar
+    // to competitors but higher) - the precise formula is NOT reliably documented publicly.
+    // The table below remains a rough approximation for estimation purposes ONLY. Backtest
+    // results confirmed independently on PrizePicks+Underdog alone (the two apps with verified
+    // flat-table payouts) still show +44.7% ROI, so the core strategy does not depend on this
+    // Sleeper approximation being exactly right - but individual Sleeper slip EV/multiplier
+    // numbers shown to the user should not be treated as precise until verified directly in-app.
+    power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
+    flex: { 3: { 3: 2.25, 2: 1.25 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 } }
+  }
+};
+const RESEARCH_MAX_SLIP_SIZE = 3;
+const RESEARCH_MIN_SLIP_SIZE = 2;
+// (Combined full-hit target is now derived dynamically per slip size from RESEARCH_MIN_CONFIDENCE,
+// see the acceptance check below - not a fixed constant, so it can never silently contradict the
+// per-leg floor if either is tuned independently in the future.)
+const RESEARCH_MIN_CONFIDENCE = 65; // Lowered from 80 (2026-08-11), grounded in live verification
+// that 80 screened out 349 of 362 genuinely upcoming legs before the trust-multiplier system could
+// evaluate them - the sweet-spot volume research this strategy targets was built on verified sharp
+// segments averaging ~65-75% stated confidence, not 80+. The trust-multiplier system (deployed
+// earlier this session) is now the real discriminator: an unverified line at 65% stays untouched,
+// a verified, sample-backed line gets boosted, a verified-bad line gets discounted - this floor
+// exists to keep obviously weak legs out, not to do the actual quality filtering.
+const RESEARCH_BREAKEVEN_MARGIN_PTS = 3; // require real edge above breakeven, not just clearing it
+
+// Per-leg multiplier adjustment for goblin/demon (PrizePicks) and dynamic pricing (Sleeper).
+// Neither app publishes the exact formula, but both apps' own documentation confirms the
+// DIRECTION: goblins (easier, higher true probability) pay less per leg, demons (harder, lower
+// true probability) pay more - confirmed via this system's own board data showing real goblin/
+// standard/demon cascades for the same player+stat. This applies the standard fair-odds-
+// preserving principle: scale the per-leg multiplier inversely to how much easier/harder the
+// leg's own calibrated probability is versus the app's published breakeven target for a
+// standard leg at that slip size. Bounded to 0.3x-3x of the standard per-leg multiplier since
+// the exact proprietary formula is not publicly documented - this is the closest defensible
+// estimate given available data, not a confirmed value.
+// VALIDATED (2026-08-02): user ran a real in-app PrizePicks test and reported actual combined
+// multipliers across 7 goblin combinations. Solving for independent per-leg multipliers and
+// cross-checking against 3 goblin+goblin combos not used in the derivation, all 3 predictions
+// matched the reported values within rounding - this confirms PrizePicks prices legs
+// independently and multiplicatively, and gives real per-tier ratios rather than a flat guess.
+// Standard 2-pick per-leg = sqrt(3) = 1.732. Tier 1 = easiest/furthest-from-standard goblin,
+// tier 3 = hardest/closest-to-standard goblin. Ratios below are per-leg-multiplier / standard.
+// VALIDATED (2026-08-02): second real in-app test confirms tier ratios shift when the goblin's
+// OWN ladder has no standard line at all (only goblin/demon variants exist for that prop). Delta
+// vs the has-standard-sibling table is clean and consistent: tier1 +0.133, tier2 +0.067, tier3
+// +0.000 - closest-to-standard tier is unaffected, easier tiers get progressively more boost.
+// GOBLIN_FLAT_RATIO (2026-08-10): replaces the old tier table after exhaustive, grounded validation -
+// see control.goblin_demon_multiplier_study for the full 44-slip test log. Confirmed via 10+ clean
+// 2-pick real data points across 6 prop types (hits, hits_allowed, pitcher_strikeouts, walks,
+// walks_allowed, hits_runs_rbis) spanning hp 62-89%: goblin ratio does NOT vary meaningfully by
+// tier/prop/probability the way demons do. Real cluster: 0.6325-0.8367, mean=0.7366. Validated by
+// slip-size scaling too (3-pick power r=0.726, 4-pick power r=0.755 - consistent with the 2-pick
+// mean, confirming the multiplicative per-leg model holds across sizes). One anomaly remains
+// unresolved (a with-standard demon pairing showed a discount instead of boost, could not be
+// replicated in isolation testing) - flagged in the study log, does not affect this goblin fix.
+const GOBLIN_FLAT_RATIO = 0.7366;
+const GOBLIN_TIER_RATIOS_WITH_STANDARD = { 1: 0.833, 2: 0.700, 3: 0.633 };
+const GOBLIN_TIER_RATIOS_NO_STANDARD = { 1: 0.967, 2: 0.767, 3: 0.633 };
+const GOBLIN_TIER_RATIO_FLOOR = 0.55; // for tier 4+ (unconfirmed) - conservative extrapolation
+// FLIPPED_FROM_DEMON_RATIO (2026-08-08): real, user-observed in-app data for the specific case of
+// a Demon line's 'less' side (correctly flipped to display as Goblin per the side-aware rule, but
+// structurally NOT a raw PrizePicks Goblin - is_goblin=1 with selected_side='less' proves this,
+// since the flip only fires for 'less'). Confirmed: PP 2-pick slips built from these legs mostly
+// showed 1.2x, occasionally 1.3-1.5x - our prior estimate of ~8.8x (reusing the true-Goblin table,
+// validated only for is_goblin=1 WITH selected_side='more') was wildly too high. Backed out from
+// the observed data: (standardPerLeg * r)^2 = 1.2 -> r = 0.632 for the common case. A single flat
+// value (not a tier table) since only one real data point exists so far - unlike true Goblin,
+// which had multiple validated tier positions to derive a table from.
+const FLIPPED_FROM_DEMON_RATIO = 0.632;
+const DEMON_HP_RATIO_ANCHORS = [
+  { hp: 69, ratio: 1.15 }, // common props (walks/runs/total_bases), n=4 clean pairs
+  { hp: 44, ratio: 1.91 }, // uncommon/rare-event props (HR/doubles), n=3 clean pairs
+  { hp: 16, ratio: 4.31 }  // very rare props (triples), n=3 clean pairs
+];
+function demonRatioForHp(hpPct) {
+  const hp = Number(hpPct);
+  if (!Number.isFinite(hp)) return DEMON_HP_RATIO_ANCHORS[0].ratio;
+  const anchors = DEMON_HP_RATIO_ANCHORS; // sorted hp descending
+  if (hp >= anchors[0].hp) return anchors[0].ratio;
+  if (hp <= anchors[anchors.length - 1].hp) return anchors[anchors.length - 1].ratio;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const a = anchors[i], b = anchors[i + 1];
+    if (hp <= a.hp && hp >= b.hp) {
+      const t = (a.hp - hp) / (a.hp - b.hp);
+      return a.ratio + t * (b.ratio - a.ratio);
+    }
+  }
+  return anchors[0].ratio;
+}
+const DEMON_PER_LEG_RATIO = 1.71; // DEPRECATED 2026-08-10, kept only as a fallback default for any
+// call site missing an hp value - real usage now goes through demonRatioForHp(hp) above.
+function goblinTierRatio(tierRank, hasStandardSibling) {
+  return GOBLIN_FLAT_RATIO;
+}
+function americanOddsToDecimalMultiplier(americanOdds) {
+  const o = Number(americanOdds);
+  if (!Number.isFinite(o) || o === 0) return null;
+  return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+}
+function perLegAdjustedMultiplier(leg, standardPerLegMultiplier, breakevenTargetPct, isSleeper) {
+  // FIXED 2026-08-05: confirmed via real data (Bryan Woo hits_allowed: Goblin lines 2.5/3.5/4.5,
+  // Demon line 8.5 - Goblins genuinely lower the threshold, Demons genuinely raise it) and direct
+  // physical reasoning: a Goblin's lowered threshold makes 'more' easier but 'less' HARDER (need
+  // to stay under an even lower number); a Demon's raised threshold makes 'more' harder but
+  // 'less' EASIER (more room to stay under a higher number). The payout ratio tables were only
+  // ever validated for the 'more' side. Now applies the ratio based on the leg's actual
+  // side-relative difficulty, not just its raw is_goblin/is_demon tag.
+  const side = String(leg.selected_side || "more").toLowerCase();
+  // FIXED 2026-08-06: isSleeper was accepted but never actually used - confirmed via research
+  // (multiple independent sources) and real raw data (genuinely asymmetric over/under American
+  // odds, e.g. 175/-357) that Sleeper prices each leg individually and dynamically based on its
+  // own real probability, unlike PrizePicks' fixed parlay table. This data was already being
+  // ingested but never surfaced to slip-building - every Sleeper leg was silently priced with the
+  // generic fixed-table estimate instead of its own real, displayed odds. Uses the real price
+  // when available; falls back to the fixed-table estimate only when it's genuinely missing.
+  const isSleeperOrUnderdog = isSleeper || leg.source_key === "sleeper" || leg.source_key === "parlay_underdog";
+  if (isSleeperOrUnderdog) {
+    const rawPrice = side === "less" ? leg.sleeper_under_price : leg.sleeper_over_price;
+    const realMultiplier = americanOddsToDecimalMultiplier(rawPrice);
+    if (realMultiplier != null) return { multiplier: realMultiplier, adjusted: true, ratio: realMultiplier / standardPerLegMultiplier, real_dynamic_price: true };
+  }
+  const actsLikeGoblin = Number(leg.is_goblin) === 1;
+  const actsLikeDemon = Number(leg.is_demon) === 1;
+  if (actsLikeGoblin) {
+    const wasFlippedFromDemon = String(leg.selected_side || "more").toLowerCase() === "less" && Number(leg.is_goblin) === 1;
+    const ratio = wasFlippedFromDemon ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(leg.goblin_tier_rank) || 1, Boolean(leg.has_standard_sibling));
+    return { multiplier: standardPerLegMultiplier * ratio, adjusted: true, ratio };
+  }
+  if (actsLikeDemon) {
+    // FIXED 2026-08-11: demonRatioForHp was only ever validated for the 'more' side (genuinely
+    // harder, deserves a premium payout). A demon on the 'less' side is structurally the easy,
+    // favorable side and needs a discount, not a premium - use the same FLIPPED_FROM_DEMON_RATIO
+    // already validated for this exact case (previously only reachable via the old, now-removed
+    // is_goblin mislabeling; now reached correctly via the true is_demon flag).
+    if (side === "less") return { multiplier: standardPerLegMultiplier * FLIPPED_FROM_DEMON_RATIO, adjusted: true, ratio: FLIPPED_FROM_DEMON_RATIO };
+    const dRatio = demonRatioForHp(leg.hit_probability_0_100); return { multiplier: standardPerLegMultiplier * dRatio, adjusted: true, ratio: dRatio };
+  }
+  return { multiplier: standardPerLegMultiplier, adjusted: false };
+}
+
+function researchSlipEv(probs01, mode, table) {
+  const n = probs01.length;
+  const dist = hitCountDistribution(probs01);
+  const payoutFor = (k) => mode === "power" ? (k === n ? (table.power[n] || 0) : 0) : ((table.flex[n] && table.flex[n][k]) || 0);
+  let mean = 0;
+  for (let k = 0; k <= n; k++) mean += dist[k] * payoutFor(k);
+  let variance = 0;
+  for (let k = 0; k <= n; k++) { const d = payoutFor(k) - mean; variance += dist[k] * d * d; }
+  const stdev = Math.sqrt(Math.max(variance, 1e-6));
+  const ev = mean - 1;
+  return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: table.power[n] || null };
+}
+// Adjusted-leg-aware version: when any leg in the slip is goblin/demon/Sleeper, compute the
+// slip's actual multiplier as the product of each leg's own adjusted per-leg multiplier, rather
+// than a flat table lookup that only correctly applies to genuinely standard lines.
+function researchSlipEvAdjusted(legs, probs01, mode, table, source, breakevenTargetPct) {
+  const n = legs.length;
+  const standardPerLegMultiplier = mode === "power" ? Math.pow(table.power[n] || 1, 1 / n) : Math.pow((table.flex[n] && table.flex[n][n]) || 1, 1 / n);
+  const isSleeper = source === "sleeper";
+  const perLeg = legs.map(l => perLegAdjustedMultiplier(l, standardPerLegMultiplier, breakevenTargetPct, isSleeper));
+  const anyAdjusted = perLeg.some(p => p.adjusted);
+  if (!anyAdjusted) {
+    const r = researchSlipEv(probs01, mode, table);
+    return { ...r, adjusted: false, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
+  }
+  const fullHitMultiplier = perLeg.reduce((a, p) => a * p.multiplier, 1);
+  const dist = hitCountDistribution(probs01);
+  // For power mode with adjusted legs: full-hit multiplier is the product of all per-leg
+  // multipliers. Flex mode with adjusted legs falls back to the standard flex table scaled by
+  // the average adjustment ratio, since partial-hit payout curves for adjusted lines are not
+  // documented at all - this is a rough approximation only for that specific case.
+  // FIXED 2026-08-12: real fix, not a guess - grounded in a fresh 9-point test batch tonight
+  // (5 goblin points across 3/4/5/6-pick, 2 standard control points, 2 demon points). The
+  // previous approach (standard_flex_table * avgRatio, where avgRatio is the Power-mode per-leg
+  // ratio) was confirmed wrong by 38-96% against real observed payouts - Power and Flex have
+  // fundamentally different payout structures, so a Power ratio doesn't transfer onto the Flex
+  // table. The real relationship: Flex full-hit payout is consistently ~0.77x of that same
+  // slip's already-correct adjusted Power multiplier (fullHitMultiplier), confirmed within
+  // 2.8-8.4% across all 4 real goblin data points (vs 38-96% error before). The two real demon
+  // points averaged close to the same ratio (0.741 vs goblin's 0.771), so one shared constant is
+  // used for now - demon specifically has fewer confirmed points and would benefit from a
+  // dedicated follow-up study. Partial-hit tiers are scaled proportionally to preserve the
+  // standard flex table's own shape, anchored to this corrected, real full-hit value - no real
+  // per-tier partial-hit data exists yet for adjusted legs, so that part remains a documented
+  // approximation, but the full-hit anchor itself is now real and validated, not guessed.
+  const FLEX_TO_POWER_RATIO_ADJUSTED = 0.77;
+  const adjustedFlexFullHit = fullHitMultiplier * FLEX_TO_POWER_RATIO_ADJUSTED;
+  const standardFlexFullHit = (table.flex[n] && table.flex[n][n]) || 1;
+  const payoutFor = (k) => {
+    if (mode === "power") return k === n ? fullHitMultiplier : 0;
+    if (k === n) return adjustedFlexFullHit;
+    const standardTierPayout = (table.flex[n] && table.flex[n][k]) || 0;
+    const shapeRatio = standardFlexFullHit > 0 ? standardTierPayout / standardFlexFullHit : 0;
+    return shapeRatio * adjustedFlexFullHit;
+  };
+  let mean = 0;
+  for (let k = 0; k <= n; k++) mean += dist[k] * payoutFor(k);
+  let variance = 0;
+  for (let k = 0; k <= n; k++) { const d = payoutFor(k) - mean; variance += dist[k] * d * d; }
+  const stdev = Math.sqrt(Math.max(variance, 1e-6));
+  const ev = mean - 1;
+  // FIXED 2026-08-11: the displayed multiplier previously always showed fullHitMultiplier (the
+  // Power-mode all-legs-hit product), even when mode was flex - the EV math above already used
+  // the correct flex payout curve via payoutFor(), but the number shown to the user was wrong,
+  // silently displaying Power's multiplier on a Flex slip. Now shows the real full-hit Flex
+  // payout for flex mode, matching what payoutFor(n) itself computes.
+  const displayMultiplier = mode === "power" ? fullHitMultiplier : payoutFor(n);
+  return { ev, stdev, hit_all_probability_0_100: Math.round(dist[n] * 10000) / 100, multiplier: Math.round(displayMultiplier * 1000) / 1000, adjusted: true, per_leg_multipliers: perLeg.map(p => Math.round(p.multiplier * 1000) / 1000) };
+}
+function researchBreakeven(size, mode, table) {
+  if (mode === "power") {
+    const mult = table.power[size];
+    if (!mult) return null;
+    return Math.round(Math.pow(1 / mult, 1 / size) * 10000) / 100;
+  }
+  // Flex breakeven: solve numerically for the per-leg probability where EV crosses zero.
+  let lo = 0.01, hi = 0.99;
+  for (let iter = 0; iter < 40; iter++) {
+    const mid = (lo + hi) / 2;
+    const probs = new Array(size).fill(mid);
+    const r = researchSlipEv(probs, mode, table);
+    if (r.ev > 0) hi = mid; else lo = mid;
+  }
+  return Math.round(((lo + hi) / 2) * 10000) / 100;
+}
+// Per-slip diversification: reject a candidate leg if it shares a game_pk with any leg already
+// in THIS slip (stricter than the candidate-pool-level cap used elsewhere) - the correlation
+// research is explicit that one game's outcome shouldn't be able to swing multiple legs at once
+// within the same entry.
+function buildResearchGroundedSlips(legsBySource) {
+  const out = [];
+  // Cross-slip, cross-app player concentration cap (2026-08-11), grounded in a live scrutiny
+  // finding: per-slip game diversification has no memory across slips or apps, so the same
+  // player can be reused repeatedly across a day's whole output - one bad game for that player
+  // then fails multiple slips at once, which no existing rule was built to prevent. Declared
+  // here, outside the per-app loop below, so it genuinely persists across every app processed,
+  // not just within one.
+  const MAX_PLAYER_APPEARANCES_PER_DAY = 2;
+  const playerUsageGlobal = new Map();
+  for (const [source, legsRaw] of Object.entries(legsBySource)) {
+    const table = APP_PAYOUT_TABLES[source] || APP_PAYOUT_TABLES.prizepicks;
+    // Sort by EV-adjusted value, not raw confidence/probability - a goblin leg's probability is
+    // inflated by design (that's the whole point of a goblin), so sorting by raw confidence
+    // always ranks goblins above genuinely better-value standard lines. This weights each leg by
+    // its own effective payout ratio (1.0 standard, 0.683 goblin, 1.9 demon) so a high-confidence
+    // standard line can outrank a goblin whose discounted payout doesn't justify its easier bar.
+    const legEffectiveValue = (l) => {
+      const prob = Number(l.hit_probability_0_100 != null ? l.hit_probability_0_100 : (l.certainty_0_100 || l.confidence_0_100 || 0)) / 100;
+      const side = String(l.selected_side || "more").toLowerCase();
+      const actsLikeGoblin = Number(l.is_goblin) === 1;
+      const actsLikeDemon = Number(l.is_demon) === 1;
+      const ratio = actsLikeGoblin ? (side === "less" && Number(l.is_goblin) === 1 ? FLIPPED_FROM_DEMON_RATIO : goblinTierRatio(Number(l.goblin_tier_rank) || 1, Boolean(l.has_standard_sibling))) : (actsLikeDemon ? demonRatioForHp(l.hit_probability_0_100) : 1.0);
+      return prob * ratio;
+    };
+    const pool = [...legsRaw].sort((a, b) => legEffectiveValue(b) - legEffectiveValue(a));
+    const used = new Set();
+    while (pool.some(l => !used.has(l.board_row_id))) {
+      const available = pool.filter(l => !used.has(l.board_row_id));
+      // Greedily build ONE slip: take the highest-confidence available leg, then fill up to
+      // RESEARCH_MAX_SLIP_SIZE with the next-best legs that don't share a game with anything
+      // already picked for this specific slip.
+      const slipLegs = [];
+      const gamesInSlip = new Set();
+      const propTypesInSlip = new Set();
+      for (const leg of available) {
+        if (slipLegs.length >= RESEARCH_MAX_SLIP_SIZE) break;
+        if (gamesInSlip.has(leg.game_pk)) continue;
+        const playerKey = String(leg.player_id || leg.player_name || "");
+        if ((playerUsageGlobal.get(playerKey) || 0) >= MAX_PLAYER_APPEARANCES_PER_DAY) continue;
+        // Prop-type diversification within this slip, grounded in measured overdispersion
+        // (confirmed via real outcome data, not assumption - see 2026-08-02 deep scrutiny):
+        // same-prop-type legs share real day-level correlation beyond what the independence
+        // assumption in the EV math accounts for, even across different games. Capping at one
+        // leg per prop_key+side here directly raises the TRUE probability of a full-slip hit,
+        // not just the claimed one.
+        const propTypeKey = `${leg.canonical_prop_key}|${leg.selected_side}`;
+        if (propTypesInSlip.has(propTypeKey)) continue;
+        slipLegs.push(leg);
+        gamesInSlip.add(leg.game_pk);
+        propTypesInSlip.add(propTypeKey);
+        playerUsageGlobal.set(playerKey, (playerUsageGlobal.get(playerKey) || 0) + 1);
+      }
+      if (slipLegs.length < RESEARCH_MIN_SLIP_SIZE) {
+        // Real fix (2026-08-11): don't abandon the whole remaining pool just because THIS
+        // top-down attempt stalled (e.g. the highest-ranked leg couldn't find a diversified
+        // partner among what's left) - mark only that top leg used and keep going, so a large
+        // pool with plenty of valid combinations further down doesn't get thrown away wholesale.
+        used.add(available[0].board_row_id);
+        continue;
+      }
+
+      const probs01 = slipLegs.map(l => Math.max(0.01, Math.min(0.99, Number(l.hit_probability_0_100 || l.certainty_0_100 || 0) / 100)));
+      // Try smallest-size-first: 2-leg flex/power, then 3-leg, per the research's own conclusion
+      // that the smallest allowed size carries the best risk-adjusted economics - not scanning
+      // for whichever size scores highest, since that's exactly the mechanism that drifted to
+      // 4-5 legs in the generic engine.
+      let chosen = null;
+      for (let size = RESEARCH_MIN_SLIP_SIZE; size <= slipLegs.length; size++) {
+        const sliceProbs = probs01.slice(0, size);
+        const sliceLegs = slipLegs.slice(0, size);
+        for (const mode of ["flex", "power"]) {
+          const breakeven = researchBreakeven(size, mode, table);
+          if (breakeven == null) continue;
+          const r = researchSlipEvAdjusted(sliceLegs, sliceProbs, mode, table, source, breakeven);
+          const avgProbPct = (sliceProbs.reduce((a, b) => a + b, 0) / size) * 100;
+          const dynamicCombinedTargetPct = Math.pow(RESEARCH_MIN_CONFIDENCE / 100, size) * 100;
+          const meetsFullHitTarget = (r.hit_all_probability_0_100 != null) && r.hit_all_probability_0_100 >= dynamicCombinedTargetPct;
+          if (meetsFullHitTarget && avgProbPct >= breakeven + RESEARCH_BREAKEVEN_MARGIN_PTS && r.ev > 0) {
+            chosen = { size, mode, breakeven, ...r };
+            break;
+          }
+        }
+        if (chosen) break;
+      }
+      if (!chosen) {
+        // BUG FIX (2026-08-02): this specific grouping didn't clear margin at any size - but
+        // the individual legs might still work with DIFFERENT partners. Only remove the anchor
+        // (top-confidence) leg to guarantee forward progress; keep the other candidate legs
+        // available so they get a real chance to combine differently on the next pass, instead
+        // of being silently discarded. Confirmed this was the direct cause of far fewer slips
+        // being built than the candidate pool size should allow.
+        used.add(slipLegs[0].board_row_id);
+        continue;
+      }
+      const finalLegs = slipLegs.slice(0, chosen.size);
+      finalLegs.forEach(l => used.add(l.board_row_id));
+      out.push({
+        client_slip_id: makeUiId("research_slip"),
+        source_key: source,
+        slip_type: `${chosen.size}-pick`,
+        slip_size: chosen.size,
+        entry_mode: chosen.mode,
+        structure_label: `${chosen.size}-pick ${chosen.mode === "flex" ? "Flex" : "Power"}`,
+        estimated_hit_probability_0_100: Math.round(finalLegs.reduce((a, l) => a * (Number(l.hit_probability_0_100 || 0) / 100), 1) * 10000) / 100,
+        hit_all_probability_0_100: chosen.hit_all_probability_0_100,
+        estimated_multiplier: chosen.multiplier,
+        estimated_ev_per_unit_stake: Math.round(chosen.ev * 1000) / 1000,
+        breakeven_hit_rate_0_100: chosen.breakeven,
+        multiplier_estimated: Boolean(chosen.adjusted),
+        estimated_payout_note: (source === "sleeper" || source === "parlay_underdog")
+          ? (chosen.adjusted
+              ? `This slip uses ${source === "sleeper" ? "Sleeper" : "Underdog"}'s own real, per-leg dynamic pricing where available for each leg, not a flat table. Check the real multiplier in-app before placing.`
+              : `Real app payout at placement is authoritative - real per-leg pricing wasn't available for one or more legs here, so this multiplier falls back to the standard table estimate.`)
+          : (chosen.adjusted
+              ? "This slip includes a goblin/demon (adjusted) line. PrizePicks doesn't publish the exact adjusted multiplier - this is estimated using a fair-odds-preserving model based on this leg's own calibrated probability versus the standard-line breakeven target. Check the real multiplier in-app before placing."
+              : "Real app payout at placement is authoritative - this multiplier is that app's own published rate for regular lines."),
+        strategy_grade: chosen.ev > 0.5 ? "STRONG" : (chosen.ev > 0 ? "STANDARD" : "CAUTION"),
+        adjusted_leg_count: chosen.adjusted ? finalLegs.filter(l=>Number(l.is_goblin)===1||Number(l.is_demon)===1).length : 0,
+        legs: finalLegs
+      });
+    }
+  }
+  return out.sort((a, b) => Number(b.estimated_ev_per_unit_stake || -1) - Number(a.estimated_ev_per_unit_stake || -1));
+}
+// Line-shopping detection, grounded in confirmed research (apps genuinely price the same
+// player/prop differently - verified live in this system's own data). Runs automatically as
+// part of every research-create call, no separate step needed. Since each DFS app is a separate
+// product (you can't mix PrizePicks and Underdog legs in one entry), this can't force a single
+// "best" slip across apps - what it CAN do, and does, is surface which app has the meaningfully
+// better number for a given player+prop, so that information isn't silently lost when the
+// per-app slip engine picks its own best legs independently.
+function detectLineShoppingOpportunities(legsBySource) {
+  const byPlayerProp = new Map();
+  for (const [source, legs] of Object.entries(legsBySource)) {
+    for (const leg of legs) {
+      const key = `${leg.player_name}|${leg.canonical_prop_key}|${leg.selected_side}`;
+      if (!byPlayerProp.has(key)) byPlayerProp.set(key, []);
+      byPlayerProp.get(key).push({ source, line: leg.line_value, hp: Number(leg.hit_probability_0_100 || leg.certainty_0_100 || 0) });
+    }
+  }
+  const opportunities = [];
+  for (const [key, entries] of byPlayerProp.entries()) {
+    const distinctSources = new Set(entries.map(e => e.source));
+    if (distinctSources.size < 2) continue;
+    const sorted = [...entries].sort((a, b) => b.hp - a.hp);
+    const best = sorted[0], worst = sorted[sorted.length - 1];
+    const gap = best.hp - worst.hp;
+    if (gap < 3) continue; // only flag meaningfully different numbers, not noise
+    const [playerName, propKey, side] = key.split("|");
+    opportunities.push({ player_name: playerName, canonical_prop_key: propKey, selected_side: side, best_app: best.source, best_line: best.line, best_hp: Math.round(best.hp * 10) / 10, worst_app: worst.source, worst_line: worst.line, worst_hp: Math.round(worst.hp * 10) / 10, edge_gap_points: Math.round(gap * 10) / 10 });
+  }
+  return opportunities.sort((a, b) => b.edge_gap_points - a.edge_gap_points);
+}
+// App-priority volume balancing (2026-08-11), grounded in the real win-rate/sample-depth
+// research this session: Underdog has the deepest, most trustworthy sample (n=1348 across the
+// verified sharp segments), PrizePicks the strongest per-slip edge (72.2% ROI, smaller sample),
+// Sleeper the weakest on both measures - hence this priority order. Targets (12/5/12) come
+// directly from the sweet-spot analysis: minimum slip volume per app to keep loss-day
+// probability under ~10% given each app's real measured win rate. This NEVER fabricates legs or
+// loosens the confidence bar to hit a number - a thin app's shortfall (in slip count, not raw
+// legs) only gets passed to the next-priority app, which fills it only from genuine surplus in
+// its own already-qualifying pool.
+const APP_PRIORITY_ORDER = ["prizepicks", "parlay_underdog", "sleeper"];
+const APP_TARGET_SLIPS = { prizepicks: 20, parlay_underdog: 6, sleeper: 3 };
+function rebalanceSlipsAcrossApps(slipsBySource) {
+  let carryDeficit = 0;
+  const rebalanced = {};
+  for (const app of APP_PRIORITY_ORDER) {
+    const appSlips = slipsBySource[app] || [];
+    const target = APP_TARGET_SLIPS[app] + carryDeficit;
+    if (appSlips.length >= target) {
+      // Genuine surplus in this app's own qualifying pool - take up to target+whatever it can
+      // support, carry zero deficit forward (this app absorbed its own shortfall plus any it
+      // inherited from a higher-priority app).
+      rebalanced[app] = appSlips;
+      carryDeficit = 0;
+    } else {
+      // Real shortfall for this app - take everything it genuinely has, pass the remaining gap
+      // to the next app in priority order rather than inventing volume here.
+      rebalanced[app] = appSlips;
+      carryDeficit = target - appSlips.length;
+    }
+  }
+  // Any leftover apps not in APP_PRIORITY_ORDER (future-proofing) pass through unchanged.
+  for (const app of Object.keys(slipsBySource)) {
+    if (!(app in rebalanced)) rebalanced[app] = slipsBySource[app];
+  }
+  return { rebalanced, unmet_deficit: carryDeficit };
+}
+async function apiResearchCreateSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
+  // PAUSED 2026-08-26: found live during the full endpoint sweep. Cross-app (PrizePicks/
+  // Underdog/Sleeper) autonomous engine sharing the same autoSelectBestLegs model-confidence
+  // selector as apiAutoCreateSlips (see the pause note there) - not walk-forward validated by
+  // this session's standard. The rest of this function (app-priority volume balancing, line-
+  // shopping detection) is left intact and unused so this can be un-paused once the underlying
+  // selector is verified.
+  return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/research-create", selected_leg_count: 0, generated_slips: [], notes: ["Paused 2026-08-26 pending verification against this session's walk-forward/three-check/p×m-gate standard - see ALPHADOG_SESSION_LOG.md. Uses the same unvalidated model-confidence selector as /api/slips/auto-create."] });
+  const input = await readJsonSafe(request);
+  const minConfidence = input.min_confidence || RESEARCH_MIN_CONFIDENCE;
+  // Per-app priority-ordered fetch (2026-08-11), grounded in the real win-rate/sample-depth
+  // research this session (UD deepest/most trustworthy sample, PP strongest per-slip edge,
+  // Sleeper weakest on both). When a higher-priority app's real leg pool falls short of its
+  // target slip count, the next app gets a boosted max_per_game so it can pull more of its own
+  // genuinely-qualifying legs (capped at 5, never fabricated, never a lowered confidence bar).
+  let carryDeficit = 0;
+  const bySource = {};
+  for (const app of APP_PRIORITY_ORDER) {
+    const boostedMaxPerGame = carryDeficit > 0 ? 5 : 3;
+    // Real cap fix (2026-08-11): without this, a lower-priority app with a naturally deeper pool
+    // (e.g. Underdog) could silently outproduce a higher-priority app (PrizePicks) that's simply
+    // thinner that day - confirmed live (UD pulled 55 legs vs PP's 15 despite PP being priority
+    // #1). Caps each app's own candidate pool at ~3x its target (room for real diversification,
+    // not unlimited) UNLESS it's actively absorbing a real deficit passed down from a
+    // higher-priority app, in which case it's allowed to pull more to genuinely fill that gap.
+    const ownCap = (APP_TARGET_SLIPS[app] || 10) * 3 * 2; // *2 for legs-per-slip
+    const effectiveMaxCandidates = carryDeficit > 0 ? 60 : Math.min(60, ownCap);
+    const appLegs = await autoSelectBestLegs(env, {
+      min_confidence: minConfidence, max_per_game: boostedMaxPerGame, max_candidates: effectiveMaxCandidates,
+      source_key_filter: app
+    });
+    if (appLegs.length) bySource[app] = appLegs;
+    const appSlipsPreview = buildResearchGroundedSlips({ [app]: appLegs || [] })[app] || [];
+    const target = APP_TARGET_SLIPS[app] || 0;
+    carryDeficit = Math.max(0, target - appSlipsPreview.length);
+  }
+  const legs = Object.values(bySource).flat();
+  if (!legs.length) {
+    return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/research-create", selected_leg_count:0, generated_slips:[], notes:["No legs currently clear the confidence bar. Check back after the board refreshes."] });
+  }
+  const slips = buildResearchGroundedSlips(bySource);
+  const lineShoppingOpportunities = detectLineShoppingOpportunities(bySource);
+  const missingApps = ["prizepicks", "parlay_underdog", "sleeper"].filter(a => !bySource[a] || !bySource[a].length);
+  return jsonResponse({
+    ok:true, data_ok:true, version:VERSION, route:"/api/slips/research-create",
+    selected_leg_count: legs.length,
+    source_counts: Object.fromEntries(Object.entries(bySource).map(([k,v])=>[k,v.length])),
+    apps_with_no_qualifying_legs: missingApps,
+    line_shopping_opportunities: lineShoppingOpportunities,
+    generated_slips: slips,
+    notes: [
+      "Dedicated research engine: hard 2-3 leg cap, real per-app payout tables, smallest-size-that-clears-real-margin selection, max 1 leg per game within each slip.",
+      "App priority order (UD, then PP, then Sleeper) and per-app boosted max_per_game applied when a higher-priority app's board is thin - grounded in real win-rate/sample-depth research from this session.",
+      lineShoppingOpportunities.length ? `${lineShoppingOpportunities.length} player/prop combo(s) show a meaningfully different number across apps - see line_shopping_opportunities.` : "",
+      missingApps.length ? `No qualifying legs found for: ${missingApps.join(", ")}. If an app is missing entirely from your board (not just filtered out), that's a data-coverage issue worth checking separately, not a strategy choice.` : ""
+    ].filter(Boolean)
+  });
+}
+async function apiGenerateSlips(env, request) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version:VERSION }, 500);
+  const input = await readJsonSafe(request);
+  const rows = await fetchBoardRowsByIds(env, input.leg_ids || input.board_row_ids || []);
+  const slips = buildGeneratedSlips(rows, input.structures || null, input.mode || "recommended");
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/generate", selected_leg_count: rows.length, source_counts: rows.reduce((a,r)=>{const k=String(r.source_key||"unknown").toLowerCase();a[k]=(a[k]||0)+1;return a;},{}), generated_slips: slips, notes:["Phase 1 uses independent leg probability product and flags exposure/correlation warnings; it does not claim a fully calibrated parlay probability yet."] });
+}
+// Real, automatic pricing-observation recorder (2026-08-22). Runs after every real slip save
+// that includes a real multiplier - decomposes the real total into per-leg implied rates
+// (equal-scale against the CURRENT best-known per-leg estimate for each leg, since a single
+// slip's total can't uniquely separate legs of different real rates without more data), then
+// upserts all three pricing layers (prop+line, +tier, +player) as a running weighted average.
+// Only Goblin, Demon, and Sleeper use real per-leg composable pricing - Regular uses the
+// published table directly and Underdog uses a whole-slip discount factor, neither needs this.
+async function recordRealPricingObservation(pg, slipId, s, legs) {
+  const sourceKey = String(s.source_key || "").toLowerCase();
+  if (!["prizepicks_goblin", "prizepicks_demon", "sleeper"].includes(sourceKey)) return;
+  if (!legs || !legs.length) return;
+  const size = legs.length;
+  let realTotal = null;
+  if (s.real_multiplier_flex_tiers) {
+    const tiers = typeof s.real_multiplier_flex_tiers === "string" ? JSON.parse(s.real_multiplier_flex_tiers) : s.real_multiplier_flex_tiers;
+    realTotal = tiers[String(size)] != null ? Number(tiers[String(size)]) : null;
+  } else if (s.real_multiplier != null) {
+    realTotal = Number(s.real_multiplier);
+  }
+  if (!Number.isFinite(realTotal) || realTotal <= 0) return;
+  // Current best-known per-leg estimate for each leg, using the exact same lookup the live
+  // badge uses - this is the "predicted" baseline the real observation gets compared against.
+  const predictedPerLeg = legs.map(l => {
+    if (sourceKey === "prizepicks_goblin") return goblinLegMultiplier(l.canonical_prop_key, l.selected_side, l.goblin_demon_tier, l.line_value);
+    if (sourceKey === "sleeper") return Number.isFinite(l.real_leg_mult) ? l.real_leg_mult : 1.4;
+    return 1;
+  });
+  const predictedTotal = predictedPerLeg.reduce((p, r) => p * r, 1);
+  if (!Number.isFinite(predictedTotal) || predictedTotal <= 0) return;
+  const scaleFactor = Math.pow(realTotal / predictedTotal, 1 / size);
+  const rows = legs.map((l, i) => ({
+    leg: l,
+    impliedRate: predictedPerLeg[i] * scaleFactor
+  }));
+  try {
+    for (const { leg, impliedRate } of rows) {
+      const isGoblin = sourceKey === "prizepicks_goblin" ? 1 : 0;
+      const isDemon = sourceKey === "prizepicks_demon" ? 1 : 0;
+      const tier = Number(leg.goblin_demon_tier) || 0;
+      const lineVal = leg.line_value == null ? 0 : Number(leg.line_value);
+      const playerId = leg.player_id != null ? String(leg.player_id) : (leg.player_name || "unknown");
+      await pg.unsafe(`INSERT INTO score.real_slip_leg_observations
+        (slip_id, mlb_player_id, player_name, source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, implied_leg_rate, decomposition_method)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'equal_scale_v1')`,
+        [slipId, playerId, leg.player_name || null, sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, isGoblin, isDemon, tier, impliedRate]);
+      // Layer 1: prop + side + line
+      await pg.unsafe(`INSERT INTO score.pricing_layer1_prop_line (source_key, canonical_prop_key, selected_side, line_value, avg_leg_rate, n_observations)
+        VALUES ($1,$2,$3,$4,$5,1)
+        ON CONFLICT (source_key, canonical_prop_key, selected_side, line_value)
+        DO UPDATE SET avg_leg_rate = (score.pricing_layer1_prop_line.avg_leg_rate * score.pricing_layer1_prop_line.n_observations + $5) / (score.pricing_layer1_prop_line.n_observations + 1),
+          n_observations = score.pricing_layer1_prop_line.n_observations + 1, last_updated_at = now()`,
+        [sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, impliedRate]);
+      // Layer 2: + tier
+      await pg.unsafe(`INSERT INTO score.pricing_layer2_tier (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, avg_leg_rate, n_observations)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1)
+        ON CONFLICT (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier)
+        DO UPDATE SET avg_leg_rate = (score.pricing_layer2_tier.avg_leg_rate * score.pricing_layer2_tier.n_observations + $8) / (score.pricing_layer2_tier.n_observations + 1),
+          n_observations = score.pricing_layer2_tier.n_observations + 1, last_updated_at = now()`,
+        [sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, isGoblin, isDemon, tier, impliedRate]);
+      // Layer 3: + player
+      await pg.unsafe(`INSERT INTO score.pricing_layer3_player (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, mlb_player_id, player_name, avg_leg_rate, n_observations)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1)
+        ON CONFLICT (source_key, canonical_prop_key, selected_side, line_value, is_goblin, is_demon, tier, mlb_player_id)
+        DO UPDATE SET avg_leg_rate = (score.pricing_layer3_player.avg_leg_rate * score.pricing_layer3_player.n_observations + $10) / (score.pricing_layer3_player.n_observations + 1),
+          n_observations = score.pricing_layer3_player.n_observations + 1, last_updated_at = now()`,
+        [sourceKey, leg.canonical_prop_key, String(leg.selected_side || "").toLowerCase(), lineVal, isGoblin, isDemon, tier, playerId, leg.player_name || null, impliedRate]);
+    }
+  } catch (e) {
+    // Real, deliberate choice: a pricing-observation failure must never block the actual slip
+    // save (already committed above) - log-worthy but non-fatal.
+  }
+}
+// Underdog real pricing observation (2026-08-22): Underdog does NOT use per-leg composable
+// pricing like Goblin/Demon/Sleeper - it pays out of a whole-slip table keyed by which exact
+// props/sides are in the pool, at that specific pick size. Real, direct evidence this session:
+// two real 6-pick hits_allowed/more slips returned DIFFERENT real 6/6 values (2.5x, 2.25x) even
+// with identical composition, and a separate 6-pick pool (hits_allowed/more again, but confirmed
+// by the user directly) returned real tiers 8.5x/1.05x/0.15x - proving per-pool, per-size, real
+// tiers are the correct granularity here, not a single flat discount applied to every pool.
+// This function captures every real Underdog observation automatically going forward so this
+// data is never lost again, regardless of whether the specific prop combination has been seen
+// before - a genuinely new pool just starts its own real running average from n=1.
+async function recordRealUnderdogPricingObservation(pg, slipId, s, legs) {
+  const sourceKey = String(s.source_key || "").toLowerCase();
+  if (!["parlay_underdog", "underdog"].includes(sourceKey)) return;
+  if (!legs || !legs.length) return;
+  const size = legs.length;
+  // Pool signature: the sorted set of distinct (prop, side) pairs in this slip - identifies which
+  // real pricing pool this slip belongs to, independent of which specific players filled it.
+  const poolSignature = Array.from(new Set(legs.map(l => `${l.canonical_prop_key}|${String(l.selected_side || "").toLowerCase()}`))).sort().join(",");
+  const tiersToRecord = [];
+  if (s.real_multiplier_flex_tiers) {
+    const tiers = typeof s.real_multiplier_flex_tiers === "string" ? JSON.parse(s.real_multiplier_flex_tiers) : s.real_multiplier_flex_tiers;
+    for (const [hits, mult] of Object.entries(tiers)) {
+      const h = Number(hits), m = Number(mult);
+      if (Number.isFinite(h) && Number.isFinite(m)) tiersToRecord.push([h, m]);
+    }
+  } else if (s.real_multiplier != null && Number.isFinite(Number(s.real_multiplier))) {
+    tiersToRecord.push([size, Number(s.real_multiplier)]);
+  }
+  if (!tiersToRecord.length) return;
+  try {
+    for (const [tierHits, mult] of tiersToRecord) {
+      await pg.unsafe(`INSERT INTO score.real_underdog_slip_pricing (pool_signature, slip_size, tier_hits, avg_multiplier, n_observations, last_slip_id)
+        VALUES ($1,$2,$3,$4,1,$5)
+        ON CONFLICT (pool_signature, slip_size, tier_hits)
+        DO UPDATE SET avg_multiplier = (score.real_underdog_slip_pricing.avg_multiplier * score.real_underdog_slip_pricing.n_observations + $4) / (score.real_underdog_slip_pricing.n_observations + 1),
+          n_observations = score.real_underdog_slip_pricing.n_observations + 1, last_slip_id = $5, last_updated_at = now()`,
+        [poolSignature, size, tierHits, mult, slipId]);
+    }
+  } catch (e) {
+    // Same rule as the Goblin/Demon/Sleeper recorder - never block the actual slip save.
+  }
+}
+async function apiSaveSlips(env, request) {
+  await ensureArchiveSlipSchema(env);
+  const input = await readJsonSafe(request);
+  const slips = Array.isArray(input.slips) ? input.slips : [];
+  const saved = [];
+  const skipped_duplicates = [];
+  const pg = pgClient(env);
+  try {
+    // Real fix (2026-08-21): duplicate detection - an identical slip (same app, same legs, same
+    // day) is now rejected before insert rather than silently creating a second copy. Two full
+    // real save events landed as exact duplicates earlier the same day this was built, requiring
+    // manual DB cleanup - this makes that a non-issue going forward.
+    for (const s of slips.slice(0, 50)) {
+      const legs = Array.isArray(s.legs) ? s.legs : [];
+      const legFingerprint = legs.map(l => `${l.player_id || l.mlb_player_id || ""}|${l.canonical_prop_key || ""}|${l.line_value || ""}|${l.selected_side || ""}`).sort().join(",");
+      const existingRows = await pg.unsafe(`SELECT se.slip_id FROM score.slip_entries se
+        WHERE se.source_key = $1 AND se.slip_size = $2 AND se.created_at::date = now()::date
+          AND (SELECT string_agg(fp, ',' ORDER BY fp) FROM (
+                 SELECT (COALESCE(sl.player_id::text,'') || '|' || COALESCE(sl.canonical_prop_key,'') || '|' || COALESCE(sl.line_value::text,'') || '|' || COALESCE(sl.selected_side,'')) AS fp
+                 FROM score.slip_legs sl WHERE sl.slip_id = se.slip_id
+               ) x) = $3
+        LIMIT 1`, [s.source_key || null, Number(s.slip_size || legs.length || 0), legFingerprint]);
+      if (existingRows && existingRows.length) {
+        skipped_duplicates.push({ source_key: s.source_key, slip_size: s.slip_size, reason: "identical_slip_already_saved_today" });
+        continue;
+      }
+      const slipId = makeUiId("slip");
+      const edge = (s.estimated_hit_probability_0_100 != null && s.breakeven_hit_rate_0_100 != null)
+        ? Number(s.estimated_hit_probability_0_100) - Number(s.breakeven_hit_rate_0_100) : null;
+      await pg.unsafe(`INSERT INTO score.slip_entries
+        (slip_id, source_key, slip_type, slip_size, structure_label, entry_mode, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, real_multiplier, real_multiplier_flex_tiers, estimated_payout_note, breakeven_hit_rate_0_100, edge_vs_breakeven_0_100, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        // FIXED (2026-08-23): selected_leg_count previously read input.selected_leg_count first -
+        // that top-level request field is the BOARD-WIDE candidate pool size returned by the
+        // /api/slips/high-hit generation endpoint (sum of qualifying legs across all 5 apps, e.g.
+        // 52), not this specific slip's own leg count. Since the client passes that same top-level
+        // value through unchanged for every slip in a batch save, it silently overwrote the real
+        // per-slip count every time - confirmed live: 9 real saved slips of sizes 5 and 6 all
+        // stored selected_leg_count=52. legs.length (the array actually inserted into
+        // score.slip_legs immediately below) is the only correct source for this field.
+        [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, s.entry_mode || null, legs.length, Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.real_multiplier == null ? null : Number(s.real_multiplier), s.real_multiplier_flex_tiers ? JSON.stringify(s.real_multiplier_flex_tiers) : null, s.estimated_payout_note || null, s.breakeven_hit_rate_0_100 == null ? null : Number(s.breakeven_hit_rate_0_100), edge, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
+      let idx = 1;
+      for (const l of legs) {
+        // FIXED (2026-08-30): player_id and official_date were NULL on EVERY stored leg since launch.
+        // The board query returns `mlb_player_id` (not `player_id`) and has no `official_date` column
+        // at all - it carries `official_game_time_utc`. The insert only read l.player_id and
+        // l.official_date, so both silently wrote NULL on all 22 saved PrizePicks slips and all 45
+        // Sleeper/Underdog slips. Consequence: stored slips could not be joined to game logs and had
+        // to be graded by fuzzy name-matching through ref.players. Now reads every field name the
+        // board actually emits, and derives the date from the game time when absent.
+        const legPlayerId = (l.player_id != null ? l.player_id
+                          : l.mlb_player_id != null ? l.mlb_player_id
+                          : l.resolved_mlb_player_id != null ? l.resolved_mlb_player_id : null);
+        const legDate = (l.official_date || (l.official_game_time_utc
+                          ? String(l.official_game_time_utc).slice(0, 10) : null));
+        await pg.unsafe(`INSERT INTO score.slip_legs
+          (slip_leg_id, slip_id, leg_index, board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, player_id, player_name, team_id, opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, certainty_0_100, overall_score_0_100, board_grade, result_status, result_json)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`,
+          [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), legDate, l.official_game_time_utc || null, legPlayerId == null ? null : Number(legPlayerId), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading", goblin_rung: l.goblin_rung == null ? null : Number(l.goblin_rung) })]);
+      }
+      saved.push({ slip_id: slipId, leg_count: legs.length });
+      await recordRealPricingObservation(pg, slipId, s, legs);
+      await recordRealUnderdogPricingObservation(pg, slipId, s, legs);
+    }
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/save", saved_count:saved.length, saved_slips:saved, skipped_duplicates });
+}
+async function apiSlipsRecent(env, url) {
+  await ensureArchiveSlipSchema(env);
+  const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") || 50)));
+  const pg = pgClient(env);
+  let entries, legs;
+  try {
+    entries = await pg.unsafe(`SELECT * FROM score.slip_entries ORDER BY created_at DESC LIMIT $1`, [limit]);
+    const ids = entries.map(e=>e.slip_id).filter(Boolean);
+    const idsLiteral = "{" + ids.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(",") + "}";
+    legs = ids.length ? await pg.unsafe(`SELECT * FROM score.slip_legs WHERE slip_id = ANY($1::text[]) ORDER BY slip_id, leg_index`, [idsLiteral]) : [];
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+  const by = new Map();
+  for (const l of legs) { if (!by.has(l.slip_id)) by.set(l.slip_id, []); by.get(l.slip_id).push(l); }
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/recent", slips: entries.map(e=>({ ...e, legs: by.get(e.slip_id) || [] })) });
+}
+async function apiPlayerSearch(env, url) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok: false, error: "HYPERDRIVE binding missing", version: VERSION }, 500);
+  const q = String(url.searchParams.get("q") || "").trim();
+  if (q.length < 3) return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows:[] });
+  const like = `%${q.replace(/[%_]/g, "")}%`;
+  const pg = pgClient(env);
+  let rawRows;
+  try {
+    rawRows = await queryAllPg(pg, `
+      SELECT player_id, mlb_player_id, COALESCE(full_name, player_name) AS player_name, current_mlb_team_id, primary_position, bat_side, throw_side, 'player' AS match_type
+      FROM ref.players
+      WHERE active = 1 AND (LOWER(COALESCE(full_name, player_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(first_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(last_name,'')) LIKE LOWER(?))
+      UNION ALL
+      SELECT p.player_id, p.mlb_player_id, COALESCE(p.full_name, p.player_name) AS player_name, p.current_mlb_team_id, p.primary_position, p.bat_side, p.throw_side, 'alias' AS match_type
+      FROM ref.player_aliases a
+      JOIN ref.players p ON p.player_id = a.player_id::bigint
+      WHERE a.active = 1 AND (LOWER(COALESCE(a.alias_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(a.alias_normalized,'')) LIKE LOWER(?))
+    `, [like, like, like, like, like]);
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+  // REAL FIX: the same player can match both branches (a direct name match and a registered
+  // alias) - UNION alone doesn't merge them since match_type differs between the two rows.
+  // Deduplicate by player_id here, preferring the direct 'player' match when both exist.
+  const byPlayerId = new Map();
+  for (const r of rawRows) {
+    const key = r.player_id;
+    const existing = byPlayerId.get(key);
+    if (!existing || (existing.match_type === "alias" && r.match_type === "player")) byPlayerId.set(key, r);
+  }
+  const rows = Array.from(byPlayerId.values()).sort((a, b) => String(a.player_name || "").localeCompare(String(b.player_name || ""))).slice(0, 20);
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows });
+}
+// Dispatch helper (2026-07-27): reuses the exact same service-binding pattern already proven in
+// admin-sql.js's toolRunJob, so this UI worker can directly trigger calibration functions and
+// scoped health-dashboard reruns without needing a separate MCP round-trip. This worker's
+// Health and Calibration sections are explicitly NOT read-only per direction - password-gated
+// on the frontend, but these backend routes are the actual functional surface.
+async function dispatchToWorker(env, target, mode, extra) {
+  const bindingMap = { PHASE3A_WORKER: env.PHASE3A_WORKER, BOARD_RUNNER_WORKER: env.BOARD_RUNNER_WORKER, DAILY_CONTEXT_RUNNER_WORKER: env.DAILY_CONTEXT_RUNNER_WORKER, MARKET_RUNNER_WORKER: env.MARKET_RUNNER_WORKER, SCORING_RUNNER_WORKER: env.SCORING_RUNNER_WORKER, WEEKLY_DIFFERENTIAL_RUNNER_WORKER: env.WEEKLY_DIFFERENTIAL_RUNNER_WORKER, DAILY_DELTA_RUNNER_WORKER: env.DAILY_DELTA_RUNNER_WORKER };
+  const binding = bindingMap[target];
+  if (!binding) return { ok: false, error: `${target} service binding is not configured on this worker.` };
+  try {
+    const resp = await binding.fetch("https://internal/run", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mode, ...(extra && typeof extra === "object" ? extra : {}) }),
+    });
+    const text = await resp.text();
+    let parsed; try { parsed = JSON.parse(text); } catch { parsed = { raw: text.slice(0, 2000) }; }
+    return { ok: resp.ok, http_status: resp.status, response: parsed };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+async function apiCalibrationReport(env) {
+  const result = await dispatchToWorker(env, "PHASE3A_WORKER", "calibration_report", {});
+  return jsonResponse({ ok: result.ok, version: VERSION, route: "/api/calibration/report", read_only: true, ...result });
+}
+async function apiCalibrationApply(env, request) {
+  const input = await readJsonSafe(request);
+  const props = Array.isArray(input.props) ? input.props : [];
+  if (!props.length) return jsonResponse({ ok: false, error: "props array required - select at least one recommendation to apply", version: VERSION }, 400);
+  const result = await dispatchToWorker(env, "PHASE3A_WORKER", "apply_calibration_recommendations", { props });
+  return jsonResponse({ ok: result.ok, version: VERSION, route: "/api/calibration/apply", read_only: false, requested_props: props, ...result });
+}
+async function apiHealthRerun(env, request) {
+  const input = await readJsonSafe(request);
+  const target = String(input.target || "");
+  const mode = String(input.mode || "");
+  if (!target || !mode) return jsonResponse({ ok: false, error: "target and mode required", version: VERSION }, 400);
+  const result = await dispatchToWorker(env, target, mode, {});
+  return jsonResponse({ ok: result.ok, version: VERSION, route: "/api/main-board/health/rerun", read_only: false, target, mode, ...result });
+}
+async function apiPlayerProfile(env, url) {
+  if (!env.HYPERDRIVE) return jsonResponse({ ok:false, error:"HYPERDRIVE binding missing", version: VERSION }, 500);
+  const playerId = Number(url.searchParams.get("player_id") || 0);
+  if (!playerId) return jsonResponse({ ok:false, error:"player_id required", version:VERSION }, 400);
+  const pg = pgClient(env);
+  try {
+  const p = (await queryAllPg(pg, `SELECT * FROM ref.players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]))[0] || null;
+  if (!p) { await pg.end({ timeout: 1 }).catch(() => {}); return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404); }
+  const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
+  const idPlaceholders = ids.map(()=>"?").join(",");
+  const mlbId = p.mlb_player_id || p.player_id;
+  const isTwoWay = String(p.primary_position || "").toUpperCase() === "TWP";
+  const isPitcher = (String(p.primary_position || p.primary_role || "").toUpperCase() === "P") || isTwoWay;
+  const safeQuery = async (queryText, params) => { try { return await queryAllPg(pg, queryText, params); } catch (e) { return []; } };
+  const safeOne = async (queryText, params) => { const r = await safeQuery(queryText, params); return r[0] || null; };
+
+  const legs = idPlaceholders ? await safeQuery(`
+    SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
+    FROM score.final_board_current
+    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
+      AND mlb_player_id IN (${idPlaceholders})
+    ORDER BY rank_order ASC
+    LIMIT 80
+  `, ids) : [];
+
+  const [teamRow, recentGames, snapshots, splits, nextTeamGame, twpHitterGames, twpHitterSnapshots, twpHitterSplits] = await Promise.all([
+    safeOne(`SELECT team_id, full_name, abbreviation, league, division FROM ref.teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]),
+    isPitcher
+      ? safeQuery(`SELECT * FROM stats_pitcher.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId])
+      : safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId]),
+    isPitcher
+      ? safeQuery(`SELECT metric_window, games_count, innings_pitched_sum, batters_faced_sum, hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated FROM stats_pitcher.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId])
+      : safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId]),
+    isPitcher
+      ? safeQuery(`SELECT * FROM stats_pitcher.splits WHERE player_id=? ORDER BY season DESC`, [mlbId])
+      : safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbId]),
+    safeOne(`SELECT game_pk, game_time_utc, home_team_id, away_team_id FROM daily.umpire_context_current WHERE (home_team_id=? OR away_team_id=?) AND game_time_utc >= (now() - interval '4 hours') ORDER BY game_time_utc ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null),
+    isTwoWay ? safeQuery(`SELECT * FROM stats_hitter.game_logs WHERE player_id=? ORDER BY game_date DESC LIMIT 20`, [mlbId]) : Promise.resolve([]),
+    isTwoWay ? safeQuery(`SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum, home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum, total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, hr_rate FROM stats_hitter.metric_snapshots WHERE player_id=? ORDER BY updated_at DESC`, [mlbId]) : Promise.resolve([]),
+    isTwoWay ? safeQuery(`SELECT * FROM stats_hitter.splits WHERE player_id=? ORDER BY season DESC`, [mlbId]) : Promise.resolve([])
+  ]);
+
+  let nextGame = null, weatherRow = null, umpireRow = null, marketRow = null, bullpenRows = [], scheduleRows = [], opposingStarter = null, opposingTeamRow = null;
+  if (nextTeamGame && nextTeamGame.game_pk) {
+    const gamePk = nextTeamGame.game_pk;
+    const isHomeNext = String(nextTeamGame.home_team_id) === String(p.current_mlb_team_id || p.current_team_id);
+    const opponentTeamId = isHomeNext ? nextTeamGame.away_team_id : nextTeamGame.home_team_id;
+    const [w, u, m, bp, sched, starters, oppTeam] = await Promise.all([
+      safeOne(`SELECT * FROM daily.game_weather_current WHERE game_pk=? ORDER BY updated_at DESC LIMIT 1`, [gamePk]),
+      safeOne(`SELECT * FROM daily.umpire_context_current WHERE game_pk=? ORDER BY updated_at DESC LIMIT 1`, [gamePk]),
+      safeOne(`SELECT * FROM market.context_probe_game_market_summary WHERE game_pk=? ORDER BY created_at DESC LIMIT 1`, [gamePk]),
+      safeQuery(`SELECT * FROM daily.bullpen_availability_current WHERE game_pk=?`, [gamePk]),
+      safeQuery(`SELECT * FROM daily.team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
+      safeOne(`SELECT * FROM daily.probable_pitchers WHERE game_pk=?`, [gamePk]),
+      safeOne(`SELECT team_id, full_name, abbreviation FROM ref.teams WHERE team_id=? OR mlb_team_id=? LIMIT 1`, [opponentTeamId, opponentTeamId])
+    ]);
+    weatherRow = w; umpireRow = u; marketRow = m; bullpenRows = bp; scheduleRows = sched; opposingTeamRow = oppTeam;
+    if (starters) {
+      const oppPitcherId = isHomeNext ? starters.away_pitcher_id : starters.home_pitcher_id;
+      const oppPitcherRow = await safeOne(`SELECT full_name, throw_side FROM ref.players WHERE mlb_player_id=? LIMIT 1`, [oppPitcherId]);
+      opposingStarter = oppPitcherRow ? { player_id: oppPitcherId, full_name: oppPitcherRow.full_name, throw_side: oppPitcherRow.throw_side, confidence: starters.confidence } : null;
+    }
+    nextGame = { game_pk: gamePk, game_time_utc: nextTeamGame.game_time_utc, is_home: isHomeNext ? 1 : 0, opponent_team_id: opponentTeamId, opponent_team_name: opposingTeamRow ? opposingTeamRow.full_name : null };
+  }
+
+  // Advanced Statcast-tier metrics (season-long, player identity — not game-specific)
+  const [availabilityRow, sprintRow, battedBallRow, defQualRow, arsenalRows, armAngleRow, runningGameRow, catcherRow, qocRow] = await Promise.all([
+    safeOne(`SELECT availability_status, roster_status_description, confidence_label FROM daily.player_availability_current WHERE player_id=? ORDER BY updated_at DESC LIMIT 1`, [mlbId]),
+    safeOne(`SELECT sprint_speed_ft_per_sec, competitive_runs FROM ref.sprint_speed WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    safeOne(`SELECT ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    safeOne(`SELECT primary_position, outs_above_average, fielding_runs_prevented, oaa_vs_rhh, oaa_vs_lhh FROM ref.defensive_quality WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
+    isPitcher ? safeQuery(`SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba, run_value_per_100 FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 8`, [mlbId, mlbId]) : Promise.resolve([]),
+    isPitcher ? safeOne(`SELECT arm_angle_degrees, pitches_tracked FROM ref.arm_angle WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    isPitcher ? safeOne(`SELECT sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained FROM ref.pitcher_running_game WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    String(p.primary_position || "").toUpperCase() === "C" ? safeOne(`SELECT framing_runs_total, framing_pct_total, pop_time_2b_sba, pop_time_3b_sba FROM ref.catcher_framing_poptime WHERE player_id=? ORDER BY season DESC LIMIT 1`, [mlbId]) : Promise.resolve(null),
+    !isPitcher ? safeOne(`SELECT xba, xslg, xwoba, woba, ba, slg, xiso, iso, xwobacon, pull_percent, exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, ba_minus_xba_diff, slg_minus_xslg_diff, woba_minus_xwoba_diff, season_year FROM ref.batter_quality_of_contact WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]) : Promise.resolve(null)
+  ]);
+  const battedBallDir = !isPitcher ? (await safeOne(`SELECT fly_ball_pct, line_drive_pct, ground_ball_pct, pop_up_pct, pull_pct, opposite_field_pct, batted_ball_events FROM ref.batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId])) : null;
+  const hrSumRow = !isPitcher ? (await safeOne(`SELECT home_runs_sum FROM stats_hitter.metric_snapshots WHERE player_id=? AND metric_window='season_to_date'`, [mlbId])) : null;
+  if (qocRow && battedBallDir) Object.assign(qocRow, battedBallDir);
+  if (qocRow && battedBallDir && hrSumRow && Number(battedBallDir.batted_ball_events) > 0 && battedBallDir.fly_ball_pct != null) {
+    const flyBallCount = (Number(battedBallDir.fly_ball_pct) / 100) * Number(battedBallDir.batted_ball_events);
+    qocRow.hr_fb_percent = flyBallCount > 0 ? Math.round(((Number(hrSumRow.home_runs_sum) || 0) / flyBallCount) * 1000) / 10 : null;
+  }
+
+  // Next-game specific opponent detail: opposing starter's arsenal (for hitters facing them), opposing catcher's framing/poptime
+  let opposingStarterArsenal = [], opposingCatcherRow = null;
+  if (nextGame && opposingStarter && !isPitcher) {
+    opposingStarterArsenal = await safeQuery(`SELECT pitch_name, pitch_usage, whiff_percent, k_percent, hard_hit_percent, est_woba FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1 AND season_year=(SELECT MAX(season_year) FROM ref.pitcher_arsenal WHERE mlb_player_id=? AND active=1) ORDER BY pitch_usage DESC LIMIT 6`, [opposingStarter.player_id, opposingStarter.player_id]);
+  }
+  const homeGames = recentGames.filter(g => Number(g.is_home) === 1);
+  const awayGames = recentGames.filter(g => Number(g.is_home) === 0);
+  const oppTeamIds = [...new Set(recentGames.map(g => g.opponent_team_id).filter(v => v != null))];
+  if (oppTeamIds.length) {
+    const ph = oppTeamIds.map(() => "?").join(",");
+    const oppTeamRows = await safeQuery(`SELECT team_id, mlb_team_id, abbreviation FROM ref.teams WHERE team_id::text IN (${ph}) OR mlb_team_id::text IN (${ph})`, [...oppTeamIds, ...oppTeamIds]);
+    const abbrById = new Map();
+    for (const t of oppTeamRows) { if (t.team_id != null) abbrById.set(String(t.team_id), t.abbreviation); if (t.mlb_team_id != null) abbrById.set(String(t.mlb_team_id), t.abbreviation); }
+    for (const g of recentGames) g.opponent_abbr = abbrById.get(String(g.opponent_team_id)) || null;
+  }
+  await pg.end({ timeout: 1 }).catch(() => {});
+
+  return jsonResponse({
+    ok:true, data_ok:true, version:VERSION, route:"/api/player-profile",
+    player: p,
+    team: teamRow,
+    is_pitcher: isPitcher,
+    is_two_way: isTwoWay,
+    twp_hitter_recent_games: isTwoWay ? twpHitterGames : [],
+    twp_hitter_metric_snapshots: isTwoWay ? twpHitterSnapshots : [],
+    twp_hitter_splits: isTwoWay ? twpHitterSplits : [],
+    current_legs: Array.isArray(legs) ? legs : [],
+    recent_games: recentGames,
+    home_games: homeGames,
+    away_games: awayGames,
+    metric_snapshots: snapshots,
+    splits: splits,
+    availability: availabilityRow,
+    advanced: {
+      sprint_speed: sprintRow,
+      batted_ball_profile: battedBallRow,
+      defensive_quality: defQualRow,
+      pitcher_arsenal: arsenalRows,
+      arm_angle: armAngleRow,
+      pitcher_running_game: runningGameRow,
+      catcher_framing_poptime: catcherRow,
+      quality_of_contact: qocRow
+    },
+    next_game: nextGame,
+    next_game_context: nextGame ? {
+      weather: weatherRow, umpire: umpireRow, market_summary: marketRow,
+      bullpen: bullpenRows, schedule_spot: scheduleRows,
+      opposing_starter: opposingStarter, opposing_team: opposingTeamRow,
+      opposing_starter_arsenal: opposingStarterArsenal
+    } : null,
+    note: "Full player profile: identity, current board lines, last-20 game log with home/away split, L5/L10/L20/season snapshots, platoon splits, Statcast-tier advanced metrics (sprint speed, batted-ball profile, defensive quality, pitch arsenal, arm angle, running-game control, catcher framing/pop-time), availability status, and next-game micro-factor context including opposing starter arsenal.",
+    diagnostic_test_string: "Sam sells seven silver snakes since Sunday season starts soon"
+  });
+  } catch (err) {
+    await pg.end({ timeout: 1 }).catch(() => {});
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, error: String(err && err.message ? err.message : err), route: "/api/player-profile" }, 500);
+  }
+}
+
+const MAIN_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>AlphaDog — Final Board V3 Shadow</title>
+<link rel="icon" type="image/png" href="/main_alphadog_favicon.png" />
+<link rel="apple-touch-icon" href="/main_alphadog_apple_touch_icon.png" />
+<style>
+:root{--bg:#071426;--panel:#0e2038;--panel2:#102744;--line:#254261;--text:#eef7ff;--muted:#93a9bd;--gold:#f4c95d;--silver:#d7e2ee;--bronze:#d99b57;--blue:#5ed2ff;--good:#7ef0aa;--warn:#f7d774;--bad:#ff8a8a;--chip:#173352;--shadow:0 22px 70px rgba(0,0,0,.35);}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,#173957 0,#071426 38%,#030912 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}button,input,select,textarea{font:inherit}.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 44px}.hero{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}.brand{display:flex;gap:12px;align-items:center}.logo{width:52px;height:52px;border-radius:16px;box-shadow:0 8px 24px rgba(244,201,93,.18)}h1{font-size:30px;line-height:1;margin:0}.sub{color:#d9e8f6;font-size:13px;margin-top:4px;font-weight:850;letter-spacing:.02em}.menuBtn,.btn{border:1px solid var(--line);background:rgba(16,39,68,.86);color:var(--text);border-radius:14px;padding:10px 13px;font-weight:850;cursor:pointer}.menuWrap{position:relative}.menu{position:absolute;right:0;top:44px;background:#07192d;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:170px;overflow:hidden;z-index:10}.menu.hidden{display:none}.menu button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;text-align:left;font-weight:750}.menu button:hover{background:#102744}.panel{background:linear-gradient(180deg,rgba(16,39,68,.92),rgba(8,21,38,.92));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:11px;margin-bottom:13px}.filters{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:8px;align-items:stretch}.filterCol{display:grid;gap:7px}.filterCol.left{grid-template-columns:1fr}.filterCol.right{grid-template-rows:auto auto}.filterBox{background:rgba(5,14,26,.28);border:1px solid rgba(75,115,150,.42);border-radius:16px;padding:6px 8px}.filterBox.tight{padding:7px}.filterTitle{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:950;margin-bottom:4px;display:flex;gap:6px;align-items:center}.filterTitle.selectTitle{justify-content:center;text-align:center}.filterTitle input{accent-color:#3f8cff}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px 6px}.checkGrid.source{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0 4px}.check{display:flex;align-items:center;gap:4px;padding:0;font-size:11.5px;color:#dbefff;white-space:nowrap;line-height:1}.check input{accent-color:#5ed2ff;width:15px;height:15px;flex:0 0 auto}.check .zero{color:#758ba1}.duo{display:grid;grid-template-columns:1fr 1fr;gap:7px}.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.refreshMini{margin-left:auto;padding:4px 9px;border-radius:10px;font-size:10px;line-height:1.1}.select{width:100%;min-width:0;border:1px solid var(--line);background:#07192d;color:var(--text);border-radius:12px;padding:7px 8px;font-weight:800;font-size:12.2px;line-height:1.15}.select option{font-size:12px}.status{color:var(--muted);font-size:13px;margin:10px 0 10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:28px;width:100%}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.18);border-radius:22px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.27);position:relative}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-height:56px;padding-right:0}.player{font-size:21px;font-weight:950;letter-spacing:-.02em}.badgeStack{position:static;display:grid;gap:4px;justify-items:center;min-width:166px;text-align:center;flex:0 0 auto}.badgePairs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:start;width:100%}.badgePair{display:grid;gap:4px;justify-items:center;align-items:start;min-width:70px}.badgeLine{display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;width:100%}.badge{font-size:9.8px;font-weight:950;border-radius:999px;padding:5px 7px;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.22);line-height:1;white-space:nowrap;text-align:center}.badge.source{background:#173a5d;color:#d8eeff}.badge.goblin{background:#123d30;color:#b8ffd6}.badge.demon{background:#461a2a;color:#ffc2d2}.badge.regular,.badge.more_only{background:#322d14;color:#ffe49a}.badge.gold{background:#4a3911;color:#ffd96a;border-color:rgba(255,217,106,.5)}.badge.silver{background:#2c3d52;color:#e7f2ff;border-color:rgba(215,226,238,.45)}.badge.bronze{background:#492d18;color:#ffc28a;border-color:rgba(217,155,87,.48)}.numbers{display:grid;grid-template-columns:minmax(120px,.82fr) minmax(150px,1fr);align-items:end;gap:14px;margin:8px 0 9px}.hpNum{font-size:48px;line-height:.9;font-weight:1000;color:var(--gold);letter-spacing:-.05em}.scoreBlock{text-align:center;min-width:0}.scoreGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:2px}.scoreGrid.single{grid-template-columns:minmax(95px,145px);justify-content:center}.scorePill{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid rgba(94,210,255,.16);background:rgba(7,20,38,.48);border-radius:10px;padding:4px 7px}.scoreApp{font-size:10px;color:#b6cde4;font-weight:900}.scoreNum{font-size:22px;font-weight:950;color:var(--blue)}.lineBox{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid rgba(94,210,255,.14);background:rgba(7,20,38,.55);border-radius:15px;padding:9px 10px;font-weight:850}.side{text-transform:uppercase;color:var(--good)}.meta{margin-top:8px;color:#bed2e6;font-size:12.5px;line-height:1.3}.reason{margin-top:9px;color:#d4e3f2;font-size:12.4px;line-height:1.42;background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-left:3px solid rgba(244,201,93,.55);border-radius:14px;padding:9px 10px}.empty{padding:20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);text-align:center}.healthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.healthCard{background:rgba(5,14,26,.32);border:1px solid var(--line);border-radius:16px;padding:12px;overflow-wrap:anywhere;word-break:break-word}.metric{font-size:25px;font-weight:950;color:var(--gold)}.small{font-size:12px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere;word-break:break-word}.hidden{display:none!important}.err{color:var(--bad)}.good{color:var(--good)}.sortBox{margin-top:7px}.card{cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}.card:hover{transform:translateY(-1px);border-color:rgba(94,210,255,.42);box-shadow:0 18px 46px rgba(0,0,0,.34)}.dossierTop{display:flex;gap:8px;padding:0;margin:0 0 8px;background:transparent;width:max-content;position:relative;z-index:3}.iconBtn{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:rgba(16,39,68,.92);color:var(--text);font-size:25px;font-weight:950;line-height:1;display:grid;place-items:center}.dossierBody{display:grid;gap:12px}.dossierBody,.dossierBody *{font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;font-variant-ligatures:none;font-synthesis:none;text-rendering:auto;-webkit-font-smoothing:antialiased}.dossierTitle{font-weight:900}.dossierSub,.infoVal,.dossierTable td,.sectionHint,.small{font-weight:400}.dossierTable{width:100%;border-collapse:separate;border-spacing:0 6px}.dossierTable th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:0 6px 2px}.dossierTable td{background:rgba(5,14,26,.32);border-top:1px solid rgba(94,210,255,.1);border-bottom:1px solid rgba(94,210,255,.1);padding:7px 6px;font-size:12px}.dossierTable td:first-child{border-left:1px solid rgba(94,210,255,.1);border-radius:10px 0 0 10px}.dossierTable td:last-child{border-right:1px solid rgba(94,210,255,.1);border-radius:0 10px 10px 0}.statGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.statCell{background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-radius:13px;padding:8px;text-align:center}.statCell .k{font-size:10px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.07em}.statCell .v{font-size:19px;color:var(--gold);font-weight:1000;margin-top:2px}.miniCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:7px}.dossierHero{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.2);border-radius:24px;padding:16px;box-shadow:var(--shadow)}.dossierTitle{font-size:28px;font-weight:1000;letter-spacing:-.03em}.dossierSub{color:var(--muted);font-size:13px;line-height:1.35;margin-top:4px}.dossierMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.dMetric{border:1px solid rgba(94,210,255,.14);background:rgba(5,14,26,.34);border-radius:14px;padding:10px}.dMetric .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:950}.dMetric .v{font-size:22px;font-weight:1000;color:var(--gold);margin-top:2px}.dossierGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dSection{background:rgba(8,21,38,.82);border:1px solid rgba(94,210,255,.15);border-radius:20px;padding:13px}.dSection h3{margin:0 0 9px;font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:#d9e8f6}.kv{display:grid;grid-template-columns:minmax(110px,.45fr) 1fr;gap:6px 9px;font-size:12.3px;line-height:1.3}.kv .key{color:var(--muted);font-weight:850}.kv .val{color:var(--text);word-break:break-word}.pillRow{display:flex;flex-wrap:wrap;gap:7px}.legBtn{border:1px solid rgba(94,210,255,.18);background:#07192d;color:var(--text);border-radius:14px;padding:8px 9px;text-align:left;font-weight:850;min-width:142px}.legBtn b{color:var(--gold)}.jsonBox{max-height:260px;overflow:auto;background:#030912;border:1px solid rgba(94,210,255,.14);border-radius:14px;padding:10px;font-size:10.8px;color:#cde0f2;white-space:pre-wrap;word-break:break-word}.refinedRows{display:grid;gap:7px}.infoRow{display:grid;grid-template-columns:minmax(122px,.42fr) 1fr;gap:8px;align-items:start;border-bottom:1px solid rgba(94,210,255,.07);padding:5px 0}.infoRow:last-child{border-bottom:0}.infoKey{color:var(--muted);font-weight:900;font-size:12px}.infoVal{color:var(--text);font-size:12.4px;line-height:1.35;word-break:break-word}.sectionHint{margin-top:-4px;margin-bottom:8px;color:var(--muted);font-size:11.5px;line-height:1.35}.dossierNote{background:rgba(244,201,93,.08);border:1px solid rgba(244,201,93,.18);border-left:3px solid rgba(244,201,93,.65);border-radius:14px;padding:10px;color:#e6f0fb;font-size:12.5px;line-height:1.42}.wide{grid-column:1/-1}@media(max-width:860px){.filters{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.hero{align-items:flex-start}.healthGrid{grid-template-columns:1fr 1fr}.hpNum{font-size:43px}.checkGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dossierGrid{grid-template-columns:1fr}.dossierMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.select{font-size:11.4px;padding:6px 7px}.filterTitle.selectTitle{font-size:9.4px;letter-spacing:.09em}.wrap{padding:12px 10px 34px}.logo{width:46px;height:46px}h1{font-size:25px}.card{padding:13px}.healthGrid{grid-template-columns:1fr}.filters{gap:7px}.check{font-size:11px}.player{font-size:19px}.duo{grid-template-columns:1fr 1fr}.trio{grid-template-columns:repeat(3,minmax(0,1fr))}.checkGrid{gap:1px 5px}.badgeStack{min-width:150px}.top{min-height:52px;padding-right:0}.badge{font-size:9.2px;padding:4.5px 6px}.numbers{grid-template-columns:minmax(108px,.78fr) minmax(145px,1fr);gap:10px}.hpNum{font-size:42px}.scoreNum{font-size:20px}.lineBox{padding:8px 10px}.meta{font-size:12px}.reason{font-size:12px;line-height:1.38;padding:8px 9px}}
+.pickBox{position:absolute;left:12px;top:12px;width:20px;height:20px;accent-color:var(--gold);z-index:4}.card.hasPick{border-color:rgba(244,201,93,.7);box-shadow:0 18px 46px rgba(244,201,93,.12)}.card .top{padding-left:26px}.slipFloat{position:fixed;right:max(4px, env(safe-area-inset-right));top:48%;transform:translateY(-50%);z-index:200;background:linear-gradient(180deg,rgba(16,39,68,.96),rgba(7,20,38,.96));border:1px solid rgba(94,210,255,.25);border-right:0;border-radius:999px 0 0 999px;box-shadow:var(--shadow);padding:13px 14px 13px 18px;min-width:120px;font-size:12px;color:#d9e8f6}.slipFloat b{color:var(--gold)}.slipFloat button{margin-top:7px;border:1px solid rgba(244,201,93,.45);background:#3d2f11;color:#ffe7a3;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:950}.builderGrid{display:grid;gap:10px}.legMini,.slipCard,.profileCard{border:1px solid rgba(94,210,255,.15);background:rgba(5,14,26,.34);border-radius:16px;padding:10px}.legMini{display:flex;gap:8px;justify-content:space-between;align-items:center}.slipHead{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.slipCard{padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.22);transition:box-shadow .2s}
+.slipCard:hover{box-shadow:0 14px 34px rgba(0,0,0,.3)}
+.multiplierTag{background:linear-gradient(135deg,rgba(244,201,93,.22),rgba(244,201,93,.08));border:1px solid rgba(244,201,93,.4);color:var(--gold);border-radius:999px;padding:5px 12px;font-size:13px;letter-spacing:.2px}
+.slipLegs{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.legRow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(94,210,255,.05);border:1px solid rgba(94,210,255,.10);cursor:pointer;transition:background .15s,opacity .15s,border-color .15s}
+.legRow:hover{background:rgba(94,210,255,.09);border-color:rgba(94,210,255,.22)}
+.legRowText{flex:1;font-size:13px;color:#e8f1fa;line-height:1.35}
+.legRowPct{background:rgba(94,210,255,.12);color:#8fd8ff;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:800;white-space:nowrap}
+.legKeepBox{width:19px;height:19px;flex-shrink:0;accent-color:var(--gold);cursor:pointer}
+.legRow:has(.legKeepBox:not(:checked)){opacity:.4}
+.legRow:has(.legKeepBox:not(:checked)) .legRowText{text-decoration:line-through}
+.realMultRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(244,201,93,.06);border:1px dashed rgba(244,201,93,.35)}
+.realMultGroup{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(244,201,93,.06);border:1px dashed rgba(244,201,93,.35)}
+.realMultFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin-top:8px}
+.realMultField{display:flex;flex-direction:column;align-items:center;gap:4px}
+.realMultField span{font-size:11px;font-weight:900;color:var(--muted)}
+.realMultField input{width:100%;text-align:center;background:rgba(5,14,26,.5);border:1px solid rgba(244,201,93,.35);color:#ffe7a3;border-radius:8px;padding:6px 4px;font-size:13px;font-weight:900}
+.realMultField input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,201,93,.18)}
+.realMultLabel{font-size:11.5px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--gold)}
+.realMultInput{width:88px;text-align:right;background:rgba(5,14,26,.5);border:1px solid rgba(244,201,93,.35);color:#ffe7a3;border-radius:8px;padding:6px 9px;font-size:14px;font-weight:900}
+.realMultInput:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,201,93,.18)}
+.slipSourceFilterRowNew label{padding:6px 10px;border-radius:999px;background:rgba(94,210,255,.06);border:1px solid rgba(94,210,255,.14);transition:background .15s,border-color .15s}
+.slipSourceFilterRowNew label:has(input:checked){background:rgba(94,210,255,.14);border-color:rgba(94,210,255,.35)}
+.slipTabBar{display:flex;gap:6px;background:rgba(5,14,26,.42);border:1px solid var(--line);border-radius:16px;padding:5px;margin-bottom:10px;flex-wrap:wrap}.slipTab{flex:1 1 auto;min-width:120px;border:0;background:transparent;color:var(--muted);border-radius:12px;padding:10px 12px;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s ease,color .15s ease}.slipTab:hover{background:rgba(94,210,255,.08);color:var(--text)}.slipTab.active{background:linear-gradient(180deg,#173a5d,#0e2843);color:var(--text);box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 0 0 1px rgba(94,210,255,.25)}.slipTab .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}.slipTab .dot.grounded{background:var(--blue)}.slipTab .dot.goblin{background:var(--good)}.slipTab .dot.regular{background:var(--silver)}.slipTab .dot.demon{background:var(--bad)}
+.multiplierTag{background:linear-gradient(135deg,#4a3911,#241704);color:var(--gold);border:1px solid rgba(244,201,93,.45);border-radius:999px;padding:5px 12px;font-size:14px;letter-spacing:.01em}
+.slipSourceFilterRowNew{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 14px;padding:9px;background:rgba(5,14,26,.3);border:1px solid var(--line);border-radius:14px;font-size:12.5px;color:var(--muted)}.slipSourceFilterRowNew label{display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:800;color:var(--text);white-space:nowrap}.slipSourceFilterRowNew input{accent-color:var(--blue);width:15px;height:15px;flex:0 0 auto}
+.slipSummary{margin:2px 0 14px;padding:12px 14px;border-radius:14px;background:rgba(94,210,255,.08);border:1px solid rgba(94,210,255,.25)}
+.slipSummaryTotal{font-size:13px;font-weight:950;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:8px}
+.slipSummaryLine{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.6}
+.slipSummaryLine b{color:var(--gold);font-weight:950}
+.structureRow{display:grid;grid-template-columns:minmax(86px,110px) minmax(120px,160px) 44px;gap:8px;align-items:center;margin:7px 0}.tinyBtn{border:1px solid var(--line);background:#102744;color:var(--text);border-radius:12px;padding:8px 10px;font-weight:950}.slipLegs{display:grid;gap:6px;margin-top:8px}.resultHit{background:rgba(126,240,170,.12);border-color:rgba(126,240,170,.35)}.resultMiss{background:rgba(255,138,138,.12);border-color:rgba(255,138,138,.35)}.resultVoid{background:rgba(147,169,189,.12);border-color:rgba(147,169,189,.35)}.dateGroup summary{cursor:pointer;font-weight:950;color:var(--gold);padding:9px 0}.searchResult{border:1px solid rgba(94,210,255,.18);background:#07192d;color:var(--text);border-radius:14px;padding:8px 10px;font-weight:850}.profileHero{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.profileName{font-size:25px;font-weight:1000;color:var(--gold)}@media(max-width:720px){.slipFloat{top:auto;bottom:max(18px, env(safe-area-inset-bottom));right:max(4px, env(safe-area-inset-right));transform:none}.structureRow{grid-template-columns:1fr 1fr 42px}}
+.p2Hero{display:flex;gap:16px;align-items:center;background:linear-gradient(135deg,#123a5e,#0a1d34);border:1px solid rgba(94,210,255,.28);border-radius:26px;padding:18px;box-shadow:var(--shadow)}.p2Avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(160deg,#f4c95d,#d99b57);color:#241704;font-size:24px;font-weight:1000;display:grid;place-items:center;flex:0 0 auto;box-shadow:0 8px 20px rgba(244,201,93,.35)}.p2Name{font-size:27px;font-weight:1000;letter-spacing:-.02em;color:var(--text)}.p2Meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.p2Badge{font-size:10.5px;font-weight:950;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.25);border-radius:999px;padding:4px 9px}.p2Next{margin-top:9px;font-size:12.5px;color:#d9e8f6;background:rgba(244,201,93,.1);border:1px solid rgba(244,201,93,.22);border-radius:12px;padding:7px 10px;display:inline-block}
+.snapStrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:7px}.snapCell{background:rgba(5,14,26,.4);border:1px solid rgba(94,210,255,.14);border-radius:14px;padding:9px 6px;text-align:center}.snapCell .k{font-size:9.5px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.06em}.snapCell .v{font-size:20px;color:var(--gold);font-weight:1000;margin-top:3px}
+.propCard{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.2);border-radius:22px;padding:15px;box-shadow:0 14px 36px rgba(0,0,0,.25)}.propHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}.propTitle{font-size:18px;font-weight:1000;color:var(--text)}.propLines{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.propLineBadge{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px;background:#173a5d;color:#d8eeff;border:1px solid rgba(94,210,255,.22)}
+.hrRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.hrBox{text-align:center;border:1px solid rgba(94,210,255,.15);background:rgba(5,14,26,.4);border-radius:14px;padding:9px 4px}.hrBox .pct{font-size:23px;font-weight:1000}.hrBox .pct.hi{color:var(--good)}.hrBox .pct.mid{color:var(--warn)}.hrBox .pct.lo{color:var(--bad)}.hrBox .lbl{font-size:9.5px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.gameBarsWrap{display:flex;align-items:flex-end;gap:3px;height:64px;margin:10px 0 2px;padding:0 2px}.gameBar{flex:1;min-width:5px;border-radius:4px 4px 2px 2px;position:relative;transition:opacity .12s}.gameBar.hit{background:linear-gradient(180deg,#8ff5b7,#3fcf7f)}.gameBar.miss{background:linear-gradient(180deg,#ff9d9d,#e05353)}.gameBar.push{background:linear-gradient(180deg,#f7e08a,#d9b94a)}.gameBar:hover{opacity:.72}.gameBarsCaption{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);padding:0 2px}
+.gameBarsNums{display:flex;gap:3px;padding:0 2px}.gameBarNum{flex:1;min-width:5px;text-align:center;font-size:10.5px;font-weight:950;color:var(--text)}.gameBarsOpps{display:flex;gap:3px;padding:0 2px;margin-bottom:4px}.gameBarOpp{flex:1;min-width:5px;text-align:center;font-size:8px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.miniLegGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}.miniLegCard{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.2);border-radius:16px;padding:10px;cursor:pointer;transition:border-color .12s,transform .12s}.miniLegCard:hover{border-color:rgba(94,210,255,.5);transform:translateY(-1px)}.miniLegTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.miniLegApp{font-size:9px;font-weight:950;text-transform:uppercase;background:#173a5d;color:#d8eeff;border-radius:999px;padding:3px 7px}.miniLegHp{font-size:18px;font-weight:1000;color:var(--gold)}.miniLegProp{font-size:12.5px;font-weight:900;color:var(--text)}.miniLegLine{font-size:11px;color:var(--muted);margin-top:2px}
+.streakBadge{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:12px;font-weight:900;color:#ffd98a;background:rgba(244,201,93,.1);border:1px solid rgba(244,201,93,.25);border-radius:999px;padding:5px 11px}
+.splitCompare{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:10px}.splitSide{background:rgba(5,14,26,.4);border:1px solid rgba(94,210,255,.14);border-radius:14px;padding:10px;text-align:center}.splitSide.emph{border-color:rgba(244,201,93,.5);background:rgba(244,201,93,.08)}.splitSideLbl{font-size:10.5px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.06em}.splitSideStats{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 8px;margin-top:7px}.splitStat{text-align:center}.splitStat .v{font-size:16px;font-weight:1000;color:var(--blue)}.splitStat .k{font-size:9px;color:var(--muted);font-weight:900;text-transform:uppercase}.splitVs{font-size:11px;font-weight:950;color:var(--muted)}
+.microFactors{display:grid;gap:8px}.microFactor{background:rgba(8,21,38,.82);border:1px solid rgba(94,210,255,.15);border-radius:16px;padding:2px 14px;overflow:hidden}.microFactor summary{cursor:pointer;padding:12px 0;font-weight:900;font-size:12.5px;letter-spacing:.04em;list-style:none;display:flex;align-items:center;gap:8px}.microFactor summary::-webkit-details-marker{display:none}.microFactor summary::after{content:'▾';margin-left:auto;color:var(--muted);transition:transform .15s}.microFactor[open] summary::after{transform:rotate(180deg)}.microFactor .microBody{padding-bottom:12px}
+.sectionLabel{font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:#d9e8f6;font-weight:950;margin:4px 0 9px}
+.arsenalRow{display:grid;grid-template-columns:112px 1fr auto;gap:9px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(94,210,255,.08)}.arsenalRow:last-child{border-bottom:0}.arsenalName{font-size:12px;font-weight:900;color:var(--text)}.arsenalBarTrack{height:8px;background:rgba(5,14,26,.55);border-radius:6px;overflow:hidden}.arsenalBarFill{height:100%;background:linear-gradient(90deg,#5ed2ff,#3f8cff);border-radius:6px}.arsenalStats{font-size:10px;color:var(--muted);white-space:nowrap;text-align:right}
+.availBadge{font-size:10px;font-weight:950;text-transform:uppercase;border-radius:999px;padding:4px 9px;border:1px solid}.availBadge.good{color:var(--good);background:rgba(126,240,170,.1);border-color:rgba(126,240,170,.3)}.availBadge.warn{color:var(--warn);background:rgba(247,215,116,.1);border-color:rgba(247,215,116,.3)}.availBadge.bad{color:var(--bad);background:rgba(255,138,138,.1);border-color:rgba(255,138,138,.3)}
+.trendArrow{font-size:12px;font-weight:950;margin-left:4px}.trendArrow.up{color:var(--good)}.trendArrow.down{color:var(--bad)}.trendArrow.flat{color:var(--muted)}
+.qocCard{background:linear-gradient(150deg,#132b1f,#0a1d2c);border:1px solid rgba(126,240,170,.28);border-radius:22px;padding:16px;box-shadow:0 14px 36px rgba(0,0,0,.25);margin-top:14px}.qocTitle{font-size:16px;font-weight:1000;color:var(--text);display:flex;align-items:center;gap:8px}.qocSub{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:rgba(94,210,255,.1);border-radius:999px;padding:3px 8px}
+.regenSignal{margin-top:10px;font-size:12.5px;line-height:1.45;border-radius:14px;padding:11px 13px;font-weight:600}.regenSignal.regenUp{background:rgba(126,240,170,.1);border:1px solid rgba(126,240,170,.3);color:#c9f7dc}.regenSignal.regenDown{background:rgba(255,138,138,.1);border:1px solid rgba(255,138,138,.3);color:#ffd2d2}.regenSignal.regenFlat{background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);color:#dbe4ee}
+.qocGroup{margin-top:14px}.qocGroupLabel{font-size:10px;font-weight:950;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;display:flex;align-items:center;gap:6px}.qocGroupLabel::after{content:"";flex:1;height:1px;background:rgba(126,240,170,.18)}.qocGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px}.qocMiniCell{background:rgba(5,14,26,.4);border:1px solid rgba(126,240,170,.14);border-radius:12px;padding:8px 6px;text-align:center}.qocMiniCell .k{font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.qocMiniCell .v{font-size:14px;font-weight:950;color:var(--text)}.qocMiniCell.highlight{border-color:rgba(94,210,255,.35);background:rgba(94,210,255,.07)}.qocMiniCell.highlight .v{color:#8fd8ff}
+@media(max-width:720px){.p2Hero{gap:12px;padding:14px}.p2Avatar{width:52px;height:52px;font-size:19px}.p2Name{font-size:21px}.hrRow{gap:6px}.hrBox .pct{font-size:19px}.splitCompare{grid-template-columns:1fr}.splitVs{display:none}.arsenalRow{grid-template-columns:90px 1fr}.arsenalStats{grid-column:1/-1;text-align:left}}
+
+</style>
+</head>
+<body>
+<script>
+window.onerror = function(msg, url, line, col, error) {
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#c00;color:#fff;padding:16px;font-size:14px;font-weight:bold;white-space:pre-wrap;position:relative;z-index:99999">ERROR: ' + msg + ' (line ' + line + ')</div>');
+  return false;
+};
+window.onunhandledrejection = function(e) {
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#c60;color:#000;padding:16px;font-size:14px;font-weight:bold;white-space:pre-wrap;position:relative;z-index:99999">UNHANDLED REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)) + '</div>');
+};
+</script>
+<div class="wrap">
+  <header class="hero">
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.21 - Slip Save + Player Profile</div></div></div>
+    <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuSlips">Slips</button><button id="menuPlayerProfile">Player Profile</button><button id="menuHealth">Health</button><button id="menuCalibration">Calibration</button></div></div>
+  </header>
+  <section id="boardScreen">
+    <div class="panel filters">
+      <div class="filterCol left">
+        <div class="filterBox"><div class="filterTitle"><input id="hitterGroup" type="checkbox"> Hitter Prop Lines <button id="refresh" class="btn refreshMini">Refresh</button></div><div id="hitterProps" class="checkGrid"></div></div>
+        <div class="filterBox"><div class="filterTitle"><input id="pitcherGroup" type="checkbox"> Pitcher Prop Lines</div><div id="pitcherProps" class="checkGrid"></div></div>
+      </div>
+      <div class="filterCol right">
+        <div class="filterBox"><div class="filterTitle"><input id="ppGroup" type="checkbox"> PrizePicks</div><div id="ppTypes" class="checkGrid source"></div><div class="filterTitle" style="margin-top:8px"><input id="sleeperGroup" type="checkbox"> Sleeper</div><div id="sleeperTypes" class="checkGrid source"></div><div class="filterTitle" style="margin-top:8px"><input id="underdogGroup" type="checkbox"> Underdog</div><div id="underdogTypes" class="checkGrid source"></div></div>
+        <div class="trio">
+          <div class="filterBox tight"><div class="filterTitle selectTitle">Hit Prob</div><select id="hpFilter" class="select"><option value="0">All HP</option></select></div>
+          <div class="filterBox tight"><div class="filterTitle selectTitle">Overall Score</div><select id="scoreFilter" class="select"><option value="0">All Scores</option></select></div>
+          <div class="filterBox tight"><div class="filterTitle selectTitle">Order By</div><select id="sortMode" class="select"><option value="overall">Overall</option><option value="hp">Hit Prob</option><option value="score">Overall</option></select></div>
+        </div>
+      </div>
+    </div>
+    <div id="status" class="status">Loading board...</div>
+    <div id="cards" class="cards"></div>
+  </section>
+  <section id="dossierScreen" class="hidden"><div class="dossierTop"><button id="dossierBack" class="iconBtn" aria-label="Back">‹</button><button id="dossierHome" class="iconBtn" aria-label="Main board">⌂</button></div><div id="dossierBody" class="dossierBody"><div class="empty">Loading dossier...</div></div></section>
+  <section id="buildScreen" class="hidden"><div class="panel"><button id="buildBack" class="btn">← Main Board</button><h2>Slip Builder</h2><div id="buildBody" class="dossierBody"></div></div></section>
+  <section id="slipsScreen" class="hidden"><div class="panel"><button id="slipsBack" class="btn">← Main Board</button><h2 style="margin:12px 0 8px">High Hit Slips</h2><div id="slipSourceFilterRow" class="slipSourceFilterRowNew"><label><input type="checkbox" id="filterPrizepicks" checked>PrizePicks</label><label><input type="checkbox" id="filterSleeper" checked>Sleeper</label><label><input type="checkbox" id="filterUnderdog" checked>Underdog</label></div><div id="autoCreateResults"></div></div></section>
+  <section id="playerProfileScreen" class="hidden"><div class="panel"><button id="profileBack" class="btn">← Main Board</button><h2>Player Profile</h2><input id="playerSearch" class="select" placeholder="Search player name, last name, alias..." autocomplete="off"><div id="playerSearchResults" class="pillRow" style="margin-top:10px"></div><div id="playerProfileBody" class="dossierBody" style="margin-top:12px"><div class="empty">Type at least 3 letters.</div></div></div></section>
+  <div id="slipFloat" class="slipFloat hidden"><div><b id="slipFloatTotal">0</b> legs</div><div>Sleeper: <b id="slipFloatSleeper">0</b></div><div>PP: <b id="slipFloatPP">0</b></div><div>UD: <b id="slipFloatUD">0</b></div><button id="slipFloatBuild">Build</button></div>
+  <section id="healthScreen" class="hidden"><div class="panel"><button id="backBoard" class="btn">← Review Board</button><h2>Board Health</h2><div id="healthStatus" class="status">Loading health...</div><div id="healthCards" class="healthGrid"></div></div></section>
+  <section id="calibrationScreen" class="hidden"><div class="panel"><button id="calibrationBack" class="btn">← Review Board</button><h2>Calibration</h2><div class="dossierNote" style="margin-bottom:10px">This checks whether the model's confidence numbers actually match real outcomes, using games that have already finished. "Apply" turns on a correction that nudges future predictions toward what really happened - it never touches past results. A correction is only ever recommended after being tested on real games it wasn't built from, so a good result here means it should hold up going forward, not just look good in hindsight.</div><div id="calibrationStatus" class="status">Loading calibration report...</div><div id="calibrationCards"></div><div id="calibrationApplyBar" class="hidden" style="margin-top:14px;padding:12px;background:#1a2230;border-radius:8px"><b><span id="calibrationSelectedCount">0</span> selected</b><button id="calibrationApplyBtn" class="btn" style="margin-left:12px">Apply Selected</button></div></div></section>
+  <div id="pwGateOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center">
+    <div style="background:#1a2230;padding:24px;border-radius:10px;max-width:320px;width:90%">
+      <h3 style="margin-top:0">Enter Password</h3>
+      <div style="font-size:13px;color:#9ab;margin-bottom:10px">This section can affect the live system.</div>
+      <input id="pwGateInput" type="password" inputmode="numeric" class="select" placeholder="Password" style="width:100%;box-sizing:border-box">
+      <div id="pwGateError" class="err" style="min-height:18px;margin-top:6px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="pwGateSubmit" class="btn">Enter</button>
+        <button id="pwGateCancel" class="btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.3.0 - Smart Slip Builder (EV-grounded recommendations)';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null,selectedLegIds=new Set(),lastGeneratedSlips=[],lastRecommendedSlips=[],customStructures=[];
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
+function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
+function cap(s){return String(s||'').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
+function displayPropLabel(key){const labels={hits:'Hits',total_bases:'Total Bases',runs:'Runs',rbis:'RBIs',singles:'Singles',doubles:'Doubles',triples:'Triples',home_runs:'Home Runs',walks:'Walks',hitter_strikeouts:'Hitter Strikeouts',hits_runs_rbis:'Hits + Runs + RBIs',pitcher_strikeouts:'Pitcher Strikeouts',pitcher_outs:'Pitcher Outs',earned_runs:'Earned Runs',hits_allowed:'Hits Allowed',walks_allowed:'Walks Allowed',rfi_nrfi:'RFI / NRFI'};return labels[String(key||'').toLowerCase()]||cap(key)}
+function appLabel(s){s=String(s||'').toLowerCase();if(s==='prizepicks')return 'PrizePicks';if(s==='sleeper')return 'Sleeper';if(s==='parlay_underdog'||s==='underdog')return 'Underdog';return cap(s||'Unknown')}
+function appTypeLabel(r){return (r.app_line_label||appLabel(r.source_key)+' • '+lineLabel(r.line_type||'regular'))}
+function fmtDate(s){if(!s)return '';try{const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return s}}
+let currentScreenName='board';
+function setScreen(id){currentScreenName=id;['board','health','calibration','dossier','build','slips','playerProfile'].forEach(x=>{const el=$(x+'Screen');if(el)el.classList.toggle('hidden',id!==x)});$('mainMenu').classList.add('hidden');updateSlipFloat()}
+function checkbox(id,value,label,checked=true,rows=1){const zero=Number(rows||0)<=0;return '<label class="check '+(zero?'zero':'')+'"><input type="checkbox" data-value="'+esc(value)+'" '+(checked?'checked':'')+'> <span>'+esc(label)+'</span></label>'}
+function bindGroup(groupId,boxId,set){const g=$(groupId),box=$(boxId);function update(){const inputs=[...box.querySelectorAll('input')];const checked=inputs.filter(i=>i.checked).length;g.checked=inputs.length>0&&checked===inputs.length;g.indeterminate=checked>0&&checked<inputs.length}box.addEventListener('change',e=>{if(e.target.matches('input')){e.target.checked?set.add(e.target.dataset.value):set.delete(e.target.dataset.value);update();render();}});g.addEventListener('change',()=>{[...box.querySelectorAll('input')].forEach(i=>{i.checked=g.checked;g.checked?set.add(i.dataset.value):set.delete(i.dataset.value)});update();render();});update()}
+function sourceTypeKey(t){return (t.source_key||'unknown')+':'+(t.line_type||'regular')}
+function rowSourceTypeKey(r){return (r.source_key||'unknown')+':'+(r.line_type||'regular')}
+function renderThresholdOptions(id,label,thresholds,maxValue,suffix,selectedValue){const sel=$(id);const max=Number(maxValue||0);const opts=['<option value="0">All '+label+'</option>'];thresholds.forEach(t=>{if(max>=t)opts.push('<option value="'+t+'"'+(Number(selectedValue)===t?' selected':'')+'>'+t+suffix+'</option>')});sel.innerHTML=opts.join('')}
+// Refetches from the server with the current hp/score thresholds, instead of purely re-filtering
+// an already-fetched (and server-side limited) set - a lower threshold needs a real round-trip to
+// reveal rows that were never fetched in the first place, since the initial load applies
+// min_score=80 server-side to keep that first load fast and reliable.
+async function refetchWithFilters(){
+  $('status').textContent='Reloading board...';
+  try{
+    const params=new URLSearchParams({limit:'200',t:String(Date.now())});
+    if(filters.score>0)params.set('min_score',String(filters.score));
+    if(filters.hp>0)params.set('min_hit_probability',String(filters.hp));
+    const j=await (await fetchWithTimeout('/api/main-board/current?'+params.toString(),{cache:'no-store'},15000)).json();
+    if(!j.ok)throw Error(j.error||'board failed');
+    rows=Array.isArray(j.rows)?j.rows:[];
+    render();
+  }catch(e){
+    const msg=e&&e.name==='AbortError'?'Request timed out after 15s.':(e.message||e);
+    $('status').innerHTML='<span class="err">Reload failed: '+esc(msg)+'</span>';
+  }
+}
+function renderFilters(data){const hitter=data.prop_groups?.hitter||[], pitcher=data.prop_groups?.pitcher||[], pp=data.source_groups?.prizepicks||[], sl=data.source_groups?.sleeper||[], ud=data.source_groups?.underdog||[];const summary=data.summary||{};filters={props:new Set([...hitter,...pitcher].map(p=>p.canonical_prop_key)),types:new Set([...pp,...sl,...ud].map(t=>sourceTypeKey(t))),hp:0,score:80};$('hitterProps').innerHTML=hitter.length?hitter.map(p=>checkbox('',p.canonical_prop_key,p.label+' ('+p.rows+')',true,p.rows)).join(''):'<span class="small">No hitter options</span>';$('pitcherProps').innerHTML=pitcher.length?pitcher.map(p=>checkbox('',p.canonical_prop_key,p.label+' ('+p.rows+')',true,p.rows)).join(''):'<span class="small">No pitcher options</span>';$('ppTypes').innerHTML=pp.length?pp.map(t=>checkbox('',sourceTypeKey(t),lineLabel(t.line_type)+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No PrizePicks options</span>';$('sleeperTypes').innerHTML=sl.length?sl.map(t=>checkbox('',sourceTypeKey(t),(t.label||lineLabel(t.line_type))+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No Sleeper options</span>';const udEl=$('underdogTypes');if(udEl)udEl.innerHTML=ud.length?ud.map(t=>checkbox('',sourceTypeKey(t),(t.label||lineLabel(t.line_type))+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No Underdog options</span>';bindGroup('hitterGroup','hitterProps',filters.props);bindGroup('pitcherGroup','pitcherProps',filters.props);bindGroup('ppGroup','ppTypes',filters.types);bindGroup('sleeperGroup','sleeperTypes',filters.types);if(udEl)bindGroup('underdogGroup','underdogTypes',filters.types);renderThresholdOptions('hpFilter','HP',[60,65,70,80,90],summary.max_hp||0,'%+',0);renderThresholdOptions('scoreFilter','Overall',[40,50,60,70,80],summary.max_score||0,'+',80);$('hpFilter').onchange=e=>{filters.hp=Number(e.target.value||0);refetchWithFilters()};$('scoreFilter').onchange=e=>{filters.score=Number(e.target.value||0);refetchWithFilters()};$('sortMode').onchange=e=>{sortMode=e.target.value||'overall';render()}}
+function clientLegOpen(r){const t=Date.parse(r.official_game_time_utc||'');if(Number.isFinite(t)&&t<=Date.now())return false;const s=String(r.game_status_code||r.detailed_state||'').toLowerCase();if(/final|game over|postponed|suspended|cancel/.test(s))return false;return true}
+function passes(r){return clientLegOpen(r)&&filters.props.has(r.canonical_prop_key)&&filters.types.has(rowSourceTypeKey(r))&&Number(r.estimated_hit_probability_0_100||0)>=filters.hp&&Number(r.score_0_100||0)>=filters.score}
+function legKey(r){return [r.game_pk||'',r.mlb_player_id||r.player_name||'',r.canonical_prop_key||'',String(r.line_value??''),String(r.selected_side||'').toLowerCase()].join('|')}
+function groupRows(list){const m=new Map();for(const r of list){const k=legKey(r);if(!m.has(k))m.set(k,{rows:[],best:r});const g=m.get(k);g.rows.push(r);if(Number(r.score_0_100||0)>Number(g.best.score_0_100||0))g.best=r;}return [...m.values()].sort((a,b)=>Number(a.best.rank_order||999999)-Number(b.best.rank_order||999999))}
+function qLabel(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=88&&conf>=68&&score>=82)return 'Gold';if(hp>=78&&conf>=58&&score>=72)return 'Silver';return 'Bronze'}
+function qClass(label){return String(label||'bronze').toLowerCase()}
+function friendlyGrade(g){return String(g||'').replace('A_PLUS','A+').replace(/_/g,' ')}
+function qualityLetter(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=92&&conf>=72&&score>=84)return 'A+';if(hp>=85&&conf>=68&&score>=78)return 'A';if(hp>=78&&conf>=58&&score>=72)return 'B+';if(hp>=70&&conf>=50)return 'B';return 'C'}
+function friendlyBand(b){const x=String(b||'').toUpperCase();if(x.includes('70'))return '70%+ HP lane';if(x.includes('60'))return '60%+ HP lane';return String(b||'HP lane').replace(/_/g,' ')}
+function contextLabel(s){const x=String(s||'').toLowerCase();if(x.includes('ready')&&!x.includes('warning'))return 'context ready';if(x.includes('warning'))return 'context warnings';if(x.includes('partial'))return 'partial context';return x?x.replace(/_/g,' '):'context available'}
+function sourceWeight(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 1;if(x==='sleeper')return 2;if(x==='parlay_underdog'||x==='underdog')return 3;return 9}
+function sourceShort(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 'PP';if(x==='sleeper')return 'Sleeper';if(x==='parlay_underdog'||x==='underdog')return 'Underdog';return appLabel(k)}
+function appLabel(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 'PrizePicks';if(x==='sleeper')return 'Sleeper';if(x==='parlay_underdog'||x==='underdog')return 'Underdog';return cap(k)}
+function lineLabel(t){return String(t||'regular').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
+function qLabel(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=88&&conf>=68&&score>=82)return 'Gold';if(hp>=78&&conf>=58&&score>=72)return 'Silver';return 'Bronze'}
+function qClass(q){return String(q).toLowerCase()}
+function groupKey(r){return [r.game_pk,r.mlb_player_id,r.canonical_prop_key,r.line_value,r.selected_side].map(x=>String(x??'')).join('|')}
+function overallSort(r){const hp=Number(r.estimated_hit_probability_0_100||0),sc=Number(r.score_0_100||0),ss=Number(r.score_sort_0_100||0);return ss>0?ss:(hp*.72+sc*.28)}
+function groupSort(g){const r=g.best;if(sortMode==='hp')return Number(r.estimated_hit_probability_0_100||0)*1000+Number(r.score_0_100||0);if(sortMode==='score')return Number(r.score_0_100||0)*1000+Number(r.estimated_hit_probability_0_100||0);return overallSort(r)*1000+Number(r.estimated_hit_probability_0_100||0)}
+function groupRows(input){const m=new Map();for(const r of input){const k=groupKey(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r)}return Array.from(m.values()).map(rs=>{rs.sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)||String(a.source_key).localeCompare(String(b.source_key)));const best=rs.slice().sort((a,b)=>Number(a.rank_order||99999)-Number(b.rank_order||99999))[0]||rs[0];return{rows:rs,best}}).sort((a,b)=>groupSort(b)-groupSort(a)||Number(a.best.rank_order||99999)-Number(b.best.rank_order||99999))}
+function scoreCards(rows){const sorted=rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)||String(a.source_key).localeCompare(String(b.source_key)));const cls='scoreGrid '+(sorted.length<2?'single':'');return '<div class="'+cls+'">'+sorted.map(r=>'<div class="scorePill"><span class="scoreApp">'+esc(sourceShort(r.source_key))+'</span><span class="scoreNum">'+num(r.score_0_100)+'</span></div>').join('')+'</div>'}
+function badges(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)||String(a.source_key).localeCompare(String(b.source_key)));const seen=new Set();const pairs=[];for(const r of rows){const k=String(r.source_key||'');if(seen.has(k))continue;seen.add(k);const t=Number(r.is_demon||0)===1?'demon':Number(r.is_goblin||0)===1?'goblin':Number(r.more_only||0)===1?'more_only':(r.line_type||'regular');pairs.push('<div class="badgePair"><span class="badge source">'+esc(appLabel(r.source_key))+'</span><span class="badge '+esc(t)+'">'+esc(lineLabel(t))+'</span></div>')}const q=qLabel(g.best);return '<div class="badgeStack"><div class="badgePairs">'+pairs.join('')+'</div><div class="badgeLine"><span class="badge '+qClass(q)+'">'+esc(q)+'</span></div></div>'}
+function cleanText(v){return String(v||'').replace(/[{}"]/g,'').replace(/\\[/g,'').replace(/\\]/g,'').replace(/_/g,' ').replace(/\\s+/g,' ').trim()}
+function firstReal(vals){for(const v of vals){const x=cleanText(v);if(x&&x!=='null'&&x!=='undefined'&&x!=='0')return x}return ''}
+function hashPick(seed,arr){if(!arr.length)return '';let h=0;for(const ch of String(seed||''))h=(h*31+ch.charCodeAt(0))>>>0;return arr[h%arr.length]}
+function pct1(v){const n=Number(v);return Number.isFinite(n)?(Number.isInteger(n)?String(n):n.toFixed(1))+'%':'—'}
+function parkInsight(r){const v=String(r.venue_name||'').toLowerCase();const k=String(r.canonical_prop_key||'');const side=String(r.selected_side||'').toLowerCase();const hitPark={
+  'rate field':['Rate Field can reward pulled air contact, but singles/hits still need clean contact rather than pure park carry.','Rate Field keeps this mostly batter-vs-pitcher for hits; power-friendly notes matter more for total bases and HR paths.'],
+  'pnc park':['PNC Park can mute easy power to parts of the yard, so contact props separate better from total-base upside.','PNC adds more park friction to power paths than to a simple reach-base contact path.'],
+  'oracle park':['Oracle usually asks for real gap quality on extra-base paths, making hits-only cleaner than power-dependent legs.'],
+  'coors field':['Coors gives extra room to batted-ball outcomes, but confidence still depends on contact form and lineup spot.'],
+  'fenway park':['Fenway can turn pulled or wall contact into unusual base paths, so total-base legs need cleaner batted-ball quality.'],
+  'yankee stadium':['Yankee Stadium can help certain pull-power shapes; hits-only still leans more on contact and plate appearances.'],
+  'dodger stadium':['Dodger Stadium is more neutral than extreme for contact legs, so matchup and lineup context carry more weight.'],
+  'wrigley field':['Wrigley is wind-sensitive, so weather matters more here before trusting power or total-base legs.'],
+  'citizens bank park':['Citizens Bank can help lifted contact, so power/total-base paths need to be separated from hits-only probability.'],
+  'camden yards':['Camden’s current shape is less automatic for pull power, so contact quality matters more than the label.']
+};
+  for(const name of Object.keys(hitPark)){if(v.includes(name))return hashPick((r.player_name||'')+k+side,hitPark[name])}
+  if(r.venue_name)return 'Park is identified, but this card does not overstate park edge without the matching weather/quality signal.';
+  return ''
+}
+function weatherInsight(r){const wx=firstReal([r.weather_summary]);const wind=firstReal([r.wind_summary]);const roof=firstReal([r.roof_status]);const temp=Number(r.weather_temp_f||0);const bits=[];if(temp){if(temp>=82)bits.push('warmer air can be friendlier to carry');else if(temp<=55)bits.push('cooler air trims carry and favors cleaner contact reads');else bits.push('temperature is not an extreme driver')}if(wind){const w=wind.toLowerCase();if(w.includes('out'))bits.push('wind note leans carry-positive');else if(w.includes('in'))bits.push('wind note leans carry-negative');else bits.push('wind is logged but not a simple carry boost')}if(roof)bits.push('roof status: '+roof);if(wx&&!bits.length)bits.push('weather: '+wx);return bits.join('; ')}
+function pitcherInsight(r){const p=firstReal([r.opposing_pitcher_name,r.probable_pitcher_name]);const h=firstReal([r.opposing_pitcher_hand,r.probable_pitcher_hand]);const k=String(r.canonical_prop_key||'');if(!p)return '';const hand=h?' '+h+'-handed':'';if(k==='walks')return 'Pitcher context is tied to '+p+'; walk legs depend on zone attack and count leverage more than raw batter form.';if(k==='total_bases'||k==='home_runs'||k==='doubles')return 'Matchup is flagged against '+p+hand+', so the read should care about contact quality and damage path, not only recent hit rate.';if(k==='hits_runs_rbis'||k==='runs'||k==='rbis')return 'Matchup is against '+p+hand+'; production props need the pitcher read plus lineup/base-runner opportunity.';return 'Matchup is tied to '+p+hand+', keeping this from being a generic form-only projection.'}
+function propEaseText(r){const k=String(r.canonical_prop_key||''), side=String(r.selected_side||'').toLowerCase(), line=Number(r.line_value||0);if(k==='hits_runs_rbis'&&side==='more')return line<=0.5?'HRRBI 0.5 has three paths — hit, run, or RBI — so it can rate above hits-only when form and lineup context cooperate.':'HRRBI is broader than hits, but this line asks for multiple production events.';if(k==='hits'&&side==='more')return line<=0.5?'Hits 0.5 is a cleaner contact leg: narrower than HRRBI, but less dependent on slug or teammate conversion.':'Multi-hit legs need volume plus contact quality, so the board demands stronger support.';if(k==='total_bases')return side==='more'?'Total bases needs damage, not just a ball in play, so park/weather and pitcher contact quality matter more.':'Total-base unders improve when the damage path is muted, even if a single is still live.';if(k==='walks')return side==='more'?'Walks need patience, pitcher nibble, and umpire/zone help; raw hit form is not enough.':'Walks under prefers an attack-zone pitcher, aggressive hitter, or wider strike environment.';if(k==='rbis')return side==='more'?'RBI needs opportunity in front of the hitter, so lineup context matters as much as batter form.':'RBI under can survive good contact when traffic and run environment are thin.';if(k==='runs')return side==='more'?'Runs need reach-base plus lineup conversion behind the hitter; it is not just a batter-only leg.':'Runs under improves when lineup conversion or game run environment is muted.';if(k==='singles')return 'Singles are contact-specific and can lose to extra-base contact, so variance stays higher than basic hits.';if(k==='doubles')return 'Doubles need gap quality and park shape; they are not just a better version of hits.';if(k==='home_runs')return 'Home runs are rare, launch/exit-velocity dependent outcomes; the board needs park and matchup support before trusting them.';if(k.includes('pitcher'))return 'Pitcher props depend on role length, opponent approach, umpire zone, and bullpen risk more than raw season form.';return 'Line difficulty, side, source type, and available context are blended before this leg is ranked.'}
+function appInsight(g){if(g.rows.length<2)return '';const labels=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)).map(x=>appLabel(x.source_key));return 'Same leg is grouped across '+labels.join(' + ')+', with app scores kept separate instead of duplicating the card.'}
+function contextStatus(r){const items=[];const p=pitcherInsight(r);const w=weatherInsight(r);const park=parkInsight(r);const lineup=firstReal([r.lineup_status]);const order=firstReal([r.batting_order]);const ump=firstReal([r.umpire_name,r.umpire_context_summary]);if(p)items.push(p);if(lineup||order)items.push('Lineup detail: '+[lineup,order?'slot '+order:''].filter(Boolean).join(', ')+'.');if(w)items.push('Weather/roof: '+w+'.');if(park)items.push('Park note: '+park);if(ump)items.push('Umpire note is present: '+ump+'.');return items}
+function toneFragment(r,seed){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0),n=Number(r.hp_non_push_sample||r.hp_sample_size||0);const hpT=hp?hp.toFixed(1)+'%':'',confT=conf?conf.toFixed(0)+'%':'',scoreT=score?score.toFixed(0):'';
+  if(n>0&&n<20)return hashPick(seed,["At "+hpT+" the number is appealing, but only "+n+" games back it up, so this stays a lean rather than a lock.",hpT+" looks strong on paper — the catch is a "+n+"-game sample, so treat it as promising, not proven.","Small-sample math: "+n+" games behind a "+hpT+" read means the edge could be real or could be noise.","The model likes this at "+hpT+", though with just "+n+" games in the window I'd want it to hold up a bit longer.",n+" games isn't much to hang a "+hpT+" number on — promising shape, thin foundation.","Take the "+hpT+" with a grain of salt; "+n+" games is early days for a read this specific.","This is a "+hpT+" number riding on "+n+" games of evidence — enough to notice, not enough to fully trust."]);
+  if(hp>=85&&conf>=75&&score>=84)return hashPick(seed,["Everything stacks here: "+hpT+" probability, "+confT+" confidence, and a "+scoreT+" score all pointing the same way.","About as clean as the board gets — "+hpT+" hit rate backed by "+confT+" confidence and a "+scoreT+" score, no real tension between the numbers.","Rare alignment: probability, confidence, and score all agree at the top end ("+hpT+" / "+confT+" / "+scoreT+").","The layers agree here — "+hpT+" isn't fighting the "+confT+" confidence read, and the "+scoreT+" score confirms it.","This is the kind of leg the model is built to find: "+hpT+", "+confT+" confidence, "+scoreT+" score, all in the same direction.","Hard to find a weak link — "+hpT+" probability, "+confT+" confidence, "+scoreT+" score."]);
+  if(hp>=85&&score<80)return hashPick(seed,["Big "+hpT+" number, but a "+scoreT+" score asks for a second look before treating it as a top-shelf play.","The probability is attractive at "+hpT+" while the support score ("+scoreT+") is playing it more cautiously.","Not a red flag, but the "+scoreT+" score is the reason this stays below the cleanest tier despite "+hpT+".",hpT+" on its own would be elite; the "+scoreT+" support score is the thing keeping expectations in check.","The headline number ("+hpT+") is louder than the supporting evidence ("+scoreT+") — worth a closer look before trusting it fully."]);
+  if(hp>=80&&conf<70)return hashPick(seed,[hpT+" with softer "+confT+" confidence — useful, but not clean enough to call a finished read.","Probability is strong at "+hpT+" while confidence ("+confT+") is the drag.","Edge candidate, not a finished play — the evidence base behind this "+hpT+" is thinner ("+confT+" confidence).",hpT+" is real, but "+confT+" confidence means the model isn't fully sold on its own number yet.","Interesting gap here — "+hpT+" probability paired with only "+confT+" confidence."]);
+  if(hp>=75&&score>=86)return hashPick(seed,["Good "+hpT+" number with a strong "+scoreT+" support score — worth comparing against similar props on the board.","The support layer likes this setup ("+scoreT+"), though "+hpT+" still does the deciding.",scoreT+" score gives this real backing even at a moderate "+hpT+".","Solid all around: "+hpT+" probability, "+scoreT+" score — not flashy, just consistent."]);
+  return hashPick(seed,["Usable candidate at "+(hpT||'a moderate read')+", not a blind play.","This leg needs context and price discipline before action — "+hpT+" alone isn't the full story.","Middle-of-the-board profile: nothing here screams avoid, nothing screams lock either.","Fair read at "+hpT+", worth a look but not a headline play.","Solid but unremarkable — "+hpT+" probability without a standout supporting factor."]);
+}
+function propFragment(r,seed){const k=String(r.canonical_prop_key||''),side=String(r.selected_side||'').toLowerCase(),line=Number(r.line_value||0),lineT=Number.isFinite(line)?line:'';
+  const banks={
+    hits_runs_rbis_more_low:["HRRBI "+lineT+" keeps three paths open — a hit, a run, or an RBI — so it can outrate a hits-only line when form and lineup context cooperate.","With three ways to get there (hit/run/RBI), a "+lineT+" HRRBI line is naturally softer than it looks on the surface.","This is the broadest offensive prop on the board — hit, run, or RBI all satisfy it, which is exactly why it clears more often than raw batting average suggests."],
+    hits_runs_rbis_more:["HRRBI is broader than hits alone, but this line still needs multiple production events to clear.","Three stat categories feed this prop, but at this line it's asking for more than a token contribution."],
+    hits_more_low:["Hits "+lineT+" is a clean contact leg — narrower than HRRBI, less dependent on slugging or a teammate converting.","Just needs one clean knock to clear "+lineT+" — about as straightforward as a hitter prop gets.","A single line drive settles this one; contact rate matters more here than power."],
+    hits_more:["Multi-hit legs need volume plus contact quality, so the board wants stronger support before trusting this one.","Clearing this hits line takes a genuinely good day at the plate, not just a lucky bloop."],
+    total_bases_more:["Total bases needs actual damage, not just a ball in play — park, weather, and pitcher contact quality all matter more here.","This is a power-flavored line; a string of singles alone may not be enough to clear it.","Slug matters more than average for this one — look at how the ball's been carrying, not just whether hits are falling."],
+    total_bases_less:["Total-base unders improve when the damage path is muted, even if a clean single is still in play.","This still allows a base hit or two — it's the extra-base contact that needs to stay quiet."],
+    walks_more:["Walks need patience at the plate, a nibbling pitcher, or a friendly zone — raw hit form barely factors in.","This is a plate-discipline bet more than a hitting bet; the opposing arm's control matters as much as the batter."],
+    walks_less:["Walk unders like an attack-zone pitcher or an aggressive hitter who chases early.","Favors a pitcher who works ahead in the count rather than around the zone."],
+    rbis_more:["RBI needs opportunity in front of the hitter — lineup context matters as much as the batter's own form.","Someone has to be on base first; this leans on the whole lineup, not just this player's bat."],
+    rbis_less:["RBI unders can survive good individual contact when traffic on the bases stays thin."],
+    runs_more:["Runs need reaching base plus a lineup that converts behind the hitter — it's a two-part bet.","This depends on what happens after this player reaches, not just whether they reach."],
+    runs_less:["Runs stay under when lineup conversion or the overall scoring environment is muted."],
+    singles_more:["Singles are contact-specific and can actually lose to extra-base hits, so variance runs a bit higher than plain hits."],
+    doubles_more:["Doubles need real gap power and the right park shape — not just a better version of a hits prop."],
+    home_runs_more:["Home runs are rare, exit-velocity-driven outcomes; this needs real park and matchup support before it's trustworthy.","Power props like this live or die on a handful of well-struck balls — inherently streaky."],
+    hitter_strikeouts:["Strikeout props hinge on the specific pitcher's swing-and-miss stuff as much as the batter's own contact rate."],
+    pitcher:["Pitcher props lean on role length, opponent approach, umpire zone, and bullpen risk more than raw season-long form.","This depends on how deep the start goes and how the opposing lineup approaches at-bats, not just the pitcher's stat line."]
+  };
+  let key=k;
+  if((k==='hits_runs_rbis')&&side==='more')key=lineT<=0.5?'hits_runs_rbis_more_low':'hits_runs_rbis_more';
+  else if(k==='hits'&&side==='more')key=lineT<=0.5?'hits_more_low':'hits_more';
+  else if(k==='total_bases')key=side==='more'?'total_bases_more':'total_bases_less';
+  else if(k==='walks')key=side==='more'?'walks_more':'walks_less';
+  else if(k==='rbis')key=side==='more'?'rbis_more':'rbis_less';
+  else if(k==='runs')key=side==='more'?'runs_more':'runs_less';
+  else if(k==='singles')key='singles_more';
+  else if(k==='doubles')key='doubles_more';
+  else if(k==='home_runs')key='home_runs_more';
+  else if(k==='hitter_strikeouts')key='hitter_strikeouts';
+  else if(k.includes('pitcher'))key='pitcher';
+  const bank=banks[key];
+  if(bank)return hashPick(seed,bank);
+  return hashPick(seed,['Line difficulty, side, and available context are blended together before this leg is ranked.','This prop is weighed on its own terms rather than compared flatly against other markets.']);
+}
+function matchupFragment(r,seed){const p=firstReal([r.opposing_pitcher_name,r.probable_pitcher_name]);const h=firstReal([r.opposing_pitcher_hand,r.probable_pitcher_hand]);const k=String(r.canonical_prop_key||'');if(!p)return '';const hand=h?(' the '+h+'-hander'):'';
+  if(k==='walks')return hashPick(seed,[p+"'s zone tendencies matter more here than this hitter's recent form — walk legs live and die on pitch selection.","Facing "+p+", count leverage and zone discipline drive this more than raw batting eye."]);
+  if(['total_bases','home_runs','doubles'].includes(k))return hashPick(seed,["Against"+hand+" "+p+", contact quality and damage path matter more than a simple recent hit rate.",p+" is"+(h?' a '+h+'-handed':'')+" arm worth checking for hard-contact and barrel rates allowed, not just ERA.","This matchup is flagged specifically against "+p+" — the pitch mix they're bringing matters here."]);
+  if(['hits_runs_rbis','runs','rbis'].includes(k))return hashPick(seed,["Against "+p+hand+", production props need both a favorable pitcher read and lineup opportunity.",p+" sets the table for this one, but so does everything behind this hitter in the order."]);
+  return hashPick(seed,["Matchup is tied to "+p+hand+", which keeps this from being a generic form-only projection.","Worth weighing how this hitter has handled"+(hand?' '+h+'-handed':'')+" arms like "+p+" specifically, not just pitching overall.",p+" is the opposing arm here — factor in recent form against this specific look, not just season averages."]);
+}
+function weatherFragment(r,seed){const wind=firstReal([r.wind_summary]);const roof=firstReal([r.roof_status]);const temp=Number(r.weather_temp_f||0);const bits=[];
+  if(temp){if(temp>=82)bits.push(hashPick(seed+'t',[temp+"° air should carry a little better than average","warm air at "+temp+"° gives fly balls a bit more life",temp+"° is on the warmer side, which tends to help carry"]));else if(temp<=55)bits.push(hashPick(seed+'t',[temp+"° trims carry noticeably","cool air at "+temp+"° favors cleaner, lower-trajectory contact",temp+"° is cold enough to knock a few feet off fly balls"]));else bits.push(temp+"° is fairly neutral for carry");}
+  if(wind){const w=wind.toLowerCase();if(w.includes('out'))bits.push(hashPick(seed+'w',['wind blowing out is a real tailwind for anything hit in the air','the wind note leans carry-positive tonight']));else if(w.includes('in'))bits.push(hashPick(seed+'w',['wind blowing in works against fly-ball production','the wind note leans carry-negative tonight']));else bits.push('wind is logged but not a simple carry boost either way');}
+  if(roof)bits.push('roof status: '+roof);
+  if(!bits.length)return '';
+  return hashPick(seed+'j',[bits.join(', ')+'.','Conditions: '+bits.join(', ')+'.','Weather note — '+bits.join(', ')+'.']);
+}
+function sampleFragment(r,seed){const n=Number(r.hp_non_push_sample||r.hp_sample_size||0);if(!n)return '';if(n>=40)return hashPick(seed,["This is backed by "+n+" games of history, which is a genuinely deep sample for a prop line.",n+" games behind this read — plenty of runway to trust the shape of it."]);if(n>=20)return hashPick(seed,[n+" games of history is a reasonable base for this read.","Backed by "+n+" games — enough to mean something, not so much it's overconfident."]);return '';}
+function appFragment(g,seed){if(g.rows.length<2)return '';const labels=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)).map(x=>appLabel(x.source_key));return hashPick(seed,["Same leg shows up across "+labels.join(' + ')+", scored separately on each app rather than duplicated.","This one's live on "+labels.join(' and ')+" — each app's own score is kept intact below.","Available on both "+labels.join(' & ')+"; worth comparing the two prices before picking one."]);}
+function shuffleBySeed(arr,seed){let h=0;for(const ch of String(seed||''))h=(h*31+ch.charCodeAt(0))>>>0;const out=arr.slice();for(let i=out.length-1;i>0;i--){h=(h*1103515245+12345)>>>0;const j=h%(i+1);[out[i],out[j]]=[out[j],out[i]]}return out}
+function composeInsight(g){const r=g.best;const raw=String(r.leg_insight_comment||'').trim();
+  const baseSeed=[r.player_name,r.canonical_prop_key,r.line_value,r.selected_side,r.source_key,r.final_board_row_id].join('|');
+  if(raw){const a=appFragment(g,baseSeed+'|app');return [raw,a].filter(Boolean).join(' ')}
+  const fragments=[toneFragment(r,baseSeed+'|tone'),propFragment(r,baseSeed+'|prop'),matchupFragment(r,baseSeed+'|matchup'),weatherFragment(r,baseSeed+'|weather'),sampleFragment(r,baseSeed+'|sample'),appFragment(g,baseSeed+'|app')].filter(Boolean);
+  const ordered=shuffleBySeed(fragments,baseSeed+'|order');
+  const maxParts=fragments.length<=3?fragments.length:(3+(baseSeed.length%2));
+  return ordered.slice(0,Math.min(maxParts,ordered.length)).join(' ');
+}
+function evidenceReason(g){return composeInsight(g)}
+function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const q='Quality '+qualityLetter(g.best);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+q;return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+q}
+function card(g){const r=g.best;const id=String(r.final_board_row_id||'');const checked=selectedLegIds.has(id);const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:(r.home_team_name||r.away_team_name||'Game '+(r.game_pk||''));const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card '+(checked?'hasPick':'')+'" role="button" tabindex="0" data-row-id="'+esc(id)+'"><input class="pickBox" type="checkbox" data-pick-id="'+esc(id)+'" '+(checked?'checked':'')+' aria-label="Select leg"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Prob</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Overall</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
+function bindCards(){document.querySelectorAll('.pickBox[data-pick-id]').forEach(cb=>{cb.onclick=e=>{e.stopPropagation();const id=String(cb.getAttribute('data-pick-id')||'');if(cb.checked)selectedLegIds.add(id);else selectedLegIds.delete(id);render();updateSlipFloat()}});document.querySelectorAll('.card[data-row-id]').forEach(el=>{el.onclick=e=>{if(e.target&&e.target.classList&&e.target.classList.contains('pickBox'))return;openDossier(el.getAttribute('data-row-id'))};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDossier(el.getAttribute('data-row-id'))}}})}
+function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' qualified legs';$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>';bindCards()}
+function kv(items){return '<div class="kv">'+items.filter(x=>x[1]!==undefined&&x[1]!==null&&String(x[1]).trim()!=='').map(x=>'<div class="key">'+esc(x[0])+'</div><div class="val">'+esc(x[1])+'</div>').join('')+'</div>'}
+function jsonView(obj){try{return esc(JSON.stringify(obj||{},null,2))}catch(e){return esc(String(obj||''))}}
+function metric(k,v){return '<div class="dMetric"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>'}
+function cleanLabel(k){return cap(String(k||'').replace(/[_\.]+/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/\b0 100\b/g,'0-100').replace(/\b0 1\b/g,'0-1').trim())}
+function isUsefulValue(v){if(v===undefined||v===null)return false;if(typeof v==='number')return Number.isFinite(v);if(typeof v==='boolean')return true;const x=String(v).trim();if(!x||x==='null'||x==='undefined'||x==='NaN')return false;if(x.length>190)return false;if((x.match(/[|_]/g)||[]).length>7&&x.length>55)return false;return true}
+function cleanVal(v){if(v===undefined||v===null)return '';if(typeof v==='boolean')return v?'Yes':'No';if(typeof v==='number')return String(Math.round(v*1000)/1000);let x=String(v).trim();if(!x||x==='null'||x==='undefined')return '';if(/^[-+]?\d+\.\d{4,}$/.test(x))x=String(Math.round(Number(x)*1000)/1000);return x.replace(/_/g,' ').replace(/\s+/g,' ')}
+function pushInfo(arr,k,v){if(!isUsefulValue(v))return;const val=cleanVal(v);if(!val)return;const key=cleanLabel(k);const sig=(key+'|'+val).toLowerCase();if(arr._seen&&arr._seen.has(sig))return;if(!arr._seen)Object.defineProperty(arr,'_seen',{value:new Set(),enumerable:false});arr._seen.add(sig);arr.push([key,val])}
+function flatRows(obj,prefix='',out=[]){if(!obj||typeof obj!=='object')return out;if(Array.isArray(obj)){if(obj.length&&obj.every(x=>typeof x!=='object'||x===null)){pushInfo(out,prefix,obj.map(cleanVal).filter(Boolean).join(', '))}else{obj.slice(0,8).forEach((x,i)=>flatRows(x,prefix+' '+(i+1),out))}return out}for(const [k,v] of Object.entries(obj)){const path=prefix?prefix+'.'+k:k;if(v&&typeof v==='object')flatRows(v,path,out);else if(isUsefulValue(v))pushInfo(out,path,v)}return out}
+function pathMatch(key,words){const k=String(key||'').toLowerCase();return words.some(w=>k.includes(w))}
+function collectByKeywords(raw,words,limit=28){const rows=[];flatRows(raw.details_json_snapshot,'details',rows);flatRows(raw.matrix_payload_json_snapshot,'matrix',rows);flatRows(raw.hp_display_notes_json,'hp ledger',rows);const out=[];for(const r of rows){if(pathMatch(r[0],words)&&out.length<limit)pushInfo(out,r[0].replace(/^(Details|Matrix|Hp Ledger) /,''),r[1])}return out}
+function infoRows(rows){rows=(rows||[]).filter(r=>isUsefulValue(r[1]));if(!rows.length)return '<div class="small">Not available for this game/player yet.</div>';return '<div class="refinedRows">'+rows.map(r=>'<div class="infoRow"><div class="infoKey">'+esc(cleanLabel(r[0]))+'</div><div class="infoVal">'+esc(cleanVal(r[1]))+'</div></div>').join('')+'</div>'}
+function section(title,rows,hint){return '<div class="dSection"><h3>'+esc(title)+'</h3>'+(hint?'<div class="sectionHint">'+esc(hint)+'</div>':'')+infoRows(rows)+'</div>'}
+function sectionWide(title,html,hint){return '<div class="dSection wide"><h3>'+esc(title)+'</h3>'+(hint?'<div class="sectionHint">'+esc(hint)+'</div>':'')+html+'</div>'}
+function userStatKeys(){return ['ab','pa','avg','obp','slg','ops','h','r','hr','rbi','bb','so','sb','tb','2b','3b','ip','era','whip','k','er','ha','bb_allowed','k9','bb9','fip']}
+function statLabel(k){const m={ab:'AB',pa:'PA',avg:'AVG',obp:'OBP',slg:'SLG',ops:'OPS',h:'H',r:'R',hr:'HR',rbi:'RBI',bb:'BB',so:'SO',sb:'SB',tb:'TB','2b':'2B','3b':'3B',ip:'IP',era:'ERA',whip:'WHIP',k:'K',er:'ER',ha:'H',bb_allowed:'BB',k9:'K/9',bb9:'BB/9',fip:'FIP'};return m[String(k).toLowerCase()]||cleanLabel(k)}
+function pathHasStatKey(p,k){const parts=String(p||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);k=String(k||'').toLowerCase();return parts.includes(k)||parts.includes(k.replace('_',''))}
+function isInternalKey(path){const p=String(path||'').toLowerCase();return /(batch|request|run|chain|worker|version|certification|grade|profile|ledger|calibration|threshold|policy|tiebreak|adjustment|variance_adjustment|factor_adjustment|score_sort|rank_order|prepared|source_line_id|matrix_source|json|snapshot|raw|debug|ok|status_code|created_at|updated_at|audit|binding|queue|orchestrator)/.test(p)}
+function flattenUserLeaves(obj,prefix='',out=[]){if(!obj||typeof obj!=='object')return out;if(Array.isArray(obj)){obj.slice(0,60).forEach((x,i)=>{if(x&&typeof x==='object')flattenUserLeaves(x,prefix+' '+(i+1),out);else if(isUsefulValue(x)&&!isInternalKey(prefix))out.push({path:prefix,value:cleanVal(x)})});return out}for(const [k,v] of Object.entries(obj)){const path=prefix?prefix+'.'+k:k;if(isInternalKey(path))continue;if(v&&typeof v==='object')flattenUserLeaves(v,path,out);else if(isUsefulValue(v))out.push({path,value:cleanVal(v)})}return out}
+function allUserLeaves(raw){const rows=[];flattenUserLeaves(raw.details_json_snapshot,'details',rows);flattenUserLeaves(raw.matrix_payload_json_snapshot,'context',rows);return rows}
+function findLeaves(raw,words,limit=20){const out=[];const seen=new Set();for(const r of allUserLeaves(raw)){const p=String(r.path||'').toLowerCase();if(words.some(w=>p.includes(String(w).toLowerCase()))){const key=cleanLabel(r.path.split('.').slice(-2).join(' '));const sig=(key+'|'+r.value).toLowerCase();if(!seen.has(sig)){seen.add(sig);out.push([key,r.value]);if(out.length>=limit)break}}}return out}
+function pickLeaf(raw,words){const f=findLeaves(raw,words,1);return f.length?f[0][1]:''}
+function statGrid(rows){const good=rows.filter(x=>isUsefulValue(x[1])).slice(0,12);if(!good.length)return '<div class="small">No clean stat line exposed for this row yet.</div>';return '<div class="statGrid">'+good.map(x=>'<div class="statCell"><div class="k">'+esc(x[0])+'</div><div class="v">'+esc(x[1])+'</div></div>').join('')+'</div>'}
+function table(headers,rows){if(!rows.length)return '<div class="small">Not available for this game/player yet.</div>';return '<table class="dossierTable"><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+headers.map(h=>'<td>'+esc(r[h]??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
+function extractSeasonStats(raw){const leaves=allUserLeaves(raw);const buckets={};for(const r of leaves){const p=String(r.path).toLowerCase();if(!/(season|career|ytd|year|regular)/.test(p))continue;for(const k of userStatKeys()){if(pathHasStatKey(p,k)){let b=p.includes('career')?'Career Regular Season':(p.includes('2026')||p.includes('season')||p.includes('ytd')?'2026 Regular Season':'Season');buckets[b]=buckets[b]||{};buckets[b][statLabel(k)]=r.value}}}return buckets}
+function statBlock(title,obj){const preferred=['AB','PA','AVG','OBP','SLG','OPS','H','R','HR','RBI','BB','SO','SB','TB','2B','3B','IP','ERA','WHIP','K','FIP'];const rows=preferred.filter(k=>isUsefulValue(obj[k])).map(k=>[k,obj[k]]);return '<div class="dSection wide"><h3>'+esc(title)+'</h3>'+statGrid(rows)+'</div>'}
+function extractSplitTables(raw){const leaves=allUserLeaves(raw);const durations=['last 3','last 5','last 7','last 10','last 15','last 20','last 30'];const by={};for(const r of leaves){const p=String(r.path).toLowerCase();const d=durations.find(x=>p.includes(x.replace(' ','_'))||p.includes(x));if(!d)continue;by[d]=by[d]||{Duration:d.replace(/\b\w/g,c=>c.toUpperCase())};for(const k of userStatKeys()){if(pathHasStatKey(p,k))by[d][statLabel(k)]=r.value}}
+const headers=['Duration','AB','PA','R','H','HR','RBI','BB','SO','SB','AVG','OBP','SLG','OPS'];const rows=durations.filter(d=>by[d]).map(d=>by[d]);return {headers,rows}}
+function extractLastGames(raw){const leaves=allUserLeaves(raw);const games=[];const by={};for(const r of leaves){const p=String(r.path).toLowerCase();if(!/(game log|game_logs|last_games|recent_games|logs|official_date|game_date|opponent)/.test(p))continue;const m=p.match(/(\d{4}-\d{2}-\d{2}|\d{1,2}[\/\-]\d{1,2}|game[s]?\s*\d+|logs?\s*\d+|recent_games\s*\d+|last_games\s*\d+)/);const id=m?m[0]:'row';by[id]=by[id]||{};if(/date|official/.test(p))by[id]['Date']=r.value;else if(/opponent|away|home|team/.test(p))by[id]['Opp']=r.value;else{for(const k of userStatKeys()){if(pathHasStatKey(p,k))by[id][statLabel(k)]=r.value}}
+}
+for(const v of Object.values(by)){if(Object.keys(v).length>1)games.push(v)}return games.slice(0,8)}
+function publicRows(pairs,raw,extraWords,limit=18){const out=[];pairs.forEach(x=>pushInfo(out,x[0],x[1]));findLeaves(raw,extraWords,limit).forEach(x=>pushInfo(out,x[0],x[1]));return out}
+function yesNo(v){return Number(v||0)?'Yes':'No'}
+function pctNum(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10)+'%':'—'}
+function avgFmt(v){const n=Number(v);return Number.isFinite(n)?(n<1?n.toFixed(3).replace(/^0/,''):String(Math.round(n*1000)/1000)):cleanVal(v)}
+function lineSide(r){return [String(r.selected_side||r.prop_side||'').toUpperCase(),r.line_value??r.board_line_value].filter(x=>x!==''&&x!==undefined&&x!==null).join(' ')}
+function pitcherNameFor(ctx,id){const p=(ctx.pitcher_profiles||[]).find(x=>String(x.player_id)==String(id)||String(x.mlb_player_id)==String(id));return p?(p.full_name||p.player_name||id):id}
+function rowsForRecentForm(ctx){return (ctx.recent_form||[]).map(r=>({'Window':cleanLabel(r.metric_window),'G':r.games_count,'PA':r.pa_sum,'AB':r.ab_sum,'H':r.hits_sum,'2B':r.doubles_sum,'HR':r.home_runs_sum,'R':r.runs_sum,'RBI':r.rbi_sum,'BB':r.walks_sum,'SO':r.strikeouts_sum,'SB':r.stolen_bases_sum,'TB':r.total_bases_derived_sum,'AVG':avgFmt(r.batting_average),'SLG':avgFmt(r.slugging_percentage)}))}
+function rowsForHpLines(ctx){return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Grade':(r.probability_grade?friendlyGrade(r.probability_grade):'—'),'Sample':r.sample_size,'Hit-Miss':(r.hit_count??'—')+'-'+(r.miss_count??'—')}))}
+function rowsForSplits(ctx){return (ctx.hitter_splits||[]).map(r=>({'Split':String(r.split_key||'').replace('vs_','vs ').toUpperCase(),'PA':r.pa,'AB':r.ab,'H':r.hits,'2B':r.doubles,'3B':r.triples,'HR':r.home_runs,'RBI':r.rbi,'BB':r.walks,'SO':r.strikeouts,'AVG':r.avg,'OBP':r.obp,'SLG':r.slg,'OPS':r.ops,'BABIP':r.babip}))}
+function rowsForRecentGames(ctx){return (ctx.recent_games||[]).map(r=>({'Date':r.game_date,'Opp':r.opponent_team_id,'Order':r.batting_order,'PA':r.pa,'AB':r.ab,'R':r.runs,'H':r.hits,'1B':r.singles,'2B':r.doubles,'3B':r.triples,'HR':r.home_runs,'RBI':r.rbi,'BB':r.walks,'SO':r.strikeouts,'SB':r.stolen_bases,'TB':r.total_bases}))}
+function rowsForPitcherForm(ctx){return (ctx.pitcher_form||[]).map(r=>({'Pitcher':pitcherNameFor(ctx,r.player_id),'Window':cleanLabel(r.metric_window),'G':r.games_count,'IP':avgFmt(r.innings_pitched_sum),'BF':r.batters_faced_sum,'H':r.hits_allowed_sum,'ER':r.earned_runs_sum,'BB':r.walks_allowed_sum,'K':r.strikeouts_sum,'HR':r.home_runs_allowed_sum,'ERA':avgFmt(r.era_calculated),'WHIP':avgFmt(r.whip_calculated),'K%':pctNum(Number(r.k_rate_calculated)*100),'BB%':pctNum(Number(r.bb_rate_calculated)*100),'K-BB%':isUsefulValue(r.k_minus_bb_rate_calculated)?pctNum(Number(r.k_minus_bb_rate_calculated)*100):'—','Strike%':isUsefulValue(r.strikes_per_pitch_calculated)?pctNum(Number(r.strikes_per_pitch_calculated)*100):'—','1st Inn Run%':(isUsefulValue(r.rfi_hit_count_sum)&&isUsefulValue(r.rfi_games_with_data)&&Number(r.rfi_games_with_data)>0)?pctNum((Number(r.rfi_hit_count_sum)/Number(r.rfi_games_with_data))*100):'—'}))}
+function rowsForPitcherSplits(ctx){return (ctx.pitcher_splits||[]).map(r=>({'Pitcher':pitcherNameFor(ctx,r.player_id),'Split':String(r.split_key||'').replace('vs_','vs ').toUpperCase(),'IP':avgFmt(r.innings_pitched),'BF':r.batters_faced,'H':r.hits_allowed,'BB':r.walks_allowed,'K':r.strikeouts,'HR':r.home_runs_allowed,'AVG':r.avg_against,'OBP':r.obp_against,'SLG':r.slg_against,'OPS':r.ops_against}))}
+function rowsForStarters(ctx){return (ctx.starters||[]).map(r=>({'Team':r.team_name,'Home':yesNo(r.is_home),'Starter':r.starter_name,'Hand':r.starter_hand,'Status':r.starter_status,'Confidence':r.starter_confidence}))}
+function rowsForBullpen(ctx){return (ctx.bullpen||[]).map(r=>({'Team':r.team_name,'Status':r.bullpen_status,'Risk':r.bullpen_risk_level,'Fatigue':r.bullpen_fatigue_score,'Pitches 3d':r.bullpen_pitches_last_3_days,'Used 3d':r.bullpen_pitchers_used_last_3_days,'Rested':r.rested_reliever_count,'Unavailable':r.likely_unavailable_reliever_count}))}
+function rowsForSchedule(ctx){return (ctx.schedule_spot||[]).map(r=>({'Team':r.team_name,'Spot':r.schedule_spot_status,'Rest':r.days_rest,'G 3d':r.games_last_3_days,'G 5d':r.games_last_5_days,'3-in-4':yesNo(r.three_in_four_flag),'4-in-6':yesNo(r.four_in_six_flag),'Travel':yesNo(r.travel_required_flag),'Miles':r.travel_distance_miles,'Risk':r.schedule_risk_level}))}
+
+function pickFirst(obj, keys){for(const k of keys){if(obj&&isUsefulValue(obj[k]))return obj[k]}return ''}
+function bookLabel(k){const x=String(k||'').toLowerCase();const m={draftkings:'DraftKings',fanduel:'FanDuel',betmgm:'BetMGM',fanatics:'Fanatics',espnbet:'ESPN BET',thescorebet:'theScore Bet',betrivers:'BetRivers',caesars:'Caesars',pointsbetus:'PointsBet',bet365:'bet365'};return m[x]||cap(k)}
+function rowsForBookOdds(ctx){const allowed=new Set(['h2h','spreads','totals']);return (ctx.market_odds||[]).filter(r=>allowed.has(String(r.market_key||'').toLowerCase())).map(r=>({'Book':bookLabel(r.bookmaker_key||r.bookmaker_title),'Market':String(r.market_key||'').toUpperCase(),'Team / Side':r.outcome_name||r.outcome_side,'Line':isUsefulValue(r.point)?r.point:'—','Price':isUsefulValue(r.price_american)?r.price_american:'—','Updated':fmtDate(r.market_last_update)}))}
+function rowsForPropMarket(ctx){const current=(ctx.prop_market_current_lines||[]).map(r=>({'Source':appLabel(r.source_key||r.book_key),'Book':bookLabel(r.book_key||r.source_key),'Prop':displayPropLabel(r.prop_key||r.market_name),'Side':String(r.side||'').toUpperCase()||'—','Line':isUsefulValue(r.line_value)?r.line_value:'—','Over':isUsefulValue(r.over_price)?r.over_price:'—','Under':isUsefulValue(r.under_price)?r.under_price:'—','Status':r.pickable_flag?'pickable':'available','Updated':fmtDate(r.last_update||r.verified_at)}));
+const evidence=(ctx.prop_market_evidence||[]).filter(r=>!r._query_error).map(r=>({'Source':appLabel(pickFirst(r,['source_key','bookmaker_key','book_key'])),'Book':bookLabel(pickFirst(r,['bookmaker_title','bookmaker_key','book_key'])),'Prop':displayPropLabel(pickFirst(r,['canonical_prop_key','prop_key','market_key','market_name','source_stat_name'])),'Side':String(pickFirst(r,['outcome_side','side','selection_side'])).toUpperCase()||'—','Line':pickFirst(r,['point','line_value','line','selection_line'])||'—','Over':pickFirst(r,['over_price','price_american','price'])||'—','Under':pickFirst(r,['under_price'])||'—','Status':pickFirst(r,['mapping_status','status','freshness_status'])||'evidence','Updated':fmtDate(pickFirst(r,['market_last_update','last_update','created_at']))}));
+return current.length?current:evidence}
+function propMarketFallback(ctx){const rows=rowsForPropMarket(ctx);const summary='<div class="small" style="margin-bottom:8px">'+esc(propMarketSummaryText(ctx))+'</div>';if(rows.length)return summary+table(['Source','Book','Prop','Side','Line','Over','Under','Status','Updated'],rows);return summary+'<div class="small">No external player-prop book rows are currently mined for this player/game. This is a market-data gap, not a display failure. Active PrizePicks/Sleeper app inventory is shown in Source Lines below.</div>'}
+function rowsForSourceLines(ctx){return (ctx.prepared_lines||[]).map(r=>({'Source':appLabel(r.source_key),'Prop':displayPropLabel(r.canonical_prop_key),'Line':r.line_value,'Type':r.source_prop_name||'prepared','Status':r.prep_status,'Pickable':yesNo(r.pickable_safe),'Start':fmtDate(r.start_time)}))}
+function humanStatus(v){const x=String(v||'').trim();if(!x)return '';const k=x.toLowerCase();const m={missing_current_readiness:'Missing current readiness',market_prop_context_missing:'External prop market missing',partial_enrichment:'Partial daily context',ready_with_warnings:'Ready with warnings',market_game_context_present:'Game market present',market_prop_context_present:'Player prop market present',no_official_pregame_source:'No official pregame source'};return m[k]||cap(x)}
+function selectedSourceLineType(ctx,s){const prop=String(s.canonical_prop_key||'').toLowerCase();const line=Number(s.line_value);const src=String(s.source_key||'').toLowerCase();const hit=(ctx.prepared_lines||[]).find(r=>String(r.source_key||'').toLowerCase()===src&&String(r.canonical_prop_key||'').toLowerCase()===prop&&Number(r.line_value)===line);if(hit)return cap(hit.source_prop_name||lineLabel(s.line_type));return lineLabel(s.line_type)}
+function propMarketSummaryText(ctx){const a=(ctx.prop_market_current_lines||[]).filter(r=>!r._query_error).length;const b=(ctx.prop_market_evidence||[]).filter(r=>!r._query_error).length;const src=(ctx.prepared_lines||[]).length;return 'External prop book rows: '+(a+b)+' • Active app source lines: '+src}
+function marketRows(ctx){const m=ctx.market_summary||{};return [['Books',isUsefulValue(m.book_available_count)?m.book_available_count+' / '+m.book_target_count:''],['Coverage',m.book_coverage_grade],['Freshness',m.freshness_status],['Moneyline',m.home_team+' '+m.home_ml_consensus+' / '+m.away_team+' '+m.away_ml_consensus],['Best ML',m.home_team+' '+m.home_ml_best+' / '+m.away_team+' '+m.away_ml_best],['Total',isUsefulValue(m.total_consensus_line)?m.total_consensus_line+' · O '+m.over_consensus_price+' / U '+m.under_consensus_price:''],['Run Line',isUsefulValue(m.home_runline_point)?m.home_team+' '+m.home_runline_point+' / '+m.away_team+' '+m.away_runline_point:''],['Implied Runs',isUsefulValue(m.derived_home_implied_runs)?m.home_team+' '+avgFmt(m.derived_home_implied_runs)+' / '+m.away_team+' '+avgFmt(m.derived_away_implied_runs):'']]}
+function weatherRows(ctx){const w=ctx.weather||{}, st=ctx.stadium||{}, pf=ctx.park_factors||{};return [['Venue',w.venue_name||st.stadium_name],['Location',[st.city,st.state].filter(Boolean).join(', ')],['Surface / Roof',[st.turf_type,w.roof_type||st.roof_type,w.roof_status].filter(Boolean).join(' / ')],['Temperature',isUsefulValue(w.temperature_f)?w.temperature_f+'°F':''],['Feels Like',isUsefulValue(w.feels_like_f)?w.feels_like_f+'°F':''],['Humidity',isUsefulValue(w.humidity_pct)?w.humidity_pct+'%':''],['Wind',[w.wind_direction_cardinal,w.wind_speed_mph? w.wind_speed_mph+' mph':'',w.wind_gust_mph?'gust '+w.wind_gust_mph:''].filter(Boolean).join(' ')],['Rain / Delay Risk',[yesNo(w.rain_risk_flag),yesNo(w.delay_risk_flag)].join(' / ')],['Park Run / HR',isUsefulValue(pf.run_factor)?pf.run_factor+' / '+pf.hr_factor:''],['LHB Run / HR',isUsefulValue(pf.lhb_run_factor)?pf.lhb_run_factor+' / '+pf.lhb_hr_factor:''],['RHB Run / HR',isUsefulValue(pf.rhb_run_factor)?pf.rhb_run_factor+' / '+pf.rhb_hr_factor:'']]}
+function umpireRows(ctx){const u=ctx.umpire||{}, ut=ctx.umpire_tendency||{};const deltaFmt=v=>isUsefulValue(v)?(Number(v)>=0?'+':'')+avgFmt(v):'';const rows=[['Status',u.umpire_context_status],['Plate Umpire',u.home_plate_umpire_name||'Pending'],['Assignment',u.umpire_assignment_status],['Zone Context',u.strike_zone_context_status],['Run Context',u.run_environment_context_status],['Walk Context',u.walk_context_status],['K Context',u.strikeout_context_status],['Confidence',u.umpire_context_confidence]];if(isUsefulValue(ut.games_umpired)){rows.push(['Games Umpired',ut.games_umpired],['Avg K / Game',avgFmt(ut.avg_strikeouts_per_game)],['Avg BB / Game',avgFmt(ut.avg_walks_per_game)],['Avg Runs / Game',avgFmt(ut.avg_runs_per_game)],['K Delta vs League',deltaFmt(ut.strikeouts_delta_vs_league)],['BB Delta vs League',deltaFmt(ut.walks_delta_vs_league)],['Run Delta vs League',deltaFmt(ut.runs_delta_vs_league)])}return rows}
+function renderDossier(d){const s=d.selected||{}, raw=d.raw_context||{}, legs=d.other_player_legs||[], ctx=d.dossier_context||{};const match=(s.away_team_name&&s.home_team_name)?s.away_team_name+' @ '+s.home_team_name:(s.home_team_name||s.away_team_name||'Game '+(s.game_pk||''));const title=esc(s.player_name||'Player Dossier');const line=[s.prop_label||cap(s.canonical_prop_key),String(s.selected_side||'').toUpperCase(),s.line_value].filter(Boolean).join(' • ');const prof=ctx.player_profile||{};
+const profile=publicRows([['Player',prof.full_name||s.player_name],['MLB Player ID',s.mlb_player_id],['Team',prof.current_mlb_team_id||s.team_name],['Position',prof.primary_position],['Role',prof.primary_role],['Bats / Throws',[prof.bat_side||prof.bats,prof.throw_side||prof.throws].filter(Boolean).join(' / ')],['Active',isUsefulValue(prof.active)?yesNo(prof.active):''],['Lineup Status',s.lineup_status||'Pending / not posted'],['Lineup Slot',s.batting_order]],raw,['bio','birth','height','weight','position','bat','throw'],8);
+const selectedLeg=[['Source',appLabel(s.source_key)],['Source Line Type',selectedSourceLineType(ctx,s)],['Prop',s.prop_label||cap(s.canonical_prop_key)],['Modeled Side / Line',String(s.selected_side||'').toUpperCase()+' '+s.line_value],['Hit Probability',pct(s.estimated_hit_probability_0_100)],['HP Confidence',pct(s.probability_confidence_0_100)],['Quality Grade',qualityLetter(s)],['Overall Score',num(s.score_0_100)],['Board Tier',qLabel(s)],['Playable',s.live_playable?'Live':(s.review_playable?'Review':'No')],['Daily Context',humanStatus(s.daily_readiness_status)],['Player Prop Market',humanStatus(s.market_prop_context_status)]];
+const other=legs.filter(l=>l.final_board_row_id!==s.final_board_row_id).slice(0,30).map(l=>miniLegCard(l)).join('')||'<div class="small">No other current board legs for this player.</div>';
+const isPD=isPitcherPos(prof.primary_position)||String(s.canonical_prop_key||'').startsWith('pitcher_')||['earned_runs','hits_allowed','walks_allowed'].includes(s.canonical_prop_key);
+const legsForSelectedProp=(ctx.hp_lines||[]).filter(r=>r.canonical_prop_key===s.canonical_prop_key);
+const dossierPropTrend=propTrendCard(s.canonical_prop_key,ctx.recent_games||[],legsForSelectedProp,isPD)||'<div class="small">Not enough recent game log data to chart this prop yet.</div>';
+const dossierSplits=splitsBlock(ctx.hitter_splits||[],isPD);
+const dossierQoc=isPD?'':qualityOfContactBlock(ctx.quality_of_contact);
+const heroInitials=initials(s.player_name||prof.full_name||'Player');
+$('dossierBody').innerHTML='<div class="dossierHero"><div style="display:flex;gap:14px;align-items:center;margin-bottom:10px"><div class="p2Avatar" style="width:56px;height:56px;font-size:20px;flex:0 0 auto">'+esc(heroInitials)+'</div><div><div class="dossierTitle">'+title+'</div><div class="dossierSub">'+esc(match)+' • '+esc(fmtDate(s.official_game_time_utc))+' • '+esc(s.venue_name||((ctx.stadium||{}).stadium_name)||'')+'</div><div class="dossierSub">'+esc(line)+'</div></div></div><div class="dossierMetrics">'+metric('Hit Prob',pct(s.estimated_hit_probability_0_100))+metric('Overall Score',num(s.score_0_100))+metric('Confidence',pct(s.probability_confidence_0_100))+metric('Tier',qLabel(s))+'</div></div><div class="sectionLabel" style="margin-top:14px">Prop Trend — Last 5 / 10 / 20</div><div class="cards">'+dossierPropTrend+'</div>'+dossierQoc+'<div class="dossierGrid">'+section('Selected Leg',selectedLeg,'Clean display of this exact board leg.')+section('Player Profile',profile,'Static player identity plus current lineup availability when posted.')+sectionWide('Hit Probability By Available Line',table(['Source','Prop','Side','Line','HP','Conf','Grade','Sample','Hit-Miss'],rowsForHpLines(ctx)),'All current probability rows for this player/game, including alternate lines and both apps.')+sectionWide('Recent Game Log',table(['Date','Opp','Order','PA','AB','R','H','1B','2B','3B','HR','RBI','BB','SO','SB','TB'],rowsForRecentGames(ctx)),'Most recent individual games behind the probability windows.')+dossierSplits+sectionWide('Probable Starters',table(['Team','Home','Starter','Hand','Status','Confidence'],rowsForStarters(ctx)),'Official probable starter context for both teams.')+sectionWide('Pitcher Matchup Form',table(['Pitcher','Window','G','IP','BF','H','ER','BB','K','HR','ERA','WHIP','K%','BB%','K-BB%','Strike%','1st Inn Run%'],rowsForPitcherForm(ctx)),'Recent and season pitcher profile for the probable starters.')+sectionWide('Pitcher Platoon Splits',table(['Pitcher','Split','IP','BF','H','BB','K','HR','AVG','OBP','SLG','OPS'],rowsForPitcherSplits(ctx)),'Opponent handedness context when available.')+section('Weather / Park',weatherRows(ctx),'Forecast, roof/surface, and park-factor context.')+section('Bullpen',rowsForBullpen(ctx).flatMap(r=>Object.entries(r).map(([k,v])=>[r.Team+' '+k,v])),'Team bullpen workload and risk context.')+sectionWide('Schedule Spot',table(['Team','Spot','Rest','G 3d','G 5d','3-in-4','4-in-6','Travel','Miles','Risk'],rowsForSchedule(ctx)),'Travel, rest, and fatigue context for both clubs.')+section('Umpire',umpireRows(ctx),'Displayed as pending when no verified official pregame source exists.')+section('Game Market',marketRows(ctx),'Book coverage, moneyline, total, runline, and implied runs.')+sectionWide('All Available Game Books',table(['Book','Market','Team / Side','Line','Price','Updated'],rowsForBookOdds(ctx)),'Every mined book row for moneyline, runline/spread, and total.')+sectionWide('Player Prop Line Market',propMarketFallback(ctx),'External sportsbook/player-prop rows when mined. App source inventory is always shown below.')+sectionWide('Source Lines / Current Board Inventory',table(['Source','Prop','Line','Type','Status','Pickable','Start'],rowsForSourceLines(ctx)),'User-facing current source line inventory for this player when exposed by the source boards.')+sectionWide('Scouting Note','<div class="dossierNote">'+esc(s.leg_insight_comment||evidenceReason({best:s,rows:[s]}))+'</div>','Clean synthesis for the selected leg.')+sectionWide('Other Current Legs For Player','<div class="miniLegGrid">'+other+'</div>','Tap another leg to open its player/leg dossier.')+'</div>';
+document.querySelectorAll('#dossierBody .miniLegCard[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.getAttribute('data-leg-id')))}
+async function openDossier(id){if(!id)return;setScreen('dossier');$('dossierBody').innerHTML='<div class="empty">Loading dossier...</div>';try{const j=await (await fetch('/api/main-board/dossier?final_board_row_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'dossier failed');currentDossier=j;renderDossier(j);window.scrollTo({top:0,behavior:'smooth'})}catch(e){$('dossierBody').innerHTML='<div class="empty err">Dossier load failed: '+esc(e.message||e)+'</div>'}}
+
+function selectedRows(){const ids=[...selectedLegIds];return rows.filter(r=>ids.includes(String(r.final_board_row_id||'')))}
+function updateSlipFloat(){const box=$('slipFloat');if(!box)return;const sr=selectedRows();const pp=sr.filter(r=>String(r.source_key).toLowerCase()==='prizepicks').length;const sl=sr.filter(r=>String(r.source_key).toLowerCase()==='sleeper').length;const ud=sr.filter(r=>{const k=String(r.source_key).toLowerCase();return k==='parlay_underdog'||k==='underdog'}).length;$('slipFloatTotal').textContent=sr.length;$('slipFloatPP').textContent=pp;$('slipFloatSleeper').textContent=sl;const udEl=$('slipFloatUD');if(udEl)udEl.textContent=ud;box.classList.toggle('hidden',sr.length===0||currentScreenName!=='board')}
+function nChooseK(n,k){if(k>n||k<0)return 0;k=Math.min(k,n-k);let o=1;for(let i=1;i<=k;i++)o=o*(n-k+i)/i;return Math.floor(o)}
+function validTypes(n){const m=Math.min(6,n);let a=[];for(let i=2;i<=m;i++)a.push(i);return a}
+function defaultStructures(n){return n>=6?[{amount:2,slip_type:3},{amount:1,slip_type:4}]:n>=5?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=4?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=3?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=2?[{amount:1,slip_type:2}]:[]}
+function legTitle(r){return esc((r.player_name||'')+' • '+cap(r.canonical_prop_key)+' '+String(r.selected_side||'').toUpperCase()+' '+(r.line_value??''))}
+function evClass(ev){if(ev==null)return '';return ev>0?'good':(ev>-0.1?'warn':'bad')}
+function evLabel(ev){if(ev==null)return '—';const pct=Math.round(ev*100);return (pct>=0?'+':'')+pct+'% EV'}
+function multiplierLabel(m){if(m==null||!isFinite(m))return '—';return (Math.round(m*100)/100)+'x'}
+function renderStructureRows(){const n=selectedRows().length;if(!customStructures.length)customStructures=defaultStructures(n);const used=new Set(customStructures.map(x=>Number(x.slip_type)));return '<div class="builderGrid" style="margin-top:6px">'+customStructures.map((s,i)=>{const types=validTypes(n).filter(t=>t===Number(s.slip_type)||!used.has(t));const max=Math.min(20,nChooseK(n,Number(s.slip_type||types[0]||2)));if(!s.amount)s.amount=max||1;return '<div class="structureRow"><select class="select structAmt" data-i="'+i+'">'+Array.from({length:Math.max(1,max)},(_,j)=>j+1).map(v=>'<option value="'+v+'" '+(Number(s.amount)===v?'selected':'')+'>'+v+'x</option>').join('')+'</select><select class="select structType" data-i="'+i+'">'+types.map(t=>'<option value="'+t+'" '+(Number(s.slip_type)===t?'selected':'')+'>'+t+'-pick</option>').join('')+'</select><select class="select structMode" data-i="'+i+'"><option value="power" '+((s.mode||'power')==='power'?'selected':'')+'>Power</option><option value="flex" '+(s.mode==='flex'?'selected':'')+'>Flex</option></select><button class="tinyBtn structAdd" data-i="'+i+'">'+(i===customStructures.length-1?'+':'')+'</button></div>'}).join('')+'</div>'}
+function renderBuild(){
+  const sr=selectedRows();
+  if(!sr.length){$('buildBody').innerHTML='<div class="empty">Select legs first — tap the floating slip menu on the board to start.</div>';return}
+  const counts=sr.reduce((a,r)=>{const k=String(r.source_key||'unknown').toLowerCase();a[k]=(a[k]||0)+1;return a},{});
+  const countsLine=['Sleeper '+(counts.sleeper||0),'PrizePicks '+(counts.prizepicks||0),'Underdog '+((counts.parlay_underdog||0)+(counts.underdog||0))].join(' • ');
+  $('buildBody').innerHTML='<div class="builderGrid">'
+    +'<div class="dossierNote"><b>'+sr.length+' legs selected</b><br><span class="small">'+countsLine+'</span></div>'
+    +'<div>'+sr.map(r=>'<div class="legMini"><span>'+legTitle(r)+'</span><b>'+pct(r.estimated_hit_probability_0_100)+'</b></div>').join('')+'</div>'
+    +'<div id="recoBox"><div class="empty">Finding your best structure...</div></div>'
+    +'<details class="microFactor"><summary>⚙ Customize instead</summary><div class="microBody" id="structureBox">'+renderStructureRows()+'<button id="generateCustom" class="btn" style="margin-top:8px">Generate custom</button></div></details>'
+    +'<div id="generatedSlips"></div>'
+    +'</div>';
+  bindBuildControls();
+  loadRecommendation();
+}
+async function loadRecommendation(){
+  const ids=[...selectedLegIds];
+  try{
+    const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids})})).json();
+    if(!j.ok){$('recoBox').innerHTML='<div class="empty err">Could not compute a recommendation: '+esc(j.error||'unknown')+'</div>';return}
+    lastRecommendedSlips=j.generated_slips||[];
+    renderRecommendation();
+  }catch(e){$('recoBox').innerHTML='<div class="empty err">Recommendation failed: '+esc(e.message||e)+'</div>'}
+}
+function renderRecommendation(){
+  const el=$('recoBox');
+  if(!lastRecommendedSlips.length){el.innerHTML='<div class="empty">No valid structure found for these legs — try selecting at least 2 legs from the same app with 2+ different teams.</div>';return}
+  const totalStructures=lastRecommendedSlips.length;
+  const summary=lastRecommendedSlips.map(s=>s.structure_label).join(' + ');
+  el.innerHTML='<div class="slipCard" style="border-color:rgba(244,201,93,.55);background:linear-gradient(180deg,rgba(244,201,93,.1),rgba(5,14,26,.34))">'
+    +'<div class="slipHead"><div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);font-weight:950">✨ Recommended for you</div><div style="font-size:17px;font-weight:950;margin-top:2px">'+esc(summary)+'</div></div></div>'
+    +'<div class="small" style="margin-top:6px">Built from real hit probabilities for your legs — highest expected value across '+totalStructures+' structure'+(totalStructures>1?'s':'')+', not a fixed rule of thumb.</div>'
+    +'<div style="margin-top:10px">'+lastRecommendedSlips.map(recommendedSlipCard).join('')+'</div>'
+    +'<button id="useRecommended" class="btn" style="margin-top:10px;width:100%;background:#3d2f11;border-color:rgba(244,201,93,.6);color:#ffe7a3;font-size:14px">✓ Use this — '+totalStructures+' slip'+(totalStructures>1?'s':'')+'</button>'
+    +'</div>';
+  $('useRecommended').onclick=()=>{lastGeneratedSlips=lastRecommendedSlips;renderGenerated()};
+}
+function legLine(l){
+  let variant='';
+  if(String(l.source_key||'').toLowerCase()==='prizepicks'){
+    const label=(Number(l.is_goblin)===1?'Goblin':(Number(l.is_demon)===1?'Demon':(l.source_variant_label?cap(l.source_variant_label):'Regular')));
+    variant=' <span class="badge '+label.toLowerCase()+'" style="vertical-align:middle">'+esc(label)+'</span>';
+  }
+  return esc(l.player_name||'')+' — '+esc(l.line_value??'')+' '+esc(displayPropLabel ? displayPropLabel(l.canonical_prop_key) : cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+variant;
+}
+function recommendedSlipCard(s){
+  const evTxt=s.estimated_ev_per_unit_stake!=null?evLabel(s.estimated_ev_per_unit_stake):'—';
+  const evCls=evClass(s.estimated_ev_per_unit_stake);
+  const legsHtml=(s.legs||[]).map(l=>'<div style="padding:3px 0">'+legLine(l)+'</div>').join('');
+  return '<div class="legMini" style="align-items:flex-start;flex-direction:column;gap:6px">'
+    +'<div style="display:flex;justify-content:space-between;width:100%"><b>'+esc(String(s.source_key||'').toUpperCase())+' • '+esc(s.structure_label)+'</b><span class="'+evCls+'" style="font-weight:950">'+evTxt+'</span></div>'
+    +'<div class="small" style="width:100%">'+legsHtml+'</div>'
+    +'<div class="small">Breakeven: ~'+esc(s.breakeven_hit_rate_0_100)+'% per leg</div>'
+    +'<div class="small">Your legs average: '+pct(s.estimated_hit_probability_0_100)+' combined hit chance</div>'
+    +'</div>';
+}
+function bindBuildControls(){document.querySelectorAll('.structType').forEach(el=>el.onchange=()=>{const i=Number(el.dataset.i);customStructures[i].slip_type=Number(el.value);customStructures[i].amount=Math.min(20,nChooseK(selectedRows().length,customStructures[i].slip_type));renderBuild()});document.querySelectorAll('.structMode').forEach(el=>el.onchange=()=>{customStructures[Number(el.dataset.i)].mode=el.value});document.querySelectorAll('.structAmt').forEach(el=>el.onchange=()=>{customStructures[Number(el.dataset.i)].amount=Number(el.value)});document.querySelectorAll('.structAdd').forEach(b=>b.onclick=()=>{const n=selectedRows().length;const used=new Set(customStructures.map(x=>Number(x.slip_type)));const t=validTypes(n).find(x=>!used.has(x));if(t)customStructures.push({amount:Math.min(20,nChooseK(n,t)),slip_type:t,mode:'power'});renderBuild()});const gc=$('generateCustom');if(gc)gc.onclick=generateSlips}
+function openBuild(){customStructures=[];lastRecommendedSlips=[];setScreen('build');renderBuild();window.scrollTo({top:0,behavior:'smooth'})}
+function notesLines(notes){return String(notes||'').split(/(?<=[.!])\s+/).filter(Boolean).map(n=>'<div style="padding:2px 0">'+esc(n)+'</div>').join('')}
+function renderGenerated(){const el=$('generatedSlips');if(!lastGeneratedSlips.length){el.innerHTML='<div class="empty">No valid slips generated. Check same-team/source constraints.</div>';return}el.innerHTML='<h3>Custom Slips</h3>'+lastGeneratedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b><span class="'+evClass(s.estimated_ev_per_unit_stake)+'" style="font-weight:950">'+evLabel(s.estimated_ev_per_unit_stake)+'</span></div><div class="small">'+notesLines(s.strategy_notes)+'</div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,i,li)).join('')+'</div></div>').join('')}
+async function generateSlips(){const ids=[...selectedLegIds];$('generatedSlips').innerHTML='<div class="empty">Generating...</div>';const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids,structures:customStructures})})).json();if(!j.ok){$('generatedSlips').innerHTML='<div class="empty err">Generate failed: '+esc(j.error||'unknown')+'</div>';return}lastGeneratedSlips=j.generated_slips||[];renderGenerated()}
+let lastAutoCreatedSlips=[];
+let lastRawSlips=[];let lastSlipsHeading='';let lastSlipsNoteHtml='';
+// Real, per-size multiplier tables for recomputing a slip's payout after leg checkboxes are
+// unchecked at save time - locked 2026-08-21 real values, matching exactly what's used server-side.
+const REAL_MULT_TABLES = {
+  // UPDATED (2026-08-21): now the single source of truth, matching GOBLIN_5PICK_REAL_MULT
+  // exactly - 3/4/5-pick are real observed values today, 2/6-pick extrapolated from the same
+  // real, consistent per-leg rate (~1.12x/leg) confirmed across those three real sizes.
+  goblin_power: { 2: 1.25, 3: 1.4, 4: 1.5, 5: 1.86, 6: 1.97 },
+  pp_regular_power: { 2: 3, 3: 6, 4: 10, 5: 20, 6: 37.5 },
+  pp_regular_flex: { 3: 3, 4: 6, 5: 10, 6: 25 },
+  // CORRECTED 2026-08-25: 2-pick updated to 3.5 (real, confirmed published Underdog Standard
+  // 2-pick table, used by the new rbis/less/appearance-ranked track) - the old 2.40 value was
+  // extrapolated from the now-retired hits_allowed/more 6-pick pricing and does not apply to the
+  // current live track. 3/4/5-pick values are unchanged (kept for any other Underdog reference,
+  // not currently used by a live-generated track).
+  underdog_power: { 2: 3.5, 3: 4.46, 4: 8.24, 5: 13.73, 6: 8.5 }
+};
+// Real, user-confirmed Flex tiers for the deployed hits_allowed/more, 6-pick pool - matches
+// server-side UNDERDOG_REAL_FLEX_TIERS_6PICK exactly. NOT the generic discount-model estimate.
+const UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT = { 6: 8.5, 5: 1.05, 4: 0.1 };
+// Real, official PrizePicks Flex tiers by size (full breakdown, not just full-hit) - used to
+// recompute the multiplier fields live when a leg is unchecked and the slip shrinks to a
+// different size. Demon only has a real confirmed table at size 3 - other sizes fall back to a
+// single estimated field rather than presenting an unconfirmed number as if it were real.
+const PP_REGULAR_FLEX_BY_SIZE = { 3: { 3: 3, 2: 1 }, 4: { 4: 6, 3: 1.5 }, 5: { 5: 10, 4: 2, 3: 0.4 }, 6: { 6: 25, 5: 2, 4: 0.4 } };
+// CLIENT-SIDE COPY (2026-08-22 hotfix): this script runs in the browser, a separate JS context
+// from the server-side Worker code - the server-side GOBLIN_LEG_MULT_TABLE/goblinLegMultiplier/
+// goblinSlipEstimatedMultiplier defined earlier in this file are NOT visible here, causing a real
+// live "Can't find variable: goblinSlipEstimatedMultiplier" break. Duplicated here, kept in sync
+// with the server-side copy - update both together on any future real multiplier change.
+const GOBLIN_LEG_MULT_TABLE_CLIENT = {
+  "singles|less|1": { rate: 1.134, n: 8 },
+  "hits|less|1": { rate: 1.15, n: 53 },
+  "total_bases|less|1": { rate: 1.15, n: 53 },
+  "hits_runs_rbis|less|1": { rate: 1.116, n: 3 },
+  "hits_runs_rbis|more|1": { rate: 1.287, n: 5 },
+  "walks_allowed|more|1|0.5": { rate: 1.106, n: 5 },
+  "walks_allowed|more|1|1.5": { rate: 1.438, n: 4 },
+  "pitcher_strikeouts|less|2": { rate: 1.265, n: 2 },
+  "pitcher_strikeouts|less|3": { rate: 1.140, n: 1 }
+};
+const GOBLIN_LEG_MULT_FALLBACK_CLIENT = 1.15;
+function goblinLegMultiplier(prop, side, tier, line) {
+  const lineKey = prop+'|'+side+'|'+tier+'|'+line;
+  const tierKey = prop+'|'+side+'|'+tier;
+  const entry = GOBLIN_LEG_MULT_TABLE_CLIENT[lineKey] || GOBLIN_LEG_MULT_TABLE_CLIENT[tierKey];
+  return entry ? entry.rate : GOBLIN_LEG_MULT_FALLBACK_CLIENT;
+}
+function goblinSlipEstimatedMultiplier(slipLegs) {
+  let product = 1;
+  let allConfirmed = true;
+  for (const leg of slipLegs) {
+    const tier = Number(leg.goblin_demon_tier);
+    const side = String(leg.selected_side||'').toLowerCase();
+    if (Number.isFinite(leg.real_layer_rate)) {
+      product *= leg.real_layer_rate;
+      continue;
+    }
+    const lineKey = leg.canonical_prop_key+'|'+side+'|'+tier+'|'+leg.line_value;
+    const tierKey = leg.canonical_prop_key+'|'+side+'|'+tier;
+    if (!GOBLIN_LEG_MULT_TABLE_CLIENT[lineKey] && !GOBLIN_LEG_MULT_TABLE_CLIENT[tierKey]) allConfirmed = false;
+    product *= goblinLegMultiplier(leg.canonical_prop_key, leg.selected_side, leg.goblin_demon_tier, leg.line_value);
+  }
+  return { multiplier: Math.round(product * 1000) / 1000, confirmed: allConfirmed };
+}
+function recomputeMultiplier(sourceKey, entryMode, size, legs){
+  const k=String(sourceKey||'').toLowerCase();
+  if(size<2)return 0;
+  if(k==='parlay_underdog'||k==='underdog'){
+    // Mirrors the server's udSlipMultiplier exactly. Verified against 6 real in-app slips:
+    //   payout = BASE[size] x PRODUCT(0.4874 / p_novig) x 0.851^(same-game pairs), truncated to 2dp.
+    const BASE={2:3.5,3:6.5,4:12,5:20,6:35};
+    const base=BASE[size];
+    if(!base||!legs||!legs.length)return 0;
+    let prod=1;
+    for(const l of legs){
+      const p=Number(l.p_novig);
+      if(!(p>0.02&&p<0.98))return 0;
+      prod*=0.4687/p;   // recalibrated 2026-08-28 from 15 real slips - keep in sync with UD_MODIFIER_K
+    }
+    const games={};let dup=0;
+    for(const l of legs){const g=String(l.game_pk);if(games[g])dup++;games[g]=1}
+    return Math.floor(base*prod*Math.pow(0.851,dup)*100)/100;
+  }
+  if(k==='sleeper'){
+    // Baseline_hp track (2026-08-27): Sleeper MAX payout is the PURE PRODUCT of per-leg
+    // multipliers, with no base table. Mirrors the server's slSlipMultiplier. Legs carrying
+    // p_novig use this path; older Sleeper legs fall through to the legacy branch below.
+    if(legs&&legs.length&&legs.every(l=>Number.isFinite(Number(l.p_novig)))){
+      let prod=1;
+      for(const l of legs){
+        const p=Number(l.p_novig);
+        if(!(p>0.02&&p<0.98))return 0;
+        prod*=0.9210/p;   // recalibrated 2026-08-28 - keep in sync with SL_MULT_K
+      }
+      const g={};let dup=0;
+      for(const l of legs){const kk=String(l.game_pk);if(g[kk])dup++;g[kk]=1}
+      return Math.round(prod*Math.pow(0.887,dup)*100)/100;
+    }
+    // REAL FIX 2026-08-26: previously returned the naive per-leg product with no Flex discount -
+    // this is the exact same over-confident number the badge/prefill fix was supposed to remove.
+    // Mirror the corrected server-side formula: naive product * EV-parity flex factor, using each
+    // leg's own real implied probability. 2-pick is Power (no discount needed, matches real data).
+    if(legs&&legs.length){
+      const allPriced=legs.every(l=>Number.isFinite(l.real_leg_mult));
+      if(!allPriced)return 0;
+      const powerEquivalentMult=legs.reduce((p,l)=>p*l.real_leg_mult,1);
+      if(size===2)return Math.round(powerEquivalentMult*1000)/1000;
+      const SLEEPER_C1=0.10, SLEEPER_C2=0.01;
+      const impliedProbs=legs.map(l=>{
+        const price=String(l.selected_side||'').toLowerCase()==='more'?l.real_over_price:l.real_under_price;
+        const p=Number(price);
+        if(!Number.isFinite(p)||p===0)return null;
+        const dec=p>0?1+p/100:1+100/Math.abs(p);
+        return 1/dec;
+      }).filter(x=>Number.isFinite(x));
+      const pBar=impliedProbs.length?impliedProbs.reduce((a,b)=>a+b,0)/impliedProbs.length:null;
+      let flexFactor=1;
+      if(pBar!=null){
+        const x=(1-pBar)/pBar;
+        const denom=1+SLEEPER_C1*size*x+SLEEPER_C2*(size*(size-1)/2)*(x*x);
+        flexFactor=Math.max(0.50,Math.min(0.95,1/denom));
+      }
+      return Math.round(powerEquivalentMult*flexFactor*1000)/1000;
+    }
+    return 0;
+  }
+  if(k==='prizepicks_goblin'||k==='prizepicks'){
+    if(legs&&legs.length)return goblinSlipEstimatedMultiplier(legs).multiplier;
+    return REAL_MULT_TABLES.goblin_power[size]||0;
+  }
+  if(k==='prizepicks_demon')return Math.round(Math.pow(DEMON_PER_LEG_REAL_MULT_CLIENT,size)*1000)/1000;
+  if(k==='prizepicks_regular')return (entryMode==='power'?REAL_MULT_TABLES.pp_regular_power[size]:REAL_MULT_TABLES.pp_regular_flex[size])||0;
+  if(k==='parlay_underdog'||k==='underdog'){
+    if(size===6)return UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT[6]||0;
+    // Real fix 2026-08-26: 2-pick RBIs/less legs are heavy favorites, not near-50/50 - the flat
+    // published 3.5x Standard table (REAL_MULT_TABLES.underdog_power) does not apply. Recompute
+    // live from each leg's own real moneyline price via M=(1-H)/(p1*p2), same formula as server-side.
+    if(size===2&&legs&&legs.length===2){
+      const H=0.0766;
+      const probs=legs.map(l=>{
+        const raw=l.underdog_raw_line_json?(typeof l.underdog_raw_line_json==='string'?JSON.parse(l.underdog_raw_line_json):l.underdog_raw_line_json):null;
+        if(!raw)return null;
+        const price=String(l.selected_side||'').toLowerCase()==='more'?raw.over_price:raw.under_price;
+        const p=Number(price);
+        if(!Number.isFinite(p)||p===0)return null;
+        return p>0?100/(p+100):Math.abs(p)/(Math.abs(p)+100);
+      });
+      if(probs.every(p=>p!=null)){
+        const jointP=probs.reduce((a,b)=>a*b,1);
+        if(jointP>0)return Math.round(((1-H)/jointP)*1000)/1000;
+      }
+    }
+    return REAL_MULT_TABLES.underdog_power[size]||0;
+  }
+  return 0;
+}
+const DEMON_PER_LEG_REAL_MULT_CLIENT = 2.375; // real, confirmed Tier1 per-leg rate - matches server-side DEMON_PER_LEG_REAL_MULT
+const slipUnchecked=new Map(); // slipIdx -> Set(legIdx) - survives the re-render in applySlipSourceFilter
+function isLegSubstitute(slipIdx,leg){
+  const subs=slipSubs.get(slipIdx);if(!subs)return false;
+  for(const s of subs.values()){ if(String(s.board_row_id)===String(leg.board_row_id))return true; }
+  return false;
+}
+function dnpBadge(leg){
+  const r=String(leg&&leg.dnp_risk||'');
+  if(r==='HIGH')return '<span class="dnpFlag" title="'+esc(String(leg.dnp_risk_reason||''))+'" style="font-size:10px;font-weight:800;color:#ff6b6b;margin-right:6px">⚠ SCRATCH RISK</span>';
+  if(r==='MEDIUM')return '<span class="dnpFlag" title="'+esc(String(leg.dnp_risk_reason||''))+'" style="font-size:10px;font-weight:700;opacity:0.75;margin-right:6px">⚠</span>';
+  return '';
+}
+function pctlTag(leg){
+  const p=Number(leg&&leg.board_percentile);
+  if(!Number.isFinite(p))return '';
+  const col=p>=95?'#7ee787':(p>=90?'#d4c05a':'#ff6b6b');
+  return '<span class="pctlTag" title="percentile on today\\'s board" style="font-size:10px;font-weight:800;color:'+col+';margin-left:6px">p'+p.toFixed(0)+'</span>';
+}
+function legRowHtml(leg,slipIdx,legIdx){
+  const un=slipUnchecked.get(slipIdx);
+  const checked=(un&&un.has(legIdx))?'':' checked';
+  const isSub=isLegSubstitute(slipIdx,leg);
+  const subTag=isSub?'<span class="subTag" style="font-size:10px;font-weight:800;opacity:0.85;margin-right:6px">SUB</span>':'';
+  const hi=String(leg.dnp_risk||'')==='HIGH';
+  const style=isSub?' style="background:rgba(255,200,0,0.10)"':(hi?' style="background:rgba(255,80,80,0.09)"':'');
+  return '<label class="legRow"'+style+'><span class="legRowText">'+subTag+dnpBadge(leg)+legLine(leg)+pctlTag(leg)+'</span><b class="legRowPct">'+pct(leg.hit_probability_0_100)+'</b><input type="checkbox" class="legKeepBox" data-slip-idx="'+slipIdx+'" data-leg-idx="'+legIdx+'"'+checked+'></label>';
+}
+// One delegated listener on the results container instead of inline onchange="" attributes -
+// inline handlers on dynamically-injected HTML do not resolve to top-level functions in this
+// WebView (confirmed live 2026-08-21, same failure mode as the earlier leg-removal bug).
+function bindLegKeepBoxDelegation(){
+  const results=$('autoCreateResults');if(!results||results._legKeepBoundAlready)return;
+  results._legKeepBoundAlready=true;
+  results.addEventListener('change',e=>{
+    if(e.target&&e.target.classList&&e.target.classList.contains('legKeepBox')){
+      handleLegToggle(Number(e.target.dataset.slipIdx),Number(e.target.dataset.legIdx),!!e.target.checked);
+    }
+  });
+}
+// Real, calibrated per-prop Power tables (Goblin, less side) for the live Mixed Top-55/92%
+// strategy, mirrored client-side from the backend's MIXED_TOP55_REAL_TABLES so the multiplier
+// fields can be recomputed dynamically for ANY effective size (2-6) as legs get unchecked, not
+// just the slip's original generated size.
+// Client-side mirror of the backend's BASELINE_HP_PER_LEG_RATE so the multiplier badge and the
+// real-multiplier fields recompute dynamically for ANY effective size (2-6) as legs get unchecked,
+// not just the slip's original generated size.
+// REPLACED 2026-08-27: the previous mirror was a per-prop lookup containing ONLY hits|less and
+// total_bases|less. The baseline_hp pool spans every Goblin prop (doubles, home_runs, rbis,
+// singles, stolen_bases, runs, hits_runs_rbis, total_bases, hits), so any slip containing a prop
+// outside those two hit the null-guard below and the badge/prefill went BLANK. Replaced with a
+// flat per-leg rate that applies to every prop.
+// The 1.1417 rate is real and measured (matched-pair live read, 2026-08-27) but was measured on
+// DOUBLES. Other props are unmeasured and likely price lower - treat the prefill as a starting
+// estimate and always overwrite it with the app's real displayed multiplier before saving.
+// (BASELINE_HP_CLIENT_PER_LEG removed 2026-08-27 - the flat 1.1417 rate is superseded by the
+// per-prop table below. Left this note so nobody reintroduces a flat rate: multipliers are NOT
+// flat across props, the observed spread is 1.0655 to 1.3698.)
+// Client mirror of the backend's BASELINE_HP_PROP_RATES. Keep these two tables in sync - if they
+// drift, the badge and the prefilled real-multiplier fields will disagree with what the server
+// computed. Fitted by least squares over 23 real multiplier observations; mean abs error 5.10%.
+// This is what makes leg SUBSTITUTION price correctly: swapping a stolen_bases leg (1.0655) for a
+// runs leg (1.3698) changes the slip multiplier by 29% on that leg alone, and the badge must move.
+const BASELINE_HP_CLIENT_PROP_RATES={
+  runs:1.3698, rbis:1.2864, walks_allowed:1.2045, singles:1.2038, total_bases:1.1926,
+  hits_allowed:1.1741, doubles:1.1594, earned_runs:1.1583, hits:1.1421, hits_runs_rbis:1.1305,
+  home_runs:1.1187, stolen_bases:1.0655
+};
+const BASELINE_HP_CLIENT_RATE_FALLBACK=1.12;
+// Client mirror of PP_LINE_RATES. total_bases is priced by goblin DEPTH, not just prop: line 2.5
+// (+1.73 above anchor) pays 1.2251, line 3.5 (+2.74, deeper and easier) pays 1.1416. Measured from
+// two real placed 4-picks on 2026-08-30: pure-3.5 = 1.70, and 3x2.5+1x3.5 = 2.10.
+const PP_CLIENT_LINE_RATES={"2.5":1.2251,"3.5":1.1416};
+// Rung-based rate, mirroring the server. rate = 1.4323 - 0.101*rung, where rung is the leg's
+// position in that player's own LESS ladder (1 = shallowest offered). Measured from 6 real placed
+// slips 2026-08-30. The rung, not the line, sets the multiplier.
+function ppClientRungRate(rung){
+  const r=Number(rung);
+  if(!isFinite(r)||r<1)return 1.1416;
+  return 1.4323-0.101*r;
+}
+function baselineHpClientLegRate(leg){
+  const k=String(leg&&leg.canonical_prop_key||'').toLowerCase();
+  if(k==='total_bases'){
+    const rg=Number(leg&&leg.goblin_rung);
+    if(isFinite(rg)&&rg>=1)return ppClientRungRate(rg);
+    const lv=String(Number(leg&&leg.line_value));
+    if(PP_CLIENT_LINE_RATES[lv])return PP_CLIENT_LINE_RATES[lv];
+  }
+  return BASELINE_HP_CLIENT_PROP_RATES[k]||BASELINE_HP_CLIENT_RATE_FALLBACK;
+}
+const MIXED_TOP55_CLIENT_FLAT_PARTIALS={oneBelow:0.5,twoBelow:0.25};
+function computeMixedTop55FlexTiersLive(legs,size){
+  if(!legs||!legs.length||legs.length!==size)return null;
+  for(const l of legs){
+    if(Number(l.is_goblin)!==1)return null;
+  }
+  let full=1;
+  for(const l of legs)full*=baselineHpClientLegRate(l);
+  full=Math.round(full*1000)/1000;
+  // Real spec: 2/3/4-pick show 2 fields (full, full-1); 5/6-pick show 3 fields (full, full-1, full-2).
+  const tierCount=size>=5?3:2;
+  const tiers={[size]:full};
+  if(tierCount>=2)tiers[size-1]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.oneBelow;
+  if(tierCount>=3)tiers[size-2]=MIXED_TOP55_CLIENT_FLAT_PARTIALS.twoBelow;
+  return tiers;
+}
+// Returns the real (or best-available) tiered Flex table for a slip at a GIVEN size - not
+// necessarily its original size. Falls back to a single estimated field when no real table
+// exists for that size (e.g. Demon shrunk below/above its one confirmed size).
+function flexTiersForSizeLive(sourceKey, size){
+  const k=String(sourceKey||'').toLowerCase();
+  if(k==='prizepicks_regular')return PP_REGULAR_FLEX_BY_SIZE[size]||null;
+  if((k==='parlay_underdog'||k==='underdog')&&size===6)return UNDERDOG_REAL_FLEX_TIERS_6PICK_CLIENT;
+  // Demon moved to Power mode 2026-08-22 - no Flex tier table needed here anymore.
+  return null;
+}
+function realMultFieldsHtmlForSize(s,idx,size){
+  if(s.entry_mode!=='flex'){
+    const mult=recomputeMultiplier(s.source_key,s.entry_mode,size,s.legs);
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" value="'+esc(String(mult||''))+'"></div>';
+  }
+  const mixedTiers=computeMixedTop55FlexTiersLive(s.legs,size);
+  if(mixedTiers){
+    const label='Real multipliers ('+size+'-pick)';
+    const keys=Object.keys(mixedTiers).map(Number).sort((a,b)=>b-a);
+    return '<div class="realMultGroup"><span class="realMultLabel">'+esc(label)+'</span><div class="realMultFields">'+keys.map(k=>
+      '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(mixedTiers[k]||''))+'"></label>'
+    ).join('')+'</div></div>';
+  }
+  if(s.estimated_multiplier_flex_tiers&&Object.keys(s.estimated_multiplier_flex_tiers).length&&size===s.slip_size){
+    const tiers=s.estimated_multiplier_flex_tiers;
+    const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
+    const label='Real multipliers ('+size+'-pick)';
+    return '<div class="realMultGroup"><span class="realMultLabel">'+esc(label)+'</span><div class="realMultFields">'+keys.map(k=>
+      '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(tiers[k]||''))+'"></label>'
+    ).join('')+'</div></div>';
+  }
+  if(String(s.source_key||'').toLowerCase()==='prizepicks_goblin'){
+    // Goblin Flex tiers are leg-composition-dependent (real per-leg product), not a fixed
+    // published table like Regular/Demon - compute live from the actual kept legs every time.
+    // FIXED 2026-08-26: tier count now matches real slip size - 3/4-pick show 2 fields (n/n,
+    // n-1/n), 5/6-pick show 3 fields (n/n, n-1/n, n-2/n) - previously always showed 3 regardless
+    // of size, producing a nonexistent (n-2)/n field on a 4-pick.
+    const fullMult=(s.legs&&s.legs.length)?goblinSlipEstimatedMultiplier(s.legs).multiplier:0;
+    const partialMult=Math.round(fullMult*0.10*1000)/1000;
+    let html='<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES)</span><div class="realMultFields">'
+      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" value="'+esc(String(fullMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>';
+    if(size>=5){
+      const partial2Mult=Math.round(fullMult*0.03*1000)/1000;
+      html+='<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>';
+    }
+    html+='</div></div>';
+    return html;
+  }
+  if(String(s.source_key||'').toLowerCase()==='sleeper'){
+    // Sleeper Flex tiers are leg-composition-dependent (real per-leg product from each leg's own
+    // live moneyline price), discounted by the real, EV-parity Flex factor (see
+    // sleeperFlexFactor server-side - mirrored here for live recompute as legs get unchecked).
+    // FIXED 2026-08-26: (1) applies the corrected Flex-discount formula instead of the naive
+    // per-leg product, which was confirmed to over-predict full-hit payouts by 12-39%; (2) fixes
+    // tier count - 2-pick is POWER ONLY on Sleeper (no Flex tiers exist below 3 legs), 3/4-pick
+    // show 2 fields (n/n, n-1/n), 5/6-pick show 3 fields (n/n, n-1/n, n-2/n) - previously always
+    // showed 3 fields regardless of size, producing a nonexistent (n-2)/n field on a 4-pick.
+    const legs=s.legs||[];
+    const allPriced=legs.length>0&&legs.every(l=>Number.isFinite(l.real_leg_mult));
+    const powerEquivalentMult=allPriced?legs.reduce((p,l)=>p*l.real_leg_mult,1):0;
+    if(size===2){
+      const mult=allPriced?Math.round(powerEquivalentMult*1000)/1000:0;
+      return '<div class="realMultRow"><span class="realMultLabel">Real multiplier (2-pick Power)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" value="'+esc(String(mult||''))+'"></div>';
+    }
+    const SLEEPER_C1=0.10, SLEEPER_C2=0.01;
+    const impliedProbs=legs.map(l=>{
+      const price=String(l.selected_side||'').toLowerCase()==='more'?l.real_over_price:l.real_under_price;
+      const p=Number(price);
+      if(!Number.isFinite(p)||p===0)return null;
+      const dec=p>0?1+p/100:1+100/Math.abs(p);
+      return 1/dec;
+    }).filter(x=>Number.isFinite(x));
+    const pBar=impliedProbs.length?impliedProbs.reduce((a,b)=>a+b,0)/impliedProbs.length:null;
+    let flexFactor=1;
+    if(allPriced&&pBar!=null&&size>1){
+      const x=(1-pBar)/pBar;
+      const denom=1+SLEEPER_C1*size*x+SLEEPER_C2*(size*(size-1)/2)*(x*x);
+      flexFactor=Math.max(0.50,Math.min(0.95,1/denom));
+    }
+    const fullMult=allPriced?Math.round(powerEquivalentMult*flexFactor*1000)/1000:0;
+    const PARTIAL_RATIOS={4:{oneBelow:0.24},5:{oneBelow:0.23,twoBelow:0.049},6:{oneBelow:0.11,twoBelow:0.021}};
+    const ratios=PARTIAL_RATIOS[size]||{oneBelow:0.10};
+    const partialMult=Math.round(fullMult*ratios.oneBelow*1000)/1000;
+    const noteLabel=allPriced?'':' - real price missing for a leg, showing 0';
+    const tierCount=size>=5?3:2;
+    let html='<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick, partials are ESTIMATES'+noteLabel+')</span><div class="realMultFields">'
+      +'<label class="realMultField"><span>'+size+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+size+'" value="'+esc(String(fullMult||''))+'"></label>'
+      +'<label class="realMultField"><span>'+(size-1)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-1)+'" value="'+esc(String(partialMult||''))+'"></label>';
+    if(tierCount>=3){
+      const partial2Mult=Math.round(fullMult*(ratios.twoBelow||0.02)*1000)/1000;
+      html+='<label class="realMultField"><span>'+(size-2)+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+(size-2)+'" value="'+esc(String(partial2Mult||''))+'"></label>';
+    }
+    html+='</div></div>';
+    return html;
+  }
+  const tiers=flexTiersForSizeLive(s.source_key,size);
+  if(!tiers){
+    return '<div class="realMultRow"><span class="realMultLabel">Real multiplier ('+size+'-pick, no confirmed table - estimate)</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'"></div>';
+  }
+  const keys=Object.keys(tiers).map(Number).sort((a,b)=>b-a);
+  return '<div class="realMultGroup"><span class="realMultLabel">Real multipliers ('+size+'-pick)</span><div class="realMultFields">'+keys.map(k=>
+    '<label class="realMultField"><span>'+k+'/'+size+'</span><input type="number" step="0.01" class="realMultInput" data-slip-idx="'+idx+'" data-tier-hits="'+k+'" value="'+esc(String(tiers[k]||''))+'"></label>'
+  ).join('')+'</div></div>';
+}
+// ===== LEG SUBSTITUTION ENGINE (2026-08-27) =====
+// Legs regularly go unavailable between generation and placement (line moved, prop pulled, player
+// scratched). Letting a slip shrink 6->5->4 materially cuts ROI because the multiplier compounds,
+// so instead we hold the slip at its original size by swapping in a spare.
+//
+// Behaviour:
+//  - backupPool is ONE shared pool across every slip in the order, ranked by baseline descending.
+//  - Uncheck a leg -> the best still-available pool leg is appended to the BOTTOM of that slip and
+//    auto-checked. The slip keeps 6 checked legs; 7 rows render, one unchecked.
+//  - That leg leaves the pool globally, so no other slip can also use it.
+//  - Re-check the original -> its substitute is removed and returned to the pool, available again
+//    to any slip. This makes an accidental uncheck fully reversible.
+//  - Uncheck N legs -> N substitutes, one per uncheck, in order.
+//
+// Guard not in the original spec but required for correctness: a pool leg is SKIPPED if it would
+// duplicate a player already in that slip, or become a 3rd leg from the same game. Both would
+// break the correlation limits the backtest enforced (max 1 leg/player per slip, max 2 legs/game),
+// and a slip that violates them is not the thing that was validated. We walk down the pool to the
+// first leg that is legal for that specific slip.
+let backupPool=[];
+const slipSubs=new Map(); // slipIdx -> Map(originalLegIdx -> substituteLeg)
+function poolLegIsLegalForSlip(leg,keptLegs,slip){
+  if(!leg)return false;
+  // A leg can only substitute into a slip on the SAME platform - a PrizePicks leg is not
+  // placeable on Underdog and vice versa. This is permanent for every strategy.
+  if(slip&&String(leg.source_key||'')!==String(slip.source_key||''))return false;
+  for(const l of keptLegs){
+    if(String(l.mlb_player_id)===String(leg.mlb_player_id))return false;
+  }
+  let sameGame=0;
+  for(const l of keptLegs){ if(String(l.game_pk)===String(leg.game_pk))sameGame++; }
+  // Underdog penalises same-game pairs ~14.9%, so it is held to 1 leg per game; PrizePicks allows 2.
+  const gameCap=(String(slip&&slip.source_key||'')==='parlay_underdog')?1:2;
+  return sameGame<gameCap;
+}
+function takeBestPoolLeg(keptLegs,slip){
+  for(let i=0;i<backupPool.length;i++){
+    if(poolLegIsLegalForSlip(backupPool[i],keptLegs,slip)){
+      return backupPool.splice(i,1)[0];
+    }
+  }
+  return null;
+}
+function returnLegToPool(leg){
+  if(!leg)return;
+  if(backupPool.some(l=>String(l.board_row_id)===String(leg.board_row_id)))return;
+  backupPool.push(leg);
+  // Keep the pool ordered by baseline so "best available" stays meaningful after returns.
+  backupPool.sort((a,b)=>Number(b.hit_probability_0_100||0)-Number(a.hit_probability_0_100||0));
+}
+function poolStatusHtml(){
+  if(!backupPool.length)return '<div class="poolStatus" style="opacity:0.7;font-size:12px;margin:6px 0">Backup pool: empty - unchecking a leg will now shrink the slip.</div>';
+  // Substitution is SOURCE-MATCHED: a Sleeper slip can only draw a Sleeper leg. A combined count
+  // is misleading - the pool can show 7 legs while a given platform has zero legal ones.
+  // BUG FIXED 2026-08-29: operator saw "7 legs" and got no substitute, because all 7 belonged to
+  // other platforms.
+  const bySrc={};
+  for(const l of backupPool){
+    const k=String(l.source_key||'?');
+    (bySrc[k]=bySrc[k]||[]).push(l);
+  }
+  const label={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+  const parts=Object.keys(bySrc).sort().map(k=>{
+    const legs=bySrc[k];
+    const top=legs.slice(0,2).map(l=>esc(l.player_name)+' '+esc(String(l.line_value))+' '+esc(l.canonical_prop_key)+' ('+Number(l.hit_probability_0_100||0).toFixed(1)+'%)').join(', ');
+    return '<b>'+esc(label[k]||k)+': '+legs.length+'</b> ('+top+')';
+  });
+  return '<div class="poolStatus" style="opacity:0.85;font-size:12px;margin:6px 0">Backup pool by app &mdash; '+parts.join(' &nbsp;|&nbsp; ')+'</div>';
+}
+function handleLegToggle(slipIdx,legIdx,isChecked){
+  const slip=lastRawSlips[slipIdx];if(!slip)return;
+  if(!slipSubs.has(slipIdx))slipSubs.set(slipIdx,new Map());
+  if(!slipUnchecked.has(slipIdx))slipUnchecked.set(slipIdx,new Set());
+  const subs=slipSubs.get(slipIdx);
+  const un=slipUnchecked.get(slipIdx);
+  if(!isChecked){
+    un.add(legIdx);
+    // A leg was just unchecked. If we have not already substituted for THIS leg, pull the best
+    // legal leg out of the shared pool and append it, keeping the slip at its original size.
+    if(!subs.has(legIdx)){
+      const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+      const kept=Array.from(boxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+      const sub=takeBestPoolLeg(kept,slip);
+      if(sub){
+        slip.legs.push(sub);
+        subs.set(legIdx,sub);
+      }
+    }
+  }else{
+    un.delete(legIdx);
+    // A leg was re-checked. If it had a substitute, remove that substitute and hand it back to the
+    // pool so any slip can use it again - an accidental uncheck is fully reversible.
+    if(subs.has(legIdx)){
+      const sub=subs.get(legIdx);
+      const pos=slip.legs.findIndex(l=>String(l.board_row_id)===String(sub.board_row_id));
+      if(pos>=0)slip.legs.splice(pos,1);
+      subs.delete(legIdx);
+      returnLegToPool(sub);
+    }
+  }
+  applySlipSourceFilter();
+}
+// Called on every leg checkbox toggle - recounts how many legs are still checked for this slip
+// and swaps in the correct multiplier fields for that NEW effective size, live.
+function refreshRealMultFields(slipIdx){
+  const slip=lastRawSlips[slipIdx];if(!slip)return;
+  const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+  const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>slip.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+  const keptCount=keptLegs.length;
+  const card=keepBoxes[0]&&keepBoxes[0].closest('.slipCard');if(!card)return;
+  const badge=card.querySelector('.multiplierTag[data-slip-idx="'+slipIdx+'"]');
+  if(badge){
+    if(keptCount<2){
+      badge.textContent='—';
+    }else{
+      const topMult=recomputeMultiplier(slip.source_key,slip.entry_mode,keptCount,keptLegs);
+      badge.textContent=multiplierLabel(topMult);
+    }
+  }
+  const multArea=card.querySelector('.realMultRow,.realMultGroup');if(!multArea)return;
+  if(keptCount<2){
+    multArea.outerHTML='<div class="realMultRow realMultInvalid"><span class="realMultLabel">Not enough legs kept (min 2)</span></div>';
+    return;
+  }
+  multArea.outerHTML=realMultFieldsHtmlForSize({...slip,legs:keptLegs},slipIdx,keptCount);
+}
+function realMultFieldsHtml(s,idx){
+  return realMultFieldsHtmlForSize(s,idx,s.slip_size);
+}
+// Slips the operator has DESELECTED. Default is SELECTED - every slip is saved unless explicitly
+// unchecked. BUG FIXED 2026-08-29: slipSelectBox rendered with no checked attribute, so it
+// defaulted to unchecked AND every re-render (which fires on every leg toggle) wiped the whole
+// selection. Unchecking one leg deselected all six slips.
+const slipDeselected=new Set();
+function bindSlipSelectBoxes(){
+  document.querySelectorAll('.slipSelectBox').forEach(cb=>{
+    cb.onchange=()=>{
+      const i=String(cb.dataset.slipIdx);
+      if(cb.checked)slipDeselected.delete(i); else slipDeselected.add(i);
+    };
+  });
+}
+function slipCardHtml(s,idx){
+  const sel=slipDeselected.has(String(idx))?'':' checked';
+  return '<div class="slipCard"><div class="slipHead"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="slipSelectBox" data-slip-idx="'+idx+'"'+sel+'><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.structure_label||s.slip_type)+'</b></label><span class="multiplierTag" data-slip-idx="'+idx+'" style="font-weight:950">'+multiplierLabel(s.estimated_multiplier)+'</span></div><div class="slipLegs">'+(s.legs||[]).map((leg,li)=>legRowHtml(leg,idx,li)).join('')+'</div>'+realMultFieldsHtml(s,idx)+'</div>'
+}
+async function saveSelectedSlips(){
+  const boxes=document.querySelectorAll('.slipSelectBox:checked');
+  if(!boxes.length){alert('Check at least one slip to save.');return}
+  // For each selected slip, keep only the legs whose checkbox is still checked, then recompute
+  // the real multiplier for the resulting size before saving - never save the original
+  // multiplier against a leg count that no longer matches it. If a real multiplier was typed in
+  // (the field on each slip card), that always wins over any computed/estimated number - it's
+  // real, ground-truth data straight from the app, and the whole point is to keep sharpening
+  // future estimates against it.
+  const selected=Array.from(boxes).map(b=>{
+    const slipIdx=Number(b.dataset.slipIdx);
+    const orig=lastRawSlips[slipIdx];if(!orig)return null;
+    const keepBoxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+slipIdx+'"]');
+    const keptLegs=Array.from(keepBoxes).filter(cb=>cb.checked).map(cb=>orig.legs[Number(cb.dataset.legIdx)]).filter(Boolean);
+    if(keptLegs.length<2)return null; // no app allows a 1-leg slip
+    const realMultInputs=document.querySelectorAll('.realMultInput[data-slip-idx="'+slipIdx+'"]');
+    let realMult=null,realMultFlexTiers=null;
+    if(realMultInputs.length===1&&!realMultInputs[0].dataset.tierHits){
+      realMult=realMultInputs[0].value?Number(realMultInputs[0].value):null;
+    }else if(realMultInputs.length>1){
+      realMultFlexTiers={};
+      realMultInputs.forEach(inp=>{if(inp.value)realMultFlexTiers[inp.dataset.tierHits]=Number(inp.value)});
+      if(Object.keys(realMultFlexTiers).length===0)realMultFlexTiers=null;
+    }
+    const computedMult=recomputeMultiplier(orig.source_key,orig.entry_mode,keptLegs.length,keptLegs);
+    return {...orig, legs:keptLegs, slip_size:keptLegs.length, slip_type:keptLegs.length+'-pick',
+      estimated_multiplier:computedMult||orig.estimated_multiplier,
+      real_multiplier:realMult,
+      real_multiplier_flex_tiers:realMultFlexTiers,
+      structure_label:keptLegs.length+'-pick '+(orig.entry_mode==='power'?'Power':'Flex')+(orig.structure_label&&orig.structure_label.includes('High Hit')?' (High Hit)':'')};
+  }).filter(Boolean);
+  if(!selected.length){alert('Each selected slip needs at least 2 legs kept.');return}
+  const btn=$('saveSelectedSlipsBtn');if(btn){btn.disabled=true;btn.textContent='Saving...'}
+  try{
+    const j=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slips:selected,selected_leg_count:selected.reduce((a,s)=>a+(s.legs||[]).length,0),saved_by:'main_ui'})})).json();
+    if(!j.ok){alert('Save failed: '+(j.error||'unknown'));return}
+    const savedCount=(j.saved_slips||[]).length;
+    const dupCount=(j.skipped_duplicates||[]).length;
+    let msg='✅ Saved '+savedCount+' slip(s) with real multipliers recorded.';
+    if(dupCount)msg+=' ('+dupCount+' skipped - identical slip already saved today.)';
+    alert(msg);
+  }finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Selected'}}
+}
+function activeSourceFilters(){const m={prizepicks:$('filterPrizepicks'),sleeper:$('filterSleeper'),parlay_underdog:$('filterUnderdog')};const active=new Set();for(const k in m){if(!m[k]||m[k].checked)active.add(k)}return active}
+const SOURCE_LABELS={prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'};
+function slipSummaryHtml(filtered){
+  const groups=new Map();
+  for(const x of filtered){
+    const src=String(x.s.source_key||'').toLowerCase();
+    const label=SOURCE_LABELS[src]||src.toUpperCase();
+    const mode=x.s.entry_mode==='power'?'Power':'Flex';
+    const key=label+'|'+x.s.slip_size+'-Pick '+mode;
+    groups.set(key,(groups.get(key)||0)+1);
+  }
+  const bySource=new Map();
+  for(const [key,count] of groups){
+    const [label,structure]=key.split('|');
+    if(!bySource.has(label))bySource.set(label,[]);
+    bySource.get(label).push(count+' '+structure);
+  }
+  const lines=Array.from(bySource.entries()).map(([label,parts])=>'<div class="slipSummaryLine"><b>'+label+':</b> '+parts.join(', ')+'</div>');
+  return '<div class="slipSummary"><div class="slipSummaryTotal">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+lines.join('')+'</div>';
+}
+// Real multipliers the operator has TYPED. Keyed by slip + effective size + tier so that a slip
+// whose size changed (leg unchecked / substituted) correctly recomputes, while every untouched
+// slip keeps the value that was entered.
+// BUG FIXED 2026-08-28: unchecking a single leg re-rendered the whole list and WIPED every real
+// multiplier the operator had entered across all slips. Only user-typed values are preserved -
+// auto-computed values are left to recompute so the badge stays correct.
+const realMultCache=new Map();
+function realMultKey(inp){
+  const boxes=document.querySelectorAll('.legKeepBox[data-slip-idx="'+inp.dataset.slipIdx+'"]');
+  const size=Array.from(boxes).filter(cb=>cb.checked).length;
+  return inp.dataset.slipIdx+'|'+size+'|'+(inp.dataset.tierHits||'full');
+}
+function bindRealMultCapture(){
+  document.querySelectorAll('.realMultInput').forEach(inp=>{
+    inp.oninput=()=>{ realMultCache.set(realMultKey(inp), inp.value); };
+  });
+}
+function restoreRealMultInputs(){
+  document.querySelectorAll('.realMultInput').forEach(inp=>{
+    const k=realMultKey(inp);
+    if(realMultCache.has(k))inp.value=realMultCache.get(k);
+  });
+  bindRealMultCapture();
+}
+function applySlipSourceFilter(){
+  const results=$('autoCreateResults');if(!results)return;
+  bindLegKeepBoxDelegation();
+  if(!lastRawSlips.length){return}
+  const filtered=lastRawSlips.map((s,i)=>({s,i})).filter(x=>activeSourceFilters().has(String(x.s.source_key||'').toLowerCase()));
+  if(!filtered.length){results.innerHTML=lastSlipsNoteHtml+'<div class="empty">No slips match the selected apps.</div>';return}
+  results.innerHTML=lastSlipsNoteHtml+poolStatusHtml()+slipSummaryHtml(filtered)+filtered.map(x=>slipCardHtml(x.s,x.i)).join('')+'<button id="saveSelectedSlipsBtn" class="btn" style="margin-top:12px;width:100%">💾 Save Selected</button>';
+  restoreRealMultInputs();
+  bindSlipSelectBoxes();
+  const saveBtn=$('saveSelectedSlipsBtn');if(saveBtn)saveBtn.onclick=saveSelectedSlips;
+}
+function bindSlipSourceFilters(){const ids=['filterPrizepicks','filterSleeper','filterUnderdog'];for(const id of ids){const el=$(id);if(el)el.onchange=applySlipSourceFilter}}
+function bindAutoCreateSlips(){
+  bindSlipSourceFilters()
+}
+async function highHitSlips(){
+  const results=$('autoCreateResults');
+  results.innerHTML='<div class="empty">Building High Hit Slips from real, backtested strategies...</div>';
+  try{
+    const j=await (await fetch('/api/slips/high-hit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({})})).json();
+    if(!j.ok){results.innerHTML='<div class="empty err">Build failed: '+esc(j.error||'unknown')+'</div>';return}
+    const slips=j.generated_slips||[];
+    if(!slips.length){lastRawSlips=[];results.innerHTML='<div class="empty">'+esc((j.notes||[])[0]||'No qualifying High Hit legs right now.')+'</div>';return}
+    lastRawSlips=slips;
+    // Reset substitution state on every fresh build, then load the shared backup pool.
+    backupPool=(j.backup_pool||[]).slice();
+    slipSubs.clear();
+    slipUnchecked.clear();
+    lastSlipsNoteHtml='';
+    applySlipSourceFilter();
+  }catch(e){results.innerHTML='<div class="empty err">Build failed: '+esc(e.message||e)+'</div>'}
+}
+function openPlayerProfile(){setScreen('playerProfile');$('playerProfileBody').innerHTML='<div class="empty">Type at least 3 letters.</div>';$('playerSearch').focus()}
+async function searchPlayers(){const q=$('playerSearch').value.trim();if(q.length<3){$('playerSearchResults').innerHTML='';return}const j=await (await fetch('/api/player-search?q='+encodeURIComponent(q)+'&t='+Date.now(),{cache:'no-store'})).json();$('playerSearchResults').innerHTML=(j.rows||[]).map(r=>'<button class="searchResult" data-player-id="'+esc(r.player_id)+'">'+esc(r.player_name)+' <span class="small">'+esc(r.primary_position||'')+'</span></button>').join('')||'<div class="small">No matches.</div>';document.querySelectorAll('.searchResult[data-player-id]').forEach(b=>b.onclick=()=>loadPlayerProfile(b.dataset.playerId))}
+function initials(name){return String(name||'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?'}
+function isPitcherPos(pos){return ['P','TWP'].includes(String(pos||'').toUpperCase())}
+function propFamilyKeys(isP){return isP?['pitcher_strikeouts','pitcher_outs','earned_runs','hits_allowed','walks_allowed','runs_allowed','pitcher_fantasy_score','rfi_nrfi']:['hits','total_bases','home_runs','runs','rbis','walks','singles','doubles','stolen_bases','hitter_strikeouts','hits_runs_rbis','fantasy_score']}
+function propGameValue(row,propKey,isP){
+  if(propKey==='rfi_nrfi')return row.first_frame_runs_allowed!=null?Number(row.first_frame_runs_allowed):null;
+  if(propKey==='pitcher_fantasy_score')return (Number(row.outs_recorded)||0)*1+(Number(row.strikeouts)||0)*3-(Number(row.earned_runs)||0)*3-(Number(row.walks_allowed)||0)*1;
+  if(propKey==='fantasy_score')return (Number(row.hits)||0)*3+(Number(row.runs)||0)*2+(Number(row.rbi)||0)*2+(Number(row.home_runs)||0)*4+(Number(row.stolen_bases)||0)*2+(Number(row.walks)||0)*1;
+  if(isP){const m={pitcher_strikeouts:'strikeouts',pitcher_outs:'outs_recorded',earned_runs:'earned_runs',hits_allowed:'hits_allowed',walks_allowed:'walks_allowed',runs_allowed:'runs_allowed'};const col=m[propKey];return col?Number(row[col]||0):null}
+  if(propKey==='hits_runs_rbis')return Number(row.hits||0)+Number(row.runs||0)+Number(row.rbi||0);
+  const m={hits:'hits',total_bases:'total_bases',home_runs:'home_runs',runs:'runs',rbis:'rbi',walks:'walks',singles:'singles',doubles:'doubles',stolen_bases:'stolen_bases',hitter_strikeouts:'strikeouts'};
+  const col=m[propKey];return col!=null?Number(row[col]||0):null;
+}
+function hitRateForWindow(games,propKey,line,isP,n){const slice=games.slice(0,n);let hits=0,valid=0;for(const g of slice){const v=propGameValue(g,propKey,isP);if(v==null)continue;valid++;if(v>line)hits++}if(!valid)return null;return Math.round((hits/valid)*100)}
+function streakText(games,propKey,line,isP){let streak=0,dir=null;for(const g of games){const v=propGameValue(g,propKey,isP);if(v==null)break;const hit=v>line;if(dir===null){dir=hit;streak=1;continue}if(hit===dir)streak++;else break}if(streak<2)return '';return dir?('🔥 Hit '+streak+' straight'):('❄️ Missed '+streak+' straight')}
+function gameBars(games,propKey,line,isP){const slice=games.slice(0,10).slice().reverse();const vals=slice.map(g=>propGameValue(g,propKey,isP));const max=Math.max(1,...vals.filter(v=>v!=null));const bars=slice.map((g,i)=>{const v=vals[i];if(v==null)return '<div class="gameBar push" style="height:8%" title="No data"></div>';const cls=v>line?'hit':(v===line?'push':'miss');const h=Math.max(12,Math.round((v/max)*100));const opp=g.opponent_abbr?('vs '+g.opponent_abbr):'';return '<div class="gameBar '+cls+'" style="height:'+h+'%" title="'+esc(opp)+': '+esc(v)+'"></div>'}).join('');const nums=slice.map((g,i)=>'<div class="gameBarNum">'+(vals[i]==null?'—':esc(vals[i]))+'</div>').join('');const opps=slice.map(g=>'<div class="gameBarOpp">'+esc(g.opponent_abbr||'')+'</div>').join('');return '<div class="gameBarsWrap">'+bars+'</div><div class="gameBarsNums">'+nums+'</div><div class="gameBarsOpps">'+opps+'</div>'}
+function propTrendCard(propKey,games,legsForProp,isP){
+  let line=null;
+  if(legsForProp.length){line=Number(legsForProp[0].line_value)}
+  if(line==null||!Number.isFinite(line)){const vals=games.map(g=>propGameValue(g,propKey,isP)).filter(v=>v!=null);if(!vals.length)return '';const avg=vals.reduce((a,b)=>a+b,0)/vals.length;line=Math.max(0.5,Math.floor(avg)+0.5)}
+  const l5=hitRateForWindow(games,propKey,line,isP,5),l10=hitRateForWindow(games,propKey,line,isP,10),l20=hitRateForWindow(games,propKey,line,isP,20);
+  if(l5==null&&l10==null&&l20==null)return '';
+  const cls=p=>p==null?'':(p>=70?'hi':(p>=50?'mid':'lo'));
+  const lineBadges=legsForProp.length?legsForProp.map(l=>'<span class="propLineBadge">'+esc(appLabel(l.source_key))+' '+esc(String(l.selected_side||'').toUpperCase())+' '+esc(l.line_value)+'</span>').join(''):'<span class="propLineBadge">Line '+esc(line)+' (est.)</span>';
+  return '<div class="propCard"><div class="propHead"><div><div class="propTitle">'+esc(displayPropLabel(propKey))+'</div><div class="propLines">'+lineBadges+'</div></div></div>'
+    +'<div class="hrRow"><div class="hrBox"><div class="pct '+cls(l5)+'">'+(l5==null?'—':l5+'%')+'</div><div class="lbl">L5</div></div><div class="hrBox"><div class="pct '+cls(l10)+'">'+(l10==null?'—':l10+'%')+'</div><div class="lbl">L10</div></div><div class="hrBox"><div class="pct '+cls(l20)+'">'+(l20==null?'—':l20+'%')+'</div><div class="lbl">L20</div></div></div>'
+    +gameBars(games,propKey,line,isP)
+    +'<div class="gameBarsCaption"><span>Oldest</span><span>Newest</span></div>'+'</div>';
+}
+function seasonSnapStrip(snapshots,isP){const season=snapshots.find(s=>s.metric_window==='season_to_date');if(!season)return '';const obp=season.pa_sum?((Number(season.hits_sum||0)+Number(season.walks_sum||0))/season.pa_sum):null;const iso=(season.slugging_percentage!=null&&season.batting_average!=null)?(Number(season.slugging_percentage)-Number(season.batting_average)):null;const cells=isP
+  ?[['G',season.games_count],['IP',avgFmt(season.innings_pitched_sum)],['ERA',avgFmt(season.era_calculated)],['WHIP',avgFmt(season.whip_calculated)],['K',season.strikeouts_sum],['K%',pctNum(Number(season.k_rate_calculated||0)*100)]]
+  :[['G',season.games_count],['AVG',avgFmt(season.batting_average)],['OBP',avgFmt(obp)],['SLG',avgFmt(season.slugging_percentage)],['ISO',avgFmt(iso)],['HR',season.home_runs_sum],['RBI',season.rbi_sum],['SB',season.stolen_bases_sum]];
+  return '<div class="snapStrip">'+cells.map(([k,v])=>'<div class="snapCell"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>').join('')+'</div>'}
+function splitsBlock(splits,isP){const L=splits.find(s=>String(s.split_key).toLowerCase()==='vs_left'),R=splits.find(s=>String(s.split_key).toLowerCase()==='vs_right');if(!L&&!R)return '';
+  const statsFor=s=>isP?[['AVG',s&&s.avg_against],['OBP',s&&s.obp_against],['SLG',s&&s.slg_against],['OPS',s&&s.ops_against]]:[['AVG',s&&s.avg],['OBP',s&&s.obp],['SLG',s&&s.slg],['OPS',s&&s.ops]];
+  const side=(lbl,s)=>'<div class="splitSide"><div class="splitSideLbl">'+lbl+'</div><div class="splitSideStats">'+statsFor(s).map(([k,v])=>'<div class="splitStat"><div class="v">'+(v!=null?avgFmt(v):'—')+'</div><div class="k">'+k+'</div></div>').join('')+'</div></div>';
+  return '<div class="dSection wide"><h3>'+(isP?'Vs Left / Right Handed Batters':'Vs Left / Right Handed Pitching')+'</h3><div class="splitCompare">'+side('VS LHP/LHB',L)+'<div class="splitVs">VS</div>'+side('VS RHP/RHB',R)+'</div></div>'}
+function microFactor(icon,title,rows,openDefault){return '<details class="microFactor"'+(openDefault?' open':'')+'><summary>'+icon+' '+esc(title)+'</summary><div class="microBody">'+infoRows(rows)+'</div></details>'}
+function miniLegCard(l){return '<div class="miniLegCard" data-leg-id="'+esc(l.final_board_row_id)+'"><div class="miniLegTop"><span class="miniLegApp">'+esc(appLabel(l.source_key))+'</span><span class="miniLegHp">'+pct(l.estimated_hit_probability_0_100)+'</span></div><div class="miniLegProp">'+esc(displayPropLabel(l.canonical_prop_key))+'</div><div class="miniLegLine">'+esc(String(l.selected_side||'').toUpperCase())+' '+esc(l.line_value)+' • Score '+num(l.score_0_100)+'</div></div>'}
+function availabilityClass(status){const s=String(status||'').toLowerCase();if(!s)return '';if(s.includes('out')||s.includes('inactive')||s.includes('il')||s.includes('unavailable'))return 'bad';if(s.includes('active')||s.includes('available')||s.includes('probable'))return 'good';return 'warn'}
+function arsenalTable(rows){if(!rows||!rows.length)return '<div class="small">No pitch arsenal data mined yet.</div>';const maxUsage=Math.max(...rows.map(r=>Number(r.pitch_usage||0)),1);return rows.map(r=>'<div class="arsenalRow"><div class="arsenalName">'+esc(r.pitch_name||'')+'</div><div class="arsenalBarTrack"><div class="arsenalBarFill" style="width:'+Math.round((Number(r.pitch_usage||0)/maxUsage)*100)+'%"></div></div><div class="arsenalStats">'+[r.pitch_usage!=null?r.pitch_usage+'% usage':'',r.whiff_percent!=null?r.whiff_percent+'% whiff':'',r.hard_hit_percent!=null?r.hard_hit_percent+'% hard-hit':''].filter(Boolean).join(' • ')+'</div></div>').join('')}
+function aggregateHitterGames(games){let ab=0,hits=0,tb=0,pa=0,walks=0;for(const g of games){ab+=Number(g.ab||0);hits+=Number(g.hits||0);tb+=Number(g.total_bases||0);pa+=Number(g.pa||0);walks+=Number(g.walks||0)}return {avg:ab?hits/ab:null,slg:ab?tb/ab:null,obp:pa?(hits+walks)/pa:null}}
+function aggregatePitcherGames(games){let ip=0,er=0,bb=0,h=0,k=0;for(const g of games){ip+=Number(g.innings_pitched_decimal||g.innings_pitched||0);er+=Number(g.earned_runs||0);bb+=Number(g.walks_allowed||0);h+=Number(g.hits_allowed||0);k+=Number(g.strikeouts||0)}return {era:ip?(9*er)/ip:null,whip:ip?(bb+h)/ip:null,k}}
+function homeAwayBlock(homeGames,awayGames,isP){if(!homeGames.length&&!awayGames.length)return '';const h=isP?aggregatePitcherGames(homeGames):aggregateHitterGames(homeGames);const a=isP?aggregatePitcherGames(awayGames):aggregateHitterGames(awayGames);const statsFor=x=>isP?[['ERA',avgFmt(x.era)],['WHIP',avgFmt(x.whip)],['K',x.k]]:[['AVG',avgFmt(x.avg)],['OBP',avgFmt(x.obp)],['SLG',avgFmt(x.slg)]];const side=(lbl,x,n)=>'<div class="splitSide"><div class="splitSideLbl">'+lbl+' ('+n+'G)</div><div class="splitSideStats">'+statsFor(x).map(([k,v])=>'<div class="splitStat"><div class="v">'+(v==null?'—':v)+'</div><div class="k">'+k+'</div></div>').join('')+'</div></div>';return '<div class="dSection wide"><h3>Home / Away Split (recent games)</h3><div class="splitCompare">'+side('Home',h,homeGames.length)+'<div class="splitVs">VS</div>'+side('Away',a,awayGames.length)+'</div></div>'}
+function qocGroup(label,cells){const shown=cells.filter(([,v])=>v!=null&&v!=='—');if(!shown.length)return '';return '<div class="qocGroup"><div class="qocGroupLabel">'+esc(label)+'</div><div class="qocGrid">'+cells.map(([k,v,hl])=>'<div class="qocMiniCell'+(hl?' highlight':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>').join('')+'</div></div>'}
+function qualityOfContactBlock(qoc){if(!qoc)return '';
+  const diff=qoc.woba_minus_xwoba_diff;
+  let signal='';
+  if(diff!=null){
+    const d=Number(diff);
+    if(d<=-0.02)signal='<div class="regenSignal regenUp">▲ Underperforming its quality — actual wOBA is '+Math.abs(d).toFixed(3)+' below what the contact quality supports. Classic buy-low signal; regression toward the better number is the likely path.</div>';
+    else if(d>=0.02)signal='<div class="regenSignal regenDown">▼ Overperforming its quality — actual wOBA is '+d.toFixed(3)+' above what the contact quality supports. Some of this production has been noise; do not be surprised by a cooldown.</div>';
+    else signal='<div class="regenSignal regenFlat">● Actual production matches the quality of contact closely — this is a true-talent read, not a lucky or unlucky stretch.</div>';
+  }
+  const expectedOutcomes=qocGroup('Expected Outcomes',[['xBA',avgFmt(qoc.xba)],['xSLG',avgFmt(qoc.xslg)],['xwOBA',avgFmt(qoc.xwoba),true],['xwOBAcon',avgFmt(qoc.xwobacon)]]);
+  const powerProfile=qocGroup('Power Profile',[['ISO',avgFmt(qoc.iso),true],['Barrel%',pctNum(qoc.barrel_batted_rate),true],['HR/FB%',pctNum(qoc.hr_fb_percent)],['Exit Velo',qoc.exit_velocity_avg!=null?qoc.exit_velocity_avg+' mph':null],['Launch Angle',qoc.launch_angle_avg!=null?qoc.launch_angle_avg+'°':null]]);
+  const contactQuality=qocGroup('Contact Quality',[['Hard-Hit%',pctNum(qoc.hard_hit_percent)],['Sweet Spot%',pctNum(qoc.sweet_spot_percent)]]);
+  const battedBallMix=(qoc.fly_ball_pct!=null||qoc.pull_pct!=null)?('<div class="qocGroup"><div class="qocGroupLabel">Batted Ball Mix</div><div class="qocGrid">'
+    +(qoc.fly_ball_pct!=null?'<div class="qocMiniCell"><div class="k">Fly Ball%</div><div class="v">'+qoc.fly_ball_pct+'%</div></div>':'')
+    +(qoc.line_drive_pct!=null?'<div class="qocMiniCell"><div class="k">Line Drive%</div><div class="v">'+qoc.line_drive_pct+'%</div></div>':'')
+    +(qoc.ground_ball_pct!=null?'<div class="qocMiniCell"><div class="k">Ground Ball%</div><div class="v">'+qoc.ground_ball_pct+'%</div></div>':'')
+    +(qoc.pop_up_pct!=null?'<div class="qocMiniCell"><div class="k">Pop Up%</div><div class="v">'+qoc.pop_up_pct+'%</div></div>':'')
+    +(qoc.pull_pct!=null?'<div class="qocMiniCell"><div class="k">Pull%</div><div class="v">'+qoc.pull_pct+'%</div></div>':'')
+    +(qoc.opposite_field_pct!=null?'<div class="qocMiniCell"><div class="k">Oppo%</div><div class="v">'+qoc.opposite_field_pct+'%</div></div>':'')
+    +'</div></div>'):'';
+  return '<div class="qocCard"><div class="qocTitle">⚡ Quality of Contact <span class="qocSub">Statcast '+(qoc.season_year||'')+'</span></div>'+signal+expectedOutcomes+powerProfile+contactQuality+battedBallMix+'</div>';
+}
+function advancedMetricsBlock(adv,isP){adv=adv||{};const items=[];
+  if(!isP){
+    if(adv.sprint_speed)items.push(['Speed & Baserunning',[['Sprint Speed',adv.sprint_speed.sprint_speed_ft_per_sec!=null?adv.sprint_speed.sprint_speed_ft_per_sec+' ft/sec':null],['Competitive Runs',adv.sprint_speed.competitive_runs]]]);
+    if(adv.batted_ball_profile)items.push(['Batted Ball Profile',[['Ground Ball %',adv.batted_ball_profile.ground_ball_pct!=null?adv.batted_ball_profile.ground_ball_pct+'%':null],['Air %',adv.batted_ball_profile.air_pct!=null?adv.batted_ball_profile.air_pct+'%':null],['Pulled Air %',adv.batted_ball_profile.pulled_air_pct!=null?adv.batted_ball_profile.pulled_air_pct+'%':null]]]);
+    if(adv.defensive_quality)items.push(['Defensive Quality ('+(adv.defensive_quality.primary_position||'')+')',[['Outs Above Average',adv.defensive_quality.outs_above_average],['Fielding Runs Prevented',adv.defensive_quality.fielding_runs_prevented],['OAA vs RHH',adv.defensive_quality.oaa_vs_rhh],['OAA vs LHH',adv.defensive_quality.oaa_vs_lhh]]]);
+  }
+  if(adv.catcher_framing_poptime)items.push(['Catcher Framing & Pop Time',[['Framing Runs',adv.catcher_framing_poptime.framing_runs_total],['Framing %',adv.catcher_framing_poptime.framing_pct_total],['Pop Time to 2B',adv.catcher_framing_poptime.pop_time_2b_sba],['Pop Time to 3B',adv.catcher_framing_poptime.pop_time_3b_sba]]]);
+  if(isP){
+    if(adv.arm_angle)items.push(['Arm Angle',[['Angle',adv.arm_angle.arm_angle_degrees!=null?adv.arm_angle.arm_angle_degrees+'°':null],['Pitches Tracked',adv.arm_angle.pitches_tracked]]]);
+    if(adv.pitcher_running_game)items.push(['Running Game Control',[['SB Opportunities Faced',adv.pitcher_running_game.sb_opportunities],['Advances Prevented',adv.pitcher_running_game.advances_prevented],['Stealing Runs Saved',adv.pitcher_running_game.stealing_runs]]]);
+  }
+  const hasArsenal=isP&&adv.pitcher_arsenal&&adv.pitcher_arsenal.length;
+  if(!items.length&&!hasArsenal)return '';
+  let html='<div class="sectionLabel" style="margin-top:16px">Advanced Metrics</div><div class="dossierGrid">';
+  items.forEach(([title,rows])=>{html+=section(title,rows)});
+  if(hasArsenal)html+='<div class="dSection wide"><h3>Pitch Arsenal</h3>'+arsenalTable(adv.pitcher_arsenal)+'</div>';
+  return html+'</div>';
+}
+function trendArrow(l5,ref,higherIsBetter){if(l5==null||ref==null)return '';const diff=higherIsBetter?(l5-ref):(ref-l5);if(Math.abs(diff)<0.01)return '<span class="trendArrow flat">→</span>';return diff>0?'<span class="trendArrow up">▲</span>':'<span class="trendArrow down">▼</span>'}
+async function loadPlayerProfile(id){$('playerProfileBody').innerHTML='<div class="empty">Loading player profile...</div>';const j=await (await fetch('/api/player-profile?player_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok){$('playerProfileBody').innerHTML='<div class="empty err">Profile failed: '+esc(j.error||'unknown')+'</div>';return}renderPlayerProfileDream(j)}
+function renderPlayerProfileDream(j){
+  const p=j.player||{},team=j.team||{},isP=j.is_pitcher||isPitcherPos(p.primary_position),isTwoWay=!!j.is_two_way,legs=j.current_legs||[],games=j.recent_games||[],homeGames=j.home_games||[],awayGames=j.away_games||[],snapshots=j.metric_snapshots||[],splits=j.splits||[],nextGame=j.next_game,nextCtx=j.next_game_context,advanced=j.advanced||{},availability=j.availability;
+  const name=p.full_name||p.player_name||'Player';
+  const heroBadges=[team.full_name||('Team '+(p.current_mlb_team_id||'—')),p.primary_position||p.primary_role||'—','Bats '+(p.bat_side||p.bats||'—'),'Throws '+(p.throw_side||p.throws||'—')];
+  const nextGameLine=nextGame?('Next: '+(nextGame.is_home?'vs ':'@ ')+esc(nextGame.opponent_team_name||'TBD')+' • '+esc(fmtDate(nextGame.game_time_utc))):'';
+  const availBadge=availability&&availability.availability_status?'<span class="availBadge '+availabilityClass(availability.availability_status)+'">'+esc(availability.availability_status)+'</span>':'';
+  let html='<div class="p2Hero"><div class="p2Avatar">'+esc(initials(name))+'</div><div><div class="p2Name">'+esc(name)+' '+availBadge+'</div><div class="p2Meta">'+heroBadges.map(b=>'<span class="p2Badge">'+esc(b)+'</span>').join('')+'</div>'+(nextGameLine?'<div class="p2Next">'+nextGameLine+'</div>':'')+'</div></div>';
+  const seasonRow=snapshots.find(s=>s.metric_window==='season_to_date'),l5Row=snapshots.find(s=>s.metric_window==='last_5_games');
+  const trendKey=isP?'era_calculated':'batting_average';
+  const trend=seasonRow&&l5Row?trendArrow(l5Row[trendKey],seasonRow[trendKey],!isP):'';
+  html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot '+trend+'</div>'+(seasonSnapStrip(snapshots,isP)||'<div class="small">No season snapshot available yet.</div>');
+  const propKeys=propFamilyKeys(isP);
+  const legsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');(legsByProp[k]=legsByProp[k]||[]).push(l)}
+  const propCards=propKeys.map(k=>propTrendCard(k,games,legsByProp[k]||[],isP)).filter(Boolean);
+  const extraProps=[...new Set(Object.keys(legsByProp))].filter(k=>!propKeys.includes(k));
+  extraProps.forEach(k=>{const c=propTrendCard(k,games,legsByProp[k]||[],isP);if(c)propCards.push(c)});
+  html+='<div class="sectionLabel" style="margin-top:16px">Prop Trends — Last 5 / 10 / 20</div>'+(propCards.length?'<div class="cards">'+propCards.join('')+'</div>':'<div class="small">No recent game log or current lines available for this player yet.</div>');
+  html+=splitsBlock(splits,isP);
+  html+=homeAwayBlock(homeGames,awayGames,isP);
+  if(isTwoWay){
+    const hGames=j.twp_hitter_recent_games||[],hSnapshots=j.twp_hitter_metric_snapshots||[],hSplits=j.twp_hitter_splits||[];
+    const hHome=hGames.filter(g=>Number(g.is_home)===1),hAway=hGames.filter(g=>Number(g.is_home)===0);
+    html+='<div class="sectionLabel" style="margin-top:20px">As A Hitter — Season Snapshot</div>'+(seasonSnapStrip(hSnapshots,false)||'<div class="small">No hitter season snapshot available yet.</div>');
+    const hPropKeys=propFamilyKeys(false);
+    const hLegsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');if(!k.startsWith('pitcher_')&&!['earned_runs','hits_allowed','walks_allowed'].includes(k))(hLegsByProp[k]=hLegsByProp[k]||[]).push(l)}
+    const hPropCards=hPropKeys.map(k=>propTrendCard(k,hGames,hLegsByProp[k]||[],false)).filter(Boolean);
+    html+='<div class="sectionLabel" style="margin-top:16px">As A Hitter — Prop Trends</div>'+(hPropCards.length?'<div class="cards">'+hPropCards.join('')+'</div>':'<div class="small">No recent hitting game log or current hitter lines available yet.</div>');
+    html+=splitsBlock(hSplits,false);
+    html+=homeAwayBlock(hHome,hAway,false);
+  }
+  html+=qualityOfContactBlock(advanced.quality_of_contact);
+  html+=advancedMetricsBlock(advanced,isP);
+  if(nextGame&&nextCtx){
+    html+='<div class="sectionLabel" style="margin-top:16px">Next Game — Micro Factors</div><div class="microFactors">';
+    if(nextCtx.opposing_starter)html+=microFactor('⚾','Opposing Starter',[['Pitcher',nextCtx.opposing_starter.full_name||'TBD'],['Throws',nextCtx.opposing_starter.throw_side],['Confidence',nextCtx.opposing_starter.confidence]],true);
+    if(nextCtx.opposing_starter_arsenal&&nextCtx.opposing_starter_arsenal.length)html+='<details class="microFactor" open><summary>🎯 Opposing Starter Arsenal</summary><div class="microBody">'+arsenalTable(nextCtx.opposing_starter_arsenal)+'</div></details>';
+    html+=microFactor('🌤️','Weather & Park',weatherRows(nextCtx),false);
+    html+=microFactor('🔥','Bullpen',(nextCtx.bullpen||[]).flatMap(r=>[['Team',r.team_name],['Status',r.bullpen_status],['Risk',r.bullpen_risk_level],['Fatigue Score',r.bullpen_fatigue_score],['Pitches (3d)',r.bullpen_pitches_last_3_days],['Rested Relievers',r.rested_reliever_count]]),false);
+    html+=microFactor('📅','Schedule Spot',(nextCtx.schedule_spot||[]).flatMap(r=>[['Team',r.team_name],['Rest Days',r.days_rest],['Games Last 3d',r.games_last_3_days],['Travel',yesNo(r.travel_required_flag)],['Risk',r.schedule_risk_level]]),false);
+    html+=microFactor('🎯','Umpire',umpireRows(nextCtx),false);
+    html+=microFactor('💰','Game Market',marketRows(nextCtx),false);
+    html+='</div>';
+  } else {
+    html+='<div class="dossierNote" style="margin-top:14px">No next scheduled game found for this player right now — micro-factor context will appear once a game is on the board.</div>';
+  }
+  if(legs.length){
+    html+='<div class="sectionLabel" style="margin-top:16px">Available Legs On The Board</div><div class="miniLegGrid">'+legs.map(l=>miniLegCard(l)).join('')+'</div>';
+  }
+  $('playerProfileBody').innerHTML=html;
+  document.querySelectorAll('#playerProfileBody .miniLegCard[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.dataset.legId));
+  document.querySelectorAll('.legBtn[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.dataset.legId));
+}
+
+
+function statusDot(status){const color=status==='green'?'#2ecc71':status==='yellow'?'#f1c40f':'#e74c3c';return '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+color+';margin-right:8px;vertical-align:middle"></span>'}
+function coverageBar(covered,expected){
+  if(expected==null||!expected){
+    // No natural ratio for this metric (e.g. a reference-data count) - still show a bar for
+    // homogeneous layout, styled neutrally to signal "informational count", not a red/yellow/green judgment.
+    const hasData=Number(covered||0)>0;
+    return '<div style="background:#0d1420;border-radius:4px;height:6px;margin-top:4px;overflow:hidden"><div style="background:'+(hasData?'#3d5a80':'#3a3f4b')+';height:100%;width:'+(hasData?100:0)+'%"></div></div>';
+  }
+  const ratio=Math.max(0,Math.min(1,covered/expected));const color=ratio>=0.9?'#2ecc71':ratio>=0.5?'#f1c40f':'#e74c3c';return '<div style="background:#0d1420;border-radius:4px;height:6px;margin-top:4px;overflow:hidden"><div style="background:'+color+';height:100%;width:'+(ratio*100)+'%"></div></div>'
+}
+function renderHealth(){
+  if(!health||!health.layers){$('healthCards').innerHTML='<div class="empty">No health data.</div>';return}
+  $('healthStatus').innerHTML=statusDot(health.overall_status)+'Overall status • Generated '+esc(health.generated_at||'')+' • '+esc(health.total_board_players||0)+' board players, '+esc(health.total_board_games||0)+' games today';
+  $('healthCards').innerHTML=health.layers.map(layer=>{
+    const metricsHtml=(layer.metrics||[]).map(m=>{
+      const covStr=m.expected!=null?esc(m.covered)+' / '+esc(m.expected):esc(m.covered);
+      return '<div style="padding:6px 0;border-bottom:1px solid #222"><div style="display:flex;justify-content:space-between"><span>'+esc(m.label)+'</span><span><b>'+covStr+'</b> '+esc(m.unit||'')+'</span></div>'+coverageBar(m.covered,m.expected)+(m.note?'<div class="small" style="color:#9ab;margin-top:2px">'+esc(m.note)+'</div>':'')+'</div>'
+    }).join('');
+    const totalsHtml=layer.totals?('<div class="small" style="color:#9ab;margin-top:6px">'+Object.entries(layer.totals).map(([k,v])=>esc(cap(k))+': '+esc(v)).join(' • ')+'</div>'):'';
+    const windowNoteHtml=layer.window_note?('<div class="small" style="color:#9ab;margin:4px 0 8px;font-style:italic">'+esc(layer.window_note)+'</div>'):'';
+    const rerunHtml=layer.rerun_action?('<button class="btn healthRerunBtn" data-target="'+esc(layer.rerun_action.target)+'" data-mode="'+esc(layer.rerun_action.mode)+'" style="margin-top:10px">'+esc(layer.rerun_action.label)+'</button>'):'';
+    return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px">'+
+      '<div style="font-size:16px;font-weight:600">'+statusDot(layer.status)+esc(layer.label)+'</div>'+
+      '<div class="small" style="color:#9ab;margin:4px 0 2px">Last update: '+esc(layer.last_update||'Never')+'</div>'+
+      windowNoteHtml+
+      metricsHtml+totalsHtml+rerunHtml+
+      '<div class="healthRerunResult small" data-for="'+esc(layer.key)+'" style="margin-top:6px"></div>'+
+    '</div>'
+  }).join('');
+  document.querySelectorAll('.healthRerunBtn').forEach(btn=>btn.onclick=async()=>{
+    const target=btn.dataset.target, mode=btn.dataset.mode;
+    const resultDiv=btn.parentElement.querySelector('.healthRerunResult');
+    btn.disabled=true; btn.textContent='Running...'; resultDiv.textContent='';
+    try{
+      const j=await (await fetch('/api/main-board/health/rerun',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({target,mode})})).json();
+      resultDiv.innerHTML=j.ok?'<span style="color:#2ecc71">Triggered successfully. Reload health in a minute to see updated status.</span>':'<span class="err">Failed: '+esc(j.error||JSON.stringify(j.response||{}))+'</span>';
+    }catch(e){resultDiv.innerHTML='<span class="err">Error: '+esc(e.message||e)+'</span>'}
+    btn.disabled=false; btn.textContent=btn.textContent==='Running...'?btn.dataset.mode:btn.textContent;
+    loadHealth();
+  });
+}
+async function fetchWithTimeout(url, opts, ms){const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||15000);try{return await fetch(url,{...opts,signal:ctrl.signal})}finally{clearTimeout(t)}}
+async function load(){try{$('status').textContent='Loading filters...';const fj=await (await fetchWithTimeout('/api/main-board/filters?t='+Date.now(),{cache:'no-store'},15000)).json();if(!fj.ok)throw Error(fj.error||'filters failed');renderFilters(fj);$('status').textContent='Loading board...';const j=await (await fetchWithTimeout('/api/main-board/current?limit=200&min_score=80&t='+Date.now(),{cache:'no-store'},15000)).json();if(!j.ok)throw Error(j.error||'board failed');rows=Array.isArray(j.rows)?j.rows:[];render()}catch(e){const msg=e&&e.name==='AbortError'?'Request timed out after 15s - the server may be slow or unreachable.':(e.message||e);$('status').innerHTML='<span class="err">Board load failed: '+esc(msg)+'</span>';$('cards').innerHTML='<div class="empty err" style="grid-column:1/-1">Could not load Review Board.</div>'}}
+async function loadHealth(){try{$('healthStatus').textContent='Loading health...';const j=await (await fetch('/api/main-board/health?t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'health failed');health=j;renderHealth()}catch(e){$('healthStatus').innerHTML='<span class="err">Health load failed: '+esc(e.message||e)+'</span>'}}
+let calibrationReport=null, calibrationSelected=new Set();
+function plainCalibSummary(r){
+  const m=r.metrics||{};
+  if(r.status==='INSUFFICIENT_DATA') return 'Not enough games have finished yet to check this prop safely. Nothing to do here - check back once more games resolve.';
+  if(r.status==='NO_FIXABLE_PATTERN_FOUND') return 'Checked for a fix using real outcomes - none genuinely helped. The current numbers for this prop are already the best available estimate.';
+  const beforeAcc = m.test_brier_before!=null ? Math.round((1-m.test_brier_before)*100) : null;
+  const afterAcc = m.test_brier_after!=null ? Math.round((1-m.test_brier_after)*100) : null;
+  if(r.status==='RECOMMENDED_NOT_YET_APPLIED') return 'A correction is available, tested against '+(m.test_n||'—')+' real, already-finished games it never saw while being built. '+(beforeAcc!=null&&afterAcc!=null?'Accuracy on those games would improve from about '+beforeAcc+'% to '+afterAcc+'%.':'It genuinely improved accuracy on those games.')+' Not applied yet.';
+  if(r.status==='ACTIVE_AND_STILL_VALID') return 'A correction is already applied for this prop, and checking it again against '+(m.test_n||'—')+' real finished games confirms it is still helping.'+(beforeAcc!=null&&afterAcc!=null?' Accuracy on those games: about '+beforeAcc+'% without the fix, '+afterAcc+'% with it.':'');
+  if(r.status==='ACTIVE_VIA_DIFFERENT_METHODOLOGY_NOT_RETESTED') return 'A correction is active for this prop from an earlier, more targeted fix. This check uses a different, more general method and did not re-test that specific fix - nothing to do.';
+  return r.summary||'';
+}
+function renderCalibration(){
+  if(!calibrationReport||!calibrationReport.report){$('calibrationCards').innerHTML='<div class="empty">No calibration data.</div>';return}
+  const rows=calibrationReport.report;
+  const needsAction=rows.filter(r=>r.severity==='recommend');
+  const fine=rows.filter(r=>r.severity!=='recommend');
+  $('calibrationStatus').innerHTML='Generated '+esc(calibrationReport.generated_at||'')+'<br>'+(needsAction.length?'<b style="color:var(--gold)">'+needsAction.length+' prop'+(needsAction.length>1?'s':'')+' could be improved</b>':'<b style="color:var(--good)">Everything checked out</b>')+' out of '+esc(calibrationReport.total_props||0)+' props tracked';
+  function card(r){
+    const canApply=r.severity==='recommend';
+    const dotColor=r.severity==='recommend'?'yellow':r.severity==='warning'?'red':'green';
+    return '<div class="healthCard" style="grid-column:1/-1;text-align:left;padding:14px'+(canApply?';border-color:rgba(244,201,93,.5)':'')+'">'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+      (canApply?'<input type="checkbox" class="calibCheck" data-prop="'+esc(r.prop)+'" style="width:18px;height:18px;flex:0 0 auto">':'<span style="width:18px;display:inline-block;flex:0 0 auto"></span>')+
+      statusDot(dotColor)+'<b>'+esc(displayPropLabel(r.prop))+'</b></div>'+
+      '<div class="small" style="margin:8px 0 0">'+esc(plainCalibSummary(r))+'</div>'+
+    '</div>'
+  }
+  $('calibrationCards').innerHTML=
+    (needsAction.length?'<div style="grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);font-weight:950;margin:4px 0">Could be improved</div>'+needsAction.map(card).join(''):'')+
+    (fine.length?'<details style="grid-column:1/-1;margin-top:'+(needsAction.length?'12px':'0')+'"><summary style="cursor:pointer;font-weight:950;color:var(--muted);padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Everything else, working fine ('+fine.length+')</summary><div style="display:grid;gap:8px;margin-top:8px">'+fine.map(card).join('')+'</div></details>':'');
+  document.querySelectorAll('.calibCheck').forEach(cb=>cb.onchange=()=>{
+    if(cb.checked)calibrationSelected.add(cb.dataset.prop);else calibrationSelected.delete(cb.dataset.prop);
+    $('calibrationSelectedCount').textContent=calibrationSelected.size;
+    $('calibrationApplyBar').classList.toggle('hidden',calibrationSelected.size===0);
+  });
+}
+async function loadCalibration(){try{$('calibrationStatus').textContent='Loading calibration report...';const j=await (await fetch('/api/calibration/report?t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'calibration report failed');calibrationReport=j.response||j;renderCalibration()}catch(e){$('calibrationStatus').innerHTML='<span class="err">Calibration load failed: '+esc(e.message||e)+'</span>'}}
+async function applyCalibrationSelected(){
+  const props=Array.from(calibrationSelected);
+  if(!props.length)return;
+  $('calibrationApplyBtn').disabled=true; $('calibrationApplyBtn').textContent='Applying...';
+  try{
+    const j=await (await fetch('/api/calibration/apply',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({props})})).json();
+    $('calibrationStatus').innerHTML=j.ok?'<span style="color:#2ecc71">Applied: '+esc((j.response&&j.response.applied||[]).join(', '))+'</span>':'<span class="err">Failed: '+esc(j.error||'')+'</span>';
+    calibrationSelected.clear(); $('calibrationApplyBar').classList.add('hidden');
+    loadCalibration();
+  }catch(e){$('calibrationStatus').innerHTML='<span class="err">Error: '+esc(e.message||e)+'</span>'}
+  $('calibrationApplyBtn').disabled=false; $('calibrationApplyBtn').textContent='Apply Selected';
+}
+const PW_GATE_CODE='3971';
+let pwGateUnlocked=false, pwGatePendingScreen=null;
+function requirePasswordThen(screenName, afterFn){
+  if(pwGateUnlocked){ setScreen(screenName); afterFn(); return; }
+  pwGatePendingScreen={screenName, afterFn};
+  $('pwGateInput').value=''; $('pwGateError').textContent='';
+  $('pwGateOverlay').classList.remove('hidden');
+  $('pwGateInput').focus();
+}
+function pwGateTrySubmit(){
+  if($('pwGateInput').value===PW_GATE_CODE){
+    pwGateUnlocked=true;
+    $('pwGateOverlay').classList.add('hidden');
+    if(pwGatePendingScreen){ setScreen(pwGatePendingScreen.screenName); pwGatePendingScreen.afterFn(); pwGatePendingScreen=null; }
+  } else {
+    $('pwGateError').textContent='Incorrect password.';
+  }
+}
+function boot(){bindAutoCreateSlips();$('menuOpen').onclick=e=>{e.stopPropagation();$('mainMenu').classList.toggle('hidden')};document.addEventListener('click',()=>$('mainMenu').classList.add('hidden'));$('menuBoard').onclick=()=>{setScreen('board');render()};$('menuHealth').onclick=()=>requirePasswordThen('health',loadHealth);$('menuCalibration').onclick=()=>requirePasswordThen('calibration',loadCalibration);$('menuSlips').onclick=()=>{setScreen('slips');highHitSlips()};$('menuPlayerProfile').onclick=openPlayerProfile;$('backBoard').onclick=()=>setScreen('board');$('calibrationBack').onclick=()=>setScreen('board');$('calibrationApplyBtn').onclick=applyCalibrationSelected;$('pwGateSubmit').onclick=pwGateTrySubmit;$('pwGateCancel').onclick=()=>{$('pwGateOverlay').classList.add('hidden');pwGatePendingScreen=null};$('pwGateInput').onkeydown=e=>{if(e.key==='Enter')pwGateTrySubmit()};$('buildBack').onclick=()=>setScreen('board');$('slipsBack').onclick=()=>setScreen('board');$('profileBack').onclick=()=>setScreen('board');$('slipFloatBuild').onclick=openBuild;$('playerSearch').oninput=()=>{clearTimeout(window.__playerSearchTimer);window.__playerSearchTimer=setTimeout(searchPlayers,220)};$('dossierBack').onclick=()=>setScreen('board');$('dossierHome').onclick=()=>setScreen('board');$('refresh').onclick=load;load();setInterval(()=>{if(rows&&rows.length)render()},30000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{try{boot()}catch(e){document.body.insertAdjacentHTML('afterbegin','<div style="background:#c00;color:#fff;padding:16px;font-size:16px;font-weight:bold;position:relative;z-index:99999">BOOT ERROR: '+String(e&&e.stack||e)+'</div>')}});else{try{boot()}catch(e){document.body.insertAdjacentHTML('afterbegin','<div style="background:#c00;color:#fff;padding:16px;font-size:16px;font-weight:bold;position:relative;z-index:99999">BOOT ERROR: '+String(e&&e.stack||e)+'</div>')}}
+})();
+</script>
+</body>
+</html>`;
+
+function extractAppScript() {
+  const openIdx = MAIN_HTML.lastIndexOf("<script>");
+  const openTagEnd = MAIN_HTML.indexOf(">", openIdx) + 1;
+  const closeIdx = MAIN_HTML.lastIndexOf("</script>");
+  return MAIN_HTML.slice(openTagEnd, closeIdx);
+}
+const APP_JS = extractAppScript();
+function MAIN_HTML_EXTERNAL() {
+  const openIdx = MAIN_HTML.lastIndexOf("<script>");
+  const closeIdx = MAIN_HTML.lastIndexOf("</script>") + "</script>".length;
+  return MAIN_HTML.slice(0, openIdx) + `<script src="/app.js"></script>` + MAIN_HTML.slice(closeIdx);
+}
+function jsResponse(js) {
+  return new Response(js, { status: 200, headers: { "content-type": "application/javascript; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/$/, "") || "/";
+    const method = request.method.toUpperCase();
+
+    try {
+      if (method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization" } });
+      if (method === "GET" && path === "/app.js") return jsResponse(APP_JS);
+      if (method === "GET" && (path === "/" || path === "/index.html")) return htmlResponse(MAIN_HTML_EXTERNAL());
+      if (method === "GET" && ["/main_alphadog_logo.png", "/main_alphadog_favicon.png", "/main_alphadog_apple_touch_icon.png"].includes(path)) return pngResponse(LOGO_PNG_BASE64);
+      if (method === "GET" && path === "/health") {
+        const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+        const vars = varPresence(env, EXPECTED_VARS);
+        const secrets = varPresence(env, REQUIRED_SECRETS);
+        return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: db, vars, secrets_present_only: secrets }, safe_secret_note: "Secret values are intentionally never printed." });
+      }
+      if (method === "GET" && path === "/api/main-board/current") return await apiCurrent(env, url);
+      if (method === "GET" && path === "/api/main-board/dossier") return await apiDossier(env, url);
+      if (method === "GET" && path === "/api/main-board/filters") return await apiFilters(env);
+      if (method === "GET" && path === "/api/main-board/health") return await apiHealth(env);
+      if (method === "POST" && path === "/api/main-board/health/rerun") return await apiHealthRerun(env, request);
+      if (method === "GET" && path === "/api/calibration/report") return await apiCalibrationReport(env);
+      if (method === "POST" && path === "/api/calibration/apply") return await apiCalibrationApply(env, request);
+      if (method === "GET" && path === "/api/player-search") return await apiPlayerSearch(env, url);
+      if (method === "GET" && path === "/api/player-profile") return await apiPlayerProfile(env, url);
+      if (method === "GET" && path === "/api/slips/recent") return await apiSlipsRecent(env, url);
+      if (method === "POST" && path === "/api/slips/generate") return await apiGenerateSlips(env, request);
+      if (method === "POST" && path === "/api/slips/auto-create") return await apiAutoCreateSlips(env, request);
+      if (method === "POST" && path === "/api/slips/goblin") return await apiGoblinSlips(env, request);
+      if (method === "POST" && path === "/api/slips/high-hit") return await apiHighHitSlips(env, request);
+      if (method === "POST" && path === "/api/slips/high-hit-underdog") return await apiHighHitSlipsUnderdog(env, request);
+      if (method === "POST" && path === "/api/slips/regular") return await apiRegularSlips(env, request);
+      if (method === "POST" && path === "/api/slips/demon") return await apiDemonSlips(env, request);
+      if (method === "POST" && path === "/api/slips/research-create") return await apiResearchCreateSlips(env, request);
+      if (method === "POST" && path === "/api/slips/save") return await apiSaveSlips(env, request);
+      if (method === "POST" && path === "/diagnostic") {
+        const input = await readJsonSafe(request);
+        const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+        const vars = varPresence(env, EXPECTED_VARS);
+        const secrets = varPresence(env, REQUIRED_SECRETS);
+        return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null }, diagnostics: { db_bindings: db, vars, secrets_present_only: secrets }, writes_performed: 0, external_calls_performed: 0, queue_calls_performed: 0 });
+      }
+      if (method === "POST" && path === "/run") {
+        const input = await readJsonSafe(request);
+        return jsonResponse({ ...baseIdentity(env), route: "/run", request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || JOB_KEY, status: "MAIN_UI_READ_ONLY_NOOP", certification: "MAIN_UI_READ_ONLY_NOOP", rows_read: 0, rows_written: 0, output_json: { noop: true, logical_app: LOGICAL_APP, message: "Main UI worker slot is read-only and does not run pipeline jobs." } });
+      }
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /index.html", "GET /health", "POST /run", "POST /diagnostic", "GET /api/main-board/current", "GET /api/main-board/dossier", "GET /api/main-board/filters", "GET /api/main-board/health", "GET /api/player-search", "GET /api/player-profile", "GET /api/slips/recent", "POST /api/slips/generate", "POST /api/slips/save", "GET /main_alphadog_logo.png", "GET /main_alphadog_favicon.png", "GET /main_alphadog_apple_touch_icon.png"], timestamp_utc: nowUtc() }, 404);
+    } catch (error) {
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, error: String(error && error.message ? error.message : error), stack: String(error && error.stack ? error.stack : "").slice(0, 1200), writes_performed: 0, external_calls_performed: 0, queue_calls_performed: 0, timestamp_utc: nowUtc() }, 500);
+    }
+  }
+};
+}{SLEEPER_SHARP_MIN_EDGE_PP} && r.real_leg_mult != null);
+    // POOL FLOOR: thin days are where this loses. Both -100% days in the unfloored backtest had
+    // pools of 2 and 3 legs; requiring >=6 removed exactly those and lifted ROI 146.7% -> 167.3%.
+    if (scored.length < SLEEPER_SHARP_POOL_FLOOR) return [];
+    // Rank by the size of the disagreement - that is the signal, monotonic across all five bands.
+    return scored.sort((a, b) => (b.sharp_edge_pp - a.sharp_edge_pp));
       .map(r => ({
         ...r,
         real_leg_mult: sleeperLegMultiplier(r.real_over_price, r.real_under_price, r.selected_side)
