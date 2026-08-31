@@ -4639,11 +4639,72 @@ function buildSleeperHighHitSlips(legs) {
 // this. Retired hits_allowed/more (prior track, 6-pick, real user-confirmed tiers) - real 9-10am
 // Pacific coverage check (2026-08-25) also confirmed RBIs/less has real presence at this specific
 // snapshot time (39 slips, 7 of 28 days) unlike several other candidates.
+// ===== UNDERDOG v3, 2026-08-31: SHARP DIVERGENCE + ONE LEG PER GAME =====
+// The rbis/less trailing-rate track is RETIRED. Same root cause as Sleeper: we were devigging
+// Underdog against ITSELF, which forces p*m = k identically and makes every propline look like the
+// house edge. Measured across all 20 proplines, best self-devigged p*m was 0.9755 - it could not
+// have been otherwise.
+//
+// BASE TABLE NOW VERIFIED EXACTLY (2026-08-31, live board reads, four strikeout legs from four
+// DIFFERENT games so no correlation discount applies):
+//     2-pick: 0.86 x 0.94                    = 0.8084, observed 2.82 -> BASE 3.4884
+//     3-pick: + 1.11                         = 0.8973, observed 5.83 -> BASE 6.4971
+//     4-pick: + 0.84                         = 0.7538, observed 9.04 -> BASE 11.9933
+// => BASE = {2:3.5, 3:6.5, 4:12, 5:20}. The widely-quoted research tables (3/6/10/20 from
+// GamedayMath, OddsJam, Props.com) are WRONG for MLB 2026. Our table also fits our own 19 placed
+// slips 3x more consistently (1.62% vs 4.87% disagreement in k across slip sizes).
+//
+// ⚠️ SAME-GAME CORRELATION DISCOUNT - NEWLY DISCOVERED, was never in the model:
+// A second H+R+RBI set with legs sharing BAL@COL showed the payout falling BELOW BASE x product:
+//     2 legs, 2 different games            -> ratio 0.999  (no discount, BASE re-confirmed)
+//     3 legs, 2 of them same game          -> ratio 0.968
+//     4 legs, 3 of them same game          -> ratio 0.819
+//     5 legs, 3 of them same game          -> ratio 0.819  (tracks the CLUSTER, not slip size)
+// Every prior Underdog backtest overvalued clustered slips by up to 18%.
+//
+// WHY ONE LEG PER GAME IS MANDATORY AND ALSO BETTER:
+// Underdog requires >=2 teams per entry (Establish The Run), so single-game pools are rejected
+// outright. Separately, sharp divergence CLUSTERS BY GAME - on 08-19 ten qualifying legs came from
+// two games, on 08-22 twelve from three. Propeller (49,000+ graded predictions) identifies the
+// mechanism: "the 30-90 minute repricing window after injury announcements is the single most
+// actionable edge on Underdog". The mispricing is game-level, so the divergence is too. Taking the
+// single highest-edge leg per game both satisfies the rule and avoids the discount.
+//
+// SIZE: expectation computed over ALL one-per-game combinations per day (not one chosen slip,
+// which removes selection luck). ROI rises with size but reliability collapses:
+//     2-pick: 7 of 16 days buildable, +37.2% ROI, 4/7 profitable, best day = 36.7% of return
+//     3-pick: 5 days, +38.5%, 3/5 profitable, best day 60.3%
+//     4-pick: 4 days, +88.1%, 2/4 profitable, best day 82.6%
+//     5-pick: 3 days, +189.9%, 1/3 profitable, best day 90.2%  <- one Monday IS the strategy
+// 2-pick chosen: double the volume, lowest concentration, and only 1.3 ROI points behind 3-pick.
+//
+// FLEX: -73.4% at 3-pick, -51.0% at 4-pick, -17.7% at 5-pick. Worst of any platform tested, because
+// the insured bases (1.25/2.0/4.0) are a fraction of standard (6.5/12/20) while leg hit is only
+// ~63%. Flex is now dead on all three platforms across six independent tests.
+//
+// ⚠️ TRAILING RATE HURTS HERE - do not re-add it. Layering trail>=70 on top lifts leg hit rate
+// 62.5% -> 77.3% but drops the average modifier 0.914 -> 0.726, because modifier = k/p means
+// selecting for safety directly destroys the payout. Net effect was negative.
+//
+// PROPLINE: runs/0.5/less is the ONLY one that clears. At >=5pp divergence:
+//     runs/0.5/less        58 legs, hit 67.24%, mod 0.831 -> p*m 0.5587  (k = 0.4704) CLEARS
+//     rbis/0.5/less        16 legs, hit 62.50%, mod 0.741 -> p*m 0.4631  fails
+//     hits/0.5/less         8 legs, hit 37.50%, mod 1.237 -> p*m 0.4639  fails
+//     total_bases/0.5/less 13 legs, hit 23.08%, mod 1.157 -> p*m 0.2670  fails badly
+//
+// HONEST STATUS: 7 slips over 16 days. This is a well-specified candidate with a causal mechanism,
+// NOT a validated strategy. It ranks behind PrizePicks (+73.1%, t=5.95) and Sleeper (+167.3%,
+// t=2.62) and should carry the smallest stake of the three. The binding constraint is sharp-book
+// feed coverage, which currently overlaps Underdog on only ~16 of 42 board days.
+const UNDERDOG_SHARP_MIN_EDGE_PP = 0.05;   // sharp consensus prob minus Underdog's devigged prob
+const UNDERDOG_SHARP_MIN_BOOKS = 2;
+const UNDERDOG_ONE_LEG_PER_GAME = true;    // mandatory: rule compliance AND avoids the discount
+const UNDERDOG_MIN_GAMES_TO_FIRE = 2;      // skip the day entirely if only one game qualifies
 const UNDERDOG_HIGH_HIT_QUALIFYING_LINES = [
-  { prop: "rbis", side: "less", rank: 1 }
+  { prop: "runs", side: "less", rank: 1 }
 ];
 const UNDERDOG_HIGH_HIT_SIZE = 2;
-const UNDERDOG_HIGH_HIT_MIN_HIT_PCT = 66;
+const UNDERDOG_HIGH_HIT_MIN_HIT_PCT = 0;   // no trailing gate - it is actively harmful here
 const UNDERDOG_HIGH_HIT_TOP_K = 25;
 // REAL FIX 2026-08-26: the flat 3.5x table was confirmed WRONG via 12 real saved slips - real
 // multipliers ranged 1.49-1.86x (mean 1.62x), roughly HALF the assumed 3.5x, every single
