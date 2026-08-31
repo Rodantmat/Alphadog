@@ -324,6 +324,17 @@ export default {
       });
     }
 
+    if (method === "GET" && path === "/debug-fetch") {
+      // Diagnostic-only route (never writes anything) to see the raw stats.nba.com response
+      // during source verification - not part of the certified /run path.
+      try {
+        const info = await fetchNbaTeamsLive(env);
+        return jsonResponse({ ok: true, ...info });
+      } catch (err) {
+        return jsonResponse({ ok: false, error: String(err && err.message ? err.message : err) }, 200);
+      }
+    }
+
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
