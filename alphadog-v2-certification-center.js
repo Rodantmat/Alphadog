@@ -3649,19 +3649,60 @@ function buildUnderdogBaselineSlips(legs) {
 //  4. Every day is +102.3% (both slips win), +1.1% (one wins), or -100% (neither). The 4-pick
 //     multiplier of 2.023 means one winner roughly returns the stake and the second is the profit.
 //
+// ===== STRATEGY v3, 2026-08-31: FULL REBUILD ON SEASON-VALIDATED SIGNAL =====
+// The v2 strategy (total_bases 2.5+3.5, 4-pick, cap 2) was validated only on the 17-day board
+// window it was searched in. Re-tested against the FULL 155-day game-log season - which needs no
+// board data, since the signal is a player's own trailing hit rate from game logs - it holds, but
+// two things changed materially:
+//
+// 1) SEASON SIGNAL VALIDATION (698 selected legs, 88 days, entirely outside the search window):
+//    total_bases/3.5/less ranked by trailing rate: 91.01 / 90.52 / 88.29 / 84.92 across rank bands
+//    -> perfectly monotonic, Spearman rho = -1.000. Top-8 vs deep pool: +7.04pp, z = 5.06.
+//    This clears Harvey/Liu/Zhu's t>3.0 multiple-testing hurdle AND the Bailey/Lopez de Prado
+//    deflated hurdle t*=4.08 for the ~4,000 configurations tested across this program.
+//
+// 2) home_runs/0.5/less WAS BEING MISSED BY OUR OWN METHODOLOGY. Every threshold sweep showed it
+//    at ~+0.4pp because trail>=78 retains 94% of its legs - the threshold does not bind. RANKED,
+//    it is the strongest propline on the board: 94.65 / 93.04 / 91.30 / 87.61, also monotonic.
+//    Adding it to total_bases/3.5 lifts leg accuracy from 91.2% to 93.8%.
+//
+// SIZE: legs are POSITIVELY correlated (slip win rate exceeds the independence prediction at every
+// size), so larger slips are better here, the reverse of the usual parlay penalty. ROI and t-stat
+// both rise monotonically 2->6 picks. 6-pick chosen.
+//
+// SELECTION: percentile, not fixed cap. The daily pool averages 385 qualifying legs but varies
+// widely; a fixed cap takes the same count on thin and rich days alike, while a percentile scales
+// with depth. Top 10% beat every fixed cap tested (+73.1% vs +68.0% at cap 5) with more slips.
+// The 7-10% band wobbles 73.1/76.7/74.6/74.4 - that spread is noise, so 10% is chosen for slip
+// count and path smoothness rather than for the point estimate.
+//
+// GATES (all passed): bootstrap 100.0% positive, 95% CI [+43.2%, +91.1%], leave-one-out
+// [+65.1%, +72.6%], t = 5.46-5.95 day-clustered, 153 slips over 27 days, best day 5.4% of returns.
+// WALK-FORWARD: first 13 days +67.1% -> last 14 days +78.0% (stronger out of sample).
+// BAYESIAN: P(true EV < 0) = 0.0% drawing the true win rate from its Beta posterior.
+// DOWNSIDE: worst 3-day window +12.8% (never negative), max losing streak 2 days. More slips per
+// day materially smooths the path - cap 2 suffered a -60% 3-day stretch, top-10% never went red.
+// FLEX: re-tested with the full tier table. Wins on 1 of 27 days. Caps at +99% on a perfect day
+// and 10 of 27 days exceeded that under Power. Costs 21 ROI points. Dead for the fifth time.
+//
 // THINGS TESTED AND REJECTED - do not re-propose without new data:
 //   board-appearance history as a signal (6 tests: split-half corr 0.0726, walk-forward -9.3pp,
 //   stacked -5.1pp, hybrid -3pp, inverted -18.8 ROI pts); enrichment factors (+5.31 vs +5.32pp);
 //   expected-PA decomposition; EV ranking and margin ranking (both circular, lose 12-28 pts on flat
 //   rates); market devig (better discrimination but only 1,661 two-sided legs); pooling proplines
 //   (circular); Flex (consolation never covers the haircut); demons (worse everywhere); pitcher
-//   props (best p*m 0.9734); more-side props (71.2% filtered vs 86% needed).
+//   props (best p*m 0.9734); more-side props (71.2% filtered vs 86% needed); lineup slot, platoon,
+//   home/away, sprint speed, opponent K/BB, burst count, walk rate, HFCS (all null - this propline
+//   is broken by POWER, not by opportunity); singles ratio and sub-4-PA rate (fail to replicate
+//   across pool definitions); Statcast barrel rate (leaks without a season_year filter).
 const PP_PROP = 'total_bases';
-const PP_LINES = [2.5, 3.5];
+const PP_LINES = [3.5];
 const PP_SIDE = 'less';
+const PP_SECOND_BOOK = { prop: 'home_runs', lines: [0.5], side: 'less' };
 const PP_TRAILING_MIN = 78.0;   // player's own trailing hit rate for this exact prop/line/side
 const PP_MIN_GAMES = 60;        // minimum prior games in that player's log
-const BASELINE_HP_SIZE = 4;     // 4-pick Power
+const PP_TOP_PERCENTILE = 0.10; // take the top 10% of the day's qualifying pool, ranked by trail
+const BASELINE_HP_SIZE = 6;     // 6-pick Power
 const BASELINE_HP_PER_LEG_RATE = 1.1926;  // legacy fallback - superseded by PP_LINE_RATES below
 // ===== MEASURED PER-LINE RATES (2026-08-30) =====
 // The flat per-prop rate was WRONG for this strategy. PrizePicks prices goblins by DEPTH from the
