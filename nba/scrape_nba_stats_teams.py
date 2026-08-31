@@ -12,6 +12,7 @@ alphadog-v2-nba-static-teams.js then reads via the GitHub Contents API - same re
 alphadog-v2-prizepicks-github-board.js already uses for prizepicks_mlb_current.json.
 """
 import json
+import os
 import sys
 import time
 from pathlib import Path
