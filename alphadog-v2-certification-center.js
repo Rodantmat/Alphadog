@@ -3844,20 +3844,28 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
         FROM score.final_board_current f
         WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
           AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
-          AND f.canonical_prop_key = '${PP_PROP}'
-          AND f.selected_side = '${PP_SIDE}'
-          AND f.line_value IN (${PP_LINES.join(',')})
           AND f.official_game_time_utc IS NOT NULL
+          AND (
+                (f.canonical_prop_key = '${PP_PROP}' AND f.selected_side = '${PP_SIDE}'
+                 AND f.line_value IN (${PP_LINES.join(',')}))
+             OR (f.canonical_prop_key = '${PP_SECOND_BOOK.prop}' AND f.selected_side = '${PP_SECOND_BOOK.side}'
+                 AND f.line_value IN (${PP_SECOND_BOOK.lines.join(',')}))
+              )
           AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
           AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
       ),
-      -- Trailing hit rate for this player on this EXACT line, from their own game log, using only
-      -- games STRICTLY BEFORE today. This is the signal - not baseline_v6, not the enrichment score,
-      -- not the board's own history. All three were tested against it and lost.
+      -- Trailing hit rate for this player on this EXACT prop and line, from their own game log,
+      -- using only games STRICTLY BEFORE today. This is the signal - not baseline_v6, not the
+      -- enrichment score, not the board's own history. All three were tested against it and lost.
+      -- v3 (2026-08-31): the stat is now selected per prop, since the strategy runs two books
+      -- (total_bases/3.5 and home_runs/0.5). Both validated monotonic on the full 155-day season.
       trail AS (
         SELECT b.final_board_row_id,
           COUNT(*) AS n_games,
-          SUM(CASE WHEN g.total_bases < b.line_value THEN 1 ELSE 0 END) AS n_hit
+          SUM(CASE WHEN (CASE b.canonical_prop_key
+                           WHEN 'total_bases' THEN g.total_bases
+                           WHEN 'home_runs'   THEN g.home_runs
+                         END) < b.line_value THEN 1 ELSE 0 END) AS n_hit
         FROM board b
         JOIN stats_hitter.game_logs g
           ON g.player_id = b.mlb_player_id
