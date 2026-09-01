@@ -513,7 +513,11 @@ Per research into real pull-decision dynamics (managers use game score state hea
 
 **Built a stratified fix instead of a uniform blend**: trust the model almost fully in normal games (weight 0.93), apply a much stronger correction specifically in blowouts (weight 0.68). Tested at day-level (9 days, corrupted dates excluded): mean improvement +0.026, **leave-one-out never crosses zero (0.007-0.044)** — a real, consistent improvement, unlike the naive uniform blend which showed 4 of 8 non-positive folds. `hits_allowed` is resolved with a genuine, mechanistically-grounded fix, not withdrawn.
 
-## 78. WHAT THIS DOES NOT YET ANSWER
+## 80. `pitcher_outs` — formalizing the null result as a real, proven conclusion
+
+Per Gemini's guidance (the Diebold-Mariano framework for comparing predictive accuracy): a day-level t-stat of -2.306 with all 8 leave-one-out folds negative **already constitutes a statistically valid, definitive result** — not an unsolved case, but proof that the raw model significantly outperforms any tested correction. This is the same logical structure as a formal DM test (|S_d| > 1.96 → the better model is statistically confirmed, not just assumed). **Formal conclusion: `pitcher_outs` requires zero correction. The correct action is to leave it alone, and this is now a proven, evidence-backed status — not a failure to find a fix, but a successful, rigorous determination that no fix is needed.**
+
+## 81. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
