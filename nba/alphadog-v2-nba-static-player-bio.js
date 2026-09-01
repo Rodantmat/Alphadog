@@ -62,9 +62,9 @@ async function runJob(input, env) {
   for (const p of players) {
     const playerId = `nba_${p.player_id}`;
     await sql`
-      UPDATE nba_ref.players SET age=${p.age}, height_inches=${p.height_inches}, weight_lbs=${p.weight},
-        college=${p.college}, country=${p.country}, draft_year=${p.draft_year}, draft_round=${p.draft_round},
-        draft_number=${p.draft_number}, updated_at=now()
+      UPDATE nba_ref.players SET age=${toIntOrNull(p.age)}, height_inches=${toIntOrNull(p.height_inches)}, weight_lbs=${toIntOrNull(p.weight)},
+        college=${p.college}, country=${p.country}, draft_year=${toIntOrNull(p.draft_year)}, draft_round=${toIntOrNull(p.draft_round)},
+        draft_number=${toIntOrNull(p.draft_number)}, updated_at=now()
       WHERE player_id=${playerId}
     `;
     bioWritten += 1;
