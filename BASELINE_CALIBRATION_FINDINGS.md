@@ -457,7 +457,15 @@ Extended to the full available population by adding two previously-untested date
 
 **Now fully validated.** `pitcher_fantasy_score` joins `walks`, `hits_runs_rbis`, `total_bases`, and `hits`/`singles`/`doubles` as the fifth completely proven fix — every one of the "robust but not yet significant" results has now cleared the bar once given the full available data, exactly as expected for a real, consistent effect.
 
-## 59. WHAT THIS DOES NOT YET ANSWER
+## 61. VERIFYING "ALREADY FINE" CLAIMS WITH THE SAME RIGOR
+
+The "already fine" status for `home_runs` and `stolen_bases` had only been checked via a pooled snapshot, not day-level — verifying properly rather than leaving it as an assumption.
+
+**`home_runs`**: day-level absolute error across 8 days ranges 0.9-10.4pp, no systematic pattern, no clear directional bias. Confirms genuinely fine.
+
+**`stolen_bases`**: day-level signed error across 11 days shows a real but modest lean (8 of 11 days positive/overconfident, mean +3.76pp), t=1.199 — not statistically significant. Confirms reasonably calibrated, with a small, unproven directional tendency worth monitoring but not requiring a fix at this evidence level.
+
+## 62. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
