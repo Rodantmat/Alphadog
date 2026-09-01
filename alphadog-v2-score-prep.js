@@ -195,6 +195,33 @@ function dateOnlyFromAnyTime(v) {
   return d.toISOString().slice(0, 10);
 }
 
+// v0.5.3 fix: confirmed live 2026-09-01. dateOnlyFromAnyTime() (and the raw
+// upstream "game_date" field it backstops) reflect the UTC calendar date of a
+// timestamp, not MLB's real Pacific-anchored official_date. For evening games
+// whose UTC commence_time crosses midnight, that UTC date is one day ahead of
+// the real official_date. Normally resolveCalendarByTeamNames()'s nearby-date
+// fallback would self-correct a date miss - but when the same two teams also
+// have a real game the next day (a multi-game series, common in MLB), the
+// wrong UTC-derived date matches that OTHER real game directly, so the
+// fallback never triggers and today's props get silently attached to
+// tomorrow's game instead. Use this to ground calendar lookups on the actual
+// Pacific calendar date of the timestamp instead.
+function pacificDateFromAnyTime(v) {
+  const s = safeStr(v);
+  if (!s) return null;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(d);
+  const m = {};
+  for (const part of parts) m[part.type] = part.value;
+  return `${m.year}-${m.month}-${m.day}`;
+}
+
 function dateAddDays(yyyyMmDd, days) {
   const d = new Date(`${yyyyMmDd}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
