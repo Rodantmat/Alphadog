@@ -1,0 +1,24 @@
+{
+  "fetched_at": "2026-09-01T01:28:37Z",
+  "source_url": "https://stats.nba.com/stats/leaguedashptstats?LeagueID=00&Season=2025-26&SeasonType=Regular+Season&PerMode=PerGame&PlayerOrTeam=Player&PtMeasureType=SpeedDistance&LastNGames=0&Month=0&OpponentTeamID=0",
+  "http_status": 200,
+  "player_count": 582,
+  "error": null,
+  "real_headers_seen": [
+    "PLAYER_ID",
+    "PLAYER_NAME",
+    "TEAM_ID",
+    "TEAM_ABBREVIATION",
+    "GP",
+    "W",
+    "L",
+    "MIN",
+    "DIST_FEET",
+    "DIST_MILES",
+    "DIST_MILES_OFF",
+    "DIST_MILES_DEF",
+    "AVG_SPEED",
+    "AVG_SPEED_OFF",
+    "AVG_SPEED_DEF"
+  ]
+}

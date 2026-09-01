@@ -1,0 +1,5242 @@
+{
+  "players": [
+    {
+      "player_id": 1630639,
+      "avg_speed": 4.62,
+      "avg_speed_off": 4.9,
+      "avg_speed_def": 4.38,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1631260,
+      "avg_speed": 4.45,
+      "avg_speed_off": 4.81,
+      "avg_speed_def": 4.07,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642358,
+      "avg_speed": 4.55,
+      "avg_speed_off": 5.04,
+      "avg_speed_def": 4.08,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 203932,
+      "avg_speed": 3.96,
+      "avg_speed_off": 4.13,
+      "avg_speed_def": 3.77,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1628988,
+      "avg_speed": 4.05,
+      "avg_speed_off": 4.14,
+      "avg_speed_def": 3.94,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630174,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.94,
+      "avg_speed_def": 4.1,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630598,
+      "avg_speed": 4.64,
+      "avg_speed_off": 5.07,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642846,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.32,
+      "avg_speed_def": 4.07,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642380,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.4,
+      "avg_speed_def": 4.38,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1641737,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.2,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642876,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.62,
+      "avg_speed_def": 4.32,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642349,
+      "avg_speed": 4.58,
+      "avg_speed_off": 5.01,
+      "avg_speed_def": 4.16,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 201143,
+      "avg_speed": 4.07,
+      "avg_speed_off": 4.28,
+      "avg_speed_def": 3.85,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630828,
+      "avg_speed": 3.98,
+      "avg_speed_off": 4.31,
+      "avg_speed_def": 3.66,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1627936,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.05,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631457,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.08,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642259,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.72,
+      "avg_speed_def": 4.04,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642918,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.25,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631214,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 4.06,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630578,
+      "avg_speed": 3.89,
+      "avg_speed_off": 3.96,
+      "avg_speed_def": 3.82,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642873,
+      "avg_speed": 4.04,
+      "avg_speed_off": 4.13,
+      "avg_speed_def": 3.94,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1641708,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 3.98,
+      "dist_miles": 2.7,
+      "dist_miles_off": 1.5,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1629599,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.23,
+      "avg_speed_def": 4.1,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1643158,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.21,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.3
+    },
+    {
+      "player_id": 203083,
+      "avg_speed": 4.08,
+      "avg_speed_off": 4.14,
+      "avg_speed_def": 4.02,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641748,
+      "avg_speed": 4.54,
+      "avg_speed_off": 4.91,
+      "avg_speed_def": 4.16,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1629614,
+      "avg_speed": 4.31,
+      "avg_speed_off": 4.77,
+      "avg_speed_def": 3.86,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 203952,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 3.92,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1629014,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 4.22,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641710,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 4.19,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 203076,
+      "avg_speed": 3.74,
+      "avg_speed_off": 3.83,
+      "avg_speed_def": 3.63,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1630162,
+      "avg_speed": 4.0,
+      "avg_speed_off": 4.32,
+      "avg_speed_def": 3.67,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630264,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 4.06,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1641810,
+      "avg_speed": 4.31,
+      "avg_speed_off": 4.34,
+      "avg_speed_def": 4.09,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1630574,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 4.35,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642854,
+      "avg_speed": 4.77,
+      "avg_speed_off": 5.12,
+      "avg_speed_def": 4.39,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641709,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.22,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630559,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.35,
+      "avg_speed_def": 3.62,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630245,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 3.96,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628389,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 3.79,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631248,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.23,
+      "avg_speed_def": 4.19,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642879,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 4.04,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641767,
+      "avg_speed": 4.71,
+      "avg_speed_off": 4.96,
+      "avg_speed_def": 4.45,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631097,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.55,
+      "avg_speed_def": 4.01,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1643016,
+      "avg_speed": 4.5,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.23,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.3
+    },
+    {
+      "player_id": 1641731,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 4.16,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 202687,
+      "avg_speed": 4.13,
+      "avg_speed_off": 4.24,
+      "avg_speed_def": 4.0,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642396,
+      "avg_speed": 4.31,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631104,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.41,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1626171,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1641752,
+      "avg_speed": 4.73,
+      "avg_speed_off": 5.0,
+      "avg_speed_def": 4.63,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 203992,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 3.87,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630538,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.69,
+      "avg_speed_def": 4.07,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 203078,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.45,
+      "avg_speed_def": 4.34,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642382,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.05,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641764,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.69,
+      "avg_speed_def": 4.05,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1629634,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.12,
+      "avg_speed_def": 4.24,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1627742,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.26,
+      "avg_speed_def": 3.73,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1641706,
+      "avg_speed": 4.24,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 3.88,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630314,
+      "avg_speed": 4.56,
+      "avg_speed_off": 4.97,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1641729,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 3.96,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642355,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.45,
+      "avg_speed_def": 3.87,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 201572,
+      "avg_speed": 3.88,
+      "avg_speed_off": 3.94,
+      "avg_speed_def": 3.82,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642964,
+      "avg_speed": 4.57,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.34,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1628971,
+      "avg_speed": 4.04,
+      "avg_speed_off": 4.25,
+      "avg_speed_def": 3.83,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631121,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642267,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.05,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631205,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 4.49,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1627741,
+      "avg_speed": 4.85,
+      "avg_speed_off": 5.06,
+      "avg_speed_def": 4.61,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1643047,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.29,
+      "avg_speed_def": 4.29,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 203468,
+      "avg_speed": 4.56,
+      "avg_speed_off": 5.09,
+      "avg_speed_def": 4.05,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630595,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.87,
+      "avg_speed_def": 3.73,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631216,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.72,
+      "avg_speed_def": 3.99,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1631126,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1628997,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.91,
+      "avg_speed_def": 4.19,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642353,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.66,
+      "avg_speed_def": 4.26,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642285,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.94,
+      "avg_speed_def": 4.04,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630560,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 3.97,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641715,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1629661,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 3.88,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1626166,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 3.92,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1627747,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 3.94,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642868,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.43,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641717,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.22,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642907,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.84,
+      "avg_speed_def": 4.24,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1643052,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629646,
+      "avg_speed": 4.24,
+      "avg_speed_off": 4.55,
+      "avg_speed_def": 4.0,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642404,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.28,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1631096,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 3.92,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628449,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.29,
+      "avg_speed_def": 4.24,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641753,
+      "avg_speed": 4.67,
+      "avg_speed_off": 4.81,
+      "avg_speed_def": 4.52,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1643024,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.1,
+      "avg_speed_def": 4.31,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 101108,
+      "avg_speed": 3.93,
+      "avg_speed_off": 4.07,
+      "avg_speed_def": 3.77,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642959,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.19,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631128,
+      "avg_speed": 4.31,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.13,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631132,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.22,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642935,
+      "avg_speed": 4.85,
+      "avg_speed_off": 5.36,
+      "avg_speed_def": 4.43,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 203991,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.16,
+      "avg_speed_def": 3.94,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1629632,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 3.77,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1628998,
+      "avg_speed": 4.67,
+      "avg_speed_off": 5.2,
+      "avg_speed_def": 4.21,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642262,
+      "avg_speed": 4.59,
+      "avg_speed_off": 4.9,
+      "avg_speed_def": 4.29,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641732,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 4.46,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1630175,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.94,
+      "avg_speed_def": 4.19,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630658,
+      "avg_speed": 3.81,
+      "avg_speed_off": 4.14,
+      "avg_speed_def": 3.5,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631221,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.92,
+      "avg_speed_def": 4.3,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642867,
+      "avg_speed": 4.45,
+      "avg_speed_off": 4.68,
+      "avg_speed_def": 4.25,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629012,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.03,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642843,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.77,
+      "avg_speed_def": 3.87,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630557,
+      "avg_speed": 4.66,
+      "avg_speed_off": 5.22,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642504,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 3.74,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1641854,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.33,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642938,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.72,
+      "avg_speed_def": 4.12,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1626156,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 3.92,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629610,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.42,
+      "avg_speed_def": 3.94,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641747,
+      "avg_speed": 4.13,
+      "avg_speed_off": 4.33,
+      "avg_speed_def": 3.92,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1631342,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.2,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630625,
+      "avg_speed": 4.12,
+      "avg_speed_off": 4.45,
+      "avg_speed_def": 3.77,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1631207,
+      "avg_speed": 4.77,
+      "avg_speed_off": 5.17,
+      "avg_speed_def": 4.39,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642261,
+      "avg_speed": 4.11,
+      "avg_speed_off": 4.4,
+      "avg_speed_def": 3.79,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1629655,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.55,
+      "avg_speed_def": 4.25,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642450,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.79,
+      "avg_speed_def": 4.22,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642874,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 203967,
+      "avg_speed": 4.23,
+      "avg_speed_off": 4.62,
+      "avg_speed_def": 4.16,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1641727,
+      "avg_speed": 3.97,
+      "avg_speed_off": 4.19,
+      "avg_speed_def": 3.75,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642468,
+      "avg_speed": 4.23,
+      "avg_speed_off": 3.95,
+      "avg_speed_def": 4.56,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1629636,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.66,
+      "avg_speed_def": 3.8,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642357,
+      "avg_speed": 4.84,
+      "avg_speed_off": 4.89,
+      "avg_speed_def": 4.79,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631223,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630558,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.97,
+      "avg_speed_def": 3.96,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630549,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.27,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1628368,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 3.95,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1629631,
+      "avg_speed": 4.15,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 3.73,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629001,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.84,
+      "avg_speed_def": 4.0,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 201599,
+      "avg_speed": 3.55,
+      "avg_speed_off": 3.7,
+      "avg_speed_def": 3.39,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630610,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.29,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 201942,
+      "avg_speed": 4.01,
+      "avg_speed_off": 4.26,
+      "avg_speed_def": 3.74,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1629731,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.79,
+      "avg_speed_def": 4.29,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629028,
+      "avg_speed": 3.96,
+      "avg_speed_off": 4.02,
+      "avg_speed_def": 3.9,
+      "dist_miles": 1.8,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1627749,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.45,
+      "avg_speed_def": 3.95,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630166,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 3.79,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 203471,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 4.06,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641726,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.95,
+      "avg_speed_def": 4.25,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642852,
+      "avg_speed": 3.94,
+      "avg_speed_off": 4.22,
+      "avg_speed_def": 3.67,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1627884,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.37,
+      "avg_speed_def": 4.19,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628401,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 3.82,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630217,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 3.99,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1626164,
+      "avg_speed": 4.03,
+      "avg_speed_off": 4.45,
+      "avg_speed_def": 3.6,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642269,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630170,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.83,
+      "avg_speed_def": 4.01,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1628415,
+      "avg_speed": 4.09,
+      "avg_speed_off": 4.27,
+      "avg_speed_def": 3.92,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1641794,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 4.21,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1627734,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.19,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631230,
+      "avg_speed": 4.6,
+      "avg_speed_off": 4.8,
+      "avg_speed_def": 4.4,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642270,
+      "avg_speed": 4.1,
+      "avg_speed_off": 4.37,
+      "avg_speed_def": 3.83,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1628378,
+      "avg_speed": 4.13,
+      "avg_speed_off": 4.75,
+      "avg_speed_def": 3.56,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1628978,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.05,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1627827,
+      "avg_speed": 4.05,
+      "avg_speed_off": 4.18,
+      "avg_speed_def": 3.91,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 203926,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 3.9,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642962,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 203110,
+      "avg_speed": 3.89,
+      "avg_speed_off": 4.15,
+      "avg_speed_def": 3.62,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629234,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.75,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641809,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.62,
+      "avg_speed_def": 4.07,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1631166,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.31,
+      "avg_speed_def": 4.03,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1630696,
+      "avg_speed": 4.64,
+      "avg_speed_off": 5.11,
+      "avg_speed_def": 4.23,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629130,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.86,
+      "avg_speed_def": 4.18,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1641871,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.21,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 203939,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642928,
+      "avg_speed": 4.1,
+      "avg_speed_off": 4.27,
+      "avg_speed_def": 3.93,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642844,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630700,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.9,
+      "avg_speed_def": 4.12,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1630604,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 3.82,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642856,
+      "avg_speed": 4.63,
+      "avg_speed_off": 5.18,
+      "avg_speed_def": 4.07,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641989,
+      "avg_speed": 4.15,
+      "avg_speed_off": 4.36,
+      "avg_speed_def": 3.96,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1641801,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.8,
+      "avg_speed_def": 4.16,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642402,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.36,
+      "avg_speed_def": 4.44,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 201569,
+      "avg_speed": 3.85,
+      "avg_speed_off": 3.99,
+      "avg_speed_def": 3.54,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630679,
+      "avg_speed": 4.75,
+      "avg_speed_off": 5.31,
+      "avg_speed_def": 4.2,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630596,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 3.89,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630532,
+      "avg_speed": 4.57,
+      "avg_speed_off": 4.96,
+      "avg_speed_def": 4.19,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1641713,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629216,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.61,
+      "avg_speed_def": 3.98,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 202066,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.42,
+      "avg_speed_def": 3.58,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1629726,
+      "avg_speed": 4.58,
+      "avg_speed_off": 5.05,
+      "avg_speed_def": 4.11,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 203914,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.48,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1627780,
+      "avg_speed": 4.77,
+      "avg_speed_off": 4.99,
+      "avg_speed_def": 4.55,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629018,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.05,
+      "avg_speed_def": 3.92,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 203507,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.38,
+      "avg_speed_def": 3.59,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1629048,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.48,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641711,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.36,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641761,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.31,
+      "avg_speed_def": 4.07,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1629684,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.11,
+      "avg_speed_def": 3.84,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628960,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.79,
+      "avg_speed_def": 3.85,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1627824,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630611,
+      "avg_speed": 4.5,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.2,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 203084,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1631127,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.3,
+      "avg_speed_def": 3.77,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1643060,
+      "avg_speed": 4.35,
+      "avg_speed_off": 5.09,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1629312,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.66,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630529,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 4.05,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642864,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.61,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630621,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 3.91,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642282,
+      "avg_speed": 4.74,
+      "avg_speed_off": 5.04,
+      "avg_speed_def": 4.42,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1641816,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.2,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1630193,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.89,
+      "avg_speed_def": 4.05,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1642403,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.02,
+      "avg_speed_def": 4.32,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1630171,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.79,
+      "avg_speed_def": 4.27,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642268,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 3.75,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642384,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.31,
+      "avg_speed_def": 4.06,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1628392,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630543,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630198,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.85,
+      "avg_speed_def": 4.14,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630587,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 4.31,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641815,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630191,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.14,
+      "avg_speed_def": 3.99,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1627826,
+      "avg_speed": 4.08,
+      "avg_speed_off": 4.18,
+      "avg_speed_def": 3.97,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631120,
+      "avg_speed": 4.24,
+      "avg_speed_off": 4.34,
+      "avg_speed_def": 4.11,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1629630,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 3.87,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642266,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.42,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631095,
+      "avg_speed": 4.04,
+      "avg_speed_off": 4.12,
+      "avg_speed_def": 3.96,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631133,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.31,
+      "avg_speed_def": 4.08,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1631210,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.87,
+      "avg_speed_def": 3.65,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1630702,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.0,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631093,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 3.96,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630183,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.17,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630256,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 4.12,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642942,
+      "avg_speed": 4.45,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 4.3,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642443,
+      "avg_speed": 4.5,
+      "avg_speed_off": 5.36,
+      "avg_speed_def": 3.94,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1643141,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 3.82,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1631170,
+      "avg_speed": 4.74,
+      "avg_speed_off": 5.43,
+      "avg_speed_def": 4.14,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631222,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.2,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1627751,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.75,
+      "avg_speed_def": 4.23,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1628973,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.72,
+      "avg_speed_def": 3.78,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.5,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631105,
+      "avg_speed": 4.17,
+      "avg_speed_off": 4.35,
+      "avg_speed_def": 3.99,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630224,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.89,
+      "avg_speed_def": 4.13,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1630552,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.84,
+      "avg_speed_def": 3.84,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1629618,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 3.86,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641771,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.81,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1630188,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.83,
+      "avg_speed_def": 4.05,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630591,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 3.87,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1631114,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.97,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630592,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631288,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 4.31,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1627750,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 3.79,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1642347,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 3.88,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631123,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 201935,
+      "avg_speed": 3.59,
+      "avg_speed_off": 3.8,
+      "avg_speed_def": 3.37,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630164,
+      "avg_speed": 4.66,
+      "avg_speed_off": 4.88,
+      "avg_speed_def": 4.45,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642364,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642419,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 4.08,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1641716,
+      "avg_speed": 4.25,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 3.92,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642272,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.72,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628991,
+      "avg_speed": 4.09,
+      "avg_speed_off": 4.39,
+      "avg_speed_def": 3.8,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1629020,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.46,
+      "avg_speed_def": 4.38,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628386,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 3.96,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642859,
+      "avg_speed": 4.66,
+      "avg_speed_off": 4.85,
+      "avg_speed_def": 4.48,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642914,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.39,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631451,
+      "avg_speed": 4.64,
+      "avg_speed_off": 4.89,
+      "avg_speed_def": 4.39,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1629750,
+      "avg_speed": 4.25,
+      "avg_speed_off": 4.38,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629637,
+      "avg_speed": 3.87,
+      "avg_speed_off": 3.96,
+      "avg_speed_def": 3.77,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630643,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.0,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1627759,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.36,
+      "avg_speed_def": 3.73,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1641740,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.13,
+      "avg_speed_def": 4.46,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642377,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.35,
+      "avg_speed_def": 4.49,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631119,
+      "avg_speed": 3.92,
+      "avg_speed_off": 4.2,
+      "avg_speed_def": 3.65,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642281,
+      "avg_speed": 4.54,
+      "avg_speed_off": 4.81,
+      "avg_speed_def": 4.28,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1643257,
+      "avg_speed": 4.13,
+      "avg_speed_off": 4.06,
+      "avg_speed_def": 4.2,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1628369,
+      "avg_speed": 3.82,
+      "avg_speed_off": 4.09,
+      "avg_speed_def": 3.52,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 201145,
+      "avg_speed": 3.64,
+      "avg_speed_off": 3.65,
+      "avg_speed_def": 3.63,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 203924,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.0,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642847,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.14,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1630526,
+      "avg_speed": 4.92,
+      "avg_speed_off": 5.22,
+      "avg_speed_def": 4.64,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631110,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.86,
+      "avg_speed_def": 4.26,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630579,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 4.18,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641724,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.15,
+      "avg_speed_def": 3.96,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1628975,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.23,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 202710,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 4.09,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642866,
+      "avg_speed": 4.63,
+      "avg_speed_off": 4.79,
+      "avg_speed_def": 4.46,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1629111,
+      "avg_speed": 4.24,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 4.07,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 204060,
+      "avg_speed": 3.96,
+      "avg_speed_off": 4.27,
+      "avg_speed_def": 3.65,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 203954,
+      "avg_speed": 3.67,
+      "avg_speed_off": 3.78,
+      "avg_speed_def": 3.55,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628381,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.18,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1629723,
+      "avg_speed": 4.56,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.36,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642967,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.83,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642910,
+      "avg_speed": 4.59,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.41,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1641780,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 4.18,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642277,
+      "avg_speed": 4.87,
+      "avg_speed_off": 5.24,
+      "avg_speed_def": 4.51,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630548,
+      "avg_speed": 4.79,
+      "avg_speed_off": 5.07,
+      "avg_speed_def": 4.63,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 202685,
+      "avg_speed": 3.96,
+      "avg_speed_off": 4.0,
+      "avg_speed_def": 3.91,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1628371,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 4.12,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630228,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.2,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642367,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.42,
+      "avg_speed_def": 4.25,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 203903,
+      "avg_speed": 4.6,
+      "avg_speed_off": 4.85,
+      "avg_speed_def": 4.34,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630692,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.39,
+      "dist_miles": 1.8,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641722,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.25,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1629162,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 4.28,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1641757,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629673,
+      "avg_speed": 4.03,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 3.58,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641775,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.33,
+      "avg_speed_def": 4.39,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630631,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630581,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.98,
+      "avg_speed_def": 3.86,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630182,
+      "avg_speed": 4.56,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.63,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628404,
+      "avg_speed": 4.25,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 3.95,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631169,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 4.3,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642490,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.24,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1629006,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.11,
+      "avg_speed_def": 4.32,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 201950,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630577,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.1,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1641763,
+      "avg_speed": 4.59,
+      "avg_speed_off": 4.8,
+      "avg_speed_def": 4.42,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642882,
+      "avg_speed": 4.24,
+      "avg_speed_off": 4.3,
+      "avg_speed_def": 4.15,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631124,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.72,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 203944,
+      "avg_speed": 3.93,
+      "avg_speed_off": 4.14,
+      "avg_speed_def": 3.73,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630551,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.21,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642348,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 4.15,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 203994,
+      "avg_speed": 4.08,
+      "avg_speed_off": 4.3,
+      "avg_speed_def": 3.85,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642354,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.27,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642955,
+      "avg_speed": 4.1,
+      "avg_speed_off": 4.19,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642880,
+      "avg_speed": 4.55,
+      "avg_speed_off": 4.95,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1626157,
+      "avg_speed": 3.94,
+      "avg_speed_off": 3.98,
+      "avg_speed_def": 3.89,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631255,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.62,
+      "avg_speed_def": 4.15,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642857,
+      "avg_speed": 4.75,
+      "avg_speed_off": 5.36,
+      "avg_speed_def": 4.21,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 202695,
+      "avg_speed": 4.1,
+      "avg_speed_off": 4.39,
+      "avg_speed_def": 3.8,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630811,
+      "avg_speed": 4.59,
+      "avg_speed_off": 5.01,
+      "avg_speed_def": 4.17,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1631099,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.15,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1642276,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.01,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629640,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.55,
+      "avg_speed_def": 4.09,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 203482,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 4.01,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1626162,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.29,
+      "avg_speed_def": 4.09,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631113,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 3.85,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1629026,
+      "avg_speed": 4.12,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 3.86,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 203484,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 4.0,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631165,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.27,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642352,
+      "avg_speed": 4.65,
+      "avg_speed_off": 5.15,
+      "avg_speed_def": 4.22,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642933,
+      "avg_speed": 4.62,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.36,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 201142,
+      "avg_speed": 3.69,
+      "avg_speed_off": 3.9,
+      "avg_speed_def": 3.45,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628989,
+      "avg_speed": 4.54,
+      "avg_speed_off": 5.04,
+      "avg_speed_def": 4.06,
+      "dist_miles": 1.7,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 201567,
+      "avg_speed": 4.05,
+      "avg_speed_off": 4.29,
+      "avg_speed_def": 3.79,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641755,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.88,
+      "avg_speed_def": 4.19,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1629645,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.22,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1626172,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.32,
+      "avg_speed_def": 4.03,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641718,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.55,
+      "avg_speed_def": 3.87,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1642863,
+      "avg_speed": 4.23,
+      "avg_speed_off": 4.35,
+      "avg_speed_def": 4.11,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 203114,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 3.92,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630165,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 3.95,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 202691,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 3.86,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641738,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 4.04,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1641723,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 4.1,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642920,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642886,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.64,
+      "avg_speed_def": 4.05,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642851,
+      "avg_speed": 4.63,
+      "avg_speed_off": 5.04,
+      "avg_speed_def": 4.19,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1627739,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.27,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631200,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.39,
+      "dist_miles": 1.8,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 204001,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.23,
+      "avg_speed_def": 3.77,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 203937,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 3.84,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642271,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 4.08,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1628398,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.02,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 200768,
+      "avg_speed": 3.86,
+      "avg_speed_off": 4.18,
+      "avg_speed_def": 3.53,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642273,
+      "avg_speed": 4.55,
+      "avg_speed_off": 5.03,
+      "avg_speed_def": 4.11,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1643018,
+      "avg_speed": 4.25,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 4.06,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630163,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.81,
+      "avg_speed_def": 3.97,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642950,
+      "avg_speed": 4.72,
+      "avg_speed_off": 5.18,
+      "avg_speed_def": 4.31,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1629013,
+      "avg_speed": 4.63,
+      "avg_speed_off": 5.02,
+      "avg_speed_def": 4.22,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1626204,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.62,
+      "avg_speed_def": 4.15,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1628374,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 4.02,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1643133,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 4.23,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 2544,
+      "avg_speed": 3.62,
+      "avg_speed_off": 3.85,
+      "avg_speed_def": 3.39,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1641778,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 4.12,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631159,
+      "avg_speed": 4.73,
+      "avg_speed_off": 5.27,
+      "avg_speed_def": 4.25,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642862,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.24,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630322,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.84,
+      "avg_speed_def": 4.36,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1628366,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.86,
+      "avg_speed_def": 3.96,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631351,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 4.17,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1629652,
+      "avg_speed": 4.15,
+      "avg_speed_off": 4.34,
+      "avg_speed_def": 3.96,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1629029,
+      "avg_speed": 3.75,
+      "avg_speed_off": 4.12,
+      "avg_speed_def": 3.37,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630568,
+      "avg_speed": 4.6,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.39,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628379,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.77,
+      "avg_speed_def": 4.05,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1628436,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.52,
+      "avg_speed_def": 4.14,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631247,
+      "avg_speed": 4.81,
+      "avg_speed_off": 5.18,
+      "avg_speed_def": 4.55,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1630644,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.85,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641869,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.87,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1631103,
+      "avg_speed": 4.5,
+      "avg_speed_off": 4.92,
+      "avg_speed_def": 4.09,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642502,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.89,
+      "avg_speed_def": 4.19,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1628370,
+      "avg_speed": 4.14,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 3.75,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630699,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.2,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631204,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.48,
+      "avg_speed_def": 4.04,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 203935,
+      "avg_speed": 3.81,
+      "avg_speed_off": 3.99,
+      "avg_speed_def": 3.63,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641813,
+      "avg_speed": 4.76,
+      "avg_speed_off": 5.05,
+      "avg_speed_def": 4.47,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1631109,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.05,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1628365,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.93,
+      "avg_speed_def": 4.3,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1628963,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 4.31,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 203486,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.91,
+      "avg_speed_def": 4.16,
+      "dist_miles": 0.6,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1641824,
+      "avg_speed": 4.58,
+      "avg_speed_off": 5.02,
+      "avg_speed_def": 4.16,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1629680,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 4.14,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631108,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.88,
+      "avg_speed_def": 4.0,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642917,
+      "avg_speed": 4.38,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 4.17,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1629622,
+      "avg_speed": 4.64,
+      "avg_speed_off": 5.04,
+      "avg_speed_def": 4.21,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1628467,
+      "avg_speed": 4.0,
+      "avg_speed_off": 4.12,
+      "avg_speed_def": 3.88,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642875,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 4.22,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642877,
+      "avg_speed": 4.56,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.38,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630695,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.18,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1629008,
+      "avg_speed": 4.17,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 3.91,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1628969,
+      "avg_speed": 4.57,
+      "avg_speed_off": 4.92,
+      "avg_speed_def": 4.2,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 201144,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628970,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.42,
+      "avg_speed_def": 3.88,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642939,
+      "avg_speed": 4.72,
+      "avg_speed_off": 5.01,
+      "avg_speed_def": 4.42,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630540,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.75,
+      "avg_speed_def": 4.29,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1629011,
+      "avg_speed": 4.14,
+      "avg_speed_off": 4.19,
+      "avg_speed_def": 4.09,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1628964,
+      "avg_speed": 4.12,
+      "avg_speed_off": 4.3,
+      "avg_speed_def": 3.93,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642885,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.74,
+      "avg_speed_def": 4.15,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1628420,
+      "avg_speed": 4.55,
+      "avg_speed_off": 5.04,
+      "avg_speed_def": 4.11,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1629021,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.46,
+      "avg_speed_def": 4.09,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630541,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.37,
+      "avg_speed_def": 3.93,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631338,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.68,
+      "avg_speed_def": 4.3,
+      "dist_miles": 1.8,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1631243,
+      "avg_speed": 4.54,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.33,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630619,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.61,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1631217,
+      "avg_speed": 4.45,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.23,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1626167,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 3.99,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642066,
+      "avg_speed": 4.92,
+      "avg_speed_off": 5.28,
+      "avg_speed_def": 4.58,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642368,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 4.34,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1641772,
+      "avg_speed": 4.69,
+      "avg_speed_off": 4.94,
+      "avg_speed_def": 4.45,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630230,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.46,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631466,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.33,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629675,
+      "avg_speed": 4.27,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 3.98,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1629674,
+      "avg_speed": 4.24,
+      "avg_speed_off": 4.4,
+      "avg_speed_def": 4.07,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629651,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.27,
+      "avg_speed_def": 4.08,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630208,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.86,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641733,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.78,
+      "avg_speed_def": 4.0,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1629638,
+      "avg_speed": 4.69,
+      "avg_speed_off": 5.26,
+      "avg_speed_def": 4.16,
+      "dist_miles": 2.7,
+      "dist_miles_off": 1.5,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 201587,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1628502,
+      "avg_speed": 4.23,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 3.95,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 203999,
+      "avg_speed": 3.75,
+      "avg_speed_off": 4.04,
+      "avg_speed_def": 3.46,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631107,
+      "avg_speed": 4.59,
+      "avg_speed_off": 5.2,
+      "avg_speed_def": 4.07,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642260,
+      "avg_speed": 4.4,
+      "avg_speed_off": 5.17,
+      "avg_speed_def": 3.72,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 202696,
+      "avg_speed": 3.97,
+      "avg_speed_off": 4.13,
+      "avg_speed_def": 3.81,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642363,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.77,
+      "avg_speed_def": 4.28,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642855,
+      "avg_speed": 5.32,
+      "avg_speed_off": 5.26,
+      "avg_speed_def": 5.43,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1641730,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 3.97,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642869,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.75,
+      "avg_speed_def": 4.28,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642849,
+      "avg_speed": 4.65,
+      "avg_speed_off": 5.09,
+      "avg_speed_def": 4.19,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1641807,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.24,
+      "avg_speed_def": 4.09,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1626181,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.92,
+      "avg_speed_def": 3.73,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628384,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.27,
+      "avg_speed_def": 4.04,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630167,
+      "avg_speed": 4.62,
+      "avg_speed_off": 4.95,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630534,
+      "avg_speed": 4.64,
+      "avg_speed_off": 4.9,
+      "avg_speed_def": 4.41,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630846,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 4.22,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641765,
+      "avg_speed": 4.64,
+      "avg_speed_off": 4.96,
+      "avg_speed_def": 4.33,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1630209,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 4.1,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630168,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631115,
+      "avg_speed": 4.45,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.39,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631131,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 4.14,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642345,
+      "avg_speed": 4.23,
+      "avg_speed_off": 4.46,
+      "avg_speed_def": 3.99,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631172,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 3.87,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629023,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 3.99,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1641790,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.27,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642359,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.94,
+      "avg_speed_def": 4.12,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631094,
+      "avg_speed": 4.13,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 3.77,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1627783,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.85,
+      "avg_speed_def": 3.91,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1626192,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 3.79,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1630311,
+      "avg_speed": 4.54,
+      "avg_speed_off": 4.87,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631116,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.61,
+      "avg_speed_def": 4.04,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630172,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.69,
+      "avg_speed_def": 3.98,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 202331,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.41,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630194,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 4.18,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1630202,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 3.81,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642362,
+      "avg_speed": 4.66,
+      "avg_speed_off": 5.38,
+      "avg_speed_def": 4.2,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1641796,
+      "avg_speed": 4.69,
+      "avg_speed_off": 5.3,
+      "avg_speed_def": 4.17,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631250,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.56,
+      "avg_speed_def": 3.89,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1631212,
+      "avg_speed": 4.32,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 4.16,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630173,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.32,
+      "avg_speed_def": 4.07,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629656,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.47,
+      "avg_speed_def": 3.95,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631245,
+      "avg_speed": 4.67,
+      "avg_speed_off": 5.13,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642366,
+      "avg_speed": 4.47,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.21,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629628,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.66,
+      "avg_speed_def": 4.02,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1642853,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.59,
+      "avg_speed_def": 4.34,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642484,
+      "avg_speed": 4.99,
+      "avg_speed_off": 5.35,
+      "avg_speed_def": 4.62,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641712,
+      "avg_speed": 4.72,
+      "avg_speed_off": 4.88,
+      "avg_speed_def": 4.56,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642263,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 3.9,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642434,
+      "avg_speed": 4.61,
+      "avg_speed_off": 5.03,
+      "avg_speed_def": 4.19,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642265,
+      "avg_speed": 4.72,
+      "avg_speed_off": 5.29,
+      "avg_speed_def": 4.19,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1629057,
+      "avg_speed": 4.14,
+      "avg_speed_off": 4.39,
+      "avg_speed_def": 3.9,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642911,
+      "avg_speed": 4.05,
+      "avg_speed_off": 4.34,
+      "avg_speed_def": 3.79,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1631199,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.33,
+      "avg_speed_def": 4.04,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641842,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.43,
+      "avg_speed_def": 4.3,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1626220,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 3.76,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 203497,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.48,
+      "avg_speed_def": 4.07,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1629060,
+      "avg_speed": 4.2,
+      "avg_speed_off": 4.39,
+      "avg_speed_def": 4.01,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 201566,
+      "avg_speed": 3.94,
+      "avg_speed_off": 4.23,
+      "avg_speed_def": 3.65,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1642346,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 4.33,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641750,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.48,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642948,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.68,
+      "avg_speed_def": 3.99,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631157,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 4.2,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630180,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.34,
+      "avg_speed_def": 3.99,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630573,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.98,
+      "avg_speed_def": 4.2,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630241,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.85,
+      "avg_speed_def": 4.23,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630572,
+      "avg_speed": 4.46,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.17,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630583,
+      "avg_speed": 4.54,
+      "avg_speed_off": 5.01,
+      "avg_speed_def": 4.1,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630703,
+      "avg_speed": 4.48,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.29,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630567,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 4.04,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1630590,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.66,
+      "avg_speed_def": 4.36,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1642951,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.86,
+      "avg_speed_def": 4.1,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 203552,
+      "avg_speed": 4.17,
+      "avg_speed_off": 4.37,
+      "avg_speed_def": 3.94,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1631101,
+      "avg_speed": 4.29,
+      "avg_speed_off": 4.73,
+      "avg_speed_def": 3.86,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1628983,
+      "avg_speed": 4.05,
+      "avg_speed_off": 4.49,
+      "avg_speed_def": 3.63,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1630536,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.68,
+      "avg_speed_def": 4.13,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1631321,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.42,
+      "avg_speed_def": 4.02,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1631323,
+      "avg_speed": 4.75,
+      "avg_speed_off": 5.51,
+      "avg_speed_def": 4.09,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1642883,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.65,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1627746,
+      "avg_speed": 4.02,
+      "avg_speed_off": 4.37,
+      "avg_speed_def": 3.97,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642461,
+      "avg_speed": 4.31,
+      "avg_speed_off": 4.35,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630649,
+      "avg_speed": 3.99,
+      "avg_speed_off": 4.07,
+      "avg_speed_def": 3.89,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 201939,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.82,
+      "avg_speed_def": 3.76,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642264,
+      "avg_speed": 4.28,
+      "avg_speed_off": 4.63,
+      "avg_speed_def": 3.97,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 203500,
+      "avg_speed": 4.03,
+      "avg_speed_off": 4.05,
+      "avg_speed_def": 4.03,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1629004,
+      "avg_speed": 4.49,
+      "avg_speed_off": 4.71,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 204456,
+      "avg_speed": 4.74,
+      "avg_speed_off": 5.1,
+      "avg_speed_def": 4.37,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1643007,
+      "avg_speed": 4.75,
+      "avg_speed_off": 5.19,
+      "avg_speed_def": 4.32,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 201959,
+      "avg_speed": 4.14,
+      "avg_speed_off": 4.17,
+      "avg_speed_def": 4.0,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1631106,
+      "avg_speed": 4.12,
+      "avg_speed_off": 4.14,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1627752,
+      "avg_speed": 4.05,
+      "avg_speed_off": 4.24,
+      "avg_speed_def": 3.85,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1641707,
+      "avg_speed": 4.37,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1629611,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.55,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1630545,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 4.09,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 203648,
+      "avg_speed": 4.15,
+      "avg_speed_off": 4.32,
+      "avg_speed_def": 3.99,
+      "dist_miles": 0.3,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1628418,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.35,
+      "avg_speed_def": 3.98,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642275,
+      "avg_speed": 4.52,
+      "avg_speed_off": 4.77,
+      "avg_speed_def": 4.22,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 203501,
+      "avg_speed": 3.93,
+      "avg_speed_off": 4.08,
+      "avg_speed_def": 3.77,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 202699,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.5,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1643253,
+      "avg_speed": 4.45,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.35,
+      "dist_miles": 2.8,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.4
+    },
+    {
+      "player_id": 1642449,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.54,
+      "avg_speed_def": 4.23,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1628396,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.33,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641787,
+      "avg_speed": 4.67,
+      "avg_speed_off": 4.11,
+      "avg_speed_def": 3.6,
+      "dist_miles": 0.1,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.0
+    },
+    {
+      "player_id": 1641739,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.48,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.3
+    },
+    {
+      "player_id": 1629027,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.87,
+      "avg_speed_def": 3.74,
+      "dist_miles": 1.9,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1631218,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.53,
+      "avg_speed_def": 4.31,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    },
+    {
+      "player_id": 1642848,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.81,
+      "avg_speed_def": 3.99,
+      "dist_miles": 1.8,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630200,
+      "avg_speed": 4.5,
+      "avg_speed_off": 5.02,
+      "avg_speed_def": 4.03,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630544,
+      "avg_speed": 4.4,
+      "avg_speed_off": 4.67,
+      "avg_speed_def": 4.09,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630570,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.6,
+      "avg_speed_def": 3.91,
+      "dist_miles": 1.2,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642280,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 4.23,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1630286,
+      "avg_speed": 4.42,
+      "avg_speed_off": 4.62,
+      "avg_speed_def": 4.19,
+      "dist_miles": 2.4,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1631211,
+      "avg_speed": 4.69,
+      "avg_speed_off": 5.18,
+      "avg_speed_def": 4.22,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1641725,
+      "avg_speed": 4.41,
+      "avg_speed_off": 4.68,
+      "avg_speed_def": 4.15,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641998,
+      "avg_speed": 4.3,
+      "avg_speed_off": 4.46,
+      "avg_speed_def": 4.15,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1630530,
+      "avg_speed": 4.22,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 3.87,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1642400,
+      "avg_speed": 4.53,
+      "avg_speed_off": 4.83,
+      "avg_speed_def": 4.34,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641774,
+      "avg_speed": 4.18,
+      "avg_speed_off": 4.46,
+      "avg_speed_def": 3.9,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1641783,
+      "avg_speed": 4.59,
+      "avg_speed_off": 4.91,
+      "avg_speed_def": 4.27,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.0,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1641803,
+      "avg_speed": 4.67,
+      "avg_speed_off": 5.23,
+      "avg_speed_def": 4.02,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1629660,
+      "avg_speed": 4.09,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 3.64,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631102,
+      "avg_speed": 4.08,
+      "avg_speed_off": 4.4,
+      "avg_speed_def": 3.79,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1631174,
+      "avg_speed": 4.79,
+      "avg_speed_off": 5.02,
+      "avg_speed_def": 4.56,
+      "dist_miles": 2.2,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1629639,
+      "avg_speed": 4.5,
+      "avg_speed_off": 5.1,
+      "avg_speed_def": 3.97,
+      "dist_miles": 2.5,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1642278,
+      "avg_speed": 4.6,
+      "avg_speed_off": 4.94,
+      "avg_speed_def": 4.22,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1641890,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.91,
+      "avg_speed_def": 4.33,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1631213,
+      "avg_speed": 4.6,
+      "avg_speed_off": 4.92,
+      "avg_speed_def": 4.28,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1630178,
+      "avg_speed": 4.26,
+      "avg_speed_off": 4.69,
+      "avg_speed_def": 3.81,
+      "dist_miles": 2.8,
+      "dist_miles_off": 1.6,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1642878,
+      "avg_speed": 4.54,
+      "avg_speed_off": 4.9,
+      "avg_speed_def": 4.19,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630623,
+      "avg_speed": 4.72,
+      "avg_speed_off": 4.96,
+      "avg_speed_def": 4.48,
+      "dist_miles": 1.3,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.6
+    },
+    {
+      "player_id": 1626145,
+      "avg_speed": 4.36,
+      "avg_speed_off": 4.61,
+      "avg_speed_def": 4.09,
+      "dist_miles": 1.1,
+      "dist_miles_off": 0.6,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642845,
+      "avg_speed": 4.25,
+      "avg_speed_off": 4.57,
+      "avg_speed_def": 3.93,
+      "dist_miles": 2.6,
+      "dist_miles_off": 1.4,
+      "dist_miles_def": 1.2
+    },
+    {
+      "player_id": 1641705,
+      "avg_speed": 4.19,
+      "avg_speed_off": 4.58,
+      "avg_speed_def": 3.85,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631246,
+      "avg_speed": 4.56,
+      "avg_speed_off": 4.93,
+      "avg_speed_def": 4.21,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642884,
+      "avg_speed": 4.72,
+      "avg_speed_off": 5.01,
+      "avg_speed_def": 4.44,
+      "dist_miles": 0.2,
+      "dist_miles_off": 0.1,
+      "dist_miles_def": 0.1
+    },
+    {
+      "player_id": 1630249,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.84,
+      "avg_speed_def": 4.05,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1631117,
+      "avg_speed": 4.17,
+      "avg_speed_off": 4.31,
+      "avg_speed_def": 4.12,
+      "dist_miles": 2.1,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1642383,
+      "avg_speed": 4.43,
+      "avg_speed_off": 4.77,
+      "avg_speed_def": 4.1,
+      "dist_miles": 1.6,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1628976,
+      "avg_speed": 4.06,
+      "avg_speed_off": 4.28,
+      "avg_speed_def": 3.83,
+      "dist_miles": 2.0,
+      "dist_miles_off": 1.1,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1631111,
+      "avg_speed": 4.69,
+      "avg_speed_off": 4.92,
+      "avg_speed_def": 4.47,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642954,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.3,
+      "avg_speed_def": 4.11,
+      "dist_miles": 1.5,
+      "dist_miles_off": 0.8,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642860,
+      "avg_speed": 4.51,
+      "avg_speed_off": 4.86,
+      "avg_speed_def": 4.16,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1630214,
+      "avg_speed": 4.09,
+      "avg_speed_off": 4.2,
+      "avg_speed_def": 3.96,
+      "dist_miles": 0.4,
+      "dist_miles_off": 0.2,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642905,
+      "avg_speed": 4.04,
+      "avg_speed_off": 4.1,
+      "avg_speed_def": 3.93,
+      "dist_miles": 0.5,
+      "dist_miles_off": 0.3,
+      "dist_miles_def": 0.2
+    },
+    {
+      "player_id": 1642949,
+      "avg_speed": 4.34,
+      "avg_speed_off": 4.51,
+      "avg_speed_def": 4.15,
+      "dist_miles": 0.8,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1642530,
+      "avg_speed": 4.61,
+      "avg_speed_off": 4.95,
+      "avg_speed_def": 4.24,
+      "dist_miles": 1.0,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.5
+    },
+    {
+      "player_id": 1642274,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.38,
+      "avg_speed_def": 4.04,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1642258,
+      "avg_speed": 4.68,
+      "avg_speed_off": 4.96,
+      "avg_speed_def": 4.42,
+      "dist_miles": 1.8,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.9
+    },
+    {
+      "player_id": 1628380,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.9,
+      "avg_speed_def": 4.02,
+      "dist_miles": 1.4,
+      "dist_miles_off": 0.7,
+      "dist_miles_def": 0.7
+    },
+    {
+      "player_id": 1641744,
+      "avg_speed": 4.16,
+      "avg_speed_off": 4.4,
+      "avg_speed_def": 3.92,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 203897,
+      "avg_speed": 4.39,
+      "avg_speed_off": 4.76,
+      "avg_speed_def": 4.01,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.3,
+      "dist_miles_def": 1.0
+    },
+    {
+      "player_id": 1630192,
+      "avg_speed": 4.21,
+      "avg_speed_off": 4.32,
+      "avg_speed_def": 4.08,
+      "dist_miles": 0.9,
+      "dist_miles_off": 0.5,
+      "dist_miles_def": 0.4
+    },
+    {
+      "player_id": 1630533,
+      "avg_speed": 4.35,
+      "avg_speed_off": 4.44,
+      "avg_speed_def": 4.26,
+      "dist_miles": 1.7,
+      "dist_miles_off": 0.9,
+      "dist_miles_def": 0.8
+    },
+    {
+      "player_id": 1629627,
+      "avg_speed": 4.33,
+      "avg_speed_off": 4.7,
+      "avg_speed_def": 3.97,
+      "dist_miles": 2.3,
+      "dist_miles_off": 1.2,
+      "dist_miles_def": 1.1
+    },
+    {
+      "player_id": 1642389,
+      "avg_speed": 4.44,
+      "avg_speed_off": 4.68,
+      "avg_speed_def": 4.43,
+      "dist_miles": 0.7,
+      "dist_miles_off": 0.4,
+      "dist_miles_def": 0.3
+    }
+  ]
+}

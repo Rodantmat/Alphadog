@@ -1,0 +1,8 @@
+{
+  "fetched_at": "2026-09-01T01:28:40Z",
+  "source_url": "https://stats.nba.com/stats/leaguedashteamstats?LeagueID=00&Season=2025-26&SeasonType=Regular+Season&PerMode=PerGame&MeasureType=Advanced&Month=0&OpponentTeamID=0&PaceAdjust=N&Rank=N&PlusMinus=N",
+  "http_status": null,
+  "team_count": 0,
+  "error": "HTTP Error 500: Internal Server Error",
+  "real_headers_seen": null
+}
