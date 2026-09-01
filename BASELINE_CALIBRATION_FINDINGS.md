@@ -258,7 +258,16 @@ where `M` is the stat's real, independently-published stabilization point (not f
 
 **Real improvement, roughly halves the gap, but doesn't fully close it** — consistent with the earlier finding (§7) that RBI also has a genuine opportunity-dependency component (teammates reaching base) that this fix doesn't address. The combined rate/variance fix handles the recency and distribution-shape parts; the remaining gap is the part that needs actual lineup-context data, same category as `walks`' opponent-pitcher piece.
 
-## 26. WHAT THIS DOES NOT YET ANSWER
+**`pitcher_fantasy_score` — the worst gap in the entire investigation, now mostly resolved.** Measured its real dispersion: variance/mean = **15.16**, by far the largest overdispersion found in this investigation — expected, since fantasy score bundles lumpy binary bonuses (wins ±6, quality starts ±4) that create huge variance no simple count model captures. This matches the code's own documented note that fantasy_score should use a Normal, not Poisson, model. Real measured SD = 12.58. Applying this directly (mean barely shifts with recency-shrinkage here — confirms the problem is almost entirely variance shape, not the rate):
+
+| | Predicted | Actual | Absolute error |
+|---|---|---|---|
+| Current system | 92.1 | 64.1 | 28.0 |
+| **Corrected (real measured SD via Normal approximation)** | 54.2 | 64.1 | **9.9** |
+
+**~65% reduction in absolute error.** Overshoots slightly to the underconfident side now (a logistic approximation to the Normal CDF was used in place of an exact one, which likely explains the residual), but this confirms the mechanism decisively: the worst-calibrated prop in the whole investigation was almost purely a case of the model not accounting for its own real, measured variance.
+
+## 27. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
