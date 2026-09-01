@@ -499,7 +499,30 @@ function numberOrNull(value) {
 }
 
 function deriveSlateDate(row) {
-  return normalizeText(row && row.game_date) || (normalizeText(row && row.commence_time) || nowUtc()).slice(0, 10);
+  // v0.4.4 Pacific-anchored slate date: the upstream Parlay/Sleeper feed's own
+  // "game_date" field (and a naive slice of commence_time) reflect the UTC
+  // calendar date, not MLB's official (Pacific-anchored) game date. For
+  // evening West Coast games whose UTC commence_time crosses midnight, that
+  // UTC-based date is one day ahead of the game's real official_date, which
+  // caused today's still-pickable games to be misfiled as tomorrow's slate
+  // and dropped from today's board. Derive the slate date from the Pacific
+  // calendar date of commence_time instead, consistent with how the rest of
+  // this pipeline determines "today" (see calendar.game_calendar /
+  // America/Los_Angeles convention). Only fall back to the raw upstream
+  // fields when commence_time is missing or unparseable.
+  const commenceTime = normalizeText(row && row.commence_time);
+  if (commenceTime) {
+    const parsed = new Date(commenceTime);
+    if (!Number.isNaN(parsed.getTime())) {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Los_Angeles",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(parsed);
+    }
+  }
+  return normalizeText(row && row.game_date) || nowUtc().slice(0, 10);
 }
 
 function deriveSourceLineId(row) {
