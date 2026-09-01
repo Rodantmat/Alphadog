@@ -23,6 +23,7 @@
 | `singles` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | +13.72pp | **+0.83pp** | **M ≈ 100 — LOCKED** |
 | `walks` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | +10.63pp | **+0.03pp** | **M = 50 — LOCKED** |
 | `doubles` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | not computed (too rare for buggy formula to be meaningfully "high-confidence") | **+0.75pp** at M=500, still marginally declining beyond that | **M ≈ 500 — LOCKED, low priority given near-zero real board volume for this prop** |
+| `total_bases` (clears 1) | 139 | 30,143 | 4,522 (top 15%) | +14.62pp | **+0.08pp** (high-conf), **-0.39pp** (mid-band, 18,965 legs) | **M = 180 — LOCKED, cross-validated across two bands, distribution-agnostic empirical method (no parametric NegBinomial assumption needed)** |
 
 **Cross-validation note for `hits`**: M=100 was checked against *two independent bands simultaneously* (high-confidence ≥70%, and mid-range 40-60%) and produced a near-perfect gap in both (+0.26pp and -0.22pp respectively) — this is not a single-band fit, it holds across the distribution.
 
