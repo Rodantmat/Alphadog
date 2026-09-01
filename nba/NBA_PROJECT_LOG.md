@@ -155,6 +155,18 @@ Per the person's "mine it, backfill it, continue" instruction, built all 3 worke
 
 ---
 
+## 2026-09-01 (cont'd 2) — On/off-court splits sourced, built, and verified (Gemini's top-flagged factor)
+
+Found and confirmed a real, sourceable endpoint for the "with/without you" splits Gemini flagged as very high impact: `teamplayeronoffdetails` (per-team, 30 calls - same shape as the arenas scrape), returning matched on-court/off-court team net-rating rows per player. Built `nba/scrape_nba_onoff.py` (reuses the already-committed teams JSON for team IDs, computes the real net-rating differential per player) and `alphadog-v2-nba-static-onoff.js`, wired in via the same 4-step pattern.
+
+**One real design nuance handled correctly, not glossed over**: a player traded mid-season appears once per team in the raw source (661 raw rows vs. 582 distinct players). The writer worker resolves this by preferring the row matching the player's *current* team (per `nba_ref.players.team_id`) rather than picking arbitrarily.
+
+**Triggered and verified independently**: 661 raw rows → 582 distinct players written to `nba_stats.player_onoff_profile`, confirmed via direct Postgres query. Spot-checked real values: Victor Wembanyama's team is +16.4 net rating better with him on the floor (17.0 on vs. 0.6 off) - a large, plausible, real signal exactly matching what Gemini predicted this factor would show for a franchise cornerstone. LeBron James shows a more modest +2.3 differential.
+
+**8 static-differential/weekly-enrichment workers now real, live, and independently verified**: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits. Referee crew tendencies remain the one open item from the Gemini research pass - genuinely needs game-level data to compute (which crew officiated which game), so it's deferred to Phase 3b rather than forced into the static layer.
+
+---
+
 ## 2026-09-01 (cont'd) — Enrichment-factors research pass complete: `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md`
 
 Per the person's explicit request (web research + mandatory Gemini consultation): researched what real, weekly-appropriate static/semi-static enrichment data exists beyond the 4 core entities. Found real, confirmed endpoints:
