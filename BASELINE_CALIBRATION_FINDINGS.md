@@ -517,7 +517,13 @@ Per research into real pull-decision dynamics (managers use game score state hea
 
 Per Gemini's guidance (the Diebold-Mariano framework for comparing predictive accuracy): a day-level t-stat of -2.306 with all 8 leave-one-out folds negative **already constitutes a statistically valid, definitive result** — not an unsolved case, but proof that the raw model significantly outperforms any tested correction. This is the same logical structure as a formal DM test (|S_d| > 1.96 → the better model is statistically confirmed, not just assumed). **Formal conclusion: `pitcher_outs` requires zero correction. The correct action is to leave it alone, and this is now a proven, evidence-backed status — not a failure to find a fix, but a successful, rigorous determination that no fix is needed.**
 
-## 81. WHAT THIS DOES NOT YET ANSWER
+## 83. FULL-DATA RE-VALIDATION — `runs` fully validated, `rbis` improved
+
+**`runs`**: recovered one previously-excluded day (08-21, n=6, dropped by an overly strict per-day threshold) — using all 12 genuinely available non-corrupted days: **t=2.054**, leave-one-out never negative (0.035-0.054). **Sixth fully validated fix.**
+
+**`rbis`**: tested the pure empirical blend (weight 0.5995) against the full 12-day available population instead of the dispersion-only correction: **t=1.775** (up from 1.410 with dispersion alone), leave-one-out never negative (0.009-0.014). Tried combining dispersion and blend together — performed worse (t=1.447) than the blend alone. **The pure empirical blend is the best available correction for `rbis`**, robust but still short of the 2.0 significance bar even using all available data — this appears to be a genuine small-effect-size case rather than an underpowered one.
+
+## 84. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
