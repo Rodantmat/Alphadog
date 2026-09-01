@@ -70,7 +70,7 @@ async function runJob(input, env) {
     bioWritten += 1;
     await sql`
       INSERT INTO nba_stats.player_season_profile (player_id, nba_player_id, season, games_played, pts_total, reb_total, ast_total, net_rating, oreb_pct, dreb_pct, usg_pct, ts_pct, ast_pct, source_key, data_quality, raw_json, updated_at)
-      VALUES (${playerId}, ${p.player_id}, '2025-26', ${p.gp}, ${p.pts}, ${p.reb}, ${p.ast}, ${p.net_rating}, ${p.oreb_pct}, ${p.dreb_pct}, ${p.usg_pct}, ${p.ts_pct}, ${p.ast_pct}, ${sourceKey}, 'real', ${JSON.stringify(p).slice(0, 2000)}, now())
+      VALUES (${playerId}, ${p.player_id}, '2025-26', ${toIntOrNull(p.gp)}, ${p.pts}, ${p.reb}, ${p.ast}, ${p.net_rating}, ${p.oreb_pct}, ${p.dreb_pct}, ${p.usg_pct}, ${p.ts_pct}, ${p.ast_pct}, ${sourceKey}, 'real', ${JSON.stringify(p).slice(0, 2000)}, now())
       ON CONFLICT (player_id) DO UPDATE SET
         season=excluded.season, games_played=excluded.games_played, pts_total=excluded.pts_total, reb_total=excluded.reb_total,
         ast_total=excluded.ast_total, net_rating=excluded.net_rating, oreb_pct=excluded.oreb_pct, dreb_pct=excluded.dreb_pct,
