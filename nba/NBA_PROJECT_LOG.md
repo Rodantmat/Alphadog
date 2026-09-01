@@ -134,6 +134,21 @@ Added both scrape steps to the same `nba-scrape.yml` workflow (one push to the e
 **Next**: the broader enrichment-factor research pass the person asked for (what other static/rarely-changing data can be mined now, beyond the four core entities), then Phase 3b's incremental/delta game-log layer.
 
 ---
+
+## 2026-09-01 (cont'd) — Enrichment-factors research pass complete: `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md`
+
+Per the person's explicit request (web research + mandatory Gemini consultation): researched what real, weekly-appropriate static/semi-static enrichment data exists beyond the 4 core entities. Found real, confirmed endpoints:
+- **`leaguedashplayerbiostats`** — one call, ALL players: age, height, weight, college, country, draft info, plus season usage/efficiency (USG%, TS%, NET_RATING, etc.). This is the real source for "player age... all important factors" the person asked about.
+- **`leaguedashptstats`** — real player-tracking data (`PtMeasureType=SpeedDistance` gives actual in-game speed/distance, not a proxy; other types cover Drives, Passing, CatchShoot, Defense, touches by zone, etc.) - the real "speed" data source.
+- **`leaguedashteamstats`/`leaguedashptteamdefend`** — team-level pace/ratings/opponent shooting.
+
+All are league-wide, one-call endpoints (unlike arenas' 30 sequential calls) - genuinely cheap for weekly refresh.
+
+**Consulted Gemini (gemini-2.5-pro) for structural insight**, per the project's mandatory-Gemini-consultation rule. Its synthesis (recorded in full in the research doc, explicitly flagged as "starting hypothesis, not verified") drew a clear weekly-vs-daily line: truly static fields (age, height, draft info) and season-long aggregates/team identity belong weekly; recent-form trailing averages, injury reports, rest days, and live odds belong in the existing daily master-run, not here. Also surfaced real factors not yet sourced: on/off-court differentials ("with/without you" splits - very high impact per Gemini, not yet independently verified as a reachable source), schedule density beyond simple back-to-backs, and confirmed referee-crew tendencies as a real, high-impact factor tying directly to the officials dictionary already built.
+
+**Concrete next static-differential workers identified, ready to build**: a player bio/season-profile worker (`leaguedashplayerbiostats`), a player-tracking "archetype" worker (`leaguedashptstats`), and a team pace/rating worker (`leaguedashteamstats`) - all small, one-call, real, and matching the exact same proven pattern (GitHub Actions curl_cffi scrape → committed JSON → Worker → Postgres → independent verification).
+
+---
 - Read all three /nba/ reference docs in full (Architecture Blueprint, Lessons Learned, Domain Mapping).
 - Verified live Postgres: 18 schemas exist (archive, backtest, calendar, certifier, classification, config, context, context_cert, control, daily, market, public, ref, score, scoring, stats_hitter, stats_pitcher, team). Zero NBA-anything exists anywhere yet — confirmed clean slate.
 - Verified `ref.teams` is genuinely MLB-specific (mlb_team_id, AL/NL division, file_code) — needs an NBA-specific counterpart, exactly as the blueprint says.
