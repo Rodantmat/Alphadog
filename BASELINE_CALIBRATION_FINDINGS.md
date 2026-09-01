@@ -465,7 +465,19 @@ The "already fine" status for `home_runs` and `stolen_bases` had only been check
 
 **`stolen_bases`**: day-level signed error across 11 days shows a real but modest lean (8 of 11 days positive/overconfident, mean +3.76pp), t=1.199 — not statistically significant. Confirms reasonably calibrated, with a small, unproven directional tendency worth monitoring but not requiring a fix at this evidence level.
 
-## 62. WHAT THIS DOES NOT YET ANSWER
+## 64. FULL-WINDOW RE-VALIDATION — `pitcher_strikeouts` blend does NOT hold up
+
+Extended `pitcher_strikeouts`' categorical blend fix from 7 days to 14 (adding a previously-untested earlier date range, 07-26→08-09, same approach that worked for the other fixes):
+
+| Metric | Original (7 days) | Full window (14 days) |
+|---|---|---|
+| Day-level t-stat | 1.463 | **-0.142** |
+| Days positive | 4 of 7 | 6 of 14 |
+| Mean improvement | +0.0444 | **-0.0044** |
+
+**This reverses, not strengthens, with more data.** Unlike the other four fixes (which all became more confident with a larger sample), `pitcher_strikeouts`' apparent improvement was not robust — it doesn't survive being tested against the fuller, more representative dataset. This is an important, honest correction to the earlier pooled-only finding for this specific prop: **the categorical blend fix should not be considered validated for `pitcher_strikeouts`**, even though the same fix works for `runs`, `fantasy_score`, and `hits_allowed`. This also reinforces why the blend mechanism was flagged as needing full row-level MLE fitting rather than a fixed category weight (§48) — `pitcher_strikeouts` may need its own distinct weight, or may not respond to this mechanism as reliably as the other props.
+
+## 65. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
