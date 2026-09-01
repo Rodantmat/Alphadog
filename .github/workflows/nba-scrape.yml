@@ -86,7 +86,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for f in nba/data/nba_teams_current.json nba/data/nba_teams_current_meta.json nba/data/nba_players_current.json nba/data/nba_players_current_meta.json nba/data/nba_arenas_current.json nba/data/nba_arenas_current_meta.json nba/data/nba_officials_current.json nba/data/nba_officials_current_meta.json; do
+          for f in nba/data/nba_teams_current.json nba/data/nba_teams_current_meta.json nba/data/nba_players_current.json nba/data/nba_players_current_meta.json nba/data/nba_arenas_current.json nba/data/nba_arenas_current_meta.json nba/data/nba_officials_current.json nba/data/nba_officials_current_meta.json nba/data/nba_player_bio_current.json nba/data/nba_player_bio_current_meta.json nba/data/nba_player_tracking_current.json nba/data/nba_player_tracking_current_meta.json nba/data/nba_team_stats_current.json nba/data/nba_team_stats_current_meta.json; do
             [ -f "$f" ] && git add "$f"
           done
           if git diff --cached --quiet; then
