@@ -365,7 +365,20 @@ Per the standing bar (day-level t-test, 95% CI, leave-one-out never negative) no
 
 **Every single confirmed fix in this investigation has now been checked against the full standing methodology — none were skipped, none were assumed.** Three clear the complete bar; two show a completely consistent direction (zero non-positive leave-one-out folds across either) that simply needs more days of data to reach formal significance, not a different mechanism or more tuning.
 
-## 39. WHAT THIS DOES NOT YET ANSWER
+**Extended day-level validation to `rbis`' existing partial fix** (n=297, 13 days with ≥10 legs/day):
+
+| Metric | Value |
+|---|---|
+| Days positive | 9 of 13 |
+| Mean improvement | +0.0240 |
+| Day-level t-stat | **1.751** — close, does not clear significance |
+| Leave-one-out range | **0.0202 to 0.0316**, never crosses zero |
+
+Same honest pattern as `hits`/`singles`/`doubles` and `pitcher_fantasy_score` — robust direction, needs more data to formally clear the bar.
+
+**Attempted a combined recency + opponent-context fix for `pitcher_strikeouts`** (multiplying the recency-shrunk rate by opponent K-tendency relative to the sample's own average): **this failed and is recorded honestly as a failure, not softened.** Corrected prediction (95.6%) was *more* overconfident than the current system (88.6%) against actual (73.1%) — the naive multiplicative adjustment, calibrated against this specific sample's own mean rather than a real population baseline, introduced its own bias rather than fixing the real one. The underlying opponent-context *direction* (§16) remains real and separately confirmed via bucket comparison; combining it cleanly with the recency correction into one formula has not been achieved and needs a properly-calibrated population reference, not a same-sample average.
+
+## 41. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
