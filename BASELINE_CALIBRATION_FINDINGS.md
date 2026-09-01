@@ -493,7 +493,11 @@ Extended `hits_allowed`'s blend fix to 8 days (excluding corrupted dates and ove
 
 Tested at day-level (7 days, corrupted dates excluded, weight=0.5995): t=1.200, 4 of 7 days positive, mean improvement +0.072. **Leave-one-out never crosses zero (0.045-0.113)** — fully robust direction, same "needs more clean days for formal significance" status as several other confirmed fixes. Given this population is already ~95% goblin-dominated (§ earlier finding), this represents the real, dominant market, not a skewed subset.
 
-## 72. WHAT THIS DOES NOT YET ANSWER
+## 74. DAY-LEVEL VALIDATION — `pitcher_outs` blend is actively harmful, withdrawn
+
+Tested at day-level (8 days, corrupted dates excluded, using pitcher_outs' own optimal weight 0.899): **t=-2.306, only 2 of 8 days positive, and all 8 leave-one-out folds are negative** — a clean, statistically significant, consistently negative result. This confirms the earlier suspicion (§ original finding: only -5.8pp starting gap, much smaller than every other fixed prop): `pitcher_outs` was already close to acceptable, and applying any blend correction actively makes it worse. **This fix is withdrawn for `pitcher_outs` — the correct action is to leave this prop alone entirely.**
+
+## 75. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
