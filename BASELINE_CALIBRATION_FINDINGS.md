@@ -477,7 +477,7 @@ Extended `pitcher_strikeouts`' categorical blend fix from 7 days to 14 (adding a
 
 **This reverses, not strengthens, with more data.** Unlike the other four fixes (which all became more confident with a larger sample), `pitcher_strikeouts`' apparent improvement was not robust — it doesn't survive being tested against the fuller, more representative dataset. This is an important, honest correction to the earlier pooled-only finding for this specific prop: **the categorical blend fix should not be considered validated for `pitcher_strikeouts`**, even though the same fix works for `runs`, `fantasy_score`, and `hits_allowed`. This also reinforces why the blend mechanism was flagged as needing full row-level MLE fitting rather than a fixed category weight (§48) — `pitcher_strikeouts` may need its own distinct weight, or may not respond to this mechanism as reliably as the other props.
 
-## 64. CORRECTION — the "reversal" was my own methodology error, not a real problem with the fix
+## 65. CORRECTION — the "reversal" was my own methodology error, not a real problem with the fix
 
 Re-opened this per direct instruction rather than accepting the negative result at face value. **Found the actual bug: the "full-window" extension in §64 (original) failed to exclude the known corrupted dates (08-05, 08-11) and included several days with n=1-2 legs showing a completely different, undercondident signature** — contaminating the clean 08-10+ population that showed the real effect. This was a real mistake in test construction, not evidence the underlying fix is wrong.
 
