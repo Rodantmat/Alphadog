@@ -70,4 +70,14 @@ jobs:
             exit 0
           fi
           git commit -m "Update NBA teams JSON [skip ci]"
-          git push origin HEAD:main
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $i/5) - another workflow pushed concurrently. Rebasing and retrying..."
+            git fetch origin main
+            git rebase origin/main
+            sleep $((RANDOM % 5 + 2))
+          done
+          echo "Failed to push after 5 attempts."
+          exit 1
