@@ -140,7 +140,21 @@ Ran the same recency-vs-season divergence test across every prop with meaningful
 
 **Not yet tested** (small populations, lower priority): `stolen_bases` (272), `fantasy_score` (92, already known to use a distinct two-component HR-mixture model per code comments), `hitter_strikeouts` (12, too small to test meaningfully).
 
-## 11. WHAT THIS DOES NOT YET ANSWER
+## 13. SCOPE CONFIRMATION — this is system-wide, across 19 prop types and 2 entity types
+
+Per instruction that the system has more than the 12 hitter prop types tested so far, checked the full prop universe: **19 canonical prop types total**, split across hitters (12: hits, total_bases, rbis, walks, doubles, runs, fantasy_score, singles, hitter_strikeouts, home_runs, stolen_bases, triples) and pitchers (7: pitcher_strikeouts, earned_runs, hits_allowed, walks_allowed, pitcher_outs, pitcher_fantasy_score).
+
+**Confirmed the overconfidence pattern extends to pitcher props.** `pitcher_strikeouts` at `clean_baseline_hp≥85` (n=104, thin sample): predicted 88.6, actual 73.1 — a -15.5pp gap, comparable in severity to the worst hitter props (`walks`, `rbis`).
+
+**Found a real, distinct infrastructure issue specific to pitchers**: exact D-1 baseline matching (used throughout this document for hitters) fails for most pitcher legs, because starting pitchers don't play daily — a pitcher's most recent relevant baseline update may be several days before their next start, not exactly the day before. Match rate against exact D-1 was ~13% on an early-season sample, ~55% on a later, better-covered sample. Any pitcher-prop backtest work needs "most recent available `as_of_date < D`" matching (a `LATERAL` nearest-prior-date join), not exact-date matching — a genuinely different join pattern than what's been used for hitters throughout this document.
+
+**Honest scope assessment**: fully diagnosing and validating each of the 19 prop types with the rigor applied to `hits`/`singles`/`doubles` (root-cause identification, mechanism confirmation, generalization testing) is a substantially larger undertaking than a single pass can complete. What's confirmed so far:
+- The overconfidence problem is **universal** — every prop type checked shows it, across both entity types.
+- The `n_eff`/`prior_strength` recency-blending mechanism (§2-5) is confirmed as the **primary** cause for the majority-volume, batter-controlled hitter props (§10).
+- A **secondary**, partially-identified mechanism (opponent/lineup-context dependency) affects externally-dependent props (`walks`, `rbis`, partially `runs`) and remains incomplete (§7).
+- Pitcher props are confirmed affected but have not yet been diagnosed for *which* mechanism(s) apply — the recency-blending fix, the opponent-context issue, both, or something pitcher-specific (e.g., analogous dependency on their own team's defense/bullpen, or opponent lineup quality) has not been tested.
+
+## 14. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
