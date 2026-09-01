@@ -32,6 +32,11 @@ async function fetchFromGithub(env, path, metaPath) {
   return { file, meta };
 }
 
+function toIntOrNull(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
 async function runJob(input, env) {
   const started = Date.now();
   const sql = pg(env);
