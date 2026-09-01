@@ -167,6 +167,20 @@ Found and confirmed a real, sourceable endpoint for the "with/without you" split
 
 ---
 
+## 2026-09-01 (cont'd 3) — Second research pass: static layer is genuinely complete; two real, honest blockers found, not built past
+
+Per the person's request to keep researching (Gemini + online + "how do strong/similar systems do it"), did a second pass and consulted Gemini again with all 8 already-built sources as context.
+
+**Garbage-time filtering** (industry-standard per Cleaning the Glass): confirmed real and meaningful for player props (Gemini: medium-high priority, most acute for bench players whose season stats are almost entirely garbage-time minutes) - but fixing it requires play-by-play data, not anything reachable at this layer. Correctly deferred to Phase 3b, not forced in.
+
+**Third-party impact metrics (Dunks & Threes' EPM, BBall Index's LEBRON)**: Gemini rated a well-built one as likely one of the single highest-predictive-lift features available and called using one a normal, legitimate practice. **But independently verified before building anything**: EPM's full data is a **paid subscription feature**, not freely scrapable like everything built so far. This is a real legitimacy line, not just a technical one - flagged plainly in `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md` Section 6, and **nothing was scraped against it** without the person's explicit sign-off to pay for access.
+
+**Other gaps surfaced (rolling/recent-form averages, defense-vs-position splits, "impact of absences" tables)**: all real, all correctly require game-log/play-by-play data rather than static snapshots - all deferred to Phase 3b, not forced into this layer.
+
+**Conclusion, stated plainly rather than continuing to search indefinitely**: the freely and legitimately sourceable static/weekly layer is now genuinely complete. Every remaining real gap falls into exactly two buckets: Phase 3b's game-log layer, or a paid third-party subscription decision that needs the person's explicit go-ahead first. This is a natural, honest stopping point for this line of research - not a reason to keep searching for more static data that doesn't exist.
+
+---
+
 ## 2026-09-01 (cont'd) — Enrichment-factors research pass complete: `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md`
 
 Per the person's explicit request (web research + mandatory Gemini consultation): researched what real, weekly-appropriate static/semi-static enrichment data exists beyond the 4 core entities. Found real, confirmed endpoints:
