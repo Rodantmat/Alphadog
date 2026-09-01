@@ -485,7 +485,11 @@ Re-opened this per direct instruction rather than accepting the negative result 
 
 **Corrected conclusion: the `pitcher_strikeouts` blend fix is real and should NOT have been withdrawn** — it needs more clean data to reach formal significance (only 6 days survive proper filtering), the same "robust but not yet significant" status as several other fixes, not a failure. The earlier §64 conclusion is superseded by this one.
 
-## 66. WHAT THIS DOES NOT YET ANSWER
+## 68. DAY-LEVEL VALIDATION — `hits_allowed` blend does not hold up, and this time it's real
+
+Extended `hits_allowed`'s blend fix to 8 days (excluding corrupted dates and overlaps, same careful methodology just applied to `pitcher_strikeouts`): t=-0.315, mean improvement slightly negative, and **critically, leave-one-out shows 4 of 8 folds non-positive** — a genuinely inconsistent result, unlike every other fix in this investigation (all of which showed zero non-positive folds once properly tested). This confirms `hits_allowed` is a real, distinct unresolved case, not a repeat of `pitcher_strikeouts`' methodology error — the blend mechanism does not reliably work here. This is consistent with `hits_allowed`'s earlier-flagged, never-fully-explained "backwards double-signal confluence" pattern (§ above) — the true mechanism for this specific prop remains genuinely unresolved, and the blend fix should be **withdrawn** for `hits_allowed` specifically, while remaining valid for `runs`, `fantasy_score`, and (once properly cleaned) `pitcher_strikeouts`.
+
+## 69. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
