@@ -1,0 +1,178 @@
+{
+  "arenas": [
+    {
+      "team_id": 1610612760,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Oklahoma City"
+    },
+    {
+      "team_id": 1610612765,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Detroit"
+    },
+    {
+      "team_id": 1610612759,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "San Antonio"
+    },
+    {
+      "team_id": 1610612738,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Boston"
+    },
+    {
+      "team_id": 1610612743,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Denver"
+    },
+    {
+      "team_id": 1610612752,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "New York"
+    },
+    {
+      "team_id": 1610612739,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Cleveland"
+    },
+    {
+      "team_id": 1610612747,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Los Angeles"
+    },
+    {
+      "team_id": 1610612745,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Houston"
+    },
+    {
+      "team_id": 1610612737,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Atlanta"
+    },
+    {
+      "team_id": 1610612750,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Minnesota"
+    },
+    {
+      "team_id": 1610612755,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Philadelphia"
+    },
+    {
+      "team_id": 1610612756,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Phoenix"
+    },
+    {
+      "team_id": 1610612757,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Portland"
+    },
+    {
+      "team_id": 1610612753,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Orlando"
+    },
+    {
+      "team_id": 1610612766,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Charlotte"
+    },
+    {
+      "team_id": 1610612746,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "LA"
+    },
+    {
+      "team_id": 1610612744,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Golden State"
+    },
+    {
+      "team_id": 1610612748,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Miami"
+    },
+    {
+      "team_id": 1610612749,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Milwaukee"
+    },
+    {
+      "team_id": 1610612740,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "New Orleans"
+    },
+    {
+      "team_id": 1610612741,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Chicago"
+    },
+    {
+      "team_id": 1610612742,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Dallas"
+    },
+    {
+      "team_id": 1610612751,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Brooklyn"
+    },
+    {
+      "team_id": 1610612763,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Memphis"
+    },
+    {
+      "team_id": 1610612754,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Indiana"
+    },
+    {
+      "team_id": 1610612758,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Sacramento"
+    },
+    {
+      "team_id": 1610612764,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Washington"
+    },
+    {
+      "team_id": 1610612762,
+      "arena_name": null,
+      "arena_capacity": null,
+      "city": "Utah"
+    }
+  ]
+}

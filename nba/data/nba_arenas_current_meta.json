@@ -1,0 +1,12 @@
+{
+  "fetched_at": "2026-09-01T00:19:19Z",
+  "arena_count": 29,
+  "team_count_input": 30,
+  "per_team_errors": [
+    {
+      "team_id": 1610612761,
+      "abbreviation": "TOR",
+      "error": "Failed to perform, curl: (35) BoringSSL SSL_connect: Connection closed abruptly (SSL_ERROR_SYSCALL; error queue empty) in connection to stats.nba.com:443. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+    }
+  ]
+}
