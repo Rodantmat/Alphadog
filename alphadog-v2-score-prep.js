@@ -1196,7 +1196,7 @@ function prepareUnderdogRows(rows, ref, calendar, batchId, now) {
     const payload = safeJsonParse(r.row_payload_json, {});
     const rawHome = safeStr(raw.home_team || payload.home_team);
     const rawAway = safeStr(raw.away_team || payload.away_team);
-    const rawDate = safeStr(raw.game_date) || dateOnlyFromAnyTime(raw.commence_time || r.start_time);
+    const rawDate = pacificDateFromAnyTime(raw.commence_time || r.start_time) || safeStr(raw.game_date);
     const rawCommence = safeStr(raw.commence_time || r.start_time);
 
     // Same reasoning as Sleeper: Underdog's commence_time (via the same ParlayAPI structure)
