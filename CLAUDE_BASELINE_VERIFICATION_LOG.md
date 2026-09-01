@@ -39,7 +39,20 @@
 
 ## Full scope, corrected: 23 real canonical props exist, not ~19
 
-Pulled directly from the live `config.calibration_config` → `prop_metric_map` — the real, authoritative source, not the original report's count. Two props (`pitches_thrown`, `pitcher_fantasy_score_ud`) were never covered by the original report at all. Full list: `hits`✅ `singles`✅ `walks`✅ `doubles`✅ `total_bases`✅ `runs`✅ `rbis`✅ `home_runs`✅ `stolen_bases`✅ (9 locked) — `triples`, `rfi_nrfi`, `earned_runs`, `hits_allowed`, `pitcher_outs`, `runs_allowed`, `fantasy_score`, `walks_allowed`, `hits_runs_rbis`, `pitches_thrown`, `hitter_strikeouts`, `pitcher_strikeouts`, `pitcher_fantasy_score`, `pitcher_fantasy_score_ud` (14 remaining).
+Pulled directly from the live `config.calibration_config` → `prop_metric_map` — the real, authoritative source, not the original report's count. Two props (`pitches_thrown`, `pitcher_fantasy_score_ud`) were never covered by the original report at all. Full list: `hits`✅ `singles`✅ `walks`✅ `doubles`✅ `total_bases`✅ `runs`✅ `rbis`✅ `home_runs`✅ `stolen_bases`✅ `pitcher_outs`✅ `walks_allowed`✅ `earned_runs`✅ `runs_allowed`✅ (13 locked) — `triples`, `rfi_nrfi`, `hits_allowed`, `fantasy_score`, `hits_runs_rbis`, `pitches_thrown`, `hitter_strikeouts`, `pitcher_strikeouts`, `pitcher_fantasy_score`, `pitcher_fantasy_score_ud` (10 remaining).
+
+## Pitcher props (source: `stats_pitcher.game_logs`, filtered to `batters_faced >= 10` as a starter-appearance proxy since `role` is unreliable/mostly-null)
+
+| Prop | Line tested | Real days | Legs (high-conf) | Buggy gap | Corrected gap | Best M |
+|---|---|---|---|---|---|---|
+| `pitcher_outs` (>15) | 88 | 344 | +4.11pp | **+0.28pp** | **M = 20 — LOCKED** |
+| `walks_allowed` (>1) | 94 | 352 | **+8.20pp — REVISES original "no fix" call** | **-0.92pp** | **M ≈ 50-55 — LOCKED** |
+| `earned_runs` (>2) | 94 | 354 | **+10.04pp — REVISES original "no fix" call** | **-0.44pp** | **M ≈ 65-70 — LOCKED** |
+| `runs_allowed` (>2) | 89 | 350 | **+10.30pp — REVISES original "no fix" call** | **-0.41pp** | **M ≈ 65-70 — LOCKED** |
+
+**Three genuinely important revisions to the original report**: `walks_allowed`, `earned_runs`, and `runs_allowed` were all found by the original report to need no correction. My larger, starter-filtered sample shows real 8-10pp overconfidence problems in all three, cleanly resolved by the same n_eff mechanism used everywhere else. This is now the second and third confirmed case (after `home_runs`) of a real problem the original, shorter/less-filtered analysis missed.
+
+**`pitcher_strikeouts` — flagged as an open question, not yet resolved either way.** At line >4 (median), the buggy formula already shows only -2.08pp, and MORE shrinkage makes it steadily worse (-3.97 at M15, down to -12.62 at M40) — the opposite pattern from every other prop tested so far. This does not confirm the original report's claim that this prop needs an empirical/model blend fix, but it also doesn't cleanly confirm "no fix needed" either, since the original report's finding may concern a different population (e.g., extreme high-K starters, or a different line) than what a single median-line test captures. Needs its own dedicated investigation, likely checking multiple real lines (not just the median) before concluding either way — do not lock a "no fix" verdict here without that.
 
 ## What's genuinely still needed before "all prop lines are completely satisfactory"
 
