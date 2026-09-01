@@ -249,7 +249,16 @@ where `M` is the stat's real, independently-published stabilization point (not f
 
 **Four independent props now confirmed** with this combined approach — hits/singles/doubles (recency-only), walks (recency + published M), total_bases and hits_runs_rbis (recency + measured dispersion). This isn't a coincidence at this point; it's a real, generalizable methodology.
 
-## 25. WHAT THIS DOES NOT YET ANSWER
+**Applied to `rbis`** (real dispersion already measured earlier, r=0.694; n=297 real legs):
+
+| | Predicted | Actual | Gap |
+|---|---|---|---|
+| Current system | 88.8 | 76.4 | -12.4 |
+| **Corrected (n_eff + real dispersion)** | **83.2** | 76.4 | **-6.8** |
+
+**Real improvement, roughly halves the gap, but doesn't fully close it** — consistent with the earlier finding (§7) that RBI also has a genuine opportunity-dependency component (teammates reaching base) that this fix doesn't address. The combined rate/variance fix handles the recency and distribution-shape parts; the remaining gap is the part that needs actual lineup-context data, same category as `walks`' opponent-pitcher piece.
+
+## 26. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
