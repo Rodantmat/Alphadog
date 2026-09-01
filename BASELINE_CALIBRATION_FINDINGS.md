@@ -102,7 +102,27 @@ Per direct instruction to validate against the full backtest dataset before any 
 
 **Conclusion: the fix is not ready for any live consideration.** It's validated and well-evidenced for a subset of props; deploying it now would address part of the system's overconfidence problem while leaving real, unexplained overconfidence in others unaddressed and undocumented. The honest next step is identifying what's different about `walks`/`rbis`-type props (possibly: different underlying model dispatch — Normal vs. Poisson — team-context factors like plate-appearance opportunity that the current mechanism doesn't touch, or a second, independent source of miscalibration) before any broader claim or deployment.
 
-## 7. WHAT THIS DOES NOT YET ANSWER
+## 7. INVESTIGATING THE WALKS/RBIS GAP — one hypothesis refuted, one partially confirmed, root cause still incomplete
+
+Per instruction to keep going rather than stop at the generalization failure in §6, tested three candidate explanations for why `walks`/`rbis` don't respond to the recency/`n_eff` mechanism the way `hits`/`singles`/`doubles` do:
+
+**Model dispatch — ruled out.** `propCanGoNegativePg` (the Normal-model trigger) only fires for weighted compound formulas; `walks` and `rbis` are simple counts using the same Poisson/NegBinomial family as `hits`. Not the differentiator.
+
+**Dispersion under-estimation — tested directly, refuted, and the refutation itself was informative.** Measured real within-player variance/mean on 2026 game logs: `rbi` is genuinely, substantially overdispersed (variance/mean = 1.59, estimated NegBinomial r≈0.69); `walks` is essentially plain Poisson (ratio 1.02). This ruled out dispersion as the walks explanation outright. For RBI, the numbers said something more precise than "add dispersion" would suggest: NegBinomial with real overdispersion actually **increases** P(zero RBIs) relative to Poisson at realistic means (overdispersed count distributions concentrate more mass at zero to preserve the same average while allowing rarer big games) — meaning properly applying dispersion would make `rbis`' overconfidence *worse*, not better. This hypothesis was wrong in direction, not just unconfirmed, and is recorded here so it isn't retried.
+
+**Opponent/matchup context — real, partial effect found for `walks`.** Tested whether facing a control vs. wild opposing pitching staff (team-level walks-allowed rate, point-in-time correct, real data) explains the residual gap:
+
+| Opponent bucket | n | Predicted | Actual | Gap |
+|---|---|---|---|---|
+| Control pitching (low walks-allowed) | 158 | 89.6 | 77.8 | -11.8 |
+| Mid | 274 | 90.5 | 70.8 | -19.7 |
+| Wild pitching (high walks-allowed) | 218 | 91.8 | 73.4 | -18.4 |
+
+Directionally real (control-pitching legs show the smallest gap), consistent with the hypothesis that baseline can't see game-specific opponent context and that's part of what enrichment's `opposing_pitcher_quality` factor is meant to supply. But the "mid" bucket is anomalous (worse than both extremes), and even the best case (control pitching) still leaves an -11.8pp gap — meaning opponent context is a real, partial contributor, not the full explanation.
+
+**Honest state of the walks/rbis investigation**: the recency-blending mechanism (§2-5) doesn't apply; dispersion doesn't apply (and points the wrong way for RBI specifically); opponent context is real but partial for walks. No single, complete mechanism has been found for these props. This is meaningfully narrowed, not solved.
+
+## 8. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
