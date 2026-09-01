@@ -68,22 +68,18 @@ where `w_i` are the same normalized recency weights already configured, and `n_i
 
 **This requires two changes, both at the metrics/classification computation stage** (not the final probability formula, which needs no change): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` into the existing `shrunkRate` formula.
 
-## 5. SCOPED END-TO-END SIMULATION — mechanism confirmed, calibration claim not yet provable at this fidelity
+## 5. SCOPED END-TO-END SIMULATION — mechanism confirmed; external reconstruction cannot validate calibration, and that limit is now well-understood
 
-Ran a scoped (not full-dataset) simulation on the same 215-leg population (`hits`/`singles`/`doubles`, `clean_baseline_hp≥85`, `less` side): computed real trailing 5/10/20-game and season windows from `stats_hitter.game_logs` (point-in-time correct), the real blended rate using production's actual weights, and `n_eff` via the formula in §4.
+Ran three successive, increasingly-faithful attempts to validate the corrected formula's calibration impact, each closing one approximation gap and exposing another:
 
-**Mechanism confirmed at scale**: average `n_old` (raw season games) = 94.3; average `n_eff` = 23.2 — a **4x reduction**, matching the single-player illustration in §4 almost exactly. This is a real, data-verified effect, not a hypothetical.
+1. **Generic proxy** (global `prior_strength=2.72`, average 3.77 PA/game): predicted 59.4% (old) / 52.6% (new) vs. actual 83.6% / real model 90.1%.
+2. **Real per-cell `prior_strength`** (pulled from `classification.baseline_v6_current`: hits=2.0, singles=2.09, doubles=7.25 — meaningfully different from the generic guess) **+ real per-player PA/game**: 56.8% / 47.3% — the gap *widened*, not narrowed.
+3. **Per-game rate instead of PA-scaled rate** (removing the PA→per-game conversion entirely, since the real model is documented as Poisson-exact on game counts): 59.0% / 54.1% — essentially unchanged.
+4. **Attempted tier-matched prior** (bucketing a broader 2,634-pair reference population by season-rate decile instead of using a flat population mean, since `blendedTierPrior` is tier-specific, not a flat average): the resulting tier means did not show the clean monotonic separation expected (flat around 0.42-0.46 across the bulk of deciles), indicating real tier assignment depends on more than season rate alone — the code references opponent-context and role-aware tiering not replicated here.
 
-**Calibration claim not provable at this fidelity — reported honestly rather than overstated.** Converting the corrected rate to an actual hit probability (via a simplified Poisson model, a single global `prior_strength=2.72` in place of the real per-cell value, and an average 3.77 PA/game in place of per-player figures) gives:
+**Mechanism confirmed and unaffected by any of this**: `n_eff` (23.2) vs `n_old` (94.3) — a real, robust 4x reduction on real data, reproduced consistently across all attempts.
 
-| | Predicted |
-|---|---|
-| Old (`n_old`-based) | 59.4% |
-| New (`n_eff`-based) | 52.6% |
-| Actual | 83.6% |
-| Real production model | 90.1% |
-
-Both simplified estimates land far below actual, while the real model — despite being the thing with the calibration problem — is much closer to actual, just overshooting on the other side. This means the proxy's own approximation error (missing tier-specific priors, a generic rather than per-player PA/game rate, a simplified probability-conversion formula) is larger than the effect being measured, so **this specific test cannot validate whether the fix improves calibration**, even though it does validate that the underlying mechanism (`n_eff` meaningfully differs from `n_old` on real data) is real. A trustworthy calibration validation needs the real per-cell `prior_strength` (available in `classification.baseline_v6_current`, not yet joined into this simulation) and per-player PA/game rates, not global averages.
+**Calibration validation conclusion**: this cannot be settled by external reconstruction. Each proxy refinement closed one gap (prior_strength, PA-scaling, tier-matching) and exposed the next, without converging — meaning the real tier-assignment logic (opponent-context, role-awareness, z-score skill tiers) is materially different from what can be reconstructed from historical tables alone. **The correct next step is testing the corrected `n_eff` formula from inside the actual pipeline's own tier/prior machinery** (a controlled variant run using the real worker's code against `backtest.*` tables), not further external approximation. This is a different, larger piece of work than has been attempted so far, and hasn't been started.
 
 ## 6. WHAT THIS DOES NOT YET ANSWER
 
