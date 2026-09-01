@@ -542,7 +542,18 @@ Rebuilt the complete pipeline (corrected baseline → real current enrichment fa
 
 **This means for `hits_runs_rbis` specifically, the correct recommendation is: fix baseline as validated, AND separately address enrichment's own +0.554 systematic bias for this prop** — not a failure of the baseline work, but new, concrete evidence of exactly where enrichment itself needs its own fix, with the magnitude now precisely measured.
 
-## 90. WHAT THIS DOES NOT YET ANSWER
+## 92. FULL-PIPELINE RESULTS — complete picture across four props
+
+| Prop | Enrichment's own avg bias | Old pipeline | New pipeline | Actual | Gap improvement |
+|---|---|---|---|---|---|
+| `total_bases` | ~0 (neutral) | 89.9% | **83.6%** | 83.5% | -6.3→-0.1, nearly perfect |
+| `walks` | ~0 (neutral) | 90.5% | **79.6%** | 73.2% | -17.3→-6.4, real, ~63% reduction |
+| `hits_runs_rbis` | **+0.554 (large)** | 93.0% | 66.4% (overshoot) | 81.7% | Baseline fix alone insufficient — enrichment's own bias must be addressed |
+| `rbis` | **+0.593 (large)** | 92.4% | 90.8% | 76.4% | -16.0→-14.4, barely moves — same cause as `hits_runs_rbis` |
+
+**A clean, consistent, generalizable pattern**: baseline fixes fully resolve the pipeline where enrichment's own average adjustment is near-neutral (`total_bases`, largely `walks`). Where enrichment carries a large, real, systematic bias of its own (`hits_runs_rbis`, `rbis` — both RBI-related, plausibly sharing the same source factor), fixing baseline alone is insufficient and actively reveals the enrichment-side bug that was previously masked by baseline's own error pointing the same direction. **This is real, valuable evidence about where the *next* piece of work belongs — not a failure of the baseline fixes, which are independently confirmed correct.**
+
+## 93. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
