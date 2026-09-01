@@ -28,12 +28,6 @@ function pg(env) {
 }
 
 async function fetchNbaOfficialsFromGithub(env) {
-  // Same proven pattern as the other NBA static workers. Source is Wikipedia's "List of NBA
-  // referees" wikitext (via a GitHub Actions scrape, not stats.nba.com - officials are a real,
-  // current roster-style list there, per nba/NBA_PROJECT_LOG.md 2026-09-01). Known, honest gap:
-  // this source has jersey number + name only, no stats.nba.com official ID - official_id here
-  // is a normalized-name-derived key until a real crosswalk exists (expected to come later from
-  // box-score "Officials" data in the delta/game-log layer, which resolves by name).
   const owner = env.GITHUB_OWNER || "Rodantmat";
   const repo = env.GITHUB_REPO || "Alphadog";
   const branch = env.GITHUB_BRANCH || "main";
@@ -58,7 +52,7 @@ async function fetchNbaOfficialsFromGithub(env) {
     try {
       const metaJson = await metaResp.json();
       meta = JSON.parse(atob(String(metaJson.content || "").replace(/\n/g, "")));
-    } catch (_) { /* informational only */ }
+    } catch (_) { }
   }
   if (meta && meta.error) throw new Error(`last_committed_scrape_failed: ${meta.error}`);
 
