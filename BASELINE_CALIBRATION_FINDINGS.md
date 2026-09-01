@@ -240,7 +240,16 @@ where `M` is the stat's real, independently-published stabilization point (not f
 
 **Tighter than the hits fix.** The lesson generalizes: props with real, measurable overdispersion need the correct variance model in addition to correct rate-shrinkage — a genuinely different, stat-specific piece of the same underlying "match the model to reality" principle, not a coincidence.
 
-## 24. WHAT THIS DOES NOT YET ANSWER
+**Same combined approach confirmed on `hits_runs_rbis`** (real dispersion measured: variance/mean=2.20, r=1.361; n=1,751 real legs):
+
+| | Predicted | Actual | Gap |
+|---|---|---|---|
+| Current system | 89.7 | 81.7 | -8.0 |
+| **Corrected (n_eff shrinkage + real NegBinomial r=1.361)** | **84.2** | 81.7 | **-2.5** |
+
+**Four independent props now confirmed** with this combined approach — hits/singles/doubles (recency-only), walks (recency + published M), total_bases and hits_runs_rbis (recency + measured dispersion). This isn't a coincidence at this point; it's a real, generalizable methodology.
+
+## 25. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
