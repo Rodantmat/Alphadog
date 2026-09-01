@@ -21,40 +21,29 @@ The slip-calibration chat found that `est_hp` (final hit probability) is severel
 
 **The actual hit rate flatlines at ~82-83% for every band ≥85%, regardless of how much higher the model claims.** Confirmed on the final enriched output too (nearly identical shape) — enrichment inherits this, it doesn't cause or meaningfully worsen it.
 
-## 2. MECHANISM — SUPERSEDED: the real root cause is upstream, in the metrics layer
+**Checked and ruled out as explanations before finding the real mechanism:**
+- **Not concentrated in one prop type**: uniform 7-19pp miss across all 11 props tested, including Poisson-exact "simple count" props (hits, doubles, home_runs) that the code documents as exactly-computed given their input rate. This means the defect is upstream of the probability-conversion math.
+- **Not symmetric**: the low end (≤30%) is calibrated within 2-8pp, nothing like the 7-19pp high-end miss. Specifically a high-end overconfidence problem, not generic "extremes are noisy."
+- **Not a `more`/`less` side artifact**: 99.4% of the ≥90% band is `less` side, but the small `more`-side subset (n=24) shows a similar-magnitude miss (91.7→83.33) — the mechanism isn't side-specific, `less` legs just trigger it more often.
+- **Not a sample-size effect**: no monotonic relationship between games played and miscalibration severity within the ≥90% band (25-50 games is actually worse than 100+ games). Rules out "insufficient regularization scaling with n" as the sole mechanism.
 
-**Correction (2026-08-29, later same session): capping is the wrong fix.** It patches the symptom (the reported probability) without correcting why the underlying rate estimate reaches extreme values. Investigated further per explicit instruction to look at the classification/metrics level instead.
+## 2. ROOT CAUSE — a metrics-level mismatch, not a shrinkage-math error
 
-**The actual root cause**: traced `shrunkRate`'s inputs back through `classRows` to where `effectiveRate` (called `blended_rate`) is computed, in `stats_hitter/pitcher.metric_snapshots`. This is a weighted average across multiple recency windows:
+**First attempt (superseded): capping the reported probability at ~82-85%.** This closed the pooled gap numerically but was correctly rejected — it patches the symptom without explaining why the rate estimate reaches extreme values, and doesn't fix the underlying logic.
+
+**Actual root cause, traced through the code**: `shrunkRate`'s input rate (`effectiveRate`, called `blended_rate`) is computed in `stats_hitter/pitcher.metric_snapshots` as a weighted average across recency windows:
 
 ```
 "global|recency_weights": { last_5_games: 0.40, last_10_games: 0.30, last_20_games: 0.20, season_to_date: 0.10 }
 ```
 
-**70% of the blended rate's weight comes from just the last 5-10 games; only 10% comes from the full season.** But `effectiveGamesSample` — the value the shrinkage formula uses to decide how much to trust `effectiveRate` — is the raw **season-to-date game count**, not any measure of how much of the blended rate's actual weight sits on thin, recent windows. This is a real mismatch: the shrinkage formula thinks it has (e.g.) 133 games of support behind a rate that's actually 70%-driven by the last 5-10 games.
+**70% of the blended rate's weight comes from just the last 5-10 games; only 10% comes from the full season.** But `effectiveGamesSample` — what the shrinkage formula uses to decide how much to trust `effectiveRate` — is the raw **season-to-date game count**, with no adjustment for how much of the blended rate's actual weight sits on thin, recent windows. The shrinkage formula believes it has (e.g.) 133 games of support behind a rate that's actually 70%-driven by the last 5-10 games.
 
-**Verified with real data** (`stats_hitter.metric_snapshots`, season 2026): real players show exactly the kind of divergence this would exploit — e.g. player 518692's last-5-games rate is 0.364 (on 22 PA) vs. season-to-date 0.267 (572 PA); player 516782 shows the opposite, a cold-stretch dip (0.118 vs 0.220). These swings are real and constant; the metric is *supposed* to be recency-sensitive — the bug is that the confidence/shrinkage step doesn't know it's looking at a recency-sensitive number.
+**Verified with real data** (`stats_hitter.metric_snapshots`): real players show exactly this divergence — player 518692's last-5-games rate is 0.364 (22 PA) vs. season-to-date 0.267 (572 PA); player 516782 shows the opposite, a cold-stretch dip (0.118 vs 0.220). Given measured `prior_strength` is modest (avg 2.72), the shrinkage weight for a typical high-sample leg is `prior_strength/(games+prior_strength)` ≈ **2%** — almost no pull back toward the tier prior, for a rate that may be substantially short-window-driven.
 
-Given measured `prior_strength` is modest (avg 2.72, session-wide), the shrinkage weight for a typical high-sample leg is `prior_strength/(games+prior_strength)` ≈ **2%** — almost no pull back toward the tier prior, for a rate that may be substantially hot-streak-driven.
+## 3. CONFIRMATION — this is regression-to-the-mean, and it targets a specific population
 
-## 3. PROPER FIX — effective sample size, not a cap
-
-Replace `effectiveGamesSample` in the shrinkage formula with a properly-computed **effective sample size** that reflects the actual recency composition of the blended rate, using the standard treatment for a weighted average of estimates with different underlying sample sizes:
-
-```
-n_eff = 1 / Σ(w_i² / n_i)
-```
-where `w_i` are the same normalized recency weights already configured, and `n_i` is each window's own real sample size (matching the rate's denominator field).
-
-**Worked example, using player 518692's real numbers** (last_5: 22 PA; assume proportionally larger n for last_10/last_20; season_to_date: 572 PA; default weights 0.40/0.30/0.20/0.10): `n_eff` ≈ 102 PA ≈ ~24 games-equivalent, vs. the raw season count of 133 games currently used. This changes the shrinkage weight from ≈2.0% to ≈10.2% — roughly 5x more pull toward the tier prior — applied automatically and proportionally to how recency-driven that specific leg's rate actually is, not as a blanket constant. A leg whose blended rate is genuinely season-stable (little divergence between windows) would see `n_eff` close to the raw season count and shrink about the same as today; a leg riding a hot 5-game stretch would correctly shrink much harder.
-
-**This requires two changes, both at the metrics/classification computation stage** (not the final probability formula): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` (or a new field) into the existing `shrunkRate` formula, which itself needs no other change.
-
-**Not yet done**: full simulation of this fix against real historical data (recomputing `n_eff` per leg in the 2026-08-29 calibration test population and re-checking whether the ≥85% band's calibration gap closes), day-level validation, and confirmation this doesn't over-shrink genuinely well-supported legs elsewhere in the distribution.
-
-## 4. CONFIRMATION — the fix targets exactly the right population
-
-Tested directly against real historical data (n=434, `hits`/`singles`/`doubles` props, `clean_baseline_hp≥85`): bucketed legs by divergence between their real recent-window rate (10-day trailing, computed from `stats_hitter.game_logs`, point-in-time correct) and their real season-to-date rate.
+Tested directly against real historical data (n=434, `hits`/`singles`/`doubles` props, `clean_baseline_hp≥85`): bucketed legs by divergence between their real recent-window rate (10-day trailing, computed point-in-time-correct from `stats_hitter.game_logs`) and their real season-to-date rate.
 
 | Bucket | n | Predicted | Actual | Gap |
 |---|---|---|---|---|
@@ -62,52 +51,30 @@ Tested directly against real historical data (n=434, `hits`/`singles`/`doubles` 
 | **Cold streak** (recent rate well below season) | 117 | 90.2 | **74.36** | **-15.8 (worst)** |
 | Hot streak (recent rate well above season) | 11 | 89.1 | 81.82 | -7.3 |
 
-**This is a more precise finding than "hot streaks cause overconfidence"**: it's regression-to-the-mean in general — any large short-window divergence from the season rate, in either direction, is disproportionately noise that reverts, and the current formula has no way to discount it. The "cold streak" bucket dominates numerically here because most of the ≥85% population is `less`-side bets, where a recent cold stretch is exactly what a recency-heavy blend reads as "safest" — but that recent coldness is often noise about to regress upward, causing the `less` bet to fail more than the model expects.
+**More precise than "hot streaks cause overconfidence"**: this is regression-to-the-mean in general — any large short-window divergence from the season rate, in either direction, is disproportionately noise that reverts, and the current formula has no way to discount it. The "cold streak" bucket dominates numerically because most of the ≥85% population is `less`-side bets, where a recent cold stretch is exactly what a recency-heavy blend reads as "safest" — but that recent coldness is often about to regress upward, causing the `less` bet to fail more than the model expects.
 
-**Critically, this confirms the proposed fix self-targets the right population.** The "stable" bucket, already close to well-calibrated, would see `n_eff` ≈ the raw season count under the proposed formula — little to no change. The "cold/hot streak" legs, responsible for most of the ≥85% band's miscalibration, are exactly the legs where `n_eff` would drop sharply below the raw season count, correctly applying much more shrinkage precisely where the rate is least trustworthy. This is not a blanket adjustment that would flatten calibration everywhere — it's proportional to how recency-driven each specific leg's rate actually is.
+**This confirms a proper fix would self-target the right population.** The "stable" bucket, already reasonably calibrated, has little room where a corrected formula would even change anything. The "cold/hot streak" legs — responsible for most of the ≥85% band's miscalibration — are exactly where a properly-computed effective sample size would drop sharply below the raw season count, correctly applying more shrinkage precisely where the rate is least trustworthy.
 
+## 4. PROPER FIX — effective sample size, not a cap
 
-Traced to `alphadog-v2-phase3a-first-inning-pitcher-context.js` line 9120:
-```js
-const hpSampleCeiling = Math.min(0.99, 0.99 - 0.30 * Math.exp(-nForVariance / 25));
-const hp = Math.max(1 - hpSampleCeiling, Math.min(hpSampleCeiling, wilsonClampedHp));
+Replace `effectiveGamesSample` in the shrinkage formula with a properly-computed **effective sample size** reflecting the actual recency composition of the blended rate, using the standard treatment for a weighted average of estimates with different underlying sample sizes:
+
 ```
+n_eff = 1 / Σ(w_i² / n_i)
+```
+where `w_i` are the same normalized recency weights already configured, and `n_i` is each window's own real sample size (matching the rate's denominator field).
 
-This ceiling was already added once specifically to fight overconfidence — the code's own comment documents catching a worse version of this exact bug on 2026-08-19 (n=23 games producing 95-100% HP identically across every line from 12.5 to 45.5). But **the ceiling's asymptote is 0.99**, built on the assumption that enough games justifies near-certainty.
+**Worked example, using player 518692's real numbers** (last_5: 22 PA; season_to_date: 572 PA; default weights 0.40/0.30/0.20/0.10): `n_eff` ≈ 102 PA ≈ ~24 games-equivalent, vs. the raw season count of 133 games currently used. This changes the shrinkage weight from ≈2.0% to ≈10.2% — roughly 5x more pull toward the tier prior — applied automatically and proportionally to how recency-driven that specific leg's rate actually is, not as a blanket constant. A leg whose blended rate is genuinely season-stable would see `n_eff` close to the raw season count and shrink about the same as today.
 
-**The data says the true achievable ceiling is ~82%, not 99%, and this holds regardless of sample size.** Checked directly:
+**This requires two changes, both at the metrics/classification computation stage** (not the final probability formula, which needs no change): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` into the existing `shrunkRate` formula.
 
-| Sample size (within ≥90% predicted) | n | Predicted | Actual |
-|---|---|---|---|
-| <25 games | 148 | 93.9 | 84.46 |
-| 25-50 games | 290 | 94.1 | 75.52 |
-| 50-100 games | 1,775 | 93.3 | 84.62 |
-| 100+ games | 1,878 | 92.8 | 81.58 |
+## 5. WHAT THIS DOES NOT YET ANSWER
 
-No monotonic sample-size relationship — the miscalibration is bad at every n, including 100+ games. **This rules out "insufficient regularization scaling with n" as the sole mechanism** and points further upstream: the ceiling formula conflates "confident in the estimate" (which genuinely improves with n) with "the true rate can approach 100%" (which real single-game outcomes don't support, regardless of n, due to irreducible game-to-game variance — weather, matchups, day-to-day form).
+1. **Full end-to-end simulation of the corrected formula** — recomputing `n_eff` per window per historical leg, re-running the full `shrunkRate` → model-conversion → final-probability chain, and re-checking whether the ≥85% band's calibration gap closes in aggregate. So far only the *mechanism* and its *targeting* have been confirmed with real data, not the full corrected pipeline output.
+2. **Whether the fix should vary by prop** — the per-prop breakdown (see prior session data) showed some spread even within the ≥90% band (home_runs actual 87.85% vs rbis actual 73.96%), suggesting prop-specific recency-weight tuning might outperform one global weight scheme.
+3. Full day-level block bootstrap validation (95% CI, leave-one-out) on the corrected formula has not been run.
+4. Historical validation is constrained by `stats_hitter/pitcher.metric_snapshots` holding only 1 row per player/window (current-state only, no retained history) — window-level historical sample sizes must be re-derived from `game_logs` directly for any full backtest, which is feasible (as done for the confirmation test above) but has not yet been done end-to-end.
 
-**Checked and ruled out as explanations:**
-- **Not concentrated in one prop type**: uniform 7-19pp miss across all 11 props tested, including Poisson-exact "simple count" props (hits, doubles, home_runs) that the code documents as exactly-computed given their input rate. This means the defect is upstream of the probability-conversion math — most likely in how `shrunkRate` itself gets estimated for legs that end up in the extreme tail — not in the Poisson/Normal conversion formulas themselves.
-- **Not symmetric**: the low end (≤30%) is calibrated within 2-8pp, nothing like the 7-19pp high-end miss. This is specifically a high-end overconfidence problem, not a generic "extremes are noisy" issue.
-- **Not a `more`/`less` side artifact**: 99.4% of the ≥90% band is `less` side (naturally reaches extreme confidence more often given typical line-setting), but the small `more`-side subset (n=24) shows a similar-magnitude miss (91.7→83.33) — the mechanism isn't side-specific, `less` legs just trigger it more often.
+## 6. STATUS
 
-## 3. SIMULATED FIX
-
-Simulated capping the observed baseline value directly (approximating what a corrected ceiling formula would have produced) — since capping is monotonic, it cannot hurt rank-based discrimination, only recalibrates the absolute reported probability. Given actual accuracy is already flat throughout the 85-99% range, the model's own claimed differentiation within that range doesn't reflect real signal, so capping loses no genuine discriminative information.
-
-| Cap tested | Predicted (avg) | Actual | Gap |
-|---|---|---|---|
-| 85% | 85.0 | 82.37 | 2.6 |
-| **82%** | **82.00** | **81.51** | **0.49** |
-
-**82% is a strong, empirically-validated candidate for the corrected ceiling asymptote**, replacing the current 0.99. Day-level check (19 days, ≥20 legs/day): mean gap 2.02pp (down from 9.7-13.8pp), SD 4.36 — real day-to-day noise remains (expected, given thin daily samples at this extreme), but the average calibration is dramatically improved.
-
-## 4. WHAT THIS DOES NOT YET ANSWER
-
-1. **Why does `shrunkRate` (or the empirical-distribution/normal-model path) produce extreme raw estimates in the first place**, uniformly across prop types and sample sizes? The ceiling is a backstop; the more root-cause question is whether `prior_strength`/shrinkage itself is under-regularizing for whatever subset of legs ends up in this tail — this session separately found `prior_strength` values are modest (avg 2.72, max 11.88, never near the theoretical cap of 100), which may itself be worth investigating as a contributing cause.
-2. **Whether 82% is the single right constant, or whether the true ceiling varies meaningfully by prop** — the per-prop breakdown showed some spread (home_runs actual 87.85% vs rbis actual 73.96% within the same ≥90% predicted band), suggesting a per-prop-calibrated ceiling might outperform one global constant. Not yet tested.
-3. Full day-level block bootstrap validation (95% CI, leave-one-out) on the proposed 82% cap has not been run — only a pooled test and a preliminary day-level gap check.
-
-## 5. STATUS
-
-**Backtest simulation only. Nothing deployed, nothing backfilled to production tables.** Per the baseline being explicitly out-of-scope for direct modification without sign-off, and per the standing "research → simulate → only then consider live" process: this needs full day-level bootstrap validation, the per-prop ceiling question resolved, and explicit sign-off from the principal and the slip-calibration chat before any change to the live baseline formula is even drafted.
+**Backtest simulation and code-level root-cause analysis only. Nothing deployed, nothing backfilled to production tables.** Per the baseline being explicitly out-of-scope for direct modification without sign-off, and per the standing "research → simulate → only then consider live" process: this needs the full end-to-end simulation (item 1 above), day-level bootstrap validation, and explicit sign-off from the principal and the slip-calibration chat before any change to the live baseline formula is even drafted.
