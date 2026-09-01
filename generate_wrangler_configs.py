@@ -126,7 +126,10 @@ def make_config(worker_name, include_services=False):
             {"binding": "NBA_STATIC_TEAMS_WORKER", "service": "alphadog-v2-nba-static-teams"},
             {"binding": "NBA_STATIC_PLAYERS_WORKER", "service": "alphadog-v2-nba-static-players"},
             {"binding": "NBA_STATIC_ARENAS_WORKER", "service": "alphadog-v2-nba-static-arenas"},
-            {"binding": "NBA_STATIC_OFFICIALS_WORKER", "service": "alphadog-v2-nba-static-officials"}
+            {"binding": "NBA_STATIC_OFFICIALS_WORKER", "service": "alphadog-v2-nba-static-officials"},
+            {"binding": "NBA_STATIC_PLAYER_BIO_WORKER", "service": "alphadog-v2-nba-static-player-bio"},
+            {"binding": "NBA_STATIC_PLAYER_TRACKING_WORKER", "service": "alphadog-v2-nba-static-player-tracking"},
+            {"binding": "NBA_STATIC_TEAM_STATS_WORKER", "service": "alphadog-v2-nba-static-team-stats"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
