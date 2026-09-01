@@ -68,7 +68,24 @@ where `w_i` are the same normalized recency weights already configured, and `n_i
 
 **This requires two changes, both at the metrics/classification computation stage** (not the final probability formula, which needs no change): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` into the existing `shrunkRate` formula.
 
-## 5. WHAT THIS DOES NOT YET ANSWER
+## 5. SCOPED END-TO-END SIMULATION — mechanism confirmed, calibration claim not yet provable at this fidelity
+
+Ran a scoped (not full-dataset) simulation on the same 215-leg population (`hits`/`singles`/`doubles`, `clean_baseline_hp≥85`, `less` side): computed real trailing 5/10/20-game and season windows from `stats_hitter.game_logs` (point-in-time correct), the real blended rate using production's actual weights, and `n_eff` via the formula in §4.
+
+**Mechanism confirmed at scale**: average `n_old` (raw season games) = 94.3; average `n_eff` = 23.2 — a **4x reduction**, matching the single-player illustration in §4 almost exactly. This is a real, data-verified effect, not a hypothetical.
+
+**Calibration claim not provable at this fidelity — reported honestly rather than overstated.** Converting the corrected rate to an actual hit probability (via a simplified Poisson model, a single global `prior_strength=2.72` in place of the real per-cell value, and an average 3.77 PA/game in place of per-player figures) gives:
+
+| | Predicted |
+|---|---|
+| Old (`n_old`-based) | 59.4% |
+| New (`n_eff`-based) | 52.6% |
+| Actual | 83.6% |
+| Real production model | 90.1% |
+
+Both simplified estimates land far below actual, while the real model — despite being the thing with the calibration problem — is much closer to actual, just overshooting on the other side. This means the proxy's own approximation error (missing tier-specific priors, a generic rather than per-player PA/game rate, a simplified probability-conversion formula) is larger than the effect being measured, so **this specific test cannot validate whether the fix improves calibration**, even though it does validate that the underlying mechanism (`n_eff` meaningfully differs from `n_old` on real data) is real. A trustworthy calibration validation needs the real per-cell `prior_strength` (available in `classification.baseline_v6_current`, not yet joined into this simulation) and per-player PA/game rates, not global averages.
+
+## 6. WHAT THIS DOES NOT YET ANSWER
 
 1. **Full end-to-end simulation of the corrected formula** — recomputing `n_eff` per window per historical leg, re-running the full `shrunkRate` → model-conversion → final-probability chain, and re-checking whether the ≥85% band's calibration gap closes in aggregate. So far only the *mechanism* and its *targeting* have been confirmed with real data, not the full corrected pipeline output.
 2. **Whether the fix should vary by prop** — the per-prop breakdown (see prior session data) showed some spread even within the ≥90% band (home_runs actual 87.85% vs rbis actual 73.96%), suggesting prop-specific recency-weight tuning might outperform one global weight scheme.
