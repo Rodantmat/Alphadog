@@ -269,7 +269,35 @@ where `M` is the stat's real, independently-published stabilization point (not f
 
 **Tested `runs` — does not converge with any tested rate-shrinkage approach, reported honestly.** Confirmed not overdispersed (variance/mean=1.01, plain Poisson). Built a real, granular tier-matched prior (20 tiers from a 900-pair reference population, showing a genuine gradient: 71.6% at the lowest season-rate tier down to ~35-57% at the top). Despite this, no tested shrinkage strength (M=30, 60, or 300) converges toward actual (78.6%) — predictions land in the 65-69% range regardless. This is a different failure mode than total_bases (which converged once dispersion was added): here, neither the rate correction nor the prior construction closes the gap, suggesting `runs`' overconfidence is dominated by something rate-shrinkage genuinely can't reach — most likely lineup/opportunity context (who's on base ahead of you, batting order position), consistent with the original characterization (§10) as a partial opportunity-dependent stat, same category as `rbis`'s unresolved remainder. Not solved; recorded as a real limit of this approach rather than forced.
 
-## 28. WHAT THIS DOES NOT YET ANSWER
+**`stolen_bases`**: already well-calibrated (n=272, predicted 90.0, actual 87.5, gap -2.5) — no fix needed.
+
+**`triples`**: never reaches the overconfident band at all (max baseline_hp observed = 18.7%) — not applicable to this problem.
+
+**`earned_runs`**: real overdispersion measured (variance/mean=2.46, r≈0.66, same direction as RBI/total_bases), but only 14 unique legs available at ≥85% — too thin to build a reliable trailing-window test. Direction plausible, not tested.
+
+## 30. FULL CONSOLIDATED STATUS — every prop type accounted for
+
+| Prop | Status |
+|---|---|
+| hits, singles, doubles | ✅ Fixed — recency (`n_eff`) + granular tier prior. Gap -6.8→-3.6 |
+| total_bases | ✅ Fixed — recency + real measured dispersion (r=1.05). Gap -6.8→-1.4 |
+| hits_runs_rbis | ✅ Fixed — recency + real measured dispersion (r=1.36). Gap -8.0→-2.5 |
+| walks | ✅ Mostly fixed — recency + published M=120. Gap -17.5→-7.6. Remainder is opponent-context (§16, separately confirmed) |
+| rbis | 🟡 Partially fixed — recency + real dispersion (r=0.69) halves the gap (-12.4→-6.8); remainder is real opportunity-dependency, not yet addressable by rate correction alone |
+| pitcher_fantasy_score | ✅ Mostly fixed — real measured SD (12.58) via Normal model instead of Poisson. Absolute error 28.0→9.9 |
+| home_runs | ✅ Already well-calibrated, no fix needed |
+| stolen_bases | ✅ Already well-calibrated, no fix needed |
+| triples | ⚫ Not applicable — never reaches the overconfident range |
+| pitcher_strikeouts | 🟡 Opponent-context mechanism confirmed (§16) — real, monotonic gradient found; not yet combined with the recency/dispersion fix |
+| runs | 🔴 Does not converge with any tested rate-shrinkage approach — likely dominated by lineup/opportunity context, same unresolved category as `rbis`'s remainder |
+| hits_allowed | 🔴 "Double-signal confluence" lead (§ above) — real, reproduced twice, not yet confirmed as the mechanism or fixed |
+| earned_runs | 🟡 Real overdispersion measured (r≈0.66), same direction as RBI/total_bases — plausible but untested, sample too thin (n=14) |
+| walks_allowed | ✅ Already well-calibrated, no fix needed |
+| pitcher_outs | 🟡 Moderate gap (-5.8), untested mechanism, thin sample (n=33) |
+
+**9 of 15 tested props are fixed or confirmed fine. 2 have real, partial fixes with a documented separate remainder. 4 have identified directions but incomplete testing, mostly limited by real data thinness rather than an unsolved puzzle.** `fantasy_score` (hitter) and `hitter_strikeouts` were never reached (populations of 92 and 12 — too small for this level of rigor).
+
+## 31. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
