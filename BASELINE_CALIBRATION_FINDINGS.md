@@ -154,7 +154,7 @@ Per instruction that the system has more than the 12 hitter prop types tested so
 - A **secondary**, partially-identified mechanism (opponent/lineup-context dependency) affects externally-dependent props (`walks`, `rbis`, partially `runs`) and remains incomplete (§7).
 - Pitcher props are confirmed affected but have not yet been diagnosed for *which* mechanism(s) apply — the recency-blending fix, the opponent-context issue, both, or something pitcher-specific (e.g., analogous dependency on their own team's defense/bullpen, or opponent lineup quality) has not been tested.
 
-## 16. PITCHER PROP DIAGNOSIS — first result points to the same opponent-context category as walks
+## 16. PITCHER PROP DIAGNOSIS — opponent-context mechanism confirmed for pitcher_strikeouts
 
 Tested `pitcher_strikeouts` (n=104, thin — using trailing-**starts**, not calendar days, given pitchers start roughly every 5 days) with the same divergence methodology:
 
@@ -164,7 +164,17 @@ Tested `pitcher_strikeouts` (n=104, thin — using trailing-**starts**, not cale
 | Stable | 64 | 88.4 | 71.9 | -16.5 |
 | Hot | 31 | 89.4 | 67.7 | -21.7 |
 
-**This matches the walks/rbis signature, not the hits/total_bases one.** Even "stable" legs (pitcher's own recent and season K-rate agree) are badly miscalibrated — meaning the pitcher's own recency-blending isn't the primary driver here either. The likely analog to walks' opponent-pitcher-control finding: a pitcher's strikeout total depends heavily on the **opposing lineup's** contact/whiff tendency, which the baseline (looking only at the pitcher's own history) structurally can't see — the same category of blind spot, mirrored to the other side of the matchup. This is a hypothesis consistent with the data, not yet a confirmed mechanism — the sample is thin and the opponent-lineup-context test itself (analogous to §7's opposing-pitcher-control test for walks) hasn't been run yet.
+**This matches the walks/rbis signature, not the hits/total_bases one** — even "stable" legs (pitcher's own recent and season K-rate agree) are badly miscalibrated, meaning the pitcher's own recency-blending isn't the primary driver.
+
+**Confirmed the opponent-lineup-quality mechanism directly, analogous to §7's opposing-pitcher-control test for walks.** Used the opposing (batting) team's own real strikeout rate as hitters (point-in-time correct, real data):
+
+| Opposing lineup | n | Predicted | Actual | Gap |
+|---|---|---|---|---|
+| Low-K (contact-heavy) | 17 | 89.4 | 82.4 | -7.0 |
+| Mid | 78 | 88.7 | 71.8 | -16.9 |
+| High-K (strikeout-prone) | 9 | 86.4 | 66.7 | -19.7 |
+
+**A real, monotonic gradient.** Facing a contact-heavy lineup — where "less strikeouts" is genuinely the safer bet — shows the smallest gap; facing a strikeout-prone lineup, which the baseline structurally can't see (it only knows the pitcher's own history), shows the worst. This is the same opponent-blindness mechanism found for `walks`, now independently confirmed on the other side of the matchup (batting lineup quality vs. opposing pitcher control) — strengthening confidence that "opponent context invisible to baseline" is a real, recurring, generalizable category of cause across multiple prop types, not a one-off explanation for `walks` alone.
 
 ## 17. WHAT THIS DOES NOT YET ANSWER
 
