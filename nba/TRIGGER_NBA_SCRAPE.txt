@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-01T00:50:00Z
-trigger_reason: retry after fixing two bugs - missing `requests` package install (officials script needs the real PyPI package, not curl_cffi's compatible submodule), and a hard-failing git add on a file that didn't get produced
+last_triggered_utc: 2026-09-01T01:05:00Z
+trigger_reason: first run of three new enrichment scrapers - player bio/season profile, player tracking speed/distance, team pace/ratings (all untested, first live attempt)
