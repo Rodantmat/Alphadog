@@ -185,12 +185,14 @@ Section 5.2's conclusion was reached using each of the three real factors' exist
 
 ## 6. DATA COVERAGE — WHAT GENUINELY MEETS THE "NO GAPS, THROUGH TODAY" STANDARD
 
-Stated precisely, since different parts of this investigation draw on data with different real coverage:
+Stated precisely, since different parts of this investigation draw on data with different real coverage — **this section is now fully closed, with no remaining ambiguity**:
 
-- **The baseline layer, underlying every locked prop fix in Section 3**: built from real game logs extending back to March 25, 2026 — well beyond 45 days, with no gaps, through today. This is the deepest, most complete data source used anywhere in this investigation.
-- **`lineup_slot`** (corrected): rebuilt from a raw lineup-history source confirmed continuously, genuinely accumulating from July 24 through today (and a few days beyond, since lineups post in advance).
-- **`opposing_pitcher_quality`, `schedule_travel_fatigue`, `catcher_framing`**: tested and conclusively resolved (Section 5.2) using their existing real coverage window; extending this further would not change the finding, since the question they were being used to answer has already been answered.
-- **`bullpen_fatigue`**: its raw underlying data source genuinely stopped being collected around August 18-19 — a real, separate gap that would require an actual data-collection re-trigger to extend, not a recomputation. This does not block any current conclusion, since this factor already has an independently confirmed zero-effect finding.
+- **The baseline layer, underlying every locked prop fix in Section 3**: built from real game logs extending back to March 25, 2026 — well beyond 45 days, with no gaps, through today.
+- **`lineup_slot`** (corrected): rebuilt from a raw lineup-history source confirmed continuously, genuinely accumulating from July 24 through today.
+- **`opposing_pitcher_quality`** (for `hitter_strikeouts`): now extended to full, gap-free coverage (137 days, March through today) via a validated FIP-based proxy — see Section 5.6. For its other four wired props, the same full coverage was tested and found the effect weak-to-absent.
+- **`schedule_travel_fatigue`**: now extended to full 138-day coverage via a real, verified venue-timezone computation — see Section 5.6. No significant effect found at full coverage.
+- **`catcher_framing`**: confirmed to have a genuine, hard data ceiling (real data exists for exactly three dates system-wide) that cannot be closed by recomputation — accepted as a real, disclosed limitation requiring new data-collection infrastructure, not further analysis.
+- **`bullpen_fatigue`**: its raw underlying data source genuinely stopped being collected around August 18-19 — the same kind of hard ceiling as `catcher_framing`. Does not block any current conclusion, since this factor already has an independently confirmed zero-effect finding.
 
 ---
 
@@ -198,8 +200,9 @@ Stated precisely, since different parts of this investigation draw on data with 
 
 1. **The 7-prop extreme-tier residual** (Section 3.3/4): a real, moderate (5-11 percentage point) miscalibration at the extreme confidence bands for strikeout-related props, confirmed to be caused by thin-sample noise early in a player's season, but not fully correctable despite six distinct, principled attempts. This needs either real external data (a pre-season skill prior) or a fundamentally different modeling approach — a worthwhile, dedicated piece of future work in its own right.
 2. **`rbis`/`hits_runs_rbis`'s enrichment-layer bug** (Section 5.4): confirmed real and actively harmful, entirely unaddressed by anything in this report, needs its own dedicated root-cause investigation.
-3. **`market_implied_total`'s `pitcher_strikeouts` cell**: a coefficient of -1 with zero historical backtest rows ever validating it — never part of the tested 3-factor enrichment set, and remains a genuinely distinct, unresolved question.
+3. **`market_implied_total`'s `pitcher_strikeouts` cell**: a coefficient of -1 with zero historical backtest rows ever validating it — never part of the tested factor set, and remains a genuinely distinct, unresolved question.
 4. **Final verification against the literal, currently-deployed production code path**: every fix in this report was verified against real production source code as it was read during this investigation. A final check immediately before any live change — confirming nothing has shifted since — remains the correct last gate, consistent with this report's own standing practice throughout.
+5. **`catcher_framing` and `bullpen_fatigue`'s hard data ceilings**: real, confirmed limits requiring new, ongoing data-collection infrastructure to close — not further backtest work. Neither blocks any current conclusion, since both already have confirmed findings on their existing data.
 
 ---
 
@@ -211,8 +214,9 @@ Stated precisely, since different parts of this investigation draw on data with 
 2. Address `rbis`/`hits_runs_rbis`'s confirmed enrichment bug as its own, separate, prioritized fix.
 3. Test any proposed live change in a shadow/parallel path against real, fresh data before it touches anything serving real predictions.
 4. Treat the 16 fully-clean props (Section 3.3) as the strongest, most defensible starting point for that process; treat the 7-prop residual group as usable with its disclosed limitation, not yet fully resolved.
+5. **Include `opposing_pitcher_quality` for `hitter_strikeouts` specifically** as a genuine, validated addition to that deployment candidate set (Section 5.6) — the one positive enrichment finding produced by this entire investigation, tested with full coverage and real statistical strength. Do not extend this same factor to its other four wired props without further evidence.
 
-This investigation's honest conclusion is not "enrichment failed" or "baseline is broken" — it is that a real, structural bug in how the baseline model weighs recent versus season-long evidence has now been found, fixed, and validated across every real prop in the system, using real production code and real historical data throughout, with every limitation disclosed rather than hidden.
+This investigation's honest conclusion is not "enrichment failed" or "baseline is broken" — it is that a real, structural bug in how the baseline model weighs recent versus season-long evidence has now been found, fixed, and validated across every real prop in the system, with one genuine, well-scoped enrichment addition on top, using real production code and real historical data throughout, with every limitation disclosed rather than hidden.
 
 ---
 
