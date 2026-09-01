@@ -331,7 +331,18 @@ Per the standing bar (day-level t-test, 95% CI, leave-one-out never negative) no
 
 **Honest, nuanced result**: the direction is robust — leave-one-out never flips negative across any single-day exclusion — but the day-level t-stat doesn't clear the 2.0 bar at this sample size (smaller effect size than `total_bases`, combined with fewer days/legs per day). This is real and consistent, just not yet statistically definitive — more data would likely resolve it, given the direction never wavers.
 
-## 36. WHAT THIS DOES NOT YET ANSWER
+**Extended validation to `walks`** (M=120 fix, n=641, 13 days with ≥20 legs/day):
+
+| Metric | Value |
+|---|---|
+| Days positive | 11 of 13 |
+| Mean improvement | +0.0679 |
+| Day-level t-stat | **4.477** — strongest of any fix tested |
+| Leave-one-out range | **0.0637 to 0.0792**, never crosses zero |
+
+**Fully validated — clears every gate.** Three of five confirmed fixes (`total_bases`, `hits_runs_rbis`, `walks`) now have complete day-level bootstrap validation; `hits`/`singles`/`doubles` shows a robust but not-yet-significant direction (§ above); `pitcher_fantasy_score` remains to be validated this way.
+
+## 37. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
