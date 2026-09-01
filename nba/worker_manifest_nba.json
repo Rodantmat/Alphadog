@@ -6,6 +6,7 @@
     "alphadog-v2-nba-static-officials",
     "alphadog-v2-nba-static-player-bio",
     "alphadog-v2-nba-static-player-tracking",
-    "alphadog-v2-nba-static-team-stats"
+    "alphadog-v2-nba-static-team-stats",
+    "alphadog-v2-nba-static-onoff"
   ]
 }
