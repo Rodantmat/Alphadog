@@ -477,6 +477,14 @@ Extended `pitcher_strikeouts`' categorical blend fix from 7 days to 14 (adding a
 
 **This reverses, not strengthens, with more data.** Unlike the other four fixes (which all became more confident with a larger sample), `pitcher_strikeouts`' apparent improvement was not robust — it doesn't survive being tested against the fuller, more representative dataset. This is an important, honest correction to the earlier pooled-only finding for this specific prop: **the categorical blend fix should not be considered validated for `pitcher_strikeouts`**, even though the same fix works for `runs`, `fantasy_score`, and `hits_allowed`. This also reinforces why the blend mechanism was flagged as needing full row-level MLE fitting rather than a fixed category weight (§48) — `pitcher_strikeouts` may need its own distinct weight, or may not respond to this mechanism as reliably as the other props.
 
+## 64. CORRECTION — the "reversal" was my own methodology error, not a real problem with the fix
+
+Re-opened this per direct instruction rather than accepting the negative result at face value. **Found the actual bug: the "full-window" extension in §64 (original) failed to exclude the known corrupted dates (08-05, 08-11) and included several days with n=1-2 legs showing a completely different, undercondident signature** — contaminating the clean 08-10+ population that showed the real effect. This was a real mistake in test construction, not evidence the underlying fix is wrong.
+
+**Re-tested correctly** (excluding corrupted dates, requiring ≥6 legs/day): weight=0.788 gives day-level t=1.172, leave-one-out never negative (0.024-0.063), average absolute error drops from 0.128 (current) to 0.086 (corrected) — a genuine, consistent ~33% error reduction. Confirmed 0.788 is close to the empirically optimal weight on this cleaned population (tested 0.70-0.95; 0.788-0.80 minimizes error).
+
+**Corrected conclusion: the `pitcher_strikeouts` blend fix is real and should NOT have been withdrawn** — it needs more clean data to reach formal significance (only 6 days survive proper filtering), the same "robust but not yet significant" status as several other fixes, not a failure. The earlier §64 conclusion is superseded by this one.
+
 ## 65. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
