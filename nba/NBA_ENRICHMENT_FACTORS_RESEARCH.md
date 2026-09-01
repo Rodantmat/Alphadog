@@ -62,12 +62,55 @@ Reproduced from the Gemini consultation as a first-pass prioritization, to be ch
 
 ---
 
-## 5. What this means for immediate next steps
+## 5. Status update (2026-09-01) — original next-steps list, now resolved
 
-1. The 4 static entities already built (teams, players, arenas, officials) remain correct and don't change based on this research.
-2. A natural **5th static-differential worker** is now clear: a "player bio + season profile" worker pulling `leaguedashplayerbiostats` (age, physical measurables, draft background, season usage/efficiency) — one call, whole league, genuinely weekly-appropriate.
-3. A natural **6th**: player tracking "archetype" stats via `leaguedashptstats` (speed/distance plus the other `PtMeasureType` families) — same one-call-per-type shape.
-4. Team-level pace/rating (`leaguedashteamstats`) is a natural 7th, small (30 rows) and cheap.
-5. On/off-court differentials, referee crew tendencies, and schedule-density factors are real and worth building, but need their own dedicated research/sourcing pass before implementation — not blocking the simpler wins above.
+Items 2–4 below (player bio, player tracking, team stats) plus on/off-court splits (Section 3's top-flagged item) have all since been built and verified — see Section 6 below for the full current checklist and the second research pass that followed.
+
+1. The 4 static entities already built (teams, players, arenas, officials) remain correct.
+2. ~~A natural 5th static-differential worker~~ → **built**: `alphadog-v2-nba-static-player-bio`.
+3. ~~A natural 6th~~ → **built**: `alphadog-v2-nba-static-player-tracking`.
+4. ~~Team-level pace/rating, a natural 7th~~ → **built**: `alphadog-v2-nba-static-team-stats`.
+5. ~~On/off-court differentials~~ → **built**: `alphadog-v2-nba-static-onoff`. Referee crew tendencies and schedule-density remain real, deferred items — see Section 6.
+
+---
+
+## 6. Second research pass (2026-09-01) — garbage-time filtering, third-party metrics, and the honest limit of the static layer
+
+Per the person's request to keep researching, consulted Gemini again with the 8 already-built sources as context, plus new findings from researching how established platforms (Cleaning the Glass, Dunks & Threes, PBP Stats) operate.
+
+### Garbage-time filtering — real, but requires data we don't have yet
+Cleaning the Glass (industry-standard methodology, Ben Falk) filters blowout endgame minutes from all its stats, since usage rate and shooting efficiency get meaningfully distorted for bench players who see a disproportionate share of their minutes in garbage time. **Gemini's verdict**: this is a real, medium-to-high-priority issue for player props specifically (most acute for deep-bench players whose season stats are almost entirely garbage-time-contaminated), but **fixing it requires play-by-play data, not anything available at the static/weekly layer** — it needs a per-game garbage-time heuristic applied to possession-level logs. **Correctly deferred to Phase 3b**, not something to force into this layer.
+
+### Third-party derived metrics (EPM, LEBRON, RAPTOR-successors) — real signal, but a real access problem
+Gemini rated a well-constructed all-in-one impact metric like Dunks & Threes' EPM as "likely one of the highest predictive-lift single features" available, and called using a public third-party model a normal, legitimate practice (not just building everything from raw box scores).
+
+**However — independently verified, and this changes the plan**: EPM's full/detailed data is a **paid subscription feature** on dunksandthrees.com (a free page shows some values, but programmatic/complete access requires a paid account, per direct research). This is not the same situation as the free, public Wikipedia officials roster or `stats.nba.com`'s free API. **Scraping paywalled content is a real legitimacy question, not just a technical one, and this document does not recommend building against it without the person's explicit decision to pay for access.** Flagged here rather than built past silently.
+
+### Other real gaps surfaced — all require game-log data, not static snapshots
+- **Rolling/recent-form averages (last 5/10/15 games) and EWMA** — Gemini called this probably more predictive than season-long averages for props specifically. Requires game logs (Phase 3b).
+- **Defense-vs-position tables** (what each team concedes to opposing PGs/SGs/etc.) — a classic, high-impact matchup feature. Requires game-log box scores aggregated by opposing player position (Phase 3b).
+- **"Impact of absences" tables** (e.g., when Player X is out, Player Y's usage rises by N%) — an extension of the on/off-court work already built, but requires historical game-by-game lineup data (Phase 3b).
+- **Vegas lines / implied team totals** and **injury status** — both already correctly scoped into the planned daily master-run, not this layer.
+
+### Honest conclusion of this research pass
+The **freely and legitimately sourceable static/weekly layer is now genuinely complete** — every factor that (a) doesn't require game-level/play-by-play data and (b) doesn't require paying for a third-party proprietary model has been identified, sourced, built, and verified (see the checklist below). What remains falls into exactly two buckets: **Phase 3b's incremental/delta game-log layer** (garbage-time adjustment, rolling averages, defense-vs-position, absence-impact tables), or **a paid third-party data decision** (EPM/LEBRON) that needs the person's explicit go-ahead before any scraping is built against it.
+
+### Built-and-verified checklist (current as of 2026-09-01)
+
+| Factor | Worker | Status |
+|---|---|---|
+| Team dictionary | `alphadog-v2-nba-static-teams` | ✅ 30/30 verified |
+| Player dictionary | `alphadog-v2-nba-static-players` | ✅ 582 verified |
+| Arenas | `alphadog-v2-nba-static-arenas` | ✅ 30/30 verified |
+| Officials | `alphadog-v2-nba-static-officials` | ✅ 80/80 verified |
+| Player bio + season profile (age, draft, usage%, TS%) | `alphadog-v2-nba-static-player-bio` | ✅ 582/582 verified |
+| Player tracking speed/distance | `alphadog-v2-nba-static-player-tracking` | ✅ 582/582 verified |
+| Team pace/ratings | `alphadog-v2-nba-static-team-stats` | ✅ 30/30 verified |
+| Player on/off-court net rating splits | `alphadog-v2-nba-static-onoff` | ✅ 582/582 verified |
+| Referee crew tendencies | — | Deferred to Phase 3b (needs per-game officiating data) |
+| Garbage-time-adjusted aggregates | — | Deferred to Phase 3b (needs play-by-play data) |
+| Rolling/recent-form averages | — | Deferred to Phase 3b (needs game logs) |
+| Defense-vs-position splits | — | Deferred to Phase 3b (needs game logs) |
+| Third-party impact metrics (EPM/LEBRON) | — | **Blocked on a paid-subscription decision**, not a technical gap |
 
 ---
