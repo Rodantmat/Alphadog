@@ -135,6 +135,26 @@ Added both scrape steps to the same `nba-scrape.yml` workflow (one push to the e
 
 ---
 
+## 2026-09-01 (cont'd) — 3 new enrichment workers built, deployed, and verified (player bio, player tracking, team stats)
+
+Per the person's "mine it, backfill it, continue" instruction, built all 3 workers identified in the enrichment-factors research doc, using the exact same proven pattern (GitHub Actions curl_cffi scrape → committed JSON → Worker reads via Contents API → Postgres → independent verification):
+
+- **`alphadog-v2-nba-static-player-bio`**: `leaguedashplayerbiostats`, one call/whole league. Updates `nba_ref.players` (added `age`, `college`, `country`, `draft_year`, `draft_round`, `draft_number` columns) and writes `nba_stats.player_season_profile` (usage%, TS%, net rating, etc.) - **582/582 players, verified independently**.
+- **`alphadog-v2-nba-static-player-tracking`**: `leaguedashptstats` (`PtMeasureType=SpeedDistance`), one call/whole league - real in-game speed/distance tracking, the actual "speed" factor requested. Writes `nba_stats.player_tracking_profile` - **582/582, verified independently**.
+- **`alphadog-v2-nba-static-team-stats`**: `leaguedashteamstats` (Advanced), one call/all 30 teams - pace, off/def/net rating. Writes `nba_team.season_profile` - **30/30, verified independently**.
+
+**Two real bugs found and fixed**:
+1. `leaguedashteamstats` returned a genuine HTTP 500 with a minimal param set - `stats.nba.com` requires the *full* documented parameter list (many as explicit empty strings) or it rejects the request outright. Fixed by matching the exact param set `nba_api`'s own docs use.
+2. The player-bio worker crashed with `invalid input syntax for type integer: "Undrafted"` - some players have the literal string `"Undrafted"` in draft fields instead of a number. Fixed with a defensive `toIntOrNull()` coercion applied to every numeric field written to Postgres, not just the one that crashed.
+
+**Spot-checked real values, not just row counts**: LeBron James (age 41, height 81in/6'9", draft year 2003, college "None" - correct, he went straight from high school) and Victor Wembanyama (age 22, height 88in/7'4", draft year 2023, college "None" - correct, he played in France) both came back exactly right. Nikola Jokić's row exists correctly too - an initial spot-check query missed him only because his name has a diacritic (`Jokić` vs `Jokic`), not a data bug.
+
+**All 7 static-differential workers are now real, live, and independently verified**: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats. The full pipeline remains zero-manual-intervention end to end.
+
+**Next**: the on/off-court "with/without you" splits and referee-crew-tendency factors flagged by Gemini as high-impact but not yet source-verified, then Phase 3b's incremental/delta game-log layer (which several of these weekly aggregates will eventually need to be cross-checked against once real game logs exist).
+
+---
+
 ## 2026-09-01 (cont'd) — Enrichment-factors research pass complete: `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md`
 
 Per the person's explicit request (web research + mandatory Gemini consultation): researched what real, weekly-appropriate static/semi-static enrichment data exists beyond the 4 core entities. Found real, confirmed endpoints:
