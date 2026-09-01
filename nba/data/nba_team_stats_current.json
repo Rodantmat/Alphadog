@@ -1,3 +1,304 @@
 {
-  "teams": []
+  "teams": [
+    {
+      "team_id": 1610612737,
+      "gp": 82,
+      "w": 46,
+      "l": 36,
+      "pace": 102.5,
+      "off_rating": 115.0,
+      "def_rating": 112.9,
+      "net_rating": 2.2
+    },
+    {
+      "team_id": 1610612738,
+      "gp": 82,
+      "w": 56,
+      "l": 26,
+      "pace": 95.58,
+      "off_rating": 120.0,
+      "def_rating": 111.7,
+      "net_rating": 8.3
+    },
+    {
+      "team_id": 1610612751,
+      "gp": 82,
+      "w": 20,
+      "l": 62,
+      "pace": 97.6,
+      "off_rating": 108.2,
+      "def_rating": 118.2,
+      "net_rating": -10.0
+    },
+    {
+      "team_id": 1610612766,
+      "gp": 82,
+      "w": 44,
+      "l": 38,
+      "pace": 97.59,
+      "off_rating": 118.4,
+      "def_rating": 113.5,
+      "net_rating": 4.9
+    },
+    {
+      "team_id": 1610612741,
+      "gp": 82,
+      "w": 31,
+      "l": 51,
+      "pace": 103.22,
+      "off_rating": 112.1,
+      "def_rating": 117.4,
+      "net_rating": -5.3
+    },
+    {
+      "team_id": 1610612739,
+      "gp": 82,
+      "w": 52,
+      "l": 30,
+      "pace": 100.7,
+      "off_rating": 118.3,
+      "def_rating": 114.1,
+      "net_rating": 4.1
+    },
+    {
+      "team_id": 1610612742,
+      "gp": 82,
+      "w": 26,
+      "l": 56,
+      "pace": 102.62,
+      "off_rating": 110.3,
+      "def_rating": 115.5,
+      "net_rating": -5.2
+    },
+    {
+      "team_id": 1610612743,
+      "gp": 82,
+      "w": 54,
+      "l": 28,
+      "pace": 99.49,
+      "off_rating": 121.2,
+      "def_rating": 116.0,
+      "net_rating": 5.2
+    },
+    {
+      "team_id": 1610612765,
+      "gp": 82,
+      "w": 60,
+      "l": 22,
+      "pace": 99.88,
+      "off_rating": 117.3,
+      "def_rating": 108.9,
+      "net_rating": 8.4
+    },
+    {
+      "team_id": 1610612744,
+      "gp": 82,
+      "w": 37,
+      "l": 45,
+      "pace": 100.05,
+      "off_rating": 113.8,
+      "def_rating": 114.4,
+      "net_rating": -0.5
+    },
+    {
+      "team_id": 1610612745,
+      "gp": 82,
+      "w": 52,
+      "l": 30,
+      "pace": 96.98,
+      "off_rating": 117.5,
+      "def_rating": 112.1,
+      "net_rating": 5.4
+    },
+    {
+      "team_id": 1610612754,
+      "gp": 82,
+      "w": 19,
+      "l": 63,
+      "pace": 101.78,
+      "off_rating": 110.1,
+      "def_rating": 117.9,
+      "net_rating": -7.8
+    },
+    {
+      "team_id": 1610612746,
+      "gp": 82,
+      "w": 42,
+      "l": 40,
+      "pace": 97.29,
+      "off_rating": 116.3,
+      "def_rating": 115.2,
+      "net_rating": 1.1
+    },
+    {
+      "team_id": 1610612747,
+      "gp": 82,
+      "w": 53,
+      "l": 29,
+      "pace": 99.22,
+      "off_rating": 117.0,
+      "def_rating": 115.5,
+      "net_rating": 1.5
+    },
+    {
+      "team_id": 1610612763,
+      "gp": 82,
+      "w": 25,
+      "l": 57,
+      "pace": 101.69,
+      "off_rating": 112.4,
+      "def_rating": 118.4,
+      "net_rating": -6.0
+    },
+    {
+      "team_id": 1610612748,
+      "gp": 82,
+      "w": 43,
+      "l": 39,
+      "pace": 104.22,
+      "off_rating": 115.8,
+      "def_rating": 113.6,
+      "net_rating": 2.1
+    },
+    {
+      "team_id": 1610612749,
+      "gp": 82,
+      "w": 32,
+      "l": 50,
+      "pace": 98.33,
+      "off_rating": 112.2,
+      "def_rating": 118.3,
+      "net_rating": -6.1
+    },
+    {
+      "team_id": 1610612750,
+      "gp": 82,
+      "w": 49,
+      "l": 33,
+      "pace": 101.5,
+      "off_rating": 115.6,
+      "def_rating": 112.5,
+      "net_rating": 3.1
+    },
+    {
+      "team_id": 1610612740,
+      "gp": 82,
+      "w": 26,
+      "l": 56,
+      "pace": 101.37,
+      "off_rating": 113.3,
+      "def_rating": 117.6,
+      "net_rating": -4.4
+    },
+    {
+      "team_id": 1610612752,
+      "gp": 82,
+      "w": 53,
+      "l": 29,
+      "pace": 97.71,
+      "off_rating": 118.7,
+      "def_rating": 112.3,
+      "net_rating": 6.4
+    },
+    {
+      "team_id": 1610612760,
+      "gp": 82,
+      "w": 64,
+      "l": 18,
+      "pace": 100.37,
+      "off_rating": 117.6,
+      "def_rating": 106.5,
+      "net_rating": 11.1
+    },
+    {
+      "team_id": 1610612753,
+      "gp": 82,
+      "w": 45,
+      "l": 37,
+      "pace": 100.56,
+      "off_rating": 114.2,
+      "def_rating": 113.6,
+      "net_rating": 0.6
+    },
+    {
+      "team_id": 1610612755,
+      "gp": 82,
+      "w": 45,
+      "l": 37,
+      "pace": 100.39,
+      "off_rating": 114.3,
+      "def_rating": 114.4,
+      "net_rating": -0.1
+    },
+    {
+      "team_id": 1610612756,
+      "gp": 82,
+      "w": 45,
+      "l": 37,
+      "pace": 98.14,
+      "off_rating": 114.2,
+      "def_rating": 112.9,
+      "net_rating": 1.4
+    },
+    {
+      "team_id": 1610612757,
+      "gp": 82,
+      "w": 42,
+      "l": 40,
+      "pace": 101.63,
+      "off_rating": 113.1,
+      "def_rating": 113.5,
+      "net_rating": -0.4
+    },
+    {
+      "team_id": 1610612758,
+      "gp": 82,
+      "w": 22,
+      "l": 60,
+      "pace": 100.12,
+      "off_rating": 110.6,
+      "def_rating": 120.3,
+      "net_rating": -9.7
+    },
+    {
+      "team_id": 1610612759,
+      "gp": 82,
+      "w": 62,
+      "l": 20,
+      "pace": 100.72,
+      "off_rating": 118.7,
+      "def_rating": 110.4,
+      "net_rating": 8.4
+    },
+    {
+      "team_id": 1610612761,
+      "gp": 82,
+      "w": 46,
+      "l": 36,
+      "pace": 99.22,
+      "off_rating": 115.0,
+      "def_rating": 112.1,
+      "net_rating": 2.9
+    },
+    {
+      "team_id": 1610612762,
+      "gp": 82,
+      "w": 22,
+      "l": 60,
+      "pace": 103.54,
+      "off_rating": 112.7,
+      "def_rating": 120.8,
+      "net_rating": -8.2
+    },
+    {
+      "team_id": 1610612764,
+      "gp": 82,
+      "w": 17,
+      "l": 65,
+      "pace": 102.49,
+      "off_rating": 109.7,
+      "def_rating": 121.5,
+      "net_rating": -11.8
+    }
+  ]
 }
