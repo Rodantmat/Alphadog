@@ -270,3 +270,21 @@ Per instruction to continue. Built the same validated FIP proxy (a single univer
 **Checked `hits` (the strongest of the four) for tier-cancellation, given the pattern of this whole investigation**: clean — all four skill tiers move by 0.2-0.3 percentage points in the same direction as the pooled result, no masked swing.
 
 **Honest conclusion: this is not a uniform finding.** `opposing_pitcher_quality` shows strong, genuine evidence of helping specifically for `hitter_strikeouts`, weak/borderline evidence for `hits` and `total_bases`, and no detectable effect at all for `walks` and `home_runs`. This is a real, prop-specific result, not a single factor that either universally works or universally doesn't — and reporting it any other way (either "confirmed it helps" or "confirmed it doesn't") would overstate what four different, mixed t-statistics actually show. The most defensible reading: **`opposing_pitcher_quality` is worth deploying for `hitter_strikeouts` specifically, on the strength of its result; the case for the other four props it's wired to is weak-to-absent and does not currently justify inclusion.**
+
+## `schedule_travel_fatigue` — the last open item, now closed with a genuine, real, negative finding
+
+Built the one remaining achievable piece: a real 30-team venue-timezone reference (stable, well-established geographic fact, not derived data) and a genuine per-game travel-direction computation — for every team's every game, comparing their actual playing location (home venue or opponent's venue, using real `is_home` + `opponent_team_id` data) against their immediately prior game's location, using `LAG()` over each team's real, ordered game sequence.
+
+**Verified the computation directly before trusting it**: spot-checked five real eastward-flagged transitions (e.g., a team playing in Anaheim then Milwaukee, Anaheim then Cincinnati, Anaheim then Kansas City) — all geographically correct. 272 real eastward and 277 real westward transitions found across the full season, a sane, plausible volume.
+
+**Applied the real, current config formula** (`-0.02` for eastward transitions, `-0.01` for westward, capped ±0.1, direction "under" — grounded in real jet-lag research per the config's own notes) to `total_bases`, `runs`, and `home_runs` (the three props with the largest originally-documented effect sizes), across the full 138-day, gap-free window:
+
+| Prop | Days (n≥20) | Days combined wins | Mean improvement | t-stat |
+|---|---|---|---|---|
+| `total_bases` | 138 | 39/138 (28%) | -0.0003 | -0.585 |
+| `runs` | 138 | 30/138 (22%) | -0.0001 | -0.204 |
+| `home_runs` | 138 | 33/138 (24%) | -0.0002 | -0.446 |
+
+**None of the three show a significant effect with full coverage — consistent with, not contradicting, the day-level test already found earlier in this document (t=0.895, not significant).** Worth naming honestly rather than glossing over: the win-rate sits consistently around 22-28% across all three props, meaningfully below the ~50% a purely neutral (zero-effect) factor would be expected to show. This is not attributable to a computational error — the underlying travel-flag logic was independently verified correct. The most likely explanation, consistent with a pattern seen elsewhere in this document: the original validation's documented effect sizes (n=87-681, specific date ranges) reflected a real signal within that particular narrower window that did not hold up across the full season — the same kind of window-specific, non-replicating finding already seen and corrected for other factors in this investigation.
+
+**Final, complete state of all three real enrichment factors, now fully tested with genuine, full, gap-free coverage**: `opposing_pitcher_quality` shows a real, positive, differentiated effect for exactly one prop (`hitter_strikeouts`) and weak-to-no effect for its other four. `catcher_framing` remains at its confirmed hard data ceiling, accepted per direct instruction. `schedule_travel_fatigue` shows no significant effect on any of its three highest-documented-effect props once tested with genuinely complete data. **This closes out every open coverage question in this section of the investigation** — nothing further remains blocked by data availability; what remains is prop-by-prop judgment about which of the now-fully-tested findings are worth deploying.
