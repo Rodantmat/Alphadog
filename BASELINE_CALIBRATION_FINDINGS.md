@@ -446,7 +446,18 @@ Per explicit instruction that all backtest days must be used and findings must h
 
 **Now fully clears the significance bar.** This confirms exactly what more data should do to a real, consistent-direction effect — `hits`/`singles`/`doubles` moves from "robust but not yet significant" to fully validated, joining `walks`, `hits_runs_rbis`, and `total_bases` as the fourth completely proven fix in this investigation.
 
-## 56. WHAT THIS DOES NOT YET ANSWER
+## 58. FULL-WINDOW RE-VALIDATION — `pitcher_fantasy_score`
+
+Extended to the full available population by adding two previously-untested date ranges (07-26→08-09 and 08-26→08-31 — the original test only covered 08-05→08-25), excluding 2 overlapping days to avoid double-counting:
+
+| Metric | Original (17 days) | Full window (25 days) |
+|---|---|---|
+| Day-level t-stat | 1.789 | **2.777** |
+| Leave-one-out | Never negative | Never negative (0.131-0.166) |
+
+**Now fully validated.** `pitcher_fantasy_score` joins `walks`, `hits_runs_rbis`, `total_bases`, and `hits`/`singles`/`doubles` as the fifth completely proven fix — every one of the "robust but not yet significant" results has now cleared the bar once given the full available data, exactly as expected for a real, consistent effect.
+
+## 59. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
