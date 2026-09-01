@@ -21,7 +21,41 @@ The slip-calibration chat found that `est_hp` (final hit probability) is severel
 
 **The actual hit rate flatlines at ~82-83% for every band ≥85%, regardless of how much higher the model claims.** Confirmed on the final enriched output too (nearly identical shape) — enrichment inherits this, it doesn't cause or meaningfully worsen it.
 
-## 2. MECHANISM
+## 2. MECHANISM — SUPERSEDED: the real root cause is upstream, in the metrics layer
+
+**Correction (2026-08-29, later same session): capping is the wrong fix.** It patches the symptom (the reported probability) without correcting why the underlying rate estimate reaches extreme values. Investigated further per explicit instruction to look at the classification/metrics level instead.
+
+**The actual root cause**: traced `shrunkRate`'s inputs back through `classRows` to where `effectiveRate` (called `blended_rate`) is computed, in `stats_hitter/pitcher.metric_snapshots`. This is a weighted average across multiple recency windows:
+
+```
+"global|recency_weights": { last_5_games: 0.40, last_10_games: 0.30, last_20_games: 0.20, season_to_date: 0.10 }
+```
+
+**70% of the blended rate's weight comes from just the last 5-10 games; only 10% comes from the full season.** But `effectiveGamesSample` — the value the shrinkage formula uses to decide how much to trust `effectiveRate` — is the raw **season-to-date game count**, not any measure of how much of the blended rate's actual weight sits on thin, recent windows. This is a real mismatch: the shrinkage formula thinks it has (e.g.) 133 games of support behind a rate that's actually 70%-driven by the last 5-10 games.
+
+**Verified with real data** (`stats_hitter.metric_snapshots`, season 2026): real players show exactly the kind of divergence this would exploit — e.g. player 518692's last-5-games rate is 0.364 (on 22 PA) vs. season-to-date 0.267 (572 PA); player 516782 shows the opposite, a cold-stretch dip (0.118 vs 0.220). These swings are real and constant; the metric is *supposed* to be recency-sensitive — the bug is that the confidence/shrinkage step doesn't know it's looking at a recency-sensitive number.
+
+Given measured `prior_strength` is modest (avg 2.72, session-wide), the shrinkage weight for a typical high-sample leg is `prior_strength/(games+prior_strength)` ≈ **2%** — almost no pull back toward the tier prior, for a rate that may be substantially hot-streak-driven.
+
+## 3. PROPER FIX — effective sample size, not a cap
+
+Replace `effectiveGamesSample` in the shrinkage formula with a properly-computed **effective sample size** that reflects the actual recency composition of the blended rate, using the standard treatment for a weighted average of estimates with different underlying sample sizes:
+
+```
+n_eff = 1 / Σ(w_i² / n_i)
+```
+where `w_i` are the same normalized recency weights already configured, and `n_i` is each window's own real sample size (matching the rate's denominator field).
+
+**Worked example, using player 518692's real numbers** (last_5: 22 PA; assume proportionally larger n for last_10/last_20; season_to_date: 572 PA; default weights 0.40/0.30/0.20/0.10): `n_eff` ≈ 102 PA ≈ ~24 games-equivalent, vs. the raw season count of 133 games currently used. This changes the shrinkage weight from ≈2.0% to ≈10.2% — roughly 5x more pull toward the tier prior — applied automatically and proportionally to how recency-driven that specific leg's rate actually is, not as a blanket constant. A leg whose blended rate is genuinely season-stable (little divergence between windows) would see `n_eff` close to the raw season count and shrink about the same as today; a leg riding a hot 5-game stretch would correctly shrink much harder.
+
+**This requires two changes, both at the metrics/classification computation stage** (not the final probability formula): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` (or a new field) into the existing `shrunkRate` formula, which itself needs no other change.
+
+**Not yet done**: full simulation of this fix against real historical data (recomputing `n_eff` per leg in the 2026-08-29 calibration test population and re-checking whether the ≥85% band's calibration gap closes), day-level validation, and confirmation this doesn't over-shrink genuinely well-supported legs elsewhere in the distribution. The §2/§3 capping approach below is retained in this document as a discarded alternative, not a recommendation — see the correction above.
+
+---
+
+### [SUPERSEDED — capping approach, kept for record only, not recommended]
+
 
 Traced to `alphadog-v2-phase3a-first-inning-pitcher-context.js` line 9120:
 ```js
