@@ -375,7 +375,7 @@ async function toolRunJob(env, args) {
   } else if (bindingName === "DAILY_DELTA_RUNNER_WORKER") {
     body = { ...(extra && typeof extra === "object" ? extra : {}) };
     path = "https://internal.daily-delta-runner/run";
-  } else if (bindingName === "NBA_STATIC_TEAMS_WORKER" || bindingName === "NBA_STATIC_PLAYERS_WORKER" || bindingName === "NBA_STATIC_ARENAS_WORKER" || bindingName === "NBA_STATIC_OFFICIALS_WORKER") {
+  } else if (bindingName === "NBA_STATIC_TEAMS_WORKER" || bindingName === "NBA_STATIC_PLAYERS_WORKER" || bindingName === "NBA_STATIC_ARENAS_WORKER" || bindingName === "NBA_STATIC_OFFICIALS_WORKER" || bindingName === "NBA_STATIC_PLAYER_BIO_WORKER" || bindingName === "NBA_STATIC_PLAYER_TRACKING_WORKER" || bindingName === "NBA_STATIC_TEAM_STATS_WORKER") {
     // NBA expansion (additive only). Same direct-call pattern as BASE_HITTER_GAME_LOGS_WORKER -
     // bypasses control_job_queue + orchestrator entirely (NBA has no orchestrator by design).
     if (job === "probe-sources") {
