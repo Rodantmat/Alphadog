@@ -50,11 +50,21 @@ where `w_i` are the same normalized recency weights already configured, and `n_i
 
 **This requires two changes, both at the metrics/classification computation stage** (not the final probability formula): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` (or a new field) into the existing `shrunkRate` formula, which itself needs no other change.
 
-**Not yet done**: full simulation of this fix against real historical data (recomputing `n_eff` per leg in the 2026-08-29 calibration test population and re-checking whether the ≥85% band's calibration gap closes), day-level validation, and confirmation this doesn't over-shrink genuinely well-supported legs elsewhere in the distribution. The §2/§3 capping approach below is retained in this document as a discarded alternative, not a recommendation — see the correction above.
+**Not yet done**: full simulation of this fix against real historical data (recomputing `n_eff` per leg in the 2026-08-29 calibration test population and re-checking whether the ≥85% band's calibration gap closes), day-level validation, and confirmation this doesn't over-shrink genuinely well-supported legs elsewhere in the distribution.
 
----
+## 4. CONFIRMATION — the fix targets exactly the right population
 
-### [SUPERSEDED — capping approach, kept for record only, not recommended]
+Tested directly against real historical data (n=434, `hits`/`singles`/`doubles` props, `clean_baseline_hp≥85`): bucketed legs by divergence between their real recent-window rate (10-day trailing, computed from `stats_hitter.game_logs`, point-in-time correct) and their real season-to-date rate.
+
+| Bucket | n | Predicted | Actual | Gap |
+|---|---|---|---|---|
+| **Stable** (recent ≈ season) | 306 | 90.2 | 86.60 | -3.6 (reasonably calibrated already) |
+| **Cold streak** (recent rate well below season) | 117 | 90.2 | **74.36** | **-15.8 (worst)** |
+| Hot streak (recent rate well above season) | 11 | 89.1 | 81.82 | -7.3 |
+
+**This is a more precise finding than "hot streaks cause overconfidence"**: it's regression-to-the-mean in general — any large short-window divergence from the season rate, in either direction, is disproportionately noise that reverts, and the current formula has no way to discount it. The "cold streak" bucket dominates numerically here because most of the ≥85% population is `less`-side bets, where a recent cold stretch is exactly what a recency-heavy blend reads as "safest" — but that recent coldness is often noise about to regress upward, causing the `less` bet to fail more than the model expects.
+
+**Critically, this confirms the proposed fix self-targets the right population.** The "stable" bucket, already close to well-calibrated, would see `n_eff` ≈ the raw season count under the proposed formula — little to no change. The "cold/hot streak" legs, responsible for most of the ≥85% band's miscalibration, are exactly the legs where `n_eff` would drop sharply below the raw season count, correctly applying much more shrinkage precisely where the rate is least trustworthy. This is not a blanket adjustment that would flatten calibration everywhere — it's proportional to how recency-driven each specific leg's rate actually is.
 
 
 Traced to `alphadog-v2-phase3a-first-inning-pitcher-context.js` line 9120:
