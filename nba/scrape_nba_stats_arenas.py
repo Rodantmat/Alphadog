@@ -35,16 +35,17 @@ OUTPUT_META_PATH = Path("nba/data/nba_arenas_current_meta.json")
 
 
 def fetch_one(team_id, proxies):
-    url = f"https://stats.nba.com/stats/teaminfocommon?LeagueID=00&Season=2025-26&SeasonType=Regular+Season&TeamID={team_id}"
+    url = f"https://stats.nba.com/stats/teamdetails?TeamID={team_id}"
     last_error = None
     for attempt in range(1, 3):
         try:
             resp = requests.get(url, headers=STATS_HEADERS, timeout=30, proxies=proxies, impersonate="chrome124")
             resp.raise_for_status()
             body = resp.json()
-            rs = (body.get("resultSets") or [{}])[0]
-            headers = rs.get("headers", [])
-            row = (rs.get("rowSet") or [[]])[0]
+            result_sets = body.get("resultSets") or []
+            background = next((rs for rs in result_sets if rs.get("name") == "TeamBackground"), result_sets[0] if result_sets else {})
+            headers = background.get("headers", [])
+            row = (background.get("rowSet") or [[]])[0]
             idx = {h: i for i, h in enumerate(headers)}
 
             def col(name):
@@ -55,8 +56,9 @@ def fetch_one(team_id, proxies):
                 "team_id": team_id,
                 "arena_name": col("ARENA"),
                 "arena_capacity": col("ARENACAPACITY"),
-                "city": col("TEAM_CITY"),
-                "_debug_headers": headers,
+                "city": col("CITY"),
+                "owner": col("OWNER"),
+                "year_founded": col("YEARFOUNDED"),
             }, None
         except Exception as exc:  # noqa: BLE001
             last_error = str(exc)
