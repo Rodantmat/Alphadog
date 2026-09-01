@@ -320,7 +320,18 @@ Per the standing bar (day-level t-test, 95% CI, leave-one-out never negative) no
 
 **Clears every gate in the standing methodology except raw day count**, which is a real data availability limit (only 12 days had ≥30 legs at this precision), not a methodology shortfall. This is the first of the confirmed fixes to receive full bootstrap validation — the recency+dispersion correction for `total_bases` isn't just a plausible mechanism, it's now a properly validated, day-level-robust result.
 
-## 35. WHAT THIS DOES NOT YET ANSWER
+**Extended validation to `hits`/`singles`/`doubles`** (M=850 fix, n=215, 10 days with ≥10 legs/day):
+
+| Metric | Value |
+|---|---|
+| Days positive | 7 of 10 |
+| Mean improvement | +0.0120 |
+| Day-level t-stat | **1.160** — does not clear significance |
+| Leave-one-out range | **0.0079 to 0.0182**, never crosses zero |
+
+**Honest, nuanced result**: the direction is robust — leave-one-out never flips negative across any single-day exclusion — but the day-level t-stat doesn't clear the 2.0 bar at this sample size (smaller effect size than `total_bases`, combined with fewer days/legs per day). This is real and consistent, just not yet statistically definitive — more data would likely resolve it, given the direction never wavers.
+
+## 36. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
