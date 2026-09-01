@@ -489,7 +489,11 @@ Re-opened this per direct instruction rather than accepting the negative result 
 
 Extended `hits_allowed`'s blend fix to 8 days (excluding corrupted dates and overlaps, same careful methodology just applied to `pitcher_strikeouts`): t=-0.315, mean improvement slightly negative, and **critically, leave-one-out shows 4 of 8 folds non-positive** — a genuinely inconsistent result, unlike every other fix in this investigation (all of which showed zero non-positive folds once properly tested). This confirms `hits_allowed` is a real, distinct unresolved case, not a repeat of `pitcher_strikeouts`' methodology error — the blend mechanism does not reliably work here. This is consistent with `hits_allowed`'s earlier-flagged, never-fully-explained "backwards double-signal confluence" pattern (§ above) — the true mechanism for this specific prop remains genuinely unresolved, and the blend fix should be **withdrawn** for `hits_allowed` specifically, while remaining valid for `runs`, `fantasy_score`, and (once properly cleaned) `pitcher_strikeouts`.
 
-## 69. WHAT THIS DOES NOT YET ANSWER
+## 71. DAY-LEVEL VALIDATION — `fantasy_score` blend holds up
+
+Tested at day-level (7 days, corrupted dates excluded, weight=0.5995): t=1.200, 4 of 7 days positive, mean improvement +0.072. **Leave-one-out never crosses zero (0.045-0.113)** — fully robust direction, same "needs more clean days for formal significance" status as several other confirmed fixes. Given this population is already ~95% goblin-dominated (§ earlier finding), this represents the real, dominant market, not a skewed subset.
+
+## 72. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
