@@ -103,6 +103,22 @@ The person was firm: no manual UI clicking, ever ("the whole point is for me to 
 **Next**: build the players worker using this exact proven pattern.
 
 ---
+
+## 2026-09-01 — Players worker built, deployed, and verified — same proven pattern, one new real bug found and fixed for good
+
+Built `nba/scrape_nba_stats_players.py` (same curl_cffi/GitHub Actions pattern as teams, hits `commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season=2025-26`, real documented schema per `nba_api` project docs) and `nba/alphadog-v2-nba-static-players.js` (same GitHub-committed-JSON read pattern as static-teams). Key design difference from teams, stated explicitly rather than copy-pasted blindly: **no hardcoded fallback list** for players — a 580+ player roster is too large and changes too often to safely hand-maintain, so this worker fails honestly (`ok: false`, real error surfaced) if the real source is unavailable, rather than silently writing stale data.
+
+Added both scrape steps to the same `nba-scrape.yml` workflow (one push to the existing `nba/TRIGGER_NBA_SCRAPE.txt` now scrapes teams AND players). Wired the new worker into `nba_config.worker_definitions`, `nba/worker_manifest_nba.json`, `generate_wrangler_configs.py`'s NBA block, and `alphadog-v2-admin-sql.js`'s `run_job` (new `NBA_STATIC_PLAYERS_WORKER` binding/enum/dispatch branch) — the exact same 4-step wiring pattern established for teams.
+
+**Real deploy-pipeline bug found and permanently fixed**: the first deploy attempt failed with `Service binding 'NBA_STATIC_PLAYERS_WORKER' references Worker 'alphadog-v2-nba-static-players' which was not found` — `github_mobile_deploy_workers.py`'s "changed" scope deploys workers in git-diff file order (effectively alphabetical by path), and `alphadog-v2-admin-sql.js` (root) sorts before `nba/alphadog-v2-nba-static-players.js`, so admin-sql tried to bind to a worker that hadn't been deployed yet in the same batch. **Fixed at the root, not worked around**: added a small `reorder_admin_sql_last()` helper that always moves `alphadog-v2-admin-sql` to the end of any deploy batch it's part of, since it's the one worker with outgoing service-binding dependencies on others (including every future NBA worker that gets wired into `run_job`). This makes the exact same failure structurally impossible going forward, for any future worker, not just this one.
+
+**Triggered `run_job(target="NBA_STATIC_PLAYERS_WORKER")` for real, verified independently against Postgres** (not just trusting the response): 582 total players, 525 active, 1822 aliases, 0 active players missing a team assignment. Real names spot-checked correct (Aaron Gordon, Ace Bailey, etc., each with a correct real team_id).
+
+**Real pipeline now fully proven for two entities in a row**, confirming the template generalizes: trigger-file push → GitHub Actions curl_cffi scrape → committed JSON → Worker reads via Contents API → Postgres write → independent verification. Every step of this session happened with **zero manual UI interaction** from the person, exactly as requested.
+
+**Next**: arenas and officials (the remaining static-differential entities), then move to Phase 3b (incremental/delta game-log data).
+
+---
 - Read all three /nba/ reference docs in full (Architecture Blueprint, Lessons Learned, Domain Mapping).
 - Verified live Postgres: 18 schemas exist (archive, backtest, calendar, certifier, classification, config, context, context_cert, control, daily, market, public, ref, score, scoring, stats_hitter, stats_pitcher, team). Zero NBA-anything exists anywhere yet — confirmed clean slate.
 - Verified `ref.teams` is genuinely MLB-specific (mlb_team_id, AL/NL division, file_code) — needs an NBA-specific counterpart, exactly as the blueprint says.
