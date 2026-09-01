@@ -154,7 +154,19 @@ Per instruction that the system has more than the 12 hitter prop types tested so
 - A **secondary**, partially-identified mechanism (opponent/lineup-context dependency) affects externally-dependent props (`walks`, `rbis`, partially `runs`) and remains incomplete (§7).
 - Pitcher props are confirmed affected but have not yet been diagnosed for *which* mechanism(s) apply — the recency-blending fix, the opponent-context issue, both, or something pitcher-specific (e.g., analogous dependency on their own team's defense/bullpen, or opponent lineup quality) has not been tested.
 
-## 14. WHAT THIS DOES NOT YET ANSWER
+## 16. PITCHER PROP DIAGNOSIS — first result points to the same opponent-context category as walks
+
+Tested `pitcher_strikeouts` (n=104, thin — using trailing-**starts**, not calendar days, given pitchers start roughly every 5 days) with the same divergence methodology:
+
+| Bucket | n | Predicted | Actual | Gap |
+|---|---|---|---|---|
+| Cold | 9 | 87.6 | 100.0 | +12.4 (tiny sample, not reliable) |
+| Stable | 64 | 88.4 | 71.9 | -16.5 |
+| Hot | 31 | 89.4 | 67.7 | -21.7 |
+
+**This matches the walks/rbis signature, not the hits/total_bases one.** Even "stable" legs (pitcher's own recent and season K-rate agree) are badly miscalibrated — meaning the pitcher's own recency-blending isn't the primary driver here either. The likely analog to walks' opponent-pitcher-control finding: a pitcher's strikeout total depends heavily on the **opposing lineup's** contact/whiff tendency, which the baseline (looking only at the pitcher's own history) structurally can't see — the same category of blind spot, mirrored to the other side of the matchup. This is a hypothesis consistent with the data, not yet a confirmed mechanism — the sample is thin and the opponent-lineup-context test itself (analogous to §7's opposing-pitcher-control test for walks) hasn't been run yet.
+
+## 17. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
