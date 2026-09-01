@@ -130,3 +130,26 @@ Per explicit instruction to push further with Gemini and external research. This
 ## Next phase
 
 Per the standing instruction: re-run the full enrichment/scoring pipeline (baseline fix + real current enrichment factor contributions) across as many real days as `daily_context`-dependent data actually supports. Then a final, complete validation pass before anything is considered ready for a live deployment discussion.
+
+---
+
+# PHASE 2: Full pipeline (corrected baseline + real current enrichment)
+
+**Real data availability confirmed directly**: `backtest.factor_contributions_asof_v2` covers 30 real days (2026-07-24 to 2026-08-22), 229,690 rows, 17 of the 23 props. This is less than the ~45-day estimate but is the actual, hard limit — proceeding with what's real rather than waiting for data that doesn't exist. Six props have no enrichment data at all (`runs_allowed`, `fantasy_score`, `pitcher_fantasy_score`, `pitcher_fantasy_score_ud`, `pitches_thrown`, `rfi_nrfi`) — likely never wired into the live enrichment layer, or handled through a different mechanism; not yet confirmed which.
+
+**Method**: for each real leg, combine my corrected baseline prediction and the real, current, live enrichment factor contributions in logit space — `combined = sigmoid(logit(baseline) + clamp(sum(real_contributions), -2, 2))` — then compare against real outcomes at the day level, exactly as the original master report did in its own Section 5.
+
+## Results so far (6 of 17 props tested)
+
+| Prop | Baseline-only gap | Combined (baseline+enrichment) gap | Verdict |
+|---|---|---|---|
+| `total_bases` | +0.07pp | **+4.25pp** | **Enrichment degrades a clean baseline.** Root cause found: `bullpen_fatigue` has zero negative values across 1,265 real rows (range 0.0 to +0.10) — a structurally one-directional factor that can only ever inflate, never correct down. |
+| `hits` | -1.24pp | **+0.24pp** | Enrichment genuinely helps here. |
+| `home_runs` | -4.89pp | **-2.18pp** | Enrichment genuinely helps here. |
+| `walks` | -1.59pp | **-0.37pp** | Enrichment genuinely helps here. |
+| `rbis` | +0.55pp | **+13.88pp** | **Severe degradation — independently reconfirms the original master report's already-known `rbis` enrichment bug**, via a completely different method (mine uses day-level logit-space combination directly against real factor contributions; theirs used a different comparison) landing on the same conclusion. |
+| `runs` | -0.36pp | **+13.90pp** | **Severe degradation — a genuinely new finding, never previously flagged.** Root cause found directly: `lineup_slot` averages +0.7545 log-odds contribution (range +0.158 to +1.422) with **zero negative values across 2,540 real rows**. This is a large, one-directional, systematic bias. Notably, `lineup_slot` was flagged much earlier in this whole investigation's history as having a "stale coefficient" issue — this independently confirms and precisely quantifies that old, previously-uncorrected finding with fresh, current data. |
+
+**The picture is genuinely mixed, not uniformly bad** — this matters and should be stated plainly. Enrichment is not broadly harmful; it's broadly fine to actively helpful for most props tested so far, with two severe, specific, well-diagnosed exceptions (`rbis`, `runs`) that both trace to a single identifiable factor each, plus one moderate exception (`total_bases`) with its own single identified cause. This is a much more targeted, fixable picture than "the enrichment layer is broken" — it's "two or three specific factors are broken, the rest of the layer is working."
+
+**11 props remain to be tested**: `doubles`, `earned_runs`, `hits_allowed`, `hitter_strikeouts`, `pitcher_outs`, `pitcher_strikeouts`, `singles`, `stolen_bases`, `triples`, `walks_allowed`, `hits_runs_rbis` (already known to have its own bug from the original report — worth confirming with this same direct method).
