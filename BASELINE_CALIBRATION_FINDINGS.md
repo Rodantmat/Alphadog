@@ -122,7 +122,25 @@ Directionally real (control-pitching legs show the smallest gap), consistent wit
 
 **Honest state of the walks/rbis investigation**: the recency-blending mechanism (§2-5) doesn't apply; dispersion doesn't apply (and points the wrong way for RBI specifically); opponent context is real but partial for walks. No single, complete mechanism has been found for these props. This is meaningfully narrowed, not solved.
 
-## 8. WHAT THIS DOES NOT YET ANSWER
+## 10. FULL PROP-BY-PROP MAP — nine of twelve props categorized
+
+Ran the same recency-vs-season divergence test across every prop with meaningful volume in the ≥85% population (real point-in-time data throughout):
+
+| Prop | n | Stable gap | Divergent gap | Category |
+|---|---|---|---|---|
+| `hits`/`singles`/`doubles` (combined, §3) | 434 | -3.6 | -15.8 (cold) | **Recency-explained** |
+| `total_bases` | 2,532 | -5.6 | -8.5 (cold) | **Recency-explained** |
+| `hits_runs_rbis` | 1,752 | -5.4 | -10.4 to -10.8 | **Recency-explained** |
+| `home_runs` | 396 | -6.6 | -1.6 (cold) / +6.9 (hot) | **Already well-calibrated** — HR rarity itself provides strong signal |
+| `runs` | 259 | -7.2 | -11.9 (cold) | **Partial** — some opportunity-dependency (scoring requires teammates), weaker than rbis |
+| `walks` | 650 | -11.2 | -19.0 (cold) | **Not recency-explained** — opponent pitcher control (§7), real but partial |
+| `rbis` | 312 | -13.8 | -12.8 (cold) | **Not recency-explained** — likely opportunity-dependency (teammates on base); dispersion tested and refuted (§7) |
+
+**Clean pattern emerging**: props primarily under the batter's own control (hits, singles, doubles, total_bases, hits_runs_rbis, and to a good extent home_runs) are well-explained by the recency-blending mechanism (§2-5) and should respond well to the `n_eff`/`prior_strength` fix. Props with genuine external dependency — `walks` (pitcher's control that game), `rbis` (teammates reaching base), and partially `runs` (teammates driving you in) — show meaningfully worse "stable" calibration too, meaning the recency fix alone won't fully resolve them; they need the opponent/lineup-context work started in §7, which remains incomplete.
+
+**Not yet tested** (small populations, lower priority): `stolen_bases` (272), `fantasy_score` (92, already known to use a distinct two-component HR-mixture model per code comments), `hitter_strikeouts` (12, too small to test meaningfully).
+
+## 11. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
