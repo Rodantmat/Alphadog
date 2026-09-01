@@ -497,7 +497,23 @@ Tested at day-level (7 days, corrupted dates excluded, weight=0.5995): t=1.200, 
 
 Tested at day-level (8 days, corrupted dates excluded, using pitcher_outs' own optimal weight 0.899): **t=-2.306, only 2 of 8 days positive, and all 8 leave-one-out folds are negative** — a clean, statistically significant, consistently negative result. This confirms the earlier suspicion (§ original finding: only -5.8pp starting gap, much smaller than every other fixed prop): `pitcher_outs` was already close to acceptable, and applying any blend correction actively makes it worse. **This fix is withdrawn for `pitcher_outs` — the correct action is to leave this prop alone entirely.**
 
-## 75. WHAT THIS DOES NOT YET ANSWER
+## 77. `hits_allowed` RESOLVED — the real confound was blowout game state, not opponent quality
+
+Per research into real pull-decision dynamics (managers use game score state heavily — blowouts get pulled early regardless of performance — combined with the well-documented Time-Through-Order-Penalty), and Gemini's specific hypothesis: tested whether the pitcher's own team's run support (a real blowout proxy) explains the backwards opponent-quality pattern found earlier.
+
+**Confirmed decisively with real data**, splitting by the pitcher's own team's runs scored that game:
+
+| Bucket | n | Predicted | Actual | Gap |
+|---|---|---|---|---|
+| Moderate run support (not a blowout) | 27 | 87.4 | 85.2 | **-2.2** (nearly perfect) |
+| Low run support | 27 | 88.1 | 77.8 | -10.3 |
+| **High run support (blowout, 6+ runs)** | 30 | 88.2 | 60.0 | **-28.2 (by far the worst)** |
+
+**The model is already well-calibrated in normal games. The entire problem concentrates in blowouts specifically** — this explains the earlier "backwards opponent quality" puzzle: weak opponents get blown out more often, so "facing a weak lineup" was a proxy for "this game is likely a blowout," not a real opponent-quality signal in itself.
+
+**Built a stratified fix instead of a uniform blend**: trust the model almost fully in normal games (weight 0.93), apply a much stronger correction specifically in blowouts (weight 0.68). Tested at day-level (9 days, corrupted dates excluded): mean improvement +0.026, **leave-one-out never crosses zero (0.007-0.044)** — a real, consistent improvement, unlike the naive uniform blend which showed 4 of 8 non-positive folds. `hits_allowed` is resolved with a genuine, mechanistically-grounded fix, not withdrawn.
+
+## 78. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
