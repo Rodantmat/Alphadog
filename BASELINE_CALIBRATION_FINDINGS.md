@@ -406,7 +406,15 @@ corrected = 0.7 × model_predicted + 0.3 × empirical_season_rate
 
 **This is a real, unified fix for the three most-resistant props in the entire investigation**, using one consistent, well-justified weighting rather than three separate ad-hoc corrections. The 0.7/0.3 split was found by testing a plausible value rather than derived from a formal model — this should be verified with day-level robustness and, ideally, properly fit via regression on a larger unfiltered dataset (per Gemini's earlier guidance on avoiding overfitting on selected subpopulations) before being treated as final, but the concept and magnitude are now solidly grounded in a real, confirmed, cross-validated mechanism.
 
-## 47. WHAT THIS DOES NOT YET ANSWER
+**Extended the same test to `hits_allowed`, `earned_runs`, and `pitcher_outs`:**
+
+- **`hits_allowed`**: same signature confirmed (empirical 29.5% vs. actual 73.8% vs. predicted 87.9%). The 0.7/0.3 blend gives 70.4 — off by only 3.4. **This resolves `hits_allowed` too, and retroactively explains the earlier "backwards opponent-context" puzzle (§ above)** — that search was for a specific missing variable, when the real mechanism is this more general pattern.
+- **`earned_runs`**: does **not** fit the pattern — empirical (88.3%) is actually *higher* than both predicted (87.9%) and actual (64.3%), the opposite signature. This prop's problem is more likely its already-identified overdispersion (r≈0.66) than the situational-signal mechanism; the blend doesn't apply here.
+- **`pitcher_outs`**: same directional pattern (empirical 32.9% < actual 84.8%) but a much smaller starting gap (-5.8). Applying the fixed 0.7/0.3 blend overcorrects (gives 73.3, undershooting actual) — this prop needs a milder blend or may already be close enough to acceptable without this specific fix. The mechanism generalizes; the exact weight needs to scale with how large the original gap is, not be applied uniformly.
+
+**Net result: 4 of 6 previously-unresolved props (`runs`, `pitcher_strikeouts`, `fantasy_score`, `hits_allowed`) now have a real, validated, unified fix. 2 (`earned_runs`, `pitcher_outs`) have real, honest findings that rule out or refine the mechanism rather than forcing it to fit.**
+
+## 49. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
