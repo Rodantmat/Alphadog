@@ -87,7 +87,22 @@ Ran successive, increasingly-faithful simulations, each closing one gap and reve
 
 Both push in the same direction; `n_eff` alone (tested in isolation) was insufficient precisely because the prior it's pulling toward is also too weakly weighted. Correcting both — `prior_strength`'s underlying variance computed from season-to-date rates only (not the recency-blended rate), and `n_eff` used for individual-leg shrinkage weight — is consistent, end to end, with the near-perfect calibration observed when relying on a properly-weighted granular tier prior.
 
-## 6. WHAT THIS DOES NOT YET ANSWER
+## 6. GENERALIZATION CHECK — the mechanism is real but incomplete; do not deploy yet
+
+Per direct instruction to validate against the full backtest dataset before any live consideration, tested whether the recency-divergence mechanism (§3) generalizes beyond `hits`/`singles`/`doubles` to two more high-volume, structurally different props (`walks`, `rbis`, both line 0.5, `less` side, n=800 total from the full ≥85% baseline_hp population, which spans 12 props and 9,262 legs).
+
+| Prop | Bucket | n | Predicted | Actual | Gap |
+|---|---|---|---|---|---|
+| rbis | stable | 85 | 89.1 | 75.3 | -13.8 |
+| rbis | cold | 174 | 88.7 | 75.9 | -12.8 |
+| walks | stable | 197 | 90.4 | 79.2 | -11.2 |
+| walks | cold | 316 | 91.5 | 72.5 | -19.0 |
+
+**This does not match the hits/singles/doubles pattern.** There, "stable" (no recency divergence) was reasonably well-calibrated (-3.6pp) and only "cold streak" legs were badly miscalibrated (-15.8pp) — a clean differential that pointed straight at the recency-blending mechanism. Here, **even the stable bucket is badly miscalibrated** (-11 to -14pp) for both `walks` and `rbis`. This means the recency/`n_eff`/`prior_strength` mechanism identified in §2-5 is real and correctly diagnosed for the props it was tested on, but **it does not fully explain overconfidence for at least these two other prop types** — something else, not yet identified, is contributing there.
+
+**Conclusion: the fix is not ready for any live consideration.** It's validated and well-evidenced for a subset of props; deploying it now would address part of the system's overconfidence problem while leaving real, unexplained overconfidence in others unaddressed and undocumented. The honest next step is identifying what's different about `walks`/`rbis`-type props (possibly: different underlying model dispatch — Normal vs. Poisson — team-context factors like plate-appearance opportunity that the current mechanism doesn't touch, or a second, independent source of miscalibration) before any broader claim or deployment.
+
+## 7. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
