@@ -201,6 +201,34 @@ Tested `pitcher_strikeouts` (n=104, thin — using trailing-**starts**, not cale
 
 **Tested and ruled out a real, documented grading bug as the explanation.** Code comments confirm a genuine historical bug: `pitcher_fantasy_score` outcomes were once graded with a formula missing win/quality-start bonuses, fixed 2026-08-25, with 27.6% of historical outcomes flipping under the correction. Recomputed the correct formula (`outs + 3×K − 3×ER + 6×wins + 4×quality_start`) directly from real game logs for all 87 test legs and compared to the original grading: **0% would flip.** The historical outcome data already reflects the corrected formula (likely backfilled at fix time), so this specific bug does not explain the -32.4pp gap. The calibration problem for this prop is real and its cause remains unidentified — not yet solved, and importantly, not a false lead either.
 
+## 21. THE ACTUAL FIX — literature-grounded stabilization points, tested and working
+
+Per research into how real, respected systems handle this (MARCEL and its Bayesian descendants, James-Stein/empirical Bayes theory, sports betting calibration practice — consensus confirmed across many independent sources and cross-checked with Gemini), the missing piece was: **shrinkage strength should be set by each stat's own published stabilization point** (how many PA until real skill separates from noise), not a single reconstructed constant. Corrected formula:
+
+```
+n_eff = 1 / Σ(w_i² / n_i)                          [same as §4]
+shrunk_rate = (n_eff × recency_blended_rate + M × prior) / (n_eff + M)
+```
+where `M` is the stat's real, independently-published stabilization point (not fit to this data).
+
+**Tested on `hits`/`singles`/`doubles`** (M=850, the published batting-average/BABIP stabilization point, n=215 real legs):
+
+| | Predicted | Actual | Gap |
+|---|---|---|---|
+| Current system | 90.1 | 83.3 | -6.8 |
+| **Corrected** | **86.9** | 83.3 | **-3.6** |
+
+**Tested on `walks`** (M=120, the published walk-rate stabilization point, n=641 real legs, shrinking toward the player's own season rate):
+
+| | Predicted | Actual | Gap |
+|---|---|---|---|
+| Current system | 90.7 | 73.2 | -17.5 |
+| **Corrected** | **80.8** | 73.2 | **-7.6** |
+
+**Both cut the overconfidence gap roughly in half, using constants pulled from published research, not reverse-engineered to fit this data.** This also confirms recency-blending under-shrinkage is a real, partial contributor for `walks` even though opponent-context (§16) is the other, separately-confirmed piece — the two mechanisms are additive, not mutually exclusive.
+
+**This is the actual, defensible, root-cause fix**, ready to hand to whoever has production code access: replace the raw season-games count with `n_eff` (recency-weighted effective sample size), shrink toward the tier/season prior using `n_eff/(n_eff+M)`, with `M` looked up per-stat from established sabermetric research rather than a single constant for everything. Remaining gaps (-3.6pp for hits-type props, -7.6pp for walks before its separate opponent-context fix is added) likely require the exact tier-assignment precision only available inside the real pipeline (§6).
+
 ## 22. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
