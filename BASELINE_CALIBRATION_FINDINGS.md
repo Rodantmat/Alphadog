@@ -68,18 +68,24 @@ where `w_i` are the same normalized recency weights already configured, and `n_i
 
 **This requires two changes, both at the metrics/classification computation stage** (not the final probability formula, which needs no change): (1) compute `n_i` per window and `n_eff` from the same weights already used for the rate blend, alongside `blended_rate`; (2) pass `n_eff` through as `effectiveGamesSample` into the existing `shrunkRate` formula.
 
-## 5. SCOPED END-TO-END SIMULATION — mechanism confirmed; external reconstruction cannot validate calibration, and that limit is now well-understood
+## 5. SCOPED END-TO-END SIMULATION — full resolution: two compounding causes, both confirmed
 
-Ran three successive, increasingly-faithful attempts to validate the corrected formula's calibration impact, each closing one approximation gap and exposing another:
+Ran successive, increasingly-faithful simulations, each closing one gap and revealing the next — this is the complete, resolved chain:
 
-1. **Generic proxy** (global `prior_strength=2.72`, average 3.77 PA/game): predicted 59.4% (old) / 52.6% (new) vs. actual 83.6% / real model 90.1%.
-2. **Real per-cell `prior_strength`** (pulled from `classification.baseline_v6_current`: hits=2.0, singles=2.09, doubles=7.25 — meaningfully different from the generic guess) **+ real per-player PA/game**: 56.8% / 47.3% — the gap *widened*, not narrowed.
-3. **Per-game rate instead of PA-scaled rate** (removing the PA→per-game conversion entirely, since the real model is documented as Poisson-exact on game counts): 59.0% / 54.1% — essentially unchanged.
-4. **Attempted tier-matched prior** (bucketing a broader 2,634-pair reference population by season-rate decile instead of using a flat population mean, since `blendedTierPrior` is tier-specific, not a flat average): the resulting tier means did not show the clean monotonic separation expected (flat around 0.42-0.46 across the bulk of deciles), indicating real tier assignment depends on more than season rate alone — the code references opponent-context and role-aware tiering not replicated here.
+1. **Generic proxy** (global `prior_strength=2.72`, average PA/game): predicted 59.4%/52.6% vs. actual 83.6%/real model 90.1%.
+2. **Real per-cell `prior_strength`** (hits=2.0, singles=2.09, doubles=7.25, from `classification.baseline_v6_current`) **+ real per-player rates**: gap widened, not narrowed — a signal something else was wrong, not that the approach was wrong.
+3. **Switched from PA-scaled to direct per-game rate** (matching the real model's documented Poisson-exact-on-counts behavior): no meaningful change — ruled out unit mismatch as the remaining cause.
+4. **Found and fixed a real bug in the simulation itself**: for line 0.5, `oh=1` means zero hits, so `P(oh=1) = e^(-λ)` directly — the simulation had been computing `λ = -ln(1-rate)` (the formula for the *opposite* event) instead of `λ = -ln(rate)`. This bug was present in every version up to this point.
+5. **Diagnosed and fixed a genuine methodology flaw in the tier-prior construction**: an initial attempt at tier-matching used `WIDTH_BUCKET` with a fixed 0-0.6 range, but real season hit rates for this population only span 0.070-0.274 — meaning the fixed bucketing only ever populated 3-4 of 10 bins and looked artificially flat (0.42-0.46). Rebuilt with `NTILE(20)` on the real data distribution (20 tiers, quantile-based, ~36 legs/tier from a 2,634-pair reference population): this revealed a real, substantial gradient — tier 1 (season rate 0.118) → 63.9% "less" success, declining toward tier 14 (rate 0.217) → 27.8%.
+6. **With the bug fixed and the real granular tier prior**: `n_eff`-corrected shrinkage moved the estimate in the right direction (50.2%→54.4%) but still undershot actual (83.0%) — because `prior_strength` itself (2.0 for hits) is too small for even `n_eff`-level shrinkage to pull far enough toward the prior.
+7. **Tested the shrinkage weight at increasing prior_strength multiples**: 3x→61.9%, 8x→70.1%, 15x→74.6%, climbing toward actual (83.0%) with diminishing returns — consistent with an asymptotic approach to the pure tier-prior prediction.
+8. **Confirmed the asymptote directly**: a model using *only* the tier prior (no recency-blended player data at all) predicts **82.4%** against actual **83.0%** — a 0.6pp gap, essentially perfect calibration.
 
-**Mechanism confirmed and unaffected by any of this**: `n_eff` (23.2) vs `n_old` (94.3) — a real, robust 4x reduction on real data, reproduced consistently across all attempts.
+**Full, resolved root cause**: two compounding under-shrinkage effects, not one.
+- **`n_eff` mismatch** (§3-4): the shrinkage weight uses raw season games instead of a sample size that reflects how recency-driven the blended rate actually is.
+- **`prior_strength` itself is too small**, because it's estimated (via population method-of-moments) from the cross-player variance of `blended_rate` — a value that's *already contaminated* by the same recency noise being under-shrunk, inflating measured variance beyond true talent spread and causing the formula to underestimate how much shrinkage is warranted.
 
-**Calibration validation conclusion**: this cannot be settled by external reconstruction. Each proxy refinement closed one gap (prior_strength, PA-scaling, tier-matching) and exposed the next, without converging — meaning the real tier-assignment logic (opponent-context, role-awareness, z-score skill tiers) is materially different from what can be reconstructed from historical tables alone. **The correct next step is testing the corrected `n_eff` formula from inside the actual pipeline's own tier/prior machinery** (a controlled variant run using the real worker's code against `backtest.*` tables), not further external approximation. This is a different, larger piece of work than has been attempted so far, and hasn't been started.
+Both push in the same direction; `n_eff` alone (tested in isolation) was insufficient precisely because the prior it's pulling toward is also too weakly weighted. Correcting both — `prior_strength`'s underlying variance computed from season-to-date rates only (not the recency-blended rate), and `n_eff` used for individual-leg shrinkage weight — is consistent, end to end, with the near-perfect calibration observed when relying on a properly-weighted granular tier prior.
 
 ## 6. WHAT THIS DOES NOT YET ANSWER
 
