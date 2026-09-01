@@ -26,8 +26,12 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-URL = ("https://stats.nba.com/stats/leaguedashteamstats?LeagueID=00&Season=2025-26&SeasonType=Regular+Season"
-       "&PerMode=PerGame&MeasureType=Advanced&Month=0&OpponentTeamID=0&PaceAdjust=N&Rank=N&PlusMinus=N")
+URL = ("https://stats.nba.com/stats/leaguedashteamstats?College=&Conference=&Country=&DateFrom=&DateTo="
+       "&Division=&DraftPick=&DraftYear=&GameScope=&GameSegment=&Height=&LastNGames=0&LeagueID=00"
+       "&Location=&MeasureType=Advanced&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N"
+       "&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26"
+       "&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0"
+       "&VsConference=&VsDivision=&Weight=")
 OUTPUT_PATH = Path("nba/data/nba_team_stats_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_team_stats_current_meta.json")
 
