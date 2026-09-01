@@ -1,6 +1,7 @@
 {
   "workers": [
     "alphadog-v2-nba-static-teams",
-    "alphadog-v2-nba-static-players"
+    "alphadog-v2-nba-static-players",
+    "alphadog-v2-nba-static-arenas"
   ]
 }
