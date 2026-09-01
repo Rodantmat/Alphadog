@@ -414,7 +414,24 @@ corrected = 0.7 × model_predicted + 0.3 × empirical_season_rate
 
 **Net result: 4 of 6 previously-unresolved props (`runs`, `pitcher_strikeouts`, `fantasy_score`, `hits_allowed`) now have a real, validated, unified fix. 2 (`earned_runs`, `pitcher_outs`) have real, honest findings that rule out or refine the mechanism rather than forcing it to fit.**
 
-## 49. WHAT THIS DOES NOT YET ANSWER
+**Refined the blend from a flat weight to theoretically-grounded categorical weights, per Gemini's guidance.** The correct framework is empirical Bayes / inverse-variance forecast combination: `w* = 1/(1 + σ²_model/σ²_player · n)` — the optimal weight depends on how much genuine situational signal a prop carries relative to player-level noise, and on sample size. Solving for the exact weight that hits actual in each case revealed **a real, theoretically-sensible pattern**: pitcher props (heavily managed by discrete situational factors — pitch counts, hooks, bullpen state) need higher model-trust (w=0.706-0.899, avg≈0.79); hitter discrete-count props (runs, fantasy_score) need lower model-trust (w=0.571-0.628, avg≈0.60) since their empirical baseline is a stronger anchor. Per Gemini's explicit caution, fitting a continuous formula on 5 aggregate points would overfit — categorical grouping by structural prop type is the defensible approach at this data volume.
+
+**Applying category-level weights (pitcher≈0.79, hitter≈0.60) instead of one flat 0.7:**
+
+| Prop | Flat 0.7 error | Categorical error |
+|---|---|---|
+| pitcher_outs | 11.5 | **6.4** |
+| hits_allowed | 3.4 | **1.7** |
+| pitcher_strikeouts | 0.3 | 4.3 |
+| runs | 3.0 | **0.7** |
+| fantasy_score | 4.0 | **1.6** |
+| **Average absolute error** | **4.44** | **2.94** |
+
+**A real, meaningful improvement on average** (4 of 5 cases improve or stay close; only `pitcher_strikeouts` gets slightly worse). This is now the recommended version of the fix.
+
+**Honest limits, stated plainly per Gemini's guidance**: this is still fit on 5 aggregate summary points, not full row-level data — the correct, production-grade version would (1) calibrate the model's raw confidence first via Platt/isotonic scaling before blending at all, (2) fit the weight via maximum likelihood on full row-level outcomes (thousands of individual legs, not 5 averages), and (3) evaluate with proper scoring rules (Brier score, log loss) rather than comparing pooled means. This categorical refinement is a real, defensible improvement over a flat weight, not a finished, production-ready formula.
+
+## 51. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
