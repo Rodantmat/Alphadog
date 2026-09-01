@@ -485,7 +485,7 @@ Re-opened this per direct instruction rather than accepting the negative result 
 
 **Corrected conclusion: the `pitcher_strikeouts` blend fix is real and should NOT have been withdrawn** — it needs more clean data to reach formal significance (only 6 days survive proper filtering), the same "robust but not yet significant" status as several other fixes, not a failure. The earlier §64 conclusion is superseded by this one.
 
-## 65. WHAT THIS DOES NOT YET ANSWER
+## 66. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
