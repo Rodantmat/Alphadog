@@ -67,6 +67,20 @@ Pulled directly from the live `config.calibration_config` → `prop_metric_map` 
 
 **Final locked fix for `pitcher_strikeouts`: do not use the standard 0.40/0.30/0.20/0.10 recency blend at all. Use pure season-to-date rate.** This is a structurally different fix from every other prop in this document — a real, evidence-based exception, not an oversight. The residual ±5.3pp/+5.77pp gaps are real and not fully eliminated despite extensive further testing (uniform compression, player-prior-relative compression, logit-space versions of both, dynamic variance-scaled shrinkage, and a Platt-style recalibration were all tried and each broke something else) — reported honestly as the current best achievable state, not smoothed over.
 
+## The skill-tier-quartile check is now mandatory for every remaining prop, not just strikeouts
+
+Discovered while resolving `pitcher_strikeouts`, and now confirmed to generalize far beyond it: **any population-prior-based shrinkage (the standard M+n_eff method used for the first 13 props) is at real risk of tier-level cancellation that a pooled aggregate gap completely hides.** Every prop from here forward is checked against this before being locked, not just when something looks suspicious.
+
+| Prop | Method | Tier 1-4 gaps (population-prior, M as noted) | Tier 1-4 gaps (pure season rate) | Locked fix |
+|---|---|---|---|---|
+| `hitter_strikeouts` (clears 0) | M=60 vs. pure season | +12.41 / +2.64 / -4.16 / -11.49 | **+2.68 / +0.08 / -1.06 / -1.93** | **Pure season rate — LOCKED. Same underlying issue as `pitcher_strikeouts`: day-to-day recency signal is mostly noise for strikeout-type props.** |
+| `triples` (clears 0) | M=800/1500 vs. pure season | +1.45-1.47 / +1.37-1.38 / +0.10 / -2.13 to -2.15 | **+0.54 / +0.39 / -0.02 / -0.67** | **Pure season rate — LOCKED. No severe cancellation here (rare-event M already reasonable), but pure season rate is simplest and best across all four tiers.** |
+| `fantasy_score` (hitter, real weighted formula: 2·RBI+2·R+2·BB+5·2B+3·1B+8·3B+10·HR, clears median=5) | M=100/200 vs. pure season | +14.03-15.24 / +5.67-6.20 / -0.97 to -1.07 / -7.84 to -8.61 | **+5.36 / +1.49 / -0.50 / -1.26** | **Pure season rate — LOCKED. Same cancellation pattern as every population-prior case; composite scoring doesn't change the underlying mechanism.** |
+| `pitcher_fantasy_score` (real weighted formula: outs+3·K-3·ER-H-BB, clears median=15) | M=25 vs. pure season | +16.76 / +4.35 / -3.29 / -13.72 | **+8.40 / +1.90 / -1.96 / -6.89** | **Pure season rate — LOCKED. Residual tier 1/4 gaps larger than hitter props (8-9pp) — consistent with this being a strikeout-dominated composite (K is the largest positive weight), inheriting `pitcher_strikeouts`' same residual imperfection.** |
+| `pitcher_fantasy_score_ud` (Underdog formula: outs+3·K-3·ER+5·wins, clears median=23) | M=25 vs. pure season | +19.41 / +4.52 / -3.91 / -14.72 | **+9.48 / +1.79 / -1.16 / -8.16** | **Pure season rate — LOCKED. Same pattern and same residual imperfection as the standard pitcher fantasy score, for the same reason (K-dominated).** |
+
+**18 of 23 props now locked.** Remaining: `rfi_nrfi`, `hits_allowed` (needs the separate blowout-stratification mechanism, not a shrinkage-method question at all), `hits_runs_rbis` (has the known separate enrichment-layer bug on top of whichever baseline fix applies), `pitches_thrown` (never assessed by anyone before this).
+
 ## What's genuinely still needed before "all prop lines are completely satisfactory"
 
 This is a large, honest list — stated plainly rather than glossed over:
