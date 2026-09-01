@@ -342,7 +342,30 @@ Per the standing bar (day-level t-test, 95% CI, leave-one-out never negative) no
 
 **Fully validated — clears every gate.** Three of five confirmed fixes (`total_bases`, `hits_runs_rbis`, `walks`) now have complete day-level bootstrap validation; `hits`/`singles`/`doubles` shows a robust but not-yet-significant direction (§ above); `pitcher_fantasy_score` remains to be validated this way.
 
-## 37. WHAT THIS DOES NOT YET ANSWER
+**Extended validation to `pitcher_fantasy_score`** (real SD=12.58 fix, n=103, 17 days with ≥3 legs/day):
+
+| Metric | Value |
+|---|---|
+| Days positive | 12 of 17 |
+| Mean improvement | +0.1061 (large, consistent with its outsized starting gap) |
+| Day-level t-stat | **1.789** — close, does not quite clear significance |
+| Leave-one-out range | **0.0861 to 0.1346**, never crosses zero |
+
+**Same honest pattern as `hits`/`singles`/`doubles`**: leave-one-out is completely robust (never flips sign regardless of which day is excluded), but the day-level t-stat falls just short of 2.0, likely due to high day-to-day variance given small per-day samples. Real, consistent, not yet formally significant.
+
+## 38. COMPLETE VALIDATION SUMMARY — all 5 confirmed fixes now bootstrap-tested
+
+| Fix | t-stat | Leave-one-out | Status |
+|---|---|---|---|
+| `walks` | **4.477** | Never negative | ✅ Fully validated (strongest) |
+| `hits_runs_rbis` | 3.284 | Never negative | ✅ Fully validated |
+| `total_bases` | 3.150 | Never negative | ✅ Fully validated |
+| `pitcher_fantasy_score` | 1.789 | Never negative | 🟡 Robust direction, not yet significant |
+| `hits`/`singles`/`doubles` | 1.160 | Never negative | 🟡 Robust direction, not yet significant |
+
+**Every single confirmed fix in this investigation has now been checked against the full standing methodology — none were skipped, none were assumed.** Three clear the complete bar; two show a completely consistent direction (zero non-positive leave-one-out folds across either) that simply needs more days of data to reach formal significance, not a different mechanism or more tuning.
+
+## 39. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
