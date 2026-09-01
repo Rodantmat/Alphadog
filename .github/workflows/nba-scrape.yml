@@ -59,6 +59,10 @@ jobs:
         run: python nba/scrape_nba_stats_arenas.py
         continue-on-error: true
 
+      - name: Scrape NBA officials from Wikipedia
+        run: python nba/scrape_nba_officials.py
+        continue-on-error: true
+
       - name: Commit NBA data JSON to main
         run: |
           set -euo pipefail
