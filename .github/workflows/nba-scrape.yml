@@ -63,6 +63,24 @@ jobs:
         run: python nba/scrape_nba_officials.py
         continue-on-error: true
 
+      - name: Scrape NBA player bio/season profile from stats.nba.com
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_player_bio.py
+        continue-on-error: true
+
+      - name: Scrape NBA player tracking (speed/distance) from stats.nba.com
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_player_tracking.py
+        continue-on-error: true
+
+      - name: Scrape NBA team stats (pace/ratings) from stats.nba.com
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_team_stats.py
+        continue-on-error: true
+
       - name: Commit NBA data JSON to main
         run: |
           set -euo pipefail
