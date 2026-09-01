@@ -37,6 +37,10 @@
 
 **Why walks needs a different M than hits/singles, and why that's expected, not a problem**: this directly matches the original report's own qualitative claim (walk rate stabilizes faster than batting-average-type stats — M=120 vs. M=850 in PA-based sabermetric units). My independently-derived, games-based M values land in a different absolute scale (since the underlying "effective sample" unit differs), but the *relative* finding — walks needs meaningfully less shrinkage strength than hits/singles — replicates independently. This is a second, different-methodology confirmation of the same qualitative claim the original report made.
 
+## Full scope, corrected: 23 real canonical props exist, not ~19
+
+Pulled directly from the live `config.calibration_config` → `prop_metric_map` — the real, authoritative source, not the original report's count. Two props (`pitches_thrown`, `pitcher_fantasy_score_ud`) were never covered by the original report at all. Full list: `hits`✅ `singles`✅ `walks`✅ `doubles`✅ `total_bases`✅ `runs`✅ `rbis`✅ `home_runs`✅ `stolen_bases`✅ (9 locked) — `triples`, `rfi_nrfi`, `earned_runs`, `hits_allowed`, `pitcher_outs`, `runs_allowed`, `fantasy_score`, `walks_allowed`, `hits_runs_rbis`, `pitches_thrown`, `hitter_strikeouts`, `pitcher_strikeouts`, `pitcher_fantasy_score`, `pitcher_fantasy_score_ud` (14 remaining).
+
 ## What's genuinely still needed before "all prop lines are completely satisfactory"
 
 This is a large, honest list — stated plainly rather than glossed over:
