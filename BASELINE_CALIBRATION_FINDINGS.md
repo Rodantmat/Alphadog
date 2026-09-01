@@ -92,6 +92,6 @@ Both simplified estimates land far below actual, while the real model — despit
 3. Full day-level block bootstrap validation (95% CI, leave-one-out) on the corrected formula has not been run.
 4. Historical validation is constrained by `stats_hitter/pitcher.metric_snapshots` holding only 1 row per player/window (current-state only, no retained history) — window-level historical sample sizes must be re-derived from `game_logs` directly for any full backtest, which is feasible (as done for the confirmation test above) but has not yet been done end-to-end.
 
-## 6. STATUS
+## 7. STATUS
 
 **Backtest simulation and code-level root-cause analysis only. Nothing deployed, nothing backfilled to production tables.** Per the baseline being explicitly out-of-scope for direct modification without sign-off, and per the standing "research → simulate → only then consider live" process: this needs the full end-to-end simulation (item 1 above), day-level bootstrap validation, and explicit sign-off from the principal and the slip-calibration chat before any change to the live baseline formula is even drafted.
