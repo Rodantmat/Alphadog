@@ -186,7 +186,20 @@ Tested `pitcher_strikeouts` (n=104, thin — using trailing-**starts**, not cale
 
 **Consistently backwards across two independent samples (n=71 and n=84) — not noise.** Facing a weaker opposing lineup correlates with *worse* calibration, not better. This is a different, distinct phenomenon from the `walks`/`pitcher_strikeouts` opponent-context mechanism, and likely connects to something the slip-calibration chat found independently in the slip-selection layer: **legs where multiple favorable signals stack together (here: an elite pitcher's own high baseline_hp *and* a weak opposing lineup, two independently-favorable factors agreeing) show the worst real-world performance, not the best** — the same "double high confidence is the worst case" inversion, appearing again in a different part of the system. Not yet confirmed as the mechanism (would need to test whether the gap specifically concentrates where *both* signals are extreme, vs. either alone), but it's a strong, reproducible, and conceptually coherent lead — recorded plainly rather than forced into the opponent-context bucket where it doesn't actually belong.
 
-## 18. WHAT THIS DOES NOT YET ANSWER
+## 20. FULL PITCHER-PROP SWEEP — all 6 pitcher props now tested
+
+| Prop | n | Predicted | Actual | Gap | Category |
+|---|---|---|---|---|---|
+| `walks_allowed` | 179 | 88.8 | 87.2 | -1.6 | **Already well-calibrated** |
+| `pitcher_outs` | 33 | 90.6 | 84.8 | -5.8 | Moderate, closer to fine |
+| `pitcher_strikeouts` | 104 | 88.6 | 73.1 | -15.5 | **Opponent-context confirmed** (§16 — opposing lineup's K tendency) |
+| `earned_runs` | 28 | 87.9 | 64.3 | -23.6 | Thin sample, severe — mechanism untested |
+| `hits_allowed` | 84 | 87.9 | 73.8 | -14.1 | **"Double-signal confluence" lead** (§ above) — backwards on simple opponent-context, reproduced twice |
+| `pitcher_fantasy_score` | 87 | 92.2 | 59.8 | **-32.4** | **Worst gap found in this entire investigation** — compound/weighted stat using a different (Normal/truncated-normal) model; mechanism untested, likely related to variance modeling of a weighted sum rather than any of the mechanisms found so far |
+
+**Pattern**: pitcher props split at least three ways — one already fine (`walks_allowed`), one confirmed opponent-context (`pitcher_strikeouts`), and the compound stat (`pitcher_fantasy_score`) showing by far the worst gap of anything tested, plausibly because it inherits variance-modeling issues specific to weighted-sum compound props (shared conceptually with `total_bases`/`hits_runs_rbis` on the hitter side, though those were found to be recency-explained — `pitcher_fantasy_score`'s much larger gap suggests something additional is wrong there specifically, not yet diagnosed).
+
+## 21. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
