@@ -529,7 +529,20 @@ Per instruction to go deeper on this prop rather than trust the earlier "mild is
 
 Confirmed not overdispersed (ratio=0.91), ruling out the variance-model mechanism. Found the same "situational signal" pattern as six other props (empirical 25.1% vs. actual 67.2% vs. predicted 82.4%). Solved for the exact optimal weight (0.735) and tested at day-level (15 days, corrupted dates excluded): **t=2.229, leave-one-out never negative (0.069-0.091).** Fully validated, sixth prop confirmed under this unified mechanism.
 
-## 87. WHAT THIS DOES NOT YET ANSWER
+## 89. FULL-PIPELINE RE-EVALUATION — reveals enrichment has its own real bug for `hits_runs_rbis`
+
+Rebuilt the complete pipeline (corrected baseline → real current enrichment factors applied on top → final probability) for `total_bases` and `hits_runs_rbis`, comparing against the old pipeline and real outcomes:
+
+| Prop | Old pipeline | New pipeline (corrected baseline + current enrichment) | Actual |
+|---|---|---|---|
+| `total_bases` | 89.9% | **83.6%** | 83.5% |
+| `hits_runs_rbis` | 93.0% | **66.4%** (overcorrected, now underconfident) | 81.7% |
+
+**`total_bases` validates beautifully end-to-end. `hits_runs_rbis` reveals something important, not a flaw in the baseline fix**: current enrichment's average log-adjustment for `total_bases` is essentially zero (-0.004, neutral), but for `hits_runs_rbis` it's **+0.554** (substantial, real, pushing the rate up ~1.74x on average). The corrected baseline alone is accurate (confirmed earlier: 84.2% vs. actual 81.7%) — but current enrichment's own large, real bias, previously masked because it happened to push in the same overconfident direction as baseline's error, is now fully exposed once baseline is fixed and overcorrects the other way.
+
+**This means for `hits_runs_rbis` specifically, the correct recommendation is: fix baseline as validated, AND separately address enrichment's own +0.554 systematic bias for this prop** — not a failure of the baseline work, but new, concrete evidence of exactly where enrichment itself needs its own fix, with the magnitude now precisely measured.
+
+## 90. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
