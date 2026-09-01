@@ -523,7 +523,13 @@ Per Gemini's guidance (the Diebold-Mariano framework for comparing predictive ac
 
 **`rbis`**: tested the pure empirical blend (weight 0.5995) against the full 12-day available population instead of the dispersion-only correction: **t=1.775** (up from 1.410 with dispersion alone), leave-one-out never negative (0.009-0.014). Tried combining dispersion and blend together — performed worse (t=1.447) than the blend alone. **The pure empirical blend is the best available correction for `rbis`**, robust but still short of the 2.0 significance bar even using all available data — this appears to be a genuine small-effect-size case rather than an underpowered one.
 
-## 84. WHAT THIS DOES NOT YET ANSWER
+## 86. `hitter_strikeouts` — a real problem was hiding behind an earlier coarse check, now found and fixed
+
+Per instruction to go deeper on this prop rather than trust the earlier "mild issue" characterization: splitting the ≥70% band more finely revealed the ≥80% sub-band alone shows a real -16.2pp gap (n=133, 25 days) — masked by averaging it together with the genuinely mild 70-80% band. **This is a real miss from insufficient granularity in the original check, not a new phenomenon.**
+
+Confirmed not overdispersed (ratio=0.91), ruling out the variance-model mechanism. Found the same "situational signal" pattern as six other props (empirical 25.1% vs. actual 67.2% vs. predicted 82.4%). Solved for the exact optimal weight (0.735) and tested at day-level (15 days, corrupted dates excluded): **t=2.229, leave-one-out never negative (0.069-0.091).** Fully validated, sixth prop confirmed under this unified mechanism.
+
+## 87. WHAT THIS DOES NOT YET ANSWER
 
 1. **Statistical robustness of the n=141 confirmation** — the near-perfect 82.4%-vs-83.0% result is on a single scoped test population; day-level block bootstrap (95% CI, leave-one-out) has not been run on this specific result, and n=141 leaves real sampling uncertainty at this level of precision.
 2. **The exact corrected formula for `prior_strength`'s underlying variance computation** — confirmed the *direction* of the fix (compute population variance from season-to-date rates, not the recency-blended rate) and confirmed a large multiplier is needed in practice (asymptotic convergence required 15x+ before flattening out), but the precise, principled formula for the corrected `empiricalPriorStrength` calculation has not been derived — only demonstrated that the current one under-estimates substantially.
