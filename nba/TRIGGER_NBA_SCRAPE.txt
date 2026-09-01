@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-01T00:10:00Z
-trigger_reason: first run of the new arenas scrape step (teaminfocommon per team), added alongside the already-working teams + players scrapes
+last_triggered_utc: 2026-09-01T00:20:00Z
+trigger_reason: re-run after fixing a real git-push race condition (previous run's scrapes all succeeded - 30 teams/582 players/30 arenas - but the final commit push was rejected as non-fast-forward due to a concurrent push from another workflow; added fetch+rebase+retry)
