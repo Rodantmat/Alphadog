@@ -254,3 +254,19 @@ Per instruction: if the boundary can be worked to a positive outcome, keep worki
 **The likely explanation for why this differs from the earlier finding**: the original `opposing_pitcher_quality` test almost certainly ran against the same sparse, mostly-zero-filled real snapshot coverage found earlier in this section — a signal that thin cannot reliably detect a real but modest effect, and can plausibly show a wrong-direction trend from pure noise. Building a validated, complete substitute did not just fill a coverage gap; it surfaced a real, previously undetectable effect.
 
 **This is reported as a genuine, positive, but appropriately bounded finding**, not a reversal of the whole Phase 2 conclusion: it applies specifically to `opposing_pitcher_quality` on `hitter_strikeouts`, tested this way, on this data. It does not by itself confirm the same holds for `opposing_pitcher_quality`'s other four wired props (`hits`, `home_runs`, `total_bases`, `walks`), each of which would need this same proxy-validation-and-full-rebuild treatment before the same conclusion could be extended to them. That is real, well-scoped, promising next work — not yet done.
+
+## Extended to the other four wired props — a genuinely mixed, honest result, not a uniform confirmation
+
+Per instruction to continue. Built the same validated FIP proxy (a single universal regression, `run_value_per_100 = -0.652×FIP + 0.787`, same r=-0.515/R²=0.27 validation as above) and applied each prop's own real, current config coefficient to it, with the same leakage-free, point-in-time methodology, across the same full 137-day/26,560-leg window.
+
+| Prop | Real coefficient | Days (n≥20) | Days combined wins | Mean improvement | t-stat |
+|---|---|---|---|---|---|
+| `hitter_strikeouts` (for reference) | +0.05 | 133 | 93/133 (70%) | +0.0058 | **5.913 — strong** |
+| `hits` | -0.05 | 133 | 76/133 (57%) | +0.0041 | **2.090 — borderline positive** |
+| `total_bases` | -0.075 | 133 | 70/133 (53%) | +0.0086 | 1.928 — borderline, just under conventional significance |
+| `walks` | -0.05 | 133 | 72/133 (54%) | +0.0017 | 1.639 — not significant |
+| `home_runs` | -0.05 | 133 | 70/133 (53%) | +0.0001 | **0.014 — essentially zero effect** |
+
+**Checked `hits` (the strongest of the four) for tier-cancellation, given the pattern of this whole investigation**: clean — all four skill tiers move by 0.2-0.3 percentage points in the same direction as the pooled result, no masked swing.
+
+**Honest conclusion: this is not a uniform finding.** `opposing_pitcher_quality` shows strong, genuine evidence of helping specifically for `hitter_strikeouts`, weak/borderline evidence for `hits` and `total_bases`, and no detectable effect at all for `walks` and `home_runs`. This is a real, prop-specific result, not a single factor that either universally works or universally doesn't — and reporting it any other way (either "confirmed it helps" or "confirmed it doesn't") would overstate what four different, mixed t-statistics actually show. The most defensible reading: **`opposing_pitcher_quality` is worth deploying for `hitter_strikeouts` specifically, on the strength of its result; the case for the other four props it's wired to is weak-to-absent and does not currently justify inclusion.**
