@@ -124,7 +124,8 @@ def make_config(worker_name, include_services=False):
             {"binding": "WEEKLY_DIFFERENTIAL_RUNNER_WORKER", "service": "alphadog-v2-weekly-differential-runner"},
             {"binding": "DAILY_DELTA_RUNNER_WORKER", "service": "alphadog-v2-daily-delta-runner"},
             {"binding": "NBA_STATIC_TEAMS_WORKER", "service": "alphadog-v2-nba-static-teams"},
-            {"binding": "NBA_STATIC_PLAYERS_WORKER", "service": "alphadog-v2-nba-static-players"}
+            {"binding": "NBA_STATIC_PLAYERS_WORKER", "service": "alphadog-v2-nba-static-players"},
+            {"binding": "NBA_STATIC_ARENAS_WORKER", "service": "alphadog-v2-nba-static-arenas"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
