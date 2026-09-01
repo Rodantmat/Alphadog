@@ -81,6 +81,12 @@ jobs:
         run: python nba/scrape_nba_team_stats.py
         continue-on-error: true
 
+      - name: Scrape NBA on/off-court splits from stats.nba.com
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_onoff.py
+        continue-on-error: true
+
       - name: Commit NBA data JSON to main
         run: |
           set -euo pipefail
