@@ -19,9 +19,10 @@
 
 | Prop | Real days | Real legs (all) | Legs in high-conf band | Buggy gap (high-conf) | Corrected gap at best M | Best M found |
 |---|---|---|---|---|---|---|
-| `hits` (clears 0) | 139 | 30,143 | 832 (≥70% band) | +20.0pp (M20 baseline) → | **+0.26pp** | **M ≈ 100** |
-| `singles` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | +13.72pp | **+0.83pp** | **M ≈ 100** |
-| `walks` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | +10.63pp | **+2.25pp** (M35), overcorrects past M60 | **M ≈ 35-45** (narrower tuning still open) |
+| `hits` (clears 0) | 139 | 30,143 | 832 (≥70% band) | +20.0pp (M20 baseline) → | **+0.26pp** | **M ≈ 100 — LOCKED** |
+| `singles` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | +13.72pp | **+0.83pp** | **M ≈ 100 — LOCKED** |
+| `walks` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | +10.63pp | **+0.03pp** | **M = 50 — LOCKED** |
+| `doubles` (clears 0) | 139 | 30,143 | 4,522 (top 15%) | not computed (too rare for buggy formula to be meaningfully "high-confidence") | **+0.75pp** at M=500, still marginally declining beyond that | **M ≈ 500 — LOCKED, low priority given near-zero real board volume for this prop** |
 
 **Cross-validation note for `hits`**: M=100 was checked against *two independent bands simultaneously* (high-confidence ≥70%, and mid-range 40-60%) and produced a near-perfect gap in both (+0.26pp and -0.22pp respectively) — this is not a single-band fit, it holds across the distribution.
 
