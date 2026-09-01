@@ -56,6 +56,7 @@ def fetch_one(team_id, proxies):
                 "arena_name": col("ARENA"),
                 "arena_capacity": col("ARENACAPACITY"),
                 "city": col("TEAM_CITY"),
+                "_debug_headers": headers,
             }, None
         except Exception as exc:  # noqa: BLE001
             last_error = str(exc)
