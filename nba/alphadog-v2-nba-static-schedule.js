@@ -16,16 +16,20 @@ async function fetchFromGithub(env, path, metaPath) {
   const owner = env.GITHUB_OWNER || "Rodantmat";
   const repo = env.GITHUB_REPO || "Alphadog";
   const branch = env.GITHUB_BRANCH || "main";
-  const headers = { "Accept": "application/vnd.github+json", "User-Agent": "Alphadog-NBA-StaticSchedule" };
+  const headers = { "User-Agent": "Alphadog-NBA-StaticSchedule" };
   if (env.GITHUB_TOKEN) headers["Authorization"] = `Bearer ${env.GITHUB_TOKEN}`;
-  const apiUrl = (p) => `https://api.github.com/repos/${owner}/${repo}/contents/${p}?ref=${encodeURIComponent(branch)}`;
-  const [dataResp, metaResp] = await Promise.all([fetch(apiUrl(path), { headers }), fetch(apiUrl(metaPath), { headers })]);
-  if (!dataResp.ok) throw new Error(`github_read_failed_http_${dataResp.status}:${(await dataResp.text()).slice(0, 200)}`);
-  const dataJson = await dataResp.json();
-  const file = JSON.parse(atob(String(dataJson.content || "").replace(/\n/g, "")));
+  // Uses raw.githubusercontent.com, not the Contents API - the Contents API's inline "content"
+  // field silently comes back empty for files over ~1MB (confirmed live 2026-09-02: this
+  // schedule file is 1.2MB, well past that limit, causing atob("") -> JSON.parse("") ->
+  // "Unexpected end of JSON input"). raw.githubusercontent.com has no such size cap and returns
+  // the file bytes directly - no base64 decode needed either.
+  const rawUrl = (p) => `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${p}`;
+  const [dataResp, metaResp] = await Promise.all([fetch(rawUrl(path), { headers }), fetch(rawUrl(metaPath), { headers })]);
+  if (!dataResp.ok) throw new Error(`github_raw_read_failed_http_${dataResp.status}:${(await dataResp.text()).slice(0, 200)}`);
+  const file = await dataResp.json();
   let meta = null;
   if (metaResp.ok) {
-    try { const metaJson = await metaResp.json(); meta = JSON.parse(atob(String(metaJson.content || "").replace(/\n/g, ""))); } catch (_) {}
+    try { meta = await metaResp.json(); } catch (_) {}
   }
   if (meta && meta.error) throw new Error(`last_committed_scrape_failed: ${meta.error}`);
   return { file, meta };
