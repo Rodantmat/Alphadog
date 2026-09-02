@@ -118,8 +118,6 @@ Added both scrape steps to the same `nba-scrape.yml` workflow (one push to the e
 
 **Next**: arenas and officials (the remaining static-differential entities), then move to Phase 3b (incremental/delta game-log data).
 
----
-
 ## 2026-09-01 — Arenas + officials built and verified; a real "no manual trigger, ever" fix; static-differential run is now complete
 
 **Real, permanent fix for triggering scrapes, per the person's explicit "I don't want to run it manually" pushback**: instead of chasing the `github_trigger_workflow` tool-list-caching problem further, added a `push` trigger to `nba-scrape.yml` scoped to one dedicated file, `nba/TRIGGER_NBA_SCRAPE.txt`. Any commit changing that file's content fires the scraper - this works with plain `github_put_file`/`github_patch_file`, which every NBA chat has had since the very first commit this session. No tool-list dependency, no connector reconnect, no manual GitHub UI click, ever again, for any future NBA chat.
