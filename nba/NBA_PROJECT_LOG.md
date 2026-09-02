@@ -266,3 +266,19 @@ Per the person's "yes" to building the schedule after the third research pass id
 **10 static/weekly-enrichment/foundational workers now real, live, and independently verified**: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits, player impact rating (DARKO), season schedule/calendar. Plus the weekly differential/change-detection layer on top. The static/weekly foundation of this project is now genuinely complete end to end, with the one true foundational gap (schedule) closed.
 
 **Next, per the third research pass's own priority order**: play-type data (`synergyplaytypes`) is the next highest-value single addition, followed by the Tier-1 player-tracking families (Passing, Rebounding, Drives, CatchShoot/PullUpShot, touches) - all using the exact same proven pattern.
+
+---
+
+## 2026-09-02 (cont'd 3) — Play-type (Synergy) data built, deployed, and verified — the highest-value remaining addition from the third research pass
+
+Built `nba/scrape_nba_playtypes.py` and `alphadog-v2-nba-static-playtypes.js` following the exact same proven pattern, targeting `synergyplaytypes` at both player and team level (offensive + defensive groupings), across all 11 real play types (Isolation, PRBallHandler, PRRollman, Postup, Spotup, Handoff, Cut, Transition, OffScreen, OffRebound, Misc).
+
+**Tested empirically rather than assumed, per the scraper's own design**: tried the cheap "leave PlayType blank" single-call path first; it did not return multiple play types in one response, so the scraper correctly fell back to looping (11 play types × up to 2 groupings × 2 levels). Real result: 3364 player records, 630 team records, zero errors.
+
+**Learned from the schedule worker's earlier bug and applied it proactively**: wrote this worker to use `raw.githubusercontent.com` from the start (not the Contents API), since player-level play-type data was a real candidate for exceeding the 1MB inline-content limit discovered earlier - avoided hitting that bug a second time instead of waiting to discover it again.
+
+**Triggered for real, verified independently against Postgres**: 3282 distinct player rows, 630 team rows. Spot-checked Nikola Jokić's real offensive profile - 22.5% of his offensive possessions are post-ups (real, well-known signature of his actual playstyle), with plausible PPP and percentile values across post-up, roll-man, spot-up, and transition play types.
+
+**11 static/weekly/foundational workers now real, live, and independently verified**, plus the weekly differential layer: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits, player impact rating (DARKO), season schedule/calendar, and play-type profiles.
+
+**Next, per the third research pass's priority order**: the Tier-1 player-tracking families still not built (Passing, Rebounding, Drives, CatchShoot/PullUpShot, touches) - same proven `leaguedashptstats` one-call-per-type pattern already used for `SpeedDistance`.
