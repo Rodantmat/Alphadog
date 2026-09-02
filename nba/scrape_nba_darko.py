@@ -116,29 +116,60 @@ def main():
             total_match = re.search(r'1[-–](\d+)\s+of\s+(\d+)', html1)
             total_expected = int(total_match.group(2)) if total_match else None
 
-            # Empirically try a handful of common pagination parameter names/values until one
-            # actually returns NEW player IDs not already collected.
-            if total_expected and len(all_players) < total_expected:
-                candidate_urls = [
-                    f"{BASE_URL}?page=2", f"{BASE_URL}?p=2", f"{BASE_URL}?offset=50",
-                    f"{BASE_URL}?pageSize=1000", f"{BASE_URL}?limit=1000", f"{BASE_URL}?per_page=1000",
-                ]
-                for url in candidate_urls:
+            # This is SvelteKit (confirmed 2026-09-02, svelte-* CSS classes / data-sveltekit-*
+            # attrs, not Next.js). SvelteKit's client-side-nav data format is a sibling
+            # __data.json endpoint per route, and/or a `<script type="application/json"
+            # data-sveltekit-fetched ...>` block embedding each load()'s fetch results directly
+            // in the page. Try both real SvelteKit patterns before falling back to guessed query
+            # params, and always dump the FULL html (not truncated) plus every embedded
+            # application/json script block on any failure, so the next attempt has full ground
+            # truth instead of another guess.
+            sveltekit_fetched_blocks = re.findall(
+                r'<script type="application/json" data-sveltekit-fetched[^>]*>(.*?)</script>', html1, re.S
+            )
+            if sveltekit_fetched_blocks:
+                method_used = "sveltekit_fetched_json"
+                for block in sveltekit_fetched_blocks:
                     try:
-                        html_n = fetch_page(url, proxies)
-                        new_players = extract_players_from_html(html_n)
-                        new_ids = [p["player_id"] for p in new_players if p["player_id"] not in all_players]
-                        if new_ids:
-                            for p in new_players:
-                                all_players[p["player_id"]] = p
-                            if len(all_players) >= total_expected:
-                                break
+                        parsed = json.loads(block)
+                        body = parsed.get("body")
+                        if isinstance(body, str):
+                            body = json.loads(body)
+                        # Shape genuinely unknown until seen for real - dump and stop rather than
+                        # guess a field path that silently returns nothing.
+                        OUTPUT_DEBUG_PATH.write_text(json.dumps(body)[:20000], encoding="utf-8")
+                        error = "sveltekit_fetched_block_found_but_shape_not_yet_mapped - see nba_darko_debug_html_snippet.txt and update this script's parsing"
+                        break
                     except Exception:  # noqa: BLE001
                         continue
 
-            if total_expected and len(all_players) < total_expected * 0.9:
-                error = f"pagination_incomplete: got {len(all_players)} of expected ~{total_expected} - real pagination URL scheme not found by the candidates tried, needs manual inspection"
-                OUTPUT_DEBUG_PATH.write_text(html1[:20000], encoding="utf-8")
+            if not sveltekit_fetched_blocks:
+                # Empirically try a handful of common pagination parameter names/values until one
+                # actually returns NEW player IDs not already collected.
+                if total_expected and len(all_players) < total_expected:
+                    candidate_urls = [
+                        f"{BASE_URL}?page=2", f"{BASE_URL}?p=2", f"{BASE_URL}?offset=50",
+                        f"{BASE_URL}?pageSize=1000", f"{BASE_URL}?limit=1000", f"{BASE_URL}?per_page=1000",
+                        f"{BASE_URL}__data.json",
+                    ]
+                    for url in candidate_urls:
+                        try:
+                            html_n = fetch_page(url, proxies)
+                            new_players = extract_players_from_html(html_n)
+                            new_ids = [p["player_id"] for p in new_players if p["player_id"] not in all_players]
+                            if new_ids:
+                                for p in new_players:
+                                    all_players[p["player_id"]] = p
+                                if len(all_players) >= total_expected:
+                                    break
+                        except Exception:  # noqa: BLE001
+                            continue
+
+                if total_expected and len(all_players) < total_expected * 0.9:
+                    error = f"pagination_incomplete: got {len(all_players)} of expected ~{total_expected} - real pagination URL scheme not found by the candidates tried, needs manual inspection"
+                    # Full, untruncated HTML this time (not just first 20k) so the next attempt
+                    # has complete ground truth instead of a partial guess.
+                    OUTPUT_DEBUG_PATH.write_text(html1, encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
         error = str(exc)
 
