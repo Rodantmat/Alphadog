@@ -154,7 +154,7 @@ async function diffTeams(sql, newTeams) {
     if (!t.id) continue;
     await sql`
       INSERT INTO nba_ref.team_roster_snapshot (team_id, nba_team_id, abbreviation, full_name, conference, division, snapshot_taken_at)
-      VALUES (${`nba_${t.id}`}, ${t.id}, ${t.abbreviation}, ${t.name}, ${t.conference}, ${t.division}, now())
+      VALUES (${`nba_${t.id}`}, ${t.id}, ${t.abbreviation}, ${`${t.city || ""} ${t.nickname || ""}`.trim()}, ${t.conference}, ${t.division}, now())
     `;
   }
 
