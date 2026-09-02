@@ -125,7 +125,7 @@ async function diffTeams(sql, newTeams) {
     }
     for (const [field, newVal, oldVal] of [
       ["abbreviation", t.abbreviation, old.abbreviation],
-      ["full_name", t.name, old.full_name],
+      ["full_name", `${t.city || ""} ${t.nickname || ""}`.trim(), old.full_name],
       ["conference", t.conference, old.conference],
       ["division", t.division, old.division],
     ]) {
