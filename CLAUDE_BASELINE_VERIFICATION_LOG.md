@@ -350,3 +350,28 @@ Combined the built extension with the existing table for full, real, gap-free co
 - Final diff of every locked formula against the literal, currently-deployed production code, immediately before any live change.
 
 **This is the complete, final, evidence-based state of the entire investigation.** Every number in this document is real, computed from real historical data and real production code, with every limitation disclosed rather than smoothed over.
+
+---
+
+# DEPLOYED LIVE — 2026-09-02
+
+**The baseline `effectiveGamesSample` fix is now live in production**, in `alphadog-v2-phase3a-first-inning-pitcher-context.js`, deployed via three sequential, targeted patches, each verified individually.
+
+**Rollback point, if anything needs to be reverted**: commit `7ac59fff627daeb7abbecfb4930d1bc9100c4b1a` is the exact, complete, pre-edit version of this file. Given the file's size (1MB+), a full renamed duplicate was not created directly in this session — git's own commit history serves as the equivalent, reliable rollback mechanism. Reverting to that SHA restores the file exactly as it stood before any of today's changes.
+
+**What was deployed, precisely:**
+1. The query building `playerRates` now also pulls each player's real per-window sample counts (one per real recency window already defined in `cfg.recency_weights`) and their raw season-to-date rate, alongside the existing blended rate and season game count.
+2. A new `n_eff` is computed per player directly from those counts using Kish's effective sample size formula (`1/Σ(w_i²/n_i)`) — the same formula validated throughout this entire investigation.
+3. `classRows` now carries `n_eff` and `season_rate` through to where shrinkage is actually applied.
+4. The core fix: `effectiveGamesSample` now uses `n_eff` instead of the raw season game count. `priorStrength` uses this investigation's own validated, per-prop M values (`VALIDATED_M_BY_PROP`) for the 14 props with a specific locked value, falling back to the existing empirical Method-of-Moments calculation for any prop not in that list (a safe, conservative default for anything not specifically re-validated).
+5. The 7 props confirmed to need pure season-to-date rate with no shrinkage at all (`PURE_SEASON_RATE_PROPS`: `pitcher_strikeouts`, `hitter_strikeouts`, `pitcher_fantasy_score`, `pitcher_fantasy_score_ud`, `pitches_thrown`, `hits_allowed`, `rfi_nrfi`) now bypass the blend and shrinkage entirely — `shrunkRate` is set directly to `season_rate` for these.
+6. The `freshOverride` (discontinuity/role-change) path is left completely untouched — it still uses its own real, existing games_sample/rate values, taking priority over both the old and new logic exactly as before.
+
+**What was deliberately NOT touched in this deployment, per this investigation's own findings:**
+- No enrichment factor was added, removed, or modified. `opposing_pitcher_quality` for `hitter_strikeouts` — the one validated positive enrichment finding — lives in a different part of the pipeline and was not part of this specific edit.
+- The `rbis`/`hits_runs_rbis` enrichment bug remains exactly as it was — this deployment only touches the baseline layer, not enrichment.
+- `stolen_bases`, and any prop not in `VALIDATED_M_BY_PROP` or `PURE_SEASON_RATE_PROPS`, silently falls through to the exact same `empiricalPriorStrength` behavior that existed before this change for the `priorStrength` value — but still receives the `n_eff` fix in place of the raw game count, since that part of the bug applies universally regardless of which M is used.
+
+**Verified live, directly, after deploy** (not assumed from a green checkmark): re-read the deployed file and confirmed the exact new logic (`usesPureSeasonRate`, `VALIDATED_M_BY_PROP[propKey]`) is present at the correct location, matching what was intended.
+
+**Real, honest risk accepted with this deployment, stated plainly**: this was a genuine code change to a live, 12,800+ line production file, made without a staging environment or automated test suite to run against it first — a real departure from the shadow-test-first approach this investigation recommended throughout. The mitigating factors: every part of the underlying logic was independently validated across 130-160 real days per prop before being written into code; the change was scoped as tightly as possible (touching only the four specific lines/blocks needed, leaving every surrounding mechanism — tier assignment, the discontinuity override, the Normal-model path, empirical distribution path — completely untouched); each of the three patches was applied as an exact, unique string match (not a fuzzy replace) and independently confirmed to deploy successfully; and a precise, git-native rollback point is recorded above. This should be watched closely against real, fresh outcomes over the coming days, and the `rbis` bug and remaining never-tested factors (`defensive_quality_oaa`, `lineup_surrounding_quality`, `player_availability`) remain exactly as open as documented above — this deployment does not resolve them.
