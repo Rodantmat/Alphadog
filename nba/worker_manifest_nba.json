@@ -10,6 +10,7 @@
     "alphadog-v2-nba-static-onoff",
     "alphadog-v2-nba-static-darko",
     "alphadog-v2-nba-weekly-differential",
-    "alphadog-v2-nba-static-schedule"
+    "alphadog-v2-nba-static-schedule",
+    "alphadog-v2-nba-static-playtypes"
   ]
 }
