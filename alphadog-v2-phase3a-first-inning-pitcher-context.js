@@ -9038,7 +9038,7 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         const rate = Number(r.blended_rate);
         const z = popStddev > 0 ? (rate - popMean) / popStddev : 0;
         const tier = assignTierFromZScorePg(z, tierBandsCfg, rates.length, rank, playerRates.length);
-        return { player_id: r.player_id, rate, games_sample: Number(r.games_sample), n_eff: r.n_eff != null ? Number(r.n_eff) : null, season_rate: r.season_rate != null ? Number(r.season_rate) : null, tier_key: tier.tier_key };
+        return { player_id: r.player_id, rate, games_sample: Number(r.games_sample), tier_key: tier.tier_key };
       });
     for (let i = 0; i < classRows.length; i += 500) {
       const chunk = classRows.slice(i, i + 500);
