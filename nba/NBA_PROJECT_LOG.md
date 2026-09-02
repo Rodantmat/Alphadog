@@ -212,3 +212,21 @@ All are league-wide, one-call endpoints (unlike arenas' 30 sequential calls) - g
 - **UI**: the existing "certification center" (leg aggregator / slip builder) will be reused as-is for NBA once ready — no separate NBA UI planned.
 
 **Next**: proceed into Phase 2 (NBA_SYSTEM_DRAFT.md) with this operating model as the locked spec, and begin Phase 1's still-open item (source probing/locking, starting with static/historical data since no live season exists yet).
+
+---
+
+## 2026-09-02 — DARKO player-impact rating built, deployed, and verified (real alternative to paid EPM found and shipped)
+
+Per the person's request to find a free alternative to paid EPM: researched and found **darko.app** (Kostya Medvedovsky's DARKO DPM) — free, public, no paywall, and independently rated by NBA analysts as the best *predictive* catch-all player-impact metric available (beats even paid EPM/LEBRON on RMSE). Consulted Gemini twice on relevance/risk: confirmed it's a genuinely load-bearing input (not redundant with the on/off-court data already built - on/off is descriptive/noisy, DPM is predictive/stable), flagged real risks (single-maintainer "bus factor," JS-heavy site), and recommended a generic `player_impact_rating` abstraction rather than hard-wiring to "DARKO" by name - implemented exactly that way.
+
+**Real technical path, iterated honestly rather than guessed blindly**:
+1. First attempt: assumed the leaderboard was server-paginated ("50 of 530") - tried common `?page=`/`?limit=` query params, got 50/530, correctly logged the failure rather than silently accepting partial data.
+2. Found and fixed a real syntax bug (`//` instead of `#` in a comment) from the first fix attempt.
+3. Dumped the full, untruncated HTML on a second failed attempt and found the real mechanism: darko.app is SvelteKit, and its **entire 530-player dataset is embedded directly in the page's hydration script** (`kit.start(app, element, {...})`) - there is no pagination to fight at all; the visible "50 per page" table is a pure client-side slice of already-fully-present data.
+4. The embedded blob is JS object-literal syntax (unquoted keys, bare leading-decimal numbers like `.534094`), not strict JSON - wrote a small repair step (regex-quote keys, fix bare decimals) and **tested it against the actual captured HTML locally before pushing** - confirmed 530/530 parsed correctly, real values (Jokic +6.76, Wembanyama +6.37) matching what was independently seen via `web_fetch` earlier.
+
+**Triggered for real, verified independently against Postgres**: `nba_stats.player_impact_rating` - 530/530 rows. Spot-checked: Wembanyama +6.37 DPM (rank 2), LeBron James +1.24 DPM (rank 56) - both match the source exactly.
+
+**9 static/weekly-enrichment workers now real, live, and independently verified**: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits, and now player impact rating (DARKO). Every single one follows the identical proven pattern end-to-end with zero manual steps: trigger-file push → GitHub Actions scrape → committed JSON → Worker reads via GitHub Contents API → Postgres write → independent verification.
+
+**Next**: Phase 3b (incremental/delta game-log layer) - the natural next major piece, and the prerequisite for garbage-time adjustment, rolling/recent-form averages, defense-vs-position splits, and a real referee-crew-tendency table, all of which were correctly deferred here pending game-level data.
