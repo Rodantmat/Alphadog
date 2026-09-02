@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-02T20:15:00Z
-trigger_reason: extended schedule scraper to fetch both the just-completed 2025-26 season (real backfill) and the upcoming 2026-27 season (may not be published yet - not treated as an error if empty)
+last_triggered_utc: 2026-09-02T20:40:00Z
+trigger_reason: first run of the play-type (Synergy) scraper - untested whether single-call-all-playtypes works or falls back to looping 11 play types x 2 levels
