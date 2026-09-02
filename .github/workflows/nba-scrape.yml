@@ -87,6 +87,12 @@ jobs:
         run: python nba/scrape_nba_onoff.py
         continue-on-error: true
 
+      - name: Scrape DARKO DPM (free player-impact metric)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_darko.py
+        continue-on-error: true
+
       - name: Commit NBA data JSON to main
         run: |
           set -euo pipefail
