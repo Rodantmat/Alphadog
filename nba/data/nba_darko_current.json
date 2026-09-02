@@ -1,0 +1,304 @@
+{
+  "players": [
+    {
+      "player_id": 203999,
+      "dpm": -5.4,
+      "dpm_off": 0.7,
+      "dpm_def": 6.8
+    },
+    {
+      "player_id": 1641705,
+      "dpm": 6.4,
+      "dpm_off": 4.0,
+      "dpm_def": 2.4
+    },
+    {
+      "player_id": 202695,
+      "dpm": 5.9,
+      "dpm_off": 5.4,
+      "dpm_def": 0.5
+    },
+    {
+      "player_id": 1628983,
+      "dpm": 5.6,
+      "dpm_off": 5.0,
+      "dpm_def": 0.6
+    },
+    {
+      "player_id": 203507,
+      "dpm": 4.6,
+      "dpm_off": 3.2,
+      "dpm_def": 1.4
+    },
+    {
+      "player_id": 1629029,
+      "dpm": 4.4,
+      "dpm_off": 4.4,
+      "dpm_def": -0.1
+    },
+    {
+      "player_id": 1628378,
+      "dpm": 3.9,
+      "dpm_off": 4.6,
+      "dpm_def": -0.7
+    },
+    {
+      "player_id": 1630595,
+      "dpm": 3.6,
+      "dpm_off": 3.2,
+      "dpm_def": 0.4
+    },
+    {
+      "player_id": 1628384,
+      "dpm": 3.6,
+      "dpm_off": 1.8,
+      "dpm_def": 1.8
+    },
+    {
+      "player_id": 1630162,
+      "dpm": 3.6,
+      "dpm_off": 4.1,
+      "dpm_def": -0.5
+    },
+    {
+      "player_id": 1626157,
+      "dpm": 3.6,
+      "dpm_off": 2.4,
+      "dpm_def": 1.2
+    },
+    {
+      "player_id": 1628973,
+      "dpm": 3.4,
+      "dpm_off": 4.3,
+      "dpm_def": -1.0
+    },
+    {
+      "player_id": 1631096,
+      "dpm": 3.2,
+      "dpm_off": 1.0,
+      "dpm_def": 2.2
+    },
+    {
+      "player_id": 201142,
+      "dpm": 3.1,
+      "dpm_off": 2.8,
+      "dpm_def": 0.3
+    },
+    {
+      "player_id": 1628369,
+      "dpm": 3.1,
+      "dpm_off": 3.3,
+      "dpm_def": -0.2
+    },
+    {
+      "player_id": 1629011,
+      "dpm": 2.9,
+      "dpm_off": 0.1,
+      "dpm_def": 2.7
+    },
+    {
+      "player_id": 1630567,
+      "dpm": 2.8,
+      "dpm_off": 1.3,
+      "dpm_def": 1.5
+    },
+    {
+      "player_id": 1630163,
+      "dpm": 2.7,
+      "dpm_off": 3.2,
+      "dpm_def": -0.6
+    },
+    {
+      "player_id": 1627750,
+      "dpm": 2.7,
+      "dpm_off": 3.5,
+      "dpm_def": -0.8
+    },
+    {
+      "player_id": 1628386,
+      "dpm": 2.5,
+      "dpm_off": 0.8,
+      "dpm_def": 1.7
+    },
+    {
+      "player_id": 203954,
+      "dpm": 2.4,
+      "dpm_off": 1.9,
+      "dpm_def": 0.5
+    },
+    {
+      "player_id": 1629660,
+      "dpm": 2.4,
+      "dpm_off": 2.6,
+      "dpm_def": -0.2
+    },
+    {
+      "player_id": 201935,
+      "dpm": 2.4,
+      "dpm_off": 2.8,
+      "dpm_def": -0.4
+    },
+    {
+      "player_id": 1630169,
+      "dpm": 2.3,
+      "dpm_off": 2.2,
+      "dpm_def": 0.2
+    },
+    {
+      "player_id": 1628392,
+      "dpm": 2.3,
+      "dpm_off": -0.5,
+      "dpm_def": 2.8
+    },
+    {
+      "player_id": 1627751,
+      "dpm": 2.2,
+      "dpm_off": -0.2,
+      "dpm_def": 2.4
+    },
+    {
+      "player_id": 1628368,
+      "dpm": 2.1,
+      "dpm_off": 2.0,
+      "dpm_def": 0.2
+    },
+    {
+      "player_id": 1628389,
+      "dpm": 2.1,
+      "dpm_off": 1.3,
+      "dpm_def": 0.8
+    },
+    {
+      "player_id": 203932,
+      "dpm": 2.0,
+      "dpm_off": 1.8,
+      "dpm_def": 0.3
+    },
+    {
+      "player_id": 201939,
+      "dpm": 2.0,
+      "dpm_off": 3.8,
+      "dpm_def": -1.8
+    },
+    {
+      "player_id": 1629057,
+      "dpm": 2.0,
+      "dpm_off": -0.1,
+      "dpm_def": 2.1
+    },
+    {
+      "player_id": 1642264,
+      "dpm": 2.0,
+      "dpm_off": 1.8,
+      "dpm_def": 0.2
+    },
+    {
+      "player_id": 1627936,
+      "dpm": 2.0,
+      "dpm_off": -0.1,
+      "dpm_def": 2.0
+    },
+    {
+      "player_id": 1630577,
+      "dpm": 1.8,
+      "dpm_off": 1.1,
+      "dpm_def": 0.7
+    },
+    {
+      "player_id": 1630178,
+      "dpm": 1.8,
+      "dpm_off": 2.7,
+      "dpm_def": -0.9
+    },
+    {
+      "player_id": 203497,
+      "dpm": 1.8,
+      "dpm_off": -1.6,
+      "dpm_def": 3.4
+    },
+    {
+      "player_id": 1630596,
+      "dpm": 1.8,
+      "dpm_off": 0.9,
+      "dpm_def": 0.9
+    },
+    {
+      "player_id": 1631105,
+      "dpm": 1.7,
+      "dpm_off": 1.0,
+      "dpm_def": 0.7
+    },
+    {
+      "player_id": 1626164,
+      "dpm": 1.7,
+      "dpm_off": 3.1,
+      "dpm_def": -1.3
+    },
+    {
+      "player_id": 202710,
+      "dpm": 1.7,
+      "dpm_off": 1.2,
+      "dpm_def": 0.6
+    },
+    {
+      "player_id": 1641717,
+      "dpm": 1.6,
+      "dpm_off": 0.2,
+      "dpm_def": 1.5
+    },
+    {
+      "player_id": 1642844,
+      "dpm": 1.6,
+      "dpm_off": 1.3,
+      "dpm_def": 0.3
+    },
+    {
+      "player_id": 203076,
+      "dpm": 1.6,
+      "dpm_off": 0.0,
+      "dpm_def": 1.5
+    },
+    {
+      "player_id": 1628374,
+      "dpm": 1.5,
+      "dpm_off": 1.8,
+      "dpm_def": -0.3
+    },
+    {
+      "player_id": 1627759,
+      "dpm": 1.5,
+      "dpm_off": 2.8,
+      "dpm_def": -1.3
+    },
+    {
+      "player_id": 1628978,
+      "dpm": 1.5,
+      "dpm_off": 0.2,
+      "dpm_def": 1.3
+    },
+    {
+      "player_id": 1628401,
+      "dpm": 1.5,
+      "dpm_off": 0.7,
+      "dpm_def": 0.8
+    },
+    {
+      "player_id": 1630532,
+      "dpm": 1.4,
+      "dpm_off": 1.6,
+      "dpm_def": -0.2
+    },
+    {
+      "player_id": 203500,
+      "dpm": 1.4,
+      "dpm_off": -1.6,
+      "dpm_def": 3.0
+    },
+    {
+      "player_id": 1630549,
+      "dpm": 1.4,
+      "dpm_off": 0.2,
+      "dpm_def": 1.3
+    }
+  ]
+}

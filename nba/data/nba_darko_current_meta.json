@@ -1,0 +1,7 @@
+{
+  "fetched_at": "2026-09-02T07:34:51Z",
+  "source_url": "https://www.darko.app/",
+  "method_used": "html_regex_scrape",
+  "player_count": 50,
+  "error": "pagination_incomplete: got 50 of expected ~530 - real pagination URL scheme not found by the candidates tried, needs manual inspection"
+}
