@@ -105,6 +105,12 @@ jobs:
         run: python nba/scrape_nba_playtypes.py
         continue-on-error: true
 
+      - name: Scrape NBA player tracking detail (Passing/Rebounding/Drives/etc) from stats.nba.com
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_tracking_detail.py
+        continue-on-error: true
+
       - name: Commit NBA data JSON to main
         run: |
           set -euo pipefail
