@@ -120,7 +120,7 @@ def main():
             # attrs, not Next.js). SvelteKit's client-side-nav data format is a sibling
             # __data.json endpoint per route, and/or a `<script type="application/json"
             # data-sveltekit-fetched ...>` block embedding each load()'s fetch results directly
-            // in the page. Try both real SvelteKit patterns before falling back to guessed query
+            # in the page. Try both real SvelteKit patterns before falling back to guessed query
             # params, and always dump the FULL html (not truncated) plus every embedded
             # application/json script block on any failure, so the next attempt has full ground
             # truth instead of another guess.
