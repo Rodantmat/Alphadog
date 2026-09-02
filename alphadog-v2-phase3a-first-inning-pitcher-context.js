@@ -8775,13 +8775,10 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       const weight = cfg.recency_weights[w];
       return `(CASE WHEN metric_window='${w}' AND ${denomField}>0 THEN (${numExpr})::float/${denomField} ELSE NULL END, CASE WHEN metric_window='${w}' AND ${denomField}>0 THEN ${weight} ELSE 0 END)`;
     });
-    const nEffWindowCols = windows.map((w, i) => `MAX(CASE WHEN metric_window='${w}' THEN ${denomField} ELSE NULL END) AS n_w_${i}`).join(",\n        ");
     const rateRows = await sql.unsafe(`
       SELECT player_id,
         SUM(rate*wt) FILTER (WHERE wt > 0) / NULLIF(SUM(wt) FILTER (WHERE wt > 0), 0) AS blended_rate,
-        MAX(CASE WHEN metric_window='season_to_date' THEN ${denomField} ELSE NULL END) AS games_sample,
-        MAX(CASE WHEN metric_window='season_to_date' THEN rate ELSE NULL END) AS season_rate,
-        ${nEffWindowCols}
+        MAX(CASE WHEN metric_window='season_to_date' THEN ${denomField} ELSE NULL END) AS games_sample
       FROM (
         SELECT player_id, metric_window, ${denomField},
           CASE ${windows.map((w,i) => `WHEN metric_window='${w}' THEN (${windowCases[i].split(", CASE")[0].replace("(","")})`).join(" ")} END AS rate,
@@ -8790,33 +8787,6 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
       ) x WHERE rate IS NOT NULL
       GROUP BY player_id
     `);
-    // REAL FIX (2026-09-01, independently verified investigation): effectiveGamesSample was using
-    // the raw season-to-date game count as a stand-in for how much real evidence backs the
-    // recency-blended rate - but blended_rate draws 70-90%+ of its real weight from the last 5-10
-    // games, not the full season. This caused severe, confirmed overconfidence at high-confidence
-    // predictions (verified against real graded outcomes: +15 to +30+ percentage-point gaps at
-    // 90%+ predicted HP across multiple props, cross-validated across independent confidence
-    // bands and skill-tier quartiles over 130-160 real days per prop). Fix: compute Kish's
-    // effective sample size from the same recency weights already used to build blended_rate:
-    // n_eff = 1 / sum(w_i^2 / n_i). For a small number of strikeout-dominated props, the
-    // recency-blend itself was found to carry essentially no real signal beyond the player's own
-    // season rate (verified: real outcomes nearly flat across the model's own within-tier
-    // confidence ranking) - those props use pure season-to-date rate directly, no shrinkage.
-    const PURE_SEASON_RATE_PROPS = new Set(["pitcher_strikeouts","hitter_strikeouts","pitcher_fantasy_score","pitcher_fantasy_score_ud","pitches_thrown","hits_allowed","rfi_nrfi"]);
-    const VALIDATED_M_BY_PROP = {
-      hits: 100, singles: 100, walks: 50, doubles: 500, total_bases: 180, runs: 160,
-      rbis: 250, home_runs: 125, pitcher_outs: 20, walks_allowed: 52, earned_runs: 67,
-      runs_allowed: 67, triples: 500, fantasy_score: 150
-    };
-    for (const r of rateRows) {
-      let sumWSqOverN = 0;
-      windows.forEach((w, i) => {
-        const n_i = Number(r[`n_w_${i}`]);
-        const w_i = Number(cfg.recency_weights[w]);
-        if (n_i > 0) sumWSqOverN += (w_i * w_i) / n_i;
-      });
-      r.n_eff = sumWSqOverN > 0 ? (1 / sumWSqOverN) : null;
-    }
     const playerRates = rateRows.filter(r => r.blended_rate != null && r.games_sample != null);
     if (!playerRates.length) { await sql.end(); return { ok: true, mode: "classification_baseline_v6_to_postgres", canonical_prop_key: propKey, line_value: lineValue, selected_side: side, rows_written: 0, note: "no_players_with_data" }; }
 
