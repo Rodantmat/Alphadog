@@ -1,7 +1,23 @@
 {
-  "fetched_at": "2026-09-02T20:10:08Z",
-  "source_url": "https://stats.nba.com/stats/scheduleleaguev2?LeagueID=00&Season=2025-26",
-  "http_status": 200,
-  "game_count": 1400,
+  "fetched_at": "2026-09-02T20:16:04Z",
+  "seasons_attempted": [
+    "2025-26",
+    "2026-27"
+  ],
+  "per_season": {
+    "2025-26": {
+      "http_status": 200,
+      "raw_count": 1400,
+      "real_count": 1400,
+      "error": null
+    },
+    "2026-27": {
+      "http_status": 200,
+      "raw_count": 1273,
+      "real_count": 1266,
+      "error": null
+    }
+  },
+  "total_game_count": 2666,
   "error": null
 }
