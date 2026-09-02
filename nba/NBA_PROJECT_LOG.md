@@ -282,3 +282,19 @@ Built `nba/scrape_nba_playtypes.py` and `alphadog-v2-nba-static-playtypes.js` fo
 **11 static/weekly/foundational workers now real, live, and independently verified**, plus the weekly differential layer: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits, player impact rating (DARKO), season schedule/calendar, and play-type profiles.
 
 **Next, per the third research pass's priority order**: the Tier-1 player-tracking families still not built (Passing, Rebounding, Drives, CatchShoot/PullUpShot, touches) - same proven `leaguedashptstats` one-call-per-type pattern already used for `SpeedDistance`.
+
+---
+
+## 2026-09-02 (cont'd 4) — Tier-1 player-tracking detail built, deployed, and verified — closes out the third research pass entirely
+
+Built `nba/scrape_nba_tracking_detail.py` and `alphadog-v2-nba-static-tracking-detail.js`, covering all 8 remaining `leaguedashptstats` measure types Gemini flagged as Tier-1 (Passing, Rebounding, Drives, CatchShoot, PullUpShot, ElbowTouch, PostTouch, PaintTouch) - 8 one-call requests, whole league each, no per-player looping.
+
+**Deliberate design choice, stated up front**: unlike `SpeedDistance` (6 fixed columns), each measure type returns a different, not-fully-predictable set of columns - rather than hand-picking fields and risking silently dropping something valuable, this stores every real column returned as a generic JSONB `metrics` blob per player per type (`nba_stats.player_tracking_detail`).
+
+**All 8 types succeeded on the first real attempt** - 4652 total records, zero errors, confirmed independently against Postgres (4652/4652, correct per-type breakdown of 582 each except Rebounding at 578).
+
+**Spot-checked real values, not just counts**: Nikola Jokić's `POTENTIAL_AST` (17.6) vs. his actual `AST` (10.7) - a large, well-known real signature of his elite passing rate that goes far beyond his counted assists, exactly the "opportunity vs. finishing" signal Gemini flagged this data for. His `PostTouch` numbers (7.2 post touches/game, 61.7% FG on post-ups) are also real and plausible.
+
+**This closes out the third research pass entirely**: season schedule (foundational), play-type data, and now all Tier-1 tracking families are built, deployed, and verified. **12 static/weekly/foundational workers now real, live, and independently verified**, plus the weekly differential change-detection layer: teams, players, arenas, officials, player bio/season-profile, player tracking (speed), team stats, on/off-court splits, player impact rating (DARKO), season schedule/calendar, play-type profiles, and tracking detail (Passing/Rebounding/Drives/CatchShoot/PullUpShot/touches).
+
+**Next**: no further static/weekly gaps remain identified across three research passes. The natural next major piece is Phase 3b - the incremental/delta game-log layer - which is also the prerequisite for everything correctly deferred so far (garbage-time adjustment, rolling/recent-form averages, defense-vs-position/role, referee-crew tendencies, absence-impact tables).
