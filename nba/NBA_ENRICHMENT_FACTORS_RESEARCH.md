@@ -114,3 +114,45 @@ The **freely and legitimately sourceable static/weekly layer is now genuinely co
 | Third-party impact metrics (EPM/LEBRON) | — | **Blocked on a paid-subscription decision**, not a technical gap |
 
 ---
+
+## 7. Resolution update (2026-09-02) — DARKO built instead of paid EPM/LEBRON
+
+The "blocked on paid subscription" row above is resolved: found and built `alphadog-v2-nba-static-darko` (darko.app's DPM) — free, public, independently rated by NBA analysts as beating even paid EPM/LEBRON on predictive accuracy. 530/530 players verified. See `NBA_PROJECT_LOG.md` (2026-09-02) for the full technical story. A weekly differential/change-detection worker was also built this session (`alphadog-v2-nba-weekly-differential`) - separate from this factors-research doc's scope, logged there.
+
+---
+
+## 8. Third research pass (2026-09-02) — a real, foundational gap found, plus a full re-prioritization
+
+Per the person's request to keep researching, did a third pass (web research + Gemini) focused specifically on "what's still missing from the weekly-static layer."
+
+### Major finding: the season schedule/calendar was never built — and it's not optional
+The full season schedule (every game, date, home/away teams, arena) was named as a needed static entity from the very first architecture discussion but was never actually built. Confirmed real and available: `stats.nba.com`'s `scheduleleaguev2` endpoint — one call, whole season, includes `gameId`/date/home-away teams/arena per game (also a plain-CDN JSON mirror exists at `cdn.nba.com/static/json/staticData/scheduleLeagueV2_X.json`, likely reachable the same curl_cffi-via-GitHub-Actions way as everything else).
+
+**Gemini's verdict, unprompted and direct**: this isn't a gap, it's a missing foundation — "the central organizing entity for your entire system... the chassis everything else bolts onto." Without it: no real rest-day/back-to-back calculation, no travel/timezone modeling, no strength-of-schedule context, and no clean way to join a player's stats to their specific opponent for a given game. This should be built **before** anything else on this list, not queued alongside it.
+
+### Player-tracking family — real prioritization, not "add everything"
+Only `SpeedDistance` is built so far. Gemini re-ranked the remaining `PtMeasureType` families by real prop-prediction value, explicitly self-correcting an earlier answer (on/off was previously treated as the top signal; Gemini now ranks *role/opportunity* data above it):
+
+- **Tier 1 (build next, high-signal)**: `Passing` (`POTENTIAL_AST` separates assist opportunity from finishing — a real regression signal), `Rebounding` (`REB_CHANCES`/`CONTESTED_REB` separates sustainable rebounding from lucky bounces), `Drives` (`DRIVE_PTS`/`DRIVE_AST` — core scoring/playmaking driver for guards/wings), `CatchShoot`/`PullUpShot` (how a player scores — critical when a playmaking teammate is out), touches (`ElbowTouch`/`PostTouch`/`PaintTouch` — role-in-offense proxies).
+- **Tier 2**: `Defense` — more descriptive of team outcomes than a player's own prop line.
+- **Tier 3, likely redundant**: `Possessions`/`Efficiency` — largely derivative of usage%/TS% already built.
+
+### Draft Combine anthropometrics — explicitly a red herring for this use case
+Real, actual measured wingspan/standing reach/vertical exists (`draftcombinestats`), but Gemini's verdict: **skip it**. For established players, realized on-court results (block rate, rebound rate) already encode their physical tools far more usefully than a combine measurement from years earlier. Only has real value for true rookies with no NBA sample yet — not worth the complexity for a current-season prop system.
+
+### New, higher-priority find than previously identified: play-type data (Synergy)
+`synergyplaytypes` — independently verified as a real, well-documented endpoint (exact schema: `PLAY_TYPE`, `POSS_PCT`, `PPP`, `FG_PCT`, etc.), works at both player and team level, across 11 real play types (Isolation, PRBallHandler, PRRollman, Postup, Spotup, Handoff, Cut, Transition, OffScreen, OffRebound, Misc). Gemini rates this as the single highest-value addition not yet built: knowing a player is the pick-and-roll ball-handler on 45% of his possessions is a direct, granular "offensive role" signal — more specific than season-long usage%, and it interacts directly with a specific opponent's known weaknesses once the schedule/matchup join exists.
+
+### Also newly surfaced, lower urgency
+- **Defense-vs-role/archetype** (not just vs. position) — e.g. "Team X allows the most efficiency to opposing pick-and-roll roll men" — a sharper version of the defense-vs-position idea from the first research pass.
+- **Granular lineup data** (`leaguedashlineups`, 2–5 man units) — a deeper extension of the on/off-court work already built; useful but explicitly ranked below play-type and defense-vs-role data.
+
+### Updated priority order for what's next
+1. **Season schedule/calendar** — foundational, build first, unlocks rest/travel/matchup joins for everything else.
+2. **Play-type data** (`synergyplaytypes`) — highest-value remaining single addition.
+3. **Passing/Rebounding/Drives/CatchShoot-PullUp/touches** (`leaguedashptstats` Tier 1 families) — same proven one-call pattern as everything already built.
+4. Referee-crew tendencies, defense-vs-role, granular lineups — all still correctly gated on Phase 3b's game-log layer.
+
+Draft Combine data and the `Defense`/`Possessions`/`Efficiency` tracking families are explicitly deprioritized/skipped per this pass's findings, not silently omitted.
+
+---
