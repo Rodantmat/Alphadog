@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-01T02:15:00Z
-trigger_reason: first run of the on/off-court splits scraper (teamplayeronoffdetails, per-team loop, untested - first live attempt)
+last_triggered_utc: 2026-09-01T04:00:00Z
+trigger_reason: first real test of the DARKO DPM scraper (untested pagination scheme, empirical discovery approach - checking real results now)
