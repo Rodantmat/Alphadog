@@ -1,0 +1,39 @@
+{
+  "fetched_at": "2026-09-02T22:55:17Z",
+  "per_type": {
+    "Passing": {
+      "count": 582,
+      "error": null
+    },
+    "Rebounding": {
+      "count": 578,
+      "error": null
+    },
+    "Drives": {
+      "count": 582,
+      "error": null
+    },
+    "CatchShoot": {
+      "count": 582,
+      "error": null
+    },
+    "PullUpShot": {
+      "count": 582,
+      "error": null
+    },
+    "ElbowTouch": {
+      "count": 582,
+      "error": null
+    },
+    "PostTouch": {
+      "count": 582,
+      "error": null
+    },
+    "PaintTouch": {
+      "count": 582,
+      "error": null
+    }
+  },
+  "total_record_count": 4652,
+  "error": null
+}
