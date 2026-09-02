@@ -250,3 +250,19 @@ Per the person's explicit instruction: the regular static workers only ever upse
 **Verified end state**: real baseline established - 582 players, 30 teams, 80 officials snapshotted. Test artifacts cleaned up, a final clean run confirmed zero false-positive events. This worker is what should run every week from here forward (matching the person's original "static data needs a differential path that runs weekly" instruction) - the regular static workers stay as the full-refresh/backfill layer, and this is the dedicated change-detection layer on top.
 
 **Not yet wired to any schedule** - `nba-scrape.yml`'s existing weekly cron only runs the Python scrapers; this Cloudflare Worker still needs to be triggered manually (via `run_job`) after each weekly scrape, or a future session should wire it into the same cron cycle. Flagged as an open item rather than silently assumed automatic.
+
+---
+
+## 2026-09-02 (cont'd 2) — Season schedule/calendar built, deployed, and verified (the foundational gap from the third research pass)
+
+Per the person's "yes" to building the schedule after the third research pass identified it as a missing foundation (Gemini: "the central organizing entity for your entire system"). Built `nba/scrape_nba_schedule.py` (`scheduleleaguev2`, real confirmed nested `leagueSchedule.gameDates[].games[]` shape, defensive multi-key-name extraction) and `alphadog-v2-nba-static-schedule.js`, wired in via the same 4-step pattern.
+
+**Fetches both seasons deliberately**: the just-completed 2025-26 season (real backfill value) and the upcoming 2026-27 season - confirmed already published as of today, not just a hopeful guess. Real result: 2026-27 season runs October 3, 2026 to April 11, 2027, consistent with the person's own "about a month away" framing from earlier in this project.
+
+**Real bug found and fixed - a new failure mode not seen before this session**: the worker failed with `Unexpected end of JSON input` on first trigger. Root cause: the committed schedule JSON is 1.2MB (2666 games), and GitHub's Contents API silently returns an empty `content` field for files over roughly 1MB - every other worker's file was small enough to never hit this. **Fixed by switching this worker's GitHub read from the Contents API to `raw.githubusercontent.com`** (same auth token, no size cap, no base64 decode needed) - this is now the correct pattern for any future large data file, not just this one.
+
+**Triggered for real, verified independently against Postgres** (not just trusting the response): 2666/2666 games written to `nba_calendar.games` - 1400 from the completed 2025-26 season, 1266 from the real, upcoming 2026-27 season. Spot-checked by joining to the teams table: real season-opener matchups (TOR vs MIA at a real Canadian preseason venue, LAC vs GSW in Hawaii, then real regular-season games at the correct, already-verified arena names) all resolved correctly.
+
+**10 static/weekly-enrichment/foundational workers now real, live, and independently verified**: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits, player impact rating (DARKO), season schedule/calendar. Plus the weekly differential/change-detection layer on top. The static/weekly foundation of this project is now genuinely complete end to end, with the one true foundational gap (schedule) closed.
+
+**Next, per the third research pass's own priority order**: play-type data (`synergyplaytypes`) is the next highest-value single addition, followed by the Tier-1 player-tracking families (Passing, Rebounding, Drives, CatchShoot/PullUpShot, touches) - all using the exact same proven pattern.
