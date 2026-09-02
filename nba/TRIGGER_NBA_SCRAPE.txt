@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-02T07:45:00Z
-trigger_reason: fixed a real syntax error (stray // instead of #) in the DARKO scraper, and added SvelteKit-specific data discovery (data-sveltekit-fetched blocks, __data.json) plus full untruncated HTML dump on failure - confirmed real site is SvelteKit, not Next.js
+last_triggered_utc: 2026-09-02T07:55:00Z
+trigger_reason: rewrote DARKO scraper with confirmed working extraction method (full 530-player dataset embedded in page hydration JSON, tested against actual captured HTML before this push)
