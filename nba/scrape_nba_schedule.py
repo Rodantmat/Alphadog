@@ -36,7 +36,13 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-URL = "https://stats.nba.com/stats/scheduleleaguev2?LeagueID=00&Season=2025-26"
+URL_TEMPLATE = "https://stats.nba.com/stats/scheduleleaguev2?LeagueID=00&Season={season}"
+# Both the just-completed season (real historical backfill value) and the upcoming season the
+# person is actually preparing for (per the original brief: "NBA season is currently off...
+# starts in about a month or so") - the schedule for next season may or may not be published yet
+# this early; each season is fetched independently so one being unavailable doesn't block the
+# other.
+SEASONS = ["2025-26", "2026-27"]
 OUTPUT_PATH = Path("nba/data/nba_schedule_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_schedule_current_meta.json")
 OUTPUT_DEBUG_PATH = Path("nba/data/nba_schedule_debug_raw.json")
