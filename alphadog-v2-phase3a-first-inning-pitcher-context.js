@@ -9155,7 +9155,15 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
         baseline_row_id: `blv6|${entity}|${r.player_id}|${propKey}|${String(lineValue).replace(".","p")}|${side}`,
         player_type: entity, player_id: r.player_id, canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
         tier_key: r.tier_key, hit_probability_0_100: Math.round(hp*10000)/100, confidence_0_100: confidence,
-        non_push_sample: effectiveGamesSample, prior_strength: Math.round(priorStrength*100)/100,
+        // FIX (2026-09-02): effectiveGamesSample became a float (Kish's n_eff, e.g. 3.333...) as of
+        // the 2026-09-01 fix above, but non_push_sample is an integer column across every table it's
+        // written to (classification.baseline_v6_current, score.final_board_current/history,
+        // score.hp_board_current, backtest.*) - writing the raw float caused every combo touching a
+        // non-integer n_eff to fail with "invalid input syntax for type integer". Round only at the
+        // point of writing to this integer column; effectiveGamesSample itself (used above for
+        // shrunkRate, predictionStddev, wilsonClampedHp, confidence) is untouched and keeps its full
+        // float precision.
+        non_push_sample: Math.round(effectiveGamesSample), prior_strength: Math.round(priorStrength*100)/100,
         // REAL fix (2026-08-20): this field is named "_0_100" implying a 0-100 percentage scale,
         // correct for usesNormalModel props where shrunkRate genuinely is a 0-1 rate. But for
         // count-model props (pitcher_outs, pitches_thrown etc - anything using the Poisson/
