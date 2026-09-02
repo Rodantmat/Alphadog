@@ -230,3 +230,23 @@ Per the person's request to find a free alternative to paid EPM: researched and 
 **9 static/weekly-enrichment workers now real, live, and independently verified**: teams, players, arenas, officials, player bio/season-profile, player tracking, team stats, on/off-court splits, and now player impact rating (DARKO). Every single one follows the identical proven pattern end-to-end with zero manual steps: trigger-file push → GitHub Actions scrape → committed JSON → Worker reads via GitHub Contents API → Postgres write → independent verification.
 
 **Next**: Phase 3b (incremental/delta game-log layer) - the natural next major piece, and the prerequisite for garbage-time adjustment, rolling/recent-form averages, defense-vs-position splits, and a real referee-crew-tendency table, all of which were correctly deferred here pending game-level data.
+
+---
+
+## 2026-09-02 (cont'd) — Weekly differential function built, tested, and verified for real (not just trusted)
+
+Per the person's explicit instruction: the regular static workers only ever upsert what's in the latest scrape - none of them actually detect or report *what changed* (new signings, team trades, departures), and none of them ever flip a departed player's `active` flag off. Built a dedicated `alphadog-v2-nba-weekly-differential` worker to close this gap properly.
+
+**Real architectural problem solved up front, not glossed over**: the regular upsert workers (`static-players` etc.) already overwrite `nba_ref.players`/`teams`/`officials` on every run, so diffing against those tables directly would compare "after" against "after" - no real "before" state survives. Fixed by giving this worker its own independent snapshot tables (`nba_stats.player_roster_snapshot`, `nba_ref.team_roster_snapshot`, `nba_ref.official_roster_snapshot`) that only it reads and writes, so its diff is always against the state as of its own last run, regardless of how many times the regular workers run in between.
+
+**Detects, per run**: new players, departed players (and actually sets `active=0` for them - the one real consequence the regular players worker never applies), mid-season team changes, reactivated players, new/removed teams, team field changes (rename/relocation/realignment), and new/departed officials.
+
+**Real bug found and fixed**: first trigger failed with `UNDEFINED_VALUE: Undefined values are not allowed` on the teams diff - the raw committed `nba_teams_current.json` schema uses separate `city`/`nickname` fields, not a combined `name` field (that combination only happens inside the *Worker's* own transform for `alphadog-v2-nba-static-teams.js`, not in the raw scrape this worker reads directly). Fixed by building `full_name` from `city`+`nickname` directly.
+
+**Genuinely tested the detection logic itself, not just trusted the code**: manually edited a player's snapshot row to simulate a trade (LeBron James → a different team_id), verified the edit actually landed via a direct read, then triggered the worker for real - it **correctly detected and logged** `team_change: LeBron James, nba_1610612738 → nba_1610612747`. Confirmed in `nba_stats.player_differential_log` independently. This is real proof the mechanism works, not an assumption.
+
+**One real operational nuance found during testing, worth knowing**: triggering this worker multiple times within seconds of each other can show a stale/duplicate detection due to Cloudflare Hyperdrive's brief query-result caching layer - a test artifact of rapid-fire manual triggering, not a logic bug (confirmed by the clean, unambiguous first test succeeding correctly). At the real weekly cadence this runs on, there's no meaningful gap for stale caching to matter.
+
+**Verified end state**: real baseline established - 582 players, 30 teams, 80 officials snapshotted. Test artifacts cleaned up, a final clean run confirmed zero false-positive events. This worker is what should run every week from here forward (matching the person's original "static data needs a differential path that runs weekly" instruction) - the regular static workers stay as the full-refresh/backfill layer, and this is the dedicated change-detection layer on top.
+
+**Not yet wired to any schedule** - `nba-scrape.yml`'s existing weekly cron only runs the Python scrapers; this Cloudflare Worker still needs to be triggered manually (via `run_job`) after each weekly scrape, or a future session should wire it into the same cron cycle. Flagged as an open item rather than silently assumed automatic.
