@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-02T20:40:00Z
-trigger_reason: first run of the play-type (Synergy) scraper - untested whether single-call-all-playtypes works or falls back to looping 11 play types x 2 levels
+last_triggered_utc: 2026-09-02T22:55:00Z
+trigger_reason: first run of the Tier-1 player-tracking detail scraper (Passing, Rebounding, Drives, CatchShoot, PullUpShot, ElbowTouch, PostTouch, PaintTouch)
