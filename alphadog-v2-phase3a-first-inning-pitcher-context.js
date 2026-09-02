@@ -9067,15 +9067,14 @@ async function runClassificationBaselineV6ToPostgres(env, input = {}) {
     const baselineRows = [];
     for (const r of classRows) {
       const freshOverride = discontinuityFreshSamples.get(String(r.player_id));
-      const usesPureSeasonRate = PURE_SEASON_RATE_PROPS.has(propKey);
-      const effectiveGamesSample = freshOverride ? freshOverride.games_sample : (r.n_eff != null ? r.n_eff : r.games_sample);
-      const effectiveRate = freshOverride ? freshOverride.rate : ((usesPureSeasonRate && r.season_rate != null) ? r.season_rate : r.rate);
+      const effectiveGamesSample = freshOverride ? freshOverride.games_sample : r.games_sample;
+      const effectiveRate = freshOverride ? freshOverride.rate : r.rate;
       const tierInfo = tierPriorRows[r.tier_key];
       const rawTierMean = tierInfo ? tierInfo.avg_rate : effectiveRate;
       const tierN = tierInfo ? tierInfo.tier_n : 0;
       const blendedTierPrior = (tierN * rawTierMean + tierBlendK * popMean) / (tierN + tierBlendK);
-      const priorStrength = usesPureSeasonRate ? 0 : (VALIDATED_M_BY_PROP[propKey] != null ? VALIDATED_M_BY_PROP[propKey] : empiricalPriorStrength);
-      const shrunkRate = usesPureSeasonRate ? effectiveRate : (effectiveGamesSample * effectiveRate + priorStrength * blendedTierPrior) / (effectiveGamesSample + priorStrength);
+      const priorStrength = empiricalPriorStrength;
+      const shrunkRate = (effectiveGamesSample * effectiveRate + priorStrength * blendedTierPrior) / (effectiveGamesSample + priorStrength);
       const classRowsCount = classRows.length;
       const skillTierFor3 = (rank) => Math.min(3, Math.floor((rank / Math.max(1, classRowsCount)) * 3) + 1);
       const lookupTierKey = opponentContextProps
