@@ -4212,20 +4212,24 @@ function buildMixedTop55Slips(legs) {
         if (slipLegs.length >= size) break;
       }
       if (slipLegs.length < minSize) break;
+      // A shrunk slip must be priced and labelled at its REAL length. Using the target size here
+      // made mixedTop55FlexPayout compare hits against 5 on a 4-leg slip, which never matches and
+      // silently returned 0, and mislabelled the slip as a 5-pick.
+      const actualSize = slipLegs.length;
       for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
       const propBreakdown = {};
       for (const l of slipLegs) { const k = `${l.canonical_prop_key}|${l.selected_side}`; propBreakdown[k] = (propBreakdown[k] || 0) + 1; }
-      const flexFull = mixedTop55FlexPayout(slipLegs, size);
+      const flexFull = mixedTop55FlexPayout(slipLegs, actualSize);
       const flexTiers = {};
-      for (const h of [size, size - 1, size - 2]) {
+      for (const h of [actualSize, actualSize - 1, actualSize - 2]) {
         if (h < 2) continue;
         flexTiers[h] = mixedTop55FlexPayout(slipLegs, h);
       }
       allSlips.push({
         client_slip_id: makeUiId("high_hit_slip_mixed_top55"),
         source_key: sourceKey,
-        slip_type: `${size}-pick`,
-        slip_size: size,
+        slip_type: actualSize + "-pick",
+        slip_size: actualSize,
         entry_mode: "power",
         structure_label: size + "-pick Power (SLIP_STRATEGY_V1: 6 goblin cells, tier-keyed)",
         estimated_multiplier: baselineHpSlipMultiplier(slipLegs),
