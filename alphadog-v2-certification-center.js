@@ -4477,6 +4477,64 @@ async function apiHighHitSlips(env, request) {
   //    stolen_bases / rbis are unmeasured and likely price lower, so ROI is optimistic.
   // Minimum stake until real placed results accumulate.
   const ppSlipsAll = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
+  // SLIP_STRATEGY_V2 - PARALLEL track. Independent cell set, its own selector, its own 6-pick
+  // Power slips. V1 stays exactly as it was; this ADDS to the response rather than replacing it.
+  // V2 legs carry their own per-leg mult (leg_mult) so the slip multiplier is the true product of
+  // measured rates, not the shared per-prop table V1 uses.
+  const v2Legs = await autoSelectStrategyV2Legs(env).catch(() => []);
+  const v2Slips = [];
+  {
+    const V2_SIZE = 6, V2_MIN = 4, V2_MAX_SLIPS = 2;
+    const used = new Set();
+    while (v2Slips.length < V2_MAX_SLIPS) {
+      const avail = v2Legs.filter(l => !used.has(l.board_row_id));
+      if (avail.length < V2_MIN) break;
+      const legs = [];
+      const seenPlayers = new Set();
+      for (const l of avail) {
+        if (legs.length >= V2_SIZE) break;
+        if (seenPlayers.has(String(l.mlb_player_id))) continue;
+        legs.push(l);
+        seenPlayers.add(String(l.mlb_player_id));
+      }
+      if (legs.length < V2_MIN) break;
+      for (const l of legs) used.add(l.board_row_id);
+      const n = legs.length;
+      let mult = 1;
+      for (const l of legs) mult *= Number(l.leg_mult) || 1.1583;
+      mult = Math.round(mult * 1000) / 1000;
+      let hp = 1;
+      for (const l of legs) hp *= (Number(l.hit_probability_0_100) || 0) / 100;
+      const cellMix = {};
+      for (const l of legs) cellMix[l.strategy_cell] = (cellMix[l.strategy_cell] || 0) + 1;
+      v2Slips.push({
+        client_slip_id: makeUiId("high_hit_slip_v2"),
+        source_key: "prizepicks",
+        slip_type: n + "-pick",
+        slip_size: n,
+        structure_label: n + "-pick Power (SLIP_STRATEGY_V2: hits/singles/TB-t3/doubles/SB/HA)",
+        entry_mode: "power",
+        selected_leg_count: n,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: mult,
+        breakeven_hit_rate_0_100: Math.round((1 / mult) * 10000) / 100,
+        edge_vs_breakeven_0_100: Math.round((hp - 1 / mult) * 10000) / 100,
+        strategy_grade: "B",
+        estimated_payout_note: "V2 multiplier is the product of per-leg rates measured on real placed slips: hits/singles/total_bases 1.1583, doubles 1.1247, hits_allowed 1.1832. Confirmed live 2026-09-03 - two real 6-pick reads of identical cell mix returned 2.50 and 2.40 against a 2.52 model, mean error -2.78%. The 4.17% spread between those two shows PrizePicks prices per PLAYER, not just per cell, so ALWAYS read the app multiplier before placing and skip anything below 1.60x.",
+        strategy_notes: [
+          "SLIP_STRATEGY_V2, parallel to V1. Six goblin cells keyed on TIER = round(abs(line - anchor)), cap 2 per cell, ranked by each cell's own best signal.",
+          "Cells: hits t1 (propline) | singles t1 (propline) | stolen_bases t0 (propline) | total_bases t3 (deep) | doubles t0 (deep) | hits_allowed t2 under (propline). Propline = exact (prop, line, side) board history, min 3. Deep = full-season game log at that exact line, min 10.",
+          "Signal choice is per-cell and measured: propline beat deep by 9.1pp on singles and 4.5pp on stolen_bases; deep beat propline by 15.5pp on doubles and 4.4pp on hits. V1's pooled 'shallow' signal lost or tied in ALL six cells and is not used here.",
+          "stolen_bases is the standout: 94.07% of all player-games have zero steals, so the LESS side estimates a near-certainty, not a rare event. The cell is +EV even unranked (87.56% vs 86.3% breakeven) and top-3 ran 22 sweeps, 6 two-of-three, and ZERO days below 2-of-3 across 30 days.",
+          "Backtest 26 days: 34 slips, 204 legs, 92.6% leg accuracy, 22/34 sweeps, avg mult 2.42, +57.3% ROI. Theory at 92.6% gives +52.5%, so the slip math is consistent.",
+          "POWER beats FLEX at every size on measured tiers (6pk +57.3 vs +35.0). At 92.6% accuracy you miss too rarely for Flex's partial credit to cover its top-tier haircut.",
+          "RISK: 08-11 to 08-18 is eight consecutive sweeps at an identical 2.47 - the same six legs recurring - and is 60% of total profit. Excluding it the other 18 days run about +30%. Use +30% as the planning number. 26 days, config selected in-sample. Minimum stake."
+        ],
+        legs: legs
+      });
+    }
+  }
+
   // Reserve helpers - declared before any builder uses them.
   // Reserve is 35% of the qualifying pool, floored at 8 and capped at 15. Proportional rather than
   // fixed because board depth varies 3-4x day to day; a flat number is either useless on a deep
