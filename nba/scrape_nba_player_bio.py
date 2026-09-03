@@ -28,8 +28,38 @@ STATS_HEADERS = {
 }
 
 URL = "https://stats.nba.com/stats/leaguedashplayerbiostats?LeagueID=00&Season=2025-26&SeasonType=Regular+Season&PerMode=Totals"
+# playerindex: separate, confirmed-real bulk endpoint (one call, whole league) that includes an
+# actual POSITION field (e.g. "F", "G", "C") - leaguedashplayerbiostats does NOT have this column
+# despite PlayerPosition being a filter param there (confirmed the hard way: an earlier attempt
+# to pull "PLAYER_POSITION" from that endpoint's rows would have silently returned null for
+# every player, since it isn't a real output column - caught and reverted before it shipped).
+POSITION_URL = "https://stats.nba.com/stats/playerindex?LeagueID=00&Season=2025-26&Historical=0"
 OUTPUT_PATH = Path("nba/data/nba_player_bio_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_player_bio_current_meta.json")
+
+
+def fetch_positions():
+    proxy_url = os.environ.get("PROXY_URL", "").strip()
+    proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
+    for attempt in range(1, 4):
+        try:
+            resp = requests.get(POSITION_URL, headers=STATS_HEADERS, timeout=30, proxies=proxies, impersonate="chrome124")
+            resp.raise_for_status()
+            body = resp.json()
+            rs = (body.get("resultSets") or [{}])[0]
+            headers = rs.get("headers", [])
+            idx = {h: i for i, h in enumerate(headers)}
+            pid_i, pos_i = idx.get("PERSON_ID"), idx.get("POSITION")
+            out = {}
+            if pid_i is not None and pos_i is not None:
+                for row in rs.get("rowSet") or []:
+                    if row[pid_i]:
+                        out[int(row[pid_i])] = row[pos_i]
+            return out
+        except Exception:  # noqa: BLE001
+            if attempt < 3:
+                time.sleep(5)
+    return {}
 
 
 def fetch():
