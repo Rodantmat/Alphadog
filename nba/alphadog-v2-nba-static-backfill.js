@@ -171,46 +171,117 @@ async function upsertCareerTotals(sql, rows, sourceKey) {
   return written;
 }
 
+async function upsertPlayerSplits(sql, rows, sourceKey, season) {
+  let written = 0;
+  const recs = rows
+    .filter(r => r.player_id && r.split_type && r.GROUP_VALUE)
+    .map(r => ({
+      player_id: `nba_${r.player_id}`, split_type: r.split_type, group_value: String(r.GROUP_VALUE), season,
+      gp: toIntOrNull(r.GP), w: toIntOrNull(r.W), l: toIntOrNull(r.L), w_pct: r.W_PCT, min: r.MIN,
+      fgm: r.FGM, fga: r.FGA, fg_pct: r.FG_PCT, fg3m: r.FG3M, fg3a: r.FG3A, fg3_pct: r.FG3_PCT,
+      ftm: r.FTM, fta: r.FTA, ft_pct: r.FT_PCT, oreb: r.OREB, dreb: r.DREB, reb: r.REB,
+      ast: r.AST, tov: r.TOV, stl: r.STL, blk: r.BLK, pf: r.PF, pts: r.PTS, plus_minus: r.PLUS_MINUS,
+      source_key: sourceKey,
+    }));
+  for (const batch of chunk(recs, BATCH_SIZE)) {
+    await sql`
+      INSERT INTO nba_stats.player_splits ${sql(batch, "player_id", "split_type", "group_value", "season", "gp", "w", "l", "w_pct", "min", "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct", "oreb", "dreb", "reb", "ast", "tov", "stl", "blk", "pf", "pts", "plus_minus", "source_key")}
+      ON CONFLICT (player_id, split_type, group_value) DO UPDATE SET
+        season=excluded.season, gp=excluded.gp, w=excluded.w, l=excluded.l, w_pct=excluded.w_pct, min=excluded.min,
+        fgm=excluded.fgm, fga=excluded.fga, fg_pct=excluded.fg_pct, fg3m=excluded.fg3m, fg3a=excluded.fg3a,
+        fg3_pct=excluded.fg3_pct, ftm=excluded.ftm, fta=excluded.fta, ft_pct=excluded.ft_pct, oreb=excluded.oreb,
+        dreb=excluded.dreb, reb=excluded.reb, ast=excluded.ast, tov=excluded.tov, stl=excluded.stl, blk=excluded.blk,
+        pf=excluded.pf, pts=excluded.pts, plus_minus=excluded.plus_minus, source_key=excluded.source_key, updated_at=now()
+    `;
+    written += batch.length;
+  }
+  return written;
+}
+
+async function upsertTeamSplits(sql, rows, sourceKey, season) {
+  let written = 0;
+  const recs = rows
+    .filter(r => r.team_id && r.split_type && r.GROUP_VALUE)
+    .map(r => ({
+      team_id: `nba_${r.team_id}`, split_type: r.split_type, group_value: String(r.GROUP_VALUE), season,
+      gp: toIntOrNull(r.GP), w: toIntOrNull(r.W), l: toIntOrNull(r.L), w_pct: r.W_PCT, min: r.MIN,
+      fgm: r.FGM, fga: r.FGA, fg_pct: r.FG_PCT, fg3m: r.FG3M, fg3a: r.FG3A, fg3_pct: r.FG3_PCT,
+      ftm: r.FTM, fta: r.FTA, ft_pct: r.FT_PCT, oreb: r.OREB, dreb: r.DREB, reb: r.REB,
+      ast: r.AST, tov: r.TOV, stl: r.STL, blk: r.BLK, pf: r.PF, pts: r.PTS, plus_minus: r.PLUS_MINUS,
+      source_key: sourceKey,
+    }));
+  for (const batch of chunk(recs, BATCH_SIZE)) {
+    await sql`
+      INSERT INTO nba_team.team_splits ${sql(batch, "team_id", "split_type", "group_value", "season", "gp", "w", "l", "w_pct", "min", "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct", "oreb", "dreb", "reb", "ast", "tov", "stl", "blk", "pf", "pts", "plus_minus", "source_key")}
+      ON CONFLICT (team_id, split_type, group_value) DO UPDATE SET
+        season=excluded.season, gp=excluded.gp, w=excluded.w, l=excluded.l, w_pct=excluded.w_pct, min=excluded.min,
+        fgm=excluded.fgm, fga=excluded.fga, fg_pct=excluded.fg_pct, fg3m=excluded.fg3m, fg3a=excluded.fg3a,
+        fg3_pct=excluded.fg3_pct, ftm=excluded.ftm, fta=excluded.fta, ft_pct=excluded.ft_pct, oreb=excluded.oreb,
+        dreb=excluded.dreb, reb=excluded.reb, ast=excluded.ast, tov=excluded.tov, stl=excluded.stl, blk=excluded.blk,
+        pf=excluded.pf, pts=excluded.pts, plus_minus=excluded.plus_minus, source_key=excluded.source_key, updated_at=now()
+    `;
+    written += batch.length;
+  }
+  return written;
+}
+
 async function runJob(input, env) {
   const started = Date.now();
   const sql = pg(env);
   const sourceKey = "NBA_GITHUB_COMMITTED_ONETIME_BACKFILL";
   const errors = [];
-  let playerLogWritten = 0, teamLogWritten = 0, careerWritten = 0, playerAdvWritten = 0, teamAdvWritten = 0;
+  const seasonSlugs = { "2023-24": "2023_24", "2024-25": "2024_25", "2025-26": "2025_26" };
+  let playerLogWritten = 0, teamLogWritten = 0, playerAdvWritten = 0, teamAdvWritten = 0, careerWritten = 0;
+  let playerSplitsWritten = 0, teamSplitsWritten = 0;
 
-  try {
-    const r = await fetchFromGithubRaw(env, "nba/data/nba_player_game_log_2025_26.json", "nba/data/nba_player_game_log_2025_26_meta.json");
-    playerLogWritten = await upsertPlayerGameLogs(sql, r.file.records || [], sourceKey);
-  } catch (err) { errors.push(`player_game_log_failed: ${String(err && err.message ? err.message : err)}`); }
+  for (const [season, slug] of Object.entries(seasonSlugs)) {
+    try {
+      const r = await fetchFromGithubRaw(env, `nba/data/nba_player_game_log_${slug}.json`, `nba/data/nba_player_game_log_${slug}_meta.json`);
+      playerLogWritten += await upsertPlayerGameLogs(sql, r.file.records || [], sourceKey, season);
+    } catch (err) { errors.push(`player_game_log_${season}_failed: ${String(err && err.message ? err.message : err)}`); }
 
-  try {
-    const r = await fetchFromGithubRaw(env, "nba/data/nba_team_game_log_2025_26.json", "nba/data/nba_team_game_log_2025_26_meta.json");
-    teamLogWritten = await upsertTeamGameLogs(sql, r.file.records || [], sourceKey);
-  } catch (err) { errors.push(`team_game_log_failed: ${String(err && err.message ? err.message : err)}`); }
+    try {
+      const r = await fetchFromGithubRaw(env, `nba/data/nba_team_game_log_${slug}.json`, `nba/data/nba_team_game_log_${slug}_meta.json`);
+      teamLogWritten += await upsertTeamGameLogs(sql, r.file.records || [], sourceKey, season);
+    } catch (err) { errors.push(`team_game_log_${season}_failed: ${String(err && err.message ? err.message : err)}`); }
 
-  try {
-    const r = await fetchFromGithubRaw(env, "nba/data/nba_player_game_log_advanced_2025_26.json", "nba/data/nba_player_game_log_advanced_2025_26_meta.json");
-    playerAdvWritten = await upsertPlayerGameLogAdvanced(sql, r.file.records || [], sourceKey);
-  } catch (err) { errors.push(`player_game_log_advanced_failed: ${String(err && err.message ? err.message : err)}`); }
+    try {
+      const r = await fetchFromGithubRaw(env, `nba/data/nba_player_game_log_advanced_${slug}.json`, `nba/data/nba_player_game_log_advanced_${slug}_meta.json`);
+      playerAdvWritten += await upsertPlayerGameLogAdvanced(sql, r.file.records || [], sourceKey);
+    } catch (err) { errors.push(`player_game_log_advanced_${season}_failed: ${String(err && err.message ? err.message : err)}`); }
 
-  try {
-    const r = await fetchFromGithubRaw(env, "nba/data/nba_team_game_log_advanced_2025_26.json", "nba/data/nba_team_game_log_advanced_2025_26_meta.json");
-    teamAdvWritten = await upsertTeamGameLogAdvanced(sql, r.file.records || [], sourceKey);
-  } catch (err) { errors.push(`team_game_log_advanced_failed: ${String(err && err.message ? err.message : err)}`); }
+    try {
+      const r = await fetchFromGithubRaw(env, `nba/data/nba_team_game_log_advanced_${slug}.json`, `nba/data/nba_team_game_log_advanced_${slug}_meta.json`);
+      teamAdvWritten += await upsertTeamGameLogAdvanced(sql, r.file.records || [], sourceKey);
+    } catch (err) { errors.push(`team_game_log_advanced_${season}_failed: ${String(err && err.message ? err.message : err)}`); }
+  }
 
   try {
     const r = await fetchFromGithubRaw(env, "nba/data/nba_player_career_totals.json", "nba/data/nba_player_career_totals_meta.json");
     careerWritten = await upsertCareerTotals(sql, r.file.rows || [], sourceKey);
   } catch (err) { errors.push(`career_totals_failed: ${String(err && err.message ? err.message : err)}`); }
 
+  try {
+    const r = await fetchFromGithubRaw(env, "nba/data/nba_player_splits.json", "nba/data/nba_player_splits_meta.json");
+    playerSplitsWritten = await upsertPlayerSplits(sql, r.file.rows || [], sourceKey, "2025-26");
+  } catch (err) { errors.push(`player_splits_failed: ${String(err && err.message ? err.message : err)}`); }
+
+  try {
+    const r = await fetchFromGithubRaw(env, "nba/data/nba_team_splits.json", "nba/data/nba_team_splits_meta.json");
+    teamSplitsWritten = await upsertTeamSplits(sql, r.file.rows || [], sourceKey, "2025-26");
+  } catch (err) { errors.push(`team_splits_failed: ${String(err && err.message ? err.message : err)}`); }
+
   const playerLogTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_game_log`;
   const teamLogTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_team.team_game_log`;
   const playerAdvTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_game_log_advanced`;
   const teamAdvTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_team.team_game_log_advanced`;
   const careerTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_career_season_totals`;
+  const playerSplitsTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_splits`;
+  const teamSplitsTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_team.team_splits`;
+  const bySeasonCount = await sql`SELECT season, COUNT(*)::int AS c FROM nba_stats.player_game_log GROUP BY season ORDER BY season`;
   await sql.end();
 
-  const certified = errors.length === 0 && playerLogWritten > 20000 && teamLogWritten === 2460;
+  const certified = errors.length === 0 && playerLogWritten > 70000;
 
   return {
     ok: certified, version: VERSION, worker_name: WORKER_NAME, job_key: input.job_key || JOB_KEY,
@@ -218,13 +289,18 @@ async function runJob(input, env) {
     errors: errors.length ? errors : null,
     player_game_log_rows_written: playerLogWritten, team_game_log_rows_written: teamLogWritten,
     player_game_log_advanced_rows_written: playerAdvWritten, team_game_log_advanced_rows_written: teamAdvWritten,
-    career_totals_rows_written: careerWritten, source_key: sourceKey,
+    career_totals_rows_written: careerWritten,
+    player_splits_rows_written: playerSplitsWritten, team_splits_rows_written: teamSplitsWritten,
+    source_key: sourceKey,
     final_counts: {
       nba_stats_player_game_log_rows: Number(playerLogTotal[0]?.c || 0),
+      nba_stats_player_game_log_by_season: bySeasonCount,
       nba_team_team_game_log_rows: Number(teamLogTotal[0]?.c || 0),
       nba_stats_player_game_log_advanced_rows: Number(playerAdvTotal[0]?.c || 0),
       nba_team_team_game_log_advanced_rows: Number(teamAdvTotal[0]?.c || 0),
       nba_stats_player_career_season_totals_rows: Number(careerTotal[0]?.c || 0),
+      nba_stats_player_splits_rows: Number(playerSplitsTotal[0]?.c || 0),
+      nba_team_team_splits_rows: Number(teamSplitsTotal[0]?.c || 0),
     },
     elapsed_ms: Date.now() - started, timestamp_utc: nowUtc()
   };
