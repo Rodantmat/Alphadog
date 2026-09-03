@@ -69,7 +69,18 @@ The person's stated 3-run operating model (static differential / delta daily / m
 
 ---
 
-## 5. Open questions — explicit, not silently decided
+## 4b. Real operating cadence — locked 2026-09-03, mirrors the existing MLB system exactly
+
+The person confirmed the actual real-world trigger schedule for the 3 runs, matching MLB's system as-is (not a new NBA-specific invention):
+
+- **Static differential (weekly run)**: once a week, early morning — **Mondays 2:00am Pacific**. Matches the already-built `alphadog-v2-nba-weekly-differential` worker's intended cadence (built 2026-09-02, not yet wired to any actual schedule until this confirmation).
+- **Delta daily**: once a day, morning — **~11:00am** (person's stated time; matches Pacific per the weekly run's stated timezone, giving a large safety buffer well past the ~2:00am ET latest-possible-game-end + 10-15min data-finalization window confirmed via research and Gemini consultation on 2026-09-03). This run must, in order: (1) ingest yesterday's newly-completed games into `nba_stats.player_game_log`/`nba_team.team_game_log` (a real, not-yet-built "Daily Delta Ingestion" worker — the one-time historical backfill built 2026-09-03 only covers the completed 2025-26 season, it is not an ongoing daily job), (2) run a pre-flight completeness check (compare games scheduled for yesterday per `nba_calendar.games` against games showing Final in the fresh pull — halt and warn on a mismatch rather than silently proceeding on an incomplete night), (3) only then recompute the baseline (EWMA rates, minutes role, variance, trend — per `NBA_BASELINE_METHODOLOGY.md`).
+- **Master run (Board → Daily Context → Market → Scoring Engine)**: once, sometimes twice a day — **2 hours before the first scheduled game of the day**, with an optional second run later "only if needed" (e.g. a late injury designation change or significant line movement after the first run). **Real design implication, not a fixed clock time**: since NBA game start times vary day to day, this trigger time must be computed dynamically from the real data already in `nba_calendar.games` (today's earliest `game_datetime_utc`) minus 2 hours — not a hardcoded time-of-day like the other two runs. The optional second run is exactly the cheap, fast re-run the two-stage baseline/enrichment separation (Section 0 of `NBA_BASELINE_METHODOLOGY.md`) was designed to make possible — it only needs to re-run the Scoring Engine against the already-cached baseline plus fresh enrichment/market data, not recompute anything expensive.
+
+**No cron/orchestrator automation** — these times are the real, intended Claude Coworker-scheduled-task trigger times (per Section 4's existing "no orchestrator" confirmation), not in-code scheduling logic to be built into any NBA worker.
+
+---
+
 
 1. **ANSWERED (2026-08-31) — ParlayAPI historical NBA coverage**: the person states ParlayAPI should have real backdata from past NBA seasons, and will definitely have NBA boards + live market data once the season starts. Still needs a real, direct test (not yet performed — same tooling gap as Phase 1) before being trusted as more than a stated expectation, but this is no longer an open design fork — treat ParlayAPI as the locked source for NBA market/board data (Sleeper, Underdog, and historical odds) pending that verification.
 2. **ANSWERED (2026-08-31) — fully separate, no shared tables anywhere**: confirmed and extended (see Section 1's correction) — this applies to every schema including the control-plane, not just `market`.
