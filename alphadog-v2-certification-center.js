@@ -4108,8 +4108,7 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-        WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
-          AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
+${sourceKey}' AND f.is_goblin = 1
           AND f.official_game_time_utc IS NOT NULL
           AND (
                 (f.canonical_prop_key = 'total_bases' AND f.selected_side = 'less' AND f.line_value = 3.5)
