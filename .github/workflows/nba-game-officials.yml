@@ -1,0 +1,62 @@
+name: NBA Game Officials Backfill
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'nba/TRIGGER_NBA_GAME_OFFICIALS.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-game-officials
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tools
+        run: python -m pip install --upgrade pip curl_cffi
+
+      - name: Backfill per-game officials (2025-26 only)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_game_officials.py
+        continue-on-error: true
+
+      - name: Commit officials JSON to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for f in nba/data/nba_game_officials_2025_26.json nba/data/nba_game_officials_2025_26_meta.json; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "No officials JSON changes to commit."
+            exit 0
+          fi
+          git commit -m "NBA game officials backfill data [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((RANDOM % 5 + 2))
+          done
+          exit 1
