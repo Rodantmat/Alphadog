@@ -7679,6 +7679,50 @@ export default {
     }
   }
 };
+// ===== SLIP_STRATEGY_V2 CLIENT PATCH (2026-09-03) =====
+// Injected into the served script rather than edited in place. The client source between lines
+// ~4991 and ~7681 is duplicated verbatim twice more inside the dead comment block below, so NO
+// anchor inside it is unique and github_patch_file cannot target it. APP_JS is extracted from the
+// LIVE MAIN_HTML only, so a string replace against it hits exactly one occurrence - the live one.
+// The replace target sits inside the page IIFE, which is required: poolLegIsLegalForSlip is scoped
+// to that IIFE and is not reachable from a separate script tag.
+//
+// Two behaviours, both measured:
+//  1. V2 SHRINKS, V1 SUBSTITUTES. Stress test across unavailability rates -
+//       shrink  0%:+93.4  5%:+91.9  10%:+89.7  20%:+86.9  30%:+84.2
+//       backup  0%:+92.7  5%:+89.1  10%:+88.4  20%:+84.1  30%:+77.2
+//     Shrink wins at every rate and the gap widens, because V2 caps each cell at rank 2 so any
+//     backup leg necessarily comes from rank 3+ - the ranks proven to dilute (widening caps by one
+//     drops pool accuracy 94.8% -> 88.7%). V1 keeps substituting; its own backtest supports that.
+//  2. V2 multiplier recomputes from the legs still CHECKED, using each leg's own measured
+//     leg_mult (hits/singles/total_bases 1.1583, doubles 1.1247, hits_allowed 1.1832) instead of a
+//     static per-size table. Confirmed live 2026-09-03: two real 6-pick reads of identical cell mix
+//     returned 2.50 and 2.40 against a 2.52 model, mean error -2.78%.
+// V1 is untouched - slipIsV2() is false for it, so both paths fall through to the originals.
+const V2_CLIENT_PATCH = [
+  "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0}",
+  "const __v1PoolLegal=poolLegIsLegalForSlip;",
+  "poolLegIsLegalForSlip=function(leg,keptLegs,slip){if(slipIsV2(slip))return false;return __v1PoolLegal(leg,keptLegs,slip)};",
+  "function v2LiveMultiplier(slip,slipIdx){",
+  "  if(!slipIsV2(slip))return null;",
+  "  const legs=(slip&&slip.legs)||[];",
+  "  const un=slipUnchecked.get(slipIdx);",
+  "  const kept=legs.filter((l,i)=>!(un&&un.has(i)));",
+  "  if(!kept.length)return null;",
+  "  for(const l of kept){if(!(Number(l.leg_mult)>0))return null}",
+  "  let m=1;for(const l of kept)m*=Number(l.leg_mult);",
+  "  return Math.round(m*1000)/1000;",
+  "}",
+  "const __v1EstMult=estimatedMultiplierFor;",
+  "estimatedMultiplierFor=function(s,idx){const v=v2LiveMultiplier(s,idx);return v!==null?v:__v1EstMult(s,idx)};",
+  ""
+].join("\n");
+const APP_JS_V2 = (function () {
+  const marker = "function applySlipSourceFilter(){";
+  const at = APP_JS.indexOf(marker);
+  if (at < 0) return APP_JS;                       // marker gone - serve original, never break the page
+  return APP_JS.slice(0, at) + V2_CLIENT_PATCH + APP_JS.slice(at);
+})();
 /* ===== ORPHANED DUPLICATE BLOCK, 2026-08-31 =====
    Created by a bad patch that used a template placeholder inside new_str. Everything from here
    to the END marker at the bottom of this file is dead duplicate code, kept commented rather than
