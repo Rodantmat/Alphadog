@@ -1,65 +1,72 @@
 {
   "0022500001": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 0
+    "v2_status": 200,
+    "v2_player_stats_row_count": 0,
+    "v3_status": 200,
+    "v3_home_player_count": 12,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   },
   "0022500002": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 0
+    "v2_status": 200,
+    "v2_player_stats_row_count": 0,
+    "v3_status": 200,
+    "v3_home_player_count": 12,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   },
   "0022500308": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 0
+    "v2_status": 200,
+    "v2_player_stats_row_count": 0,
+    "v3_status": 200,
+    "v3_home_player_count": 13,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   },
   "0022500616": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 0
+    "v2_status": 200,
+    "v2_player_stats_row_count": 0,
+    "v3_status": 200,
+    "v3_home_player_count": 12,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   },
   "0022500923": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 0
+    "v2_status": 200,
+    "v2_player_stats_row_count": 0,
+    "v3_status": 200,
+    "v3_home_player_count": 15,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   },
   "0022501200": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 0
+    "v2_status": 200,
+    "v2_player_stats_row_count": 0,
+    "v3_status": 200,
+    "v3_home_player_count": 15,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   },
   "0022501230": {
-    "status": 200,
-    "result_set_names": [
-      "PlayerStats",
-      "TeamStats",
-      "TeamStarterBenchStats"
-    ],
-    "player_stats_row_count": 28
+    "v2_status": 200,
+    "v2_player_stats_row_count": 28,
+    "v3_status": 200,
+    "v3_home_player_count": 13,
+    "v3_top_level_keys": [
+      "meta",
+      "boxScoreTraditional"
+    ]
   }
 }
