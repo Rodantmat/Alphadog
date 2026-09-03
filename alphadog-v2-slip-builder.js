@@ -432,14 +432,18 @@ export default {
                   "stats_pitcher.game_logs", "score.prop_outcome_history"],
           writes: ["score.slip_entries", "score.slip_legs"],
           config: { entry_mode: "power", target_size: TARGET_SIZE, min_size: MIN_SIZE,
-                    max_slips_per_day: MAX_SLIPS_PER_DAY, cells: CELLS.length },
-          backtest: { slips: 34, days: 23, roi_pct: 68.8, leg_accuracy_pct: 94.9,
-                      bootstrap_positive_pct: 100.0, ci_95: "[+39.9, +94.5]" },
+                    max_slips_per_day: MAX_SLIPS_PER_DAY, max_legs_per_prop: MAX_LEGS_PER_PROP,
+                    min_real_multiplier_to_place: MIN_REAL_MULTIPLIER, cells: CELLS.length },
+          backtest: { slips: 33, days: 23, roi_pct: 58.7, leg_accuracy_pct: 94.8,
+                      full_hits: "25/33", profitable_days: "18/23",
+                      bootstrap_positive_pct: 100.0, ci_95: "[+27.6, +85.3]" },
           safety_note: "Never places a bet. Writes status='saved_pending' only. Defaults to dry_run.",
           known_gaps: [
-            "Sample is 34 slips over 23 days; per-cell signal and cap were selected in-sample.",
-            "Multipliers are size-dependent and are calibrated for 4-pick slips only.",
-            "Not yet registered for cron; invoke manually via POST /run."
+            "Sample is 33 slips over 23 days; per-cell signal and cap were selected in-sample. Expect degradation out-of-sample.",
+            "Multipliers DRIFT: the same four players priced 2.40 one day and 1.80 another, a 7% per-leg swing. Every slip therefore carries min_real_multiplier_to_place - check the app before placing.",
+            "ROI is highly sensitive to the rank caps (+58.7% at cap, +23.7% at cap+1). The edge lives in a narrow band of top-ranked legs.",
+            "Stake flat at 1-3% of bankroll. Full Kelly on the measured 75.8% win rate computes to 52% of bankroll and would be reckless at this sample size.",
+            "Not registered for cron; invoke manually via POST /run. Requires HYPERDRIVE binding in generate_wrangler_configs.py."
           ]
         }), { headers: { "content-type": "application/json" } });
       }
