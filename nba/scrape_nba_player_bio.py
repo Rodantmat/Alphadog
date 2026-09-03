@@ -122,6 +122,15 @@ def main():
     except Exception as exc:  # noqa: BLE001
         players, http_status, error = [], None, str(exc)
 
+    positions = fetch_positions()
+    matched = 0
+    for p in players:
+        pos = positions.get(p["player_id"])
+        p["position"] = pos
+        if pos:
+            matched += 1
+    position_note = f"positions_matched: {matched}/{len(players)} via playerindex" if players else None
+
     OUTPUT_PATH.write_text(json.dumps({"players": players}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at, "source_url": URL, "http_status": http_status,
