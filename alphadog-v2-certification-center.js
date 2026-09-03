@@ -4109,30 +4109,6 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
   }
 }
 
-        WHERE t.n_games >= ${PP_MIN_GAMES}
-          AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
-      )
-      SELECT r.final_board_row_id AS board_row_id, r.source_key, r.game_pk, r.official_game_time_utc,
-        r.player_name, r.mlb_player_id, r.canonical_prop_key, r.line_value, r.selected_side,
-        r.trail_pct AS hit_probability_0_100,
-        r.probability_confidence_0_100 AS confidence_0_100,
-        r.is_goblin, r.is_demon,
-        r.n_games AS historical_n,
-        round(r.trail_pct::numeric,1) AS historical_hit_pct,
-        NULL::int AS goblin_rung
-      FROM ranked r
-      -- Percentile, not fixed cap. The qualifying pool averages ~385 legs but swings widely by day;
-      -- a fixed cap takes the same count on a thin board as on a deep one. Top 10% beat every fixed
-      -- cap tested (+73.1% vs +68.0% at cap 5) with more slips and a far smoother path - cap 2 had a
-      -- -60% three-day stretch, top-10% never had a negative three-day window in 27 days.
-      WHERE r.pr <= ${PP_TOP_PERCENTILE}
-      ORDER BY r.trail_pct DESC, r.player_name
-    `);
-    return rows;
-  } finally {
-    await pg.end({ timeout: 1 }).catch(() => {});
-  }
-}
 // Real, backtested replacement: drops hits_runs_rbis/less from the qualifying pool (weakest real
 // p*m of the three at 1.059, vs 1.074 for hits/less and 1.191 for total_bases/less - all measured
 // on 470-645 real observations each) and removes the max-3-per-prop cap. A real, correlation-
