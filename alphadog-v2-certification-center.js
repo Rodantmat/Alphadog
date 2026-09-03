@@ -4256,16 +4256,6 @@ function buildMixedTop55Slips(legs) {
           "Backtest: 33 slips, 23 days, +58.7% ROI, 94.8% leg accuracy, 25/33 full hits. Day-block bootstrap 100% positive, 95% CI [+27.6%, +85.3%], 18/23 profitable days.",
           "RISKS: 23 days and 33 slips, and the per-cell signal and cap were selected in-sample. ROI is cap-sensitive - widening every cap by one drops it from +58.7% to +23.7% - so the edge sits in a narrow band of top-ranked legs. Correlation controls were tested and REJECTED: one-leg-per-game cuts slips 33 to 14 and drops the CI floor below zero. Flat stake at 1-3% of bankroll; full Kelly on this win rate computes to 52% and would be reckless at this sample size."
         ],
-        strategy_notes: [
-          `Qualifying legs: canonical_prop_key = total_bases, lines 2.5 and 3.5, LESS side ONLY. Signal is the PLAYER'S OWN TRAILING HIT RATE for that exact prop/line/side from their game log, games strictly before today, requiring >= ${PP_MIN_GAMES} prior games and >= ${PP_TRAILING_MIN}% hit rate. This is NOT baseline_v6 and NOT the enriched score - both were tested head-to-head on this propline and lost (raw trailing is monotonic and reaches 87.93% at Q4; baseline_v6 INVERTS, its Q4 of 84.05% is worse than its Q3 of 86.27%).`,
-          `A 410-cell matrix sweep (4 signals x 8 thresholds x 133 proplines, hitters and pitchers, both sides, both variants) found only 6 proplines with p*m > 1 and ALL are LESS side. total_bases/3.5/less is the strongest, positive in 32 of its cells.`,
-          `Backtest: 34 slips, 24 wins, 17 days, 89.7% leg accuracy (122/136), +42.8% ROI. Bootstrap 99.8% positive, 95% CI [+13.0%, +72.5%], leave-one-out [+39.1%, +51.7%], 16 of 17 days profitable, best day only 8% of returns. Threshold-flat: 78 -> +42.8%, 81 -> +41.0%, 84 -> +39.1%.`,
-          `⚠️ SUBSTITUTION DISCIPLINE: only swap in legs from the backup pool, which contains only legs that already passed this filter. On 2026-08-27, legs substituted from BELOW the threshold went 0-for-5 while the 19 qualifying legs went 19-for-19. If nothing qualifies, LET THE SLIP SHRINK.`,
-          `Daily cap: top ${BASELINE_HP_MAX_SLIPS_PER_DAY} slips by average baseline. Cap sweep on the real backtest: uncapped +97.4% (101 slips), cap 12 +100.3%, cap 8 +109.0%, cap 5 +109.5%, cap 3 +103.8%. ROI is flat across caps 3-12 - cap 5 is the top of a noisy band, not a sharp optimum.`,
-          "Correlation limits: max 2 legs per game, max 1 leg per player per slip, max 2 slips per player per day.",
-          "HONEST RISKS: only 9 backtest days (the >=90 pool does not exist in usable size before 2026-08-12); zero losing days across those 9 is the least trustworthy part of the result; at cap 5 the two imperfect days were both days that could not build 5 slips, so the cap hides variance rather than removing it. Use minimum stake until real placed results accumulate.",
-          `Real prop mix in this slip: ${Object.entries(propBreakdown).map(([k, v]) => `${k}=${v}`).join(", ")}`
-        ],
         legs: slipLegs
       });
     }
