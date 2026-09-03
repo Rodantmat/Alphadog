@@ -13,6 +13,7 @@
     "alphadog-v2-nba-static-schedule",
     "alphadog-v2-nba-static-playtypes",
     "alphadog-v2-nba-static-tracking-detail",
-    "alphadog-v2-nba-static-shotquality"
+    "alphadog-v2-nba-static-shotquality",
+    "alphadog-v2-nba-static-backfill"
   ]
 }
