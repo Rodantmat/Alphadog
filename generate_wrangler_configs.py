@@ -135,7 +135,8 @@ def make_config(worker_name, include_services=False):
             {"binding": "NBA_STATIC_WEEKLY_DIFFERENTIAL_WORKER", "service": "alphadog-v2-nba-weekly-differential"},
             {"binding": "NBA_STATIC_SCHEDULE_WORKER", "service": "alphadog-v2-nba-static-schedule"},
             {"binding": "NBA_STATIC_PLAYTYPES_WORKER", "service": "alphadog-v2-nba-static-playtypes"},
-            {"binding": "NBA_STATIC_TRACKING_DETAIL_WORKER", "service": "alphadog-v2-nba-static-tracking-detail"}
+            {"binding": "NBA_STATIC_TRACKING_DETAIL_WORKER", "service": "alphadog-v2-nba-static-tracking-detail"},
+            {"binding": "NBA_STATIC_SHOTQUALITY_WORKER", "service": "alphadog-v2-nba-static-shotquality"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
