@@ -34,18 +34,24 @@ import postgres from "postgres";
  */
 
 const WORKER_NAME = "alphadog-v2-slip-builder";
-const VERSION = "alphadog-v2-slip-builder-v1.0.0-power-4pick-own-signal";
+const VERSION = "alphadog-v2-slip-builder-v1.1.0-power-5pick-own-signal";
 const JOB_KEY = "slip-builder";
 const STRATEGY_VERSION = "SLIP_STRATEGY_V1";
 
-const TARGET_SIZE = 4;
-const MIN_SIZE = 3;
-const MAX_SLIPS_PER_DAY = 3;
+const TARGET_SIZE = 5;
+const MIN_SIZE = 4;
+const MAX_SLIPS_PER_DAY = 2;
+const MAX_LEGS_PER_PROP = 3;
+
+// Pre-placement gate. Slip win rate measured 25/33 = 75.8%; breakeven multiplier
+// is 1/p. Rounded conservatively. If the app shows a multiplier below this, the
+// slip is no longer +EV and must NOT be placed.
+const MIN_REAL_MULTIPLIER = 1.35;
 
 // Cell definitions. signal: 'deep' | 'shallow'. cap_lo/cap_hi are daily ranks
-// within the cell (1-indexed, inclusive). mult measured on real 4-pick slips.
+// within the cell (1-indexed, inclusive).
 const CELLS = [
-  { key: "total_bases/over",        prop: "total_bases",        side: "less", tier: 2, dir: "over",  signal: "deep",    cap_lo: 1, cap_hi: 3, mult: 1.2447 },
+  { key: "total_bases/over",        prop: "total_bases",        side: "less", tier: 2, dir: "over",  signal: "deep",    cap_lo: 1, cap_hi: 3, mult: 1.1583 },
   { key: "pitcher_strikeouts/over", prop: "pitcher_strikeouts", side: "less", tier: 2, dir: "over",  signal: "shallow", cap_lo: 1, cap_hi: 1, mult: 1.2743 },
   { key: "doubles/over",            prop: "doubles",            side: "less", tier: 0, dir: "over",  signal: "deep",    cap_lo: 1, cap_hi: 1, mult: 1.1247 },
   { key: "hits_allowed/under",      prop: "hits_allowed",       side: "more", tier: 2, dir: "under", signal: "shallow", cap_lo: 1, cap_hi: 1, mult: 1.1832 },
