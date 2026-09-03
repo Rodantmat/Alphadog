@@ -1,0 +1,11 @@
+{
+  "fetched_at": "2026-09-03T02:06:36Z",
+  "per_bucket": {
+    "0-2 Feet - Very Tight": null,
+    "2-4 Feet - Tight": null,
+    "4-6 Feet - Open": null,
+    "6+ Feet - Wide Open": "HTTP Error 400: Bad Request"
+  },
+  "row_count": 1682,
+  "error": "failed_buckets: ['6+ Feet - Wide Open']"
+}
