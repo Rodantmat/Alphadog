@@ -134,7 +134,7 @@ def main():
     OUTPUT_PATH.write_text(json.dumps({"players": players}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at, "source_url": URL, "http_status": http_status,
-        "player_count": len(players), "error": error,
+        "player_count": len(players), "error": error, "position_note": position_note,
     }, indent=2), encoding="utf-8")
 
     if error:
