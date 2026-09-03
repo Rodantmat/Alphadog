@@ -149,6 +149,10 @@ def main():
     }, indent=2), encoding="utf-8")
     print(f"Team game logs: {len(team_records)} rows, error={error2}")
 
+    advanced_error = run_advanced(proxies, fetched_at)
+    if advanced_error:
+        overall_error = (overall_error + " | " if overall_error else "") + advanced_error
+
     if overall_error:
         print(f"NBA backfill FAILED/WARN: {overall_error}", file=sys.stderr)
         sys.exit(1)
