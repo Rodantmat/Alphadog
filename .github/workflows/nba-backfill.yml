@@ -1,0 +1,76 @@
+name: NBA One-Time Historical Backfill
+
+on:
+  # No cron - this is deliberately NOT part of the weekly refresh cycle. Per the person's
+  # explicit instruction (2026-09-03): the 2025-26 season is complete/frozen and its game logs
+  # will not change, so re-mining it weekly would be pure waste. This runs only on demand, via
+  # the same file-push trigger mechanism as the weekly scraper (nba/TRIGGER_NBA_BACKFILL.txt),
+  # which works with plain github_put_file/github_patch_file - no special tool needed, same as
+  # every other NBA trigger this session.
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'nba/TRIGGER_NBA_BACKFILL.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tools
+        run: python -m pip install --upgrade pip curl_cffi
+
+      - name: Backfill 2025-26 full player + team game logs
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_backfill_2025_26.py
+        continue-on-error: true
+
+      - name: Backfill career season-totals for all active players
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_career_totals.py
+        continue-on-error: true
+
+      - name: Commit NBA backfill JSON to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for f in nba/data/nba_player_game_log_2025_26.json nba/data/nba_player_game_log_2025_26_meta.json nba/data/nba_player_game_log_2025_26_debug_raw.json nba/data/nba_team_game_log_2025_26.json nba/data/nba_team_game_log_2025_26_meta.json nba/data/nba_team_game_log_2025_26_debug_raw.json nba/data/nba_player_career_totals.json nba/data/nba_player_career_totals_meta.json; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "No NBA backfill JSON changes to commit."
+            exit 0
+          fi
+          git commit -m "NBA one-time historical backfill data [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $i/5) - retrying with rebase..."
+            git fetch origin main
+            git rebase origin/main
+            sleep $((RANDOM % 5 + 2))
+          done
+          echo "Failed to push after 5 attempts."
+          exit 1
