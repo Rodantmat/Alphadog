@@ -36,12 +36,12 @@ function chunk(arr, size) {
   return out;
 }
 
-async function upsertPlayerGameLogs(sql, records, sourceKey) {
+async function upsertPlayerGameLogs(sql, records, sourceKey, season) {
   let written = 0;
   const rows = records
     .filter(r => r.PLAYER_ID && r.GAME_ID)
     .map(r => ({
-      player_id: `nba_${r.PLAYER_ID}`, nba_player_id: r.PLAYER_ID, game_id: r.GAME_ID, season: "2025-26",
+      player_id: `nba_${r.PLAYER_ID}`, nba_player_id: r.PLAYER_ID, game_id: r.GAME_ID, season,
       team_id: r.TEAM_ID ? `nba_${r.TEAM_ID}` : null, game_date: r.GAME_DATE, matchup: r.MATCHUP, wl: r.WL,
       min: r.MIN, fgm: r.FGM, fga: r.FGA, fg_pct: r.FG_PCT, fg3m: r.FG3M, fg3a: r.FG3A, fg3_pct: r.FG3_PCT,
       ftm: r.FTM, fta: r.FTA, ft_pct: r.FT_PCT, oreb: r.OREB, dreb: r.DREB, reb: r.REB, ast: r.AST,
