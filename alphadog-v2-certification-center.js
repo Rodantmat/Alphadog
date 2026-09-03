@@ -4304,7 +4304,7 @@ async function autoSelectStrategyV2Legs(env) {
         WHERE s.sig IS NOT NULL
           AND ((s.sigtype='propline' AND s.sn >= 3) OR (s.sigtype='deep' AND s.sn >= 10))
       )
-      SELECT r.pid::text || '|' || r.prop || '|' || r.ln::text || '|' || r.side AS board_row_id,
+      SELECT 'v2|' || r.pid::text || '|' || r.prop || '|' || r.ln::text || '|' || r.side AS board_row_id,
         'prizepicks' AS source_key, r.gp AS game_pk, r.gt AS official_game_time_utc,
         r.player_name, r.pid AS mlb_player_id, r.prop AS canonical_prop_key,
         r.ln AS line_value, r.side AS selected_side,
