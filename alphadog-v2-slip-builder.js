@@ -12,25 +12,37 @@ import postgres from "postgres";
  *
  * Strategy: SLIP_STRATEGY_V1 (see SLIP_STRATEGY_V1_SPEC_AND_BLOCKERS.md and
  * SLIP_STRATEGY_V1_VERIFICATION_ADDENDUM.md).
- * Backtest: 34 slips / 23 days, +68.8% ROI, bootstrap 100%, CI [+39.9,+94.5],
- * leg accuracy 94.9%, best-day share 9.5%, 20/23 profitable days.
+ * Backtest: 33 slips / 23 days, +58.7% ROI, bootstrap 100%, CI [+27.6,+85.3],
+ * leg accuracy 94.8%, 25/33 full hits, 18/23 profitable days.
  *
- * KEY DESIGN DECISIONS (all measured, see addendum):
- *  - POWER not Flex. Flex lowers the all-hit tier to ~0.73x and pays 0.50 on n-1;
- *    at 95% leg accuracy that trade loses (+68.8% Power vs ~+24% Flex).
- *  - 4-pick not 5-pick. Multipliers are SIZE-DEPENDENT: total_bases t2 measured
- *    1.2447/leg on a 4-pick but 1.1914/leg on a 5-pick (-4.3%). The 5th leg costs
- *    accuracy and gains almost nothing.
+ * KEY DESIGN DECISIONS (all measured):
+ *  - POWER not Flex. Flex lowers the all-hit tier to ~0.73x of Power and pays
+ *    0.50 on n-1, 0.25 on n-2. At 95% leg accuracy that trade loses badly
+ *    (+58.7% Power vs ~+24% Flex).
+ *  - 5-pick. Size-dependence was TESTED AND DISPROVEN by a nested read: the same
+ *    four players priced 1.80 as a 4-pick (1.1583/leg) and 2.10 with a fifth leg
+ *    added (1.1600/leg) - a 0.14% difference. Real placed PrizePicks slips also
+ *    show per-leg rates RISING with size (4pk 1.1419, 5pk 1.1453, 6pk 1.1479).
+ *    An earlier v1.0.0 comment claiming size-dependence was wrong: those two
+ *    reads used different players, so size was confounded with player identity.
+ *  - 6-pick has higher raw ROI (+65.3%) but worse bootstrap (99.2% vs 100%),
+ *    a far wider CI, and only 15/22 profitable days - a 6-pick turns more
+ *    near-misses into total losses. 5-pick earns more money more consistently.
  *  - Tiers computed from the RAW UNCUT board, never from final_board_history.
  *    goblin_demon_anchor_line is populated on only 16.1% of final-board rows
  *    because the anchor fallback needs both More and Less rows present and cut
  *    rows never arrive.
  *  - Pool ordered by each cell's OWN signal, NOT final HP. Final HP is downstream
  *    of baseline, whose formula changed 2026-09-02. Dropping it costs ~10 ROI
- *    points and removes the dependency entirely. Config is now baseline-free.
+ *    points and removes the dependency entirely. Config is baseline-free.
  *  - On leg unavailability: SHRINK the slip, never substitute a backup leg.
  *    Measured: shrink wins at every drop rate (0%: +93.4 vs +92.7; 30%: +84.2 vs +77.2).
- *    Backup legs come from beyond the cap, exactly the ranks proven dilutive.
+ *  - Correlation controls were TESTED AND REJECTED. One-leg-per-game cuts slips
+ *    33 -> 14 and drops the CI floor to -2.4%; max-2-per-prop drops ROI to +43.5%;
+ *    overlapping slips drop it to +49.3% with the CI floor collapsing to +5.3%.
+ *    With only 5-7 legs/day the volume loss dominates the correlation benefit,
+ *    and PrizePicks does not appear to discount same-game legs (Round-5 study
+ *    found same-team slips paying MORE, opposite to Underdog).
  */
 
 const WORKER_NAME = "alphadog-v2-slip-builder";
