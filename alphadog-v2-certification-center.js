@@ -4206,7 +4206,7 @@ function buildMixedTop55Slips(legs) {
         playersInSlip.add(leg.mlb_player_id);
         if (slipLegs.length >= size) break;
       }
-      if (slipLegs.length < size) break;
+      if (slipLegs.length < minSize) break;
       for (const l of slipLegs) { used.add(l.board_row_id); dailyPlayerUsage.set(l.mlb_player_id, (dailyPlayerUsage.get(l.mlb_player_id) || 0) + 1); }
       const propBreakdown = {};
       for (const l of slipLegs) { const k = `${l.canonical_prop_key}|${l.selected_side}`; propBreakdown[k] = (propBreakdown[k] || 0) + 1; }
