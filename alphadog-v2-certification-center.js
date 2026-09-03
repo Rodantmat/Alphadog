@@ -4181,9 +4181,18 @@ function buildMixedTop55Slips(legs) {
     const used = new Set();
     const dailyPlayerUsage = new Map();
     const size = MIXED_TOP55_SIZE;
+    // SLIP_STRATEGY_V1 2026-09-03: SHRINK support. Previously this was size-only - if the pool
+    // could not fill a full slip it broke and produced nothing. The strategy requires target 5,
+    // minimum 4, because the qualifying pool is only 5-8 legs after per-cell caps and a rigid
+    // size discards otherwise-playable days.
+    // Shrink, never substitute: a leg that goes unavailable is REMOVED and the slip gets smaller.
+    // Measured on the backtest, shrink beats pulling a backup leg at every unavailability rate
+    // (0%: +93.4 vs +92.7 | 10%: +89.7 vs +88.4 | 30%: +84.2 vs +77.2), because backup legs come
+    // from beyond the per-cell cap - exactly the ranks that dilute accuracy.
+    const minSize = MIXED_TOP55_MIN_SIZE;
     while (true) {
       const avail = sourceLegs.filter(l => !used.has(l.board_row_id));
-      if (avail.length < size) break;
+      if (avail.length < minSize) break;
       const gameCounts = new Map();
       const playersInSlip = new Set();
       const slipLegs = [];
