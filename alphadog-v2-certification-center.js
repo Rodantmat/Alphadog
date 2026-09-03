@@ -4134,6 +4134,11 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
 // floor on the ENRICHED board score; it is replaced by baseline-layer selection. The builder,
 // multiplier plumbing and all UI wiring below are unchanged and shared.)
 const MIXED_TOP55_SIZE = BASELINE_HP_SIZE;
+// SLIP_STRATEGY_V1: target 5, minimum 4. A slip may shrink to 4 legs when the pool cannot fill 5
+// (or when a leg is unselected at placement time). It must NEVER drop below 4 and must NEVER be
+// topped up from outside the per-cell caps - measured, shrink beats substitution at every
+// unavailability rate.
+const MIXED_TOP55_MIN_SIZE = 4;
 // REAL FIX 2026-08-26: the prior table (5.25/10.5 at 6-pick) was confirmed WRONG via 7 real
 // saved slips - actual PrizePicks payouts for this mixed hits+total_bases Flex pool clustered at
 // 2.25-2.5x for 6-pick regardless of composition, not 6.6-10.5x. 1.15^6=2.313 lands right in the
