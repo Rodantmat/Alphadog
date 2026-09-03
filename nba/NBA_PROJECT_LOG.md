@@ -315,3 +315,19 @@ Built `nba/scrape_nba_shotquality.py` (4 defender-distance buckets + league-wide
 **13 static/weekly/foundational workers now real, live, and independently verified**, plus the weekly differential layer: teams, players, arenas, officials, player bio/season-profile, player tracking (speed), team stats, on/off-court splits, player impact rating (DARKO), season schedule/calendar, play-type profiles, tracking detail, and now shot quality/delta/zones.
 
 **This closes out the research line the person opened four passes ago** ("what else is missing for weekly data" / "what do strong systems use"). Per Gemini's own direct assessment, no further static-layer research is expected to be productive - Phase 3b (incremental/delta game-log layer) is the confirmed, correct next major piece of work.
+
+---
+
+## 2026-09-03 (cont'd) — Phase 3b scoping: historical backfill plan researched, documented, not yet built
+
+Per the person's request to identify what past-season data is needed (game logs, histories, splits) before building anything. Full findings in `nba/NBA_HISTORICAL_BACKFILL_PLAN.md`.
+
+**Confirmed real sources**: `playergamelogs`/`teamgamelogs` (full box-score-level, one row per player/team per game, one call per season for the whole league) and `playerdashboardbygeneralsplits`/`teamdashboardbygeneralsplits` (one call returns 6 real split groups together: DaysRest, Location, Month, PrePostAllStar, StartingPosition, WinsLosses) - confirmed NBA absolutely has real, free, comprehensive splits, contrary to the person's own uncertainty about this.
+
+**Gemini's direct, specific answer on season count**: 3-5 seasons of full per-game logs, not "more is always better" and not 1-2 either. Concrete, non-obvious reasoning: a player's own data from several years ago in a *different role on a different team* is actively misleading, not just less useful (Gemini's example: Kevin Durant's 2016 Thunder numbers would hurt a model predicting his performance today) - this is a real argument for bounding history, not just a cost-saving one. Recommended hot/cold structure: most recent 2 seasons + current at full detail, seasons 3-5 back still at full per-game granularity but splits collection can be lighter there.
+
+**Real prioritization of splits, not "collect everything since it's free"**: DaysRest/Location/StartingPosition flagged essential (StartingPosition specifically as a direct role/usage proxy). PrePostAllStar worthwhile. WinsLosses flagged with a real, substantive warning - it's correlational not causal (players play better in wins partly *because* good play caused the win), a genuine data-leakage risk if used as a raw feature. Month flagged as low-signal, likely to get dropped in feature selection.
+
+**Architecture recommendation**: per-game granularity as the mandatory base unit (matches what's being predicted), team game logs are equally essential (not an afterthought) for pace and opponent-defense context, and a 3-step decoupled pipeline (raw ingestion → transformation → feature engineering) so a later feature-engineering change doesn't require re-mining the expensive historical data.
+
+**Not yet built - explicitly flagged for the person's sign-off**: this is a genuinely large mining job (500+ players × ~70-82 games × 3+ seasons), unlike anything in the static layer so far. Recommending 3 seasons (2023-24, 2024-25, 2025-26) as the initial target, but this needs explicit confirmation before building scrapers, given the scale.
