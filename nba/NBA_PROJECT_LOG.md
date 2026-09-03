@@ -423,3 +423,25 @@ The person confirmed the actual real-world trigger schedule for all 3 runs (not 
 **Real, still-open gap, explicitly named rather than assumed solved**: the "Daily Delta Ingestion" worker itself (pulling yesterday's newly-completed games into `player_game_log`/`team_game_log` on an ongoing basis, plus the pre-flight completeness check comparing scheduled-vs-final games) has not been built yet - only the one-time historical 2025-26 backfill exists so far. This is the concrete next piece needed before the baseline pipeline can run safely on a real ongoing daily cadence.
 
 Recorded in `nba/NBA_SYSTEM_DRAFT.md` Section 4b as the locked, binding cadence for all future NBA sessions.
+
+---
+
+## 2026-09-03 (cont'd 8) — Real gap audit while the season is off: 2 more seasons of game logs + splits data, all built and verified
+
+Per the person's explicit instruction to use the off-season downtime to close any remaining backfill gaps (game logs, splits, histories, static data) before the delta pipeline can even be tested. **Did a real Postgres audit first, not a memory-based guess** - confirmed exactly 2 concrete gaps against `NBA_HISTORICAL_BACKFILL_PLAN.md`'s own stated recommendations:
+1. Only 1 of the recommended 3 seasons of full per-game logs existed (2025-26 only).
+2. Zero splits tables existed anywhere, despite DaysRest/Location/Month/PrePostAllStar/WinsLosses being identified in earlier research and never actually built.
+
+**Built `nba/scrape_nba_backfill_historical_seasons.py`** (2023-24, 2024-25, same proven bulk endpoints as the already-verified 2025-26 backfill, kept as a separate script to avoid any risk to that working pipeline) and **`nba/scrape_nba_splits.py`** (`playerdashboardbygeneralsplits`/`teamdashboardbygeneralsplits`, one call per player/team returns all 6 split groups together). Created `nba_stats.player_splits`/`nba_team.team_splits` tables. Rewrote `alphadog-v2-nba-static-backfill.js` to loop generically over all 3 seasons (fixing an earlier hardcoded `"2025-26"` season value) and added splits upserts.
+
+**Real, large-scale run**: ~1,200+ sequential API calls (582 for career-context work, 612 for splits across all players+teams, plus 8 bulk calls for the 2 new seasons) - took ~49 minutes real wall-clock time on the GitHub Actions runner, the longest single run this session, and correctly not rushed or assumed-complete early.
+
+**Triggered for real, verified independently against Postgres** (not just trusting the response):
+- Player game logs: **79,358 rows across 3 confirmed distinct seasons** (26,401 / 26,306 / 26,651 for 2023-24 / 2024-25 / 2025-26)
+- Team game logs: **7,380 rows** (3 seasons × 2,460)
+- Player splits: **9,948 rows**, 577/582 players (5 real HTTP 500s from the source, well under tolerance)
+- Team splits: **581 rows**, 30/30 teams, zero errors
+
+**Spot-checked real values**: Nikola Jokić's rest-day splits (12+35+11+5+2 = 65 games) and home/road splits (33+32 = 65 games) both sum to his exact real season game count - a clean, real cross-check that the splits data is internally consistent, not just present.
+
+**This closes out the real, concrete backfill gaps identified during the season's off-period** - full 3-season game-log coverage (matching the plan's own recommendation) plus comprehensive splits data now exist alongside the already-complete static/weekly layer, career totals, and advanced per-game stats. The system is now maximally prepared for when the season starts and the daily delta pipeline can finally be tested for real.
