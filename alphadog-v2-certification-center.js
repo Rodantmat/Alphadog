@@ -7713,8 +7713,12 @@ const V2_CLIENT_PATCH = [
   "  let m=1;for(const l of kept)m*=Number(l.leg_mult);",
   "  return Math.round(m*1000)/1000;",
   "}",
-  "const __v1EstMult=estimatedMultiplierFor;",
-  "estimatedMultiplierFor=function(s,idx){const v=v2LiveMultiplier(s,idx);return v!==null?v:__v1EstMult(s,idx)};",
+  "try{",
+  "  if(typeof estimatedMultiplierFor==='function'){",
+  "    const __v1EstMult=estimatedMultiplierFor;",
+  "    estimatedMultiplierFor=function(s,idx){const v=v2LiveMultiplier(s,idx);return v!==null?v:__v1EstMult(s,idx)};",
+  "  }",
+  "}catch(e){}",
   ""
 ].join("\n");
 const APP_JS_V2 = (function () {
