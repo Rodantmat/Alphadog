@@ -1,17 +1,9 @@
 {
-  "fetched_at": "2026-09-03T18:21:15Z",
+  "fetched_at": "2026-09-03T21:32:40Z",
   "season": "2025-26",
+  "method": "boxscoretraditionalv3",
   "games_input": 1230,
-  "games_succeeded": 1228,
-  "row_count": 799,
-  "per_game_errors": [
-    {
-      "game_id": "0022500353",
-      "error": "Failed to perform, curl: (56) Proxy CONNECT aborted. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-    },
-    {
-      "game_id": "0022500356",
-      "error": "Failed to perform, curl: (56) Proxy CONNECT aborted. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
-    }
-  ]
+  "games_succeeded": 1230,
+  "row_count": 32179,
+  "per_game_errors": []
 }
