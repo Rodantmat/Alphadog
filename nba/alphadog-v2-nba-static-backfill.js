@@ -205,6 +205,8 @@ async function runJob(input, env) {
 
   const playerLogTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_game_log`;
   const teamLogTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_team.team_game_log`;
+  const playerAdvTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_game_log_advanced`;
+  const teamAdvTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_team.team_game_log_advanced`;
   const careerTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_career_season_totals`;
   await sql.end();
 
@@ -215,10 +217,13 @@ async function runJob(input, env) {
     status: errors.length === 0 ? "completed" : "completed_with_errors",
     errors: errors.length ? errors : null,
     player_game_log_rows_written: playerLogWritten, team_game_log_rows_written: teamLogWritten,
+    player_game_log_advanced_rows_written: playerAdvWritten, team_game_log_advanced_rows_written: teamAdvWritten,
     career_totals_rows_written: careerWritten, source_key: sourceKey,
     final_counts: {
       nba_stats_player_game_log_rows: Number(playerLogTotal[0]?.c || 0),
       nba_team_team_game_log_rows: Number(teamLogTotal[0]?.c || 0),
+      nba_stats_player_game_log_advanced_rows: Number(playerAdvTotal[0]?.c || 0),
+      nba_team_team_game_log_advanced_rows: Number(teamAdvTotal[0]?.c || 0),
       nba_stats_player_career_season_totals_rows: Number(careerTotal[0]?.c || 0),
     },
     elapsed_ms: Date.now() - started, timestamp_utc: nowUtc()
