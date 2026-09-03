@@ -231,8 +231,6 @@ Per the person's request to find a free alternative to paid EPM: researched and 
 
 **Next**: Phase 3b (incremental/delta game-log layer) - the natural next major piece, and the prerequisite for garbage-time adjustment, rolling/recent-form averages, defense-vs-position splits, and a real referee-crew-tendency table, all of which were correctly deferred here pending game-level data.
 
----
-
 ## 2026-09-02 (cont'd) — Weekly differential function built, tested, and verified for real (not just trusted)
 
 Per the person's explicit instruction: the regular static workers only ever upsert what's in the latest scrape - none of them actually detect or report *what changed* (new signings, team trades, departures), and none of them ever flip a departed player's `active` flag off. Built a dedicated `alphadog-v2-nba-weekly-differential` worker to close this gap properly.
