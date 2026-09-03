@@ -4,5 +4,5 @@ This is a ONE-TIME historical backfill, deliberately separate from the weekly
 nba/TRIGGER_NBA_SCRAPE.txt cycle - the 2025-26 season is complete and frozen, so it doesn't need
 weekly re-mining like the static/enrichment layer does.
 
-last_triggered_utc: 2026-09-03T03:00:00Z
-trigger_reason: first run - full 2025-26 player+team game logs (untested at this data volume) plus career season-totals for all active players (untested whether traded players show separate rows, combined TOT rows, or both)
+last_triggered_utc: 2026-09-03T03:45:00Z
+trigger_reason: added Advanced measure type to the same bulk player/team game log calls (usage%/pace/ratings per game) - confirmed this is a cheap bulk-call addition, not the ~1230 per-game calls initially assumed
