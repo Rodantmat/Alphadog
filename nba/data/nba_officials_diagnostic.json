@@ -1,0 +1,362 @@
+{
+  "0022500001": {
+    "status": 200,
+    "top_level_keys": [
+      "meta",
+      "boxScoreSummary"
+    ],
+    "summary_keys": [
+      "gameId",
+      "gameCode",
+      "gameStatus",
+      "gameStatusText",
+      "period",
+      "gameClock",
+      "gameTimeUTC",
+      "gameEt",
+      "awayTeamId",
+      "homeTeamId",
+      "duration",
+      "attendance",
+      "sellout",
+      "seriesGameNumber",
+      "gameLabel",
+      "gameSubLabel",
+      "seriesText",
+      "ifNecessary",
+      "isNeutral",
+      "arena",
+      "officials",
+      "broadcasters",
+      "homeTeam",
+      "awayTeam",
+      "lastFiveMeetings",
+      "pregameCharts",
+      "postgameCharts",
+      "videoAvailableFlag",
+      "ptAvailable",
+      "ptXYZAvailable",
+      "whStatus",
+      "hustleStatus",
+      "historicalStatus",
+      "gameSubtype"
+    ],
+    "officials_sample": [
+      {
+        "personId": 2534,
+        "name": "Zach Zarba",
+        "nameI": "Z. Zarba",
+        "firstName": "Zach",
+        "familyName": "Zarba",
+        "jerseyNum": "15  ",
+        "assignment": ""
+      },
+      {
+        "personId": 200833,
+        "name": "Eric Dalen",
+        "nameI": "E. Dalen",
+        "firstName": "Eric",
+        "familyName": "Dalen",
+        "jerseyNum": "37  ",
+        "assignment": ""
+      },
+      {
+        "personId": 1626301,
+        "name": "Jason Goldenberg",
+        "nameI": "J. Goldenberg",
+        "firstName": "Jason",
+        "familyName": "Goldenberg",
+        "jerseyNum": "35  ",
+        "assignment": ""
+      }
+    ]
+  },
+  "0022500308": {
+    "status": 200,
+    "top_level_keys": [
+      "meta",
+      "boxScoreSummary"
+    ],
+    "summary_keys": [
+      "gameId",
+      "gameCode",
+      "gameStatus",
+      "gameStatusText",
+      "period",
+      "gameClock",
+      "gameTimeUTC",
+      "gameEt",
+      "awayTeamId",
+      "homeTeamId",
+      "duration",
+      "attendance",
+      "sellout",
+      "seriesGameNumber",
+      "gameLabel",
+      "gameSubLabel",
+      "seriesText",
+      "ifNecessary",
+      "isNeutral",
+      "arena",
+      "officials",
+      "broadcasters",
+      "homeTeam",
+      "awayTeam",
+      "lastFiveMeetings",
+      "pregameCharts",
+      "postgameCharts",
+      "videoAvailableFlag",
+      "ptAvailable",
+      "ptXYZAvailable",
+      "whStatus",
+      "hustleStatus",
+      "historicalStatus",
+      "gameSubtype"
+    ],
+    "officials_sample": [
+      {
+        "personId": 202053,
+        "name": "Scott Twardoski",
+        "nameI": "S. Twardoski",
+        "firstName": "Scott",
+        "familyName": "Twardoski",
+        "jerseyNum": "52  ",
+        "assignment": ""
+      },
+      {
+        "personId": 1626301,
+        "name": "Jason Goldenberg",
+        "nameI": "J. Goldenberg",
+        "firstName": "Jason",
+        "familyName": "Goldenberg",
+        "jerseyNum": "35  ",
+        "assignment": ""
+      },
+      {
+        "personId": 1627962,
+        "name": "Jacyn Goble",
+        "nameI": "J. Goble",
+        "firstName": "Jacyn",
+        "familyName": "Goble",
+        "jerseyNum": "68  ",
+        "assignment": ""
+      }
+    ]
+  },
+  "0022500616": {
+    "status": 200,
+    "top_level_keys": [
+      "meta",
+      "boxScoreSummary"
+    ],
+    "summary_keys": [
+      "gameId",
+      "gameCode",
+      "gameStatus",
+      "gameStatusText",
+      "period",
+      "gameClock",
+      "gameTimeUTC",
+      "gameEt",
+      "awayTeamId",
+      "homeTeamId",
+      "duration",
+      "attendance",
+      "sellout",
+      "seriesGameNumber",
+      "gameLabel",
+      "gameSubLabel",
+      "seriesText",
+      "ifNecessary",
+      "isNeutral",
+      "arena",
+      "officials",
+      "broadcasters",
+      "homeTeam",
+      "awayTeam",
+      "lastFiveMeetings",
+      "pregameCharts",
+      "postgameCharts",
+      "videoAvailableFlag",
+      "ptAvailable",
+      "ptXYZAvailable",
+      "whStatus",
+      "hustleStatus",
+      "historicalStatus",
+      "gameSubtype"
+    ],
+    "officials_sample": [
+      {
+        "personId": 200833,
+        "name": "Eric Dalen",
+        "nameI": "E. Dalen",
+        "firstName": "Eric",
+        "familyName": "Dalen",
+        "jerseyNum": "37  ",
+        "assignment": ""
+      },
+      {
+        "personId": 202056,
+        "name": "CJ Washington",
+        "nameI": "C. Washington",
+        "firstName": "CJ",
+        "familyName": "Washington",
+        "jerseyNum": "12  ",
+        "assignment": ""
+      },
+      {
+        "personId": 204058,
+        "name": "Gediminas Petraitis",
+        "nameI": "G. Petraitis",
+        "firstName": "Gediminas",
+        "familyName": "Petraitis",
+        "jerseyNum": "50  ",
+        "assignment": ""
+      }
+    ]
+  },
+  "0022500923": {
+    "status": 200,
+    "top_level_keys": [
+      "meta",
+      "boxScoreSummary"
+    ],
+    "summary_keys": [
+      "gameId",
+      "gameCode",
+      "gameStatus",
+      "gameStatusText",
+      "period",
+      "gameClock",
+      "gameTimeUTC",
+      "gameEt",
+      "awayTeamId",
+      "homeTeamId",
+      "duration",
+      "attendance",
+      "sellout",
+      "seriesGameNumber",
+      "gameLabel",
+      "gameSubLabel",
+      "seriesText",
+      "ifNecessary",
+      "isNeutral",
+      "arena",
+      "officials",
+      "broadcasters",
+      "homeTeam",
+      "awayTeam",
+      "lastFiveMeetings",
+      "pregameCharts",
+      "postgameCharts",
+      "videoAvailableFlag",
+      "ptAvailable",
+      "ptXYZAvailable",
+      "whStatus",
+      "hustleStatus",
+      "historicalStatus",
+      "gameSubtype"
+    ],
+    "officials_sample": [
+      {
+        "personId": 2882,
+        "name": "Sean Wright",
+        "nameI": "S. Wright",
+        "firstName": "Sean",
+        "familyName": "Wright",
+        "jerseyNum": "4   ",
+        "assignment": ""
+      },
+      {
+        "personId": 203593,
+        "name": "Justin Van Duyne",
+        "nameI": "J. Van Duyne",
+        "firstName": "Justin",
+        "familyName": "Van Duyne",
+        "jerseyNum": "64  ",
+        "assignment": ""
+      },
+      {
+        "personId": 1627961,
+        "name": "Brandon Adair",
+        "nameI": "B. Adair",
+        "firstName": "Brandon",
+        "familyName": "Adair",
+        "jerseyNum": "67  ",
+        "assignment": ""
+      }
+    ]
+  },
+  "0022501230": {
+    "status": 200,
+    "top_level_keys": [
+      "meta",
+      "boxScoreSummary"
+    ],
+    "summary_keys": [
+      "gameId",
+      "gameCode",
+      "gameStatus",
+      "gameStatusText",
+      "period",
+      "gameClock",
+      "gameTimeUTC",
+      "gameEt",
+      "awayTeamId",
+      "homeTeamId",
+      "duration",
+      "attendance",
+      "sellout",
+      "seriesGameNumber",
+      "gameLabel",
+      "gameSubLabel",
+      "seriesText",
+      "ifNecessary",
+      "isNeutral",
+      "arena",
+      "officials",
+      "broadcasters",
+      "homeTeam",
+      "awayTeam",
+      "lastFiveMeetings",
+      "pregameCharts",
+      "postgameCharts",
+      "videoAvailableFlag",
+      "ptAvailable",
+      "ptXYZAvailable",
+      "whStatus",
+      "hustleStatus",
+      "historicalStatus",
+      "gameSubtype"
+    ],
+    "officials_sample": [
+      {
+        "personId": 2882,
+        "name": "Sean Wright",
+        "nameI": "S. Wright",
+        "firstName": "Sean",
+        "familyName": "Wright",
+        "jerseyNum": "4   ",
+        "assignment": ""
+      },
+      {
+        "personId": 101283,
+        "name": "Brian Forte",
+        "nameI": "B. Forte",
+        "firstName": "Brian",
+        "familyName": "Forte",
+        "jerseyNum": "45  ",
+        "assignment": ""
+      },
+      {
+        "personId": 1626301,
+        "name": "Jason Goldenberg",
+        "nameI": "J. Goldenberg",
+        "firstName": "Jason",
+        "familyName": "Goldenberg",
+        "jerseyNum": "35  ",
+        "assignment": ""
+      }
+    ]
+  }
+}
