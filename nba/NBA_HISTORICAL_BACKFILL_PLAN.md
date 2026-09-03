@@ -103,4 +103,7 @@ One call **per player** (not per season, not per league) returns their **entire 
 
 **Recommendation**: worth building as a real, additional static-adjacent worker (one call per active player, ~582 calls, same shape as most work already done), but explicitly gated on verifying the trade-row and shortened-season handling empirically first, and explicitly documented wherever it's used that any trend/aging feature derived from it carries the survivorship-bias caveat above.
 
+### RESOLVED (2026-09-03) — real empirical answer to the trade-row question
+Checked directly against the real, committed backfill data: **traded players get separate per-team rows, PLUS a combined total row with `TEAM_ID = 0`** (the real equivalent of Basketball-Reference's "TOT" convention). Confirmed by summing: e.g. player 1630173's 2023-24 season shows 25 GP on one team + 49 GP on another = 74 GP on the `TEAM_ID=0` row, matching exactly. **This means the `TEAM_ID=0` row is the correct one to use for season-level aggregate features** (it's already the properly combined total), while the per-team split rows remain available if a feature ever needs to know specifically which teams a player was on and for how long within a season (which directly feeds the "context stability" flag from Section 8 above).
+
 ---
