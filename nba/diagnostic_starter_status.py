@@ -48,19 +48,36 @@ def main():
 
     results = {}
     for gid in sample_ids:
+        entry = {}
         try:
             status, text = fetch_raw(gid, proxies)
             try:
                 body = json.loads(text)
-                rs_names = [rs.get("name") for rs in body.get("resultSets") or []]
                 player_rs = next((rs for rs in body.get("resultSets") or [] if rs.get("name") == "PlayerStats"), None)
-                row_count = len(player_rs.get("rowSet") or []) if player_rs else None
-                results[gid] = {"status": status, "result_set_names": rs_names, "player_stats_row_count": row_count}
+                entry["v2_status"] = status
+                entry["v2_player_stats_row_count"] = len(player_rs.get("rowSet") or []) if player_rs else None
             except Exception as parse_exc:  # noqa: BLE001
-                results[gid] = {"status": status, "parse_error": str(parse_exc), "raw_sample": text[:1000]}
+                entry["v2_parse_error"] = str(parse_exc)
         except Exception as exc:  # noqa: BLE001
-            results[gid] = {"fetch_error": str(exc)}
+            entry["v2_fetch_error"] = str(exc)
         time.sleep(0.5)
+
+        try:
+            status3, text3 = fetch_raw_v3(gid, proxies)
+            try:
+                body3 = json.loads(text3)
+                player_stats = ((body3.get("boxScoreTraditional") or {}).get("homeTeam") or {}).get("players")
+                entry["v3_status"] = status3
+                entry["v3_home_player_count"] = len(player_stats) if player_stats is not None else None
+                entry["v3_top_level_keys"] = list(body3.keys())
+            except Exception as parse_exc3:  # noqa: BLE001
+                entry["v3_parse_error"] = str(parse_exc3)
+                entry["v3_raw_sample"] = text3[:800]
+        except Exception as exc3:  # noqa: BLE001
+            entry["v3_fetch_error"] = str(exc3)
+        time.sleep(0.5)
+
+        results[gid] = entry
 
     Path("nba/data/nba_starter_status_diagnostic.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
