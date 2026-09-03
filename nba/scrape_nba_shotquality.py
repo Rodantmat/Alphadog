@@ -145,20 +145,25 @@ def fetch_shot_zones(proxies):
     if error:
         return None, error, None
     try:
-        result_set = (body.get("resultSets") or [{}])[0]
+        raw_result_sets = body.get("resultSets")
+        # Real, confirmed quirk (2026-09-03): unlike every other endpoint used this session,
+        # this one returns resultSets as a single dict, not a list of dicts - indexing it with
+        # [0] raised KeyError(0), which stringifies to the confusing bare "0" seen in the first
+        # failed attempt's meta file.
+        result_set = raw_result_sets[0] if isinstance(raw_result_sets, list) else (raw_result_sets or {})
         # Real, unusual structure: two header rows - a zone-name row with columnSpan, and a
-        # per-zone sub-header row (FGM/FGA/FG_PCT typically). Confirmed via nba_api docs; parsed
-        # defensively here since it wasn't directly tested before this first live attempt.
+        # per-zone sub-header row. The sub-header's own "columnNames" is misleadingly the FULL
+        # flat 30-column list (6 skip columns + FGM/FGA/FG_PCT repeated per zone), not just the
+        # 3 real per-zone sub-column names - confirmed from the actual raw response, not assumed.
         header_groups = result_set.get("headers") or []
         row_set = result_set.get("rowSet") or []
         if len(header_groups) < 2:
             return None, "unexpected_header_structure_less_than_2_groups", body
         zone_group = header_groups[0]
-        subcol_group = header_groups[1]
         zone_names = zone_group.get("columnNames") or []
-        sub_names = subcol_group.get("columnNames") or []
         skip = zone_group.get("columnsToSkip", 0)
-        span = zone_group.get("columnSpan", len(sub_names))
+        span = zone_group.get("columnSpan", 3)
+        per_zone_subcols = ["FGM", "FGA", "FG_PCT"][:span]
 
         players = []
         for row in row_set:
@@ -169,7 +174,7 @@ def fetch_shot_zones(proxies):
             for zi, zone_name in enumerate(zone_names):
                 base = skip + zi * span
                 zone_data = {}
-                for si, sub_name in enumerate(sub_names):
+                for si, sub_name in enumerate(per_zone_subcols):
                     if base + si < len(row):
                         zone_data[sub_name] = row[base + si]
                 zones[zone_name] = zone_data
