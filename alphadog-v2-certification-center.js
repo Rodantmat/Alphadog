@@ -4644,14 +4644,20 @@ async function apiHighHitSlips(env, request) {
   const v2UsedIds = new Set(v2Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v2BackupPool = v2Legs.filter(l => !v2UsedIds.has(l.board_row_id)).slice(0, 8);
   // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
-  const allPlayerIds = [...new Set([...ppSlips, ...udSlips, ...slBaselineSlips]
+  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
     .concat(backupPool.map(l => l.mlb_player_id))
+    .concat(v2BackupPool.map(l => l.mlb_player_id))
     .filter(Boolean))];
   const dnpRiskMap = await fetchDnpRisk(env, allPlayerIds);
   attachDnpRisk(ppSlips, dnpRiskMap);
+  attachDnpRisk(v2Slips, dnpRiskMap);
   attachDnpRisk(udSlips, dnpRiskMap);
   attachDnpRisk(slBaselineSlips, dnpRiskMap);
+  for (const l of v2BackupPool) {
+    const r = dnpRiskForLeg(l, dnpRiskMap);
+    l.dnp_risk = r.level; l.dnp_risk_reason = r.reason;
+  }
   for (const l of backupPool) {
     const r = dnpRiskForLeg(l, dnpRiskMap);
     l.dnp_risk = r.level; l.dnp_risk_reason = r.reason;
