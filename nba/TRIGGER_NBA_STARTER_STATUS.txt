@@ -1,0 +1,4 @@
+This file's only purpose is to trigger .github/workflows/nba-starter-status.yml on demand.
+
+last_triggered_utc: 2026-09-03T18:20:00Z
+trigger_reason: first run of the per-game starter/bench status backfill (2025-26 only, ~1230 games, one call per game)
