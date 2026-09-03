@@ -67,12 +67,12 @@ async function upsertPlayerGameLogs(sql, records, sourceKey, season) {
   return written;
 }
 
-async function upsertTeamGameLogs(sql, records, sourceKey) {
+async function upsertTeamGameLogs(sql, records, sourceKey, season) {
   let written = 0;
   const rows = records
     .filter(r => r.TEAM_ID && r.GAME_ID)
     .map(r => ({
-      team_id: `nba_${r.TEAM_ID}`, nba_team_id: r.TEAM_ID, game_id: r.GAME_ID, season: "2025-26",
+      team_id: `nba_${r.TEAM_ID}`, nba_team_id: r.TEAM_ID, game_id: r.GAME_ID, season,
       game_date: r.GAME_DATE, matchup: r.MATCHUP, wl: r.WL, min: r.MIN, fgm: r.FGM, fga: r.FGA, fg_pct: r.FG_PCT,
       fg3m: r.FG3M, fg3a: r.FG3A, fg3_pct: r.FG3_PCT, ftm: r.FTM, fta: r.FTA, ft_pct: r.FT_PCT,
       oreb: r.OREB, dreb: r.DREB, reb: r.REB, ast: r.AST, tov: r.TOV, stl: r.STL, blk: r.BLK, pf: r.PF,
