@@ -4174,6 +4174,154 @@ function mixedTop55FlexPayout(slipLegs, hits) {
 // and consistency (see header comment above), so a single prop can fill all 6 slots if it has
 // enough real, correlation-clean legs that day. No smaller leftover slips - this exact 6-pick-only
 // behavior is what was backtested and shown, so live matches it exactly.
+// ===== SLIP_STRATEGY_V2 (2026-09-03) - PARALLEL track, runs alongside V1 =====
+// V1 and V2 share NO cells except doubles t0 and hits_allowed t2. V2 replaces V1's weakest cells
+// (total_bases t2 measured -2.8% EV, pitcher_strikeouts t2 only 15 legs) with four that V1 never
+// used: hits t1, singles t1, total_bases t3, stolen_bases t0.
+//
+// Cells, signal, cap 2 each:
+//   hits t1 over/less          propline  mult 1.1583
+//   singles t1 over/less       propline  mult 1.1583
+//   stolen_bases t0 over/less  propline  mult 1.1583
+//   total_bases t3 over/less   deep      mult 1.1583
+//   doubles t0 over/less       deep      mult 1.1247
+//   hits_allowed t2 under/more propline  mult 1.1832
+//
+// "propline" = the player's hit rate on that EXACT (prop, line, side) from prior graded board legs.
+// This is NOT V1's "shallow" signal, which pooled across all lines and corrupted the estimate -
+// Brandon Young's hits_allowed LESS read 61.1% pooled but 66.7% at the actual 7.5 line, because
+// pooling mixed in a 5.5 line where he was 0-for-5. Propline lost or tied in ZERO of six cells
+// tested; shallow lost or tied in all six.
+// "deep" = full-season game-log rate at that exact line. Wins where lines vary (doubles, hits);
+// propline wins where the line is fixed and board history is dense (stolen_bases, singles).
+//
+// Backtest 26 days, cap 2, 6-pick POWER: 34 slips, 204 legs, 92.6% leg accuracy, 22/34 sweeps,
+// avg mult 2.42, +57.3% ROI. Theoretical at 92.6% is 0.926^6 * 2.42 - 1 = +52.5%, so the slip
+// math checks out; the question is whether 92.6% holds forward.
+// POWER beats FLEX at every size on measured tiers: 3pk +22.4 vs +1.5, 4pk +31.0 vs -6.4,
+// 5pk +41.2 vs +20.6, 6pk +57.3 vs +35.0. At this accuracy you do not miss often enough for
+// Flex's partial credit to be worth its haircut on the top tier.
+//
+// HONEST RISK: 08-11 through 08-18 is eight consecutive sweeps at an identical 2.47 multiplier -
+// the same six legs recurring - and contributes 60% of total profit. Excluding that block the
+// remaining 18 days run about +30%. Treat +30% as the planning number, not +57.3%.
+// Multipliers confirmed live 2026-09-03: two real 6-pick reads returned 2.50 and 2.40 against a
+// 2.52 model (mean error -2.78%). The 4.17% spread between two slips of IDENTICAL cell mix but
+// different players shows pricing is player-sensitive, so always verify in-app before placing.
+async function autoSelectStrategyV2Legs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH raw AS (
+        SELECT b.player_name, b.resolved_mlb_player_id AS pid, b.official_game_pk AS gp,
+               b.canonical_prop_key AS prop, b.line_value AS ln, b.official_game_time_utc AS gt,
+               (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' AS ot,
+               CASE WHEN (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'allowed_wager_types'
+                         = 'under_or_over' THEN 1 ELSE 0 END AS ua
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'prizepicks' AND b.resolved_mlb_player_id IS NOT NULL
+          AND b.canonical_prop_key IN ('hits','singles','total_bases','doubles','stolen_bases','hits_allowed')
+      ),
+      t AS (SELECT * FROM raw WHERE ot IS NOT NULL),
+      vis AS (SELECT pid, prop, MIN(ln) AS a FROM t WHERE ot = 'standard' GROUP BY 1,2),
+      sw AS (
+        SELECT pid, prop,
+          (MAX(CASE WHEN ot='goblin' THEN ln END) + MIN(CASE WHEN ot='demon' THEN ln END)) / 2.0 AS a
+        FROM t GROUP BY 1,2
+        HAVING MAX(CASE WHEN ot='goblin' THEN ln END) IS NOT NULL
+           AND MIN(CASE WHEN ot='demon' THEN ln END) IS NOT NULL
+           AND MIN(CASE WHEN ot='demon' THEN ln END) > MAX(CASE WHEN ot='goblin' THEN ln END)
+      ),
+      pm AS (SELECT prop, a FROM (
+        SELECT prop, a, ROW_NUMBER() OVER (PARTITION BY prop ORDER BY COUNT(*) DESC) r
+        FROM vis GROUP BY 1,2) z WHERE r = 1),
+      an AS (
+        SELECT d.pid, d.prop, COALESCE(v.a, s.a, p.a) AS anch
+        FROM (SELECT DISTINCT pid, prop FROM t) d
+        LEFT JOIN vis v ON v.pid=d.pid AND v.prop=d.prop
+        LEFT JOIN sw  s ON s.pid=d.pid AND s.prop=d.prop
+        LEFT JOIN pm  p ON p.prop=d.prop
+      ),
+      sided AS (
+        SELECT t.*, a.anch,
+          CASE WHEN t.ln = a.anch THEN 0 ELSE round(abs(t.ln - a.anch))::int END AS tier,
+          CASE WHEN t.ln > a.anch THEN 'over' ELSE 'under' END AS dir,
+          x.side, x.g
+        FROM t JOIN an a ON a.pid=t.pid AND a.prop=t.prop
+        CROSS JOIN LATERAL (VALUES
+          ('more', CASE WHEN t.ot='goblin' THEN 1 ELSE 0 END),
+          ('less', CASE WHEN t.ot='demon'  THEN 1 ELSE 0 END)) AS x(side, g)
+        WHERE a.anch IS NOT NULL AND t.ot <> 'standard'
+          AND (x.side = 'more' OR t.ua = 1)
+          AND t.gt IS NOT NULL
+          AND t.gt::timestamptz > now() + interval '20 minutes'
+          AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c
+                          WHERE c.game_pk::text = t.gp::text
+                            AND (c.is_live = true OR c.is_final = true))
+      ),
+      cells AS (
+        SELECT s.*, c.cell, c.sigtype, c.mult
+        FROM sided s JOIN (VALUES
+          ('hits',1,'over','less','hits t1','propline',1.1583),
+          ('singles',1,'over','less','singles t1','propline',1.1583),
+          ('stolen_bases',0,'over','less','stolen_bases t0','propline',1.1583),
+          ('total_bases',3,'over','less','total_bases t3','deep',1.1583),
+          ('doubles',0,'over','less','doubles t0','deep',1.1247),
+          ('hits_allowed',2,'under','more','hits_allowed t2','propline',1.1832)
+        ) AS c(p,tr,d,sd,cell,sigtype,mult)
+          ON c.p=s.prop AND c.tr=s.tier AND c.d=s.dir AND c.sd=s.side
+        WHERE s.g = 1
+      ),
+      scored AS (
+        SELECT c.*,
+          CASE WHEN c.sigtype = 'propline' THEN
+            (SELECT AVG(o.outcome_hit::numeric) FROM score.prop_outcome_history o
+             WHERE o.mlb_player_id=c.pid AND o.canonical_prop_key=c.prop
+               AND o.selected_side=c.side AND o.line_value=c.ln
+               AND o.official_date::date < CURRENT_DATE AND o.outcome_hit IS NOT NULL)
+          ELSE
+            (SELECT AVG(CASE WHEN v.val < c.ln THEN 1.0 ELSE 0.0 END)
+             FROM (SELECT CASE c.prop WHEN 'total_bases' THEN g.total_bases
+                                      WHEN 'doubles' THEN g.doubles END AS val
+                   FROM stats_hitter.game_logs g
+                   WHERE g.player_id=c.pid AND g.game_date < CURRENT_DATE) v
+             WHERE v.val IS NOT NULL)
+          END AS sig,
+          CASE WHEN c.sigtype = 'propline' THEN
+            (SELECT COUNT(*) FROM score.prop_outcome_history o
+             WHERE o.mlb_player_id=c.pid AND o.canonical_prop_key=c.prop
+               AND o.selected_side=c.side AND o.line_value=c.ln
+               AND o.official_date::date < CURRENT_DATE AND o.outcome_hit IS NOT NULL)
+          ELSE
+            (SELECT COUNT(*) FROM stats_hitter.game_logs g
+             WHERE g.player_id=c.pid AND g.game_date < CURRENT_DATE)
+          END AS sn
+        FROM cells c
+      ),
+      ranked AS (
+        SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell ORDER BY s.sig DESC, s.player_name) rk
+        FROM scored s
+        WHERE s.sig IS NOT NULL
+          AND ((s.sigtype='propline' AND s.sn >= 3) OR (s.sigtype='deep' AND s.sn >= 10))
+      )
+      SELECT r.pid::text || '|' || r.prop || '|' || r.ln::text || '|' || r.side AS board_row_id,
+        'prizepicks' AS source_key, r.gp AS game_pk, r.gt AS official_game_time_utc,
+        r.player_name, r.pid AS mlb_player_id, r.prop AS canonical_prop_key,
+        r.ln AS line_value, r.side AS selected_side,
+        round((100.0 * r.sig)::numeric, 2) AS hit_probability_0_100,
+        NULL::numeric AS confidence_0_100, 1 AS is_goblin, 0 AS is_demon,
+        r.sn AS historical_n, round((100.0 * r.sig)::numeric, 1) AS historical_hit_pct,
+        NULL::int AS goblin_rung, r.cell AS strategy_cell, r.mult AS leg_mult
+      FROM ranked r
+      WHERE r.rk <= 2
+      ORDER BY r.sig DESC, r.player_name
+    `);
+    return rows;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
+
 function buildMixedTop55Slips(legs) {
   const bySource = new Map();
   for (const l of legs || []) {
