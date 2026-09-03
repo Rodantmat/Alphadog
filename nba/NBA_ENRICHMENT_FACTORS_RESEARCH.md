@@ -156,3 +156,30 @@ Real, actual measured wingspan/standing reach/vertical exists (`draftcombinestat
 Draft Combine data and the `Defense`/`Possessions`/`Efficiency` tracking families are explicitly deprioritized/skipped per this pass's findings, not silently omitted.
 
 ---
+
+## 9. Fourth research pass (2026-09-02) — Shot Quality Delta, the last major static pillar
+
+Per the person's request to look at what "strong systems similar to ours" (professional betting-model writeups, not just public analytics sites) actually use. Found real, repeated references to "Quantified Shot Quality" (qSQ) and "Shot Quality Delta" as a core professional technique — but the full version requires proprietary Second Spectrum spatiotemporal (XY, 25fps) tracking data, which is **not publicly available**, not something to pretend otherwise about.
+
+### The real, free, public equivalent — found and verified
+`stats.nba.com`'s `leaguedashplayerptshot` breaks a player's shooting stats down by `CloseDefDistRange` (0-2ft "Very Tight", 2-4ft "Tight", 4-6ft "Open", 6+ft "Wide Open") — a genuine, if coarser, public proxy for defender-proximity shot quality. The same endpoint also supports breakdowns by `DribbleRange`, `TouchTimeRange`, and `ShotClockRange`. Separately, `leaguedashplayershotlocations` gives shot frequency/efficiency by real court zone (restricted area, paint, mid-range, corner 3, above-the-break 3).
+
+**Gemini's verdict, direct and specific**: this is not a lesser substitute to skip — it's "likely the single most valuable public data point you can add to your system at this stage." The four buckets capture most of the real predictive signal (the gap between "Very Tight" and "Wide Open" is where almost all the variance lives), and building nothing here just because the full XY data isn't public would be leaving real signal on the table.
+
+### Concrete, buildable "Shot Quality Delta" methodology (from Gemini, to implement when this gets built)
+1. Weekly, alongside the per-player breakdown, pull the same endpoint **league-wide** to get the league-average eFG% at each of the 4 defender-distance buckets.
+2. For each player, weight the league-average eFG% by that player's own shot-frequency mix across the 4 buckets → their **expected eFG% (x_eFG%)**: "what a league-average shooter would shoot, taking the same shot diet this player takes."
+3. **Shot Quality Delta = player's actual eFG% − x_eFG%.**
+4. A large positive delta = shooting unsustainably hot relative to shot difficulty (negative-regression candidate). A large negative delta = shooting cold relative to difficulty (positive-regression candidate) — a real, direct answer to the "hot/cold streak" problem that plagues models using only season-long averages.
+
+### Shot-location profile — confirmed non-redundant, not just another view of the same thing
+Gemini's framing: play-type data answers **how** a shot came to be (tactical origin), shot-location answers **where** (geometric value), defender-distance answers **what** (contest level at release). Two players with identical play-type efficiency can have completely different real profiles once location + contest are added — genuinely additive, not overlapping with what's already built.
+
+### Also surfaced, smaller and lower-priority
+- **Opponent "defensive archetype" profiles** — running the same play-type/shot-quality analysis on the defensive side, per team (e.g., "what eFG% does Team X allow on spot-up threes, and how often do they leave shooters Open/Wide Open"). A real, buildable static extension once the shot-quality data exists.
+- **Referee foul-rate profiles** (fouls/48, shooting vs. non-shooting foul tendency) — real and valuable, but genuinely requires cross-referencing box-score data with which crew officiated which game. **This needs Phase 3b's game logs, not pure static data** — correctly re-confirmed as gated on game-level data, not something to force here.
+
+### Honest, direct conclusion — asked for explicitly, not softened
+Gemini's own words: **"the well for truly novel, high-impact, weekly-static data is indeed running low... your instinct is correct: Phase 3b is the right next move."** Shot-quality/shot-location data (this pass's finding) is confirmed as the last major static pillar, not one of several more still to find. Further static-layer research passes beyond this one are expected to have diminishing returns — this is a genuine stopping point for this line of research, not an arbitrary one.
+
+---
