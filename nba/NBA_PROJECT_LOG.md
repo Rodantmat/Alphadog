@@ -331,3 +331,48 @@ Per the person's request to identify what past-season data is needed (game logs,
 **Architecture recommendation**: per-game granularity as the mandatory base unit (matches what's being predicted), team game logs are equally essential (not an afterthought) for pace and opponent-defense context, and a 3-step decoupled pipeline (raw ingestion → transformation → feature engineering) so a later feature-engineering change doesn't require re-mining the expensive historical data.
 
 **Not yet built - explicitly flagged for the person's sign-off**: this is a genuinely large mining job (500+ players × ~70-82 games × 3+ seasons), unlike anything in the static layer so far. Recommending 3 seasons (2023-24, 2024-25, 2025-26) as the initial target, but this needs explicit confirmation before building scrapers, given the scale.
+
+---
+
+## 2026-09-03 (cont'd 2) — Real answer on "smart older-season aggregates": playercareerstats, TOT-row question resolved empirically
+
+Per the person's question ("can we get aggregates for older seasons without compromising reliability"): found `playercareerstats` - one call per player returns their entire career, season-by-season, already aggregated (not per-game). Consulted Gemini: confirmed this legitimately sidesteps the per-game contamination risk (season aggregates used as trajectory *features*, not stand-in training rows, are a fundamentally different and safer use), while flagging real risks - **survivorship bias** (only currently-active players are queryable, so any "typical aging curve" is a curve for successful NBA players, not a neutral population) and era effects (raw totals aren't comparable across eras without normalizing).
+
+One real open question from that research - how mid-season-traded players are represented - could not be confirmed from documentation alone and was explicitly left unresolved rather than guessed at.
+
+---
+
+## 2026-09-03 (cont'd 3) — One-time historical backfill for 2025-26 (game logs, team logs, career totals) built, deployed, and verified
+
+Per the person's explicit decision: full per-game backfill scoped to the most recent COMPLETED season only (2025-26 - frozen, no weekly re-mining needed), with career-level aggregates covering everything before that. Built as a **dedicated one-time workflow** (`nba-backfill.yml`, own trigger file `nba/TRIGGER_NBA_BACKFILL.txt`), deliberately separate from the weekly `nba-scrape.yml` cycle.
+
+**Real results, all verified independently against Postgres**:
+- `nba_stats.player_game_log`: **26,651 rows** (full box-score-level, `playergamelogs` bulk endpoint)
+- `nba_team.team_game_log`: **2,460 rows** - exactly 30 teams × 82 games, a clean confirmation of full-season completeness
+- `nba_stats.player_career_season_totals`: **3,644 rows** across all 582 active players, zero failures
+
+**The open TOT-row question got resolved empirically, not guessed at**: checked directly against the real committed data - traded players get separate per-team rows **plus a combined total row with `TEAM_ID=0`** (confirmed by summing GP across split rows matching the total row exactly, e.g. 25+49=74). Documented in `NBA_HISTORICAL_BACKFILL_PLAN.md` as resolved - the `TEAM_ID=0` row is the correct one for season-level aggregate features.
+
+**Postgres writer uses batched inserts** (500 rows/batch via postgres.js's array-insert helper), not one-by-one - the first genuinely large-volume write this session (32,755 total rows), completed in under 10 seconds once built correctly.
+
+---
+
+## 2026-09-03 (cont'd 4) — Fifth research pass: what else the historical backfill needs, and a real correction to Gemini's own cost estimate
+
+Per the person's request to keep researching what else is needed for the backfill (older seasons, splits, "all the good stuff"). Found real professional prop-betting tools (DataStreak, SharkBetting) explicitly built on rolling-window hit rates and opponent-matchup history - confirming these are real, used-in-practice techniques, computable directly from the game logs already backfilled (no new raw data needed for these specifically).
+
+**Consulted Gemini on three additional real data sources found**: per-game officials/lineups (`boxscoresummaryv2`), per-game advanced stats (`boxscoreadvancedv2`), and play-by-play/garbage-time detection (`playbyplayv2`). Gemini's direct sequencing:
+1. **Advanced per-game stats - do now.** Usage rate specifically called "arguably one of the most powerful individual predictors for volume-based props."
+2. **Garbage-time/PBP - defer.** Use a cheap proxy first (blowout margin + minutes played) before spending real effort on true possession-level detection.
+3. **Officials/lineups - skip for historical entirely.** Sharp, correct point: starters (`GS` column) and inactives (missing/zero-minute rows) are already inferable from the game logs already backfilled - spending real API calls here would be genuinely redundant for historical purposes (still real and worth building later for *live/forward-looking* officiating-tendency use, per the static-layer deferral already on record).
+4. **New, unprompted finding**: historical betting market/closing-line data is more valuable than either PBP or officials for model *evaluation* specifically - connects to the already-planned market/odds layer rather than being a new build.
+
+**Real, independently-caught correction to Gemini's own cost estimate, not just accepted**: Gemini assumed advanced per-game stats required the per-game `boxscoreadvancedv2` endpoint (~1,230 calls for a full season). Checked independently via `nba_api` docs: the **same bulk endpoints already used** (`playergamelogs`/`teamgamelogs`) accept a `MeasureType=Advanced` parameter - this is 2 more cheap bulk calls, not 1,230 individual ones. Confirmed correct via a real run.
+
+**Extended the one-time backfill script and worker; triggered and verified independently**:
+- `nba_stats.player_game_log_advanced`: **26,651 rows** - exact match to the base game log, confirming the correction was right
+- `nba_team.team_game_log_advanced`: **2,460 rows** - exact match to the base team log
+
+Spot-checked Nikola Jokić's per-game advanced stats: real, plausible game-to-game usage-rate swings (16.2% to 38.2%) and pace variation, correctly joined across the base and advanced tables by `(player_id, game_id)`.
+
+**15 total datasets/workers now real, live, and independently verified across the static/weekly layer plus the one-time historical backfill.** Deferred, correctly and explicitly (not silently skipped): garbage-time true detection (needs PBP, use MIN+margin proxy for now), per-game officials/lineups history (redundant with existing logs for historical purposes; still relevant for live/forward use per the earlier static-layer deferral), and historical betting-market data (belongs to the market/odds layer, not this one).
