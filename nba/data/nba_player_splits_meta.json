@@ -1,0 +1,28 @@
+{
+  "fetched_at": "2026-09-03T05:02:43Z",
+  "season": "2025-26",
+  "player_count_input": 582,
+  "row_count": 9948,
+  "per_player_errors": [
+    {
+      "player_id": 1630567,
+      "error": "HTTP Error 500: Internal Server Error"
+    },
+    {
+      "player_id": 1642964,
+      "error": "HTTP Error 500: Internal Server Error"
+    },
+    {
+      "player_id": 1629628,
+      "error": "HTTP Error 500: Internal Server Error"
+    },
+    {
+      "player_id": 1629599,
+      "error": "HTTP Error 500: Internal Server Error"
+    },
+    {
+      "player_id": 203967,
+      "error": "HTTP Error 500: Internal Server Error"
+    }
+  ]
+}
