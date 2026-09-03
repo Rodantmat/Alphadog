@@ -4231,7 +4231,7 @@ function buildMixedTop55Slips(legs) {
         slip_type: actualSize + "-pick",
         slip_size: actualSize,
         entry_mode: "power",
-        structure_label: size + "-pick Power (SLIP_STRATEGY_V1: 6 goblin cells, tier-keyed)",
+        structure_label: actualSize + "-pick Power (SLIP_STRATEGY_V1: 6 goblin cells, tier-keyed)",
         estimated_multiplier: baselineHpSlipMultiplier(slipLegs),
         estimated_payout_note: `Multiplier is priced by GOBLIN DEPTH, not a flat prop rate: line 2.5 pays 1.2251/leg, line 3.5 pays 1.1416/leg (measured from real placed 4-picks on 2026-08-30 - pure 3.5 = 1.70, 3x2.5+1x3.5 = 2.10). A pure-3.5 4-pick is 1.70x; a 2.5-heavy one is higher. Real backtest with these measured rates: 34 slips, 24 wins, 17 days, 89.7% leg accuracy, +32.7% ROI (was +42.8% under the old flat 1.1926, which overpriced 3.5 by 4.5%). Always overwrite with the app's real displayed multiplier before saving.`,
         strategy_notes: [
