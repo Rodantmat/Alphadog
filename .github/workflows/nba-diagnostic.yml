@@ -38,12 +38,18 @@ jobs:
         run: python nba/diagnostic_starter_status.py
         continue-on-error: true
 
+      - name: Run officials diagnostic (small sample)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/diagnostic_officials.py
+        continue-on-error: true
+
       - name: Commit diagnostic JSON to main
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/nba_starter_status_diagnostic.json || true
+          git add nba/data/nba_starter_status_diagnostic.json nba/data/nba_officials_diagnostic.json || true
           if git diff --cached --quiet; then
             echo "No diagnostic JSON changes to commit."
             exit 0
