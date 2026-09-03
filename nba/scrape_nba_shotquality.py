@@ -30,6 +30,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 from curl_cffi import requests
 
