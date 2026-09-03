@@ -48,6 +48,14 @@ TEAM_URL = (
     f"&PaceAdjust=N&PerMode=Totals&Period=0&PlusMinus=N&Rank=N&Season={SEASON}"
     f"&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&TeamID=0&VsConference=&VsDivision="
 )
+# Advanced measure type on the SAME bulk endpoints - confirmed real via nba_api docs
+# (MeasureType is a nullable/settable param on playergamelogs/teamgamelogs, not exclusive to the
+# per-game boxscoreadvancedv2 endpoint). This gets usage%/pace/ratings per game for the whole
+# season in one more bulk call each - NOT the ~1230 per-game calls initially assumed before this
+# was checked. PerMode=PerGame here since some advanced fields (rates/percentages) don't sum
+# meaningfully as Totals.
+PLAYER_ADVANCED_URL = PLAYER_URL.replace("MeasureType=Base", "MeasureType=Advanced").replace("PerMode=Totals", "PerMode=PerGame")
+TEAM_ADVANCED_URL = TEAM_URL.replace("MeasureType=Base", "MeasureType=Advanced").replace("PerMode=Totals", "PerMode=PerGame")
 
 
 def get_any(d, *keys, default=None):
