@@ -176,7 +176,7 @@ async function runJob(input, env) {
   const sql = pg(env);
   const sourceKey = "NBA_GITHUB_COMMITTED_ONETIME_BACKFILL";
   const errors = [];
-  let playerLogWritten = 0, teamLogWritten = 0, careerWritten = 0;
+  let playerLogWritten = 0, teamLogWritten = 0, careerWritten = 0, playerAdvWritten = 0, teamAdvWritten = 0;
 
   try {
     const r = await fetchFromGithubRaw(env, "nba/data/nba_player_game_log_2025_26.json", "nba/data/nba_player_game_log_2025_26_meta.json");
@@ -187,6 +187,16 @@ async function runJob(input, env) {
     const r = await fetchFromGithubRaw(env, "nba/data/nba_team_game_log_2025_26.json", "nba/data/nba_team_game_log_2025_26_meta.json");
     teamLogWritten = await upsertTeamGameLogs(sql, r.file.records || [], sourceKey);
   } catch (err) { errors.push(`team_game_log_failed: ${String(err && err.message ? err.message : err)}`); }
+
+  try {
+    const r = await fetchFromGithubRaw(env, "nba/data/nba_player_game_log_advanced_2025_26.json", "nba/data/nba_player_game_log_advanced_2025_26_meta.json");
+    playerAdvWritten = await upsertPlayerGameLogAdvanced(sql, r.file.records || [], sourceKey);
+  } catch (err) { errors.push(`player_game_log_advanced_failed: ${String(err && err.message ? err.message : err)}`); }
+
+  try {
+    const r = await fetchFromGithubRaw(env, "nba/data/nba_team_game_log_advanced_2025_26.json", "nba/data/nba_team_game_log_advanced_2025_26_meta.json");
+    teamAdvWritten = await upsertTeamGameLogAdvanced(sql, r.file.records || [], sourceKey);
+  } catch (err) { errors.push(`team_game_log_advanced_failed: ${String(err && err.message ? err.message : err)}`); }
 
   try {
     const r = await fetchFromGithubRaw(env, "nba/data/nba_player_career_totals.json", "nba/data/nba_player_career_totals_meta.json");
