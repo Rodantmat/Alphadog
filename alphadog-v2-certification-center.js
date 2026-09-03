@@ -7699,13 +7699,10 @@ export default {
 //     static per-size table. Confirmed live 2026-09-03: two real 6-pick reads of identical cell mix
 //     returned 2.50 and 2.40 against a 2.52 model, mean error -2.78%.
 // V1 is untouched - slipIsV2() is false for it, so both paths fall through to the originals.
-// This REDEFINES extractAppScript. Function declarations hoist and the last definition in the
-// module wins, so `const APP_JS = extractAppScript()` at ~line 7619 calls THIS one - the served
-// script is patched at build time and the /app.js route needs no change. That matters because the
-// route line is byte-duplicated twice inside the dead block below and cannot be patched directly.
-// The patch string is inlined rather than referencing a const: APP_JS is built during module
-// evaluation, before any const declared down here has left its temporal dead zone.
-function extractAppScript() {
+// Builds the client script with the V2 patch injected. Named separately from extractAppScript
+// because esbuild parses the whole file including the commented dead block and rejects a duplicate
+// symbol even though only one declaration is live. The /app.js route serves APP_JS_V2.
+function extractAppScriptV2() {
   const openIdx = MAIN_HTML.lastIndexOf("<script>");
   const openTagEnd = MAIN_HTML.indexOf(">", openIdx) + 1;
   const closeIdx = MAIN_HTML.lastIndexOf("</script>");
