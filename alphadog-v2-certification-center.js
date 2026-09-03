@@ -7677,14 +7677,12 @@ export default {
     } catch (error) { // main worker fetch handler - REAL end of module
       return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, error: String(error && error.message ? error.message : error), stack: String(error && error.stack ? error.stack : "").slice(0, 1200), writes_performed: 0, external_calls_performed: 0, queue_calls_performed: 0, timestamp_utc: nowUtc() }, 500);
     }
-  },
-  // /app.js is served from APP_JS_V2 (defined below) rather than APP_JS, so the SLIP_STRATEGY_V2
-  // client patch reaches the browser. Declared as a second handler key would not work; instead the
-  // route inside fetch above still reads APP_JS, so this override runs first via a wrapper.
+  }
 };
-// Re-route /app.js to the patched script. Done here because the route line inside the fetch
-// handler is byte-duplicated twice in the dead block below and cannot be patched directly.
-const __v2BaseFetch = (typeof globalThis !== "undefined") ? null : null;
+// /app.js is rewritten below to serve APP_JS_V2 instead of APP_JS. The route line inside the fetch
+// handler above is byte-duplicated twice more inside the dead comment block and cannot be patched
+// directly, so the served script is swapped here by wrapping the exported handler.
+const __v2ExportedFetch = exportedFetchRef.fetch;
 // ===== SLIP_STRATEGY_V2 CLIENT PATCH (2026-09-03) =====
 // Injected into the served script rather than edited in place. The client source between lines
 // ~4991 and ~7681 is duplicated verbatim twice more inside the dead comment block below, so NO
