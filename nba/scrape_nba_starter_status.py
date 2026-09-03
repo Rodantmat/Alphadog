@@ -41,7 +41,7 @@ OUTPUT_PATH = Path("nba/data/nba_starter_status_2025_26.json")
 OUTPUT_META_PATH = Path("nba/data/nba_starter_status_2025_26_meta.json")
 
 
-def fetch_game(game_id, proxies):
+def fetch_game(game_id, proxies, debug_capture=None):
     url = f"https://stats.nba.com/stats/boxscoretraditionalv2?EndPeriod=10&EndRange=28800&GameID={game_id}&RangeType=0&Season=2025-26&SeasonType=Regular+Season&StartPeriod=1&StartRange=0"
     last_error = None
     for attempt in range(1, 3):
@@ -67,6 +67,15 @@ def fetch_game(game_id, proxies):
                             "is_starter": 1 if start_pos else 0,
                             "comment": comment or None,
                         })
+                    if not rows and debug_capture is not None and "captured" not in debug_capture:
+                        # Real, unexplained failure mode found empirically (2026-09-03): most
+                        # "successful" (no HTTP error) calls were silently returning an empty
+                        # PlayerStats rowSet - captured here so the real cause can be diagnosed
+                        # from actual data instead of guessed at.
+                        debug_capture["captured"] = True
+                        debug_capture["game_id"] = game_id
+                        debug_capture["status_code"] = resp.status_code
+                        debug_capture["body_sample"] = json.dumps(body)[:5000]
                     return rows, None
             return [], "player_stats_result_set_not_found"
         except Exception as exc:  # noqa: BLE001
