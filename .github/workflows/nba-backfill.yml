@@ -50,6 +50,18 @@ jobs:
         run: python nba/scrape_nba_career_totals.py
         continue-on-error: true
 
+      - name: Backfill 2 additional historical seasons (2023-24, 2024-25)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_backfill_historical_seasons.py
+        continue-on-error: true
+
+      - name: Backfill player and team splits (DaysRest/Location/Month/PrePostAllStar/WinsLosses)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_splits.py
+        continue-on-error: true
+
       - name: Commit NBA backfill JSON to main
         run: |
           set -euo pipefail
