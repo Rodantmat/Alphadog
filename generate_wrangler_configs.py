@@ -136,7 +136,8 @@ def make_config(worker_name, include_services=False):
             {"binding": "NBA_STATIC_SCHEDULE_WORKER", "service": "alphadog-v2-nba-static-schedule"},
             {"binding": "NBA_STATIC_PLAYTYPES_WORKER", "service": "alphadog-v2-nba-static-playtypes"},
             {"binding": "NBA_STATIC_TRACKING_DETAIL_WORKER", "service": "alphadog-v2-nba-static-tracking-detail"},
-            {"binding": "NBA_STATIC_SHOTQUALITY_WORKER", "service": "alphadog-v2-nba-static-shotquality"}
+            {"binding": "NBA_STATIC_SHOTQUALITY_WORKER", "service": "alphadog-v2-nba-static-shotquality"},
+            {"binding": "NBA_STATIC_BACKFILL_WORKER", "service": "alphadog-v2-nba-static-backfill"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
