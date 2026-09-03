@@ -7679,10 +7679,6 @@ export default {
     }
   }
 };
-// /app.js is rewritten below to serve APP_JS_V2 instead of APP_JS. The route line inside the fetch
-// handler above is byte-duplicated twice more inside the dead comment block and cannot be patched
-// directly, so the served script is swapped here by wrapping the exported handler.
-const __v2ExportedFetch = exportedFetchRef.fetch;
 // ===== SLIP_STRATEGY_V2 CLIENT PATCH (2026-09-03) =====
 // Injected into the served script rather than edited in place. The client source between lines
 // ~4991 and ~7681 is duplicated verbatim twice more inside the dead comment block below, so NO
