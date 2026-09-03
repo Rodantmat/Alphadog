@@ -406,3 +406,20 @@ The person correctly caught a real design flaw in the methodology doc just writt
 **Rewrote `nba/NBA_BASELINE_METHODOLOGY.md` with the corrected architecture**: Sections 1-3 (base rate, minutes role, pace/defense, variance, trend) are now strictly historical - zero dependency on anything not yet built, and can be implemented and run today against the already-backfilled game logs. Section 4 (enrichment: injury adjustments, blowout/fatigue factors, team-total anchoring against live odds) is explicitly a separate stage applied on top of the cached baseline, not fused into it. Added a new real-risks section (double-counting, order-of-operations, baseline staleness on trades/season-ending injuries) that the two-stage design must actively guard against, not just benefit from.
 
 **Net effect**: the baseline pipeline (Sections 1-3) is now confirmed fully buildable today with zero blocking dependencies - the natural immediate next step, once the person confirms direction.
+
+---
+
+## 2026-09-03 (cont'd 7) — Real operating cadence locked, mirroring the existing MLB system exactly
+
+The person confirmed the actual real-world trigger schedule for all 3 runs (not a new NBA invention - same as MLB's live system):
+- **Static differential (weekly)**: Mondays 2:00am Pacific.
+- **Delta daily**: ~11:00am, everyday.
+- **Master run** (Board → Daily Context → Market → Scoring Engine): 2 hours before the first scheduled game of the day, with an optional second run later "only if needed."
+
+**One real design implication surfaced and locked, not glossed over**: since NBA game times vary day to day, the master run's trigger time is not a fixed clock time like the other two - it must be computed dynamically from `nba_calendar.games` (today's earliest real game_datetime_utc, already-built data) minus 2 hours. The optional second run is exactly what the two-stage baseline/enrichment separation (locked earlier the same day) was designed to make cheap: it only re-runs the Scoring Engine against the already-cached baseline plus fresh daily-context/market data, not a full recompute.
+
+**Cross-checked the daily delta timing against real, confirmed data availability research from earlier the same day**: 11am (Pacific or Eastern, either reading) gives a large safety buffer well past the ~2:00am ET latest-possible-game-end + 10-15-minute stat-finalization window - consistent with, not contradicting, the earlier "6am ET is safe" finding.
+
+**Real, still-open gap, explicitly named rather than assumed solved**: the "Daily Delta Ingestion" worker itself (pulling yesterday's newly-completed games into `player_game_log`/`team_game_log` on an ongoing basis, plus the pre-flight completeness check comparing scheduled-vs-final games) has not been built yet - only the one-time historical 2025-26 backfill exists so far. This is the concrete next piece needed before the baseline pipeline can run safely on a real ongoing daily cadence.
+
+Recorded in `nba/NBA_SYSTEM_DRAFT.md` Section 4b as the locked, binding cadence for all future NBA sessions.
