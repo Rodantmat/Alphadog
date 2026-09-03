@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-02T22:55:00Z
-trigger_reason: first run of the Tier-1 player-tracking detail scraper (Passing, Rebounding, Drives, CatchShoot, PullUpShot, ElbowTouch, PostTouch, PaintTouch)
+last_triggered_utc: 2026-09-02T23:15:00Z
+trigger_reason: first run of the shot quality (defender distance) + Shot Quality Delta + shot zone scraper - untested, especially the unusual paired-header structure of leaguedashplayershotlocations
