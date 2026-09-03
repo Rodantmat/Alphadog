@@ -4108,18 +4108,7 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-${sourceKey}' AND f.is_goblin = 1
-          AND f.official_game_time_utc IS NOT NULL
-          AND (
-                (f.canonical_prop_key = 'total_bases' AND f.selected_side = 'less' AND f.line_value = 3.5)
-             OR (f.canonical_prop_key = 'home_runs'   AND f.selected_side = 'less' AND f.line_value = 0.5)
-              )
-          AND f.official_game_time_utc::timestamptz > now() + interval '20 minutes'
-          AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c WHERE c.game_pk::text = f.game_pk::text AND (c.is_live = true OR c.is_final = true))
-      ),
-      -- Trailing hit rate for this player on this EXACT prop and line, from their own game log,
-      -- using only games STRICTLY BEFORE today. This is the signal - not baseline_v6, not the
-      -- enrichment score, not the board's own history. All three were tested against it and lost.
+      REMOVE_ME_ORPHAN_MARKER
       trail AS (
         SELECT b.final_board_row_id,
           COUNT(*) AS n_games,
