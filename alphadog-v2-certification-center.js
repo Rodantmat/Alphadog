@@ -3963,19 +3963,21 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
   try {
     const rows = await queryAllPg(pg, `
       WITH raw AS (
-        SELECT b.player_name, b.mlb_player_id, b.game_id, b.stat_type, b.line_score,
-               b.odds_type, b.is_under_allowed, b.official_game_time_utc,
-               CASE b.stat_type
-                 WHEN 'Total Bases'        THEN 'total_bases'
-                 WHEN 'Doubles'            THEN 'doubles'
-                 WHEN 'Pitcher Strikeouts' THEN 'pitcher_strikeouts'
-                 WHEN 'Hits Allowed'       THEN 'hits_allowed'
-                 WHEN 'Walks Allowed'      THEN 'walks_allowed'
-               END AS prop
-        FROM market.prizepicks_board_current b
-        WHERE b.pickable_flag = 1
+        SELECT b.player_name,
+               b.resolved_mlb_player_id AS mlb_player_id,
+               b.official_game_pk AS game_id,
+               b.canonical_prop_key AS prop,
+               b.line_value AS line_score,
+               b.official_game_time_utc,
+               (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' AS odds_type,
+               CASE WHEN (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'allowed_wager_types'
+                         = 'under_or_over' THEN 1 ELSE 0 END AS is_under_allowed
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'prizepicks'
+          AND b.resolved_mlb_player_id IS NOT NULL
+          AND b.canonical_prop_key IN ('total_bases','doubles','pitcher_strikeouts','hits_allowed','walks_allowed')
       ),
-      typed AS (SELECT * FROM raw WHERE prop IS NOT NULL),
+      typed AS (SELECT * FROM raw WHERE prop IS NOT NULL AND odds_type IS NOT NULL),
       -- Anchor per player+prop ladder. Layer 1 visible standard, layer 2 switch point between the
       -- highest goblin and the lowest demon, layer 3 prop-level modal standard.
       vis AS (
