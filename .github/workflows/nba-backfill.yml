@@ -62,12 +62,6 @@ jobs:
         run: python nba/scrape_nba_splits.py
         continue-on-error: true
 
-      - name: Backfill per-game starter/bench status (2025-26 only)
-        env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
-        run: python nba/scrape_nba_starter_status.py
-        continue-on-error: true
-
       - name: Commit NBA backfill JSON to main
         run: |
           set -euo pipefail
