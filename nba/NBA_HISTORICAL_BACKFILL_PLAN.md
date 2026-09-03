@@ -76,3 +76,31 @@ A three-step, decoupled pipeline, not a single "mine everything into final table
 4. This is also where garbage-time adjustment, rolling/recent-form averages, defense-vs-position, and referee-crew tendencies (all correctly deferred from the static-layer research passes) become buildable, once real game logs exist to compute them from.
 
 ---
+
+## 8. Older-season aggregates without per-game contamination (2026-09-03 follow-up)
+
+The person asked specifically: can older-season data be used *smartly* — without the "stale per-game context" contamination Gemini flagged in Section 2 — to extend historical coverage further back than the 3–5 season full-detail window?
+
+### Real, confirmed answer: yes, via `playercareerstats`
+One call **per player** (not per season, not per league) returns their **entire career, season-by-season, already aggregated** (not per-game) — `SEASON_ID`, `TEAM_ID`, `PLAYER_AGE`, `GP`, `GS`, `MIN`, full box-score totals, all the way back to their rookie season. Confirmed real schema via `nba_api` project docs.
+
+**Why this genuinely sidesteps the contamination problem** (independently reasoned, then checked against Gemini): the original concern was mixing an old *per-game* row into training data as if it represented current context. Season-level aggregates used as *reference features about the player's trajectory* — not as substitute training rows — are a structurally different, safer use. Gemini's own framing: this generates features that describe **the player's current state** (declining, stable, historically durable), not stand-ins for current performance.
+
+### Three concrete, real uses identified and validated
+1. **Real aging curves** — age vs. performance across a full career, using season-level (not per-game-noisy) data. Enables features like `years_since_peak` or a multi-season performance trend slope.
+2. **A "context stability" flag** — `distinct team count / career seasons` from the `TEAM_ID` column. A player on 4 teams in 6 years is a genuinely different, real risk profile than one who's been on 1 team for 10 — a signal invisible in any single-season stat line.
+3. **A durability/availability proxy** — `GP` relative to that season's real total team games (accounting for lockout/shortened seasons), without storing or inferring any actual injury/health record (which is correctly off-limits).
+
+### Real risks and biases, not glossed over
+- **Survivorship bias, flagged as the critical one**: this endpoint only has data for players who stayed in the league long enough to still be queryable. Any "typical aging curve" derived from it is a curve for *successful* NBA players, not a generic one — role players who washed out after 2-3 seasons are systematically invisible. Any model built on this should be understood as conditioned on "being a currently-relevant NBA player," not a neutral population.
+- **Era effects**: raw stat totals from a 2004 season aren't directly comparable to a 2024 season (pace, 3-point rate changed the whole league). Mitigation: use rate stats (per-100-possessions or z-scored vs. that season's league average), not raw totals, when building trend features.
+- **Role change vs. skill decline ambiguity**: a scoring drop could mean aging decline or just a new team giving the player a smaller role. Rate stats plus the context-stability flag help disambiguate this, but it's a real limit on how much this data can cleanly say on its own.
+
+### Genuinely unresolved, needs empirical verification once this endpoint is actually called (not assumed here)
+- **Mid-season trade handling**: unclear from documentation search alone whether a traded player's season shows separate per-team rows, a combined "total" row, or both. Basketball-Reference's convention is a "TOT" row; `stats.nba.com`'s own behavior for this specific endpoint was not confirmed by research and needs to be checked against a real API response for a known traded player before this data is trusted for season aggregates.
+- **Whether retired players are queryable at all** — if the endpoint requires an active roster player, the survivorship bias above is even more severe than described.
+- **Shortened-season handling** (2011-12 lockout, 2019-20 COVID) for the `GP`-based durability proxy's denominator.
+
+**Recommendation**: worth building as a real, additional static-adjacent worker (one call per active player, ~582 calls, same shape as most work already done), but explicitly gated on verifying the trade-row and shortened-season handling empirically first, and explicitly documented wherever it's used that any trend/aging feature derived from it carries the survivorship-bias caveat above.
+
+---
