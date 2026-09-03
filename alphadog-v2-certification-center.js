@@ -4108,34 +4108,7 @@ async function autoSelectMixedTop55Legs(env, sourceKey) {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
 }
-      REMOVE_ME_ORPHAN_MARKER
-      trail AS (
-        SELECT b.final_board_row_id,
-          COUNT(*) AS n_games,
-          SUM(CASE WHEN (CASE b.canonical_prop_key
-                           WHEN 'total_bases'  THEN g.total_bases
-                           WHEN 'home_runs'    THEN g.home_runs
-                         END) < b.line_value THEN 1 ELSE 0 END) AS n_hit
-        FROM board b
-        JOIN stats_hitter.game_logs g
-          ON g.player_id = b.mlb_player_id
-         AND g.game_date::date < b.official_date::date
-        GROUP BY b.final_board_row_id
-      ),
-      -- v3 (2026-08-31): the RUNG model is retired. It was fitted on 6 placed slips that were all
-      -- total_bases/3.5, and anchor-relative tier analysis showed it mislabelled them - two legs it
-      -- called the same rung sat at genuinely different tiers (gap +2.00 vs +2.54 from the anchor).
-      -- Rates are now taken from the per-cell table calibrated against all 22 real placed slips
-      -- (MAE 6.31%), with the two total_bases cells PINNED to their direct reads.
-      ranked AS (
-        SELECT b.final_board_row_id, b.source_key, b.game_pk, b.official_game_time_utc,
-          b.player_name, b.mlb_player_id, b.canonical_prop_key, b.line_value, b.selected_side,
-          b.probability_confidence_0_100, b.is_goblin, b.is_demon,
-          t.n_games, t.n_hit,
-          (100.0 * t.n_hit / NULLIF(t.n_games,0)) AS trail_pct,
-          PERCENT_RANK() OVER (ORDER BY (100.0 * t.n_hit / NULLIF(t.n_games,0)) DESC) AS pr
-        FROM board b
-        JOIN trail t ON t.final_board_row_id = b.final_board_row_id
+
         WHERE t.n_games >= ${PP_MIN_GAMES}
           AND (100.0 * t.n_hit / NULLIF(t.n_games,0)) >= ${PP_TRAILING_MIN}
       )
