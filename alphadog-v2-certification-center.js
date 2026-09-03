@@ -7699,34 +7699,40 @@ export default {
 //     static per-size table. Confirmed live 2026-09-03: two real 6-pick reads of identical cell mix
 //     returned 2.50 and 2.40 against a 2.52 model, mean error -2.78%.
 // V1 is untouched - slipIsV2() is false for it, so both paths fall through to the originals.
-const V2_CLIENT_PATCH = [
-  "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0}",
-  "const __v1PoolLegal=poolLegIsLegalForSlip;",
-  "poolLegIsLegalForSlip=function(leg,keptLegs,slip){if(slipIsV2(slip))return false;return __v1PoolLegal(leg,keptLegs,slip)};",
-  "function v2LiveMultiplier(slip,slipIdx){",
-  "  if(!slipIsV2(slip))return null;",
-  "  const legs=(slip&&slip.legs)||[];",
-  "  const un=slipUnchecked.get(slipIdx);",
-  "  const kept=legs.filter((l,i)=>!(un&&un.has(i)));",
-  "  if(!kept.length)return null;",
-  "  for(const l of kept){if(!(Number(l.leg_mult)>0))return null}",
-  "  let m=1;for(const l of kept)m*=Number(l.leg_mult);",
-  "  return Math.round(m*1000)/1000;",
-  "}",
-  "try{",
-  "  if(typeof estimatedMultiplierFor==='function'){",
-  "    const __v1EstMult=estimatedMultiplierFor;",
-  "    estimatedMultiplierFor=function(s,idx){const v=v2LiveMultiplier(s,idx);return v!==null?v:__v1EstMult(s,idx)};",
-  "  }",
-  "}catch(e){}",
-  ""
-].join("\n");
-const APP_JS_V2 = (function () {
+// This REDEFINES extractAppScript. Function declarations hoist and the last definition in the
+// module wins, so `const APP_JS = extractAppScript()` at ~line 7619 calls THIS one - the served
+// script is patched at build time and the /app.js route needs no change. That matters because the
+// route line is byte-duplicated twice inside the dead block below and cannot be patched directly.
+// The patch string is inlined rather than referencing a const: APP_JS is built during module
+// evaluation, before any const declared down here has left its temporal dead zone.
+function extractAppScript() {
+  const openIdx = MAIN_HTML.lastIndexOf("<script>");
+  const openTagEnd = MAIN_HTML.indexOf(">", openIdx) + 1;
+  const closeIdx = MAIN_HTML.lastIndexOf("</script>");
+  const base = MAIN_HTML.slice(openTagEnd, closeIdx);
   const marker = "function applySlipSourceFilter(){";
-  const at = APP_JS.indexOf(marker);
-  if (at < 0) return APP_JS;                       // marker gone - serve original, never break the page
-  return APP_JS.slice(0, at) + V2_CLIENT_PATCH + APP_JS.slice(at);
-})();
+  const at = base.indexOf(marker);
+  if (at < 0) return base;   // marker gone - serve the original, never break the page
+  const patch = [
+    "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0}",
+    "var __v1PoolLegal=poolLegIsLegalForSlip;",
+    "poolLegIsLegalForSlip=function(leg,keptLegs,slip){if(slipIsV2(slip))return false;return __v1PoolLegal(leg,keptLegs,slip)};",
+    "function v2LiveMultiplier(slip,slipIdx){",
+    "  if(!slipIsV2(slip))return null;",
+    "  var legs=(slip&&slip.legs)||[];",
+    "  var un=slipUnchecked.get(slipIdx);",
+    "  var kept=legs.filter(function(l,i){return !(un&&un.has(i))});",
+    "  if(!kept.length)return null;",
+    "  for(var a=0;a<kept.length;a++){if(!(Number(kept[a].leg_mult)>0))return null}",
+    "  var m=1;for(var b=0;b<kept.length;b++)m*=Number(kept[b].leg_mult);",
+    "  return Math.round(m*1000)/1000;",
+    "}",
+    "try{if(typeof estimatedMultiplierFor==='function'){var __v1Est=estimatedMultiplierFor;",
+    "estimatedMultiplierFor=function(s,i){var v=v2LiveMultiplier(s,i);return v!==null?v:__v1Est(s,i)}}}catch(e){}",
+    ""
+  ].join("\n");
+  return base.slice(0, at) + patch + base.slice(at);
+}
 /* ===== ORPHANED DUPLICATE BLOCK, 2026-08-31 =====
    Created by a bad patch that used a template placeholder inside new_str. Everything from here
    to the END marker at the bottom of this file is dead duplicate code, kept commented rather than
