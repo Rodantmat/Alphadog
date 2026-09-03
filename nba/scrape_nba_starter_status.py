@@ -103,8 +103,9 @@ def main():
 
     all_rows = []
     errors = []
+    debug_capture = {}
     for i, game_id in enumerate(game_ids):
-        rows, error = fetch_game(game_id, proxies)
+        rows, error = fetch_game(game_id, proxies, debug_capture)
         if rows is not None:
             all_rows.extend(rows)
         else:
@@ -112,6 +113,9 @@ def main():
         if (i + 1) % 100 == 0:
             print(f"Progress: {i + 1}/{len(game_ids)} games processed, {len(errors)} errors so far")
         time.sleep(0.3)
+
+    if debug_capture:
+        Path("nba/data/nba_starter_status_debug_raw.json").write_text(json.dumps(debug_capture, indent=2), encoding="utf-8")
 
     OUTPUT_PATH.write_text(json.dumps({"rows": all_rows}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
