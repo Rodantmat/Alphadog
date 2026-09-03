@@ -154,5 +154,49 @@ def main():
         sys.exit(1)
 
 
+PLAYER_ADVANCED_FIELDS = ["PLAYER_ID", "GAME_ID", "OFF_RATING", "DEF_RATING", "NET_RATING",
+                           "USG_PCT", "PACE", "TS_PCT", "EFG_PCT", "AST_PCT", "OREB_PCT", "DREB_PCT", "REB_PCT"]
+TEAM_ADVANCED_FIELDS = ["TEAM_ID", "GAME_ID", "OFF_RATING", "DEF_RATING", "NET_RATING", "PACE",
+                         "TS_PCT", "EFG_PCT", "AST_PCT", "OREB_PCT", "DREB_PCT"]
+
+
+def run_advanced(proxies, fetched_at):
+    overall_error = None
+
+    body, error = fetch_json(PLAYER_ADVANCED_URL, proxies)
+    if body is None:
+        records, headers = [], []
+        error = error or "no_body"
+    else:
+        records, headers = rows_to_records(body, PLAYER_ADVANCED_FIELDS)
+        error = None if records else "zero_rows_parsed"
+    Path("nba/data/nba_player_game_log_advanced_2025_26.json").write_text(json.dumps({"records": records}, indent=2), encoding="utf-8")
+    if error:
+        overall_error = f"player_advanced_error: {error}"
+    Path("nba/data/nba_player_game_log_advanced_2025_26_meta.json").write_text(json.dumps({
+        "fetched_at": fetched_at, "season": SEASON, "record_count": len(records),
+        "real_headers_seen": headers, "error": error,
+    }, indent=2), encoding="utf-8")
+    print(f"Player advanced game logs: {len(records)} rows, error={error}")
+
+    body2, error2 = fetch_json(TEAM_ADVANCED_URL, proxies)
+    if body2 is None:
+        team_records, team_headers = [], []
+        error2 = error2 or "no_body"
+    else:
+        team_records, team_headers = rows_to_records(body2, TEAM_ADVANCED_FIELDS)
+        error2 = None if team_records else "zero_rows_parsed"
+    Path("nba/data/nba_team_game_log_advanced_2025_26.json").write_text(json.dumps({"records": team_records}, indent=2), encoding="utf-8")
+    if error2:
+        overall_error = (overall_error + " | " if overall_error else "") + f"team_advanced_error: {error2}"
+    Path("nba/data/nba_team_game_log_advanced_2025_26_meta.json").write_text(json.dumps({
+        "fetched_at": fetched_at, "season": SEASON, "record_count": len(team_records),
+        "real_headers_seen": team_headers, "error": error2,
+    }, indent=2), encoding="utf-8")
+    print(f"Team advanced game logs: {len(team_records)} rows, error={error2}")
+
+    return overall_error
+
+
 if __name__ == "__main__":
     main()
