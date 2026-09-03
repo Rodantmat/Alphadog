@@ -65,7 +65,7 @@ def fetch_json(url, proxies, attempts=3):
 
 def fetch_shot_quality_bucket(dist_range, proxies):
     url = ("https://stats.nba.com/stats/leaguedashplayerptshot?College=&Conference=&Country="
-           f"&CloseDefDistRange={dist_range.replace(' ', '+')}&DateFrom=&DateTo=&Division="
+           f"&CloseDefDistRange={quote(dist_range)}&DateFrom=&DateTo=&Division="
            "&DraftPick=&DraftYear=&DribbleRange=&GameSegment=&GeneralRange=&Height=&LastNGames=0"
            "&LeagueID=00&Location=&Month=0&OpponentTeamID=0&Outcome=&PORound=0&Period=0"
            "&PlayerExperience=&PlayerPosition=&SeasonSegment=&Season=2025-26"
