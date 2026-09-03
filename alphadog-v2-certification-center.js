@@ -4622,6 +4622,27 @@ async function apiHighHitSlips(env, request) {
     ...udLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE),
     ...slLegs.filter(l => !usedRowIds.has(l.board_row_id)).slice(0, BASELINE_HP_BACKUP_POOL_SIZE)
   ];
+  // V2 keeps its OWN reserve, entirely separate from the V1/UD/SL pool above. V2 leg ids are
+  // namespaced 'v2|...' so a V1 substitution can never hand back a leg V2 is already using, and
+  // vice versa - the two tracks share two cells (doubles t0, hits_allowed t2) so an unnamespaced
+  // id would collide on exactly those legs.
+  //
+  // V2 POLICY IS SHRINK-FIRST, NOT SUBSTITUTE-FIRST. This is the opposite of V1 and it is measured,
+  // not a style choice. Stress test over the backtest, varying the share of legs made unavailable:
+  //     drop  0%: shrink +93.4%  vs backup +92.7%
+  //     drop  5%: shrink +91.9%  vs backup +89.1%
+  //     drop 10%: shrink +89.7%  vs backup +88.4%
+  //     drop 20%: shrink +86.9%  vs backup +84.1%
+  //     drop 30%: shrink +84.2%  vs backup +77.2%
+  // Shrink wins at every rate and the gap widens as drops rise, because V2 caps each cell at rank 2
+  // and the backup legs necessarily come from rank 3+ - exactly the ranks that dilute. Widening the
+  // caps by one drops pool accuracy 94.8% -> 88.7% and collapses ROI.
+  // So: if a V2 leg goes unavailable, REMOVE IT and let the slip run at 5, then 4. Never top up.
+  // Below 4 legs, drop the slip. The reserve below exists only so the UI has something to display
+  // and so a leg can be swapped for an equal-rank one within the same cell if the user prefers -
+  // it is NOT meant to backfill a shrinking slip.
+  const v2UsedIds = new Set(v2Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const v2BackupPool = v2Legs.filter(l => !v2UsedIds.has(l.board_row_id)).slice(0, 8);
   // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
   const allPlayerIds = [...new Set([...ppSlips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
