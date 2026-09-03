@@ -29,6 +29,12 @@ def fetch_raw(game_id, proxies):
     return resp.status_code, resp.text
 
 
+def fetch_raw_v3(game_id, proxies):
+    url = f"https://stats.nba.com/stats/boxscoretraditionalv3?GameID={game_id}&LeagueID=00&endPeriod=10&endRange=28800&rangeType=0&startPeriod=1&startRange=0"
+    resp = requests.get(url, headers=STATS_HEADERS, timeout=30, proxies=proxies, impersonate="chrome124")
+    return resp.status_code, resp.text
+
+
 def main():
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
