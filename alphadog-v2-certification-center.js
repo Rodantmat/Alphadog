@@ -7730,6 +7730,7 @@ function extractAppScriptV2() {
   ].join("\n");
   return base.slice(0, at) + patch + base.slice(at);
 }
+const APP_JS_V2 = extractAppScriptV2();
 /* ===== ORPHANED DUPLICATE BLOCK, 2026-08-31 =====
    Created by a bad patch that used a template placeholder inside new_str. Everything from here
    to the END marker at the bottom of this file is dead duplicate code, kept commented rather than
