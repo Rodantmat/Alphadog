@@ -3925,14 +3925,189 @@ const BASELINE_HP_MAX_SLIPS_PER_DAY = 2;
 // 20+ spare qualifying legs).
 const BASELINE_HP_BACKUP_POOL_SIZE = 25;
 async function autoSelectMixedTop55Legs(env, sourceKey) {
+  // ===== SLIP_STRATEGY_V1, 2026-09-03 =====
+  // REPLACES the total_bases/3.5 + home_runs/0.5 selector entirely. Three reasons it had to be a
+  // rewrite, not a threshold change:
+  //  1. The old query read score.final_board_current - the CUT board. It carries ~15% of the raw
+  //     feed and goblin_demon_anchor_line resolves on only 15.6% of goblin rows there, because the
+  //     anchor fallback needs both a More and a Less row in the same batch and cut rows never
+  //     arrive. Tier-keyed cells cannot be served from it. This now reads the RAW board.
+  //  2. Its trail CTE joined stats_hitter.game_logs only, so pitcher props could not be selected at
+  //     all. Three of the six cells here are pitcher props.
+  //  3. It ranked by one global percentile. This needs six independent per-cell rankings with
+  //     different caps and two different signal types.
+  //
+  // home_runs is REMOVED. Measured 1.1419/leg on a real pure 4-pick (breakeven 87.58%) against
+  // measured hit rates of 81-85%. Negative EV at every cap on every signal tested.
+  //
+  // Cells (all goblin, tier = round(abs(line - anchor))):
+  //   total_bases        t2 over  less  deep    ranks 1-3   mult 1.1583
+  //   pitcher_strikeouts t2 over  less  shallow rank  1     mult 1.2743
+  //   doubles            t0 over  less  deep    rank  1     mult 1.1247
+  //   hits_allowed       t2 under more  shallow rank  1     mult 1.1832
+  //   hits_allowed       t2 over  less  shallow ranks 1-2   mult 1.1832
+  //   walks_allowed      t1 under more  deep    rank  1     mult 1.1362
+  //
+  // deep    = full-season game-log rate for that exact line/side, >= 10 prior games
+  // shallow = prior graded board legs for that prop/side, >= 3 prior legs
+  // Signal choice is per-cell and NOT interchangeable: pitcher_strikeouts scores +12.7% on shallow
+  // but -15.5% on deep (pitchers get ~20 starts, recency beats depth); doubles is +12.5% on deep
+  // and -4.4% on shallow (hitters get ~100 games, depth beats recency).
+  //
+  // Backtest: 33 slips / 23 days, +58.7% ROI, 94.8% leg accuracy, 25/33 full hits,
+  // bootstrap 100% positive, 95% CI [+27.6%, +85.3%], 18/23 profitable days.
+  // RISKS: config selected in-sample on 23 days; ROI is cap-sensitive (+58.7% at cap, +23.7% at
+  // cap+1); multipliers drift ~7% on identical compositions. Verify the app's real multiplier
+  // before placing and skip anything below 1.35x. Minimum stake.
   const pg = pgClient(env);
   try {
     const rows = await queryAllPg(pg, `
-      WITH board AS (
-        SELECT f.final_board_row_id, f.source_key, f.game_pk, f.official_game_time_utc,
-          f.player_name, f.mlb_player_id, f.canonical_prop_key, f.line_value, f.selected_side,
-          f.probability_confidence_0_100, f.is_goblin, f.is_demon, f.official_date
-        FROM score.final_board_current f
+      WITH raw AS (
+        SELECT b.player_name, b.mlb_player_id, b.game_id, b.stat_type, b.line_score,
+               b.odds_type, b.is_under_allowed, b.official_game_time_utc,
+               CASE b.stat_type
+                 WHEN 'Total Bases'        THEN 'total_bases'
+                 WHEN 'Doubles'            THEN 'doubles'
+                 WHEN 'Pitcher Strikeouts' THEN 'pitcher_strikeouts'
+                 WHEN 'Hits Allowed'       THEN 'hits_allowed'
+                 WHEN 'Walks Allowed'      THEN 'walks_allowed'
+               END AS prop
+        FROM market.prizepicks_board_current b
+        WHERE b.pickable_flag = 1
+      ),
+      typed AS (SELECT * FROM raw WHERE prop IS NOT NULL),
+      -- Anchor per player+prop ladder. Layer 1 visible standard, layer 2 switch point between the
+      -- highest goblin and the lowest demon, layer 3 prop-level modal standard.
+      vis AS (
+        SELECT mlb_player_id, prop, MIN(line_score) AS anchor
+        FROM typed WHERE odds_type = 'standard' GROUP BY mlb_player_id, prop
+      ),
+      sw AS (
+        SELECT t.mlb_player_id, t.prop,
+          (MAX(CASE WHEN t.odds_type = 'goblin' THEN t.line_score END)
+           + MIN(CASE WHEN t.odds_type = 'demon' THEN t.line_score END)) / 2.0 AS anchor
+        FROM typed t GROUP BY t.mlb_player_id, t.prop
+        HAVING MAX(CASE WHEN t.odds_type = 'goblin' THEN t.line_score END) IS NOT NULL
+           AND MIN(CASE WHEN t.odds_type = 'demon'  THEN t.line_score END) IS NOT NULL
+           AND MIN(CASE WHEN t.odds_type = 'demon'  THEN t.line_score END)
+             > MAX(CASE WHEN t.odds_type = 'goblin' THEN t.line_score END)
+      ),
+      propmode AS (
+        SELECT prop, anchor FROM (
+          SELECT prop, anchor, ROW_NUMBER() OVER (PARTITION BY prop ORDER BY COUNT(*) DESC) AS rn
+          FROM vis GROUP BY prop, anchor
+        ) z WHERE rn = 1
+      ),
+      anch AS (
+        SELECT t.mlb_player_id, t.prop,
+          COALESCE(v.anchor, s.anchor, p.anchor) AS anchor_line,
+          CASE WHEN v.anchor IS NOT NULL THEN 'visible'
+               WHEN s.anchor IS NOT NULL THEN 'inferred'
+               ELSE 'prop_fallback' END AS anchor_source
+        FROM (SELECT DISTINCT mlb_player_id, prop FROM typed) t
+        LEFT JOIN vis v ON v.mlb_player_id = t.mlb_player_id AND v.prop = t.prop
+        LEFT JOIN sw  s ON s.mlb_player_id = t.mlb_player_id AND s.prop = t.prop
+        LEFT JOIN propmode p ON p.prop = t.prop
+      ),
+      -- Complement rule: odds_type tags the MORE side. A demon-tagged row bet LESS is a goblin.
+      sided AS (
+        SELECT t.*, a.anchor_line, a.anchor_source,
+          CASE WHEN t.line_score = a.anchor_line THEN 0
+               ELSE round(abs(t.line_score - a.anchor_line))::int END AS tier,
+          CASE WHEN t.line_score > a.anchor_line THEN 'over' ELSE 'under' END AS tier_dir,
+          x.side, x.is_goblin
+        FROM typed t
+        JOIN anch a ON a.mlb_player_id = t.mlb_player_id AND a.prop = t.prop
+        CROSS JOIN LATERAL (
+          VALUES ('more', CASE WHEN t.odds_type = 'goblin' THEN 1 ELSE 0 END),
+                 ('less', CASE WHEN t.odds_type = 'demon'  THEN 1 ELSE 0 END)
+        ) AS x(side, is_goblin)
+        WHERE a.anchor_line IS NOT NULL
+          AND t.odds_type <> 'standard'
+          AND (x.side = 'more' OR t.is_under_allowed = 1)
+          AND t.official_game_time_utc IS NOT NULL
+          AND t.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+          AND NOT EXISTS (SELECT 1 FROM calendar.game_calendar c
+                          WHERE c.game_pk::text = t.game_id::text
+                            AND (c.is_live = true OR c.is_final = true))
+      ),
+      cells AS (
+        SELECT s.*, c.cell_key, c.signal, c.cap_hi, c.mult
+        FROM sided s
+        JOIN (VALUES
+          ('total_bases',        2, 'over',  'less', 'total_bases/over',        'deep',    3, 1.1583),
+          ('pitcher_strikeouts', 2, 'over',  'less', 'pitcher_strikeouts/over', 'shallow', 1, 1.2743),
+          ('doubles',            0, 'over',  'less', 'doubles/over',            'deep',    1, 1.1247),
+          ('hits_allowed',       2, 'under', 'more', 'hits_allowed/under',      'shallow', 1, 1.1832),
+          ('hits_allowed',       2, 'over',  'less', 'hits_allowed/over',       'shallow', 2, 1.1832),
+          ('walks_allowed',      1, 'under', 'more', 'walks_allowed/under',     'deep',    1, 1.1362)
+        ) AS c(prop, tier, tier_dir, side, cell_key, signal, cap_hi, mult)
+          ON c.prop = s.prop AND c.tier = s.tier AND c.tier_dir = s.tier_dir AND c.side = s.side
+        WHERE s.is_goblin = 1
+      ),
+      -- DEEP: full-season game log, that exact line and side, games strictly before today.
+      deep AS (
+        SELECT c.mlb_player_id, c.prop, c.line_score, c.side,
+          COUNT(*) AS n, AVG(CASE WHEN c.side = 'less'
+            THEN (CASE WHEN v.val < c.line_score THEN 1.0 ELSE 0.0 END)
+            ELSE (CASE WHEN v.val > c.line_score THEN 1.0 ELSE 0.0 END) END) AS rate
+        FROM (SELECT DISTINCT mlb_player_id, prop, line_score, side FROM cells WHERE signal = 'deep') c
+        JOIN LATERAL (
+          SELECT CASE c.prop WHEN 'total_bases' THEN g.total_bases WHEN 'doubles' THEN g.doubles END AS val
+          FROM stats_hitter.game_logs g
+          WHERE g.player_id = c.mlb_player_id AND g.game_date < CURRENT_DATE
+          UNION ALL
+          SELECT CASE c.prop WHEN 'walks_allowed' THEN p.walks_allowed END AS val
+          FROM stats_pitcher.game_logs p
+          WHERE p.player_id = c.mlb_player_id AND p.game_date < CURRENT_DATE
+        ) v ON v.val IS NOT NULL
+        GROUP BY c.mlb_player_id, c.prop, c.line_score, c.side
+      ),
+      -- SHALLOW: prior graded board legs for that prop and side.
+      shallow AS (
+        SELECT c.mlb_player_id, c.prop, c.side,
+          COUNT(*) AS n, AVG(o.outcome_hit::numeric) AS rate
+        FROM (SELECT DISTINCT mlb_player_id, prop, side FROM cells WHERE signal = 'shallow') c
+        JOIN score.prop_outcome_history o
+          ON o.mlb_player_id = c.mlb_player_id AND o.canonical_prop_key = c.prop
+         AND o.selected_side = c.side AND o.official_date::date < CURRENT_DATE
+         AND o.outcome_hit IS NOT NULL
+        GROUP BY c.mlb_player_id, c.prop, c.side
+      ),
+      scored AS (
+        SELECT c.*,
+          COALESCE(d.rate, sh.rate) AS sig, COALESCE(d.n, sh.n) AS sig_n
+        FROM cells c
+        LEFT JOIN deep d ON c.signal = 'deep' AND d.mlb_player_id = c.mlb_player_id
+          AND d.prop = c.prop AND d.line_score = c.line_score AND d.side = c.side
+        LEFT JOIN shallow sh ON c.signal = 'shallow' AND sh.mlb_player_id = c.mlb_player_id
+          AND sh.prop = c.prop AND sh.side = c.side
+      ),
+      ranked AS (
+        SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell_key ORDER BY s.sig DESC, s.player_name) AS rk
+        FROM scored s
+        WHERE s.sig IS NOT NULL
+          AND ((s.signal = 'deep' AND s.sig_n >= 10) OR (s.signal = 'shallow' AND s.sig_n >= 3))
+      )
+      SELECT r.mlb_player_id::text || '|' || r.prop || '|' || r.line_score::text || '|' || r.side AS board_row_id,
+        'prizepicks' AS source_key, r.game_id AS game_pk, r.official_game_time_utc,
+        r.player_name, r.mlb_player_id, r.prop AS canonical_prop_key,
+        r.line_score AS line_value, r.side AS selected_side,
+        round((100.0 * r.sig)::numeric, 2) AS hit_probability_0_100,
+        NULL::numeric AS confidence_0_100,
+        1 AS is_goblin, 0 AS is_demon,
+        r.sig_n AS historical_n,
+        round((100.0 * r.sig)::numeric, 1) AS historical_hit_pct,
+        NULL::int AS goblin_rung
+      FROM ranked r
+      WHERE r.rk <= r.cap_hi
+      ORDER BY r.sig DESC, r.player_name
+    `);
+    return rows;
+  } finally {
+    await pg.end({ timeout: 1 }).catch(() => {});
+  }
+}
         WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score.final_board_batches WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1)
           AND f.source_key = '${sourceKey}' AND f.is_goblin = 1
           AND f.official_game_time_utc IS NOT NULL
