@@ -57,7 +57,6 @@ def fetch():
                 players.append({
                     "player_id": int(pid),
                     "age": col(row, "AGE"),
-                    "position": col(row, "PLAYER_POSITION"),
                     "height_inches": col(row, "PLAYER_HEIGHT_INCHES"),
                     "weight": col(row, "PLAYER_WEIGHT"),
                     "college": col(row, "COLLEGE"),
