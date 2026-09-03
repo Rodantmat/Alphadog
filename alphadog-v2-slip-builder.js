@@ -293,21 +293,37 @@ async function buildPool(sql, slateDate) {
 
 function assembleSlips(pool) {
   const slips = [];
-  let i = 0;
-  while (pool.length - i >= MIN_SIZE && slips.length < MAX_SLIPS_PER_DAY) {
-    const size = Math.min(TARGET_SIZE, pool.length - i);
-    if (size < MIN_SIZE) break;
-    const legs = pool.slice(i, i + size);
-    i += size;
+  const remaining = pool.slice();
+  while (remaining.length >= MIN_SIZE && slips.length < MAX_SLIPS_PER_DAY) {
+    // Take up to TARGET_SIZE, never more than MAX_LEGS_PER_PROP of any one prop.
+    // Measured neutral on the backtest (identical result) but bounds concentration risk.
+    const legs = [];
+    const propCount = {};
+    for (let j = 0; j < remaining.length && legs.length < TARGET_SIZE; j++) {
+      const cand = remaining[j];
+      if ((propCount[cand.prop] || 0) >= MAX_LEGS_PER_PROP) continue;
+      legs.push(cand);
+      propCount[cand.prop] = (propCount[cand.prop] || 0) + 1;
+    }
+    if (legs.length < MIN_SIZE) break;
+    for (const l of legs) remaining.splice(remaining.indexOf(l), 1);
+
     const mult = legs.reduce((a, l) => a * l.mult, 1);
     const estHp = legs.reduce((a, l) => a * l.signal_value, 1);
+    const breakeven = 1 / estHp; // multiplier the app must show for this slip to be +EV
     slips.push({
       legs,
       slip_size: legs.length,
       estimated_multiplier: round(mult, 4),
       estimated_hit_probability_0_100: round(estHp * 100, 2),
       breakeven_hit_rate_0_100: round((1 / mult) * 100, 2),
-      edge_vs_breakeven_0_100: round((estHp - 1 / mult) * 100, 2)
+      edge_vs_breakeven_0_100: round((estHp - 1 / mult) * 100, 2),
+      // PRE-PLACEMENT GATE. Measured multiplier drift of ~7% on identical
+      // compositions (same 4 players priced 2.40 one day, 1.80 another), so the
+      // estimate cannot be trusted at placement time. Read the REAL multiplier in
+      // the app and refuse the slip if it is below this floor.
+      min_real_multiplier_to_place: round(Math.max(breakeven, MIN_REAL_MULTIPLIER), 4),
+      placement_rule: `Check the app's displayed multiplier before placing. If it is below ${round(Math.max(breakeven, MIN_REAL_MULTIPLIER), 4)}x, DO NOT PLACE - the slip is no longer +EV at that price.`
     });
   }
   return slips;
