@@ -95,6 +95,54 @@ async function upsertTeamGameLogs(sql, records, sourceKey) {
   return written;
 }
 
+async function upsertPlayerGameLogAdvanced(sql, records, sourceKey) {
+  let written = 0;
+  const rows = records
+    .filter(r => r.PLAYER_ID && r.GAME_ID)
+    .map(r => ({
+      player_id: `nba_${r.PLAYER_ID}`, game_id: r.GAME_ID,
+      off_rating: r.OFF_RATING, def_rating: r.DEF_RATING, net_rating: r.NET_RATING,
+      usg_pct: r.USG_PCT, pace: r.PACE, ts_pct: r.TS_PCT, efg_pct: r.EFG_PCT,
+      ast_pct: r.AST_PCT, oreb_pct: r.OREB_PCT, dreb_pct: r.DREB_PCT, reb_pct: r.REB_PCT,
+      source_key: sourceKey,
+    }));
+  for (const batch of chunk(rows, BATCH_SIZE)) {
+    await sql`
+      INSERT INTO nba_stats.player_game_log_advanced ${sql(batch, "player_id", "game_id", "off_rating", "def_rating", "net_rating", "usg_pct", "pace", "ts_pct", "efg_pct", "ast_pct", "oreb_pct", "dreb_pct", "reb_pct", "source_key")}
+      ON CONFLICT (player_id, game_id) DO UPDATE SET
+        off_rating=excluded.off_rating, def_rating=excluded.def_rating, net_rating=excluded.net_rating,
+        usg_pct=excluded.usg_pct, pace=excluded.pace, ts_pct=excluded.ts_pct, efg_pct=excluded.efg_pct,
+        ast_pct=excluded.ast_pct, oreb_pct=excluded.oreb_pct, dreb_pct=excluded.dreb_pct, reb_pct=excluded.reb_pct,
+        source_key=excluded.source_key, updated_at=now()
+    `;
+    written += batch.length;
+  }
+  return written;
+}
+
+async function upsertTeamGameLogAdvanced(sql, records, sourceKey) {
+  let written = 0;
+  const rows = records
+    .filter(r => r.TEAM_ID && r.GAME_ID)
+    .map(r => ({
+      team_id: `nba_${r.TEAM_ID}`, game_id: r.GAME_ID,
+      off_rating: r.OFF_RATING, def_rating: r.DEF_RATING, net_rating: r.NET_RATING, pace: r.PACE,
+      ts_pct: r.TS_PCT, efg_pct: r.EFG_PCT, ast_pct: r.AST_PCT, oreb_pct: r.OREB_PCT, dreb_pct: r.DREB_PCT,
+      source_key: sourceKey,
+    }));
+  for (const batch of chunk(rows, BATCH_SIZE)) {
+    await sql`
+      INSERT INTO nba_team.team_game_log_advanced ${sql(batch, "team_id", "game_id", "off_rating", "def_rating", "net_rating", "pace", "ts_pct", "efg_pct", "ast_pct", "oreb_pct", "dreb_pct", "source_key")}
+      ON CONFLICT (team_id, game_id) DO UPDATE SET
+        off_rating=excluded.off_rating, def_rating=excluded.def_rating, net_rating=excluded.net_rating,
+        pace=excluded.pace, ts_pct=excluded.ts_pct, efg_pct=excluded.efg_pct, ast_pct=excluded.ast_pct,
+        oreb_pct=excluded.oreb_pct, dreb_pct=excluded.dreb_pct, source_key=excluded.source_key, updated_at=now()
+    `;
+    written += batch.length;
+  }
+  return written;
+}
+
 async function upsertCareerTotals(sql, rows, sourceKey) {
   let written = 0;
   const recs = rows
