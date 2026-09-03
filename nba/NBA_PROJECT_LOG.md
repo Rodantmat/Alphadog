@@ -376,3 +376,21 @@ Per the person's request to keep researching what else is needed for the backfil
 Spot-checked Nikola Jokić's per-game advanced stats: real, plausible game-to-game usage-rate swings (16.2% to 38.2%) and pace variation, correctly joined across the base and advanced tables by `(player_id, game_id)`.
 
 **15 total datasets/workers now real, live, and independently verified across the static/weekly layer plus the one-time historical backfill.** Deferred, correctly and explicitly (not silently skipped): garbage-time true detection (needs PBP, use MIN+margin proxy for now), per-game officials/lineups history (redundant with existing logs for historical purposes; still relevant for live/forward use per the earlier static-layer deferral), and historical betting-market data (belongs to the market/odds layer, not this one).
+
+---
+
+## 2026-09-03 (cont'd 5) — Baseline projection methodology designed: `nba/NBA_BASELINE_METHODOLOGY.md`
+
+Per the natural next step after the historical backfill: researched and designed the actual baseline classification/projection system - "the heart of the system" per the original locked operating model. Real research grounding: EWMA (exponentially weighted moving averages), rolling-window variance, and Bayesian shrinkage toward priors are all standard, documented sports-analytics techniques (confirmed via multiple real sources including a hobbyist's own prop-model build log, which specifically flagged that raw player projections go "wild" without anchoring to team context).
+
+**Consulted Gemini for a concrete, buildable synthesis** (treated as a strong starting design, not final - to be independently validated against real backtests once built, per the project's standing rule):
+
+1. **Core 5-step pipeline**: EWMA-based per-36 rate (with Bayesian shrinkage for small samples) → projected minutes (separate, faster EWMA) → pace/opponent-defense multipliers → raw projection → **anchor to team-implied totals** (sum all teammates' raw projections, scale to match a market-implied team total) - this last step is the real, practitioner-sourced fix for wild projections when a star is rested.
+2. **Variation (volatility)**: rolling-window standard deviation, not just a point estimate - turns the projection into a real distribution, enabling a genuine model-vs-market fair-price comparison via Z-scores.
+3. **Direction (trend)**: a second, faster EWMA compared against the primary one, applied as a *dampened* multiplier specifically to avoid double-counting what the primary EWMA already captures.
+4. **Concrete tunable rule example** (`Primary_Playmaker_Absence_Bonus`) - fully DB-configurable per the project's no-hardcoding rule, using data already built (season usage%/AST% to detect a "primary playmaker" teammate being out).
+5. **Honest difficulty assessment, not glossed over**: minutes projection is flagged as "the single biggest source of error in any player-prop model" - a real, ongoing challenge, not a solved problem. Cascading injury effects are named as a genuine network problem beyond a single rule. Player-vs-player defensive matchups and "soft" factors (revenge games, contract-year motivation) are explicitly named as things to NOT try to solve at this stage - market-anchoring is the honest practical answer for soft factors, since the market already prices much of them in.
+
+**Explicitly named dependencies not yet built**: the daily injury/lineup confirmation layer and the live-odds/market layer (both part of the originally planned daily master run) are required for two of the five pipeline steps (minutes cross-check, team-total anchoring) - this design document doesn't pretend those are ready.
+
+**Not yet implemented in code** - this is a design/methodology document only, matching the same research-then-build pattern used throughout this project. The next step would be building the actual EWMA/shrinkage calculation as a real worker against the now-available historical game logs.
