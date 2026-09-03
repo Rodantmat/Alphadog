@@ -652,18 +652,18 @@
       "total_fga": 400
     },
     {
-      "player_id": 1642907,
-      "actual_efg_pct": 0.541,
-      "expected_efg_pct": 0.5443,
-      "shot_quality_delta": -0.0033,
-      "total_fga": 647
-    },
-    {
       "player_id": 1628386,
       "actual_efg_pct": 0.641,
       "expected_efg_pct": 0.5358,
       "shot_quality_delta": 0.1053,
       "total_fga": 525
+    },
+    {
+      "player_id": 1642907,
+      "actual_efg_pct": 0.541,
+      "expected_efg_pct": 0.5443,
+      "shot_quality_delta": -0.0033,
+      "total_fga": 647
     },
     {
       "player_id": 1630692,
@@ -939,18 +939,18 @@
       "total_fga": 514
     },
     {
-      "player_id": 1642874,
-      "actual_efg_pct": 0.4818,
-      "expected_efg_pct": 0.55,
-      "shot_quality_delta": -0.0682,
-      "total_fga": 440
-    },
-    {
       "player_id": 203932,
       "actual_efg_pct": 0.5745,
       "expected_efg_pct": 0.5401,
       "shot_quality_delta": 0.0344,
       "total_fga": 398
+    },
+    {
+      "player_id": 1642874,
+      "actual_efg_pct": 0.4818,
+      "expected_efg_pct": 0.55,
+      "shot_quality_delta": -0.0682,
+      "total_fga": 440
     },
     {
       "player_id": 1629675,
@@ -995,18 +995,18 @@
       "total_fga": 388
     },
     {
-      "player_id": 1629001,
-      "actual_efg_pct": 0.4735,
-      "expected_efg_pct": 0.5467,
-      "shot_quality_delta": -0.0732,
-      "total_fga": 509
-    },
-    {
       "player_id": 1641739,
       "actual_efg_pct": 0.5643,
       "expected_efg_pct": 0.5583,
       "shot_quality_delta": 0.006,
       "total_fga": 889
+    },
+    {
+      "player_id": 1629001,
+      "actual_efg_pct": 0.4735,
+      "expected_efg_pct": 0.5467,
+      "shot_quality_delta": -0.0732,
+      "total_fga": 509
     },
     {
       "player_id": 203954,
@@ -1037,6 +1037,13 @@
       "total_fga": 657
     },
     {
+      "player_id": 1642268,
+      "actual_efg_pct": 0.5232,
+      "expected_efg_pct": 0.5418,
+      "shot_quality_delta": -0.0187,
+      "total_fga": 511
+    },
+    {
       "player_id": 202699,
       "actual_efg_pct": 0.5314,
       "expected_efg_pct": 0.5464,
@@ -1049,13 +1056,6 @@
       "expected_efg_pct": 0.5457,
       "shot_quality_delta": 0.1084,
       "total_fga": 357
-    },
-    {
-      "player_id": 1642268,
-      "actual_efg_pct": 0.5232,
-      "expected_efg_pct": 0.5418,
-      "shot_quality_delta": -0.0187,
-      "total_fga": 511
     },
     {
       "player_id": 203500,
@@ -1100,18 +1100,18 @@
       "total_fga": 632
     },
     {
-      "player_id": 1631097,
-      "actual_efg_pct": 0.4852,
-      "expected_efg_pct": 0.542,
-      "shot_quality_delta": -0.0569,
-      "total_fga": 677
-    },
-    {
       "player_id": 1630529,
       "actual_efg_pct": 0.4663,
       "expected_efg_pct": 0.5516,
       "shot_quality_delta": -0.0853,
       "total_fga": 478
+    },
+    {
+      "player_id": 1631097,
+      "actual_efg_pct": 0.4852,
+      "expected_efg_pct": 0.542,
+      "shot_quality_delta": -0.0569,
+      "total_fga": 677
     },
     {
       "player_id": 1642349,
@@ -1156,18 +1156,18 @@
       "total_fga": 671
     },
     {
-      "player_id": 1626162,
-      "actual_efg_pct": 0.5461,
-      "expected_efg_pct": 0.5437,
-      "shot_quality_delta": 0.0025,
-      "total_fga": 544
-    },
-    {
       "player_id": 1627884,
       "actual_efg_pct": 0.5712,
       "expected_efg_pct": 0.5444,
       "shot_quality_delta": 0.0268,
       "total_fga": 379
+    },
+    {
+      "player_id": 1626162,
+      "actual_efg_pct": 0.5461,
+      "expected_efg_pct": 0.5437,
+      "shot_quality_delta": 0.0025,
+      "total_fga": 544
     },
     {
       "player_id": 203994,
@@ -1212,18 +1212,18 @@
       "total_fga": 671
     },
     {
-      "player_id": 203903,
-      "actual_efg_pct": 0.517,
-      "expected_efg_pct": 0.5434,
-      "shot_quality_delta": -0.0264,
-      "total_fga": 526
-    },
-    {
       "player_id": 1641775,
       "actual_efg_pct": 0.5992,
       "expected_efg_pct": 0.5477,
       "shot_quality_delta": 0.0515,
       "total_fga": 267
+    },
+    {
+      "player_id": 203903,
+      "actual_efg_pct": 0.517,
+      "expected_efg_pct": 0.5434,
+      "shot_quality_delta": -0.0264,
+      "total_fga": 526
     },
     {
       "player_id": 1641772,
@@ -1261,18 +1261,18 @@
       "total_fga": 1045
     },
     {
-      "player_id": 1641783,
-      "actual_efg_pct": 0.5468,
-      "expected_efg_pct": 0.552,
-      "shot_quality_delta": -0.0052,
-      "total_fga": 620
-    },
-    {
       "player_id": 1627734,
       "actual_efg_pct": 0.5543,
       "expected_efg_pct": 0.5356,
       "shot_quality_delta": 0.0186,
       "total_fga": 221
+    },
+    {
+      "player_id": 1641783,
+      "actual_efg_pct": 0.5468,
+      "expected_efg_pct": 0.552,
+      "shot_quality_delta": -0.0052,
+      "total_fga": 620
     },
     {
       "player_id": 1627739,
@@ -1282,18 +1282,18 @@
       "total_fga": 477
     },
     {
-      "player_id": 1628392,
-      "actual_efg_pct": 0.6218,
-      "expected_efg_pct": 0.5349,
-      "shot_quality_delta": 0.0869,
-      "total_fga": 296
-    },
-    {
       "player_id": 202685,
       "actual_efg_pct": 0.5927,
       "expected_efg_pct": 0.5392,
       "shot_quality_delta": 0.0535,
       "total_fga": 390
+    },
+    {
+      "player_id": 1628392,
+      "actual_efg_pct": 0.6218,
+      "expected_efg_pct": 0.5349,
+      "shot_quality_delta": 0.0869,
+      "total_fga": 296
     },
     {
       "player_id": 1641757,
@@ -1380,18 +1380,18 @@
       "total_fga": 624
     },
     {
-      "player_id": 1629060,
-      "actual_efg_pct": 0.61,
-      "expected_efg_pct": 0.5514,
-      "shot_quality_delta": 0.0586,
-      "total_fga": 593
-    },
-    {
       "player_id": 1630583,
       "actual_efg_pct": 0.5524,
       "expected_efg_pct": 0.5438,
       "shot_quality_delta": 0.0086,
       "total_fga": 476
+    },
+    {
+      "player_id": 1629060,
+      "actual_efg_pct": 0.61,
+      "expected_efg_pct": 0.5514,
+      "shot_quality_delta": 0.0586,
+      "total_fga": 593
     },
     {
       "player_id": 1631222,
@@ -1520,6 +1520,13 @@
       "total_fga": 268
     },
     {
+      "player_id": 1629673,
+      "actual_efg_pct": 0.4796,
+      "expected_efg_pct": 0.5493,
+      "shot_quality_delta": -0.0698,
+      "total_fga": 444
+    },
+    {
       "player_id": 1631108,
       "actual_efg_pct": 0.5638,
       "expected_efg_pct": 0.5476,
@@ -1534,13 +1541,6 @@
       "total_fga": 388
     },
     {
-      "player_id": 1629673,
-      "actual_efg_pct": 0.4796,
-      "expected_efg_pct": 0.5493,
-      "shot_quality_delta": -0.0698,
-      "total_fga": 444
-    },
-    {
       "player_id": 1642363,
       "actual_efg_pct": 0.4822,
       "expected_efg_pct": 0.5491,
@@ -1548,18 +1548,18 @@
       "total_fga": 596
     },
     {
-      "player_id": 1642273,
-      "actual_efg_pct": 0.5243,
-      "expected_efg_pct": 0.5498,
-      "shot_quality_delta": -0.0255,
-      "total_fga": 577
-    },
-    {
       "player_id": 1642383,
       "actual_efg_pct": 0.4653,
       "expected_efg_pct": 0.5463,
       "shot_quality_delta": -0.081,
       "total_fga": 461
+    },
+    {
+      "player_id": 1642273,
+      "actual_efg_pct": 0.5243,
+      "expected_efg_pct": 0.5498,
+      "shot_quality_delta": -0.0255,
+      "total_fga": 577
     },
     {
       "player_id": 1642358,
@@ -1590,18 +1590,18 @@
       "total_fga": 185
     },
     {
-      "player_id": 203471,
-      "actual_efg_pct": 0.4651,
-      "expected_efg_pct": 0.5453,
-      "shot_quality_delta": -0.0802,
-      "total_fga": 629
-    },
-    {
       "player_id": 1629631,
       "actual_efg_pct": 0.4899,
       "expected_efg_pct": 0.5453,
       "shot_quality_delta": -0.0555,
       "total_fga": 501
+    },
+    {
+      "player_id": 203471,
+      "actual_efg_pct": 0.4651,
+      "expected_efg_pct": 0.5453,
+      "shot_quality_delta": -0.0802,
+      "total_fga": 629
     },
     {
       "player_id": 1630193,
@@ -1625,18 +1625,18 @@
       "total_fga": 303
     },
     {
-      "player_id": 1642928,
-      "actual_efg_pct": 0.5924,
-      "expected_efg_pct": 0.5319,
-      "shot_quality_delta": 0.0605,
-      "total_fga": 179
-    },
-    {
       "player_id": 1630264,
       "actual_efg_pct": 0.6659,
       "expected_efg_pct": 0.541,
       "shot_quality_delta": 0.1249,
       "total_fga": 214
+    },
+    {
+      "player_id": 1642928,
+      "actual_efg_pct": 0.5924,
+      "expected_efg_pct": 0.5319,
+      "shot_quality_delta": 0.0605,
+      "total_fga": 179
     },
     {
       "player_id": 1627741,
@@ -1751,18 +1751,18 @@
       "total_fga": 692
     },
     {
-      "player_id": 203935,
-      "actual_efg_pct": 0.4968,
-      "expected_efg_pct": 0.5566,
-      "shot_quality_delta": -0.0598,
-      "total_fga": 476
-    },
-    {
       "player_id": 1642869,
       "actual_efg_pct": 0.4778,
       "expected_efg_pct": 0.5463,
       "shot_quality_delta": -0.0686,
       "total_fga": 203
+    },
+    {
+      "player_id": 203935,
+      "actual_efg_pct": 0.4968,
+      "expected_efg_pct": 0.5566,
+      "shot_quality_delta": -0.0598,
+      "total_fga": 476
     },
     {
       "player_id": 1642269,
@@ -1842,13 +1842,6 @@
       "total_fga": 267
     },
     {
-      "player_id": 1629004,
-      "actual_efg_pct": 0.6133,
-      "expected_efg_pct": 0.5477,
-      "shot_quality_delta": 0.0656,
-      "total_fga": 362
-    },
-    {
       "player_id": 1642866,
       "actual_efg_pct": 0.6635,
       "expected_efg_pct": 0.5251,
@@ -1856,32 +1849,18 @@
       "total_fga": 98
     },
     {
+      "player_id": 1629004,
+      "actual_efg_pct": 0.6133,
+      "expected_efg_pct": 0.5477,
+      "shot_quality_delta": 0.0656,
+      "total_fga": 362
+    },
+    {
       "player_id": 202331,
       "actual_efg_pct": 0.5361,
       "expected_efg_pct": 0.5412,
       "shot_quality_delta": -0.0051,
       "total_fga": 513
-    },
-    {
-      "player_id": 1642848,
-      "actual_efg_pct": 0.5054,
-      "expected_efg_pct": 0.5505,
-      "shot_quality_delta": -0.0451,
-      "total_fga": 642
-    },
-    {
-      "player_id": 1642267,
-      "actual_efg_pct": 0.5387,
-      "expected_efg_pct": 0.5502,
-      "shot_quality_delta": -0.0115,
-      "total_fga": 740
-    },
-    {
-      "player_id": 1630192,
-      "actual_efg_pct": 0.5166,
-      "expected_efg_pct": 0.544,
-      "shot_quality_delta": -0.0273,
-      "total_fga": 151
     },
     {
       "player_id": 1630592,
@@ -1898,18 +1877,25 @@
       "total_fga": 431
     },
     {
-      "player_id": 1628415,
-      "actual_efg_pct": 0.5008,
-      "expected_efg_pct": 0.5473,
-      "shot_quality_delta": -0.0464,
-      "total_fga": 959
+      "player_id": 1630192,
+      "actual_efg_pct": 0.5166,
+      "expected_efg_pct": 0.544,
+      "shot_quality_delta": -0.0273,
+      "total_fga": 151
     },
     {
-      "player_id": 204456,
-      "actual_efg_pct": 0.5558,
-      "expected_efg_pct": 0.5412,
-      "shot_quality_delta": 0.0146,
-      "total_fga": 450
+      "player_id": 1642267,
+      "actual_efg_pct": 0.5387,
+      "expected_efg_pct": 0.5502,
+      "shot_quality_delta": -0.0115,
+      "total_fga": 740
+    },
+    {
+      "player_id": 1642848,
+      "actual_efg_pct": 0.5054,
+      "expected_efg_pct": 0.5505,
+      "shot_quality_delta": -0.0451,
+      "total_fga": 642
     },
     {
       "player_id": 1629021,
@@ -1924,6 +1910,20 @@
       "expected_efg_pct": 0.5404,
       "shot_quality_delta": -0.0242,
       "total_fga": 155
+    },
+    {
+      "player_id": 1628415,
+      "actual_efg_pct": 0.5008,
+      "expected_efg_pct": 0.5473,
+      "shot_quality_delta": -0.0464,
+      "total_fga": 959
+    },
+    {
+      "player_id": 204456,
+      "actual_efg_pct": 0.5558,
+      "expected_efg_pct": 0.5412,
+      "shot_quality_delta": 0.0146,
+      "total_fga": 450
     },
     {
       "player_id": 1642914,
@@ -1982,6 +1982,13 @@
       "total_fga": 169
     },
     {
+      "player_id": 1641738,
+      "actual_efg_pct": 0.5644,
+      "expected_efg_pct": 0.5523,
+      "shot_quality_delta": 0.0121,
+      "total_fga": 271
+    },
+    {
       "player_id": 1642853,
       "actual_efg_pct": 0.5096,
       "expected_efg_pct": 0.5474,
@@ -1994,13 +2001,6 @@
       "expected_efg_pct": 0.5571,
       "shot_quality_delta": -0.0455,
       "total_fga": 300
-    },
-    {
-      "player_id": 1641738,
-      "actual_efg_pct": 0.5644,
-      "expected_efg_pct": 0.5523,
-      "shot_quality_delta": 0.0121,
-      "total_fga": 271
     },
     {
       "player_id": 1630541,
@@ -2045,18 +2045,18 @@
       "total_fga": 333
     },
     {
-      "player_id": 1629750,
-      "actual_efg_pct": 0.5587,
-      "expected_efg_pct": 0.5566,
-      "shot_quality_delta": 0.0021,
-      "total_fga": 411
-    },
-    {
       "player_id": 1631107,
       "actual_efg_pct": 0.4377,
       "expected_efg_pct": 0.5516,
       "shot_quality_delta": -0.1139,
       "total_fga": 314
+    },
+    {
+      "player_id": 1629750,
+      "actual_efg_pct": 0.5587,
+      "expected_efg_pct": 0.5566,
+      "shot_quality_delta": 0.0021,
+      "total_fga": 411
     },
     {
       "player_id": 1631131,
@@ -2066,18 +2066,18 @@
       "total_fga": 145
     },
     {
-      "player_id": 1630703,
-      "actual_efg_pct": 0.5015,
-      "expected_efg_pct": 0.5467,
-      "shot_quality_delta": -0.0452,
-      "total_fga": 342
-    },
-    {
       "player_id": 1641712,
       "actual_efg_pct": 0.4618,
       "expected_efg_pct": 0.5509,
       "shot_quality_delta": -0.0891,
       "total_fga": 314
+    },
+    {
+      "player_id": 1630703,
+      "actual_efg_pct": 0.5015,
+      "expected_efg_pct": 0.5467,
+      "shot_quality_delta": -0.0452,
+      "total_fga": 342
     },
     {
       "player_id": 1630591,
@@ -2115,6 +2115,13 @@
       "total_fga": 320
     },
     {
+      "player_id": 1641744,
+      "actual_efg_pct": 0.638,
+      "expected_efg_pct": 0.5287,
+      "shot_quality_delta": 0.1094,
+      "total_fga": 98
+    },
+    {
       "player_id": 1628396,
       "actual_efg_pct": 0.5556,
       "expected_efg_pct": 0.535,
@@ -2129,11 +2136,11 @@
       "total_fga": 387
     },
     {
-      "player_id": 1641744,
-      "actual_efg_pct": 0.638,
-      "expected_efg_pct": 0.5287,
-      "shot_quality_delta": 0.1094,
-      "total_fga": 98
+      "player_id": 1642942,
+      "actual_efg_pct": 0.4438,
+      "expected_efg_pct": 0.5478,
+      "shot_quality_delta": -0.104,
+      "total_fga": 195
     },
     {
       "player_id": 1630241,
@@ -2143,13 +2150,6 @@
       "total_fga": 484
     },
     {
-      "player_id": 1642942,
-      "actual_efg_pct": 0.4438,
-      "expected_efg_pct": 0.5478,
-      "shot_quality_delta": -0.104,
-      "total_fga": 195
-    },
-    {
       "player_id": 1642882,
       "actual_efg_pct": 0.5297,
       "expected_efg_pct": 0.5327,
@@ -2157,18 +2157,18 @@
       "total_fga": 119
     },
     {
-      "player_id": 1642877,
-      "actual_efg_pct": 0.4363,
-      "expected_efg_pct": 0.5538,
-      "shot_quality_delta": -0.1175,
-      "total_fga": 275
-    },
-    {
       "player_id": 1642461,
       "actual_efg_pct": 0.6127,
       "expected_efg_pct": 0.5565,
       "shot_quality_delta": 0.0563,
       "total_fga": 262
+    },
+    {
+      "player_id": 1642877,
+      "actual_efg_pct": 0.4363,
+      "expected_efg_pct": 0.5538,
+      "shot_quality_delta": -0.1175,
+      "total_fga": 275
     },
     {
       "player_id": 203484,
@@ -2199,18 +2199,18 @@
       "total_fga": 293
     },
     {
-      "player_id": 1631172,
-      "actual_efg_pct": 0.5001,
-      "expected_efg_pct": 0.553,
-      "shot_quality_delta": -0.0529,
-      "total_fga": 399
-    },
-    {
       "player_id": 1642364,
       "actual_efg_pct": 0.5253,
       "expected_efg_pct": 0.5528,
       "shot_quality_delta": -0.0275,
       "total_fga": 296
+    },
+    {
+      "player_id": 1631172,
+      "actual_efg_pct": 0.5001,
+      "expected_efg_pct": 0.553,
+      "shot_quality_delta": -0.0529,
+      "total_fga": 399
     },
     {
       "player_id": 1626220,
@@ -2269,13 +2269,6 @@
       "total_fga": 301
     },
     {
-      "player_id": 1642920,
-      "actual_efg_pct": 0.5703,
-      "expected_efg_pct": 0.555,
-      "shot_quality_delta": 0.0153,
-      "total_fga": 384
-    },
-    {
       "player_id": 203939,
       "actual_efg_pct": 0.6501,
       "expected_efg_pct": 0.5348,
@@ -2290,6 +2283,13 @@
       "total_fga": 189
     },
     {
+      "player_id": 1642920,
+      "actual_efg_pct": 0.5703,
+      "expected_efg_pct": 0.555,
+      "shot_quality_delta": 0.0153,
+      "total_fga": 384
+    },
+    {
       "player_id": 1641774,
       "actual_efg_pct": 0.5585,
       "expected_efg_pct": 0.5502,
@@ -2297,11 +2297,11 @@
       "total_fga": 317
     },
     {
-      "player_id": 1642346,
-      "actual_efg_pct": 0.5309,
-      "expected_efg_pct": 0.5548,
-      "shot_quality_delta": -0.0239,
-      "total_fga": 354
+      "player_id": 1631342,
+      "actual_efg_pct": 0.5412,
+      "expected_efg_pct": 0.5452,
+      "shot_quality_delta": -0.004,
+      "total_fga": 279
     },
     {
       "player_id": 1631124,
@@ -2311,11 +2311,11 @@
       "total_fga": 319
     },
     {
-      "player_id": 1631342,
-      "actual_efg_pct": 0.5412,
-      "expected_efg_pct": 0.5452,
-      "shot_quality_delta": -0.004,
-      "total_fga": 279
+      "player_id": 1642346,
+      "actual_efg_pct": 0.5309,
+      "expected_efg_pct": 0.5548,
+      "shot_quality_delta": -0.0239,
+      "total_fga": 354
     },
     {
       "player_id": 202691,
@@ -2346,13 +2346,6 @@
       "total_fga": 246
     },
     {
-      "player_id": 1630540,
-      "actual_efg_pct": 0.5616,
-      "expected_efg_pct": 0.5452,
-      "shot_quality_delta": 0.0164,
-      "total_fga": 404
-    },
-    {
       "player_id": 1641854,
       "actual_efg_pct": 0.5136,
       "expected_efg_pct": 0.5462,
@@ -2360,11 +2353,18 @@
       "total_fga": 258
     },
     {
-      "player_id": 1642353,
-      "actual_efg_pct": 0.4245,
-      "expected_efg_pct": 0.5418,
-      "shot_quality_delta": -0.1172,
-      "total_fga": 139
+      "player_id": 1630540,
+      "actual_efg_pct": 0.5616,
+      "expected_efg_pct": 0.5452,
+      "shot_quality_delta": 0.0164,
+      "total_fga": 404
+    },
+    {
+      "player_id": 1629618,
+      "actual_efg_pct": 0.5282,
+      "expected_efg_pct": 0.5544,
+      "shot_quality_delta": -0.0262,
+      "total_fga": 232
     },
     {
       "player_id": 1630198,
@@ -2374,11 +2374,11 @@
       "total_fga": 543
     },
     {
-      "player_id": 1629618,
-      "actual_efg_pct": 0.5282,
-      "expected_efg_pct": 0.5544,
-      "shot_quality_delta": -0.0262,
-      "total_fga": 232
+      "player_id": 1642353,
+      "actual_efg_pct": 0.4245,
+      "expected_efg_pct": 0.5418,
+      "shot_quality_delta": -0.1172,
+      "total_fga": 139
     },
     {
       "player_id": 1630544,
@@ -2416,13 +2416,6 @@
       "total_fga": 121
     },
     {
-      "player_id": 1629660,
-      "actual_efg_pct": 0.5725,
-      "expected_efg_pct": 0.5415,
-      "shot_quality_delta": 0.031,
-      "total_fga": 215
-    },
-    {
       "player_id": 1629723,
       "actual_efg_pct": 0.5458,
       "expected_efg_pct": 0.5557,
@@ -2430,11 +2423,11 @@
       "total_fga": 198
     },
     {
-      "player_id": 1626172,
-      "actual_efg_pct": 0.4335,
-      "expected_efg_pct": 0.5339,
-      "shot_quality_delta": -0.1004,
-      "total_fga": 60
+      "player_id": 1629660,
+      "actual_efg_pct": 0.5725,
+      "expected_efg_pct": 0.5415,
+      "shot_quality_delta": 0.031,
+      "total_fga": 215
     },
     {
       "player_id": 1630170,
@@ -2449,6 +2442,13 @@
       "expected_efg_pct": 0.5538,
       "shot_quality_delta": 0.0048,
       "total_fga": 384
+    },
+    {
+      "player_id": 1626172,
+      "actual_efg_pct": 0.4335,
+      "expected_efg_pct": 0.5339,
+      "shot_quality_delta": -0.1004,
+      "total_fga": 60
     },
     {
       "player_id": 1628960,
@@ -2500,6 +2500,13 @@
       "total_fga": 109
     },
     {
+      "player_id": 1631213,
+      "actual_efg_pct": 0.4893,
+      "expected_efg_pct": 0.5477,
+      "shot_quality_delta": -0.0584,
+      "total_fga": 277
+    },
+    {
       "player_id": 1630679,
       "actual_efg_pct": 0.4743,
       "expected_efg_pct": 0.5491,
@@ -2512,13 +2519,6 @@
       "expected_efg_pct": 0.5569,
       "shot_quality_delta": 0.0096,
       "total_fga": 278
-    },
-    {
-      "player_id": 1631213,
-      "actual_efg_pct": 0.4893,
-      "expected_efg_pct": 0.5477,
-      "shot_quality_delta": -0.0584,
-      "total_fga": 277
     },
     {
       "player_id": 1642260,
@@ -2542,25 +2542,11 @@
       "total_fga": 59
     },
     {
-      "player_id": 1629646,
-      "actual_efg_pct": 0.6597,
-      "expected_efg_pct": 0.523,
-      "shot_quality_delta": 0.1368,
-      "total_fga": 47
-    },
-    {
       "player_id": 1643052,
       "actual_efg_pct": 0.5907,
       "expected_efg_pct": 0.5444,
       "shot_quality_delta": 0.0463,
       "total_fga": 94
-    },
-    {
-      "player_id": 1626156,
-      "actual_efg_pct": 0.4764,
-      "expected_efg_pct": 0.5452,
-      "shot_quality_delta": -0.0688,
-      "total_fga": 232
     },
     {
       "player_id": 1628997,
@@ -2570,18 +2556,25 @@
       "total_fga": 188
     },
     {
+      "player_id": 1626156,
+      "actual_efg_pct": 0.4764,
+      "expected_efg_pct": 0.5452,
+      "shot_quality_delta": -0.0688,
+      "total_fga": 232
+    },
+    {
+      "player_id": 1629646,
+      "actual_efg_pct": 0.6597,
+      "expected_efg_pct": 0.523,
+      "shot_quality_delta": 0.1368,
+      "total_fga": 47
+    },
+    {
       "player_id": 1630167,
       "actual_efg_pct": 0.5924,
       "expected_efg_pct": 0.553,
       "shot_quality_delta": 0.0394,
       "total_fga": 200
-    },
-    {
-      "player_id": 1642419,
-      "actual_efg_pct": 0.6356,
-      "expected_efg_pct": 0.5524,
-      "shot_quality_delta": 0.0831,
-      "total_fga": 144
     },
     {
       "player_id": 1631093,
@@ -2598,18 +2591,18 @@
       "total_fga": 173
     },
     {
-      "player_id": 1628975,
-      "actual_efg_pct": 0.528,
-      "expected_efg_pct": 0.5546,
-      "shot_quality_delta": -0.0265,
-      "total_fga": 304
+      "player_id": 1642419,
+      "actual_efg_pct": 0.6356,
+      "expected_efg_pct": 0.5524,
+      "shot_quality_delta": 0.0831,
+      "total_fga": 144
     },
     {
-      "player_id": 1629234,
-      "actual_efg_pct": 0.5994,
-      "expected_efg_pct": 0.5377,
-      "shot_quality_delta": 0.0617,
-      "total_fga": 156
+      "player_id": 1631466,
+      "actual_efg_pct": 0.5774,
+      "expected_efg_pct": 0.546,
+      "shot_quality_delta": 0.0313,
+      "total_fga": 84
     },
     {
       "player_id": 1630574,
@@ -2619,6 +2612,13 @@
       "total_fga": 80
     },
     {
+      "player_id": 1629234,
+      "actual_efg_pct": 0.5994,
+      "expected_efg_pct": 0.5377,
+      "shot_quality_delta": 0.0617,
+      "total_fga": 156
+    },
+    {
       "player_id": 1631103,
       "actual_efg_pct": 0.5494,
       "expected_efg_pct": 0.5394,
@@ -2626,11 +2626,11 @@
       "total_fga": 91
     },
     {
-      "player_id": 1631466,
-      "actual_efg_pct": 0.5774,
-      "expected_efg_pct": 0.546,
-      "shot_quality_delta": 0.0313,
-      "total_fga": 84
+      "player_id": 1628975,
+      "actual_efg_pct": 0.528,
+      "expected_efg_pct": 0.5546,
+      "shot_quality_delta": -0.0265,
+      "total_fga": 304
     },
     {
       "player_id": 1641722,
@@ -2654,6 +2654,13 @@
       "total_fga": 312
     },
     {
+      "player_id": 1642382,
+      "actual_efg_pct": 0.6103,
+      "expected_efg_pct": 0.5535,
+      "shot_quality_delta": 0.0567,
+      "total_fga": 186
+    },
+    {
       "player_id": 1631199,
       "actual_efg_pct": 0.5457,
       "expected_efg_pct": 0.5615,
@@ -2668,11 +2675,11 @@
       "total_fga": 188
     },
     {
-      "player_id": 1642382,
-      "actual_efg_pct": 0.6103,
-      "expected_efg_pct": 0.5535,
-      "shot_quality_delta": 0.0567,
-      "total_fga": 186
+      "player_id": 1642905,
+      "actual_efg_pct": 0.3351,
+      "expected_efg_pct": 0.5483,
+      "shot_quality_delta": -0.2132,
+      "total_fga": 100
     },
     {
       "player_id": 1631119,
@@ -2696,13 +2703,6 @@
       "total_fga": 169
     },
     {
-      "player_id": 1642905,
-      "actual_efg_pct": 0.3351,
-      "expected_efg_pct": 0.5483,
-      "shot_quality_delta": -0.2132,
-      "total_fga": 100
-    },
-    {
       "player_id": 1631260,
       "actual_efg_pct": 0.6115,
       "expected_efg_pct": 0.5488,
@@ -2715,13 +2715,6 @@
       "expected_efg_pct": 0.5512,
       "shot_quality_delta": 0.0185,
       "total_fga": 237
-    },
-    {
-      "player_id": 1629652,
-      "actual_efg_pct": 0.5078,
-      "expected_efg_pct": 0.5586,
-      "shot_quality_delta": -0.0508,
-      "total_fga": 524
     },
     {
       "player_id": 1631113,
@@ -2738,18 +2731,11 @@
       "total_fga": 37
     },
     {
-      "player_id": 201567,
-      "actual_efg_pct": 0.5303,
-      "expected_efg_pct": 0.5555,
-      "shot_quality_delta": -0.0253,
-      "total_fga": 199
-    },
-    {
-      "player_id": 1643016,
-      "actual_efg_pct": 0.5298,
-      "expected_efg_pct": 0.5466,
-      "shot_quality_delta": -0.0168,
-      "total_fga": 100
+      "player_id": 1629652,
+      "actual_efg_pct": 0.5078,
+      "expected_efg_pct": 0.5586,
+      "shot_quality_delta": -0.0508,
+      "total_fga": 524
     },
     {
       "player_id": 1642880,
@@ -2759,11 +2745,18 @@
       "total_fga": 169
     },
     {
-      "player_id": 1630175,
-      "actual_efg_pct": 0.4715,
-      "expected_efg_pct": 0.5464,
-      "shot_quality_delta": -0.0749,
-      "total_fga": 231
+      "player_id": 1643016,
+      "actual_efg_pct": 0.5298,
+      "expected_efg_pct": 0.5466,
+      "shot_quality_delta": -0.0168,
+      "total_fga": 100
+    },
+    {
+      "player_id": 201567,
+      "actual_efg_pct": 0.5303,
+      "expected_efg_pct": 0.5555,
+      "shot_quality_delta": -0.0253,
+      "total_fga": 199
     },
     {
       "player_id": 1641989,
@@ -2773,18 +2766,18 @@
       "total_fga": 161
     },
     {
+      "player_id": 1630175,
+      "actual_efg_pct": 0.4715,
+      "expected_efg_pct": 0.5464,
+      "shot_quality_delta": -0.0749,
+      "total_fga": 231
+    },
+    {
       "player_id": 1627749,
       "actual_efg_pct": 0.5356,
       "expected_efg_pct": 0.5394,
       "shot_quality_delta": -0.0039,
       "total_fga": 182
-    },
-    {
-      "player_id": 1642449,
-      "actual_efg_pct": 0.5002,
-      "expected_efg_pct": 0.5258,
-      "shot_quality_delta": -0.0256,
-      "total_fga": 36
     },
     {
       "player_id": 1631250,
@@ -2801,6 +2794,13 @@
       "total_fga": 100
     },
     {
+      "player_id": 1642449,
+      "actual_efg_pct": 0.5002,
+      "expected_efg_pct": 0.5258,
+      "shot_quality_delta": -0.0256,
+      "total_fga": 36
+    },
+    {
       "player_id": 1631104,
       "actual_efg_pct": 0.4919,
       "expected_efg_pct": 0.5502,
@@ -2815,11 +2815,11 @@
       "total_fga": 364
     },
     {
-      "player_id": 1629684,
-      "actual_efg_pct": 0.5686,
-      "expected_efg_pct": 0.5577,
-      "shot_quality_delta": 0.0109,
-      "total_fga": 183
+      "player_id": 1642885,
+      "actual_efg_pct": 0.5354,
+      "expected_efg_pct": 0.5644,
+      "shot_quality_delta": -0.029,
+      "total_fga": 213
     },
     {
       "player_id": 1626145,
@@ -2829,25 +2829,11 @@
       "total_fga": 217
     },
     {
-      "player_id": 1642885,
-      "actual_efg_pct": 0.5354,
-      "expected_efg_pct": 0.5644,
-      "shot_quality_delta": -0.029,
-      "total_fga": 213
-    },
-    {
-      "player_id": 1626204,
-      "actual_efg_pct": 0.5041,
-      "expected_efg_pct": 0.5568,
-      "shot_quality_delta": -0.0527,
-      "total_fga": 124
-    },
-    {
-      "player_id": 1630182,
-      "actual_efg_pct": 0.6186,
-      "expected_efg_pct": 0.5621,
-      "shot_quality_delta": 0.0564,
-      "total_fga": 181
+      "player_id": 1629684,
+      "actual_efg_pct": 0.5686,
+      "expected_efg_pct": 0.5577,
+      "shot_quality_delta": 0.0109,
+      "total_fga": 183
     },
     {
       "player_id": 1629162,
@@ -2878,6 +2864,20 @@
       "total_fga": 104
     },
     {
+      "player_id": 1630182,
+      "actual_efg_pct": 0.6186,
+      "expected_efg_pct": 0.5621,
+      "shot_quality_delta": 0.0564,
+      "total_fga": 181
+    },
+    {
+      "player_id": 1626204,
+      "actual_efg_pct": 0.5041,
+      "expected_efg_pct": 0.5568,
+      "shot_quality_delta": -0.0527,
+      "total_fga": 124
+    },
+    {
       "player_id": 1642878,
       "actual_efg_pct": 0.5133,
       "expected_efg_pct": 0.5575,
@@ -2906,18 +2906,18 @@
       "total_fga": 334
     },
     {
-      "player_id": 1630286,
-      "actual_efg_pct": 0.4401,
-      "expected_efg_pct": 0.5444,
-      "shot_quality_delta": -0.1043,
-      "total_fga": 50
+      "player_id": 1631351,
+      "actual_efg_pct": 0.4333,
+      "expected_efg_pct": 0.5507,
+      "shot_quality_delta": -0.1174,
+      "total_fga": 75
     },
     {
-      "player_id": 1643253,
-      "actual_efg_pct": 0.4214,
-      "expected_efg_pct": 0.5511,
-      "shot_quality_delta": -0.1297,
-      "total_fga": 70
+      "player_id": 1642367,
+      "actual_efg_pct": 0.5909,
+      "expected_efg_pct": 0.5292,
+      "shot_quality_delta": 0.0616,
+      "total_fga": 44
     },
     {
       "player_id": 1642948,
@@ -2941,18 +2941,25 @@
       "total_fga": 123
     },
     {
-      "player_id": 1631351,
-      "actual_efg_pct": 0.4333,
-      "expected_efg_pct": 0.5507,
-      "shot_quality_delta": -0.1174,
-      "total_fga": 75
+      "player_id": 1630286,
+      "actual_efg_pct": 0.4401,
+      "expected_efg_pct": 0.5444,
+      "shot_quality_delta": -0.1043,
+      "total_fga": 50
     },
     {
-      "player_id": 1642367,
-      "actual_efg_pct": 0.5909,
-      "expected_efg_pct": 0.5292,
-      "shot_quality_delta": 0.0616,
-      "total_fga": 44
+      "player_id": 1643253,
+      "actual_efg_pct": 0.4214,
+      "expected_efg_pct": 0.5511,
+      "shot_quality_delta": -0.1297,
+      "total_fga": 70
+    },
+    {
+      "player_id": 1631247,
+      "actual_efg_pct": 0.2639,
+      "expected_efg_pct": 0.54,
+      "shot_quality_delta": -0.276,
+      "total_fga": 36
     },
     {
       "player_id": 1630590,
@@ -2976,13 +2983,6 @@
       "total_fga": 99
     },
     {
-      "player_id": 1631247,
-      "actual_efg_pct": 0.2639,
-      "expected_efg_pct": 0.54,
-      "shot_quality_delta": -0.276,
-      "total_fga": 36
-    },
-    {
       "player_id": 1641771,
       "actual_efg_pct": 0.5388,
       "expected_efg_pct": 0.5498,
@@ -2990,18 +2990,18 @@
       "total_fga": 77
     },
     {
-      "player_id": 203482,
-      "actual_efg_pct": 0.5517,
-      "expected_efg_pct": 0.5581,
-      "shot_quality_delta": -0.0064,
-      "total_fga": 96
-    },
-    {
       "player_id": 1630623,
       "actual_efg_pct": 0.5483,
       "expected_efg_pct": 0.5542,
       "shot_quality_delta": -0.0059,
       "total_fga": 145
+    },
+    {
+      "player_id": 203482,
+      "actual_efg_pct": 0.5517,
+      "expected_efg_pct": 0.5581,
+      "shot_quality_delta": -0.0064,
+      "total_fga": 96
     },
     {
       "player_id": 1630644,
@@ -3025,6 +3025,13 @@
       "total_fga": 50
     },
     {
+      "player_id": 1630165,
+      "actual_efg_pct": 0.3659,
+      "expected_efg_pct": 0.5464,
+      "shot_quality_delta": -0.1805,
+      "total_fga": 138
+    },
+    {
       "player_id": 1629680,
       "actual_efg_pct": 0.5709,
       "expected_efg_pct": 0.562,
@@ -3039,18 +3046,11 @@
       "total_fga": 152
     },
     {
-      "player_id": 1630165,
-      "actual_efg_pct": 0.3659,
-      "expected_efg_pct": 0.5464,
-      "shot_quality_delta": -0.1805,
-      "total_fga": 138
-    },
-    {
-      "player_id": 1630573,
-      "actual_efg_pct": 0.5842,
-      "expected_efg_pct": 0.5591,
-      "shot_quality_delta": 0.0251,
-      "total_fga": 601
+      "player_id": 1628380,
+      "actual_efg_pct": 0.6485,
+      "expected_efg_pct": 0.5498,
+      "shot_quality_delta": 0.0987,
+      "total_fga": 64
     },
     {
       "player_id": 1630811,
@@ -3060,25 +3060,11 @@
       "total_fga": 171
     },
     {
-      "player_id": 1628380,
-      "actual_efg_pct": 0.6485,
-      "expected_efg_pct": 0.5498,
-      "shot_quality_delta": 0.0987,
-      "total_fga": 64
-    },
-    {
-      "player_id": 1628467,
-      "actual_efg_pct": 0.4933,
-      "expected_efg_pct": 0.5511,
-      "shot_quality_delta": -0.0578,
-      "total_fga": 73
-    },
-    {
-      "player_id": 1641871,
-      "actual_efg_pct": 0.6017,
-      "expected_efg_pct": 0.5632,
-      "shot_quality_delta": 0.0385,
-      "total_fga": 74
+      "player_id": 1630573,
+      "actual_efg_pct": 0.5842,
+      "expected_efg_pct": 0.5591,
+      "shot_quality_delta": 0.0251,
+      "total_fga": 601
     },
     {
       "player_id": 1642873,
@@ -3088,11 +3074,32 @@
       "total_fga": 20
     },
     {
+      "player_id": 1641871,
+      "actual_efg_pct": 0.6017,
+      "expected_efg_pct": 0.5632,
+      "shot_quality_delta": 0.0385,
+      "total_fga": 74
+    },
+    {
+      "player_id": 1628467,
+      "actual_efg_pct": 0.4933,
+      "expected_efg_pct": 0.5511,
+      "shot_quality_delta": -0.0578,
+      "total_fga": 73
+    },
+    {
       "player_id": 1631223,
       "actual_efg_pct": 0.5503,
       "expected_efg_pct": 0.5385,
       "shot_quality_delta": 0.0118,
       "total_fga": 30
+    },
+    {
+      "player_id": 1642357,
+      "actual_efg_pct": 0.5802,
+      "expected_efg_pct": 0.5348,
+      "shot_quality_delta": 0.0455,
+      "total_fga": 25
     },
     {
       "player_id": 1642876,
@@ -3109,13 +3116,6 @@
       "total_fga": 216
     },
     {
-      "player_id": 1642357,
-      "actual_efg_pct": 0.5802,
-      "expected_efg_pct": 0.5348,
-      "shot_quality_delta": 0.0455,
-      "total_fga": 25
-    },
-    {
       "player_id": 1627827,
       "actual_efg_pct": 0.4357,
       "expected_efg_pct": 0.5653,
@@ -3130,13 +3130,6 @@
       "total_fga": 32
     },
     {
-      "player_id": 1628366,
-      "actual_efg_pct": 0.4169,
-      "expected_efg_pct": 0.5561,
-      "shot_quality_delta": -0.1392,
-      "total_fga": 175
-    },
-    {
       "player_id": 1641752,
       "actual_efg_pct": 0.4071,
       "expected_efg_pct": 0.5438,
@@ -3144,11 +3137,11 @@
       "total_fga": 27
     },
     {
-      "player_id": 1626166,
-      "actual_efg_pct": 0.4833,
-      "expected_efg_pct": 0.5484,
-      "shot_quality_delta": -0.0651,
-      "total_fga": 149
+      "player_id": 1628366,
+      "actual_efg_pct": 0.4169,
+      "expected_efg_pct": 0.5561,
+      "shot_quality_delta": -0.1392,
+      "total_fga": 175
     },
     {
       "player_id": 1641755,
@@ -3158,25 +3151,11 @@
       "total_fga": 47
     },
     {
-      "player_id": 1641733,
-      "actual_efg_pct": 0.5252,
-      "expected_efg_pct": 0.5576,
-      "shot_quality_delta": -0.0324,
-      "total_fga": 158
-    },
-    {
-      "player_id": 1630214,
-      "actual_efg_pct": 0.4674,
-      "expected_efg_pct": 0.5498,
-      "shot_quality_delta": -0.0825,
-      "total_fga": 46
-    },
-    {
-      "player_id": 1641747,
-      "actual_efg_pct": 0.6725,
-      "expected_efg_pct": 0.5677,
-      "shot_quality_delta": 0.1049,
-      "total_fga": 61
+      "player_id": 1626166,
+      "actual_efg_pct": 0.4833,
+      "expected_efg_pct": 0.5484,
+      "shot_quality_delta": -0.0651,
+      "total_fga": 149
     },
     {
       "player_id": 1641807,
@@ -3193,39 +3172,25 @@
       "total_fga": 16
     },
     {
-      "player_id": 1642359,
-      "actual_efg_pct": 0.3981,
-      "expected_efg_pct": 0.5496,
-      "shot_quality_delta": -0.1515,
-      "total_fga": 49
+      "player_id": 1641747,
+      "actual_efg_pct": 0.6725,
+      "expected_efg_pct": 0.5677,
+      "shot_quality_delta": 0.1049,
+      "total_fga": 61
     },
     {
-      "player_id": 1641723,
-      "actual_efg_pct": 0.35,
-      "expected_efg_pct": 0.5485,
-      "shot_quality_delta": -0.1986,
-      "total_fga": 50
+      "player_id": 1641733,
+      "actual_efg_pct": 0.5252,
+      "expected_efg_pct": 0.5576,
+      "shot_quality_delta": -0.0324,
+      "total_fga": 158
     },
     {
-      "player_id": 1643018,
-      "actual_efg_pct": 0.5543,
-      "expected_efg_pct": 0.5632,
-      "shot_quality_delta": -0.0088,
-      "total_fga": 110
-    },
-    {
-      "player_id": 201144,
-      "actual_efg_pct": 0.465,
-      "expected_efg_pct": 0.5661,
-      "shot_quality_delta": -0.1011,
-      "total_fga": 215
-    },
-    {
-      "player_id": 1630639,
-      "actual_efg_pct": 0.5575,
-      "expected_efg_pct": 0.5486,
-      "shot_quality_delta": 0.0089,
-      "total_fga": 78
+      "player_id": 1630214,
+      "actual_efg_pct": 0.4674,
+      "expected_efg_pct": 0.5498,
+      "shot_quality_delta": -0.0825,
+      "total_fga": 46
     },
     {
       "player_id": 1629312,
@@ -3256,6 +3221,27 @@
       "total_fga": 18
     },
     {
+      "player_id": 1641723,
+      "actual_efg_pct": 0.35,
+      "expected_efg_pct": 0.5485,
+      "shot_quality_delta": -0.1986,
+      "total_fga": 50
+    },
+    {
+      "player_id": 201144,
+      "actual_efg_pct": 0.465,
+      "expected_efg_pct": 0.5661,
+      "shot_quality_delta": -0.1011,
+      "total_fga": 215
+    },
+    {
+      "player_id": 1642359,
+      "actual_efg_pct": 0.3981,
+      "expected_efg_pct": 0.5496,
+      "shot_quality_delta": -0.1515,
+      "total_fga": 49
+    },
+    {
       "player_id": 203914,
       "actual_efg_pct": 0.577,
       "expected_efg_pct": 0.5534,
@@ -3263,18 +3249,18 @@
       "total_fga": 104
     },
     {
-      "player_id": 1642862,
-      "actual_efg_pct": 0.5266,
-      "expected_efg_pct": 0.5614,
-      "shot_quality_delta": -0.0348,
-      "total_fga": 95
+      "player_id": 1630639,
+      "actual_efg_pct": 0.5575,
+      "expected_efg_pct": 0.5486,
+      "shot_quality_delta": 0.0089,
+      "total_fga": 78
     },
     {
-      "player_id": 1642355,
-      "actual_efg_pct": 0.5043,
-      "expected_efg_pct": 0.5562,
-      "shot_quality_delta": -0.052,
-      "total_fga": 115
+      "player_id": 1643018,
+      "actual_efg_pct": 0.5543,
+      "expected_efg_pct": 0.5632,
+      "shot_quality_delta": -0.0088,
+      "total_fga": 110
     },
     {
       "player_id": 1641778,
@@ -3291,6 +3277,13 @@
       "total_fga": 52
     },
     {
+      "player_id": 1642355,
+      "actual_efg_pct": 0.5043,
+      "expected_efg_pct": 0.5562,
+      "shot_quality_delta": -0.052,
+      "total_fga": 115
+    },
+    {
       "player_id": 1641780,
       "actual_efg_pct": 0.1665,
       "expected_efg_pct": 0.5333,
@@ -3298,18 +3291,18 @@
       "total_fga": 24
     },
     {
-      "player_id": 1641890,
-      "actual_efg_pct": 0.52,
-      "expected_efg_pct": 0.5538,
-      "shot_quality_delta": -0.0338,
-      "total_fga": 50
+      "player_id": 1642862,
+      "actual_efg_pct": 0.5266,
+      "expected_efg_pct": 0.5614,
+      "shot_quality_delta": -0.0348,
+      "total_fga": 95
     },
     {
-      "player_id": 203486,
-      "actual_efg_pct": 0.7859,
-      "expected_efg_pct": 0.5316,
-      "shot_quality_delta": 0.2543,
-      "total_fga": 14
+      "player_id": 1631111,
+      "actual_efg_pct": 0.5714,
+      "expected_efg_pct": 0.5253,
+      "shot_quality_delta": 0.0461,
+      "total_fga": 7
     },
     {
       "player_id": 1642959,
@@ -3319,11 +3312,102 @@
       "total_fga": 63
     },
     {
-      "player_id": 1631111,
-      "actual_efg_pct": 0.5714,
-      "expected_efg_pct": 0.5253,
-      "shot_quality_delta": 0.0461,
-      "total_fga": 7
+      "player_id": 203486,
+      "actual_efg_pct": 0.7859,
+      "expected_efg_pct": 0.5316,
+      "shot_quality_delta": 0.2543,
+      "total_fga": 14
+    },
+    {
+      "player_id": 1641890,
+      "actual_efg_pct": 0.52,
+      "expected_efg_pct": 0.5538,
+      "shot_quality_delta": -0.0338,
+      "total_fga": 50
+    },
+    {
+      "player_id": 1631116,
+      "actual_efg_pct": 0.5184,
+      "expected_efg_pct": 0.5512,
+      "shot_quality_delta": -0.0328,
+      "total_fga": 27
+    },
+    {
+      "player_id": 1631174,
+      "actual_efg_pct": 0.4733,
+      "expected_efg_pct": 0.5536,
+      "shot_quality_delta": -0.0803,
+      "total_fga": 112
+    },
+    {
+      "player_id": 1642396,
+      "actual_efg_pct": 0.6666,
+      "expected_efg_pct": 0.5488,
+      "shot_quality_delta": 0.1177,
+      "total_fga": 114
+    },
+    {
+      "player_id": 1630209,
+      "actual_efg_pct": 0.4234,
+      "expected_efg_pct": 0.5425,
+      "shot_quality_delta": -0.1191,
+      "total_fga": 26
+    },
+    {
+      "player_id": 203648,
+      "actual_efg_pct": 0.4687,
+      "expected_efg_pct": 0.5426,
+      "shot_quality_delta": -0.0739,
+      "total_fga": 32
+    },
+    {
+      "player_id": 1631115,
+      "actual_efg_pct": 0.7,
+      "expected_efg_pct": 0.5299,
+      "shot_quality_delta": 0.1701,
+      "total_fga": 5
+    },
+    {
+      "player_id": 1642404,
+      "actual_efg_pct": 0.4213,
+      "expected_efg_pct": 0.5662,
+      "shot_quality_delta": -0.1449,
+      "total_fga": 89
+    },
+    {
+      "player_id": 1627752,
+      "actual_efg_pct": 0.61,
+      "expected_efg_pct": 0.5493,
+      "shot_quality_delta": 0.0607,
+      "total_fga": 191
+    },
+    {
+      "player_id": 1642933,
+      "actual_efg_pct": 0.4167,
+      "expected_efg_pct": 0.5307,
+      "shot_quality_delta": -0.114,
+      "total_fga": 12
+    },
+    {
+      "player_id": 1630164,
+      "actual_efg_pct": 0.6,
+      "expected_efg_pct": 0.5341,
+      "shot_quality_delta": 0.0659,
+      "total_fga": 10
+    },
+    {
+      "player_id": 1629622,
+      "actual_efg_pct": 0.5933,
+      "expected_efg_pct": 0.5483,
+      "shot_quality_delta": 0.045,
+      "total_fga": 107
+    },
+    {
+      "player_id": 1643133,
+      "actual_efg_pct": 0.6,
+      "expected_efg_pct": 0.5243,
+      "shot_quality_delta": 0.0757,
+      "total_fga": 10
     },
     {
       "player_id": 1631120,
@@ -3347,27 +3431,6 @@
       "total_fga": 7
     },
     {
-      "player_id": 1642933,
-      "actual_efg_pct": 0.4167,
-      "expected_efg_pct": 0.5307,
-      "shot_quality_delta": -0.114,
-      "total_fga": 12
-    },
-    {
-      "player_id": 1642396,
-      "actual_efg_pct": 0.6666,
-      "expected_efg_pct": 0.5488,
-      "shot_quality_delta": 0.1177,
-      "total_fga": 114
-    },
-    {
-      "player_id": 1643133,
-      "actual_efg_pct": 0.6,
-      "expected_efg_pct": 0.5243,
-      "shot_quality_delta": 0.0757,
-      "total_fga": 10
-    },
-    {
       "player_id": 1628998,
       "actual_efg_pct": 0.1999,
       "expected_efg_pct": 0.5441,
@@ -3382,80 +3445,17 @@
       "total_fga": 25
     },
     {
-      "player_id": 1642404,
-      "actual_efg_pct": 0.4213,
-      "expected_efg_pct": 0.5662,
-      "shot_quality_delta": -0.1449,
-      "total_fga": 89
+      "player_id": 203926,
+      "actual_efg_pct": 0.5612,
+      "expected_efg_pct": 0.5575,
+      "shot_quality_delta": 0.0037,
+      "total_fga": 139
     },
     {
-      "player_id": 1630164,
-      "actual_efg_pct": 0.6,
-      "expected_efg_pct": 0.5341,
-      "shot_quality_delta": 0.0659,
-      "total_fga": 10
-    },
-    {
-      "player_id": 1629622,
-      "actual_efg_pct": 0.5933,
-      "expected_efg_pct": 0.5483,
-      "shot_quality_delta": 0.045,
-      "total_fga": 107
-    },
-    {
-      "player_id": 1631115,
-      "actual_efg_pct": 0.7,
-      "expected_efg_pct": 0.5299,
-      "shot_quality_delta": 0.1701,
-      "total_fga": 5
-    },
-    {
-      "player_id": 1631116,
-      "actual_efg_pct": 0.5184,
-      "expected_efg_pct": 0.5512,
-      "shot_quality_delta": -0.0328,
-      "total_fga": 27
-    },
-    {
-      "player_id": 1631174,
-      "actual_efg_pct": 0.4733,
-      "expected_efg_pct": 0.5536,
-      "shot_quality_delta": -0.0803,
-      "total_fga": 112
-    },
-    {
-      "player_id": 1630209,
-      "actual_efg_pct": 0.4234,
-      "expected_efg_pct": 0.5425,
-      "shot_quality_delta": -0.1191,
-      "total_fga": 26
-    },
-    {
-      "player_id": 203648,
-      "actual_efg_pct": 0.4687,
-      "expected_efg_pct": 0.5426,
-      "shot_quality_delta": -0.0739,
-      "total_fga": 32
-    },
-    {
-      "player_id": 1627752,
-      "actual_efg_pct": 0.61,
-      "expected_efg_pct": 0.5493,
-      "shot_quality_delta": 0.0607,
-      "total_fga": 191
-    },
-    {
-      "player_id": 1628502,
-      "actual_efg_pct": 0.348,
-      "expected_efg_pct": 0.5464,
-      "shot_quality_delta": -0.1984,
-      "total_fga": 46
-    },
-    {
-      "player_id": 1641803,
-      "actual_efg_pct": 0.5556,
-      "expected_efg_pct": 0.5443,
-      "shot_quality_delta": 0.0112,
+      "player_id": 1629634,
+      "actual_efg_pct": 0.3333,
+      "expected_efg_pct": 0.5224,
+      "shot_quality_delta": -0.1891,
       "total_fga": 9
     },
     {
@@ -3466,11 +3466,18 @@
       "total_fga": 26
     },
     {
-      "player_id": 1642484,
-      "actual_efg_pct": 0.3977,
-      "expected_efg_pct": 0.5434,
-      "shot_quality_delta": -0.1457,
-      "total_fga": 83
+      "player_id": 1642504,
+      "actual_efg_pct": 0.652,
+      "expected_efg_pct": 0.5566,
+      "shot_quality_delta": 0.0954,
+      "total_fga": 102
+    },
+    {
+      "player_id": 1642443,
+      "actual_efg_pct": 0.4598,
+      "expected_efg_pct": 0.5463,
+      "shot_quality_delta": -0.0865,
+      "total_fga": 25
     },
     {
       "player_id": 1643158,
@@ -3480,11 +3487,11 @@
       "total_fga": 29
     },
     {
-      "player_id": 1629634,
-      "actual_efg_pct": 0.3333,
-      "expected_efg_pct": 0.5224,
-      "shot_quality_delta": -0.1891,
-      "total_fga": 9
+      "player_id": 1628502,
+      "actual_efg_pct": 0.348,
+      "expected_efg_pct": 0.5464,
+      "shot_quality_delta": -0.1984,
+      "total_fga": 46
     },
     {
       "player_id": 1629599,
@@ -3494,11 +3501,18 @@
       "total_fga": 112
     },
     {
-      "player_id": 1642443,
-      "actual_efg_pct": 0.4598,
-      "expected_efg_pct": 0.5463,
-      "shot_quality_delta": -0.0865,
-      "total_fga": 25
+      "player_id": 1641803,
+      "actual_efg_pct": 0.5556,
+      "expected_efg_pct": 0.5443,
+      "shot_quality_delta": 0.0112,
+      "total_fga": 9
+    },
+    {
+      "player_id": 1642484,
+      "actual_efg_pct": 0.3977,
+      "expected_efg_pct": 0.5434,
+      "shot_quality_delta": -0.1457,
+      "total_fga": 83
     },
     {
       "player_id": 1626192,
@@ -3513,76 +3527,6 @@
       "expected_efg_pct": 0.5579,
       "shot_quality_delta": -0.1672,
       "total_fga": 119
-    },
-    {
-      "player_id": 203926,
-      "actual_efg_pct": 0.5612,
-      "expected_efg_pct": 0.5575,
-      "shot_quality_delta": 0.0037,
-      "total_fga": 139
-    },
-    {
-      "player_id": 1642504,
-      "actual_efg_pct": 0.652,
-      "expected_efg_pct": 0.5566,
-      "shot_quality_delta": 0.0954,
-      "total_fga": 102
-    },
-    {
-      "player_id": 1642967,
-      "actual_efg_pct": 0.599,
-      "expected_efg_pct": 0.5582,
-      "shot_quality_delta": 0.0408,
-      "total_fga": 91
-    },
-    {
-      "player_id": 1643047,
-      "actual_efg_pct": 0.5455,
-      "expected_efg_pct": 0.5448,
-      "shot_quality_delta": 0.0007,
-      "total_fga": 11
-    },
-    {
-      "player_id": 1641727,
-      "actual_efg_pct": 0.4999,
-      "expected_efg_pct": 0.5508,
-      "shot_quality_delta": -0.0509,
-      "total_fga": 93
-    },
-    {
-      "player_id": 201145,
-      "actual_efg_pct": 0.456,
-      "expected_efg_pct": 0.5551,
-      "shot_quality_delta": -0.0991,
-      "total_fga": 68
-    },
-    {
-      "player_id": 1630625,
-      "actual_efg_pct": 0.3334,
-      "expected_efg_pct": 0.545,
-      "shot_quality_delta": -0.2116,
-      "total_fga": 12
-    },
-    {
-      "player_id": 1630658,
-      "actual_efg_pct": 0.4,
-      "expected_efg_pct": 0.5237,
-      "shot_quality_delta": -0.1237,
-      "total_fga": 5
-    },
-    {
-      "player_id": 1642939,
-      "actual_efg_pct": 0.4774,
-      "expected_efg_pct": 0.5647,
-      "shot_quality_delta": -0.0873,
-      "total_fga": 44
-    },
-    {
-      "player_id": 1631338,
-      "actual_efg_pct": 0.5909,
-      "expected_efg_pct": 0.555,
-      "shot_quality_delta": 0.0359,
-      "total_fga": 11
     },
     {
       "player_id": 1631102,
@@ -3648,46 +3592,60 @@
       "total_fga": 19
     },
     {
-      "player_id": 1643007,
-      "actual_efg_pct": 0.5093,
-      "expected_efg_pct": 0.5612,
-      "shot_quality_delta": -0.0519,
-      "total_fga": 158
+      "player_id": 201145,
+      "actual_efg_pct": 0.456,
+      "expected_efg_pct": 0.5551,
+      "shot_quality_delta": -0.0991,
+      "total_fga": 68
     },
     {
-      "player_id": 1641801,
-      "actual_efg_pct": 0.5386,
-      "expected_efg_pct": 0.5557,
-      "shot_quality_delta": -0.017,
-      "total_fga": 13
+      "player_id": 1630625,
+      "actual_efg_pct": 0.3334,
+      "expected_efg_pct": 0.545,
+      "shot_quality_delta": -0.2116,
+      "total_fga": 12
     },
     {
-      "player_id": 1642389,
-      "actual_efg_pct": 0.7308,
-      "expected_efg_pct": 0.5439,
-      "shot_quality_delta": 0.1869,
-      "total_fga": 13
+      "player_id": 1642967,
+      "actual_efg_pct": 0.599,
+      "expected_efg_pct": 0.5582,
+      "shot_quality_delta": 0.0408,
+      "total_fga": 91
     },
     {
-      "player_id": 203078,
-      "actual_efg_pct": 0.448,
-      "expected_efg_pct": 0.5511,
-      "shot_quality_delta": -0.1031,
-      "total_fga": 48
+      "player_id": 1643047,
+      "actual_efg_pct": 0.5455,
+      "expected_efg_pct": 0.5448,
+      "shot_quality_delta": 0.0007,
+      "total_fga": 11
     },
     {
-      "player_id": 1629726,
-      "actual_efg_pct": 0.5675,
-      "expected_efg_pct": 0.5519,
-      "shot_quality_delta": 0.0156,
-      "total_fga": 52
+      "player_id": 1641727,
+      "actual_efg_pct": 0.4999,
+      "expected_efg_pct": 0.5508,
+      "shot_quality_delta": -0.0509,
+      "total_fga": 93
     },
     {
-      "player_id": 203967,
-      "actual_efg_pct": 0.25,
-      "expected_efg_pct": 0.5518,
-      "shot_quality_delta": -0.3018,
-      "total_fga": 6
+      "player_id": 1630658,
+      "actual_efg_pct": 0.4,
+      "expected_efg_pct": 0.5237,
+      "shot_quality_delta": -0.1237,
+      "total_fga": 5
+    },
+    {
+      "player_id": 1642939,
+      "actual_efg_pct": 0.4774,
+      "expected_efg_pct": 0.5647,
+      "shot_quality_delta": -0.0873,
+      "total_fga": 44
+    },
+    {
+      "player_id": 1631338,
+      "actual_efg_pct": 0.5909,
+      "expected_efg_pct": 0.555,
+      "shot_quality_delta": 0.0359,
+      "total_fga": 11
     },
     {
       "player_id": 1641794,
@@ -3751,6 +3709,48 @@
       "expected_efg_pct": 0.5356,
       "shot_quality_delta": 0.0199,
       "total_fga": 9
+    },
+    {
+      "player_id": 1643007,
+      "actual_efg_pct": 0.5093,
+      "expected_efg_pct": 0.5612,
+      "shot_quality_delta": -0.0519,
+      "total_fga": 158
+    },
+    {
+      "player_id": 1641801,
+      "actual_efg_pct": 0.5386,
+      "expected_efg_pct": 0.5557,
+      "shot_quality_delta": -0.017,
+      "total_fga": 13
+    },
+    {
+      "player_id": 203078,
+      "actual_efg_pct": 0.448,
+      "expected_efg_pct": 0.5511,
+      "shot_quality_delta": -0.1031,
+      "total_fga": 48
+    },
+    {
+      "player_id": 1642389,
+      "actual_efg_pct": 0.7308,
+      "expected_efg_pct": 0.5439,
+      "shot_quality_delta": 0.1869,
+      "total_fga": 13
+    },
+    {
+      "player_id": 1629726,
+      "actual_efg_pct": 0.5675,
+      "expected_efg_pct": 0.5519,
+      "shot_quality_delta": 0.0156,
+      "total_fga": 52
+    },
+    {
+      "player_id": 203967,
+      "actual_efg_pct": 0.25,
+      "expected_efg_pct": 0.5518,
+      "shot_quality_delta": -0.3018,
+      "total_fga": 6
     },
     {
       "player_id": 1630699,
@@ -3900,6 +3900,13 @@
       "total_fga": 6
     },
     {
+      "player_id": 1641815,
+      "actual_efg_pct": 0.4286,
+      "expected_efg_pct": 0.5451,
+      "shot_quality_delta": -0.1165,
+      "total_fga": 7
+    },
+    {
       "player_id": 1642951,
       "actual_efg_pct": 0.4333,
       "expected_efg_pct": 0.5543,
@@ -3914,18 +3921,18 @@
       "total_fga": 21
     },
     {
-      "player_id": 1641815,
-      "actual_efg_pct": 0.4286,
-      "expected_efg_pct": 0.5451,
-      "shot_quality_delta": -0.1165,
-      "total_fga": 7
-    },
-    {
       "player_id": 1641753,
       "actual_efg_pct": 0.5714,
       "expected_efg_pct": 0.5598,
       "shot_quality_delta": 0.0116,
       "total_fga": 7
+    },
+    {
+      "player_id": 1642884,
+      "actual_efg_pct": 0.7503,
+      "expected_efg_pct": 0.538,
+      "shot_quality_delta": 0.2122,
+      "total_fga": 4
     },
     {
       "player_id": 1630846,
@@ -3942,11 +3949,11 @@
       "total_fga": 14
     },
     {
-      "player_id": 1642884,
-      "actual_efg_pct": 0.7503,
-      "expected_efg_pct": 0.538,
-      "shot_quality_delta": 0.2122,
-      "total_fga": 4
+      "player_id": 1642917,
+      "actual_efg_pct": 0.3124,
+      "expected_efg_pct": 0.5568,
+      "shot_quality_delta": -0.2444,
+      "total_fga": 8
     },
     {
       "player_id": 1642368,
@@ -3961,13 +3968,6 @@
       "expected_efg_pct": 0.5528,
       "shot_quality_delta": 0.0627,
       "total_fga": 13
-    },
-    {
-      "player_id": 1642917,
-      "actual_efg_pct": 0.3124,
-      "expected_efg_pct": 0.5568,
-      "shot_quality_delta": -0.2444,
-      "total_fga": 8
     },
     {
       "player_id": 1631211,
@@ -4005,6 +4005,13 @@
       "total_fga": 16
     },
     {
+      "player_id": 1643060,
+      "actual_efg_pct": 0.6667,
+      "expected_efg_pct": 0.5367,
+      "shot_quality_delta": 0.1299,
+      "total_fga": 3
+    },
+    {
       "player_id": 1641732,
       "actual_efg_pct": 0.3333,
       "expected_efg_pct": 0.5722,
@@ -4012,11 +4019,11 @@
       "total_fga": 3
     },
     {
-      "player_id": 1643060,
-      "actual_efg_pct": 0.6667,
-      "expected_efg_pct": 0.5367,
-      "shot_quality_delta": 0.1299,
-      "total_fga": 3
+      "player_id": 1631205,
+      "actual_efg_pct": 0.5,
+      "expected_efg_pct": 0.554,
+      "shot_quality_delta": -0.054,
+      "total_fga": 6
     },
     {
       "player_id": 200768,
@@ -4030,13 +4037,6 @@
       "actual_efg_pct": 0.0,
       "expected_efg_pct": 0.554,
       "shot_quality_delta": -0.554,
-      "total_fga": 6
-    },
-    {
-      "player_id": 1631205,
-      "actual_efg_pct": 0.5,
-      "expected_efg_pct": 0.554,
-      "shot_quality_delta": -0.054,
       "total_fga": 6
     },
     {
