@@ -3754,7 +3754,15 @@ const PP_SECOND_BOOK = { prop: 'home_runs', lines: [0.5], side: 'less' };
 const PP_TRAILING_MIN = 78.0;   // player's own trailing hit rate for this exact prop/line/side
 const PP_MIN_GAMES = 60;        // minimum prior games in that player's log
 const PP_TOP_PERCENTILE = 0.10; // top 10% of the day's qualifying pool, ranked by trailing rate
-const BASELINE_HP_SIZE = 6;     // 6-pick Power
+// SLIP_STRATEGY_V1 2026-09-03: 6 -> 5. Nested same-player test disproved size-dependence
+// (4-pick 1.1583/leg vs 5-pick 1.1600/leg on the identical four players), so the question is purely
+// hit-rate vs payout. Measured on the 23-day backtest with real per-leg rates:
+//   4-pick +47.0% (34 slips) | 5-pick +58.7% (33 slips) | 6-pick min5 +65.3% (22 slips)
+// 6-pick has the higher headline but worse bootstrap (99.2% vs 100%), a far wider CI, only 15/22
+// profitable days vs 18/23, and LOWER total profit - it converts more near-misses into total
+// losses. 5-pick earns more money more consistently. The qualifying pool is only 5-8 legs after
+// caps, so a 6-pick also fails to build on thin days.
+const BASELINE_HP_SIZE = 5;
 const BASELINE_HP_PER_LEG_RATE = 1.1416;
 // ===== MEASURED PER-LINE RATES (2026-08-30) =====
 // The flat per-prop rate was WRONG for this strategy. PrizePicks prices goblins by DEPTH from the
