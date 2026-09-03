@@ -7634,7 +7634,7 @@ export default {
 
     try {
       if (method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization" } });
-      if (method === "GET" && path === "/app.js") return jsResponse(APP_JS);
+      if (method === "GET" && path === "/app.js") return jsResponse(APP_JS_V2);
       if (method === "GET" && (path === "/" || path === "/index.html")) return htmlResponse(MAIN_HTML_EXTERNAL());
       if (method === "GET" && ["/main_alphadog_logo.png", "/main_alphadog_favicon.png", "/main_alphadog_apple_touch_icon.png"].includes(path)) return pngResponse(LOGO_PNG_BASE64);
       if (method === "GET" && path === "/health") {
