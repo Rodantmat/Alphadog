@@ -5,5 +5,29 @@
   "games_input": 1230,
   "games_succeeded": 1230,
   "row_count": 3681,
-  "per_game_errors": []
+  "per_game_errors": [],
+  "patch_applied": {
+    "fetched_at": "2026-09-04T18:00:13Z",
+    "games_retried": [
+      "0022500259",
+      "0022500260",
+      "0022500261"
+    ],
+    "games_recovered": 0,
+    "still_failing": [
+      {
+        "game_id": "0022500259",
+        "error": "zero_officials_parsed_v3"
+      },
+      {
+        "game_id": "0022500260",
+        "error": "zero_officials_parsed_v3"
+      },
+      {
+        "game_id": "0022500261",
+        "error": "zero_officials_parsed_v3"
+      }
+    ],
+    "bug_fixed": "main loop checked 'rows is not None' instead of truthiness, silently dropping games with zero parsed officials"
+  }
 }
