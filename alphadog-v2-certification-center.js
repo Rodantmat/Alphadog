@@ -4415,13 +4415,27 @@ async function autoSelectStrategyV3Legs(env) {
           -- goblin (a multiplier below 1.0 would reduce the payout). Until there are pure single-
           -- cell reads for runs t1, total_bases t3, hits t1 and singles t1, the uniform correction
           -- is the only defensible adjustment.
+          -- DIRECT READS 2026-09-04, pure single-cell 4-picks. These REPLACE the uniform -2.40%
+          -- average for the two cells that carried it, and they went in OPPOSITE directions:
+          --   runs t1/less        4-pick Power 1.50 -> 1.1067/leg (breakeven 90.4%)
+          --     originally assumed 1.1832, then averaged to 1.1548. Real is 6.5% below the
+          --     original and 4.2% below the average. This cell was the main source of the
+          --     -22.1% error on the runs+TB slip.
+          --   total_bases t3/less 4-pick Power 1.80 -> 1.1583/leg (breakeven 86.3%)
+          --     the ORIGINAL 1.1583 was exact. The -2.40% correction was wrong for this cell.
+          -- Tiers on the total_bases read were verified: none of the four players had a standard
+          -- line, so the anchor resolved by switch-point ((max goblin + min demon)/2) to 2.0 for
+          -- Chourio and 1.0 for the others, putting every leg at tier 3.
+          -- Lesson: a uniform correction is a stopgap. Cells move in different directions and the
+          -- remaining averaged cells (doubles t0, hits_runs_rbis t2, walks_allowed) still need
+          -- their own pure reads.
           ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',4,1.1749),
           ('walks_allowed',1,'more','walks_allowed t1/more','live',2,1.1089),
           ('walks_allowed',2,'more','walks_allowed t2/more','live',4,1.1089),
           ('earned_runs',2,'more','earned_runs t2/more','live',4,1.1548),
           ('hits_runs_rbis',2,'less','hits_runs_rbis t2/less','live',4,1.0973),
-          ('total_bases',3,'less','total_bases t3/less','reb',2,1.1305),
-          ('runs',1,'less','runs t1/less','reb',2,1.1548),
+          ('total_bases',3,'less','total_bases t3/less','reb',2,1.1583),
+          ('runs',1,'less','runs t1/less','reb',2,1.1067),
           ('doubles',0,'less','doubles t0/less','reb',2,1.0977)
         ) AS c(p,tr,sd,cell,src,cap,mult)
           ON c.p=s.prop AND c.tr=s.tier AND c.sd=s.side
