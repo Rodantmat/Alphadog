@@ -4429,14 +4429,17 @@ async function autoSelectStrategyV3Legs(env) {
           -- Lesson: a uniform correction is a stopgap. Cells move in different directions and the
           -- remaining averaged cells (doubles t0, hits_runs_rbis t2, walks_allowed) still need
           -- their own pure reads.
+          -- CELLS DROPPED 2026-09-04 once true prices were known:
+          --   doubles t0/less        88.1% vs 91.1% breakeven at 1.0977 = -3.3% EV. Negative.
+          --   hits_runs_rbis t2/less 93.3% vs 91.1% breakeven at 1.0973 = +2.4% EV. Marginal.
+          -- Removing both raised ROI +75.0% -> +96.3%, recent window +42.2% -> +65.5%,
+          -- leg accuracy 95.00% -> 96.46% and sweep rate 82.0% -> 87.9%. Six cells beat eight.
           ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',4,1.1749),
           ('walks_allowed',1,'more','walks_allowed t1/more','live',2,1.1089),
           ('walks_allowed',2,'more','walks_allowed t2/more','live',4,1.1089),
           ('earned_runs',2,'more','earned_runs t2/more','live',4,1.1548),
-          ('hits_runs_rbis',2,'less','hits_runs_rbis t2/less','live',4,1.0973),
           ('total_bases',3,'less','total_bases t3/less','reb',2,1.1583),
-          ('runs',1,'less','runs t1/less','reb',2,1.1067),
-          ('doubles',0,'less','doubles t0/less','reb',2,1.0977)
+          ('runs',1,'less','runs t1/less','reb',2,1.1067)
         ) AS c(p,tr,sd,cell,src,cap,mult)
           ON c.p=s.prop AND c.tr=s.tier AND c.sd=s.side
         WHERE s.g = 1
