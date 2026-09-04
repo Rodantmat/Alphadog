@@ -4757,11 +4757,11 @@ async function apiHighHitSlips(env, request) {
       });
     }
   }
-  const v2Slips = [];
+  const v2SlipsDisabled = [];
   {
     const V2_SIZE = 5, V2_MIN = 4, V2_MAX_SLIPS = 2;
     const used = new Set();
-    while (v2Slips.length < V2_MAX_SLIPS) {
+    while (v2SlipsDisabled.length < V2_MAX_SLIPS) {
       const avail = v2Legs.filter(l => !used.has(l.board_row_id));
       if (avail.length < V2_MIN) break;
       const legs = [];
