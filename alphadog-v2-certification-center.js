@@ -4632,6 +4632,72 @@ async function apiHighHitSlips(env, request) {
   // and the sort was not deterministic. All figures here use ORDER BY sig DESC, cell, pid.
   const ppSlipsAll = [];
   const v2Legs = await autoSelectStrategyV2Legs(env).catch(() => []);
+  // SLIP_STRATEGY_V3 - independent parallel track. V2 is untouched.
+  const v3Legs = await autoSelectStrategyV3Legs(env).catch(() => []);
+  const v3Slips = [];
+  {
+    // SHRINK, NOT SUBSTITUTE - measured on this exact config at four unavailability rates:
+    //   drop  0%: shrink +95.7%  vs substitute +81.4%
+    //   drop 10%: shrink +85.5%  vs substitute +81.5%
+    //   drop 20%: shrink +66.6%  vs substitute +39.2%
+    //   drop 30%: shrink +71.8%  vs substitute +61.9%
+    // Shrink wins at every rate. Backup legs necessarily come from BEYOND the per-cell cap, and
+    // those ranks dilute - leg accuracy drops 95.5% -> 93.9% the moment substitutes are allowed.
+    const SZ = 6, MIN_SZ = 4, MAX_SLIPS = 3;
+    const used = new Set();
+    while (v3Slips.length < MAX_SLIPS) {
+      const avail = v3Legs.filter(l => !used.has(l.board_row_id));
+      if (avail.length < MIN_SZ) break;
+      const legs = [];
+      const seenPlayers = new Set();
+      for (const l of avail) {
+        if (legs.length >= SZ) break;
+        if (seenPlayers.has(String(l.mlb_player_id))) continue;
+        legs.push(l);
+        seenPlayers.add(String(l.mlb_player_id));
+      }
+      if (legs.length < MIN_SZ) break;
+      for (const l of legs) used.add(l.board_row_id);
+      const n = legs.length;
+      let mult = 1;
+      for (const l of legs) mult *= Number(l.leg_mult) || 1.1583;
+      mult = Math.round(mult * 1000) / 1000;
+      let hp = 1;
+      for (const l of legs) hp *= (Number(l.hit_probability_0_100) || 0) / 100;
+      // Flex tiers measured live 2026-09-03: full tier is ~0.73x the Power tier, n-1 pays a flat
+      // 0.50 and n-2 pays 0.25 on 5+ legs. Prefilled so the real numbers are visible before saving.
+      const flexFull = Math.round(mult * 0.73 * 1000) / 1000;
+      const flexTiers = { [n]: flexFull, [n - 1]: 0.5 };
+      if (n >= 5) flexTiers[n - 2] = 0.25;
+      const breakeven = Math.round((1 / mult) * 10000) / 100;
+      v3Slips.push({
+        client_slip_id: makeUiId("high_hit_slip_v3"),
+        source_key: "prizepicks",
+        slip_type: n + "-pick",
+        slip_size: n,
+        structure_label: n + "-pick Power (SLIP_STRATEGY_V3: tier cells, dual-signal, cap 2-4)",
+        entry_mode: "power",
+        selected_leg_count: n,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: mult,
+        estimated_multiplier_flex_tiers: flexTiers,
+        breakeven_hit_rate_0_100: breakeven,
+        edge_vs_breakeven_0_100: Math.round((hp - 1 / mult) * 10000) / 100,
+        strategy_grade: "A",
+        estimated_payout_note: "V3 multiplier is the product of per-leg rates measured on real placed slips: pitcher_strikeouts t2 1.2038 (visible anchor), walks_allowed 1.1362, earned_runs 1.1832, hits_runs_rbis t2 1.1243, total_bases t3 1.1583, runs t1 1.1832, doubles t0 1.1247. POWER not Flex - Flex lost in all 18 configurations tested, by 24 to 37 points, because at 94.5% leg accuracy you miss too rarely for partial credit to cover the ~27% haircut on the top tier. ALWAYS read the app's real multiplier before placing: identical cell mixes have priced 4.17% apart on different players, so PrizePicks prices per player, not just per cell. Skip the slip if the app shows less than " + Math.max(breakeven / 100 * 1.05, 1.35).toFixed(2) + "x.",
+        strategy_notes: [
+          "SLIP_STRATEGY_V3, parallel to V2. Eight cells keyed on TIER = round(abs(line - anchor)), per-cell signal source and per-cell cap, 6-pick Power, shrink to 4 minimum.",
+          "Cells and caps: pitcher_strikeouts t2/more (live, 4) | walks_allowed t1/more (live, 2) | walks_allowed t2/more (live, 4) | earned_runs t2/more (live, 4) | hits_runs_rbis t2/less (live, 4) | total_bases t3/less (rebuilt, 2) | runs t1/less (rebuilt, 2) | doubles t0/less (rebuilt, 2).",
+          "Two signals, chosen per cell. 'live' = final_board_current HP. 'rebuilt' = leak-free rate from game logs strictly before today. Live wins on the pitcher and HRR cells; rebuilt wins on doubles by 13.4pp, and on total_bases t3 and runs t1. One signal for everything buried the best cells.",
+          "Live HP alone is NOT trusted: across 274k graded legs it overstates the >=90 band by 12.0pp (claims 93.83%, delivers 81.84%). The leak-free rebuild halves that to 6.2pp. Both are kept because live still RANKS better on some cells even though its LEVEL is wrong.",
+          "Backtest on 39 real morning snapshots: 70 slips, 31 days, 94.52% leg accuracy, 61/70 slips won, +103.0% ROI. Bootstrap 100% positive, 95% CI [+55.6%, +109.0%], LOO +79.6% to +89.1%, 28/33 profitable days, best-day share 9.2%. Never underwater; worst day -$2.00.",
+          "hits t1/less and singles t1/less were REMOVED after collapsing 95.9%->77.5% and 100%->87.5% between early and late windows. That single change lifted recent-window ROI from +8.8% to +55.0%. Re-test them in a few weeks - a two-week slump can be variance.",
+          "RISK: cells, caps and signal sources were all selected on these 31 days, and the recent window is only 22 slips. Split-sample holds and every gate passes, but configuration selection is not covered by either. PLAN ON +55%, the recent-window figure, not +103%. Minimum stake."
+        ],
+        legs: legs
+      });
+    }
+  }
   const v2Slips = [];
   {
     const V2_SIZE = 5, V2_MIN = 4, V2_MAX_SLIPS = 2;
