@@ -96,10 +96,14 @@ def main():
     errors = []
     for i, game_id in enumerate(game_ids):
         rows, error = fetch_game(game_id, proxies)
-        if rows is not None:
+        # Real bug found and fixed (2026-09-03): a game with genuinely zero officials returns
+        # ([], "some_error_string") from fetch_game - checking "rows is not None" treats an
+        # empty list as success (since [] is not None), silently swallowing the error and
+        # dropping the game from output with zero record of it. Must check truthiness instead.
+        if rows:
             all_rows.extend(rows)
         else:
-            errors.append({"game_id": game_id, "error": error})
+            errors.append({"game_id": game_id, "error": error or "empty_rows"})
         if (i + 1) % 100 == 0:
             print(f"Progress: {i + 1}/{len(game_ids)} games processed, {len(errors)} errors so far, {len(all_rows)} rows so far")
         time.sleep(0.3)
