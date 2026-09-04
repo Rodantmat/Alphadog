@@ -27,7 +27,7 @@ OUTPUT_PATH = Path("nba/data/nba_game_officials_2025_26.json")
 OUTPUT_META_PATH = Path("nba/data/nba_game_officials_2025_26_meta.json")
 
 
-def fetch_game(game_id, proxies):
+def fetch_game(game_id, proxies, debug=None):
     url = f"https://stats.nba.com/stats/boxscoresummaryv3?GameID={game_id}&LeagueID=00"
     last_error = None
     for attempt in range(1, 4):
@@ -37,6 +37,12 @@ def fetch_game(game_id, proxies):
             body = resp.json()
             summary = body.get("boxScoreSummary") or {}
             officials = summary.get("officials") or []
+            if debug is not None:
+                debug[game_id] = {
+                    "raw_officials_field": officials,
+                    "summary_keys": list(summary.keys()),
+                    "game_status_text": summary.get("gameStatusText"),
+                }
             rows = []
             for o in officials:
                 pid = o.get("personId")
