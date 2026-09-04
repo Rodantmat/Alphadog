@@ -4281,7 +4281,8 @@ async function autoSelectStrategyV2Legs(env) {
           ELSE
             (SELECT AVG(CASE WHEN v.val < c.ln THEN 1.0 ELSE 0.0 END)
              FROM (SELECT CASE c.prop WHEN 'total_bases' THEN g.total_bases
-                                      WHEN 'doubles' THEN g.doubles END AS val
+                                      WHEN 'doubles' THEN g.doubles
+                                      WHEN 'stolen_bases' THEN g.stolen_bases END AS val
                    FROM stats_hitter.game_logs g
                    WHERE g.player_id=c.pid AND g.game_date < CURRENT_DATE) v
              WHERE v.val IS NOT NULL)
