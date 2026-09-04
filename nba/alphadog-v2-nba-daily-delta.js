@@ -163,20 +163,21 @@ async function runJob(input, env) {
   } catch (err) { errors.push(`team_advanced_failed: ${String(err)}`); }
 
   // Real completeness check: Final REGULAR SEASON games in the calendar vs games actually
-  // present in the log, for the detected/fetched season. Restricted to game_label = '' (the
-  // standard regular-season slate) because nba_calendar.games also includes preseason, Cup
-  // knockout rounds, All-Star weekend, and playoffs - none of which player_game_log covers by
-  // design (confirmed via a real count mismatch: 2025-26 showed 1400 calendar-Final vs 1230
-  // logged, fully explained by exactly these extra game types, not a real gap).
+  // present in the log. Uses the GAME_ID prefix convention (002=regular season, 001=preseason,
+  // 003=all-star, 004=playoffs, 005=play-in) rather than the free-text game_label field - the
+  // label field turned out unreliable for this (Cup group-stage games, Rivals Week, and
+  // international showcase games all correctly count as regular season but carry a non-blank
+  // label, while blank-label alone undercounted by 81 games). GAME_ID prefix '002' matched the
+  // known-correct 1230 regular-season game count for 2025-26 exactly - verified before using it.
   let completeness = null;
   if (season) {
-    const calendarFinal = await sql`SELECT COUNT(*)::int AS c FROM nba_calendar.games WHERE season = ${season} AND game_status = 3 AND game_label = ''`;
+    const calendarFinal = await sql`SELECT COUNT(*)::int AS c FROM nba_calendar.games WHERE season = ${season} AND game_status = 3 AND game_id LIKE '002%'`;
     const loggedGames = await sql`SELECT COUNT(DISTINCT game_id)::int AS c FROM nba_stats.player_game_log WHERE season = ${season}`;
     const missingGames = await sql`
       SELECT g.game_id, g.game_date, g.home_team_tricode, g.away_team_tricode
       FROM nba_calendar.games g
       LEFT JOIN (SELECT DISTINCT game_id FROM nba_stats.player_game_log WHERE season = ${season}) l ON l.game_id = g.game_id
-      WHERE g.season = ${season} AND g.game_status = 3 AND g.game_label = '' AND l.game_id IS NULL
+      WHERE g.season = ${season} AND g.game_status = 3 AND g.game_id LIKE '002%' AND l.game_id IS NULL
       ORDER BY g.game_date DESC LIMIT 20
     `;
     completeness = {
