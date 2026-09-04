@@ -4403,14 +4403,26 @@ async function autoSelectStrategyV3Legs(env) {
       cells AS (
         SELECT s.*, c.cell, c.src, c.cap, c.mult
         FROM sided s JOIN (VALUES
-          ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',4,1.2038),
-          ('walks_allowed',1,'more','walks_allowed t1/more','live',2,1.1362),
-          ('walks_allowed',2,'more','walks_allowed t2/more','live',4,1.1362),
-          ('earned_runs',2,'more','earned_runs t2/more','live',4,1.1832),
-          ('hits_runs_rbis',2,'less','hits_runs_rbis t2/less','live',4,1.1243),
-          ('total_bases',3,'less','total_bases t3/less','reb',2,1.1583),
-          ('runs',1,'less','runs t1/less','reb',2,1.1832),
-          ('doubles',0,'less','doubles t0/less','reb',2,1.1247)
+          -- RECALIBRATED 2026-09-04 from 4 real placed slips (23 legs). The prefilled multipliers
+          -- ran HIGH against the app on every slip. Slip-level model vs real:
+          --   4x hits_runs_rbis t2 + 2x earned_runs : model 2.237 vs real 2.20  (-1.6%)
+          --   2x earned_runs + 2x pitcher_K + 2x WA : model 2.619 vs real 2.40  (-8.4%)
+          --   2x hits + 2x singles + 1x TB t3       : model 2.085 vs real 1.70 (-18.5%)
+          --   2x runs + 2x TB t3 + pitcher_K + WA   : model 2.569 vs real 2.00 (-22.1%)
+          -- Aggregate across all 23 legs implies -2.40% per leg, applied uniformly below.
+          -- A per-cell solve was attempted and REJECTED: 4 equations against 8 unknowns is
+          -- underdetermined, and it returned total_bases t3 = 0.9444, which is impossible for a
+          -- goblin (a multiplier below 1.0 would reduce the payout). Until there are pure single-
+          -- cell reads for runs t1, total_bases t3, hits t1 and singles t1, the uniform correction
+          -- is the only defensible adjustment.
+          ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',4,1.1749),
+          ('walks_allowed',1,'more','walks_allowed t1/more','live',2,1.1089),
+          ('walks_allowed',2,'more','walks_allowed t2/more','live',4,1.1089),
+          ('earned_runs',2,'more','earned_runs t2/more','live',4,1.1548),
+          ('hits_runs_rbis',2,'less','hits_runs_rbis t2/less','live',4,1.0973),
+          ('total_bases',3,'less','total_bases t3/less','reb',2,1.1305),
+          ('runs',1,'less','runs t1/less','reb',2,1.1548),
+          ('doubles',0,'less','doubles t0/less','reb',2,1.0977)
         ) AS c(p,tr,sd,cell,src,cap,mult)
           ON c.p=s.prop AND c.tr=s.tier AND c.sd=s.side
         WHERE s.g = 1
