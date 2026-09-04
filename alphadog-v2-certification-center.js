@@ -4454,8 +4454,7 @@ async function autoSelectStrategyV3Legs(env) {
                     THEN (CASE WHEN v.val < c.ln THEN 1.0 ELSE 0.0 END)
                     ELSE (CASE WHEN v.val > c.ln THEN 1.0 ELSE 0.0 END) END)
              FROM (SELECT CASE c.prop WHEN 'total_bases' THEN g.total_bases
-                                      WHEN 'runs' THEN g.runs
-                                      WHEN 'doubles' THEN g.doubles END AS val
+                                      WHEN 'runs' THEN g.runs END AS val
                    FROM stats_hitter.game_logs g
                    WHERE g.player_id=c.pid AND g.game_date < CURRENT_DATE) v
              WHERE v.val IS NOT NULL)
