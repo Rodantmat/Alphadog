@@ -4860,16 +4860,26 @@ async function apiHighHitSlips(env, request) {
   const v2UsedIds = new Set(v2Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v2BackupPool = v2Legs.filter(l => !v2UsedIds.has(l.board_row_id)).slice(0, 8);
   // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
-  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...udSlips, ...slBaselineSlips]
+  const v3UsedIds = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  // V3 reserve is for DISPLAY and equal-rank swaps only. V3 SHRINKS on unavailability - it must
+  // never backfill from here, because these legs sit beyond the per-cell cap and measurably dilute.
+  const v3BackupPool = v3Legs.filter(l => !v3UsedIds.has(l.board_row_id)).slice(0, 8);
+  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
     .concat(backupPool.map(l => l.mlb_player_id))
     .concat(v2BackupPool.map(l => l.mlb_player_id))
+    .concat(v3BackupPool.map(l => l.mlb_player_id))
     .filter(Boolean))];
   const dnpRiskMap = await fetchDnpRisk(env, allPlayerIds);
   attachDnpRisk(ppSlips, dnpRiskMap);
   attachDnpRisk(v2Slips, dnpRiskMap);
+  attachDnpRisk(v3Slips, dnpRiskMap);
   attachDnpRisk(udSlips, dnpRiskMap);
   attachDnpRisk(slBaselineSlips, dnpRiskMap);
+  for (const l of v3BackupPool) {
+    const r = dnpRiskForLeg(l, dnpRiskMap);
+    l.dnp_risk = r.level; l.dnp_risk_reason = r.reason;
+  }
   for (const l of v2BackupPool) {
     const r = dnpRiskForLeg(l, dnpRiskMap);
     l.dnp_risk = r.level; l.dnp_risk_reason = r.reason;
