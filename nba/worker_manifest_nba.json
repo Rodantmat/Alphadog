@@ -15,6 +15,7 @@
     "alphadog-v2-nba-static-tracking-detail",
     "alphadog-v2-nba-static-shotquality",
     "alphadog-v2-nba-static-backfill",
-    "alphadog-v2-nba-static-starter-status"
+    "alphadog-v2-nba-static-starter-status",
+    "alphadog-v2-nba-static-game-officials"
   ]
 }
