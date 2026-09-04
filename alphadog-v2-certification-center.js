@@ -4669,7 +4669,13 @@ async function apiHighHitSlips(env, request) {
   // Earlier readings of +25.9%/+31.5% for V1 were tie-break artifacts: many legs share sig=1.0000
   // and the sort was not deterministic. All figures here use ORDER BY sig DESC, cell, pid.
   const ppSlipsAll = [];
-  const v2Legs = await autoSelectStrategyV2Legs(env).catch(() => []);
+  // V2 DISABLED 2026-09-04, replaced by V3. V2 was 5 hitter cells / cap 2 / 5-pick at ~+30% on 26
+  // days. V3 measures +96.3% on 22 days at 96.46% leg accuracy with directly-read multipliers for
+  // every cell it keeps. Running both would split stake across configs whose difference is far
+  // larger than their error bars, and they compete for the same board. V2's selector is left in
+  // the file but is no longer called.
+  const v2Legs = [];
+  const v2Slips = [];
   // SLIP_STRATEGY_V3 - independent parallel track. V2 is untouched.
   const v3Legs = await autoSelectStrategyV3Legs(env).catch(() => []);
   const v3Slips = [];
