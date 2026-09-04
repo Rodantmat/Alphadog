@@ -184,6 +184,32 @@ async function runJob(input, env) {
       season, calendar_final_games: Number(calendarFinal[0]?.c || 0), logged_games: Number(loggedGames[0]?.c || 0),
       missing_games_sample: missingGames, is_complete: Number(calendarFinal[0]?.c || 0) === Number(loggedGames[0]?.c || 0),
     };
+
+    // Real gap closed (2026-09-04, final coverage pass): this check was designed but never
+    // actually implemented until now - identifies logged games that still lack starter-status
+    // or officials data, so a follow-up per-game backfill run knows exactly which game_ids to
+    // target instead of needing to re-scan the whole season.
+    const missingStarterStatus = await sql`
+      SELECT g.game_id, g.game_date, g.home_team_tricode, g.away_team_tricode
+      FROM nba_stats.player_game_log g
+      LEFT JOIN (SELECT DISTINCT game_id FROM nba_stats.player_game_starter_status) s ON s.game_id = g.game_id
+      WHERE g.season = ${season} AND s.game_id IS NULL
+      GROUP BY g.game_id, g.game_date, g.home_team_tricode, g.away_team_tricode
+      ORDER BY g.game_date DESC LIMIT 20
+    `;
+    const missingOfficials = await sql`
+      SELECT g.game_id, g.game_date, g.home_team_tricode, g.away_team_tricode
+      FROM nba_stats.player_game_log g
+      LEFT JOIN (SELECT DISTINCT game_id FROM nba_stats.game_officials) o ON o.game_id = g.game_id
+      WHERE g.season = ${season} AND o.game_id IS NULL
+      GROUP BY g.game_id, g.game_date, g.home_team_tricode, g.away_team_tricode
+      ORDER BY g.game_date DESC LIMIT 20
+    `;
+    completeness.per_game_data_gaps = {
+      games_missing_starter_status_sample: missingStarterStatus,
+      games_missing_officials_sample: missingOfficials,
+      note: "These per-game endpoints (boxscoretraditionalv3/boxscoresummaryv3) are not re-fetched by this worker automatically - this list tells you exactly which game_ids a follow-up per-game backfill run needs to target.",
+    };
   }
 
   await sql.end();
