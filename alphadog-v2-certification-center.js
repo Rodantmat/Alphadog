@@ -4360,8 +4360,7 @@ async function autoSelectStrategyV3Legs(env) {
                          = 'under_or_over' THEN 1 ELSE 0 END AS ua
         FROM score.board_prepared_current b
         WHERE b.source_key = 'prizepicks' AND b.resolved_mlb_player_id IS NOT NULL
-          AND b.canonical_prop_key IN ('pitcher_strikeouts','walks_allowed','total_bases','runs',
-                                       'earned_runs','hits_runs_rbis','doubles')
+          AND b.canonical_prop_key IN ('pitcher_strikeouts','walks_allowed','total_bases','runs','earned_runs')
       ),
       t AS (SELECT * FROM raw WHERE ot IS NOT NULL),
       vis AS (SELECT pid, prop, MIN(ln) a FROM t WHERE ot='standard' GROUP BY 1,2),
