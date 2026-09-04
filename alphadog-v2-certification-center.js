@@ -4923,7 +4923,10 @@ async function apiHighHitSlips(env, request) {
   const v3UsedIds = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   // V3 reserve is for DISPLAY and equal-rank swaps only. V3 SHRINKS on unavailability - it must
   // never backfill from here, because these legs sit beyond the per-cell cap and measurably dilute.
-  const v3BackupPool = v3Legs.filter(l => !v3UsedIds.has(l.board_row_id)).slice(0, 8);
+  // V3 has NO reserve. Substitutions are off and slips are full-6-only, so a backup pool would
+  // only invite a swap that measurably hurts: substituting drops leg accuracy 97.50% -> 93.89%
+  // because every backup leg sits beyond its cell's cap. If a leg is unavailable, drop the slip.
+  const v3BackupPool = [];
   const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
     .concat(backupPool.map(l => l.mlb_player_id))
