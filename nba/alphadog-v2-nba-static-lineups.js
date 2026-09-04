@@ -65,7 +65,7 @@ async function runJob(input, env) {
     for (const batch of chunk(rows, BATCH_SIZE)) {
       await sql`
         INSERT INTO nba_team.lineup_profile ${sql(batch, "group_quantity", "group_id", "player_ids", "group_name", "team_id", "season", "gp", "w", "l", "w_pct", "min", "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct", "oreb", "dreb", "reb", "ast", "tov", "stl", "blk", "blka", "pf", "pfd", "pts", "plus_minus", "source_key")}
-        ON CONFLICT (group_quantity, group_id, season) DO UPDATE SET
+        ON CONFLICT (group_quantity, group_id, team_id, season) DO UPDATE SET
           player_ids=excluded.player_ids, group_name=excluded.group_name, team_id=excluded.team_id,
           gp=excluded.gp, w=excluded.w, l=excluded.l, w_pct=excluded.w_pct, min=excluded.min,
           fgm=excluded.fgm, fga=excluded.fga, fg_pct=excluded.fg_pct, fg3m=excluded.fg3m, fg3a=excluded.fg3a,
