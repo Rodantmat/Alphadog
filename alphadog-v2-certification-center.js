@@ -4315,6 +4315,8 @@ async function autoSelectStrategyV2Legs(env) {
       FROM ranked r
       WHERE r.rk <= 2
       ORDER BY r.sig DESC, r.player_name
+    `);
+    return rows;
   } finally {
     await pg.end({ timeout: 1 }).catch(() => {});
   }
