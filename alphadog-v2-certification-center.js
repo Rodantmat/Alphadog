@@ -4525,7 +4525,7 @@ async function apiHighHitSlips(env, request) {
         source_key: "prizepicks",
         slip_type: n + "-pick",
         slip_size: n,
-        structure_label: n + "-pick Power (SLIP_STRATEGY_V2: hits/singles/TB-t3/doubles/SB/HA)",
+        structure_label: n + "-pick Power (SLIP_STRATEGY_V2: hits/singles/TB-t3/doubles/SB, cap 2)",
         entry_mode: "power",
         selected_leg_count: n,
         estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
