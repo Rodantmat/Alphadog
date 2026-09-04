@@ -53,7 +53,7 @@ async function runJob(input, env) {
       .filter(x => x && x.group_id && x.group_quantity)
       .map(x => ({
         group_quantity: toIntOrNull(x.group_quantity), group_id: x.group_id,
-        player_ids: (x.player_ids || []).map(p => `nba_${p}`), group_name: x.group_name,
+        player_ids: sql.array((x.player_ids || []).map(p => `nba_${p}`)), group_name: x.group_name,
         team_id: x.team_id ? `nba_${x.team_id}` : null, season,
         gp: toIntOrNull(x.gp), w: toIntOrNull(x.w), l: toIntOrNull(x.l), w_pct: x.w_pct, min: x.min,
         fgm: x.fgm, fga: x.fga, fg_pct: x.fg_pct, fg3m: x.fg3m, fg3a: x.fg3a, fg3_pct: x.fg3_pct,
