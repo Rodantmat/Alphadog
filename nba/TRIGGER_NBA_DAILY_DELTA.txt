@@ -1,0 +1,3 @@
+Trigger for nba-daily-delta.yml
+last_triggered_utc: 2026-09-04T18:40:00Z
+trigger_reason: first mechanical test of the daily delta ingestion pipeline against the current (not-yet-started) 2026-27 season - expect 0 rows, 0 errors, verifying the pipeline runs cleanly before the season begins
