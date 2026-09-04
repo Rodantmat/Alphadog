@@ -4299,7 +4299,7 @@ async function autoSelectStrategyV2Legs(env) {
         FROM cells c
       ),
       ranked AS (
-        SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell ORDER BY s.sig DESC, s.player_name) rk
+        SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell ORDER BY s.sig DESC, s.player_name, s.pid) rk
         FROM scored s
         WHERE s.sig IS NOT NULL
           AND ((s.sigtype='propline' AND s.sn >= 3) OR (s.sigtype='deep' AND s.sn >= 10))
