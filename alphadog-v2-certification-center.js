@@ -4264,10 +4264,9 @@ async function autoSelectStrategyV2Legs(env) {
         FROM sided s JOIN (VALUES
           ('hits',1,'over','less','hits t1','propline',1.1583),
           ('singles',1,'over','less','singles t1','propline',1.1583),
-          ('stolen_bases',0,'over','less','stolen_bases t0','propline',1.1583),
-          ('total_bases',3,'over','less','total_bases t3','deep',1.1583),
-          ('doubles',0,'over','less','doubles t0','deep',1.1247),
-          ('hits_allowed',2,'under','more','hits_allowed t2','propline',1.1832)
+          ('stolen_bases',0,'over','less','stolen_bases t0','deep',1.1583),
+          ('total_bases',3,'over','less','total_bases t3','propline',1.1583),
+          ('doubles',0,'over','less','doubles t0','deep',1.1247)
         ) AS c(p,tr,d,sd,cell,sigtype,mult)
           ON c.p=s.prop AND c.tr=s.tier AND c.d=s.dir AND c.sd=s.side
         WHERE s.g = 1
