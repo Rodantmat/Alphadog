@@ -4700,8 +4700,11 @@ async function apiHighHitSlips(env, request) {
     //   drop 30%: shrink +81.7%              vs substitute +73.6%
     // Substitutes pull from BEYOND the per-cell cap and drop leg accuracy 97.50% -> 93.89%.
     //
-    // MIN_SZ === SZ means a slip is built only when 6 qualifying legs exist. If a leg becomes
-    // unavailable at placement time, DROP THE SLIP - do not shrink it and do not backfill.
+    // MIN_SZ === SZ means a slip is BUILT only when 6 qualifying legs exist, so spare legs never
+    // become a leftover 2nd or 3rd slip. This is a BUILD-time rule only.
+    // AT PLACEMENT it is the opposite: if a leg goes unavailable, SHRINK and play the slip. A
+    // shrunk slip is still strongly +EV (5 legs 1.887x at 83.5% win = +57.6%, 4 legs 1.662x at
+    // 86.6% = +43.9%), so dropping it forfeits real value. Just never backfill the empty spot.
     const SZ = 6, MIN_SZ = 6, MAX_SLIPS = 3;
     const used = new Set();
     while (v3Slips.length < MAX_SLIPS) {
