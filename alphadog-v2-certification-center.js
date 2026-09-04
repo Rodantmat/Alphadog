@@ -4782,7 +4782,7 @@ async function apiHighHitSlips(env, request) {
       for (const l of legs) hp *= (Number(l.hit_probability_0_100) || 0) / 100;
       const cellMix = {};
       for (const l of legs) cellMix[l.strategy_cell] = (cellMix[l.strategy_cell] || 0) + 1;
-      v2Slips.push({
+      v2SlipsDisabled.push({
         client_slip_id: makeUiId("high_hit_slip_v2"),
         source_key: "prizepicks",
         slip_type: n + "-pick",
