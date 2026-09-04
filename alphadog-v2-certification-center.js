@@ -4476,15 +4476,19 @@ async function apiHighHitSlips(env, request) {
   //  - The 1.1417 per-leg rate is measured on DOUBLES and applied to every prop; home_runs /
   //    stolen_bases / rbis are unmeasured and likely price lower, so ROI is optimistic.
   // Minimum stake until real placed results accumulate.
-  const ppSlipsAll = ppLegs.length >= BASELINE_HP_SIZE ? buildMixedTop55Slips(ppLegs) : [];
-  // SLIP_STRATEGY_V2 - PARALLEL track. Independent cell set, its own selector, its own 6-pick
-  // Power slips. V1 stays exactly as it was; this ADDS to the response rather than replacing it.
-  // V2 legs carry their own per-leg mult (leg_mult) so the slip multiplier is the true product of
-  // measured rates, not the shared per-prop table V1 uses.
+  // V1 (autoSelectMixedTop55Legs / buildMixedTop55Slips) is DISABLED as of 2026-09-04.
+  // Measured deterministically over 25 days: +13.2% ROI on 32 slips, 88.28% leg accuracy, but it
+  // spent 13 of 25 days UNDERWATER and bottomed at -$4.00 (12.5% of stake) before turning. Its two
+  // best cells (doubles t0, pitcher_strikeouts t2) were tested inside V2 and made it WORSE - adding
+  // pitcher cells drops leg accuracy 92.08% -> 90.67% and ROI 30.5% -> 21.2%, because the pitcher
+  // pools are shallow (98-174 legs vs doubles' 2,790) and displace stronger hitter legs.
+  // Earlier readings of +25.9%/+31.5% for V1 were tie-break artifacts: many legs share sig=1.0000
+  // and the sort was not deterministic. All figures here use ORDER BY sig DESC, cell, pid.
+  const ppSlipsAll = [];
   const v2Legs = await autoSelectStrategyV2Legs(env).catch(() => []);
   const v2Slips = [];
   {
-    const V2_SIZE = 6, V2_MIN = 4, V2_MAX_SLIPS = 2;
+    const V2_SIZE = 5, V2_MIN = 4, V2_MAX_SLIPS = 2;
     const used = new Set();
     while (v2Slips.length < V2_MAX_SLIPS) {
       const avail = v2Legs.filter(l => !used.has(l.board_row_id));
