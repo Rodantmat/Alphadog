@@ -4674,14 +4674,29 @@ async function apiHighHitSlips(env, request) {
   const v3Legs = await autoSelectStrategyV3Legs(env).catch(() => []);
   const v3Slips = [];
   {
-    // SHRINK, NOT SUBSTITUTE - measured on this exact config at four unavailability rates:
-    //   drop  0%: shrink +95.7%  vs substitute +81.4%
-    //   drop 10%: shrink +85.5%  vs substitute +81.5%
-    //   drop 20%: shrink +66.6%  vs substitute +39.2%
-    //   drop 30%: shrink +71.8%  vs substitute +61.9%
-    // Shrink wins at every rate. Backup legs necessarily come from BEYOND the per-cell cap, and
-    // those ranks dilute - leg accuracy drops 95.5% -> 93.9% the moment substitutes are allowed.
-    const SZ = 6, MIN_SZ = 4, MAX_SLIPS = 3;
+    // FULL 6-PICKS ONLY. No leftover slips, no substitutions. Both were measured on this exact
+    // six-cell config over 22-30 real snapshot days:
+    //
+    // LEFTOVERS - profitable but ROI-dilutive, so they are OFF:
+    //   6-pick only      33 slips / 22 days / 96.46% leg acc / +$31.77 / +96.3% ROI
+    //   + leftover >=5   35 slips / 23 days / 95.67%          / +$31.82 / +90.9%
+    //   + leftover >=4   45 slips / 28 days / 95.56%          / +$37.82 / +84.0%
+    //   + leftover >=3   47 slips / 29 days / 95.67%          / +$38.90 / +82.8%
+    //   + leftover >=2   51 slips / 30 days / 95.04%          / +$38.73 / +75.9%
+    // Leftovers add ~22% more absolute profit but cost 13.5 ROI points. Since stake scales to
+    // ROI, full slips compound faster. Note >=2 makes LESS money than >=3 - two-leg slips are
+    // strictly bad.
+    //
+    // SUBSTITUTIONS - worse at nearly every unavailability rate, so they are OFF:
+    //   drop  0%: shrink +77.2% (97.50% acc) vs substitute +69.4% (93.89% acc)
+    //   drop 10%: shrink +68.1%              vs substitute +72.2%   <- only reversal, 13-15 slips
+    //   drop 20%: shrink +76.9%              vs substitute +65.6%
+    //   drop 30%: shrink +81.7%              vs substitute +73.6%
+    // Substitutes pull from BEYOND the per-cell cap and drop leg accuracy 97.50% -> 93.89%.
+    //
+    // MIN_SZ === SZ means a slip is built only when 6 qualifying legs exist. If a leg becomes
+    // unavailable at placement time, DROP THE SLIP - do not shrink it and do not backfill.
+    const SZ = 6, MIN_SZ = 6, MAX_SLIPS = 3;
     const used = new Set();
     while (v3Slips.length < MAX_SLIPS) {
       const avail = v3Legs.filter(l => !used.has(l.board_row_id));
