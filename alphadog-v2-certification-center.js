@@ -4456,10 +4456,19 @@ async function apiHighHitSlips(env, request) {
   //   PrizePicks -> autoSelectMixedTop55Legs  (total_bases 3.5 + home_runs 0.5, 6-pick, top 10%)
   //   Sleeper    -> autoSelectSleeperHighHitSlipLegs (sharp divergence >=3pp, pool floor 6, 3-pick)
   //   Underdog   -> handled by the v3 constants; baseline call removed here
-  const [sleeperLegs, ppLegs] = await Promise.all([
-    autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectMixedTop55Legs(env, "prizepicks")
+  // Live tracks after this change:
+  //   PrizePicks -> autoSelectStrategyV2Legs ONLY (5 hitter cells, cap 2, 5-pick Power)
+  //   Sleeper    -> autoSelectSleeperHighHitSlipLegs (sharp divergence >=3pp, pool floor 6, 3-pick)
+  //   Underdog   -> handled by the v3 constants; baseline call removed here
+  //
+  // autoSelectMixedTop55Legs is NO LONGER CALLED. Disabling V1's slip building alone was not
+  // enough - the selector still ran inside this Promise.all and blew the 8s Hyperdrive timeout
+  // (HARD_QUERY_TIMEOUT_8000MS), taking the whole endpoint down with it. The function is kept in
+  // the file for reference but nothing invokes it.
+  const [sleeperLegs] = await Promise.all([
+    autoSelectSleeperHighHitSlipLegs(env)
   ]);
+  const ppLegs = [];
   const udLegs = [];   // DISABLED - superseded by Underdog v3 sharp divergence
   const slLegs = [];   // DISABLED - superseded by Sleeper v3 sharp divergence
   // RE-ENABLED 2026-08-27: PrizePicks Goblin returns with an entirely new selection layer. The
