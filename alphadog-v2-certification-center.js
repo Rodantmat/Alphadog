@@ -4440,6 +4440,17 @@ async function autoSelectStrategyV3Legs(env) {
       ranked AS (
         SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell ORDER BY s.sig DESC, s.player_name, s.pid) rk
         FROM scored s WHERE s.sig IS NOT NULL AND s.sn >= 10
+          -- ABSOLUTE SIGNAL FLOOR. Measured across 502 selected legs, the signal LEVEL separates
+          -- cleanly where rank does not: sig>=95 hits 96.8%, 90-95 hits 96.4%, 85-90 hits 94.1%,
+          -- but sig<85 hits only 89.9%. Rank within cell is flat (rk1 93.5%, rk2 91.9%, rk3 92.0%,
+          -- rk4 94.1%) so ranking alone cannot drop the weak legs.
+          -- A floor of 80 keeps overall ROI identical (+103.0%) while lifting leg accuracy
+          -- 94.52% -> 95.00% and the recent-window ROI from +55.0% to +65.6%. Higher floors were
+          -- tested and are non-monotonic on small samples (85 -> +65.8%, 88 -> +43.4%, 90 -> +61.3%),
+          -- so 80 is the last floor with enough volume to trust.
+          -- The floor is ABSOLUTE, not relative, which is the point: on a thin day it refuses to
+          -- play rather than taking the best of a weak pool.
+          AND s.sig >= 80
       )
       SELECT 'v3|' || r.pid::text || '|' || r.prop || '|' || r.ln::text || '|' || r.side AS board_row_id,
         'prizepicks' AS source_key, r.gp AS game_pk, r.gt AS official_game_time_utc,
