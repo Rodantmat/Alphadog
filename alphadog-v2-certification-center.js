@@ -7938,7 +7938,7 @@ function extractAppScriptV2() {
   const at = base.indexOf(marker);
   if (at < 0) return base;   // marker gone - serve the original, never break the page
   const patch = [
-    "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0}",
+    "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0||String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V3')>=0}",
     "var __v1PoolLegal=poolLegIsLegalForSlip;",
     "poolLegIsLegalForSlip=function(leg,keptLegs,slip){if(slipIsV2(slip))return false;return __v1PoolLegal(leg,keptLegs,slip)};",
     "function v2LiveMultiplier(slip,slipIdx){",
