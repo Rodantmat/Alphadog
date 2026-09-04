@@ -32,10 +32,10 @@ jobs:
       - name: Install tools
         run: python -m pip install --upgrade pip curl_cffi
 
-      - name: Backfill per-game officials (2025-26 only)
+      - name: Patch missing games (one-off recovery)
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
-        run: python nba/scrape_nba_game_officials.py
+        run: python nba/patch_missing_officials.py
         continue-on-error: true
 
       - name: Commit officials JSON to main
