@@ -17,6 +17,7 @@
     "alphadog-v2-nba-static-backfill",
     "alphadog-v2-nba-static-starter-status",
     "alphadog-v2-nba-static-game-officials",
-    "alphadog-v2-nba-static-lineups"
+    "alphadog-v2-nba-static-lineups",
+    "alphadog-v2-nba-daily-delta"
   ]
 }
