@@ -76,8 +76,9 @@ def main():
 
     new_rows = []
     still_failing = []
+    debug = {}
     for gid in MISSING_GAME_IDS:
-        rows, error = fetch_game(gid, proxies)
+        rows, error = fetch_game(gid, proxies, debug)
         if rows:
             new_rows.extend(rows)
             print(f"{gid}: recovered {len(rows)} officials")
@@ -85,6 +86,8 @@ def main():
             still_failing.append({"game_id": gid, "error": error})
             print(f"{gid}: STILL FAILING - {error}")
         time.sleep(1)
+
+    Path("nba/data/nba_officials_debug_raw.json").write_text(json.dumps(debug, indent=2), encoding="utf-8")
 
     merged_rows = existing_rows + new_rows
     OUTPUT_PATH.write_text(json.dumps({"rows": merged_rows}, indent=2), encoding="utf-8")
