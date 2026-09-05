@@ -195,19 +195,50 @@ Sleeper Flex is a genuine **round-robin decomposition**, not a separate pricing 
 
 ## 6. UNDERDOG — Real Multiplier Mechanics and History
 
-### Real published table (confirmed current, verified 2026-08-17 official source)
+### ⚠️ MAJOR CORRECTION 2026-09-05 — THE FLAT-DISCOUNT MODEL IS WRONG. DO NOT USE IT.
+
+**Underdog does NOT apply a flat discount to a published table. It uses DYNAMIC PER-LEG pricing, the same mechanism as Sleeper.** Every strategy in this section that was priced off `published × 0.6865` is overstated by 3-5x and is NOT profitable.
+
+**Evidence — six real placed 4-pick slips, all legs `rbis 0.5 less`, from `score.slip_entries`:**
+`1.82, 1.85, 2.01, 2.04, 2.06, 2.28` — mean **2.010x**, implying **1.1907 per leg**.
+
+| Model | 4-pick | Per-leg | Overstates by |
+|---|---|---|---|
+| Published table | 12.00x | 1.8612 | **+497%** |
+| Published x 0.6865 | 8.24x | 1.6943 | **+310%** |
+| **REAL placed slips** | **2.010x** | **1.1907** | — |
+
+The single slip previously logged as "came back at only 2.35x against a 24.03x estimate" was NOT an anomaly. It was correct, and it should have invalidated the flat-discount model then.
+
+**Why the 0.6865 was wrong:** it was derived from 10 six-pick observations when the published rate was 35x. Underdog now prices each leg to its own difficulty - an easy `rbis 0.5 less` pays ~1.19/leg, not the ~1.86 a flat table implies. A single scalar cannot represent that. Same lesson as PrizePicks goblins: the per-leg rate depends on how easy the specific line is.
+
+**Implied 6-pick at 1.1907/leg = 2.85x, not 24.03x — an 8.4x overstatement.**
+
+### Consequence for the "locked" strategies below — BOTH ARE DEAD
+
+| Strategy | As documented | Repriced on real multipliers |
+|---|---|---|
+| `rbis/less` + `walks/less`, 6-pick, cap 1 | +345.0% | **-10.0%** |
+| Sleeper `hits_runs_rbis/more`, 3-pick | +46.5% | **-13.1%** |
+
+The Underdog 6-pick sweeps 12 of 38 (31.6%) on clean deduped data, which needs **3.17x to break even**. Real payout is ~2.85x.
+
+The Sleeper figure used 1.638/leg from a live board; the validated formula `1 + (dec-1) x 0.95` gives **1.462** on this line mix. At 1.638 and 12 wins the +46.5% reproduces exactly, so the method replicates - the multiplier input was the error.
+
+### ⚠️ ALSO: every backtest in this file built from a join to `score.prop_outcome_history` must be re-checked for DUPLICATE FAN-OUT.
+That table carries multiple rows per (player, date, prop, line, side) - one per intraday board refresh. Joining without `DISTINCT ON` inflates leg counts ~3-10x and lets `ROW_NUMBER` hand consecutive rank slots to COPIES OF THE SAME PLAYER. Measured 2026-09-05: a PrizePicks pool went 281,409 rows -> 27,364 real legs, and 18 of 32 "6-pick" slips were two players repeated three times each. Dedup key is `(source_key, date, player, prop, line, side)`. Symptoms: leg accuracy near 99%, almost every day perfect, no drawdown, and observed sweep rate far above `leg_acc ^ size`.
+
+### Real published table (2026-08-17) — KEPT FOR REFERENCE ONLY, DOES NOT PREDICT REAL PAYOUTS
 Standard: `2:3.5, 3:6.5, 4:12, 5:20, 6:35, 7:65, 8:120`
 Flex (full table, all sizes): `3:{3:3.25,2:1.09}`, `4:{4:6,3:1.5}`, `5:{5:10,4:2.5}`, `6:{6:25,5:2.6,4:0.25}`, `7:{7:40,6:2.75,5:0.5}`, `8:{8:80,7:3,6:1}`
 
-### Real, confirmed discount factor
-Real placed multipliers run at only **~68.65%** of the published table (`UNDERDOG_REAL_DISCOUNT = 0.6865`), derived from 10 real 6-pick observations averaging 3.75x actual against a 35x published rate at the time. This is a FLAT discount applied once to the published number — NOT a compounding per-leg ratio like Goblin, and NOT genuine dynamic per-leg pricing like Sleeper. Applying published × 0.6865 gives: `2:2.40, 3:4.46, 4:8.24, 5:13.73, 6:24.03`.
+### SUPERSEDED — the flat discount factor (do not use)
+Real placed multipliers were once measured at ~68.65% of the published table (`UNDERDOG_REAL_DISCOUNT = 0.6865`) from 10 real 6-pick observations. **This is now disproven** - see the correction above. Any figure derived from it is wrong by 3-5x.
 
-**Real, live correction found 2026-08-21**: even this discounted number can be significantly off for a SPECIFIC real slip depending on prop mix — one real placed slip came back at only 2.35x against a 24.03x estimate. Treat the discounted table as a starting estimate, always overwrite with the real number once placed.
-
-### Real historical strategy generations
+### Real historical strategy generations — ALL ROI FIGURES BELOW ARE UNRELIABLE
 1. **(2026-08-17)** Mixed 5-line pool (`hits_allowed`, `rfi_nrfi`, `walks`, `runs_allowed`), 6-pick Flex, cap=1/day. Real 8-day backtest: -6.8%.
-2. **Real depth-gate discovery**: gating on `hits_allowed` depth ≥6 legs (skip the day entirely below that) flipped it to **+181.3%** — a real, clean, structural signal (depth≥6 = 2/2 real wins, depth<6 = 0/6, perfect split across 8 real days). Real mechanism: below depth, the builder was forced to dilute with much weaker `rbis`/`walks` legs (63-74% real) to fill 6 slots — Underdog's pool ranks across 5 different prop types, so thin depth in the strongest prop directly degrades slip quality. **This depth-gate concept generalizes and should be tested against whatever pool is currently locked.**
-3. **(2026-08-21, current, locked)**: `rbis/less` + `walks/less`, 6-pick, Power, cap=1/day. Real 27-day backtest: 715 slips uncapped → 98 full hits (+229.4%); at the locked cap=1/day: 27 slips, 5 full hits, **+345.0%**. Massive real sample underlying this (4,553 and 4,340 real graded outcomes for the two props respectively) — the largest, most statistically solid signal found anywhere this session.
+2. **Real depth-gate discovery**: gating on `hits_allowed` depth >=6 legs flipped it to +181.3% (depth>=6 = 2/2 wins, depth<6 = 0/6 across 8 days). **The DEPTH-GATE CONCEPT still generalizes and is worth testing** - thin depth in the strongest prop forces dilution with weaker legs. The ROI number itself is not trustworthy.
+3. **(2026-08-21)** `rbis/less` + `walks/less`, 6-pick, Power, cap=1/day. Logged as +345.0%. **Repriced: -10.0%. Dead.**
 
 ---
 
