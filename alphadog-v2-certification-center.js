@@ -4433,12 +4433,32 @@ async function autoSelectStrategyV3Legs(env) {
           --   hits_runs_rbis t2/less 93.3% vs 91.1% breakeven at 1.0973 = +2.4% EV. Marginal.
           -- Removing both raised ROI +75.0% -> +96.3%, recent window +42.2% -> +65.5%,
           -- leg accuracy 95.00% -> 96.46% and sweep rate 82.0% -> 87.9%. Six cells beat eight.
+          -- CONFIG A, 2026-09-05. Five cells. earned_runs t2/more DROPPED and caps widened on the
+          -- rest. Measured: 32 slips / 21 days / 98.96% leg accuracy / 31 of 32 slips won /
+          -- +106.8% ROI. Train +106.9% vs TEST +106.8% - identical to 0.1pt. Bootstrap 100%
+          -- positive, 95% CI [+89.3%, +119.0%], 20/21 profitable days, best-day share 9.8%.
+          --
+          -- WHY earned_runs WAS DROPPED despite being +3.7% EV/leg in isolation: in an
+          -- all-or-nothing parlay the WEAKEST leg dominates. At 89.8% it cut slip win probability
+          -- more than its 1.1548 multiplier added. Removing it moved leg accuracy 96.46% ->
+          -- 98.96% and sweep 87.9% -> 96.9%. Positive EV per leg is NOT sufficient for inclusion:
+          -- a leg must beat the AVERAGE of what is already in the slip, not merely breakeven.
+          --
+          -- Its signal assignment was also wrong, which is worth recording. On the LIVE signal
+          -- earned_runs is non-monotonic and mostly negative (90-95 band delivers 73.5%, 85-90
+          -- delivers 61.3%). On the REBUILT signal it is clean (>=95 -> 100% on 13 legs, 90-95 ->
+          -- 92.6% on 68). Switching it to rebuilt with a floor of 90 scored +97.8% and added 6
+          -- slips and $2.97 more absolute profit - a real alternative if volume is wanted over
+          -- rate. Dropping it still won by 9 points, and that gap held in both halves.
+          --
+          -- Caps widened from the earlier 2/4 pattern: walks_allowed t1 improves MONOTONICALLY
+          -- with depth (93.8 at cap1 -> 98.6 at cap6) so it takes 6; total_bases t3 and runs t1
+          -- peak at cap3. Widening every cap uniformly was tested and lost (+88.1%).
           ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',4,1.1749),
-          ('walks_allowed',1,'more','walks_allowed t1/more','live',2,1.1089),
-          ('walks_allowed',2,'more','walks_allowed t2/more','live',4,1.1089),
-          ('earned_runs',2,'more','earned_runs t2/more','live',4,1.1548),
-          ('total_bases',3,'less','total_bases t3/less','reb',2,1.1583),
-          ('runs',1,'less','runs t1/less','reb',2,1.1067)
+          ('walks_allowed',1,'more','walks_allowed t1/more','live',6,1.1089),
+          ('walks_allowed',2,'more','walks_allowed t2/more','live',6,1.1089),
+          ('total_bases',3,'less','total_bases t3/less','reb',3,1.1583),
+          ('runs',1,'less','runs t1/less','reb',3,1.1067)
         ) AS c(p,tr,sd,cell,src,cap,mult)
           ON c.p=s.prop AND c.tr=s.tier AND c.sd=s.side
         WHERE s.g = 1
