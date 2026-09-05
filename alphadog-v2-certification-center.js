@@ -4481,6 +4481,16 @@ async function autoSelectStrategyV3Legs(env) {
       )
       SELECT 'v3|' || r.pid::text || '|' || r.prop || '|' || r.ln::text || '|' || r.side AS board_row_id,
         'prizepicks' AS source_key, r.gp AS game_pk, r.gt AS official_game_time_utc,
+        -- Emit official_date explicitly. The /api/slips/save handler otherwise derives it as
+        -- String(official_game_time_utc).slice(0,10) - the raw UTC calendar date - which is WRONG
+        -- for night games: a 2026-09-04 evening game starting 00:10 UTC on 09-05 was stored as
+        -- 09-05 and could never join score.prop_outcome_history, so it sat "pending" forever while
+        -- the app showed it settled. Confirmed on 19 legs from 2026-09-04.
+        -- MLB's official date is the US date, so shift back 8h: 00:00-07:59 UTC maps to the
+        -- previous day, day games are untouched. Supplying it here means the save path's fallback
+        -- never fires for V3. (The three duplicate save handlers still carry the bug for other
+        -- tracks - they are byte-identical and cannot be patched individually.)
+        (r.gt::timestamptz - interval '8 hours')::date AS official_date,
         r.player_name, r.pid AS mlb_player_id, r.prop AS canonical_prop_key,
         r.ln AS line_value, r.side AS selected_side,
         round(r.sig::numeric, 2) AS hit_probability_0_100,
