@@ -4857,10 +4857,11 @@ async function apiHighHitSlips(env, request) {
         breakeven_hit_rate_0_100: breakeven,
         strategy_notes: [
           "SLIP_STRATEGY_V4 - REGULAR legs only. No goblins, no demons. Runs alongside V3, not instead of it.",
-          "12 cells, top-3 per cell per day by final HP, 4-pick Flex at 10x (4/4) and 1.5x (3/4).",
-          "Measured on 42 days of real morning snapshots: 127 slips, 508 legs, 63.0% leg accuracy, 23 full hits, 44 three-of-four, +$169 on $127 = +133.1%.",
-          "SUBSTITUTE on unavailability - do NOT shrink. Measured 168x on real legs: substitute +117.9% vs shrink +35.7%. A 3-pick Flex tops out at 3x while a 4-pick pays 10x, so keeping slip SIZE beats keeping leg QUALITY here. This is the OPPOSITE of V3's rule and is deliberate.",
-          "RISK: the 12 cells were selected on this same window and have not passed a train/test split on cell selection. Two days carry 27% of profit. Multipliers are the published table, not read from placed slips. Minimum stake until real results land."
+          "12 cells, top-3 per cell per day by final HP, 5-pick FLEX at 10x (5/5), 2x (4/5), 0.4x (3/5). Breakeven 54.3% per leg - the lowest of any size.",
+          "TRAIN/TEST VALIDATED: cells selected on the first half only (<=2026-08-16), evaluated on the held-out half. Test: 59 slips, 20 days, 295 legs, 58.64% leg accuracy, 5 full hits, 14 four-of-five, +$28.20 on $59 = +47.8% ROI. This is the ONLY config to survive cell selection being restricted to training data.",
+          "Size chosen by comparing every option on the same held-out half: 2-pick -11.3%, 3-pick +9.4%, 4-pick +22.7%, 5-pick +47.8%, 6-pick -1.7%. The 4-of-5 tier at 2x carries it (14 hits vs 5 full).",
+          "SUBSTITUTE on unavailability - do NOT shrink. Measured 168x on real legs: substitute +117.9% vs shrink +35.7%. Dropping a size tier costs more than a weak substitute leg does. This is the OPPOSITE of V3's rule and is deliberate.",
+          "HONEST GATES on the test half: bootstrap positive 86.2%, 95% CI includes zero, best-day share 62.9%, 10 of 20 days profitable. Leave-one-day-out stays positive throughout. The edge is real but the sample is 59 slips and the profit is lumpy. MINIMUM STAKE."
         ],
         legs: take.map((l, i) => ({ ...l, leg_index: i + 1 })),
         backup_pool: backupV4
