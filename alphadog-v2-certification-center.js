@@ -5174,8 +5174,8 @@ async function apiHighHitSlips(env, request) {
   // track built above, which uses an entirely different signal and correct moneyline pricing.
   const sleeperSlips = slBaselineSlips;
   const demonSlips = []; // PAUSED - see comment above.
-  const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length + slLegs.length + v2Legs.length + v3Legs.length;
+  const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...udSlips, ...sleeperSlips];
+  const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length + slLegs.length + v2Legs.length + v3Legs.length + v4Legs.length;
   if (!generated_slips.length) {
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], notes: [`No leg currently on the board qualifies right now - board may still be filling in for the day. PrizePicks Goblin (total_bases LESS, trailing>=${PP_TRAILING_MIN}%) found ${ppLegs.length} leg(s), needs ${BASELINE_HP_SIZE}. Underdog (divergence>=${Math.round(UD_DIVERGENCE_MIN*100)}pp) found ${udLegs.length} leg(s), needs ${UD_SLIP_SIZE}. Sleeper (top ${Math.round((1-SL_PERCENTILE)*100)}%) found ${slLegs.length} leg(s), needs ${SL_SLIP_SIZE}. Demon remains paused.`] });
   }
