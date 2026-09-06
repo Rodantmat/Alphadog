@@ -4849,6 +4849,7 @@ async function apiHighHitSlips(env, request) {
         slip_type: n + "-pick",
         slip_size: n,
         structure_label: n + "-pick Flex (SLIP_STRATEGY_V4: REGULARS ONLY, 12 cells, cap 3, SUBSTITUTE)",
+        entry_mode: "flex",
         selected_leg_count: n,
         estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
         estimated_multiplier: mult,
