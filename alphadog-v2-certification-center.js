@@ -4820,7 +4820,7 @@ async function apiHighHitSlips(env, request) {
   const v4Legs = await autoSelectStrategyV4Legs(env).catch(() => []);
   const v4Slips = [];
   {
-    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 3;
+    const SZ = 5, MIN_SZ = 5, MAX_SLIPS = 3;
     const usedV4 = new Set();
     while (v4Slips.length < MAX_SLIPS) {
       const avail = v4Legs.filter(l => !usedV4.has(l.board_row_id));
