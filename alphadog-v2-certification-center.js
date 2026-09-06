@@ -4348,6 +4348,75 @@ async function autoSelectStrategyV2Legs(env) {
 // hits t1/less and singles t1/less were REMOVED: they collapsed 95.9% -> 77.5% and 100% -> 87.5%
 // between the early and late window. Dropping them lifted recent-window ROI from +8.8% to +55.0%.
 // Worth re-testing in a few weeks - a two-week slump may be variance rather than decay.
+// SLIP_STRATEGY_V4 leg selector - REGULAR (standard) legs only.
+// Deliberately excludes goblins and demons: this track exploits a different inefficiency from V3.
+// V3 rides the flat goblin discount; V4 rides regular legs whose final-HP top-3 clear 62-63%
+// against a 4-pick Flex breakeven of ~55%.
+// Cells were chosen because their top-3-per-day rate held at or above 58% over 42 days with at
+// least 15 active days each. Pooled across all 12: 590 legs, 43 days, 13.7 legs/day, 62.0%.
+// NOTE the anchor is irrelevant here - a standard leg IS the anchor, so there is no tier logic.
+async function autoSelectStrategyV4Legs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH cells AS (
+        SELECT * FROM (VALUES
+          ('pitcher_fantasy_score',26.5,'less'), ('pitcher_fantasy_score',33.5,'less'),
+          ('pitcher_fantasy_score',27.5,'less'), ('fantasy_score',3.5,'less'),
+          ('fantasy_score',6.5,'less'),          ('fantasy_score',5.5,'less'),
+          ('fantasy_score',3.5,'more'),          ('pitcher_strikeouts',4.5,'more'),
+          ('pitcher_strikeouts',7.0,'less'),     ('pitcher_strikeouts',5.5,'less'),
+          ('hits_runs_rbis',0.5,'less'),         ('hits_runs_rbis',1.5,'more')
+        ) c(prop, ln, side)
+      ),
+      board AS (
+        SELECT b.player_name, b.resolved_mlb_player_id AS pid, b.official_game_pk AS gp,
+               b.canonical_prop_key AS prop, b.line_value AS ln, b.official_game_time_utc AS gt
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'prizepicks'
+          AND b.resolved_mlb_player_id IS NOT NULL
+          AND (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' = 'standard'
+          AND b.official_game_time_utc IS NOT NULL
+          AND b.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+      ),
+      matched AS (
+        SELECT bd.*, c.side,
+          (SELECT MAX(f.estimated_hit_probability_0_100) FROM score.final_board_current f
+             WHERE f.mlb_player_id = bd.pid AND f.canonical_prop_key = bd.prop
+               AND f.line_value = bd.ln AND f.selected_side = c.side) AS sig
+        FROM board bd
+        JOIN cells c ON c.prop = bd.prop AND c.ln = bd.ln
+      ),
+      ranked AS (
+        SELECT m.*, ROW_NUMBER() OVER (
+          PARTITION BY m.prop, m.ln, m.side ORDER BY m.sig DESC, m.player_name, m.pid) AS rk
+        FROM matched m WHERE m.sig IS NOT NULL
+      ),
+      capped AS (SELECT * FROM ranked WHERE rk <= 3),
+      one_per_player AS (
+        SELECT * FROM (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY sig DESC) AS pr FROM capped
+        ) z WHERE pr = 1
+      )
+      SELECT 'v4|' || pid::text || '|' || prop || '|' || ln::text || '|' || side AS board_row_id,
+        'prizepicks' AS source_key, gp AS game_pk, gt AS official_game_time_utc,
+        (gt::timestamptz - interval '8 hours')::date AS official_date,
+        player_name, pid AS mlb_player_id, prop AS canonical_prop_key,
+        ln AS line_value, side AS selected_side,
+        ROUND(sig::numeric, 2) AS hit_probability_0_100,
+        prop || ' ' || ln::text || ' ' || side AS cell_label, rk AS cell_rank
+      FROM one_per_player
+      ORDER BY sig DESC, prop, pid
+      LIMIT 40
+    `, []);
+    return rows || [];
+  } catch (_) {
+    return [];
+  } finally {
+    try { await pg.end(); } catch (_) {}
+  }
+}
+
 async function autoSelectStrategyV3Legs(env) {
   const pg = pgClient(env);
   try {
