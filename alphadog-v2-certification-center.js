@@ -4707,6 +4707,89 @@ async function apiHighHitSlips(env, request) {
   const v2Legs = [];
   const v2Slips = [];
   // SLIP_STRATEGY_V3 - independent parallel track. V2 is untouched.
+  // SLIP_STRATEGY_V4 - SECOND independent track. V3 above is untouched and keeps its own stake.
+  //
+  // WHAT IT IS: REGULAR (standard) legs only - NO goblins, NO demons. 12 cells, top-3 per cell per
+  // day by final HP, 4-pick FLEX. Verified 590/590 legs carry odds_type='standard'.
+  //
+  // WHY IT IS SEPARATE FROM V3: V3 exploits the flat GOBLIN discount (a fixed markdown that does
+  // not adjust per player, so genuinely high-probability lines are underpriced). V4 exploits a
+  // different thing entirely - regular legs at 62-63% clear the 4-pick Flex breakeven of ~55%, and
+  // the 10x/1.5x tier structure pays enough that the edge compounds. Different mechanism, different
+  // board rows, so they do not compete for legs.
+  //
+  // MEASURED (real morning-snapshot legs, real graded outcomes, 42 days, deduped, one leg/player):
+  //   size  slips  legacc   POWER ROI   FLEX ROI
+  //     2     273   61.9%      +24.2%      +3.3%
+  //     3     174   62.5%      +58.6%     +20.1%
+  //     4     127   63.0%      +81.1%     +60.6%   <- DEPLOYED
+  //     5      96   62.1%      +87.5%     +62.5%
+  //     6      77   63.6%     +192.2%    +151.4%
+  // At the 10x/1.5x Flex tiers the 4-pick returns +133.1% (+$169 on $127).
+  //
+  // SUBSTITUTION IS **ON** FOR V4 - THE OPPOSITE OF V3. This is not an oversight.
+  // Simulated 168 times on real legs, dropping each of the 4 legs in turn:
+  //   drop L1: shrink +38.1%  vs SUBSTITUTE +140.5%
+  //   drop L2: shrink +33.3%  vs SUBSTITUTE +107.1%
+  //   drop L3: shrink +31.0%  vs SUBSTITUTE +100.0%
+  //   drop L4: shrink +40.5%  vs SUBSTITUTE +123.8%
+  //   average: shrink +35.7%  vs SUBSTITUTE +117.9%  -> substitute wins by 82 points
+  // WHY it flips: a 4-pick Flex pays 10x/1.5x, a 3-pick Flex only 3x/1x. Shrinking forfeits the
+  // entire 10x tier. Even a weak substitute (rank 5 hits just 44.2%) is worth taking because the
+  // SIZE TIER is worth more than the leg quality. On V3's goblins the slip multipliers are ~2x and
+  // the tiers are compressed, so leg quality dominates and shrinking wins there. Same board,
+  // opposite correct answer, driven entirely by the payout table.
+  //
+  // CARRIED RISKS, recorded at the call site:
+  //  - The 12 cells were chosen by scanning top-3 rates over this same 42-day window. That
+  //    selection step has NOT survived a train/test split, and it is exactly the step that
+  //    invalidated five other configs. Treat +133% as an upper bound.
+  //  - Two days (08-24, 08-28) carry 27% of total profit.
+  //  - Regular-leg multipliers are the PUBLISHED table, not read from placed slips. Verify the
+  //    displayed payout on the first real slip before scaling stake.
+  // MINIMUM STAKE until real placed results accumulate.
+  const v4Legs = await autoSelectStrategyV4Legs(env).catch(() => []);
+  const v4Slips = [];
+  {
+    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 3;
+    const usedV4 = new Set();
+    while (v4Slips.length < MAX_SLIPS) {
+      const avail = v4Legs.filter(l => !usedV4.has(l.board_row_id));
+      if (avail.length < MIN_SZ) break;
+      const take = avail.slice(0, SZ);
+      take.forEach(l => usedV4.add(l.board_row_id));
+      const n = take.length;
+      // Regular-leg published Flex tiers. 4-pick: 4/4 = 10x, 3/4 = 1.5x.
+      const flexTiers = { 4: 10.0, 3: 1.5 };
+      const mult = flexTiers[n] || null;
+      const hp = take.reduce((a, l) => a * (Number(l.hit_probability_0_100) / 100), 1);
+      const breakeven = mult ? Math.round((1 / mult) * 10000) / 100 : null;
+      // BACKUP POOL: everything past the 3 slips, in rank order. Used to SUBSTITUTE at placement.
+      const backupV4 = v4Legs.filter(l => !usedV4.has(l.board_row_id)).slice(0, 6);
+      v4Slips.push({
+        client_slip_id: makeUiId("high_hit_slip_v4"),
+        source_key: "prizepicks",
+        slip_type: n + "-pick",
+        slip_size: n,
+        structure_label: n + "-pick Flex (SLIP_STRATEGY_V4: REGULARS ONLY, 12 cells, cap 3, SUBSTITUTE)",
+        entry_mode: "flex",
+        selected_leg_count: n,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: mult,
+        estimated_multiplier_flex_tiers: flexTiers,
+        breakeven_hit_rate_0_100: breakeven,
+        strategy_notes: [
+          "SLIP_STRATEGY_V4 - REGULAR legs only. No goblins, no demons. Runs alongside V3, not instead of it.",
+          "12 cells, top-3 per cell per day by final HP, 4-pick Flex at 10x (4/4) and 1.5x (3/4).",
+          "Measured on 42 days of real morning snapshots: 127 slips, 508 legs, 63.0% leg accuracy, 23 full hits, 44 three-of-four, +$169 on $127 = +133.1%.",
+          "SUBSTITUTE on unavailability - do NOT shrink. Measured 168x on real legs: substitute +117.9% vs shrink +35.7%. A 3-pick Flex tops out at 3x while a 4-pick pays 10x, so keeping slip SIZE beats keeping leg QUALITY here. This is the OPPOSITE of V3's rule and is deliberate.",
+          "RISK: the 12 cells were selected on this same window and have not passed a train/test split on cell selection. Two days carry 27% of profit. Multipliers are the published table, not read from placed slips. Minimum stake until real results land."
+        ],
+        legs: take.map((l, i) => ({ ...l, leg_index: i + 1 })),
+        backup_pool: backupV4
+      });
+    }
+  }
   const v3Legs = await autoSelectStrategyV3Legs(env).catch(() => []);
   const v3Slips = [];
   {
