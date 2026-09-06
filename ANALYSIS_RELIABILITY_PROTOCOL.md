@@ -62,6 +62,13 @@ To change a previous conclusion, show specifically what changed: a data fix, a c
 
 ## Standing facts, by confidence tier
 
+### MEASURED — added 2026-09-06
+- **Demons and Goblins are MORE-ONLY on PrizePicks.** Official help center: "Demon and Goblin projections will only give you the option to select 'More'." The API's `allowed_wager_types = under_or_over` flag is WRONG for these rows. Any backtest leg built as the LESS side of a goblin-tagged row (a "demon LESS") or the LESS side of a demon-tagged row is a PHANTOM - it was never bettable. 22,445 such legs existed in `backtest.sig3`. Every demon number derived before this date is void.
+- **Demons are priced PER PLAYER, not per cell.** Three real 3-pick reads of `hits 1.5 MORE` tier 1 on the same slate: per-leg 2.621 / 3.287 / 3.317. Same prop, line, tier - 26% spread. PrizePicks: "Demon projections vary in how much of a boost they provide." The cap-curve / cell-level method that works on goblins and regulars does NOT apply to demons. The unit of analysis is the player-leg.
+- **Same-game legs carry a correlation discount.** PrizePicks: "payout rates can vary if you select multiple players within the same game." A 3-pick of three LAD hitters read 18x; mixed-game 3-picks of the same cell read 35.5-36.5x.
+- **Demon pricing model:** `per_leg = 0.92 / P_book(player, line)`, then a same-game discount. Ceiling 2000x on a 6-pick = 3.55/leg. Tier-1 demons read 2.62-3.32/leg.
+- **Demon edge test:** `P_ours(player) x per_leg > 1`, i.e. our probability must beat the book's implied probability by more than ~9% ON THAT PLAYER. Final HP is the only signal with per-player demon coverage, and it overstates demons by 25-35 points at every check - it must be recalibrated on the hard side before it can be used.
+
 ### MEASURED
 - **PrizePicks uses a FLAT goblin discount that does NOT adjust per player.** This is the mechanism V3 exploits.
 - **Sleeper and Underdog price EVERY LEG INDIVIDUALLY** and are better calibrated than our model at every confidence band. Sleeper's margin is a flat +5.8 to +6.0pp; our model's error runs +3.7pp to +19.2pp and is WORST where the model is most confident. There is no edge to find there with the current model.
