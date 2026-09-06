@@ -5114,11 +5114,18 @@ async function apiHighHitSlips(env, request) {
   // only invite a swap that measurably hurts: substituting drops leg accuracy 97.50% -> 93.89%
   // because every backup leg sits beyond its cell's cap. If a leg is unavailable, drop the slip.
   const v3BackupPool = [];
-  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...udSlips, ...slBaselineSlips]
+  // V4 DOES have a live backup pool and DOES substitute - the opposite of V3, deliberately.
+  // Measured 168x on real legs: substitute +117.9% vs shrink +35.7%. A 4-pick Flex pays 10x/1.5x
+  // while a 3-pick pays only 3x/1x, so forfeiting the size tier costs far more than a weak
+  // substitute leg does. Each V4 slip carries its own backup_pool built at construction time.
+  const v4UsedIds = new Set(v4Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const v4BackupPool = v4Legs.filter(l => !v4UsedIds.has(l.board_row_id)).slice(0, 8);
+  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
     .concat(backupPool.map(l => l.mlb_player_id))
     .concat(v2BackupPool.map(l => l.mlb_player_id))
     .concat(v3BackupPool.map(l => l.mlb_player_id))
+    .concat(v4BackupPool.map(l => l.mlb_player_id))
     .filter(Boolean))];
   const dnpRiskMap = await fetchDnpRisk(env, allPlayerIds);
   attachDnpRisk(ppSlips, dnpRiskMap);
