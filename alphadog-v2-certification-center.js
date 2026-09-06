@@ -4828,8 +4828,10 @@ async function apiHighHitSlips(env, request) {
       const take = avail.slice(0, SZ);
       take.forEach(l => usedV4.add(l.board_row_id));
       const n = take.length;
-      // Regular-leg published Flex tiers. 4-pick: 4/4 = 10x, 3/4 = 1.5x.
-      const flexTiers = { 4: 10.0, 3: 1.5 };
+      // CORRECTED 2026-09-06: 4-pick Flex pays 6x on 4/4 and 1.5x on 3/4. An earlier version of
+      // this block used 10x for 4/4 - that is the POWER payout, not Flex, and it overstated
+      // every V4 figure. Confirmed against the published table.
+      const flexTiers = { 4: 6.0, 3: 1.5 };
       const mult = flexTiers[n] || null;
       const hp = take.reduce((a, l) => a * (Number(l.hit_probability_0_100) / 100), 1);
       const breakeven = mult ? Math.round((1 / mult) * 10000) / 100 : null;
