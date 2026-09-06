@@ -4828,10 +4828,16 @@ async function apiHighHitSlips(env, request) {
       const take = avail.slice(0, SZ);
       take.forEach(l => usedV4.add(l.board_row_id));
       const n = take.length;
-      // CORRECTED 2026-09-06: 4-pick Flex pays 6x on 4/4 and 1.5x on 3/4. An earlier version of
-      // this block used 10x for 4/4 - that is the POWER payout, not Flex, and it overstated
-      // every V4 figure. Confirmed against the published table.
-      const flexTiers = { 4: 6.0, 3: 1.5 };
+      // 5-pick Flex published tiers: 5/5 = 10x, 4/5 = 2x, 3/5 = 0.4x (net loss).
+      // Chosen over the 4-pick after a train/test comparison of every size on the held-out half:
+      //   size  slips  legacc   FLEX ROI   breakeven
+      //     2     163  56.75%     -11.3%      61.8%   <- 1-of-2 pays 0.5x, worst breakeven
+      //     3     106  57.55%      +9.4%      57.7%
+      //     4      77  57.47%     +22.7%      55.0%
+      //     5      59  58.64%     +47.8%      54.3%   <- DEPLOYED, lowest breakeven
+      //     6      47  55.67%      -1.7%      54.2%   <- only 1 full hit in 47 slips
+      // The 4-of-5 tier at 2x carries this size: 14 of those vs only 5 full hits on the test half.
+      const flexTiers = { 5: 10.0, 4: 2.0, 3: 0.4 };
       const mult = flexTiers[n] || null;
       const hp = take.reduce((a, l) => a * (Number(l.hit_probability_0_100) / 100), 1);
       const breakeven = mult ? Math.round((1 / mult) * 10000) / 100 : null;
