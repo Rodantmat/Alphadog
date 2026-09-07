@@ -5678,8 +5678,9 @@ async function apiHighHitSlips(env, request) {
   // while a 3-pick pays only 3x/1x, so forfeiting the size tier costs far more than a weak
   // substitute leg does. Each V4 slip carries its own backup_pool built at construction time.
   // v4UsedIds / v4BackupPool are declared at V4 construction above.
-  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...udSlips, ...slBaselineSlips]
+  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...udSlips, ...udwSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
+    .concat(udwBackupPool.map(l => l.mlb_player_id))
     .concat(v5BackupPool.map(l => l.mlb_player_id))
     .concat(backupPool.map(l => l.mlb_player_id))
     .concat(v2BackupPool.map(l => l.mlb_player_id))
