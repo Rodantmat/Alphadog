@@ -4378,6 +4378,21 @@ async function autoSelectStrategyV4Legs(env) {
           AND (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' = 'standard'
           AND b.official_game_time_utc IS NOT NULL
           AND b.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+          -- RE-TAG GUARD (Option C, 2026-09-07). Measured since 08-20: 6.6% of standard legs
+          -- re-tag to goblin/demon before last capture, but it is concentrated: hits_runs_rbis
+          -- 18.0%, hits_allowed 15.2%, pitcher_strikeouts 12.9%, fantasy_score/pitcher_fantasy_score
+          -- 0.0%. A real 5-pick Flex carrying one re-tagged (goblin) leg paid 8x instead of 10x.
+          -- Exclude any leg that carried a non-standard tag in ANY capture today - it is mid-flip
+          -- and will likely not be standard at placement. The backup pool then substitutes.
+          AND NOT EXISTS (
+            SELECT 1 FROM archive.board_leg_history h
+            WHERE h.source_key = 'prizepicks'
+              AND h.resolved_mlb_player_id = b.resolved_mlb_player_id
+              AND h.canonical_prop_key = b.canonical_prop_key
+              AND h.line_value = b.line_value
+              AND h.official_date::date = (b.official_game_time_utc::timestamptz - interval '8 hours')::date
+              AND (h.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' <> 'standard'
+          )
       ),
       matched AS (
         SELECT bd.*, c.side,
