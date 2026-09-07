@@ -5692,6 +5692,8 @@ async function apiHighHitSlips(env, request) {
   attachDnpRisk(v3Slips, dnpRiskMap);
   attachDnpRisk(v4Slips, dnpRiskMap);
   attachDnpRisk(v5Slips, dnpRiskMap);
+  attachDnpRisk(udwSlips, dnpRiskMap);
+  for (const l of udwBackupPool) { const r = dnpRiskMap[l.mlb_player_id]; if (r) { l.dnp_risk = r.risk; l.dnp_reason = r.reason; } }
   for (const l of v5BackupPool) {
     const r = dnpRiskMap[l.mlb_player_id];
     if (r) { l.dnp_risk = r.risk; l.dnp_reason = r.reason; }
