@@ -8930,6 +8930,9 @@ function extractAppScriptV2() {
     // and silently dropped them. Normalise any prizepicks* key to the PrizePicks checkbox.
     "var __origActiveSourceFilters=activeSourceFilters;",
     "activeSourceFilters=function(){var a=__origActiveSourceFilters();if(a.has('prizepicks')){a.add('prizepicks_regular');a.add('prizepicks_goblin');a.add('prizepicks_goblin_v3');a.add('prizepicks_demon')}return a};",
+    // Summary grouped by strategy track (PP V3 / PP V4 / PP V5 / UD V1 / SL V1) when the slip carries
+    // track_label; slips without one fall back to the original source-key grouping.
+    "slipSummaryHtml=function(filtered){var groups=new Map();var order=['PP V3','PP V4','PP V5','UD V1','SL V1'];for(var i=0;i<filtered.length;i++){var s=filtered[i].s;var lab=s.track_label||((({prizepicks:'PrizePicks',sleeper:'Sleeper',parlay_underdog:'Underdog'})[String(s.source_key||'').toLowerCase()])||String(s.source_key||'').toUpperCase());var mode=s.entry_mode==='power'?'Power':'Flex';var key=lab+'|'+s.slip_size+'-Pick '+mode;groups.set(key,(groups.get(key)||0)+1)}var keys=Array.from(groups.keys()).sort(function(a,b){var ia=order.indexOf(a.split('|')[0]),ib=order.indexOf(b.split('|')[0]);if(ia<0)ia=99;if(ib<0)ib=99;return ia-ib||a.localeCompare(b)});var rows=keys.map(function(k){var p=k.split('|');return '<div class=\\\"slipSummaryRow\\\"><span>'+esc(p[0])+'</span><span>'+groups.get(k)+' '+esc(p[1])+'</span></div>'}).join('');return '<div class=\\\"slipSummary\\\"><div class=\\\"slipSummaryTotal\\\">'+filtered.length+' slip'+(filtered.length===1?'':'s')+' total</div>'+rows+'</div>'};",
     // UDW legs carry real_layer_rate (decimal x 0.963). The stock UD path prices from p_novig and
     // returns 0 without it. When every leg has real_layer_rate, the slip is their product.
     "var __origRecomputeMultiplier=recomputeMultiplier;",
