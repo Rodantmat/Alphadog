@@ -4845,7 +4845,10 @@ async function apiHighHitSlips(env, request) {
       const backupV4 = v4Legs.filter(l => !usedV4.has(l.board_row_id)).slice(0, 6);
       v4Slips.push({
         client_slip_id: makeUiId("high_hit_slip_v4"),
-        source_key: "prizepicks",
+        // 'prizepicks_regular' is what the client's recomputeMultiplier() keys on to use the
+        // published REGULAR Flex table. Under plain 'prizepicks' it falls into the goblin
+        // per-leg-product path and reported 2.011 on a 5-pick Flex that should read 10x.
+        source_key: "prizepicks_regular",
         slip_type: n + "-pick",
         slip_size: n,
         structure_label: n + "-pick Flex (SLIP_STRATEGY_V4: REGULARS ONLY, 12 cells, cap 3, SUBSTITUTE)",
