@@ -5293,6 +5293,12 @@ async function apiHighHitSlips(env, request) {
     // At 95.5% legs a 5-pick sweeps 79% and pays ~2.0x; a 4-pick sweeps 83% at ~1.7x. The extra
     // leg costs 4pts of sweep and adds 18% of payout. Six is where it breaks (-4.2% clean).
     const SZ = 5, MIN_SZ = 4, MAX_SLIPS = 3;
+    // GAME CAP (2026-09-07): max 2 legs per game. First live 5-pick had three legs from one game -
+    // two LAD hitters on total_bases LESS and the CIN starter on strikeouts MORE facing them - and
+    // read 1.60 against a 1.86 model. PrizePicks discounts that correlation. Measured on the
+    // rebuilt pool: no cap +43.8% (21 slips), max 2/game +47.3% (17), max 1/game +34.1% (14).
+    const MAX_PER_GAME = 2;
+    const gameCount = new Map();
     const used = new Set();
     while (v3Slips.length < MAX_SLIPS) {
       const avail = v3Legs.filter(l => !used.has(l.board_row_id));
