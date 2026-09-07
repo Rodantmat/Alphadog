@@ -4813,13 +4813,13 @@ async function autoSelectStrategyV3Legs(env) {
                  FROM stats_hitter.game_logs h
                  WHERE h.team_id = (
                    -- Opponent = the team in today's game that is NOT the pitcher's own team.
-                   SELECT CASE WHEN gs.home_mlb_team_id = pt.team_id THEN gs.away_mlb_team_id ELSE gs.home_mlb_team_id END
+                   SELECT CASE WHEN gs.home_mlb_team_id::text = pt.team_id::text THEN gs.away_mlb_team_id::text ELSE gs.home_mlb_team_id::text END
                    FROM (SELECT DISTINCT ON (game_pk) game_pk, home_mlb_team_id, away_mlb_team_id
                          FROM daily.game_status_current WHERE game_pk::text = s.gp::text
                          ORDER BY game_pk, updated_at DESC) gs
                    CROSS JOIN (SELECT t.team_id FROM stats_pitcher.game_logs t
                                WHERE t.player_id = s.pid ORDER BY t.game_date DESC LIMIT 1) pt
-                   LIMIT 1)
+                   LIMIT 1)::text
                    AND h.game_date < CURRENT_DATE AND h.game_date >= CURRENT_DATE - 30) >= 0.085
           ))
           -- ABSOLUTE SIGNAL FLOOR. Measured across 502 selected legs, the signal LEVEL separates
