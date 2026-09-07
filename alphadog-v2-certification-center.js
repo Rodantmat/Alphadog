@@ -5504,12 +5504,7 @@ async function apiHighHitSlips(env, request) {
   const v2UsedIds = new Set(v2Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v2BackupPool = v2Legs.filter(l => !v2UsedIds.has(l.board_row_id)).slice(0, 8);
   // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
-  const v3UsedIds = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
-  // V3 reserve is for DISPLAY and equal-rank swaps only. V3 SHRINKS on unavailability - it must
-  // never backfill from here, because these legs sit beyond the per-cell cap and measurably dilute.
-  // V3 has NO reserve. Substitutions are off and slips are full-6-only, so a backup pool would
-  // only invite a swap that measurably hurts: substituting drops leg accuracy 97.50% -> 93.89%
-  // because every backup leg sits beyond its cell's cap. If a leg is unavailable, drop the slip.
+  // (v3UsedIds declared once, below)
   // V3 REBUILT 2026-09-07: backup pool ON. Leftover legs from V3's own filtered selector (same
   // five cells, same HP floor, same walks_allowed hard filter). Tagged 'prizepicks_goblin_v3'
   // so poolLegIsLegalForSlip() only pairs them with V3 slips - V1's goblin pool cannot leak in.
