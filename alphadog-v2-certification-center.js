@@ -5308,10 +5308,10 @@ async function apiHighHitSlips(env, request) {
       const breakeven = Math.round((1 / mult) * 10000) / 100;
       v3Slips.push({
         client_slip_id: makeUiId("high_hit_slip_v3"),
-        source_key: "prizepicks",
+        source_key: "prizepicks_goblin_v3",
         slip_type: n + "-pick",
         slip_size: n,
-        structure_label: n + "-pick Power (SLIP_STRATEGY_V3: tier cells, dual-signal, cap 2-4)",
+        structure_label: n + "-pick Power (SLIP_STRATEGY_V3: goblin cells, corrected HP, WA hard filter, SUB)",
         entry_mode: "power",
         selected_leg_count: n,
         estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
