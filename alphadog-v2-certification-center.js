@@ -8628,6 +8628,10 @@ function extractAppScriptV2() {
   const at = base.indexOf(marker);
   if (at < 0) return base;   // marker gone - serve the original, never break the page
   const patch = [
+    // V4/V5 slips carry source_key 'prizepicks_regular'; the source filter only knew 'prizepicks'
+    // and silently dropped them. Normalise any prizepicks* key to the PrizePicks checkbox.
+    "var __origActiveSourceFilters=activeSourceFilters;",
+    "activeSourceFilters=function(){var a=__origActiveSourceFilters();if(a.has('prizepicks')){a.add('prizepicks_regular');a.add('prizepicks_goblin');a.add('prizepicks_goblin_v3');a.add('prizepicks_demon')}return a};",
     "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0}",
     "var __v1PoolLegal=poolLegIsLegalForSlip;",
     "poolLegIsLegalForSlip=function(leg,keptLegs,slip){if(slipIsV2(slip))return false;return __v1PoolLegal(leg,keptLegs,slip)};",
