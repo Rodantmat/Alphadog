@@ -4458,7 +4458,112 @@ async function autoSelectStrategyV5Legs(env) {
 // Cells were chosen because their top-3-per-day rate held at or above 58% over 42 days with at
 // least 15 active days each. Pooled across all 12: 590 legs, 43 days, 13.7 legs/day, 62.0%.
 // NOTE the anchor is irrelevant here - a standard leg IS the anchor, so there is no tier logic.
+// SLIP_STRATEGY_V4 (REBUILT 2026-09-07) - WORKLOAD-WIDE, 4-pick FLEX, signal-strength ranked.
+//
+// The previous V4 (12 HP-ranked regular cells, 5-pick Flex) is GONE. It passed one 20-day split
+// and failed walk-forward (-2.2%). On HP recomputed through today's live formula, HP has ZERO
+// separation on regular lines (51.7% at >=80 vs 51.2% at <60). Every model-ranked regular config
+// died the same way. V4 now shares V5's mechanism and widens the pool for the 4-pick Flex.
+//
+// MECHANISM (same as V5): the market prices a ceiling, workload caps the floor. PrizePicks pitcher
+// FS = 1/out + 3/K + 6/WIN + 4/QS - 3/ER. A pitcher on a <5-IP leash cannot earn the W or QS - up
+// to 10 points the line assumes and the leash removes. That is why the fantasy lines are the
+// strongest cells, and why the 15-16 outs band works ONLY at high lines (aces going 5 IP against a
+// 7-IP line). Hitter FS = 3/1B, 5/2B, 8/3B, 10/HR, 2/R,RBI,BB,HBP, 5/SB - a <3-PA bat cannot reach 4.5.
+//
+// POOL (all LESS, regular lines only):
+//   Pitchers avg outs L5 < 14:   earned_runs 2.5, pitcher_outs 14.5 & 16.5, PFS 17.5 & >=23.5
+//   Pitchers avg outs L5 15-16:  PFS >=26.5 & 21.5, pitcher_outs 16.5      (the 14-15 band is DEAD: 40.5%)
+//   Hitters avg PA L5 < 3.0:     FS 3, 3.5, 4.5, >=5.5; hits_runs_rbis 0.5 & 1.5
+//   EXCLUDED: FS 4 and FS 5 (whole-number lines push; 48.9% / 33.3%). K unders >=5.5 tested at
+//   70% as legs but displace better legs in slip grouping (-9 pts ROI) - out.
+// RANK: by SIGNAL STRENGTH (fewest outs / fewest PA first), NOT HP. HP is flat inside this pool.
+//   Signal-strength ranking beat HP ranking +62.5% vs +42.9% and cut best-day share 27.8% -> 19.0%.
+//   PPI tiebreak, line-height weighting, pitchers-first all tested: each WORSE. Pure signal wins.
+//
+// MEASURED (42 days, real morning-snapshot regular legs, real graded, one per player):
+//   84 slips, 63.7% leg acc, 17 sweeps, 30 three-of-four, +66.1% ROI
+//   Both halves positive (+25.0% pre-08-20 / +120.8% post-08-20 on the live-formula window)
+//   Bootstrap 99.7% positive, 95% CI [+16.9%, +124.1%], LOO-2 min +44.4%, best-day share 18.0%
+//   First configuration all session to pass CI, LOO-2 and best-day together on the full window.
+//
+// SUBSTITUTION: SUB if a backup exists, else SHRINK to 3-pick Flex (3x/1x). Measured 328x on real
+// legs: this blend +64.0% on drop days vs +70.1% no-drop baseline. Sub-only +31.7% (dead when no
+// backup), shrink-only +22.6%, cancel 0%. The frontend does exactly this natively for non-V2/V3
+// slips: pool first, shrink when empty. No client patch needed. Backup pool = every qualified leg
+// left over after slips are built, in signal-strength order.
+// SEASONAL: Aug-Sep mechanism. Pause at season end; April needs re-validation.
 async function autoSelectStrategyV4Legs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH board AS (
+        SELECT b.player_name, b.resolved_mlb_player_id AS pid, b.official_game_pk AS gp,
+               b.canonical_prop_key AS prop, b.line_value AS ln, b.official_game_time_utc AS gt
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'prizepicks'
+          AND b.resolved_mlb_player_id IS NOT NULL
+          AND (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' = 'standard'
+          AND b.official_game_time_utc IS NOT NULL
+          AND b.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+          AND (
+            (b.canonical_prop_key = 'earned_runs' AND b.line_value = 2.5)
+            OR (b.canonical_prop_key = 'pitcher_outs' AND b.line_value IN (14.5, 16.5))
+            OR (b.canonical_prop_key = 'pitcher_fantasy_score' AND (b.line_value >= 21.5 OR b.line_value = 17.5))
+            OR (b.canonical_prop_key = 'fantasy_score' AND b.line_value >= 3 AND b.line_value NOT IN (4, 5))
+            OR (b.canonical_prop_key = 'hits_runs_rbis' AND b.line_value IN (0.5, 1.5))
+          )
+      ),
+      wl AS (
+        SELECT bd.*,
+          CASE WHEN bd.prop IN ('earned_runs','pitcher_outs','pitcher_fantasy_score') THEN 'P' ELSE 'H' END side_type,
+          (SELECT AVG(g.outs_recorded::numeric) FROM (
+             SELECT x.outs_recorded FROM stats_pitcher.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE
+             ORDER BY x.game_date DESC LIMIT 5) g) AS outs_l5,
+          (SELECT AVG(g.pa::numeric) FROM (
+             SELECT x.pa FROM stats_hitter.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE AND x.pa > 0
+             ORDER BY x.game_date DESC LIMIT 5) g) AS pa_l5
+        FROM board bd
+      ),
+      qual AS (
+        SELECT *,
+          CASE WHEN side_type = 'P' THEN 20 - outs_l5 ELSE 5 - pa_l5 END AS sig_strength
+        FROM wl
+        WHERE (side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 < 14
+                 AND ((prop = 'earned_runs') OR (prop = 'pitcher_outs')
+                      OR (prop = 'pitcher_fantasy_score' AND (ln >= 23.5 OR ln = 17.5))))
+           OR (side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 >= 15 AND outs_l5 < 16
+                 AND ((prop = 'pitcher_fantasy_score' AND (ln >= 26.5 OR ln = 21.5))
+                      OR (prop = 'pitcher_outs' AND ln = 16.5)))
+           OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0)
+      ),
+      one_per_player AS (
+        SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY sig_strength DESC, ln DESC) pr FROM qual) z WHERE pr = 1
+      )
+      SELECT 'v4|' || pid::text || '|' || prop || '|' || ln::text || '|less' AS board_row_id,
+        'prizepicks_regular' AS source_key, gp AS game_pk, gt AS official_game_time_utc,
+        (gt::timestamptz - interval '8 hours')::date AS official_date,
+        player_name, pid AS mlb_player_id, prop AS canonical_prop_key,
+        ln AS line_value, 'less' AS selected_side,
+        ROUND(sig_strength::numeric, 2) AS hit_probability_0_100,
+        prop || ' ' || ln::text || ' less' AS cell_label,
+        side_type, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5,
+        ROUND(sig_strength::numeric,2) AS sig_strength
+      FROM one_per_player
+      ORDER BY sig_strength DESC, prop, pid
+      LIMIT 40
+    `, []);
+    return rows || [];
+  } catch (_) {
+    return [];
+  } finally {
+    try { await pg.end(); } catch (_) {}
+  }
+}
+
+async function autoSelectStrategyV4Legs_OLD_HP_RANKED_DISABLED(env) {
   const pg = pgClient(env);
   try {
     const rows = await queryAllPg(pg, `
