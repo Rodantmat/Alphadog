@@ -5323,14 +5323,15 @@ async function apiHighHitSlips(env, request) {
   const v4Legs = v4LegsRaw.filter(l => !v5PlacedPlayers.has(String(l.mlb_player_id)));
   const v4Slips = [];
   {
-    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 4;
-    // One leg per game - keep the same correlation rule as V5.
-    const usedGames = new Set();
+    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 4, MAX_PER_GAME = 2;
+    // Max 2 legs per game (2026-09-07). Measured on the wide pool: no cap 84 slips +58.9%,
+    // max 2/game 81 slips +55.6%, max 1/game 55 slips +69.1%. Two per game keeps 96% of the volume.
+    const gameCount = new Map();
     const legsV4 = [];
     for (const l of v4Legs) {
       const g = String(l.game_pk || '');
-      if (g && usedGames.has(g)) continue;
-      if (g) usedGames.add(g);
+      if (g && (gameCount.get(g) || 0) >= MAX_PER_GAME) continue;
+      if (g) gameCount.set(g, (gameCount.get(g) || 0) + 1);
       legsV4.push(l);
     }
     let i = 0;
