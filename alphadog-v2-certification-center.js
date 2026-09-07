@@ -8787,7 +8787,7 @@ function extractAppScriptV2() {
     // UDW legs carry real_layer_rate (decimal x 0.963). The stock UD path prices from p_novig and
     // returns 0 without it. When every leg has real_layer_rate, the slip is their product.
     "var __origRecomputeMultiplier=recomputeMultiplier;",
-    "recomputeMultiplier=function(sourceKey,entryMode,size,legs){var k=String(sourceKey||'').toLowerCase();if((k==='parlay_underdog'||k==='underdog')&&legs&&legs.length&&legs.every(function(l){return Number.isFinite(Number(l.real_layer_rate))&&Number(l.real_layer_rate)>1})){var p=1;for(var i=0;i<legs.length;i++)p*=Number(legs[i].real_layer_rate);return Math.round(p*1000)/1000}return __origRecomputeMultiplier(sourceKey,entryMode,size,legs)};",
+    "recomputeMultiplier=function(sourceKey,entryMode,size,legs){var k=String(sourceKey||'').toLowerCase();if((k==='parlay_underdog'||k==='underdog'||k==='sleeper')&&legs&&legs.length&&legs.every(function(l){return Number.isFinite(Number(l.real_layer_rate))&&Number(l.real_layer_rate)>1})){var p=1;for(var i=0;i<legs.length;i++)p*=Number(legs[i].real_layer_rate);return Math.round(p*1000)/1000}return __origRecomputeMultiplier(sourceKey,entryMode,size,legs)};",
     "function slipIsV2(s){return String(s&&s.structure_label||'').indexOf('SLIP_STRATEGY_V2')>=0}",
     "var __v1PoolLegal=poolLegIsLegalForSlip;",
     "poolLegIsLegalForSlip=function(leg,keptLegs,slip){if(slipIsV2(slip))return false;return __v1PoolLegal(leg,keptLegs,slip)};",
