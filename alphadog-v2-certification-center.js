@@ -4935,7 +4935,59 @@ async function apiHighHitSlips(env, request) {
   //  - Regular-leg multipliers are the PUBLISHED table, not read from placed slips. Verify the
   //    displayed payout on the first real slip before scaling stake.
   // MINIMUM STAKE until real placed results accumulate.
-  const v4Legs = await autoSelectStrategyV4Legs(env).catch(() => []);
+  // SLIP_STRATEGY_V5 - replaces V4. V4 passed a single 20-day split (+47.8%) but failed walk-forward
+  // (-2.2% on 32 days) - its cell selection was the artifact every other regular config showed.
+  // V5's edge is structural (workload caps accumulation) and holds walk-forward on both halves.
+  // V4 code is retained below but produces no slips.
+  const v5Legs = await autoSelectStrategyV5Legs(env).catch(() => []);
+  const v5Slips = [];
+  {
+    // One leg per game - two capped pitchers in the same game are correlated through game script.
+    const usedGames = new Set();
+    const legsV5 = [];
+    for (const l of v5Legs) {
+      const g = String(l.game_pk || '');
+      if (g && usedGames.has(g)) continue;
+      if (g) usedGames.add(g);
+      legsV5.push(l);
+    }
+    // BUILD RULE (measured best ROI-per-drought): chunk into 2-picks; when exactly 3 legs remain,
+    // make them one 3-pick. Never leave a single leg. Never build a 4+.
+    const n = legsV5.length;
+    let i = 0;
+    while (n - i >= 2) {
+      const rem = n - i;
+      const sz = (rem === 3) ? 3 : 2;
+      const take = legsV5.slice(i, i + sz); i += sz;
+      const mult = (sz === 3) ? 6.0 : 3.0;
+      const hp = take.reduce((a, l) => a * (Number(l.hit_probability_0_100) / 100), 1);
+      v5Slips.push({
+        client_slip_id: makeUiId("high_hit_slip_v5"),
+        source_key: "prizepicks_regular",
+        slip_type: sz + "-pick",
+        slip_size: sz,
+        structure_label: sz + "-pick Power (SLIP_STRATEGY_V5: WORKLOAD UNDERS, regulars, 2+upgrade)",
+        entry_mode: "power",
+        selected_leg_count: sz,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: mult,
+        breakeven_hit_rate_0_100: Math.round((1 / mult) * 10000) / 100,
+        strategy_notes: [
+          "SLIP_STRATEGY_V5 - workload-capped UNDERS on REGULAR lines. Replaces V4.",
+          "Pitchers averaging <14 outs over last 5 starts on earned_runs 2.5 / pitcher_outs 14.5 / pitcher_fantasy_score >=23.5 LESS. Hitters averaging <3 PA over last 5 games on fantasy_score >=4.5 LESS.",
+          "Mechanism: the market prices the ceiling, workload caps the floor. Structural, not model-driven - inside the pool HP/pconf/score/rolling-rate are all flat. Holds walk-forward on both halves.",
+          "Measured 38 days, 69 slips: +56.5% ROI, max drawdown -4, worst losing streak 2 days, 18/38 winning days. The upgraded 3-picks (exactly 3 legs left) won 9 of 17 and carried the profit; the 2-picks keep the curve steady.",
+          "SUBSTITUTE from backup_pool only. Every backup leg passed the same workload filter. If no backup, CANCEL the slip - a 2-pick with an unfiltered leg is negative. Never shrink a 2-pick.",
+          "SEASONAL: innings caps, playoff rest, roster expansion are Aug-Sep. Pause in April, re-validate May."
+        ],
+        legs: take.map((l, k) => ({ ...l, leg_index: k + 1 }))
+      });
+    }
+  }
+  const v5UsedIds = new Set(v5Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const v5BackupPool = v5Legs.filter(l => !v5UsedIds.has(l.board_row_id)).slice(0, 6);
+  // V4 disabled - see note above.
+  const v4Legs = [];
   const v4Slips = [];
   {
     const SZ = 5, MIN_SZ = 5, MAX_SLIPS = 3;
