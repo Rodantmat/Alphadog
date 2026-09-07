@@ -5267,7 +5267,19 @@ async function apiHighHitSlips(env, request) {
     // AT PLACEMENT it is the opposite: if a leg goes unavailable, SHRINK and play the slip. A
     // shrunk slip is still strongly +EV (5 legs 1.887x at 83.5% win = +57.6%, 4 legs 1.662x at
     // 86.6% = +43.9%), so dropping it forfeits real value. Just never backfill the empty spot.
-    const SZ = 6, MIN_SZ = 6, MAX_SLIPS = 3;
+    // ============================================================================
+    // REBUILT 2026-09-07 on corrected HP. 4-PICK, not 6. Six 93% legs sweep 65%, four sweep
+    // 75%; on the clean window (08-20+) the 6-pick was -4.2%, the 4-pick +46.1%.
+    //
+    // SUBSTITUTION IS NOW ON. The old rule (shrink, never sub) was measured when backups came
+    // from a wider, weaker pool beyond the caps. With the hard walks_allowed filter the pool is
+    // tight - every leg is 90%+ - so a rank-5 backup is near-equivalent. Measured 84x on the
+    // rebuilt pool: SUB if backup else SHRINK +34.1%, SHRINK only +27.1%, no-drop +37.0%.
+    // Backups are tagged 'prizepicks_goblin_v3' so the client's platform check only pairs them
+    // with V3 slips - V1's goblin pool cannot leak in. Legs carry real_layer_rate so the
+    // multiplier path is unaffected by the source_key.
+    // ============================================================================
+    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 3;
     const used = new Set();
     while (v3Slips.length < MAX_SLIPS) {
       const avail = v3Legs.filter(l => !used.has(l.board_row_id));
