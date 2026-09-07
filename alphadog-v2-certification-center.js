@@ -5417,6 +5417,56 @@ async function apiHighHitSlips(env, request) {
   }
   const udwUsedIds = new Set(udwSlips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const udwBackupPool = udwLegs.filter(l => !udwUsedIds.has(l.board_row_id)).slice(0, 6);
+
+  // SLEEPER WORKLOAD (SLW) - new track 2026-09-07. See autoSelectSleeperWorkloadLegs.
+  const slwLegs = await autoSelectSleeperWorkloadLegs(env).catch((e) => { selectorErrors.slw = String(e && e.message || e); return []; });
+  let slwSlips = [];
+  {
+    const SZ = 2, MAX_SLIPS = 3, MIN_SLIPS_TO_PLAY = 2;
+    const used = new Set();
+    while (slwSlips.length < MAX_SLIPS) {
+      const avail = slwLegs.filter(l => !used.has(l.board_row_id));
+      if (avail.length < SZ) break;
+      const legs = []; const seen = new Set(); const teams = new Set();
+      for (const l of avail) {
+        if (legs.length >= SZ) break;
+        if (seen.has(String(l.mlb_player_id))) continue;
+        const t = String(l.team_id || '');
+        if (t && teams.has(t)) continue;   // never same-team: the one same-team read took a 17% haircut
+        legs.push(l); seen.add(String(l.mlb_player_id)); if (t) teams.add(t);
+      }
+      if (legs.length < SZ) break;
+      for (const l of legs) used.add(l.board_row_id);
+      const mult = legs.reduce((a, l) => a * (Number(l.leg_mult) || 1.55), 1);
+      const hp = legs.reduce((a, l) => a * (Number(l.hit_probability_0_100) / 100), 1);
+      slwSlips.push({
+        client_slip_id: makeUiId("high_hit_slip_slw"),
+        source_key: "sleeper",
+        slip_type: "2-pick",
+        slip_size: 2,
+        structure_label: "2-pick Power (SLEEPER WORKLOAD: HRR 1.5 / ER 2.5 unders, role-ranked, cap 3)",
+        entry_mode: "power",
+        selected_leg_count: 2,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: Math.round(mult * 1000) / 1000,
+        breakeven_hit_rate_0_100: Math.round((1 / mult) * 10000) / 100,
+        estimated_payout_note: "Sleeper prices PER LEG: leg multiplier = 1 + (decimal odds - 1) x 0.95 (validated on 639 native legs). Slip shown = product of legs = the FLOOR. Real uncorrelated Sleeper slips have paid up to 1.22x above the product; the app number is the one to use.",
+        strategy_notes: [
+          "SLEEPER WORKLOAD - hitters <3 PA L5 on hits_runs_rbis 1.5 LESS; pitchers <14 outs L5 on earned_runs 2.5 LESS. Multiplier band 1.40-1.80.",
+          "RANKED BY ROLE STABILITY (games played L7, then multiplier). Everyday bottom-of-order bats hit 79.6%; deep-bench pinch-hit profiles 57.7%. Sleeper prices both the same. Ranking by multiplier alone paired the riskiest legs first (sweep 40.8% -> 54.9%).",
+          "2-PICK ONLY, one player per team. Every 3-pick config was negative on the test half. This slip only appears on days with 2+ buildable slips - a lone 2-pick loses the day half the time; two or more lose it 25%. Losing days 16 -> 6 on 28 days.",
+          "Measured 28 days, per-leg floor pricing: 71 slips, 71.8% legs, 54.9% sweep, +38.2% ROI, train +51.9% / test +24.9%, 22/28 profitable days.",
+          "SUBSTITUTE if a backup exists, else CANCEL. No shrink on a 2-pick. Measured 142x: +3.5% vs cancel 0% - the backup legs are the pinch-hit profiles, so a substitute is nearly a coin flip. If no backup, cancel the slip.",
+          "PLACE AFTER 20:00 UTC when Sleeper's board fills. PAPER TRACK until the native price archive (sleeper_source_prices_history) is restarted and the slip-level bonus is measured."
+        ],
+        legs: legs.map((l, k) => ({ ...l, leg_index: k + 1 }))
+      });
+    }
+    // Day rule: fewer than MIN_SLIPS_TO_PLAY buildable -> play nothing. Legs go to backup only.
+    if (slwSlips.length < MIN_SLIPS_TO_PLAY) slwSlips = [];
+  }
+  const slwUsedIds = new Set(slwSlips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const slwBackupPool = slwSlips.length ? slwLegs.filter(l => !slwUsedIds.has(l.board_row_id)).slice(0, 4) : [];
   if (false) {
     const SZ = 5, MIN_SZ = 5, MAX_SLIPS = 3;
     const usedV4 = new Set();
