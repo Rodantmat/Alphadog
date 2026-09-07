@@ -5749,8 +5749,8 @@ async function apiHighHitSlips(env, request) {
   // track built above, which uses an entirely different signal and correct moneyline pricing.
   const sleeperSlips = slBaselineSlips;
   const demonSlips = []; // PAUSED - see comment above.
-  const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...udSlips, ...sleeperSlips];
-  const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length + slLegs.length + v2Legs.length + v3Legs.length + v4Legs.length + v5Legs.length;
+  const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...udSlips, ...udwSlips, ...sleeperSlips];
+  const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length + slLegs.length + v2Legs.length + v3Legs.length + v4Legs.length + v5Legs.length + udwLegs.length;
   if (!generated_slips.length) {
     const errNote = Object.keys(selectorErrors).length ? ` SELECTOR ERRORS: ${JSON.stringify(selectorErrors)}` : "";
     return jsonResponse({ ok: true, data_ok: true, version: VERSION, route: "/api/slips/high-hit", selected_leg_count, generated_slips: [], selector_errors: selectorErrors, notes: [`No leg currently on the board qualifies right now - board may still be filling in for the day. V3 goblin found ${v3Legs.length} leg(s), needs 4. V4 workload-wide found ${v4Legs.length} leg(s), needs 4. V5 workload found ${v5Legs.length} leg(s), needs 2. Sleeper (top ${Math.round((1-SL_PERCENTILE)*100)}%) found ${slLegs.length} leg(s), needs ${SL_SLIP_SIZE}.${errNote}`] });
