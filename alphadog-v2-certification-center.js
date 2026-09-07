@@ -4833,10 +4833,7 @@ async function autoSelectStrategyV3Legs(env) {
           -- A floor of 80 keeps overall ROI identical (+103.0%) while lifting leg accuracy
           -- 94.52% -> 95.00% and the recent-window ROI from +55.0% to +65.6%. Higher floors were
           -- tested and are non-monotonic on small samples (85 -> +65.8%, 88 -> +43.4%, 90 -> +61.3%),
-          -- so 80 is the last floor with enough volume to trust.
-          -- The floor is ABSOLUTE, not relative, which is the point: on a thin day it refuses to
-          -- play rather than taking the best of a weak pool.
-          AND s.sig >= 80
+          -- so 80 is the last floor with enough volume to trust. (Applied above, before the WA filter.)
       )
       SELECT 'v3|' || r.pid::text || '|' || r.prop || '|' || r.ln::text || '|' || r.side AS board_row_id,
         'prizepicks' AS source_key, r.gp AS game_pk, r.gt AS official_game_time_utc,
