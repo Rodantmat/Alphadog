@@ -4811,8 +4811,7 @@ async function autoSelectStrategyV3Legs(env) {
                    ORDER BY x.game_date DESC LIMIT 3) g) >= 0.08
             AND (SELECT SUM(h.walks)::numeric / NULLIF(SUM(h.pa),0)
                  FROM stats_hitter.game_logs h
-                 WHERE h.team_id = (
-                   -- Opponent = the team in today's game that is NOT the pitcher's own team.
+                 WHERE h.team_id::text = (
                    SELECT CASE WHEN gs.home_mlb_team_id::text = pt.team_id::text THEN gs.away_mlb_team_id::text ELSE gs.home_mlb_team_id::text END
                    FROM (SELECT DISTINCT ON (game_pk) game_pk, home_mlb_team_id, away_mlb_team_id
                          FROM daily.game_status_current WHERE game_pk::text = s.gp::text
