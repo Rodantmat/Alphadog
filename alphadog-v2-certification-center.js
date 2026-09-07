@@ -4801,6 +4801,21 @@ async function autoSelectStrategyV3Legs(env) {
       ranked AS (
         SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell ORDER BY s.sig DESC, s.player_name, s.pid) rk
         FROM scored s WHERE s.sig IS NOT NULL AND s.sn >= 10
+          -- HARD FILTER for walks_allowed cells (21-for-21 on corrected data). Both structural
+          -- signals are pipeline-independent: recent command from the pitcher's own last 3 starts,
+          -- and the opponent's 30-day plate discipline. Legs on other cells pass through untouched.
+          AND (s.prop <> 'walks_allowed' OR (
+            (SELECT SUM(g.walks_allowed)::numeric / NULLIF(SUM(g.batters_faced),0)
+             FROM (SELECT x.walks_allowed, x.batters_faced FROM stats_pitcher.game_logs x
+                   WHERE x.player_id = s.pid AND x.game_date < CURRENT_DATE
+                   ORDER BY x.game_date DESC LIMIT 3) g) >= 0.08
+            AND (SELECT SUM(h.walks)::numeric / NULLIF(SUM(h.pa),0)
+                 FROM stats_hitter.game_logs h
+                 WHERE h.team_id = (SELECT t.opponent_team_id FROM stats_pitcher.game_logs t
+                                    WHERE t.player_id = s.pid AND t.game_date >= CURRENT_DATE - 1
+                                    ORDER BY t.game_date DESC LIMIT 1)
+                   AND h.game_date < CURRENT_DATE AND h.game_date >= CURRENT_DATE - 30) >= 0.085
+          ))
           -- ABSOLUTE SIGNAL FLOOR. Measured across 502 selected legs, the signal LEVEL separates
           -- cleanly where rank does not: sig>=95 hits 96.8%, 90-95 hits 96.4%, 85-90 hits 94.1%,
           -- but sig<85 hits only 89.9%. Rank within cell is flat (rk1 93.5%, rk2 91.9%, rk3 92.0%,
