@@ -5515,8 +5515,8 @@ async function apiHighHitSlips(env, request) {
   // so poolLegIsLegalForSlip() only pairs them with V3 slips - V1's goblin pool cannot leak in.
   // Measured 84x on real legs: sub-if-backup-else-shrink +34.1% vs shrink-only +27.1%.
   const v3UsedIds = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
-  const v3BackupPool = v3Legs.filter(l => !v3UsedIds.has(l.board_row_id)).slice(0, 6).map(l => ({ ...l, source_key: "prizepicks_goblin_v3" }));
-  for (const s of v3Slips) s.legs = (s.legs || []).map(l => ({ ...l, source_key: "prizepicks_goblin_v3" }));
+  const v3BackupPool = v3Legs.filter(l => !v3UsedIds.has(l.board_row_id)).slice(0, 6).map(l => ({ ...l, source_key: "prizepicks", real_layer_rate: Number(l.leg_mult) || 1.12 }));
+  for (const s of v3Slips) { s.source_key = "prizepicks"; s.legs = (s.legs || []).map(l => ({ ...l, source_key: "prizepicks", real_layer_rate: Number(l.leg_mult) || 1.12 })); }
   // V4 DOES have a live backup pool and DOES substitute - the opposite of V3, deliberately.
   // Measured 168x on real legs: substitute +117.9% vs shrink +35.7%. A 4-pick Flex pays 10x/1.5x
   // while a 3-pick pays only 3x/1x, so forfeiting the size tier costs far more than a weak
