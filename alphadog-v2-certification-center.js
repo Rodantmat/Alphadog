@@ -5238,7 +5238,8 @@ async function apiHighHitSlips(env, request) {
       });
     }
   }
-  const v3Legs = await autoSelectStrategyV3Legs(env).catch(() => []);
+  const selectorErrors = {};
+  const v3Legs = await autoSelectStrategyV3Legs(env).catch((e) => { selectorErrors.v3 = String(e && e.message || e); return []; });
   const v3Slips = [];
   {
     // FULL 6-PICKS ONLY. No leftover slips, no substitutions. Both were measured on this exact
