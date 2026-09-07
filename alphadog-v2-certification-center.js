@@ -4798,29 +4798,34 @@ async function autoSelectStrategyV3Legs(env) {
                      WHERE g.player_id=c.pid AND g.game_date < CURRENT_DATE) END AS sn
         FROM cells c
       ),
+      -- walks_allowed hard filter, precomputed ONCE for the handful of WA pitchers on today's board
+      -- (was three correlated subqueries evaluated per row across all cells -> 8s timeout).
+      wa_pitchers AS (
+        SELECT DISTINCT c.pid, c.gp FROM cells c WHERE c.prop = 'walks_allowed'
+      ),
+      wa_ok AS (
+        SELECT w.pid
+        FROM wa_pitchers w
+        JOIN LATERAL (SELECT SUM(x.walks_allowed)::numeric / NULLIF(SUM(x.batters_faced),0) bb3
+                      FROM (SELECT walks_allowed, batters_faced FROM stats_pitcher.game_logs
+                            WHERE player_id = w.pid AND game_date < CURRENT_DATE
+                            ORDER BY game_date DESC LIMIT 3) x) b ON true
+        JOIN LATERAL (SELECT team_id FROM stats_pitcher.game_logs
+                      WHERE player_id = w.pid ORDER BY game_date DESC LIMIT 1) pt ON true
+        JOIN LATERAL (SELECT home_mlb_team_id, away_mlb_team_id FROM daily.game_status_current
+                      WHERE game_pk::text = w.gp::text ORDER BY updated_at DESC LIMIT 1) gs ON true
+        JOIN LATERAL (SELECT SUM(h.walks)::numeric / NULLIF(SUM(h.pa),0) obb
+                      FROM stats_hitter.game_logs h
+                      WHERE h.team_id::text = (CASE WHEN gs.home_mlb_team_id::text = pt.team_id::text
+                                                    THEN gs.away_mlb_team_id::text ELSE gs.home_mlb_team_id::text END)
+                        AND h.game_date < CURRENT_DATE AND h.game_date >= CURRENT_DATE - 30) o ON true
+        WHERE b.bb3 >= 0.08 AND o.obb >= 0.085
+      ),
       ranked AS (
         SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.cell ORDER BY s.sig DESC, s.player_name, s.pid) rk
         FROM scored s WHERE s.sig IS NOT NULL AND s.sn >= 10
-          -- HARD FILTER for walks_allowed cells (21-for-21 on corrected data). Both structural
-          -- signals are pipeline-independent: recent command from the pitcher's own last 3 starts,
-          -- and the opponent's 30-day plate discipline. Legs on other cells pass through untouched.
-          AND (s.prop <> 'walks_allowed' OR (
-            (SELECT SUM(g.walks_allowed)::numeric / NULLIF(SUM(g.batters_faced),0)
-             FROM (SELECT x.walks_allowed, x.batters_faced FROM stats_pitcher.game_logs x
-                   WHERE x.player_id = s.pid AND x.game_date < CURRENT_DATE
-                   ORDER BY x.game_date DESC LIMIT 3) g) >= 0.08
-            AND (SELECT SUM(h.walks)::numeric / NULLIF(SUM(h.pa),0)
-                 FROM stats_hitter.game_logs h
-                 WHERE h.team_id::text = (
-                   SELECT CASE WHEN gs.home_mlb_team_id::text = pt.team_id::text THEN gs.away_mlb_team_id::text ELSE gs.home_mlb_team_id::text END
-                   FROM (SELECT DISTINCT ON (game_pk) game_pk, home_mlb_team_id, away_mlb_team_id
-                         FROM daily.game_status_current WHERE game_pk::text = s.gp::text
-                         ORDER BY game_pk, updated_at DESC) gs
-                   CROSS JOIN (SELECT t.team_id FROM stats_pitcher.game_logs t
-                               WHERE t.player_id = s.pid ORDER BY t.game_date DESC LIMIT 1) pt
-                   LIMIT 1)::text
-                   AND h.game_date < CURRENT_DATE AND h.game_date >= CURRENT_DATE - 30) >= 0.085
-          ))
+          AND s.sig >= 80
+          AND (s.prop <> 'walks_allowed' OR s.pid IN (SELECT pid FROM wa_ok))
           -- ABSOLUTE SIGNAL FLOOR. Measured across 502 selected legs, the signal LEVEL separates
           -- cleanly where rank does not: sig>=95 hits 96.8%, 90-95 hits 96.4%, 85-90 hits 94.1%,
           -- but sig<85 hits only 89.9%. Rank within cell is flat (rk1 93.5%, rk2 91.9%, rk3 92.0%,
