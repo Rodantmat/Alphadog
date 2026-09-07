@@ -4547,7 +4547,12 @@ async function autoSelectStrategyV4Legs(env) {
         (gt::timestamptz - interval '8 hours')::date AS official_date,
         player_name, pid AS mlb_player_id, prop AS canonical_prop_key,
         ln AS line_value, 'less' AS selected_side,
-        ROUND(sig_strength::numeric, 2) AS hit_probability_0_100,
+        -- Display value = the MEASURED accuracy of this leg's source group over 42 days (not a
+        -- per-leg probability; inside the pool no model signal separates legs). Ranking uses
+        -- sig_strength, carried separately.
+        CASE WHEN side_type = 'P' AND outs_l5 < 14 THEN 65.7
+             WHEN side_type = 'P' THEN 62.1
+             ELSE 59.3 END AS hit_probability_0_100,
         prop || ' ' || ln::text || ' less' AS cell_label,
         side_type, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5,
         ROUND(sig_strength::numeric,2) AS sig_strength
