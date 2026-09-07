@@ -4348,6 +4348,92 @@ async function autoSelectStrategyV2Legs(env) {
 // hits t1/less and singles t1/less were REMOVED: they collapsed 95.9% -> 77.5% and 100% -> 87.5%
 // between the early and late window. Dropping them lifted recent-window ROI from +8.8% to +55.0%.
 // Worth re-testing in a few weeks - a two-week slump may be variance rather than decay.
+// SLEEPER WORKLOAD (SLW) leg selector - 2026-09-07. NEW track, separate from the disabled Sleeper
+// divergence/baseline tracks (slLegs, slBaselineSlips).
+//
+// MECHANISM: same as V4/V5/UDW. Sleeper prices per leg: multiplier = 1 + (decimal - 1) x 0.95.
+// Validated on 639 native-archive legs (real_under_leg_mult / decimal = 0.975-0.989 at every price)
+// and two live single-leg reads. Slip = PRODUCT of legs as a FLOOR: a real uncorrelated 3-pick paid
+// 1.22x above it; a same-team stack paid 0.83x. The size bonus is unmeasured - never assumed.
+//
+// POOL (LESS): hits_runs_rbis 1.5 for hitters avg PA L5 < 3.0; earned_runs 2.5 for pitchers avg
+//   outs L5 < 14. Sleeper juices the capped HRR under 17pts harder than UD (-167 vs -150) so the
+//   per-leg EV is thinner: 1.061 vs 1.148. Multiplier band 1.40-1.80 (drops the extreme prices).
+// RANK: games played in last 7 DESC, then multiplier DESC. THIS IS THE SIGNAL. Everyday bottom-of-
+//   order bats (6+ games, <3 PA) hit 79.6%; deep-bench (<=3 games) hit 57.7% - their low PA is
+//   pinch-hitting, and when they start they get four trips. Sleeper prices both the same.
+//   Ranking by multiplier alone paired the two riskiest legs first: sweep 40.8% -> 54.9%.
+// STRUCTURE: 2-PICK ONLY. Every 3-pick config is negative on the test half - sweep runs under
+//   independence. Cap 3 slips/day. ONLY PLAY DAYS WITH 2+ BUILDABLE SLIPS: a lone 2-pick at 50%
+//   sweep loses the day half the time; two or more lose it 25%. Losing days 16 -> 6.
+// MEASURED (per-leg floor pricing, 28 days): 71 slips, 71.8% legs, 54.9% sweep, +38.2% ROI,
+//   train +51.9% / test +24.9%, 22/28 profitable days.
+// SUBSTITUTION: SUB if a backup exists, else CANCEL. There is no shrink on a 2-pick. Measured 142x:
+//   sub-if-backup-else-cancel +3.5% vs cancel 0% - the leftover legs are the pinch-hit profiles,
+//   so a substitute is close to a coin flip. Never leave a single leg.
+// PLACEMENT: Sleeper's board fills at ~20:00 UTC (581-leg capture). Do not place before then.
+async function autoSelectSleeperWorkloadLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH board AS (
+        SELECT b.player_name, b.resolved_mlb_player_id AS pid, b.official_game_pk AS gp,
+               b.canonical_prop_key AS prop, b.line_value AS ln, b.official_game_time_utc AS gt,
+               ((b.raw_source_json #>> '{}')::jsonb->>'under_price')::numeric AS under_price
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'sleeper'
+          AND b.resolved_mlb_player_id IS NOT NULL
+          AND b.official_game_time_utc IS NOT NULL
+          AND b.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+          AND ((b.canonical_prop_key = 'hits_runs_rbis' AND b.line_value = 1.5)
+            OR (b.canonical_prop_key = 'earned_runs' AND b.line_value = 2.5))
+      ),
+      wl AS (
+        SELECT bd.*, CASE WHEN bd.prop = 'earned_runs' THEN 'P' ELSE 'H' END side_type,
+          (SELECT AVG(g.outs_recorded::numeric) FROM (SELECT x.outs_recorded FROM stats_pitcher.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE ORDER BY x.game_date DESC LIMIT 5) g) AS outs_l5,
+          (SELECT AVG(g.pa::numeric) FROM (SELECT x.pa FROM stats_hitter.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE AND x.pa > 0 ORDER BY x.game_date DESC LIMIT 5) g) AS pa_l5,
+          (SELECT COUNT(*) FROM stats_hitter.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE AND x.game_date >= CURRENT_DATE - 7 AND x.pa > 0) AS games_l7,
+          (SELECT t.team_id FROM stats_hitter.game_logs t WHERE t.player_id = bd.pid ORDER BY t.game_date DESC LIMIT 1) AS h_team,
+          (SELECT t.team_id FROM stats_pitcher.game_logs t WHERE t.player_id = bd.pid ORDER BY t.game_date DESC LIMIT 1) AS p_team
+        FROM board bd
+      ),
+      qual AS (
+        SELECT *, 1 + (CASE WHEN under_price < 0 THEN 100.0/(-under_price) WHEN under_price > 0 THEN under_price/100.0 END) * 0.95 AS leg_mult,
+          COALESCE(h_team, p_team) AS team_id
+        FROM wl
+        WHERE under_price IS NOT NULL
+          AND ((side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 < 14)
+            OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0))
+      ),
+      banded AS (SELECT * FROM qual WHERE leg_mult BETWEEN 1.40 AND 1.80),
+      one_per_player AS (
+        SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY leg_mult DESC) pr FROM banded) z WHERE pr = 1
+      )
+      SELECT 'slw|' || pid::text || '|' || prop || '|' || ln::text || '|less' AS board_row_id,
+        'sleeper' AS source_key, gp AS game_pk, gt AS official_game_time_utc,
+        (gt::timestamptz - interval '8 hours')::date AS official_date,
+        player_name, pid AS mlb_player_id, prop AS canonical_prop_key,
+        ln AS line_value, 'less' AS selected_side,
+        CASE WHEN side_type = 'P' THEN 62.9 WHEN games_l7 >= 6 THEN 79.6 ELSE 67.6 END AS hit_probability_0_100,
+        prop || ' ' || ln::text || ' less' AS cell_label,
+        ROUND(leg_mult::numeric, 3) AS leg_mult, ROUND(leg_mult::numeric, 3) AS real_layer_rate,
+        under_price, side_type, team_id::text AS team_id,
+        COALESCE(games_l7, 7) AS games_l7, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5
+      FROM one_per_player
+      ORDER BY COALESCE(games_l7, 7) DESC, leg_mult DESC, pid
+      LIMIT 30
+    `, []);
+    return rows || [];
+  } catch (_) {
+    return [];
+  } finally {
+    try { await pg.end(); } catch (_) {}
+  }
+}
+
 // UNDERDOG WORKLOAD (UDW) leg selector - 2026-09-07. A NEW track; the old UD divergence track
 // (udLegs, disabled) is untouched.
 //
