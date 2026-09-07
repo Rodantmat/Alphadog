@@ -5382,10 +5382,11 @@ async function apiHighHitSlips(env, request) {
     // V4's backup legs go into the SHARED pool the frontend substitutes from. V3's stay out
     // because V3 shrinks. Tagged 'prizepicks_regular' to match the V4 slip source_key, which
     // poolLegIsLegalForSlip() requires - a mismatch makes every substitution illegal.
-    backup_pool: [...backupPool, ...v4BackupPool.map(l => ({ ...l, source_key: "prizepicks_regular" }))],
+    backup_pool: [...backupPool, ...v5BackupPool],
     v2_backup_pool: v2BackupPool,
     v3_backup_pool: v3BackupPool,
     v4_backup_pool: v4BackupPool,
+    v5_backup_pool: v5BackupPool,
     notes: [
       `PrizePicks Goblin: total_bases LESS strategy, deployed 2026-08-30. Legs = total_bases at lines 2.5/3.5, LESS side only, where the PLAYER'S OWN trailing hit rate for that exact line (from their game log, games strictly before today) is >= ${PP_TRAILING_MIN}% on >= ${PP_MIN_GAMES} prior games. Ranked by that rate, ${BASELINE_HP_SIZE}-pick Power, cap ${BASELINE_HP_MAX_SLIPS_PER_DAY}/day. Every leg pays 1.1926 so a 4-pick is 2.023x. Backtest: 34 slips, 24 wins, 17 days, 89.7% leg accuracy, +42.8% ROI, bootstrap 99.8%, CI [+13.0%, +72.5%], leave-one-out [+39.1%, +51.7%]. This REPLACES the percentile strategy, whose +120.8% was measured on a LEAKED baseline (as_of_date=D included day D's own game) and scores -13.4% when re-run clean. ⚠️ Substitute ONLY from the backup pool. ⚠️ 17 days / 34 slips - the CI floor of +13.0% is the realistic expectation, not +42.8%. Always overwrite the prefilled multiplier with what the app actually shows.`,
       "Underdog: PAUSED 2026-08-26 - rbis/less confirmed negative EV on real, corrected pricing (-14.0%). No slips until a replacement signal is confirmed.",
