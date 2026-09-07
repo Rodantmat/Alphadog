@@ -4882,8 +4882,8 @@ async function apiHighHitSlips(env, request) {
           "RE-TAG RULE (Option C): if any leg shows a GOBLIN or DEMON icon in the app at placement, it re-tagged after build. SUBSTITUTE it from backup_pool - do NOT accept the goblin/demon version. A real 5-pick Flex with one goblin leg paid 8x instead of 10x. Legs that were already mid-flip in today's captures are excluded server-side; this rule covers flips after build. Re-tag rate by cell: hits_runs_rbis 18%, pitcher_strikeouts 13%, fantasy cells ~0%.",
           "HONEST GATES on the test half: bootstrap positive 86.2%, 95% CI includes zero, best-day share 62.9%, 10 of 20 days profitable. Leave-one-day-out stays positive throughout. The edge is real but the sample is 59 slips and the profit is lumpy. MINIMUM STAKE."
         ],
-        legs: take.map((l, i) => ({ ...l, leg_index: i + 1 })),
-        backup_pool: backupV4
+        legs: take.map((l, i) => ({ ...l, source_key: "prizepicks_regular", leg_index: i + 1 })),
+        backup_pool: backupV4.map(l => ({ ...l, source_key: "prizepicks_regular" }))
       });
     }
   }
