@@ -5138,7 +5138,7 @@ async function apiHighHitSlips(env, request) {
   // measurement. V5 (2-pick + upgrade) is UNTOUCHED above and keeps its own legs.
   // V4 excludes any player already placed by V5 today so the two tracks never double-stake a leg.
   const v5PlacedPlayers = new Set(v5Slips.flatMap(s => (s.legs || []).map(l => String(l.mlb_player_id))));
-  const v4LegsRaw = await autoSelectStrategyV4Legs(env).catch(() => []);
+  const v4LegsRaw = await autoSelectStrategyV4Legs(env).catch((e) => { selectorErrors.v4 = String(e && e.message || e); return []; });
   const v4Legs = v4LegsRaw.filter(l => !v5PlacedPlayers.has(String(l.mlb_player_id)));
   const v4Slips = [];
   {
