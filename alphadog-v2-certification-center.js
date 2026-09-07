@@ -5086,7 +5086,7 @@ async function apiHighHitSlips(env, request) {
   // (-2.2% on 32 days) - its cell selection was the artifact every other regular config showed.
   // V5's edge is structural (workload caps accumulation) and holds walk-forward on both halves.
   // V4 code is retained below but produces no slips.
-  const v5Legs = await autoSelectStrategyV5Legs(env).catch(() => []);
+  const v5Legs = await autoSelectStrategyV5Legs(env).catch((e) => { selectorErrors.v5 = String(e && e.message || e); return []; });
   const v5Slips = [];
   {
     // One leg per game - two capped pitchers in the same game are correlated through game script.
