@@ -5303,8 +5303,9 @@ async function apiHighHitSlips(env, request) {
   // substitute leg does. Each V4 slip carries its own backup_pool built at construction time.
   const v4UsedIds = new Set(v4Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v4BackupPool = v4Legs.filter(l => !v4UsedIds.has(l.board_row_id)).slice(0, 8);
-  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...udSlips, ...slBaselineSlips]
+  const allPlayerIds = [...new Set([...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...udSlips, ...slBaselineSlips]
     .flatMap(s => (s.legs || []).map(l => l.mlb_player_id))
+    .concat(v5BackupPool.map(l => l.mlb_player_id))
     .concat(backupPool.map(l => l.mlb_player_id))
     .concat(v2BackupPool.map(l => l.mlb_player_id))
     .concat(v3BackupPool.map(l => l.mlb_player_id))
