@@ -5279,7 +5279,13 @@ async function apiHighHitSlips(env, request) {
     // with V3 slips - V1's goblin pool cannot leak in. Legs carry real_layer_rate so the
     // multiplier path is unaffected by the source_key.
     // ============================================================================
-    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 3;
+    // SIZE RULE (2026-09-07): build a 5-pick when 5+ qualifying legs exist, a 4-pick when exactly
+    // 4 do. Measured on the rebuilt pool with full gates:
+    //   4-pick only:       +39.5%  pre +21.8% / post +46.1%  LOO-2 +33.1%  best-day 17.0%
+    //   5s first, 4 left:  +43.8%  pre +34.6% / post +47.5%  LOO-2 +36.4%  best-day 12.6%
+    // At 95.5% legs a 5-pick sweeps 79% and pays ~2.0x; a 4-pick sweeps 83% at ~1.7x. The extra
+    // leg costs 4pts of sweep and adds 18% of payout. Six is where it breaks (-4.2% clean).
+    const SZ = 5, MIN_SZ = 4, MAX_SLIPS = 3;
     const used = new Set();
     while (v3Slips.length < MAX_SLIPS) {
       const avail = v3Legs.filter(l => !used.has(l.board_row_id));
