@@ -5305,11 +5305,15 @@ async function apiHighHitSlips(env, request) {
       if (avail.length < MIN_SZ) break;
       const legs = [];
       const seenPlayers = new Set();
+      const slipGames = new Map();
       for (const l of avail) {
         if (legs.length >= SZ) break;
         if (seenPlayers.has(String(l.mlb_player_id))) continue;
+        const g = String(l.game_pk || '');
+        if (g && (slipGames.get(g) || 0) >= MAX_PER_GAME) continue;
         legs.push(l);
         seenPlayers.add(String(l.mlb_player_id));
+        if (g) slipGames.set(g, (slipGames.get(g) || 0) + 1);
       }
       if (legs.length < MIN_SZ) break;
       for (const l of legs) used.add(l.board_row_id);
