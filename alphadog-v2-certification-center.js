@@ -4348,6 +4348,109 @@ async function autoSelectStrategyV2Legs(env) {
 // hits t1/less and singles t1/less were REMOVED: they collapsed 95.9% -> 77.5% and 100% -> 87.5%
 // between the early and late window. Dropping them lifted recent-window ROI from +8.8% to +55.0%.
 // Worth re-testing in a few weeks - a two-week slump may be variance rather than decay.
+// SLIP_STRATEGY_V5 leg selector - WORKLOAD-CAPPED UNDERS on REGULAR lines.
+//
+// MECHANISM: the market prices a player's ceiling; recent workload caps the floor. Where a line
+// sits above what the innings or plate appearances can produce, the under hits regardless of
+// talent. This is structural, not statistical - and it is the reason it survives walk-forward
+// when every model-ranked regular config failed.
+//
+// PITCHERS: average outs over last 5 starts < 14 (under 4.67 IP). Lines: earned_runs 2.5 LESS,
+//   pitcher_outs 14.5 LESS, pitcher_fantasy_score >= 23.5 LESS. The threshold is a CLIFF, not a
+//   gradient: outs<14 hits 58-68%, outs 14-15 hits 40.5%, outs>=15 hits 50-56%. The market prices
+//   5-inning starters correctly; sub-4.2 signals a non-standard role (opener, rehab, innings cap)
+//   the lines have not adjusted for. Works on ACCUMULATION props only - on hits_allowed it INVERTS
+//   (38.9% short vs 63.6% deep) because a short-outing pitcher was pulled for giving up hits.
+// HITTERS: average PA over last 5 games < 3.0. Line: fantasy_score >= 4.5 LESS. Same shape - a
+//   sub-3-PA hitter cannot reach 4.5 FS but can reach 2.5, so only the higher lines respond.
+//
+// MEASURED (real morning-snapshot regular legs, real graded, 38 days, deduped, one per player):
+//   2-pick only          69 slips  +30.4%   maxDD -4  worst losing streak 2 days
+//   2 + upgrade (THIS)   69 slips  +56.5%   maxDD -4  worst losing streak 2 days  18/38 win days
+//   3s first             53 slips  +81.1%   maxDD -7  worst losing streak 5 days
+//   3 only               41 slips  +90.2%   maxDD -7  worst losing streak 6 days
+// Chosen for ROI-per-drought: same drawdown profile as pure 2-pick at nearly double the return.
+// The upgraded 3-picks won 9 of 17 (52.9%) and carried +$45 of the +$39 net; the base 2-picks
+// were roughly flat. The upgrade IS the return; the 2-picks keep the curve from bleeding.
+//
+// INSIDE THE POOL no model signal separates hits from misses - HP, pconf, score, rolling rate,
+// baseline all flat within a point. Rank order barely matters; volume is the constraint.
+// Every widening was tested and failed: L3 window adds 51% legs, L10 adds 35%, wider outs
+// threshold falls into the 40% band, lower lines are reachable by a short outing.
+// SEASONAL: innings caps, playoff rest and roster expansion are Aug-Sep phenomena. Pause in April.
+async function autoSelectStrategyV5Legs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH board AS (
+        SELECT b.player_name, b.resolved_mlb_player_id AS pid, b.official_game_pk AS gp,
+               b.canonical_prop_key AS prop, b.line_value AS ln, b.official_game_time_utc AS gt
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'prizepicks'
+          AND b.resolved_mlb_player_id IS NOT NULL
+          AND (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' = 'standard'
+          AND b.official_game_time_utc IS NOT NULL
+          AND b.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+          AND (
+            (b.canonical_prop_key = 'earned_runs' AND b.line_value = 2.5)
+            OR (b.canonical_prop_key = 'pitcher_outs' AND b.line_value = 14.5)
+            OR (b.canonical_prop_key = 'pitcher_fantasy_score' AND b.line_value >= 23.5)
+            OR (b.canonical_prop_key = 'fantasy_score' AND b.line_value >= 4.5)
+          )
+      ),
+      wl AS (
+        SELECT bd.*,
+          CASE WHEN bd.prop IN ('earned_runs','pitcher_outs','pitcher_fantasy_score') THEN 'P' ELSE 'H' END side_type,
+          (SELECT AVG(g.outs_recorded::numeric) FROM (
+             SELECT x.outs_recorded FROM stats_pitcher.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE
+             ORDER BY x.game_date DESC LIMIT 5) g) AS outs_l5,
+          (SELECT AVG(g.pa::numeric) FROM (
+             SELECT x.pa FROM stats_hitter.game_logs x
+             WHERE x.player_id = bd.pid AND x.game_date < CURRENT_DATE AND x.pa > 0
+             ORDER BY x.game_date DESC LIMIT 5) g) AS pa_l5
+        FROM board bd
+      ),
+      qual AS (
+        SELECT * FROM wl
+        WHERE (side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 < 14)
+           OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0)
+      ),
+      scored AS (
+        SELECT q.*,
+          COALESCE(
+            (SELECT MAX(f.estimated_hit_probability_0_100) FROM score.final_board_current f
+             WHERE f.mlb_player_id = q.pid AND f.canonical_prop_key = q.prop
+               AND f.line_value = q.ln AND f.selected_side = 'less'),
+            (SELECT MAX(h.estimated_hit_probability_0_100) FROM score.hp_board_current h
+             WHERE h.mlb_player_id = q.pid AND h.canonical_prop_key = q.prop
+               AND h.line_value = q.ln AND h.selected_side = 'less'),
+            50) AS sig
+        FROM qual q
+      ),
+      one_per_player AS (
+        SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY sig DESC, ln DESC) pr FROM scored) z WHERE pr = 1
+      )
+      SELECT 'v5|' || pid::text || '|' || prop || '|' || ln::text || '|less' AS board_row_id,
+        'prizepicks_regular' AS source_key, gp AS game_pk, gt AS official_game_time_utc,
+        (gt::timestamptz - interval '8 hours')::date AS official_date,
+        player_name, pid AS mlb_player_id, prop AS canonical_prop_key,
+        ln AS line_value, 'less' AS selected_side,
+        ROUND(sig::numeric, 2) AS hit_probability_0_100,
+        prop || ' ' || ln::text || ' less' AS cell_label,
+        side_type, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5
+      FROM one_per_player
+      ORDER BY sig DESC, prop, pid
+      LIMIT 30
+    `, []);
+    return rows || [];
+  } catch (_) {
+    return [];
+  } finally {
+    try { await pg.end(); } catch (_) {}
+  }
+}
+
 // SLIP_STRATEGY_V4 leg selector - REGULAR (standard) legs only.
 // Deliberately excludes goblins and demons: this track exploits a different inefficiency from V3.
 // V3 rides the flat goblin discount; V4 rides regular legs whose final-HP top-3 clear 62-63%
