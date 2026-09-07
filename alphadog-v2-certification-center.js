@@ -5091,10 +5091,59 @@ async function apiHighHitSlips(env, request) {
   }
   const v5UsedIds = new Set(v5Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v5BackupPool = v5Legs.filter(l => !v5UsedIds.has(l.board_row_id)).slice(0, 6);
-  // V4 disabled - see note above.
-  const v4Legs = [];
+  // V4 REBUILT 2026-09-07 - workload-wide, 4-pick Flex. See autoSelectStrategyV4Legs for the full
+  // measurement. V5 (2-pick + upgrade) is UNTOUCHED above and keeps its own legs.
+  // V4 excludes any player already placed by V5 today so the two tracks never double-stake a leg.
+  const v5PlacedPlayers = new Set(v5Slips.flatMap(s => (s.legs || []).map(l => String(l.mlb_player_id))));
+  const v4LegsRaw = await autoSelectStrategyV4Legs(env).catch(() => []);
+  const v4Legs = v4LegsRaw.filter(l => !v5PlacedPlayers.has(String(l.mlb_player_id)));
   const v4Slips = [];
   {
+    const SZ = 4, MIN_SZ = 4, MAX_SLIPS = 4;
+    // One leg per game - keep the same correlation rule as V5.
+    const usedGames = new Set();
+    const legsV4 = [];
+    for (const l of v4Legs) {
+      const g = String(l.game_pk || '');
+      if (g && usedGames.has(g)) continue;
+      if (g) usedGames.add(g);
+      legsV4.push(l);
+    }
+    let i = 0;
+    while (v4Slips.length < MAX_SLIPS && legsV4.length - i >= MIN_SZ) {
+      const take = legsV4.slice(i, i + SZ); i += SZ;
+      const n = take.length;
+      // 4-pick Flex published tiers: 4/4 = 6x, 3/4 = 1.5x. Breakeven 55.0% per leg.
+      const flexTiers = { 4: 6.0, 3: 1.5 };
+      const mult = flexTiers[n] || null;
+      const breakeven = mult ? Math.round((1 / mult) * 10000) / 100 : null;
+      v4Slips.push({
+        client_slip_id: makeUiId("high_hit_slip_v4"),
+        source_key: "prizepicks_regular",
+        slip_type: n + "-pick",
+        slip_size: n,
+        structure_label: n + "-pick Flex (SLIP_STRATEGY_V4: WORKLOAD-WIDE, regulars, signal-ranked)",
+        entry_mode: "flex",
+        selected_leg_count: n,
+        estimated_hit_probability_0_100: 63.7,
+        estimated_multiplier: mult,
+        estimated_multiplier_flex_tiers: flexTiers,
+        breakeven_hit_rate_0_100: breakeven,
+        strategy_notes: [
+          "SLIP_STRATEGY_V4 (rebuilt 2026-09-07) - workload-capped UNDERS on REGULAR lines, widened pool, 4-pick FLEX at 6x (4/4) / 1.5x (3/4). Same mechanism as V5; V5's 2-pick track is unchanged and runs alongside.",
+          "Pool: pitchers <14 outs L5 on ER 2.5 / outs 14.5 & 16.5 / PFS 17.5 & >=23.5; pitchers 15-16 outs on PFS >=26.5 & 21.5 / outs 16.5; hitters <3 PA L5 on FS 3/3.5/4.5/>=5.5 and HRR 0.5/1.5. All LESS. No FS 4 or 5 (push lines).",
+          "Ranked by SIGNAL STRENGTH (fewest outs / fewest PA), not HP - HP is flat inside this pool. The hit_probability field on each leg IS the signal strength, not a probability.",
+          "Measured 42 days, 84 real morning-snapshot slips: 63.7% leg acc, 17 sweeps, +66.1% ROI, both halves positive, bootstrap 99.7%, 95% CI [+17%, +124%], leave-two-days-out min +44%, best-day share 18%. All gates pass.",
+          "SUBSTITUTE if a backup exists, else SHRINK to 3-pick Flex (3x/1x). Measured 328x: this blend +64.0% on drop days vs +70.1% no-drop. The app does this natively - uncheck the dead leg, it pulls from backup_pool, shrinks if empty.",
+          "SEASONAL: Aug-Sep mechanism (innings caps, playoff rest, showcases). Pause at season end; April needs re-validation."
+        ],
+        legs: take.map((l, k) => ({ ...l, leg_index: k + 1 }))
+      });
+    }
+  }
+  const v4UsedIds = new Set(v4Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const v4BackupPool = v4Legs.filter(l => !v4UsedIds.has(l.board_row_id)).slice(0, 8);
+  if (false) {
     const SZ = 5, MIN_SZ = 5, MAX_SLIPS = 3;
     const usedV4 = new Set();
     while (v4Slips.length < MAX_SLIPS) {
