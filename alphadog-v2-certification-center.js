@@ -5281,6 +5281,56 @@ async function apiHighHitSlips(env, request) {
   }
   const v4UsedIds = new Set(v4Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v4BackupPool = v4Legs.filter(l => !v4UsedIds.has(l.board_row_id)).slice(0, 8);
+
+  // UNDERDOG WORKLOAD (UDW) - new track 2026-09-07. Separate variables from the disabled UD
+  // divergence track. See autoSelectUnderdogWorkloadLegs for measurement.
+  const udwLegs = await autoSelectUnderdogWorkloadLegs(env).catch((e) => { selectorErrors.udw = String(e && e.message || e); return []; });
+  const udwSlips = [];
+  {
+    const SZ = 3, MIN_SZ = 3, MAX_SLIPS = 2, MAX_PER_GAME = 2;
+    const used = new Set();
+    while (udwSlips.length < MAX_SLIPS) {
+      const avail = udwLegs.filter(l => !used.has(l.board_row_id));
+      if (avail.length < MIN_SZ) break;
+      const legs = []; const seen = new Set(); const games = new Map();
+      for (const l of avail) {
+        if (legs.length >= SZ) break;
+        if (seen.has(String(l.mlb_player_id))) continue;
+        const g = String(l.game_pk || '');
+        if (g && (games.get(g) || 0) >= MAX_PER_GAME) continue;
+        legs.push(l); seen.add(String(l.mlb_player_id));
+        if (g) games.set(g, (games.get(g) || 0) + 1);
+      }
+      if (legs.length < MIN_SZ) break;
+      for (const l of legs) used.add(l.board_row_id);
+      const mult = legs.reduce((a, l) => a * (Number(l.leg_mult) || 1.6), 1);
+      const hp = legs.reduce((a, l) => a * (Number(l.hit_probability_0_100) / 100), 1);
+      udwSlips.push({
+        client_slip_id: makeUiId("high_hit_slip_udw"),
+        source_key: "parlay_underdog",
+        slip_type: SZ + "-pick",
+        slip_size: SZ,
+        structure_label: SZ + "-pick Power (UNDERDOG WORKLOAD: capped unders, per-leg priced, cap 2)",
+        entry_mode: "power",
+        selected_leg_count: SZ,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: Math.round(mult * 1000) / 1000,
+        breakeven_hit_rate_0_100: Math.round((1 / mult) * 10000) / 100,
+        estimated_payout_note: "Underdog prices PER LEG: leg multiplier = decimal odds x 0.963 (fitted from 19 real placed slips), slip = product. Each leg's leg_mult is shown. Compare to the app before placing.",
+        strategy_notes: [
+          "UNDERDOG WORKLOAD - capped UNDERS on Underdog. Hitters <3 PA L5 on hits_runs_rbis 1.5 / fantasy_score 5.5 LESS; pitchers <14 outs L5 on earned_runs 2.5 / walks_allowed 2.5 / pitcher_fantasy_score_ud >=26.5 LESS.",
+          "Ranked by UD LEG MULTIPLIER (high to low), not by workload depth - the cap is binary on UD; what separates is what UD charges. Legs UD prices <55% hit 66.7% at 1.84 (EV 1.22).",
+          "Validated three ways: UD's own price (60% implied vs 69% actual on 117 legs), sharp market (54% vs 65% on 97 legs), 19 real placed multipliers (per-leg 0.963 x decimal, consistent across sizes).",
+          "Measured 31 days on the 20:00 UTC board, real pricing: 59 slips, 71.2% legs, +122% ROI, train +160% / test +84%, 19/31 profitable days, best-day 14%. Uncapped +76%. All gates pass.",
+          "SUBSTITUTE if a backup exists, else SHRINK. Measured 174x: +72.5% vs shrink-only +61.8%. Backups are this pool's own leftovers, priced. Max 2 slips/day - the third dilutes.",
+          "PLACE AFTER 20:00 UTC. UD's board fills then; 69% of qualifying legs are up by then and hit better than late ones."
+        ],
+        legs: legs.map((l, k) => ({ ...l, leg_index: k + 1 }))
+      });
+    }
+  }
+  const udwUsedIds = new Set(udwSlips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const udwBackupPool = udwLegs.filter(l => !udwUsedIds.has(l.board_row_id)).slice(0, 6);
   if (false) {
     const SZ = 5, MIN_SZ = 5, MAX_SLIPS = 3;
     const usedV4 = new Set();
