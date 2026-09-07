@@ -4746,11 +4746,33 @@ async function autoSelectStrategyV3Legs(env) {
           -- Caps widened from the earlier 2/4 pattern: walks_allowed t1 improves MONOTONICALLY
           -- with depth (93.8 at cap1 -> 98.6 at cap6) so it takes 6; total_bases t3 and runs t1
           -- peak at cap3. Widening every cap uniformly was tested and lost (+88.1%).
-          ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',4,1.1749),
-          ('walks_allowed',1,'more','walks_allowed t1/more','live',6,1.1089),
-          ('walks_allowed',2,'more','walks_allowed t2/more','live',6,1.1089),
-          ('total_bases',3,'less','total_bases t3/less','reb',3,1.1583),
-          ('runs',1,'less','runs t1/less','reb',3,1.1067)
+          -- ============================================================================
+          -- V3 REBUILT 2026-09-07 on HP recomputed through the LIVE formula (Platt calibration,
+          -- stable since 08-20). The old config validated on a mix of two HP formulas; on the
+          -- clean window it was -9.6%. This config is +39.5% overall, +21.8% pre / +46.1% post,
+          -- 22 slips / 21 days, 95.5% leg acc, 18 wins, bootstrap 99.2%, CI [+8.9%, +63.9%],
+          -- LOO-2 min +33.1%, 17/21 profitable days, best-day 17.0%. All 12 gates pass.
+          --
+          -- CHANGES:
+          --  runs t1/less OUT (86.2% at t2 vs 90.4% breakeven on corrected HP).
+          --  total_bases t2/less IN (92.2% at t2, 100% on the clean window, 33 legs).
+          --  ALL cells on LIVE final HP. The rebuilt empirical rate is retired here - on corrected
+          --  data HP ranks goblins monotonically (83% at >=90 vs 68% at <70), so it is the signal.
+          --  Multipliers corrected to the pure 4-pick reads: K t2 1.2038, WA t1 1.1892, TB t3 1.1247.
+          --  Caps 2 (TB, K) / 3 (WA). Wider caps and HP>=85/90 floors tested: worse or too thin.
+          --  4-pick Power (built downstream). 6-pick was -4.2% on the clean window: six 93% legs
+          --  sweep 65%, four sweep 75%.
+          --  walks_allowed HARD FILTER: last-3-start BB/BF >= 0.08 AND opponent 30-day walk rate
+          --  >= 0.085. 21-for-21 on corrected data. As a hard filter (not a boost) it moved the
+          --  4-pick +29.5% -> +39.5% and the CI floor +3.6% -> +8.9%.
+          --  Workload cap (outs<14) tested on goblin unders: NO lift (ER t2/less 73.7% capped vs
+          --  75.4% deep) - the goblin line already reflects the ease. HP is the tool here.
+          -- ============================================================================
+          ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',2,1.2038),
+          ('walks_allowed',1,'more','walks_allowed t1/more','live',3,1.1892),
+          ('walks_allowed',2,'more','walks_allowed t2/more','live',3,1.1089),
+          ('total_bases',3,'less','total_bases t3/less','live',2,1.1247),
+          ('total_bases',2,'less','total_bases t2/less','live',2,1.1129)
         ) AS c(p,tr,sd,cell,src,cap,mult)
           ON c.p=s.prop AND c.tr=s.tier AND c.sd=s.side
         WHERE s.g = 1
