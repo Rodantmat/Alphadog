@@ -5239,7 +5239,6 @@ async function apiHighHitSlips(env, request) {
       });
     }
   }
-  const selectorErrors = {};
   const v3Legs = await autoSelectStrategyV3Legs(env).catch((e) => { selectorErrors.v3 = String(e && e.message || e); return []; });
   const v3Slips = [];
   {
