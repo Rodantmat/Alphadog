@@ -5,5 +5,5 @@ its `push` path filter - this works with plain github_put_file/github_patch_file
 NBA chat has had since day one, so no special tool or connector reconnect is ever needed to
 run this scraper on demand again.
 
-last_triggered_utc: 2026-09-04T18:20:00Z
-trigger_reason: added lineup synergy scraper (leaguedashlineups) to the weekly cycle - last item from the multi-pass NBA data audit
+last_triggered_utc: 2026-09-07T20:00:00Z
+trigger_reason: regression test of the shared nba_season utility across all scrapers - stats resolve to 2025-26 (idempotent re-pull of identical data), roster/schedule to 2026-27. Verifies the sys.path import works in the real Actions runtime, not just py_compile.
