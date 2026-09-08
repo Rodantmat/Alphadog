@@ -41,8 +41,15 @@ OUTPUT_PATH = Path("nba/data/nba_tracking_detail_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_tracking_detail_current_meta.json")
 
 
+import sys
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
+
+
 def build_url(measure_type):
-    return ("https://stats.nba.com/stats/leaguedashptstats?LeagueID=00&Season=2025-26"
+    return (f"https://stats.nba.com/stats/leaguedashptstats?LeagueID=00&Season={SEASON}"
             f"&SeasonType=Regular+Season&PerMode=PerGame&PlayerOrTeam=Player"
             f"&PtMeasureType={measure_type}&LastNGames=0&Month=0&OpponentTeamID=0")
 
