@@ -43,9 +43,9 @@ BASE_URL = "https://stats.nba.com/stats/synergyplaytypes"
 
 import sys
 sys.path.insert(0, "nba")
-from nba_season import current_season
+from nba_season import active_stats_season
 
-SEASON = current_season()
+SEASON = active_stats_season()
 
 
 def build_url(player_or_team, play_type, type_grouping):
