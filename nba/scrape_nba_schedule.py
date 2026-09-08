@@ -42,7 +42,13 @@ URL_TEMPLATE = "https://stats.nba.com/stats/scheduleleaguev2?LeagueID=00&Season=
 # starts in about a month or so") - the schedule for next season may or may not be published yet
 # this early; each season is fetched independently so one being unavailable doesn't block the
 # other.
-SEASONS = ["2025-26", "2026-27"]
+import sys
+sys.path.insert(0, "nba")
+from nba_season import current_season, prior_seasons
+
+# [most recently completed season, current/upcoming season] - derived dynamically so the
+# weekly cycle rolls over correctly each summer without a code change.
+SEASONS = [prior_seasons(1)[0], current_season()]
 OUTPUT_PATH = Path("nba/data/nba_schedule_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_schedule_current_meta.json")
 OUTPUT_DEBUG_PATH = Path("nba/data/nba_schedule_debug_raw.json")
