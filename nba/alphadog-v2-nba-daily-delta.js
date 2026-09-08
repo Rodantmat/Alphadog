@@ -13,6 +13,11 @@ function jsonResponse(body, status = 200) {
 async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false }); }
 function toIntOrNull(v) { if (v === null || v === undefined || v === "") return null; const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : null; }
+// Real bug (2026-09-08, first run against REAL data after only ever being "verified" against an
+// empty season): postgres.js rejects `undefined` outright ("UNDEFINED_VALUE"). Team advanced logs
+// have no USG_PCT (usage is a player concept), so r.USG_PCT was undefined and the whole batch
+// failed. Every mapped value now passes through this so a missing column becomes NULL, never undefined.
+function nn(v) { return v === undefined ? null : v; }
 
 async function fetchFromGithubRaw(env, path) {
   const owner = env.GITHUB_OWNER || "Rodantmat";
