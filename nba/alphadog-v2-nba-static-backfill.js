@@ -268,12 +268,13 @@ async function runJob(input, env) {
 
   try {
     const r = await fetchFromGithubRaw(env, "nba/data/nba_player_splits.json", "nba/data/nba_player_splits_meta.json");
-    playerSplitsWritten = await upsertPlayerSplits(sql, r.file.rows || [], sourceKey, "2025-26");
+    // Season from the scraper's meta (set via active_stats_season), never hardcoded.
+    playerSplitsWritten = await upsertPlayerSplits(sql, r.file.rows || [], sourceKey, (r.meta && r.meta.season) || r.file.season);
   } catch (err) { errors.push(`player_splits_failed: ${String(err && err.message ? err.message : err)}`); }
 
   try {
     const r = await fetchFromGithubRaw(env, "nba/data/nba_team_splits.json", "nba/data/nba_team_splits_meta.json");
-    teamSplitsWritten = await upsertTeamSplits(sql, r.file.rows || [], sourceKey, "2025-26");
+    teamSplitsWritten = await upsertTeamSplits(sql, r.file.rows || [], sourceKey, (r.meta && r.meta.season) || r.file.season);
   } catch (err) { errors.push(`team_splits_failed: ${String(err && err.message ? err.message : err)}`); }
 
   const playerLogTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_game_log`;
