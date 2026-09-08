@@ -8,12 +8,19 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 50000; // Effectively unlimited: Cloudflare wall-clock time is free for I/O-bound
-// work (waiting on Postgres doesn't count against any real platform limit), so there's no need to chunk writes
-// across multiple invocations. Process everything in one pass. CPU time (the only real Cloudflare limit) is
-// raised via wrangler limits.cpu_ms for defensive headroom, though this worker's actual CPU usage is minimal.
-// wastes the entire 24s AND still requires a retry from scratch, while a smaller tick that reliably completes
-// makes real, durable progress every single time. Re-tune upward again only with fresh, real timing evidence.
+const WRITE_ROWS_PER_INVOCATION = 2000; // FIXED 2026-09-08 (Cowork-supervised 1pm slot): reverted from 50000
+// ("effectively unlimited"). That assumption - "Cloudflare wall-clock time is free for I/O-bound work,
+// waiting on Postgres doesn't count against any real platform limit" - is empirically false: live runs
+// today repeatedly died mid-INSERT-loop (score.board_prepared_stage climbing into four/five figures - one
+// attempt reached 10575/12173 - then going completely silent with no error thrown and no active DB
+// connection in pg_stat_activity), well within the 300000ms cpu_ms budget already raised for this worker.
+// That signature is a wall-clock kill on the waitUntil-extended execution, not CPU exhaustion. The
+// PARTIAL_CONTINUE_BOARD_PREP_WRITE / recoverResumeBatchForRequest(request_id) resume path already exists
+// below but was unreachable while this constant exceeded real daily row counts (writeEndExclusive always
+// equalled rows.length, so the partial-write branch never triggered). Bounding this back down lets that
+// resume path actually engage, so a caller retrying with the same request_id makes real, durable progress
+// each call instead of restarting the whole batch from scratch. Re-tune upward again only with fresh,
+// real timing evidence that a larger bound reliably completes.
 
 function nowIso() {
   return new Date().toISOString();
