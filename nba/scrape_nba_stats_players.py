@@ -33,7 +33,7 @@ STATS_HEADERS = {
 
 # IsOnlyCurrentSeason=1 -> active-roster players only for the given season, per the real,
 # documented commonallplayers contract (confirmed via nba_api project docs, 2026-08-31).
-URL = "https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season=2025-26"
+URL = f"https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season={SEASON}"
 OUTPUT_PATH = Path("nba/data/nba_players_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_players_current_meta.json")
 
