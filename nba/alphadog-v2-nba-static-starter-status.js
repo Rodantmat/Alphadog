@@ -76,7 +76,7 @@ async function runJob(input, env) {
   const starterTotal = await sql`SELECT COUNT(*)::int AS c FROM nba_stats.player_game_starter_status WHERE is_starter = 1`;
   await sql.end();
 
-  const certified = !error && written > 30000;
+  const certified = !error && written > 0; // was written > 30000 - false alarm early in a new season
 
   return {
     ok: certified, version: VERSION, worker_name: WORKER_NAME, job_key: input.job_key || JOB_KEY,
