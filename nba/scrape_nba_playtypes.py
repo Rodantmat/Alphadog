@@ -41,9 +41,16 @@ PLAY_TYPES = ["Transition", "Isolation", "PRBallHandler", "PRRollman", "Postup",
 BASE_URL = "https://stats.nba.com/stats/synergyplaytypes"
 
 
+import sys
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
+
+
 def build_url(player_or_team, play_type, type_grouping):
     return (f"{BASE_URL}?LeagueID=00&PerMode=Totals&PlayType={play_type}&PlayerOrTeam={player_or_team}"
-            f"&SeasonType=Regular+Season&SeasonYear=2025-26&TypeGrouping={type_grouping}")
+            f"&SeasonType=Regular+Season&SeasonYear={SEASON}&TypeGrouping={type_grouping}")
 
 
 def fetch_one(url, proxies):
