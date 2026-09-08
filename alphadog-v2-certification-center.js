@@ -5870,6 +5870,57 @@ async function apiHighHitSlips(env, request) {
   const v2BackupPool = v2Legs.filter(l => !v2UsedIds.has(l.board_row_id)).slice(0, 8);
   // Attach DNP risk to every generated slip and to the backup pool, across all three platforms.
   // (v3UsedIds declared once, below)
+  // PP V6 - DEMON UNDER. 2 demon-unders (different games) + 1 V3 goblin (third game). 3-pick FLEX
+  // 10x/1x - same EV as Power 12.5x, losing days 14 -> 8 of 20 because the 2-of-3 tier refunds the
+  // most common failure (one demon misses). See autoSelectDemonUnderLegs for the measurement.
+  // SUB/SHRINK (measured on real legs): demon drop -> sub demon (+182%) -> else sub 2nd goblin
+  // (+98%) -> else shrink to D+G 2-pick Power (+47%). Goblin drop -> shrink to D+D 2-pick Power
+  // 10x (+220%; the goblin only bought the Flex insurance) or sub goblin to keep Flex (+135%).
+  const v6Demons = await autoSelectDemonUnderLegs(env).catch((e) => { selectorErrors.v6 = String(e && e.message || e); return []; });
+  const v3UsedForV3 = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const v6GoblinPool = v3Legs.filter(l => !v3UsedForV3.has(l.board_row_id)).concat(v3Legs.filter(l => v3UsedForV3.has(l.board_row_id)));
+  const v6Slips = [];
+  {
+    const MAX_SLIPS = 2; const usedD = new Set(); const usedG = new Set();
+    while (v6Slips.length < MAX_SLIPS) {
+      const ds = v6Demons.filter(l => !usedD.has(l.board_row_id));
+      if (ds.length < 2) break;
+      const d1 = ds[0]; const d2 = ds.find(l => String(l.game_pk) !== String(d1.game_pk) && String(l.mlb_player_id) !== String(d1.mlb_player_id));
+      if (!d2) break;
+      const g = v6GoblinPool.find(l => !usedG.has(l.board_row_id) && String(l.game_pk) !== String(d1.game_pk) && String(l.game_pk) !== String(d2.game_pk));
+      if (!g) break;
+      usedD.add(d1.board_row_id); usedD.add(d2.board_row_id); usedG.add(g.board_row_id);
+      const gm = Number(g.leg_mult) || 1.15;
+      const legs = [{ ...d1, leg_index: 1 }, { ...d2, leg_index: 2 }, { ...g, leg_index: 3, real_layer_rate: gm, leg_kind: 'goblin' }];
+      const powerMult = Math.round((Number(d1.leg_mult) * Number(d2.leg_mult) * gm) * 100) / 100;
+      const flexFull = Math.round(powerMult * 0.8 * 100) / 100;
+      const hp = (Number(d1.hit_probability_0_100)/100) * (Number(d2.hit_probability_0_100)/100) * 0.95;
+      v6Slips.push({
+        client_slip_id: makeUiId("high_hit_slip_v6"),
+        source_key: "prizepicks",
+        slip_type: "3-pick", slip_size: 3,
+        structure_label: "3-pick Flex (PP V6: DEMON UNDER x2 + V3 goblin, 10x/1x)",
+        entry_mode: "flex", selected_leg_count: 3,
+        estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
+        estimated_multiplier: flexFull,
+        estimated_multiplier_flex_tiers: { 3: flexFull, 2: 1.0 },
+        estimated_power_multiplier: powerMult,
+        breakeven_hit_rate_0_100: Math.round((1 / flexFull) * 10000) / 100,
+        estimated_payout_note: "FLEX 3-pick. Real read 09-07: 2 K demon-unders + 1 goblin = 12.5x Power / 10x-1x Flex. Flex keeps 92% of Power's ROI and refunds 2-of-3 (the common failure). Read the app; if Flex 3/3 is under 8x, take Power.",
+        strategy_notes: [
+          "PP V6 DEMON UNDER: LESS on goblin-tagged pitcher rows (pitcher_outs t2, pitcher_strikeouts t1/t2) - line set below anchor, under is the hard side, priced as a demon (~3.16/leg at t2).",
+          "Two demons from different games + one V3 goblin from a third game. 3-pick FLEX 10x/1x: same EV as Power 12.5x, losing days 14 -> 8 of 20.",
+          "Ranked by L10 trailing rate under the line: <30% excluded (35% hit), 30-50% first (50%), >=50% second (45.5% - PrizePicks already set the line low). HP/baseline cover a third of these legs - unusable.",
+          "Measured 18 days, real reads: 24 slips, 7 sweeps, +221% Flex ROI, train +63% / test +300%, 7 win / 4 even / 7 lose days.",
+          "DEMON DROP: sub demon from v6 backups (+182%) -> else sub a 2nd goblin (+98%) -> else shrink to demon+goblin 2-pick Power ~3.5x (+47%). GOBLIN DROP: shrink to demon+demon 2-pick Power 10x (+220%) - the goblin only bought the Flex insurance; sub a goblin (+135%) if you want to keep Flex.",
+          "Rules: no pitcher vs opposing batter in one slip (PrizePicks rule); demons from different games."
+        ],
+        legs
+      });
+    }
+  }
+  const v6UsedIds = new Set(v6Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+  const v6BackupPool = v6Demons.filter(l => !v6UsedIds.has(l.board_row_id)).slice(0, 4);
   // V3 REBUILT 2026-09-07: backup pool ON. Leftover legs from V3's own filtered selector (same
   // five cells, same HP floor, same walks_allowed hard filter). Tagged 'prizepicks_goblin_v3'
   // so poolLegIsLegalForSlip() only pairs them with V3 slips - V1's goblin pool cannot leak in.
