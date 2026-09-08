@@ -62,5 +62,6 @@ def prior_seasons(n, today=None):
 
 
 if __name__ == "__main__":
-    print("current_season:", current_season())
+    print("current_season (roster/schedule):", current_season())
+    print("active_stats_season (has game data):", active_stats_season())
     print("prior 2:", prior_seasons(2))
