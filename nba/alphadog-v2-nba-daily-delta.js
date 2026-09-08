@@ -49,7 +49,7 @@ async function upsertPlayerGameLogs(sql, records, sourceKey, season) {
     tov: r.TOV, stl: r.STL, blk: r.BLK, blka: r.BLKA, pf: r.PF, pfd: r.PFD, pts: r.PTS,
     plus_minus: r.PLUS_MINUS, nba_fantasy_pts: r.NBA_FANTASY_PTS, dd2: toIntOrNull(r.DD2), td3: toIntOrNull(r.TD3),
     source_key: sourceKey,
-  }));
+  })).map(nnRow);
   for (const batch of chunk(rows, BATCH_SIZE)) {
     await sql`
       INSERT INTO nba_stats.player_game_log ${sql(batch, "player_id", "nba_player_id", "game_id", "season", "team_id", "game_date", "matchup", "wl", "min", "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct", "oreb", "dreb", "reb", "ast", "tov", "stl", "blk", "blka", "pf", "pfd", "pts", "plus_minus", "nba_fantasy_pts", "dd2", "td3", "source_key")}
