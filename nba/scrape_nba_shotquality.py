@@ -138,7 +138,7 @@ def fetch_shot_zones(proxies):
            "&DateFrom=&DateTo=&DistanceRange=By+Zone&Division=&DraftPick=&DraftYear=&GameScope="
            "&GameSegment=&Height=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0"
            "&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=Totals&Period=0"
-           "&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26"
+           "&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=" + SEASON +
            "&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&VsConference="
            "&VsDivision=&Weight=")
     body, error = fetch_json(url, proxies)
