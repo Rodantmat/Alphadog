@@ -38,6 +38,12 @@ jobs:
         run: python nba/scrape_nba_daily_delta.py
         continue-on-error: true
 
+      - name: Per-game delta - starter status + officials for newly logged games only
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_per_game_delta.py
+        continue-on-error: true
+
       - name: Commit delta JSON to main
         run: |
           set -euo pipefail
