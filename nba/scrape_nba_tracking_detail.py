@@ -43,9 +43,9 @@ OUTPUT_META_PATH = Path("nba/data/nba_tracking_detail_current_meta.json")
 
 import sys
 sys.path.insert(0, "nba")
-from nba_season import current_season
+from nba_season import active_stats_season
 
-SEASON = current_season()
+SEASON = active_stats_season()
 
 
 def build_url(measure_type):
