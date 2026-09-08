@@ -1013,23 +1013,48 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const pgClient = pg(env);
-      try {
-        const workPromise = generateFinalBoard(pgClient, input || {});
-        ctx.waitUntil(workPromise.then(() => {}, () => {}));
-        const output = await workPromise;
-        output.request_id = output.request_id || input.request_id || null;
-        output.run_id = output.run_id || input.run_id || null;
-        return jsonResponse(output, output.ok !== false ? 200 : 500);
-      } catch (err) {
-        const failOutput = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: input.run_id || null, status: "score_final_board_exception", certification: "SCORE_FINAL_BOARD_EXCEPTION", certification_grade: "FAILED", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc() };
-        try {
-          await pgClient`UPDATE score.final_board_batches SET status='failed_runtime_exception', certification='SCORE_FINAL_BOARD_EXCEPTION', certification_grade='FAILED', finished_at=COALESCE(finished_at, now()), output_json=${safeJson(failOutput)}
-            WHERE final_board_batch_id IN (SELECT final_board_batch_id FROM score.final_board_batches WHERE status='running' AND finished_at IS NULL ORDER BY started_at DESC LIMIT 1)`.catch(() => {});
-        } catch (_) {}
-        return jsonResponse(failOutput, 500);
-      } finally {
-        await pgClient.end({ timeout: 1 }).catch(() => {});
-      }
+      // CHANGED 2026-09-08: this handler used to await generateFinalBoard() fully (via
+      // workPromise) before returning any response, on the theory that ctx.waitUntil() alone
+      // was enough to protect the work from a caller disconnect. Confirmed live (Cowork-
+      // supervised run, 9am Pacific slot) that this is NOT reliable in practice - this is the
+      // exact same anti-pattern already found and fixed the same run in alphadog-v2-score-prep.js
+      // (see that file's matching 2026-09-08 comment): score.final_board_history repeatedly made
+      // real, verified incremental progress (thousands of rows written, confirmed via active
+      // INSERT queries in pg_stat_activity) then went silent with no further progress and no
+      // active DB connection, consistently within the ~40s window of the caller's probe timeout,
+      // even with cpu_ms already raised and this worker's own reconcileStaleRunningFinalBoard()
+      // stale-batch logic already in place. Fix: send a response immediately after registering
+      // ctx.waitUntil(), before generateFinalBoard() settles, so the request/response cycle
+      // actually completes and the documented "background work survives after response is sent"
+      // behavior applies. All prior error handling (failed_runtime_exception batch update) and
+      // connection cleanup (pgClient.end()) are preserved, just moved into the awaited promise
+      // chain so they still run once the background work actually settles. Callers already poll
+      // score.final_board_history / score.final_board_batches for real completion per this
+      // worker's own known "poll the right table" trap (see master-run runbook step 28 notes) -
+      // this only changes when the HTTP response returns, not how completion is verified.
+      const workPromise = generateFinalBoard(pgClient, input || {})
+        .catch(async (err) => {
+          const failOutput = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: input.run_id || null, status: "score_final_board_exception", certification: "SCORE_FINAL_BOARD_EXCEPTION", certification_grade: "FAILED", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc() };
+          try {
+            await pgClient`UPDATE score.final_board_batches SET status='failed_runtime_exception', certification='SCORE_FINAL_BOARD_EXCEPTION', certification_grade='FAILED', finished_at=COALESCE(finished_at, now()), output_json=${safeJson(failOutput)}
+              WHERE final_board_batch_id IN (SELECT final_board_batch_id FROM score.final_board_batches WHERE status='running' AND finished_at IS NULL ORDER BY started_at DESC LIMIT 1)`.catch(() => {});
+          } catch (_) {}
+          return failOutput;
+        })
+        .finally(() => { pgClient.end({ timeout: 1 }).catch(() => {}); });
+      ctx.waitUntil(workPromise.then(() => {}, () => {}));
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        request_id: input.request_id || null,
+        run_id: input.run_id || null,
+        status: "ACCEPTED_FINAL_BOARD_RUN_RUNNING_IN_BACKGROUND",
+        note: "Work continues via ctx.waitUntil() after this response returns. Poll score.final_board_history (incremental) and score.final_board_batches / score.final_board_current for real completion; do not treat this response as certified completion.",
+        timestamp_utc: nowUtc()
+      });
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
