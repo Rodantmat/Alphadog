@@ -205,11 +205,11 @@ async function runJob(input, env) {
       ORDER BY g.game_date DESC LIMIT 20
     `;
     const missingOfficials = await sql`
-      SELECT g.game_id, g.game_date, g.matchup
+      SELECT g.game_id, g.game_date
       FROM nba_stats.player_game_log g
       LEFT JOIN (SELECT DISTINCT game_id FROM nba_stats.game_officials) o ON o.game_id = g.game_id
       WHERE g.season = ${season} AND o.game_id IS NULL
-      GROUP BY g.game_id, g.game_date, g.matchup
+      GROUP BY g.game_id, g.game_date
       ORDER BY g.game_date DESC LIMIT 20
     `;
     completeness.per_game_data_gaps = {
