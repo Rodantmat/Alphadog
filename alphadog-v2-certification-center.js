@@ -5446,14 +5446,18 @@ async function apiHighHitSlips(env, request) {
     while (udwSlips.length < MAX_SLIPS) {
       const avail = udwLegs.filter(l => !used.has(l.board_row_id));
       if (avail.length < MIN_SZ) break;
-      const legs = []; const seen = new Set(); const games = new Map();
+      const legs = []; const seen = new Set(); const games = new Map(); const teams = new Set();
       for (const l of avail) {
         if (legs.length >= SZ) break;
         if (seen.has(String(l.mlb_player_id))) continue;
         const g = String(l.game_pk || '');
         if (g && (games.get(g) || 0) >= MAX_PER_GAME) continue;
+        // One per team (2026-09-08): Benintendi + Straw same team read 5.0x vs 6.25 model. UD discounts stacks.
+        const t = String(l.team_id || l.h_team || l.p_team || '');
+        if (t && teams.has(t)) continue;
         legs.push(l); seen.add(String(l.mlb_player_id));
         if (g) games.set(g, (games.get(g) || 0) + 1);
+        if (t) teams.add(t);
       }
       if (legs.length < MIN_SZ) break;
       for (const l of legs) used.add(l.board_row_id);
