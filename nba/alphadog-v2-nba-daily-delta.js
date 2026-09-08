@@ -121,7 +121,7 @@ async function upsertTeamAdvanced(sql, records, sourceKey) {
     off_rating: r.OFF_RATING, def_rating: r.DEF_RATING, net_rating: r.NET_RATING, pace: r.PACE,
     usg_pct: r.USG_PCT, ts_pct: r.TS_PCT, ast_pct: r.AST_PCT, oreb_pct: r.OREB_PCT, dreb_pct: r.DREB_PCT,
     reb_pct: r.REB_PCT, efg_pct: r.EFG_PCT, source_key: sourceKey,
-  }));
+  })).map(nnRow);
   for (const batch of chunk(rows, BATCH_SIZE)) {
     await sql`
       INSERT INTO nba_team.team_game_log_advanced ${sql(batch, "team_id", "game_id", "off_rating", "def_rating", "net_rating", "pace", "usg_pct", "ts_pct", "ast_pct", "oreb_pct", "dreb_pct", "reb_pct", "efg_pct", "source_key")}
