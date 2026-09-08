@@ -43,7 +43,10 @@ async function runJob(input, env) {
   let meta = null;
 
   try {
-    const r = await fetchFromGithubRaw(env, "nba/data/nba_game_officials_2025_26.json", "nba/data/nba_game_officials_2025_26_meta.json");
+    let season = input.season || null;
+    if (!season) { try { season = (await fetchFromGithubRaw(env, "nba/data/nba_daily_delta_meta.json", "nba/data/nba_daily_delta_meta.json")).file.season; } catch (_) {} }
+    const slug = (season || "2025-26").replace("-", "_");
+    const r = await fetchFromGithubRaw(env, `nba/data/nba_game_officials_${slug}.json`, `nba/data/nba_game_officials_${slug}_meta.json`);
     meta = r.meta;
     const rows = (r.file.rows || [])
       .filter(x => x && x.official_id && x.game_id)
