@@ -1,3 +1,3 @@
 Trigger for nba-measure-types.yml
-last_triggered_utc: 2026-09-08T03:25:00Z
-trigger_reason: first run - backfill Usage/Scoring/Four Factors for the 3 most recent seasons with game data
+last_triggered_utc: 2026-09-08T03:30:00Z
+trigger_reason: re-run - first run scraped successfully (79,608 rows each, 0 errors) but lost the git push race to 6 simultaneous admin-sql wiring commits; re-running now that pushes have stopped
