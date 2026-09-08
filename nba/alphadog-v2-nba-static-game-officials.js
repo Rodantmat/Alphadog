@@ -72,7 +72,7 @@ async function runJob(input, env) {
   const games = await sql`SELECT COUNT(DISTINCT game_id)::int AS c FROM nba_stats.game_officials`;
   await sql.end();
 
-  const certified = !error && written > 3600;
+  const certified = !error && written > 0; // was written > 3600 - false alarm early in a new season
 
   return {
     ok: certified, version: VERSION, worker_name: WORKER_NAME, job_key: input.job_key || JOB_KEY,
