@@ -25,6 +25,12 @@ from pathlib import Path
 # reason (confirmed via direct testing, not assumed - see NBA_PROJECT_LOG.md 2026-08-31).
 from curl_cffi import requests
 
+import sys
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
+
 STATS_HEADERS = {
     "Host": "stats.nba.com",
     "Accept": "application/json, text/plain, */*",
