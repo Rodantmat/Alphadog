@@ -79,6 +79,17 @@ def fetch(url, result_set_name, proxies):
     return None, last_error
 
 
+KEEP_COMMON = {"PLAYER_ID", "TEAM_ID", "GAME_ID", "GAME_DATE", "MATCHUP", "MIN"}
+
+
+def slim(row):
+    """Keep only IDs, game context, and real metric columns. Drop the *_RANK columns (pure noise,
+    ~half the bytes), NICKNAME/TEAM_NAME/PLAYER_NAME (already in nba_ref), and other padding.
+    Real reason (2026-09-08): the 3-season combined player files hit 116-124 MB, over GitHub's
+    hard 100 MB per-file limit - the push was rejected by the pre-receive hook."""
+    return {k: v for k, v in row.items() if k in KEEP_COMMON or (k.startswith(("USG_", "PCT_", "EFG_", "FTA_", "TM_TOV", "OREB_", "OPP_")) and not k.endswith("_RANK"))}
+
+
 def main():
     fetched_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     proxy_url = os.environ.get("PROXY_URL", "").strip()
@@ -89,23 +100,22 @@ def main():
     meta = {"fetched_at": fetched_at, "seasons": seasons, "results": {}, "errors": []}
 
     for key, endpoint, measure_type, rs_name in SPECS:
-        all_records = []
         for season in seasons:
             rows, error = fetch(build_url(endpoint, measure_type, season), rs_name, proxies)
+            slug = season.replace("-", "_")
             if rows is None:
                 meta["errors"].append({"key": key, "season": season, "error": error})
                 print(f"{key} {season}: FAILED - {error}")
             else:
-                for r in rows:
-                    r["_season"] = season
-                all_records.extend(rows)
-                print(f"{key} {season}: {len(rows)} rows")
+                slim_rows = [slim(r) for r in rows]
+                # One file per (key, season) - never a combined multi-season file (100 MB limit).
+                Path(f"nba/data/nba_backfill_{key}_{slug}.json").write_text(json.dumps({"season": season, "records": slim_rows}, separators=(",", ":")), encoding="utf-8")
+                meta["results"][f"{key}_{slug}"] = len(slim_rows)
+                print(f"{key} {season}: {len(slim_rows)} rows")
             time.sleep(2)
-        Path(f"nba/data/nba_backfill_{key}.json").write_text(json.dumps({"records": all_records}, indent=2), encoding="utf-8")
-        meta["results"][key] = len(all_records)
 
     Path("nba/data/nba_backfill_measure_types_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    print(json.dumps({k: v for k, v in meta.items() if k != "results"} | {"results": meta["results"]}, indent=2))
+    print(json.dumps(meta, indent=2))
     if len(meta["errors"]) > 2:
         sys.exit(1)
 
