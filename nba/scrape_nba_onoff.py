@@ -20,6 +20,11 @@ from pathlib import Path
 
 from curl_cffi import requests
 
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
+
 STATS_HEADERS = {
     "Host": "stats.nba.com",
     "Accept": "application/json, text/plain, */*",
