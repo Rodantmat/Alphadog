@@ -96,7 +96,7 @@ def main():
     proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
     Path("nba/data").mkdir(parents=True, exist_ok=True)
 
-    seasons = [active_stats_season()] + prior_seasons(2)
+    seasons = stats_seasons(3)
     meta = {"fetched_at": fetched_at, "seasons": seasons, "results": {}, "errors": []}
 
     for key, endpoint, measure_type, rs_name in SPECS:
