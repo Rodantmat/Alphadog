@@ -16,9 +16,9 @@ from curl_cffi import requests
 
 import sys
 sys.path.insert(0, "nba")
-from nba_season import current_season
+from nba_season import active_stats_season
 
-SEASON = current_season()
+SEASON = active_stats_season()
 
 STATS_HEADERS = {
     "Host": "stats.nba.com",
