@@ -62,11 +62,14 @@ def fetch_bulk(url, result_set_name, proxies):
 
 
 def detect_current_season():
-    """Delegates to the shared nba_season utility (one source of truth for every scraper)."""
+    """Delegates to the shared nba_season utility (one source of truth for every scraper).
+    Uses active_stats_season (the season that actually has game data) - in the Jul-Sep off-season
+    that's the prior completed season, which makes this an idempotent no-op re-pull with a real
+    completeness check, rather than a trivial 0-row pull against the not-yet-started season."""
     import sys
     sys.path.insert(0, "nba")
-    from nba_season import current_season
-    return current_season()
+    from nba_season import active_stats_season
+    return active_stats_season()
 
 
 def main():
