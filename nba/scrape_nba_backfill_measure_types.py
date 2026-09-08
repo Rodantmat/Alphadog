@@ -28,7 +28,7 @@ from pathlib import Path
 from curl_cffi import requests
 
 sys.path.insert(0, "nba")
-from nba_season import active_stats_season, prior_seasons
+from nba_season import stats_seasons
 
 STATS_HEADERS = {
     "Host": "stats.nba.com",
