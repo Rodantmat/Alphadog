@@ -123,6 +123,18 @@ jobs:
         run: python nba/scrape_nba_lineups.py
         continue-on-error: true
 
+      - name: Scrape NBA career season totals (weekly refresh - current season row updates as games are played)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_career_totals.py
+        continue-on-error: true
+
+      - name: Scrape NBA player + team splits (weekly refresh - cumulative season aggregates)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_splits.py
+        continue-on-error: true
+
       - name: Commit NBA data JSON to main
         run: |
           set -euo pipefail
