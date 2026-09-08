@@ -35,9 +35,9 @@ STATS_HEADERS = {
 
 import sys
 sys.path.insert(0, "nba")
-from nba_season import current_season
+from nba_season import active_stats_season
 
-SEASON = current_season()
+SEASON = active_stats_season()
 PLAYERS_INPUT_PATH = Path("nba/data/nba_players_current.json")
 TEAMS_INPUT_PATH = Path("nba/data/nba_teams_current.json")
 
