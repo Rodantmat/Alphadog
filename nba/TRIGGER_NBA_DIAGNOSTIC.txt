@@ -1,3 +1,3 @@
 Trigger for nba-diagnostic.yml
-last_triggered_utc: 2026-09-03T22:50:00Z
-trigger_reason: check boxscoresummaryv3's real officials JSON structure before a full ~1230-call scrape
+last_triggered_utc: 2026-09-08T03:15:00Z
+trigger_reason: probe real column schemas for Usage/Scoring/Four Factors measure types on bulk game-log endpoints before designing tables
