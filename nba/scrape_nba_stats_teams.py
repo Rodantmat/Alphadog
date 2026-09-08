@@ -43,7 +43,7 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-URL = "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2025-26&SeasonType=Regular%20Season"
+URL = f"https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season={SEASON}&SeasonType=Regular%20Season"
 OUTPUT_PATH = Path("nba/data/nba_teams_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_teams_current_meta.json")
 
