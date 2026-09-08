@@ -29,6 +29,31 @@ def current_season(today=None):
     return f"{start_year}-{str(start_year + 1)[2:]}"
 
 
+def active_stats_season(today=None):
+    """The season that actually HAS game data right now - distinct from current_season().
+
+    Real design subtlety surfaced while applying the utility (2026-09-07): in Jul-Sep the
+    "current" season is the UPCOMING one (correct for roster/schedule purposes), but it has zero
+    games played. If the weekly STATS scrapers (tracking, splits, lineups, shot quality, on/off,
+    play types, team stats) queried it, they'd get empty or zero-valued rows - and for tables keyed
+    by player_id alone, that could overwrite last season's real stats with zeros. So stats
+    scrapers use THIS: the most recent season with real games - i.e. the prior completed season
+    during the off-season, rolling over to the new season only once it starts in October.
+
+    Roster/schedule scrapers (players, teams, schedule) should keep using current_season().
+    """
+    override = os.environ.get("NBA_SEASON", "").strip()
+    if override:
+        return override
+    today = today or date.today()
+    # Jul, Aug, Sep = off-season: the season with real game data is still the prior one.
+    if today.month in (7, 8, 9):
+        start_year = today.year - 1
+    else:
+        start_year = today.year if today.month >= 10 else today.year - 1
+    return f"{start_year}-{str(start_year + 1)[2:]}"
+
+
 def prior_seasons(n, today=None):
     """The n seasons before the current one, most recent first. e.g. n=2 in 2026-27 -> ['2025-26','2024-25']."""
     cur = current_season(today)
