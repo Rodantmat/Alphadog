@@ -48,7 +48,7 @@ async function runJob(input, env) {
     // last season's file forever. Resolves from input.season, else the daily-delta meta (set by
     // active_stats_season), else the 2025-26 default for backward compatibility.
     let season = input.season || null;
-    if (!season) { try { season = (await fetchFromGithubRaw(env, "nba/data/nba_daily_delta_meta.json")).season; } catch (_) {} }
+    if (!season) { try { season = (await fetchFromGithubRaw(env, "nba/data/nba_daily_delta_meta.json", "nba/data/nba_daily_delta_meta.json")).file.season; } catch (_) {} }
     const slug = (season || "2025-26").replace("-", "_");
     const r = await fetchFromGithubRaw(env, `nba/data/nba_starter_status_${slug}.json`, `nba/data/nba_starter_status_${slug}_meta.json`);
     meta = r.meta;
