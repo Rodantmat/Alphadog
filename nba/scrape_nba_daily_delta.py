@@ -62,15 +62,11 @@ def fetch_bulk(url, result_set_name, proxies):
 
 
 def detect_current_season():
-    """Determine the current NBA season string (e.g. '2026-27') from today's date.
-    NBA seasons run Oct-June; a date in Jul-Sep counts toward the upcoming season."""
-    from datetime import date
-    today = date.today()
-    if today.month >= 7:
-        start_year = today.year
-    else:
-        start_year = today.year - 1
-    return f"{start_year}-{str(start_year + 1)[2:]}"
+    """Delegates to the shared nba_season utility (one source of truth for every scraper)."""
+    import sys
+    sys.path.insert(0, "nba")
+    from nba_season import current_season
+    return current_season()
 
 
 def main():
