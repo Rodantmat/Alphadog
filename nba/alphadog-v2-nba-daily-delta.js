@@ -18,6 +18,8 @@ function toIntOrNull(v) { if (v === null || v === undefined || v === "") return 
 // have no USG_PCT (usage is a player concept), so r.USG_PCT was undefined and the whole batch
 // failed. Every mapped value now passes through this so a missing column becomes NULL, never undefined.
 function nn(v) { return v === undefined ? null : v; }
+// Applies nn() to every value of a mapped row so no undefined can reach the driver.
+function nnRow(o) { for (const k of Object.keys(o)) o[k] = nn(o[k]); return o; }
 
 async function fetchFromGithubRaw(env, path) {
   const owner = env.GITHUB_OWNER || "Rodantmat";
