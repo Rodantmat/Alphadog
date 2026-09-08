@@ -233,8 +233,13 @@ async function runJob(input, env) {
   const seasonSlugs = { "2023-24": "2023_24", "2024-25": "2024_25", "2025-26": "2025_26" };
   let playerLogWritten = 0, teamLogWritten = 0, playerAdvWritten = 0, teamAdvWritten = 0, careerWritten = 0;
   let playerSplitsWritten = 0, teamSplitsWritten = 0;
+  // mode "weekly" (2026-09-08): splits and career totals are cumulative season aggregates that go
+  // stale as the season progresses, but they only lived in this one-time backfill worker with
+  // no recurring path (gap found in the delta-path brainstorm). Weekly mode skips the 79k-row
+  // 3-season game-log loop and loads only those two - cheap enough for the weekly cycle.
+  const mode = input.mode || "full";
 
-  for (const [season, slug] of Object.entries(seasonSlugs)) {
+  for (const [season, slug] of Object.entries(mode === "weekly" ? {} : seasonSlugs)) {
     try {
       const r = await fetchFromGithubRaw(env, `nba/data/nba_player_game_log_${slug}.json`, `nba/data/nba_player_game_log_${slug}_meta.json`);
       playerLogWritten += await upsertPlayerGameLogs(sql, r.file.records || [], sourceKey, season);
