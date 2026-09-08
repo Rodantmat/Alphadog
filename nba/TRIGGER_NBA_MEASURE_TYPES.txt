@@ -1,3 +1,3 @@
 Trigger for nba-measure-types.yml
-last_triggered_utc: 2026-09-08T03:45:00Z
-trigger_reason: third run - split to one file per (key, season) and drop _RANK/name padding after the combined player files hit 116-124 MB, over GitHub's hard 100 MB limit
+last_triggered_utc: 2026-09-08T06:05:00Z
+trigger_reason: fourth run - fixed season-list bug (anchor/counting mismatch produced a duplicate 2025-26 and dropped 2023-24); new stats_seasons(3) verified across dates
