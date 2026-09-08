@@ -33,9 +33,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 sys.path.insert(0, "nba")
-from nba_season import current_season
+from nba_season import active_stats_season
 
-SEASON = current_season()
+SEASON = active_stats_season()
 
 from curl_cffi import requests
 
