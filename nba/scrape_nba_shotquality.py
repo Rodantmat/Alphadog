@@ -32,6 +32,11 @@ import time
 from pathlib import Path
 from urllib.parse import quote
 
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
+
 from curl_cffi import requests
 
 STATS_HEADERS = {
