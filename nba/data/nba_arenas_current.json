@@ -1,28 +1,20 @@
 {
   "arenas": [
     {
-      "team_id": 1610612760,
-      "arena_name": "Paycom Center",
-      "arena_capacity": null,
-      "city": "Oklahoma City",
-      "owner": "Clay Bennett",
-      "year_founded": 1967
+      "team_id": 1610612737,
+      "arena_name": "State Farm Arena",
+      "arena_capacity": "18729",
+      "city": "Atlanta",
+      "owner": "Tony Ressler",
+      "year_founded": 1949
     },
     {
-      "team_id": 1610612765,
-      "arena_name": "Little Caesars Arena",
-      "arena_capacity": null,
-      "city": "Detroit",
-      "owner": "Tom Gores",
-      "year_founded": 1948
-    },
-    {
-      "team_id": 1610612759,
-      "arena_name": "Frost Bank Center",
-      "arena_capacity": "18694",
-      "city": "San Antonio",
-      "owner": "Peter Holt",
-      "year_founded": 1976
+      "team_id": 1610612742,
+      "arena_name": "American Airlines Center",
+      "arena_capacity": "19200",
+      "city": "Dallas",
+      "owner": "Patrick Dumont",
+      "year_founded": 1980
     },
     {
       "team_id": 1610612738,
@@ -41,28 +33,20 @@
       "year_founded": 1976
     },
     {
-      "team_id": 1610612752,
-      "arena_name": "Madison Square Garden",
-      "arena_capacity": "19763",
-      "city": "New York",
-      "owner": "Jim Dolan",
+      "team_id": 1610612741,
+      "arena_name": "United Center",
+      "arena_capacity": "21711",
+      "city": "Chicago",
+      "owner": "Michael Reinsdorf",
+      "year_founded": 1966
+    },
+    {
+      "team_id": 1610612744,
+      "arena_name": "Chase Center",
+      "arena_capacity": null,
+      "city": "Golden State",
+      "owner": "Joe Lacob",
       "year_founded": 1946
-    },
-    {
-      "team_id": 1610612739,
-      "arena_name": "Rocket Arena",
-      "arena_capacity": "20562",
-      "city": "Cleveland",
-      "owner": "Dan Gilbert",
-      "year_founded": 1970
-    },
-    {
-      "team_id": 1610612747,
-      "arena_name": "Crypto.com Arena",
-      "arena_capacity": "19060",
-      "city": "Los Angeles",
-      "owner": "Mark Walter & Jeanie Buss",
-      "year_founded": 1948
     },
     {
       "team_id": 1610612745,
@@ -73,60 +57,20 @@
       "year_founded": 1967
     },
     {
-      "team_id": 1610612761,
-      "arena_name": "Scotiabank Arena",
+      "team_id": 1610612751,
+      "arena_name": "Barclays Center",
       "arena_capacity": null,
-      "city": "Toronto",
-      "owner": "Lawrence Tanenbaum",
-      "year_founded": 1995
+      "city": "Brooklyn",
+      "owner": "Joe Tsai",
+      "year_founded": 1976
     },
     {
-      "team_id": 1610612737,
-      "arena_name": "State Farm Arena",
-      "arena_capacity": "18729",
-      "city": "Atlanta",
-      "owner": "Tony Ressler",
-      "year_founded": 1949
-    },
-    {
-      "team_id": 1610612750,
-      "arena_name": "Target Center",
-      "arena_capacity": "19356",
-      "city": "Minnesota",
-      "owner": "Marc Lore & Alex Rodriguez",
-      "year_founded": 1989
-    },
-    {
-      "team_id": 1610612755,
-      "arena_name": "Xfinity Mobile Arena",
-      "arena_capacity": null,
-      "city": "Philadelphia",
-      "owner": "Joshua Harris & David Blitzer",
-      "year_founded": 1949
-    },
-    {
-      "team_id": 1610612756,
-      "arena_name": "Mortgage Matchup Center",
-      "arena_capacity": null,
-      "city": "Phoenix",
-      "owner": "Mat Ishbia",
-      "year_founded": 1968
-    },
-    {
-      "team_id": 1610612757,
-      "arena_name": "Moda Center",
-      "arena_capacity": "19980",
-      "city": "Portland",
-      "owner": "Tom Dundon",
-      "year_founded": 1970
-    },
-    {
-      "team_id": 1610612753,
-      "arena_name": "Kia Center",
-      "arena_capacity": "0",
-      "city": "Orlando",
-      "owner": "Dan DeVos",
-      "year_founded": 1989
+      "team_id": 1610612747,
+      "arena_name": "Crypto.com Arena",
+      "arena_capacity": "19060",
+      "city": "Los Angeles",
+      "owner": "Mark Walter & Jeanie Buss",
+      "year_founded": 1948
     },
     {
       "team_id": 1610612766,
@@ -137,6 +81,14 @@
       "year_founded": 1988
     },
     {
+      "team_id": 1610612739,
+      "arena_name": "Rocket Arena",
+      "arena_capacity": "20562",
+      "city": "Cleveland",
+      "owner": "Dan Gilbert",
+      "year_founded": 1970
+    },
+    {
       "team_id": 1610612746,
       "arena_name": "Intuit Dome",
       "arena_capacity": "19060",
@@ -145,12 +97,44 @@
       "year_founded": 1970
     },
     {
-      "team_id": 1610612744,
-      "arena_name": "Chase Center",
+      "team_id": 1610612763,
+      "arena_name": "FedExForum",
+      "arena_capacity": "18119",
+      "city": "Memphis",
+      "owner": "Robert Pera",
+      "year_founded": 1995
+    },
+    {
+      "team_id": 1610612765,
+      "arena_name": "Little Caesars Arena",
       "arena_capacity": null,
-      "city": "Golden State",
-      "owner": "Joe Lacob",
-      "year_founded": 1946
+      "city": "Detroit",
+      "owner": "Tom Gores",
+      "year_founded": 1948
+    },
+    {
+      "team_id": 1610612750,
+      "arena_name": "Target Center",
+      "arena_capacity": "19356",
+      "city": "Minnesota",
+      "owner": "Marc Lore & Alex Rodriguez",
+      "year_founded": 1989
+    },
+    {
+      "team_id": 1610612754,
+      "arena_name": "Gainbridge Fieldhouse ",
+      "arena_capacity": "18345",
+      "city": "Indiana",
+      "owner": "Herb Simon",
+      "year_founded": 1976
+    },
+    {
+      "team_id": 1610612740,
+      "arena_name": "Smoothie King Center",
+      "arena_capacity": null,
+      "city": "New Orleans",
+      "owner": "Gayle Benson",
+      "year_founded": 2002
     },
     {
       "team_id": 1610612748,
@@ -169,52 +153,52 @@
       "year_founded": 1968
     },
     {
-      "team_id": 1610612740,
-      "arena_name": "Smoothie King Center",
+      "team_id": 1610612760,
+      "arena_name": "Paycom Center",
       "arena_capacity": null,
-      "city": "New Orleans",
-      "owner": "Gayle Benson",
-      "year_founded": 2002
+      "city": "Oklahoma City",
+      "owner": "Clay Bennett",
+      "year_founded": 1967
     },
     {
-      "team_id": 1610612741,
-      "arena_name": "United Center",
-      "arena_capacity": "21711",
-      "city": "Chicago",
-      "owner": "Michael Reinsdorf",
-      "year_founded": 1966
+      "team_id": 1610612752,
+      "arena_name": "Madison Square Garden",
+      "arena_capacity": "19763",
+      "city": "New York",
+      "owner": "Jim Dolan",
+      "year_founded": 1946
     },
     {
-      "team_id": 1610612742,
-      "arena_name": "American Airlines Center",
-      "arena_capacity": "19200",
-      "city": "Dallas",
-      "owner": "Patrick Dumont",
-      "year_founded": 1980
-    },
-    {
-      "team_id": 1610612751,
-      "arena_name": "Barclays Center",
+      "team_id": 1610612756,
+      "arena_name": "Mortgage Matchup Center",
       "arena_capacity": null,
-      "city": "Brooklyn",
-      "owner": "Joe Tsai",
-      "year_founded": 1976
+      "city": "Phoenix",
+      "owner": "Mat Ishbia",
+      "year_founded": 1968
     },
     {
-      "team_id": 1610612763,
-      "arena_name": "FedExForum",
-      "arena_capacity": "18119",
-      "city": "Memphis",
-      "owner": "Robert Pera",
-      "year_founded": 1995
+      "team_id": 1610612753,
+      "arena_name": "Kia Center",
+      "arena_capacity": "0",
+      "city": "Orlando",
+      "owner": "Dan DeVos",
+      "year_founded": 1989
     },
     {
-      "team_id": 1610612754,
-      "arena_name": "Gainbridge Fieldhouse ",
-      "arena_capacity": "18345",
-      "city": "Indiana",
-      "owner": "Herb Simon",
-      "year_founded": 1976
+      "team_id": 1610612757,
+      "arena_name": "Moda Center",
+      "arena_capacity": "19980",
+      "city": "Portland",
+      "owner": "Tom Dundon",
+      "year_founded": 1970
+    },
+    {
+      "team_id": 1610612755,
+      "arena_name": "Xfinity Mobile Arena",
+      "arena_capacity": null,
+      "city": "Philadelphia",
+      "owner": "Joshua Harris & David Blitzer",
+      "year_founded": 1949
     },
     {
       "team_id": 1610612758,
@@ -225,12 +209,20 @@
       "year_founded": 1948
     },
     {
-      "team_id": 1610612764,
-      "arena_name": "Capital One Arena",
-      "arena_capacity": "20647",
-      "city": "Washington",
-      "owner": "Ted Leonsis",
-      "year_founded": 1961
+      "team_id": 1610612759,
+      "arena_name": "Frost Bank Center",
+      "arena_capacity": "18694",
+      "city": "San Antonio",
+      "owner": "Peter Holt",
+      "year_founded": 1976
+    },
+    {
+      "team_id": 1610612761,
+      "arena_name": "Scotiabank Arena",
+      "arena_capacity": null,
+      "city": "Toronto",
+      "owner": "Lawrence Tanenbaum",
+      "year_founded": 1995
     },
     {
       "team_id": 1610612762,
@@ -239,6 +231,14 @@
       "city": "Utah",
       "owner": "Ryan Smith",
       "year_founded": 1974
+    },
+    {
+      "team_id": 1610612764,
+      "arena_name": "Capital One Arena",
+      "arena_capacity": "20647",
+      "city": "Washington",
+      "owner": "Ted Leonsis",
+      "year_founded": 1961
     }
   ]
 }

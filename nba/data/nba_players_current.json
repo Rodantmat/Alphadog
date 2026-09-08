@@ -14,6 +14,19 @@
       "team_abbreviation": "SAC"
     },
     {
+      "id": 1643411,
+      "full_name": "Darius Acuff Jr.",
+      "last_comma_first": "Acuff Jr., Darius",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_darius_acuff_jr",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
       "id": 203500,
       "full_name": "Steven Adams",
       "last_comma_first": "Adams, Steven",
@@ -40,17 +53,17 @@
       "team_abbreviation": "MIA"
     },
     {
-      "id": 1630534,
-      "full_name": "Ochai Agbaji",
-      "last_comma_first": "Agbaji, Ochai",
+      "id": 1642369,
+      "full_name": "Michael Ajayi",
+      "last_comma_first": "Ajayi, Michael",
       "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "ochai_agbaji",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "michael_ajayi",
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
       "id": 1630583,
@@ -60,10 +73,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "santi_aldama",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1641725,
@@ -73,10 +86,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "trey_alexander",
-      "team_id": 1610612740,
-      "team_city": "New Orleans",
-      "team_name": "Pelicans",
-      "team_abbreviation": "NOP"
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
     },
     {
       "id": 1629638,
@@ -99,10 +112,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "grayson_allen",
-      "team_id": 1610612756,
-      "team_city": "Phoenix",
-      "team_name": "Suns",
-      "team_abbreviation": "PHX"
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
       "id": 1628386,
@@ -131,6 +144,32 @@
       "team_abbreviation": "NYK"
     },
     {
+      "id": 1643417,
+      "full_name": "Nate Ament",
+      "last_comma_first": "Ament, Nate",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "nathaniel_ament",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
+      "id": 1643515,
+      "full_name": "Christian Anderson",
+      "last_comma_first": "Anderson, Christian",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_christian_anderson",
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
+    },
+    {
       "id": 203937,
       "full_name": "Kyle Anderson",
       "last_comma_first": "Anderson, Kyle",
@@ -138,23 +177,10 @@
       "from_year": "2014",
       "to_year": "2026",
       "player_code": "kyle_anderson",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
-    },
-    {
-      "id": 1630828,
-      "full_name": "Alex Antetokounmpo",
-      "last_comma_first": "Antetokounmpo, Alex",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "alex_antetokounmpo",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 203507,
@@ -164,36 +190,10 @@
       "from_year": "2013",
       "to_year": "2026",
       "player_code": "giannis_antetokounmpo",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
-    },
-    {
-      "id": 203648,
-      "full_name": "Thanasis Antetokounmpo",
-      "last_comma_first": "Antetokounmpo, Thanasis",
-      "roster_status": 1,
-      "from_year": "2015",
-      "to_year": "2025",
-      "player_code": "thanasis_antetokounmpo",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
-    },
-    {
-      "id": 1630175,
-      "full_name": "Cole Anthony",
-      "last_comma_first": "Anthony, Cole",
-      "roster_status": 0,
-      "from_year": "2020",
-      "to_year": "2025",
-      "player_code": "cole_anthony",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 1628384,
@@ -222,6 +222,19 @@
       "team_abbreviation": "POR"
     },
     {
+      "id": 1643591,
+      "full_name": "Tobe Awaka",
+      "last_comma_first": "Awaka, Tobe",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tobe_awaka",
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
+    },
+    {
       "id": 1629028,
       "full_name": "Deandre Ayton",
       "last_comma_first": "Ayton, Deandre",
@@ -229,10 +242,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "deandre_ayton",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
+      "team_id": 1610612764,
+      "team_city": "Washington",
+      "team_name": "Wizards",
+      "team_abbreviation": "WAS"
     },
     {
       "id": 1628963,
@@ -242,10 +255,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "marvin_bagley_iii",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
+      "team_id": 1610612743,
+      "team_city": "Denver",
+      "team_name": "Nuggets",
+      "team_abbreviation": "DEN"
     },
     {
       "id": 1642846,
@@ -261,32 +274,6 @@
       "team_abbreviation": "UTA"
     },
     {
-      "id": 1642380,
-      "full_name": "Adama Bal",
-      "last_comma_first": "Bal, Adama",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "adama_bal",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1631116,
-      "full_name": "Patrick Baldwin Jr.",
-      "last_comma_first": "Baldwin Jr., Patrick",
-      "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "patrick_baldwin_jr",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
-    },
-    {
       "id": 1630163,
       "full_name": "LaMelo Ball",
       "last_comma_first": "Ball, LaMelo",
@@ -294,36 +281,23 @@
       "from_year": "2020",
       "to_year": "2026",
       "player_code": "lamelo_ball",
-      "team_id": 1610612766,
-      "team_city": "Charlotte",
-      "team_name": "Hornets",
-      "team_abbreviation": "CHA"
-    },
-    {
-      "id": 1628366,
-      "full_name": "Lonzo Ball",
-      "last_comma_first": "Ball, Lonzo",
-      "roster_status": 0,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "lonzo_ball",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
     },
     {
       "id": 1628964,
       "full_name": "Mo Bamba",
       "last_comma_first": "Bamba, Mo",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "mohamed_bamba",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
     },
     {
       "id": 1631094,
@@ -350,19 +324,6 @@
       "team_city": "Orlando",
       "team_name": "Magic",
       "team_abbreviation": "ORL"
-    },
-    {
-      "id": 1630625,
-      "full_name": "Dalano Banton",
-      "last_comma_first": "Banton, Dalano",
-      "roster_status": 1,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "dalano_banton",
-      "team_id": 1610612738,
-      "team_city": "Boston",
-      "team_name": "Celtics",
-      "team_abbreviation": "BOS"
     },
     {
       "id": 1631230,
@@ -443,6 +404,19 @@
       "team_abbreviation": "GSW"
     },
     {
+      "id": 1642926,
+      "full_name": "Tamar Bates",
+      "last_comma_first": "Bates, Tamar",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tamar_bates",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
       "id": 1642419,
       "full_name": "Jamison Battle",
       "last_comma_first": "Battle, Jamison",
@@ -521,6 +495,32 @@
       "team_abbreviation": "NOP"
     },
     {
+      "id": 1641844,
+      "full_name": "Tarik Biberovic",
+      "last_comma_first": "Biberovic, Tarik",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tarik_biberovic",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
+    },
+    {
+      "id": 1643548,
+      "full_name": "Tyler Bilodeau",
+      "last_comma_first": "Bilodeau, Tyler",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tyler_bilodeau",
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
+    },
+    {
       "id": 1629048,
       "full_name": "Goga Bitadze",
       "last_comma_first": "Bitadze, Goga",
@@ -534,17 +534,17 @@
       "team_abbreviation": "ORL"
     },
     {
-      "id": 202687,
-      "full_name": "Bismack Biyombo",
-      "last_comma_first": "Biyombo, Bismack",
+      "id": 1642927,
+      "full_name": "Nate Bittle",
+      "last_comma_first": "Bittle, Nate",
       "roster_status": 1,
-      "from_year": "2011",
-      "to_year": "2025",
-      "player_code": "bismack_biyombo",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "nate_bittle",
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 1641710,
@@ -560,32 +560,6 @@
       "team_abbreviation": "ORL"
     },
     {
-      "id": 1641778,
-      "full_name": "Leaky Black",
-      "last_comma_first": "Black, Leaky",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "leaky_black",
-      "team_id": 1610612764,
-      "team_city": "Washington",
-      "team_name": "Wizards",
-      "team_abbreviation": "WAS"
-    },
-    {
-      "id": 1631205,
-      "full_name": "Buddy Boeheim",
-      "last_comma_first": "Boeheim, Buddy",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "buddy_boheim",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 203992,
       "full_name": "Bogdan Bogdanovi\u0107",
       "last_comma_first": "Bogdanovi\u0107, Bogdan",
@@ -593,10 +567,10 @@
       "from_year": "2017",
       "to_year": "2026",
       "player_code": "bogdan_bogdanovic",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
     },
     {
       "id": 1641737,
@@ -625,17 +599,30 @@
       "team_abbreviation": "PHX"
     },
     {
-      "id": 1628449,
-      "full_name": "Chris Boucher",
-      "last_comma_first": "Boucher, Chris",
-      "roster_status": 0,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "chris_boucher",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643409,
+      "full_name": "Cameron Boozer",
+      "last_comma_first": "Boozer, Cameron",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_cameron_boozer",
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
+    },
+    {
+      "id": 1643573,
+      "full_name": "Kylan Boswell",
+      "last_comma_first": "Boswell, Kylan",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_kylan_boswell",
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
       "id": 1631123,
@@ -649,6 +636,19 @@
       "team_city": "Phoenix",
       "team_name": "Suns",
       "team_abbreviation": "PHX"
+    },
+    {
+      "id": 1643558,
+      "full_name": "Jaden Bradley",
+      "last_comma_first": "Bradley, Jaden",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_jaden_bradley",
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 1628396,
@@ -667,14 +667,14 @@
       "id": 1631103,
       "full_name": "Malaki Branham",
       "last_comma_first": "Branham, Malaki",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "malaki_branham",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
     },
     {
       "id": 1631128,
@@ -684,6 +684,19 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "christian_braun",
+      "team_id": 1610612743,
+      "team_city": "Denver",
+      "team_name": "Nuggets",
+      "team_abbreviation": "DEN"
+    },
+    {
+      "id": 1642350,
+      "full_name": "Trevon Brazile",
+      "last_comma_first": "Brazile, Trevon",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "trevon_brazile",
       "team_id": 1610612743,
       "team_city": "Denver",
       "team_name": "Nuggets",
@@ -723,10 +736,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "miles_bridges",
-      "team_id": 1610612766,
-      "team_city": "Charlotte",
-      "team_name": "Hornets",
-      "team_abbreviation": "CHA"
+      "team_id": 1610612756,
+      "team_city": "Phoenix",
+      "team_name": "Suns",
+      "team_abbreviation": "PHX"
     },
     {
       "id": 1628415,
@@ -749,10 +762,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "johni_broome",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
     },
     {
       "id": 1628971,
@@ -775,10 +788,10 @@
       "from_year": "2016",
       "to_year": "2026",
       "player_code": "jaylen_brown",
-      "team_id": 1610612738,
-      "team_city": "Boston",
-      "team_name": "Celtics",
-      "team_abbreviation": "BOS"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1641738,
@@ -794,17 +807,30 @@
       "team_abbreviation": "IND"
     },
     {
-      "id": 1642468,
-      "full_name": "Darius Brown II",
-      "last_comma_first": "Brown II, Darius",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "darius_brown",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643576,
+      "full_name": "Maliq Brown",
+      "last_comma_first": "Brown, Maliq",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "maliq_brown",
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
+    },
+    {
+      "id": 1643414,
+      "full_name": "Mikel Brown Jr.",
+      "last_comma_first": "Brown Jr., Mikel",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "christopher_brown_jr",
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
     },
     {
       "id": 1628973,
@@ -849,27 +875,27 @@
       "id": 1641723,
       "full_name": "Kobe Bufkin",
       "last_comma_first": "Bufkin, Kobe",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "kobe_bufkin",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
-      "id": 1631174,
-      "full_name": "Tyler Burton",
-      "last_comma_first": "Burton, Tyler",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "tyler_burton",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643415,
+      "full_name": "Brayden Burries",
+      "last_comma_first": "Burries, Brayden",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "brayden_burries",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
     },
     {
       "id": 202710,
@@ -883,6 +909,19 @@
       "team_city": "Golden State",
       "team_name": "Warriors",
       "team_abbreviation": "GSW"
+    },
+    {
+      "id": 1631219,
+      "full_name": "John Butler Jr.",
+      "last_comma_first": "Butler Jr., John",
+      "roster_status": 1,
+      "from_year": "2022",
+      "to_year": "2026",
+      "player_code": "john_butler_jr",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
     },
     {
       "id": 1641824,
@@ -918,10 +957,10 @@
       "from_year": "2013",
       "to_year": "2026",
       "player_code": "kentavious_caldwell-pope",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1641739,
@@ -970,10 +1009,23 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "branden_carlson",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
+      "team_id": 1610612757,
+      "team_city": "Portland",
+      "team_name": "Trail Blazers",
+      "team_abbreviation": "POR"
+    },
+    {
+      "id": 1643418,
+      "full_name": "Cameron Carr",
+      "last_comma_first": "Carr, Cameron",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "cameron_carr",
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1642267,
@@ -996,10 +1048,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "tmp_devin_carter",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1628975,
@@ -1067,6 +1119,32 @@
       "team_abbreviation": "ORL"
     },
     {
+      "id": 1643572,
+      "full_name": "Rafael Castro",
+      "last_comma_first": "Castro, Rafael",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "rafael_castro",
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
+    },
+    {
+      "id": 1643416,
+      "full_name": "Chris Cenac Jr.",
+      "last_comma_first": "Cenac Jr., Chris",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "christopher_cenac_jr",
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
+    },
+    {
       "id": 1630577,
       "full_name": "Julian Champagnie",
       "last_comma_first": "Champagnie, Julian",
@@ -1091,19 +1169,6 @@
       "team_city": "Washington",
       "team_name": "Wizards",
       "team_abbreviation": "WAS"
-    },
-    {
-      "id": 1631113,
-      "full_name": "Kennedy Chandler",
-      "last_comma_first": "Chandler, Kennedy",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "kennedy_chandler",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1642353,
@@ -1171,19 +1236,6 @@
       "team_abbreviation": "MIN"
     },
     {
-      "id": 1629634,
-      "full_name": "Brandon Clarke",
-      "last_comma_first": "Clarke, Brandon",
-      "roster_status": 1,
-      "from_year": "2019",
-      "to_year": "2025",
-      "player_code": "brandon_clarke",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
-    },
-    {
       "id": 203903,
       "full_name": "Jordan Clarkson",
       "last_comma_first": "Clarkson, Jordan",
@@ -1204,10 +1256,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "nicolas_claxton",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
     },
     {
       "id": 1642383,
@@ -1295,10 +1347,10 @@
       "from_year": "2017",
       "to_year": "2026",
       "player_code": "john_collins",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
     },
     {
       "id": 1628380,
@@ -1321,10 +1373,10 @@
       "from_year": "2007",
       "to_year": "2026",
       "player_code": "mike_conley",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
     },
     {
       "id": 1626192,
@@ -1340,17 +1392,17 @@
       "team_abbreviation": "CHA"
     },
     {
-      "id": 1631451,
-      "full_name": "Javonte Cooke",
-      "last_comma_first": "Cooke, Javonte",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "javonte_cooke",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643553,
+      "full_name": "Ryan Conwell",
+      "last_comma_first": "Conwell, Ryan",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "ryan_conwell",
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 1630536,
@@ -1364,6 +1416,19 @@
       "team_city": "Washington",
       "team_name": "Wizards",
       "team_abbreviation": "WAS"
+    },
+    {
+      "id": 1643595,
+      "full_name": "Quadir Copeland",
+      "last_comma_first": "Copeland, Quadir",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "quadir_copeland",
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
     },
     {
       "id": 1641731,
@@ -1483,19 +1548,6 @@
       "team_abbreviation": "ATL"
     },
     {
-      "id": 1642368,
-      "full_name": "N'Faly Dante",
-      "last_comma_first": "Dante, N'Faly",
-      "roster_status": 0,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "nfaly_dante",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 203076,
       "full_name": "Anthony Davis",
       "last_comma_first": "Davis, Anthony",
@@ -1516,23 +1568,23 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "jd_davison",
-      "team_id": 1610612745,
-      "team_city": "Houston",
-      "team_name": "Rockets",
-      "team_abbreviation": "HOU"
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
     },
     {
-      "id": 201942,
-      "full_name": "DeMar DeRozan",
-      "last_comma_first": "DeRozan, DeMar",
+      "id": 1643620,
+      "full_name": "Tucker DeVries",
+      "last_comma_first": "DeVries, Tucker",
       "roster_status": 1,
-      "from_year": "2009",
-      "to_year": "2025",
-      "player_code": "demar_derozan",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tucker_devries",
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
     },
     {
       "id": 1642484,
@@ -1561,6 +1613,19 @@
       "team_abbreviation": "MIN"
     },
     {
+      "id": 1643738,
+      "full_name": "Malik Dia",
+      "last_comma_first": "Dia, Malik",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "malik_dia",
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
+    },
+    {
       "id": 1631217,
       "full_name": "Moussa Diabat\u00e9",
       "last_comma_first": "Diabat\u00e9, Moussa",
@@ -1572,6 +1637,19 @@
       "team_city": "Charlotte",
       "team_name": "Hornets",
       "team_abbreviation": "CHA"
+    },
+    {
+      "id": 1643813,
+      "full_name": "Alpha Diallo",
+      "last_comma_first": "Diallo, Alpha",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "alpha_diallo",
+      "team_id": 1610612743,
+      "team_city": "Denver",
+      "team_name": "Nuggets",
+      "team_abbreviation": "DEN"
     },
     {
       "id": 1642885,
@@ -1600,19 +1678,6 @@
       "team_abbreviation": "TOR"
     },
     {
-      "id": 1630621,
-      "full_name": "Hunter Dickinson",
-      "last_comma_first": "Dickinson, Hunter",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "hunter_dickinson",
-      "team_id": 1610612740,
-      "team_city": "New Orleans",
-      "team_name": "Pelicans",
-      "team_abbreviation": "NOP"
-    },
-    {
       "id": 1631172,
       "full_name": "Ousmane Dieng",
       "last_comma_first": "Dieng, Ousmane",
@@ -1639,6 +1704,45 @@
       "team_abbreviation": "CHI"
     },
     {
+      "id": 1631215,
+      "full_name": "Khalifa Diop",
+      "last_comma_first": "Diop, Khalifa",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "khalifa_diop",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
+    },
+    {
+      "id": 1643717,
+      "full_name": "Josh Dix",
+      "last_comma_first": "Dix, Josh",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "josh_dix",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
+    },
+    {
+      "id": 1643621,
+      "full_name": "Tre Donaldson",
+      "last_comma_first": "Donaldson, Tre",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tre_donaldson",
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
+    },
+    {
       "id": 1629029,
       "full_name": "Luka Don\u010di\u0107",
       "last_comma_first": "Don\u010di\u0107, Luka",
@@ -1659,10 +1763,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "luguentz_dort",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1630245,
@@ -1685,10 +1789,10 @@
       "from_year": "2012",
       "to_year": "2026",
       "player_code": "andre_drummond",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
+      "team_id": 1610612752,
+      "team_city": "New York",
+      "team_name": "Knicks",
+      "team_abbreviation": "NYK"
     },
     {
       "id": 1627739,
@@ -1741,6 +1845,19 @@
       "team_city": "Detroit",
       "team_name": "Pistons",
       "team_abbreviation": "DET"
+    },
+    {
+      "id": 1643407,
+      "full_name": "AJ Dybantsa",
+      "last_comma_first": "Dybantsa, AJ",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "anicet_dybantsa",
+      "team_id": 1610612764,
+      "team_city": "Washington",
+      "team_name": "Wizards",
+      "team_abbreviation": "WAS"
     },
     {
       "id": 1642856,
@@ -1821,6 +1938,19 @@
       "team_abbreviation": "PHI"
     },
     {
+      "id": 1643544,
+      "full_name": "Zuby Ejiofor",
+      "last_comma_first": "Ejiofor, Zuby",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "zuby_ejiofor",
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
+    },
+    {
       "id": 1631165,
       "full_name": "Keon Ellis",
       "last_comma_first": "Ellis, Keon",
@@ -1828,10 +1958,10 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "keon_ellis",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
     },
     {
       "id": 203954,
@@ -1873,43 +2003,30 @@
       "team_abbreviation": "CHI"
     },
     {
-      "id": 1630623,
-      "full_name": "Tyson Etienne",
-      "last_comma_first": "Etienne, Tyson",
+      "id": 1642912,
+      "full_name": "Isaiah Evans",
+      "last_comma_first": "Evans, Isaiah",
       "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "tyson_etienne",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_isaiah_evans",
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
     },
     {
-      "id": 1629234,
-      "full_name": "Drew Eubanks",
-      "last_comma_first": "Eubanks, Drew",
+      "id": 1629605,
+      "full_name": "Tacko Fall",
+      "last_comma_first": "Fall, Tacko",
       "roster_status": 1,
-      "from_year": "2018",
-      "to_year": "2025",
-      "player_code": "drew_eubanks",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
-    },
-    {
-      "id": 1641787,
-      "full_name": "Tosan Evbuomwan",
-      "last_comma_first": "Evbuomwan, Tosan",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "tosan_evbuomwan",
-      "team_id": 1610612766,
-      "team_city": "Charlotte",
-      "team_name": "Hornets",
-      "team_abbreviation": "CHA"
+      "from_year": "2019",
+      "to_year": "2026",
+      "player_code": "tacko_fall",
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1642847,
@@ -1945,10 +2062,10 @@
       "from_year": "2016",
       "to_year": "2026",
       "player_code": "dorian_finney-smith",
-      "team_id": 1610612745,
-      "team_city": "Houston",
-      "team_name": "Rockets",
-      "team_abbreviation": "HOU"
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
       "id": 1642843,
@@ -1964,6 +2081,19 @@
       "team_abbreviation": "DAL"
     },
     {
+      "id": 1641745,
+      "full_name": "Adam Flagler",
+      "last_comma_first": "Flagler, Adam",
+      "roster_status": 1,
+      "from_year": "2023",
+      "to_year": "2026",
+      "player_code": "adam_flagler",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
       "id": 1642853,
       "full_name": "Rasheer Fleming",
       "last_comma_first": "Fleming, Rasheer",
@@ -1977,17 +2107,17 @@
       "team_abbreviation": "PHX"
     },
     {
-      "id": 1642280,
-      "full_name": "Trentyn Flowers",
-      "last_comma_first": "Flowers, Trentyn",
-      "roster_status": 0,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "trentyn_flowers",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643412,
+      "full_name": "Kingston Flemings",
+      "last_comma_first": "Flemings, Kingston",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "kingston_flemings",
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1631323,
@@ -2029,19 +2159,6 @@
       "team_abbreviation": "MIN"
     },
     {
-      "id": 1628365,
-      "full_name": "Markelle Fultz",
-      "last_comma_first": "Fultz, Markelle",
-      "roster_status": 0,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "markelle_fultz",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1642277,
       "full_name": "Johnny Furphy",
       "last_comma_first": "Furphy, Johnny",
@@ -2066,19 +2183,6 @@
       "team_city": "Dallas",
       "team_name": "Mavericks",
       "team_abbreviation": "DAL"
-    },
-    {
-      "id": 1643158,
-      "full_name": "Andersson Garcia",
-      "last_comma_first": "Garcia, Andersson",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "andersson_garcia",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1642066,
@@ -2153,10 +2257,10 @@
       "from_year": "2010",
       "to_year": "2026",
       "player_code": "paul_george",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
     },
     {
       "id": 201959,
@@ -2237,6 +2341,19 @@
       "team_abbreviation": "PHX"
     },
     {
+      "id": 1643551,
+      "full_name": "Ja'Kobi Gillespie",
+      "last_comma_first": "Gillespie, Ja'Kobi",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jakobi_gillespie",
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
+    },
+    {
       "id": 203497,
       "full_name": "Rudy Gobert",
       "last_comma_first": "Gobert, Rudy",
@@ -2302,19 +2419,6 @@
       "team_abbreviation": "DEN"
     },
     {
-      "id": 201569,
-      "full_name": "Eric Gordon",
-      "last_comma_first": "Gordon, Eric",
-      "roster_status": 0,
-      "from_year": "2008",
-      "to_year": "2025",
-      "player_code": "eric_gordon",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 203924,
       "full_name": "Jerami Grant",
       "last_comma_first": "Grant, Jerami",
@@ -2322,10 +2426,23 @@
       "from_year": "2014",
       "to_year": "2026",
       "player_code": "jerami_grant",
-      "team_id": 1610612757,
-      "team_city": "Portland",
-      "team_name": "Trail Blazers",
-      "team_abbreviation": "POR"
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
+    },
+    {
+      "id": 1643512,
+      "full_name": "Allen Graves",
+      "last_comma_first": "Graves, Allen",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "allen_graves",
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 1643060,
@@ -2413,10 +2530,10 @@
       "from_year": "2020",
       "to_year": "2026",
       "player_code": "josh_green",
-      "team_id": 1610612766,
-      "team_city": "Charlotte",
-      "team_name": "Hornets",
-      "team_abbreviation": "CHA"
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
     },
     {
       "id": 1629656,
@@ -2426,23 +2543,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "quentin_grimes",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
-    },
-    {
-      "id": 1631338,
-      "full_name": "Mouhamadou Gueye",
-      "last_comma_first": "Gueye, Mouhamadou",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "mouhamadou_gueye",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1631243,
@@ -2465,10 +2569,36 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "rui_hachimura",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
+      "id": 1643727,
+      "full_name": "J'Vonne Hadley",
+      "last_comma_first": "Hadley, J'Vonne",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jvonne_hadley",
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
+    },
+    {
+      "id": 1630169,
+      "full_name": "Tyrese Haliburton",
+      "last_comma_first": "Haliburton, Tyrese",
+      "roster_status": 1,
+      "from_year": "2020",
+      "to_year": "2026",
+      "player_code": "tyrese_haliburton",
+      "team_id": 1610612754,
+      "team_city": "Indiana",
+      "team_name": "Pacers",
+      "team_abbreviation": "IND"
     },
     {
       "id": 1641790,
@@ -2491,10 +2621,10 @@
       "from_year": "2013",
       "to_year": "2026",
       "player_code": "tim_hardaway_jr",
-      "team_id": 1610612743,
-      "team_city": "Denver",
-      "team_name": "Nuggets",
-      "team_abbreviation": "DEN"
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 201935,
@@ -2517,10 +2647,10 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "jaden_hardy",
-      "team_id": 1610612764,
-      "team_city": "Washington",
-      "team_name": "Wizards",
-      "team_abbreviation": "WAS"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1641989,
@@ -2530,10 +2660,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "elijah_harkless",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
     },
     {
       "id": 1642844,
@@ -2569,10 +2699,10 @@
       "from_year": "2014",
       "to_year": "2026",
       "player_code": "gary_harris",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
     },
     {
       "id": 202699,
@@ -2582,10 +2712,10 @@
       "from_year": "2011",
       "to_year": "2026",
       "player_code": "tobias_harris",
-      "team_id": 1610612765,
-      "team_city": "Detroit",
-      "team_name": "Pistons",
-      "team_abbreviation": "DET"
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
     },
     {
       "id": 1628404,
@@ -2647,36 +2777,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "jaxson_hayes",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
-    },
-    {
-      "id": 1630165,
-      "full_name": "Killian Hayes",
-      "last_comma_first": "Hayes, Killian",
-      "roster_status": 1,
-      "from_year": "2020",
-      "to_year": "2025",
-      "player_code": "killian_hayes",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
-    },
-    {
-      "id": 1628502,
-      "full_name": "Nigel Hayes-Davis",
-      "last_comma_first": "Hayes-Davis, Nigel",
-      "roster_status": 0,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "nigel_hayes",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
     },
     {
       "id": 1630703,
@@ -2725,10 +2829,23 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "tyler_herro",
-      "team_id": 1610612748,
-      "team_city": "Miami",
-      "team_name": "Heat",
-      "team_abbreviation": "MIA"
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
+      "id": 1626209,
+      "full_name": "Mario Hezonja",
+      "last_comma_first": "Hezonja, Mario",
+      "roster_status": 1,
+      "from_year": "2015",
+      "to_year": "2026",
+      "player_code": "mario_hezonja",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
     },
     {
       "id": 1627741,
@@ -2835,6 +2952,19 @@
       "team_abbreviation": "OKC"
     },
     {
+      "id": 1643624,
+      "full_name": "Bryce Hopkins",
+      "last_comma_first": "Hopkins, Bryce",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "bryce_hopkins",
+      "team_id": 1610612743,
+      "team_city": "Denver",
+      "team_name": "Nuggets",
+      "team_abbreviation": "DEN"
+    },
+    {
       "id": 201143,
       "full_name": "Al Horford",
       "last_comma_first": "Horford, Al",
@@ -2851,14 +2981,14 @@
       "id": 1631216,
       "full_name": "Caleb Houstan",
       "last_comma_first": "Houstan, Caleb",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "caleb_houstan",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
       "id": 1641724,
@@ -2868,10 +2998,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "jett_howard",
-      "team_id": 1610612753,
-      "team_city": "Orlando",
-      "team_name": "Magic",
-      "team_abbreviation": "ORL"
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1628989,
@@ -2907,10 +3037,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "ariel_hukporti",
-      "team_id": 1610612752,
-      "team_city": "New York",
-      "team_name": "Knicks",
-      "team_abbreviation": "NYK"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1629631,
@@ -2965,19 +3095,6 @@
       "team_abbreviation": "PHX"
     },
     {
-      "id": 204060,
-      "full_name": "Joe Ingles",
-      "last_comma_first": "Ingles, Joe",
-      "roster_status": 1,
-      "from_year": "2014",
-      "to_year": "2025",
-      "player_code": "joe_ingles",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
-    },
-    {
       "id": 1627742,
       "full_name": "Brandon Ingram",
       "last_comma_first": "Ingram, Brandon",
@@ -2998,10 +3115,23 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "harrison_ingram",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
+      "id": 202681,
+      "full_name": "Kyrie Irving",
+      "last_comma_first": "Irving, Kyrie",
+      "roster_status": 1,
+      "from_year": "2011",
+      "to_year": "2026",
+      "player_code": "kyrie_irving",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1628371,
@@ -3017,17 +3147,17 @@
       "team_abbreviation": "ORL"
     },
     {
-      "id": 1631093,
-      "full_name": "Jaden Ivey",
-      "last_comma_first": "Ivey, Jaden",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "jaden_ivey",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643585,
+      "full_name": "Vsevolod Ishchenko",
+      "last_comma_first": "Ishchenko, Vsevolod",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "vsevolod_ishchenko",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1641713,
@@ -3076,10 +3206,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "andre_jackson_jr",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 1628991,
@@ -3115,10 +3245,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "kasparas_jakucionis",
-      "team_id": 1610612748,
-      "team_city": "Miami",
-      "team_name": "Heat",
-      "team_abbreviation": "MIA"
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
     },
     {
       "id": 1642355,
@@ -3141,10 +3271,10 @@
       "from_year": "2003",
       "to_year": "2026",
       "player_code": "lebron_james",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1642883,
@@ -3167,36 +3297,23 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "jaime_jaquez_jr",
-      "team_id": 1610612748,
-      "team_city": "Miami",
-      "team_name": "Heat",
-      "team_abbreviation": "MIA"
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
     },
     {
-      "id": 1630610,
-      "full_name": "DeJon Jarreau",
-      "last_comma_first": "Jarreau, DeJon",
-      "roster_status": 0,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "dejon_jarreau",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1629610,
-      "full_name": "DaQuan Jeffries",
-      "last_comma_first": "Jeffries, DaQuan",
-      "roster_status": 0,
-      "from_year": "2019",
-      "to_year": "2025",
-      "player_code": "daquan_jeffries",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643538,
+      "full_name": "Joshua Jefferson",
+      "last_comma_first": "Jefferson, Joshua",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "joshua_jefferson",
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
     },
     {
       "id": 1641998,
@@ -3206,10 +3323,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "trey_jemison",
-      "team_id": 1610612752,
-      "team_city": "New York",
-      "team_name": "Knicks",
-      "team_abbreviation": "NYK"
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 1642450,
@@ -3245,10 +3362,10 @@
       "from_year": "2020",
       "to_year": "2026",
       "player_code": "isaiah_joe",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
     },
     {
       "id": 1642358,
@@ -3258,10 +3375,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "aj_johnson",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
     },
     {
       "id": 1629661,
@@ -3329,6 +3446,19 @@
       "team_abbreviation": "MIA"
     },
     {
+      "id": 1643516,
+      "full_name": "Morez Johnson",
+      "last_comma_first": "Johnson, Morez",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "morez_johnson",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
+    },
+    {
       "id": 1642848,
       "full_name": "Tre Johnson",
       "last_comma_first": "Johnson, Tre",
@@ -3342,6 +3472,19 @@
       "team_abbreviation": "WAS"
     },
     {
+      "id": 1641935,
+      "full_name": "Jarkel Joiner",
+      "last_comma_first": "Joiner, Jarkel",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jarkell_joiner",
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
+    },
+    {
       "id": 203999,
       "full_name": "Nikola Joki\u0107",
       "last_comma_first": "Joki\u0107, Nikola",
@@ -3353,19 +3496,6 @@
       "team_city": "Denver",
       "team_name": "Nuggets",
       "team_abbreviation": "DEN"
-    },
-    {
-      "id": 1641732,
-      "full_name": "Colby Jones",
-      "last_comma_first": "Jones, Colby",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "colby_jones",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1642938,
@@ -3427,10 +3557,23 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "kameron_jones",
-      "team_id": 1610612754,
-      "team_city": "Indiana",
-      "team_name": "Pacers",
-      "team_abbreviation": "IND"
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
+      "id": 1643650,
+      "full_name": "Lajae Jones",
+      "last_comma_first": "Jones, Lajae",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "lajae_jones",
+      "team_id": 1610612744,
+      "team_city": "Golden State",
+      "team_name": "Warriors",
+      "team_abbreviation": "GSW"
     },
     {
       "id": 1642461,
@@ -3524,19 +3667,6 @@
       "team_abbreviation": "MIA"
     },
     {
-      "id": 1630548,
-      "full_name": "Johnny Juzang",
-      "last_comma_first": "Juzang, Johnny",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "johnny_juzang",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1641750,
       "full_name": "Ryan Kalkbrenner",
       "last_comma_first": "Kalkbrenner, Ryan",
@@ -3550,6 +3680,45 @@
       "team_abbreviation": "CHA"
     },
     {
+      "id": 1641751,
+      "full_name": "Arthur Kaluma",
+      "last_comma_first": "Kaluma, Arthur",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "arthur_kaluma",
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
+    },
+    {
+      "id": 1642284,
+      "full_name": "Alex Karaban",
+      "last_comma_first": "Karaban, Alex",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "alex_karaban",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
+      "id": 1643626,
+      "full_name": "Trey Kaufman-Renn",
+      "last_comma_first": "Kaufman-Renn, Trey",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "trey_kaufman-renn",
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
+    },
+    {
       "id": 1642530,
       "full_name": "Yuki Kawamura",
       "last_comma_first": "Kawamura, Yuki",
@@ -3557,10 +3726,23 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "yuki_kawamura",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
+      "id": 1643583,
+      "full_name": "Jack Kayil",
+      "last_comma_first": "Kayil, Jack",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_jack_kayil",
+      "team_id": 1610612752,
+      "team_city": "New York",
+      "team_name": "Knicks",
+      "team_abbreviation": "NYK"
     },
     {
       "id": 1631211,
@@ -3576,19 +3758,6 @@
       "team_abbreviation": "MIA"
     },
     {
-      "id": 1642939,
-      "full_name": "Miles Kelly",
-      "last_comma_first": "Kelly, Miles",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "miles_kelly",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1628379,
       "full_name": "Luke Kennard",
       "last_comma_first": "Kennard, Luke",
@@ -3596,10 +3765,10 @@
       "from_year": "2017",
       "to_year": "2026",
       "player_code": "luke_kennard",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
+      "team_id": 1610612756,
+      "team_city": "Phoenix",
+      "team_name": "Suns",
+      "team_abbreviation": "PHX"
     },
     {
       "id": 1643257,
@@ -3622,10 +3791,10 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "walker_kessler",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1630557,
@@ -3639,32 +3808,6 @@
       "team_city": "Atlanta",
       "team_name": "Hawks",
       "team_abbreviation": "ATL"
-    },
-    {
-      "id": 1628467,
-      "full_name": "Maxi Kleber",
-      "last_comma_first": "Kleber, Maxi",
-      "roster_status": 1,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "maxi_kleber",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
-    },
-    {
-      "id": 1641752,
-      "full_name": "Bobi Klintman",
-      "last_comma_first": "Klintman, Bobi",
-      "roster_status": 0,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "bobi_klintman",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1642261,
@@ -3713,23 +3856,10 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "christian_koloko",
-      "team_id": 1610612737,
-      "team_city": "Atlanta",
-      "team_name": "Hawks",
-      "team_abbreviation": "ATL"
-    },
-    {
-      "id": 1629723,
-      "full_name": "John Konchar",
-      "last_comma_first": "Konchar, John",
-      "roster_status": 1,
-      "from_year": "2019",
-      "to_year": "2025",
-      "player_code": "john_konchar",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
       "id": 1628436,
@@ -3765,10 +3895,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "jonathan_kuminga",
-      "team_id": 1610612737,
-      "team_city": "Atlanta",
-      "team_name": "Hawks",
-      "team_abbreviation": "ATL"
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
     },
     {
       "id": 1628398,
@@ -3810,19 +3940,6 @@
       "team_abbreviation": "SAC"
     },
     {
-      "id": 1627746,
-      "full_name": "Skal Labissiere",
-      "last_comma_first": "Labissiere, Skal",
-      "roster_status": 0,
-      "from_year": "2016",
-      "to_year": "2025",
-      "player_code": "skal_labissiere",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1629111,
       "full_name": "Jock Landale",
       "last_comma_first": "Landale, Jock",
@@ -3862,6 +3979,19 @@
       "team_abbreviation": "MIA"
     },
     {
+      "id": 1643588,
+      "full_name": "Tobi Lawal",
+      "last_comma_first": "Lawal, Tobi",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tobi_lawal",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
+    },
+    {
       "id": 1630639,
       "full_name": "A.J. Lawson",
       "last_comma_first": "Lawson, A.J.",
@@ -3882,10 +4012,23 @@
       "from_year": "2016",
       "to_year": "2026",
       "player_code": "caris_levert",
-      "team_id": 1610612765,
-      "team_city": "Detroit",
-      "team_name": "Pistons",
-      "team_abbreviation": "DET"
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
+      "id": 1642865,
+      "full_name": "Yaxel Lendeborg",
+      "last_comma_first": "Lendeborg, Yaxel",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "yaxel_lendeborg",
+      "team_id": 1610612744,
+      "team_city": "Golden State",
+      "team_name": "Warriors",
+      "team_abbreviation": "GSW"
     },
     {
       "id": 202695,
@@ -3914,17 +4057,30 @@
       "team_abbreviation": "GSW"
     },
     {
-      "id": 1630604,
-      "full_name": "E.J. Liddell",
-      "last_comma_first": "Liddell, E.J.",
+      "id": 1641831,
+      "full_name": "Malique Lewis",
+      "last_comma_first": "Lewis, Malique",
       "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "ej_liddell",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "malique_lewis",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
+      "id": 203081,
+      "full_name": "Damian Lillard",
+      "last_comma_first": "Lillard, Damian",
+      "roster_status": 1,
+      "from_year": "2012",
+      "to_year": "2026",
+      "player_code": "damian_lillard",
+      "team_id": 1610612757,
+      "team_city": "Portland",
+      "team_name": "Trail Blazers",
+      "team_abbreviation": "POR"
     },
     {
       "id": 1641726,
@@ -3953,19 +4109,6 @@
       "team_abbreviation": "PHX"
     },
     {
-      "id": 1641753,
-      "full_name": "Chris Livingston",
-      "last_comma_first": "Livingston, Chris",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "chris_livingston",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1626172,
       "full_name": "Kevon Looney",
       "last_comma_first": "Looney, Kevon",
@@ -3973,10 +4116,10 @@
       "from_year": "2015",
       "to_year": "2026",
       "player_code": "kevon_looney",
-      "team_id": 1610612740,
-      "team_city": "New Orleans",
-      "team_name": "Pelicans",
-      "team_abbreviation": "NOP"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 201572,
@@ -3992,6 +4135,19 @@
       "team_abbreviation": "LAC"
     },
     {
+      "id": 1643510,
+      "full_name": "Karim Lopez",
+      "last_comma_first": "Lopez, Karim",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_karim_lopez",
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
+    },
+    {
       "id": 1631126,
       "full_name": "Caleb Love",
       "last_comma_first": "Love, Caleb",
@@ -3999,10 +4155,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "caleb_love",
-      "team_id": 1610612757,
-      "team_city": "Portland",
-      "team_name": "Trail Blazers",
-      "team_abbreviation": "POR"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 201567,
@@ -4018,19 +4174,6 @@
       "team_abbreviation": "UTA"
     },
     {
-      "id": 1643133,
-      "full_name": "Lawson Lovering",
-      "last_comma_first": "Lovering, Lawson",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "lawson_lovering",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 200768,
       "full_name": "Kyle Lowry",
       "last_comma_first": "Lowry, Kyle",
@@ -4042,6 +4185,19 @@
       "team_city": "Philadelphia",
       "team_name": "76ers",
       "team_abbreviation": "PHI"
+    },
+    {
+      "id": 1626168,
+      "full_name": "Trey Lyles",
+      "last_comma_first": "Lyles, Trey",
+      "roster_status": 1,
+      "from_year": "2015",
+      "to_year": "2026",
+      "player_code": "trey_lyles",
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
     },
     {
       "id": 1642863,
@@ -4064,10 +4220,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "sandro_mamukelashvili",
-      "team_id": 1610612761,
-      "team_city": "Toronto",
-      "team_name": "Raptors",
-      "team_abbreviation": "TOR"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1629611,
@@ -4090,10 +4246,23 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "tre_mann",
-      "team_id": 1610612766,
-      "team_city": "Charlotte",
-      "team_name": "Hornets",
-      "team_abbreviation": "CHA"
+      "team_id": 1610612764,
+      "team_city": "Washington",
+      "team_name": "Wizards",
+      "team_abbreviation": "WAS"
+    },
+    {
+      "id": 1643530,
+      "full_name": "Aday Mara",
+      "last_comma_first": "Mara, Aday",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "aday_mara",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1628374,
@@ -4107,6 +4276,19 @@
       "team_city": "Utah",
       "team_name": "Jazz",
       "team_abbreviation": "UTA"
+    },
+    {
+      "id": 1642881,
+      "full_name": "Bogoljub Markovi\u0107",
+      "last_comma_first": "Markovi\u0107, Bogoljub",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "bogoljub_markovic",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
     },
     {
       "id": 1630230,
@@ -4148,19 +4330,6 @@
       "team_abbreviation": "DAL"
     },
     {
-      "id": 1628998,
-      "full_name": "Cody Martin",
-      "last_comma_first": "Martin, Cody",
-      "roster_status": 0,
-      "from_year": "2019",
-      "to_year": "2025",
-      "player_code": "cody_martin",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1631213,
       "full_name": "Tyrese Martin",
       "last_comma_first": "Martin, Tyrese",
@@ -4174,6 +4343,19 @@
       "team_abbreviation": "PHI"
     },
     {
+      "id": 1643568,
+      "full_name": "Nick Martinelli",
+      "last_comma_first": "Martinelli, Nick",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "nick_martinelli",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
       "id": 1642942,
       "full_name": "Jahmai Mashack",
       "last_comma_first": "Mashack, Jahmai",
@@ -4185,19 +4367,6 @@
       "team_city": "Memphis",
       "team_name": "Grizzlies",
       "team_abbreviation": "MEM"
-    },
-    {
-      "id": 1629726,
-      "full_name": "Garrison Mathews",
-      "last_comma_first": "Mathews, Garrison",
-      "roster_status": 0,
-      "from_year": "2019",
-      "to_year": "2025",
-      "player_code": "garrison_mathews",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1631097,
@@ -4291,19 +4460,6 @@
       "team_abbreviation": "OKC"
     },
     {
-      "id": 1630644,
-      "full_name": "Mac McClung",
-      "last_comma_first": "McClung, Mac",
-      "roster_status": 1,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "mac_mcclung",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
-    },
-    {
       "id": 203468,
       "full_name": "CJ McCollum",
       "last_comma_first": "McCollum, CJ",
@@ -4354,19 +4510,6 @@
       "team_city": "Minnesota",
       "team_name": "Timberwolves",
       "team_abbreviation": "MIN"
-    },
-    {
-      "id": 203926,
-      "full_name": "Doug McDermott",
-      "last_comma_first": "McDermott, Doug",
-      "roster_status": 1,
-      "from_year": "2014",
-      "to_year": "2025",
-      "player_code": "doug_mcdermott",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
     },
     {
       "id": 1631121,
@@ -4441,10 +4584,36 @@
       "from_year": "2012",
       "to_year": "2026",
       "player_code": "khris_middleton",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
+      "team_id": 1610612764,
+      "team_city": "Washington",
+      "team_name": "Wizards",
+      "team_abbreviation": "WAS"
+    },
+    {
+      "id": 1643575,
+      "full_name": "Duke Miles",
+      "last_comma_first": "Miles, Duke",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "duke_miles",
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
+    },
+    {
+      "id": 1642394,
+      "full_name": "Baba Miller",
+      "last_comma_first": "Miller, Baba",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "baba_miller",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
     },
     {
       "id": 1641706,
@@ -4458,19 +4627,6 @@
       "team_city": "Charlotte",
       "team_name": "Hornets",
       "team_abbreviation": "CHA"
-    },
-    {
-      "id": 1641801,
-      "full_name": "Emanuel Miller",
-      "last_comma_first": "Miller, Emanuel",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "emanuel_miller",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
     },
     {
       "id": 1641757,
@@ -4564,6 +4720,19 @@
       "team_abbreviation": "MIA"
     },
     {
+      "id": 1641759,
+      "full_name": "Dillon Mitchell",
+      "last_comma_first": "Mitchell, Dillon",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "dillon_mitchell",
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
+    },
+    {
       "id": 1628378,
       "full_name": "Donovan Mitchell",
       "last_comma_first": "Mitchell, Donovan",
@@ -4597,10 +4766,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "jonathan_mogbo",
-      "team_id": 1610612761,
-      "team_city": "Toronto",
-      "team_name": "Raptors",
-      "team_abbreviation": "TOR"
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
     },
     {
       "id": 1628370,
@@ -4662,23 +4831,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "ja_morant",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
-    },
-    {
-      "id": 1628420,
-      "full_name": "Monte Morris",
-      "last_comma_first": "Morris, Monte",
-      "roster_status": 0,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "monte_morris",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612757,
+      "team_city": "Portland",
+      "team_name": "Trail Blazers",
+      "team_abbreviation": "POR"
     },
     {
       "id": 1630530,
@@ -4740,10 +4896,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "kris_murray",
-      "team_id": 1610612757,
-      "team_city": "Portland",
-      "team_name": "Trail Blazers",
-      "team_abbreviation": "POR"
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
     },
     {
       "id": 1642867,
@@ -4792,23 +4948,49 @@
       "from_year": "2015",
       "to_year": "2026",
       "player_code": "larry_nance_jr",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": 1610612754,
+      "team_city": "Indiana",
+      "team_name": "Pacers",
+      "team_abbreviation": "IND"
     },
     {
       "id": 1641761,
       "full_name": "Grant Nelson",
       "last_comma_first": "Nelson, Grant",
-      "roster_status": 0,
+      "roster_status": 1,
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "grant_nelson",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
+    },
+    {
+      "id": 1643593,
+      "full_name": "Izaiyah Nelson",
+      "last_comma_first": "Nelson, Izaiyah",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "izaiyah_nelson",
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
+    },
+    {
+      "id": 1642392,
+      "full_name": "Jameer Nelson Jr.",
+      "last_comma_first": "Nelson Jr., Jameer",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jameer_nelson_jr",
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1629614,
@@ -4831,10 +5013,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "ryan_nembhard",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1630174,
@@ -4863,17 +5045,43 @@
       "team_abbreviation": "ATL"
     },
     {
-      "id": 1641803,
-      "full_name": "Tristen Newton",
-      "last_comma_first": "Newton, Tristen",
+      "id": 1643712,
+      "full_name": "Narcisse Ngoy",
+      "last_comma_first": "Ngoy, Narcisse",
       "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "tristen_newton",
-      "team_id": 1610612745,
-      "team_city": "Houston",
-      "team_name": "Rockets",
-      "team_abbreviation": "HOU"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "narcisse_ngoy",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
+      "id": 1627777,
+      "full_name": "Georges Niang",
+      "last_comma_first": "Niang, Georges",
+      "roster_status": 1,
+      "from_year": "2016",
+      "to_year": "2026",
+      "player_code": "georges_niang",
+      "team_id": 1610612744,
+      "team_city": "Golden State",
+      "team_name": "Warriors",
+      "team_abbreviation": "GSW"
+    },
+    {
+      "id": 1643589,
+      "full_name": "Tyler Nickel",
+      "last_comma_first": "Nickel, Tyler",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tyler_nickel",
+      "team_id": 1610612752,
+      "team_city": "New York",
+      "team_name": "Knicks",
+      "team_abbreviation": "NYK"
     },
     {
       "id": 1642949,
@@ -4922,36 +5130,23 @@
       "from_year": "2017",
       "to_year": "2026",
       "player_code": "royce_o'neale",
-      "team_id": 1610612756,
-      "team_city": "Phoenix",
-      "team_name": "Suns",
-      "team_abbreviation": "PHX"
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
-      "id": 1642490,
-      "full_name": "Josh Oduro",
-      "last_comma_first": "Oduro, Josh",
+      "id": 1643758,
+      "full_name": "AK Okereke",
+      "last_comma_first": "Okereke, AK",
       "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "josh_oduro",
-      "team_id": 1610612740,
-      "team_city": "New Orleans",
-      "team_name": "Pelicans",
-      "team_abbreviation": "NOP"
-    },
-    {
-      "id": 1643253,
-      "full_name": "Toby Okani",
-      "last_comma_first": "Okani, Toby",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "toby_okani",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "ak_okereke",
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1629006,
@@ -4961,10 +5156,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "josh_okogie",
-      "team_id": 1610612745,
-      "team_city": "Houston",
-      "team_name": "Rockets",
-      "team_abbreviation": "HOU"
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
     },
     {
       "id": 1630168,
@@ -4980,6 +5175,19 @@
       "team_abbreviation": "ATL"
     },
     {
+      "id": 1643536,
+      "full_name": "Ebuka Okorie",
+      "last_comma_first": "Okorie, Ebuka",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "ebuka_okorie",
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
+    },
+    {
       "id": 1630171,
       "full_name": "Isaac Okoro",
       "last_comma_first": "Okoro, Isaac",
@@ -4993,30 +5201,17 @@
       "team_abbreviation": "CHI"
     },
     {
-      "id": 1642950,
-      "full_name": "Lachlan Olbrich",
-      "last_comma_first": "Olbrich, Lachlan",
+      "id": 1643590,
+      "full_name": "Felix Okpara",
+      "last_comma_first": "Okpara, Felix",
       "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "lachlan_olbrich",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
-    },
-    {
-      "id": 203482,
-      "full_name": "Kelly Olynyk",
-      "last_comma_first": "Olynyk, Kelly",
-      "roster_status": 1,
-      "from_year": "2013",
-      "to_year": "2025",
-      "player_code": "kelly_olynyk",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "felix_okpara",
+      "team_id": 1610612764,
+      "team_city": "Washington",
+      "team_name": "Wizards",
+      "team_abbreviation": "WAS"
     },
     {
       "id": 1641807,
@@ -5032,6 +5227,19 @@
       "team_abbreviation": "LAC"
     },
     {
+      "id": 1642391,
+      "full_name": "Ugonna Onyenso",
+      "last_comma_first": "Onyenso, Ugonna",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "ugonna_onyenso",
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
+    },
+    {
       "id": 1626162,
       "full_name": "Kelly Oubre Jr.",
       "last_comma_first": "Oubre Jr., Kelly",
@@ -5039,36 +5247,23 @@
       "from_year": "2015",
       "to_year": "2026",
       "player_code": "kelly_oubre_jr",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
+      "team_id": 1610612754,
+      "team_city": "Indiana",
+      "team_name": "Pacers",
+      "team_abbreviation": "IND"
     },
     {
-      "id": 101108,
-      "full_name": "Chris Paul",
-      "last_comma_first": "Paul, Chris",
-      "roster_status": 0,
-      "from_year": "2005",
-      "to_year": "2025",
-      "player_code": "chris_paul",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1626166,
-      "full_name": "Cameron Payne",
-      "last_comma_first": "Payne, Cameron",
-      "roster_status": 0,
-      "from_year": "2015",
-      "to_year": "2025",
-      "player_code": "cameron_payne",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1642923,
+      "full_name": "Otega Oweh",
+      "last_comma_first": "Oweh, Otega",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "otega_oweh",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1627780,
@@ -5082,6 +5277,19 @@
       "team_city": "Golden State",
       "team_name": "Warriors",
       "team_abbreviation": "GSW"
+    },
+    {
+      "id": 1643520,
+      "full_name": "Koa Peat",
+      "last_comma_first": "Peat, Koa",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "koa_peat",
+      "team_id": 1610612756,
+      "team_city": "Phoenix",
+      "team_name": "Suns",
+      "team_abbreviation": "PHX"
     },
     {
       "id": 1642877,
@@ -5104,10 +5312,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "sean_pedulla",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
     },
     {
       "id": 1642869,
@@ -5130,23 +5338,23 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "taelon_peter",
-      "team_id": 1610612754,
-      "team_city": "Indiana",
-      "team_name": "Pacers",
-      "team_abbreviation": "IND"
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
     },
     {
-      "id": 1641809,
-      "full_name": "Drew Peterson",
-      "last_comma_first": "Peterson, Drew",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "drew_peterson",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643408,
+      "full_name": "Darryn Peterson",
+      "last_comma_first": "Peterson, Darryn",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "darryn_peterson",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
     },
     {
       "id": 1641763,
@@ -5156,10 +5364,23 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "julian_phillips",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
+    },
+    {
+      "id": 1642889,
+      "full_name": "Labaron Philon",
+      "last_comma_first": "Philon, Labaron",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "labaron_philon",
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1629618,
@@ -5169,10 +5390,23 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "jalen_pickett",
-      "team_id": 1610612743,
-      "team_city": "Denver",
-      "team_name": "Nuggets",
-      "team_abbreviation": "DEN"
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
+      "id": 1643555,
+      "full_name": "Jaron Pierre Jr.",
+      "last_comma_first": "Pierre Jr., Jaron",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jaron_pierre_jr",
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
       "id": 1630590,
@@ -5199,19 +5433,6 @@
       "team_city": "Sacramento",
       "team_name": "Kings",
       "team_abbreviation": "SAC"
-    },
-    {
-      "id": 203486,
-      "full_name": "Mason Plumlee",
-      "last_comma_first": "Plumlee, Mason",
-      "roster_status": 1,
-      "from_year": "2013",
-      "to_year": "2025",
-      "player_code": "mason_plumlee",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
     },
     {
       "id": 1641764,
@@ -5299,10 +5520,10 @@
       "from_year": "2015",
       "to_year": "2026",
       "player_code": "bobby_portis",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 204001,
@@ -5325,10 +5546,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "quinten_post",
-      "team_id": 1610612744,
-      "team_city": "Golden State",
-      "team_name": "Warriors",
-      "team_abbreviation": "GSW"
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
     },
     {
       "id": 1630695,
@@ -5338,10 +5559,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "micah_potter",
-      "team_id": 1610612754,
-      "team_city": "Indiana",
-      "team_name": "Pacers",
-      "team_abbreviation": "IND"
+      "team_id": 1610612757,
+      "team_city": "Portland",
+      "team_name": "Trail Blazers",
+      "team_abbreviation": "POR"
     },
     {
       "id": 1642967,
@@ -5390,10 +5611,10 @@
       "from_year": "2015",
       "to_year": "2026",
       "player_code": "norman_powell",
-      "team_id": 1610612748,
-      "team_city": "Miami",
-      "team_name": "Heat",
-      "team_abbreviation": "MIA"
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
     },
     {
       "id": 1627752,
@@ -5403,10 +5624,10 @@
       "from_year": "2016",
       "to_year": "2026",
       "player_code": "taurean_prince",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
+      "team_id": 1610612765,
+      "team_city": "Detroit",
+      "team_name": "Pistons",
+      "team_abbreviation": "DET"
     },
     {
       "id": 1630202,
@@ -5461,6 +5682,19 @@
       "team_abbreviation": "MIN"
     },
     {
+      "id": 1643519,
+      "full_name": "Jayden Quaintance",
+      "last_comma_first": "Quaintance, Jayden",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_jayden_quaintance",
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
+    },
+    {
       "id": 1642852,
       "full_name": "Derik Queen",
       "last_comma_first": "Queen, Derik",
@@ -5507,10 +5741,10 @@
       "from_year": "2014",
       "to_year": "2026",
       "player_code": "julius_randle",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
     },
     {
       "id": 1642875,
@@ -5524,19 +5758,6 @@
       "team_city": "Sacramento",
       "team_name": "Kings",
       "team_abbreviation": "SAC"
-    },
-    {
-      "id": 1641871,
-      "full_name": "Duop Reath",
-      "last_comma_first": "Reath, Duop",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "duop_reath",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1630559,
@@ -5565,17 +5786,17 @@
       "team_abbreviation": "DET"
     },
     {
-      "id": 1642882,
-      "full_name": "Julian Reese",
-      "last_comma_first": "Reese, Julian",
+      "id": 1643542,
+      "full_name": "Tarris Reed Jr.",
+      "last_comma_first": "Reed Jr., Tarris",
       "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "julian_reese",
-      "team_id": 1610612764,
-      "team_city": "Washington",
-      "team_name": "Wizards",
-      "team_abbreviation": "WAS"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tarris_reed_jr",
+      "team_id": 1610612759,
+      "team_city": "San Antonio",
+      "team_name": "Spurs",
+      "team_abbreviation": "SAS"
     },
     {
       "id": 1641810,
@@ -5598,10 +5819,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "naz_reid",
-      "team_id": 1610612750,
-      "team_city": "Minnesota",
-      "team_name": "Timberwolves",
-      "team_abbreviation": "MIN"
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
       "id": 1642954,
@@ -5624,10 +5845,10 @@
       "from_year": "2020",
       "to_year": "2026",
       "player_code": "nick_richards",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 1642859,
@@ -5641,19 +5862,6 @@
       "team_city": "Orlando",
       "team_name": "Magic",
       "team_abbreviation": "ORL"
-    },
-    {
-      "id": 1642955,
-      "full_name": "Kadary Richmond",
-      "last_comma_first": "Richmond, Kadary",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "kadary_richmond",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1642860,
@@ -5676,10 +5884,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "tmp_zaccharie_risacher",
-      "team_id": 1610612737,
-      "team_city": "Atlanta",
-      "team_name": "Hawks",
-      "team_abbreviation": "ATL"
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     },
     {
       "id": 1629130,
@@ -5702,36 +5910,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "mitchell_robinson",
-      "team_id": 1610612752,
-      "team_city": "New York",
-      "team_name": "Knicks",
-      "team_abbreviation": "NYK"
-    },
-    {
-      "id": 1631115,
-      "full_name": "Orlando Robinson",
-      "last_comma_first": "Robinson, Orlando",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "orlando_robinson",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1630526,
-      "full_name": "Jeremiah Robinson-Earl",
-      "last_comma_first": "Robinson-Earl, Jeremiah",
-      "roster_status": 0,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "jeremiah_robinson-earl",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
     },
     {
       "id": 1631223,
@@ -5767,10 +5949,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "rayan_rupert",
-      "team_id": 1610612763,
-      "team_city": "Memphis",
-      "team_name": "Grizzlies",
-      "team_abbreviation": "MEM"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1626156,
@@ -5780,10 +5962,10 @@
       "from_year": "2015",
       "to_year": "2026",
       "player_code": "d'angelo_russell",
-      "team_id": 1610612764,
-      "team_city": "Washington",
-      "team_name": "Wizards",
-      "team_abbreviation": "WAS"
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
     },
     {
       "id": 1642504,
@@ -5825,19 +6007,6 @@
       "team_abbreviation": "CHA"
     },
     {
-      "id": 1642282,
-      "full_name": "Hunter Sallis",
-      "last_comma_first": "Sallis, Hunter",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "hunter_sallis",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1642920,
       "full_name": "Kobe Sanders",
       "last_comma_first": "Sanders, Kobe",
@@ -5849,19 +6018,6 @@
       "team_city": "LA",
       "team_name": "Clippers",
       "team_abbreviation": "LAC"
-    },
-    {
-      "id": 1642362,
-      "full_name": "Payton Sandfort",
-      "last_comma_first": "Sandfort, Payton",
-      "roster_status": 1,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "payton_sandfort",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
     },
     {
       "id": 1630611,
@@ -5890,19 +6046,6 @@
       "team_abbreviation": "BKN"
     },
     {
-      "id": 203967,
-      "full_name": "Dario Saric",
-      "last_comma_first": "Saric, Dario",
-      "roster_status": 0,
-      "from_year": "2016",
-      "to_year": "2025",
-      "player_code": "dario_saric",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1642259,
       "full_name": "Alex Sarr",
       "last_comma_first": "Sarr, Alex",
@@ -5916,19 +6059,6 @@
       "team_abbreviation": "WAS"
     },
     {
-      "id": 1630846,
-      "full_name": "Olivier Sarr",
-      "last_comma_first": "Sarr, Olivier",
-      "roster_status": 1,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "olivier_sarr",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
-    },
-    {
       "id": 1631204,
       "full_name": "Marcus Sasser",
       "last_comma_first": "Sasser, Marcus",
@@ -5936,10 +6066,23 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "marcus_sasser",
-      "team_id": 1610612765,
-      "team_city": "Detroit",
-      "team_name": "Pistons",
-      "team_abbreviation": "DET"
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
+    },
+    {
+      "id": 1643563,
+      "full_name": "Richie Saunders",
+      "last_comma_first": "Saunders, Richie",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "richie_saunders",
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
     },
     {
       "id": 1631248,
@@ -5962,36 +6105,23 @@
       "from_year": "2013",
       "to_year": "2026",
       "player_code": "dennis_schroder",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
-      "id": 1630286,
-      "full_name": "Trevon Scott",
-      "last_comma_first": "Scott, Trevon",
-      "roster_status": 0,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "trevon_scott",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1641813,
-      "full_name": "Mark Sears",
-      "last_comma_first": "Sears, Mark",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "mark_sears",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643637,
+      "full_name": "Jaylin Sellers",
+      "last_comma_first": "Sellers, Jaylin",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jaylin_sellers",
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
     },
     {
       "id": 1630578,
@@ -6027,10 +6157,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "collin_sexton",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1629013,
@@ -6057,6 +6187,32 @@
       "team_city": "Minnesota",
       "team_name": "Timberwolves",
       "team_abbreviation": "MIN"
+    },
+    {
+      "id": 1643567,
+      "full_name": "Emanuel Sharp",
+      "last_comma_first": "Sharp, Emanuel",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "emanuel_sharp",
+      "team_id": 1610612758,
+      "team_city": "Sacramento",
+      "team_name": "Kings",
+      "team_abbreviation": "SAC"
+    },
+    {
+      "id": 1642481,
+      "full_name": "Jamarion Sharp",
+      "last_comma_first": "Sharp, Jamarion",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jamarion_sharp",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
     },
     {
       "id": 1630549,
@@ -6157,10 +6313,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "anfernee_simons",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1642354,
@@ -6222,10 +6378,23 @@
       "from_year": "2014",
       "to_year": "2026",
       "player_code": "marcus_smart",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
+    },
+    {
+      "id": 1643552,
+      "full_name": "Braden Smith",
+      "last_comma_first": "Smith, Braden",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "braden_smith",
+      "team_id": 1610612754,
+      "team_city": "Indiana",
+      "team_name": "Pacers",
+      "team_abbreviation": "IND"
     },
     {
       "id": 1630696,
@@ -6261,10 +6430,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "malachi_smith",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
     },
     {
       "id": 1642449,
@@ -6280,19 +6449,6 @@
       "team_abbreviation": "DET"
     },
     {
-      "id": 1641890,
-      "full_name": "Tyler Smith",
-      "last_comma_first": "Smith, Tyler",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "tmp_tyler_smith",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
-    },
-    {
       "id": 1631095,
       "full_name": "Jabari Smith Jr.",
       "last_comma_first": "Smith Jr., Jabari",
@@ -6306,19 +6462,6 @@
       "team_abbreviation": "HOU"
     },
     {
-      "id": 1641733,
-      "full_name": "Nick Smith Jr.",
-      "last_comma_first": "Smith Jr., Nick",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "nick_smith_jr",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
-    },
-    {
       "id": 1631110,
       "full_name": "Jeremy Sochan",
       "last_comma_first": "Sochan, Jeremy",
@@ -6326,10 +6469,23 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "jeremy_sochan",
-      "team_id": 1610612752,
-      "team_city": "New York",
-      "team_name": "Knicks",
-      "team_abbreviation": "NYK"
+      "team_id": 1610612757,
+      "team_city": "Portland",
+      "team_name": "Trail Blazers",
+      "team_abbreviation": "POR"
+    },
+    {
+      "id": 1642850,
+      "full_name": "Thomas Sorber",
+      "last_comma_first": "Sorber, Thomas",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "thomas_sorber",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1642285,
@@ -6352,23 +6508,23 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "pat_spencer",
-      "team_id": 1610612744,
-      "team_city": "Golden State",
-      "team_name": "Warriors",
-      "team_abbreviation": "GSW"
+      "team_id": 1610612756,
+      "team_city": "Phoenix",
+      "team_name": "Suns",
+      "team_abbreviation": "PHX"
     },
     {
-      "id": 1641815,
-      "full_name": "Isaiah Stevens",
-      "last_comma_first": "Stevens, Isaiah",
+      "id": 1643419,
+      "full_name": "Hannes Steinbach",
+      "last_comma_first": "Steinbach, Hannes",
       "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "isaiah_stevens",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "hannes_steinbach",
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
     },
     {
       "id": 1630191,
@@ -6378,10 +6534,36 @@
       "from_year": "2020",
       "to_year": "2026",
       "player_code": "isaiah_stewart",
-      "team_id": 1610612765,
-      "team_city": "Detroit",
-      "team_name": "Pistons",
-      "team_abbreviation": "DET"
+      "team_id": 1610612763,
+      "team_city": "Memphis",
+      "team_name": "Grizzlies",
+      "team_abbreviation": "MEM"
+    },
+    {
+      "id": 1643225,
+      "full_name": "Kobe Stewart",
+      "last_comma_first": "Stewart, Kobe",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "kobe_stewart",
+      "team_id": 1610612766,
+      "team_city": "Charlotte",
+      "team_name": "Hornets",
+      "team_abbreviation": "CHA"
+    },
+    {
+      "id": 1642892,
+      "full_name": "Bennett Stirtz",
+      "last_comma_first": "Stirtz, Bennett",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "bennett_stirtz",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1631124,
@@ -6404,10 +6586,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "max_strus",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
     },
     {
       "id": 1630591,
@@ -6421,6 +6603,19 @@
       "team_city": "Orlando",
       "team_name": "Magic",
       "team_abbreviation": "ORL"
+    },
+    {
+      "id": 1643517,
+      "full_name": "Dailyn Swain",
+      "last_comma_first": "Swain, Dailyn",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "dailyn_swain",
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
     },
     {
       "id": 1630256,
@@ -6449,32 +6644,6 @@
       "team_abbreviation": "BOS"
     },
     {
-      "id": 1643141,
-      "full_name": "Jahmyl Telfort",
-      "last_comma_first": "Telfort, Jahmyl",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "jahmyl_telfort",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 202066,
-      "full_name": "Garrett Temple",
-      "last_comma_first": "Temple, Garrett",
-      "roster_status": 1,
-      "from_year": "2009",
-      "to_year": "2025",
-      "player_code": "garrett_temple",
-      "team_id": 1610612761,
-      "team_city": "Toronto",
-      "team_name": "Raptors",
-      "team_abbreviation": "TOR"
-    },
-    {
       "id": 1631207,
       "full_name": "Dalen Terry",
       "last_comma_first": "Terry, Dalen",
@@ -6482,10 +6651,10 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "dalen_terry",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
+      "team_id": 1610612744,
+      "team_city": "Golden State",
+      "team_name": "Warriors",
+      "team_abbreviation": "GSW"
     },
     {
       "id": 1642876,
@@ -6501,17 +6670,30 @@
       "team_abbreviation": "LAL"
     },
     {
-      "id": 1630560,
-      "full_name": "Cam Thomas",
-      "last_comma_first": "Thomas, Cam",
-      "roster_status": 0,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "cam_thomas",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643509,
+      "full_name": "Meleek Thomas",
+      "last_comma_first": "Thomas, Meleek",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "meleek_thomas",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
+    },
+    {
+      "id": 1643148,
+      "full_name": "Saint Thomas",
+      "last_comma_first": "Thomas, Saint",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "saint_thomas",
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
     },
     {
       "id": 1641708,
@@ -6540,19 +6722,6 @@
       "team_abbreviation": "DET"
     },
     {
-      "id": 1630679,
-      "full_name": "Ethan Thompson",
-      "last_comma_first": "Thompson, Ethan",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "ethan_thompson",
-      "team_id": 1610612754,
-      "team_city": "Indiana",
-      "team_name": "Pacers",
-      "team_abbreviation": "IND"
-    },
-    {
       "id": 202691,
       "full_name": "Klay Thompson",
       "last_comma_first": "Thompson, Klay",
@@ -6560,10 +6729,23 @@
       "from_year": "2011",
       "to_year": "2026",
       "player_code": "klay_thompson",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
+    },
+    {
+      "id": 1643570,
+      "full_name": "Bruce Thornton",
+      "last_comma_first": "Thornton, Bruce",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "bruce_thornton",
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
     },
     {
       "id": 1629680,
@@ -6573,10 +6755,10 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "matisse_thybulle",
-      "team_id": 1610612757,
-      "team_city": "Portland",
-      "team_name": "Trail Blazers",
-      "team_abbreviation": "POR"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1630214,
@@ -6590,19 +6772,6 @@
       "team_city": "Charlotte",
       "team_name": "Hornets",
       "team_abbreviation": "CHA"
-    },
-    {
-      "id": 1631166,
-      "full_name": "Drew Timme",
-      "last_comma_first": "Timme, Drew",
-      "roster_status": 1,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "drew_timme",
-      "team_id": 1610612747,
-      "team_city": "Los Angeles",
-      "team_name": "Lakers",
-      "team_abbreviation": "LAL"
     },
     {
       "id": 1641772,
@@ -6625,10 +6794,10 @@
       "from_year": "2025",
       "to_year": "2026",
       "player_code": "john_tonje",
-      "team_id": 1610612738,
-      "team_city": "Boston",
-      "team_name": "Celtics",
-      "team_abbreviation": "BOS"
+      "team_id": 1610612757,
+      "team_city": "Portland",
+      "team_name": "Trail Blazers",
+      "team_abbreviation": "POR"
     },
     {
       "id": 1642260,
@@ -6642,19 +6811,6 @@
       "team_city": "Oklahoma City",
       "team_name": "Thunder",
       "team_abbreviation": "OKC"
-    },
-    {
-      "id": 1631210,
-      "full_name": "Jacob Toppin",
-      "last_comma_first": "Toppin, Jacob",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "jacob_toppin",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1630167,
@@ -6696,19 +6852,6 @@
       "team_abbreviation": "BKN"
     },
     {
-      "id": 1631247,
-      "full_name": "Luke Travers",
-      "last_comma_first": "Travers, Luke",
-      "roster_status": 0,
-      "from_year": "2024",
-      "to_year": "2025",
-      "player_code": "luke_travers",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1629018,
       "full_name": "Gary Trent Jr.",
       "last_comma_first": "Trent Jr., Gary",
@@ -6729,10 +6872,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "oscar_tshiebwe",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
     },
     {
       "id": 1626167,
@@ -6748,19 +6891,6 @@
       "team_abbreviation": "MIL"
     },
     {
-      "id": 1641816,
-      "full_name": "Hunter Tyson",
-      "last_comma_first": "Tyson, Hunter",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "hunter_tyson",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1642281,
       "full_name": "Jaylon Tyson",
       "last_comma_first": "Tyson, Jaylon",
@@ -6774,30 +6904,43 @@
       "team_abbreviation": "CLE"
     },
     {
-      "id": 1630649,
-      "full_name": "Stanley Umude",
-      "last_comma_first": "Umude, Stanley",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "stanley_umude",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "id": 1643640,
+      "full_name": "Ernest Udeh, Jr.",
+      "last_comma_first": "Udeh, Jr., Ernest",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "ernest_udeh,_jr",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
     },
     {
-      "id": 202685,
-      "full_name": "Jonas Valanciunas",
-      "last_comma_first": "Valanciunas, Jonas",
+      "id": 1642870,
+      "full_name": "Milos Uzan",
+      "last_comma_first": "Uzan, Milos",
       "roster_status": 1,
-      "from_year": "2012",
-      "to_year": "2025",
-      "player_code": "jonas_valanciunas",
-      "team_id": 1610612743,
-      "team_city": "Denver",
-      "team_name": "Nuggets",
-      "team_abbreviation": "DEN"
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "milos_uzan",
+      "team_id": 1610612738,
+      "team_city": "Boston",
+      "team_name": "Celtics",
+      "team_abbreviation": "BOS"
+    },
+    {
+      "id": 1627832,
+      "full_name": "Fred VanVleet",
+      "last_comma_first": "VanVleet, Fred",
+      "roster_status": 1,
+      "from_year": "2016",
+      "to_year": "2026",
+      "player_code": "fred_vanvleet",
+      "team_id": 1610612745,
+      "team_city": "Houston",
+      "team_name": "Rockets",
+      "team_abbreviation": "HOU"
     },
     {
       "id": 1629020,
@@ -6824,6 +6967,19 @@
       "team_city": "San Antonio",
       "team_name": "Spurs",
       "team_abbreviation": "SAS"
+    },
+    {
+      "id": 1643539,
+      "full_name": "Henri Veesaar",
+      "last_comma_first": "Veesaar, Henri",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tmp_henri_veesaar",
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1629216,
@@ -6859,10 +7015,10 @@
       "from_year": "2011",
       "to_year": "2026",
       "player_code": "nikola_vucevic",
-      "team_id": 1610612738,
-      "team_city": "Boston",
-      "team_name": "Celtics",
-      "team_abbreviation": "BOS"
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
     },
     {
       "id": 1629731,
@@ -6872,10 +7028,23 @@
       "from_year": "2019",
       "to_year": "2026",
       "player_code": "dean_wade",
-      "team_id": 1610612739,
-      "team_city": "Cleveland",
-      "team_name": "Cavaliers",
-      "team_abbreviation": "CLE"
+      "team_id": 1610612755,
+      "team_city": "Philadelphia",
+      "team_name": "76ers",
+      "team_abbreviation": "PHI"
+    },
+    {
+      "id": 1643413,
+      "full_name": "Keaton Wagler",
+      "last_comma_first": "Wagler, Keaton",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "keaton_wagler",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
     },
     {
       "id": 1630532,
@@ -6898,10 +7067,10 @@
       "from_year": "2018",
       "to_year": "2026",
       "player_code": "moritz_wagner",
-      "team_id": 1610612753,
-      "team_city": "Orlando",
-      "team_name": "Magic",
-      "team_abbreviation": "ORL"
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
     },
     {
       "id": 1631133,
@@ -6989,10 +7158,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "kelel_ware",
-      "team_id": 1610612748,
-      "team_city": "Miami",
-      "team_name": "Heat",
-      "team_abbreviation": "MIA"
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
     },
     {
       "id": 1629023,
@@ -7021,19 +7190,6 @@
       "team_abbreviation": "LAC"
     },
     {
-      "id": 1630322,
-      "full_name": "Lindy Waters III",
-      "last_comma_first": "Waters III, Lindy",
-      "roster_status": 1,
-      "from_year": "2021",
-      "to_year": "2025",
-      "player_code": "lindy_waters_iii",
-      "team_id": 1610612759,
-      "team_city": "San Antonio",
-      "team_name": "Spurs",
-      "team_abbreviation": "SAS"
-    },
-    {
       "id": 1630570,
       "full_name": "Trendon Watford",
       "last_comma_first": "Watford, Trendon",
@@ -7041,10 +7197,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "trendon_watford",
-      "team_id": 1610612755,
-      "team_city": "Philadelphia",
-      "team_name": "76ers",
-      "team_abbreviation": "PHI"
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
       "id": 1642364,
@@ -7067,10 +7223,10 @@
       "from_year": "2022",
       "to_year": "2026",
       "player_code": "peyton_watson",
-      "team_id": 1610612743,
-      "team_city": "Denver",
-      "team_name": "Nuggets",
-      "team_abbreviation": "DEN"
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
     },
     {
       "id": 1642377,
@@ -7112,19 +7268,6 @@
       "team_abbreviation": "POR"
     },
     {
-      "id": 201566,
-      "full_name": "Russell Westbrook",
-      "last_comma_first": "Westbrook, Russell",
-      "roster_status": 1,
-      "from_year": "2008",
-      "to_year": "2025",
-      "player_code": "russell_westbrook",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
-    },
-    {
       "id": 1629632,
       "full_name": "Coby White",
       "last_comma_first": "White, Coby",
@@ -7151,32 +7294,6 @@
       "team_abbreviation": "BOS"
     },
     {
-      "id": 1641727,
-      "full_name": "Dariq Whitehead",
-      "last_comma_first": "Whitehead, Dariq",
-      "roster_status": 0,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "dariq_whitehead",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1641715,
-      "full_name": "Cam Whitmore",
-      "last_comma_first": "Whitmore, Cam",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2025",
-      "player_code": "cam_whitmore",
-      "team_id": 1610612764,
-      "team_city": "Washington",
-      "team_name": "Wizards",
-      "team_abbreviation": "WAS"
-    },
-    {
       "id": 1630598,
       "full_name": "Aaron Wiggins",
       "last_comma_first": "Wiggins, Aaron",
@@ -7184,10 +7301,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "aaron_wiggins",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 203952,
@@ -7201,19 +7318,6 @@
       "team_city": "Miami",
       "team_name": "Heat",
       "team_abbreviation": "MIA"
-    },
-    {
-      "id": 1631214,
-      "full_name": "Alondes Williams",
-      "last_comma_first": "Williams, Alondes",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "alondes_williams",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
     },
     {
       "id": 1642873,
@@ -7236,10 +7340,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "brandon_williams",
-      "team_id": 1610612742,
-      "team_city": "Dallas",
-      "team_name": "Mavericks",
-      "team_abbreviation": "DAL"
+      "team_id": 1610612744,
+      "team_city": "Golden State",
+      "team_name": "Warriors",
+      "team_abbreviation": "GSW"
     },
     {
       "id": 1642262,
@@ -7249,10 +7353,10 @@
       "from_year": "2024",
       "to_year": "2026",
       "player_code": "tmp_cody_williams",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
+      "team_id": 1610612750,
+      "team_city": "Minnesota",
+      "team_name": "Timberwolves",
+      "team_abbreviation": "MIN"
     },
     {
       "id": 1629684,
@@ -7353,10 +7457,10 @@
       "from_year": "2021",
       "to_year": "2026",
       "player_code": "ziaire_williams",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
+      "team_id": 1610612747,
+      "team_city": "Los Angeles",
+      "team_name": "Lakers",
+      "team_abbreviation": "LAL"
     },
     {
       "id": 1629057,
@@ -7372,32 +7476,6 @@
       "team_abbreviation": "POR"
     },
     {
-      "id": 1631246,
-      "full_name": "Vince Williams Jr.",
-      "last_comma_first": "Williams Jr., Vince",
-      "roster_status": 0,
-      "from_year": "2022",
-      "to_year": "2025",
-      "player_code": "vince_williams_jr",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
-      "id": 1631351,
-      "full_name": "Lucas Williamson",
-      "last_comma_first": "Williamson, Lucas",
-      "roster_status": 0,
-      "from_year": "2025",
-      "to_year": "2025",
-      "player_code": "lucas_williamson",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1629627,
       "full_name": "Zion Williamson",
       "last_comma_first": "Williamson, Zion",
@@ -7411,6 +7489,19 @@
       "team_abbreviation": "NOP"
     },
     {
+      "id": 1643410,
+      "full_name": "Caleb Wilson",
+      "last_comma_first": "Wilson, Caleb",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "caleb_wilson",
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
+    },
+    {
       "id": 1630592,
       "full_name": "Jalen Wilson",
       "last_comma_first": "Wilson, Jalen",
@@ -7418,23 +7509,10 @@
       "from_year": "2023",
       "to_year": "2026",
       "player_code": "jalen_wilson",
-      "team_id": 1610612751,
-      "team_city": "Brooklyn",
-      "team_name": "Nets",
-      "team_abbreviation": "BKN"
-    },
-    {
-      "id": 1630164,
-      "full_name": "James Wiseman",
-      "last_comma_first": "Wiseman, James",
-      "roster_status": 0,
-      "from_year": "2020",
-      "to_year": "2025",
-      "player_code": "james_wiseman",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
+      "team_id": 1610612737,
+      "team_city": "Atlanta",
+      "team_name": "Hawks",
+      "team_abbreviation": "ATL"
     },
     {
       "id": 1642874,
@@ -7448,19 +7526,6 @@
       "team_city": "Brooklyn",
       "team_name": "Nets",
       "team_abbreviation": "BKN"
-    },
-    {
-      "id": 1627824,
-      "full_name": "Guerschon Yabusele",
-      "last_comma_first": "Yabusele, Guerschon",
-      "roster_status": 1,
-      "from_year": "2017",
-      "to_year": "2025",
-      "player_code": "guerschon_yabusele",
-      "team_id": 1610612741,
-      "team_city": "Chicago",
-      "team_name": "Bulls",
-      "team_abbreviation": "CHI"
     },
     {
       "id": 1642905,
@@ -7515,19 +7580,6 @@
       "team_abbreviation": "POR"
     },
     {
-      "id": 1630209,
-      "full_name": "Omer Yurtseven",
-      "last_comma_first": "Yurtseven, Omer",
-      "roster_status": 0,
-      "from_year": "2020",
-      "to_year": "2025",
-      "player_code": "omer_yurtseven",
-      "team_id": null,
-      "team_city": "",
-      "team_name": "",
-      "team_abbreviation": ""
-    },
-    {
       "id": 1642911,
       "full_name": "Rocco Zikarsky",
       "last_comma_first": "Zikarsky, Rocco",
@@ -7565,6 +7617,19 @@
       "team_city": "Orlando",
       "team_name": "Magic",
       "team_abbreviation": "ORL"
+    },
+    {
+      "id": 1643547,
+      "full_name": "Sergio de Larrea",
+      "last_comma_first": "de Larrea, Sergio",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "sergio_de_larrea",
+      "team_id": 1610612742,
+      "team_city": "Dallas",
+      "team_name": "Mavericks",
+      "team_abbreviation": "DAL"
     }
   ]
 }

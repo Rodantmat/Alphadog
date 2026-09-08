@@ -1,7 +1,7 @@
 {
-  "fetched_at": "2026-09-07T14:57:37Z",
-  "source_url": "https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season=2025-26",
+  "fetched_at": "2026-09-08T03:08:41Z",
+  "source_url": "https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season=2026-27",
   "http_status": 200,
-  "player_count": 582,
+  "player_count": 587,
   "error": null
 }
