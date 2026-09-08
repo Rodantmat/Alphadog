@@ -219,6 +219,32 @@ async function runJob(input, env) {
     };
   }
 
+  // Defense-vs-Position recompute for the delta season. DvP is DERIVED (no API calls) - it was
+  // originally computed by a one-off manual SQL and had no recurring path at all (gap found in
+  // the 2026-09-07 delta-path brainstorm). Recomputing here keeps it current with every delta
+  // run. Same SQL as the original build; opponent resolved from the game log's own MATCHUP.
+  let dvpRows = null;
+  if (season && errors.length === 0) {
+    try {
+      await sql`
+        INSERT INTO nba_team.defense_vs_position (team_id, opponent_position, season, games_sampled, avg_pts_allowed, avg_reb_allowed, avg_ast_allowed, avg_fg_pct_allowed)
+        SELECT t.team_id, p.position, gl.season, COUNT(*), AVG(gl.pts), AVG(gl.reb), AVG(gl.ast), AVG(gl.fg_pct)
+        FROM nba_stats.player_game_log gl
+        JOIN nba_ref.players p ON p.player_id = gl.player_id
+        JOIN nba_ref.teams t ON t.abbreviation = CASE
+          WHEN gl.matchup LIKE '%vs.%' THEN split_part(gl.matchup, 'vs. ', 2)
+          WHEN gl.matchup LIKE '%@%' THEN split_part(gl.matchup, '@ ', 2) END
+        WHERE gl.season = ${season} AND p.position IS NOT NULL AND gl.fg_pct IS NOT NULL
+        GROUP BY t.team_id, p.position, gl.season
+        ON CONFLICT (team_id, opponent_position, season) DO UPDATE SET
+          games_sampled=excluded.games_sampled, avg_pts_allowed=excluded.avg_pts_allowed,
+          avg_reb_allowed=excluded.avg_reb_allowed, avg_ast_allowed=excluded.avg_ast_allowed,
+          avg_fg_pct_allowed=excluded.avg_fg_pct_allowed, updated_at=now()
+      `;
+      dvpRows = Number((await sql`SELECT COUNT(*)::int AS c FROM nba_team.defense_vs_position WHERE season = ${season}`)[0]?.c || 0);
+    } catch (err) { errors.push(`dvp_recompute_failed: ${String(err && err.message ? err.message : err)}`); }
+  }
+
   await sql.end();
 
   const certified = errors.length === 0;
