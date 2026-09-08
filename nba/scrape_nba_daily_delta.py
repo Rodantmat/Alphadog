@@ -104,6 +104,41 @@ def main():
         "fetched_at": fetched_at, "season": season, "row_counts": results, "errors": errors,
     }
     Path("nba/data/nba_daily_delta_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+    # Measure types (Usage/Scoring/Four Factors) for the same season - 4 more bulk calls. Written
+    # as nba_delta_{key}_{slug}.json + nba_delta_measure_types_meta.json so the EXISTING
+    # measure-types writer loads them with file_prefix="nba/data/nba_delta_" - no duplicated
+    # upsert logic. Same slim() column filter as the backfill (100 MB limit lesson).
+    keep_common = {"PLAYER_ID", "TEAM_ID", "GAME_ID", "GAME_DATE", "MATCHUP", "MIN"}
+
+    def slim(row):
+        return {k: v for k, v in row.items() if k in keep_common or (k.startswith(("USG_", "PCT_", "EFG_", "FTA_", "TM_TOV", "OREB_", "OPP_")) and not k.endswith("_RANK"))}
+
+    def mt_url(endpoint, measure_type):
+        u = (f"https://stats.nba.com/stats/{endpoint}?DateFrom=&DateTo=&GameSegment=&LastNGames=0&LeagueID=00"
+             f"&Location=&MeasureType={measure_type.replace(' ', '+')}&Month=0&OpponentTeamID=0&Outcome=&PORound=0"
+             f"&PaceAdjust=N&PerMode=Totals&Period=0&PlusMinus=N&Rank=N&Season={season}&SeasonSegment="
+             f"&SeasonType=Regular+Season&ShotClockRange=&TeamID=0&VsConference=&VsDivision=")
+        return u + ("&PlayerExperience=&PlayerPosition=&StarterBench=" if endpoint == "playergamelogs" else "")
+
+    slug = season.replace("-", "_")
+    mt_meta = {"fetched_at": fetched_at, "seasons": [season], "results": {}, "errors": []}
+    for key, endpoint, measure_type, rs_name in (
+        ("player_usage", "playergamelogs", "Usage", "PlayerGameLogs"),
+        ("player_scoring", "playergamelogs", "Scoring", "PlayerGameLogs"),
+        ("team_scoring", "teamgamelogs", "Scoring", "TeamGameLogs"),
+        ("team_four_factors", "teamgamelogs", "Four Factors", "TeamGameLogs"),
+    ):
+        rows, error = fetch_bulk(mt_url(endpoint, measure_type), rs_name, proxies)
+        if rows is not None:
+            Path(f"nba/data/nba_delta_{key}_{slug}.json").write_text(json.dumps({"season": season, "records": [slim(r) for r in rows]}, separators=(",", ":")), encoding="utf-8")
+            mt_meta["results"][f"{key}_{slug}"] = len(rows)
+            print(f"delta {key}: {len(rows)} rows")
+        else:
+            mt_meta["errors"].append({"key": key, "error": error})
+            print(f"delta {key}: FAILED - {error}")
+        time.sleep(1)
+    Path("nba/data/nba_delta_measure_types_meta.json").write_text(json.dumps(mt_meta, indent=2), encoding="utf-8")
     print(json.dumps(meta, indent=2))
 
 
