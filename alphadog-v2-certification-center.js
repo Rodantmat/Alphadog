@@ -5878,7 +5878,7 @@ async function apiHighHitSlips(env, request) {
   // 10x (+220%; the goblin only bought the Flex insurance) or sub goblin to keep Flex (+135%).
   const v6Demons = await autoSelectDemonUnderLegs(env).catch((e) => { selectorErrors.v6 = String(e && e.message || e); return []; });
   const v3UsedForV3 = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
-  const v6GoblinPool = v3Legs.filter(l => !v3UsedForV3.has(l.board_row_id)).concat(v3Legs.filter(l => v3UsedForV3.has(l.board_row_id)));
+  const v6GoblinPool = v3Legs.filter(l => !v3UsedForV3.has(l.board_row_id));   // never double-stake a V3 leg
   const v6Slips = [];
   {
     const MAX_SLIPS = 2; const usedD = new Set(); const usedG = new Set();
@@ -5887,11 +5887,12 @@ async function apiHighHitSlips(env, request) {
       if (ds.length < 2) break;
       const d1 = ds[0]; const d2 = ds.find(l => String(l.game_pk) !== String(d1.game_pk) && String(l.mlb_player_id) !== String(d1.mlb_player_id));
       if (!d2) break;
-      const g = v6GoblinPool.find(l => !usedG.has(l.board_row_id) && String(l.game_pk) !== String(d1.game_pk) && String(l.game_pk) !== String(d2.game_pk));
+      const g = v6GoblinPool.find(l => !usedG.has(l.board_row_id) && String(l.game_pk) !== String(d1.game_pk) && String(l.game_pk) !== String(d2.game_pk)
+        && String(l.mlb_player_id) !== String(d1.mlb_player_id) && String(l.mlb_player_id) !== String(d2.mlb_player_id));
       if (!g) break;
       usedD.add(d1.board_row_id); usedD.add(d2.board_row_id); usedG.add(g.board_row_id);
       const gm = Number(g.leg_mult) || 1.15;
-      const legs = [{ ...d1, leg_index: 1 }, { ...d2, leg_index: 2 }, { ...g, leg_index: 3, real_layer_rate: gm, leg_kind: 'goblin' }];
+      const legs = [{ ...d1, leg_index: 1, odds_type: 'demon' }, { ...d2, leg_index: 2, odds_type: 'demon' }, { ...g, leg_index: 3, real_layer_rate: gm, leg_kind: 'goblin', odds_type: 'goblin' }];
       const powerMult = Math.round((Number(d1.leg_mult) * Number(d2.leg_mult) * gm) * 100) / 100;
       const flexFull = Math.round(powerMult * 0.8 * 100) / 100;
       const hp = (Number(d1.hit_probability_0_100)/100) * (Number(d2.hit_probability_0_100)/100) * 0.95;
