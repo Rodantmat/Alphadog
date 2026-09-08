@@ -1,9 +1,17 @@
 {
-  "fetched_at": "2026-09-03T21:32:40Z",
+  "fetched_at": "2026-09-08T08:23:00Z",
   "season": "2025-26",
-  "method": "boxscoretraditionalv3",
+  "method": "delta",
   "games_input": 1230,
   "games_succeeded": 1230,
   "row_count": 32179,
-  "per_game_errors": []
+  "per_game_errors": [],
+  "games_covered": 1230,
+  "last_delta": {
+    "attempted": 0,
+    "recovered_games": 0,
+    "errors": [],
+    "newly_empty": []
+  },
+  "known_empty_games": []
 }
