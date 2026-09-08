@@ -6031,7 +6031,8 @@ async function apiHighHitSlips(env, request) {
     // V4's backup legs go into the SHARED pool the frontend substitutes from. V3's stay out
     // because V3 shrinks. Tagged 'prizepicks_regular' to match the V4 slip source_key, which
     // poolLegIsLegalForSlip() requires - a mismatch makes every substitution illegal.
-    backup_pool: [...backupPool, ...v3BackupPool, ...v4BackupPool, ...v5BackupPool, ...udwBackupPool, ...slwBackupPool],
+    backup_pool: [...backupPool, ...v3BackupPool, ...v6BackupPool, ...v4BackupPool, ...v5BackupPool, ...udwBackupPool, ...slwBackupPool],
+    v6_backup_pool: v6BackupPool,
     udw_backup_pool: udwBackupPool,
     slw_backup_pool: slwBackupPool,
     v2_backup_pool: v2BackupPool,
