@@ -6009,11 +6009,12 @@ async function apiHighHitSlips(env, request) {
   // track built above, which uses an entirely different signal and correct moneyline pricing.
   const sleeperSlips = slBaselineSlips;
   const demonSlips = []; // PAUSED - see comment above.
-  const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...udSlips, ...udwSlips, ...slwSlips, ...sleeperSlips];
+  const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...v6Slips, ...udSlips, ...udwSlips, ...slwSlips, ...sleeperSlips];
   // Track labels for the client summary (grouped by strategy, not by source key).
   for (const s of v3Slips) s.track_label = "PP V3";
   for (const s of v4Slips) s.track_label = "PP V4";
   for (const s of v5Slips) s.track_label = "PP V5";
+  for (const s of v6Slips) s.track_label = "PP V6";
   for (const s of udwSlips) s.track_label = "UD V1";
   for (const s of slwSlips) s.track_label = "SL V1";
   const selected_leg_count = sleeperLegs.length + ppLegs.length + udLegs.length + slLegs.length + v2Legs.length + v3Legs.length + v4Legs.length + v5Legs.length + udwLegs.length + slwLegs.length;
