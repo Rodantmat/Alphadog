@@ -38,7 +38,7 @@ URL = f"https://stats.nba.com/stats/leaguedashplayerbiostats?LeagueID=00&Season=
 # despite PlayerPosition being a filter param there (confirmed the hard way: an earlier attempt
 # to pull "PLAYER_POSITION" from that endpoint's rows would have silently returned null for
 # every player, since it isn't a real output column - caught and reverted before it shipped).
-POSITION_URL = "https://stats.nba.com/stats/playerindex?LeagueID=00&Season=2025-26&Historical=0"
+POSITION_URL = f"https://stats.nba.com/stats/playerindex?LeagueID=00&Season={SEASON}&Historical=0"
 OUTPUT_PATH = Path("nba/data/nba_player_bio_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_player_bio_current_meta.json")
 
