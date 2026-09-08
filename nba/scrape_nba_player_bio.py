@@ -27,7 +27,12 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-URL = "https://stats.nba.com/stats/leaguedashplayerbiostats?LeagueID=00&Season=2025-26&SeasonType=Regular+Season&PerMode=Totals"
+import sys
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
+URL = f"https://stats.nba.com/stats/leaguedashplayerbiostats?LeagueID=00&Season={SEASON}&SeasonType=Regular+Season&PerMode=Totals"
 # playerindex: separate, confirmed-real bulk endpoint (one call, whole league) that includes an
 # actual POSITION field (e.g. "F", "G", "C") - leaguedashplayerbiostats does NOT have this column
 # despite PlayerPosition being a filter param there (confirmed the hard way: an earlier attempt
