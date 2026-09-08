@@ -1856,20 +1856,34 @@ export default {
         }
       })();
       ctx.waitUntil(workPromise.catch(() => {}));
-      const settled = await workPromise;
-      if (settled.ok) {
-        return jsonResponse(settled.output);
-      }
+      // CHANGED 2026-09-08: the previous code awaited workPromise fully before returning any
+      // response, on the theory that ctx.waitUntil() alone was enough to protect the work from
+      // a caller disconnect. Confirmed live (Cowork-supervised run, 9am Pacific slot) that this is
+      // NOT reliable in practice: board_prep_enrichment repeatedly made real, verified progress
+      // (score.board_prepared_stage climbing into five figures, confirmed via active INSERT
+      // queries in pg_stat_activity) and then went silent with no further checkpoint and no
+      // active DB connection - almost always within a few seconds of the caller's ~40s probe
+      // timeout, across a dozen+ attempts, even with cpu_ms already raised to 300000 and no lock
+      // contention or DB-side blocking present. The common thread: no HTTP response had actually
+      // been sent yet when the caller disconnected, so Cloudflare's runtime appears to tear down
+      // the whole execution (waitUntil callbacks included) rather than only stop reading the
+      // response body. Fix: send a response immediately after registering ctx.waitUntil(), before
+      // the real work settles, so the request/response cycle actually completes and the
+      // documented "background work survives after response is sent" behavior applies. Callers
+      // already poll score.board_prep_batches / score.board_prepared_current for real completion
+      // per this file's own certified-completion contract (see SELF-HEALING PROTOCOL in the
+      // master-run runbook) - this only changes when the HTTP response returns, not how
+      // completion is verified.
       return jsonResponse({
-        ok: false,
-        data_ok: false,
+        ok: true,
+        data_ok: true,
         version: VERSION,
         worker_name: WORKER_NAME,
         job_key: JOB_KEY,
-        status: "FAILED_BOARD_PREP_ENRICHMENT",
-        error: settled.error,
+        status: "ACCEPTED_BOARD_PREP_ENRICHMENT_RUNNING_IN_BACKGROUND",
+        note: "Work continues via ctx.waitUntil() after this response returns. Poll score.board_prep_batches (status/updated_at) and score.board_prepared_current for real completion; do not treat this response as certified completion.",
         timestamp_utc: nowIso()
-      }, 500);
+      });
     }
 
     return jsonResponse({
