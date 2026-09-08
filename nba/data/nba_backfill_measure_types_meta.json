@@ -1,19 +1,23 @@
 {
-  "fetched_at": "2026-09-08T05:55:45Z",
+  "fetched_at": "2026-09-08T06:00:37Z",
   "seasons": [
     "2025-26",
-    "2025-26",
-    "2024-25"
+    "2024-25",
+    "2023-24"
   ],
   "results": {
     "player_usage_2025_26": 26651,
     "player_usage_2024_25": 26306,
+    "player_usage_2023_24": 26401,
     "player_scoring_2025_26": 26651,
     "player_scoring_2024_25": 26306,
+    "player_scoring_2023_24": 26401,
     "team_scoring_2025_26": 2460,
     "team_scoring_2024_25": 2460,
+    "team_scoring_2023_24": 2460,
     "team_four_factors_2025_26": 2460,
-    "team_four_factors_2024_25": 2460
+    "team_four_factors_2024_25": 2460,
+    "team_four_factors_2023_24": 2460
   },
   "errors": []
 }
