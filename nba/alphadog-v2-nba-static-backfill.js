@@ -287,7 +287,7 @@ async function runJob(input, env) {
   const bySeasonCount = await sql`SELECT season, COUNT(*)::int AS c FROM nba_stats.player_game_log GROUP BY season ORDER BY season`;
   await sql.end();
 
-  const certified = errors.length === 0 && playerLogWritten > 70000;
+  const certified = errors.length === 0 && (mode === "weekly" ? (careerWritten > 0 && playerSplitsWritten > 0) : playerLogWritten > 70000);
 
   return {
     ok: certified, version: VERSION, worker_name: WORKER_NAME, job_key: input.job_key || JOB_KEY,
