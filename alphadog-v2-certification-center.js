@@ -5911,7 +5911,7 @@ async function apiHighHitSlips(env, request) {
         entry_mode: "flex", selected_leg_count: 3,
         estimated_hit_probability_0_100: Math.round(hp * 10000) / 100,
         estimated_multiplier: flexFull,
-        estimated_multiplier_flex_tiers: { 3: flexFull, 2: 1.0 },
+        estimated_multiplier_flex_tiers: { 3: flexFull, 2: 1.25 },
         estimated_power_multiplier: powerMult,
         breakeven_hit_rate_0_100: Math.round((1 / flexFull) * 10000) / 100,
         estimated_payout_note: "FLEX 3-pick. Real read 09-07: 2 K demon-unders + 1 goblin = 12.5x Power / 10x-1x Flex. Flex keeps 92% of Power's ROI and refunds 2-of-3 (the common failure). Read the app; if Flex 3/3 is under 8x, take Power.",
