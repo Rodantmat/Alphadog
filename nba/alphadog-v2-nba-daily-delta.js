@@ -254,6 +254,7 @@ async function runJob(input, env) {
     status: errors.length === 0 ? "completed" : "completed_with_errors",
     errors: errors.length ? errors : null, season, source_key: sourceKey,
     rows_written: { player_game_log: playerWritten, team_game_log: teamWritten, player_advanced: playerAdvWritten, team_advanced: teamAdvWritten },
+    dvp_rows_for_season: dvpRows,
     completeness_check: completeness,
     scraper_fetched_at: meta ? meta.fetched_at : null,
     elapsed_ms: Date.now() - started, timestamp_utc: nowUtc()
