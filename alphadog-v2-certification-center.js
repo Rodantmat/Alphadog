@@ -4575,7 +4575,10 @@ async function autoSelectUnderdogWorkloadLegs(env) {
         CASE WHEN side_type = 'P' THEN 66.7 ELSE 67.3 END AS hit_probability_0_100,
         prop || ' ' || ln::text || ' less' AS cell_label,
         ROUND(leg_mult::numeric, 3) AS leg_mult, ROUND(leg_mult::numeric, 3) AS real_layer_rate,
-        under_price, side_type, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5
+        under_price, side_type, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5,
+        COALESCE(
+          (SELECT t.team_id::text FROM stats_hitter.game_logs t WHERE t.player_id = one_per_player.pid ORDER BY t.game_date DESC LIMIT 1),
+          (SELECT t.team_id::text FROM stats_pitcher.game_logs t WHERE t.player_id = one_per_player.pid ORDER BY t.game_date DESC LIMIT 1)) AS team_id
       FROM one_per_player
       WHERE leg_mult IS NOT NULL
       ORDER BY leg_mult DESC, prop, pid
