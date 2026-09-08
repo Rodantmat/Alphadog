@@ -35,7 +35,7 @@ STATS_HEADERS = {
 URL = ("https://stats.nba.com/stats/leaguedashteamstats?College=&Conference=&Country=&DateFrom=&DateTo="
        "&Division=&DraftPick=&DraftYear=&GameScope=&GameSegment=&Height=&LastNGames=0&LeagueID=00"
        "&Location=&MeasureType=Advanced&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N"
-       "&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26"
+       "&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=" + SEASON +
        "&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0"
        "&VsConference=&VsDivision=&Weight=")
 OUTPUT_PATH = Path("nba/data/nba_team_stats_current.json")
