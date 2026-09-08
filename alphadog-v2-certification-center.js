@@ -4400,8 +4400,8 @@ async function autoSelectDemonUnderLegs(env) {
         player_name, pid AS mlb_player_id, prop AS canonical_prop_key, ln AS line_value, 'less' AS selected_side,
         CASE WHEN prop='pitcher_outs' THEN 45.0 WHEN tier=2 THEN 39.1 ELSE 50.0 END AS hit_probability_0_100,
         prop || ' t' || tier || '/less DEMON' AS cell_label,
-        CASE WHEN tier = 2 THEN 3.16 ELSE 2.375 END AS leg_mult,
-        CASE WHEN tier = 2 THEN 3.16 ELSE 2.375 END AS real_layer_rate,
+        CASE WHEN tier = 2 THEN 3.70 ELSE 2.375 END AS leg_mult,
+        CASE WHEN tier = 2 THEN 3.70 ELSE 2.375 END AS real_layer_rate,
         tier, anch AS anchor, ROUND(trail_rate::numeric, 2) AS trail_rate, 'demon_under' AS leg_kind
       FROM one
       ORDER BY (CASE WHEN trail_rate BETWEEN 0.30 AND 0.50 THEN 1 ELSE 0 END) DESC, tier DESC, pid
