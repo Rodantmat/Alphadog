@@ -197,11 +197,11 @@ async function runJob(input, env) {
     // or officials data, so a follow-up per-game backfill run knows exactly which game_ids to
     // target instead of needing to re-scan the whole season.
     const missingStarterStatus = await sql`
-      SELECT g.game_id, g.game_date, g.matchup
+      SELECT g.game_id, g.game_date
       FROM nba_stats.player_game_log g
       LEFT JOIN (SELECT DISTINCT game_id FROM nba_stats.player_game_starter_status) s ON s.game_id = g.game_id
       WHERE g.season = ${season} AND s.game_id IS NULL
-      GROUP BY g.game_id, g.game_date, g.matchup
+      GROUP BY g.game_id, g.game_date
       ORDER BY g.game_date DESC LIMIT 20
     `;
     const missingOfficials = await sql`
