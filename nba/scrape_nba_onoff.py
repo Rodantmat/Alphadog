@@ -50,7 +50,7 @@ def fetch_one_team(team_id, proxies):
     url = (
         "https://stats.nba.com/stats/teamplayeronoffdetails?DateFrom=&DateTo=&GameSegment=&LastNGames=0"
         "&LeagueID=00&Location=&MeasureType=Advanced&Month=0&OpponentTeamID=0&Outcome=&PORound=0"
-        "&PaceAdjust=N&PerMode=PerGame&Period=0&PlusMinus=N&Rank=N&Season=2025-26&SeasonSegment="
+        "&PaceAdjust=N&PerMode=PerGame&Period=0&PlusMinus=N&Rank=N&Season=" + SEASON + "&SeasonSegment="
         f"&SeasonType=Regular+Season&ShotClockRange=&TeamID={team_id}&VsConference=&VsDivision="
     )
     last_error = None
