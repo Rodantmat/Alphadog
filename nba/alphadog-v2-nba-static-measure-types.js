@@ -92,8 +92,18 @@ async function runJob(input, env) {
   const sql = pg(env);
   const sourceKey = input.source_key || "NBA_GITHUB_COMMITTED_MEASURE_TYPES_BACKFILL";
   const prefix = input.file_prefix || "nba/data/nba_backfill_";
+  // Files are one-per-(key, season) - never combined, because the combined 3-season player
+  // files were 116-124 MB, over GitHub's hard 100 MB per-file limit (real push rejection).
+  // Season slugs come from the meta file so this worker never hardcodes a season either.
   const errors = [];
   const written = {};
+  let seasons = input.seasons || null;
+  if (!seasons) {
+    try {
+      const meta = await fetchFromGithubRaw(env, `${prefix}measure_types_meta.json`);
+      seasons = meta.seasons || [];
+    } catch (err) { errors.push(`meta_read_failed: ${String(err && err.message ? err.message : err)}`); seasons = []; }
+  }
 
   const jobs = [
     ["player_usage", async (recs) => upsertPlayerUsage(sql, recs, sourceKey)],
@@ -102,10 +112,14 @@ async function runJob(input, env) {
     ["team_four_factors", async (recs) => upsertTeamFourFactors(sql, recs, sourceKey)],
   ];
   for (const [key, fn] of jobs) {
-    try {
-      const f = await fetchFromGithubRaw(env, `${prefix}${key}.json`);
-      written[key] = await fn(f.records || []);
-    } catch (err) { errors.push(`${key}: ${String(err && err.message ? err.message : err)}`); }
+    written[key] = 0;
+    for (const season of seasons) {
+      const slug = season.replace("-", "_");
+      try {
+        const f = await fetchFromGithubRaw(env, `${prefix}${key}_${slug}.json`);
+        written[key] += await fn(f.records || []);
+      } catch (err) { errors.push(`${key} ${season}: ${String(err && err.message ? err.message : err)}`); }
+    }
   }
 
   const counts = {
