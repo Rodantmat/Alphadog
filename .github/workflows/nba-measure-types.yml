@@ -43,9 +43,11 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for f in nba/data/nba_backfill_player_usage.json nba/data/nba_backfill_player_scoring.json nba/data/nba_backfill_team_scoring.json nba/data/nba_backfill_team_four_factors.json nba/data/nba_backfill_measure_types_meta.json; do
+          for f in nba/data/nba_backfill_player_usage_*.json nba/data/nba_backfill_player_scoring_*.json nba/data/nba_backfill_team_scoring_*.json nba/data/nba_backfill_team_four_factors_*.json nba/data/nba_backfill_measure_types_meta.json; do
             [ -f "$f" ] && git add "$f"
           done
+          # Never commit the old combined files if a stale copy exists locally (100 MB limit).
+          git rm -q --cached nba/data/nba_backfill_player_usage.json nba/data/nba_backfill_player_scoring.json nba/data/nba_backfill_team_scoring.json nba/data/nba_backfill_team_four_factors.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
