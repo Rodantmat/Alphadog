@@ -29,9 +29,9 @@ STATS_HEADERS = {
 
 import sys
 sys.path.insert(0, "nba")
-from nba_season import current_season
+from nba_season import active_stats_season
 
-SEASON = current_season()
+SEASON = active_stats_season()
 URL = f"https://stats.nba.com/stats/leaguedashplayerbiostats?LeagueID=00&Season={SEASON}&SeasonType=Regular+Season&PerMode=Totals"
 # playerindex: separate, confirmed-real bulk endpoint (one call, whole league) that includes an
 # actual POSITION field (e.g. "F", "G", "C") - leaguedashplayerbiostats does NOT have this column
