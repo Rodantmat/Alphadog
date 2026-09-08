@@ -33,7 +33,7 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-URL = ("https://stats.nba.com/stats/leaguedashptstats?LeagueID=00&Season=2025-26&SeasonType=Regular+Season"
+URL = ("https://stats.nba.com/stats/leaguedashptstats?LeagueID=00&Season=" + SEASON + "&SeasonType=Regular+Season"
        "&PerMode=PerGame&PlayerOrTeam=Player&PtMeasureType=SpeedDistance&LastNGames=0&Month=0&OpponentTeamID=0")
 OUTPUT_PATH = Path("nba/data/nba_player_tracking_current.json")
 OUTPUT_META_PATH = Path("nba/data/nba_player_tracking_current_meta.json")
