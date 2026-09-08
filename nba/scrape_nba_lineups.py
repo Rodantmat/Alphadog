@@ -31,7 +31,11 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-SEASON = "2025-26"
+import sys
+sys.path.insert(0, "nba")
+from nba_season import current_season
+
+SEASON = current_season()
 OUTPUT_PATH = Path("nba/data/nba_lineup_profile.json")
 OUTPUT_META_PATH = Path("nba/data/nba_lineup_profile_meta.json")
 
