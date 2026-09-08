@@ -4348,6 +4348,73 @@ async function autoSelectStrategyV2Legs(env) {
 // hits t1/less and singles t1/less were REMOVED: they collapsed 95.9% -> 77.5% and 100% -> 87.5%
 // between the early and late window. Dropping them lifted recent-window ROI from +8.8% to +55.0%.
 // Worth re-testing in a few weeks - a two-week slump may be variance rather than decay.
+// DEMON UNDER (V6) leg selector - 2026-09-07.
+// LESS on a GOBLIN-TAGGED pitcher row = the demon-under (odds_type tags the MORE side; LESS is the
+// complement). PrizePicks' current page: "Demons & Goblins - available on select More and Less picks".
+// CELLS: pitcher_outs t2/less (45%, 60 legs; the 17.5 line on aces = third-time-through hook, 50%),
+//   pitcher_strikeouts t2/less (39%), pitcher_strikeouts t1/less (50%). Tier = round(|line-anchor|).
+// PRICE: real read 09-07: two K t2 demon-unders = 10x Power / 6x-0.75x Flex -> 3.16/leg, on the
+//   rarity curve from the 44-slip study. + one V3 goblin: 12.5x Power / 10x-1x Flex.
+// RANK: L10 trailing rate of finishing under the line. <30% -> 35% hit, EXCLUDED. 30-50% -> 50%
+//   (first). >=50% -> 45.5% (PrizePicks already set the line low). HP/baseline cover 34 of 105
+//   legs - unusable. PPI, walk rate, ER form, pitch load, days rest, team hook: all flat or inverted
+//   (a 100+ pitch last start means the manager EXTENDS him: 37.5%).
+// MEASURED (3-pick Flex D+D+G, 10x/1x, real reads): 24 slips / 18 days, 7 sweeps, +221%,
+//   train +63% / test +300%, 7 win / 4 even / 7 lose days. Power 12.5x: +168% at 14 losing days.
+async function autoSelectDemonUnderLegs(env) {
+  const pg = pgClient(env);
+  try {
+    const rows = await queryAllPg(pg, `
+      WITH raw AS (
+        SELECT b.player_name, b.resolved_mlb_player_id AS pid, b.official_game_pk AS gp, b.canonical_prop_key AS prop,
+               b.line_value AS ln, b.official_game_time_utc AS gt,
+               (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'odds_type' AS ot,
+               (b.raw_source_json #>> '{}')::jsonb->'attributes'->>'allowed_wager_types' AS awt
+        FROM score.board_prepared_current b
+        WHERE b.source_key = 'prizepicks' AND b.resolved_mlb_player_id IS NOT NULL
+          AND b.canonical_prop_key IN ('pitcher_outs','pitcher_strikeouts')
+          AND b.official_game_time_utc IS NOT NULL AND b.official_game_time_utc::timestamptz > now() + interval '20 minutes'
+      ),
+      an AS (
+        SELECT pid, prop, COALESCE(MIN(ln) FILTER (WHERE ot='standard'),
+          (MAX(ln) FILTER (WHERE ot='goblin') + MIN(ln) FILTER (WHERE ot='demon'))/2.0) AS anch
+        FROM raw GROUP BY 1,2
+      ),
+      dem AS (
+        SELECT r.*, a.anch, ROUND(ABS(r.ln - a.anch))::int AS tier
+        FROM raw r JOIN an a ON a.pid = r.pid AND a.prop = r.prop
+        WHERE r.ot = 'goblin' AND r.awt = 'under_or_over' AND a.anch IS NOT NULL AND r.ln < a.anch
+      ),
+      q AS (
+        SELECT d.*,
+          (SELECT AVG(CASE WHEN (CASE d.prop WHEN 'pitcher_outs' THEN g.outs_recorded ELSE g.strikeouts END) < d.ln THEN 1.0 ELSE 0 END)
+           FROM (SELECT x.outs_recorded, x.strikeouts FROM stats_pitcher.game_logs x
+                 WHERE x.player_id = d.pid AND x.game_date < CURRENT_DATE ORDER BY x.game_date DESC LIMIT 10) g) AS trail_rate
+        FROM dem d
+        WHERE (d.prop = 'pitcher_outs' AND d.tier = 2) OR (d.prop = 'pitcher_strikeouts' AND d.tier IN (1,2))
+      ),
+      one AS (SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY tier DESC, ln) pr FROM q WHERE trail_rate >= 0.30) z WHERE pr = 1)
+      SELECT 'v6|' || pid::text || '|' || prop || '|' || ln::text || '|less' AS board_row_id,
+        'prizepicks' AS source_key, gp AS game_pk, gt AS official_game_time_utc,
+        (gt::timestamptz - interval '8 hours')::date AS official_date,
+        player_name, pid AS mlb_player_id, prop AS canonical_prop_key, ln AS line_value, 'less' AS selected_side,
+        CASE WHEN prop='pitcher_outs' THEN 45.0 WHEN tier=2 THEN 39.1 ELSE 50.0 END AS hit_probability_0_100,
+        prop || ' t' || tier || '/less DEMON' AS cell_label,
+        CASE WHEN tier = 2 THEN 3.16 ELSE 2.375 END AS leg_mult,
+        CASE WHEN tier = 2 THEN 3.16 ELSE 2.375 END AS real_layer_rate,
+        tier, anch AS anchor, ROUND(trail_rate::numeric, 2) AS trail_rate, 'demon_under' AS leg_kind
+      FROM one
+      ORDER BY (CASE WHEN trail_rate BETWEEN 0.30 AND 0.50 THEN 1 ELSE 0 END) DESC, tier DESC, pid
+      LIMIT 12
+    `, []);
+    return rows || [];
+  } catch (_) {
+    return [];
+  } finally {
+    try { await pg.end(); } catch (_) {}
+  }
+}
+
 // SLEEPER WORKLOAD (SLW) leg selector - 2026-09-07. NEW track, separate from the disabled Sleeper
 // divergence/baseline tracks (slLegs, slBaselineSlips).
 //
