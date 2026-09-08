@@ -68,7 +68,7 @@ def fetch_shot_quality_bucket(dist_range, proxies):
            f"&CloseDefDistRange={quote(dist_range)}&DateFrom=&DateTo=&Division="
            "&DraftPick=&DraftYear=&DribbleRange=&GameSegment=&GeneralRange=&Height=&LastNGames=0"
            "&LeagueID=00&Location=&Month=0&OpponentTeamID=0&Outcome=&PORound=0&Period=0"
-           "&PlayerExperience=&PlayerPosition=&SeasonSegment=&Season=2025-26"
+           "&PlayerExperience=&PlayerPosition=&SeasonSegment=&Season=" + SEASON +
            "&SeasonType=Regular+Season&ShotClockRange=&ShotDistRange=&StarterBench="
            "&TeamID=0&TouchTimeRange=&VsConference=&VsDivision=&Weight=")
     body, error = fetch_json(url, proxies)
