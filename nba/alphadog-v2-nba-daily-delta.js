@@ -75,7 +75,7 @@ async function upsertTeamGameLogs(sql, records, sourceKey, season) {
     fg3m: r.FG3M, fg3a: r.FG3A, fg3_pct: r.FG3_PCT, ftm: r.FTM, fta: r.FTA, ft_pct: r.FT_PCT,
     oreb: r.OREB, dreb: r.DREB, reb: r.REB, ast: r.AST, tov: r.TOV, stl: r.STL, blk: r.BLK, pf: r.PF,
     pts: r.PTS, plus_minus: r.PLUS_MINUS, source_key: sourceKey,
-  }));
+  })).map(nnRow);
   for (const batch of chunk(rows, BATCH_SIZE)) {
     await sql`
       INSERT INTO nba_team.team_game_log ${sql(batch, "team_id", "nba_team_id", "game_id", "season", "game_date", "matchup", "wl", "min", "fgm", "fga", "fg_pct", "fg3m", "fg3a", "fg3_pct", "ftm", "fta", "ft_pct", "oreb", "dreb", "reb", "ast", "tov", "stl", "blk", "pf", "pts", "plus_minus", "source_key")}
