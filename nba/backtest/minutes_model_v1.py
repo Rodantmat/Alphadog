@@ -32,8 +32,10 @@ its own history):
     redistribution. Moves the star B2B factor into the P(start)/availability model.
   - Team-specific starter pull in won blowouts spans 0.81 (Orlando) to 1.10 (Dallas) - a 30%
     spread, validating team-specific E[min|blowout].
-  - ANOMALY TO INVESTIGATE (not explained away): FRINGE ratio 0.867 in WON blowouts (<1, expected >1
-    for garbage-time accumulators). Possibly the >=40%-of-median filter inflating fringe mu_role.
+  - ANOMALY RESOLVED (same day): FRINGE ratio 0.867 was a LEAKAGE BUG in this harness - mu_role was a
+    season-wide mean (uses future games, inflates fringe baselines). Fixed to a strictly backward-looking
+    rolling mean of prior competitive games. Corrected: FRINGE 1.18 (won) / 1.43 (lost) - garbage-time
+    accumulation as expected; stars 0.83-0.87 either side; B2B conclusions unchanged.
 """
 import json
 import math
