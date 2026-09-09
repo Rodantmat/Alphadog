@@ -149,12 +149,13 @@ def main():
         path = DATA / f"nba_injury_report_{slug}.json"
         existing = json.loads(path.read_text()) if path.exists() else {"meta": {}, "rows": []}
         done_days = set(existing["meta"].get("days_done", [])); rows = existing["rows"]; d = d0
-        while d <= d1:
+        max_days = int(os.environ.get("INJURY_MAX_DAYS", "40")); n_new = 0   # chunked: progress is committed per run, resume later
+        while d <= d1 and n_new < max_days:
             if d.isoformat() not in done_days:
                 snaps = scan_day(session, d)
                 for ts, url, content in snaps:
                     rows += [{**r, "source_url": url} for r in parse_report(extract_text(content), ts)]
-                done_days.add(d.isoformat()); print(d, len(snaps), "snapshots")
+                done_days.add(d.isoformat()); n_new += 1; print(d, len(snaps), "snapshots")
                 existing["meta"] = {"days_done": sorted(done_days), "rows": len(rows), "updated_at": datetime.utcnow().isoformat() + "Z"}
                 path.write_text(json.dumps({"meta": existing["meta"], "rows": rows}))
                 time.sleep(0.5)
