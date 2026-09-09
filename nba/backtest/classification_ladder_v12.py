@@ -88,7 +88,6 @@ VBANDS_ALL = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "
               "ftm": [(0, 1.5, "LOW"), (1.5, 3.5, "MID"), (3.5, 5.5, "HIGH"), (5.5, 99, "ELITE")],
               "personal_fouls": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 99, "HIGH")]}
 ROLE_TIERS = [("IRON_MAN", 36, 99), ("HIGH_USAGE_STARTER", 32, 36), ("STARTER", 27, 32), ("ROTATION", 21, 27), ("BENCH", 15, 21), ("FRINGE", 0, 15)]
-MIN_RATIO = {"IRON_MAN": (0.832, 0.841), "HIGH_USAGE_STARTER": (0.837, 0.855), "STARTER": (0.867, 0.908), "ROTATION": (0.960, 1.003), "BENCH": (1.015, 1.074), "FRINGE": (1.180, 1.430)}
 P_BLOWOUT_BINS = [0, 2, 4, 6, 8, 10, 12, 15, 99]
 # MIN_RATIO and P_BLOWOUT are derived from TRAIN inside the run (see below) - no pasted constants.
 
