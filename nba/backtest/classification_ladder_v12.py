@@ -137,10 +137,16 @@ home = tg[tg["is_home"]][["season", "GAME_ID", "TEAM_ID", "pre_net_shrunk", "res
 away = tg[~tg["is_home"]][["season", "GAME_ID", "TEAM_ID", "pre_net_shrunk", "rest_days"]].rename(columns={"TEAM_ID": "away_id", "pre_net_shrunk": "away_net", "rest_days": "away_rest"})
 games = home.merge(away, on=["season", "GAME_ID"], how="inner")
 games["rest_diff"] = (games["home_rest"].fillna(2) - games["away_rest"].fillna(2)).clip(-3, 3)
-HCA = 1.98
+# ONE RECIPE, NO PASTED CONSTANTS: HCA, the P(blowout | spread) lookup and the blowout minutes ratios are
+# derived from the TRAIN (as-of history) seasons inside the run. Holdout 2024-25 unchanged (1.2 / 0.8 / 0 of 37).
+_trg = games[games["season"].isin(TRAIN)]
+HCA = float((_trg["home_margin"] - (_trg["home_net"] - _trg["away_net"])).mean())
 games["derived_spread"] = (games["home_net"] - games["away_net"]) + HCA + 0.5 * games["rest_diff"]
 games["abs_margin"] = games["home_margin"].abs()
-games["p_blowout"] = pd.cut(games["derived_spread"].abs(), bins=P_BLOWOUT_BINS, labels=P_BLOWOUT, include_lowest=True).astype(float)
+_trg = games[games["season"].isin(TRAIN)]
+_bl = (_trg["abs_margin"] >= BLOWOUT_MARGIN).groupby(pd.cut(_trg["derived_spread"].abs(), bins=P_BLOWOUT_BINS, include_lowest=True), observed=False).mean()
+P_BLOWOUT = [float(v) if not np.isnan(v) else 0.2 for v in _bl.values]
+games["p_blowout"] = pd.cut(games["derived_spread"].abs(), bins=P_BLOWOUT_BINS, labels=P_BLOWOUT, include_lowest=True, ordered=False).astype(float)
 games["home_favored"] = games["derived_spread"] > 0
 
 pg = players.merge(games[["season", "GAME_ID", "home_id", "home_margin", "abs_margin", "p_blowout", "home_favored"]], on=["season", "GAME_ID"], how="inner")
