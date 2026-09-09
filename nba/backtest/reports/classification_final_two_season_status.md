@@ -47,6 +47,22 @@ EXTENSION PASS (v18): blocks + steals run under the same standard.
   - turnovers / fga / fg3a / ftm / personal_fouls: RUN (v19/v20), verdicts below.
 
 SINGLE-STAT PROP SCOREBOARD (same recipe, two seasons; "certified" = ladder <= ~1.5pp, 0 rung cells, <= ~3 of ~40 band misses on BOTH seasons)
+UPDATED 2026-09-09 (v22) after the FACTOR-LAYER re-certification on Actions (format: ladder pp / band misses; 2025-26 | 2024-25 holdout):
+  CERTIFIED (6): points 1.2/0 | 1.2/0 ; rebounds 0.7/1 | 0.9/0 ; assists 1.5/0 | 0.7/2 (thin) ; threes_made 1.2/1 | 1.2/1 ; fga 1.0/0 | 1.1/0 ; FTM 0.8/0 of 19 | 1.8/1 (-2.8) [factor layer + shift 0.5 certified it]
+  BORDERLINE: blocks 0.6/0 | 1.0/2 (<=3.3)
+  CLOSE: steals 1.3/2 | 0.8/3 ; turnovers 1.8/~4 | 2.0/3 ; personal_fouls 1.8/~2 | 1.1/~2
+  REGIME: fg3a 2.6/3 | 1.9/2 (sign flips with the league 3PA swing +7% / -3%)
+
+COMBOS + DOUBLE-DOUBLE (combos_ladder_v1.py, on the calibrated component marginals + player covariance):
+  ladders 2025-26 | 2024-25 holdout: pts_reb 0.8 | 0.9 ; pts_ast 1.1 | 1.1 ; reb_ast 0.7 | 0.9 ; pra 1.1 | 1.1 ; fantasy 1.0 | 0.8 ; stocks 1.6 | 1.3
+  confidence bands: 163 checked / 4 over 2.5pp (2025-26) ; 162 / 5 (holdout) - stocks accounts for 3 and 4 of them (inherits the blocks/steals floor)
+  -> P+R, P+A, R+A, PRA, FANTASY CERTIFIED on both seasons; STOCKS close. reb_ast ELITE (n=649) carries the same +/-4-5 tail residual as rebounds ELITE.
+  Double-double (Gaussian copula on calibrated marginals, exact trivariate term): 2025-26 every band n>=300 within +/-1.4 except 0.2-0.3 (-3.9);
+  holdout every band n>=300 within +/-5 with no systematic sign (0.2-0.3 -0.3, 0.3-0.4 +3.6, 0.4-0.5 +5.0, 0.5-0.6 -1.5). Normal marginals and the
+  product approximation of the triple term were REJECTED on data (over-predicted candidates, 0.99 vs 0.82 for TD players).
+  Population rho(points,rebounds) by role (train): IRON_MAN 0.13 ... FRINGE 0.46 - covariance is minutes-driven, archetype-dependent as designed.
+
+PREVIOUS (v20) SCOREBOARD kept for history:
 | prop | mode | k | 2025-26 ladder / band misses | 2024-25 holdout ladder / band misses | verdict |
 |---|---|---|---|---|---|
 | points | replacement | 25 | 0.9 / 0 of 19 | 1.2 / 0 of 18 | CERTIFIED |
