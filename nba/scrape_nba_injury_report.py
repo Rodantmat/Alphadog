@@ -134,6 +134,18 @@ def main():
     mode = os.environ.get("INJURY_MODE", "daily")
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     session = requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
+    if mode == "probe":
+        # DIAGNOSTIC: what does the CDN return to the runner for a URL known to exist (with and without the proxy)?
+        url = os.environ.get("INJURY_PROBE_URL", "https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-04-08_02_30PM.pdf")
+        for label, sess in (("proxy" if proxy_url else "direct", session), ("direct", requests.Session())):
+            try:
+                r = sess.get(url, timeout=30, impersonate="chrome124")
+                print(f"[{label}] status={r.status_code} len={len(r.content)} ctype={r.headers.get('content-type')} head={r.content[:12]!r}")
+                for h in ("server", "x-cache", "content-encoding", "location"):
+                    if h in r.headers: print(f"   {h}: {r.headers[h]}")
+            except Exception as exc:  # noqa: BLE001
+                print(f"[{label}] EXC {type(exc).__name__}: {exc}")
+        return
     if mode == "daily":
         days = [date.today() - timedelta(days=1), date.today()]
         out = []
