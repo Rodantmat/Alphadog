@@ -57,7 +57,7 @@ def fetch_period(season, period, proxies):
 def main():
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
-    seasons = stats_seasons(3)
+    seasons = stats_seasons(int(os.environ.get("PERIODS_SEASONS", "3")))   # daily delta passes 1 (current season only)
     summary = {}
     for season in seasons:
         slug = season.replace("-", "_")
