@@ -36,8 +36,8 @@ jobs:
         run: python nba/backtest/minutes_model_v1.py
         continue-on-error: true
 
-      - name: Classification + ladder calibration (canonical)
-        run: python nba/backtest/classification_ladder_v1.py
+      - name: Classification + ladder calibration (canonical v12, leg-level)
+        run: python nba/backtest/classification_ladder_v12.py
         continue-on-error: true
 
       - name: Commit reports to main
