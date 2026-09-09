@@ -335,7 +335,9 @@ for prop, cfg in PROPS.items():
             line = (test["anchor"] + off * cfg["step"]).clip(lower=0.5)
             k_int = np.floor(line).astype(int)
             use_normal = (cfg["family"] == "auto") & (test["proj_mean"] >= 10)
-            if cfg["family"] == "compound":
+            if cfg.get("zero_adjust"):
+                p_under = np.array([nb_cdf_zadj(kk, m, v, z) for kk, m, v, z in zip(k_int, test["proj_mean"], test["proj_var"], test["p0_band"])])
+            elif cfg["family"] == "compound":
                 att_var = np.maximum(test["proj_att"] * 1.6, test["proj_att"] + 1e-6)
                 p_under = np.array([compound_cdf(kk, a, av, pc) for kk, a, av, pc in zip(k_int, test["proj_att"], att_var, test["make_pct"])])
             else:
