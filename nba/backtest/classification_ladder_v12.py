@@ -153,11 +153,21 @@ games["home_favored"] = games["derived_spread"] > 0
 pg = players.merge(games[["season", "GAME_ID", "home_id", "home_margin", "abs_margin", "p_blowout", "home_favored"]], on=["season", "GAME_ID"], how="inner")
 pg["team_margin"] = np.where(pg["TEAM_ID"] == pg["home_id"], pg["home_margin"], -pg["home_margin"])
 pg["favored"] = np.where(pg["TEAM_ID"] == pg["home_id"], pg["home_favored"], ~pg["home_favored"])
-pg = pg.sort_values(["season", "PLAYER_ID", "GAME_DATE"]).reset_index(drop=True)
+pg = pg.sort_values(["PLAYER_ID", "GAME_DATE"]).reset_index(drop=True)
 pg["competitive"] = pg["abs_margin"] < COMPETITIVE_MARGIN
 pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan)
-g = pg.groupby(["season", "PLAYER_ID"])
-pg["mu_role"] = g["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
+# CROSS-SEASON CARRYOVER (season-opening study 2026-09-09): without it the opening month has ZERO projections and
+# November only 62% coverage (within-season rates need 3 games, the minutes role 5). Minutes role and rate EWMA are
+# carried across seasons at the player level; at a season boundary the carried evidence counts as CARRY_N games so
+# the prior season anchors the opening weeks while new-season games adapt fast. Coverage: Oct 85%, Nov 90%.
+CARRY = os.environ.get("BT_CARRY", "1") == "1"
+if CARRY:
+    gp = pg.groupby("PLAYER_ID")
+    pg["mu_role"] = gp["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
+    g = pg.groupby(["season", "PLAYER_ID"])
+else:
+    g = pg.groupby(["season", "PLAYER_ID"])
+    pg["mu_role"] = g["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
 pg["role_tier"] = pg["mu_role"].apply(lambda m: role_tier(m) if not np.isnan(m) else None)
 pg["n_prior"] = g.cumcount()
 _tm = pg[pg["season"].isin(TRAIN) & pg["mu_role"].notna() & (pg["mu_role"] > 0)].copy()
