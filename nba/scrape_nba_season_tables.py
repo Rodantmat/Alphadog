@@ -77,12 +77,51 @@ def fetch(session, table, season):
     raise RuntimeError(f"fetch failed: {table} {season}")
 
 
+def asof_weekly(session, table, season, season_start, season_end, step_days=7):
+    """PARITY MODE: weekly as-of snapshots (DateTo = each week end) for date-filterable tables, so the historical
+    simulation sees exactly what the daily season-to-date pull sees (at weekly resolution)."""
+    from datetime import date, timedelta
+    t = TABLES[table]
+    assert "DateTo=" in t["qs"], f"{table} has no DateTo - use the per-game scraper for parity"
+    d = date.fromisoformat(season_start) + timedelta(days=step_days); end = date.fromisoformat(season_end)
+    snaps = []
+    while d <= end + timedelta(days=step_days):
+        qs = t["qs"].format(season=season).replace("DateTo=", f"DateTo={min(d, end).strftime('%m/%d/%Y')}")
+        url = f"https://stats.nba.com/stats/{t['endpoint']}?" + qs
+        recs = None
+        for attempt in range(4):
+            try:
+                r = session.get(url, headers=STATS_HEADERS, timeout=90, impersonate="chrome124"); r.raise_for_status()
+                rs = next((x for x in r.json().get("resultSets") or [] if x.get("name") == t["rs"]), None)
+                hdr = rs.get("headers", []); rows = rs.get("rowSet") or []
+                idx = [hdr.index(c) for c in t["keep"] if c in hdr]; cols = [hdr[i] for i in idx]
+                recs = [dict(zip(cols, [row[i] for i in idx])) for row in rows]; break
+            except Exception as exc:  # noqa: BLE001
+                print(f"  attempt {attempt + 1} failed {table} {season} asof {d}: {exc}"); time.sleep(5 * (attempt + 1))
+        snaps.append({"asof": min(d, end).isoformat(), "row_count": len(recs or []), "records": recs or []})
+        print(f"  {table} {season} asof {min(d, end)}: {len(recs or [])} rows"); time.sleep(1.5)
+        d += timedelta(days=step_days)
+    return snaps
+
+
 def main():
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     session = requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
     seasons = stats_seasons(int(os.environ.get("SEASONS_N", "3")))
     tables = [x for x in os.environ.get("TABLES", ",".join(TABLES)).split(",") if x]
     summary = {}
+    if os.environ.get("MODE", "season") == "asof_weekly":
+        WINDOWS = {"2023-24": ("2023-10-24", "2024-04-14"), "2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
+        for season in seasons:
+            slug = season.replace("-", "_"); w = WINDOWS.get(season)
+            if not w: print("no window for", season); continue
+            for table in tables:
+                if "DateTo=" not in TABLES[table]["qs"]: print(f"skip {table} (no DateTo; per-game scraper covers it)"); continue
+                snaps = asof_weekly(session, table, season, w[0], w[1])
+                path = OUT / f"nba_{table}_asof_{slug}.json"
+                path.write_text(json.dumps({"meta": {"season": season, "table": table, "mode": "asof_weekly", "window": w, "snapshots": len(snaps)}, "snapshots": snaps}))
+                summary[f"{table}_asof_{season}"] = {"snapshots": len(snaps), "mb": round(path.stat().st_size / 1e6, 2)}
+        (OUT / "nba_season_tables_asof_summary.json").write_text(json.dumps({"seasons": seasons, "summary": summary}, indent=2)); return
     for season in seasons:
         slug = season.replace("-", "_")
         for table in tables:
