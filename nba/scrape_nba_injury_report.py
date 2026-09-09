@@ -110,7 +110,7 @@ def extract_text(pdf_bytes):
     import pdfplumber
     out = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for page in pdf.pages: out.append(page.extract_text() or "")
+        for page in pdf.pages: out.append(page.extract_text(x_tolerance=1.5) or "")
     return "\n".join(out)
 
 
