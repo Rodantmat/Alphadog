@@ -1,5 +1,5 @@
 Trigger for nba-baseline.yml
 asof: 2026-03-15
 replay: 1
-last_triggered_utc: 2026-09-09T20:30:00Z
-trigger_reason: first Actions build of the baseline ladder - replay of 2026-03-15 (all 11 single-stat props); the JSON lands in nba/data/ for the loader worker
+last_triggered_utc: 2026-09-09T20:45:00Z
+trigger_reason: retry - patch anchor fixed (repo harness has a trailing comment on the walk-forward line); all 5 anchors verified against the repo harness
