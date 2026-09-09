@@ -91,16 +91,16 @@ def parse_report(text, snapshot_ts):
             if not line: continue
         m = _TEAM_RE.match(line)
         if m:
-            cur["team"] = m.group(1); line = m.group(2).strip(); last = None
+            cur["team"] = _TEAM_CANON.get(m.group(1), m.group(1)); line = m.group(2).strip(); last = None
             if not line: continue
-        if line.startswith("NOT YET SUBMITTED"):
+        if line.replace(" ", "").startswith("NOTYETSUBMITTED"):
             rows.append({**cur, "player_name": None, "status": "NOT_YET_SUBMITTED", "reason": None, "reason_class": "not_submitted", "snapshot_ts": snapshot_ts}); last = None; continue
         m = _STATUS_RE.match(line)
         if m and cur["team"]:
-            row = {**cur, "player_name": f"{m.group(1).strip()}, {m.group(2).strip()}", "status": m.group(3), "reason": m.group(4).strip(), "reason_class": None, "snapshot_ts": snapshot_ts}
+            row = {**cur, "player_name": f"{_split_camel(m.group(1))}, {_split_camel(m.group(2))}", "status": m.group(3), "reason": _split_camel(m.group(4)), "reason_class": None, "snapshot_ts": snapshot_ts}
             rows.append(row); last = row; continue
         if last is not None:
-            last["reason"] = (last["reason"] + " " + line).strip()
+            last["reason"] = (last["reason"] + " " + _split_camel(line)).strip()
     for r in rows:
         if r["status"] != "NOT_YET_SUBMITTED": r["reason_class"] = reason_class(r["reason"])
     return rows
