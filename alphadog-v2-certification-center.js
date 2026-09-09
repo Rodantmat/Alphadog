@@ -4772,16 +4772,25 @@ async function autoSelectStrategyV4Legs(env) {
         FROM board bd
       ),
       qual AS (
-        SELECT *,
-          CASE WHEN side_type = 'P' THEN 20 - outs_l5 ELSE 5 - pa_l5 END AS sig_strength
-        FROM wl
+        SELECT w.*,
+          CASE WHEN w.side_type = 'P' THEN 20 - w.outs_l5 ELSE 5 - w.pa_l5 END AS sig_strength,
+          lu.lineup_slot
+        FROM wl w
+        LEFT JOIN LATERAL (SELECT MIN(l.lineup_slot) lineup_slot FROM daily.lineups_current l
+                           WHERE l.player_id::text = w.pid::text AND l.official_date::date = CURRENT_DATE
+                             AND l.lineup_slot BETWEEN 1 AND 9) lu ON true
         WHERE (side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 < 14
                  AND ((prop = 'earned_runs') OR (prop = 'pitcher_outs')
                       OR (prop = 'pitcher_fantasy_score' AND (ln >= 23.5 OR ln = 17.5))))
            OR (side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 >= 15 AND outs_l5 < 16
                  AND ((prop = 'pitcher_fantasy_score' AND (ln >= 26.5 OR ln = 21.5))
                       OR (prop = 'pitcher_outs' AND ln = 16.5)))
-           OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0)
+           OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0
+                 -- LINEUP SPLIT (2026-09-08): a <3-PA bat now posted at 7-9 is a bench player who just
+                 -- got a regular job - he'll see 3-4 PA and hits the FS>=4.5 under only 33%. Keep him on
+                 -- FS 3/3.5 (58%). Not-in-lineup (true bench, 76% on FS>=4.5) and slots 1-6 (77%) unchanged.
+                 AND (lu.lineup_slot IS NULL OR lu.lineup_slot <= 6
+                      OR (prop = 'fantasy_score' AND ln IN (3, 3.5))))
       ),
       one_per_player AS (
         SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY sig_strength DESC, ln DESC) pr FROM qual) z WHERE pr = 1
