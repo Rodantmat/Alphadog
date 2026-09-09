@@ -177,9 +177,17 @@ pg["role_tier"] = pg["trail_med_min"].apply(lambda m: role_tier(m) if not np.isn
 pg["won_blowout"] = (pg["team_margin"] >= BLOWOUT_MARGIN)
 pg["lost_blowout"] = (pg["team_margin"] <= -BLOWOUT_MARGIN)
 pg["competitive"] = pg["abs_margin"] < COMPETITIVE_MARGIN
-comp = pg[pg["competitive"] & (pg["PF"] < 6) & pg["trail_med_min"].notna()]
-comp = comp[comp["MINF"] >= 0.4 * comp["trail_med_min"]]
-player_comp = comp.groupby(["season", "PLAYER_ID"])["MINF"].agg(mu_role="mean", sigma_player="std", n="count").reset_index()
+comp_mask = pg["competitive"] & (pg["PF"] < 6)
+# LEAKAGE FIX (2026-09-09, found via the FRINGE anomaly): mu_role was a season-wide mean, which uses
+# FUTURE games and inflates fringe baselines (season mean 13.5 vs backward trailing 8.1 for the same
+# games). Every baseline must be strictly backward-looking. mu_role/sigma are now a per-player
+# rolling (shift(1)) mean/std over the player's PREVIOUS competitive, non-foul-out games only.
+pg = pg.sort_values(["season", "PLAYER_ID", "GAME_DATE"])
+pg["comp_min"] = np.where(comp_mask, pg["MINF"], np.nan)
+grp = pg.groupby(["season", "PLAYER_ID"])["comp_min"]
+pg["mu_role"] = grp.transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
+pg["sigma_player"] = grp.transform(lambda s: s.shift(1).rolling(20, min_periods=5).std())
+player_comp = pg.dropna(subset=["mu_role"]).groupby(["season", "PLAYER_ID"]).agg(mu_role=("mu_role", "last"), sigma_player=("sigma_player", "last"), n=("comp_min", "count")).reset_index()
 dud_flags = []
 for (s, pid), grp in pg[pg["competitive"] & pg["trail_med_min"].notna()].groupby(["season", "PLAYER_ID"]):
     if len(grp) < 15: continue
