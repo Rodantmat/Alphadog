@@ -15,9 +15,7 @@ full status and the OPEN items (owner directive: do not move on until fixed).
   v12 k-sweep on the VALIDATION season showed bias monotone in the band at any single shrinkage k;
       per-(prop, band) mean-ratio cells fit on 2024-25 (bandfit.py), shrunk by cell n, applied here.
 
-Earlier history (v1-v9) is in classification_ladder_v1.py's header. This file is the full v12 body;
-part 2 (from the dispersion prior onward) is appended by the same session — if the file ends before
-'# STAGE 2' it is incomplete and must not be run.
+Earlier history (v1-v9) is in classification_ladder_v1.py's header. This is the complete v12 body.
 """
 import json
 import math
