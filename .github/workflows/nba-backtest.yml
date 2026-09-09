@@ -88,9 +88,9 @@ jobs:
           BT_TRAIN=2023-24 BT_TEST=2024-25 python nba/backtest/combos_ladder_v1.py || true
         continue-on-error: true
 
-      - name: Period props (q1/q4 x points/rebounds, both seasons)
+      - name: Period props (q1/q4/h2 x points/rebounds, both seasons)
         run: |
-          for per in q1 q4; do for prop in points rebounds; do
+          for per in q1 q4 h2; do for prop in points rebounds; do
             BT_PERIODS=$per BT_PROPS=$prop python nba/backtest/periods_ladder_v1.py || true
             BT_TRAIN=2023-24 BT_TEST=2024-25 BT_PERIODS=$per BT_PROPS=$prop python nba/backtest/periods_ladder_v1.py || true
           done; done
