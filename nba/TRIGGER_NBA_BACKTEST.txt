@@ -1,3 +1,3 @@
 Trigger for nba-backtest.yml
-last_triggered_utc: 2026-09-09T08:10:00Z
-trigger_reason: produce the COMBOS + double-double reports on Actions for both seasons (components saved per pair, then combos_ladder_v1.py); single-stat reports already committed with the factor layer
+last_triggered_utc: 2026-09-09T21:00:00Z
+trigger_reason: RE-CERTIFICATION after cross-season CARRYOVER + SEASON-PHASE cell were added to the recipe (season-opening study); every report now includes the month-by-month season-shape table
