@@ -184,11 +184,28 @@ for per in PERIODS:
             plays = sub[sub[mcol] >= 3]; pr_ = float(plays["ratio"].mean()) if len(plays) >= 30 else 1.0
             S3[(rt, st)] = (sit, pr_)
     findings[f"{per}_3state_by_role"] = {f"{k[0]}|{k[1]}": (round(v[0], 3), round(v[1], 3)) for k, v in S3.items()}
+    # RATE ratio per stat per role x state (given played >= 3 min) relative to the role's medium-state rate.
+    # Measured: Iron Man Q4 points 1.09x in close games (FGA 1.13, FTA 1.18); assists ~0.9x (hero ball); bench points 0.84x.
+    RR = {}
+    _p3 = _t2[_t2[mcol] >= 3].copy()
+    for col_ in ["PTS", "REB", "AST", "FG3M"]:
+        _p3[f"r_{col_}"] = _p3[f"{col_}_{pc}"] / _p3[mcol] * 36
+        for rt, _lo, _hi in ROLE_TIERS:
+            base_ = _p3[(_p3["role_tier"] == rt) & (_p3["state"] == "medium")][f"r_{col_}"].mean()
+            for st in ("close", "medium", "blowout"):
+                v_ = _p3[(_p3["role_tier"] == rt) & (_p3["state"] == st)][f"r_{col_}"].mean()
+                RR[(rt, st, col_)] = float(np.clip(v_ / base_, 0.7, 1.4)) if (base_ and base_ > 0 and not np.isnan(v_)) else 1.0
+    # OT minutes given OT and played, per role (OT mixture branch)
+    _otm = pg[pg["season"].isin(TRAIN) & (pg["MINF_ot"] > 0) & pg["role_tier"].notna()].groupby("role_tier")["MINF_ot"].mean().to_dict()
+    pg[f"ot_min_{per}"] = pg["role_tier"].map(_otm).fillna(2.0) if per in ("q4", "h2") else 0.0
+    findings[f"{per}_ot_minutes_by_role"] = {k: round(float(v), 2) for k, v in _otm.items()}
     pcl = pg["p_close"].fillna(0.4).values; pmed = np.clip(1 - pb - pcl, 0.02, 1)
     for st, pst in (("close", pcl), ("medium", pmed), ("blowout", pb)):
         pg[f"p_{st}_{per}"] = pst
         pg[f"sit_{st}_{per}"] = [S3.get((r, st), (0.05, 1.0))[0] for r in pg["role_tier"]]
         pg[f"pr_{st}_{per}"] = [S3.get((r, st), (0.05, 1.0))[1] for r in pg["role_tier"]]
+        for col_ in ["PTS", "REB", "AST", "FG3M"]:
+            pg[f"rr_{st}_{col_}_{per}"] = [RR.get((r, st, col_), 1.0) for r in pg["role_tier"]]
     for prop in BT_PROPS:
         col, alpha, kst = PROPS[prop]; ycol = f"{col}_{pc}"
         df = pg.copy()
