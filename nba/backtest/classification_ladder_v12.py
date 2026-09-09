@@ -68,8 +68,8 @@ PROPS = {
     "assists":     {"col": "AST",  "alpha": 0.15, "k_stab": 20, "step": 1.0, "family": "negbin"},
     "threes_made": {"col": "FG3M", "att_col": "FG3A", "alpha": 0.12, "pct_alpha": 0.03, "k_stab": 25, "step": 1.0, "family": "compound"},
     # Extension props. Prior strength from data (2026-09-09): k_MoM relative to points = STL 4.9x, TOV 2.5x, BLK 1.7x.
-    "blocks":      {"col": "BLK",  "alpha": 0.10, "k_stab": 50, "step": 1.0, "family": "negbin"},
-    "steals":      {"col": "STL",  "alpha": 0.10, "k_stab": 125, "step": 1.0, "family": "negbin"},
+    "blocks":      {"col": "BLK",  "alpha": 0.10, "k_stab": 50, "step": 1.0, "family": "negbin", "zero_adjust": True},
+    "steals":      {"col": "STL",  "alpha": 0.10, "k_stab": 125, "step": 1.0, "family": "negbin", "zero_adjust": True},
     "turnovers":   {"col": "TOV",  "alpha": 0.12, "k_stab": 60, "step": 1.0, "family": "negbin"},
     "fga":         {"col": "FGA",  "alpha": 0.15, "k_stab": 15, "step": 1.0, "family": "auto"},
     "fg3a":        {"col": "FG3A", "alpha": 0.12, "k_stab": 20, "step": 1.0, "family": "negbin"},
