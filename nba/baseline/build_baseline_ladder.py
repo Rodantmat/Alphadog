@@ -65,10 +65,8 @@ s = rep(s, '''for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL",
 '''for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL", "TOV", "FGA", "FTM", "FTA"]:
     players[c] = pd.to_numeric(players[c], errors="coerce"); _h = players["GAME_DATE"] < ASOF
     players.loc[_h, c] = players.loc[_h, c].fillna(0)''')
-s = rep(s, '''    for month, test in test_all.groupby("ym_dt"):
-        hist = d[(d["season"].isin(TRAIN) | (d["ym_dt"] < month)) & d["tier"].notna()]''',
-'''    for month, test in test_all.groupby("ym_dt"):
-        _t0 = test["GAME_DATE"].min()
+s = rep(s, '''        hist = d[(d["season"].isin(TRAIN) | (d["ym_dt"] < month)) & d["tier"].notna()]''',
+'''        _t0 = test["GAME_DATE"].min()
         hist = d[(d["GAME_DATE"] < _t0) & d[col].notna() & d["tier"].notna()]''')
 s = rep(s, '''def brier(p, y): return float(np.mean((p - y) ** 2))''',
 '''_ladder = rel[rel["month"] == str(pd.Period(ASOF, freq="M"))].copy()
