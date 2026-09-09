@@ -294,8 +294,17 @@ for prop, cfg in PROPS.items():
     d["var_band"] = [next((k for lo, hi, k in VBANDS if lo <= a < hi), "ELITE") for a in d["anchor"]]
     EMP_MIN = 300
     d["ym_dt"] = pd.to_datetime(d["GAME_DATE"]).dt.to_period("M")
+    # ZERO-ADJUSTMENT TABLE (blocks/steals): actual P(0) by projected-mean band, fit on TRAIN inside the run.
+    Z_BANDS = [0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 99]
+    if cfg.get("zero_adjust"):
+        _z = d[d["season"].isin(TRAIN)]
+        p0_by_band = (_z[col] == 0).groupby(pd.cut(_z["proj_mean"], Z_BANDS), observed=False).mean()
+        d["p0_band"] = pd.cut(d["proj_mean"], Z_BANDS).map(p0_by_band).astype(float)
+        d["p0_band"] = d["p0_band"].fillna(np.exp(-d["proj_mean"]))
     def param_p_over(fr, off):
         line_ = (fr["anchor"] + off * cfg["step"]).clip(lower=0.5); k_ = np.floor(line_).astype(int)
+        if cfg.get("zero_adjust"):
+            return 1 - np.array([nb_cdf_zadj(kk, m, v, z) for kk, m, v, z in zip(k_, fr["proj_mean"], fr["proj_var"], fr["p0_band"])])
         if cfg["family"] == "compound":
             av = np.maximum(fr["proj_att"] * 1.6, fr["proj_att"] + 1e-6)
             pu = np.array([compound_cdf(kk, a, v, pc) for kk, a, v, pc in zip(k_, fr["proj_att"], av, fr["make_pct"])])
