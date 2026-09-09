@@ -412,3 +412,109 @@ Signals: the two categories' calibrated marginals (already in the baseline copul
 7. 3-in-4 / time-zone / day-game effects conditional on playing.
 8. The folklore list (revenge, national TV, home/away alone) — measure and retire or keep.
 Each becomes a `factor_profile_cells` entry keyed by prop × direction × variation band × role tier, validated on two seasons exactly like the baseline.
+
+---
+---
+
+# Pass 3 (2026-09-09) — What was still missing: the matchup family, coach logic, report nuance, market structure; double-count discipline; correlations to test
+
+Sources this pass: RotoGrinders' minutes methodology (injuries → blowout → matchup-specific minutes → coach tendency → foul
+trouble; "don't double count what the projection already has"), the feature-engineering literature on defender assignment
+and scheme (drop/hedge/blitz/switch; "Aggression+" for turnovers), the nba.com endpoint catalog (`leagueseasonmatchups`,
+`boxscorematchupsv3`, `leaguedashptdefend`, `leaguedashptteamdefend`, hustle and clutch dashboards, `boxscoremiscv3` with
+foulsDrawn/pointsPaint), DARKO's defensive component, and an adversarial Gemini pass. Verdicts below are tagged
+**[free, backfillable]**, **[free, live only]**, **[paid]**, **[no evidence]**.
+
+## P3.1 New factor family: MATCHUP (player-level, not position-level)
+
+**M1 `primary_defender_quality`** — Mech R. The minutes-weighted quality of the defenders expected to guard the player
+tonight. Sub-tiers: expected primary defender's defended-FG% delta (`leaguedashptdefend`), his matchup-specific allowed
+points/possession vs this player or vs the player's archetype (`leagueseasonmatchups`: MATCHUP_MIN, PARTIAL_POSS,
+PLAYER_PTS, MATCHUP_FGA/FG3A/FTA, SFL), DARKO defensive DPM; the defender's status (OUT → the assignment shifts to the next
+man). Dir: elite primary defender → Less on points/FGA/3PM for the matched scorer (−2…−5 pp at mid/high anchors,
+published range; measure); defender OUT → More. Var: strongest on STAR anchors (stars draw the best defender). Trap:
+switching schemes dilute the assignment; cross-matching. Source: **[free, backfillable]** — season matchup table is one
+bulk call per season; per-game matchups via `boxscorematchupsv3` (~1,230 calls/season) if per-game assignment history is
+wanted. Engine: RB medium (residual over the opponent-profile factor).
+
+**M2 `defensive_scheme_proxy`** — Mech R. Opponent coverage tendencies: free proxies = our Synergy play-type defense
+(already built: PRBallHandler/Spotup/Isolation defense efficiency and frequency), opponent shot profile allowed by zone
+(`leaguedashteamptshot`/shot locations — have shot quality), zone/switch frequency (not free; Second Spectrum). Dir:
+pull-up shooter vs drop → More 3PA/points; handler vs blitz → More assists, More turnovers; roll-man vs drop → More
+points/rebounds at the rim. **[free proxies now; scheme rates paid]**. Engine: RB medium for 3PM/assists/turnovers.
+
+**M3 `hustle_and_deflection_profile`** — Mech R (defensive props). Opponent's deflections allowed / contested shots /
+charges drawn and the player's own deflection rate (hustle dashboard) as steals/blocks predictors beyond TOV%/paint share.
+**[free, backfillable by season]**. Engine: RB for stocks legs (the only way to make stocks legs slip-worthy).
+
+**M4 `clutch_usage_profile`** — Mech R (period props). Player's clutch usage/FTA share (`leaguedashplayerclutch`) →
+who takes the shots and free throws in close fourth quarters (stars 1.09× points, 1.18× FTA in close Q4s [measured] — this
+sub-factor says *which* stars). **[free, backfillable]**. Engine: RB for 4Q/2H points and FTM in projected close games.
+
+## P3.2 New: COACH ROTATION LOGIC (the granular version of P(start) and the state mixture)
+
+**K1 `coach_rotation_profile`** — Mech M. Per coach (not per team — coaching changes reset it): rotation length (players
+with ≥10 min in competitive games), starter pull timing in blowouts (we measured team-level starter pull 0.81–1.10 in won
+blowouts — attribute to the coach), first-substitution minute in Q1 (from quarter files: Q1 minutes distribution of
+starters), closing-lineup stability, foul-trouble hook tendency (needs play-by-play for the exact rule; proxy = starters'
+minutes in games with 2+ first-half fouls, from box scores + quarter files). Dir: short-rotation coach → More for starters
+in leverage games; quick-pull coach → stronger Less on starters' high anchors under blowout risk. **[free, computable
+now]**. Engine: multiplies the blowout gate and the leverage booster; confidence when the coach is new.
+
+## P3.3 New: INJURY-REPORT NUANCE (the Questionable problem)
+
+**N1 `questionable_resolution_rate`** — P(plays | Questionable) by team and by reason class (illness resolves high; soft
+tissue lower; "return to competition reconditioning" ~ restriction) — backfillable from the PDF archive (status as
+known) × box scores (truth). Some teams are systematically conservative or misleading; this is measurable per team. Dir:
+confidence and the P(plays) weight; also the *teammates'* enrichment must be run under both branches (plays / sits) and
+blended by P(plays). **[free, backfillable]**. Engine: G/C; branch-blended probabilities for teammates.
+
+**N2 `injury_type_class`** — Illness / soft tissue (hamstring, calf, groin) / joint (ankle, knee) / back / concussion /
+reconditioning / rest. Soft-tissue returns carry re-aggravation and minutes-restriction risk; illness returns do not.
+Source: the report's reason text. **[free, backfillable]**. Engine: modulates A3 (restriction) and C.
+
+## P3.4 New: PICK'EM MARKET STRUCTURE (board-time, later phase, recorded here for completeness)
+
+**S1** PrizePicks line shading vs sportsbooks (structural gaps, typically on stars and on "popular" Mores); **S2** Underdog
+odds-adjusted picks (some legs carry a multiplier ≠ 1 — the multiplier is information: the house's own probability);
+**S3** Sleeper multipliers (same); **S4** Goblin/Demon existence as a shading signal (owner: G/D layers later, but the
+*existence* of a Demon line tells you where the house expects the standard line to be beaten). **[live only; historical
+prop lines paid]**. Engine: these are the strongest single ranking inputs once the board exists.
+
+## P3.5 Double-count discipline (apply as residuals, or not at all)
+
+The baseline already carries: opponent profile (DEF rating, miss rate, OREB%, TOV%, forced TOV%, FTA rate, paint share,
+3PA allowed), pace, home, B2B, DvP, with/without teammate (derived backup), P(start), season phase, carryover, blowout
+mixture on the derived spread, OT probability.
+- **National TV**: mostly a rest-protection rule (A4) — as a *motivation* factor, no evidence; keep only inside A4.
+- **Altitude**: captured by home/away and the market total; keep as a sub-tier of D2 only for visitors on B2B; expect ≈0.
+- **Referee crew**: the baseline has player foul-drawing and opponent fouls-committed; the crew adds a *tertiary* modulation
+  — build the tendency table, but accept it only if the FTM/PF effect is significant on two seasons; expect small.
+- **Opponent absences (B4) and matchup (M1)** overlap: M1 supersedes B4 when the matchup table is built; until then B4.
+- **Market spread (B1)** vs the baseline's derived spread: apply the *delta*, not the level.
+- **Contract year, holidays, post-All-Star, revenge**: no evidence → not in the registry (recorded as retired).
+
+## P3.6 Correlations to test on our three seasons (for the slip engine; published ranges)
+
+Positive: same-player points + assists for high-usage handlers (r ≈ +0.3…+0.5); teammate A assists + teammate B points/3PM
+(+0.2…+0.4, higher for 3PM with a pass-first PG); same-player points + rebounds for interior scorers (+0.3…+0.4; we
+measured population ρ 0.13 Iron Men → 0.46 fringe — role-dependent); game total up + all Mores (diffuse positive).
+Negative: teammate scorers' points (−0.1…−0.3); frontcourt teammates' rebounds (−0.2…−0.4); large spread + all starters'
+counting stats (state correlation, strongest of all). All of these are computable from our game logs and lineup data now,
+per pair type and role tier, and become the slip engine's copula inputs.
+
+## P3.7 Registry additions (pass 3) and what is retired
+
+Added to `nba_config.factor_registry` (layer=enrichment): `primary_defender_quality`, `defensive_scheme_proxy`,
+`hustle_deflection_profile`, `clutch_usage_profile`, `coach_rotation_profile`, `questionable_resolution_rate`,
+`injury_type_class`, `pickem_market_structure`. Retired (no evidence): contract year, holiday games, post-All-Star,
+revenge/milestone; `national_tv_marquee` and `altitude_venue` demoted to sub-tiers of A4 and D2.
+
+## P3.8 The honest state of the lock after three passes
+
+The factor set is now complete at the level of *mechanisms*: availability and role (A1–A9, N1–N2), game state (B1–B5,
+K1), matchup (M1–M4, B4), market (C1–C4, S1–S4), officials/schedule (D1–D2), confidence (E1–E4). What remains is not more
+factors but **measurement**: every magnitude in P2 and P3 tagged [published] must be re-measured on our data, and only
+those that hold on two seasons (same sign, useful size) become cells. Next: build the two backfills that unlock
+measurement of the largest factors — the injury-report PDF archive (statuses as known) and the matchup/hustle/clutch season
+tables — then run the pass-3 measurement list.
