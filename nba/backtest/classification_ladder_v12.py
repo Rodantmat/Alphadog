@@ -265,6 +265,21 @@ for prop, cfg in PROPS.items():
         d["make_pct"] = ((_att_seen * _pct_raw + 60.0 * _pop_pct) / (_att_seen + 60.0)).clip(0.05, 0.6)
         d["proj_att"] = d["proj_mean"]
         d["proj_mean"] = d["proj_att"] * d["make_pct"]
+    # FACTOR MULTIPLIER (log-rate; coefficients fit on TRAIN by least squares of ln((y+0.5)/(mean+0.5)) on the
+    # prop's factor set; centered features, so beta~0 means the factor is not needed - nothing forced).
+    if FACTORS_ON:
+        fc = FACTORS_BY_PROP[prop]
+        X_all = d[fc].astype(float).fillna(0.0).values
+        trm = d["season"].isin(TRAIN).values & (d["proj_mean"].values > 0.2)
+        X = X_all[trm]; yv = np.log((d[col].values[trm] + 0.5) / (d["proj_mean"].values[trm] + 0.5))
+        mu_x = X.mean(axis=0); Xc = X - mu_x
+        beta, *_ = np.linalg.lstsq(np.c_[np.ones(len(Xc)), Xc], yv, rcond=None)
+        beta = beta[1:]
+        FACTOR_FITS[prop] = {f_: round(float(b_), 4) for f_, b_ in zip(fc, beta)}
+        mult = np.exp(np.clip((X_all - mu_x) @ beta, -0.35, 0.35))
+        d["proj_mean"] = d["proj_mean"] * mult
+        if cfg["family"] == "compound": d["proj_att"] = d["proj_att"] * mult
+        print(f"{prop} factor betas (log-rate per unit): {FACTOR_FITS[prop]}")
     # heteroscedastic dispersion prior by mean band (TRAIN), player-level shrunk k=10; prediction interval sqrt(1+1/n)
     _tr = d[d["season"].isin(TRAIN)].dropna(subset=["prior_var", "prior_mean"])
     _tr_iod = (_tr["prior_var"] / _tr["prior_mean"].clip(lower=0.5))
