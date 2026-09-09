@@ -142,7 +142,8 @@ def make_config(worker_name, include_services=False):
             {"binding": "NBA_STATIC_GAME_OFFICIALS_WORKER", "service": "alphadog-v2-nba-static-game-officials"},
             {"binding": "NBA_STATIC_LINEUPS_WORKER", "service": "alphadog-v2-nba-static-lineups"},
             {"binding": "NBA_DAILY_DELTA_WORKER", "service": "alphadog-v2-nba-daily-delta"},
-            {"binding": "NBA_STATIC_MEASURE_TYPES_WORKER", "service": "alphadog-v2-nba-static-measure-types"}
+            {"binding": "NBA_STATIC_MEASURE_TYPES_WORKER", "service": "alphadog-v2-nba-static-measure-types"},
+            {"binding": "NBA_BASELINE_LADDER_WORKER", "service": "alphadog-v2-nba-baseline-ladder"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
