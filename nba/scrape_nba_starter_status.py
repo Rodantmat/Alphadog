@@ -43,9 +43,10 @@ STATS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
 }
 
-INPUT_PATH = Path("nba/data/nba_player_game_log_2025_26.json")
-OUTPUT_PATH = Path("nba/data/nba_starter_status_2025_26.json")
-OUTPUT_META_PATH = Path("nba/data/nba_starter_status_2025_26_meta.json")
+_SLUG = os.environ.get("SEASON_SLUG", "2025_26")   # backfill other seasons with SEASON_SLUG=2024_25 / 2023_24 (parity backfill 2026-09-09)
+INPUT_PATH = Path(f"nba/data/nba_player_game_log_{_SLUG}.json")
+OUTPUT_PATH = Path(f"nba/data/nba_starter_status_{_SLUG}.json")
+OUTPUT_META_PATH = Path(f"nba/data/nba_starter_status_{_SLUG}_meta.json")
 
 
 def fetch_game(game_id, proxies):
