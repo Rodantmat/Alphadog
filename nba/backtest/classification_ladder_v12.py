@@ -170,6 +170,26 @@ else:
     pg["mu_role"] = g["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
 pg["role_tier"] = pg["mu_role"].apply(lambda m: role_tier(m) if not np.isnan(m) else None)
 pg["n_prior"] = g.cumcount()
+# RETURN RAMP + TEAM-CHANGE (season-opening / availability study 2026-09-09, measured on 3 seasons):
+# games missed = the team's games between the player's previous appearance and this game; game-back index 1..4 after an
+# absence of >=3 games. Measured minutes ratio vs the 10-game role: missed 3-7 -> 0.87/0.97/1.01; 8-15 -> 0.79/0.92/0.96;
+# 16+ -> 0.72/0.84/0.92/1.00 (game 1/2/3/4). Per-minute rate unchanged (~1.0) -> a MINUTES multiplier only, fit on TRAIN.
+_tgd = teams.groupby(["season", "TEAM_ID"])["GAME_DATE"].apply(lambda x: np.array(sorted(x))).to_dict()
+_prev_gd = pg.groupby(["PLAYER_ID"])["GAME_DATE"].shift(1); _prev_tid = pg.groupby(["PLAYER_ID"])["TEAM_ID"].shift(1); _prev_season = pg.groupby(["PLAYER_ID"])["season"].shift(1)
+def _missed(s_, tid_, prev_, gd_, ps_):
+    if not isinstance(prev_, date) or ps_ != s_: return 0
+    arr = _tgd.get((s_, tid_)); return int(((arr > prev_) & (arr < gd_)).sum()) if arr is not None else 0
+pg["games_missed"] = [_missed(a, b, c, d_, e) for a, b, c, d_, e in zip(pg["season"], pg["TEAM_ID"], _prev_gd, pg["GAME_DATE"], _prev_season)]
+pg["team_changed"] = ((_prev_tid.notna()) & (_prev_tid != pg["TEAM_ID"])).astype(int)
+_gb, _st = [], {}
+for pid_, s_, m_ in zip(pg["PLAYER_ID"], pg["season"], pg["games_missed"]):
+    k_ = (s_, pid_)
+    if m_ >= 3: _st[k_] = (1, m_)
+    elif _st.get(k_) and m_ == 0 and _st[k_][0] < 4: _st[k_] = (_st[k_][0] + 1, _st[k_][1])
+    else: _st[k_] = None
+    _gb.append(_st[k_] if _st[k_] else (0, 0))
+pg["gb_idx"] = [x[0] for x in _gb]; pg["gb_missed"] = [x[1] for x in _gb]
+RAMP_ON = os.environ.get("BT_RAMP", "1") == "1"
 _tm = pg[pg["season"].isin(TRAIN) & pg["mu_role"].notna() & (pg["mu_role"] > 0)].copy()
 _tm["won_bl"] = _tm["team_margin"] >= BLOWOUT_MARGIN; _tm["lost_bl"] = _tm["team_margin"] <= -BLOWOUT_MARGIN
 _tm["ratio"] = _tm["MINF"] / _tm["mu_role"]
