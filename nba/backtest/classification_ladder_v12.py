@@ -164,6 +164,12 @@ CARRY = os.environ.get("BT_CARRY", "1") == "1"
 if CARRY:
     gp = pg.groupby("PLAYER_ID")
     pg["mu_role"] = gp["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
+    # TEAM-CHANGE DISCOUNT (measured: carried minutes-role MAE 5.97 vs 4.75 after a move): once a player has >=5
+    # competitive games with the new team, the role uses only those games (shorter window), not the mixed history.
+    pg["_team_run"] = (pg["TEAM_ID"] != gp["TEAM_ID"].shift(1)).cumsum()
+    _mu_team = pg.groupby(["PLAYER_ID", "_team_run"])["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
+    _n_team = pg.groupby(["PLAYER_ID", "_team_run"])["comp_min"].transform(lambda s: s.shift(1).notna().cumsum())
+    pg["mu_role"] = np.where((_n_team >= 5) & _mu_team.notna(), _mu_team, pg["mu_role"])
     g = pg.groupby(["season", "PLAYER_ID"])
 else:
     g = pg.groupby(["season", "PLAYER_ID"])
