@@ -201,9 +201,14 @@ for per in PERIODS:
             for pid, t in tier_of.items(): tp[(s, ym, role, pid)] = (int(t), (tn[t] * tm[t] + TIER_BLEND_K * pm) / (tn[t] + TIER_BLEND_K))
         d["tier"] = [tp.get((s, y_, r, p), (None, np.nan))[0] for s, y_, r, p in zip(d["season"], d["ym_s"], d["role_tier"], d["PLAYER_ID"])]
         d["tier_prior"] = [tp.get((s, y_, r, p), (None, np.nan))[1] for s, y_, r, p in zip(d["season"], d["ym_s"], d["role_tier"], d["PLAYER_ID"])]
-        n = d["n_rate"].clip(lower=1); d["shr36"] = (n * d["rate36"] + kst * d["tier_prior"]) / (n + kst)
+        # prior strength scaled by period length: a quarter's per-36 rate carries ~1/3 of a game's information
+        K_SCALE = {"q1": 3.0, "q4": 3.0, "h1": 1.5, "h2": 1.5}[per] * float(os.environ.get("BT_KSCALE", "1.0"))
+        n = d["n_rate"].clip(lower=1); d["shr36"] = (n * d["rate36"] + kst * K_SCALE * d["tier_prior"]) / (n + kst * K_SCALE)
         d["mean"] = d["shr36"] * d[f"pm_{per}"] / 36
         d["mean_norm"] = d["shr36"] * d[f"pm_{per}_norm"] / 36; d["mean_blow"] = d["shr36"] * d[f"pm_{per}_blow"] / 36
+        for st in ("close", "medium", "blowout"):
+            d[f"mean_{st}"] = d["shr36"] * d[f"mu_{per}"] * d[f"pr_{st}_{per}"] / 36   # mean given PLAYS in that state
+        d["mean_sit"] = d["shr36"] * 1.0 / 36   # ~1 minute of production when sitting most of the period
         _tr = d[d["season"].isin(TRAIN)].dropna(subset=["prior_var", "prior_mean"]); _iod = (_tr["prior_var"] / _tr["prior_mean"].clip(lower=0.25))
         _b = [0, 1, 2, 4, 6, 8, 12, 16, 200]; iod_band = _iod.groupby(pd.cut(_tr["prior_mean"], _b)).median()
         iod_prior = pd.cut(d["mean"], _b).map(iod_band).astype(float).fillna(float(_iod.median()))
