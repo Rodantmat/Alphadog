@@ -163,6 +163,25 @@ for per in PERIODS:
     pb = pg["p_blowout"].fillna(0.2).values
     pg[f"pm_{per}"] = pg[f"mu_{per}"] * ((1 - pb) + pb * rr)
     pg[f"pm_{per}_norm"] = pg[f"mu_{per}"]; pg[f"pm_{per}_blow"] = pg[f"mu_{per}"] * rr; pg[f"pb_{per}"] = pb
+    # 3-PART MIXTURE (design third component; measured 2026-09-09): per role x game state, the SIT-OUT rate
+    # (period minutes < 3) and the plays-ratio (period minutes / mu | played), fit on TRAIN.
+    # Q4 Iron Man: close 3% sit / 1.07x, medium 8% / 0.89x, blowout 45% / 0.64x; fringe blowout 18% / 2.9x.
+    _t2 = pg[pg["season"].isin(TRAIN) & pg[f"mu_{per}"].notna() & (pg[f"mu_{per}"] > 1)].copy()
+    _t2["state"] = np.select([_t2["abs_margin"] >= BLOWOUT_MARGIN, _t2["abs_margin"] < 8], ["blowout", "close"], "medium")
+    _t2["sit"] = (_t2[mcol] < 3).astype(float); _t2["ratio"] = _t2[mcol] / _t2[f"mu_{per}"]
+    S3 = {}
+    for rt, _lo, _hi in ROLE_TIERS:
+        for st in ("close", "medium", "blowout"):
+            sub = _t2[(_t2["role_tier"] == rt) & (_t2["state"] == st)]
+            sit = float(sub["sit"].mean()) if len(sub) >= 30 else 0.05
+            plays = sub[sub[mcol] >= 3]; pr_ = float(plays["ratio"].mean()) if len(plays) >= 30 else 1.0
+            S3[(rt, st)] = (sit, pr_)
+    findings[f"{per}_3state_by_role"] = {f"{k[0]}|{k[1]}": (round(v[0], 3), round(v[1], 3)) for k, v in S3.items()}
+    pcl = pg["p_close"].fillna(0.4).values; pmed = np.clip(1 - pb - pcl, 0.02, 1)
+    for st, pst in (("close", pcl), ("medium", pmed), ("blowout", pb)):
+        pg[f"p_{st}_{per}"] = pst
+        pg[f"sit_{st}_{per}"] = [S3.get((r, st), (0.05, 1.0))[0] for r in pg["role_tier"]]
+        pg[f"pr_{st}_{per}"] = [S3.get((r, st), (0.05, 1.0))[1] for r in pg["role_tier"]]
     for prop in BT_PROPS:
         col, alpha, kst = PROPS[prop]; ycol = f"{col}_{pc}"
         df = pg.copy()
