@@ -159,6 +159,13 @@ g = pg.groupby(["season", "PLAYER_ID"])
 pg["mu_role"] = g["comp_min"].transform(lambda s: s.shift(1).rolling(20, min_periods=5).mean())
 pg["role_tier"] = pg["mu_role"].apply(lambda m: role_tier(m) if not np.isnan(m) else None)
 pg["n_prior"] = g.cumcount()
+_tm = pg[pg["season"].isin(TRAIN) & pg["mu_role"].notna() & (pg["mu_role"] > 0)].copy()
+_tm["won_bl"] = _tm["team_margin"] >= BLOWOUT_MARGIN; _tm["lost_bl"] = _tm["team_margin"] <= -BLOWOUT_MARGIN
+_tm["ratio"] = _tm["MINF"] / _tm["mu_role"]
+MIN_RATIO = {}
+for rt, _lo, _hi in ROLE_TIERS:
+    w = _tm[(_tm["role_tier"] == rt) & _tm["won_bl"]]["ratio"].mean(); l = _tm[(_tm["role_tier"] == rt) & _tm["lost_bl"]]["ratio"].mean()
+    MIN_RATIO[rt] = (float(w) if not np.isnan(w) else 0.9, float(l) if not np.isnan(l) else 0.95)
 
 
 def proj_minutes(r):
