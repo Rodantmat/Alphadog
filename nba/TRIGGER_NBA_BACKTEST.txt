@@ -1,0 +1,3 @@
+Trigger for nba-backtest.yml
+last_triggered_utc: 2026-09-09T02:30:00Z
+trigger_reason: first Actions run of the minutes-model v1 harness (already dry-run locally on real data); commits the report to nba/backtest/reports/
