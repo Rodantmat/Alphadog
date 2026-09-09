@@ -363,6 +363,8 @@ for prop, cfg in PROPS.items():
     d["proj_mean"] = d["proj_mean"] * _ratio
     if cfg["family"] == "compound": d["proj_att"] = d["proj_att"] * _ratio
     d["anchor"] = np.floor(d["proj_mean"]) + 0.5
+    if os.environ.get("BT_SAVE_COMPONENTS", "0") == "1":
+        d[["season", "PLAYER_ID", "GAME_ID", "GAME_DATE", "TEAM_ID", "role_tier", "tier", "proj_min", "proj_mean", "proj_var", "anchor", col]].rename(columns={col: "actual"}).to_pickle(OUT / f"_comp_{prop}_{TEST[0]}.pkl")
     d["var_band"] = [next((k for lo, hi, k in VBANDS if lo <= a < hi), "ELITE") for a in d["anchor"]]
     EMP_MIN = 300
     d["ym_dt"] = pd.to_datetime(d["GAME_DATE"]).dt.to_period("M")
