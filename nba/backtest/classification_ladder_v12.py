@@ -299,8 +299,18 @@ for prop, cfg in PROPS.items():
     if cfg["family"] == "compound":
         df["ew_makes"] = gg[col].transform(lambda s2: s2.shift(1).ewm(alpha=cfg["pct_alpha"], adjust=False, min_periods=3).mean())
         df["ew_att"] = gg[rate_col].transform(lambda s2: s2.shift(1).ewm(alpha=cfg["pct_alpha"], adjust=False, min_periods=3).mean())
-    df["rate36"] = gg["per36"].transform(lambda s: ewma_prior(s, cfg["alpha"]))
-    df["n_rate"] = gg["per36"].transform(lambda s: s.shift(1).notna().cumsum())
+    if CARRY:
+        CARRY_N = float(os.environ.get("BT_CARRY_N", "8"))
+        df = df.sort_values(["PLAYER_ID", "GAME_DATE"])
+        gp2 = df.groupby("PLAYER_ID")
+        df["rate36"] = gp2["per36"].transform(lambda s: ewma_prior(s, cfg["alpha"]))
+        df["n_in_season"] = gg["per36"].transform(lambda s: s.shift(1).notna().cumsum())
+        df["n_total"] = gp2["per36"].transform(lambda s: s.shift(1).notna().cumsum())
+        df["n_rate"] = np.minimum(df["n_total"], df["n_in_season"] + CARRY_N)
+        df = df.sort_values(["season", "PLAYER_ID", "GAME_DATE"]); gg = df.groupby(["season", "PLAYER_ID"])
+    else:
+        df["rate36"] = gg["per36"].transform(lambda s: ewma_prior(s, cfg["alpha"]))
+        df["n_rate"] = gg["per36"].transform(lambda s: s.shift(1).notna().cumsum())
     df["prior_var"] = gg[col].transform(lambda s: s.shift(1).rolling(20, min_periods=8).var())
     df["prior_mean"] = gg[col].transform(lambda s: s.shift(1).rolling(20, min_periods=8).mean())
     df["ym"] = pd.to_datetime(df["GAME_DATE"]).dt.to_period("M").astype(str)
