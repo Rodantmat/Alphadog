@@ -118,7 +118,14 @@ _cl = (_trg["abs_margin"] < 8).groupby(pd.cut(_trg["derived_spread"].abs(), bins
 P_CLOSE = [float(v) if not np.isnan(v) else 0.4 for v in _cl.values]
 games["p_close"] = pd.cut(games["derived_spread"].abs(), bins=BINS, labels=P_CLOSE, include_lowest=True, ordered=False).astype(float)
 games["home_favored"] = games["derived_spread"] > 0
-pg = base.merge(games[["season", "GAME_ID", "home_id", "home_margin", "abs_margin", "p_blowout", "p_close", "home_favored"]], on=["season", "GAME_ID"], how="inner")
+# P(OT | spread) fit on TRAIN: OT games detected via any player OT minutes in the period frame
+_ot_games = set(base.loc[base["MINF_ot"] > 0.5, ["season", "GAME_ID"]].itertuples(index=False, name=None))
+games["is_ot"] = [1.0 if (s_, g_) in _ot_games else 0.0 for s_, g_ in zip(games["season"], games["GAME_ID"])]
+_trg = games[games["season"].isin(TRAIN)]
+_po = _trg["is_ot"].groupby(pd.cut(_trg["derived_spread"].abs(), bins=BINS, include_lowest=True), observed=False).mean()
+P_OT = [float(v) if not np.isnan(v) else 0.05 for v in _po.values]   # measured: 5.3% at pick'em -> 1.9% at 15+
+games["p_ot"] = pd.cut(games["derived_spread"].abs(), bins=BINS, labels=P_OT, include_lowest=True, ordered=False).astype(float)
+pg = base.merge(games[["season", "GAME_ID", "home_id", "home_margin", "abs_margin", "p_blowout", "p_close", "p_ot", "home_favored"]], on=["season", "GAME_ID"], how="inner")
 pg["team_margin"] = np.where(pg["TEAM_ID"] == pg["home_id"], pg["home_margin"], -pg["home_margin"])
 pg["favored"] = np.where(pg["TEAM_ID"] == pg["home_id"], pg["home_favored"], ~pg["home_favored"])
 pg = pg.sort_values(["season", "PLAYER_ID", "GAME_DATE"]).reset_index(drop=True)
