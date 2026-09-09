@@ -1,0 +1,78 @@
+name: NBA Baseline Ladder
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'nba/TRIGGER_NBA_BASELINE.txt'
+  schedule:
+    - cron: '30 12 * * *'   # daily 12:30 UTC, after the daily delta has landed
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-baseline
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tools
+        run: python -m pip install --upgrade pip pandas numpy scipy
+
+      - name: Resolve ASOF (from nba/TRIGGER_NBA_BASELINE.txt 'asof:' line, else today)
+        id: asof
+        run: |
+          A=$(grep -E '^asof:' nba/TRIGGER_NBA_BASELINE.txt 2>/dev/null | head -1 | sed 's/^asof:[[:space:]]*//')
+          R=$(grep -E '^replay:' nba/TRIGGER_NBA_BASELINE.txt 2>/dev/null | head -1 | sed 's/^replay:[[:space:]]*//')
+          [ -z "$A" ] && A=$(date -u +%F)
+          echo "asof=$A" >> $GITHUB_OUTPUT; echo "replay=${R:-0}" >> $GITHUB_OUTPUT; echo "ASOF=$A replay=${R:-0}"
+
+      - name: Build the baseline ladder (single-stat full-game props, per prop pair)
+        env:
+          BT_ASOF: ${{ steps.asof.outputs.asof }}
+          BT_REPLAY: ${{ steps.asof.outputs.replay }}
+        run: |
+          for pair in points,rebounds assists,threes_made blocks,steals turnovers,personal_fouls fga,fg3a ftm; do
+            BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py || echo "pair $pair failed"
+          done
+          python - <<'EOF'
+          import json, glob, os
+          asof = os.environ["BT_ASOF"]; rows = []; meta = None
+          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+          if meta:
+              meta["rows"] = len(rows); meta["props"] = sorted({r["prop"] for r in rows}); meta["players"] = len({r["player_id"] for r in rows})
+              json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+              json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
+              print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
+          for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"): os.remove(f)
+          EOF
+
+      - name: Commit ladder to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/nba_baseline_ladder_*.json || true
+          if git diff --cached --quiet; then echo "No ladder changes."; exit 0; fi
+          git commit -m "NBA baseline ladder ${{ steps.asof.outputs.asof }} [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+          done
+          exit 1
