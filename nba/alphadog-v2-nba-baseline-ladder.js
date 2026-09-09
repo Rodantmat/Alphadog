@@ -62,7 +62,7 @@ async function runJob(input, env) {
     }
     await sql`
       INSERT INTO nba_score.baseline_ladder_runs (asof, slate_games, players, rows, props, history_seasons, current_season, factor_fits, role_minutes_multiplier, source_file)
-      VALUES (${asof}, ${nn(meta.slate_games)}, ${nn(meta.players)}, ${rows.length}, ${meta.props || null}, ${meta.history_seasons || null}, ${nn(meta.current_season)}, ${JSON.stringify(meta.factor_fits || {})}, ${JSON.stringify(meta.role_minutes_multiplier || {})}, ${path})
+      VALUES (${asof}, ${nn(meta.slate_games)}, ${nn(meta.players)}, ${rows.length}, string_to_array(${(meta.props || []).join(",")}, ','), string_to_array(${(meta.history_seasons || []).join(",")}, ','), ${nn(meta.current_season)}, ${JSON.stringify(meta.factor_fits || {})}, ${JSON.stringify(meta.role_minutes_multiplier || {})}, ${path})
       ON CONFLICT (asof) DO UPDATE SET slate_games=excluded.slate_games, players=excluded.players, rows=excluded.rows, props=excluded.props, history_seasons=excluded.history_seasons,
         current_season=excluded.current_season, factor_fits=excluded.factor_fits, role_minutes_multiplier=excluded.role_minutes_multiplier, source_file=excluded.source_file, loaded_at=now()
     `;
