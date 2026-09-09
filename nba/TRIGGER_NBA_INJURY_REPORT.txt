@@ -1,0 +1,7 @@
+Trigger for nba-injury-report.yml
+mode: backfill
+from: 2025-10-20
+to: 2026-04-13
+slug: 2025_26
+last_triggered_utc: 2026-09-09T22:40:00Z
+trigger_reason: first backfill of the official injury report PDF archive - 2025-26 regular season, every snapshot slot per day (statuses as known pre-game); resumable
