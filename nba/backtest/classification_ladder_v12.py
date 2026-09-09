@@ -168,6 +168,61 @@ for rt, _lo, _hi in ROLE_TIERS:
     w = _tm[(_tm["role_tier"] == rt) & _tm["won_bl"]]["ratio"].mean(); l = _tm[(_tm["role_tier"] == rt) & _tm["lost_bl"]]["ratio"].mean()
     MIN_RATIO[rt] = (float(w) if not np.isnan(w) else 0.9, float(l) if not np.isnan(l) else 0.95)
 
+# ---------------------------------------------------------------- FACTOR LAYER (baseline, static/derived)
+# Owner: the factor layer must be in from the start; nothing forced - each coefficient is FIT on TRAIN in
+# log-rate space and may land at ~0 if the factor is unneeded. Per-team as-of rolling (shift(1), last 15
+# games) stats from the committed team files, attached to each player-game as the OPPONENT's profile.
+# First fits (2025-26 / 2024-25 holdout): blocks opp paint share 0.30/0.37, steals opp TOV rate 0.27/0.26
+# (stable, transferable); pace 0.30/0.16 and 0.23/-0.03 (unstable with one training season); home and B2B ~0.
+FF, SC = [], []
+for s_ in SEASONS:
+    f = pd.DataFrame(json.loads((DATA / f"nba_backfill_team_four_factors_{SLUG[s_]}.json").read_text()).get("records", [])); f["season"] = s_; FF.append(f)
+    c = pd.DataFrame(json.loads((DATA / f"nba_backfill_team_scoring_{SLUG[s_]}.json").read_text()).get("records", [])); c["season"] = s_; SC.append(c)
+ff = pd.concat(FF, ignore_index=True); sc = pd.concat(SC, ignore_index=True)
+for df_ in (ff, sc):
+    df_["GAME_ID"] = df_["GAME_ID"].astype(str); df_["TEAM_ID"] = df_["TEAM_ID"].astype(str)
+tf = teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE", "FGA", "FG3A", "PF"]].copy()
+for c_ in ["FGA", "FG3A", "PF"]: tf[c_] = pd.to_numeric(tf[c_], errors="coerce")
+tf = tf.merge(teams_adv[["season", "TEAM_ID", "GAME_ID", "PACE", "DEF_RATING", "OFF_RATING"]], on=["season", "TEAM_ID", "GAME_ID"], how="left")
+tf = tf.merge(ff[["season", "TEAM_ID", "GAME_ID", "EFG_PCT", "FTA_RATE", "TM_TOV_PCT", "OREB_PCT", "OPP_EFG_PCT", "OPP_FTA_RATE", "OPP_TOV_PCT", "OPP_OREB_PCT"]], on=["season", "TEAM_ID", "GAME_ID"], how="left")
+tf = tf.merge(sc[["season", "TEAM_ID", "GAME_ID", "PCT_PTS_PAINT", "PCT_FGA_3PT"]], on=["season", "TEAM_ID", "GAME_ID"], how="left")
+opp_line = tf[["season", "GAME_ID", "TEAM_ID", "FGA", "FG3A", "PCT_PTS_PAINT", "PCT_FGA_3PT"]].rename(columns={"TEAM_ID": "OTHER_ID", "FGA": "o_FGA", "FG3A": "o_FG3A", "PCT_PTS_PAINT": "o_paint", "PCT_FGA_3PT": "o_3pa_share"})
+tf = tf.merge(opp_line, on=["season", "GAME_ID"], how="left"); tf = tf[tf["TEAM_ID"] != tf["OTHER_ID"]]
+tf["allowed_3pa_share"] = tf["o_3pa_share"]; tf["allowed_paint_share"] = tf["o_paint"]
+FCOLS = ["PACE", "DEF_RATING", "OFF_RATING", "EFG_PCT", "FTA_RATE", "TM_TOV_PCT", "OREB_PCT", "OPP_EFG_PCT", "OPP_FTA_RATE", "OPP_TOV_PCT", "OPP_OREB_PCT", "PCT_PTS_PAINT", "PCT_FGA_3PT", "allowed_3pa_share", "allowed_paint_share"]
+for c_ in FCOLS: tf[c_] = pd.to_numeric(tf[c_], errors="coerce")
+tf = tf.sort_values(["season", "TEAM_ID", "GAME_DATE"])
+gt = tf.groupby(["season", "TEAM_ID"])
+for c_ in FCOLS: tf["asof_" + c_] = gt[c_].transform(lambda x: x.shift(1).rolling(15, min_periods=5).mean())
+asof = tf[["season", "TEAM_ID", "GAME_ID"] + ["asof_" + c_ for c_ in FCOLS]]
+pg["OPP_ID"] = np.where(pg["TEAM_ID"] == pg["home_id"], games.set_index(["season", "GAME_ID"]).loc[list(zip(pg["season"], pg["GAME_ID"])), "away_id"].values, pg["home_id"])
+pg = pg.merge(asof[["season", "TEAM_ID", "GAME_ID", "asof_PACE"]].rename(columns={"asof_PACE": "own_pace"}), on=["season", "TEAM_ID", "GAME_ID"], how="left")
+pg = pg.merge(asof.rename(columns={"TEAM_ID": "OPP_ID", **{"asof_" + c_: "opp_" + c_ for c_ in FCOLS}}), on=["season", "OPP_ID", "GAME_ID"], how="left")
+pg["is_home"] = (pg["TEAM_ID"] == pg["home_id"]).astype(float)
+pg = pg.sort_values(["season", "PLAYER_ID", "GAME_DATE"]).reset_index(drop=True)
+pg["prev_gd"] = pg.groupby(["season", "PLAYER_ID"])["GAME_DATE"].shift(1)
+pg["is_b2b"] = [(1.0 if (isinstance(p_, date) and (g_ - p_).days == 1) else 0.0) for g_, p_ in zip(pg["GAME_DATE"], pg["prev_gd"])]
+LG = {c_: float(tf[c_].mean()) for c_ in FCOLS}
+pg["f_pace"] = np.log(np.sqrt(pg["own_pace"].fillna(LG["PACE"]) * pg["opp_PACE"].fillna(LG["PACE"])) / LG["PACE"])
+def _lf(col_, lg_): return np.log(pg[col_].fillna(lg_).clip(lower=1e-3) / lg_)
+pg["f_opp_def"] = _lf("opp_DEF_RATING", LG["DEF_RATING"])
+pg["f_opp_miss"] = np.log((1 - pg["opp_EFG_PCT"].fillna(LG["EFG_PCT"])) / (1 - LG["EFG_PCT"]))
+pg["f_opp_oreb"] = _lf("opp_OREB_PCT", LG["OREB_PCT"])
+pg["f_opp_tov"] = _lf("opp_TM_TOV_PCT", LG["TM_TOV_PCT"])
+pg["f_opp_forced"] = _lf("opp_OPP_TOV_PCT", LG["OPP_TOV_PCT"])
+pg["f_opp_ftr"] = _lf("opp_FTA_RATE", LG["FTA_RATE"])
+pg["f_opp_fouls"] = _lf("opp_OPP_FTA_RATE", LG["OPP_FTA_RATE"])
+pg["f_opp_paint"] = _lf("opp_PCT_PTS_PAINT", LG["PCT_PTS_PAINT"])
+pg["f_opp_3pa"] = _lf("opp_allowed_3pa_share", LG["allowed_3pa_share"])
+FACTORS_BY_PROP = {
+    "points": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "rebounds": ["f_pace", "f_opp_miss", "f_opp_oreb", "is_home", "is_b2b"],
+    "assists": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "threes_made": ["f_pace", "f_opp_3pa", "is_home", "is_b2b"],
+    "blocks": ["f_pace", "f_opp_paint", "is_home", "is_b2b"], "steals": ["f_pace", "f_opp_tov", "is_home", "is_b2b"],
+    "turnovers": ["f_pace", "f_opp_forced", "is_home", "is_b2b"], "fga": ["f_pace", "is_home", "is_b2b"], "fg3a": ["f_pace", "f_opp_3pa", "is_home", "is_b2b"],
+    "ftm": ["f_pace", "f_opp_fouls", "is_home", "is_b2b"], "personal_fouls": ["f_pace", "f_opp_ftr", "is_home", "is_b2b"]}
+FACTORS_ON = os.environ.get("BT_FACTORS", "1") == "1"
+FACTOR_FITS = {}
+
 
 def proj_minutes(r):
     if np.isnan(r["mu_role"]) or r["role_tier"] is None: return np.nan
