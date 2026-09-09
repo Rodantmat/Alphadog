@@ -174,3 +174,35 @@ history has the **same shape, the same snapshot semantics, and the same as-of cu
 
 Applied so far: injury report (snapshots both modes ✓), season tables (weekly as-of mode added; per-game matchups
 scraper added; end-of-season tables demoted to cross-check), preseason logs ✓.
+
+---
+
+## 9. BACKFILL COVERAGE MATRIX (owner 2026-09-09: every enrichment factor needs a two-season backfill)
+
+Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked (owner action) · — derived (no external data)
+
+| Factor | 2025-26 | 2024-25 | 2023-24 | Source / build | Notes |
+|---|---|---|---|---|---|
+| A1 injury_status_self, N1 P(plays\|Q), N2 injury class, A6 late scratch, A9 suspension | ⏳ chunk 1 | 🔧 | 🔧 (archive coverage to verify) | `scrape_nba_injury_report.py` backfill mode | parser fixed for runner extraction |
+| A2 teammate-out redistribution | ✓ | ✓ | ✓ | box-score absences + logs (derived) + PDFs for as-known | measurable now |
+| A3 return ramp | ✓ | ✓ | ✓ | logs; in baseline v30 | — |
+| A4 rest probability | ✓ logs | ✓ | ✓ | logs + PDF reason class (⏳) + national-TV flag (verify schedule field) + All-Star/All-NBA lists (static, to add) | absence prior measured |
+| A5 lineup change | ✓ starters | ⏳ | 🔧 | `scrape_nba_starter_status.py` SEASON_SLUG (nba-pergame-backfill.yml) | |
+| A7 trade window | ✓ | ✓ | ✓ | logs (team change) | — |
+| A8 rookie / two-way | ✓ preseason + PDF two-way reason | ✓ preseason | ✓ preseason | season tables `preseason_logs` | |
+| B1/B2 market spread & total, C3 game-line movement | ⛔ | ⛔ | ⛔ | ParlayAPI key INVALID_KEY (v3.2.0); Odds API key DEACTIVATED → owner renews ParlayAPI (free key per its signup) — then historical game lines; free fallback for history: Kaggle "NBA Betting Data Oct 2007–Jun 2026" (owner account) or TeamRankings odds-history scrape | derived spread is the trained fallback (in place) |
+| B3 leverage / tanking | ✓ | ✓ | ✓ | standings from logs | — |
+| B4/M1 opponent absences / primary defender | ⏳ per-game matchups (sharded) + weekly pt_defend | 🔧 | 🔧 | `scrape_nba_matchups_pergame.py`, season-tables asof_weekly | |
+| B5 OT probability | ✓ | ✓ | ✓ | derived | — |
+| C1/C2 book vs pick'em gap, prop-line movement | ⛔ | ⛔ | ⛔ | historical prop lines are paid (BigDataBall) — owner decision; live-only otherwise, calibrated in-season | |
+| C4, S1–S4 pick'em structure | ⛔ (no archive exists) | ⛔ | ⛔ | boards are not archived anywhere free; live from season start; the board scraper will archive every board from day one so the NEXT backfill exists | |
+| D1 referee crew | ✓ officials | ⏳ | 🔧 | `scrape_nba_game_officials.py` SEASON_SLUG (nba-pergame-backfill.yml); daily assignments scraper to build | |
+| D2 schedule / travel / day game / altitude | ✓ | ✓ | ✓ | logs (dates, home) + arenas | — |
+| K1 coach rotation profile | ✓ logs | ✓ | ✓ | logs + coach-by-team-by-date table (source: Wikipedia season pages "Coaching changes" tables with dates; to compile as a static file) | |
+| M2 scheme proxy | ✓ current | prior-season table (parity-safe) | prior-season | Synergy play types have no date filter → use the previous season's table for a given season | documented limitation |
+| M3 hustle, M4 clutch | ⏳ weekly as-of | ⏳ | ⏳ | season-tables asof_weekly | |
+| E1–E4 confidence | — | — | — | run metadata | — |
+
+Blocked items need the owner: (1) renew the ParlayAPI key (free) — unlocks B1/B2/C3 live and, with its historical
+endpoint, the backfill; (2) decide on BigDataBall for C1/C2 history; (3) optionally a Kaggle account for the free
+game-line history. Everything else is built or running.
