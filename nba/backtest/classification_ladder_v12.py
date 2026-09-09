@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 """
-NBA Backtest Harness — Step 2: CLASSIFICATION + LADDER CALIBRATION (canonical v17, file name kept).
+NBA Backtest Harness — Step 2: CLASSIFICATION + LADDER CALIBRATION (canonical v18; file name kept).
+
+EXTENSION (v18, 2026-09-09): blocks/steals/turnovers/fga/fg3a/ftm/personal_fouls added under the same standard.
+  blocks+steals at lambda=0.5 shift mode with DATA-FIT prior strength (STL k=125, TOV k=60: k_MoM relative
+  to points STL 4.9x, TOV 2.5x, BLK 1.7x; top-decile steals players regress 17% over the next 20 games):
+  2025-26 ladder blocks 0.8 / steals 1.4; 0 band x direction x rung cells over 2.5pp; conf bands 3 of 26
+  miss (blocks more 70-75 -4.3 n=3900 = P(0 blocks) under-predicted for ~1.5bpg players, persists at any
+  lambda; blocks less 75-80 -2.6 thin; steals less 60-65 +3.6). Holdout 2024-25 shows the same signs.
+  turnovers/fga/fg3a/ftm/personal_fouls: configured, NOT yet run.
+REJECTED ON DATA: player-own L0 cells (n=40-80; regression-noise dominated; ELITE rebounds +/-7.7). Off.
+SHIFT_LAMBDA = ordering strength per prop in shift mode (1.0 full parametric ordering, 0 replacement).
 
 FINAL LEG-LEVEL RESULT (2026-09-09), same configuration on BOTH seasons, no re-tuning:
                          2025-26 (2 seasons history)   2024-25 holdout (2023-24 history only)
