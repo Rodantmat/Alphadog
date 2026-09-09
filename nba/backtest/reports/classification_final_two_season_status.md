@@ -36,8 +36,14 @@ WHAT CHANGED SINCE v12 (each verified on data before adoption):
   = binomial); attempts overdispersion (Poisson, iod ~1.0).
 
 REMAINING (honest):
-  1. Rebounds ELITE tails (n=699-1071, ~10 players): mean right, shape +/-3..5 at outer rungs -> fit dispersion per band for rebounds.
+  1. Rebounds ELITE tails (n=699-1071, ~10 players): mean right, shape +/-3..5 at outer rungs (~2.9 sigma). Tried: hierarchical fallback (helped +7.9 -> +3.6), band cell (structural, kept), dispersion per band (rebounds iod is FLAT 1.25-1.35 at every level - not the cause), player-own L0 cells (REJECTED: n=40-80 regression-noise dominated, made it +/-7.7). Left for in-season per-rung Platt once pooled n >= 1000.
   2. Assists HIGH low rungs (~3.3): left skew (hurdle) the research predicted; NegBin cannot produce it.
   3. Thinnest 'less' bands (assists 60-65, 3PM 50-55): n too small for Platt to act in-season.
+
+EXTENSION PASS (v18): blocks + steals run under the same standard.
+  - Shift mode with ordering strength lambda=0.5 (pure replacement: within-rung ordering wrong, blocks 55-60 -6.8; pure shift lambda=1: top bands over-confident, blocks 75-80 -8.0). Dampened ordering is the evidence-chosen middle.
+  - DATA-FIT prior strength: k_MoM relative to points = STL 4.9x, TOV 2.5x, BLK 1.7x; top-decile steals players regress 17% over the next 20 games (blocks 6%, rebounds 4%). STL k 60 -> 125, TOV k 40 -> 60. Steals 'more' bands went clean.
+  - 2025-26: ladder blocks 0.8 / steals 1.4; 0 band x direction x rung cells over 2.5pp; conf bands 3 of 26 miss: blocks more 70-75 -4.3 (n=3900, persists at any lambda -> P(0 blocks) under-predicted for ~1.5 bpg players; next target), blocks less 75-80 -2.6 (n=1059), steals less 60-65 +3.6. 2024-25 holdout: same signs -> structural.
+  - turnovers / fga / fg3a / ftm / personal_fouls: configured in the harness, not yet run.
 
 Files: nba/backtest/classification_ladder_v12.py (canonical body = v17; env: BT_TRAIN, BT_TEST, BT_PROPS, BT_BAND_CELLS, BT_SHIFT_MODE, BT_KCELL_3PM, BT_TAG); nba/backtest/bandfit.py; workflow runs both seasons per prop pair and commits classification_final_<season>_<props>.{json,md}.
