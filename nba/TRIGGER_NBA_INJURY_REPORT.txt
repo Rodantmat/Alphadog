@@ -1,4 +1,4 @@
 Trigger for nba-injury-report.yml
 mode: probe
-last_triggered_utc: 2026-09-10T00:45:00Z
-trigger_reason: DIAGNOSTIC - the 2025-26 backfill scanned all 176 days and found ZERO snapshots; probe what the CDN returns to the runner (proxy vs direct) for a URL known to exist
+last_triggered_utc: 2026-09-10T00:55:00Z
+trigger_reason: DIAGNOSTIC 2 - show pdfplumber's extracted text and parsed row count on the runner (backfill found the PDFs but produced zero rows)
