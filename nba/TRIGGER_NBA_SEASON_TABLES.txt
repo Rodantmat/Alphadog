@@ -1,7 +1,7 @@
 Trigger for nba-season-tables.yml
 seasons_n: 3
-tables: pt_defend,hustle,clutch
-mode: asof_weekly
-matchups: backfill:2025-26
-last_triggered_utc: 2026-09-09T23:30:00Z
-trigger_reason: PARITY backfill - weekly as-of snapshots (DateTo) for defended FG% / hustle / clutch on 3 seasons, and per-game matchups (boxscorematchupsv3) for 2025-26 with a schema probe on the first game
+tables: all_players
+mode: season
+matchups: backfill:2024-25
+last_triggered_utc: 2026-09-09T23:55:00Z
+trigger_reason: player index (commonallplayers, all seasons) for the injury-report name join + per-game matchups backfill 2024-25 (queued behind the running parity job)
