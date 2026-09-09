@@ -1,5 +1,7 @@
 # NBA Deep Documentation Checkpoint — 2026-09-09
 
+*Realignment rule: open `nba/NBA_COMPASS.md` first — it maps every question to the document and section that answers it. This checkpoint is the deepest record of the baseline phase.*
+
 *Read this first in any new NBA session. It consolidates everything built between the 2026-09-04 checkpoint
 (`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md`: infrastructure, 30 tables, 19 workers, sources, bugs) and
 2026-09-09 21:00 UTC. Nothing here is re-derivable from the chat logs faster than reading this file.*
