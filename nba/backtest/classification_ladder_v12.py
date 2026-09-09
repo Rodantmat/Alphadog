@@ -543,6 +543,18 @@ for prop, grp in rel.groupby("prop"):
     for off, g2 in grp.groupby("offset"):
         summary.append({"prop": prop, "offset": int(off), "n": int(len(g2)), "mean_pred": round(float(g2["p_over"].mean()), 4), "actual_over": round(float(g2["actual"].mean()), 4), "gap_pp": round(100 * (float(g2["actual"].mean()) - float(g2["p_over"].mean())), 2), "brier": round(brier(g2["p_over"].values, g2["actual"].values), 4), "brier_param_only": round(brier(g2["p_param"].values, g2["actual"].values), 4), "logloss": round(logloss(g2["p_over"].values, g2["actual"].values), 4), "emp_share": round(float(g2["used_emp"].mean()), 3)})
 summary = pd.DataFrame(summary)
+# SEASON-SHAPE table: calibration + coverage by month of the test season (opening weeks and April are their own regimes)
+_pg_test = pg[pg["season"].isin(TEST)].copy(); _pg_test["ym"] = pd.to_datetime(_pg_test["GAME_DATE"]).dt.to_period("M").astype(str)
+_games_by_month = _pg_test.groupby("ym").size()
+mb = []
+for (prop, m), g2 in rel.groupby(["prop", "month"]):
+    anchor = g2[g2["offset"] == 0]
+    legs_ = pd.concat([g2.assign(p_side=g2["p_over"], hit=g2["actual"]), g2.assign(p_side=1 - g2["p_over"], hit=1 - g2["actual"])])
+    legs_ = legs_[legs_["p_side"] >= 0.5]; legs_["band"] = pd.cut(legs_["p_side"], [0.5, 0.6, 0.7, 0.8, 0.9, 1.01], right=False)
+    bb = legs_.groupby("band", observed=True).agg(n=("hit", "size"), p=("p_side", "mean"), h=("hit", "mean")); bb = bb[bb["n"] >= 300]
+    mb.append({"prop": prop, "month": m, "projected": int(len(anchor)), "player_games": int(_games_by_month.get(m, 0)), "coverage": round(len(anchor) / max(1, _games_by_month.get(m, 1)), 3),
+               "anchor_gap_pp": round(100 * (anchor["actual"].mean() - anchor["p_over"].mean()), 2), "worst_band_gap_pp": round(float((100 * (bb["h"] - bb["p"])).abs().max()) if len(bb) else float("nan"), 1), "platt_share": round(float((g2["p_over"] != g2["p_raw"]).mean()), 2)})
+month_table = pd.DataFrame(mb).sort_values(["prop", "month"])
 rel["bin"] = pd.cut(rel["p_over"], bins=np.linspace(0, 1, 11), include_lowest=True)
 reliability = rel.groupby(["prop", "bin"], observed=True).agg(n=("actual", "size"), mean_pred=("p_over", "mean"), actual=("actual", "mean")).reset_index()
 reliability["gap_pp"] = 100 * (reliability["actual"] - reliability["mean_pred"])
