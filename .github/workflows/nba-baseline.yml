@@ -46,9 +46,14 @@ jobs:
           BT_ASOF: ${{ steps.asof.outputs.asof }}
           BT_REPLAY: ${{ steps.asof.outputs.replay }}
         run: |
-          for pair in points,rebounds assists,threes_made blocks,steals turnovers,personal_fouls fga,fg3a ftm; do
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py || echo "pair $pair failed"
+          done
+          for pair in threes_made,fg3a fga,ftm personal_fouls; do
             BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py || echo "pair $pair failed"
           done
+          python nba/baseline/build_combos_ladder.py || echo "combos failed"
+          rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
           python - <<'EOF'
           import json, glob, os
           asof = os.environ["BT_ASOF"]; rows = []; meta = None
