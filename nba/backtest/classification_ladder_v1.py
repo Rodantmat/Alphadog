@@ -1,6 +1,24 @@
 #!/usr/bin/env python3
 """
-NBA Backtest Harness — Step 2: CLASSIFICATION + LADDER CALIBRATION (canonical, v1 = internal v9).
+NBA Backtest Harness — Step 2: CLASSIFICATION + LADDER CALIBRATION (canonical, currently internal v12).
+
+LEG-LEVEL STATUS (v12, 2026-09-09, out-of-sample 2025-26): points and rebounds meet the ladder
+standard (max rung gap 0.7pp, confidence bands within ~2pp both sides); assists close (1.1pp);
+THREES_MADE NOT YET at standard ('more' 60-65 band -4.6pp; LOW band P(>=1) +3.3pp). Worst-cell
+count 39 -> 28 across v10-v12. See nba/backtest/reports/classification_v12_leg_level.md for the
+full status and the OPEN items (owner directive: do not move on until fixed).
+  v10 hierarchical empirical fallback (tier x role x rung -> band x role x rung -> band x rung) and
+      variation band added to the Platt key (with band-level pool fallback).
+  v11 3PM compound model (tier on 3PA/36; makes|attempts Binomial). Did not fix the 60-65 band.
+      Data checks: makes|attempts ARE binomial (var ratio 0.94; beta-binomial rejected before
+      building); attempts are Poisson (iod ~1.0).
+  v12 k-sweep on the VALIDATION season showed bias monotone in the band at any single shrinkage k;
+      per-(prop, band) mean-ratio cells fit on 2024-25 (bandfit.py), shrunk by cell n, applied here.
+
+NOTE: the repo copy of this file is the v9 body with this v12 header; the v12 body (hierarchical
+empirical tables, band-aware Platt with pools, compound 3PM, band mean-ratio cells, leg-level report,
+stage-1 pickle) is being pushed in the same session as nba/backtest/classification_ladder_v12.py.
+Use v12 for all further work.
 
 Objective (owner): "a formula where the real outcomes fit the ladder most of the time." Metric:
 calibration on the ladder - predicted P(over) vs actual at every rung (anchor +/- 6), per prop,
