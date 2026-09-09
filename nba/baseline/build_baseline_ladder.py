@@ -60,7 +60,62 @@ if v_players:
     players = pd.concat([players, pd.DataFrame(v_players)], ignore_index=True)
     teams = pd.concat([teams, pd.DataFrame(v_teams)], ignore_index=True)
     teams_adv = pd.concat([teams_adv, pd.DataFrame(v_teams)], ignore_index=True)
-print(f"slate {ASOF}: {len(_slate)} games, {len(v_players)} virtual player rows")''')
+print(f"slate {ASOF}: {len(_slate)} games, {len(v_players)} virtual player rows")
+# DAY-BEFORE INJURY REPORT (baseline version of A1/A2, owner reassignment 2026-09-09): statuses AS KNOWN at the baseline
+# cutoff (game day 09:00 ET, nba/nba_asof.py) from the official report snapshots. Out/Doubtful -> removed from the slate;
+# Questionable/Probable/Available -> kept (P(plays) weighting comes with the measured priors). Teammates of an OUT player
+# get a with/without MINUTES multiplier measured from their own history (games the OUT player missed vs played).
+# Production reads nba_injury_report_current.json; replay reads the season backfill file. No file -> no-op (fallback).
+INJ_OUT_IDS, INJ_STATUS = {}, {}
+if os.environ.get("BT_INJURY", "1") == "1" and v_players:
+    import sys as _sys, unicodedata as _ud, re as _re
+    _sys.path.insert(0, "nba")
+    try:
+        from nba_asof import status_asof, cutoff_ts, BASELINE_CUTOFF_LOCAL
+        _cand = [DATA / f"nba_injury_report_{TEST[0].replace('-', '_')}.json", DATA / "nba_injury_report_current.json"]
+        _rows = []
+        for _p in _cand:
+            if _p.exists(): _rows += json.loads(_p.read_text()).get("rows", [])
+        _st = status_asof(_rows, str(ASOF), cutoff_ts(str(ASOF), BASELINE_CUTOFF_LOCAL)) if _rows else {}
+        def _norm(x): return _re.sub(r"[^a-z]", "", _ud.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower())
+        _idx = json.loads((DATA / "nba_all_players.json").read_text()).get("records", []) if (DATA / "nba_all_players.json").exists() else []
+        _name_to_id = {_norm(r_.get("DISPLAY_LAST_COMMA_FIRST")): str(r_["PERSON_ID"]) for r_ in _idx}
+        _TEAM_TRI = {"Atlanta Hawks": "ATL", "Boston Celtics": "BOS", "Brooklyn Nets": "BKN", "Charlotte Hornets": "CHA", "Chicago Bulls": "CHI", "Cleveland Cavaliers": "CLE", "Dallas Mavericks": "DAL", "Denver Nuggets": "DEN", "Detroit Pistons": "DET", "Golden State Warriors": "GSW", "Houston Rockets": "HOU", "Indiana Pacers": "IND", "LA Clippers": "LAC", "Los Angeles Clippers": "LAC", "Los Angeles Lakers": "LAL", "Memphis Grizzlies": "MEM", "Miami Heat": "MIA", "Milwaukee Bucks": "MIL", "Minnesota Timberwolves": "MIN", "New Orleans Pelicans": "NOP", "New York Knicks": "NYK", "Oklahoma City Thunder": "OKC", "Orlando Magic": "ORL", "Philadelphia 76ers": "PHI", "Phoenix Suns": "PHX", "Portland Trail Blazers": "POR", "Sacramento Kings": "SAC", "San Antonio Spurs": "SAS", "Toronto Raptors": "TOR", "Utah Jazz": "UTA", "Washington Wizards": "WAS"}
+        _tri_to_tid = {}
+        for g_ in _slate: _tri_to_tid[g_.get("home_team_tricode")] = str(g_["home_team_id"]); _tri_to_tid[g_.get("away_team_tricode")] = str(g_["away_team_id"])
+        _unmatched = 0
+        for (team_, name_), (status_, rc_, ts_) in _st.items():
+            pid_ = _name_to_id.get(_norm(name_)); tid_ = _tri_to_tid.get(_TEAM_TRI.get(team_))
+            if pid_ is None: _unmatched += 1; continue
+            INJ_STATUS[(tid_, pid_)] = (status_, rc_)
+            if status_ in ("Out", "Doubtful"): INJ_OUT_IDS.setdefault(tid_, set()).add(pid_)
+        _n_before = len(players)
+        _drop = players["GAME_DATE"].eq(ASOF) & players.apply(lambda r_: r_["PLAYER_ID"] in INJ_OUT_IDS.get(r_["TEAM_ID"], set()), axis=1)
+        players = players[~_drop].reset_index(drop=True)
+        print(f"injury report at cutoff: {len(_st)} statuses, {sum(len(v) for v in INJ_OUT_IDS.values())} Out/Doubtful on the slate, {_n_before - len(players)} virtual rows removed, {_unmatched} names unmatched")
+    except Exception as _exc:  # noqa: BLE001
+        print("injury report step skipped:", _exc)''')
+s = rep(s, '''    pg["proj_min"] = pg["proj_min"] * pg["ramp_mult"].clip(0.5, 1.05)''',
+'''    pg["proj_min"] = pg["proj_min"] * pg["ramp_mult"].clip(0.5, 1.05)
+# WITH/WITHOUT minutes multiplier for teammates of OUT players (measured per player from own history; shrunk by n)
+if INJ_OUT_IDS:
+    _hist = pg[(pg["GAME_DATE"] < ASOF) & (pg["season"] == TEST[0]) & pg["competitive"]]
+    _pres = _hist.groupby(["TEAM_ID", "GAME_ID"])["PLAYER_ID"].apply(set).to_dict()
+    _mult = {}
+    for tid_, outs_ in INJ_OUT_IDS.items():
+        _tg = _hist[_hist["TEAM_ID"] == tid_]
+        if _tg.empty: continue
+        _wo_games = {g_ for (t_, g_), s_ in _pres.items() if t_ == tid_ and any(o_ not in s_ for o_ in outs_)}
+        _w_games = {g_ for (t_, g_), s_ in _pres.items() if t_ == tid_ and all(o_ in s_ for o_ in outs_)}
+        for pid_, grp_ in _tg.groupby("PLAYER_ID"):
+            if pid_ in outs_: continue
+            mw = grp_[grp_["GAME_ID"].isin(_w_games)]["MINF"]; mwo = grp_[grp_["GAME_ID"].isin(_wo_games)]["MINF"]
+            if len(mwo) >= 3 and len(mw) >= 3 and mw.mean() > 0:
+                k_ = len(mwo) / (len(mwo) + 5.0); _mult[(tid_, pid_)] = float(np.clip(1 + k_ * (mwo.mean() / mw.mean() - 1), 0.75, 1.4))
+    _is_v = pg["GAME_DATE"].eq(ASOF)
+    pg["inj_min_mult"] = [ _mult.get((t_, p_), 1.0) if v_ else 1.0 for t_, p_, v_ in zip(pg["TEAM_ID"], pg["PLAYER_ID"], _is_v)]
+    pg["proj_min"] = pg["proj_min"] * pg["inj_min_mult"]
+    print(f"with/without minutes multipliers applied to {sum(1 for v in _mult.values() if v != 1.0)} teammates; mean {np.mean(list(_mult.values())) if _mult else 1:.3f}")''')
 s = rep(s, '''for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL", "TOV", "FGA", "FTM", "FTA"]: players[c] = pd.to_numeric(players[c], errors="coerce").fillna(0)''',
 '''for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL", "TOV", "FGA", "FTM", "FTA"]:
     players[c] = pd.to_numeric(players[c], errors="coerce"); _h = players["GAME_DATE"] < ASOF
