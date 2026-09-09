@@ -226,10 +226,14 @@ for per in PERIODS:
         def param_p_over(fr, off):
             line_ = (fr["anchor"] + off).clip(lower=0.5); k_ = np.floor(line_).astype(int); io = fr["iod"].values
             if per in ("q4", "h2"):
-                pb_ = fr[f"pb_{per}"].values
-                pn_ = np.array([_cdf(kk, m, m * i) for kk, m, i in zip(k_, fr["mean_norm"], io)])
-                pbw = np.array([_cdf(kk, m, m * i) for kk, m, i in zip(k_, fr["mean_blow"], io)])
-                return 1 - ((1 - pb_) * pn_ + pb_ * pbw)
+                # P(under) = sum_state P(state) * [ sit_state * P(under | sit) + (1 - sit_state) * P(under | plays in state) ]
+                p_sit = np.array([_cdf(kk, m, max(m * 1.2, m + 1e-6)) for kk, m in zip(k_, fr["mean_sit"])])
+                tot = np.zeros(len(fr))
+                for st in ("close", "medium", "blowout"):
+                    ps = fr[f"p_{st}_{per}"].values; sit = fr[f"sit_{st}_{per}"].values
+                    pp_ = np.array([_cdf(kk, m, m * i) for kk, m, i in zip(k_, fr[f"mean_{st}"], io)])
+                    tot += ps * (sit * p_sit + (1 - sit) * pp_)
+                return 1 - tot
             return 1 - np.array([_cdf(kk, m, v) for kk, m, v in zip(k_, fr["mean"], fr["var"])])
         for off in range(-LADDER_STEPS, LADDER_STEPS + 1): d[f"pp_{off}"] = param_p_over(d, off)
         test_all = d[d["season"].isin(TEST)]
