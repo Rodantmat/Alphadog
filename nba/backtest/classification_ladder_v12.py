@@ -526,7 +526,7 @@ vb_conf = legs[legs["p_side"] >= 0.5].groupby(["prop", "var_band", "side", "conf
 vb_conf["gap_pp"] = 100 * (vb_conf["hit_rate"] - vb_conf["mean_pred"])
 vb_conf_worst = vb_conf[(vb_conf["gap_pp"].abs() > 2.5) & (vb_conf["n"] >= 500)].sort_values("gap_pp", key=lambda x: -x.abs())
 
-report = {"leg_level": {"confidence_bands_by_prop_side": json.loads(conf.astype({"conf_band": str}).to_json(orient="records")),
+report = {"factor_fits": FACTOR_FITS, "leg_level": {"confidence_bands_by_prop_side": json.loads(conf.astype({"conf_band": str}).to_json(orient="records")),
                         "variation_x_direction_x_rung": json.loads(vbd.to_json(orient="records")),
                         "worst_cells_gap_gt_2p5_n_ge_500": json.loads(worst.to_json(orient="records")),
                         "variation_x_direction_x_confidence_worst": json.loads(vb_conf_worst.astype({"conf_band": str}).to_json(orient="records"))},
