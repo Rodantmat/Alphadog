@@ -1,4 +1,7 @@
 Trigger for nba-injury-report.yml
-mode: probe
-last_triggered_utc: 2026-09-10T00:55:00Z
-trigger_reason: DIAGNOSTIC 2 - show pdfplumber's extracted text and parsed row count on the runner (backfill found the PDFs but produced zero rows)
+mode: backfill
+from: 2025-10-20
+to: 2026-04-13
+slug: 2025_26
+last_triggered_utc: 2026-09-10T01:10:00Z
+trigger_reason: RERUN 2025-26 backfill with the space-insensitive parser (pdfplumber drops intra-cell spaces on the runner; verified fix on the collapsed text) - chunk 1 of 2 (100 days/run; the zero-row prior state is discarded automatically)
