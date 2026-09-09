@@ -32,19 +32,34 @@ jobs:
       - name: Install tools
         run: python -m pip install --upgrade pip curl_cffi
 
-      - name: "Resolve options from trigger file (seasons_n and tables lines)"
+      - name: "Resolve options from trigger file (seasons_n, tables, mode, matchups lines)"
         id: cfg
         run: |
           f=nba/TRIGGER_NBA_SEASON_TABLES.txt
           N=$(grep -E '^seasons_n:' $f 2>/dev/null | head -1 | sed 's/^seasons_n:[[:space:]]*//'); T=$(grep -E '^tables:' $f 2>/dev/null | head -1 | sed 's/^tables:[[:space:]]*//')
-          echo "seasons_n=${N:-3}" >> $GITHUB_OUTPUT; echo "tables=$T" >> $GITHUB_OUTPUT
+          M=$(grep -E '^mode:' $f 2>/dev/null | head -1 | sed 's/^mode:[[:space:]]*//'); G=$(grep -E '^matchups:' $f 2>/dev/null | head -1 | sed 's/^matchups:[[:space:]]*//')
+          echo "seasons_n=${N:-3}" >> $GITHUB_OUTPUT; echo "tables=$T" >> $GITHUB_OUTPUT; echo "mode=${M:-season}" >> $GITHUB_OUTPUT; echo "matchups=$G" >> $GITHUB_OUTPUT
 
-      - name: Scrape season tables
+      - name: Scrape season tables (season or asof_weekly mode)
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           SEASONS_N: ${{ steps.cfg.outputs.seasons_n }}
           TABLES: ${{ steps.cfg.outputs.tables }}
+          MODE: ${{ steps.cfg.outputs.mode }}
         run: python nba/scrape_nba_season_tables.py
+        continue-on-error: true
+
+      - name: Per-game matchups (matchups line = backfill:<season> or delta)
+        if: steps.cfg.outputs.matchups != ''
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          M="${{ steps.cfg.outputs.matchups }}"
+          case "$M" in
+            backfill:*) MATCHUPS_MODE=backfill SEASON="${M#backfill:}" python nba/scrape_nba_matchups_pergame.py ;;
+            delta) MATCHUPS_MODE=delta python nba/scrape_nba_matchups_pergame.py ;;
+          esac
+        continue-on-error: true
 
       - name: Commit to main
         run: |
