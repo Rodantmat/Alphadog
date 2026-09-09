@@ -113,7 +113,7 @@ def main():
     OUTPUT_PATH.write_text(json.dumps({"rows": all_rows}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at,
-        "season": "2025-26",
+        "season": _SLUG.replace("_", "-"),
         "method": "boxscoretraditionalv3",
         "games_input": len(game_ids),
         "games_succeeded": len(game_ids) - len(errors),
