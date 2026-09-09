@@ -60,6 +60,24 @@ jobs:
         run: BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=ext BT_PROPS=blocks,steals python nba/backtest/classification_ladder_v12.py
         continue-on-error: true
 
+      - name: Extension - turnovers+fouls, both seasons
+        run: |
+          BT_TAG=ext BT_PROPS=turnovers,personal_fouls python nba/backtest/classification_ladder_v12.py || true
+          BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=ext BT_PROPS=turnovers,personal_fouls python nba/backtest/classification_ladder_v12.py || true
+        continue-on-error: true
+
+      - name: Extension - fga+fg3a, both seasons
+        run: |
+          BT_TAG=ext BT_PROPS=fga,fg3a python nba/backtest/classification_ladder_v12.py || true
+          BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=ext BT_PROPS=fga,fg3a python nba/backtest/classification_ladder_v12.py || true
+        continue-on-error: true
+
+      - name: Extension - ftm, both seasons
+        run: |
+          BT_TAG=ext BT_PROPS=ftm python nba/backtest/classification_ladder_v12.py || true
+          BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=ext BT_PROPS=ftm python nba/backtest/classification_ladder_v12.py || true
+        continue-on-error: true
+
       - name: Commit reports to main
         run: |
           set -euo pipefail
