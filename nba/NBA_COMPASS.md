@@ -49,6 +49,7 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 5. Standard: "extremely accurate" = calibrated at the leg level (band × direction × rung, and confidence bands that hit their stated rate) on BOTH seasons with the same recipe. A calibrated 75% still loses one time in four.
 6. One fixed recipe; every value (tier cutpoints, cells, Platt, HCA, blowout lookup, minutes ratios, dispersion, zero-adjust, factor betas, phase ratios) is computed in-run from history as of the day. Nothing pasted.
 7. Goblins/Demons: deferred (board-dependent). Historical prop lines: not free (BigDataBall; owner decision).
+7b. BASELINE/ENRICHMENT SPLIT (owner, 2026-09-09): anything derivable from logs/splits/schedule/season tables as of the morning build, or PUBLISHED BEFORE it (official day-before injury report at 5 PM local; referee assignments ~9 AM ET), belongs in the BASELINE; enrichment prices only the same-day residual; board and market are separate stages. Factor lock closed after 5 passes: `NBA_ENRICHMENT_FACTOR_LOCK.md`, config keys `enrichment_factor_lock_status`, `enrichment_subfactor_tree`, `baseline_reassignment_from_enrichment`.
 
 **Data**
 8. Sources: `stats.nba.com` via `curl_cffi` on GitHub Actions (Cloudflare egress is blocked by nba.com); committed JSON in `nba/data/`; workers read raw GitHub → Postgres (Hyperdrive). One file per (key, season) — combined files exceeded GitHub's 100 MB limit.
