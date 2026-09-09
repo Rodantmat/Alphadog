@@ -53,7 +53,34 @@ if v_players:
     teams = pd.concat([teams, pd.DataFrame(v_teams)], ignore_index=True)
     teams_adv = pd.concat([teams_adv, pd.DataFrame([{"season": r_["season"], "TEAM_ID": r_["TEAM_ID"], "GAME_ID": r_["GAME_ID"]} for r_ in v_teams])], ignore_index=True)
 full["MINF"] = full["MIN"].apply(to_min)
-print(f"slate {ASOF_D}: {len(_slate)} games, {len(v_players)} virtual player rows")''')
+print(f"slate {ASOF_D}: {len(_slate)} games, {len(v_players)} virtual player rows")
+# DAY-BEFORE INJURY REPORT (same rule as the single-stat builder): Out/Doubtful at the baseline cutoff leave the slate.
+if os.environ.get("BT_INJURY", "1") == "1" and v_players:
+    import sys as _sys, unicodedata as _ud, re as _re
+    _sys.path.insert(0, "nba")
+    try:
+        from nba_asof import status_asof, cutoff_ts, BASELINE_CUTOFF_LOCAL
+        _rows = []
+        for _p in (DATA / f"nba_injury_report_{TEST[0].replace('-', '_')}.json", DATA / "nba_injury_report_current.json"):
+            if _p.exists(): _rows += json.loads(_p.read_text()).get("rows", [])
+        _st = status_asof(_rows, str(ASOF_D), cutoff_ts(str(ASOF_D), BASELINE_CUTOFF_LOCAL)) if _rows else {}
+        def _norm(x): return _re.sub(r"[^a-z]", "", _ud.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower())
+        _idx = json.loads((DATA / "nba_all_players.json").read_text()).get("records", []) if (DATA / "nba_all_players.json").exists() else []
+        _name_to_id = {_norm(r_.get("DISPLAY_LAST_COMMA_FIRST")): str(r_["PERSON_ID"]) for r_ in _idx}
+        _TEAM_TRI = {"Atlanta Hawks": "ATL", "Boston Celtics": "BOS", "Brooklyn Nets": "BKN", "Charlotte Hornets": "CHA", "Chicago Bulls": "CHI", "Cleveland Cavaliers": "CLE", "Dallas Mavericks": "DAL", "Denver Nuggets": "DEN", "Detroit Pistons": "DET", "Golden State Warriors": "GSW", "Houston Rockets": "HOU", "Indiana Pacers": "IND", "LA Clippers": "LAC", "Los Angeles Clippers": "LAC", "Los Angeles Lakers": "LAL", "Memphis Grizzlies": "MEM", "Miami Heat": "MIA", "Milwaukee Bucks": "MIL", "Minnesota Timberwolves": "MIN", "New Orleans Pelicans": "NOP", "New York Knicks": "NYK", "Oklahoma City Thunder": "OKC", "Orlando Magic": "ORL", "Philadelphia 76ers": "PHI", "Phoenix Suns": "PHX", "Portland Trail Blazers": "POR", "Sacramento Kings": "SAC", "San Antonio Spurs": "SAS", "Toronto Raptors": "TOR", "Utah Jazz": "UTA", "Washington Wizards": "WAS"}
+        _tri_to_tid = {}
+        for g_ in _slate: _tri_to_tid[g_.get("home_team_tricode")] = str(g_["home_team_id"]); _tri_to_tid[g_.get("away_team_tricode")] = str(g_["away_team_id"])
+        _outs = set()
+        for (team_, name_), (status_, rc_, ts_) in _st.items():
+            if status_ in ("Out", "Doubtful"):
+                pid_ = _name_to_id.get(_norm(name_)); tid_ = _tri_to_tid.get(_TEAM_TRI.get(team_))
+                if pid_ is not None and tid_ is not None: _outs.add((tid_, pid_))
+        _n0 = len(full)
+        _drop = (full["GAME_DATE"] == ASOF_D) & pd.Series([(t_, p_) in _outs for t_, p_ in zip(full["TEAM_ID"], full["PLAYER_ID"])], index=full.index)
+        full = full[~_drop].reset_index(drop=True)
+        print(f"injury report at cutoff: {len(_st)} statuses, {len(_outs)} Out/Doubtful on the slate, {_n0 - len(full)} virtual rows removed")
+    except Exception as _exc:  # noqa: BLE001
+        print("injury report step skipped:", _exc)''')
 s = rep(s, '''            hist = d[(d["season"].isin(TRAIN) | (d["ym"] < month)) & d["tier"].notna()]''',
 '''            _t0 = test["GAME_DATE"].min()
             hist = d[(d["GAME_DATE"] < _t0) & d["tier"].notna()]''')
