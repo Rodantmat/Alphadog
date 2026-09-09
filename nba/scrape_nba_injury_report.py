@@ -143,6 +143,16 @@ def main():
                 print(f"[{label}] status={r.status_code} len={len(r.content)} ctype={r.headers.get('content-type')} head={r.content[:12]!r}")
                 for h in ("server", "x-cache", "content-encoding", "location"):
                     if h in r.headers: print(f"   {h}: {r.headers[h]}")
+                if r.status_code == 200 and label == "direct":
+                    txt = extract_text(r.content); lines = [ln for ln in txt.splitlines() if ln.strip()]
+                    print(f"   pdfplumber: {len(txt)} chars, {len(lines)} lines; first 25 lines:"); [print("   |", ln[:140]) for ln in lines[:25]]
+                    rows = parse_report(txt, "probe"); print(f"   parsed rows: {len(rows)}")
+                    try:
+                        import pdfplumber, io as _io
+                        with pdfplumber.open(_io.BytesIO(r.content)) as pdf:
+                            tb = pdf.pages[0].extract_table(); print(f"   extract_table page1: {len(tb) if tb else 0} rows; first: {tb[:3] if tb else None}")
+                    except Exception as e2:  # noqa: BLE001
+                        print("   extract_table failed:", e2)
             except Exception as exc:  # noqa: BLE001
                 print(f"[{label}] EXC {type(exc).__name__}: {exc}")
         return
