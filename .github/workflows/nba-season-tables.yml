@@ -61,16 +61,17 @@ jobs:
           esac
         continue-on-error: true
 
-      - name: Commit to main
+      - name: Commit to main (small files first, then matchup shards with a size guard)
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/nba_matchups_*.json nba/data/nba_pt_defend_*.json nba/data/nba_hustle_*.json nba/data/nba_clutch_*.json nba/data/nba_preseason_logs_*.json nba/data/nba_season_tables_summary.json nba/data/nba_season_tables_asof_summary.json nba/data/nba_matchups_pergame_*.json nba/data/nba_all_players.json 2>/dev/null || true
-          if git diff --cached --quiet; then echo "No season table changes."; exit 0; fi
-          git commit -m "NBA season tables (matchups/defend/hustle/clutch/preseason) [skip ci]"
-          for i in 1 2 3 4 5; do
-            if git push origin HEAD:main; then exit 0; fi
-            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+          push() { for i in 1 2 3 4 5; do if git push origin HEAD:main; then return 0; fi; git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2)); done; return 1; }
+          git add nba/data/nba_matchups_20*.json nba/data/nba_pt_defend_*.json nba/data/nba_hustle_*.json nba/data/nba_clutch_*.json nba/data/nba_preseason_logs_*.json nba/data/nba_season_tables_summary.json nba/data/nba_season_tables_asof_summary.json nba/data/nba_all_players.json nba/data/nba_matchups_pergame_probe.json nba/data/nba_matchups_pergame_*_index.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then git commit -m "NBA season tables (as-of/defend/hustle/clutch/preseason/index) [skip ci]"; push; fi
+          for f in nba/data/nba_matchups_pergame_*_20*.json; do
+            [ -f "$f" ] || continue
+            sz=$(stat -c %s "$f"); if [ "$sz" -gt 95000000 ]; then echo "SKIP $f ($sz bytes > 95 MB)"; continue; fi
+            git add "$f"; if ! git diff --cached --quiet; then git commit -m "NBA per-game matchups shard $(basename $f) [skip ci]"; push; fi
           done
-          exit 1
+          echo "commit step done"
