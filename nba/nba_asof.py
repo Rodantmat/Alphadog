@@ -59,6 +59,17 @@ def table_asof(snapshots, game_date):
     return max(cands, key=lambda s: s["asof"]) if cands else None
 
 
+def load_matchups(data_dir, slug):
+    """Reassemble the columnar monthly shards nba_matchups_pergame_<slug>_<YYYY-MM>.json into row dicts."""
+    import json
+    from pathlib import Path
+    rows = []
+    for p in sorted(Path(data_dir).glob(f"nba_matchups_pergame_{slug}_20*.json")):
+        d = json.loads(p.read_text()); cols = d["columns"]
+        rows += [dict(zip(cols, r)) for r in d["rows"]]
+    return rows
+
+
 def aggregate_matchups_asof(rows, game_date, keys=("personIdOff", "personIdDef"), sum_cols=("matchupMinutes", "partialPossessions", "playerPoints", "matchupFieldGoalsAttempted", "matchupFieldGoalsMade", "matchupThreePointersAttempted", "matchupThreePointersMade", "matchupFreeThrowsAttempted", "matchupFreeThrowsMade", "matchupAssists", "matchupTurnovers", "shootingFouls")):
     """Sum per-game matchup rows with GAME_DATE < game_date into season-to-date pairings."""
     agg = {}
