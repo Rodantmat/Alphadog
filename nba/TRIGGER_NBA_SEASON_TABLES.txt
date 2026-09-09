@@ -1,0 +1,5 @@
+Trigger for nba-season-tables.yml
+seasons_n: 3
+tables: matchups,pt_defend,hustle,clutch,preseason_logs
+last_triggered_utc: 2026-09-09T23:05:00Z
+trigger_reason: first pull of the season tables for the matchup/hustle/clutch factor family + preseason logs, 3 seasons (schemas verified empirically via meta.source_headers / missing_keep_columns)
