@@ -70,11 +70,11 @@ PROPS = {
     # Extension props. Prior strength from data (2026-09-09): k_MoM relative to points = STL 4.9x, TOV 2.5x, BLK 1.7x.
     "blocks":      {"col": "BLK",  "alpha": 0.10, "k_stab": 50, "step": 1.0, "family": "negbin", "zero_adjust": True},
     "steals":      {"col": "STL",  "alpha": 0.10, "k_stab": 125, "step": 1.0, "family": "negbin", "zero_adjust": True},
-    "turnovers":   {"col": "TOV",  "alpha": 0.12, "k_stab": 60, "step": 1.0, "family": "negbin"},
-    "fga":         {"col": "FGA",  "alpha": 0.15, "k_stab": 15, "step": 1.0, "family": "auto"},
-    "fg3a":        {"col": "FG3A", "alpha": 0.12, "k_stab": 20, "step": 1.0, "family": "negbin"},
-    "ftm":         {"col": "FTM",  "att_col": "FTA", "alpha": 0.12, "pct_alpha": 0.03, "k_stab": 30, "step": 1.0, "family": "compound"},
-    "personal_fouls": {"col": "PF", "alpha": 0.10, "k_stab": 40, "step": 1.0, "family": "negbin"},
+    "turnovers":   {"col": "TOV",  "alpha": 0.12, "k_stab": 95, "step": 1.0, "family": "negbin", "zero_adjust": True},   # top-decile regression 13%
+    "fga":         {"col": "FGA",  "alpha": 0.15, "k_stab": 15, "step": 1.0, "family": "auto"},   # CERTIFIED both seasons (0.9 / 1.3, 0 band misses)
+    "fg3a":        {"col": "FG3A", "alpha": 0.12, "k_stab": 20, "step": 1.0, "family": "negbin"},   # anchor-band residual is attempts REGIME (sign flips across seasons)
+    "ftm":         {"col": "FTM",  "att_col": "FTA", "alpha": 0.12, "pct_alpha": 0.03, "k_stab": 60, "step": 1.0, "family": "compound"},   # FTA regression 9%; shift lambda 0.5
+    "personal_fouls": {"col": "PF", "alpha": 0.10, "k_stab": 100, "step": 1.0, "family": "negbin", "zero_adjust": True},   # top-decile regression 14%
 }
 VBANDS_ALL = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "STARTER"), (25.5, 31.5, "STAR"), (31.5, 99, "SUPERSTAR")],
               "rebounds": [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
