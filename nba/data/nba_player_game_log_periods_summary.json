@@ -1,0 +1,57 @@
+{
+  "seasons": [
+    "2025-26",
+    "2024-25",
+    "2023-24"
+  ],
+  "summary": {
+    "2025-26_Q1": {
+      "rows": 22522,
+      "sample_max_min_first2000": 12.0
+    },
+    "2025-26_Q2": {
+      "rows": 23126,
+      "sample_max_min_first2000": 12.0
+    },
+    "2025-26_Q3": {
+      "rows": 22247,
+      "sample_max_min_first2000": 12.0
+    },
+    "2025-26_Q4": {
+      "rows": 22806,
+      "sample_max_min_first2000": 12.0
+    },
+    "2024-25_Q1": {
+      "rows": 22043,
+      "sample_max_min_first2000": 12.0
+    },
+    "2024-25_Q2": {
+      "rows": 22624,
+      "sample_max_min_first2000": 12.0
+    },
+    "2024-25_Q3": {
+      "rows": 21674,
+      "sample_max_min_first2000": 12.0
+    },
+    "2024-25_Q4": {
+      "rows": 22611,
+      "sample_max_min_first2000": 12.0
+    },
+    "2023-24_Q1": {
+      "rows": 21905,
+      "sample_max_min_first2000": 12.0
+    },
+    "2023-24_Q2": {
+      "rows": 22413,
+      "sample_max_min_first2000": 12.0
+    },
+    "2023-24_Q3": {
+      "rows": 21552,
+      "sample_max_min_first2000": 12.0
+    },
+    "2023-24_Q4": {
+      "rows": 22564,
+      "sample_max_min_first2000": 12.0
+    }
+  }
+}
