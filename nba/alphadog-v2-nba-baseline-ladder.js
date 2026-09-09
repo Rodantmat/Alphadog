@@ -40,12 +40,16 @@ async function runJob(input, env) {
     const file = await fetchFromGithubRaw(env, path);
     meta = file.meta || {}; asof = asof || meta.asof;
     if (!asof) throw new Error("ladder file has no asof");
-    const rows = (file.ladder || []).filter(x => x && x.player_id && x.game_id && x.prop && x.line != null).map(x => ({
+    const rowsRaw = (file.ladder || []).filter(x => x && x.player_id && x.game_id && x.prop && x.line != null).map(x => ({
       asof, player_id: String(x.player_id), team_id: nn(x.team_id ? String(x.team_id) : null), game_id: String(x.game_id), game_date: nn(x.game_date || asof),
       prop: x.prop, period: x.period || "FULL", ot_rule: x.ot_rule || "include", line: Number(x.line), anchor: nn(x.anchor), ladder_offset: nn(x.offset),
       p_more: Number(x.p_more), p_less: Number(x.p_less), p_raw: nn(x.p_raw), role_tier: nn(x.role_tier), var_band: nn(x.var_band), used_emp: nn(x.used_emp),
       recipe_version: nn(meta.recipe || null),
     }));
+    // rungs clipped to the natural floor (0.5) can repeat within a ladder -> dedupe on the PK, keep the last
+    const seen = new Map();
+    for (const r of rowsRaw) seen.set(`${r.player_id}|${r.game_id}|${r.prop}|${r.period}|${r.ot_rule}|${r.line}`, r);
+    const rows = Array.from(seen.values());
     for (const batch of chunk(rows, BATCH_SIZE)) {
       await sql`
         INSERT INTO nba_score.baseline_ladder ${sql(batch, "asof", "player_id", "team_id", "game_id", "game_date", "prop", "period", "ot_rule", "line", "anchor", "ladder_offset", "p_more", "p_less", "p_raw", "role_tier", "var_band", "used_emp", "recipe_version")}
