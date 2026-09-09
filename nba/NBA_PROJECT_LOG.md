@@ -1,5 +1,7 @@
 # NBA Project — Standing Log
 
+*Realignment rule (owner, 2026-09-09): before answering anything about what has been built, open `nba/NBA_COMPASS.md` — the map from every question to the document/section that answers it. This log is chronological; the checkpoints are the reference.*
+
 *Every NBA chat/session must add an entry here (or in a dated sub-log linked from here, if this file approaches a size where it should be split) for every important step, decision, issue found, and fix applied. Newest entries at the top. This is the log system required by the operating instructions in NBA_ARCHITECTURE_BLUEPRINT.md's own documentation-discipline lessons (Section 4l) — don't let this go stale silently; if a gap happens, say so explicitly rather than implying continuity that isn't there.*
 
 ---
