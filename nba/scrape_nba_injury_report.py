@@ -37,12 +37,19 @@ TEAMS = ["Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets"
          "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks", "Oklahoma City Thunder", "Orlando Magic",
          "Philadelphia 76ers", "Phoenix Suns", "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs",
          "Toronto Raptors", "Utah Jazz", "Washington Wizards"]
-_TEAM_RE = re.compile("^(" + "|".join(re.escape(t) for t in sorted(TEAMS, key=len, reverse=True)) + r")\b\s*(.*)$")
+_TEAM_RE = re.compile("^(" + "|".join(re.escape(t) + "|" + re.escape(t.replace(" ", "")) for t in sorted(TEAMS, key=len, reverse=True)) + r")\b\s*(.*)$")
 _DATE_RE = re.compile(r"^(\d{2}/\d{2}/\d{4})\s*(.*)$")
 _TIME_RE = re.compile(r"^(\d{2}:\d{2})\s*\(ET\)\s*(.*)$")
 _MATCH_RE = re.compile(r"^([A-Z]{3}@[A-Z]{3})\s*(.*)$")
 _STATUS_RE = re.compile(r"^(.*?),\s*(.*?)\s+(Out|Doubtful|Questionable|Probable|Available)\b\s*(.*)$")
-_HDR_RE = re.compile(r"^(Injury Report: .*|Page \d+ of \d+|Game Date Game Time Matchup Team Player Name Current Status Reason)$")
+_HDR_RE = re.compile(r"^(Injury\s*Report:.*|Page\s*\d+\s*of\s*\d+|Game\s*Date\s*Game\s*Time\s*Matchup\s*Team\s*Player\s*Name\s*Current\s*Status\s*Reason)$")
+_TEAM_CANON = {t.replace(" ", ""): t for t in TEAMS}
+
+
+def _split_camel(s):
+    """Recover spaces pdfplumber may drop inside cells: 'RightKnee;Surgery' -> 'Right Knee; Surgery'; 'NOTYETSUBMITTED' kept."""
+    s = re.sub(r"([a-z\.\)])([A-Z])", r"\1 \2", s); s = re.sub(r";(?=\S)", "; ", s); s = re.sub(r"-(?=[A-Z])", "- ", s)
+    return re.sub(r"\s+", " ", s).strip()
 
 
 def reason_class(reason):
