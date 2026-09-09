@@ -86,6 +86,18 @@ FACTOR LAYER (v21, owner directive: in from the start, nothing forced). Static/d
   VERDICT: real but SMALL at the baseline level. Brier improvement: points -0.12%, rebounds -0.09%, blocks -0.09%, steals -0.29% (most opponent-driven prop, as predicted). Calibration unchanged at standard (points+rebounds 1 of 37 bands; blocks 0 of 12 on 2025-26). A +/-3% pace differential moves a 20-pt player ~0.7 pts (~2pp). The large discrimination gains must come from the live enrichment layer (injuries/lineups -> minutes and usage) and combo structure, not static opponent stats. Factor layer stays ON (evidence-fit, harmless, slightly helpful).
   - ZERO-ADJUSTED NegBin for blocks/steals (v19): actual P(0) by mean band fit on TRAIN inside the run (blocks ~1.5 bpg: 0.32 actual vs 0.27 NegBin; steals zero-DEFLATED at low means, inflated at high). 2025-26: blocks ladder 0.7, all bands within 2.7 (blocks MEETS the standard on 2025-26); steals ladder 1.3, less 60-65 +4.1. 2024-25 holdout (one season of history): blocks 70-75 back at -4.4 (single-season P(0) table is noisier); steals zig-zag +4.4/-3.4/-3.5 across adjacent bands (binning noise), less 60-65 +3.4 (structural, both seasons). VERDICT: blocks/steals CLOSE BUT NOT CERTIFIED - ladders <=1.3 and 0 rung cells on both seasons, but 3-5 confidence bands per season miss by 2.6-4.4pp (certified four: 3 of 76).
 
+PERIOD LAYER SCOREBOARD (periods_ladder_v1.py v3: 3-part state mixture, period-scaled prior strength, shift 0.5, rate-by-state, OT mixture, factors; format: ladder pp / band misses of n checked):
+  points_q1      2025-26: 1.1 / 0                                 AT STANDARD first pass - the cleanest prop, as designed
+  rebounds_q1    2025-26: 1.2 / 2 of 19   (60-65 discreteness cluster both sides; rung cells 32 -> 0)
+  assists_q1     2025-26: 0.5 / 1 of 15   (less 60-65 +4.8, n=1148 thin)
+  threes_made_q1 2025-26: 0.9 / 0 of 8    rung cells 0
+  points_h1      2025-26: 1.5 / 0 of 20   holdout 2024-25: 1.0 / 0 of 19          CERTIFIED both seasons (pace elasticity 1.36 - the purest pace effect)
+  points_h2      2025-26: 1.0 / 1 of 19   holdout: 1.5 / 3 top bands (thin history)   AT STANDARD 2025-26; LOW band 'more' +3.3/+5.1 both seasons (fringe cold-streak; band-cell candidate)
+  points_q4      2025-26: 0.9 / 1 of 17   holdout: 0.8 / 0 of 17                   CERTIFIED both seasons (3-part mixture); star HIGH band -4.5 at n=839
+  points_q4 OT=exclude (Sleeper rule): 0.9 / 1 of 17 - same recipe, flag only
+  Measured: Q1 starters blowout ratio ~1.00; Q4 Iron Man 0.37 (close 9.0 min / 3% sit; medium 7.6 / 9%; blowout 3.5 / 45% sit); 2H Iron Man 0.68; P(OT|spread) 5.3% -> 1.9%;
+  Iron Man Q4 pts rate 1.09x in close games (FGA 1.13 / FTA 1.18); assists ~0.9x close (hero ball); bench points 0.84x close. REJECTED: star close-game rate penalty (opposite sign).
+
 RECIPE INTEGRITY (v19): every constant is now derived from as-of history inside the run (HCA, P(blowout|spread) lookup, blowout minutes ratios by role, role minutes multipliers, dispersion priors, zero-adjust tables, tier cutpoints, empirical cells, Platt). Nothing pasted. Re-running the 2024-25 holdout with all constants from 2023-24 alone: points 1.2 / rebounds 0.8 / 0 of 37 bands - unchanged. The only frozen numbers are the rebounds band mean-ratio cells (validation-fit, season-consistency rule) and the per-prop hyperparameters (k, lambda, alpha, K_CELL) which are the recipe itself.
 
 Files: nba/backtest/classification_ladder_v12.py (canonical body = v17; env: BT_TRAIN, BT_TEST, BT_PROPS, BT_BAND_CELLS, BT_SHIFT_MODE, BT_KCELL_3PM, BT_TAG); nba/backtest/bandfit.py; workflow runs both seasons per prop pair and commits classification_final_<season>_<props>.{json,md}.
