@@ -1,0 +1,84 @@
+{
+  "seasons": [
+    "2025-26",
+    "2024-25",
+    "2023-24"
+  ],
+  "summary": {
+    "matchups_2025-26": {
+      "rows": 147805,
+      "mb": 59.77,
+      "missing": []
+    },
+    "pt_defend_2025-26": {
+      "rows": 580,
+      "mb": 0.14,
+      "missing": []
+    },
+    "hustle_2025-26": {
+      "rows": 581,
+      "mb": 0.23,
+      "missing": []
+    },
+    "clutch_2025-26": {
+      "rows": 492,
+      "mb": 0.13,
+      "missing": []
+    },
+    "preseason_logs_2025-26": {
+      "rows": 2021,
+      "mb": 0.62,
+      "missing": []
+    },
+    "matchups_2024-25": {
+      "rows": 141577,
+      "mb": 57.24,
+      "missing": []
+    },
+    "pt_defend_2024-25": {
+      "rows": 568,
+      "mb": 0.13,
+      "missing": []
+    },
+    "hustle_2024-25": {
+      "rows": 567,
+      "mb": 0.22,
+      "missing": []
+    },
+    "clutch_2024-25": {
+      "rows": 498,
+      "mb": 0.13,
+      "missing": []
+    },
+    "preseason_logs_2024-25": {
+      "rows": 2099,
+      "mb": 0.65,
+      "missing": []
+    },
+    "matchups_2023-24": {
+      "rows": 137763,
+      "mb": 55.69,
+      "missing": []
+    },
+    "pt_defend_2023-24": {
+      "rows": 569,
+      "mb": 0.13,
+      "missing": []
+    },
+    "hustle_2023-24": {
+      "rows": 567,
+      "mb": 0.22,
+      "missing": []
+    },
+    "clutch_2023-24": {
+      "rows": 469,
+      "mb": 0.13,
+      "missing": []
+    },
+    "preseason_logs_2023-24": {
+      "rows": 2078,
+      "mb": 0.64,
+      "missing": []
+    }
+  }
+}
