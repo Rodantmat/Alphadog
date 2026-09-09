@@ -5,8 +5,7 @@ on:
   push:
     paths:
       - 'nba/TRIGGER_NBA_BASELINE.txt'
-  schedule:
-    - cron: '30 12 * * *'   # daily 12:30 UTC, after the daily delta has landed
+  # No cron for now (owner 2026-09-09): scheduling will be set up via Claude Coworker closer to the season.
 
 permissions:
   contents: write
