@@ -110,6 +110,16 @@ def main():
     seasons = stats_seasons(int(os.environ.get("SEASONS_N", "3")))
     tables = [x for x in os.environ.get("TABLES", ",".join(TABLES)).split(",") if x]
     summary = {}
+    if "all_players" in tables:
+        # PLAYER INDEX (every player, all seasons): the name -> id join for the injury report (names are "Last, First").
+        url = f"https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=0&LeagueID=00&Season={seasons[0]}"
+        r = session.get(url, headers=STATS_HEADERS, timeout=90, impersonate="chrome124"); r.raise_for_status()
+        rs = next(x for x in r.json()["resultSets"] if x["name"] == "CommonAllPlayers"); hdr = rs["headers"]
+        keep = ["PERSON_ID", "DISPLAY_LAST_COMMA_FIRST", "DISPLAY_FIRST_LAST", "ROSTERSTATUS", "FROM_YEAR", "TO_YEAR", "TEAM_ID", "TEAM_ABBREVIATION"]
+        idx = [hdr.index(c) for c in keep if c in hdr]; cols = [hdr[i] for i in idx]
+        recs = [dict(zip(cols, [row[i] for i in idx])) for row in rs["rowSet"]]
+        (OUT / "nba_all_players.json").write_text(json.dumps({"meta": {"endpoint": "commonallplayers", "all_seasons": True, "row_count": len(recs), "source_headers": hdr}, "records": recs}))
+        print("all_players:", len(recs)); tables = [t for t in tables if t != "all_players"]
     if os.environ.get("MODE", "season") == "asof_weekly":
         WINDOWS = {"2023-24": ("2023-10-24", "2024-04-14"), "2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
         for season in seasons:
