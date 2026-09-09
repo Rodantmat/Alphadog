@@ -36,8 +36,20 @@ jobs:
         run: python nba/backtest/minutes_model_v1.py
         continue-on-error: true
 
-      - name: Classification + ladder calibration (canonical v12, leg-level)
-        run: python nba/backtest/classification_ladder_v12.py
+      - name: Classification + ladder calibration (canonical, leg-level) - 2025-26, points+rebounds
+        run: BT_TAG=final BT_PROPS=points,rebounds python nba/backtest/classification_ladder_v12.py
+        continue-on-error: true
+
+      - name: Classification - 2025-26, assists+threes
+        run: BT_TAG=final BT_PROPS=assists,threes_made python nba/backtest/classification_ladder_v12.py
+        continue-on-error: true
+
+      - name: Classification - 2024-25 holdout (history 2023-24), points+rebounds
+        run: BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=final BT_PROPS=points,rebounds python nba/backtest/classification_ladder_v12.py
+        continue-on-error: true
+
+      - name: Classification - 2024-25 holdout, assists+threes
+        run: BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=final BT_PROPS=assists,threes_made python nba/backtest/classification_ladder_v12.py
         continue-on-error: true
 
       - name: Commit reports to main
