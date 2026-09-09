@@ -53,11 +53,11 @@ def _split_camel(s):
 
 
 def reason_class(reason):
-    r = (reason or "").lower()
+    r = (reason or "").lower(); rz = re.sub(r"[\s\-]", "", r)   # rz: space/hyphen-insensitive (pdf extraction may drop them)
     if not r or r in ("-",): return "none"
     if "rest" in r and "injury" not in r: return "rest"
-    if "injury management" in r or "injury maintenance" in r or "load management" in r: return "management"
-    if "g league" in r or "two-way" in r: return "gleague_two_way"
+    if "injurymanagement" in rz or "injurymaintenance" in rz or "loadmanagement" in rz: return "management"
+    if "gleague" in rz or "twoway" in rz: return "gleague_two_way"
     if "suspension" in r: return "suspension"
     if "personal" in r or "bereave" in r: return "personal"
     if "illness" in r and not re.search(r"ankle|knee|hip|back|hamstring|calf|groin|quad|shoulder|wrist|hand|finger|toe|foot|achilles|concussion|thigh|elbow|rib", r): return "illness"
