@@ -518,3 +518,129 @@ factors but **measurement**: every magnitude in P2 and P3 tagged [published] mus
 those that hold on two seasons (same sign, useful size) become cells. Next: build the two backfills that unlock
 measurement of the largest factors — the injury-report PDF archive (statuses as known) and the matchup/hustle/clutch season
 tables — then run the pass-3 measurement list.
+
+---
+---
+
+# Pass 4 (2026-09-09) — Sub-factors: the level below each factor (splits, thresholds, type), and the minutes-projection tree
+
+*Sources: DARKO's disclosed method (Bayesian/Kalman updating with exponential decay on box scores + tracking + on/off —
+the same architecture as our EWMA + shrinkage; its author states minutes are the hardest and least accurate part of any
+projection system), RotoGrinders' minutes workflow (injuries → blowout → matchup minutes → coach tendency → foul
+trouble), professional-group conditioning splits collected via Gemini, and our own measured facts. Type legend: **M**
+minutes, **R** rate/usage, **V** variance, **A** availability. Every threshold below is a starting split to be measured on
+our data — the owner granulation rule applies (granulate where under-fit, never flatten).*
+
+## P4.1 Own injury status (A1) — sub-factors
+| Sub-factor | Split | Type | Moves |
+|---|---|---|---|
+| games missed before return | 1–2 / 3–9 / 10+ | M/R | all props Less on high anchors for the returner, tiered |
+| injury type class (N2) | illness / soft tissue / joint / back / hand-wrist / concussion / reconditioning / rest | R/M | hand-wrist → shooting % and turnovers; back/joint → explosiveness (stocks, rebounds) Less; illness → stamina (minutes) Less |
+| Questionable timing | listed day-before / added game-day / downgraded from Probable game-day | A/M | game-day additions and downgrades → lower P(plays), higher in-game limitation risk |
+| coach qualifier | "minutes restriction" / "see how he feels" / "full go" | M/V | restriction = hard cap; "see how he feels" = downside variance |
+| shootaround/warmup participation | full / limited / did not | A | anything below full lowers P(plays) sharply |
+| re-injury risk | ≥2 soft-tissue injuries in 12 months; chronic joint | V/M | in-game exit probability up → widen the floor |
+| questionable resolution history (N1) | team-level P(plays\|Q) tercile; reason-class P(plays\|Q) | A | per team and reason class (backfillable: PDF archive × box scores) |
+
+## P4.2 Teammate-out redistribution (A2) — sub-factors
+| Sub-factor | Split | Type | Moves |
+|---|---|---|---|
+| vacated usage tier | <18% role / 18–24% starter / 25–29% secondary star / 30%+ alpha | R | magnitude of the teammates' usage lift |
+| absent player's archetype | true PG / scoring wing / stretch big / rim-running C / 3&D wing | R | PG out → secondary handler AST% and USG% up; C out → PF and backup C REB% up |
+| beneficiary's on/off lift | historical USG% lift with the absent player off: >5 / 2–5 / <2 | R | the most direct quantitative input (we have on/off and with/without tables) |
+| direct backup vs committee | one player takes ≥80% of the backup minutes at the position vs split | M | direct backup → large minutes step; committee → muted |
+| play-type synergy | absent player was #1 in PnR ball-handler possessions; beneficiary is #2 | R | beneficiary points/assists up (Synergy play types built) |
+| starting-lineup insertion | bench player confirmed starting | M | step function (e.g., 18 → 30 minutes) |
+| game number of the absence | 1st / 2nd–3rd / 4th+ | R/M | 1st game most mispriced; later games absorbed by market and our own history |
+| dependent teammate (negative branch) | roll-man / spot-up finisher whose primary creator is absent | R | rate DOWN despite minutes up (the archetype trap) |
+| multiple absences | 2+ rotation players out | V | variance up; committee effects |
+
+## P4.3 Returning player (A3) — sub-factors
+| Sub-factor | Split | Type | Moves |
+|---|---|---|---|
+| returner's usage | ≥25% / <25% | R | high-usage return → all teammates' offensive props Less |
+| returner's role | starter displacing a spot starter / bench returning to bench | M/R | displaced spot starter: large minutes drop |
+| "vulturing" | returning C with REB% >20% (PF rebounds Less); returning PG (SG assists Less) | R | position-specific rate transfer |
+| pace impact | returner's on-court pace delta ≥ +2 possessions | R | small lift to everyone's counting stats |
+| ramp curve | game 1 ≈ 65% of baseline minutes / game 2 ≈ 80% / game 3 ≈ 95%, conditioned on injury class (published; measure ours) | M | hard cap on the returner |
+
+## P4.4 Star rest probability (A4) — sub-factors (all A)
+B2B second night AND road AND age ≥32 AND not national TV (the highest-probability rest spot); ≥10 consecutive games
+played; Probable/Questionable tag carried into the first leg of a B2B (large increase for the second leg); standings lock
+(seed clinched with >2 games left); opponent bottom-5 net rating ("winnable without him"); 40+ minutes or OT the night
+before; monthly rest count vs the team's pattern; star designation under the policy (All-Star/All-NBA in the last 3
+seasons) and the age/mileage allowances; home vs road balance rule (rest preferred at home under the policy — measure
+which dominates: the policy's home preference or the traditional road-B2B rest).
+
+## P4.5 Lineup change (A5) — sub-factors
+starter → bench demotion (hard minutes drop); positional role change (PF → small-ball C: REB%/BLK up; PG → SG: AST%
+down, USG up); "tinkering" coach (>10 different starting lineups in the first 25 games → variance for non-stars);
+post-trade first 1–3 games (variance); closing-lineup shake-up in the last 2 games (trust signal → median minutes down);
+spot starter with a high foul rate (>4.0 PF/36 → muted upside, third-stringer runs).
+
+## P4.6 Late scratch (A6) — sub-factors
+timing (>60 min / <15 min before tip — the latter is maximal mispricing); warm-up setback; scratched player's usage (>25%
+re-prices the team; <18% affects only the direct backup); coach's historical response (one player absorbs vs scatter);
+market signals: props pulled off the board (imminent scratch), and the re-release delta on a teammate's line (the market's
+new median — the size of the delta is the measured impact).
+
+## P4.7 Market spread → state mixture (B1) — sub-factors
+spread bands 1–5.5 close / 6–9.5 / 10–13.5 / 14+; spread movement ≥2.0 since open (sharp information); favorite vs
+underdog side (both truncated; the favorite's bench gains); team blowout tendency (top-5 margin-of-victory teams carry
+intrinsic blowout variance); halftime line >15 (live only — guarantees bench-heavy fourth quarters; a future live layer).
+
+## P4.8 Opponent absences / matchup (B4, M1) — sub-factors
+positional impact (opp C out → our C/PF points/rebounds; opp PG out → our PG points/assists); defensive anchor out (DBPM
+>2.5 or DARKO D-DPM top decile → all primary scorers' efficiency up); multiple positional absences (opp C AND PF out →
+forced small → our bigs' paint points and rebounds up); primary defender quantile (90th vs 50th vs 10th percentile
+defended-FG%/D-DPM); physical mismatch (≥4 in height or ≥30 lb on the primary defender → post points/rebounds up);
+defender foul rate (>4.0 PF/36 → foul trouble → easier matchup later, FTA up); PnR defense grade (drop → floaters, mid-range
+and roll-man assists; switch → isolation and driving).
+
+## P4.9 Referee crew (D1) — sub-factors
+crew fouls per 48 quartile (top → foul trouble risk for aggressive defenders, FTA up for slashers); player-specific
+referee history (FTA lift with a given official — used by pros manually, not commonly automated; test); crew-chief
+technical-foul rate (ejection variance for volatile players).
+
+## P4.10 Schedule (D2) — sub-factors
+3-in-4 (third game) / 4-in-5; road trip length (≥4 games); time zones crossed and direction (east → west with a late tip;
+west → east with an early tip); day game (tip ≤ 3 PM local); post-OT night; altitude on B2B (DEN/UTA visitors) — all
+conditional on playing; measure each; expect most ≈0–2 pp (our baseline B2B measured ≈0 conditional on playing).
+
+## P4.11 MINUTES-PROJECTION TREE (the hardest and highest-value piece — DARKO/RotoGrinders)
+| Sub-factor | Split / implementation | Effect on the minutes projection |
+|---|---|---|
+| foul-trouble propensity | player PF/36 > 4.0 AND opponent top-10 foul-drawing at the position AND high-foul crew | median −2…−4; variance up (P(<20 min) up) |
+| blowout pull timing (coach) | coach-specific pull minute vs spread (we measured team starter pull 0.81–1.10) | −1…−3 in 14+ spread games depending on coach |
+| closing-lineup membership | ≥75% of clutch minutes (clutch dashboard) | +2…+4 in projected close games |
+| matchup-specific minutes | opponent plays small ≥40% → traditional C −3…−5; fast opponent → high-stamina players + | measurable from lineup data |
+| rest-day pattern | documented B2B/road rest pattern per player | availability, not minutes |
+| recent minutes trend vs role | last-3 minutes rising above the role (25, 28, 32 for a 26-min role) with no absence context | shift the role toward the trend |
+| injury return ramp | 65% / 80% / 95% of baseline by game back, by injury class | hard cap |
+| rookie ramp | post-All-Star floor/ceiling rise for rookies on evaluation teams | +2…+5 from February |
+| two-way status | near the 50-game limit | availability |
+| hack-a risk | FT% <60% AND close game AND a coach known to hack | −1…−2, out of the closing lineup |
+| ejection propensity | top-10 technicals AND rival / quick-tech crew | small median drop, variance up |
+| in-game injury rate | chronic soft tissue → 3–5% in-game exit | floor outcome; median × ~0.97 |
+| overtime probability | market/derived P(OT) (5–9% near pick'em; we measured 5.3% → 1.9%) | +5 × P(OT) minutes (mixture, not bump — already in the baseline) |
+| coach trust ceiling | consistently benched in Q4 despite production | hard ceiling regardless of script |
+| garbage-time contamination | rate stats from garbage time inflate bench baselines (Cleaning-the-Glass principle); our competitive filter (|margin| < 15) is the proxy until a time-and-margin rule exists | rate correction for fringe/bench |
+
+## P4.12 Thin factors (small, real, keep as confidence or tie-breakers only)
+Day game; long road trip fatigue; altitude on B2B; individual-referee player history; ejection propensity; hack-a risk;
+rookie post-ASB drift; team blowout tendency; two-way limits; "tinkering coach" variance; national TV as a rest shield
+(inside A4 only). Each is expected at ≤2 pp; they enter as confidence modifiers or tie-breakers in the leg-quality score,
+never as primary rank boosters, unless measurement shows more.
+
+## P4.13 Retired after four passes (no evidence in any serious system)
+Contract year; holiday games; post-All-Star "motivation"; revenge/milestone games; home/away as a standalone enrichment
+(baseline carries it); generic "B2B = under" (measured ≈0 conditional on playing); generic DvP (baseline profile is
+better; matchup supersedes).
+
+## P4.14 State of the lock after four passes
+Factors (34 active) and sub-factors (~90) are enumerated with splits and types; the minutes tree is explicit; thin factors
+and retirements are recorded. The lock is **complete for discovery**. Everything from here is measurement on our own
+seasons, in this order: (1) build the injury-report PDF backfill (statuses as known, two seasons) and the season matchup /
+hustle / clutch tables; (2) measure the minutes tree and A2/A3/A4 sub-factors on 3 seasons of box scores; (3) fit cells
+per prop × direction × variation band × role tier, keep only what holds on two seasons; (4) then the enrichment engine and,
+after that, the slip engine with the correlation copula.
