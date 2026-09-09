@@ -382,6 +382,20 @@ for prop, cfg in PROPS.items():
     _ratio = np.array([(BAND_N[prop][b] * BAND_RATIO[prop][b] + 300.0) / (BAND_N[prop][b] + 300.0) for b in _pre_band]) if prop in BAND_CELL_PROPS else np.ones(len(d))
     d["proj_mean"] = d["proj_mean"] * _ratio
     if cfg["family"] == "compound": d["proj_att"] = d["proj_att"] * _ratio
+    # SEASON-PHASE CELL (design factor 'season_phase'; measured 2026-09-09 on BOTH seasons: carryover over-projects
+    # ~5pp at the anchor in October, ~2-4 in November, flat Dec-Mar, under-projects 5-7 in April). Ratio actual/projected
+    # mean by month-of-season, fit on train seasons that themselves had a predecessor in the data, shrunk toward 1.0
+    # (k=500), applied to the current season. Result on 2025-26: points October -4.8 -> -0.1, April +6.1 -> +2.3.
+    if os.environ.get("BT_PHASE", "1") == "1":
+        _mo = pd.to_datetime(d["GAME_DATE"]).dt.month
+        d["phase"] = np.select([_mo == 10, _mo == 11, _mo == 4, _mo >= 5], ["OCT", "NOV", "APR", "MAY"], "MID")
+        _fit_seasons = [s_ for s_ in TRAIN if any(x < s_ for x in TRAIN)] or TRAIN
+        _trp = d[d["season"].isin(_fit_seasons)].groupby("phase").agg(a=(col, "mean"), p=("proj_mean", "mean"), n=(col, "size"))
+        _trp["ratio"] = (_trp["n"] * (_trp["a"] / _trp["p"]) + 500.0) / (_trp["n"] + 500.0)
+        PHASE_RATIO = _trp["ratio"].to_dict()
+        FACTOR_FITS.setdefault("season_phase", {})[prop] = {k: round(float(v), 4) for k, v in PHASE_RATIO.items()}
+        d["proj_mean"] = d["proj_mean"] * d["phase"].map(PHASE_RATIO).fillna(1.0)
+        if cfg["family"] == "compound": d["proj_att"] = d["proj_att"] * d["phase"].map(PHASE_RATIO).fillna(1.0)
     d["anchor"] = np.floor(d["proj_mean"]) + 0.5
     if os.environ.get("BT_SAVE_COMPONENTS", "0") == "1":
         d[["season", "PLAYER_ID", "GAME_ID", "GAME_DATE", "TEAM_ID", "role_tier", "tier", "proj_min", "proj_mean", "proj_var", "anchor", col]].rename(columns={col: "actual"}).to_pickle(OUT / f"_comp_{prop}_{TEST[0]}.pkl")
