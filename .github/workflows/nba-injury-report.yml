@@ -33,7 +33,7 @@ jobs:
       - name: Install tools
         run: python -m pip install --upgrade pip curl_cffi pdfplumber
 
-      - name: Resolve mode from trigger file (mode:/from:/to:/slug: lines; default daily)
+      - name: "Resolve mode from trigger file (mode, from, to, slug lines; default daily)"
         id: cfg
         run: |
           f=nba/TRIGGER_NBA_INJURY_REPORT.txt
