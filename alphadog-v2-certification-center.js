@@ -5441,6 +5441,8 @@ async function apiHighHitSlips(env, request) {
           "Pool: pitchers <14 outs L5 on ER 2.5 / outs 14.5 & 16.5 / PFS 17.5 & >=23.5; pitchers 15-16 outs on PFS >=26.5 & 21.5 / outs 16.5; hitters <3 PA L5 on FS 3/3.5/4.5/>=5.5 and HRR 0.5/1.5. All LESS. No FS 4 or 5 (push lines).",
           "Ranked by SIGNAL STRENGTH (fewest outs / fewest PA), not HP - HP is flat inside this pool. The hit_probability field on each leg IS the signal strength, not a probability.",
           "Measured 42 days, 84 real morning-snapshot slips: 63.7% leg acc, 17 sweeps, +66.1% ROI, both halves positive, bootstrap 99.7%, 95% CI [+17%, +124%], leave-two-days-out min +44%, best-day share 18%. All gates pass.",
+          "LINEUP SPLIT (2026-09-08): hitters posted at slots 7-9 with a <3-PA L5 are bench bats who just got a regular job - 3-4 PA tonight, FS>=4.5 under hits 33%. They now qualify only on FS 3/3.5 (58%). Not-in-lineup bench (76% on FS>=4.5, but 19% DNP) and slots 1-6 (77%) unchanged. Backtest +58.9% -> +65.6%, same volume.",
+          "DNP REALITY: backtests cannot see voided legs (they never reach the outcome table). With the bench's 19% DNP priced into the Flex tiers, V4's honest expectation is ~+45%, not +66%. Still solidly positive. A DNP drops the Flex a tier (4->3 pays 3x/1x); a 2-pick DNP is a refund.",
           "SUBSTITUTE if a backup exists, else SHRINK to 3-pick Flex (3x/1x). Measured 328x: this blend +64.0% on drop days vs +70.1% no-drop. The app does this natively - uncheck the dead leg, it pulls from backup_pool, shrinks if empty.",
           "SEASONAL: Aug-Sep mechanism (innings caps, playoff rest, showcases). Pause at season end; April needs re-validation."
         ],
