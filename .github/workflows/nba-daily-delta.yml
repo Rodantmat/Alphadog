@@ -44,12 +44,22 @@ jobs:
         run: python nba/scrape_nba_per_game_delta.py
         continue-on-error: true
 
+      - name: Baseline inputs - mirror season files from the delta, refresh current-season quarters, refresh schedule
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PERIODS_SEASONS: "1"
+        run: |
+          python nba/sync_season_files_from_delta.py || echo "season-file sync failed"
+          python nba/scrape_nba_periods.py || echo "periods refresh failed"
+          python nba/scrape_nba_schedule.py || echo "schedule refresh failed"
+        continue-on-error: true
+
       - name: Commit delta JSON to main
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for f in nba/data/nba_delta_player_game_log.json nba/data/nba_delta_player_game_log_advanced.json nba/data/nba_delta_team_game_log.json nba/data/nba_delta_team_game_log_advanced.json nba/data/nba_daily_delta_meta.json nba/data/nba_delta_player_usage_*.json nba/data/nba_delta_player_scoring_*.json nba/data/nba_delta_team_scoring_*.json nba/data/nba_delta_team_four_factors_*.json nba/data/nba_delta_measure_types_meta.json nba/data/nba_starter_status_*.json nba/data/nba_game_officials_*.json; do
+          for f in nba/data/nba_delta_player_game_log.json nba/data/nba_delta_player_game_log_advanced.json nba/data/nba_delta_team_game_log.json nba/data/nba_delta_team_game_log_advanced.json nba/data/nba_daily_delta_meta.json nba/data/nba_delta_player_usage_*.json nba/data/nba_delta_player_scoring_*.json nba/data/nba_delta_team_scoring_*.json nba/data/nba_delta_team_four_factors_*.json nba/data/nba_delta_measure_types_meta.json nba/data/nba_starter_status_*.json nba/data/nba_game_officials_*.json nba/data/nba_player_game_log_20*.json nba/data/nba_team_game_log_20*.json nba/data/nba_team_game_log_advanced_20*.json nba/data/nba_backfill_team_four_factors_20*.json nba/data/nba_backfill_team_scoring_20*.json nba/data/nba_player_game_log_q*_20*.json nba/data/nba_player_game_log_periods_summary.json nba/data/nba_schedule_current.json; do
             [ -f "$f" ] && git add "$f"
           done
           if git diff --cached --quiet; then
