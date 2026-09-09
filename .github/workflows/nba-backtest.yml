@@ -52,6 +52,14 @@ jobs:
         run: BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=final BT_PROPS=assists,threes_made python nba/backtest/classification_ladder_v12.py
         continue-on-error: true
 
+      - name: Extension - blocks+steals, 2025-26
+        run: BT_TAG=ext BT_PROPS=blocks,steals python nba/backtest/classification_ladder_v12.py
+        continue-on-error: true
+
+      - name: Extension - blocks+steals, 2024-25 holdout
+        run: BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=ext BT_PROPS=blocks,steals python nba/backtest/classification_ladder_v12.py
+        continue-on-error: true
+
       - name: Commit reports to main
         run: |
           set -euo pipefail
