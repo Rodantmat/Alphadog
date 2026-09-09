@@ -78,6 +78,16 @@ jobs:
           BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=ext BT_PROPS=ftm python nba/backtest/classification_ladder_v12.py || true
         continue-on-error: true
 
+      - name: Components for combos (both seasons) + combos + double-double
+        run: |
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            BT_SAVE_COMPONENTS=1 BT_TAG=comp BT_PROPS=$pair python nba/backtest/classification_ladder_v12.py || true
+            BT_SAVE_COMPONENTS=1 BT_TRAIN=2023-24 BT_TEST=2024-25 BT_TAG=comp BT_PROPS=$pair python nba/backtest/classification_ladder_v12.py || true
+          done
+          python nba/backtest/combos_ladder_v1.py || true
+          BT_TRAIN=2023-24 BT_TEST=2024-25 python nba/backtest/combos_ladder_v1.py || true
+        continue-on-error: true
+
       - name: Commit reports to main
         run: |
           set -euo pipefail
