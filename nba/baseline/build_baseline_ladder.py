@@ -36,7 +36,7 @@ def _season_of(d_):
     y = d_.year if d_.month >= 10 else d_.year - 1
     return f"{y}-{str(y + 1)[-2:]}"
 _cur = _season_of(ASOF)
-_all = sorted({p.name.split("nba_player_game_log_")[1][:7].replace("_", "-") for p in Path("nba/data").glob("nba_player_game_log_20*.json") if "_q" not in p.name})
+_all = sorted({p.name.split("nba_player_game_log_")[1][:7].replace("_", "-") for p in Path("nba/data").glob("nba_player_game_log_20*.json") if "_q" not in p.name and __import__("re").match(r"^\d{4}_\d{2}\.json$", p.name.split("nba_player_game_log_")[1])})
 TEST = [_cur if _cur in _all else _all[-1]]; TRAIN = [x for x in _all if x < TEST[0]][-2:]; SEASONS = TRAIN + TEST
 print("ASOF", ASOF, "| history seasons", TRAIN, "| current", TEST)''')
 s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")''',
