@@ -4805,7 +4805,10 @@ async function autoSelectStrategyV4Legs(env) {
         -- sig_strength, carried separately.
         CASE WHEN side_type = 'P' AND outs_l5 < 14 THEN 65.7
              WHEN side_type = 'P' THEN 62.1
-             ELSE 59.3 END AS hit_probability_0_100,
+             WHEN lineup_slot IS NULL THEN 63.6
+             WHEN lineup_slot <= 6 THEN 76.9
+             ELSE 58.3 END AS hit_probability_0_100,
+        lineup_slot,
         prop || ' ' || ln::text || ' less' AS cell_label,
         side_type, ROUND(outs_l5::numeric,1) AS outs_l5, ROUND(pa_l5::numeric,2) AS pa_l5,
         ROUND(sig_strength::numeric,2) AS sig_strength
