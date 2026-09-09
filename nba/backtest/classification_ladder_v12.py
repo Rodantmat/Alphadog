@@ -264,6 +264,14 @@ pg["proj_min_raw"] = pg.apply(proj_minutes, axis=1)
 _m = pg[pg["season"].isin(TRAIN) & pg["proj_min_raw"].notna() & (pg["proj_min_raw"] >= 8)]
 ROLE_MIN_MULT = (_m["MINF"] / _m["proj_min_raw"]).groupby(_m["role_tier"]).median().to_dict()
 pg["proj_min"] = pg["proj_min_raw"] * pg["role_tier"].map(ROLE_MIN_MULT).fillna(1.0)
+if RAMP_ON:
+    _rm = pg[pg["season"].isin(TRAIN) & (pg["gb_idx"] > 0) & pg["proj_min"].notna() & (pg["proj_min"] >= 12)].copy()
+    _rm["mt"] = pd.cut(_rm["gb_missed"], [2, 7, 15, 999], labels=["3-7", "8-15", "16+"]).astype(str)
+    RAMP = (_rm["MINF"] / _rm["proj_min"]).groupby([_rm["mt"], _rm["gb_idx"]]).mean().to_dict()
+    _mt_all = pd.cut(pg["gb_missed"], [2, 7, 15, 999], labels=["3-7", "8-15", "16+"]).astype(str)
+    pg["ramp_mult"] = [RAMP.get((m_, int(i_)), 1.0) if i_ > 0 else 1.0 for m_, i_ in zip(_mt_all, pg["gb_idx"])]
+    pg["proj_min"] = pg["proj_min"] * pg["ramp_mult"].clip(0.5, 1.05)
+    print("RETURN RAMP multipliers (train):", {f"{k[0]}|g{k[1]}": round(v, 3) for k, v in sorted(RAMP.items())})
 
 
 def ewma_prior(series, alpha):
