@@ -72,6 +72,8 @@ s = rep(s, '''def brier(p, y): return float(np.mean((p - y) ** 2))''',
 '''_ladder = rel[rel["month"] == str(pd.Period(ASOF, freq="M"))].copy()
 _vp = pd.DataFrame(v_players)[["PLAYER_ID", "GAME_ID", "TEAM_ID"]].drop_duplicates() if v_players else pd.DataFrame(columns=["PLAYER_ID", "GAME_ID", "TEAM_ID"])
 _ladder = _ladder.merge(_vp, on=["PLAYER_ID", "GAME_ID"], how="inner")
+# rungs below the natural floor collapse onto the same 0.5 line -> keep one row per distinct (player, game, prop, line)
+_ladder = _ladder.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
 out_rows = [{"player_id": r.PLAYER_ID, "team_id": r.TEAM_ID, "game_id": r.GAME_ID, "game_date": str(ASOF), "prop": r.prop, "period": "FULL", "line": float(r.line), "anchor": float(r.anchor), "offset": int(r.offset),
              "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4), "p_raw": round(float(r.p_raw), 4), "role_tier": r.role_tier, "var_band": r.var_band, "used_emp": bool(r.used_emp)} for r in _ladder.itertuples(index=False)]
 _meta = {"asof": str(ASOF), "history_seasons": TRAIN, "current_season": TEST[0], "slate_games": len(_slate), "players": int(_ladder["PLAYER_ID"].nunique()), "rows": len(out_rows), "props": sorted(_ladder["prop"].unique().tolist()),
