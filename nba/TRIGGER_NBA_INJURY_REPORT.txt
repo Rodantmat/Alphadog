@@ -1,7 +1,4 @@
 Trigger for nba-injury-report.yml
-mode: backfill
-from: 2025-10-20
-to: 2026-04-13
-slug: 2025_26
-last_triggered_utc: 2026-09-09T22:55:00Z
-trigger_reason: retry - workflow YAML fixed (unquoted colons in a step name); first backfill of the injury report PDF archive for 2025-26
+mode: probe
+last_triggered_utc: 2026-09-10T00:45:00Z
+trigger_reason: DIAGNOSTIC - the 2025-26 backfill scanned all 176 days and found ZERO snapshots; probe what the CDN returns to the runner (proxy vs direct) for a URL known to exist
