@@ -82,25 +82,38 @@ def main():
     for r in tl:
         gid = str(r["GAME_ID"])
         if gid.startswith("002"): games[gid] = str(r["GAME_DATE"])[:10]
-    path = DATA / f"nba_matchups_pergame_{slug}.json"
-    existing = json.loads(path.read_text()) if path.exists() else {"meta": {"covered": [], "empty": []}, "rows": []}
-    covered = set(existing["meta"].get("covered", [])); empty = set(existing["meta"].get("empty", [])); rows = existing["rows"]
+    path = DATA / f"nba_matchups_pergame_{slug}_index.json"
+    # STORAGE: GitHub rejects files >100 MB (a full season of pairings is ~170 MB as row dicts). Rows are stored as
+    # COLUMNAR MONTHLY SHARDS nba_matchups_pergame_<slug>_<YYYY-MM>.json ({"columns":[...],"rows":[[...]]}) and the
+    # index file carries covered/empty game ids. nba_asof.load_matchups(slug) reassembles them.
+    COLS = ["gameId", "GAME_DATE", "teamId", "personIdDef", "personIdOff", "positionDef"] + KEEP
+    existing = json.loads(path.read_text()) if path.exists() else {"meta": {"covered": [], "empty": []}}
+    covered = set(existing["meta"].get("covered", [])); empty = set(existing["meta"].get("empty", []))
+    shards = {}
+    for p in DATA.glob(f"nba_matchups_pergame_{slug}_20*.json"):
+        d_ = json.loads(p.read_text()); shards[p.name.rsplit("_", 1)[1][:7]] = d_["rows"]
     todo = sorted(g for g in games if g not in covered and g not in empty)
     limit = int(os.environ.get("MAX_GAMES", "1400")); n_ok = n_empty = n_fail = 0
+    def _flush():
+        for ym, rows_ in shards.items():
+            (DATA / f"nba_matchups_pergame_{slug}_{ym}.json").write_text(json.dumps({"columns": COLS, "rows": rows_}, separators=(",", ":")))
+        existing["meta"] = {"season": season, "covered": sorted(covered), "empty": sorted(empty), "rows": sum(len(v) for v in shards.values()), "columns": COLS, "shards": sorted(shards)}
+        path.write_text(json.dumps({"meta": existing["meta"]}))
     for i, gid in enumerate(todo[:limit]):
         out, err = fetch_game(session, gid)
         if out is None: n_fail += 1; continue
         if not out: empty.add(gid); n_empty += 1
         else:
-            for row in out: row["GAME_DATE"] = games[gid]
-            rows += out; covered.add(gid); n_ok += 1
-        if (i + 1) % 50 == 0:
-            existing["meta"] = {"season": season, "covered": sorted(covered), "empty": sorted(empty), "rows": len(rows)}
-            path.write_text(json.dumps({"meta": existing["meta"], "rows": rows})); print(f"{i + 1}/{len(todo)} ok={n_ok} empty={n_empty} fail={n_fail}")
+            ym = games[gid][:7]
+            for row in out:
+                row["GAME_DATE"] = games[gid]
+                shards.setdefault(ym, []).append([(round(row[c], 3) if isinstance(row.get(c), float) else row.get(c)) for c in COLS])
+            covered.add(gid); n_ok += 1
+        if (i + 1) % 50 == 0: _flush(); print(f"{i + 1}/{len(todo)} ok={n_ok} empty={n_empty} fail={n_fail}")
         time.sleep(0.6)
-    existing["meta"] = {"season": season, "covered": sorted(covered), "empty": sorted(empty), "rows": len(rows)}
-    path.write_text(json.dumps({"meta": existing["meta"], "rows": rows}))
-    print(f"done: season={season} mode={mode} games={len(games)} covered={len(covered)} empty={len(empty)} rows={len(rows)} fail={n_fail} size={path.stat().st_size / 1e6:.1f}MB")
+    _flush()
+    sizes = {p.name: round(p.stat().st_size / 1e6, 1) for p in DATA.glob(f"nba_matchups_pergame_{slug}_20*.json")}
+    print(f"done: season={season} mode={mode} games={len(games)} covered={len(covered)} empty={len(empty)} rows={existing['meta']['rows']} fail={n_fail} shards_MB={sizes}")
     if n_fail and n_ok == 0: sys.exit(2)
 
 
