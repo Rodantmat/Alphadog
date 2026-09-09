@@ -1,0 +1,565 @@
+{
+  "generated_at": "2026-09-09",
+  "train_seasons": [
+    "2023-24",
+    "2024-25"
+  ],
+  "test_seasons": [
+    "2025-26"
+  ],
+  "games": {
+    "train": 2455,
+    "test": 1225,
+    "player_games": 79138
+  },
+  "derived_spread": {
+    "home_court_advantage_fit": 1.98,
+    "corr_with_margin_train": 0.436,
+    "corr_with_margin_test": 0.46,
+    "mae_vs_margin_test": 11.47,
+    "note": "Market spreads typically achieve r~0.35-0.45 and MAE~10-11 vs final margin; this is the static-only ceiling to compare against"
+  },
+  "p_blowout_lookup": {
+    "train": [
+      {
+        "spread_bin": "0-2",
+        "mean": 0.1677018634,
+        "count": 644
+      },
+      {
+        "spread_bin": "2-4",
+        "mean": 0.1583011583,
+        "count": 518
+      },
+      {
+        "spread_bin": "4-6",
+        "mean": 0.2076372315,
+        "count": 419
+      },
+      {
+        "spread_bin": "6-8",
+        "mean": 0.1839762611,
+        "count": 337
+      },
+      {
+        "spread_bin": "8-10",
+        "mean": 0.1991341991,
+        "count": 231
+      },
+      {
+        "spread_bin": "10-12",
+        "mean": 0.3037037037,
+        "count": 135
+      },
+      {
+        "spread_bin": "12-15",
+        "mean": 0.3739130435,
+        "count": 115
+      },
+      {
+        "spread_bin": "15+",
+        "mean": 0.3928571429,
+        "count": 56
+      }
+    ],
+    "test": [
+      {
+        "spread_bin": "0-2",
+        "mean": 0.1848184818,
+        "count": 303
+      },
+      {
+        "spread_bin": "2-4",
+        "mean": 0.2038461538,
+        "count": 260
+      },
+      {
+        "spread_bin": "4-6",
+        "mean": 0.2216494845,
+        "count": 194
+      },
+      {
+        "spread_bin": "6-8",
+        "mean": 0.2197802198,
+        "count": 182
+      },
+      {
+        "spread_bin": "8-10",
+        "mean": 0.2272727273,
+        "count": 110
+      },
+      {
+        "spread_bin": "10-12",
+        "mean": 0.3411764706,
+        "count": 85
+      },
+      {
+        "spread_bin": "12-15",
+        "mean": 0.3728813559,
+        "count": 59
+      },
+      {
+        "spread_bin": "15+",
+        "mean": 0.40625,
+        "count": 32
+      }
+    ],
+    "blowout_definition": "abs final margin >= 20"
+  },
+  "datastreak_reproduction": {
+    "published_over_rate": {
+      "<=7": 46.7,
+      "8-14": 44.9,
+      "15-19": 43.8,
+      "20+": 40.9
+    },
+    "ours_pts_vs_trailing_median": [
+      {
+        "margin_bucket": "<=7",
+        "mean": 0.499142459,
+        "count": 18658
+      },
+      {
+        "margin_bucket": "8-14",
+        "mean": 0.4819204621,
+        "count": 16621
+      },
+      {
+        "margin_bucket": "15-19",
+        "mean": 0.4683236526,
+        "count": 7403
+      },
+      {
+        "margin_bucket": "20+",
+        "mean": 0.4448432026,
+        "count": 11703
+      }
+    ],
+    "favored_vs_underdog_starters_in_blowouts_2025_26": [
+      {
+        "favored": false,
+        "mean": 0.3939151321,
+        "count": 1249
+      },
+      {
+        "favored": true,
+        "mean": 0.4767899292,
+        "count": 1271
+      }
+    ],
+    "won_vs_lost_blowout_all_players": [
+      {
+        "state": "competitive(<15)",
+        "over_rate": 0.4910286573,
+        "n": 35279
+      },
+      {
+        "state": "won_blowout(20+)",
+        "over_rate": 0.5186868687,
+        "n": 5940
+      },
+      {
+        "state": "lost_blowout(20+)",
+        "over_rate": 0.3687315634,
+        "n": 5763
+      }
+    ]
+  },
+  "minutes_components": {
+    "players_with_competitive_fit": 1554,
+    "median_sigma_player": 5.79,
+    "median_dud_rate": 0.196,
+    "e_min_ratio_in_blowout_by_role": [
+      {
+        "role_tier": "BENCH",
+        "won_blowout": false,
+        "mean": 0.9641126523,
+        "count": 1393
+      },
+      {
+        "role_tier": "BENCH",
+        "won_blowout": true,
+        "mean": 0.9268398141,
+        "count": 1490
+      },
+      {
+        "role_tier": "FRINGE",
+        "won_blowout": false,
+        "mean": 0.9770264431,
+        "count": 2169
+      },
+      {
+        "role_tier": "FRINGE",
+        "won_blowout": true,
+        "mean": 0.867111802,
+        "count": 2633
+      },
+      {
+        "role_tier": "HIGH_USAGE_STARTER",
+        "won_blowout": false,
+        "mean": 0.8806220038,
+        "count": 963
+      },
+      {
+        "role_tier": "HIGH_USAGE_STARTER",
+        "won_blowout": true,
+        "mean": 0.8427775481,
+        "count": 1082
+      },
+      {
+        "role_tier": "IRON_MAN",
+        "won_blowout": false,
+        "mean": 0.8637721135,
+        "count": 360
+      },
+      {
+        "role_tier": "IRON_MAN",
+        "won_blowout": true,
+        "mean": 0.8485620636,
+        "count": 515
+      },
+      {
+        "role_tier": "ROTATION",
+        "won_blowout": false,
+        "mean": 0.9740505617,
+        "count": 1666
+      },
+      {
+        "role_tier": "ROTATION",
+        "won_blowout": true,
+        "mean": 0.945600624,
+        "count": 1423
+      },
+      {
+        "role_tier": "STARTER",
+        "won_blowout": false,
+        "mean": 0.9189513702,
+        "count": 1370
+      },
+      {
+        "role_tier": "STARTER",
+        "won_blowout": true,
+        "mean": 0.8720325286,
+        "count": 1430
+      }
+    ],
+    "team_specific_starter_pull_in_won_blowouts_2025_26": [
+      {
+        "TEAM_ID": "1610612753",
+        "mean": 0.8091827141,
+        "count": 39
+      },
+      {
+        "TEAM_ID": "1610612759",
+        "mean": 0.8107456238,
+        "count": 55
+      },
+      {
+        "TEAM_ID": "1610612757",
+        "mean": 0.8379185555,
+        "count": 30
+      },
+      {
+        "TEAM_ID": "1610612739",
+        "mean": 0.847121982,
+        "count": 44
+      },
+      {
+        "TEAM_ID": "1610612760",
+        "mean": 0.8579913727,
+        "count": 123
+      },
+      {
+        "TEAM_ID": "1610612766",
+        "mean": 0.8650282686,
+        "count": 85
+      },
+      {
+        "TEAM_ID": "1610612752",
+        "mean": 0.8732613234,
+        "count": 83
+      },
+      {
+        "TEAM_ID": "1610612765",
+        "mean": 0.8755269023,
+        "count": 75
+      },
+      {
+        "TEAM_ID": "1610612750",
+        "mean": 0.8948724722,
+        "count": 64
+      },
+      {
+        "TEAM_ID": "1610612763",
+        "mean": 0.8963115972,
+        "count": 14
+      },
+      {
+        "TEAM_ID": "1610612751",
+        "mean": 0.9009132441,
+        "count": 10
+      },
+      {
+        "TEAM_ID": "1610612761",
+        "mean": 0.9102595625,
+        "count": 49
+      },
+      {
+        "TEAM_ID": "1610612743",
+        "mean": 0.9131029568,
+        "count": 40
+      },
+      {
+        "TEAM_ID": "1610612746",
+        "mean": 0.9218828174,
+        "count": 55
+      },
+      {
+        "TEAM_ID": "1610612764",
+        "mean": 0.9345837624,
+        "count": 15
+      },
+      {
+        "TEAM_ID": "1610612740",
+        "mean": 0.9349558183,
+        "count": 20
+      },
+      {
+        "TEAM_ID": "1610612737",
+        "mean": 0.9351251304,
+        "count": 62
+      },
+      {
+        "TEAM_ID": "1610612748",
+        "mean": 0.9457940578,
+        "count": 55
+      },
+      {
+        "TEAM_ID": "1610612755",
+        "mean": 0.95333897,
+        "count": 40
+      },
+      {
+        "TEAM_ID": "1610612745",
+        "mean": 0.9676147998,
+        "count": 65
+      },
+      {
+        "TEAM_ID": "1610612747",
+        "mean": 0.9685951771,
+        "count": 45
+      },
+      {
+        "TEAM_ID": "1610612749",
+        "mean": 0.9710360084,
+        "count": 10
+      },
+      {
+        "TEAM_ID": "1610612744",
+        "mean": 0.9893865977,
+        "count": 45
+      },
+      {
+        "TEAM_ID": "1610612738",
+        "mean": 1.0106817415,
+        "count": 74
+      },
+      {
+        "TEAM_ID": "1610612756",
+        "mean": 1.0253655853,
+        "count": 43
+      },
+      {
+        "TEAM_ID": "1610612754",
+        "mean": 1.0635071025,
+        "count": 15
+      },
+      {
+        "TEAM_ID": "1610612762",
+        "mean": 1.0797716826,
+        "count": 19
+      },
+      {
+        "TEAM_ID": "1610612741",
+        "mean": 1.0922657852,
+        "count": 25
+      },
+      {
+        "TEAM_ID": "1610612742",
+        "mean": 1.1042127949,
+        "count": 10
+      }
+    ]
+  },
+  "b2b_validation": {
+    "published_ranges": {
+      "veterans_30plus_starters": "-1.5 to -3.0",
+      "young_stars": "-0.5 to -1.5",
+      "bench": "~0"
+    },
+    "ours": [
+      {
+        "role_tier": "BENCH",
+        "age_bucket": "<26",
+        "mean_b2b": 0.6095166569,
+        "count_b2b": 598,
+        "mean_rested": -1.9089471992,
+        "count_rested": 3058,
+        "b2b_effect_min": 2.5184638561
+      },
+      {
+        "role_tier": "BENCH",
+        "age_bucket": "26-29",
+        "mean_b2b": 0.0572032489,
+        "count_b2b": 422,
+        "mean_rested": -1.4372614767,
+        "count_rested": 2359,
+        "b2b_effect_min": 1.4944647255
+      },
+      {
+        "role_tier": "BENCH",
+        "age_bucket": "30+",
+        "mean_b2b": 0.0816123541,
+        "count_b2b": 362,
+        "mean_rested": -1.1468340301,
+        "count_rested": 2107,
+        "b2b_effect_min": 1.2284463842
+      },
+      {
+        "role_tier": "FRINGE",
+        "age_bucket": "<26",
+        "mean_b2b": -0.359174947,
+        "count_b2b": 366,
+        "mean_rested": -1.8263693661,
+        "count_rested": 2042,
+        "b2b_effect_min": 1.4671944191
+      },
+      {
+        "role_tier": "FRINGE",
+        "age_bucket": "26-29",
+        "mean_b2b": 0.0550852559,
+        "count_b2b": 141,
+        "mean_rested": -1.9224599461,
+        "count_rested": 968,
+        "b2b_effect_min": 1.977545202
+      },
+      {
+        "role_tier": "FRINGE",
+        "age_bucket": "30+",
+        "mean_b2b": -0.1154140919,
+        "count_b2b": 136,
+        "mean_rested": -1.276116091,
+        "count_rested": 844,
+        "b2b_effect_min": 1.1607019992
+      },
+      {
+        "role_tier": "HIGH_USAGE_STARTER",
+        "age_bucket": "<26",
+        "mean_b2b": -0.6275401001,
+        "count_b2b": 346,
+        "mean_rested": -0.2710320413,
+        "count_rested": 1656,
+        "b2b_effect_min": -0.3565080588
+      },
+      {
+        "role_tier": "HIGH_USAGE_STARTER",
+        "age_bucket": "26-29",
+        "mean_b2b": -0.0794773881,
+        "count_b2b": 381,
+        "mean_rested": -0.2814270484,
+        "count_rested": 2088,
+        "b2b_effect_min": 0.2019496603
+      },
+      {
+        "role_tier": "HIGH_USAGE_STARTER",
+        "age_bucket": "30+",
+        "mean_b2b": -0.5429067991,
+        "count_b2b": 385,
+        "mean_rested": -0.2185525185,
+        "count_rested": 2266,
+        "b2b_effect_min": -0.3243542806
+      },
+      {
+        "role_tier": "IRON_MAN",
+        "age_bucket": "<26",
+        "mean_b2b": 0.246544289,
+        "count_b2b": 150,
+        "mean_rested": -0.3188035629,
+        "count_rested": 735,
+        "b2b_effect_min": 0.5653478519
+      },
+      {
+        "role_tier": "IRON_MAN",
+        "age_bucket": "26-29",
+        "mean_b2b": -0.0376091515,
+        "count_b2b": 250,
+        "mean_rested": -0.322004551,
+        "count_rested": 1314,
+        "b2b_effect_min": 0.2843953995
+      },
+      {
+        "role_tier": "IRON_MAN",
+        "age_bucket": "30+",
+        "mean_b2b": -0.0894287588,
+        "count_b2b": 186,
+        "mean_rested": -0.291801565,
+        "count_rested": 997,
+        "b2b_effect_min": 0.2023728063
+      },
+      {
+        "role_tier": "ROTATION",
+        "age_bucket": "<26",
+        "mean_b2b": 0.0297007905,
+        "count_b2b": 670,
+        "mean_rested": -1.1174793916,
+        "count_rested": 3715,
+        "b2b_effect_min": 1.1471801821
+      },
+      {
+        "role_tier": "ROTATION",
+        "age_bucket": "26-29",
+        "mean_b2b": 0.2335695859,
+        "count_b2b": 554,
+        "mean_rested": -0.8389018742,
+        "count_rested": 3197,
+        "b2b_effect_min": 1.0724714601
+      },
+      {
+        "role_tier": "ROTATION",
+        "age_bucket": "30+",
+        "mean_b2b": 0.1016893246,
+        "count_b2b": 297,
+        "mean_rested": -0.5120318239,
+        "count_rested": 1769,
+        "b2b_effect_min": 0.6137211485
+      },
+      {
+        "role_tier": "STARTER",
+        "age_bucket": "<26",
+        "mean_b2b": 0.044715593,
+        "count_b2b": 517,
+        "mean_rested": -0.6837251386,
+        "count_rested": 2742,
+        "b2b_effect_min": 0.7284407316
+      },
+      {
+        "role_tier": "STARTER",
+        "age_bucket": "26-29",
+        "mean_b2b": 0.3129181628,
+        "count_b2b": 408,
+        "mean_rested": -0.5027097363,
+        "count_rested": 2257,
+        "b2b_effect_min": 0.8156278991
+      },
+      {
+        "role_tier": "STARTER",
+        "age_bucket": "30+",
+        "mean_b2b": 0.0858836388,
+        "count_b2b": 444,
+        "mean_rested": -0.2536317916,
+        "count_rested": 2595,
+        "b2b_effect_min": 0.3395154304
+      }
+    ]
+  }
+}
