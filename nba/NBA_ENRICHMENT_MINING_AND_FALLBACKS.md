@@ -147,3 +147,30 @@ source (primary / secondary / derived) populated each factor (`information_fresh
 Each backfilled factor is then measured on 2023-24 → 2025-26 with the certification harness pattern (leg-level, two
 seasons) before it earns a cell; each derived fallback is trained and reported the same way (its own Brier / accuracy on
 two seasons) so "always populated" never means "populated with a guess".
+
+---
+
+## 8. PARITY RULE (owner, 2026-09-09): the backfill must be the same object the daily mining produces
+
+The historical simulation trains the final probability / score / confidence engine. It is only valid if every factor's
+history has the **same shape, the same snapshot semantics, and the same as-of cutoff** as the live daily run. Rules:
+
+1. **Same rows.** A backfill writes the same record type the daily scraper writes (injury snapshots with `snapshot_ts`;
+   per-game matchup rows; weekly as-of table snapshots with `asof`). Never an end-of-season aggregate where the live run
+   will see season-to-date.
+2. **One as-of function.** `nba/nba_asof.py` holds the cutoff rules (baseline build = game day 09:00 ET, which sees the
+   official day-before report; enrichment runs = 13:30, 17:30, tip−30) and the selectors (`status_asof`, `table_asof`,
+   `aggregate_matchups_asof`). Training and production call the same functions with the same arguments — only the
+   timestamps differ.
+3. **Date-filterable endpoints → weekly as-of snapshots** (`DateTo=`): defended FG%, hustle, clutch. Live daily pulls
+   are season-to-date; weekly snapshots are the same object at weekly resolution (the tables move slowly).
+4. **Endpoints without a date filter → the atomic per-game object** (`boxscorematchupsv3`) for both live (new games
+   only) and backfill (every game); aggregates are derived in-repo. The season table (`leagueseasonmatchups`) is kept
+   only as a cross-check of the aggregation, never as a predictor.
+5. **Truth is separate from what-was-known.** Box-score DNP/inactives are the truth for training targets; the PDF
+   snapshots are what was known. The simulation must never let truth leak into a predictor.
+6. **Static-by-season inputs are parity-safe** when they exist before opening day (preseason logs, All-Star/All-NBA
+   lists, arenas, schedule) and are used only for the season they precede.
+
+Applied so far: injury report (snapshots both modes ✓), season tables (weekly as-of mode added; per-game matchups
+scraper added; end-of-season tables demoted to cross-check), preseason logs ✓.
