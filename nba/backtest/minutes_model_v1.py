@@ -205,8 +205,7 @@ team_pull = blow26.groupby("TEAM_ID")["min_ratio"].agg(["mean", "count"]).reset_
 # ---------------------------------------------------------------- 5. B2B validation
 players["prev_date"] = players.groupby(["season", "PLAYER_ID"])["GAME_DATE"].shift(1)
 players["rest"] = [(g - p).days - 1 if isinstance(p, date) else np.nan for g, p in zip(players["GAME_DATE"], players["prev_date"])]
-b2 = players.merge(player_comp[["season", "PLAYER_ID", "mu_role"]], on=["season", "PLAYER_ID"], how="inner")
-b2 = b2.merge(gm[["season", "GAME_ID", "abs_margin"]], on=["season", "GAME_ID"], how="inner")
+b2 = pg[pg["mu_role"].notna()].merge(players[["season", "PLAYER_ID", "GAME_ID", "rest"]], on=["season", "PLAYER_ID", "GAME_ID"], how="inner")
 b2 = b2[(b2["abs_margin"] < COMPETITIVE_MARGIN) & b2["rest"].notna()]
 b2["role_tier"] = b2["mu_role"].apply(role_tier)
 b2["age_bucket"] = pd.cut(b2["age"], bins=[0, 25, 29, 60], labels=["<26", "26-29", "30+"])
