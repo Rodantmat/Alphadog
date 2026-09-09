@@ -154,6 +154,19 @@ def nb_cdf(k, mean, var):
     r = mean * mean / (var - mean); p = r / (r + mean); return float(stats.nbinom.cdf(k, r, p))
 
 
+# FACTOR LAYER for periods (pace + opponent DEF rating), as-of rolling(15) from team files, coefficients fit on TRAIN
+_ta = teams_adv.sort_values(["season", "TEAM_ID", "GAME_DATE"]).copy()
+for c_ in ["PACE", "DEF_RATING"]: _ta[c_] = pd.to_numeric(_ta[c_], errors="coerce")
+_gt = _ta.groupby(["season", "TEAM_ID"])
+_ta["asof_PACE"] = _gt["PACE"].transform(lambda x: x.shift(1).rolling(15, min_periods=5).mean()); _ta["asof_DEF"] = _gt["DEF_RATING"].transform(lambda x: x.shift(1).rolling(15, min_periods=5).mean())
+pg["OPP_ID"] = np.where(pg["TEAM_ID"] == pg["home_id"], games.set_index(["season", "GAME_ID"]).loc[list(zip(pg["season"], pg["GAME_ID"])), "away_id"].values, pg["home_id"])
+pg = pg.merge(_ta[["season", "TEAM_ID", "GAME_ID", "asof_PACE"]].rename(columns={"asof_PACE": "own_pace"}), on=["season", "TEAM_ID", "GAME_ID"], how="left")
+pg = pg.merge(_ta[["season", "TEAM_ID", "GAME_ID", "asof_PACE", "asof_DEF"]].rename(columns={"TEAM_ID": "OPP_ID", "asof_PACE": "opp_pace", "asof_DEF": "opp_def"}), on=["season", "OPP_ID", "GAME_ID"], how="left")
+LG_PACE = float(_ta["PACE"].mean()); LG_DEF = float(_ta["DEF_RATING"].mean())
+pg["f_pace"] = np.log(np.sqrt(pg["own_pace"].fillna(LG_PACE) * pg["opp_pace"].fillna(LG_PACE)) / LG_PACE); pg["f_opp_def"] = np.log(pg["opp_def"].fillna(LG_DEF) / LG_DEF)
+pg = pg.sort_values(["season", "PLAYER_ID", "GAME_DATE"]).reset_index(drop=True); g = pg.groupby(["season", "PLAYER_ID"])
+FACTOR_FITS = {}
+
 reliab = []; findings = {}
 for per in PERIODS:
     pc = PCOL[per]; mcol = f"MINF_{pc}"
