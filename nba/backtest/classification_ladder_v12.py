@@ -259,10 +259,7 @@ for prop, cfg in PROPS.items():
               "rebounds": {"ELITE": 1071, "HIGH": 3190, "LOW": 5628, "MID": 10722},
               "assists": {"ELITE": 292, "HIGH": 2456, "LOW": 9755, "MID": 8108},
               "threes_made": {"ELITE": 161, "HIGH": 4470, "LOW": 8359, "MID": 7621}}
-    VBANDS = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "STARTER"), (25.5, 31.5, "STAR"), (31.5, 99, "SUPERSTAR")],
-              "rebounds": [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
-              "assists": [(0, 2.5, "LOW"), (2.5, 5.5, "MID"), (5.5, 8.5, "HIGH"), (8.5, 99, "ELITE")],
-              "threes_made": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 4.5, "HIGH"), (4.5, 99, "ELITE")]}[prop]
+    VBANDS = VBANDS_ALL[prop]
     _pre_band = [next((kk for lo, hi, kk in VBANDS if lo <= a < hi), "ELITE") for a in np.floor(d["proj_mean"]) + 0.5]
     _ratio = np.array([(BAND_N[prop][b] * BAND_RATIO[prop][b] + 300.0) / (BAND_N[prop][b] + 300.0) for b in _pre_band]) if prop in BAND_CELL_PROPS else np.ones(len(d))
     d["proj_mean"] = d["proj_mean"] * _ratio
