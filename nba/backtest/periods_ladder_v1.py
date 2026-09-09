@@ -241,11 +241,18 @@ for per in PERIODS:
         # prior strength scaled by period length: a quarter's per-36 rate carries ~1/3 of a game's information
         K_SCALE = {"q1": 3.0, "q4": 3.0, "h1": 1.5, "h2": 1.5}[per] * float(os.environ.get("BT_KSCALE", "1.0"))
         n = d["n_rate"].clip(lower=1); d["shr36"] = (n * d["rate36"] + kst * K_SCALE * d["tier_prior"]) / (n + kst * K_SCALE)
+        # factor multiplier (log-rate, fit on TRAIN; centered so beta~0 = unneeded)
+        X_all = d[["f_pace", "f_opp_def"]].astype(float).fillna(0.0).values; trm = d["season"].isin(TRAIN).values
+        yv = np.log((d[ycol].values[trm] + 0.5) / (d["shr36"].values[trm] * d[f"pm_{per}"].values[trm] / 36 + 0.5))
+        mu_x = X_all[trm].mean(axis=0); beta, *_ = np.linalg.lstsq(np.c_[np.ones(trm.sum()), X_all[trm] - mu_x], yv, rcond=None); beta = beta[1:]
+        FACTOR_FITS[f"{prop}_{per}"] = {"f_pace": round(float(beta[0]), 3), "f_opp_def": round(float(beta[1]), 3)}
+        d["shr36"] = d["shr36"] * np.exp(np.clip((X_all - mu_x) @ beta, -0.35, 0.35))
         d["mean"] = d["shr36"] * d[f"pm_{per}"] / 36
         d["mean_norm"] = d["shr36"] * d[f"pm_{per}_norm"] / 36; d["mean_blow"] = d["shr36"] * d[f"pm_{per}_blow"] / 36
         for st in ("close", "medium", "blowout"):
-            d[f"mean_{st}"] = d["shr36"] * d[f"mu_{per}"] * d[f"pr_{st}_{per}"] / 36   # mean given PLAYS in that state
-        d["mean_sit"] = d["shr36"] * 1.0 / 36   # ~1 minute of production when sitting most of the period
+            d[f"mean_{st}"] = d["shr36"] * d[f"rr_{st}_{col}_{per}"] * d[f"mu_{per}"] * d[f"pr_{st}_{per}"] / 36   # plays in that state x state RATE ratio
+        d["mean_sit"] = d["shr36"] * 1.0 / 36
+        d["mean_ot_extra"] = d["shr36"] * d[f"rr_close_{col}_{per}"] * d[f"ot_min_{per}"] / 36 if per in ("q4", "h2") else 0.0
         _tr = d[d["season"].isin(TRAIN)].dropna(subset=["prior_var", "prior_mean"]); _iod = (_tr["prior_var"] / _tr["prior_mean"].clip(lower=0.25))
         _b = [0, 1, 2, 4, 6, 8, 12, 16, 200]; iod_band = _iod.groupby(pd.cut(_tr["prior_mean"], _b)).median()
         iod_prior = pd.cut(d["mean"], _b).map(iod_band).astype(float).fillna(float(_iod.median()))
