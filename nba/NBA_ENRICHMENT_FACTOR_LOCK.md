@@ -644,3 +644,87 @@ seasons, in this order: (1) build the injury-report PDF backfill (statuses as kn
 hustle / clutch tables; (2) measure the minutes tree and A2/A3/A4 sub-factors on 3 seasons of box scores; (3) fit cells
 per prop × direction × variation band × role tier, keep only what holds on two seasons; (4) then the enrichment engine and,
 after that, the slip engine with the correlation copula.
+
+---
+---
+
+# Pass 5 (2026-09-09) — Final scan per prop, and the BASELINE REASSIGNMENT (what moves from enrichment into the baseline)
+
+## P5.1 The reassignment rule (owner)
+
+Anything that (a) is derivable from game logs, splits, schedule, rosters, and season tables as of the morning build, or
+(b) is *published before the morning build* (the official day-before injury report at 5 PM local; referee assignments
+~9 AM ET), belongs in the **baseline** — the recipe already knows how to fit it on train, keep it only if it holds on two
+seasons, and carry a derived fallback. The enrichment layer then prices only the **same-day residual** (game-day report
+changes, late scratches, confirmed lineups, market moves, coach quotes). This makes the baseline numbers more assertive
+on their own and shrinks what enrichment has to do. The delta principle is unchanged: enrichment never re-evaluates what
+the baseline priced.
+
+## P5.2 Reassignment table
+
+| Factor / sub-factor | Baseline version (derived or day-before) | Enrichment residual (same day) |
+|---|---|---|
+| A1 own status | **day-before report**: Out/Doubtful → removed from the slate roster; Questionable/Probable → P(plays) weight from the team's measured resolution rate (N1) and reason class (N2) | game-day report changes, downgrades, shootaround/warm-up, late scratch |
+| A2 teammate-out redistribution | day-before Outs trigger the baseline's with/without table and the on/off lift (already carried as "derived backup"); game-of-absence index from history | same-day Outs; confirmed committee vs direct backup; re-release deltas |
+| A3 returning player | game-back index and games-missed tier are known from history; ramp curve (65/80/95 by injury class) fit on train | the coach's restriction quote |
+| A4 star rest probability | fully derivable: policy designation, age/mileage, B2B/3-in-4, home/road, national TV (schedule), consecutive games, prior-night minutes/OT, standings lock, opponent strength, monthly rest count → P(rest) prior fit on train | the day-before "Rest" listing resolves it; same-day announcements |
+| A5 lineup | P(start) from starter-status history (already baseline); demotion/promotion patterns; tinkering-coach variance | confirmed lineup 30–90 min pre-tip |
+| A7 trade window | team change detected in logs → first-5-games effect + variance (fit on train) | wire timing on the day |
+| A8 rookie / two-way | **preseason game logs** (`SeasonType=Pre Season`, one bulk call) seed rookies and new arrivals for the opening; two-way game count from logs; rookie post-ASB drift | recall/assignment news |
+| B3 leverage / tanking | standings computed from logs by date; seed lock; elimination; conditional April structure | shutdown announcements |
+| B4 / M1 opponent absences and matchup | day-before opponent Outs → primary-defender assignment shifts; season matchup / defended-FG% / D-DPM tables → `primary_defender_quality` as a baseline factor fit on train | same-day opponent changes |
+| M2 scheme proxy, M3 hustle, M4 clutch | season tables (Synergy play-type defense, shot locations, hustle, clutch) → baseline factors | none |
+| K1 coach rotation profile | fully derivable from box scores + quarter files, keyed by coach | new coach (confidence) |
+| D1 referee crew | assignments post ~9 AM ET → available to a morning build → tendency table applied at baseline (tertiary; keep only if significant) | crew changes (rare) |
+| D2 schedule/travel/altitude/day game | fully derivable (schedule + arenas) | none |
+| N1 P(plays\|Questionable), N2 injury class | history from the PDF archive × box scores → baseline priors | the resolution itself |
+| B1/B2 market spread/total, C1–C4 lines, S1–S4 pick'em structure | **stay in enrichment/market stages** by owner design (board and market are separate pipeline stages) — though the baseline's derived spread is their fallback | all |
+| E1–E4 confidence | baseline carries sample thinness and freshness of its own inputs | news recency, team flux at run time |
+
+Net effect: of the 34 enrichment factors, **~22 gain a baseline version**; the enrichment layer keeps the same-day
+residuals and the entire market/pick'em family.
+
+## P5.3 Final per-prop scan — the last additions (all baseline-derivable)
+
+- **Age-adjusted carryover** (all props; season opening): the cross-season carryover should regress by age curve —
+  DARKO does this explicitly; our carryover currently treats a 34-year-old and a 23-year-old identically. Fit the age
+  adjustment on train (player bio has age). Also: **team-change carryover discount** — a player who changed teams in the
+  off-season keeps his rate prior but his minutes-role prior is far less certain (CARRY_N lower); measurable on the
+  trades/free agency in our three seasons.
+- **Preseason seeding** (rookies/new arrivals): preseason minutes and per-36 rates as the opening prior when no NBA
+  history exists (weight low; measurable: preseason → October correlation on 2023-24 and 2024-25 rookies).
+- **PFD (personal fouls drawn)** is a column in the bulk game logs — the direct FTM/points foul-drawing input (the
+  baseline seeds `foul_drawing` from PFD/min; verify the column is retained in our slim files, add it if not).
+- **BLKA (blocks against)** is also in the logs — a scorer's rim-finishing vulnerability, a sub-factor for points vs
+  elite rim protectors (M1 interaction).
+- **DD2/TD3 flags** are in the logs — direct double-double history for the DD copula's validation.
+- **Q1 usage share vs full-game usage share** (period props): scripted early shooters; measurable from the quarter files
+  now; belongs in the period harness as a rate sub-factor.
+- **Game-flow prior for 2H/4Q** (period props): the team's historical first-half margin distribution vs the derived spread
+  (teams that build leads early vs come back) — a small state-mixture refinement; measurable from quarter files (Q1+Q2
+  team points).
+- **Turnovers vs opponent steal profile / assists vs opponent forced-assist profile**: opponent STL% and AST allowed are
+  in the team logs; the baseline has forced-TO%; add STL/36 allowed and AST allowed as opponent-profile columns (cheap).
+- Nothing new for FGA/3PA (volume is the cleanest signal and already fully covered), rebounds (opponent miss rate,
+  OREB%, shot diet, teammate competition all present), or fantasy/combos (inherit).
+
+## P5.4 What is NOT moved to the baseline, and why
+Market spread/total, prop lines, line movement, pick'em structure — owner design: board and market are separate stages
+that run after the baseline. Same-day availability changes — by definition unavailable at the morning build (the day-
+before report captures most Outs; the residual is the enrichment layer's core job). Coach quotes and shootaround reports —
+same day.
+
+## P5.5 Build order implied by the reassignment (baseline side, before the season)
+1. Day-before injury report ingestion into the ladder builder (parse the last PDF snapshot before the build; roster filter
+   + with/without trigger + P(plays) weights) — the single biggest assertiveness gain available.
+2. PDF archive backfill (two seasons, statuses as known) → N1/N2 priors and the honest backtest of item 1.
+3. Season matchup / defended-FG% / hustle / clutch tables (bulk, cheap) → M1–M4 as baseline factors fit on train.
+4. Rest prior (A4) from history + schedule; coach rotation profile (K1); trade window (A7); age-adjusted and team-change
+   carryover; preseason seeding.
+5. Referee tendency table from `game_officials` (2025-26 first; decide on the two-season backfill by significance).
+6. Re-certify the baseline on both seasons with each addition (the same leg-level standard); only what holds stays.
+
+## P5.6 Lock status after five passes
+Discovery is closed: 34 factors, ~90 sub-factors, a minutes tree, thin factors, retirements, and a baseline/enrichment
+split that puts everything derivable or day-before-published into the baseline. No further passes are expected to find a
+new mechanism; the remaining risk is measurement, which is exactly what the certification harness exists for.
