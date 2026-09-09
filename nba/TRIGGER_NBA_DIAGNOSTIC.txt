@@ -1,3 +1,3 @@
 Trigger for nba-diagnostic.yml
-last_triggered_utc: 2026-09-08T03:15:00Z
-trigger_reason: probe real column schemas for Usage/Scoring/Four Factors measure types on bulk game-log endpoints before designing tables
+last_triggered_utc: 2026-09-08T09:30:00Z
+trigger_reason: probe whether playergamelogs honors Period=1..4 for per-quarter box scores (gates the period-props layer: 4 bulk calls vs 4x1230 per-game calls)
