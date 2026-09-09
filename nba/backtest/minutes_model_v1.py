@@ -195,7 +195,7 @@ for (s, pid), grp in pg[pg["competitive"] & pg["trail_med_min"].notna()].groupby
     d = ((grp["MINF"] <= thr) | (grp["PF"] >= 5)).mean()
     dud_flags.append((s, pid, float(d), int(len(grp))))
 dud_df = pd.DataFrame(dud_flags, columns=["season", "PLAYER_ID", "dud_rate", "n"])
-bw = pg.merge(player_comp[["season", "PLAYER_ID", "mu_role"]], on=["season", "PLAYER_ID"], how="inner")
+bw = pg[pg["mu_role"].notna() & (pg["mu_role"] > 0)].copy()
 bw["min_ratio"] = bw["MINF"] / bw["mu_role"]
 blow = bw[(bw["won_blowout"] | bw["lost_blowout"]) & bw["role_tier"].notna()]
 blow_by_role = blow.groupby(["role_tier", "won_blowout"])["min_ratio"].agg(["mean", "count"]).reset_index()
