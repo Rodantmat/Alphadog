@@ -178,7 +178,9 @@ def main():
         path = DATA / f"nba_injury_report_{slug}.json"
         existing = json.loads(path.read_text()) if path.exists() else {"meta": {}, "rows": []}
         done_days = set(existing["meta"].get("days_done", [])); rows = existing["rows"]; d = d0
-        max_days = int(os.environ.get("INJURY_MAX_DAYS", "40")); n_new = 0   # chunked: progress is committed per run, resume later
+        max_days = int(os.environ.get("INJURY_MAX_DAYS", "100")); n_new = 0   # chunked: progress is committed per run, resume later
+        if existing["meta"].get("rows") == 0 and done_days:   # a previous run recorded days with zero rows (parser bug) -> redo them
+            done_days = set(); rows = []
         while d <= d1 and n_new < max_days:
             if d.isoformat() not in done_days:
                 snaps = scan_day(session, d)
