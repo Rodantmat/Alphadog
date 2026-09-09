@@ -297,7 +297,7 @@ for prop, cfg in PROPS.items():
     EMP_MIN = 300
     d["ym_dt"] = pd.to_datetime(d["GAME_DATE"]).dt.to_period("M")
     # ZERO-ADJUSTMENT TABLE (blocks/steals): actual P(0) by projected-mean band, fit on TRAIN inside the run.
-    Z_BANDS = [0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 99]
+    Z_BANDS = [0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 99]
     if cfg.get("zero_adjust"):
         _z = d[d["season"].isin(TRAIN)]
         p0_by_band = (_z[col] == 0).groupby(pd.cut(_z["proj_mean"], Z_BANDS), observed=False).mean()
