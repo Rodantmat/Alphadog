@@ -1,0 +1,3 @@
+Trigger for nba-periods.yml
+last_triggered_utc: 2026-09-09T08:05:00Z
+trigger_reason: first pull of per-quarter player game logs (Period=1..4) for the 3 stats seasons - period props layer
