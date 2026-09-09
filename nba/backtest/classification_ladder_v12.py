@@ -121,7 +121,7 @@ for df in (players, teams, teams_adv):
     df["GAME_ID"] = df["GAME_ID"].astype(str); df["TEAM_ID"] = df["TEAM_ID"].astype(str)
 teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
 players["MINF"] = players["MIN"].apply(to_min)
-for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF"]: players[c] = pd.to_numeric(players[c], errors="coerce").fillna(0)
+for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL", "TOV", "FGA", "FTM", "FTA"]: players[c] = pd.to_numeric(players[c], errors="coerce").fillna(0)
 players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)
 teams["is_home"] = teams["MATCHUP"].str.contains("vs."); teams["margin"] = pd.to_numeric(teams["PLUS_MINUS"], errors="coerce")
 teams_adv["NET_RATING"] = pd.to_numeric(teams_adv["NET_RATING"], errors="coerce")
