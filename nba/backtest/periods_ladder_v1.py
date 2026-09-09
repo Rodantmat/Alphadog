@@ -42,7 +42,7 @@ TRAIN = os.environ.get("BT_TRAIN", "2023-24,2024-25").split(","); TEST = [os.env
 SLUG = {s: s.replace("-", "_") for s in SEASONS}
 PERIODS = os.environ.get("BT_PERIODS", "q1,h1,h2,q4").split(","); OT_MODE = os.environ.get("BT_OT", "include")
 BT_PROPS = os.environ.get("BT_PROPS", "points,rebounds,assists,threes_made").split(",")
-SHIFT_LAMBDA = float(os.environ.get("BT_SHIFT_LAMBDA", "0"))
+SHIFT_LAMBDA = float(os.environ.get("BT_SHIFT_LAMBDA", "0.5"))   # evidence: 0.5 for q1/q4 (0 = replacement was under-confident; 1 over-confident)
 PROPS = {"points": ("PTS", 0.12, 25), "rebounds": ("REB", 0.08, 40), "assists": ("AST", 0.15, 20), "threes_made": ("FG3M", 0.12, 25)}
 ROLE_TIERS = [("IRON_MAN", 36, 99), ("HIGH_USAGE_STARTER", 32, 36), ("STARTER", 27, 32), ("ROTATION", 21, 27), ("BENCH", 15, 21), ("FRINGE", 0, 15)]
 MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL, BLOWOUT_MARGIN, COMPETITIVE_MARGIN = 24, 15, 5, 6, 300, 300.0, 20, 15
