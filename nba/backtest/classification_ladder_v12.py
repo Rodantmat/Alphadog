@@ -496,6 +496,10 @@ for (prop, vb, role, off), grp in rel.groupby(["prop", "var_band", "role_tier", 
         rel.loc[cur_idx, "p_over"] = sigmoid(A * logit(rel.loc[cur_idx, "p_raw"].values) + B)
         platt_log.append({"prop": prop, "var_band": vb, "role_tier": role, "offset": int(off), "month": str(m), "A": round(float(A), 4), "B": round(float(B), 4), "n_fit": int(len(hist)), "max_shift": round(float(shift), 4)})
 platt_df = pd.DataFrame(platt_log)
+if os.environ.get("BT_SAVE_COMPONENTS", "0") == "1":
+    # calibrated marginal P(over 9.5) (post-Platt) for the double-double joint threshold in combos_ladder_v1.py
+    for prop_ in rel["prop"].unique():
+        rel[(rel["prop"] == prop_) & (rel["line"] == 9.5)][["season", "PLAYER_ID", "GAME_ID", "p_over"]].rename(columns={"p_over": "p_ge10"}).to_pickle(OUT / f"_p10_{prop_}_{TEST[0]}.pkl")
 
 def brier(p, y): return float(np.mean((p - y) ** 2))
 def logloss(p, y):
