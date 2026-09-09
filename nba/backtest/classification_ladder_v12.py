@@ -55,7 +55,10 @@ BAND_CELL_PROPS = set() if _bc == "0" else ({"points", "rebounds", "assists", "t
 K_CELL_BY_PROP = {"threes_made": float(os.environ.get("BT_KCELL_3PM", "100"))}
 TAG = os.environ.get("BT_TAG", "final")
 BT_PROPS = os.environ.get("BT_PROPS", "")
-SHIFT_MODE_PROPS = set(os.environ.get("BT_SHIFT_MODE", "threes_made").split(","))
+SHIFT_MODE_PROPS = set(os.environ.get("BT_SHIFT_MODE", "threes_made,blocks,steals").split(","))
+PLAYER_L0 = os.environ.get("BT_PLAYER_L0", "0") == "1"   # REJECTED on data 2026-09-09 (regression-noise dominated); off by default
+L0_MIN, L0_K = 40, 40.0
+SHIFT_LAMBDA = {p: float(v) for p, v in (kv.split(":") for kv in os.environ.get("BT_SHIFT_LAMBDA", "threes_made:1.0,blocks:0.5,steals:0.5").split(","))}
 SLUG = {s: s.replace("-", "_") for s in SEASONS}
 BLOWOUT_MARGIN = 20; COMPETITIVE_MARGIN = 15
 MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6
