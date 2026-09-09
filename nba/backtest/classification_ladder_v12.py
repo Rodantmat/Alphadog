@@ -67,7 +67,26 @@ PROPS = {
     "rebounds":    {"col": "REB",  "alpha": 0.08, "k_stab": 40, "step": 1.0, "family": "negbin"},
     "assists":     {"col": "AST",  "alpha": 0.15, "k_stab": 20, "step": 1.0, "family": "negbin"},
     "threes_made": {"col": "FG3M", "att_col": "FG3A", "alpha": 0.12, "pct_alpha": 0.03, "k_stab": 25, "step": 1.0, "family": "compound"},
+    # Extension props. Prior strength from data (2026-09-09): k_MoM relative to points = STL 4.9x, TOV 2.5x, BLK 1.7x.
+    "blocks":      {"col": "BLK",  "alpha": 0.10, "k_stab": 50, "step": 1.0, "family": "negbin"},
+    "steals":      {"col": "STL",  "alpha": 0.10, "k_stab": 125, "step": 1.0, "family": "negbin"},
+    "turnovers":   {"col": "TOV",  "alpha": 0.12, "k_stab": 60, "step": 1.0, "family": "negbin"},
+    "fga":         {"col": "FGA",  "alpha": 0.15, "k_stab": 15, "step": 1.0, "family": "auto"},
+    "fg3a":        {"col": "FG3A", "alpha": 0.12, "k_stab": 20, "step": 1.0, "family": "negbin"},
+    "ftm":         {"col": "FTM",  "att_col": "FTA", "alpha": 0.12, "pct_alpha": 0.03, "k_stab": 30, "step": 1.0, "family": "compound"},
+    "personal_fouls": {"col": "PF", "alpha": 0.10, "k_stab": 40, "step": 1.0, "family": "negbin"},
 }
+VBANDS_ALL = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "STARTER"), (25.5, 31.5, "STAR"), (31.5, 99, "SUPERSTAR")],
+              "rebounds": [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
+              "assists": [(0, 2.5, "LOW"), (2.5, 5.5, "MID"), (5.5, 8.5, "HIGH"), (8.5, 99, "ELITE")],
+              "threes_made": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 4.5, "HIGH"), (4.5, 99, "ELITE")],
+              "blocks": [(0, 0.6, "LOW"), (0.6, 1.6, "MID"), (1.6, 99, "HIGH")],
+              "steals": [(0, 0.6, "LOW"), (0.6, 1.6, "MID"), (1.6, 99, "HIGH")],
+              "turnovers": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 3.5, "HIGH"), (3.5, 99, "ELITE")],
+              "fga": [(0, 7.5, "LOW"), (7.5, 12.5, "MID"), (12.5, 17.5, "HIGH"), (17.5, 99, "ELITE")],
+              "fg3a": [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
+              "ftm": [(0, 1.5, "LOW"), (1.5, 3.5, "MID"), (3.5, 5.5, "HIGH"), (5.5, 99, "ELITE")],
+              "personal_fouls": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 99, "HIGH")]}
 ROLE_TIERS = [("IRON_MAN", 36, 99), ("HIGH_USAGE_STARTER", 32, 36), ("STARTER", 27, 32), ("ROTATION", 21, 27), ("BENCH", 15, 21), ("FRINGE", 0, 15)]
 MIN_RATIO = {"IRON_MAN": (0.832, 0.841), "HIGH_USAGE_STARTER": (0.837, 0.855), "STARTER": (0.867, 0.908), "ROTATION": (0.960, 1.003), "BENCH": (1.015, 1.074), "FRINGE": (1.180, 1.430)}
 P_BLOWOUT_BINS = [0, 2, 4, 6, 8, 10, 12, 15, 99]
