@@ -331,8 +331,9 @@ for prop, cfg in PROPS.items():
                     # stacking the three levels tripled the correction.
                     fine = next((c for c in reversed(levels) if c), None)
                     if fine:
-                        used[i] = True; w = fine[1] / (fine[1] + K_CELL)
-                        base = _sg(_lg(base) + w * (_lg(fine[0]) - _lg(fine[2])))
+                        used[i] = True; w = fine[1] / (fine[1] + K_CELL); lam = SHIFT_LAMBDA.get(prop, 1.0)
+                        # cell level + lam * (parametric deviation from the cell's mean parametric) + shrunk observed gap
+                        base = _sg(_lg(fine[2]) + lam * (_lg(base) - _lg(fine[2])) + w * (_lg(fine[0]) - _lg(fine[2])))
                 else:
                     for c in levels:   # REPLACEMENT, chained coarse -> fine, each shrunk k/(k+n)
                         if not c: continue
