@@ -413,5 +413,19 @@
       "OPP_OREB_PCT_RANK": 62,
       "AVAILABLE_FLAG": 1
     }
+  },
+  "playergamelogs::Period=1": {
+    "status": 200,
+    "row_count": 22522,
+    "sample_min": 9.616666666666667,
+    "sample_pts": 10,
+    "sample_player": "LeBron James"
+  },
+  "playergamelogs::Period=4": {
+    "status": 200,
+    "row_count": 22806,
+    "sample_min": 12.0,
+    "sample_pts": 17,
+    "sample_player": "Dalton Knecht"
   }
 }
