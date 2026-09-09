@@ -263,3 +263,152 @@ time-zone effects; and the size of what the baseline's derived backups already c
 - Whether the market spread's information beyond our derived spread is large for period props specifically.
 - Line-movement-as-news-detector (C3) threshold and lead time.
 - Overrated list to test explicitly on our data: revenge games, home/away in isolation, generic B2B, generic DvP.
+
+---
+---
+
+# Pass 2 (2026-09-09) — Prop-line signal sets and slip-level factors
+
+*What the slip engine consumes: for each leg, the baseline probability plus a set of DAILY SIGNALS, each with a
+direction, an anchor-band-dependent magnitude, a trap, and an engine role (rank booster / gate / confidence / correlation
+flag). Magnitudes marked **[measured]** come from our own two-season data; **[published]** from public research
+(RotoGrinders, Unabated, HoopMargin, propeller-type sources) and are to be re-measured; **[folklore]** is widely repeated
+but unmeasured and is NOT to be used until measured. Engine role legend: **RB** rank booster, **G** gate (filter),
+**C** confidence modifier, **X** correlation flag.*
+
+## P2.1 Points (anchors: FRINGE <9.5 · ROLE 9.5–17.5 · STARTER 17.5–25.5 · STAR 25.5–31.5 · SUPERSTAR >31.5)
+
+| Signal (exact data point) | Mechanism | Direction / magnitude at anchor | Low vs mid vs high anchor | Trap | Engine |
+|---|---|---|---|---|---|
+| Teammate with usage ≥28% listed OUT (first game of the absence) | usage vacuum → FGA/FTA up for same-position starters and the direct backup | More +3–8 pp [published; 7–8 usage pts freed, market prices 5–6] | mid anchors gain most; SUPERSTAR already at max usage; FRINGE only gains if minutes come with it | replacement is a low-usage defender; team slows down without the star; second/third game (market and our history have adjusted) | RB high; X (pairs badly with another teammate's points More) |
+| Player is the direct backup of an OUT starter at the same position | minutes +8–15 and usage +3–5 pts [published] | More +5–10 pp on ROLE anchors | largest relative move on FRINGE/ROLE; the ceiling moves | coach splits the minutes across two players; spot starter is a defender | RB high |
+| Market spread ≥ 11.5 against or for the player's team (favored starter) | 4Q sit: Iron Men play 37% of normal Q4 minutes in blowouts, 45% sit entirely [measured] | Less on STAR/SUPERSTAR anchors +4–8 pp of Less (i.e., More −4…−8) [measured from state effects]; favored bench More | devastating on high anchors; neutral/positive on FRINGE | trap game stays close (derived spread disagrees with market → weight both); underdog stars also sit (lost blowouts 36.9% over-rate [measured]) | G on high-anchor More when spread ≥11.5; RB for favored bench More |
+| Market total ≥ 232 (or ≥ +6 vs our pace-implied total) | more possessions and a shootout script | More +1–4 pp, scales with anchor [published] | proportional; highest absolute gain on STAR | pace driven by turnovers (opponent forces TOs) lowers efficiency | C; small RB on high anchors |
+| Line is ≥2.5 below the player's last-10 median WITH the same context (no teammate returned) | market lag on a stable role change | More +2–6 pp [published] | strongest on ROLE/STARTER | the L10 was inflated by absences that have ended; hot streak (shooting) is noise [published: hot/cold streaks regress] | RB medium, conditioned on context match |
+| 2nd game back from an 8+ game absence (restriction likely 24–28 min) | minutes cap | Less on STAR anchors +6–10 pp of Less; 1st game back stronger [measured on our data next pass] | high anchors cannot be reached on 20–24 min | "no restriction" quote from the coach removes it | G on high-anchor More; RB Less |
+| Player's last-5 minutes trend ≥ +4 vs season with no injury context | role expansion | More +2–4 pp | ROLE/STARTER | garbage-time minutes in blowouts inflate the trend (filter competitive games — our baseline already does) | C |
+| Opponent's primary rim protector OUT (for slashers/bigs) or top perimeter defender OUT (for guards) | rate: rim finishing / shot quality | More +2–4 pp [published] | mid/high anchors | backup is an elite defender | RB medium |
+| Crew in the top quartile of fouls/game (for elite foul-drawers: FTA/36 top decile) | FT rate | More +1–3 pp on points (larger on FTM) [published] | high anchors (stars draw fouls) | player adapts aggression | C on points; RB on FTM |
+| Close-game leverage (spread ≤ 4 and play-in/seeding stakes) | rotation shortening; stars +2–4 minutes; stars score 1.09× per minute in close Q4s [measured] | More +2–3 pp on STAR anchors; 4Q/2H props more | high anchors | coach is a long-rotation coach regardless | RB for 2H/4Q; C for full game |
+| Season phase October (carryover) / April (tank, rest) | baseline already deflates October ~5% and lifts April; the enrichment version is the *conditional* one (this team is tanking; this star is shut down) | Less veterans on tanking teams −4…−8 pp; More young players + variance | all anchors | phase cell double-counting → apply only the residual | G (shut down = void risk); C |
+
+**Folklore, not to be used until measured:** revenge games, "national TV motivation", home/away in isolation, generic "B2B = under".
+
+## P2.2 Rebounds (LOW <3.5 · MID 3.5–6.5 · HIGH 6.5–9.5 · ELITE >9.5)
+
+| Signal | Mechanism | Direction / magnitude | Anchor dependence | Trap | Engine |
+|---|---|---|---|---|---|
+| Teammate primary rebounder (REB/36 top on team) OUT | vacated boards + minutes for the backup big | More +3–6 pp for the replacement big; +1–3 for other starters [published] | HIGH/ELITE for the backup; MID for wings | team rebounds worse collectively; opponent OREB rises | RB high; X (two teammates' rebounds More compete) |
+| Opponent starting C OUT or opponent bottom-quartile DREB% | more available boards at the rim | More +2–4 pp for the matched big | HIGH/ELITE | backup C is elite (Drummond-type) | RB medium |
+| Opponent 3PA share top quartile (long rebounds) | long misses favor guards/wings | More +2–4 pp for guard/wing rebound lines | LOW/MID | efficient 3P team (fewer misses); check opp miss rate — baseline factor 0.33 [measured] | RB medium for guards |
+| Opponent OREB% top quartile | opponent crashes → fewer *defensive* boards for our big | Less +1–3 pp for our bigs (baseline opp OREB −0.11 [measured]) | HIGH/ELITE | scheme changes by opponent | C |
+| Market spread ≥ 11.5 | 4Q sit for starters; blowout minutes for bench bigs | Less on ELITE bigs' high anchors; More for backup bigs | ELITE hit hardest | trap game | G/RB as for points |
+| Total ≥ 232 | more shots → more misses | More +1–3 pp | proportional | efficiency-driven totals | C |
+| Crew low-foul (bottom quartile) for physical bigs | fewer foul-outs, more minutes | More +1–2 pp minutes-driven | HIGH/ELITE | — | C |
+| ELITE-band big vs a small-ball opponent (opp C minutes < 20 recent) | mismatch boards | More +2–4 pp | ELITE | opponent goes big for this matchup | RB medium |
+
+Measured facts to carry: rebounds dispersion is flat (var/mean 1.25–1.35) at every level — rebounds are the most *shape-stable* prop; the ELITE band's ±3–5 tail residual is a ~10-player effect (use confidence, not direction).
+
+## P2.3 Assists (LOW <2.5 · MID 2.5–5.5 · HIGH 5.5–8.5 · ELITE >8.5)
+
+| Signal | Mechanism | Direction / magnitude | Anchor dependence | Trap | Engine |
+|---|---|---|---|---|---|
+| Primary ball-handler OUT; player becomes the primary handler | role change: touches and potential assists up | More +4–8 pp for the new handler [published] | LOW/MID players gain most (non-playmakers promoted) | inefficient playmaker → turnovers not assists | RB high |
+| Player's top assist target (finisher/shooter) OUT | fewer conversions of passes | Less −3…−5 pp for ELITE passers [published] | ELITE/HIGH | player shifts to scoring (points More — correlation) | RB Less; X (assists Less ↔ points More) |
+| Opponent blitzes/doubles the primary handler (scheme flag) | forced kick-outs | More +2–5 pp for the handler | HIGH/ELITE | crisp rotations turn kick-outs into turnovers | RB medium |
+| Teammates' recent 3P% hot vs season (shooter quality) | conversion of the same passes | More +1–3 pp | HIGH/ELITE | shooting regresses | C only |
+| Close game projected (spread ≤ 4) | hero ball: assists 0.88–0.96× per minute for stars in close Q4s [measured] | Less on 4Q/2H assists for stars; full-game small | HIGH/ELITE, period props | — | RB Less for 4Q assists; C full game |
+| Pace/total up | more possessions | More +1–3 pp | proportional | — | C |
+| Blowout risk (spread ≥ 11.5) | 4Q sit | Less on high anchors | HIGH/ELITE | — | G |
+
+Measured: assists are near-Poisson (var/mean ~1.1–1.2) with left skew for HIGH players — the "less" side on high anchors is the structurally harder side to price; use confidence.
+
+## P2.4 3PM / 3PA (3PM: LOW <1.5 · MID 1.5–2.5 · HIGH 2.5–4.5 · ELITE >4.5)
+
+| Signal | Mechanism | Direction / magnitude | Anchor dependence | Trap | Engine |
+|---|---|---|---|---|---|
+| Teammate high-3PA player OUT | attempt redistribution (3PA moves before 3PM — attempts are Poisson, makes binomial [measured]) | More on 3PA +3–6 pp; on 3PM +2–4 pp | MID/HIGH | replacement is a non-shooter (attempts vanish, not move) | RB high for 3PA; medium for 3PM |
+| Opponent allowed-3PA share top quartile (baseline factor exists) — daily version: opponent's best perimeter defender OUT | more open looks | More +2–4 pp | HIGH/ELITE | opponent switches to zone | RB medium |
+| Opponent drop coverage (scheme flag) for pull-up shooters; aggressive help for spot-up shooters | shot type availability | More +2–4 pp for the matching archetype | HIGH/ELITE | scheme adapts | RB medium (needs playtype data — we have Synergy play types) |
+| Total ≥ 232 / pace up | more attempts | More +1–3 pp | proportional | — | C |
+| Blowout for favored shooters | 4Q sit | Less on ELITE | ELITE | garbage-time bench shooters More | G |
+| Line-shooting regime (league 3PA swing) | the baseline's 3PA regime residual | apply the current-season Platt only | all | — | C |
+
+Rule: for 3PM never use makes-based streaks (binomial noise); use attempt signals. LOW-band 3PM (line 0.5/1.5) is a coin-flip prop unless attempts ≥ 5.
+
+## P2.5 FGA (LOW <7.5 · MID 7.5–12.5 · HIGH 12.5–17.5 · ELITE >17.5)
+
+The cleanest usage prop (certified 0.9/1.3 both seasons). Signals: teammate usage vacuum (strongest single More signal, +4–8 pp [published]); direct-backup minutes; blowout gate on ELITE; total/pace; role change; restriction (Less). Trap: efficiency-driven scorers (fewer attempts per point). Engine: FGA More is the preferred way to express a usage-vacuum thesis when points lines have already moved.
+
+## P2.6 FTM (LOW <1.5 · MID 1.5–3.5 · HIGH 3.5–5.5 · ELITE >5.5)
+
+| Signal | Mechanism | Direction / magnitude | Anchor | Trap | Engine |
+|---|---|---|---|---|---|
+| Crew top-quartile fouls/game (tendency table) | more whistles | More +2–4 pp for FTA/36 top-decile players [published] | HIGH/ELITE | player passivity vs tight whistle | RB high (first-order for this prop) |
+| Opponent OPP_FTA_RATE top quartile (baseline factor) — daily version: opponent's foul-prone big starting/out | fouls committed | More +2–3 pp | HIGH/ELITE | — | RB medium |
+| Close game projected | late-game intentional fouling: stars' FTA 1.18× in close Q4s [measured] | More on ELITE FTM in close games; 4Q FTM props | ELITE | blowout removes it | RB for 4Q/2H FTM |
+| Usage vacuum | more drives | More +2–4 pp | MID/HIGH | replacement drives less | RB medium |
+
+## P2.7 Blocks / Steals / Stocks (blocks: LOW <0.6 · MID 0.6–1.6 · HIGH >1.6; steals same)
+
+| Signal | Mechanism | Direction / magnitude | Anchor | Trap | Engine |
+|---|---|---|---|---|---|
+| Opponent paint-scoring share top quartile (baseline opp paint 0.30/0.37 [measured]) — daily: opponent rim-attacking star IN and their stretch-5 OUT | rim attempts | More blocks +3–6 pp for rim protectors [published; our baseline carries the static part] | MID/HIGH | opponent settles for floaters vs an elite protector | RB medium (residual over baseline) |
+| Opponent TOV% top quartile (baseline opp TOV 0.27/0.26 [measured]) — daily: opponent primary handler OUT (replacement sloppier) | live-ball turnovers | More steals +3–5 pp | MID/HIGH | ball out of hands / slow pace | RB medium |
+| Foul trouble risk with a high-foul crew | minutes | Less blocks for foul-prone bigs −2…−4 pp | HIGH | — | C/G |
+| Blowout risk | fringe minutes (FRINGE Q4 ratio 2.4 [measured]) | More for bench bigs' 0.5 lines; Less for starters | LOW lines for bench | — | RB/G |
+| Zero-inflation: player's P(0) by mean band (baseline zero-adjust [measured]) | shape | confidence on 0.5 lines | LOW | — | C |
+
+Measured: steals regress 17% over the next 20 games, blocks 6% — never chase a stocks hot streak; these are the noisiest props on the board (baseline: close-not-certified). Engine rule: stocks legs only as 2-pick anchors with a strong opponent signal, never as filler in 5–6 leg slips.
+
+## P2.8 Turnovers / Personal fouls
+
+Turnovers More: opponent forced-TO% top quartile (baseline factor exists; daily: opponent's disruptive guard IN), player becomes primary handler (usage vacuum → turnovers More, +3–7 pp [published]), pace up. Turnovers Less: blowout (fewer possessions for starters), restriction. Fouls More: high-foul crew, matchup vs a foul-drawing star (opponent FTA rate), tight game late (intentional fouls). Fouls Less: blowout (sits), low-foul crew. Both are zero-adjusted, top-decile regression 13–14% [measured]: treat as confidence-limited props.
+
+## P2.9 Combos (PRA, P+R, P+A, R+A), fantasy, stocks
+
+- The combos inherit the component signals; the engine adds them with the **component covariance** (measured: ρ points–rebounds 0.13 Iron Men → 0.46 fringe — minutes-driven). A usage vacuum is the strongest PRA/fantasy More driver because it lifts all components together.
+- Fantasy: the most stable full-game prop (certified 1.0/0.8) — variance averages across components; the best anchor leg for large slips. Turnover penalty (−1) matters for high-usage handlers under pressure defenses.
+- Combo Less legs under blowout risk are stronger than single-stat Less legs (all components truncate together).
+- Stocks inherits blocks+steals noise — same rule as P2.7.
+
+## P2.10 Double-double
+
+Signals: the two categories' calibrated marginals (already in the baseline copula), plus any rebounds/points More signal on a big (opponent C out, teammate rebounder out) and the blowout gate (kills the second category). Engine: DD only for players whose weaker category's P(≥10) is ≥ 0.55 after enrichment; never for 0.3–0.5 candidates in multi-leg slips.
+
+## P2.11 Period props
+
+- **1Q / 1H** (cleanest; blowout irrelevant [measured Q1 ratio ≈1.00]): starter confirmation (A5) is the primary signal; 1Q usage share vs full-game share (scripted first plays — measurable from our quarter files); day games; opponent starting lineup quality; a returning player's restriction usually does NOT affect 1Q (they start and play the first stint) — 1Q More on a restricted star is a real, underpriced spot (verify).
+- **2H / 4Q** (state-driven): market spread ≤ 6.5 → More for stars (3-part mixture; stars 9.0 min / 3% sit in close games vs 3.5 / 45% in blowouts [measured]); spread ≥ 11.5 → gate More on stars, RB More on bench; P(OT) 5.3% at pick'em → OT-inclusive lines get a small More; hero-ball assists Less; stars' FTA 1.18× in close Q4s; bench scoring 0.84× in close Q4s (bench 4Q More only in blowouts).
+
+---
+
+## P2.12 Slip-level factors (for the slip engine)
+
+**Correlation (must be modeled, not hand-waved).** Use the same copula machinery as the double-double: per-pair correlation from history, shrunk to population by relationship type.
+- Negative: two teammates' points/FGA More (usage competition); handler points More + handler assists Less is *positively* correlated (shoot-or-pass) — so points More + assists More on the same handler is negative; two teammates' rebounds More; starter More + same-team bench More in a non-blowout.
+- Positive: passer assists More + shooter 3PM More (measurable from lineup data); player More + opponent player More in a high-total game; all "Less" legs on both teams in a projected blowout (starters), all bench "More" legs in the same blowout; component legs of the same player (points + PRA) — near-duplicates, cap at one per player.
+- Period vs full: 1Q More + full-game Less on a favored star in a blowout is a *coherent* pair; 4Q More + full-game More on a star in a close game is coherent; mixing periods and full game across the same player otherwise stacks correlation.
+- Engine: compute the joint hit probability of a candidate slip via simulation on the copula; rank by **marginal EV of adding a leg to this slip**, not by leg probability alone.
+
+**Payout math.** For all-or-nothing entries with payout m on n legs, the per-leg breakeven (independent legs) is m^(−1/n) (e.g., 3× on 2 → 57.7%; 5× on 3 → 58.5%; 6× on 3 → 55.0%; 10× on 4 → 56.2%). Flex entries need the full distribution: EV = Σ P(k hits) × payout(k), computed from the joint (correlated) hit distribution. **Payout tables and void rules change and differ per app — read them from the apps at season start and store them in `nba_config` (design rule: never hardcode); do not rely on remembered tables.** Void handling is app-specific (a voided leg reduces the entry size on PrizePicks; treat other apps' rules as unverified until read).
+
+**Prop stability for slip construction — from OUR certification (not folklore):** most stable full-game legs: FGA, points, rebounds, fantasy/PRA, assists, 3PM (ladder ≤1.5 pp, bands within 2.5 on both seasons); use as anchors in 4–6 leg slips. Confidence-limited: blocks, steals, turnovers, fouls, stocks, low-volume 3PM, DD candidates in the 0.3–0.5 zone; use only as 2-pick anchors with a strong daily signal. Period props: 1H and 4Q points certified; 1Q rebounds/assists/threes near standard; 2H points at standard on one season.
+
+**Gates (hard filters before ranking):** (1) player Questionable at lock with no beat confirmation → exclude (or app-dependent); (2) high-anchor More on any starter with market spread ≥ 11.5 → exclude; (3) team in flux (trade window / ≥2 rotation players out / new coach) → confidence cap; (4) information older than the last report snapshot → confidence cap; (5) leg whose board line is ≥1.5 units from our anchor without a known cause → hold (news we lack).
+
+**Leg quality score inputs (what the engine ranks on):** enriched probability; edge vs the board's implied 50% (and vs sportsbook consensus when available); confidence (information freshness, sample thinness, team flux, prop stability class); correlation-adjusted marginal EV in the slip; prop stability class; number and agreement of independent daily signals (a usage vacuum + a favorable opponent absence + a high total agreeing is stronger than one signal of the same nominal size).
+
+---
+
+## P2.13 What gets measured on our own data next (pass 3, before any coefficient is trusted)
+
+1. Usage vacuum by archetype and usage tier: for every absence (3 seasons), the beneficiaries' FGA/36, points, assists, rebounds vs their own baseline, split by relationship (direct backup, same position, other starters, roll-man of an absent playmaker) and by game-of-absence (1st/2nd/3rd+).
+2. First-game-back minutes and rate by games missed (1–2 / 3–7 / 8+), starter vs bench; 1Q share on restricted games.
+3. Rest-spot base rates under the policy: P(star DNP) by B2B/3-in-4 × home/road × national TV × opponent strength × age/mileage × month.
+4. Opponent absences: opponent C out → our bigs' rebounds/points/blocks; opponent primary defender out → matched scorer.
+5. Market vs derived spread (once ParlayAPI game lines are pulled): does the market delta improve the state-mixture weights for 4Q/2H props beyond the derived spread?
+6. Crew tendencies from `game_officials` (2025-26) → FTM/PF/minutes effects; decide if the two-season officials backfill is worth ~2,460 calls.
+7. 3-in-4 / time-zone / day-game effects conditional on playing.
+8. The folklore list (revenge, national TV, home/away alone) — measure and retire or keep.
+Each becomes a `factor_profile_cells` entry keyed by prop × direction × variation band × role tier, validated on two seasons exactly like the baseline.
