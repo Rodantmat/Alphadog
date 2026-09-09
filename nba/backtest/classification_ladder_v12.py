@@ -588,7 +588,9 @@ report = {"factor_fits": FACTOR_FITS, "leg_level": {"confidence_bands_by_prop_si
           "anchor_by_role_tier": json.loads(by_role.to_json(orient="records"))}
 _suffix = f"{TAG}_{TEST[0]}" + (f"_{BT_PROPS.replace(',', '-')}" if BT_PROPS else "")
 (OUT / f"classification_{_suffix}.json").write_text(json.dumps(report, indent=2, default=str))
-md = [f"# Classification + ladder calibration {TAG} ({date.today()}) — out-of-sample {TEST}, history {TRAIN}", ""]
+md = [f"# Classification + ladder calibration {TAG} ({date.today()}) — out-of-sample {TEST}, history {TRAIN}", "", "## Season shape (calibration + coverage by month)", "| prop | month | projected | player-games | coverage | anchor gap pp | worst band gap pp | platt share |", "|---|---|---|---|---|---|---|---|"]
+for _, r in month_table.iterrows(): md.append(f"| {r['prop']} | {r['month']} | {int(r['projected'])} | {int(r['player_games'])} | {r['coverage']:.3f} | {r['anchor_gap_pp']:+.2f} | {r['worst_band_gap_pp']} | {r['platt_share']:.2f} |")
+md.append("")
 for prop in [p for p in PROPS if not BT_PROPS or p in BT_PROPS.split(",")]:
     s = summary[summary["prop"] == prop]
     md += [f"## {prop}", "| offset | n | mean pred P(over) | actual over | gap (pp) | Brier (emp+param) | Brier (param only) | emp share |", "|---|---|---|---|---|---|---|---|"]
