@@ -272,10 +272,13 @@ for per in PERIODS:
             if per in ("q4", "h2"):
                 # P(under) = sum_state P(state) * [ sit_state * P(under | sit) + (1 - sit_state) * P(under | plays in state) ]
                 p_sit = np.array([_cdf(kk, m, max(m * 1.2, m + 1e-6)) for kk, m in zip(k_, fr["mean_sit"])])
-                tot = np.zeros(len(fr))
+                tot = np.zeros(len(fr)); pot = fr["p_ot"].fillna(0.05).values if OT_MODE == "include" else np.zeros(len(fr))
                 for st in ("close", "medium", "blowout"):
                     ps = fr[f"p_{st}_{per}"].values; sit = fr[f"sit_{st}_{per}"].values
                     pp_ = np.array([_cdf(kk, m, m * i) for kk, m, i in zip(k_, fr[f"mean_{st}"], io)])
+                    if st == "close" and OT_MODE == "include":   # OT as a MIXTURE branch (not a mean bump); OT only in close games
+                        pp_ot = np.array([_cdf(kk, m, m * i) for kk, m, i in zip(k_, fr[f"mean_{st}"] + fr["mean_ot_extra"], io)])
+                        w_ot = np.clip(pot / np.maximum(ps, 1e-6), 0, 1); pp_ = (1 - w_ot) * pp_ + w_ot * pp_ot
                     tot += ps * (sit * p_sit + (1 - sit) * pp_)
                 return 1 - tot
             return 1 - np.array([_cdf(kk, m, v) for kk, m, v in zip(k_, fr["mean"], fr["var"])])
