@@ -200,6 +200,20 @@ def _compound_cdf_raw(k, att_mean, att_var, pct, max_att=30):
     return float(sum(p_att[a] * stats.binom.cdf(k, a, pct) for a in range(max_att + 1)))
 
 
+def nb_cdf_zadj(k, mean, var, p0_actual):
+    """Zero-adjusted NegBin (blocks/steals): P(0) replaced by the mean band's real zero rate fit on TRAIN
+    inside the run (blocks ~1.5bpg: actual 0.32 vs NegBin 0.27; steals zero-deflated at low means), rest rescaled."""
+    if mean <= 0: return 1.0
+    if var <= mean * 1.02:
+        pmf0 = float(stats.poisson.pmf(0, mean)); cdf_k = float(stats.poisson.cdf(k, mean))
+    else:
+        r = mean * mean / (var - mean); p = r / (r + mean)
+        pmf0 = float(stats.nbinom.pmf(0, r, p)); cdf_k = float(stats.nbinom.cdf(k, r, p))
+    if k < 0: return 0.0
+    if k == 0: return p0_actual
+    return p0_actual + (cdf_k - pmf0) * (1 - p0_actual) / max(1 - pmf0, 1e-9)
+
+
 def nb_cdf(k, mean, var):
     if mean <= 0: return 1.0
     if var <= mean * 1.02:
