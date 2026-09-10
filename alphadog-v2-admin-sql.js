@@ -273,7 +273,7 @@ async function toolRunJob(env, args) {
     try {
       const resp = await fetch(url, { method: (extra && extra.method) || "GET", headers: (extra && extra.headers) || {}, body: extra && extra.body ? (typeof extra.body === "string" ? extra.body : JSON.stringify(extra.body)) : undefined });
       const text = await resp.text(); let json = null; try { json = JSON.parse(text); } catch (_) {}
-      const out = { ok: resp.ok, http_status: resp.status, url, bytes: text.length, body_preview: text.slice(0, Number((extra && extra.preview_chars) || 2500)) };
+      const out = { ok: resp.ok, http_status: resp.status, url, bytes: text.length, resp_headers: Object.fromEntries([...resp.headers].filter(([k]) => /remaining|used|limit|quota|x-requests|retry|rate/i.test(k))), body_preview: text.slice(0, Number((extra && extra.preview_chars) || 2500)) };
       if (extra && extra.find) { const needle = String(extra.find); const snips = []; let pos = 0; while (snips.length < Number(extra.find_max || 6)) { const i = text.indexOf(needle, pos); if (i < 0) break; snips.push(text.slice(Math.max(0, i - 250), i + 450)); pos = i + needle.length; } out.find_hits = snips; out.find_count = text.split(needle).length - 1; }
       if (json && typeof json === "object") { out.top_keys = Array.isArray(json) ? `array(${json.length})` : Object.keys(json).slice(0, 25); if (!Array.isArray(json)) out.key_sizes = Object.fromEntries(Object.entries(json).map(([k, v]) => [k, Array.isArray(v) ? v.length : typeof v])); }
       return out;
