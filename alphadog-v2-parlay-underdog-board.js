@@ -67,6 +67,16 @@ const UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
   strikeouts: "pitcher_strikeouts",
   walks_allowed: "walks_allowed",
   fantasy_points: "fantasy_score",
+  // The worker snake_cases and player_-prefixes whatever market_key we hand it, so these are the
+  // normalized forms our scraper's display names become. Seen live 2026-09-10.
+  player_points: "fantasy_score",
+  player_fantasy_points: "fantasy_score",
+  player_pitching_outs: "pitcher_outs",
+  player_walks_allowed: "walks_allowed",
+  player_batter_walks: "walks",
+  player_batter_strikeouts: "hitter_strikeouts",
+  player_earned_runs_allowed: "earned_runs",
+  player_run_1st_inning: "rfi_nrfi",
   player_hits: "hits",
   player_rbis: "rbis",
   player_runs: "runs",
