@@ -187,7 +187,7 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 | A2 teammate-out redistribution | ✓ | ✓ | ✓ | box-score absences + logs (derived) + PDFs for as-known | measurable now |
 | A3 return ramp | ✓ | ✓ | ✓ | logs; in baseline v30 | — |
 | A4 rest probability | ✓ logs | ✓ | ✓ | logs + PDF reason class (⏳) + national-TV flag (verify schedule field) + All-Star/All-NBA lists (static, to add) | absence prior measured |
-| A5 lineup change | ✓ starters | ⏳ | 🔧 | `scrape_nba_starter_status.py` SEASON_SLUG (nba-pergame-backfill.yml) | |
+| A5 lineup change | ✓ starters | ✓ 32,515 rows (1,230/1,230) | ✓ 32,328 rows (1,228/1,230; 2 timeouts to rerun) | `scrape_nba_starter_status.py` SEASON_SLUG (nba-pergame-backfill.yml) | complete |
 | A7 trade window | ✓ | ✓ | ✓ | logs (team change) | — |
 | A8 rookie / two-way | ✓ preseason + PDF two-way reason | ✓ preseason | ✓ preseason | season tables `preseason_logs` | |
 | B1/B2 market spread & total, C3 game-line movement | ✓ closing lines (Postgres nba_market.game_lines_closing) | ✓ | — | ParlayAPI closing-odds archive, 5-7 books, 2,410 games, 12,165 rows (2026-09-10); openers not archived before May 2026 | derived spread stays as the fallback for dates without a line |
