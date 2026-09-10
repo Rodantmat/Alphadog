@@ -932,6 +932,29 @@ function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, proje
 }
 
 async function loadMarketRows(env) {
+  // HYPERDRIVE CACHE (2026-09-10): these were bare, identical `SELECT *` statements every run,
+  // which Hyperdrive is free to serve from cache. score-prep logged sleeper_rows:0 /
+  // underdog_rows:0 at 20:05:10 while both tables held committed data from 20:04:5x (408 and
+  // 1349 rows) - a stale empty result set. Every DFS leg was silently dropped before prep.
+  // A bound parameter that changes per call makes the statement uncacheable.
+  const cacheBust = Date.now();
+  const prizepicksRows = await allRows(env.pg, "SELECT * FROM market.prizepicks_board_current WHERE ? > 0", [cacheBust]);
+  const sleeperRows = await allRows(env.pg, "SELECT * FROM market.sleeper_board_current WHERE ? > 0", [cacheBust]);
+  let underdogRows = [];
+  try {
+    underdogRows = await allRows(env.pg, "SELECT * FROM market.underdog_board_current WHERE ? > 0", [cacheBust]);
+  } catch (err) {
+    const message = String(err && err.message ? err.message : err);
+    // Only a genuinely absent table is non-fatal. Anything else was previously swallowed here,
+    // which is how a real read failure could look identical to "no Underdog data yet".
+    if (!/does not exist/i.test(message)) throw err;
+    console.log(`score-prep: underdog_board_current missing, treating as zero rows (${message})`);
+  }
+  console.log(`score-prep loadMarketRows: prizepicks=${prizepicksRows.length} sleeper=${sleeperRows.length} underdog=${underdogRows.length}`);
+  return { prizepicksRows, sleeperRows, underdogRows };
+}
+
+async function loadMarketRows_ORIGINAL(env) {
   const prizepicksRows = await allRows(env.pg, "SELECT * FROM market.prizepicks_board_current");
   const sleeperRows = await allRows(env.pg, "SELECT * FROM market.sleeper_board_current");
   // underdog_board_current is only created when the Underdog worker itself first runs, and
