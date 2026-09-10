@@ -522,6 +522,7 @@ Return ramp (minutes-only multipliers by games missed × game back, measured on 
 - Bridge jobs added this session: `raw_fetch` (url, headers, method, body, preview_chars, find), `raw_scan_scripts` (page + scripts regex scan), `fliff_probe_codes`, `board_compare_parlay_vs_ours`, `pp_compare_parlay_vs_scraper`, `parlay_game_lines_backfill`, `odds_api_board_backfill`, `market_source_probe_raw` upgrades. Workflows added: `nba-injury-report.yml` (self-looping), `nba-pergame-backfill.yml`, `nba-probe.yml` (no-commit probes), `sleeper-board.yml`, `underdog-board.yml`. PrizePicks MLB scraper (`scrape.yml`) lacks a rebase-retry on push — it failed once on a concurrent commit (the two new board workflows have the retry).
 
 ### 7. Pending, in order
+0. ~~Overnight jobs~~ **VERIFIED 05:30Z**: injury report 2025-26 = 176/176 days, 919,949 rows, 7 shards; 2024-25 = 174 days, 418,071 rows, 7 shards (fewer intra-day re-publishes that season — spot-check per month); starters 2023-24 = 32,328 rows, 1,228/1,230 (timeouts on 0022300079, 0022300721 — rerun); officials 2023-24 = 3,690 rows, 1,230/1,230. Every enrichment factor now has its two-season backfill except the boards (waiting on the Odds API upgrade). Status snapshot in config `enrichment_backfill_status_2026_09_10`.
 1. Owner upgrades the Odds API plan → run `odds_api_board_backfill` for both seasons (~1–2 h, resumable) → confirm rows.
 2. Verify overnight jobs: injury 2025-26 tail + 2024-25 shards; starters/officials 2023-24.
 3. Underdog alternates capture; Fliff `sports_book_public` capture (optional).
