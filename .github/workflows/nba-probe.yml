@@ -19,6 +19,8 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip curl_cffi
       - name: "Run the probe script named in the trigger file"
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
         run: |
           f=nba/TRIGGER_NBA_PROBE.txt
           S=$(grep -E '^script:' $f | head -1 | sed 's/^script:[[:space:]]*//')
