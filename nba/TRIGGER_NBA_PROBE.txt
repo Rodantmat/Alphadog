@@ -1,4 +1,4 @@
 Trigger for nba-probe.yml
 script: probe_board_archives.py
-last_triggered_utc: 2026-09-10T01:35:00Z
+last_triggered_utc: 2026-09-10T01:40:00Z
 trigger_reason: are there FREE historical board archives (Wayback CDX captures of the PrizePicks/Underdog/Sleeper public APIs; vendor free tiers)?
