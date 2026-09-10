@@ -243,7 +243,7 @@ def main():
                     res = "over_win"
                 else:
                     res = "under_win"
-                out.append((d, event_id, label, book, mk, player, side, line, price, actual, res, is_alt, True))
+                out.append((d, event_id, label, book, mk, player, side, line, None, actual, res, is_alt, True))
                 tot[res] += 1
             if out:
                 cur.executemany("""INSERT INTO nba_market.board_outcomes
