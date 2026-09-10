@@ -1089,7 +1089,10 @@ async function lastFetchAge(env) {
 }
 
 async function safeProbe(env, input = {}) {
-  if (!input.force_refresh) {
+  // Freshness buffer exists only to save ParlayAPI credits; the scraper costs nothing.
+  let scraperFresh = false;
+  try { const probe = await fetchScraperBoard(); scraperFresh = !!(probe && probe.ok && probe.rows && probe.rows.length); } catch (_) { scraperFresh = false; }
+  if (!input.force_refresh && !scraperFresh) {
     const lastFetch = await lastFetchAge(env);
     if (lastFetch !== null) {
       const ageMs = Date.now() - lastFetch;
