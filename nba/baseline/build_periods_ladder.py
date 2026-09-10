@@ -59,10 +59,8 @@ if os.environ.get("BT_INJURY", "1") == "1" and v_players:
     import sys as _sys, unicodedata as _ud, re as _re
     _sys.path.insert(0, "nba")
     try:
-        from nba_asof import status_asof, cutoff_ts, BASELINE_CUTOFF_LOCAL
-        _rows = []
-        for _p in (DATA / f"nba_injury_report_{TEST[0].replace('-', '_')}.json", DATA / "nba_injury_report_current.json"):
-            if _p.exists(): _rows += json.loads(_p.read_text()).get("rows", [])
+        from nba_asof import status_asof, cutoff_ts, BASELINE_CUTOFF_LOCAL, load_injury_rows
+        _rows = load_injury_rows(DATA, TEST[0].replace('-', '_'))
         _st = status_asof(_rows, str(ASOF_D), cutoff_ts(str(ASOF_D), BASELINE_CUTOFF_LOCAL)) if _rows else {}
         def _norm(x): return _re.sub(r"[^a-z]", "", _ud.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower())
         _idx = json.loads((DATA / "nba_all_players.json").read_text()).get("records", []) if (DATA / "nba_all_players.json").exists() else []
