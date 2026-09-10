@@ -225,6 +225,20 @@ async function toolRunJob(env, args) {
     }
     return { ok: true, from, to, accepted_or_other: out };
   }
+  if (job === "json_facet") {
+    // Fetch a JSON array/object and count values of a dotted field path across items, optionally filtered. extra { url, headers?, path (e.g. "options.0.outcome_type"), filter_path?, filter_value?, top?: 40, sample_where?: {path,value}, sample_chars?: 1200 }
+    const resp = await fetch(String(extra.url), { method: (extra && extra.method) || "GET", headers: (extra && extra.headers) || {}, body: extra && extra.body ? JSON.stringify(extra.body) : undefined });
+    const j = await resp.json(); const items = Array.isArray(j) ? j : (extra && extra.items_path ? String(extra.items_path).split(".").reduce((o, k) => (o == null ? o : o[k]), j) : [j]);
+    const dig = (o, p) => String(p).split(".").reduce((x, k) => (x == null ? x : x[/^\d+$/.test(k) ? Number(k) : k]), o);
+    const counts = {}; let sample = null;
+    for (const it of items || []) {
+      if (extra && extra.filter_path && String(dig(it, extra.filter_path)) !== String(extra.filter_value)) continue;
+      const v = String(dig(it, extra.path));
+      counts[v] = (counts[v] || 0) + 1;
+      if (!sample && extra && extra.sample_where && String(dig(it, extra.sample_where.path)) === String(extra.sample_where.value)) sample = JSON.stringify(it).slice(0, Number(extra.sample_chars || 1200));
+    }
+    return { ok: true, http_status: resp.status, items: (items || []).length, counts: Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, Number(extra.top || 40)), sample };
+  }
   if (job === "scan_webpack_chunks") {
     // Fetch a webpack runtime, rebuild the chunk URLs from its id->hash map, and grep every chunk for a regex. extra { runtime_url, base_url, pattern, max_chunks?: 80, snippet?: 300 }
     const hdrs = { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" };
