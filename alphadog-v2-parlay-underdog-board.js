@@ -401,6 +401,40 @@ async function fetchScraperBoard() {
   return { ok: true, rows, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
 }
 
+// Underdog's games map does not resolve a start time for every appearance (pitcher legs in
+// particular), and the promoter requires a future start - that dropped 465 of 920 legs on
+// 2026-09-10, including EVERY pitching-outs and earned-runs row. We own the authoritative MLB
+// schedule, so fill the gap from it rather than trusting the feed.
+async function backfillStageStartTimes(env, batchId) {
+  const client = pgClient(env);
+  try {
+    const res = await client.unsafe(`
+      UPDATE market.underdog_board_stage s
+      SET start_time = g.game_time
+      FROM (
+        SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm, gs.game_time_utc game_time
+        FROM ref.players p
+        JOIN LATERAL (
+          SELECT DISTINCT ON (game_pk) game_time_utc, home_mlb_team_id, away_mlb_team_id
+          FROM daily.game_status_current
+          WHERE game_time_utc > now()
+          ORDER BY game_pk, updated_at DESC
+        ) gs ON gs.home_mlb_team_id::text = p.current_mlb_team_id::text
+             OR gs.away_mlb_team_id::text = p.current_mlb_team_id::text
+        WHERE p.mlb_player_id IS NOT NULL
+      ) g
+      WHERE s.batch_id = $1 AND s.start_time IS NULL AND LOWER(s.player_name) = g.nm`,
+      [batchId]);
+    const chk = await client.unsafe(
+      "SELECT COUNT(*) total, COUNT(start_time) with_start FROM market.underdog_board_stage WHERE batch_id = $1", [batchId]);
+    return { ok: true, filled: Number(res?.count || 0), total: Number(chk?.[0]?.total || 0), with_start: Number(chk?.[0]?.with_start || 0) };
+  } catch (err) {
+    return { ok: false, error: safeString(err && err.message ? err.message : err, 300) };
+  } finally {
+    try { await client.end({ timeout: 2 }); } catch (_) {}
+  }
+}
+
 function ladderStatToCanonical(stat) {
   const s = normalizeText(stat);
   if (!s) return null;
