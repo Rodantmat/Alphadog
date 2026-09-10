@@ -165,8 +165,16 @@ def main():
                 nm = norm_name(player)
                 rec = day.get(nm)
                 if rec is None:
-                    # distinguish a real scratch from a join failure
-                    res = "dnp" if nm in players_seen else "unmatched_player"
+                    # Distinguish a real scratch from a join failure:
+                    #   in this season's logs at all -> he plays this season, absent today = DNP/inactive
+                    #   known league-wide but never in this season -> almost always a name-match problem
+                    #   unknown entirely -> definitely a matching problem (or a team/combo market)
+                    if nm in players_seen:
+                        res = "dnp"
+                    elif nm in all_known_names:
+                        res = "unmatched_not_in_season"
+                    else:
+                        res = "unmatched_player"
                     out.append((d, event_id, label, book, mk, player, side, line, price, None, res, is_alt, False))
                     tot[res] += 1
                     continue
