@@ -216,7 +216,12 @@ def main():
                         res = "unmatched_not_in_season"
                     else:
                         res = "unmatched_player"
-                out.append((d, event_id, label, book, mk, player, side, line, None, None, res, is_alt, False))
+                    out.append((d, event_id, label, book, mk, player, side, line, None, None, res, is_alt, False))
+                    tot[res] += 1
+                    continue
+                if not rec["played"]:
+                    # listed but 0 minutes: a scratch, NOT a 0-point under
+                    out.append((d, event_id, label, book, mk, player, side, line, None, None, "dnp", is_alt, False))
                     tot["dnp"] += 1
                     continue
                 if base in YES_NO:
