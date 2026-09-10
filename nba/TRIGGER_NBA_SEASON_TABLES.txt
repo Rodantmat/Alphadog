@@ -1,7 +1,7 @@
 Trigger for nba-season-tables.yml
 seasons_n: 3
-tables: none
+tables: coaches
 mode: season
-matchups: backfill:2024-25
-last_triggered_utc: 2026-09-10T02:05:00Z
-trigger_reason: per-game matchups backfill 2024-25 (sharded); 2025-26 done (1,229/1,230 games, 241,590 pairings); weekly as-of tables done for 3 seasons; player index done (5,212)
+matchups: backfill:2023-24
+last_triggered_utc: 2026-09-10T01:02:00Z
+trigger_reason: coaches per team per season (commonteamroster, 3 seasons) + per-game matchups backfill 2023-24 (2024-25 done: 1,230/1,230 games, 232,830 pairings)
