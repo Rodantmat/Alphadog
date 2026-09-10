@@ -184,8 +184,8 @@ def main():
                 "line_type": ln.get("line_type"), "live": ln.get("live_event"), "status": ln.get("status"), "expires_at": ln.get("expires_at"), "rank": ln.get("rank"),
                 "game_id": app.get("match_id"), "game_start": game.get("scheduled_at") or game.get("start_time"), "game_title": game.get("title") or "", "appearance_id": ast.get("appearance_id"),
             })
-        meta = {"ok": True, "source": "underdog lobby content (scaffold->market_filters->match_grouped_lines->lines)", "sport": sport, "started_at": started, "fetched_at": fetched_at,
-                "categories": cats, "calls": calls, "lines": len(store["over_under_lines"]), "legs": len(legs), "players": len({l["player_id"] for l in legs if l["player_id"]}),
+        meta = {"ok": True, "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders", "sport": sport, "started_at": started, "fetched_at": fetched_at,
+                "categories": cats, "calls": calls, "lines": len(store["over_under_lines"]), "legs": len(legs), "ladder_legs": len(alt_legs), "ladder_lines_with_alternates": alt_calls, "players": len({l["player_id"] for l in legs if l["player_id"]}),
                 "pregame_legs": sum(1 for l in legs if not l["live"]), "live_legs": sum(1 for l in legs if l["live"]), "by_stat": dict(Counter(l["stat"] for l in legs).most_common(50)),
                 "by_line_type": dict(Counter(l["line_type"] for l in legs)), "unresolved_player_names": sum(1 for l in legs if l["appearance_type"] == "Player" and not l["player"]),
                 "multiplier_values": dict(Counter(str(l["higher_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
