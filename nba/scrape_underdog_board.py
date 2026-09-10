@@ -69,7 +69,7 @@ def main():
             for x in new:
                 seen.add(x.get("id")); lines.append(x)
             print(f"{sport} page {page}: {len(oul)} lines ({len(new)} new); opened_lines_count={opened}")
-            if not oul or not new or (opened is not None and len(lines) >= int(opened)):
+            if not oul or not new or (opened and len(lines) >= int(opened)):
                 break
             page += 1
             time.sleep(0.6)
