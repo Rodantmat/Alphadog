@@ -120,6 +120,28 @@ def main():
         recs = [dict(zip(cols, [row[i] for i in idx])) for row in rs["rowSet"]]
         (OUT / "nba_all_players.json").write_text(json.dumps({"meta": {"endpoint": "commonallplayers", "all_seasons": True, "row_count": len(recs), "source_headers": hdr}, "records": recs}))
         print("all_players:", len(recs)); tables = [t for t in tables if t != "all_players"]
+    if "coaches" in tables:
+        # COACHES per team per season (commonteamroster 'Coaches' result set; historical seasons supported) -> K1 coach
+        # rotation profile keyed by coach. In-season changes are overlaid from nba/data/nba_coach_changes.json (dates).
+        team_ids = sorted({int(r_["TEAM_ID"]) for r_ in json.loads((OUT / "nba_all_players.json").read_text())["records"] if r_.get("TEAM_ID")}) if (OUT / "nba_all_players.json").exists() else []
+        if not team_ids:
+            team_ids = [1610612737, 1610612738, 1610612739, 1610612740, 1610612741, 1610612742, 1610612743, 1610612744, 1610612745, 1610612746, 1610612747, 1610612748, 1610612749, 1610612750, 1610612751, 1610612752, 1610612753, 1610612754, 1610612755, 1610612756, 1610612757, 1610612758, 1610612759, 1610612760, 1610612761, 1610612762, 1610612763, 1610612764, 1610612765, 1610612766]
+        team_ids = [t for t in team_ids if 1610612737 <= t <= 1610612766]
+        for season in seasons:
+            recs = []
+            for tid in team_ids:
+                url = f"https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season={season}&TeamID={tid}"
+                try:
+                    r = session.get(url, headers=STATS_HEADERS, timeout=60, impersonate="chrome124"); r.raise_for_status()
+                    rs = next(x for x in r.json()["resultSets"] if x["name"] == "Coaches"); hdr = rs["headers"]
+                    for row in rs["rowSet"]:
+                        d_ = dict(zip(hdr, row)); recs.append({"TEAM_ID": tid, "SEASON": season, "COACH_ID": d_.get("COACH_ID"), "COACH_NAME": d_.get("COACH_NAME"), "COACH_TYPE": d_.get("COACH_TYPE"), "IS_ASSISTANT": d_.get("IS_ASSISTANT"), "SORT_SEQUENCE": d_.get("SORT_SEQUENCE")})
+                except Exception as exc:  # noqa: BLE001
+                    print(f"  coaches {season} team {tid} failed: {exc}")
+                time.sleep(0.8)
+            (OUT / f"nba_coaches_{season.replace('-', '_')}.json").write_text(json.dumps({"meta": {"season": season, "endpoint": "commonteamroster/Coaches", "row_count": len(recs)}, "records": recs}))
+            print(f"coaches {season}: {len(recs)} rows, head coaches: {sum(1 for x in recs if str(x.get('COACH_TYPE', '')).lower().startswith('head'))}")
+        tables = [t for t in tables if t != "coaches"]
     if os.environ.get("MODE", "season") == "asof_weekly":
         WINDOWS = {"2023-24": ("2023-10-24", "2024-04-14"), "2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
         for season in seasons:
