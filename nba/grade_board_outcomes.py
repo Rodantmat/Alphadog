@@ -196,7 +196,9 @@ def main():
                 base = mk.replace("_alternate", "") if mk else ""
                 is_alt = bool(mk and mk.endswith("_alternate"))
                 nm = norm_name(player)
-                rec = day.get(nm)
+                resolved, how = resolve(nm, day, players_seen, alias_idx)
+                tot["match_" + how] += 1
+                rec = day.get(resolved) if resolved else None
                 if rec is None:
                     # Distinguish a real scratch from a join failure:
                     #   in this season's logs at all -> he plays this season, absent today = DNP/inactive
