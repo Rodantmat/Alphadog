@@ -1,8 +1,8 @@
 {
   "ok": true,
   "source": "https://api.sleeper.app/lines/available?dynamic=true",
-  "started_at": "2026-09-10T03:26:26Z",
-  "fetched_at": "2026-09-10T03:26:34Z",
+  "started_at": "2026-09-10T03:50:55Z",
+  "fetched_at": "2026-09-10T03:51:01Z",
   "sport": "nba",
   "legs": 0,
   "unknown_players": 0,
@@ -11,5 +11,5 @@
   "by_game_status": {},
   "players": 0,
   "multiplier_values": {},
-  "github_run_id": "34433295360"
+  "github_run_id": "34434859916"
 }
