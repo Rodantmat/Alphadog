@@ -57,7 +57,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add nba/data/nba_injury_report_*.json || true
+          git rm --cached --ignore-unmatch nba/data/nba_injury_report_2025_26.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "No injury report changes."; exit 0; fi
+          for f in $(git diff --cached --name-only); do sz=$(stat -c %s "$f" 2>/dev/null || echo 0); if [ "$sz" -gt 95000000 ]; then echo "SKIP oversized $f ($sz)"; git reset -q "$f"; fi; done
+          if git diff --cached --quiet; then echo "Nothing commit-able."; exit 0; fi
           git commit -m "NBA injury report data [skip ci]"
           for i in 1 2 3 4 5; do
             if git push origin HEAD:main; then exit 0; fi
