@@ -72,31 +72,43 @@ def season_of(d):
     return f"{y}_{str(y + 1)[-2:]}"
 
 
-def load_logs(slug):
-    url = RAW + f"nba_player_game_log_{slug}.json"
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "alphadog"}), timeout=180) as r:
+def load_players():
+    """PERSON_ID -> normalized name, and the set of all known normalized names (5,212 players)."""
+    url = RAW + "nba_all_players.json"
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "alphadog"}), timeout=120) as r:
         doc = json.load(r)
-    rows = doc.get("data") or doc.get("rows") or doc
-    by_date = defaultdict(dict)          # date -> normname -> row
-    teams_by_date = defaultdict(set)
+    by_id, names = {}, set()
+    for x in doc.get("records") or []:
+        nm = norm_name(x.get("DISPLAY_FIRST_LAST"))
+        if nm:
+            by_id[str(x.get("PERSON_ID"))] = nm
+            names.add(nm)
+    return by_id, names
+
+
+def load_logs(slug, pid_to_name):
+    """Game logs are columnar-ish records keyed by PLAYER_ID (no name), MIN is a float."""
+    url = RAW + f"nba_player_game_log_{slug}.json"
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "alphadog"}), timeout=300) as r:
+        doc = json.load(r)
+    rows = doc.get("records") or []
+    by_date = defaultdict(dict)
     players_seen = set()
     for x in rows:
-        d = str(x.get("GAME_DATE") or x.get("game_date") or "")[:10]
-        nm = norm_name(x.get("PLAYER_NAME") or x.get("player_name"))
+        d = str(x.get("GAME_DATE") or "")[:10]
+        nm = pid_to_name.get(str(x.get("PLAYER_ID")))
         if not d or not nm:
             continue
-        mins = x.get("MIN")
         try:
-            played = float(str(mins).split(":")[0]) > 0 if mins not in (None, "") else False
+            played = float(x.get("MIN") or 0) > 0
         except (TypeError, ValueError):
             played = False
         rec = {k: (x.get(k) or 0) for k in ("PTS", "REB", "AST", "FG3M", "BLK", "STL", "TOV")}
         rec["played"] = played
-        rec["team"] = x.get("TEAM_ABBREVIATION") or x.get("team_abbreviation")
+        rec["team"] = (str(x.get("MATCHUP") or "").split(" ")[0] or None)
         by_date[d][nm] = rec
-        teams_by_date[d].add(rec["team"])
         players_seen.add(nm)
-    return by_date, teams_by_date, players_seen
+    return by_date, players_seen
 
 
 def dd(r):
