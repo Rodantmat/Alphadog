@@ -549,6 +549,20 @@ async function backfillStageStartTimes(env, batchId) {
   }
 }
 
+// UNDERDOG PAYOUT RULE (canonical, verified 2026-09-10):
+//   leg multiplier = decimal(american_price) * 0.963
+//   slip multiplier = product of leg multipliers (app applies a further 2-8% on multi-leg slips)
+// Verified three ways: against the live app on three price points spanning +138 to -189, against
+// 19 real placed slips, and against four live 3-pick slip totals. Do NOT use Underdog's
+// higher_multiplier / lower_multiplier fields - those are payout MODIFIERS (0.6-2.2), not payouts.
+const UD_PAYOUT_FACTOR = 0.963;
+function udPayoutMult(american) {
+  const a = Number(american);
+  if (!Number.isFinite(a) || a === 0) return null;
+  const dec = a < 0 ? 1 + 100.0 / (-a) : 1 + a / 100.0;
+  return Math.round(dec * UD_PAYOUT_FACTOR * 1000) / 1000;
+}
+
 function ladderStatToCanonical(stat) {
   const s = normalizeText(stat);
   if (!s) return null;
