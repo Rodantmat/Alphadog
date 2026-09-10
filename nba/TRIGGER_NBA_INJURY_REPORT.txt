@@ -1,7 +1,7 @@
 Trigger for nba-injury-report.yml
 mode: backfill
-from: 2025-10-20
-to: 2026-04-13
-slug: 2025_26
-last_triggered_utc: 2026-09-10T02:05:00Z
-trigger_reason: chunk 3 of 2025-26 (resume from 2026-03-06 to season end); 137 days / 622,571 rows / 6 shards done, Oct-Dec now present via the hourly pattern
+from: 2024-10-22
+to: 2025-04-13
+slug: 2024_25
+last_triggered_utc: 2026-09-10T02:50:00Z
+trigger_reason: 2024-25 injury report backfill (queued behind the running 2025-26 final chunk via the concurrency group); the workflow now loops 30-day chunks with commits until the range is complete
