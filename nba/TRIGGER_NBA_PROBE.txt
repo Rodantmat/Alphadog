@@ -1,4 +1,4 @@
 Trigger for nba-probe.yml
-script: probe_underdog3.py
-last_triggered_utc: 2026-09-10T03:55:00Z
-trigger_reason: Underdog search endpoint - find pagination / full-board parameters
+script: probe_underdog4.py
+last_triggered_utc: 2026-09-10T04:15:00Z
+trigger_reason: Underdog pre-game board variants (proxy-only, spaced)
