@@ -182,6 +182,67 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "odds_api_board_backfill") {
+    // NBA DFS + sportsbook prop-board backfill from The Odds API historical endpoints into nba_market.board_snapshots.
+    // extra: { start, end (YYYY-MM-DD, Pacific game dates), snapshots: ["window","close"], window_pt: "14:45", close_minus_min: 30,
+    //          markets: comma list (default NBA_MARKETS), regions: "us_dfs,us", max_events: N (test cap), key_name: "odds_api_key_nba" }
+    // Cost: 10 credits x markets x regions per event-snapshot. Resumable: board_backfill_log skips done (event, label).
+    const NBA_MARKETS = "player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,player_turnovers,player_points_rebounds_assists,player_points_rebounds,player_points_assists,player_rebounds_assists,player_blocks_steals,player_double_double,player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate,player_points_rebounds_assists_alternate,player_points_rebounds_alternate,player_points_assists_alternate,player_rebounds_assists_alternate";
+    const start = String((extra && extra.start) || "").trim(); const end = String((extra && extra.end) || start).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { ok: false, error: "extra.start (YYYY-MM-DD) required" };
+    const markets = String((extra && extra.markets) || NBA_MARKETS); const regions = String((extra && extra.regions) || "us_dfs,us");
+    const labels = (extra && extra.snapshots) || ["window", "close"]; const windowPt = String((extra && extra.window_pt) || "14:45");
+    const closeMinus = Number((extra && extra.close_minus_min) || 30); const maxEvents = Number((extra && extra.max_events) || 0);
+    const keyName = String((extra && extra.key_name) || "odds_api_key_nba");
+    const nMarkets = markets.split(",").filter(Boolean).length, nRegions = regions.split(",").filter(Boolean).length;
+    const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
+    try {
+      const kr = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = ${keyName} LIMIT 1`;
+      const key = kr && kr[0] ? String(kr[0].credential_value_encrypted).trim() : ""; if (!key) return { ok: false, error: `no credential ${keyName}` };
+      const base = "https://api.the-odds-api.com/v4";
+      // Pacific offset per date (PDT -07 until early Nov, PST -08 after; DST boundaries approximated by month/day)
+      const ptOffset = (ds) => { const [y, m, d] = ds.split("-").map(Number); const dst = (m > 3 && m < 11) || (m === 3 && d >= 9) || (m === 11 && d < 2); return dst ? 7 : 8; };
+      const out = { dates: 0, events: 0, snapshots_done: 0, rows: 0, credits_est: 0, skipped: 0, errors: [] };
+      for (let d = new Date(start + "T00:00:00Z"); d <= new Date(end + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + 1)) {
+        const ds = d.toISOString().slice(0, 10); out.dates += 1; const off = ptOffset(ds);
+        // events as of 09:00 PT that day (games whose commence_time falls on this Pacific date)
+        const listTs = `${ds}T${String(9 + off).padStart(2, "0")}:00:00Z`;
+        let events = [];
+        try {
+          const er = await fetch(`${base}/historical/sports/basketball_nba/events?date=${listTs}&apiKey=${key}`); const ej = await er.json();
+          if (!er.ok) { out.errors.push({ date: ds, stage: "events", status: er.status, body: JSON.stringify(ej).slice(0, 200) }); continue; }
+          events = (ej.data || []).filter((e) => { const ct = new Date(e.commence_time); const local = new Date(ct.getTime() - off * 3600e3); return local.toISOString().slice(0, 10) === ds; });
+        } catch (e) { out.errors.push({ date: ds, stage: "events", error: String(e) }); continue; }
+        for (const ev of events) {
+          if (maxEvents && out.events >= maxEvents) break;
+          out.events += 1;
+          for (const label of labels) {
+            const done = await sqlp`SELECT 1 FROM nba_market.board_backfill_log WHERE event_id = ${ev.id} AND snapshot_label = ${label} AND status = 'ok'`;
+            if (done.length) { out.skipped += 1; continue; }
+            let reqTs;
+            if (label === "close") reqTs = new Date(new Date(ev.commence_time).getTime() - closeMinus * 60e3).toISOString().slice(0, 19) + "Z";
+            else { const [hh, mm] = windowPt.split(":").map(Number); reqTs = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hh + off, mm)).toISOString().slice(0, 19) + "Z"; }
+            try {
+              const r = await fetch(`${base}/historical/sports/basketball_nba/events/${ev.id}/odds?date=${reqTs}&regions=${regions}&markets=${markets}&oddsFormat=american&includeMultipliers=true&apiKey=${key}`);
+              const j = await r.json();
+              if (!r.ok) { await sqlp`INSERT INTO nba_market.board_backfill_log (event_id, snapshot_label, status, rows, credits_used, requested_ts, error) VALUES (${ev.id}, ${label}, 'error', 0, 0, ${reqTs}, ${JSON.stringify(j).slice(0, 300)}) ON CONFLICT (event_id, snapshot_label) DO UPDATE SET status='error', error=EXCLUDED.error, done_at=now()`; out.errors.push({ event: ev.id, label, status: r.status, body: JSON.stringify(j).slice(0, 200) }); continue; }
+              const snapTs = j.timestamp; let n = 0;
+              for (const bk of (j.data && j.data.bookmakers) || []) for (const mk of bk.markets || []) for (const oc of mk.outcomes || []) {
+                await sqlp`INSERT INTO nba_market.board_snapshots (game_date, event_id, snapshot_label, snapshot_ts, bookmaker, market_key, player, side, line, price, multiplier, home_team, away_team, commence_time)
+                  VALUES (${ds}, ${ev.id}, ${label}, ${snapTs}, ${bk.key}, ${mk.key}, ${oc.description || oc.name}, ${oc.name}, ${oc.point ?? null}, ${oc.price ?? null}, ${oc.multiplier ?? null}, ${ev.home_team}, ${ev.away_team}, ${ev.commence_time})
+                  ON CONFLICT (event_id, snapshot_label, bookmaker, market_key, player, side, line) DO UPDATE SET price = EXCLUDED.price, multiplier = EXCLUDED.multiplier, snapshot_ts = EXCLUDED.snapshot_ts, fetched_at = now()`;
+                n += 1;
+              }
+              const credits = 10 * nMarkets * nRegions; out.credits_est += credits; out.rows += n; out.snapshots_done += 1;
+              await sqlp`INSERT INTO nba_market.board_backfill_log (event_id, snapshot_label, status, rows, credits_used, requested_ts, snapshot_ts) VALUES (${ev.id}, ${label}, 'ok', ${n}, ${credits}, ${reqTs}, ${snapTs}) ON CONFLICT (event_id, snapshot_label) DO UPDATE SET status='ok', rows=EXCLUDED.rows, credits_used=EXCLUDED.credits_used, snapshot_ts=EXCLUDED.snapshot_ts, error=NULL, done_at=now()`;
+            } catch (e) { out.errors.push({ event: ev.id, label, error: String(e && e.message ? e.message : e) }); }
+          }
+        }
+        if (maxEvents && out.events >= maxEvents) break;
+      }
+      return { ok: true, start, end, markets: nMarkets, regions: nRegions, credits_per_snapshot: 10 * nMarkets * nRegions, ...out, errors: out.errors.slice(0, 15) };
+    } finally { await sqlp.end({ timeout: 5 }); }
+  }
   if (job === "parlay_game_lines_backfill") {
     // Backfill NBA (or any sport) closing game lines from ParlayAPI's archive into nba_market.game_lines_closing.
     // extra: { sport_key, start (YYYY-MM-DD), end (YYYY-MM-DD) } - one closing-odds call per date (10 credits), all books.
