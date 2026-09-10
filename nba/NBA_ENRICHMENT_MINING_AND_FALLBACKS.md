@@ -183,7 +183,7 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 
 | Factor | 2025-26 | 2024-25 | 2023-24 | Source / build | Notes |
 |---|---|---|---|---|---|
-| A1 injury_status_self, N1 P(plays\|Q), N2 injury class, A6 late scratch, A9 suspension | ⏳ chunk 1 | 🔧 | 🔧 (archive coverage to verify) | `scrape_nba_injury_report.py` backfill mode | parser fixed for runner extraction |
+| A1 injury_status_self, N1 P(plays\|Q), N2 injury class, A6 late scratch, A9 suspension | ✓ 176 days, 919,949 rows, 7 monthly shards | ✓ 174 days, 418,071 rows, 7 shards | partial (archive coverage older than 2024-25 unverified) | `scrape_nba_injury_report.py` (both URL patterns, header timestamps, md5 dedupe, monthly shards, self-looping workflow) | complete for both seasons 2026-09-10 |
 | A2 teammate-out redistribution | ✓ | ✓ | ✓ | box-score absences + logs (derived) + PDFs for as-known | measurable now |
 | A3 return ramp | ✓ | ✓ | ✓ | logs; in baseline v30 | — |
 | A4 rest probability | ✓ logs | ✓ | ✓ | logs + PDF reason class (⏳) + national-TV flag (verify schedule field) + All-Star/All-NBA lists (static, to add) | absence prior measured |
