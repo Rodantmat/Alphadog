@@ -23,6 +23,50 @@ const DEFAULT_PARLAY_UNDERDOG_PROBE_ENDPOINT = "/sports/baseball_mlb/props?bookm
 // Underdog-specific market_key names that don't match this map (they'll show up as
 // "unmapped_source_stat_name" in the batch's certification_json, same audit trail as Sleeper).
 const UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
+  // Our own scraper emits Underdog's display_stat / stat key rather than ParlayAPI's player_*
+  // naming. These are the exact 30 categories the live board returned on 2026-09-10.
+  "Hits": "hits",
+  "RBIs": "rbis",
+  "Runs": "runs",
+  "Singles": "singles",
+  "Doubles": "doubles",
+  "Triples": "triples",
+  "Home Runs": "home_runs",
+  "Total Bases": "total_bases",
+  "Hits + Runs + RBIs": "hits_runs_rbis",
+  "Batter Walks": "walks",
+  "Batter Strikeouts": "hitter_strikeouts",
+  "Stolen Bases": "stolen_bases",
+  "Hits Allowed": "hits_allowed",
+  "Earned Runs Allowed": "earned_runs",
+  "Pitching Outs": "pitcher_outs",
+  "Strikeouts": "pitcher_strikeouts",
+  "Walks Allowed": "walks_allowed",
+  "Run 1st Inning": "rfi_nrfi",
+  // Underdog's Fantasy Points is a single display name used for BOTH roles. The pitcher scoring
+  // (3/out + 3/K - 3/ER - hits - walks) is a different stat from the hitter one, so it maps to the
+  // UD-specific pitcher key; auditCanonicalMapping's isPitcher flag picks the right side.
+  "Fantasy Points": "fantasy_score",
+  "Fantasy Points__pitcher": "pitcher_fantasy_score_ud",
+  // snake_case stat keys, in case appearance_stat.stat is emitted instead of display_stat.
+  hits: "hits",
+  rbis: "rbis",
+  runs: "runs",
+  singles: "singles",
+  doubles: "doubles",
+  triples: "triples",
+  home_runs: "home_runs",
+  total_bases: "total_bases",
+  hits_runs_rbis: "hits_runs_rbis",
+  batter_walks: "walks",
+  batter_strikeouts: "hitter_strikeouts",
+  stolen_bases: "stolen_bases",
+  hits_allowed: "hits_allowed",
+  earned_runs_allowed: "earned_runs",
+  pitching_outs: "pitcher_outs",
+  strikeouts: "pitcher_strikeouts",
+  walks_allowed: "walks_allowed",
+  fantasy_points: "fantasy_score",
   player_hits: "hits",
   player_rbis: "rbis",
   player_runs: "runs",
