@@ -1,4 +1,4 @@
 Trigger for nba-probe.yml
-script: probe_dfs_apis.py
-last_triggered_utc: 2026-09-10T03:35:00Z
-trigger_reason: probe Underdog / Sleeper / Fliff public APIs (structure, ladders, multipliers) to build our own board scrapers
+script: probe_underdog2.py
+last_triggered_utc: 2026-09-10T03:45:00Z
+trigger_reason: Underdog - does the residential proxy + HTTP/2 + app headers get past the 403/426?
