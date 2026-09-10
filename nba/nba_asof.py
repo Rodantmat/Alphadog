@@ -70,8 +70,21 @@ def load_matchups(data_dir, slug):
     return rows
 
 
+def _minutes(v):
+    """matchupMinutes arrives as 'm:ss' (probe 2026-09-09); matchupMinutesSort is seconds. Return minutes as float."""
+    if v is None: return 0.0
+    if isinstance(v, (int, float)): return float(v)
+    s = str(v)
+    if ":" in s:
+        m, sec = s.split(":", 1)
+        try: return int(m) + int(sec) / 60.0
+        except ValueError: return 0.0
+    try: return float(s)
+    except ValueError: return 0.0
+
+
 def aggregate_matchups_asof(rows, game_date, keys=("personIdOff", "personIdDef"), sum_cols=("matchupMinutes", "partialPossessions", "playerPoints", "matchupFieldGoalsAttempted", "matchupFieldGoalsMade", "matchupThreePointersAttempted", "matchupThreePointersMade", "matchupFreeThrowsAttempted", "matchupFreeThrowsMade", "matchupAssists", "matchupTurnovers", "shootingFouls")):
-    """Sum per-game matchup rows with GAME_DATE < game_date into season-to-date pairings."""
+    """Sum per-game matchup rows with GAME_DATE < game_date into season-to-date pairings (minutes parsed from m:ss)."""
     agg = {}
     for r in rows:
         if r.get("GAME_DATE", "") >= game_date: continue
@@ -80,6 +93,7 @@ def aggregate_matchups_asof(rows, game_date, keys=("personIdOff", "personIdDef")
         a["GP"] += 1
         for c in sum_cols:
             v = r.get(c)
+            if c == "matchupMinutes": a[c] += _minutes(v); continue
             try:
                 if v is not None: a[c] += float(v)
             except (TypeError, ValueError):
