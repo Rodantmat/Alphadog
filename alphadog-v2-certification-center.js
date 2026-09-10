@@ -4562,7 +4562,8 @@ async function autoSelectUnderdogWorkloadLegs(env) {
         FROM wl
         WHERE under_price IS NOT NULL
           AND ((side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 < 14)
-            OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0))
+            -- Hitter legs PAUSED 2026-09-10 (September roster expansion; see V4). Pitcher-only UD: 2-pick +69.8% (29), 3-pick +150% (11).
+            OR (FALSE AND side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0))
       ),
       one_per_player AS (
         SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY leg_mult DESC) pr FROM qual) z WHERE pr = 1
