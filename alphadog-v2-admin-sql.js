@@ -182,6 +182,20 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "fliff_probe_codes") {
+    // Enumerate operation codes on Fliff's public sports book RPC; returns per-code status/error text (validation errors reveal required fields).
+    const from = Number((extra && extra.from) || 1), to = Number((extra && extra.to) || 120); const out = [];
+    const header = { api_version: 1, os: "web", version: "1.0.0", build: 1, lang: "en", install_token: "web-a1b2c3d4", device_id: "web-9bf94825-5a40-424e-b039-b33fb6a5b84b", usa_state_code: "CA", country_code: "US", platform: "prod", product_code: 1 };
+    for (let code = from; code <= to; code++) {
+      try {
+        const r = await fetch("https://app.getfliff.com/api/v1/sports_book_public/", { method: "POST", headers: { "content-type": "application/json", accept: "application/json", origin: "https://sports.getfliff.com", referer: "https://sports.getfliff.com/", "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" }, body: JSON.stringify({ header, operation: { code, config_version: 0 } }) });
+        const t = await r.text(); let msg = t.slice(0, 160); try { const j = JSON.parse(t); msg = JSON.stringify(j.detail || j.response || j).slice(0, 220); } catch (_) {}
+        if (!/invalid value for operation code/.test(msg)) out.push({ code, status: r.status, msg });
+      } catch (err) { out.push({ code, error: String(err).slice(0, 80) }); }
+      await new Promise((res) => setTimeout(res, 350));
+    }
+    return { ok: true, from, to, accepted_or_other: out };
+  }
   if (job === "raw_scan_scripts") {
     // Fetch a page, then every same-origin script it references, and collect regex matches across all of them.
     // extra { url, pattern (JS regex source), max_scripts?: 40, headers? }
