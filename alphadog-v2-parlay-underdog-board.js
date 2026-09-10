@@ -1016,12 +1016,12 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
       const client = pgClient(env);
       try {
         const sched = await client.unsafe(`
-          SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm, MIN(gs.game_time_utc) game_time,
-                 MIN(gs.home_name) home_name, MIN(gs.away_name) away_name
+          SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm, MIN(gs.official_start_time_utc) game_time,
+                 MIN(gs.home_team_name) home_name, MIN(gs.away_team_name) away_name
           FROM ref.players p
-          JOIN (SELECT DISTINCT ON (game_pk) game_pk, game_time_utc, home_mlb_team_id, away_mlb_team_id,
-                       home_team_name home_name, away_team_name away_name
-                FROM daily.game_status_current WHERE game_time_utc > now()
+          JOIN (SELECT DISTINCT ON (game_pk) game_pk, official_start_time_utc, home_mlb_team_id, away_mlb_team_id,
+                       home_team_name, away_team_name
+                FROM daily.game_status_current WHERE official_start_time_utc > now()
                 ORDER BY game_pk, updated_at DESC) gs
             ON gs.home_mlb_team_id::text = p.current_mlb_team_id::text
             OR gs.away_mlb_team_id::text = p.current_mlb_team_id::text
