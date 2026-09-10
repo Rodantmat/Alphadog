@@ -182,6 +182,41 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "parlay_game_lines_backfill") {
+    // Backfill NBA (or any sport) closing game lines from ParlayAPI's archive into nba_market.game_lines_closing.
+    // extra: { sport_key, start (YYYY-MM-DD), end (YYYY-MM-DD) } - one closing-odds call per date (10 credits), all books.
+    // Chunk by month per call (the worker's wall-time budget); the caller loops months.
+    const sport = String((extra && extra.sport_key) || "basketball_nba");
+    const start = String((extra && extra.start) || "").trim(); const end = String((extra && extra.end) || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return { ok: false, error: "extra.start and extra.end (YYYY-MM-DD) required" };
+    let key = "";
+    const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
+    try {
+      const r = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'parlay_api_key' LIMIT 1`;
+      key = r && r[0] ? String(r[0].credential_value_encrypted).trim() : (env.PARLAY_API_KEY || "");
+      if (!key) return { ok: false, error: "no parlay key" };
+      const base = String(env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").replace(/\/+$/, "");
+      const out = { dates: 0, dates_with_rows: 0, rows: 0, errors: [] };
+      for (let d = new Date(start + "T00:00:00Z"); d <= new Date(end + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + 1)) {
+        const ds = d.toISOString().slice(0, 10); out.dates += 1;
+        try {
+          const resp = await fetch(`${base}/historical/sports/${sport}/closing-odds?markets=spreads,totals,h2h&date=${ds}`, { headers: { "X-API-Key": key, accept: "application/json" } });
+          const rows = await resp.json();
+          if (!resp.ok || !Array.isArray(rows)) { out.errors.push({ date: ds, status: resp.status, body: JSON.stringify(rows).slice(0, 200) }); continue; }
+          if (!rows.length) continue;
+          out.dates_with_rows += 1;
+          for (const r0 of rows) {
+            if (!r0.canonical_event_id || !r0.bookmaker) continue;
+            await sqlp`INSERT INTO nba_market.game_lines_closing (game_date, canonical_event_id, bookmaker, home_team, away_team, season, home_odds, away_odds, total_line, over_odds, under_odds, home_spread, home_spread_odds, away_spread_odds, home_score, away_score)
+              VALUES (${r0.game_date}, ${r0.canonical_event_id}, ${r0.bookmaker}, ${r0.home_team || null}, ${r0.away_team || null}, ${r0.season || null}, ${r0.home_odds ?? null}, ${r0.away_odds ?? null}, ${r0.total_line ?? null}, ${r0.over_odds ?? null}, ${r0.under_odds ?? null}, ${r0.home_spread ?? null}, ${r0.home_spread_odds ?? null}, ${r0.away_spread_odds ?? null}, ${r0.home_score ?? null}, ${r0.away_score ?? null})
+              ON CONFLICT (game_date, canonical_event_id, bookmaker) DO UPDATE SET home_odds = EXCLUDED.home_odds, away_odds = EXCLUDED.away_odds, total_line = EXCLUDED.total_line, over_odds = EXCLUDED.over_odds, under_odds = EXCLUDED.under_odds, home_spread = EXCLUDED.home_spread, home_spread_odds = EXCLUDED.home_spread_odds, away_spread_odds = EXCLUDED.away_spread_odds, home_score = EXCLUDED.home_score, away_score = EXCLUDED.away_score, fetched_at = now()`;
+            out.rows += 1;
+          }
+        } catch (e) { out.errors.push({ date: ds, error: String(e && e.message ? e.message : e) }); }
+      }
+      return { ok: true, sport, start, end, ...out, errors: out.errors.slice(0, 20) };
+    } finally { await sqlp.end({ timeout: 5 }); }
+  }
   if (job === "market_source_probe_raw") {
     // Real diagnostic: direct, raw fetch against a market/odds provider using this worker's
     // already-bound real credentials (ODDS_API_KEY / PARLAY_API_KEY), bypassing all pipeline
