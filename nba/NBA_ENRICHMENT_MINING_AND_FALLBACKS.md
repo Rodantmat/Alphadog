@@ -200,9 +200,7 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 | D2 schedule / travel / day game / altitude | ✓ | ✓ | ✓ | logs (dates, home) + arenas | — |
 | K1 coach rotation profile | ✓ logs | ✓ | ✓ | logs + coach-by-team-by-date table (source: Wikipedia season pages "Coaching changes" tables with dates; to compile as a static file) | |
 | M2 scheme proxy | ✓ current | prior-season table (parity-safe) | prior-season | Synergy play types have no date filter → use the previous season's table for a given season | documented limitation |
-| M3 hustle, M4 clutch | ⏳ weekly as-of | ⏳ | ⏳ | season-tables asof_weekly | |
+| M3 hustle, M4 clutch | ✓ 25 weekly as-of snapshots | ✓ 25 | ✓ 25 | season-tables asof_weekly | complete |
 | E1–E4 confidence | — | — | — | run metadata | — |
 
-Blocked items need the owner: (1) renew the ParlayAPI key (free) — unlocks B1/B2/C3 live and, with its historical
-endpoint, the backfill; (2) decide on BigDataBall for C1/C2 history; (3) optionally a Kaggle account for the free
-game-line history. Everything else is built or running.
+Status as of 2026-09-10 05:30Z (config `enrichment_backfill_status_2026_09_10`): every factor has its two-season backfill except the pick'em/prop history (built, waiting only on the owner's Odds API upgrade). Remaining small builds: coach-change dates 2024-25/2023-24, All-Star/All-NBA lists, national-TV flag, daily referee-assignments scraper, the NBA game-id join for `game_lines_closing`/`board_snapshots`, the two 2023-24 starter-status game timeouts. BigDataBall is no longer needed (The Odds API history covers the sportsbook props and both DFS boards).
