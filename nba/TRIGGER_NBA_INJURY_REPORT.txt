@@ -3,5 +3,5 @@ mode: backfill
 from: 2025-10-20
 to: 2026-04-13
 slug: 2025_26
-last_triggered_utc: 2026-09-10T01:10:00Z
-trigger_reason: RERUN 2025-26 backfill with the space-insensitive parser (pdfplumber drops intra-cell spaces on the runner; verified fix on the collapsed text) - chunk 1 of 2 (100 days/run; the zero-row prior state is discarded automatically)
+last_triggered_utc: 2026-09-10T01:00:00Z
+trigger_reason: RERUN with BOTH filename patterns (hourly Injury-Report_YYYY-MM-DD_HHAM.pdf before ~2025-12-22; 15-min pattern after), header timestamp as snapshot_ts, consecutive-duplicate documents dropped, MONTHLY SHARDS (single file hit 98 MB); migrates the existing single file and redoes the zero-row days
