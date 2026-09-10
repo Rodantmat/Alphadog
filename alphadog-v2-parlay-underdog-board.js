@@ -263,6 +263,84 @@ async function authConfig(env) {
   };
 }
 
+// ============================================================================
+// SCRAPER SOURCE (2026-09-10) - we now mine Underdog with our OWN scraper
+// (nba/scrape_underdog_board.py, workflow underdog-board.yml, every 2h for MLB,NBA).
+// It produces boards/underdog_mlb_current.json: 1,025 pregame legs + 2,359 ladder rungs
+// with real payout multipliers, decimal + american prices, and Underdog's own fantasy and
+// sportsbook implied probabilities per side - versus ~278 rows and no ladder from ParlayAPI.
+// This removes the ParlayAPI credit burn for Underdog entirely.
+//
+// DESIGN: one adapter (adaptScraperLegs) renames the scraper's leg fields into the exact row
+// shape the existing ParlayAPI path already parses. toStageRow, canonical mapping, player
+// resolution, batch certification and promotion are UNCHANGED. ParlayAPI stays as a fallback
+// if the scraper JSON is missing or older than SCRAPER_MAX_AGE_HOURS.
+const SCRAPER_BOARD_URL = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/boards/underdog_mlb_current.json";
+const SCRAPER_MAX_AGE_HOURS = 6;
+
+function americanFrom(dec, american) {
+  if (Number.isFinite(american)) return american;
+  if (!Number.isFinite(dec) || dec <= 1) return null;
+  return dec >= 2 ? Math.round((dec - 1) * 100) : Math.round(-100 / (dec - 1));
+}
+
+// Scraper leg -> ParlayAPI-shaped row. Keeps every scraper field under scraper_* so nothing is lost.
+function adaptScraperLeg(leg) {
+  const hiDec = numberOrNull(leg && leg.higher_decimal);
+  const loDec = numberOrNull(leg && leg.lower_decimal);
+  const hiAm = americanFrom(hiDec, numberOrNull(leg && leg.higher_american));
+  const loAm = americanFrom(loDec, numberOrNull(leg && leg.lower_american));
+  return {
+    id: leg.line_id,
+    event_id: leg.game_id,
+    canonical_event_id: leg.game_id,
+    player: leg.player,
+    player_id: leg.player_id,
+    team: leg.team,
+    position: leg.position,
+    market_key: leg.stat_key || leg.stat,
+    market: leg.stat,
+    line: leg.line,
+    commence_time: leg.game_start,
+    sport_key: "baseball_mlb",
+    bookmaker: "underdog",
+    bookmaker_title: "Underdog Fantasy",
+    // Legacy price keys the downstream selectors and backtests already read.
+    over_price: hiAm,
+    under_price: loAm,
+    over_decimal: hiDec,
+    under_decimal: loDec,
+    implied_probability: null,
+    is_dfs_flat_payout: leg.line_type === "balanced" ? false : true,
+    // Real payout modifiers and everything else the scraper gives us.
+    higher_multiplier: leg.higher_multiplier,
+    lower_multiplier: leg.lower_multiplier,
+    line_type: leg.line_type,
+    live_event: leg.live,
+    status: leg.status,
+    expires_at: leg.expires_at,
+    appearance_id: leg.appearance_id,
+    game_title: leg.game_title,
+    source_feed: "alphadog_scraper_v1"
+  };
+}
+
+async function fetchScraperBoard() {
+  const res = await fetch(SCRAPER_BOARD_URL, { headers: { "user-agent": "AlphaDog-v2/1.0", "accept": "application/json" } });
+  if (!res.ok) return { ok: false, reason: `scraper_http_${res.status}` };
+  const json = await res.json();
+  const legs = Array.isArray(json && json.legs) ? json.legs : [];
+  const ladder = Array.isArray(json && json.ladder) ? json.ladder : [];
+  const fetchedAt = json && json.meta && json.meta.fetched_at;
+  const ageHours = fetchedAt ? (Date.now() - Date.parse(fetchedAt)) / 3600000 : 999;
+  if (!legs.length) return { ok: false, reason: "scraper_no_legs", age_hours: ageHours };
+  if (!(ageHours <= SCRAPER_MAX_AGE_HOURS)) return { ok: false, reason: "scraper_stale", age_hours: ageHours, legs: legs.length };
+  // Pregame player props only - moneyline/spread/total rows carry no player and are dropped by
+  // rowRequiredAudit anyway, but filtering here keeps the batch counts honest.
+  const rows = legs.filter(l => l && l.player && l.appearance_type === "Player" && !l.live).map(adaptScraperLeg);
+  return { ok: true, rows, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
+}
+
 function detectShape(json) {
   const topType = Array.isArray(json) ? "array" : typeof json;
   const topKeys = json && !Array.isArray(json) && typeof json === "object" ? Object.keys(json).slice(0, 40) : [];
