@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "purpose": "In-season head-coach changes with exact effective dates, overlaid on the per-season coaching staff pulled from commonteamroster (nba/data/nba_coaches_<season>.json). Source: Wikipedia season pages, 'Coaching changes' tables and dated notes. K1 coach_rotation_profile keys rotation behavior by the coach in charge on the game date.",
+    "verified": "2025-26 verified from the 2025-26 NBA season page on 2026-09-10; 2024-25 and 2023-24 to be added from their season pages"
+  },
+  "changes": [
+    {"season": "2025-26", "team": "Portland Trail Blazers", "team_id": 1610612757, "from_coach": "Chauncey Billups", "to_coach": "Tiago Splitter", "interim": true, "effective_date": "2025-10-23", "note": "Billups placed on leave by the NBA (federal gambling investigation)"},
+    {"season": "2025-26", "team": "New Orleans Pelicans", "team_id": 1610612740, "from_coach": "Willie Green", "to_coach": "James Borrego", "interim": true, "effective_date": "2025-11-15", "note": "Green fired after four seasons"}
+  ]
+}
