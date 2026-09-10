@@ -144,6 +144,15 @@ def main():
                 opts = {str(o.get("choice")): o for o in pr.get("options") or []}
                 hi, lo = opts.get("higher", {}), opts.get("lower", {})
                 prob = lambda o, k: ((o.get("odds") or {}).get(k) or {}).get("probability")
+                def _dec(am):
+                    try: am = float(am)
+                    except (TypeError, ValueError): return None
+                    return round(1 + am / 100.0, 4) if am > 0 else round(1 + 100.0 / (-am), 4)
+                def _payout(am):
+                    # VERIFIED RULE (owner, 2026-09-10): Underdog payout = decimal(American price) x 0.963.
+                    # The higher_multiplier / lower_multiplier fields are MODIFIERS, not payouts - never use them as payouts.
+                    d = _dec(am)
+                    return round(d * 0.963, 4) if d is not None else None
                 alt_legs.append({
                     "line_id": pr.get("id"), "over_under_id": ou.get("id"), "sport": sport, "is_main": bool(pr.get("is_main")), "stable_id": pr.get("stable_id"),
                     "player": " ".join(x for x in (pl.get("first_name"), pl.get("last_name")) if x) or ou.get("title") or "", "player_id": app.get("player_id"),
