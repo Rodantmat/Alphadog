@@ -67,6 +67,17 @@ const UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
   strikeouts: "pitcher_strikeouts",
   walks_allowed: "walks_allowed",
   fantasy_points: "fantasy_score",
+  // GROUND TRUTH (2026-09-10, from market.underdog_ladder_current.source_stat_name): Underdog's
+  // appearance_stat.stat values are BARE - hits, strikeouts, walks_allowed, points, runs_allowed,
+  // hits_allowed. The pitcher-outs and earned-runs keys are 'outs' and 'earned_runs', NOT
+  // 'pitching_outs' / 'earned_runs_allowed'. That single naming mismatch is why every Pitching
+  // Outs and Earned Runs Allowed leg went unmapped and never reached the board.
+  outs: "pitcher_outs",
+  earned_runs: "earned_runs",
+  runs_allowed: "runs_allowed",
+  points: "fantasy_score",
+  batter_walks: "walks",
+  batter_strikeouts: "hitter_strikeouts",
   // The worker snake_cases and player_-prefixes whatever market_key we hand it, so these are the
   // normalized forms our scraper's display names become. Seen live 2026-09-10.
   player_points: "fantasy_score",
