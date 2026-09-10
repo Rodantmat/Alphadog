@@ -1,0 +1,57 @@
+name: Sleeper Board Scraper
+
+on:
+  schedule:
+    - cron: '15 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      sports:
+        description: "Sleeper sport tags, comma-separated"
+        default: "mlb,nba"
+        required: false
+  push:
+    paths:
+      - 'nba/TRIGGER_SLEEPER_BOARD.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-sleeper-board
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip curl_cffi
+      - name: Produce Sleeper board JSON
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          SLEEPER_SPORTS: ${{ github.event.inputs.sports || 'mlb,nba' }}
+          SLEEPER_OUT_DIR: boards
+        run: |
+          mkdir -p boards
+          python nba/scrape_sleeper_board.py
+      - name: Commit board JSON to main (with rebase retry)
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add boards/sleeper_*.json || true
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git commit -m "Update Sleeper board JSON [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+          done
+          exit 1
