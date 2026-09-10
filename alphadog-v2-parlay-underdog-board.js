@@ -73,6 +73,10 @@ const UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
   // 'pitching_outs' / 'earned_runs_allowed'. That single naming mismatch is why every Pitching
   // Outs and Earned Runs Allowed leg went unmapped and never reached the board.
   outs: "pitcher_outs",
+  pitch_outs: "pitcher_outs",
+  rfi_v2: "rfi_nrfi",
+  period_1_hits_allowed: "first_inning_hits_allowed",
+  period_1_total_runs_allowed: "first_inning_runs_allowed",
   earned_runs: "earned_runs",
   runs_allowed: "runs_allowed",
   points: "fantasy_score",
