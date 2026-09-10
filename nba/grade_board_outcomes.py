@@ -251,8 +251,8 @@ def main():
                     (game_date, event_id, snapshot_label, bookmaker, market_key, player, side, line, price,
                      stat_actual, leg_result, is_alternate, played)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                    ON CONFLICT ((md5(coalesce(game_date::text,'')||'|'||coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||
-                                      coalesce(side,'')||'|'||coalesce(line::text,''))::uuid))
+                    ON CONFLICT (game_date, (md5(coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||coalesce(side,'')||'|'||
+                                                 coalesce(line::text,''))))
                     DO UPDATE SET stat_actual=EXCLUDED.stat_actual, leg_result=EXCLUDED.leg_result,
                                   played=EXCLUDED.played, graded_at=now()""", out)
             tot["legs"] += len(out)
