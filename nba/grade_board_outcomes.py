@@ -232,7 +232,7 @@ def main():
                     continue
                 fn = BASE.get(base)
                 if fn is None or line is None:
-                    out.append((d, event_id, label, book, mk, player, side, line, price, None, "no_stat", is_alt, True))
+                    out.append((d, event_id, label, book, mk, player, side, line, None, None, "no_stat", is_alt, True))
                     tot["no_stat"] += 1
                     continue
                 actual = float(fn(rec))
