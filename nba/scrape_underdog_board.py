@@ -157,7 +157,9 @@ def main():
                     "line_id": pr.get("id"), "over_under_id": ou.get("id"), "sport": sport, "is_main": bool(pr.get("is_main")), "stable_id": pr.get("stable_id"),
                     "player": " ".join(x for x in (pl.get("first_name"), pl.get("last_name")) if x) or ou.get("title") or "", "player_id": app.get("player_id"),
                     "stat": ast.get("display_stat") or ou.get("title"), "stat_key": ast.get("stat"), "line": pr.get("stat_value"),
-                    "higher_multiplier": hi.get("payout_multiplier"), "lower_multiplier": lo.get("payout_multiplier"), "higher_american": hi.get("american_price"), "lower_american": lo.get("american_price"),
+                    "higher_multiplier_modifier_only": hi.get("payout_multiplier"), "lower_multiplier_modifier_only": lo.get("payout_multiplier"),
+                    "higher_payout": _payout(hi.get("american_price")), "lower_payout": _payout(lo.get("american_price")),
+                    "higher_american": hi.get("american_price"), "lower_american": lo.get("american_price"),
                     "higher_prob_fantasy": prob(hi, "fantasy"), "lower_prob_fantasy": prob(lo, "fantasy"), "higher_prob_sportsbook": prob(hi, "sportsbook"), "lower_prob_sportsbook": prob(lo, "sportsbook"),
                     "higher_status": hi.get("status"), "lower_status": lo.get("status"), "game_id": app.get("match_id"), "updated_at": hi.get("updated_at") or lo.get("updated_at"),
                 })
