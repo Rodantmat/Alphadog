@@ -188,7 +188,7 @@ async function toolRunJob(env, args) {
     try {
       const resp = await fetch(url, { headers: (extra && extra.headers) || {} });
       const text = await resp.text(); let json = null; try { json = JSON.parse(text); } catch (_) {}
-      const out = { ok: resp.ok, http_status: resp.status, url, bytes: text.length, body_preview: text.slice(0, 2500) };
+      const out = { ok: resp.ok, http_status: resp.status, url, bytes: text.length, body_preview: text.slice(0, Number((extra && extra.preview_chars) || 2500)) };
       if (json && typeof json === "object") { out.top_keys = Array.isArray(json) ? `array(${json.length})` : Object.keys(json).slice(0, 25); if (!Array.isArray(json)) out.key_sizes = Object.fromEntries(Object.entries(json).map(([k, v]) => [k, Array.isArray(v) ? v.length : typeof v])); }
       return out;
     } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
