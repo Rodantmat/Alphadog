@@ -189,11 +189,16 @@ def main():
             if not day:
                 tot["dates_without_boxscore"] += 1
                 continue
-            cur.execute("""SELECT event_id, snapshot_label, bookmaker, market_key, player, side, line, price
+            # Grade DISTINCT legs, not one row per bookmaker: the outcome of (player, market, line, side)
+            # is a property of the box score, not of who offered it. Ten books offering the same line share
+            # one truth - storing it per book would multiply the table ~10x for no information. The board
+            # rows join back on (game_date, player, market_key, line, side).
+            cur.execute("""SELECT DISTINCT market_key, player, side, line
                            FROM nba_market.board_snapshots WHERE game_date = %s""", (d,))
             legs = cur.fetchall()
             out = []
-            for event_id, label, book, mk, player, side, line, price in legs:
+            for mk, player, side, line in legs:
+                event_id = label = book = None
                 base = mk.replace("_alternate", "") if mk else ""
                 is_alt = bool(mk and mk.endswith("_alternate"))
                 nm = norm_name(player)
