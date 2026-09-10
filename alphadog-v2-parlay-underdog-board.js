@@ -397,7 +397,19 @@ async function fetchScraperBoard() {
   if (!(ageHours <= SCRAPER_MAX_AGE_HOURS)) return { ok: false, reason: "scraper_stale", age_hours: ageHours, legs: legs.length };
   // Pregame player props only - moneyline/spread/total rows carry no player and are dropped by
   // rowRequiredAudit anyway, but filtering here keeps the batch counts honest.
-  const rows = legs.filter(l => l && l.player && l.appearance_type === "Player" && !l.live).map(adaptScraperLeg);
+  // appearance_type comes from the scraper's appearances map and is NULL whenever that lookup
+  // missed - which is the case for every leg harvested through the per-match filter pills, where
+  // the player name falls back to over_under.title. Requiring it dropped 100% of Pitching Outs and
+  // Earned Runs Allowed. Filter on what actually matters instead: a real player and a numeric
+  // line. Team markets carry no player-prop mapping and are excluded by name.
+  const TEAM_MARKETS = /^(moneyline|spread|total runs|team total runs|1st 5 innings)/i;
+  const rows = legs.filter(l =>
+    l && l.player && String(l.player).trim() &&
+    Number.isFinite(Number(l.line)) &&
+    !l.live &&
+    l.appearance_type !== "Team" &&
+    !TEAM_MARKETS.test(String(l.stat || ""))
+  ).map(adaptScraperLeg);
   // LINE VARIANTS (2026-09-10): the main board carries ONE line per player+prop, but Underdog
   // offers a full ladder of alternates. Promoting only the main line threw away ~3 of every 4
   // real, pickable lines. Every rung is its own board row - same shape as PrizePicks treating
