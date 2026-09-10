@@ -208,12 +208,22 @@ async function toolRunJob(env, args) {
       baseUrl = String((extra && extra.base_url) || env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").replace(/\/+$/, "");
       headers = { "X-API-Key": parlayKey, "accept": "application/json" };
     } else if (provider === "oddsapi") {
-      if (!env.ODDS_API_KEY) return { ok: false, error: "ODDS_API_KEY not present on this worker's environment." };
+      let oddsKey = String((extra && extra.api_key) || "").trim();
+      if (!oddsKey && env.HYPERDRIVE) {
+        try {
+          const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false });
+          const r = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'odds_api_key' LIMIT 1`;
+          if (r && r[0] && r[0].credential_value_encrypted) oddsKey = String(r[0].credential_value_encrypted).trim();
+          await sqlp.end({ timeout: 5 });
+        } catch (e) { /* fall through */ }
+      }
+      if (!oddsKey) oddsKey = env.ODDS_API_KEY;
+      if (!oddsKey) return { ok: false, error: "ODDS_API_KEY not present on this worker's environment." };
       baseUrl = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
       const sep = path.includes("?") ? "&" : "?";
       headers = { "accept": "application/json" };
       // OddsAPI uses an apiKey query param rather than a header.
-      const fullUrl = `${baseUrl}${path}${sep}apiKey=${encodeURIComponent(env.ODDS_API_KEY)}`;
+      const fullUrl = `${baseUrl}${path}${sep}apiKey=${encodeURIComponent(oddsKey)}`;
       try {
         const resp = await fetch(fullUrl, { method: "GET", headers });
         const text = await resp.text();
