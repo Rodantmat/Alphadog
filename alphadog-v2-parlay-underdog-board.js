@@ -387,6 +387,10 @@ function adaptScraperLeg(leg) {
     under_decimal: loDec,
     implied_probability: null,
     is_dfs_flat_payout: leg.line_type === "balanced" ? false : true,
+    // Real payout multipliers - see udPayoutMult. higher_multiplier/lower_multiplier are MODIFIERS.
+    higher_payout_mult: udPayoutMult(hiAm),
+    lower_payout_mult: udPayoutMult(loAm),
+    real_layer_rate: udPayoutMult(loAm),
     // Real payout modifiers and everything else the scraper gives us.
     higher_multiplier: leg.higher_multiplier,
     lower_multiplier: leg.lower_multiplier,
