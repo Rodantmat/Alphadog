@@ -80,15 +80,41 @@ def main():
             calls.append(("match_grouped_lines[core]", len(store["over_under_lines"])))
         except Exception as exc:  # noqa: BLE001
             calls.append(("match_grouped_lines_error", str(exc)[:80]))
-        # 2) per-match lines with mass-option (ladder) markets on = the full board
+        # 2) per-match lines: Popular first, then every filter pill (PickemStat = stat ids discovered from the lines'
+        #    over_under.appearance_stat.pickem_stat_id, MarketGroup = seeded ids) -> union = the full board
+        SEED_STATS = {"MLB": ["311b6775-4d03-4466-8ab9-776442468b27", "4969134d-144f-4b30-b0bc-3e1932c84385", "53a72b17-e0a3-4d28-b98a-3ce5f7d58d92", "1f670d50-4b2e-4fde-b9c7-598418a986a1", "5efeda12-bacd-48b5-9d52-f64e00f7c9fd", "a74cd651-437c-4e6c-b011-c58789b09db7", "4dc8687c-fb40-486a-8be4-31c5a05dd3f1", "18993dd5-3442-44fd-8b09-a7d66bdf6723", "0e012ab0-1f09-40cf-8d63-85386f172dd2"]}
+        SEED_GROUPS = {"MLB": ["6bd05401-eb13-4dc9-952e-03b5442b8ad0", "1e9af10c-4192-40db-bb6f-14bece463f60"]}
+        reg_path = OUT / f"underdog_filters_{sport.lower()}.json"
+        registry = {"pickem_stats": {}, "market_groups": {}}
+        if reg_path.exists():
+            try: registry = json.loads(reg_path.read_text())
+            except Exception: pass  # noqa: BLE001
+        for sid in SEED_STATS.get(sport, []): registry["pickem_stats"].setdefault(sid, "")
+        for gid in SEED_GROUPS.get(sport, []): registry["market_groups"].setdefault(gid, "")
+        def harvest(j):
+            for ln in (j.get("over_under_lines") or {}).values() if isinstance(j.get("over_under_lines"), dict) else (j.get("over_under_lines") or []):
+                ast = ((ln.get("over_under") or {}).get("appearance_stat") or {})
+                if ast.get("pickem_stat_id"): registry["pickem_stats"][ast["pickem_stat_id"]] = ast.get("display_stat") or registry["pickem_stats"].get(ast["pickem_stat_id"], "")
         for mid, mtype in matches[:120]:
+            base = f"{API}/v1/lobbies/content/lines?include_live=true&match_id={mid}&match_type={quote(str(mtype))}&{COMMON}&show_mass_option_markets=true"
             try:
-                j = get(s, f"{API}/v1/lobbies/content/lines?include_live=true&match_id={mid}&match_type={quote(str(mtype))}&{COMMON}&show_mass_option_markets=true", proxies)
+                j = get(s, base, proxies); harvest(j)
                 before = len(store["over_under_lines"]); merge(store, j); calls.append((f"lines[match={mid}]", len(store["over_under_lines"]) - before))
             except Exception as exc:  # noqa: BLE001
                 calls.append((f"lines[match={mid}]_error", str(exc)[:60]))
-            time.sleep(0.4)
-        cats = ["core"]
+            filters = [(sid, "PickemStat") for sid in list(registry["pickem_stats"])] + [(gid, "MarketGroup") for gid in list(registry["market_groups"])]
+            added = 0
+            for fid, ftype in filters:
+                try:
+                    j = get(s, f"{base}&filter_id={fid}&filter_type={ftype}", proxies); harvest(j)
+                    before = len(store["over_under_lines"]); merge(store, j); added += len(store["over_under_lines"]) - before
+                except Exception as exc:  # noqa: BLE001
+                    calls.append((f"lines[match={mid},{ftype}]_error", str(exc)[:40]))
+                time.sleep(0.25)
+            calls.append((f"pills[match={mid}]", added))
+            time.sleep(0.3)
+        reg_path.write_text(json.dumps(registry, indent=1))
+        cats = sorted(registry["pickem_stats"].values())
         # 3) popular picks incl. mass-option (ladder) markets
         for mass in ("true", "false"):
             try:
