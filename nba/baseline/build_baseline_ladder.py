@@ -71,9 +71,11 @@ if os.environ.get("BT_INJURY", "1") == "1" and v_players:
     import sys as _sys, unicodedata as _ud, re as _re
     _sys.path.insert(0, "nba")
     try:
-        from nba_asof import status_asof, cutoff_ts, BASELINE_CUTOFF_LOCAL, load_injury_rows
+        from nba_asof import status_asof, cutoff_ts, BASELINE_CUTOFF_LOCAL, PHASE1_CUTOFF_LOCAL, PHASE2_CUTOFF_LOCAL, load_injury_rows
+        _cut_name = os.environ.get("BT_CUTOFF", "baseline").lower()
+        _cut = {"baseline": BASELINE_CUTOFF_LOCAL, "phase1": PHASE1_CUTOFF_LOCAL, "phase2": PHASE2_CUTOFF_LOCAL}.get(_cut_name, BASELINE_CUTOFF_LOCAL)
         _rows = load_injury_rows(DATA, TEST[0].replace('-', '_'))
-        _st = status_asof(_rows, str(ASOF), cutoff_ts(str(ASOF), BASELINE_CUTOFF_LOCAL)) if _rows else {}
+        _st = status_asof(_rows, str(ASOF), cutoff_ts(str(ASOF), _cut)) if _rows else {}
         def _norm(x): return _re.sub(r"[^a-z]", "", _ud.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower())
         _idx = json.loads((DATA / "nba_all_players.json").read_text()).get("records", []) if (DATA / "nba_all_players.json").exists() else []
         _name_to_id = {_norm(r_.get("DISPLAY_LAST_COMMA_FIRST")): str(r_["PERSON_ID"]) for r_ in _idx}
