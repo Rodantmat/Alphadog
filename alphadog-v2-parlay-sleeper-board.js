@@ -245,6 +245,87 @@ async function authConfig(env) {
   };
 }
 
+// ============================================================================
+// SCRAPER SOURCE (2026-09-10) - we now mine Sleeper with our OWN scraper
+// (nba/scrape_sleeper_board.py, workflow sleeper-board.yml, every 2h for MLB,NBA).
+// boards/sleeper_mlb_current.json carries 674 pregame legs vs ~130 from ParlayAPI, and gives the
+// REAL payout_multiplier per side directly (1.78, 1.54, 2.09 ...) instead of us deriving it from
+// american odds. Zero API credits.
+//
+// DESIGN: adaptScraperLeg renames scraper fields into the ParlayAPI row shape, so staging,
+// canonical mapping, player resolution, certification and promotion are UNCHANGED. We carry the
+// real multiplier through as over_multiplier_real / under_multiplier_real AND back-solve an
+// american price for over_price/under_price so anything already reading those keeps working.
+// Sleeper multiplier = 1 + (decimal - 1) * 0.95  ->  decimal = 1 + (multiplier - 1) / 0.95
+const SCRAPER_BOARD_URL = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/boards/sleeper_mlb_current.json";
+const SCRAPER_MAX_AGE_HOURS = 6;
+const SLEEPER_PAYOUT_FACTOR = 0.95;
+
+function decimalFromMultiplier(mult) {
+  const m = Number(mult);
+  if (!Number.isFinite(m) || m <= 1) return null;
+  return 1 + (m - 1) / SLEEPER_PAYOUT_FACTOR;
+}
+
+function americanFromDecimal(dec) {
+  if (!Number.isFinite(dec) || dec <= 1) return null;
+  return dec >= 2 ? Math.round((dec - 1) * 100) : Math.round(-100 / (dec - 1));
+}
+
+function adaptScraperLeg(leg) {
+  const overDec = decimalFromMultiplier(leg && leg.over_multiplier);
+  const underDec = decimalFromMultiplier(leg && leg.under_multiplier);
+  const md = (leg && leg.metadata) || {};
+  const start = md.start_time || md.game_start_time || md.scheduled_at || md.commence_time || null;
+  return {
+    id: leg.line_id,
+    event_id: leg.game_id,
+    canonical_event_id: leg.game_id,
+    player: leg.player,
+    player_id: leg.subject_id,
+    team: leg.team,
+    position: leg.position,
+    market_key: leg.wager_type,
+    market: leg.wager_type,
+    line: leg.line,
+    commence_time: start,
+    game_status: leg.game_status,
+    sport_key: "baseball_mlb",
+    bookmaker: "sleeper",
+    bookmaker_title: "Sleeper",
+    // Legacy american keys, back-solved from the real multiplier.
+    over_price: americanFromDecimal(overDec),
+    under_price: americanFromDecimal(underDec),
+    over_decimal: overDec,
+    under_decimal: underDec,
+    // The real thing - prefer these downstream.
+    over_multiplier_real: leg.over_multiplier,
+    under_multiplier_real: leg.under_multiplier,
+    over_status: leg.over_status,
+    under_status: leg.under_status,
+    line_status: leg.line_status,
+    line_type: leg.line_type,
+    market_type: leg.market_type,
+    is_dfs_flat_payout: false,
+    source_feed: "alphadog_scraper_v1"
+  };
+}
+
+async function fetchScraperBoard() {
+  const res = await fetch(SCRAPER_BOARD_URL, { headers: { "user-agent": "AlphaDog-v2/1.0", "accept": "application/json" } });
+  if (!res.ok) return { ok: false, reason: `scraper_http_${res.status}` };
+  const json = await res.json();
+  const legs = Array.isArray(json && json.legs) ? json.legs : [];
+  const fetchedAt = json && json.meta && json.meta.fetched_at;
+  const ageHours = fetchedAt ? (Date.now() - Date.parse(fetchedAt)) / 3600000 : 999;
+  if (!legs.length) return { ok: false, reason: "scraper_no_legs", age_hours: ageHours };
+  if (!(ageHours <= SCRAPER_MAX_AGE_HOURS)) return { ok: false, reason: "scraper_stale", age_hours: ageHours, legs: legs.length };
+  const rows = legs
+    .filter(l => l && l.player && l.subject_type === "player" && l.game_status === "pre_game" && Number.isFinite(Number(l.line)))
+    .map(adaptScraperLeg);
+  return { ok: true, rows, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
+}
+
 function detectShape(json) {
   const topType = Array.isArray(json) ? "array" : typeof json;
   const topKeys = json && !Array.isArray(json) && typeof json === "object" ? Object.keys(json).slice(0, 40) : [];
