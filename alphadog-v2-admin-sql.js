@@ -229,7 +229,7 @@ async function toolRunJob(env, args) {
               const snapTs = j.timestamp; let n = 0;
               for (const bk of (j.data && j.data.bookmakers) || []) for (const mk of bk.markets || []) for (const oc of mk.outcomes || []) {
                 await sqlp`INSERT INTO nba_market.board_snapshots (game_date, event_id, snapshot_label, snapshot_ts, bookmaker, market_key, player, side, line, price, multiplier, home_team, away_team, commence_time)
-                  VALUES (${ds}, ${ev.id}, ${label}, ${snapTs}, ${bk.key}, ${mk.key}, ${oc.description || oc.name}, ${oc.name}, ${oc.point ?? null}, ${oc.price ?? null}, ${oc.multiplier ?? null}, ${ev.home_team}, ${ev.away_team}, ${ev.commence_time})
+                  VALUES (${ds}, ${ev.id}, ${label}, ${snapTs}, ${bk.key}, ${mk.key}, ${oc.description || oc.name}, ${oc.name}, ${oc.point ?? -1}, ${oc.price ?? null}, ${oc.multiplier ?? null}, ${ev.home_team}, ${ev.away_team}, ${ev.commence_time})
                   ON CONFLICT (event_id, snapshot_label, bookmaker, market_key, player, side, line) DO UPDATE SET price = EXCLUDED.price, multiplier = EXCLUDED.multiplier, snapshot_ts = EXCLUDED.snapshot_ts, fetched_at = now()`;
                 n += 1;
               }
