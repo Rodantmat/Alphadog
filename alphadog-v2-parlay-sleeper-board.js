@@ -763,6 +763,36 @@ function rowPayloadForCurrent(row) {
 }
 
 async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
+  // Sleeper's lines payload carries no game start time (metadata is empty), so every row was
+  // non-pickable and never reached score-prep. We own the MLB schedule - fill from it.
+  try {
+    const missing = (stageRows || []).filter(r => r && !r.start_time && r.player_name);
+    if (missing.length) {
+      const client = pgClient(env);
+      try {
+        const sched = await client.unsafe(`
+          SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm, MIN(gs.game_time_utc) game_time
+          FROM ref.players p
+          JOIN (SELECT DISTINCT ON (game_pk) game_pk, game_time_utc, home_mlb_team_id, away_mlb_team_id
+                FROM daily.game_status_current WHERE game_time_utc > now()
+                ORDER BY game_pk, updated_at DESC) gs
+            ON gs.home_mlb_team_id::text = p.current_mlb_team_id::text
+            OR gs.away_mlb_team_id::text = p.current_mlb_team_id::text
+          WHERE p.mlb_player_id IS NOT NULL
+          GROUP BY 1`);
+        const byName = new Map((sched || []).map(r => [String(r.nm), r.game_time]));
+        let filled = 0;
+        for (const r of missing) {
+          const t = byName.get(String(r.player_name).toLowerCase());
+          if (t) { r.start_time = t instanceof Date ? t.toISOString() : String(t); filled++; }
+        }
+        if (filled) console.log(`sleeper: filled ${filled}/${missing.length} missing start_time from schedule`);
+      } finally {
+        try { await client.end({ timeout: 2 }); } catch (_) {}
+      }
+    }
+  } catch (_) { /* non-fatal */ }
+
   const certifiedRows = (stageRows || []).filter(row =>
     row.parse_status === "parsed_stage_only_canonical_mapping_audited" &&
     row.source_key === SOURCE_KEY &&
