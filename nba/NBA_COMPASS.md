@@ -141,6 +141,13 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 
 | If asked about… | Open |
 |---|---|
+| an enrichment factor, sub-factor, why something is baseline vs enrichment, folklore retired | `NBA_ENRICHMENT_FACTOR_LOCK.md` (passes 1–5 appended in order); `nba_config.factor_registry` |
+| a factor's source, fallback, backfill route, the parity rule, the coverage matrix | `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` §8–§9; `nba/nba_asof.py` |
+| injury-report PDFs, shards, URL patterns, parser bugs, day-before report in the builders | log entry 2026-09-09/10 §4; `nba/scrape_nba_injury_report.py` |
+| matchups/hustle/clutch/coaches/all-players/starters/officials backfills and shards | log entry 2026-09-09/10 §4; `scrape_nba_season_tables.py`, `scrape_nba_matchups_pergame.py`, `nba-pergame-backfill.yml` |
+| API keys, ParlayAPI/Odds API/OddsPapi capabilities, game lines, board history, credits/cost, the pick window | log entry 2026-09-09/10 §5; config `market_sources_directive`, `market_probe_results_2026_09_10`, `market_game_lines_backfill`, `board_backfill_odds_api`; COMPASS facts 41, 45–47 |
+| which app board comes from where, Underdog/Fliff/Sleeper API details, scrapers and workflows | log entry 2026-09-09/10 §6; config `board_sources_decision`; COMPASS facts 48–50 |
+| the outcome grader, enrichment engine, slip engine order | log entry 2026-09-09/10 §7; COMPASS fact 53 |
 | any table, row count, worker endpoint, source reliability, an early bug | 09-04 checkpoint |
 | the season utility, measure types, DvP recurring, per-game delta, the 5-step daily procedure | 09-09 checkpoint §1 |
 | why the design is what it is (tiers, ladder, component model, combos, periods, factors) | `NBA_CLASSIFICATION_BASELINE_DESIGN.md`; 09-09 checkpoint §2 |
