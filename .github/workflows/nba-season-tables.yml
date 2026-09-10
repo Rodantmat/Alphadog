@@ -67,7 +67,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           push() { for i in 1 2 3 4 5; do if git push origin HEAD:main; then return 0; fi; git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2)); done; return 1; }
-          git add nba/data/nba_matchups_20*.json nba/data/nba_pt_defend_*.json nba/data/nba_hustle_*.json nba/data/nba_clutch_*.json nba/data/nba_preseason_logs_*.json nba/data/nba_season_tables_summary.json nba/data/nba_season_tables_asof_summary.json nba/data/nba_all_players.json nba/data/nba_matchups_pergame_probe.json nba/data/nba_matchups_pergame_*_index.json 2>/dev/null || true
+          git add nba/data/nba_matchups_20*.json nba/data/nba_pt_defend_*.json nba/data/nba_hustle_*.json nba/data/nba_clutch_*.json nba/data/nba_preseason_logs_*.json nba/data/nba_season_tables_summary.json nba/data/nba_season_tables_asof_summary.json nba/data/nba_all_players.json nba/data/nba_coaches_*.json nba/data/nba_matchups_pergame_probe.json nba/data/nba_matchups_pergame_*_index.json 2>/dev/null || true
           if ! git diff --cached --quiet; then git commit -m "NBA season tables (as-of/defend/hustle/clutch/preseason/index) [skip ci]"; push; fi
           for f in nba/data/nba_matchups_pergame_*_20*.json; do
             [ -f "$f" ] || continue
