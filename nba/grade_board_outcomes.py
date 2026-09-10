@@ -86,6 +86,39 @@ def load_players():
     return by_id, names
 
 
+# Sportsbooks use nicknames the NBA register does not: "Herb Jones" vs "Herbert Jones",
+# "Nic Claxton" vs "Nicolas Claxton", "Moe Wagner" vs "Moritz Wagner". These are resolved
+# automatically below (last name + first initial), with this table for anything the rule misses.
+NAME_OVERRIDES = {
+    "herbjones": "herbertjones",
+    "nicolasclaxton": "nicclaxton",
+    "moewagner": "moritzwagner",
+}
+
+
+def build_alias_index(players_seen):
+    """(last name, first initial) -> normalized name, for players active in this season's logs.
+    Only used when the exact normalized name misses, and only when the key is unambiguous."""
+    idx = defaultdict(set)
+    for nm in players_seen:
+        # normalized names have no separator, so key on a stable suffix instead: last 6 chars + first char
+        idx[(nm[-6:], nm[0])].add(nm)
+    return {k: next(iter(v)) for k, v in idx.items() if len(v) == 1}
+
+
+def resolve(nm, day, players_seen, alias_idx):
+    """Exact -> override -> unambiguous (suffix, initial) alias. Returns (name_or_None, how)."""
+    if nm in day:
+        return nm, "exact"
+    ov = NAME_OVERRIDES.get(nm)
+    if ov and ov in day:
+        return ov, "override"
+    cand = alias_idx.get((nm[-6:], nm[0])) if len(nm) >= 6 else None
+    if cand and cand in day:
+        return cand, "alias"
+    return None, "none"
+
+
 def load_logs(slug, pid_to_name):
     """Game logs are columnar-ish records keyed by PLAYER_ID (no name), MIN is a float."""
     url = RAW + f"nba_player_game_log_{slug}.json"
