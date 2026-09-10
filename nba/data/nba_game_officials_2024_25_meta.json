@@ -1,0 +1,9 @@
+{
+  "fetched_at": "2026-09-10T00:59:09Z",
+  "season": "2024-25",
+  "method": "boxscoresummaryv3",
+  "games_input": 1230,
+  "games_succeeded": 1230,
+  "row_count": 3691,
+  "per_game_errors": []
+}
