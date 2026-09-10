@@ -192,9 +192,21 @@ async function toolRunJob(env, args) {
     if (!path) return { ok: false, error: "extra.path is required, e.g. '/sports/baseball_mlb/odds?regions=us&markets=h2h'" };
     let baseUrl, headers;
     if (provider === "parlay") {
-      if (!env.PARLAY_API_KEY) return { ok: false, error: "PARLAY_API_KEY not present on this worker's environment." };
-      baseUrl = String(env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").replace(/\/+$/, "");
-      headers = { "X-API-Key": env.PARLAY_API_KEY, "accept": "application/json" };
+      // Key precedence: extra.api_key (explicit override, e.g. a freshly issued key not yet deployed as a secret) >
+      // nba_config.external_credentials 'parlay_api_key' (Postgres) > the worker secret PARLAY_API_KEY.
+      let parlayKey = String((extra && extra.api_key) || "").trim();
+      if (!parlayKey && env.HYPERDRIVE) {
+        try {
+          const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false });
+          const r = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'parlay_api_key' LIMIT 1`;
+          if (r && r[0] && r[0].credential_value_encrypted) parlayKey = String(r[0].credential_value_encrypted).trim();
+          await sqlp.end({ timeout: 5 });
+        } catch (e) { /* fall through to the worker secret */ }
+      }
+      if (!parlayKey) parlayKey = env.PARLAY_API_KEY;
+      if (!parlayKey) return { ok: false, error: "PARLAY_API_KEY not present on this worker's environment." };
+      baseUrl = String((extra && extra.base_url) || env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").replace(/\/+$/, "");
+      headers = { "X-API-Key": parlayKey, "accept": "application/json" };
     } else if (provider === "oddsapi") {
       if (!env.ODDS_API_KEY) return { ok: false, error: "ODDS_API_KEY not present on this worker's environment." };
       baseUrl = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
