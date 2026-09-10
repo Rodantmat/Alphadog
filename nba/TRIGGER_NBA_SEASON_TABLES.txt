@@ -1,7 +1,7 @@
 Trigger for nba-season-tables.yml
 seasons_n: 3
-tables: all_players,pt_defend,hustle,clutch
-mode: asof_weekly
-matchups: backfill:2025-26
-last_triggered_utc: 2026-09-10T00:20:00Z
-trigger_reason: RERUN after the 171 MB commit rejection - per-game matchups now stored as columnar monthly shards with a size-guarded per-file commit; weekly as-of tables + player index committed first
+tables: none
+mode: season
+matchups: backfill:2024-25
+last_triggered_utc: 2026-09-10T02:05:00Z
+trigger_reason: per-game matchups backfill 2024-25 (sharded); 2025-26 done (1,229/1,230 games, 241,590 pairings); weekly as-of tables done for 3 seasons; player index done (5,212)
