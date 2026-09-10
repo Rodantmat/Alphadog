@@ -345,7 +345,13 @@ function adaptScraperLeg(leg) {
     market_key: leg.stat_key || leg.stat,
     market: leg.stat,
     line: leg.line,
-    commence_time: leg.game_start,
+    // game_start comes from the games map and is null for legs whose appearance resolves to a
+    // solo_game or a match the merge missed - that silently dropped 465 of 920 legs at promotion
+    // on 2026-09-10, including EVERY pitcher prop (pitching outs, earned runs, fantasy points),
+    // because the promoter requires a future start time. expires_at is Underdog's own line-expiry
+    // timestamp and lands at the game start, so it is a real, correct fallback.
+    commence_time: leg.game_start || leg.expires_at || null,
+    commence_time_source: leg.game_start ? "game_start" : (leg.expires_at ? "expires_at" : "none"),
     sport_key: "baseball_mlb",
     bookmaker: "underdog",
     bookmaker_title: "Underdog Fantasy",
