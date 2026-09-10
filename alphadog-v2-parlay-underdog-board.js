@@ -1094,7 +1094,11 @@ async function lastFetchAge(env) {
 }
 
 async function safeProbe(env, input = {}) {
-  if (!input.force_refresh) {
+  // The freshness buffer exists ONLY to avoid burning ParlayAPI credits. Our own scraper costs
+  // nothing, so when boards/underdog_mlb_current.json is fresh we always rebuild from it.
+  let scraperFresh = false;
+  try { const probe = await fetchScraperBoard(); scraperFresh = !!(probe && probe.ok && probe.rows && probe.rows.length); } catch (_) { scraperFresh = false; }
+  if (!input.force_refresh && !scraperFresh) {
     const lastFetch = await lastFetchAge(env);
     if (lastFetch !== null) {
       const ageMs = Date.now() - lastFetch;
