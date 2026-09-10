@@ -105,6 +105,27 @@ def main():
             hn, an = str(c.get("home_team_name", "")), str(c.get("away_team_name", ""))
             return any(n in hn for n in names) and any(n in an for n in names)
         evs = [c for c in conflicts if is_sport(c)]
+        # channel select: the global sync lists only featured events; selecting each sport channel returns the whole slate
+        chan_ids = chans | {c.get("channel_id") for c in evs if c.get("channel_id")}
+        seen_fkeys = {c.get("conflict_fkey") for c in evs}
+        for ch in sorted(chan_ids):
+            try:
+                jc = sync(s, feed_host, hdr, 3062, proxies, channel=ch)
+            except Exception as exc:  # noqa: BLE001
+                print(f"{sport}: channel {ch} select failed: {exc}", file=sys.stderr); continue
+            xs = jc.get("x_slots") or {}
+            for c in list(xs.get("active_prematch_conflicts") or []) + list(xs.get("active_inplay_conflicts") or []):
+                if c.get("conflict_fkey") and c.get("conflict_fkey") not in seen_fkeys and (c.get("channel_id") == ch or is_sport(c)):
+                    evs.append(c); seen_fkeys.add(c.get("conflict_fkey"))
+            # proposals carry conflict_fkey + event info when the conflict list is absent
+            for lst in walk_lists(xs, "proposals"):
+                for p in lst:
+                    fk = p.get("conflict_fkey") if isinstance(p, dict) else None
+                    if fk and fk not in seen_fkeys:
+                        info = str(p.get("t_121_event_info") or "")
+                        away, _, home = info.partition(" vs ")
+                        evs.append({"conflict_fkey": fk, "channel_id": ch, "away_team_name": away, "home_team_name": home, "event_start_timestamp_utc": p.get("event_start_timestamp_utc")}); seen_fkeys.add(fk)
+            time.sleep(0.5)
         legs, raw_markets, errors = [], [], []
         for c in evs:
             fkey = c.get("conflict_fkey")
