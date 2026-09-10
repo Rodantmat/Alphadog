@@ -5947,6 +5947,51 @@ async function apiHighHitSlips(env, request) {
   }
   const v6UsedIds = new Set(v6Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v6BackupPool = v6Demons.filter(l => !v6UsedIds.has(l.board_row_id)).slice(0, 4);
+
+  // V4-A (2026-09-10, SEPTEMBER STRUCTURE): 2 pitcher workload unders + 2 V3 goblins, 4-pick FLEX.
+  // Replaces the 4-pitcher Flex while hitter legs are paused. Goblins are V3's leftovers after V3 and V6
+  // have taken theirs. Measured: 44 slips / 30 days, 13 sweeps, 22 three-of-four; at a conservative
+  // 3.5x/1.0x Flex read +53.4% (train +14 / test +72), 9 win / 13 even / 8 lose days. At 4.5x/1.25x +95%.
+  // The Flex tiers with two goblins are UNREAD - the first app read sets them. If 4/4 is under 3x, skip.
+  {
+    const v3AndV6Used = new Set([...v3Slips, ...v6Slips].flatMap(s => (s.legs || []).map(l => l.board_row_id)));
+    const gobs = v3Legs.filter(l => !v3AndV6Used.has(l.board_row_id));
+    const pits = v4Legs.filter(l => l.side_type === 'P');
+    const rebuilt = []; const usedP = new Set(); const usedG = new Set();
+    while (rebuilt.length < 3) {
+      const ps = pits.filter(l => !usedP.has(l.board_row_id));
+      if (ps.length < 2) break;
+      const p1 = ps[0]; const p2 = ps.find(l => String(l.game_pk) !== String(p1.game_pk));
+      if (!p2) break;
+      const gs = gobs.filter(l => !usedG.has(l.board_row_id) && String(l.game_pk) !== String(p1.game_pk) && String(l.game_pk) !== String(p2.game_pk)
+        && String(l.mlb_player_id) !== String(p1.mlb_player_id) && String(l.mlb_player_id) !== String(p2.mlb_player_id));
+      if (gs.length < 2) break;
+      const g1 = gs[0]; const g2 = gs.find(l => l.board_row_id !== g1.board_row_id && String(l.game_pk) !== String(g1.game_pk)) || gs[1];
+      [p1, p2].forEach(l => usedP.add(l.board_row_id)); [g1, g2].forEach(l => usedG.add(l.board_row_id));
+      const legs = [
+        { ...p1, leg_index: 1, real_layer_rate: 1.732, leg_kind: 'workload' }, { ...p2, leg_index: 2, real_layer_rate: 1.732, leg_kind: 'workload' },
+        { ...g1, leg_index: 3, real_layer_rate: Number(g1.leg_mult) || 1.15, leg_kind: 'goblin', odds_type: 'goblin' },
+        { ...g2, leg_index: 4, real_layer_rate: Number(g2.leg_mult) || 1.15, leg_kind: 'goblin', odds_type: 'goblin' }];
+      rebuilt.push({
+        client_slip_id: makeUiId("high_hit_slip_v4a"),
+        source_key: "prizepicks", slip_type: "4-pick", slip_size: 4,
+        structure_label: "4-pick Flex (PP V4-A: 2 pitcher workload unders + 2 V3 goblins)",
+        entry_mode: "flex", selected_leg_count: 4,
+        estimated_hit_probability_0_100: Math.round(0.65 * 0.65 * 0.95 * 0.95 * 10000) / 100,
+        estimated_multiplier: 3.5, estimated_multiplier_flex_tiers: { 4: 3.5, 3: 1.0 },
+        breakeven_hit_rate_0_100: Math.round((1 / 3.5) * 10000) / 100,
+        estimated_payout_note: "4-pick FLEX with two goblins - tiers UNREAD. Estimate 3.5x (4/4) / 1.0x (3/4). Read the app; if 4/4 is under 3x, skip. If it reads ~4.5x, this is +95%.",
+        strategy_notes: [
+          "PP V4-A - September structure while hitter FS unders are paused (roster expansion turned bench bats into starters: pool 58% -> 43%).",
+          "Two capped pitchers (<14 outs L5 on ER 2.5 / outs 14.5-16.5 / PFS >=23.5, or 15-16 outs on PFS >=26.5) at ~65%, plus two V3 goblins at ~95% as anchors. All four from different games.",
+          "Measured 30 days: 44 slips, 13 sweeps, 22 three-of-four. +53% at 3.5/1.0; 9 win / 13 even / 8 lose days. The goblins turn most misses into 3-of-4 refunds.",
+          "SUB: pitcher drop -> sub pitcher from prizepicks_regular backups, else shrink to 3-pick Flex. Goblin drop -> sub goblin from PrizePicks backups (V3 pool), else shrink."
+        ],
+        legs
+      });
+    }
+    v4Slips.length = 0; rebuilt.forEach(s => v4Slips.push(s));
+  }
   // V3 REBUILT 2026-09-07: backup pool ON. Leftover legs from V3's own filtered selector (same
   // five cells, same HP floor, same walks_allowed hard filter). Tagged 'prizepicks_goblin_v3'
   // so poolLegIsLegalForSlip() only pairs them with V3 slips - V1's goblin pool cannot leak in.
