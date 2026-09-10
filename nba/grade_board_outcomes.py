@@ -183,6 +183,7 @@ def main():
                 print("loading logs", slug, flush=True)
                 cache[slug] = load_logs(slug, pid_to_name)
             by_date, players_seen = cache[slug]
+            alias_idx = build_alias_index(players_seen)
             ds = d.isoformat()
             day = by_date.get(ds, {})
             if not day:
