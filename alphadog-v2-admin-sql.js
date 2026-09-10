@@ -231,7 +231,7 @@ async function toolRunJob(env, args) {
     const url = String((extra && extra.url) || ""); const re = new RegExp(String((extra && extra.pattern) || "https?://[a-zA-Z0-9.-]+"), "g");
     const hdrs = (extra && extra.headers) || { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" };
     const page = await (await fetch(url, { headers: hdrs })).text(); const origin = new URL(url).origin;
-    const srcs = [...new Set([...page.matchAll(/(?:src|href)="([^"]+\.js)"/g)].map((m) => (m[1].startsWith("http") ? m[1] : origin + m[1])))].slice(0, Number((extra && extra.max_scripts) || 40));
+    const srcs = [...new Set([...page.matchAll(/(?:src|href)="([^"]+\.js(?:\?[^"]*)?)"/g)].map((m) => (m[1].startsWith("http") ? m[1] : origin + m[1])))].slice(0, Number((extra && extra.max_scripts) || 40));
     const hits = {}; const add = (s, src) => { for (const m of s.matchAll(re)) { const k = m[0]; if (!hits[k]) hits[k] = new Set(); hits[k].add(src); } };
     add(page, "page");
     for (const s of srcs) { try { add(await (await fetch(s, { headers: hdrs })).text(), s.split("/").pop()); } catch (_) {} }
