@@ -114,6 +114,18 @@ def main():
             calls.append((f"pills[match={mid}]", added))
             time.sleep(0.3)
         reg_path.write_text(json.dumps(registry, indent=1))
+        # 3b) per-player completeness pass: lines_with_stats returns EVERY market for the player (learns unseen stat ids too)
+        seen_apps = {str(a.get("id")) for a in store["appearances"].values() if isinstance(a, dict) and a.get("type") == "Player" and a.get("player_id")}
+        added = 0
+        for aid in sorted(seen_apps)[:250]:
+            try:
+                j = get(s, f"{API}/v1/lobbies/content/lines_with_stats?appearance_id={aid}&{COMMON}", proxies); harvest(j)
+                before = len(store["over_under_lines"]); merge(store, j); added += len(store["over_under_lines"]) - before
+            except Exception as exc:  # noqa: BLE001
+                calls.append((f"lines_with_stats[{aid[:8]}]_error", str(exc)[:40]))
+            time.sleep(0.25)
+        calls.append(("lines_with_stats[players]", added, len(seen_apps)))
+        reg_path.write_text(json.dumps(registry, indent=1))
         cats = sorted(registry["pickem_stats"].values())
         # 3) popular picks incl. mass-option (ladder) markets
         for mass in ("true", "false"):
