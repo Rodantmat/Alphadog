@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "http_status": 200,
+  "errors": null,
+  "source": "betr fantasy graphql getUpcomingEventsV2",
+  "sport": "mlb",
+  "fetched_at": "2026-09-10T06:18:28.583Z",
+  "token_expires_at": "2026-10-10T06:10:56.000Z",
+  "events": 5,
+  "legs": 1684,
+  "players": 102,
+  "by_tier": {
+    "BOOSTED": 403,
+    "EDGE_3": 41,
+    "REGULAR": 248,
+    "SUPER_BOOSTED": 281,
+    "EDGE_2": 97,
+    "MINI_BOOSTED": 346,
+    "EDGE_1": 108,
+    "BOOSTED_4": 129,
+    "EDGE_4": 31
+  },
+  "by_stat": {
+    "Doubles": 92,
+    "Hits + Runs + Runs Batted In": 221,
+    "Hits": 189,
+    "Runs": 92,
+    "Runs Batted In": 169,
+    "Singles": 163,
+    "Stolen Bases": 30,
+    "Strikeouts": 102,
+    "Total Bases": 358,
+    "Walks": 79,
+    "Home Runs": 64,
+    "Pitching Hits Allowed": 34,
+    "Pitching Walks": 18,
+    "Pitching Earned Runs": 19,
+    "Pitching Strikeouts": 41,
+    "Total Outs Pitched": 13
+  },
+  "by_sides": {
+    "MORE": 1582,
+    "MORE/LESS": 90,
+    "LESS": 12
+  },
+  "live_legs": 0
+}
