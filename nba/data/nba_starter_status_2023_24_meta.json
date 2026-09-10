@@ -1,0 +1,18 @@
+{
+  "fetched_at": "2026-09-10T02:24:38Z",
+  "season": "2023-24",
+  "method": "boxscoretraditionalv3",
+  "games_input": 1230,
+  "games_succeeded": 1228,
+  "row_count": 32328,
+  "per_game_errors": [
+    {
+      "game_id": "0022300079",
+      "error": "Failed to perform, curl: (28) Operation timed out after 30000 milliseconds with 0 bytes received. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+    },
+    {
+      "game_id": "0022300721",
+      "error": "Failed to perform, curl: (28) Operation timed out after 30000 milliseconds with 0 bytes received. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+    }
+  ]
+}
