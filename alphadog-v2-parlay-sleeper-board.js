@@ -37,7 +37,30 @@ const SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
   player_outs: "pitcher_outs",
   player_pitcher_strikeouts: "pitcher_strikeouts",
   player_strike_outs: "pitcher_strikeouts",
-  player_first_inning_runs: "rfi_nrfi"
+  player_first_inning_runs: "rfi_nrfi",
+  // Our own scraper emits Sleeper's bare wager_type (no player_ prefix). Same targets.
+  // Observed live 2026-09-10: hits 93, total_bases 93, runs 91, singles 91, hits_runs_rbis 89,
+  // rbis 86, bat_walks 70, earned_runs 9, first_inning_runs 9, hits_allowed 9, outs 9,
+  // strike_outs 9, walks 8, home_runs 4, stolen_bases 2, doubles 2.
+  hits: "hits",
+  rbis: "rbis",
+  runs: "runs",
+  singles: "singles",
+  doubles: "doubles",
+  triples: "triples",
+  home_runs: "home_runs",
+  total_bases: "total_bases",
+  hits_runs_rbis: "hits_runs_rbis",
+  bat_walks: "walks",
+  bat_strike_outs: "hitter_strikeouts",
+  stolen_bases: "stolen_bases",
+  hits_allowed: "hits_allowed",
+  earned_runs: "earned_runs",
+  outs: "pitcher_outs",
+  strike_outs: "pitcher_strikeouts",
+  // Sleeper splits walks by role: bat_walks is the hitter, bare walks is the pitcher.
+  walks: "walks_allowed",
+  first_inning_runs: "rfi_nrfi"
 };
 const DEFAULT_PARLAY_API_AUTH_HEADER_NAME = "X-API-Key";
 const DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX = "";
