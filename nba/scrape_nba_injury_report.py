@@ -198,30 +198,49 @@ def main():
         out = []
         for d in days:
             for ts, url, content in scan_day(session, d):
-                out += [{**r, "source_url": url} for r in parse_report(extract_text(content), ts)]
+                txt = extract_text(content); ts2 = header_ts(txt) or ts
+                out += [{**r, "source_url": url} for r in parse_report(txt, ts2)]
                 time.sleep(0.3)
         (DATA / "nba_injury_report_current.json").write_text(json.dumps({"meta": {"fetched_at": datetime.utcnow().isoformat() + "Z", "days": [d.isoformat() for d in days], "rows": len(out), "snapshots": len({r["snapshot_ts"] for r in out})}, "rows": out}))
         print("daily:", len(out), "rows,", len({r["snapshot_ts"] for r in out}), "snapshots")
     else:
+        # BACKFILL -> MONTHLY SHARDS nba_injury_report_<slug>_<YYYY-MM>.json (a season of all snapshots is ~150+ MB as one
+        # file; GitHub rejects >100 MB) + index file nba_injury_report_<slug>_index.json (days_done). Resumable, chunked.
         d0 = date.fromisoformat(os.environ["INJURY_FROM"]); d1 = date.fromisoformat(os.environ["INJURY_TO"])
         slug = os.environ.get("INJURY_SEASON_SLUG", f"{d0.year}_{str(d1.year)[-2:]}")
-        path = DATA / f"nba_injury_report_{slug}.json"
-        existing = json.loads(path.read_text()) if path.exists() else {"meta": {}, "rows": []}
-        done_days = set(existing["meta"].get("days_done", [])); rows = existing["rows"]; d = d0
-        max_days = int(os.environ.get("INJURY_MAX_DAYS", "100")); n_new = 0   # chunked: progress is committed per run, resume later
-        if existing["meta"].get("rows") == 0 and done_days:   # a previous run recorded days with zero rows (parser bug) -> redo them
-            done_days = set(); rows = []
+        ipath = DATA / f"nba_injury_report_{slug}_index.json"
+        legacy = DATA / f"nba_injury_report_{slug}.json"
+        index = json.loads(ipath.read_text()) if ipath.exists() else {"days_done": [], "rows": 0}
+        shards = {}
+        for p in DATA.glob(f"nba_injury_report_{slug}_20*.json"):
+            if p.name.endswith("_index.json"): continue
+            shards[p.name.rsplit("_", 1)[1][:7]] = json.loads(p.read_text())["rows"]
+        if legacy.exists() and not shards:
+            # migrate the single-file state (2026-09-10) into shards; days with zero rows are redone (old URL pattern)
+            old = json.loads(legacy.read_text())
+            for r in old.get("rows", []): shards.setdefault(r["snapshot_ts"][:7], []).append(r)
+            days_with_rows = {r["snapshot_ts"][:10] for r in old.get("rows", [])}
+            index["days_done"] = sorted(days_with_rows); legacy.unlink()
+        done_days = set(index.get("days_done", [])); d = d0
+        max_days = int(os.environ.get("INJURY_MAX_DAYS", "100")); n_new = 0
+        def _flush():
+            for ym, rows_ in shards.items():
+                (DATA / f"nba_injury_report_{slug}_{ym}.json").write_text(json.dumps({"rows": rows_}, separators=(",", ":")))
+            index.update({"days_done": sorted(done_days), "rows": sum(len(v) for v in shards.values()), "shards": sorted(shards), "updated_at": datetime.utcnow().isoformat() + "Z"})
+            ipath.write_text(json.dumps(index))
         while d <= d1 and n_new < max_days:
             if d.isoformat() not in done_days:
                 snaps = scan_day(session, d)
                 for ts, url, content in snaps:
-                    rows += [{**r, "source_url": url} for r in parse_report(extract_text(content), ts)]
+                    txt = extract_text(content); ts2 = header_ts(txt) or ts
+                    for r in parse_report(txt, ts2):
+                        shards.setdefault(ts2[:7], []).append({**r, "source_url": url})
                 done_days.add(d.isoformat()); n_new += 1; print(d, len(snaps), "snapshots")
-                existing["meta"] = {"days_done": sorted(done_days), "rows": len(rows), "updated_at": datetime.utcnow().isoformat() + "Z"}
-                path.write_text(json.dumps({"meta": existing["meta"], "rows": rows}))
+                if n_new % 5 == 0: _flush()
                 time.sleep(0.5)
             d += timedelta(days=1)
-        print("backfill:", len(rows), "rows,", len(done_days), "days")
+        _flush()
+        print("backfill:", index["rows"], "rows,", len(done_days), "days, shards:", index.get("shards"))
 
 
 if __name__ == "__main__":
