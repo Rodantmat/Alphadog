@@ -182,6 +182,49 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "pp_compare_parlay_vs_scraper") {
+    // Same-moment comparison of PrizePicks legs: ParlayAPI live props (bookmakers=prizepicks) vs our own scraper output
+    // (raw PrizePicks JSON:API committed to the repo). extra: { sport_key: "baseball_mlb", scraper_path: "prizepicks_mlb_current.json" }
+    const sport = String((extra && extra.sport_key) || "baseball_mlb"); const scraperPath = String((extra && extra.scraper_path) || "prizepicks_mlb_current.json");
+    const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
+    let key = "";
+    try { const r = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'parlay_api_key' LIMIT 1`; key = r && r[0] ? String(r[0].credential_value_encrypted).trim() : (env.PARLAY_API_KEY || ""); } finally { await sqlp.end({ timeout: 5 }); }
+    const norm = (s) => String(s || "").toLowerCase().replace(/rbis?/g, "rbi").replace(/[^a-z0-9+]/g, "");
+    const normPlayer = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\b(jr|sr|ii|iii|iv)\b/g, "").replace(/[^a-z]/g, "");
+    const pr = await fetch(`https://parlay-api.com/v1/sports/${sport}/props?bookmakers=prizepicks`, { headers: { "X-API-Key": key, accept: "application/json" } });
+    const parlay = await pr.json(); const parlayAt = new Date().toISOString();
+    const sr = await fetch(`https://raw.githubusercontent.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/main/${scraperPath}?r=${Date.now()}`);
+    const scr = await sr.json();
+    const mr = await fetch(`https://raw.githubusercontent.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/main/${scraperPath.replace(".json", "_meta.json")}?r=${Date.now()}`);
+    const meta = await mr.json().catch(() => ({}));
+    // scraper: JSON:API -> legs
+    const players = {}, stats = {};
+    for (const inc of scr.included || []) { if (inc.type === "new_player") players[inc.id] = inc.attributes && (inc.attributes.display_name || inc.attributes.name); if (inc.type === "stat_type") stats[inc.id] = inc.attributes && inc.attributes.name; }
+    const sLegs = [];
+    for (const p of scr.data || []) {
+      const a = p.attributes || {}; if (a.status && a.status !== "pre_game") continue;
+      const pid = p.relationships && p.relationships.new_player && p.relationships.new_player.data && p.relationships.new_player.data.id;
+      sLegs.push({ player: players[pid] || "", stat: a.stat_type || stats[(p.relationships.stat_type || {}).data?.id] || "", line: Number(a.line_score), odds_type: String(a.odds_type || "standard").toLowerCase(), start: a.start_time, live: !!a.is_live });
+    }
+    const pLegs = (Array.isArray(parlay) ? parlay : []).map((r) => ({ player: r.player, stat: r.market, line: Number(r.line), odds_type: String(r.odds_type || "standard").toLowerCase(), commence: r.commence_time }));
+    const keyOf = (l) => `${normPlayer(l.player)}|${norm(l.stat)}|${l.line}|${l.odds_type}`;
+    const sMap = new Map(sLegs.map((l) => [keyOf(l), l])), pMap = new Map(pLegs.map((l) => [keyOf(l), l]));
+    const matched = [...sMap.keys()].filter((k) => pMap.has(k));
+    const scraperOnly = [...sMap.keys()].filter((k) => !pMap.has(k)), parlayOnly = [...pMap.keys()].filter((k) => !sMap.has(k));
+    // looser match: same player+stat+odds_type, different line
+    const loose = (l) => `${normPlayer(l.player)}|${norm(l.stat)}|${l.odds_type}`;
+    const pLoose = new Map(); for (const l of pLegs) pLoose.set(loose(l), (pLoose.get(loose(l)) || []).concat([l.line]));
+    const lineDiffs = scraperOnly.map((k) => sMap.get(k)).filter((l) => pLoose.has(loose(l))).map((l) => ({ player: l.player, stat: l.stat, scraper_line: l.line, parlay_lines: pLoose.get(loose(l)), odds_type: l.odds_type }));
+    const count = (arr, f) => arr.reduce((m, x) => { const k = f(x); m[k] = (m[k] || 0) + 1; return m; }, {});
+    const statsS = count(sLegs, (l) => norm(l.stat)), statsP = count(pLegs, (l) => norm(l.stat));
+    const statsOnlyScraper = Object.keys(statsS).filter((k) => !statsP[k]).map((k) => [k, statsS[k]]), statsOnlyParlay = Object.keys(statsP).filter((k) => !statsS[k]).map((k) => [k, statsP[k]]);
+    return { ok: true, parlay_fetched_at: parlayAt, scraper_finished_at: meta.finished_at, scraper_total_projections: (scr.data || []).length, scraper_pregame_legs: sLegs.length, parlay_legs: pLegs.length,
+      by_odds_type: { scraper: count(sLegs, (l) => l.odds_type), parlay: count(pLegs, (l) => l.odds_type) },
+      matched_exact: matched.length, scraper_only: scraperOnly.length, parlay_only: parlayOnly.length, scraper_only_with_line_diff: lineDiffs.length,
+      distinct_players: { scraper: new Set(sLegs.map((l) => normPlayer(l.player))).size, parlay: new Set(pLegs.map((l) => normPlayer(l.player))).size },
+      stats_only_scraper: statsOnlyScraper.slice(0, 40), stats_only_parlay: statsOnlyParlay.slice(0, 40),
+      sample_scraper_only: scraperOnly.slice(0, 25).map((k) => sMap.get(k)), sample_parlay_only: parlayOnly.slice(0, 25).map((k) => pMap.get(k)), sample_line_diffs: lineDiffs.slice(0, 25) };
+  }
   if (job === "odds_api_board_backfill") {
     // NBA DFS + sportsbook prop-board backfill from The Odds API historical endpoints into nba_market.board_snapshots.
     // extra: { start, end (YYYY-MM-DD, Pacific game dates), snapshots: ["window","close"], window_pt: "14:45", close_minus_min: 30,
