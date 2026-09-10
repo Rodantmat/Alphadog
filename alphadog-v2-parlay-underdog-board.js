@@ -447,10 +447,10 @@ async function persistLadder(env, ladder, batchId, fetchedAt) {
     // Resolve player ids from the board we just promoted, by name.
     await client.unsafe(`
       UPDATE market.underdog_ladder_current l
-      SET resolved_mlb_player_id = b.resolved_mlb_player_id
-      FROM (SELECT DISTINCT ON (LOWER(player_name)) LOWER(player_name) nm, resolved_mlb_player_id
-            FROM score.board_prepared_current WHERE source_key='parlay_underdog' AND resolved_mlb_player_id IS NOT NULL) b
-      WHERE LOWER(l.player_name) = b.nm`);
+      SET resolved_mlb_player_id = r.mlb_player_id
+      FROM (SELECT DISTINCT ON (LOWER(COALESCE(full_name, player_name))) LOWER(COALESCE(full_name, player_name)) nm, mlb_player_id
+            FROM ref.players WHERE mlb_player_id IS NOT NULL) r
+      WHERE LOWER(l.player_name) = r.nm`);
     await client.unsafe(`
       INSERT INTO archive.underdog_ladder_history
       SELECT * FROM market.underdog_ladder_current
