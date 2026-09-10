@@ -194,9 +194,9 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 | B3 leverage / tanking | ✓ | ✓ | ✓ | standings from logs | — |
 | B4/M1 opponent absences / primary defender | ✓ per-game matchups 1,229/1,230 (241,590 pairings, monthly shards) + weekly pt_defend | ✓ 1,230/1,230 (232,830) | ✓ 1,228/1,230 | `scrape_nba_matchups_pergame.py`, season-tables asof_weekly | M1 measured (config `primary_defender_quality_measured`); harness integration pending |
 | B5 OT probability | ✓ | ✓ | ✓ | derived | — |
-| C1/C2 book vs pick'em gap, prop-line movement | ⛔ | ⛔ | ⛔ | historical prop lines are paid (BigDataBall) — owner decision; live-only otherwise, calibrated in-season | |
-| C4, S1–S4 pick'em structure | ⛔ (no archive exists) | ⛔ | ⛔ | boards are not archived anywhere free; live from season start; the board scraper will archive every board from day one so the NEXT backfill exists | |
-| D1 referee crew | ✓ officials | ⏳ | 🔧 | `scrape_nba_game_officials.py` SEASON_SLUG (nba-pergame-backfill.yml); daily assignments scraper to build | |
+| C1/C2 book vs pick'em gap, prop-line movement | 🔧 The Odds API history (sportsbook props in the `us` region of the same pull) | 🔧 | — | pulled together with the boards by `odds_api_board_backfill` (two snapshots per game: window + tip−30) | runs after the owner's Odds API upgrade |
+| C4, S1–S4 pick'em structure (PrizePicks + Underdog boards) | 🔧 The Odds API `us_dfs` history (PP incl. Goblins/Demons, Underdog with multipliers) — verified on 2024-10-25 | 🔧 | — | `odds_api_board_backfill` → `nba_market.board_snapshots`; Sleeper has no history anywhere → derived-Sleeper fallback trained on PP/UD snapshots; live boards from opening day via OUR scrapers (PP, Sleeper, Underdog) + ParlayAPI (Fliff) — see config `board_sources_decision` | waits on the $119/5M plan |
+| D1 referee crew | ✓ officials | ✓ 3,691 rows (1,230/1,230) | ✓ 3,690 rows (1,230/1,230) | `scrape_nba_game_officials.py` SEASON_SLUG (nba-pergame-backfill.yml); daily assignments scraper still to build | complete |
 | D2 schedule / travel / day game / altitude | ✓ | ✓ | ✓ | logs (dates, home) + arenas | — |
 | K1 coach rotation profile | ✓ logs | ✓ | ✓ | logs + coach-by-team-by-date table (source: Wikipedia season pages "Coaching changes" tables with dates; to compile as a static file) | |
 | M2 scheme proxy | ✓ current | prior-season table (parity-safe) | prior-season | Synergy play types have no date filter → use the previous season's table for a given season | documented limitation |
