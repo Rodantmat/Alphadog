@@ -403,13 +403,36 @@ async function fetchScraperBoard() {
   // Earned Runs Allowed. Filter on what actually matters instead: a real player and a numeric
   // line. Team markets carry no player-prop mapping and are excluded by name.
   const TEAM_MARKETS = /^(moneyline|spread|total runs|team total runs|1st 5 innings)/i;
-  const rows = legs.filter(l =>
+  const candidates = legs.filter(l =>
     l && l.player && String(l.player).trim() &&
     Number.isFinite(Number(l.line)) &&
     !l.live &&
     l.appearance_type !== "Team" &&
     !TEAM_MARKETS.test(String(l.stat || ""))
-  ).map(adaptScraperLeg);
+  );
+  // The same failed appearance lookup that nulls appearance_type also nulls game_id, player_id,
+  // team and game_start - and a missing game_id fails rowRequiredAudit outright. Every one of
+  // these players DOES appear on other legs where the lookup succeeded, so borrow the context.
+  const ctxByPlayer = new Map();
+  for (const l of candidates) {
+    const k = String(l.player).toLowerCase();
+    const cur = ctxByPlayer.get(k) || {};
+    if (!cur.game_id && l.game_id) cur.game_id = l.game_id;
+    if (!cur.player_id && l.player_id) cur.player_id = l.player_id;
+    if (!cur.team && l.team) cur.team = l.team;
+    if (!cur.game_start && l.game_start) cur.game_start = l.game_start;
+    ctxByPlayer.set(k, cur);
+  }
+  const rows = candidates.map(l => {
+    const ctx = ctxByPlayer.get(String(l.player).toLowerCase()) || {};
+    return adaptScraperLeg({
+      ...l,
+      game_id: l.game_id || ctx.game_id || null,
+      player_id: l.player_id || ctx.player_id || null,
+      team: l.team || ctx.team || null,
+      game_start: l.game_start || ctx.game_start || null
+    });
+  });
   // LINE VARIANTS (2026-09-10): the main board carries ONE line per player+prop, but Underdog
   // offers a full ladder of alternates. Promoting only the main line threw away ~3 of every 4
   // real, pickable lines. Every rung is its own board row - same shape as PrizePicks treating
