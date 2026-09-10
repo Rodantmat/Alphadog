@@ -1,0 +1,45 @@
+{
+  "seasons": [
+    "2025-26",
+    "2024-25",
+    "2023-24"
+  ],
+  "summary": {
+    "pt_defend_asof_2025-26": {
+      "snapshots": 25,
+      "mb": 3.0
+    },
+    "hustle_asof_2025-26": {
+      "snapshots": 25,
+      "mb": 4.94
+    },
+    "clutch_asof_2025-26": {
+      "snapshots": 25,
+      "mb": 2.68
+    },
+    "pt_defend_asof_2024-25": {
+      "snapshots": 25,
+      "mb": 3.0
+    },
+    "hustle_asof_2024-25": {
+      "snapshots": 25,
+      "mb": 4.9
+    },
+    "clutch_asof_2024-25": {
+      "snapshots": 25,
+      "mb": 2.58
+    },
+    "pt_defend_asof_2023-24": {
+      "snapshots": 25,
+      "mb": 3.02
+    },
+    "hustle_asof_2023-24": {
+      "snapshots": 25,
+      "mb": 4.94
+    },
+    "clutch_asof_2023-24": {
+      "snapshots": 25,
+      "mb": 2.46
+    }
+  }
+}
