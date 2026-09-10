@@ -2,8 +2,8 @@
   "ok": true,
   "source": "https://api.underdogfantasy.com/v2/pickem_search/search_results",
   "sport": "NBA",
-  "started_at": "2026-09-10T03:36:31Z",
-  "fetched_at": "2026-09-10T03:36:34Z",
+  "started_at": "2026-09-10T03:38:55Z",
+  "fetched_at": "2026-09-10T03:38:58Z",
   "pages": 1,
   "opened_lines_count": 0,
   "lines": 0,
@@ -14,5 +14,5 @@
   "live_lines": 0,
   "unresolved_player_names": 0,
   "multiplier_values": {},
-  "github_run_id": "34433946032"
+  "github_run_id": "34434098137"
 }
