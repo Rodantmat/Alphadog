@@ -108,7 +108,7 @@ def main():
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     session = requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
     seasons = stats_seasons(int(os.environ.get("SEASONS_N", "3")))
-    tables = [x for x in os.environ.get("TABLES", ",".join(TABLES)).split(",") if x and (x in TABLES or x == "all_players")]
+    tables = [x for x in os.environ.get("TABLES", ",".join(TABLES)).split(",") if x and (x in TABLES or x in ("all_players", "coaches"))]
     summary = {}
     if "all_players" in tables:
         # PLAYER INDEX (every player, all seasons): the name -> id join for the injury report (names are "Last, First").
