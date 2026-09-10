@@ -34,6 +34,24 @@ def cutoff_ts(game_date, hhmm):
     return f"{game_date}T{hhmm}:00{ET_OFFSET}"
 
 
+def load_injury_rows(data_dir, slug=None):
+    """All injury snapshot rows: monthly backfill shards nba_injury_report_<slug>_<YYYY-MM>.json (+ legacy single file)
+    plus the live file nba_injury_report_current.json. Same row shape everywhere (parity)."""
+    import json
+    from pathlib import Path
+    rows = []
+    dd = Path(data_dir)
+    if slug:
+        for p in sorted(dd.glob(f"nba_injury_report_{slug}_20*.json")):
+            if p.name.endswith("_index.json"): continue
+            rows += json.loads(p.read_text()).get("rows", [])
+        legacy = dd / f"nba_injury_report_{slug}.json"
+        if legacy.exists(): rows += json.loads(legacy.read_text()).get("rows", [])
+    cur = dd / "nba_injury_report_current.json"
+    if cur.exists(): rows += json.loads(cur.read_text()).get("rows", [])
+    return rows
+
+
 def status_asof(rows, game_date, cutoff):
     """Latest snapshot <= cutoff for each team playing on game_date; returns dict keyed by (team, player_name)."""
     by_team = {}
