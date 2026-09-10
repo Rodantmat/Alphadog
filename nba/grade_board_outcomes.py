@@ -141,13 +141,15 @@ def main():
         print(f"grading {len(dates)} dates", flush=True)
 
         cache = {}
+        pid_to_name, all_known_names = load_players()
+        print(f"player map: {len(pid_to_name)} ids, {len(all_known_names)} distinct names", flush=True)
         tot = defaultdict(int)
         for d in dates:
             slug = season_of(d)
             if slug not in cache:
                 print("loading logs", slug, flush=True)
-                cache[slug] = load_logs(slug)
-            by_date, teams_by_date, players_seen = cache[slug]
+                cache[slug] = load_logs(slug, pid_to_name)
+            by_date, players_seen = cache[slug]
             ds = d.isoformat()
             day = by_date.get(ds, {})
             if not day:
