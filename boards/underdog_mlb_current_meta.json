@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (scaffold->market_filters->match_grouped_lines->lines)",
   "sport": "MLB",
-  "started_at": "2026-09-10T04:21:55Z",
-  "fetched_at": "2026-09-10T04:22:15Z",
+  "started_at": "2026-09-10T04:28:46Z",
+  "fetched_at": "2026-09-10T04:29:06Z",
   "categories": [
     "core"
   ],
@@ -13,46 +13,198 @@
       48
     ],
     [
-      "lines[mass=true]",
+      "lines[match=143915]",
+      0
+    ],
+    [
+      "lines[match=143308]",
       20
+    ],
+    [
+      "lines[match=143708]",
+      20
+    ],
+    [
+      "lines[match=142608]",
+      20
+    ],
+    [
+      "lines[match=144202]",
+      20
+    ],
+    [
+      "lines[match=142982]",
+      20
+    ],
+    [
+      "lines[match=144492]",
+      0
+    ],
+    [
+      "lines[match=143007]",
+      0
+    ],
+    [
+      "lines[match=142342]",
+      0
+    ],
+    [
+      "lines[match=142732]",
+      0
+    ],
+    [
+      "lines[match=143798]",
+      0
+    ],
+    [
+      "lines[match=142316]",
+      0
+    ],
+    [
+      "lines[match=143225]",
+      0
+    ],
+    [
+      "lines[match=143651]",
+      0
+    ],
+    [
+      "lines[match=143757]",
+      0
+    ],
+    [
+      "lines[match=143674]",
+      0
+    ],
+    [
+      "lines[match=142994]",
+      0
+    ],
+    [
+      "lines[match=144360]",
+      0
+    ],
+    [
+      "lines[match=142247]",
+      0
+    ],
+    [
+      "lines[match=144128]",
+      0
+    ],
+    [
+      "lines[match=142519]",
+      0
+    ],
+    [
+      "lines[match=144067]",
+      0
+    ],
+    [
+      "lines[match=144030]",
+      0
+    ],
+    [
+      "lines[match=142366]",
+      0
+    ],
+    [
+      "lines[match=144557]",
+      0
+    ],
+    [
+      "lines[match=143097]",
+      0
+    ],
+    [
+      "lines[match=143493]",
+      0
+    ],
+    [
+      "lines[match=144302]",
+      0
+    ],
+    [
+      "lines[match=142678]",
+      0
+    ],
+    [
+      "lines[match=142515]",
+      0
+    ],
+    [
+      "lines[match=143298]",
+      0
+    ],
+    [
+      "lines[match=143201]",
+      0
+    ],
+    [
+      "lines[match=142944]",
+      0
+    ],
+    [
+      "lines[match=143465]",
+      0
+    ],
+    [
+      "lines[match=142504]",
+      0
+    ],
+    [
+      "lines[match=142956]",
+      0
+    ],
+    [
+      "lines[mass=true]",
+      0
     ],
     [
       "lines[mass=false]",
       0
     ]
   ],
-  "lines": 68,
-  "legs": 68,
-  "players": 20,
-  "pregame_legs": 65,
+  "lines": 148,
+  "legs": 148,
+  "players": 67,
+  "pregame_legs": 145,
   "live_legs": 3,
   "by_stat": {
+    "Hits + Runs + RBIs": 46,
     "Moneyline": 36,
-    "Hits + Runs + RBIs": 12,
-    "Strikeouts": 8,
+    "Home Runs": 19,
+    "Strikeouts": 10,
+    "Fantasy Points": 9,
     "Spread": 6,
-    "Total Runs": 6
+    "Total Runs": 6,
+    "Total Bases": 6,
+    "Hits": 4,
+    "Pitching Outs": 3,
+    "Runs": 1,
+    "RBIs": 1,
+    "Earned Runs Allowed": 1
   },
   "by_line_type": {
-    "balanced": 68
+    "balanced": 148
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
     "None": 42,
-    "1.0": 8,
+    "1.0": 31,
+    "1.13": 5,
+    "0.91": 4,
+    "1.05": 4,
     "0.89": 3,
-    "0.91": 2,
-    "1.13": 2,
-    "1.05": 2,
-    "0.53": 1,
-    "1.1": 1,
-    "0.85": 1,
-    "1.04": 1,
-    "1.12": 1,
-    "1.06": 1,
-    "0.86": 1,
-    "0.84": 1,
-    "0.9": 1
+    "1.16": 3,
+    "0.81": 3,
+    "1.1": 3,
+    "1.11": 3,
+    "1.07": 3,
+    "1.12": 2,
+    "0.88": 2,
+    "1.08": 2,
+    "1.06": 2
   },
-  "github_run_id": "34436862741"
+  "github_run_id": "34437300139"
 }

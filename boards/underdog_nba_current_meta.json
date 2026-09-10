@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (scaffold->market_filters->match_grouped_lines->lines)",
   "sport": "NBA",
-  "started_at": "2026-09-10T04:21:55Z",
-  "fetched_at": "2026-09-10T04:22:33Z",
+  "started_at": "2026-09-10T04:28:46Z",
+  "fetched_at": "2026-09-10T04:29:10Z",
   "categories": [
     "core"
   ],
@@ -11,6 +11,18 @@
     [
       "match_grouped_lines[core]",
       3
+    ],
+    [
+      "lines[match=211122]",
+      0
+    ],
+    [
+      "lines[match=211123]",
+      0
+    ],
+    [
+      "lines[match=211124]",
+      0
     ],
     [
       "lines[mass=true]",
@@ -36,5 +48,5 @@
   "multiplier_values": {
     "None": 3
   },
-  "github_run_id": "34436862741"
+  "github_run_id": "34437300139"
 }
