@@ -5463,7 +5463,9 @@ async function apiHighHitSlips(env, request) {
   const udwLegs = await autoSelectUnderdogWorkloadLegs(env).catch((e) => { selectorErrors.udw = String(e && e.message || e); return []; });
   const udwSlips = [];
   {
-    const SZ = 3, MIN_SZ = 3, MAX_SLIPS = 2, MAX_PER_GAME = 2;
+    const SZ = 3, MIN_SZ = 2, MAX_SLIPS = 2, MAX_PER_GAME = 2;
+    // September pitcher-only: builds a 3-pick when 3+ capped pitchers post (+150% on 11), a 2-pick when
+    // only 2 do (+69.8% on 29). Both measured on real per-leg UD pricing.
     const used = new Set();
     while (udwSlips.length < MAX_SLIPS) {
       const avail = udwLegs.filter(l => !used.has(l.board_row_id));
