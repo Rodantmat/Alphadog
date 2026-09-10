@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Underdog Pick'em board producer (our own scraper).
-Source: https://api.underdogfantasy.com/v2/pickem_search/search_results?sport_id=<SPORT>&page=<n>  (the web app's own endpoint;
-requires the app client headers - verified 2026-09-10: 200 direct and via proxy; the older beta/v6 over_under_lines is bot-blocked).
-Env: UNDERDOG_SPORTS (default "MLB,NBA"), PROXY_URL (optional fallback), UNDERDOG_OUT_DIR.
-Output per sport: boards/underdog_<sport>_current.json {meta, legs[], raw_lines[]} + _meta.json.
-Leg = one over_under_line: player, team, stat, line, higher/lower multipliers (+ decimal/american prices), line_type (balanced/boosted...),
-live flag, game id/start, appearance id. raw_lines keeps the untouched objects so nothing is lost while the schema settles.
+Underdog Pick'em board producer v2 (our own scraper, built from the real app calls captured 2026-09-10).
+Flow (no auth needed): scaffold -> market_filters (categories) -> match_grouped_lines per category (pregame + live)
+                       + lines?show_mass_option_markets=true (ladders) -> merge over_under_lines by id.
+Required query params on every call: product=fantasy, product_experience_id, state_config_id (state rule set; CA captured).
+Env: UNDERDOG_SPORTS (default "MLB,NBA"), UNDERDOG_PXID, UNDERDOG_STATE_CONFIG, UNDERDOG_CLIENT_VERSION, PROXY_URL (fallback), UNDERDOG_OUT_DIR.
+Output per sport: boards/underdog_<sport>_current.json {meta, legs[], raw_lines[], players, appearances, games, teams} + _meta.json.
 """
 import json
 import os
@@ -16,17 +15,22 @@ import uuid
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 from curl_cffi import requests
 
-BASE = "https://api.underdogfantasy.com/v2/pickem_search/search_results"
+API = "https://api.underdogfantasy.com"
+PXID = os.environ.get("UNDERDOG_PXID", "b34dfd93-d0e8-4da3-8bf4-45c15c548dec")
+STATE = os.environ.get("UNDERDOG_STATE_CONFIG", "725014ef-3570-4e93-871d-d69674ab3521")
 OUT = Path(os.environ.get("UNDERDOG_OUT_DIR", "boards"))
+DEVICE = os.environ.get("UNDERDOG_DEVICE_ID") or str(uuid.uuid4())
 H = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-    "Accept": "application/json", "Accept-Language": "en-US,en;q=0.9", "Origin": "https://underdogfantasy.com", "Referer": "https://underdogfantasy.com/",
-    "client-type": "web", "client-version": os.environ.get("UNDERDOG_CLIENT_VERSION", "20260901"), "client-device-id": os.environ.get("UNDERDOG_DEVICE_ID", str(uuid.uuid4())),
-    "referring-device": "web", "user-latitude": "32.7157", "user-longitude": "-117.1611",
+    "accept": "application/json", "accept-language": "en-US,en;q=0.9", "origin": "https://app.underdogsports.com", "referer": "https://app.underdogsports.com/",
+    "client-type": "web", "client-version": os.environ.get("UNDERDOG_CLIENT_VERSION", "20260907143253"), "client-device-id": DEVICE,
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+    "user-latitude": os.environ.get("UNDERDOG_LAT", "32.65148161377867"), "user-longitude": os.environ.get("UNDERDOG_LON", "-116.8550890281236"),
 }
+COMMON = f"product=fantasy&product_experience_id={PXID}&state_config_id={STATE}"
 
 
 def get(session, url, proxies):
@@ -34,7 +38,7 @@ def get(session, url, proxies):
     for attempt in range(3):
         for use_proxy in (False, True):
             try:
-                r = session.get(url, headers=H, timeout=60, impersonate="chrome124", proxies=proxies if use_proxy else None)
+                r = session.get(url, headers={**H, "client-request-id": str(uuid.uuid4())}, timeout=60, impersonate="safari_ios", proxies=proxies if use_proxy else None)
                 if r.status_code == 200:
                     return r.json()
                 last = f"http {r.status_code}"
@@ -43,11 +47,18 @@ def get(session, url, proxies):
             if not proxies:
                 break
         time.sleep(2 + attempt * 3)
-    raise RuntimeError(f"underdog fetch failed {url}: {last}")
+    raise RuntimeError(f"underdog fetch failed {url[:120]}: {last}")
 
 
-def index(lst, key="id"):
-    return {str(x.get(key)): x for x in (lst or []) if isinstance(x, dict)}
+def as_dict(x, key="id"):
+    if isinstance(x, dict):
+        return {str(k): v for k, v in x.items()}
+    return {str(i.get(key)): i for i in (x or []) if isinstance(i, dict)}
+
+
+def merge(store, j):
+    for k in ("over_under_lines", "appearances", "players", "games", "solo_games", "teams"):
+        store[k].update(as_dict(j.get(k)))
 
 
 def main():
@@ -58,48 +69,82 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     s = requests.Session()
     for sport in sports:
-        lines, players, appearances, games, solo_games, teams = [], {}, {}, {}, {}, {}
-        seen, page, opened = set(), 1, None
-        while page <= 60:
-            j = get(s, f"{BASE}?sport_id={sport}&page={page}", proxies)
-            oul = j.get("over_under_lines") or []
-            opened = j.get("opened_lines_count", opened)
-            players.update(index(j.get("players"))); appearances.update(index(j.get("appearances"))); games.update(index(j.get("games"))); solo_games.update(index(j.get("solo_games"))); teams.update(index(j.get("teams")))
-            new = [x for x in oul if x.get("id") not in seen]
-            for x in new:
-                seen.add(x.get("id")); lines.append(x)
-            print(f"{sport} page {page}: {len(oul)} lines ({len(new)} new); opened_lines_count={opened}")
-            if not oul or not new or (opened and len(lines) >= int(opened)):
-                break
-            page += 1
-            time.sleep(0.6)
+        store = {k: {} for k in ("over_under_lines", "appearances", "players", "games", "solo_games", "teams")}
+        calls = []
+        # 1) market categories for the sport
+        cats = ["core"]
+        try:
+            mf = get(s, f"{API}/v1/lobbies/content/market_filters?empty_if_single_core_pill=false&include_live=true&{COMMON}&sport_id={sport}", proxies)
+            found = []
+            def walk(o):
+                if isinstance(o, dict):
+                    for k, v in o.items():
+                        if k in ("market_category", "category", "key", "id") and isinstance(v, str) and v and v not in found and len(v) < 40 and " " not in v: found.append(v)
+                        walk(v)
+                elif isinstance(o, list):
+                    for v in o: walk(v)
+            walk(mf)
+            cats = sorted({c for c in found if c.islower() and c.replace("_", "").isalpha()} | {"core"})
+            calls.append(("market_filters", len(cats)))
+        except Exception as exc:  # noqa: BLE001
+            print(f"{sport}: market_filters failed ({exc}); using core only", file=sys.stderr)
+        # 2) grouped lines per category (pregame + live)
+        for cat in cats:
+            try:
+                j = get(s, f"{API}/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D={quote(cat)}&match_limit=200&{COMMON}&show_more_picks_cta=true&sport_id={sport}&two_box_enabled_surface=true", proxies)
+                before = len(store["over_under_lines"]); merge(store, j)
+                calls.append((f"match_grouped_lines[{cat}]", len(store["over_under_lines"]) - before))
+                # follow per-match "more picks" action paths when present
+                for mg in (j.get("match_groups") or [])[:60]:
+                    ap = (mg.get("action_path") or mg.get("cta") or {}) if isinstance(mg, dict) else {}
+                    url = ap.get("url") if isinstance(ap, dict) else None
+                    if url and "lobbies/content" in url:
+                        try:
+                            jj = get(s, url if "state_config_id" in url else f"{url}&{COMMON}", proxies); b2 = len(store["over_under_lines"]); merge(store, jj)
+                            calls.append(("match_more_picks", len(store["over_under_lines"]) - b2))
+                        except Exception as exc:  # noqa: BLE001
+                            calls.append(("match_more_picks_error", str(exc)[:60]))
+                        time.sleep(0.4)
+            except Exception as exc:  # noqa: BLE001
+                calls.append((f"match_grouped_lines[{cat}]_error", str(exc)[:80]))
+            time.sleep(0.5)
+        # 3) popular picks incl. mass-option (ladder) markets
+        for mass in ("true", "false"):
+            try:
+                j = get(s, f"{API}/v1/lobbies/content/lines?include_live=true&{COMMON}&show_mass_option_markets={mass}&sport_id={sport}", proxies)
+                before = len(store["over_under_lines"]); merge(store, j); calls.append((f"lines[mass={mass}]", len(store["over_under_lines"]) - before))
+            except Exception as exc:  # noqa: BLE001
+                calls.append((f"lines[mass={mass}]_error", str(exc)[:80]))
+            time.sleep(0.5)
         fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        # 4) flatten
         legs = []
-        for ln in lines:
+        for lid, ln in store["over_under_lines"].items():
             ou = ln.get("over_under") or {}
             ast = ou.get("appearance_stat") or {}
-            app = appearances.get(str(ast.get("appearance_id") or ln.get("appearance_id") or ""), {})
-            pl = players.get(str(app.get("player_id") or ""), {})
-            game = games.get(str(app.get("match_id") or app.get("game_id") or ""), {}) or solo_games.get(str(app.get("match_id") or ""), {})
-            team = teams.get(str(app.get("team_id") or pl.get("team_id") or ""), {})
+            app = store["appearances"].get(str(ast.get("appearance_id") or ""), {})
+            pl = store["players"].get(str(app.get("player_id") or ""), {})
+            game = store["games"].get(str(app.get("match_id") or ""), {}) or store["solo_games"].get(str(app.get("match_id") or ""), {})
+            team = store["teams"].get(str(app.get("team_id") or pl.get("team_id") or ""), {})
             opts = {str(o.get("choice")): o for o in ln.get("options") or []}
             hi, lo = opts.get("higher", {}), opts.get("lower", {})
             legs.append({
-                "line_id": ln.get("id"), "sport": sport, "player": " ".join(x for x in (pl.get("first_name"), pl.get("last_name")) if x) or ou.get("title") or "",
-                "player_id": app.get("player_id"), "team": team.get("abbr") or pl.get("team_abbr") or "", "position": pl.get("position") or app.get("position_id"),
+                "line_id": lid, "sport": sport, "player": " ".join(x for x in (pl.get("first_name"), pl.get("last_name")) if x) or ou.get("title") or "",
+                "player_id": app.get("player_id"), "appearance_type": app.get("type"), "team": team.get("abbr") or "", "position": pl.get("position") or app.get("position_id"),
                 "stat": ast.get("display_stat") or ast.get("stat") or ou.get("title"), "stat_key": ast.get("stat"), "line": ln.get("stat_value"),
                 "higher_multiplier": hi.get("payout_multiplier"), "lower_multiplier": lo.get("payout_multiplier"), "higher_decimal": hi.get("decimal_price"), "lower_decimal": lo.get("decimal_price"),
                 "higher_american": hi.get("american_price"), "lower_american": lo.get("american_price"), "higher_label": hi.get("choice_display_name_shorter"), "lower_label": lo.get("choice_display_name_shorter"),
-                "line_type": ln.get("line_type"), "live": ln.get("live_event"), "status": ln.get("status"), "expires_at": ln.get("expires_at"),
+                "line_type": ln.get("line_type"), "live": ln.get("live_event"), "status": ln.get("status"), "expires_at": ln.get("expires_at"), "rank": ln.get("rank"),
                 "game_id": app.get("match_id"), "game_start": game.get("scheduled_at") or game.get("start_time"), "game_title": game.get("title") or "", "appearance_id": ast.get("appearance_id"),
             })
-        meta = {"ok": True, "source": BASE, "sport": sport, "started_at": started, "fetched_at": fetched_at, "pages": page, "opened_lines_count": opened, "lines": len(lines), "legs": len(legs),
-                "players": len({l["player_id"] for l in legs if l["player_id"]}), "by_stat": dict(Counter(l["stat"] for l in legs).most_common(40)), "by_line_type": dict(Counter(l["line_type"] for l in legs)),
-                "live_lines": sum(1 for l in legs if l["live"]), "unresolved_player_names": sum(1 for l in legs if not l["player"]), "multiplier_values": dict(Counter(str(l["higher_multiplier"]) for l in legs).most_common(15)),
-                "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
-        (OUT / f"underdog_{sport.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs, "raw_lines": lines, "players": players, "appearances": appearances, "games": games, "teams": teams}, separators=(",", ":")))
+        meta = {"ok": True, "source": "underdog lobby content (scaffold->market_filters->match_grouped_lines->lines)", "sport": sport, "started_at": started, "fetched_at": fetched_at,
+                "categories": cats, "calls": calls, "lines": len(store["over_under_lines"]), "legs": len(legs), "players": len({l["player_id"] for l in legs if l["player_id"]}),
+                "pregame_legs": sum(1 for l in legs if not l["live"]), "live_legs": sum(1 for l in legs if l["live"]), "by_stat": dict(Counter(l["stat"] for l in legs).most_common(50)),
+                "by_line_type": dict(Counter(l["line_type"] for l in legs)), "unresolved_player_names": sum(1 for l in legs if l["appearance_type"] == "Player" and not l["player"]),
+                "multiplier_values": dict(Counter(str(l["higher_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
+        (OUT / f"underdog_{sport.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs, "raw_lines": list(store["over_under_lines"].values()), "players": store["players"], "appearances": store["appearances"], "games": store["games"], "teams": store["teams"]}, separators=(",", ":")))
         (OUT / f"underdog_{sport.lower()}_current_meta.json").write_text(json.dumps(meta, indent=2))
-        print(f"{sport}: {len(legs)} legs, players={meta['players']}, unresolved names={meta['unresolved_player_names']}, line_types={meta['by_line_type']}, live={meta['live_lines']}")
+        print(f"{sport}: {len(legs)} legs (pregame {meta['pregame_legs']}, live {meta['live_legs']}), players={meta['players']}, categories={cats}, calls={calls}")
 
 
 if __name__ == "__main__":
