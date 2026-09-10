@@ -580,6 +580,13 @@ async function persistLadder(env, ladder, batchId, fetchedAt) {
         source_stat_name: normalizeText(r.stat_key || r.stat), canonical_prop_key: ck, line_value: line,
         higher_multiplier: numberOrNull(r.higher_multiplier), lower_multiplier: numberOrNull(r.lower_multiplier),
         higher_american: numberOrNull(r.higher_american), lower_american: numberOrNull(r.lower_american),
+        // REAL payout multipliers. higher_multiplier/lower_multiplier above are Underdog's payout
+        // MODIFIERS (0.6-2.2), not payouts - reading them as multipliers is badly wrong. The true
+        // payout is decimal(american) * 0.963, verified against the live app on 2026-09-10
+        // (Feltner ER 2.5 under +114 -> 2.06 shown; Smith 0.5 over +138 -> 2.31; under -189 -> 1.44)
+        // and independently fitted from 19 real placed slips. Slip = product of leg multipliers.
+        higher_payout_mult: udPayoutMult(r.higher_american),
+        lower_payout_mult: udPayoutMult(r.lower_american),
         higher_prob_fantasy: numberOrNull(r.higher_prob_fantasy), lower_prob_fantasy: numberOrNull(r.lower_prob_fantasy),
         higher_prob_sportsbook: numberOrNull(r.higher_prob_sportsbook), lower_prob_sportsbook: numberOrNull(r.lower_prob_sportsbook),
         higher_status: normalizeText(r.higher_status), lower_status: normalizeText(r.lower_status),
