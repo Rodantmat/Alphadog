@@ -1153,12 +1153,31 @@ async function safeProbe(env, input = {}) {
   let parseError = null;
   try { parsed = JSON.parse(text); } catch (err) { parseError = safeString(err && err.message ? err.message : err, 500); }
   const shape = parsed ? detectShape(parsed) : null;
-  const rows = shape && shape.detected_rows_path === "$" && Array.isArray(parsed) ? parsed : [];
-  const rowsRead = shape ? Number(shape.detected_row_count || 0) : 0;
+  let rows = shape && shape.detected_rows_path === "$" && Array.isArray(parsed) ? parsed : [];
+  let rowsRead = shape ? Number(shape.detected_row_count || 0) : 0;
+
+  // SCRAPER FIRST (2026-09-10): our own Underdog scraper produces a far richer board than ParlayAPI
+  // and costs no credits. If boards/underdog_mlb_current.json is fresh, its rows REPLACE the API rows
+  // and the rest of this worker (staging, canonical mapping, player resolution, promotion) runs
+  // unchanged on them. If it is missing or stale, we keep whatever ParlayAPI returned.
+  let scraperInfo = { used: false };
+  try {
+    const sc = await fetchScraperBoard();
+    if (sc.ok && sc.rows.length) {
+      rows = sc.rows;
+      rowsRead = sc.rows.length;
+      scraperInfo = { used: true, rows: sc.rows.length, raw_legs: sc.raw_legs, ladder_rungs: (sc.ladder || []).length, age_hours: Math.round(sc.age_hours * 100) / 100, source: SCRAPER_BOARD_URL };
+    } else {
+      scraperInfo = { used: false, reason: sc.reason || "scraper_unavailable", age_hours: sc.age_hours || null, fallback: "parlay_api" };
+    }
+  } catch (err) {
+    scraperInfo = { used: false, reason: safeString(err && err.message ? err.message : err, 200), fallback: "parlay_api" };
+  }
+
   let stageResult = null;
   let stageError = null;
 
-  if (response.ok && parsed && shape && shape.top_level_type === "array" && Array.isArray(rows)) {
+  if (scraperInfo.used || (response.ok && parsed && shape && shape.top_level_type === "array" && Array.isArray(rows))) {
     try {
       stageResult = await stageOnlyRows(env, rows, {
         base_url_host: endpoint.base_url_host || null,
