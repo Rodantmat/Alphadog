@@ -157,10 +157,10 @@ def main():
             player text, side text, line numeric, price numeric,
             stat_actual numeric, leg_result text, is_alternate boolean, played boolean,
             graded_at timestamptz DEFAULT now())""")
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS board_outcomes_uidx ON nba_market.board_outcomes
-            ((md5(coalesce(event_id,'')||'|'||coalesce(snapshot_label,'')||'|'||coalesce(bookmaker,'')||'|'||
-                  coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||coalesce(side,'')||'|'||
-                  coalesce(line::text,''))::uuid))""")
+        # distinct-leg key: the outcome does not depend on bookmaker/snapshot
+        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS board_outcomes_leg_uidx ON nba_market.board_outcomes
+            ((md5(coalesce(game_date::text,'')||'|'||coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||
+                  coalesce(side,'')||'|'||coalesce(line::text,''))::uuid))""")
         cur.execute("CREATE INDEX IF NOT EXISTS board_outcomes_date_idx ON nba_market.board_outcomes (game_date, leg_result)")
 
         start = os.environ.get("GRADE_START", "2024-10-22")
