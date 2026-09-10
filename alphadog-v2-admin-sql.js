@@ -190,7 +190,7 @@ async function toolRunJob(env, args) {
     const NBA_MARKETS = "player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,player_turnovers,player_points_rebounds_assists,player_points_rebounds,player_points_assists,player_rebounds_assists,player_blocks_steals,player_double_double,player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate,player_points_rebounds_assists_alternate,player_points_rebounds_alternate,player_points_assists_alternate,player_rebounds_assists_alternate";
     const start = String((extra && extra.start) || "").trim(); const end = String((extra && extra.end) || start).trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { ok: false, error: "extra.start (YYYY-MM-DD) required" };
-    const markets = String((extra && extra.markets) || NBA_MARKETS); const regions = String((extra && extra.regions) || "us_dfs,us,us2");
+    const markets = String((extra && extra.markets) || NBA_MARKETS); const regions = String((extra && extra.regions) || "us_dfs,us");
     const labels = (extra && extra.snapshots) || ["window", "close"]; const windowPt = String((extra && extra.window_pt) || "14:45");
     const closeMinus = Number((extra && extra.close_minus_min) || 30); const maxEvents = Number((extra && extra.max_events) || 0);
     const keyName = String((extra && extra.key_name) || "odds_api_key_nba");
