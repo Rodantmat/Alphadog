@@ -112,7 +112,7 @@ def main():
                 j = sync(s, feed_host, hdr, 3062, proxies, channel=c.get("channel_id", -333), conflict=fkey)
             except Exception as exc:  # noqa: BLE001
                 errors.append({"conflict_fkey": fkey, "error": str(exc)[:120]}); continue
-            markets = [m for lst in walk_lists(j.get("x_slots") or {}, "markets") for m in lst if isinstance(m, dict) and m.get("conflict_fkey") == fkey]
+            markets = [m for key in ("market_updates", "markets") for lst in walk_lists(j.get("x_slots") or {}, key) for m in lst if isinstance(m, dict) and m.get("conflict_fkey") == fkey]
             for m in markets:
                 raw_markets.append(m)
                 for g in m.get("groups") or []:
