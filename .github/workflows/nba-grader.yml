@@ -1,0 +1,44 @@
+name: NBA Outcome Grader
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Start game date YYYY-MM-DD"
+        default: "2024-10-22"
+        required: false
+      end:
+        description: "End game date YYYY-MM-DD"
+        default: "2026-04-12"
+        required: false
+      limit_dates:
+        description: "Cap number of dates (0 = all) - use a small number for a smoke test"
+        default: "0"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-grader
+  cancel-in-progress: false
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Grade board outcomes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GRADE_START: ${{ github.event.inputs.start || '2024-10-22' }}
+          GRADE_END: ${{ github.event.inputs.end || '2026-04-12' }}
+          GRADE_LIMIT_DATES: ${{ github.event.inputs.limit_dates || '0' }}
+        run: python nba/grade_board_outcomes.py
