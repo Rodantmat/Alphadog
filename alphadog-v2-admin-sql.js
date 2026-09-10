@@ -247,7 +247,19 @@ async function toolRunJob(env, args) {
         try { json = JSON.parse(text); } catch (_) {}
         const headerDump = {};
         for (const [k, v] of resp.headers.entries()) headerDump[k] = v;
-        return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null, headers: headerDump };
+        // Optional summary: value counts of one or more fields across an array response (e.g. bookmaker, market_key)
+        let summary = null;
+        const fields = extra && extra.summarize_fields ? String(extra.summarize_fields).split(",").map((s) => s.trim()).filter(Boolean) : [];
+        if (Array.isArray(json) && fields.length) {
+          summary = {};
+          for (const f of fields) {
+            const counts = {};
+            for (const row of json) { const v = row && typeof row === "object" ? row[f] : undefined; const k = v === undefined ? "<missing>" : String(v); counts[k] = (counts[k] || 0) + 1; }
+            summary[f] = counts;
+          }
+          if (extra.filter_field && extra.filter_value) summary.sample = json.filter((r) => r && String(r[extra.filter_field]) === String(extra.filter_value)).slice(0, 5);
+        }
+        return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, summary ? 500 : 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null, summary, headers: extra && extra.no_headers ? undefined : headerDump };
       } catch (err) {
         return { ok: false, error: String(err && err.message ? err.message : err) };
       }
