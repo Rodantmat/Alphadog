@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "source": "https://api.underdogfantasy.com/v2/pickem_search/search_results",
+  "sport": "MLB",
+  "started_at": "2026-09-10T03:36:31Z",
+  "fetched_at": "2026-09-10T03:36:33Z",
+  "pages": 1,
+  "opened_lines_count": 0,
+  "lines": 100,
+  "legs": 100,
+  "players": 15,
+  "by_stat": {
+    "Hits + Runs + RBIs": 14,
+    "Total Bases": 14,
+    "Hits": 14,
+    "Runs": 14,
+    "Home Runs": 13,
+    "RBIs": 13,
+    "Batter Walks": 9,
+    "Batter Strikeouts": 5,
+    "Singles": 1,
+    "Strikeouts": 1,
+    "Hits Allowed": 1,
+    "Walks Allowed": 1
+  },
+  "by_line_type": {
+    "balanced": 100
+  },
+  "live_lines": 100,
+  "unresolved_player_names": 0,
+  "multiplier_values": {
+    "1.17": 5,
+    "2.04": 4,
+    "1.82": 3,
+    "1.3": 2,
+    "1.19": 2,
+    "1.55": 2,
+    "1.09": 2,
+    "1.05": 2,
+    "1.47": 2,
+    "1.15": 2,
+    "2.39": 2,
+    "1.28": 2,
+    "1.53": 2,
+    "1.29": 2,
+    "1.25": 2
+  },
+  "github_run_id": "34433946032"
+}
