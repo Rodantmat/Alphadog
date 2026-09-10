@@ -117,14 +117,24 @@ def main():
             for c in list(xs.get("active_prematch_conflicts") or []) + list(xs.get("active_inplay_conflicts") or []):
                 if c.get("conflict_fkey") and c.get("conflict_fkey") not in seen_fkeys and (c.get("channel_id") == ch or is_sport(c)):
                     evs.append(c); seen_fkeys.add(c.get("conflict_fkey"))
-            # proposals carry conflict_fkey + event info when the conflict list is absent
-            for lst in walk_lists(xs, "proposals"):
-                for p in lst:
-                    fk = p.get("conflict_fkey") if isinstance(p, dict) else None
-                    if fk and fk not in seen_fkeys:
-                        info = str(p.get("t_121_event_info") or "")
-                        away, _, home = info.partition(" vs ")
-                        evs.append({"conflict_fkey": fk, "channel_id": ch, "away_team_name": away, "home_team_name": home, "event_start_timestamp_utc": p.get("event_start_timestamp_utc")}); seen_fkeys.add(fk)
+            # subfeed updates carry conflict_fkeys lists and market_updates[].conflict_fkey; event names come from the proposals' t_121_event_info
+            info_by_fk = {}
+            for lst in walk_lists(xs, "market_updates"):
+                for m in lst:
+                    if not isinstance(m, dict) or not m.get("conflict_fkey"): continue
+                    fk = m["conflict_fkey"]
+                    for g in m.get("groups") or []:
+                        for p in g.get("proposals") or []:
+                            if p.get("t_121_event_info"): info_by_fk.setdefault(fk, p["t_121_event_info"]); break
+                        if fk in info_by_fk: break
+                    info_by_fk.setdefault(fk, "")
+            for lst in walk_lists(xs, "conflict_fkeys"):
+                for fk in lst:
+                    if isinstance(fk, str): info_by_fk.setdefault(fk, "")
+            for fk, info in info_by_fk.items():
+                if fk not in seen_fkeys:
+                    away, _, home = str(info).partition(" vs ")
+                    evs.append({"conflict_fkey": fk, "channel_id": ch, "away_team_name": away, "home_team_name": home, "event_start_timestamp_utc": None}); seen_fkeys.add(fk)
             time.sleep(0.5)
         legs, raw_markets, errors = [], [], []
         for c in evs:
