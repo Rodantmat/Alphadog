@@ -182,6 +182,34 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "board_compare_parlay_vs_ours") {
+    // Same-moment diff of OUR board scraper output (boards/<app>_<sport>_current.json: legs[]) vs ParlayAPI live props for that book.
+    // extra: { app: "sleeper"|"underdog", sport_key: "baseball_mlb", file_sport: "mlb" }
+    const app = String((extra && extra.app) || "sleeper"); const sport = String((extra && extra.sport_key) || "baseball_mlb"); const fs = String((extra && extra.file_sport) || "mlb");
+    const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
+    let key = "";
+    try { const r = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'parlay_api_key' LIMIT 1`; key = r && r[0] ? String(r[0].credential_value_encrypted).trim() : (env.PARLAY_API_KEY || ""); } finally { await sqlp.end({ timeout: 5 }); }
+    const norm = (s) => String(s || "").toLowerCase().replace(/rbis?/g, "rbi").replace(/[^a-z0-9+]/g, "");
+    const normPlayer = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\b(jr|sr|ii|iii|iv)\b/g, "").replace(/[^a-z]/g, "");
+    const pr = await fetch(`https://parlay-api.com/v1/sports/${sport}/props?bookmakers=${app}`, { headers: { "X-API-Key": key, accept: "application/json" } });
+    const parlay = await pr.json(); const parlayAt = new Date().toISOString();
+    const sr = await fetch(`https://raw.githubusercontent.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/main/boards/${app}_${fs}_current.json?r=${Date.now()}`);
+    const ours = await sr.json();
+    const oursLegs = (ours.legs || []).map((l) => ({ player: l.player, stat: l.wager_type || l.stat, line: Number(l.line), mult_over: l.over_multiplier ?? l.higher_multiplier, mult_under: l.under_multiplier ?? l.lower_multiplier, line_type: l.line_type, live: l.live || l.game_status === "in_game" }));
+    const pLegs = (Array.isArray(parlay) ? parlay : []).map((r) => ({ player: r.player, stat: r.market_key || r.market, line: Number(r.line), over: r.over_price, under: r.under_price, flat: r.is_dfs_flat_payout }));
+    const k3 = (l) => `${normPlayer(l.player)}|${l.line}`; // player+line (stat naming differs between the two systems)
+    const kStat = (l) => `${normPlayer(l.player)}|${norm(l.stat)}|${l.line}`;
+    const oMap = new Map(oursLegs.map((l) => [kStat(l), l])), pMap = new Map(pLegs.map((l) => [kStat(l), l]));
+    const matchedStat = [...oMap.keys()].filter((k) => pMap.has(k)).length;
+    const oPL = new Set(oursLegs.map(k3)), pPL = new Set(pLegs.map(k3));
+    const matchedPL = [...oPL].filter((k) => pPL.has(k)).length;
+    const count = (arr, f) => arr.reduce((m, x) => { const k = f(x); m[k] = (m[k] || 0) + 1; return m; }, {});
+    return { ok: true, app, sport, ours_fetched_at: ours.meta && ours.meta.fetched_at, parlay_fetched_at: parlayAt, ours_legs: oursLegs.length, parlay_legs: pLegs.length,
+      ours_players: new Set(oursLegs.map((l) => normPlayer(l.player))).size, parlay_players: new Set(pLegs.map((l) => normPlayer(l.player))).size,
+      matched_player_stat_line: matchedStat, matched_player_line: matchedPL, ours_only_player_line: oPL.size - matchedPL, parlay_only_player_line: pPL.size - matchedPL,
+      ours_stat_names: Object.entries(count(oursLegs, (l) => norm(l.stat))).slice(0, 30), parlay_stat_names: Object.entries(count(pLegs, (l) => norm(l.stat))).slice(0, 30),
+      ours_multiplier_sample: oursLegs.slice(0, 6), parlay_price_sample: pLegs.slice(0, 6), ours_line_types: count(oursLegs, (l) => String(l.line_type)), ours_live: oursLegs.filter((l) => l.live).length };
+  }
   if (job === "pp_compare_parlay_vs_scraper") {
     // Same-moment comparison of PrizePicks legs: ParlayAPI live props (bookmakers=prizepicks) vs our own scraper output
     // (raw PrizePicks JSON:API committed to the repo). extra: { sport_key: "baseball_mlb", scraper_path: "prizepicks_mlb_current.json" }
