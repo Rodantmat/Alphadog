@@ -1021,7 +1021,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
           FROM ref.players p
           JOIN (SELECT DISTINCT ON (game_pk) game_pk, official_start_time_utc, home_mlb_team_id, away_mlb_team_id,
                        home_team_name, away_team_name
-                FROM daily.game_status_current WHERE official_start_time_utc > now()
+                FROM daily.game_status_current WHERE official_start_time_utc::timestamptz > now()
                 ORDER BY game_pk, updated_at DESC) gs
             ON gs.home_mlb_team_id::text = p.current_mlb_team_id::text
             OR gs.away_mlb_team_id::text = p.current_mlb_team_id::text
