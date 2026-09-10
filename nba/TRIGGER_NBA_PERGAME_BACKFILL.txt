@@ -1,5 +1,5 @@
 Trigger for nba-pergame-backfill.yml
 slug: 2023_24
-steps: starters,officials
-last_triggered_utc: 2026-09-10T02:06:00Z
-trigger_reason: parity backfill 2023-24 starters + officials (2024-25 landed: 32,515 starter rows, 3,691 officials rows, 1,230/1,230 games each)
+steps: starters
+last_triggered_utc: 2026-09-10T16:05:00Z
+trigger_reason: rerun 2023-24 starter status to pick up the two games that timed out (0022300079, 0022300721)
