@@ -938,11 +938,11 @@ async function loadMarketRows(env) {
   // 1349 rows) - a stale empty result set. Every DFS leg was silently dropped before prep.
   // A bound parameter that changes per call makes the statement uncacheable.
   const cacheBust = Date.now();
-  const prizepicksRows = await allRows(env.pg, "SELECT * FROM market.prizepicks_board_current WHERE ? > 0", [cacheBust]);
-  const sleeperRows = await allRows(env.pg, "SELECT * FROM market.sleeper_board_current WHERE ? > 0", [cacheBust]);
+  const prizepicksRows = await allRows(env.pg, `SELECT * FROM market.prizepicks_board_current WHERE ${cacheBust} > 0`);
+  const sleeperRows = await allRows(env.pg, `SELECT * FROM market.sleeper_board_current WHERE ${cacheBust} > 0`);
   let underdogRows = [];
   try {
-    underdogRows = await allRows(env.pg, "SELECT * FROM market.underdog_board_current WHERE ? > 0", [cacheBust]);
+    underdogRows = await allRows(env.pg, `SELECT * FROM market.underdog_board_current WHERE ${cacheBust} > 0`);
   } catch (err) {
     const message = String(err && err.message ? err.message : err);
     // Only a genuinely absent table is non-fatal. Anything else was previously swallowed here,
