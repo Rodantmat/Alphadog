@@ -5490,8 +5490,8 @@ async function apiHighHitSlips(env, request) {
       udwSlips.push({
         client_slip_id: makeUiId("high_hit_slip_udw"),
         source_key: "parlay_underdog",
-        slip_type: SZ + "-pick",
-        slip_size: SZ,
+        slip_type: legs.length + "-pick",
+        slip_size: legs.length,
         structure_label: SZ + "-pick Power (UNDERDOG WORKLOAD: capped unders, per-leg priced, cap 2)",
         entry_mode: "power",
         selected_leg_count: SZ,
