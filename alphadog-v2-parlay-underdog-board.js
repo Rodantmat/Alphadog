@@ -398,7 +398,57 @@ async function fetchScraperBoard() {
   // Pregame player props only - moneyline/spread/total rows carry no player and are dropped by
   // rowRequiredAudit anyway, but filtering here keeps the batch counts honest.
   const rows = legs.filter(l => l && l.player && l.appearance_type === "Player" && !l.live).map(adaptScraperLeg);
-  return { ok: true, rows, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
+  // LINE VARIANTS (2026-09-10): the main board carries ONE line per player+prop, but Underdog
+  // offers a full ladder of alternates. Promoting only the main line threw away ~3 of every 4
+  // real, pickable lines. Every rung is its own board row - same shape as PrizePicks treating
+  // standard / goblin / demon as separate rows on one player+prop.
+  const mainKeys = new Set(rows.map(r => `${r.player_id}|${r.market_key}|${r.line}`));
+  const byOverUnder = new Map();
+  for (const r of rows) if (r.appearance_id) byOverUnder.set(String(r.id), r);
+  const variantRows = [];
+  for (const rung of ladder) {
+    if (!rung || !rung.player || !Number.isFinite(Number(rung.line))) continue;
+    const key = `${rung.player_id}|${rung.stat_key || rung.stat}|${rung.line}`;
+    if (mainKeys.has(key)) continue;               // already on the board as the main line
+    if (rung.higher_status && rung.higher_status !== "active" && rung.lower_status && rung.lower_status !== "active") continue;
+    // Inherit game/time context from the main line for the same over_under, which always exists.
+    const parent = byOverUnder.get(String(rung.over_under_id)) || rows.find(r => String(r.player_id) === String(rung.player_id)) || {};
+    variantRows.push({
+      id: rung.line_id,
+      event_id: rung.game_id || parent.event_id,
+      canonical_event_id: rung.game_id || parent.canonical_event_id,
+      player: rung.player,
+      player_id: rung.player_id,
+      team: parent.team || null,
+      position: parent.position || null,
+      market_key: rung.stat_key || rung.stat,
+      market: rung.stat,
+      line: rung.line,
+      commence_time: parent.commence_time || null,
+      sport_key: "baseball_mlb",
+      bookmaker: "underdog",
+      bookmaker_title: "Underdog Fantasy",
+      over_price: numberOrNull(rung.higher_american),
+      under_price: numberOrNull(rung.lower_american),
+      over_decimal: null,
+      under_decimal: null,
+      higher_multiplier: rung.higher_multiplier,
+      lower_multiplier: rung.lower_multiplier,
+      // Underdog's own probabilities, carried straight onto the board row.
+      higher_prob_fantasy: rung.higher_prob_fantasy,
+      lower_prob_fantasy: rung.lower_prob_fantasy,
+      higher_prob_sportsbook: rung.higher_prob_sportsbook,
+      lower_prob_sportsbook: rung.lower_prob_sportsbook,
+      is_main_line: !!rung.is_main,
+      line_variant: rung.is_main ? "main" : "alternate",
+      line_type: "ladder",
+      is_dfs_flat_payout: false,
+      source_feed: "alphadog_scraper_v1"
+    });
+  }
+  for (const r of rows) { r.is_main_line = true; r.line_variant = "main"; }
+  const allRows = rows.concat(variantRows);
+  return { ok: true, rows: allRows, main_rows: rows.length, variant_rows: variantRows.length, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
 }
 
 // Underdog's games map does not resolve a start time for every appearance (pitcher legs in
