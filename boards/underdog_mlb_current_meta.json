@@ -1,9 +1,9 @@
 {
   "ok": true,
-  "source": "underdog lobby content (scaffold->market_filters->match_grouped_lines->lines)",
+  "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-09-10T04:54:48Z",
-  "fetched_at": "2026-09-10T05:00:20Z",
+  "started_at": "2026-09-10T06:39:12Z",
+  "fetched_at": "2026-09-10T06:48:46Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -39,7 +39,7 @@
     ],
     [
       "pills[match=143308]",
-      112
+      129
     ],
     [
       "lines[match=143708]",
@@ -47,7 +47,7 @@
     ],
     [
       "pills[match=143708]",
-      115
+      139
     ],
     [
       "lines[match=142608]",
@@ -55,7 +55,7 @@
     ],
     [
       "pills[match=142608]",
-      113
+      138
     ],
     [
       "lines[match=144202]",
@@ -63,7 +63,7 @@
     ],
     [
       "pills[match=144202]",
-      117
+      142
     ],
     [
       "lines[match=142982]",
@@ -71,7 +71,7 @@
     ],
     [
       "pills[match=142982]",
-      111
+      132
     ],
     [
       "lines[match=144492]",
@@ -315,8 +315,14 @@
     ],
     [
       "lines_with_stats[players]",
-      111,
+      0,
       100
+    ],
+    [
+      "alternate_projections",
+      562,
+      2061,
+      0
     ],
     [
       "lines[mass=true]",
@@ -327,10 +333,12 @@
       0
     ]
   ],
-  "lines": 854,
-  "legs": 854,
+  "lines": 855,
+  "legs": 855,
+  "ladder_legs": 2061,
+  "ladder_lines_with_alternates": 562,
   "players": 100,
-  "pregame_legs": 854,
+  "pregame_legs": 855,
   "live_legs": 0,
   "by_stat": {
     "Hits + Runs + RBIs": 90,
@@ -339,7 +347,7 @@
     "Hits": 89,
     "RBIs": 89,
     "Runs": 88,
-    "Batter Walks": 77,
+    "Batter Walks": 78,
     "Fantasy Points": 53,
     "Moneyline": 35,
     "Run 1st Inning": 35,
@@ -357,25 +365,25 @@
     "1st 5 Innings Spread": 5
   },
   "by_line_type": {
-    "balanced": 854
+    "balanced": 855
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 118,
+    "1.0": 120,
     "None": 85,
-    "0.86": 20,
-    "1.08": 18,
-    "1.05": 17,
-    "0.81": 16,
-    "1.1": 15,
-    "0.83": 14,
-    "1.12": 13,
-    "0.85": 13,
+    "1.12": 18,
+    "0.81": 17,
+    "0.86": 14,
+    "0.88": 13,
+    "1.1": 13,
+    "1.06": 13,
+    "1.07": 12,
+    "1.05": 12,
+    "0.83": 12,
+    "1.15": 12,
     "0.89": 11,
-    "1.13": 11,
-    "1.16": 11,
-    "1.15": 11,
-    "1.09": 10
+    "1.08": 11,
+    "0.82": 10
   },
-  "github_run_id": "34438972989"
+  "github_run_id": "34446131676"
 }
