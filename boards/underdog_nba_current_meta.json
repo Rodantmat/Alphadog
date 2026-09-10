@@ -1,18 +1,40 @@
 {
   "ok": true,
-  "source": "https://api.underdogfantasy.com/v2/pickem_search/search_results",
+  "source": "underdog lobby content (scaffold->market_filters->match_grouped_lines->lines)",
   "sport": "NBA",
-  "started_at": "2026-09-10T03:38:55Z",
-  "fetched_at": "2026-09-10T03:38:58Z",
-  "pages": 1,
-  "opened_lines_count": 0,
-  "lines": 0,
-  "legs": 0,
+  "started_at": "2026-09-10T04:21:55Z",
+  "fetched_at": "2026-09-10T04:22:33Z",
+  "categories": [
+    "core"
+  ],
+  "calls": [
+    [
+      "match_grouped_lines[core]",
+      3
+    ],
+    [
+      "lines[mass=true]",
+      0
+    ],
+    [
+      "lines[mass=false]",
+      0
+    ]
+  ],
+  "lines": 3,
+  "legs": 3,
   "players": 0,
-  "by_stat": {},
-  "by_line_type": {},
-  "live_lines": 0,
+  "pregame_legs": 3,
+  "live_legs": 0,
+  "by_stat": {
+    "Moneyline": 3
+  },
+  "by_line_type": {
+    "balanced": 3
+  },
   "unresolved_player_names": 0,
-  "multiplier_values": {},
-  "github_run_id": "34434098137"
+  "multiplier_values": {
+    "None": 3
+  },
+  "github_run_id": "34436862741"
 }
