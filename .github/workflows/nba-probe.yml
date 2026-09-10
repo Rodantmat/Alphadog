@@ -1,0 +1,25 @@
+name: NBA Probe (no commit)
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'nba/TRIGGER_NBA_PROBE.txt'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip curl_cffi
+      - name: Run probe script named in the trigger file (script: line)
+        run: |
+          f=nba/TRIGGER_NBA_PROBE.txt
+          S=$(grep -E '^script:' $f | head -1 | sed 's/^script:[[:space:]]*//')
+          echo "running $S"; python "nba/$S"
