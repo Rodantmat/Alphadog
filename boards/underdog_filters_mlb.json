@@ -21,7 +21,15 @@
   "92390e5a-2c3e-4fc3-a31c-d71f51f97c5c": "Walks Allowed",
   "fccd12d8-bc08-4ec5-b6ee-f027a6ab55b5": "Earned Runs Allowed",
   "b6cbee93-b117-42be-b337-acb8f7b10385": "Stolen Bases",
-  "4fa6097e-0614-45af-96c2-de1cf8fdc97f": "Batter Walks"
+  "4fa6097e-0614-45af-96c2-de1cf8fdc97f": "Batter Walks",
+  "e5708362-cca9-462e-a276-c1b6680060d1": "Singles",
+  "70cb2975-b2c7-4645-9a50-c9e46b774012": "Batter Strikeouts",
+  "315a67ea-caf8-4603-8cf0-b96eb35c2a00": "Doubles",
+  "d2531510-0d4e-4ed0-9fc3-00cc7a789a68": "1st Inn. Strikeouts",
+  "c262eee7-1214-47d9-8b4b-8dd004a3d172": "1st Inn. Runs Allowed",
+  "90bde759-40ff-4fb6-9ec5-cdd5bde85069": "1st Inn. Pitch Count",
+  "aa5767c7-001e-462a-b73f-51d9a23c9846": "1st Inn. Batters Faced",
+  "b41e4659-fbd9-4bac-993a-d6172026a6cd": "1st Inn. Hits Allowed"
  },
  "market_groups": {
   "6bd05401-eb13-4dc9-952e-03b5442b8ad0": "",
