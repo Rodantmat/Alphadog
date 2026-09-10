@@ -225,6 +225,21 @@ async function toolRunJob(env, args) {
     }
     return { ok: true, from, to, accepted_or_other: out };
   }
+  if (job === "scan_webpack_chunks") {
+    // Fetch a webpack runtime, rebuild the chunk URLs from its id->hash map, and grep every chunk for a regex. extra { runtime_url, base_url, pattern, max_chunks?: 80, snippet?: 300 }
+    const hdrs = { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" };
+    const rt = await (await fetch(String(extra.runtime_url), { headers: hdrs })).text();
+    // maps like {123:"abcdef",456:"..."} appearing before ".js"
+    const maps = [...rt.matchAll(/\{((?:\d+:"[0-9a-f]{6,}",?)+)\}/g)].map((m) => m[1]);
+    const ids = {}; for (const mp of maps) for (const kv of mp.matchAll(/(\d+):"([0-9a-f]+)"/g)) ids[kv[1]] = kv[2];
+    const tmpl = (rt.match(/"\.js"|\.js/) ? true : false);
+    const names = Object.entries(ids).slice(0, Number(extra.max_chunks || 80)).map(([id, h]) => `${id}.${h}.js`);
+    const re = new RegExp(String(extra.pattern), "g"); const hits = [];
+    for (const n of names) {
+      try { const t = await (await fetch(String(extra.base_url).replace(/\/$/, "") + "/" + n, { headers: hdrs })).text(); let m; let k = 0; while ((m = re.exec(t)) && k < 6) { hits.push({ chunk: n, at: m.index, snippet: t.slice(Math.max(0, m.index - 200), m.index + Number(extra.snippet || 300)) }); k++; } re.lastIndex = 0; } catch (_) {}
+    }
+    return { ok: true, chunks: names.length, template_has_js: tmpl, hits: hits.slice(0, 40) };
+  }
   if (job === "raw_scan_scripts") {
     // Fetch a page, then every same-origin script it references, and collect regex matches across all of them.
     // extra { url, pattern (JS regex source), max_scripts?: 40, headers? }
