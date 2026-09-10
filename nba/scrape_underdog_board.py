@@ -71,43 +71,24 @@ def main():
     for sport in sports:
         store = {k: {} for k in ("over_under_lines", "appearances", "players", "games", "solo_games", "teams")}
         calls = []
-        # 1) market categories for the sport
-        cats = ["core"]
+        # 1) match list (pregame + live) from the sport grid; this also yields the featured/core lines
+        matches = []
         try:
-            mf = get(s, f"{API}/v1/lobbies/content/market_filters?empty_if_single_core_pill=false&include_live=true&{COMMON}&sport_id={sport}", proxies)
-            found = []
-            def walk(o):
-                if isinstance(o, dict):
-                    for k, v in o.items():
-                        if k in ("market_category", "category", "key", "id") and isinstance(v, str) and v and v not in found and len(v) < 40 and " " not in v: found.append(v)
-                        walk(v)
-                elif isinstance(o, list):
-                    for v in o: walk(v)
-            walk(mf)
-            cats = sorted({c for c in found if c.islower() and c.replace("_", "").isalpha()} | {"core"})
-            calls.append(("market_filters", len(cats)))
+            j = get(s, f"{API}/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D=core&match_limit=200&{COMMON}&show_more_picks_cta=true&sport_id={sport}&two_box_enabled_surface=true", proxies)
+            merge(store, j)
+            matches = [(mg.get("id"), mg.get("type") or "Game") for mg in (j.get("match_groups") or []) if isinstance(mg, dict) and mg.get("id")]
+            calls.append(("match_grouped_lines[core]", len(store["over_under_lines"])))
         except Exception as exc:  # noqa: BLE001
-            print(f"{sport}: market_filters failed ({exc}); using core only", file=sys.stderr)
-        # 2) grouped lines per category (pregame + live)
-        for cat in cats:
+            calls.append(("match_grouped_lines_error", str(exc)[:80]))
+        # 2) per-match lines with mass-option (ladder) markets on = the full board
+        for mid, mtype in matches[:120]:
             try:
-                j = get(s, f"{API}/v1/lobbies/content/match_grouped_lines?include_live=true&market_categories%5B%5D={quote(cat)}&match_limit=200&{COMMON}&show_more_picks_cta=true&sport_id={sport}&two_box_enabled_surface=true", proxies)
-                before = len(store["over_under_lines"]); merge(store, j)
-                calls.append((f"match_grouped_lines[{cat}]", len(store["over_under_lines"]) - before))
-                # follow per-match "more picks" action paths when present
-                for mg in (j.get("match_groups") or [])[:60]:
-                    ap = (mg.get("action_path") or mg.get("cta") or {}) if isinstance(mg, dict) else {}
-                    url = ap.get("url") if isinstance(ap, dict) else None
-                    if url and "lobbies/content" in url:
-                        try:
-                            jj = get(s, url if "state_config_id" in url else f"{url}&{COMMON}", proxies); b2 = len(store["over_under_lines"]); merge(store, jj)
-                            calls.append(("match_more_picks", len(store["over_under_lines"]) - b2))
-                        except Exception as exc:  # noqa: BLE001
-                            calls.append(("match_more_picks_error", str(exc)[:60]))
-                        time.sleep(0.4)
+                j = get(s, f"{API}/v1/lobbies/content/lines?include_live=true&match_id={mid}&match_type={quote(str(mtype))}&{COMMON}&show_mass_option_markets=true", proxies)
+                before = len(store["over_under_lines"]); merge(store, j); calls.append((f"lines[match={mid}]", len(store["over_under_lines"]) - before))
             except Exception as exc:  # noqa: BLE001
-                calls.append((f"match_grouped_lines[{cat}]_error", str(exc)[:80]))
-            time.sleep(0.5)
+                calls.append((f"lines[match={mid}]_error", str(exc)[:60]))
+            time.sleep(0.4)
+        cats = ["core"]
         # 3) popular picks incl. mass-option (ladder) markets
         for mass in ("true", "false"):
             try:
