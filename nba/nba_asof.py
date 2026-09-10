@@ -26,6 +26,12 @@ pairings over games strictly before game_date.
 """
 
 BASELINE_CUTOFF_LOCAL = "09:00"
+# Two-phase pipeline cutoffs (owner decision 2026-09-10, config pipeline_architecture_decision).
+# Phase 1 ("baseline") runs 1:00 PM PT = 16:00 ET: shapes + multiplier tables + pre-score on the morning board.
+# Phase 2 ("window") runs 2:45 PM PT = 17:45 ET: board pull, day-of injury report/lineups delta, market, scoring.
+# Historical rebuilds MUST use these same cutoffs or the engine trains on a world that never exists live.
+PHASE1_CUTOFF_LOCAL = "16:00"   # 1:00 PM PT
+PHASE2_CUTOFF_LOCAL = "17:45"   # 2:45 PM PT (the owner's pick window; after the 5:30 PM ET day-of report)
 ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]
 ET_OFFSET = "-05:00"   # snapshot_ts strings are written in ET with this offset by the scraper
 
