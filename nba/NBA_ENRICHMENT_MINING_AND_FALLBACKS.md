@@ -190,7 +190,7 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 | A5 lineup change | ✓ starters | ⏳ | 🔧 | `scrape_nba_starter_status.py` SEASON_SLUG (nba-pergame-backfill.yml) | |
 | A7 trade window | ✓ | ✓ | ✓ | logs (team change) | — |
 | A8 rookie / two-way | ✓ preseason + PDF two-way reason | ✓ preseason | ✓ preseason | season tables `preseason_logs` | |
-| B1/B2 market spread & total, C3 game-line movement | ⛔ | ⛔ | ⛔ | ParlayAPI key INVALID_KEY (v3.2.0); Odds API key DEACTIVATED → owner renews ParlayAPI (free key per its signup) — then historical game lines; free fallback for history: Kaggle "NBA Betting Data Oct 2007–Jun 2026" (owner account) or TeamRankings odds-history scrape | derived spread is the trained fallback (in place) |
+| B1/B2 market spread & total, C3 game-line movement | ✓ closing lines (Postgres nba_market.game_lines_closing) | ✓ | — | ParlayAPI closing-odds archive, 5-7 books, 2,410 games, 12,165 rows (2026-09-10); openers not archived before May 2026 | derived spread stays as the fallback for dates without a line |
 | B3 leverage / tanking | ✓ | ✓ | ✓ | standings from logs | — |
 | B4/M1 opponent absences / primary defender | ⏳ per-game matchups (sharded) + weekly pt_defend | 🔧 | 🔧 | `scrape_nba_matchups_pergame.py`, season-tables asof_weekly | |
 | B5 OT probability | ✓ | ✓ | ✓ | derived | — |
