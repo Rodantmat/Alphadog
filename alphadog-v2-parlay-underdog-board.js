@@ -401,6 +401,69 @@ async function fetchScraperBoard() {
   return { ok: true, rows, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
 }
 
+function ladderStatToCanonical(stat) {
+  const s = normalizeText(stat);
+  if (!s) return null;
+  const direct = UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[s];
+  if (direct) return direct;
+  const snake = s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[snake] || UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY[`player_${snake}`] || null;
+}
+
+// Persist the alternate-projection ladder. Every rung carries BOTH payout multipliers, both
+// american prices, and - uniquely - Underdog's OWN fantasy and sportsbook implied probability per
+// side. That is a native sharp-probability feed on every UD line, which is what the UD strategies
+// previously had to approximate from market_agreement_p.
+async function persistLadder(env, ladder, batchId, fetchedAt) {
+  if (!Array.isArray(ladder) || !ladder.length) return { ok: true, rows: 0, reason: "no_ladder" };
+  const client = pgClient(env);
+  try {
+    const slate = new Date(Date.now() - 8 * 3600 * 1000).toISOString().slice(0, 10);
+    const rows = [];
+    for (const r of ladder) {
+      const ck = ladderStatToCanonical(r && (r.stat_key || r.stat));
+      const line = numberOrNull(r && r.line);
+      if (line === null) continue;
+      rows.push({
+        ladder_row_id: `udl_${batchId}_${normalizeText(r.line_id) || rid("rung")}`,
+        batch_id: batchId, slate_date: slate, fetched_at: fetchedAt,
+        line_id: normalizeText(r.line_id), over_under_id: normalizeText(r.over_under_id), stable_id: normalizeText(r.stable_id),
+        is_main: !!r.is_main, source_player_id: normalizeText(r.player_id), player_name: normalizeText(r.player),
+        source_stat_name: normalizeText(r.stat_key || r.stat), canonical_prop_key: ck, line_value: line,
+        higher_multiplier: numberOrNull(r.higher_multiplier), lower_multiplier: numberOrNull(r.lower_multiplier),
+        higher_american: numberOrNull(r.higher_american), lower_american: numberOrNull(r.lower_american),
+        higher_prob_fantasy: numberOrNull(r.higher_prob_fantasy), lower_prob_fantasy: numberOrNull(r.lower_prob_fantasy),
+        higher_prob_sportsbook: numberOrNull(r.higher_prob_sportsbook), lower_prob_sportsbook: numberOrNull(r.lower_prob_sportsbook),
+        higher_status: normalizeText(r.higher_status), lower_status: normalizeText(r.lower_status),
+        game_id: normalizeText(r.game_id), updated_at: normalizeText(r.updated_at) || null
+      });
+    }
+    if (!rows.length) return { ok: true, rows: 0, reason: "no_valid_rungs" };
+    await client.unsafe("DELETE FROM market.underdog_ladder_current");
+    const CHUNK = 300;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      await client`INSERT INTO market.underdog_ladder_current ${client(rows.slice(i, i + CHUNK))}`;
+    }
+    // Resolve player ids from the board we just promoted, by name.
+    await client.unsafe(`
+      UPDATE market.underdog_ladder_current l
+      SET resolved_mlb_player_id = b.resolved_mlb_player_id
+      FROM (SELECT DISTINCT ON (LOWER(player_name)) LOWER(player_name) nm, resolved_mlb_player_id
+            FROM score.board_prepared_current WHERE source_key='parlay_underdog' AND resolved_mlb_player_id IS NOT NULL) b
+      WHERE LOWER(l.player_name) = b.nm`);
+    await client.unsafe(`
+      INSERT INTO archive.underdog_ladder_history
+      SELECT * FROM market.underdog_ladder_current
+      ON CONFLICT DO NOTHING`);
+    const stat = await client.unsafe("SELECT COUNT(*) n, COUNT(resolved_mlb_player_id) resolved, COUNT(higher_prob_sportsbook) w_sb FROM market.underdog_ladder_current");
+    return { ok: true, rows: rows.length, resolved: Number(stat?.[0]?.resolved || 0), with_sportsbook_prob: Number(stat?.[0]?.w_sb || 0) };
+  } catch (err) {
+    return { ok: false, rows: 0, error: safeString(err && err.message ? err.message : err, 300) };
+  } finally {
+    try { await client.end({ timeout: 2 }); } catch (_) {}
+  }
+}
+
 function detectShape(json) {
   const topType = Array.isArray(json) ? "array" : typeof json;
   const topKeys = json && !Array.isArray(json) && typeof json === "object" ? Object.keys(json).slice(0, 40) : [];
