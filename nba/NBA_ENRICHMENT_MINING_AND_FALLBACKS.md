@@ -192,7 +192,7 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 | A8 rookie / two-way | ✓ preseason + PDF two-way reason | ✓ preseason | ✓ preseason | season tables `preseason_logs` | |
 | B1/B2 market spread & total, C3 game-line movement | ✓ closing lines (Postgres nba_market.game_lines_closing) | ✓ | — | ParlayAPI closing-odds archive, 5-7 books, 2,410 games, 12,165 rows (2026-09-10); openers not archived before May 2026 | derived spread stays as the fallback for dates without a line |
 | B3 leverage / tanking | ✓ | ✓ | ✓ | standings from logs | — |
-| B4/M1 opponent absences / primary defender | ⏳ per-game matchups (sharded) + weekly pt_defend | 🔧 | 🔧 | `scrape_nba_matchups_pergame.py`, season-tables asof_weekly | |
+| B4/M1 opponent absences / primary defender | ✓ per-game matchups 1,229/1,230 (241,590 pairings, monthly shards) + weekly pt_defend | ✓ 1,230/1,230 (232,830) | ✓ 1,228/1,230 | `scrape_nba_matchups_pergame.py`, season-tables asof_weekly | M1 measured (config `primary_defender_quality_measured`); harness integration pending |
 | B5 OT probability | ✓ | ✓ | ✓ | derived | — |
 | C1/C2 book vs pick'em gap, prop-line movement | ⛔ | ⛔ | ⛔ | historical prop lines are paid (BigDataBall) — owner decision; live-only otherwise, calibrated in-season | |
 | C4, S1–S4 pick'em structure | ⛔ (no archive exists) | ⛔ | ⛔ | boards are not archived anywhere free; live from season start; the board scraper will archive every board from day one so the NEXT backfill exists | |
