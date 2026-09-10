@@ -126,13 +126,43 @@ def fetch_snapshot(session, d, h, m):
         return None
 
 
+def fetch_snapshot_hourly(session, d, h):
+    """Legacy filename (observed before ~2025-12-22): Injury-Report_YYYY-MM-DD_HHAM.pdf (no minutes)."""
+    ap = "AM" if h < 12 else "PM"; h12 = h if h <= 12 else h - 12
+    if h12 == 0: h12 = 12
+    url = f"https://ak-static.cms.nba.com/referee/injury/Injury-Report_{d.isoformat()}_{h12:02d}{ap}.pdf"
+    try:
+        r = session.get(url, timeout=30, impersonate="chrome124")
+        if r.status_code != 200 or not r.content.startswith(b"%PDF"): return None
+        return url, r.content
+    except Exception:  # noqa: BLE001
+        return None
+
+
+_HDR_TS = re.compile(r"Injury\s*Report:\s*(\d{2})/(\d{2})/(\d{2})\s*(\d{2}):(\d{2})\s*(AM|PM)")
+
+
+def header_ts(text):
+    """The document's own publish time ('Injury Report: 11/24/25 12:30 PM') -> ISO ET; None if absent."""
+    m = _HDR_TS.search(text or "")
+    if not m: return None
+    mo, dd, yy, hh, mm, ap = m.groups(); hh = int(hh) % 12 + (12 if ap == "PM" else 0)
+    return f"20{yy}-{mo}-{dd}T{hh:02d}:{mm}:00{'-05:00'}"
+
+
 def scan_day(session, d, slots=SLOTS):
-    found = []
-    for h, m in slots:
-        res = fetch_snapshot(session, d, h, m)
-        if res:
-            url, content = res
-            found.append((f"{d.isoformat()}T{h:02d}:{m:02d}:00-05:00", url, content))
+    """All snapshots for a day across BOTH filename patterns; consecutive identical documents are dropped."""
+    import hashlib
+    found, seen = [], set()
+    cands = [(h, m, fetch_snapshot(session, d, h, m)) for h, m in slots]
+    cands += [(h, None, fetch_snapshot_hourly(session, d, h)) for h in range(0, 24)]
+    for h, m, res in cands:
+        if not res: continue
+        url, content = res
+        hsh = hashlib.md5(content).hexdigest()
+        if hsh in seen: continue
+        seen.add(hsh)
+        found.append((f"{d.isoformat()}T{h:02d}:{(m or 0):02d}:00-05:00", url, content))
     return found
 
 
