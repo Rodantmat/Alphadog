@@ -358,7 +358,7 @@ async function toolRunJob(env, args) {
           }
           if (extra.filter_field && extra.filter_value) summary.sample = json.filter((r) => r && String(r[extra.filter_field]) === String(extra.filter_value)).slice(0, 5);
         }
-        return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, summary ? 500 : 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null, summary, headers: extra && extra.no_headers ? undefined : headerDump };
+        return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, summary ? 500 : 6000) : text.slice(0, 3000), full_body: extra && extra.full_body ? (json || text) : undefined, array_length: Array.isArray(json) ? json.length : null, summary, headers: extra && extra.no_headers ? undefined : headerDump };
       } catch (err) {
         return { ok: false, error: String(err && err.message ? err.message : err) };
       }
