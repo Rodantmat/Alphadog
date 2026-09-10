@@ -4786,9 +4786,12 @@ async function autoSelectStrategyV4Legs(env) {
                  AND ((prop = 'pitcher_fantasy_score' AND (ln >= 26.5 OR ln = 21.5))
                       OR (prop = 'pitcher_outs' AND ln = 16.5)))
            OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0
-                 -- LINEUP SPLIT (2026-09-08): a <3-PA bat now posted at 7-9 is a bench player who just
-                 -- got a regular job - he'll see 3-4 PA and hits the FS>=4.5 under only 33%. Keep him on
-                 -- FS 3/3.5 (58%). Not-in-lineup (true bench, 76% on FS>=4.5) and slots 1-6 (77%) unchanged.
+                 -- PAUSED 2026-09-10 (SEPTEMBER): the PA<3 FS-under pool fell from 58% (Jul-Aug) to 43% (Sep 6-9)
+                 -- after roster expansion - the bench bats are now the starters, and the L5 window lags the role
+                 -- change. Selected hitter legs went 4/16 and 6/20 on consecutive nights, every miss a 3-5 PA game.
+                 -- Pitcher legs unaffected (innings caps are a September feature). Re-enable ~Sep 15 once the L5
+                 -- window has caught up, after checking the pool is back above 55%. Pitcher-only V4: 26 slips +78.8%.
+                 AND FALSE
                  AND (lu.lineup_slot IS NULL OR lu.lineup_slot <= 6
                       OR (prop = 'fantasy_score' AND ln IN (3, 3.5))))
       ),
