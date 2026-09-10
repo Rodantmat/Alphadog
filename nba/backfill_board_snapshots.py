@@ -129,6 +129,16 @@ def main():
             d += timedelta(days=1)
             continue
         tot["dates_with_games"] += 1
+        # WINDOW TIME PER SLATE (owner rule 2026-09-10): normally 14:45 PT, but on early slates (weekends/holidays,
+        # first tip before 15:45 PT) the 2:45 snapshot would land at or after tip - use first_tip - 2h instead, which
+        # still sits after the league's game-day injury report for those early games.
+        first_tip = min(datetime.fromisoformat(str(e["commence_time"]).replace("Z", "+00:00")) for e in events)
+        hh, mm = (int(x) for x in window_pt.split(":"))
+        std_window = datetime(d.year, d.month, d.day, hh + off, mm, tzinfo=timezone.utc)
+        early_cut = datetime(d.year, d.month, d.day, 15 + off, 45, tzinfo=timezone.utc)   # 15:45 PT
+        window_dt = std_window if first_tip >= early_cut else (first_tip - timedelta(hours=2))
+        if window_dt != std_window:
+            print(f"{d}: EARLY SLATE first tip {first_tip.isoformat()} -> window {window_dt.isoformat()}", flush=True)
         for ev in events:
             if max_events and tot["events"] >= max_events:
                 break
