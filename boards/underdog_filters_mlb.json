@@ -1,0 +1,28 @@
+{
+ "pickem_stats": {
+  "311b6775-4d03-4466-8ab9-776442468b27": "Strikeouts",
+  "4969134d-144f-4b30-b0bc-3e1932c84385": "Hits + Runs + RBIs",
+  "53a72b17-e0a3-4d28-b98a-3ce5f7d58d92": "Home Runs",
+  "1f670d50-4b2e-4fde-b9c7-598418a986a1": "Total Bases",
+  "5efeda12-bacd-48b5-9d52-f64e00f7c9fd": "Fantasy Points",
+  "a74cd651-437c-4e6c-b011-c58789b09db7": "Pitching Outs",
+  "4dc8687c-fb40-486a-8be4-31c5a05dd3f1": "Hits Allowed",
+  "18993dd5-3442-44fd-8b09-a7d66bdf6723": "Team Total Runs",
+  "0e012ab0-1f09-40cf-8d63-85386f172dd2": "Run 1st Inning",
+  "3f157ade-e2af-41ff-a5c6-9e0ca4f8c018": "Moneyline",
+  "efa4c7d0-9e4a-46cf-89f3-24005a3b7c94": "Total Runs",
+  "f71ad294-b93c-4c62-be04-d123e7640775": "Spread",
+  "349c9245-79da-45e9-b1c0-9d8977c23ce4": "Runs",
+  "72538c70-1e4c-4e62-b7e2-6446e9e1e524": "1st 5 Innings Moneyline",
+  "52300709-67bf-46d8-ad90-0150669a03ca": "1st 5 Innings Total Runs",
+  "86cff764-cbcf-44d1-8e96-458f7e53da19": "1st 5 Innings Spread",
+  "f932798a-04cf-4718-b620-d1a42bdce97e": "Hits",
+  "a8bb8a04-0a17-4bd0-aaad-86bbd9df7abc": "RBIs",
+  "92390e5a-2c3e-4fc3-a31c-d71f51f97c5c": "Walks Allowed",
+  "fccd12d8-bc08-4ec5-b6ee-f027a6ab55b5": "Earned Runs Allowed"
+ },
+ "market_groups": {
+  "6bd05401-eb13-4dc9-952e-03b5442b8ad0": "",
+  "1e9af10c-4192-40db-bb6f-14bece463f60": ""
+ }
+}
