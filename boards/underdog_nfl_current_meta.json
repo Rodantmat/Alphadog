@@ -1,0 +1,411 @@
+{
+  "ok": true,
+  "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
+  "sport": "NFL",
+  "started_at": "2026-09-10T15:49:45Z",
+  "fetched_at": "2026-09-10T16:05:05Z",
+  "categories": [
+    "100+ Pass Yards in Each Half",
+    "150+ Pass Yards in Each Half",
+    "1H Pass TDs",
+    "1H Pass Yards",
+    "1H Rec Yards",
+    "1H Receptions",
+    "1H Rush + Rec TDs",
+    "1H Rush Yards",
+    "1Q Pass TDs",
+    "1Q Pass Yards",
+    "1Q Rec Yards",
+    "1Q Receptions",
+    "1Q Rush + Rec TDs",
+    "1Q Rush Yards",
+    "25+ Pass Yards in Each Quarter",
+    "25+ Rec Yards in Each Half",
+    "25+ Rush Yards in Each Half",
+    "50+ Pass Yards in Each Quarter",
+    "50+ Rec Yards in Each Half",
+    "50+ Rush Yards in Each Half",
+    "Assists",
+    "Completions",
+    "Defensive INTs",
+    "FG Made",
+    "Fantasy Points",
+    "First TD Scorer",
+    "Fumbles Lost",
+    "INTs Thrown",
+    "Kicking Points",
+    "Last TD Scorer",
+    "Longest Completion",
+    "Longest Reception",
+    "Longest Rush",
+    "Pass + Rush Yards",
+    "Pass Attempts",
+    "Pass TDs",
+    "Pass Yards",
+    "Receiving Yards",
+    "Receptions",
+    "Rush + Rec TDs",
+    "Rush + Rec Yards",
+    "Rush Attempts",
+    "Rush Yards",
+    "Sacks",
+    "Solo Tackles",
+    "Tackles + Assists",
+    "Targets",
+    "XP Made"
+  ],
+  "calls": [
+    [
+      "match_grouped_lines[core]",
+      93
+    ],
+    [
+      "lines[match=177184]",
+      20
+    ],
+    [
+      "pills[match=177184]",
+      57
+    ],
+    [
+      "lines[match=178861]",
+      20
+    ],
+    [
+      "pills[match=178861]",
+      37
+    ],
+    [
+      "lines[match=178862]",
+      20
+    ],
+    [
+      "pills[match=178862]",
+      74
+    ],
+    [
+      "lines[match=178864]",
+      20
+    ],
+    [
+      "pills[match=178864]",
+      59
+    ],
+    [
+      "lines[match=178865]",
+      20
+    ],
+    [
+      "pills[match=178865]",
+      72
+    ],
+    [
+      "lines[match=178866]",
+      20
+    ],
+    [
+      "pills[match=178866]",
+      47
+    ],
+    [
+      "lines[match=178863]",
+      20
+    ],
+    [
+      "pills[match=178863]",
+      63
+    ],
+    [
+      "lines[match=179056]",
+      20
+    ],
+    [
+      "pills[match=179056]",
+      66
+    ],
+    [
+      "lines[match=178860]",
+      20
+    ],
+    [
+      "pills[match=178860]",
+      91
+    ],
+    [
+      "lines[match=178894]",
+      20
+    ],
+    [
+      "pills[match=178894]",
+      112
+    ],
+    [
+      "lines[match=178896]",
+      20
+    ],
+    [
+      "pills[match=178896]",
+      62
+    ],
+    [
+      "lines[match=178893]",
+      20
+    ],
+    [
+      "pills[match=178893]",
+      98
+    ],
+    [
+      "lines[match=178895]",
+      20
+    ],
+    [
+      "pills[match=178895]",
+      118
+    ],
+    [
+      "lines[match=177890]",
+      20
+    ],
+    [
+      "pills[match=177890]",
+      137
+    ],
+    [
+      "lines[match=178337]",
+      20
+    ],
+    [
+      "pills[match=178337]",
+      145
+    ],
+    [
+      "lines[match=178001]",
+      0
+    ],
+    [
+      "pills[match=178001]",
+      0
+    ],
+    [
+      "lines[match=178897]",
+      0
+    ],
+    [
+      "pills[match=178897]",
+      0
+    ],
+    [
+      "lines[match=178901]",
+      0
+    ],
+    [
+      "pills[match=178901]",
+      0
+    ],
+    [
+      "lines[match=178904]",
+      0
+    ],
+    [
+      "pills[match=178904]",
+      0
+    ],
+    [
+      "lines[match=178899]",
+      0
+    ],
+    [
+      "pills[match=178899]",
+      0
+    ],
+    [
+      "lines[match=178902]",
+      0
+    ],
+    [
+      "pills[match=178902]",
+      0
+    ],
+    [
+      "lines[match=178898]",
+      0
+    ],
+    [
+      "pills[match=178898]",
+      0
+    ],
+    [
+      "lines[match=178900]",
+      0
+    ],
+    [
+      "pills[match=178900]",
+      0
+    ],
+    [
+      "lines[match=178903]",
+      0
+    ],
+    [
+      "pills[match=178903]",
+      0
+    ],
+    [
+      "lines[match=178905]",
+      0
+    ],
+    [
+      "pills[match=178905]",
+      0
+    ],
+    [
+      "lines[match=178906]",
+      0
+    ],
+    [
+      "pills[match=178906]",
+      0
+    ],
+    [
+      "lines[match=178909]",
+      0
+    ],
+    [
+      "pills[match=178909]",
+      0
+    ],
+    [
+      "lines[match=178908]",
+      0
+    ],
+    [
+      "pills[match=178908]",
+      0
+    ],
+    [
+      "lines[match=178907]",
+      0
+    ],
+    [
+      "pills[match=178907]",
+      0
+    ],
+    [
+      "lines[match=178910]",
+      0
+    ],
+    [
+      "pills[match=178910]",
+      0
+    ],
+    [
+      "lines[match=178911]",
+      0
+    ],
+    [
+      "pills[match=178911]",
+      0
+    ],
+    [
+      "lines_with_stats[players]",
+      1366,
+      613
+    ],
+    [
+      "alternate_projections",
+      1793,
+      11180,
+      0
+    ],
+    [
+      "lines[mass=true]",
+      0
+    ],
+    [
+      "lines[mass=false]",
+      0
+    ]
+  ],
+  "lines": 2997,
+  "legs": 2997,
+  "ladder_legs": 11180,
+  "ladder_lines_with_alternates": 1793,
+  "players": 613,
+  "pregame_legs": 2997,
+  "live_legs": 0,
+  "by_stat": {
+    "Rush + Rec TDs": 362,
+    "Receiving Yards": 188,
+    "1H Rush + Rec TDs": 181,
+    "Receptions": 168,
+    "Defensive INTs": 149,
+    "Targets": 139,
+    "Sacks": 112,
+    "First TD Scorer": 89,
+    "1Q Rush + Rec TDs": 88,
+    "Rush Yards": 76,
+    "1Q Rec Yards": 72,
+    "1Q Receptions": 72,
+    "1H Rec Yards": 72,
+    "1H Receptions": 72,
+    "Longest Reception": 71,
+    "Tackles + Assists": 69,
+    "Fantasy Points": 68,
+    "Fumbles Lost": 56,
+    "Assists": 53,
+    "Longest Rush": 42,
+    "1Q Rush Yards": 42,
+    "1H Rush Yards": 42,
+    "Solo Tackles": 41,
+    "Rush Attempts": 41,
+    "25+ Rec Yards in Each Half": 40,
+    "Rush + Rec Yards": 39,
+    "Moneyline": 31,
+    "Spread": 31,
+    "Total Points": 31,
+    "Pass Yards": 30,
+    "FG Made": 30,
+    "25+ Rush Yards in Each Half": 26,
+    "XP Made": 25,
+    "Pass TDs": 25,
+    "Last TD Scorer": 25,
+    "Kicking Points": 20,
+    "Pass + Rush Yards": 20,
+    "Completions": 20,
+    "Pass Attempts": 20,
+    "INTs Thrown": 20,
+    "1Q Pass TDs": 20,
+    "25+ Pass Yards in Each Quarter": 20,
+    "100+ Pass Yards in Each Half": 20,
+    "50+ Pass Yards in Each Quarter": 20,
+    "50+ Rec Yards in Each Half": 19,
+    "1Q Pass Yards": 19,
+    "Longest Completion": 19,
+    "1H Pass Yards": 19,
+    "1H Pass TDs": 19,
+    "150+ Pass Yards in Each Half": 14
+  },
+  "by_line_type": {
+    "balanced": 2997
+  },
+  "unresolved_player_names": 0,
+  "multiplier_values": {
+    "1.0": 949,
+    "None": 62,
+    "1.1": 40,
+    "1.05": 38,
+    "0.91": 35,
+    "1.14": 32,
+    "0.9": 31,
+    "1.11": 30,
+    "1.04": 29,
+    "1.16": 29,
+    "1.12": 29,
+    "1.09": 28,
+    "1.08": 27,
+    "0.89": 27,
+    "0.81": 23
+  },
+  "github_run_id": "34498134252"
+}
