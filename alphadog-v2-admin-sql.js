@@ -182,6 +182,35 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "betr_board_pull") {
+    // Betr Picks board via the app's GraphQL (token = owner's Keycloak access token, sent RAW in `authorization`, stored in external_credentials.betr_access_token).
+    // extra { leagues?: ["MLB","NBA"], write_repo?: true }
+    const leagues = (extra && extra.leagues) || ["MLB", "NBA"]; const writeRepo = !(extra && extra.write_repo === false);
+    const sqlp = postgres(env.HYPERDRIVE.connectionString, { max: 1, fetch_types: false, prepare: false });
+    let token = "";
+    try { const r = await sqlp`SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = 'betr_access_token' LIMIT 1`; token = r && r[0] ? String(r[0].credential_value_encrypted).trim() : ""; } finally { await sqlp.end({ timeout: 5 }); }
+    if (!token) return { ok: false, error: "betr_access_token missing in nba_config.external_credentials" };
+    let exp = null; try { exp = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp; } catch (_) {}
+    const q = "query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) { id date status sport league name competitionType ... on TeamVersusEvent { teams { id name fullName players { id firstName lastName position projections { marketId marketStatus isLive type label name key order value nonRegularPercentage nonRegularValue currentValue allowedOptions { marketOptionId outcome } } } } } } }";
+    const out = {}; const fetchedAt = new Date().toISOString();
+    for (const league of leagues) {
+      const resp = await fetch("https://api.fantasy.betr.app/graphql", { method: "POST", headers: { accept: "application/graphql-response+json, application/graphql+json, application/json", authorization: token, channel: "MOBILE_WEB", "content-type": "application/json", "fantasy-api-version": "16.0", "fantasy-application-version": "3.42.7", jurisdiction: "CA", origin: "https://picks.betr.app", "promotions-api-version": "6.0", referer: "https://picks.betr.app/", "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" }, body: JSON.stringify({ operationName: "LeagueUpcomingEvents", query: q, variables: { league } }) });
+      const text = await resp.text(); let j = null; try { j = JSON.parse(text); } catch (_) {}
+      const events = (j && j.data && j.data.getUpcomingEventsV2) || [];
+      const legs = [];
+      for (const ev of events) for (const t of ev.teams || []) for (const p of t.players || []) for (const pr of p.projections || []) legs.push({ sport: league.toLowerCase(), event_id: ev.id, event: ev.name, event_date: ev.date, event_status: ev.status, team: t.name, player: `${p.firstName || ""} ${p.lastName || ""}`.trim(), player_id: p.id, position: p.position, stat: pr.name, stat_label: pr.label, stat_key: pr.key, line: pr.value, tier: pr.type, alt_line: pr.nonRegularValue, alt_pct: pr.nonRegularPercentage, sides: (pr.allowedOptions || []).map((o) => o.outcome), market_id: pr.marketId, market_status: pr.marketStatus, live: !!pr.isLive, current_value: pr.currentValue });
+      const count = (arr, f) => arr.reduce((m, x) => { const k = f(x); m[k] = (m[k] || 0) + 1; return m; }, {});
+      const meta = { ok: resp.ok && !!j && !j.errors, http_status: resp.status, errors: j && j.errors ? j.errors.slice(0, 3) : null, source: "betr fantasy graphql getUpcomingEventsV2", sport: league.toLowerCase(), fetched_at: fetchedAt, token_expires_at: exp ? new Date(exp * 1000).toISOString() : null, events: events.length, legs: legs.length, players: new Set(legs.map((l) => l.player_id)).size, by_tier: count(legs, (l) => l.tier), by_stat: count(legs, (l) => l.stat), by_sides: count(legs, (l) => l.sides.join("/")), live_legs: legs.filter((l) => l.live).length };
+      out[league] = meta;
+      if (writeRepo && resp.ok) {
+        const doc = JSON.stringify({ meta, legs, events });
+        const r1 = await toolGithubPutFile(env, { path: `boards/betr_${league.toLowerCase()}_current.json`, content: doc, message: `Update Betr ${league} board JSON [skip ci]` });
+        const r2 = await toolGithubPutFile(env, { path: `boards/betr_${league.toLowerCase()}_current_meta.json`, content: JSON.stringify(meta, null, 2), message: `Update Betr ${league} board meta [skip ci]` });
+        meta.repo_write = { board: !!(r1 && r1.ok), meta: !!(r2 && r2.ok) };
+      }
+    }
+    return { ok: true, fetched_at: fetchedAt, token_expires_at: exp ? new Date(exp * 1000).toISOString() : null, leagues: out };
+  }
   if (job === "fliff_probe_codes") {
     // Enumerate operation codes on Fliff's public sports book RPC; returns per-code status/error text (validation errors reveal required fields).
     const from = Number((extra && extra.from) || 1), to = Number((extra && extra.to) || 120); const out = [];
