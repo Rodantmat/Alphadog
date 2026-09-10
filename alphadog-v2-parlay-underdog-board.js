@@ -497,8 +497,22 @@ async function fetchScraperBoard() {
     });
   }
   for (const r of rows) { r.is_main_line = true; r.line_variant = "main"; }
-  const allRows = rows.concat(variantRows);
-  return { ok: true, rows: allRows, main_rows: rows.length, variant_rows: variantRows.length, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
+  // DE-DUPE (2026-09-10): the board is harvested in several passes (match pills, lines_with_stats,
+  // then the ladder), so the same (player, prop, line) can arrive more than once at different
+  // prices - 49 duplicates were live on the board. A selector could otherwise pick the same leg
+  // twice at two prices. Keep the main line; failing that keep the row with the better under price.
+  const byKey = new Map();
+  for (const r of rows.concat(variantRows)) {
+    const key = `${r.player_id || r.player}|${r.market_key}|${r.line}`;
+    const prev = byKey.get(key);
+    if (!prev) { byKey.set(key, r); continue; }
+    const prevMain = prev.is_main_line ? 1 : 0;
+    const curMain = r.is_main_line ? 1 : 0;
+    if (curMain > prevMain) { byKey.set(key, r); continue; }
+    if (curMain === prevMain && Number(r.under_price) > Number(prev.under_price || -99999)) byKey.set(key, r);
+  }
+  const allRows = Array.from(byKey.values());
+  return { ok: true, rows: allRows, main_rows: rows.length, variant_rows: variantRows.length, deduped_to: allRows.length, ladder, meta: json.meta || {}, age_hours: ageHours, raw_legs: legs.length };
 }
 
 // Underdog's games map does not resolve a start time for every appearance (pitcher legs in
