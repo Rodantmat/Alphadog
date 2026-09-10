@@ -254,7 +254,7 @@ async function toolRunJob(env, args) {
       }
       if (!oddsKey) oddsKey = env.ODDS_API_KEY;
       if (!oddsKey) return { ok: false, error: "ODDS_API_KEY not present on this worker's environment." };
-      baseUrl = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
+      baseUrl = String((extra && extra.base_url) || env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
       const sep = path.includes("?") ? "&" : "?";
       headers = { "accept": "application/json" };
       // OddsAPI uses an apiKey query param rather than a header.
