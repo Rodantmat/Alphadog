@@ -1317,6 +1317,14 @@ async function safeProbe(env, input = {}) {
     } catch (err) {
       stageError = safeString(err && err.message ? err.message : err, 800);
     }
+    // Ladder: written after the board so player-id resolution can join on the promoted names.
+    if (scraperInfo.used && scraperLadder.length) {
+      try {
+        scraperInfo.ladder = await persistLadder(env, scraperLadder, (stageResult && stageResult.batch_id) || rid("underdog_batch"), nowUtc());
+      } catch (err) {
+        scraperInfo.ladder = { ok: false, error: safeString(err && err.message ? err.message : err, 300) };
+      }
+    }
   }
 
   const stagedOk = !!stageResult && !stageError;
