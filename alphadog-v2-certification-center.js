@@ -4658,7 +4658,8 @@ async function autoSelectStrategyV5Legs(env) {
       qual AS (
         SELECT * FROM wl
         WHERE (side_type = 'P' AND outs_l5 IS NOT NULL AND outs_l5 < 14)
-           OR (side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0)
+           -- Hitter legs PAUSED 2026-09-10 - September roster expansion (see V4 note). Pitcher-only V5: 77 slips +24.7%.
+           OR (FALSE AND side_type = 'H' AND pa_l5 IS NOT NULL AND pa_l5 < 3.0)
       ),
       scored AS (
         SELECT q.*,
