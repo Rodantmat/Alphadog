@@ -199,7 +199,7 @@ async function toolRunJob(env, args) {
     // Generic diagnostic fetch from the worker's egress: extra { url, headers?: {...}, summarize_keys?: true }
     const url = String((extra && extra.url) || "").trim(); if (!/^https:\/\//.test(url)) return { ok: false, error: "extra.url (https) required" };
     try {
-      const resp = await fetch(url, { headers: (extra && extra.headers) || {} });
+      const resp = await fetch(url, { method: (extra && extra.method) || "GET", headers: (extra && extra.headers) || {}, body: extra && extra.body ? (typeof extra.body === "string" ? extra.body : JSON.stringify(extra.body)) : undefined });
       const text = await resp.text(); let json = null; try { json = JSON.parse(text); } catch (_) {}
       const out = { ok: resp.ok, http_status: resp.status, url, bytes: text.length, body_preview: text.slice(0, Number((extra && extra.preview_chars) || 2500)) };
       if (extra && extra.find) { const needle = String(extra.find); const snips = []; let pos = 0; while (snips.length < Number(extra.find_max || 6)) { const i = text.indexOf(needle, pos); if (i < 0) break; snips.push(text.slice(Math.max(0, i - 250), i + 450)); pos = i + needle.length; } out.find_hits = snips; out.find_count = text.split(needle).length - 1; }
