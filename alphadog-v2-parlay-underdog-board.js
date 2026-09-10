@@ -1016,22 +1016,38 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
       const client = pgClient(env);
       try {
         const sched = await client.unsafe(`
-          SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm, MIN(gs.game_time_utc) game_time
+          SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm, MIN(gs.game_time_utc) game_time,
+                 MIN(gs.home_name) home_name, MIN(gs.away_name) away_name
           FROM ref.players p
-          JOIN (SELECT DISTINCT ON (game_pk) game_pk, game_time_utc, home_mlb_team_id, away_mlb_team_id
+          JOIN (SELECT DISTINCT ON (game_pk) game_pk, game_time_utc, home_mlb_team_id, away_mlb_team_id,
+                       home_team_name home_name, away_team_name away_name
                 FROM daily.game_status_current WHERE game_time_utc > now()
                 ORDER BY game_pk, updated_at DESC) gs
             ON gs.home_mlb_team_id::text = p.current_mlb_team_id::text
             OR gs.away_mlb_team_id::text = p.current_mlb_team_id::text
           WHERE p.mlb_player_id IS NOT NULL
           GROUP BY 1`);
-        const byName = new Map((sched || []).map(r => [String(r.nm), r.game_time]));
-        let filled = 0;
-        for (const r of missing) {
-          const t = byName.get(String(r.player_name).toLowerCase());
-          if (t) { r.start_time = t instanceof Date ? t.toISOString() : String(t); filled++; }
+        const byName = new Map((sched || []).map(r => [String(r.nm), r]));
+        let filled = 0, teamed = 0;
+        // score-prep's prepareUnderdogRows resolves the calendar from raw.home_team / raw.away_team.
+        // ParlayAPI supplied those; our scraper does not, so without this every row fails calendar
+        // grounding and is dropped before board_prepared_current. Inject them from our own schedule.
+        for (const r of (stageRows || [])) {
+          const hit = r && r.player_name ? byName.get(String(r.player_name).toLowerCase()) : null;
+          if (!hit) continue;
+          if (!r.start_time && hit.game_time) { r.start_time = hit.game_time instanceof Date ? hit.game_time.toISOString() : String(hit.game_time); filled++; }
+          if (hit.home_name && hit.away_name) {
+            try {
+              const raw = typeof r.raw_line_json === "string" ? JSON.parse(r.raw_line_json) : (r.raw_line_json || {});
+              if (!raw.home_team) raw.home_team = hit.home_name;
+              if (!raw.away_team) raw.away_team = hit.away_name;
+              if (!raw.commence_time && r.start_time) raw.commence_time = r.start_time;
+              r.raw_line_json = JSON.stringify(raw);
+              teamed++;
+            } catch (_) {}
+          }
         }
-        if (filled) console.log(`underdog: filled ${filled}/${missing.length} missing start_time from schedule`);
+        if (filled || teamed) console.log(`underdog: start_time filled ${filled}, home/away injected ${teamed}`);
       } finally {
         try { await client.end({ timeout: 2 }); } catch (_) {}
       }
