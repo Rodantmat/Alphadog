@@ -19,7 +19,9 @@
   "f932798a-04cf-4718-b620-d1a42bdce97e": "Hits",
   "a8bb8a04-0a17-4bd0-aaad-86bbd9df7abc": "RBIs",
   "92390e5a-2c3e-4fc3-a31c-d71f51f97c5c": "Walks Allowed",
-  "fccd12d8-bc08-4ec5-b6ee-f027a6ab55b5": "Earned Runs Allowed"
+  "fccd12d8-bc08-4ec5-b6ee-f027a6ab55b5": "Earned Runs Allowed",
+  "b6cbee93-b117-42be-b337-acb8f7b10385": "Stolen Bases",
+  "4fa6097e-0614-45af-96c2-de1cf8fdc97f": "Batter Walks"
  },
  "market_groups": {
   "6bd05401-eb13-4dc9-952e-03b5442b8ad0": "",
