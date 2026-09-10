@@ -155,8 +155,7 @@ def main():
                 if label == "close":
                     req_ts = iso_z(ct - timedelta(minutes=close_minus))
                 else:
-                    hh, mm = (int(x) for x in window_pt.split(":"))
-                    req_ts = iso_z(datetime(d.year, d.month, d.day, hh + off, mm, tzinfo=timezone.utc))
+                    req_ts = iso_z(window_dt)
                 url = (f"{BASE}/historical/sports/basketball_nba/events/{ev['id']}/odds?date={req_ts}"
                        f"&regions={regions}&markets={markets}&oddsFormat=american&includeMultipliers=true&apiKey={key}")
                 data, remaining, err = get_json(session, url)
