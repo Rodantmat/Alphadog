@@ -1379,7 +1379,7 @@ async function safeProbe(env, input = {}) {
       rows = sc.rows;
       rowsRead = sc.rows.length;
       scraperLadder = sc.ladder || [];
-      scraperInfo = { used: true, rows: sc.rows.length, raw_legs: sc.raw_legs, ladder_rungs: scraperLadder.length, age_hours: Math.round(sc.age_hours * 100) / 100, source: SCRAPER_BOARD_URL };
+      scraperInfo = { used: true, rows: sc.rows.length, main_rows: sc.main_rows, variant_rows: sc.variant_rows, raw_legs: sc.raw_legs, ladder_rungs: scraperLadder.length, age_hours: Math.round(sc.age_hours * 100) / 100, source: SCRAPER_BOARD_URL };
     } else {
       scraperInfo = { used: false, reason: sc.reason || "scraper_unavailable", age_hours: sc.age_hours || null, fallback: "parlay_api" };
     }
