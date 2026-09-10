@@ -182,7 +182,7 @@ def main():
                         cur.executemany("""INSERT INTO nba_market.board_snapshots
                             (game_date, event_id, snapshot_label, snapshot_ts, bookmaker, market_key, player, side, line, price, multiplier, home_team, away_team, commence_time)
                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                            ON CONFLICT (event_id, snapshot_label, bookmaker, market_key, player, side, line)
+                            ON CONFLICT ((md5(coalesce(event_id,'')||'|'||coalesce(snapshot_label,'')||'|'||coalesce(bookmaker,'')||'|'||coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||coalesce(side,'')||'|'||coalesce(line::text,''))::uuid))
                             DO UPDATE SET price=EXCLUDED.price, multiplier=EXCLUDED.multiplier, snapshot_ts=EXCLUDED.snapshot_ts, fetched_at=now()""", rows)
                     cur.execute("""INSERT INTO nba_market.board_backfill_log (event_id, snapshot_label, status, rows, credits_used, requested_ts, snapshot_ts)
                                    VALUES (%s,%s,'ok',%s,%s,%s,%s)
