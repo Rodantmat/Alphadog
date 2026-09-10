@@ -42,16 +42,40 @@ jobs:
           echo "mode=${M:-daily}" >> $GITHUB_OUTPUT; echo "from=$F" >> $GITHUB_OUTPUT; echo "to=$T" >> $GITHUB_OUTPUT; echo "slug=$S" >> $GITHUB_OUTPUT
           echo "mode=${M:-daily} from=$F to=$T slug=$S"
 
-      - name: Run injury report scraper
+      - name: Run injury report scraper (backfill loops in 30-day chunks, committing after each, until the range is done)
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           INJURY_MODE: ${{ steps.cfg.outputs.mode }}
           INJURY_FROM: ${{ steps.cfg.outputs.from }}
           INJURY_TO: ${{ steps.cfg.outputs.to }}
           INJURY_SEASON_SLUG: ${{ steps.cfg.outputs.slug }}
-        run: python nba/scrape_nba_injury_report.py
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_now() {
+            git add nba/data/nba_injury_report_*.json || true
+            git rm --cached --ignore-unmatch nba/data/nba_injury_report_2025_26.json 2>/dev/null || true
+            for f in $(git diff --cached --name-only); do sz=$(stat -c %s "$f" 2>/dev/null || echo 0); if [ "$sz" -gt 95000000 ]; then echo "SKIP oversized $f ($sz)"; git reset -q "$f"; fi; done
+            if git diff --cached --quiet; then echo "nothing to commit"; return 0; fi
+            git commit -q -m "NBA injury report data [skip ci]"
+            for i in 1 2 3 4 5; do if git push -q origin HEAD:main; then return 0; fi; git fetch -q origin main; git rebase -q origin/main; sleep $((RANDOM % 5 + 2)); done
+            return 1
+          }
+          if [ "$INJURY_MODE" != "backfill" ]; then python nba/scrape_nba_injury_report.py; commit_now; exit 0; fi
+          start=$(date +%s); budget=$((270*60))
+          for i in $(seq 1 12); do
+            INJURY_MAX_DAYS=30 python nba/scrape_nba_injury_report.py | tail -3
+            commit_now
+            idx="nba/data/nba_injury_report_${INJURY_SEASON_SLUG}_index.json"
+            done_n=$(python -c "import json,sys;print(len(json.load(open('$idx'))['days_done']))" 2>/dev/null || echo 0)
+            total=$(python -c "from datetime import date;print((date.fromisoformat('$INJURY_TO')-date.fromisoformat('$INJURY_FROM')).days+1)")
+            echo "chunk $i done: $done_n / $total days"
+            if [ "$done_n" -ge "$total" ]; then echo "COMPLETE"; break; fi
+            if [ $(( $(date +%s) - start )) -gt $budget ]; then echo "time budget reached; re-trigger to continue"; break; fi
+          done
 
-      - name: Commit to main
+      - name: Commit to main (final)
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
