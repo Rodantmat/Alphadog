@@ -153,7 +153,20 @@ def main():
                     "higher_status": hi.get("status"), "lower_status": lo.get("status"), "game_id": app.get("match_id"), "updated_at": hi.get("updated_at") or lo.get("updated_at"),
                 })
             time.sleep(0.25)
-        calls.append(("alternate_projections", alt_calls, len(alt_legs), alt_errors))
+        # De-dupe ladder rungs: the same economic rung can be harvested twice (via a pill and via lines_with_stats)
+        # and the board may have moved between calls. Key on (player_id or player, stat, line, is_main) and keep the
+        # freshest row by updated_at - a selector must never see the same leg twice at two different prices.
+        def _rungkey(l):
+            return (l.get("player_id") or l.get("player"), l.get("stat"), l.get("line"), bool(l.get("is_main")))
+        _best = {}
+        for l in alt_legs:
+            k = _rungkey(l)
+            cur = _best.get(k)
+            if cur is None or str(l.get("updated_at") or "") > str(cur.get("updated_at") or ""):
+                _best[k] = l
+        dupes_dropped = len(alt_legs) - len(_best)
+        alt_legs = list(_best.values())
+        calls.append(("alternate_projections", alt_calls, len(alt_legs), alt_errors, f"deduped {dupes_dropped}"))
         cats = sorted(registry["pickem_stats"].values())
         # 3) popular picks incl. mass-option (ladder) markets
         for mass in ("true", "false"):
