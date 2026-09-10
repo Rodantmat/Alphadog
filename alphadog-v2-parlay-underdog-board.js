@@ -1288,12 +1288,14 @@ async function safeProbe(env, input = {}) {
   // and the rest of this worker (staging, canonical mapping, player resolution, promotion) runs
   // unchanged on them. If it is missing or stale, we keep whatever ParlayAPI returned.
   let scraperInfo = { used: false };
+  let scraperLadder = [];
   try {
     const sc = await fetchScraperBoard();
     if (sc.ok && sc.rows.length) {
       rows = sc.rows;
       rowsRead = sc.rows.length;
-      scraperInfo = { used: true, rows: sc.rows.length, raw_legs: sc.raw_legs, ladder_rungs: (sc.ladder || []).length, age_hours: Math.round(sc.age_hours * 100) / 100, source: SCRAPER_BOARD_URL };
+      scraperLadder = sc.ladder || [];
+      scraperInfo = { used: true, rows: sc.rows.length, raw_legs: sc.raw_legs, ladder_rungs: scraperLadder.length, age_hours: Math.round(sc.age_hours * 100) / 100, source: SCRAPER_BOARD_URL };
     } else {
       scraperInfo = { used: false, reason: sc.reason || "scraper_unavailable", age_hours: sc.age_hours || null, fallback: "parlay_api" };
     }
