@@ -182,6 +182,17 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "raw_fetch") {
+    // Generic diagnostic fetch from the worker's egress: extra { url, headers?: {...}, summarize_keys?: true }
+    const url = String((extra && extra.url) || "").trim(); if (!/^https:\/\//.test(url)) return { ok: false, error: "extra.url (https) required" };
+    try {
+      const resp = await fetch(url, { headers: (extra && extra.headers) || {} });
+      const text = await resp.text(); let json = null; try { json = JSON.parse(text); } catch (_) {}
+      const out = { ok: resp.ok, http_status: resp.status, url, bytes: text.length, body_preview: text.slice(0, 2500) };
+      if (json && typeof json === "object") { out.top_keys = Array.isArray(json) ? `array(${json.length})` : Object.keys(json).slice(0, 25); if (!Array.isArray(json)) out.key_sizes = Object.fromEntries(Object.entries(json).map(([k, v]) => [k, Array.isArray(v) ? v.length : typeof v])); }
+      return out;
+    } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
+  }
   if (job === "board_compare_parlay_vs_ours") {
     // Same-moment diff of OUR board scraper output (boards/<app>_<sport>_current.json: legs[]) vs ParlayAPI live props for that book.
     // extra: { app: "sleeper"|"underdog", sport_key: "baseball_mlb", file_sport: "mlb" }
