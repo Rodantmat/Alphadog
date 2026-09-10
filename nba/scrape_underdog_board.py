@@ -126,6 +126,34 @@ def main():
             time.sleep(0.25)
         calls.append(("lines_with_stats[players]", added, len(seen_apps)))
         reg_path.write_text(json.dumps(registry, indent=1))
+        # 3c) ALTERNATE LADDERS: for every over_under with has_alternates, /v3/over_unders/<id>/alternate_projections returns every rung
+        #     (is_main flag, higher/lower payout multipliers, prices, and Underdog's fantasy + sportsbook implied probabilities per side)
+        alt_legs, alt_calls, alt_errors = [], 0, 0
+        for lid, ln in list(store["over_under_lines"].items()):
+            ou = ln.get("over_under") or {}
+            if not ou.get("has_alternates") or not ou.get("id"):
+                continue
+            try:
+                j = get(s, f"{API}/v3/over_unders/{ou['id']}/alternate_projections?{COMMON}", proxies); alt_calls += 1
+            except Exception as exc:  # noqa: BLE001
+                alt_errors += 1; continue
+            ast = ou.get("appearance_stat") or {}
+            app = store["appearances"].get(str(ast.get("appearance_id") or ""), {})
+            pl = store["players"].get(str(app.get("player_id") or ""), {})
+            for pr in j.get("projections") or []:
+                opts = {str(o.get("choice")): o for o in pr.get("options") or []}
+                hi, lo = opts.get("higher", {}), opts.get("lower", {})
+                prob = lambda o, k: ((o.get("odds") or {}).get(k) or {}).get("probability")
+                alt_legs.append({
+                    "line_id": pr.get("id"), "over_under_id": ou.get("id"), "sport": sport, "is_main": bool(pr.get("is_main")), "stable_id": pr.get("stable_id"),
+                    "player": " ".join(x for x in (pl.get("first_name"), pl.get("last_name")) if x) or ou.get("title") or "", "player_id": app.get("player_id"),
+                    "stat": ast.get("display_stat") or ou.get("title"), "stat_key": ast.get("stat"), "line": pr.get("stat_value"),
+                    "higher_multiplier": hi.get("payout_multiplier"), "lower_multiplier": lo.get("payout_multiplier"), "higher_american": hi.get("american_price"), "lower_american": lo.get("american_price"),
+                    "higher_prob_fantasy": prob(hi, "fantasy"), "lower_prob_fantasy": prob(lo, "fantasy"), "higher_prob_sportsbook": prob(hi, "sportsbook"), "lower_prob_sportsbook": prob(lo, "sportsbook"),
+                    "higher_status": hi.get("status"), "lower_status": lo.get("status"), "game_id": app.get("match_id"), "updated_at": hi.get("updated_at") or lo.get("updated_at"),
+                })
+            time.sleep(0.25)
+        calls.append(("alternate_projections", alt_calls, len(alt_legs), alt_errors))
         cats = sorted(registry["pickem_stats"].values())
         # 3) popular picks incl. mass-option (ladder) markets
         for mass in ("true", "false"):
