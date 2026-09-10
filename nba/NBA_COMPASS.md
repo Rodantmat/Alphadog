@@ -34,8 +34,10 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 | 4 | Classification + baseline design (locked skeleton + schema) | 09-08/09 | `NBA_CLASSIFICATION_BASELINE_DESIGN.md`; 09-09 checkpoint §2 |
 | 5 | Backtests: minutes model, ladder v1→v29, combos, periods, season opening | 09-09 | 09-09 checkpoint §3–§7; `backtest/reports/classification_final_two_season_status.md` |
 | 6 | Production baseline: builders, workflow, loader worker, Postgres, daily plumbing | 09-09 | 09-09 checkpoint §8 |
-| 7 | Enrichment factor lock → enrichment engine → final score | **in progress** (research started 09-09) | (to be created) `NBA_ENRICHMENT_FACTOR_LOCK.md` |
-| — | Board / Market pipelines, Goblin/Demon layers | later (board not available off-season; owner deferred G/D) | design doc §5 |
+| 7 | Enrichment factor lock (5 passes) → baseline v30 (ramp + team-change) → mining/fallback plan + PARITY RULE (`nba_asof.py`) | 09-09 | `NBA_ENRICHMENT_FACTOR_LOCK.md`; `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` (§8 parity, §9 coverage matrix); log entry 09-09/10 |
+| 8 | Two-season backfills of every enrichment factor: injury-report PDF archive (monthly shards, hourly+15-min URL patterns), weekly as-of tables, per-game matchups (sharded), starters/officials, coaches, all-players; day-before report wired into the builders; absence prior + M1 measured | 09-10 | log entry 09-09/10 §4; config `absence_prior_measured`, `primary_defender_quality_measured` |
+| 9 | Market + boards: ParlayAPI game lines 2 seasons in Postgres; The Odds API history verified (PP+UD boards) and the two-snapshot board puller built (waits on the $119 plan); all four live board sources decided on same-moment evidence (PP, Sleeper, Underdog = OUR scrapers; Fliff = ParlayAPI) | 09-10 | log entry 09-09/10 §5–§6; config `board_sources_decision`, `board_backfill_odds_api`, `market_probe_results_2026_09_10` |
+| — | Outcome grader → enrichment engine → slip engine (copula) | next | design in config `board_backfill_odds_api` |
 
 ---
 
