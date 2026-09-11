@@ -1174,8 +1174,14 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
     // found nothing; this never overrides a successful pair match.
     if (!cal.game) {
       const singleTeam = safeStr(raw.team || r.team);
+      // rawDate is also always empty for Sleeper (no commence_time, no start_time, no game_date
+      // anywhere in the raw payload) - confirmed live in the same investigation. Without a base
+      // date resolveCalendarBySingleTeam has nothing to search from and always returns unresolved.
+      // Default to today's Pacific date; its own [-1,0,1,2] day window already reaches tomorrow,
+      // covering both dates in the live current-window filter below.
+      const singleTeamDate = rawDate || ptTodayTomorrow()[0];
       if (singleTeam) {
-        const singleCal = resolveCalendarBySingleTeam(calendar, rawDate, singleTeam);
+        const singleCal = resolveCalendarBySingleTeam(calendar, singleTeamDate, singleTeam);
         if (singleCal.game) cal = singleCal;
       }
     }
