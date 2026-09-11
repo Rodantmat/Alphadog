@@ -5535,9 +5535,9 @@ async function apiHighHitSlips(env, request) {
 
   // SLEEPER WORKLOAD (SLW) - new track 2026-09-07. See autoSelectSleeperWorkloadLegs.
   const slwLegsRaw = await autoSelectSleeperWorkloadLegs(env).catch((e) => { selectorErrors.slw = String(e && e.message || e); return []; });
-  // Sleeper builds last, so exclude anyone already placed on PrizePicks or Underdog - same player,
-  // same side, same game across books is one bet staked twice.
-  const placedBeforeSleeper = new Set([...v3Slips, ...v4Slips, ...v5Slips, ...v6Slips, ...udwSlips]
+  // Sleeper builds after PrizePicks' workload tracks and Underdog - same player, same side, same
+  // game across books is one bet staked twice. V3/V6 are declared further down (goblin/demon cells).
+  const placedBeforeSleeper = new Set([...v4Slips, ...v5Slips, ...udwSlips]
     .flatMap(s => (s.legs || []).map(l => String(l.mlb_player_id))));
   const slwLegs = slwLegsRaw.filter(l => !placedBeforeSleeper.has(String(l.mlb_player_id)));
   let slwSlips = [];
