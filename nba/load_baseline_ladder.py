@@ -67,16 +67,16 @@ def main():
     if not (combo_props & set(props)):
         raise SystemExit("ABORT: artifact has no combo props - refusing to load a singles-only slate")
 
-    conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
-    conn.execute("SET statement_timeout = 0")
-    with conn.cursor() as cur:
+    conn = psycopg.connect(os.environ["DATABASE_URL"])   # NOT autocommit: delete+insert must be atomic.
+    conn.execute("SET statement_timeout = 0")            # A failed insert after a committed delete once
+    with conn.cursor() as cur:                            # emptied the table - never again.
         cur.execute("DELETE FROM nba_score.baseline_ladder WHERE asof = %s", (asof,))
         cur.executemany("""INSERT INTO nba_score.baseline_ladder
             (asof, player_id, team_id, game_id, game_date, prop, period, ot_rule, line, anchor,
              ladder_offset, p_more, p_less, p_raw, role_tier, var_band, used_emp, recipe_version, loaded_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())""",
             [(asof, str(r.get("player_id")), str(r.get("team_id") or ""), str(r.get("game_id")),
-              r.get("game_date"), r.get("prop"), r.get("period") or "FULL", r.get("ot_rule"),
+              r.get("game_date"), r.get("prop"), r.get("period") or "FULL", r.get("ot_rule") or "include",
               r.get("line"), r.get("anchor"), r.get("offset"), r.get("p_more"), r.get("p_less"),
               r.get("p_raw"), r.get("role_tier"), r.get("var_band"), r.get("used_emp"),
               (meta.get("recipe") or "")[:200]) for r in rows])
@@ -89,6 +89,8 @@ def main():
              [str(x) for x in (meta.get("history_seasons") or [])] or None, meta.get("current_season"),
              json.dumps(meta.get("factor_fits") or {}), json.dumps(meta.get("role_minutes_multiplier") or {}),
              ", ".join(n for n, _ in docs)))
+    conn.commit()
+    with conn.cursor() as cur:
         cur.execute("SELECT prop, count(*) FROM nba_score.baseline_ladder WHERE asof=%s GROUP BY 1 ORDER BY 2 DESC", (asof,))
         for p, n in cur.fetchall():
             print(f"  {p:<16} {n}")
