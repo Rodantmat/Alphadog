@@ -58,11 +58,11 @@ jobs:
           for pair in threes_made,fg3a fga,ftm personal_fouls; do
             BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
           done
-          python nba/baseline/build_combos_ladder.py || echo "combos failed"
+          python nba/baseline/build_combos_ladder.py
           # PERIOD PROPS (certified/at-standard set; each call ~8 min): 1Q/1H/2H/4Q points, 1Q rebounds/assists/threes, 4Q OT-excluded (Sleeper)
-          for per in q1 h1 h2 q4; do BT_PERIODS=$per BT_PROPS=points python nba/baseline/build_periods_ladder.py || echo "period $per points failed"; done
-          for prop in rebounds assists threes_made; do BT_PERIODS=q1 BT_PROPS=$prop python nba/baseline/build_periods_ladder.py || echo "period q1 $prop failed"; done
-          BT_PERIODS=q4 BT_PROPS=points BT_OT=exclude python nba/baseline/build_periods_ladder.py || echo "period q4 OT-exclude failed"
+          for per in q1 h1 h2 q4; do BT_PERIODS=$per BT_PROPS=points python nba/baseline/build_periods_ladder.py; done
+          for prop in rebounds assists threes_made; do BT_PERIODS=q1 BT_PROPS=$prop python nba/baseline/build_periods_ladder.py; done
+          BT_PERIODS=q4 BT_PROPS=points BT_OT=exclude python nba/baseline/build_periods_ladder.py
           rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
           python - <<'EOF'
           import json, glob, os
