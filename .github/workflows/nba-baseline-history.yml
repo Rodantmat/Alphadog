@@ -45,6 +45,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BT_TEST: ${{ github.event.inputs.season }}
+          # TRAIN must be strictly BEFORE the test season - the harness default ("2023-24,2024-25") would put
+          # 2024-25 inside its own training set (a leak, and it doubled memory: both 2024-25 attempts were
+          # OOM-killed at ~117s). Matches how certification ran each season.
+          BT_TRAIN: ${{ github.event.inputs.season == '2024-25' && '2023-24' || '2023-24,2024-25' }}
           BT_LADDER_STEPS: ${{ github.event.inputs.ladder_steps || '10' }}
           BT_INJURY: "1"
         run: |
