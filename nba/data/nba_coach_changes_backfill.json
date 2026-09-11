@@ -1,8 +1,8 @@
 {
  "meta": {
-  "built_at": "2026-09-11T20:14:52Z",
-  "source": "wikipedia season pages",
-  "note": "in-season head coach changes for 2023-24 / 2024-25; merge into nba_coach_changes.json after review"
+  "built_at": "2026-09-11T20:25:49Z",
+  "source": "wikipedia season + team season pages",
+  "note": "in-season head coach changes for 2023-24 / 2024-25 with the date and the W-L record splits; verify the date against the team game log before use"
  },
  "seasons": {
   "2023-24": [
@@ -147,6 +147,93 @@
     "incoming": "Mitch Johnson (interim)",
     "section": "In-season",
     "in_season": true
+   }
+  ]
+ },
+ "dated": {
+  "2023-24": [
+   {
+    "team": "Brooklyn Nets",
+    "outgoing": "Jacque Vaughn",
+    "incoming": "Kevin Ollie (interim)",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2023%E2%80%9324_Brooklyn_Nets_season",
+    "infobox": "Head coach Jacque Vaughn (fired) Kevin Ollie (interim) ",
+    "fired_date_text": null,
+    "records": []
+   },
+   {
+    "team": "Milwaukee Bucks",
+    "outgoing": "Adrian Griffin",
+    "incoming": "Joe Prunty (interim)Doc Rivers",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2023%E2%80%9324_Milwaukee_Bucks_season",
+    "infobox": "Head coach Adrian Griffin (fired Jan. 23, 30\u201313 record) Joe Prunty (interim, 2\u20131 record) Doc Rivers (17\u201319 record) ",
+    "fired_date_text": "Jan. 23",
+    "records": [
+     "30-13",
+     "2-1",
+     "17-19"
+    ]
+   },
+   {
+    "team": "Washington Wizards",
+    "outgoing": "Wes Unseld Jr.",
+    "incoming": "Brian Keefe (interim)",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2023%E2%80%9324_Washington_Wizards_season",
+    "infobox": "Head coach .mw-parser-output .plainlist ol,.mw-parser-output .plainlist ul{line-height:inherit;list-style:none;margin:0;padding:0}.mw-parser-output .plainlist ol li,.mw-parser-output .plainlist ul li{margin-bottom:0} Wes Unseld Jr. (fired) Brian Keefe (interim) ",
+    "fired_date_text": null,
+    "records": []
+   }
+  ],
+  "2024-25": [
+   {
+    "team": "Sacramento Kings",
+    "outgoing": "Mike Brown",
+    "incoming": "Doug Christie (interim)",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_Sacramento_Kings_season",
+    "infobox": "Head coach Mike Brown (fired) Doug Christie (interim) ",
+    "fired_date_text": null,
+    "records": []
+   },
+   {
+    "team": "Memphis Grizzlies",
+    "outgoing": "Taylor Jenkins",
+    "incoming": "Tuomas Iisalo (interim)",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_Memphis_Grizzlies_season",
+    "infobox": "Head coach Taylor Jenkins (fired) Tuomas Iisalo (interim) ",
+    "fired_date_text": null,
+    "records": []
+   },
+   {
+    "team": "Denver Nuggets",
+    "outgoing": "Michael Malone",
+    "incoming": "David Adelman (interim)",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_Denver_Nuggets_season",
+    "infobox": "Head coach Michael Malone (until April 8) David Adelman (interim; from April 8 onward) ",
+    "fired_date_text": null,
+    "records": []
+   },
+   {
+    "team": "San Antonio Spurs",
+    "outgoing": "Gregg Popovich",
+    "incoming": "Mitch Johnson (interim)",
+    "section": "In-season",
+    "in_season": true,
+    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_San_Antonio_Spurs_season",
+    "infobox": "Head coach Gregg Popovich Mitch Johnson (acting coach for the rest of the season, starting on November 2, 2024) ",
+    "fired_date_text": null,
+    "records": []
    }
   ]
  }
