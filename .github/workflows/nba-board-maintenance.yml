@@ -33,9 +33,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/maintenance_shrink_board_index.py
       - name: Build derived market tables
-        if: ${{ github.event.inputs.task == 'derived' }}
+        if: ${{ github.event.inputs.task == 'derived' || github.event.inputs.task == 'map' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DERIVED_STEP: ${{ github.event.inputs.task == 'map' && 'map' || 'all' }}
         run: python nba/build_market_derived.py
       - name: Build book curves and calibration
         if: ${{ github.event.inputs.task == 'curves' }}
