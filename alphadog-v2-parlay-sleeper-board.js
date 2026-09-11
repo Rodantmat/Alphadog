@@ -1321,6 +1321,9 @@ async function safeProbe(env, input = {}) {
     } catch (err) {
       stageError = safeString(err && err.message ? err.message : err, 800);
     }
+    // Start time + home/away must be filled AFTER the rows are promoted - see backfillPromotedRows.
+    try { scraperInfo.backfill = await backfillPromotedRows(env); }
+    catch (err) { scraperInfo.backfill = { ok: false, error: safeString(err && err.message ? err.message : err, 200) }; }
   }
 
   const stagedOk = !!stageResult && !stageError;
