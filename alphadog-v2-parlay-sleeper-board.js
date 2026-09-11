@@ -762,6 +762,55 @@ function rowPayloadForCurrent(row) {
   });
 }
 
+// Post-promotion backfill, done in SQL against the promoted table. The equivalent in-memory
+// mutation inside promoteBoardInventory did NOT reach the insert - on 2026-09-11 all 362 promoted
+// rows still had NULL start_time, leaving them non-pickable and mostly absent from score-prep.
+// Doing it here is independent of how the rows got written.
+// Fills: start_time + is_pickable from our own MLB schedule, and home_team/away_team inside
+// raw_line_json, which score-prep's prepareSleeperRows requires for calendar grounding.
+async function backfillPromotedRows(env) {
+  const client = pgClient(env);
+  try {
+    const res = await client.unsafe(`
+      WITH sched AS (
+        SELECT LOWER(COALESCE(p.full_name, p.player_name)) nm,
+               MIN(gs.official_start_time_utc) game_time,
+               MIN(gs.home_team_name) home_name, MIN(gs.away_team_name) away_name
+        FROM ref.players p
+        JOIN (SELECT DISTINCT ON (game_pk) game_pk, official_start_time_utc, home_mlb_team_id,
+                     away_mlb_team_id, home_team_name, away_team_name
+              FROM daily.game_status_current
+              WHERE official_start_time_utc::timestamptz > now()
+              ORDER BY game_pk, updated_at DESC) gs
+          ON gs.home_mlb_team_id::text = p.current_mlb_team_id::text
+          OR gs.away_mlb_team_id::text = p.current_mlb_team_id::text
+        WHERE p.mlb_player_id IS NOT NULL
+        GROUP BY 1
+      )
+      UPDATE market.sleeper_board_current s
+      SET start_time = COALESCE(s.start_time, sched.game_time::timestamptz),
+          is_pickable = 1,
+          raw_line_json = (
+            jsonb_set(
+              jsonb_set(
+                (CASE WHEN jsonb_typeof(s.raw_line_json::jsonb) = 'string'
+                      THEN (s.raw_line_json #>> '{}')::jsonb ELSE s.raw_line_json::jsonb END),
+                '{home_team}', to_jsonb(sched.home_name), true),
+              '{away_team}', to_jsonb(sched.away_name), true)
+          )::text
+      FROM sched
+      WHERE LOWER(s.player_name) = sched.nm
+        AND sched.home_name IS NOT NULL AND sched.away_name IS NOT NULL`);
+    const chk = await client.unsafe(
+      "SELECT COUNT(*) n, COUNT(start_time) w_start FROM market.sleeper_board_current");
+    return { ok: true, updated: Number(res?.count || 0), rows: Number(chk?.[0]?.n || 0), with_start: Number(chk?.[0]?.w_start || 0) };
+  } catch (err) {
+    return { ok: false, error: safeString(err && err.message ? err.message : err, 300) };
+  } finally {
+    try { await client.end({ timeout: 2 }); } catch (_) {}
+  }
+}
+
 async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
   // Sleeper's lines payload carries no game start time (metadata is empty), so every row was
   // non-pickable and never reached score-prep. We own the MLB schedule - fill from it.
