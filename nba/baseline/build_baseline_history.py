@@ -63,7 +63,7 @@ _h = _h.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "p
 _rows = [{"game_date": str(pd.to_datetime(r.GAME_DATE).date()), "player_id": str(r.PLAYER_ID), "game_id": str(r.GAME_ID),
           "prop": r.prop, "period": "FULL", "line": float(r.line), "anchor": float(r.anchor), "offset": int(r.offset),
           "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4),
-          "p_raw": round(float(getattr(r, "p_param", r.p_over)), 4),
+          "p_raw": round(float(getattr(r, "p_raw", r.p_over)), 4),
           "role_tier": r.role_tier, "var_band": r.var_band, "used_emp": bool(r.used_emp)}
          for r in _h.itertuples(index=False)]
 _out = Path("nba/data") / f"nba_baseline_history_{_season.replace('-', '_')}_{_props_tag}.json"
