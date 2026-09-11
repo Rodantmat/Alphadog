@@ -58,7 +58,9 @@ def coach_changes(proxies):
             continue
         rows = []
         try:
-            tables = pd.read_html(html)
+            # pandas >= 2.1 treats a bare string as a path/URL - the HTML must be wrapped in StringIO
+            from io import StringIO
+            tables = pd.read_html(StringIO(html))
         except Exception as exc:  # noqa: BLE001
             print(f"coach changes {season}: read_html failed: {exc}")
             continue
