@@ -42,55 +42,43 @@ def get(url, proxies):
 
 
 def coach_changes(proxies):
-    """In-season head-coach replacements with dates.
+    """In-season head-coach replacements.
 
-    The first attempt used a regex over raw HTML and parsed nothing - Wikipedia's coaching-changes
-    tables are wikitables whose row structure does not match a naive pattern. This version parses the
-    tables properly with pandas.read_html and picks the in-season one by its column signature
-    (a table with Team / Outgoing / Incoming and a date column).
+    Two earlier attempts failed because I guessed at the structure. The real table is:
+        caption "Coaching changes"
+        headers: Team | <prev> season | <this> season      <- NO Incoming/Outgoing columns
+        a colspan sub-header row splits "Off-season" from "In-season"
+    So we parse the raw table and use the sub-header rows to know which section we are in; the
+    in-season rows are the ones that matter (a mid-season replacement changes rotations).
     """
-    import pandas as pd
     out = {}
     for season, slug in SEASONS.items():
         html = get(f"https://en.wikipedia.org/wiki/{slug}", proxies)
         if not html:
             print(f"coach changes {season}: page fetch failed")
             continue
-        rows = []
-        try:
-            # pandas >= 2.1 treats a bare string as a path/URL - the HTML must be wrapped in StringIO
-            from io import StringIO
-            tables = pd.read_html(StringIO(html))
-        except Exception as exc:  # noqa: BLE001
-            print(f"coach changes {season}: read_html failed: {exc}")
+        m = re.search(r'<caption[^>]*>Coaching changes</caption>(.*?)</table>', html, re.S)
+        if not m:
+            print(f"coach changes {season}: no Coaching changes table found")
             continue
-        for t in tables:
-            cols = [str(c).lower() for c in t.columns]
-            joined = " ".join(cols)
-            if "team" not in joined or not any(k in joined for k in ("incoming", "replaced by", "new coach")):
+        section, rows = None, []
+        for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', m.group(1), re.S):
+            sub = re.search(r'<th[^>]*colspan="\d+"[^>]*>(.*?)</th>', tr, re.S)
+            if sub:
+                section = re.sub(r'<[^>]+>', '', sub.group(1)).strip()
                 continue
-            date_col = next((c for c in t.columns if "date" in str(c).lower()), None)
-            team_col = next((c for c in t.columns if "team" in str(c).lower()), None)
-            out_col = next((c for c in t.columns if any(k in str(c).lower() for k in ("outgoing", "departing"))), None)
-            in_col = next((c for c in t.columns if any(k in str(c).lower() for k in ("incoming", "replaced by", "new coach"))), None)
-            if not (team_col and in_col):
+            cells = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', tr, re.S)
+            if len(cells) < 3:
                 continue
-            for _, r in t.iterrows():
-                entry = {"team": str(r.get(team_col, "")).strip(),
-                         "outgoing": str(r.get(out_col, "")).strip() if out_col else None,
-                         "incoming": str(r.get(in_col, "")).strip(),
-                         "date": str(r.get(date_col, "")).strip() if date_col else None}
-                if entry["team"] and entry["team"].lower() != "nan" and entry["incoming"].lower() != "nan":
-                    rows.append(entry)
-        # de-duplicate (pre-season and in-season tables can repeat a hire)
-        seen, uniq = set(), []
-        for e in rows:
-            k = (e["team"], e["incoming"], e.get("date"))
-            if k not in seen:
-                seen.add(k)
-                uniq.append(e)
-        out[season] = uniq
-        print(f"coach changes {season}: {len(uniq)} entries parsed")
+            txt = [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', c)).strip() for c in cells]
+            if txt[0].lower() == "team":
+                continue
+            rows.append({"team": txt[0], "outgoing": txt[1], "incoming": txt[2],
+                         "section": section or "unknown",
+                         "in_season": bool(section and "in-season" in section.lower())})
+        out[season] = rows
+        n_in = sum(1 for r in rows if r["in_season"])
+        print(f"coach changes {season}: {len(rows)} entries ({n_in} in-season)")
     return out
 
 
