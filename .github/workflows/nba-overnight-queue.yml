@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib
 
       # 1) Load the freshly built baseline artifact (singles + combos + periods) into Postgres,
       #    and record the run metadata the freshness gates read.
