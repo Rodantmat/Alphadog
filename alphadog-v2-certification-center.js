@@ -5475,8 +5475,9 @@ async function apiHighHitSlips(env, request) {
   const udwLegsRaw = await autoSelectUnderdogWorkloadLegs(env).catch((e) => { selectorErrors.udw = String(e && e.message || e); return []; });
   // CROSS-BOOK DEDUPE (2026-09-11): the same capped pitcher appears on both books, so Rodon and May
   // shipped in V5 (PrizePicks) AND UD V1 on the same side, same game - one bet staked twice, not two
-  // bets. Underdog builds after PrizePicks, so drop anyone PrizePicks already placed.
-  const ppPlacedPlayers = new Set([...v3Slips, ...v4Slips, ...v5Slips, ...v6Slips]
+  // bets. Only V4/V5 are referenced here: they are the workload tracks that collide with UD/SL, and
+  // V3/V6 are declared further down (goblin and demon cells, different props, no overlap).
+  const ppPlacedPlayers = new Set([...v4Slips, ...v5Slips]
     .flatMap(s => (s.legs || []).map(l => String(l.mlb_player_id))));
   const udwLegs = udwLegsRaw.filter(l => !ppPlacedPlayers.has(String(l.mlb_player_id)));
   const udwSlips = [];
