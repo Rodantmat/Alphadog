@@ -37,3 +37,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/build_market_derived.py
+      - name: Build book curves and calibration
+        if: ${{ github.event.inputs.task == 'curves' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STEP: all
+        run: python nba/build_book_curves.py
