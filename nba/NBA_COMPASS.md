@@ -37,7 +37,9 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 | 7 | Enrichment factor lock (5 passes) → baseline v30 (ramp + team-change) → mining/fallback plan + PARITY RULE (`nba_asof.py`) | 09-09 | `NBA_ENRICHMENT_FACTOR_LOCK.md`; `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` (§8 parity, §9 coverage matrix); log entry 09-09/10 |
 | 8 | Two-season backfills of every enrichment factor: injury-report PDF archive (monthly shards, hourly+15-min URL patterns), weekly as-of tables, per-game matchups (sharded), starters/officials, coaches, all-players; day-before report wired into the builders; absence prior + M1 measured | 09-10 | log entry 09-09/10 §4; config `absence_prior_measured`, `primary_defender_quality_measured` |
 | 9 | Market + boards: ParlayAPI game lines 2 seasons in Postgres; The Odds API history verified (PP+UD boards) and the two-snapshot board puller built (waits on the $119 plan); all four live board sources decided on same-moment evidence (PP, Sleeper, Underdog = OUR scrapers; Fliff = ParlayAPI) | 09-10 | log entry 09-09/10 §5–§6; config `board_sources_decision`, `board_backfill_odds_api`, `market_probe_results_2026_09_10` |
-| — | Outcome grader → enrichment engine → slip engine (copula) | next | design in config `board_backfill_odds_api` |
+| 10 | Grader + tiers + market adjuster + baseline depth: `board_outcomes` (6.9M graded legs), `board_tiers` (2.2M, demon/goblin answered), `rung_market` (1.06M priced rungs), baseline at ±10 rungs with combos; index shrink 25→21 GB | 09-11 | log entry 2026-09-11; COMPASS facts 60–65 |
+| 11 | **Day-by-day parity directive** — every daily factor must be backfilled exactly as the live pipeline would produce it; a factor is not done until that exists | 09-11 | `NBA_DAILY_PARITY_AND_BACKFILL.md`; COMPASS facts 58–59 |
+| — | Enrichment engine → scoring engine (hit probability → score → confidence → final board) → slip engine (copula) | next | requires the day-by-day replay harness first |
 
 ---
 
