@@ -5472,7 +5472,13 @@ async function apiHighHitSlips(env, request) {
 
   // UNDERDOG WORKLOAD (UDW) - new track 2026-09-07. Separate variables from the disabled UD
   // divergence track. See autoSelectUnderdogWorkloadLegs for measurement.
-  const udwLegs = await autoSelectUnderdogWorkloadLegs(env).catch((e) => { selectorErrors.udw = String(e && e.message || e); return []; });
+  const udwLegsRaw = await autoSelectUnderdogWorkloadLegs(env).catch((e) => { selectorErrors.udw = String(e && e.message || e); return []; });
+  // CROSS-BOOK DEDUPE (2026-09-11): the same capped pitcher appears on both books, so Rodon and May
+  // shipped in V5 (PrizePicks) AND UD V1 on the same side, same game - one bet staked twice, not two
+  // bets. Underdog builds after PrizePicks, so drop anyone PrizePicks already placed.
+  const ppPlacedPlayers = new Set([...v3Slips, ...v4Slips, ...v5Slips, ...v6Slips]
+    .flatMap(s => (s.legs || []).map(l => String(l.mlb_player_id))));
+  const udwLegs = udwLegsRaw.filter(l => !ppPlacedPlayers.has(String(l.mlb_player_id)));
   const udwSlips = [];
   {
     const SZ = 3, MIN_SZ = 2, MAX_SLIPS = 2, MAX_PER_GAME = 2;
