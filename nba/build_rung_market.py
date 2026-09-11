@@ -79,6 +79,7 @@ def main():
     total = 0
     for d0, d1 in months(os.environ.get("RUNG_FROM", "2024-10"), os.environ.get("RUNG_TO", "2026-04")):
         with conn.cursor() as cur:
+            cur.execute(DELETE_BLOCK, {"d0": d0, "d1": d1})
             cur.execute(BLOCK, {"d0": d0, "d1": d1})
             cur.execute("SELECT count(*) FROM nba_market.rung_market WHERE game_date >= %s AND game_date < %s", (d0, d1))
             n = cur.fetchone()[0]
