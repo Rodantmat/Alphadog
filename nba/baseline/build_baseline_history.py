@@ -48,8 +48,11 @@ s = rep(s, '''MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS 
 # 2) the singles recipe ALREADY keeps PLAYER_ID / GAME_ID / season on every reliability row (line ~525),
 #    unlike the combos recipe. Only GAME_DATE is missing - it is joined from the game logs below.
 
-# 3) emit EVERY game-day instead of the reliability summary
-s = rep(s, '''more = rel.assign(side="more", p_side=rel["p_over"], hit=rel["actual"]); less = rel.assign(side="less", p_side=1 - rel["p_over"], hit=1 - rel["actual"])''',
+# 3) emit EVERY game-day, AFTER Stage 2 Platt calibration (p_over is calibrated by then; p_raw is the
+#    pre-Platt value the recipe saves at line ~546). Hooked at the leg-level block, which is two lines in
+#    the singles recipe - not the single joined line the combos recipe uses.
+s = rep(s, '''more = rel.assign(side="more", p_side=rel["p_over"], hit=rel["actual"])
+less = rel.assign(side="less", p_side=1 - rel["p_over"], hit=1 - rel["actual"])''',
         '''_season = os.environ.get("BT_TEST", "unknown")
 _props_tag = (os.environ.get("BT_PROPS", "all") or "all").replace(",", "-")
 _dates = d[["PLAYER_ID", "GAME_ID", "GAME_DATE"]].drop_duplicates()
