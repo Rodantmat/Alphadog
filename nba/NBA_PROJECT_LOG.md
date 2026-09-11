@@ -638,6 +638,16 @@ Two-season board backfill final: **2,468 events, ~5,115 snapshots, 27.06M rows, 
 3:45 PM PT) after 57 window snapshots were found to have been taken after tip; all repaired, zero
 post-tip windows remain, 9 snapshots unrecoverable (0.18%).
 
+### 10. Pending after this entry
+1. **A5 projected lineups** — stop using box-score starters as an input to a past day; build an as-of proxy.
+2. **D1 referee assignments** — live daily capture (the archive only starts when we start it).
+3. **M1 defender-quality integration** into the harness.
+4. **Day-by-day replay harness** — walk a date range producing baseline + enrichment exactly as production would.
+5. Owner-side captures: Sleeper alt-lines, Chalkboard phone-proxy, PrizePicks multiplier calibration slips.
+
+---
+
+### Pending list from the 2026-09-09/10 entry (kept for history)
 0. ~~Overnight jobs~~ **VERIFIED 05:30Z**: injury report 2025-26 = 176/176 days, 919,949 rows, 7 shards; 2024-25 = 174 days, 418,071 rows, 7 shards (fewer intra-day re-publishes that season — spot-check per month); starters 2023-24 = 32,328 rows, 1,228/1,230 (timeouts on 0022300079, 0022300721 — rerun); officials 2023-24 = 3,690 rows, 1,230/1,230. Every enrichment factor now has its two-season backfill except the boards (waiting on the Odds API upgrade). Status snapshot in config `enrichment_backfill_status_2026_09_10`.
 1. Owner upgrades the Odds API plan → run `odds_api_board_backfill` for both seasons (~1–2 h, resumable) → confirm rows.
 2. Verify overnight jobs: injury 2025-26 tail + 2024-25 shards; starters/officials 2023-24.
