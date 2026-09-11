@@ -131,10 +131,11 @@ def main():
 
     changes = coach_changes(proxies)
     if any(changes.values()):
+        dated = coach_change_dates(changes, proxies)
         p = OUT / "nba_coach_changes_backfill.json"
-        p.write_text(json.dumps({"meta": {"built_at": now, "source": "wikipedia season pages",
-                                          "note": "in-season head coach changes for 2023-24 / 2024-25; merge into nba_coach_changes.json after review"},
-                                 "seasons": changes}, indent=1))
+        p.write_text(json.dumps({"meta": {"built_at": now, "source": "wikipedia season + team season pages",
+                                          "note": "in-season head coach changes for 2023-24 / 2024-25 with the date and the W-L record splits; verify the date against the team game log before use"},
+                                 "seasons": changes, "dated": dated}, indent=1))
         print("wrote", p)
     else:
         print("coach changes: nothing parsed, file left untouched", file=sys.stderr)
