@@ -130,13 +130,17 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    # Coach changes: the NAMES parse reliably from the season pages, but the DATES do not (team infobox
+    # formats vary - only 1 of 7 parsed). The dated set is now a verified static file,
+    # nba/data/nba_coach_changes_backfill.json, hand-checked against multiple sources. Seven historical
+    # facts that will never change are better verified once than scraped fragilely every run.
+    # This step now only re-parses the names, to detect if a season page ever gains a change we missed.
     changes = coach_changes(proxies)
     if any(changes.values()):
-        dated = coach_change_dates(changes, proxies)
-        p = OUT / "nba_coach_changes_backfill.json"
-        p.write_text(json.dumps({"meta": {"built_at": now, "source": "wikipedia season + team season pages",
-                                          "note": "in-season head coach changes for 2023-24 / 2024-25 with the date and the W-L record splits; verify the date against the team game log before use"},
-                                 "seasons": changes, "dated": dated}, indent=1))
+        p = OUT / "nba_coach_changes_parsed_names.json"
+        p.write_text(json.dumps({"meta": {"built_at": now, "source": "wikipedia season pages",
+                                          "note": "NAMES ONLY - cross-check against the verified dated set in nba_coach_changes_backfill.json"},
+                                 "seasons": changes}, indent=1))
         print("wrote", p)
     else:
         print("coach changes: nothing parsed, file left untouched", file=sys.stderr)
