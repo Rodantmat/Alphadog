@@ -2,7 +2,8 @@ Trigger for nba-baseline.yml
 asof: 2026-03-15
 replay: 1
 ladder_steps: 10
-last_triggered_utc: 2026-09-11T08:30:00Z
-trigger_reason: rebuild with BT_LADDER_STEPS=10 (was 6). Coverage check on the 2026-03-15 board showed
-  demons on high scorers reaching ~anchor+10: 102 pts_reb legs, 81 pts_ast, 69 pra and 60 points legs
-  fell outside the ladder range. Offsets 0-6 keep their certified computation; this only adds rungs.
+last_triggered_utc: 2026-09-11T17:30:00Z
+trigger_reason: second rebuild at steps=10. The first one deepened the SINGLES to +/-10 but the combos
+  stayed at +/-6 - build_combos_ladder.py patches combos_ladder_v1.py, which carries its own
+  LADDER_STEPS constant that the recipe patch never touched. Now both honour BT_LADDER_STEPS.
+  Targets the 252 combo legs still out of range (pts_reb 102, pts_ast 81, pra 69).
