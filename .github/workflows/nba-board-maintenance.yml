@@ -23,6 +23,12 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip "psycopg[binary]"
       - name: Shrink board_snapshots index
+        if: ${{ github.event.inputs.task == 'shrink' || github.event.inputs.task == '' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/maintenance_shrink_board_index.py
+      - name: Build derived market tables
+        if: ${{ github.event.inputs.task == 'derived' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_market_derived.py
