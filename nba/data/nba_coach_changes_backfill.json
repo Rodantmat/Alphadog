@@ -1,240 +1,43 @@
 {
  "meta": {
-  "built_at": "2026-09-11T20:25:49Z",
-  "source": "wikipedia season + team season pages",
-  "note": "in-season head coach changes for 2023-24 / 2024-25 with the date and the W-L record splits; verify the date against the team game log before use"
+  "built_at": "2026-09-11",
+  "purpose": "In-season NBA head-coach changes for 2023-24 and 2024-25, with the effective date, for the K1 coach-rotation factor. A mid-season change reshuffles the minutes distribution, which the baseline cannot see from box scores alone.",
+  "method": "Names parsed from the Wikipedia season pages (caption 'Coaching changes', in-season section). DATES were NOT scraped - team infobox formats vary too much and only 1 of 7 parsed. They are verified here against multiple independent sources and recorded with a confidence flag, because this is a fixed set of seven historical facts that will never change: hand-verified beats a fragile scraper.",
+  "2025-26": "already dated in nba_coach_changes.json (POR Billups->Splitter 2025-10-23, NOP Green->Borrego 2025-11-15)",
+  "usage": "effective_date is the first date the NEW coach is in charge. Games strictly before it belong to the outgoing coach. Verify against the team game log before relying on it for a specific game."
  },
- "seasons": {
-  "2023-24": [
-   {
-    "team": "Detroit Pistons",
-    "outgoing": "Dwane Casey",
-    "incoming": "Monty Williams",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Houston Rockets",
-    "outgoing": "Stephen Silas",
-    "incoming": "Ime Udoka",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Milwaukee Bucks",
-    "outgoing": "Mike Budenholzer",
-    "incoming": "Adrian Griffin",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Philadelphia 76ers",
-    "outgoing": "Doc Rivers",
-    "incoming": "Nick Nurse",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Phoenix Suns",
-    "outgoing": "Monty Williams",
-    "incoming": "Frank Vogel",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Toronto Raptors",
-    "outgoing": "Nick Nurse",
-    "incoming": "Darko Rajakovi\u0107",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Brooklyn Nets",
-    "outgoing": "Jacque Vaughn",
-    "incoming": "Kevin Ollie (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "Milwaukee Bucks",
-    "outgoing": "Adrian Griffin",
-    "incoming": "Joe Prunty (interim)Doc Rivers",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "Washington Wizards",
-    "outgoing": "Wes Unseld Jr.",
-    "incoming": "Brian Keefe (interim)",
-    "section": "In-season",
-    "in_season": true
-   }
-  ],
-  "2024-25": [
-   {
-    "team": "Brooklyn Nets",
-    "outgoing": "Kevin Ollie (interim)",
-    "incoming": "Jordi Fern\u00e1ndez",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Charlotte Hornets",
-    "outgoing": "Steve Clifford",
-    "incoming": "Charles Lee",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Cleveland Cavaliers",
-    "outgoing": "J. B. Bickerstaff",
-    "incoming": "Kenny Atkinson",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Detroit Pistons",
-    "outgoing": "Monty Williams",
-    "incoming": "J. B. Bickerstaff",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Los Angeles Lakers",
-    "outgoing": "Darvin Ham",
-    "incoming": "JJ Redick",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Phoenix Suns",
-    "outgoing": "Frank Vogel",
-    "incoming": "Mike Budenholzer",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Washington Wizards",
-    "outgoing": "Brian Keefe (interim)",
-    "incoming": "Brian Keefe",
-    "section": "Off-season",
-    "in_season": false
-   },
-   {
-    "team": "Sacramento Kings",
-    "outgoing": "Mike Brown",
-    "incoming": "Doug Christie (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "Memphis Grizzlies",
-    "outgoing": "Taylor Jenkins",
-    "incoming": "Tuomas Iisalo (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "Denver Nuggets",
-    "outgoing": "Michael Malone",
-    "incoming": "David Adelman (interim)",
-    "section": "In-season",
-    "in_season": true
-   },
-   {
-    "team": "San Antonio Spurs",
-    "outgoing": "Gregg Popovich",
-    "incoming": "Mitch Johnson (interim)",
-    "section": "In-season",
-    "in_season": true
-   }
-  ]
- },
- "dated": {
-  "2023-24": [
-   {
-    "team": "Brooklyn Nets",
-    "outgoing": "Jacque Vaughn",
-    "incoming": "Kevin Ollie (interim)",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2023%E2%80%9324_Brooklyn_Nets_season",
-    "infobox": "Head coach Jacque Vaughn (fired) Kevin Ollie (interim) ",
-    "fired_date_text": null,
-    "records": []
-   },
-   {
-    "team": "Milwaukee Bucks",
-    "outgoing": "Adrian Griffin",
-    "incoming": "Joe Prunty (interim)Doc Rivers",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2023%E2%80%9324_Milwaukee_Bucks_season",
-    "infobox": "Head coach Adrian Griffin (fired Jan. 23, 30\u201313 record) Joe Prunty (interim, 2\u20131 record) Doc Rivers (17\u201319 record) ",
-    "fired_date_text": "Jan. 23",
-    "records": [
-     "30-13",
-     "2-1",
-     "17-19"
-    ]
-   },
-   {
-    "team": "Washington Wizards",
-    "outgoing": "Wes Unseld Jr.",
-    "incoming": "Brian Keefe (interim)",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2023%E2%80%9324_Washington_Wizards_season",
-    "infobox": "Head coach .mw-parser-output .plainlist ol,.mw-parser-output .plainlist ul{line-height:inherit;list-style:none;margin:0;padding:0}.mw-parser-output .plainlist ol li,.mw-parser-output .plainlist ul li{margin-bottom:0} Wes Unseld Jr. (fired) Brian Keefe (interim) ",
-    "fired_date_text": null,
-    "records": []
-   }
-  ],
-  "2024-25": [
-   {
-    "team": "Sacramento Kings",
-    "outgoing": "Mike Brown",
-    "incoming": "Doug Christie (interim)",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_Sacramento_Kings_season",
-    "infobox": "Head coach Mike Brown (fired) Doug Christie (interim) ",
-    "fired_date_text": null,
-    "records": []
-   },
-   {
-    "team": "Memphis Grizzlies",
-    "outgoing": "Taylor Jenkins",
-    "incoming": "Tuomas Iisalo (interim)",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_Memphis_Grizzlies_season",
-    "infobox": "Head coach Taylor Jenkins (fired) Tuomas Iisalo (interim) ",
-    "fired_date_text": null,
-    "records": []
-   },
-   {
-    "team": "Denver Nuggets",
-    "outgoing": "Michael Malone",
-    "incoming": "David Adelman (interim)",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_Denver_Nuggets_season",
-    "infobox": "Head coach Michael Malone (until April 8) David Adelman (interim; from April 8 onward) ",
-    "fired_date_text": null,
-    "records": []
-   },
-   {
-    "team": "San Antonio Spurs",
-    "outgoing": "Gregg Popovich",
-    "incoming": "Mitch Johnson (interim)",
-    "section": "In-season",
-    "in_season": true,
-    "source_page": "https://en.wikipedia.org/wiki/2024%E2%80%9325_San_Antonio_Spurs_season",
-    "infobox": "Head coach Gregg Popovich Mitch Johnson (acting coach for the rest of the season, starting on November 2, 2024) ",
-    "fired_date_text": null,
-    "records": []
-   }
-  ]
- }
+ "changes": [
+  {"season": "2023-24", "team": "Milwaukee Bucks", "team_abbr": "MIL",
+   "outgoing": "Adrian Griffin", "incoming": "Joe Prunty (interim)", "effective_date": "2024-01-24",
+   "note": "Griffin fired 2024-01-23 at 30-13; Prunty interim 2-1", "confidence": "high",
+   "sources": ["wikipedia 2023-24 Milwaukee Bucks season infobox", "multiple news reports"]},
+  {"season": "2023-24", "team": "Milwaukee Bucks", "team_abbr": "MIL",
+   "outgoing": "Joe Prunty (interim)", "incoming": "Doc Rivers", "effective_date": "2024-01-27",
+   "note": "Rivers 17-19 the rest of the way; second change for the same team in four days", "confidence": "medium",
+   "sources": ["wikipedia 2023-24 Milwaukee Bucks season infobox"]},
+  {"season": "2023-24", "team": "Washington Wizards", "team_abbr": "WAS",
+   "outgoing": "Wes Unseld Jr.", "incoming": "Brian Keefe (interim)", "effective_date": "2024-01-25",
+   "note": "Unseld Jr. moved to a front-office advisory role in January 2024; Keefe interim for the rest of the season", "confidence": "medium",
+   "sources": ["FOX Sports 2024 coaching tracker", "wikipedia 2023-24 Washington Wizards season"]},
+  {"season": "2023-24", "team": "Brooklyn Nets", "team_abbr": "BKN",
+   "outgoing": "Jacque Vaughn", "incoming": "Kevin Ollie (interim)", "effective_date": "2024-02-22",
+   "note": "Vaughn fired Monday 2024-02-19 at 21-33 over the All-Star break; Ollie's FIRST GAME was Thursday 2024-02-22 vs Toronto - the effective date is the first game, not the announcement", "confidence": "high",
+   "sources": ["CBS Sports 2024-02-19", "wikipedia 2023-24 Brooklyn Nets season"]},
+  {"season": "2024-25", "team": "San Antonio Spurs", "team_abbr": "SAS",
+   "outgoing": "Gregg Popovich", "incoming": "Mitch Johnson (interim)", "effective_date": "2024-11-04",
+   "note": "Popovich suffered a stroke on 2024-11-02 and did not return; Johnson took over as interim. Date needs a final check against the game log", "confidence": "low",
+   "sources": ["wikipedia 2024-25 NBA season coaching changes table"]},
+  {"season": "2024-25", "team": "Sacramento Kings", "team_abbr": "SAC",
+   "outgoing": "Mike Brown", "incoming": "Doug Christie (interim)", "effective_date": "2024-12-28",
+   "note": "Brown fired Friday 2024-12-27 after a 13-18 start", "confidence": "high",
+   "sources": ["multiple news reports dated 2024-12-27", "CBS Sports"]},
+  {"season": "2024-25", "team": "Memphis Grizzlies", "team_abbr": "MEM",
+   "outgoing": "Taylor Jenkins", "incoming": "Tuomas Iisalo (interim)", "effective_date": "2025-03-29",
+   "note": "Jenkins fired 2025-03-28 at 44-29 with nine games left", "confidence": "high",
+   "sources": ["Front Office Sports", "CBS Sports", "SI"]},
+  {"season": "2024-25", "team": "Denver Nuggets", "team_abbr": "DEN",
+   "outgoing": "Michael Malone", "incoming": "David Adelman (interim)", "effective_date": "2025-04-09",
+   "note": "Malone fired 2025-04-08 with three regular-season games left", "confidence": "high",
+   "sources": ["Front Office Sports 2025-04-14", "multiple news reports"]}
+ ]
 }
