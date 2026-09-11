@@ -158,6 +158,13 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 
 | If asked about… | Open |
 |---|---|
+| whether a factor's backfill is "done", day-by-day parity, leak risks, what All-Star/national TV should do | `NBA_DAILY_PARITY_AND_BACKFILL.md` (governing directive); COMPASS facts 58–59 |
+| the grader, DNP/push/settlement handling, player name resolution | log entry 2026-09-11 §2; COMPASS fact 60; `nba/grade_board_outcomes.py`, `nba/nba_names.py` |
+| goblins/demons — are they worth taking, tiers, anchors, multipliers | log entry 2026-09-11 §3; COMPASS fact 61; config `prizepicks_goblin_demon_tier_spec`, `board_payout_conversion_rules` |
+| the market layer, what it is FOR, de-vig, book weighting | log entry 2026-09-11 §4; COMPASS fact 62; `nba/build_rung_market.py` |
+| baseline ladder depth, combos missing, loader gates | log entry 2026-09-11 §5; COMPASS fact 63; `nba/load_baseline_ladder.py`, `nba/check_baseline_board_coverage.py` |
+| coach changes and their dates | COMPASS fact 64; `nba/data/nba_coach_changes_backfill.json` |
+| disk, index sizes, why a derived table is chunked | COMPASS fact 65; log entry 2026-09-11 §7 |
 | an enrichment factor, sub-factor, why something is baseline vs enrichment, folklore retired | `NBA_ENRICHMENT_FACTOR_LOCK.md` (passes 1–5 appended in order); `nba_config.factor_registry` |
 | a factor's source, fallback, backfill route, the parity rule, the coverage matrix | `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` §8–§9; `nba/nba_asof.py` |
 | injury-report PDFs, shards, URL patterns, parser bugs, day-before report in the builders | log entry 2026-09-09/10 §4; `nba/scrape_nba_injury_report.py` |
