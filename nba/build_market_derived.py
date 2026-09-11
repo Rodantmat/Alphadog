@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""
+Build derived market tables from nba_market.board_snapshots.
+
+1) nba_market.market_consensus
+   De-vigged sportsbook probability per (game_date, snapshot_label, player, market_key, line).
+   The de-vig is done PER BOOK across the two sides of the SAME line: p = over/(over+under).
+   Averaging raw implied probabilities across books without removing the vig first biases every
+   number high by roughly half the hold - which would show up later as a fake edge.
+
+   Flat DFS placeholder prices (-137 / +100) are excluded: they are PrizePicks' nominal pricing,
+   not real odds, and would poison the consensus.
+
+2) nba_market.event_game_map
+   Bridges Odds API event_id -> NBA game_id, so board legs can join to enrichment (pace, rest,
+   spread, travel, officials). Matched on game_date + both team names, normalized.
+
+Env: DATABASE_URL. Safe to re-run: tables are rebuilt transactionally.
+"""
+import json
+import os
+import re
+import unicodedata
+import urllib.request
+
+import psycopg
+
+RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
+
+CONSENSUS_SQL = """
+DROP TABLE IF EXISTS nba_market.market_consensus_new;
+CREATE TABLE nba_market.market_consensus_new AS
+WITH bk AS (
+  SELECT game_date, snapshot_label, player, market_key, line, bookmaker, side,
+         CASE WHEN price>0 THEN 100.0/(price+100) ELSE (-price)/((-price)+100.0) END AS implied
+  FROM nba_market.board_snapshots
+  WHERE bookmaker IN ('draftkings','fanduel','betmgm','williamhill_us','betrivers','bovada','betonlineag','fanatics')
+    AND price > -100000 AND price <> -137 AND price <> 100 AND line IS NOT NULL
+), paired AS (
+  SELECT o.game_date, o.snapshot_label, o.player, o.market_key, o.line, o.bookmaker,
+         o.implied/(o.implied+u.implied) AS p_over
+  FROM bk o JOIN bk u
+    ON u.game_date=o.game_date AND u.snapshot_label=o.snapshot_label AND u.player=o.player
+   AND u.market_key=o.market_key AND u.line=o.line AND u.bookmaker=o.bookmaker AND u.side='Under'
+  WHERE o.side='Over'
+)
+SELECT game_date, snapshot_label, player, market_key, line,
+       count(*)::int AS books,
+       round(avg(p_over)::numeric,5) AS p_over_mean,
+       round((percentile_cont(0.5) WITHIN GROUP (ORDER BY p_over))::numeric,5) AS p_over_median,
+       round(coalesce(stddev_samp(p_over),0)::numeric,5) AS p_over_sd
+FROM paired GROUP BY 1,2,3,4,5;
+"""
+
+
+def norm_team(s):
+    s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z]", "", s)
+
+
+def build_event_map(conn):
+    """Odds API event_id -> NBA game_id via game_date + team names."""
+    url = RAW + "nba_schedule_2025_26.json"
+    games = []
+    for slug in ("2024_25", "2025_26"):
+        try:
+            u = RAW + f"nba_schedule_{slug}.json"
+            with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "alphadog"}), timeout=120) as r:
+                doc = json.load(r)
+            for g in doc.get("records") or doc.get("games") or []:
+                games.append(g)
+        except Exception as exc:  # noqa: BLE001
+            print(f"schedule {slug}: {exc}")
+    print("schedule rows:", len(games))
+    if not games:
+        print("NO SCHEDULE FILE - event_game_map skipped (needs nba_schedule_<slug>.json)")
+        return 0
+    rows = []
+    for g in games:
+        gid = g.get("GAME_ID") or g.get("game_id")
+        gd = str(g.get("GAME_DATE") or g.get("game_date") or "")[:10]
+        home = norm_team(g.get("HOME_TEAM_NAME") or g.get("home_team"))
+        away = norm_team(g.get("VISITOR_TEAM_NAME") or g.get("away_team"))
+        if gid and gd and home and away:
+            rows.append((gid, gd, home, away))
+    with conn.cursor() as cur:
+        cur.execute("""DROP TABLE IF EXISTS nba_market.schedule_norm;
+                       CREATE TABLE nba_market.schedule_norm (game_id text, game_date date, home text, away text)""")
+        cur.executemany("INSERT INTO nba_market.schedule_norm VALUES (%s,%s,%s,%s)", rows)
+        cur.execute("""DROP TABLE IF EXISTS nba_market.event_game_map;
+            CREATE TABLE nba_market.event_game_map AS
+            SELECT DISTINCT b.event_id, s.game_id, b.game_date
+            FROM (SELECT DISTINCT event_id, game_date,
+                         regexp_replace(lower(home_team),'[^a-z]','','g') AS home,
+                         regexp_replace(lower(away_team),'[^a-z]','','g') AS away
+                  FROM nba_market.board_snapshots) b
+            JOIN nba_market.schedule_norm s
+              ON s.game_date=b.game_date
+             AND (s.home = b.home OR b.home LIKE '%'||s.home||'%' OR s.home LIKE '%'||b.home||'%')
+             AND (s.away = b.away OR b.away LIKE '%'||s.away||'%' OR s.away LIKE '%'||b.away||'%')""")
+        cur.execute("SELECT count(*) FROM nba_market.event_game_map")
+        n = cur.fetchone()[0]
+    return n
+
+
+def main():
+    conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+    conn.execute("SET statement_timeout = 0")
+    with conn.cursor() as cur:
+        print("building market_consensus ...", flush=True)
+        cur.execute(CONSENSUS_SQL)
+        cur.execute("SELECT count(*), round(avg(books),2) FROM nba_market.market_consensus_new")
+        n, avg_books = cur.fetchone()
+        print(f"market_consensus rows={n} avg_books={avg_books}", flush=True)
+        if n == 0:
+            raise SystemExit("ABORT: consensus is empty")
+        cur.execute("""DROP TABLE IF EXISTS nba_market.market_consensus;
+                       ALTER TABLE nba_market.market_consensus_new RENAME TO market_consensus;
+                       CREATE INDEX market_consensus_idx ON nba_market.market_consensus
+                         (game_date, player, market_key, line, snapshot_label)""")
+        print("consensus done", flush=True)
+    print("building event_game_map ...", flush=True)
+    mapped = build_event_map(conn)
+    print("event_game_map rows:", mapped, flush=True)
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(DISTINCT event_id) FROM nba_market.board_snapshots")
+        total = cur.fetchone()[0]
+    print(f"coverage: {mapped} of {total} events mapped", flush=True)
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()
