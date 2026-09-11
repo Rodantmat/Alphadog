@@ -713,6 +713,33 @@ function resolveCalendarByTeamNames(calendar, officialDate, rawHome, rawAway, so
   return { status: "calendar_ambiguous", confidence: "multiple_calendar_games_same_team_pair", game: null, candidates };
 }
 
+function resolveCalendarBySingleTeam(calendar, officialDate, rawTeam) {
+  const date = safeStr(officialDate);
+  const team = normalizeTeam(rawTeam);
+  if (!calendar || !calendar.teamDateMap || !date || !team) {
+    return { status: "calendar_unresolved", confidence: "missing_team_or_date", game: null };
+  }
+  // Single-team fallback for sources (Sleeper, and some Underdog rows) whose raw payload never
+  // includes an opponent/home-away pair - only the player's own team abbreviation. Safe only when
+  // exactly one real MLB game involves that team on the resolved date (or immediately adjacent
+  // dates, same reasoning as the team-pair nearby-date correction above); an ambiguous multi-game
+  // day (doubleheader) is deliberately left unresolved rather than guessed.
+  const windowDays = [0, -1, 1, 2];
+  for (const offset of windowDays) {
+    const d = dateAddDays(date, offset);
+    const candidates = calendar.teamDateMap.get(`${d}|${team}`) || [];
+    if (candidates.length === 1) {
+      return offset === 0
+        ? { status: "calendar_matched", confidence: "official_calendar_single_team_date", game: candidates[0] }
+        : { status: "calendar_matched", confidence: "official_calendar_single_team_date_corrected", game: candidates[0], source_stated_date: date, corrected_official_date: d };
+    }
+    if (candidates.length > 1) {
+      return { status: "calendar_ambiguous", confidence: "multiple_calendar_games_single_team_date", game: null, candidates };
+    }
+  }
+  return { status: "calendar_unresolved", confidence: "no_calendar_match_single_team", game: null };
+}
+
 function resolveCalendarByAbbrPair(calendar, ref, officialDate, teamAbbr, oppAbbr, sourceStartTime) {
   const team = ref.teamByAbbr.get(safeStr(teamAbbr).toUpperCase());
   const opp = ref.teamByAbbr.get(safeStr(oppAbbr).toUpperCase());
