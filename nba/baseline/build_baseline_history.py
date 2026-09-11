@@ -45,16 +45,18 @@ s = SRC
 s = rep(s, '''MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6''',
         '''MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = int(os.environ.get("BT_LADDER_STEPS", "10"))''')
 
-# 2) keep player/game identity on every reliability row - without this the harness discards WHO the row
-#    belongs to and only calibration statistics survive. Same patch the combos builder uses.
-s = rep(s, '''            reliab.append(pd.DataFrame({"prop": prop, "offset": off, "p_over": p_over, "p_param": p_param, "actual": (test["y"] > line).astype(int).values, "anchor": test["anchor"].values, "line": line.values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": used, "month": str(month)}))''',
-        '''            reliab.append(pd.DataFrame({"prop": prop, "offset": off, "p_over": p_over, "p_param": p_param, "actual": (test["y"] > line).astype(int).values, "anchor": test["anchor"].values, "line": line.values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": used, "month": str(month), "PLAYER_ID": test["PLAYER_ID"].values, "GAME_ID": test["GAME_ID"].values, "GAME_DATE": test["GAME_DATE"].values}))''')
+# 2) the singles recipe ALREADY keeps PLAYER_ID / GAME_ID / season on every reliability row (line ~525),
+#    unlike the combos recipe. Only GAME_DATE is missing - it is joined from the game logs below.
 
 # 3) emit EVERY game-day instead of the reliability summary
 s = rep(s, '''more = rel.assign(side="more", p_side=rel["p_over"], hit=rel["actual"]); less = rel.assign(side="less", p_side=1 - rel["p_over"], hit=1 - rel["actual"])''',
         '''_season = os.environ.get("BT_TEST", "unknown")
 _props_tag = (os.environ.get("BT_PROPS", "all") or "all").replace(",", "-")
-_h = rel.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
+_dates = d[["PLAYER_ID", "GAME_ID", "GAME_DATE"]].drop_duplicates()
+_dates["PLAYER_ID"] = _dates["PLAYER_ID"].astype(str); _dates["GAME_ID"] = _dates["GAME_ID"].astype(str)
+_h = rel.copy(); _h["PLAYER_ID"] = _h["PLAYER_ID"].astype(str); _h["GAME_ID"] = _h["GAME_ID"].astype(str)
+_h = _h.merge(_dates, on=["PLAYER_ID", "GAME_ID"], how="left")
+_h = _h.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
 _rows = [{"game_date": str(pd.to_datetime(r.GAME_DATE).date()), "player_id": str(r.PLAYER_ID), "game_id": str(r.GAME_ID),
           "prop": r.prop, "period": "FULL", "line": float(r.line), "anchor": float(r.anchor), "offset": int(r.offset),
           "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4),
