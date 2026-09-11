@@ -29,6 +29,14 @@ def rep(s, old, new):
 
 
 s = SRC
+# LADDER DEPTH: the certified recipe uses LADDER_STEPS = 6 (anchor +/- 6). The 2026-03-15 board coverage
+# check showed demons on high scorers reaching roughly anchor + 10 on points and the points-based combos
+# (102 pts_reb legs, 81 pts_ast, 69 pra, 60 points out of ladder range). Extending the range only ADDS
+# rungs - offsets 0..6 keep their exact computation and the certification for them is untouched; deeper
+# rungs with too few samples fall through the existing hierarchy to the parametric, which is the designed
+# behaviour. Override with BT_LADDER_STEPS.
+s = rep(s, '''MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6''',
+'''MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = int(os.environ.get("BT_LADDER_STEPS", "10"))''')
 s = rep(s, '''TRAIN = os.environ.get("BT_TRAIN", "2023-24,2024-25").split(","); TEST = [os.environ.get("BT_TEST", "2025-26")]; SEASONS = TRAIN + TEST''',
 '''from datetime import date as _date
 ASOF = _date.fromisoformat(os.environ.get("BT_ASOF", str(_date.today())))
