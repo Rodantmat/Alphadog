@@ -5035,8 +5035,8 @@ async function autoSelectStrategyV3Legs(env) {
           --  75.4% deep) - the goblin line already reflects the ease. HP is the tool here.
           -- ============================================================================
           ('pitcher_strikeouts',2,'more','pitcher_strikeouts t2/more','live',2,1.2038),
-          ('walks_allowed',1,'more','walks_allowed t1/more','live',3,1.1892),
-          ('walks_allowed',2,'more','walks_allowed t2/more','live',3,1.1089),
+          ('walks_allowed',1,'more','walks_allowed t1/more','live',1,1.1892),
+          ('walks_allowed',2,'more','walks_allowed t2/more','live',1,1.1089),
           ('total_bases',3,'less','total_bases t3/less','live',2,1.1247),
           ('total_bases',2,'less','total_bases t2/less','live',2,1.1129)
         ) AS c(p,tr,sd,cell,src,cap,mult)
