@@ -1,7 +1,8 @@
 Trigger for nba-baseline.yml
 asof: 2026-03-15
 replay: 1
-last_triggered_utc: 2026-09-11T05:10:00Z
-trigger_reason: full replay with the injury report present (BT_INJURY) - produces singles + combos + periods.
-  Coverage check on 2026-03-15 showed 1,660 board legs (PRA/PR/PA/RA/stocks) with no baseline rows because
-  the combos half was never loaded, plus 60 points legs out of ladder range on high scorers.
+ladder_steps: 10
+last_triggered_utc: 2026-09-11T08:30:00Z
+trigger_reason: rebuild with BT_LADDER_STEPS=10 (was 6). Coverage check on the 2026-03-15 board showed
+  demons on high scorers reaching ~anchor+10: 102 pts_reb legs, 81 pts_ast, 69 pra and 60 points legs
+  fell outside the ladder range. Offsets 0-6 keep their certified computation; this only adds rungs.
