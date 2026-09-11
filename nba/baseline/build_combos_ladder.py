@@ -28,6 +28,8 @@ def rep(s, old, new):
 
 
 s = SRC
+s = rep(s, '''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, 6, 300, 300.0''',
+'''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, int(os.environ.get("BT_LADDER_STEPS", "10")), 300, 300.0''')
 s = rep(s, '''        hist = x[(x["season"].isin(TRAIN) | (x["ym"] < month)) & x["tier"].notna()]''',
 '''        _t0 = test["GAME_DATE"].min()
         hist = x[(x["GAME_DATE"] < _t0) & x["y"].notna() & x["tier"].notna()]''')
