@@ -49,3 +49,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/build_rung_market.py
+      - name: Baseline vs board coverage
+        if: ${{ github.event.inputs.task == 'coverage' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          COVER_DATE: ${{ github.event.inputs.date || '2026-03-15' }}
+        run: python nba/check_baseline_board_coverage.py
