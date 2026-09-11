@@ -1164,7 +1164,21 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
     // Critical v0.2.1 fix: Sleeper's commence_time can be a provider placeholder.
     // Calendar grounding must use official_date + raw team pair in either orientation,
     // then replace source time with the internal MLB calendar time.
-    const cal = resolveCalendarByTeamNames(calendar, rawDate, rawHome, rawAway, null);
+    let cal = resolveCalendarByTeamNames(calendar, rawDate, rawHome, rawAway, null);
+    // REAL FIX (root-caused via direct investigation, master-run 5pm 2026-09-10): Sleeper's raw
+    // payload never includes home_team/away_team (confirmed live - every sampled row has only a
+    // single "team" abbreviation, commence_time null), so the pair-based resolution above always
+    // returned calendar_unresolved and every Sleeper row was silently dropped by the window filter
+    // downstream - sleeper_rows had been 0 in board_prepared_current on every run. Fall back to
+    // single-team + date resolution (see resolveCalendarBySingleTeam) only when the pair lookup
+    // found nothing; this never overrides a successful pair match.
+    if (!cal.game) {
+      const singleTeam = safeStr(raw.team || r.team);
+      if (singleTeam) {
+        const singleCal = resolveCalendarBySingleTeam(calendar, rawDate, singleTeam);
+        if (singleCal.game) cal = singleCal;
+      }
+    }
     const playerName = safeStr(r.player_name || raw.player);
     const preliminaryPropKey = safeStr(r.canonical_prop_key || raw.market);
     const sleeperComboMarket = isComboMarketRow({ playerName, propKey: preliminaryPropKey, payloadJson: r.row_payload_json, rawJson: r.raw_line_json });
