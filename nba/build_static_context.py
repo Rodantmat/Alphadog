@@ -42,7 +42,14 @@ def get(url, proxies):
 
 
 def coach_changes(proxies):
-    """In-season head-coach replacements with dates, from the season page 'Coaching changes' table."""
+    """In-season head-coach replacements with dates.
+
+    The first attempt used a regex over raw HTML and parsed nothing - Wikipedia's coaching-changes
+    tables are wikitables whose row structure does not match a naive pattern. This version parses the
+    tables properly with pandas.read_html and picks the in-season one by its column signature
+    (a table with Team / Outgoing / Incoming and a date column).
+    """
+    import pandas as pd
     out = {}
     for season, slug in SEASONS.items():
         html = get(f"https://en.wikipedia.org/wiki/{slug}", proxies)
@@ -50,14 +57,38 @@ def coach_changes(proxies):
             print(f"coach changes {season}: page fetch failed")
             continue
         rows = []
-        # the in-season section lists: Team | Outgoing | Reason | Date | Incoming
-        sec = re.split(r"[Ii]n-season", html)
-        if len(sec) > 1:
-            block = sec[1][:20000]
-            for m in re.finditer(r'title="([^"]{3,40})">\1</a>\s*</th>.{0,2000}?(\w+ \d{1,2}, \d{4})', block, re.S):
-                rows.append({"team": m.group(1), "date": m.group(2)})
-        out[season] = rows
-        print(f"coach changes {season}: {len(rows)} in-season entries parsed")
+        try:
+            tables = pd.read_html(html)
+        except Exception as exc:  # noqa: BLE001
+            print(f"coach changes {season}: read_html failed: {exc}")
+            continue
+        for t in tables:
+            cols = [str(c).lower() for c in t.columns]
+            joined = " ".join(cols)
+            if "team" not in joined or not any(k in joined for k in ("incoming", "replaced by", "new coach")):
+                continue
+            date_col = next((c for c in t.columns if "date" in str(c).lower()), None)
+            team_col = next((c for c in t.columns if "team" in str(c).lower()), None)
+            out_col = next((c for c in t.columns if any(k in str(c).lower() for k in ("outgoing", "departing"))), None)
+            in_col = next((c for c in t.columns if any(k in str(c).lower() for k in ("incoming", "replaced by", "new coach"))), None)
+            if not (team_col and in_col):
+                continue
+            for _, r in t.iterrows():
+                entry = {"team": str(r.get(team_col, "")).strip(),
+                         "outgoing": str(r.get(out_col, "")).strip() if out_col else None,
+                         "incoming": str(r.get(in_col, "")).strip(),
+                         "date": str(r.get(date_col, "")).strip() if date_col else None}
+                if entry["team"] and entry["team"].lower() != "nan" and entry["incoming"].lower() != "nan":
+                    rows.append(entry)
+        # de-duplicate (pre-season and in-season tables can repeat a hire)
+        seen, uniq = set(), []
+        for e in rows:
+            k = (e["team"], e["incoming"], e.get("date"))
+            if k not in seen:
+                seen.add(k)
+                uniq.append(e)
+        out[season] = uniq
+        print(f"coach changes {season}: {len(uniq)} entries parsed")
     return out
 
 
