@@ -82,6 +82,47 @@ def coach_changes(proxies):
     return out
 
 
+def coach_change_dates(changes, proxies):
+    """Pin the exact date each in-season change took effect.
+
+    The season-page table gives names but no dates. The TEAM season pages do give them, in the infobox
+    coach field: "Adrian Griffin (fired Jan. 23, 30-13 record) Joe Prunty (interim, 2-1) Doc Rivers (17-19)".
+    Two independent signals there:
+      - an explicit date ("fired Jan. 23")
+      - a W-L record, which pins the change to a specific game in the team's log
+    We take the date when present and keep the record so the as-of logic can verify it against the game
+    log; a mismatch is worth knowing about rather than silently trusting one scrape.
+    """
+    slug_of = {"2023-24": "2023%E2%80%9324", "2024-25": "2024%E2%80%9325"}
+    out = {}
+    for season, rows in (changes or {}).items():
+        dated = []
+        for r in rows:
+            if not r.get("in_season"):
+                continue
+            team = r["team"].replace(" ", "_")
+            url = f"https://en.wikipedia.org/wiki/{slug_of[season]}_{team}_season"
+            html = get(url, proxies)
+            entry = dict(r)
+            entry["source_page"] = url
+            if html:
+                # infobox coach line, e.g. "Adrian Griffin (fired Jan. 23, 30-13 record)"
+                m = re.search(r'Head coach.{0,1200}?</td>', html, re.S)
+                blob = re.sub(r'<[^>]+>', ' ', m.group(0)) if m else ""
+                blob = re.sub(r'\s+', ' ', blob)
+                entry["infobox"] = blob[:300]
+                d = re.search(r'fired\s+([A-Z][a-z]+\.?\s+\d{1,2})', blob)
+                entry["fired_date_text"] = d.group(1) if d else None
+                recs = re.findall(r'(\d{1,3})[-\u2013](\d{1,3})\s*(?:record)?', blob)
+                entry["records"] = [f"{a}-{b}" for a, b in recs][:4]
+            dated.append(entry)
+            time.sleep(0.5)
+        out[season] = dated
+        got = sum(1 for e in dated if e.get("fired_date_text"))
+        print(f"coach change dates {season}: {got}/{len(dated)} with an explicit date")
+    return out
+
+
 def main():
     proxy = os.environ.get("PROXY_URL", "").strip()
     proxies = {"https": proxy, "http": proxy} if proxy else None
