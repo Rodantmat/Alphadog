@@ -2,6 +2,11 @@ name: NBA Maintenance - Shrink Board Index
 
 on:
   workflow_dispatch:
+    inputs:
+      task:
+        description: "shrink | derived"
+        default: "derived"
+        required: false
 
 permissions:
   contents: read
