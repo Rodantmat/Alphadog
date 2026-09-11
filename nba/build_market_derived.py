@@ -59,34 +59,58 @@ def norm_team(s):
 
 
 def build_event_map(conn):
-    """Odds API event_id -> NBA game_id via game_date + team names."""
-    url = RAW + "nba_schedule_2025_26.json"
-    games = []
+    """Odds API event_id -> NBA game_id.
+
+    Source: the player game logs, which carry GAME_ID + GAME_DATE + MATCHUP ("LAC @ GSW") for all
+    three seasons - better than nba_schedule_current.json, which only covers the current season.
+    Team abbreviations are mapped to the board's full team names via nba_teams_current.json.
+    """
+    abbr_to_full = {}
+    try:
+        u = RAW + "nba_teams_current.json"
+        with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "alphadog"}), timeout=60) as r:
+            doc = json.load(r)
+        for t in doc.get("records") or []:
+            ab = t.get("abbreviation") or t.get("TEAM_ABBREVIATION") or t.get("ABBREVIATION")
+            full = t.get("full_name") or t.get("TEAM_NAME") or t.get("nickname")
+            if ab and full:
+                abbr_to_full[ab.upper()] = norm_team(full)
+    except Exception as exc:  # noqa: BLE001
+        print("teams file:", exc)
+    print("team map:", len(abbr_to_full))
+
+    games = {}
     for slug in ("2024_25", "2025_26"):
         try:
-            u = RAW + f"nba_schedule_{slug}.json"
-            with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "alphadog"}), timeout=120) as r:
+            u = RAW + f"nba_player_game_log_{slug}.json"
+            with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "alphadog"}), timeout=300) as r:
                 doc = json.load(r)
-            for g in doc.get("records") or doc.get("games") or []:
-                games.append(g)
+            for x in doc.get("records") or []:
+                gid = str(x.get("GAME_ID") or "")
+                m = str(x.get("MATCHUP") or "")
+                gd = str(x.get("GAME_DATE") or "")[:10]
+                if not gid or not gd or gid in games:
+                    continue
+                # "LAC @ GSW" = away @ home ; "GSW vs. LAC" = home vs away
+                if "@" in m:
+                    away, home = [p.strip() for p in m.split("@")[:2]]
+                elif "vs" in m:
+                    home, away = [p.strip().replace(".", "") for p in m.split("vs")[:2]]
+                else:
+                    continue
+                games[gid] = (gd, abbr_to_full.get(home.upper(), ""), abbr_to_full.get(away.upper(), ""))
         except Exception as exc:  # noqa: BLE001
-            print(f"schedule {slug}: {exc}")
-    print("schedule rows:", len(games))
-    if not games:
-        print("NO SCHEDULE FILE - event_game_map skipped (needs nba_schedule_<slug>.json)")
+            print(f"game log {slug}: {exc}")
+    rows = [(gid, gd, h, a) for gid, (gd, h, a) in games.items() if h and a]
+    print("games with both teams resolved:", len(rows), "of", len(games))
+    if not rows:
+        print("NO GAMES RESOLVED - event_game_map skipped")
         return 0
-    rows = []
-    for g in games:
-        gid = g.get("GAME_ID") or g.get("game_id")
-        gd = str(g.get("GAME_DATE") or g.get("game_date") or "")[:10]
-        home = norm_team(g.get("HOME_TEAM_NAME") or g.get("home_team"))
-        away = norm_team(g.get("VISITOR_TEAM_NAME") or g.get("away_team"))
-        if gid and gd and home and away:
-            rows.append((gid, gd, home, away))
     with conn.cursor() as cur:
         cur.execute("""DROP TABLE IF EXISTS nba_market.schedule_norm;
                        CREATE TABLE nba_market.schedule_norm (game_id text, game_date date, home text, away text)""")
         cur.executemany("INSERT INTO nba_market.schedule_norm VALUES (%s,%s,%s,%s)", rows)
+        cur.execute("CREATE INDEX schedule_norm_idx ON nba_market.schedule_norm (game_date, home, away)")
         cur.execute("""DROP TABLE IF EXISTS nba_market.event_game_map;
             CREATE TABLE nba_market.event_game_map AS
             SELECT DISTINCT b.event_id, s.game_id, b.game_date
@@ -95,9 +119,7 @@ def build_event_map(conn):
                          regexp_replace(lower(away_team),'[^a-z]','','g') AS away
                   FROM nba_market.board_snapshots) b
             JOIN nba_market.schedule_norm s
-              ON s.game_date=b.game_date
-             AND (s.home = b.home OR b.home LIKE '%'||s.home||'%' OR s.home LIKE '%'||b.home||'%')
-             AND (s.away = b.away OR b.away LIKE '%'||s.away||'%' OR s.away LIKE '%'||b.away||'%')""")
+              ON s.game_date = b.game_date AND s.home = b.home AND s.away = b.away""")
         cur.execute("SELECT count(*) FROM nba_market.event_game_map")
         n = cur.fetchone()[0]
     return n
