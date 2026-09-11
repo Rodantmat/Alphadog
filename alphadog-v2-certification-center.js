@@ -4677,10 +4677,10 @@ async function autoSelectStrategyV5Legs(env) {
       one_per_player AS (
         SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY pid ORDER BY sig DESC, ln DESC) pr FROM scored) z WHERE pr = 1
       ),
-      -- MIN HP FLOOR (2026-09-11): a 2-pick Power needs 57.7% per leg and a 3-pick 55.0%. `sig`
-      -- falls back to 50 when neither final_board nor hp_board has a read, and a 50% leg shipped
-      -- inside a 3-pick (Dustin May) - below breakeven on its own. The slips are meant to be placed
-      -- as shown, not filtered by hand, so anything under 55 is dropped here.
+      -- MIN HP FLOOR (2026-09-11): a 2-pick Power needs 57.7% per leg and a 3-pick 55.0%. The sig
+      -- value falls back to 50 when neither final_board nor hp_board has a read, and a 50% leg
+      -- shipped inside a 3-pick (Dustin May) - below breakeven on its own. The slips are meant to
+      -- be placed as shown, not filtered by hand, so anything under 55 is dropped here.
       floored AS (SELECT * FROM one_per_player WHERE sig >= 55)
       SELECT 'v5|' || pid::text || '|' || prop || '|' || ln::text || '|less' AS board_row_id,
         'prizepicks_regular' AS source_key, gp AS game_pk, gt AS official_game_time_utc,
