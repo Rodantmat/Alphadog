@@ -31,8 +31,8 @@ MARKET_TO_PROP = {
     "player_threes": "threes_made", "player_blocks": "blocks", "player_steals": "steals",
     "player_turnovers": "turnovers",
     # combos live in the combos ladder, not the singles ladder - reported separately
-    "player_points_rebounds_assists": "pra", "player_points_rebounds": "pr",
-    "player_points_assists": "pa", "player_rebounds_assists": "ra", "player_blocks_steals": "stocks",
+    "player_points_rebounds_assists": "pra", "player_points_rebounds": "pts_reb",
+    "player_points_assists": "pts_ast", "player_rebounds_assists": "reb_ast", "player_blocks_steals": "stocks",
     "player_double_double": "double_double",
 }
 
