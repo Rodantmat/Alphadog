@@ -1,0 +1,153 @@
+{
+ "meta": {
+  "built_at": "2026-09-11T20:14:52Z",
+  "source": "wikipedia season pages",
+  "note": "in-season head coach changes for 2023-24 / 2024-25; merge into nba_coach_changes.json after review"
+ },
+ "seasons": {
+  "2023-24": [
+   {
+    "team": "Detroit Pistons",
+    "outgoing": "Dwane Casey",
+    "incoming": "Monty Williams",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Houston Rockets",
+    "outgoing": "Stephen Silas",
+    "incoming": "Ime Udoka",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Milwaukee Bucks",
+    "outgoing": "Mike Budenholzer",
+    "incoming": "Adrian Griffin",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Philadelphia 76ers",
+    "outgoing": "Doc Rivers",
+    "incoming": "Nick Nurse",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Phoenix Suns",
+    "outgoing": "Monty Williams",
+    "incoming": "Frank Vogel",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Toronto Raptors",
+    "outgoing": "Nick Nurse",
+    "incoming": "Darko Rajakovi\u0107",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Brooklyn Nets",
+    "outgoing": "Jacque Vaughn",
+    "incoming": "Kevin Ollie (interim)",
+    "section": "In-season",
+    "in_season": true
+   },
+   {
+    "team": "Milwaukee Bucks",
+    "outgoing": "Adrian Griffin",
+    "incoming": "Joe Prunty (interim)Doc Rivers",
+    "section": "In-season",
+    "in_season": true
+   },
+   {
+    "team": "Washington Wizards",
+    "outgoing": "Wes Unseld Jr.",
+    "incoming": "Brian Keefe (interim)",
+    "section": "In-season",
+    "in_season": true
+   }
+  ],
+  "2024-25": [
+   {
+    "team": "Brooklyn Nets",
+    "outgoing": "Kevin Ollie (interim)",
+    "incoming": "Jordi Fern\u00e1ndez",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Charlotte Hornets",
+    "outgoing": "Steve Clifford",
+    "incoming": "Charles Lee",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Cleveland Cavaliers",
+    "outgoing": "J. B. Bickerstaff",
+    "incoming": "Kenny Atkinson",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Detroit Pistons",
+    "outgoing": "Monty Williams",
+    "incoming": "J. B. Bickerstaff",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Los Angeles Lakers",
+    "outgoing": "Darvin Ham",
+    "incoming": "JJ Redick",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Phoenix Suns",
+    "outgoing": "Frank Vogel",
+    "incoming": "Mike Budenholzer",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Washington Wizards",
+    "outgoing": "Brian Keefe (interim)",
+    "incoming": "Brian Keefe",
+    "section": "Off-season",
+    "in_season": false
+   },
+   {
+    "team": "Sacramento Kings",
+    "outgoing": "Mike Brown",
+    "incoming": "Doug Christie (interim)",
+    "section": "In-season",
+    "in_season": true
+   },
+   {
+    "team": "Memphis Grizzlies",
+    "outgoing": "Taylor Jenkins",
+    "incoming": "Tuomas Iisalo (interim)",
+    "section": "In-season",
+    "in_season": true
+   },
+   {
+    "team": "Denver Nuggets",
+    "outgoing": "Michael Malone",
+    "incoming": "David Adelman (interim)",
+    "section": "In-season",
+    "in_season": true
+   },
+   {
+    "team": "San Antonio Spurs",
+    "outgoing": "Gregg Popovich",
+    "incoming": "Mitch Johnson (interim)",
+    "section": "In-season",
+    "in_season": true
+   }
+  ]
+ }
+}
