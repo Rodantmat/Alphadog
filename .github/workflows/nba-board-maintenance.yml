@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "shrink | derived"
+        description: "shrink | derived | map | curves | rungs | coverage"
         default: "derived"
+        required: false
+      date:
+        description: "slate date for coverage check"
+        default: "2026-03-15"
         required: false
 
 permissions:
