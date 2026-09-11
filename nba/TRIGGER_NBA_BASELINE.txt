@@ -1,5 +1,7 @@
 Trigger for nba-baseline.yml
 asof: 2026-03-15
 replay: 1
-last_triggered_utc: 2026-09-09T20:45:00Z
-trigger_reason: retry - patch anchor fixed (repo harness has a trailing comment on the walk-forward line); all 5 anchors verified against the repo harness
+last_triggered_utc: 2026-09-11T05:10:00Z
+trigger_reason: full replay with the injury report present (BT_INJURY) - produces singles + combos + periods.
+  Coverage check on 2026-03-15 showed 1,660 board legs (PRA/PR/PA/RA/stocks) with no baseline rows because
+  the combos half was never loaded, plus 60 points legs out of ladder range on high scorers.
