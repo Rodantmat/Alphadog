@@ -38,19 +38,25 @@ jobs:
         run: |
           A=$(grep -E '^asof:' nba/TRIGGER_NBA_BASELINE.txt 2>/dev/null | head -1 | sed 's/^asof:[[:space:]]*//')
           R=$(grep -E '^replay:' nba/TRIGGER_NBA_BASELINE.txt 2>/dev/null | head -1 | sed 's/^replay:[[:space:]]*//')
+          L=$(grep -E '^ladder_steps:' nba/TRIGGER_NBA_BASELINE.txt 2>/dev/null | head -1 | sed 's/^ladder_steps:[[:space:]]*//')
           [ -z "$A" ] && A=$(date -u +%F)
-          echo "asof=$A" >> $GITHUB_OUTPUT; echo "replay=${R:-0}" >> $GITHUB_OUTPUT; echo "ASOF=$A replay=${R:-0}"
+          echo "asof=$A" >> $GITHUB_OUTPUT; echo "replay=${R:-0}" >> $GITHUB_OUTPUT; echo "steps=${L:-10}" >> $GITHUB_OUTPUT
+          echo "ASOF=$A replay=${R:-0} ladder_steps=${L:-10}"
 
       - name: Build the baseline ladder (single-stat full-game props, per prop pair)
         env:
           BT_ASOF: ${{ steps.asof.outputs.asof }}
           BT_REPLAY: ${{ steps.asof.outputs.replay }}
+          BT_LADDER_STEPS: ${{ steps.asof.outputs.steps }}
         run: |
+          # NO "|| echo failed": a silent failure here is how the combos ladder went missing and left
+          # 44% of the 2026-03-15 board with no baseline probability. Fail loudly instead.
+          set -e
           for pair in points,rebounds assists,steals blocks,turnovers; do
-            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py || echo "pair $pair failed"
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
           done
           for pair in threes_made,fg3a fga,ftm personal_fouls; do
-            BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py || echo "pair $pair failed"
+            BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
           done
           python nba/baseline/build_combos_ladder.py || echo "combos failed"
           # PERIOD PROPS (certified/at-standard set; each call ~8 min): 1Q/1H/2H/4Q points, 1Q rebounds/assists/threes, 4Q OT-excluded (Sleeper)
