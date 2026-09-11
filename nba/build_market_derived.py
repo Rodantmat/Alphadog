@@ -129,7 +129,8 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     conn.execute("SET statement_timeout = 0")
     with conn.cursor() as cur:
-        print("building market_consensus ...", flush=True)
+        if step in ("consensus", "all"):
+            print("building market_consensus ...", flush=True)
         cur.execute(CONSENSUS_SQL)
         cur.execute("SELECT count(*), round(avg(books),2) FROM nba_market.market_consensus_new")
         n, avg_books = cur.fetchone()
