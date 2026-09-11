@@ -530,7 +530,114 @@ Owner asked for both. **Betr Picks**: web app `picks.betr.app` on GraphQL `api.f
 ### 6d. Ladders — every app's alternate lines (09-10, 06:25–06:50 UTC)
 Owner asked for the extra variations per leg on Sleeper and Underdog. **Underdog**: the web app's logic lives in lazily-loaded webpack chunks, so a new bridge job `scan_webpack_chunks` rebuilt the chunk list from `runtime.js` and grepped all 80 — chunk 4113 held `GET /v3/over_unders/{id}/alternate_projections`. It returns every rung (`is_main` flag, `stat_value`, `stable_id <ou>|alternate|<line>`) with both sides' `payout_multiplier`, prices, and two implied probabilities per side (`odds.fantasy.probability`, `odds.sportsbook.probability` — the pick'em shading factor served directly). Scraper pass 3c calls it for each line with `has_alternates`: **562 lines → 2,061 ladder legs**, output key `ladder`. Bonus endpoints found on the way: `/v1/over_unders/{id}/chart_data?metric=option_normalized_probability` (Underdog's own line-movement series at 20-minute steps), `chart_news_items`, `volume_ticker`, `beta/v2/live_over_under_lines`. **Sleeper**: `lines/available` is one line per player+stat (all "normal"), extra params are ignored, and its GraphQL (introspection open, snake_case) has no alternate-line query — only `available_line_promotions(include_boosts)` (boost promos). Sleeper prices its ladder through the per-side multipliers on the single line; nothing further exists to capture. PrizePicks (rungs in the feed), Fliff (separate proposals) and Betr (tiers) already carry their ladders.
 
-### 7. Pending, in order
+## 2026-09-11 — Grader, tiers, market layer, baseline depth, and the day-by-day parity directive
+
+Continues the 2026-09-09/10 entry. Everything below happened after the two-season board backfill finished.
+
+### 1. OWNER DIRECTIVE — day-by-day parity (the governing rule)
+Every daily factor must be backfilled **day by day**, producing exactly what the live pipeline would
+have produced that day from only what was available at that day's cutoff — baseline and enrichment
+alike. Without it there is no realistic back data. Full statement, factor inventory and the open work it
+creates: **`nba/NBA_DAILY_PARITY_AND_BACKFILL.md`**. Two leak risks it surfaces: A5 lineup change
+currently draws on box-score starters (post-tip truth), and D1 referee assignments are live-only and not
+archived. Also recorded: All-Star/All-NBA **blocked** (volatile, and selection status leaks backwards),
+national TV **not mined** (treat as a regular game).
+
+### 2. Outcome grader — built and run (`nba_market.board_outcomes`, 6.9M legs, 327 dates)
+`nba/grade_board_outcomes.py` + `nba-grader.yml`. Grades every line the board offered against the box
+score. Design rule: **leg truth and operator settlement are separate** — PrizePicks reverts the lineup on
+a DNP and tiers down on a tie, Underdog voids the leg; baking either into the leg result would make the
+data useless for the other. Careful cases handled explicitly: a DNP is never inferred from a join failure
+(three outcomes: confirmed scratch / known league-wide but not this season / unresolvable), zero minutes
+is a DNP not a 0-point under, exact landings on whole-number lines are pushes, alternates grade on their
+own line, double-double is Yes/No. The unmatched category immediately caught three board-vs-register
+name mismatches (Herb/Herbert Jones, Nic/Nicolas Claxton, Moe/Moritz Wagner) that would otherwise have
+graded 1,404 legs as scratches. Shared resolution now lives in `nba/nba_names.py` and
+`nba_ref.player_name_map` (5,212 players in Postgres) so the grader and the engine cannot drift.
+Storage note: grading is **per distinct leg**, not per bookmaker — an outcome does not depend on who
+offered the line, and per-book grading would have written ~22M rows of duplicated truth.
+
+### 3. PrizePicks tiers and the demon/goblin answer (`nba_market.board_tiers`, 2.2M rows)
+Anchor detection in both forms (explicit regular line; invisible switch point on the 42,600 ladders with
+no regular line), tier index outward in each direction. Validated by the switch-point symmetry
+(goblin T1 −0.95 / demon T1 +0.95). Joined to the grader over both seasons:
+
+| Tier | Legs | Hit rate | Payout boost needed |
+|---|---|---|---|
+| Goblin −3 / −2 / −1 | 31.6k / 100.7k / 254.2k | 74.1% / 68.7% / 61.9% | can give up ≤34% / 29% / 21% |
+| Standard | 359k | 48.8% | — (break-even 54.3–57.8%) |
+| Demon +1 / +2 / +3 | 255.2k / 149.5k / 74.8k | 32.9% / 21.3% / 14.8% | ≥1.48× / 2.30× / 3.31× |
+
+Conclusion: **goblins are −EV at every tier** (observed factors take 40–53% of payout for a 21–34%
+allowance); **demons beyond T1 are hopeless** (need 2.3–3.3× against a ~1.75–1.9× ceiling); **demon T1 is
+the only selection problem worth solving**. Standard legs hit 48.8%, so PrizePicks' house edge on the
+board is 5.5–9 points — the model must find mispriced legs, not merely pick well.
+
+### 4. Market layer — scoped to its role
+Owner: **market is a confidence adjuster and a ranking signal, not ground truth**; our probability comes
+from baseline + enrichment. Built `nba_market.rung_market` (1.06M priced rungs, 206 MB) — de-vigged book
+probability **at the DFS rungs only**, in monthly blocks. Two earlier attempts were wrong and were
+deleted: a same-line join found only 1.48 books per line (books post different lines), and a full
+`book_curves` materialisation over 15.4M rows cost 3 GB and nearly filled the disk. The scoped version
+averages 2.11 books per rung. Calibration check against 776k graded legs: book consensus tracks actual
+outcomes within ~1–2.5 points at every tier, which validates de-vig, rung matching and grading together.
+The growing gap at deeper demons is most likely an artifact of proportional de-vig overstating longshots
+— not worth chasing given the adjuster role.
+
+### 5. Baseline — combos gap found and closed, ladder deepened
+Per-player coverage against the real board (`nba/check_baseline_board_coverage.py`) showed **1,660 board
+legs (44% of the slate) with no baseline probability at all** — every combo market. Cause was not matrix
+width: the combos builder exists and is certified, but every step of `nba-baseline.yml` ended in
+`|| echo failed`, so a failed combos build left a green job and a singles-only artifact. Fixed: `set -e`
+everywhere, and the loader now **refuses a slate with no combo props**. Then the coverage check showed
+high-scorer demons running past the ladder ceiling, so `LADDER_STEPS` became a build parameter
+(`BT_LADDER_STEPS`, now 10) — applied in the singles recipe **and** the combos recipe, which is a
+separate certified file with its own constant (the first rebuild missed it: singles reached ±10 while
+combos stayed at ±6). Result: points out-of-range 60 → 8, pra 69 → 12; 18 props, 161 players.
+The replay also confirmed the **injury integration works** — 173 roster players became 161 once the
+day-of report was applied.
+
+### 6. Corrections worth recording
+- **My "duplicate rows" alarm was wrong, twice.** The baseline emits a full anchor ± rung matrix
+  (COMPASS fact 16: rung is a cell dimension), so several rungs landing on the same line for integer
+  stats is by design, not duplication and not a More/Less split. The loader collapsing to one row per
+  line is correct for board matching; only the `offset` column is then ambiguous.
+- **Underdog has no historical ladders** in the Odds API archive — 464,053 of 465,618 player-markets
+  have exactly one rung. Its tier economics must come from the live `alternate_projections` capture.
+  Sleeper has no alternate lines at all.
+- **Underdog payout arithmetic** (from the MLB side, verified against app screenshots and 19 placed
+  slips): payout = decimal(American) × 0.963; Sleeper = 1 + (decimal − 1) × 0.95; slip = product of legs.
+  The `higher_multiplier` / `lower_multiplier` fields are **modifiers, not payouts** — using them as
+  payouts produced a units error that reversed a conclusion (see `board_payout_conversion_rules`).
+- **Gemini failed a reproducibility test** on demon/goblin multipliers: five of six identical scenarios
+  returned different numbers on a second pass while being labelled "specific remembered source". No
+  Gemini-derived number is used anywhere.
+- **A loader bug emptied `baseline_ladder` for about an hour** — delete-then-insert outside a
+  transaction, with the insert failing on a NOT NULL column. Now atomic.
+
+### 7. Infrastructure
+- **Index shrink**: `board_snapshots` primary key (7 columns, 5,577 MB) replaced with a compact md5→uuid
+  unique index (1,001 MB) — 4 GB recovered, uniqueness preserved, and the successful build over 27.06M
+  rows proves **zero duplicates**. Database 25 GB → 21 GB.
+- **Disk incident**: the database hit its 20 GB cap mid-run and DigitalOcean flipped the primary
+  read-only, failing an insert. Auto-expansion to 30 GB resolved it. Lesson applied: derived tables are
+  now built **scoped and in monthly blocks**, never as one pass over the full table.
+- Bridge gained `raw_fetch` (method/body/headers/find), `raw_scan_scripts`, `scan_webpack_chunks`,
+  `json_facet`, `fliff_probe_codes`, `betr_board_pull`, `board_compare_parlay_vs_ours`.
+
+### 8. Board sources — all five live boards are ours
+PrizePicks (own producer), Sleeper, Underdog (incl. the `alternate_projections` ladder found by grepping
+the app's lazily-loaded webpack chunks), Fliff (own scraper via the app's `fc_mobile_api_public` RPC — no
+login needed), Betr (bridge job with the owner's session token, twice daily). Chalkboard is app-only and
+deferred pending a phone-proxy capture. ParlayAPI is the single fallback; owner downgraded it to Starter
+($5/mo, 20k credits) since all boards are ours.
+
+### 9. Credits and coverage
+Two-season board backfill final: **2,468 events, ~5,115 snapshots, 27.06M rows, 2,148,300 credits** of
+5M. Early-slate rule added (window = 2:45 PM PT, or **first tip − 2h** when the slate starts before
+3:45 PM PT) after 57 window snapshots were found to have been taken after tip; all repaired, zero
+post-tip windows remain, 9 snapshots unrecoverable (0.18%).
+
 0. ~~Overnight jobs~~ **VERIFIED 05:30Z**: injury report 2025-26 = 176/176 days, 919,949 rows, 7 shards; 2024-25 = 174 days, 418,071 rows, 7 shards (fewer intra-day re-publishes that season — spot-check per month); starters 2023-24 = 32,328 rows, 1,228/1,230 (timeouts on 0022300079, 0022300721 — rerun); officials 2023-24 = 3,690 rows, 1,230/1,230. Every enrichment factor now has its two-season backfill except the boards (waiting on the Odds API upgrade). Status snapshot in config `enrichment_backfill_status_2026_09_10`.
 1. Owner upgrades the Odds API plan → run `odds_api_board_backfill` for both seasons (~1–2 h, resumable) → confirm rows.
 2. Verify overnight jobs: injury 2025-26 tail + 2024-25 shards; starters/officials 2023-24.
