@@ -5029,6 +5029,13 @@ async function autoSelectStrategyV3Legs(env) {
           --  4-pick Power (built downstream). 6-pick was -4.2% on the clean window: six 93% legs
           --  sweep 65%, four sweep 75%.
           --  walks_allowed HARD FILTER: last-3-start BB/BF >= 0.08 AND opponent 30-day walk rate
+          --  SAFETY 2026-09-11: walks_allowed cap cut 3 -> 1 leg per slip. The cell ran 89.3% (289
+          --  legs) through Sep 4 then 80.0% (40 legs) Sep 5-10. At 1.1892 that is +6.2% EV at 89%
+          --  but -5% at 80%, and 40 legs cannot separate the two. A season-BB >= 7% floor was
+          --  tested to exclude elite-control arms (deGrom and Cornelio both walked 0 after a noisy
+          --  3-start window) and REJECTED: it drops 54 legs that hit 90.7% and moves the overall
+          --  rate 89.3% -> 88.9%, i.e. nothing. Capping exposure is the honest response to an
+          --  uncertain cell; revisit the filter once the recent sample passes ~120 legs.
           --  >= 0.085. 21-for-21 on corrected data. As a hard filter (not a boost) it moved the
           --  4-pick +29.5% -> +39.5% and the CI floor +3.6% -> +8.9%.
           --  Workload cap (outs<14) tested on goblin unders: NO lift (ER t2/less 73.7% capped vs
