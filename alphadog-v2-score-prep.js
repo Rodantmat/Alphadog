@@ -1273,7 +1273,28 @@ function prepareUnderdogRows(rows, ref, calendar, batchId, now) {
     // Same reasoning as Sleeper: Underdog's commence_time (via the same ParlayAPI structure)
     // can be a provider placeholder. Calendar grounding must use official_date + raw team pair,
     // then replace source time with the internal MLB calendar time.
-    const cal = resolveCalendarByTeamNames(calendar, rawDate, rawHome, rawAway, null);
+    let cal = resolveCalendarByTeamNames(calendar, rawDate, rawHome, rawAway, null);
+    // REAL FIX (root-caused via direct investigation, master-run 5pm 2026-09-10): Underdog's raw
+    // payload never includes home_team/away_team either (confirmed live), so the pair-based
+    // resolution above always returned calendar_unresolved and underdog_rows had been 0 in
+    // board_prepared_current on every run. Underdog does sometimes carry game_title ("AWAY @ HOME",
+    // e.g. "KC @ BOS") - try parsing that into a team pair first; if game_title is absent or still
+    // unresolved, fall back to single-team + date resolution like Sleeper. Neither fallback
+    // overrides a successful pair match.
+    if (!cal.game) {
+      const titleMatch = /^\s*([A-Za-z.]+)\s*@\s*([A-Za-z.]+)\s*$/.exec(safeStr(raw.game_title));
+      if (titleMatch) {
+        const titleCal = resolveCalendarByTeamNames(calendar, rawDate, titleMatch[2], titleMatch[1], null);
+        if (titleCal.game) cal = titleCal;
+      }
+    }
+    if (!cal.game) {
+      const singleTeam = safeStr(raw.team || r.team);
+      if (singleTeam) {
+        const singleCal = resolveCalendarBySingleTeam(calendar, rawDate, singleTeam);
+        if (singleCal.game) cal = singleCal;
+      }
+    }
     const playerName = safeStr(r.player_name || raw.player);
     const preliminaryUnderdogPropKey = safeStr(r.canonical_prop_key || raw.market);
     const underdogComboMarket = isComboMarketRow({ playerName, propKey: preliminaryUnderdogPropKey, payloadJson: r.row_payload_json, rawJson: r.raw_line_json });
