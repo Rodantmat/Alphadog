@@ -126,29 +126,30 @@ def build_event_map(conn):
 
 
 def main():
+    step = os.environ.get("DERIVED_STEP", "all")
     conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
     conn.execute("SET statement_timeout = 0")
-    with conn.cursor() as cur:
-        if step in ("consensus", "all"):
+    if step in ("consensus", "all"):
+        with conn.cursor() as cur:
             print("building market_consensus ...", flush=True)
-        cur.execute(CONSENSUS_SQL)
-        cur.execute("SELECT count(*), round(avg(books),2) FROM nba_market.market_consensus_new")
-        n, avg_books = cur.fetchone()
-        print(f"market_consensus rows={n} avg_books={avg_books}", flush=True)
-        if n == 0:
-            raise SystemExit("ABORT: consensus is empty")
-        cur.execute("""DROP TABLE IF EXISTS nba_market.market_consensus;
-                       ALTER TABLE nba_market.market_consensus_new RENAME TO market_consensus;
-                       CREATE INDEX market_consensus_idx ON nba_market.market_consensus
-                         (game_date, player, market_key, line, snapshot_label)""")
-        print("consensus done", flush=True)
-    print("building event_game_map ...", flush=True)
-    mapped = build_event_map(conn)
-    print("event_game_map rows:", mapped, flush=True)
-    with conn.cursor() as cur:
-        cur.execute("SELECT count(DISTINCT event_id) FROM nba_market.board_snapshots")
-        total = cur.fetchone()[0]
-    print(f"coverage: {mapped} of {total} events mapped", flush=True)
+            cur.execute(CONSENSUS_SQL)
+            cur.execute("SELECT count(*), round(avg(books),2) FROM nba_market.market_consensus_new")
+            n, avg_books = cur.fetchone()
+            print(f"market_consensus rows={n} avg_books={avg_books}", flush=True)
+            if n == 0:
+                raise SystemExit("ABORT: consensus is empty")
+            cur.execute("""DROP TABLE IF EXISTS nba_market.market_consensus;
+                           ALTER TABLE nba_market.market_consensus_new RENAME TO market_consensus;
+                           CREATE INDEX market_consensus_idx ON nba_market.market_consensus
+                             (game_date, player, market_key, line, snapshot_label)""")
+            print("consensus done", flush=True)
+    if step in ("map", "all"):
+        print("building event_game_map ...", flush=True)
+        mapped = build_event_map(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(DISTINCT event_id) FROM nba_market.board_snapshots")
+            total = cur.fetchone()[0]
+        print(f"coverage: {mapped} of {total} events mapped", flush=True)
     conn.close()
 
 
