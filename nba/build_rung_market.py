@@ -30,8 +30,9 @@ CREATE TABLE IF NOT EXISTS nba_market.rung_market (
 CREATE INDEX IF NOT EXISTS rung_market_idx ON nba_market.rung_market (game_date, player, market, line, snapshot_label);
 """
 
+DELETE_BLOCK = "DELETE FROM nba_market.rung_market WHERE game_date >= %(d0)s AND game_date < %(d1)s;"
+
 BLOCK = f"""
-DELETE FROM nba_market.rung_market WHERE game_date >= %(d0)s AND game_date < %(d1)s;
 INSERT INTO nba_market.rung_market (game_date, snapshot_label, player, market, line, p_over_book, p_over_sd, books)
 WITH rungs AS (
   SELECT DISTINCT game_date, snapshot_label, player, base_market AS market, line
