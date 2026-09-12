@@ -66,6 +66,13 @@ jobs:
           RATE_TEST_SEASON: "2025-26"
           RATE_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
         run: python nba/fit_rate_response.py
+      - name: Per-prop A2 value test
+        if: ${{ github.event.inputs.allocator == '4' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RATE_TEST_SEASON: ${{ github.event.inputs.seasons || '2025-26' }}
+          RATE_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
+        run: python nba/test_a2_per_prop.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
