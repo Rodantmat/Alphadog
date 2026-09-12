@@ -95,6 +95,13 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           N1_SEASONS: "2024-25,2025-26"
         run: python nba/measure_n1_status_resolution.py
+      - name: A2 under window-time information
+        if: ${{ github.event.inputs.allocator == '8' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          A2W_TEST_SEASON: ${{ github.event.inputs.seasons || '2025-26' }}
+          A2W_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
+        run: python nba/test_a2_window_information.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
