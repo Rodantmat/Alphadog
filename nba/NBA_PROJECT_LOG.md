@@ -647,6 +647,65 @@ post-tip windows remain, 9 snapshots unrecoverable (0.18%).
 
 ---
 
+## 2026-09-12 — Day-by-day baseline complete; game lines; event map; stage assignment
+
+### 1. Stage assignment by publish time (owner directive)
+Anything knowable before 2:30 PM PT is computed in **phase 1** (baseline/delta); the **phase 2** window
+(2:30 → first tip) handles only the day-of report, projected-lineup delta, the 2:45 board and market, and
+rescores only the legs those touch. Per-factor publish-time table in `NBA_DAILY_PARITY_AND_BACKFILL.md` §7.
+Referee assignments post in the morning → **baseline stage** (correcting my earlier "target-only" framing:
+the box-score crew is a faithful reconstruction of what was knowable). Registry column `compute_stage`
+added: 15 phase-1, 17 phase-2, 2 live-only, 2 not-mined. Owner: the overnight run may take hours (fine);
+precompute scenarios for the late inputs and select at 2:30. Infra limits sized: GitHub repo is PUBLIC
+(Actions free/unlimited; 20 concurrent jobs), Cloudflare $5 plan untouched (no compute there), Postgres was
+the bottleneck → upgraded to 1 vCPU / 2 GB / 47 connections; MLB `backtest` schema (1,177 tables, 7 GB)
+dropped after verifying no live worker reads it: DB 21 → 15 GB.
+
+### 2. Day-by-day baseline history — `nba_score.baseline_history`, **29 stat types × 2 seasons = 18.78M rows**
+The baseline was certified on both seasons but its per-leg, per-day probabilities were never STORED — only
+calibration summaries survived; the production table held one slate. Owner: "that should have been done";
+correct. Built `nba/baseline/build_baseline_history.py` (singles), `build_combos_history.py`,
+`build_periods_history.py` — patchers over the three certified recipes that keep player/game identity and
+emit every test-season game-day after Platt calibration. One run per prop pair per season (the harness
+already scores every game-day from history strictly before it), loaded by `nba/load_baseline_history.py`.
+Patch anchors are asserted, which caught three shape differences between the recipes (the singles recipe
+already keeps PLAYER_ID/GAME_ID; combos and periods do not; the leg-level block is two lines in singles,
+one in combos/periods). A `BT_TRAIN` omission put 2024-25 inside its own training set and OOM-killed the
+runner at ~117 s twice — training seasons are now explicit per season. Coverage of the real PrizePicks
+board season-wide with the shared name resolution: **89.6% of 634k legs** (name-unresolved ≈ 0; residual =
+players with no row that day ~5% and points-combo demons beyond ±10 ~5%).
+Live PrizePicks menu: added **fgm, fta, oreb, dreb** to the singles recipe (all three per-prop tables:
+config, bands, factor features). fgm/fta/dreb **certified on both seasons** (worst cells ≤ ±3.5 pp);
+**oreb FAILED** (LOW/more/70–75: pred 74.3 vs actual 53.1, −21 pp, n=542) → rows deleted, needs retuning.
+Periods: all 8 sets both seasons, **152 of 163 game-days** (quarter files lack ~11 dates). Dunks not built
+(needs play-by-play). Fantasy-score formula verified identical for Underdog (official help center) and
+PrizePicks (1/1.2/1.5/3/3/−1) — DraftKings' table is the trap.
+
+### 3. Market and reference tables
+`nba_market.game_lines_snapshots` — h2h/spread/total at **morning (08:00 PT) and window (14:45 PT or first
+tip − 2h)**, 10 books, both seasons, 658 snapshots / 307,604 rows, 0 errors (ParlayAPI holds closing only).
+`nba_market.event_game_map` — Odds API event → NBA game id, **2,454 of 2,556 (96%)**, built from the game
+logs' MATCHUP field (first attempt 0%: `nba_teams_current.json` is EMPTY → static 30-team map; second
+47%: "GSW vs. LAC" parse left a leading space and the first broken row got locked in).
+Two-way contract status **derived from the injury reports** ("G League - Two-Way" reason, 76 players / 29
+teams in one month) — as-of correct by construction; no roster scrape needed.
+
+### 4. Corrections recorded
+Baseline "certified" ≠ "stored day by day" (owner caught it). Referees are knowable pre-window. My sizing
+of the board was low: PrizePicks averages **4,503 legs/day** (max 8,700) in the archive; with Less on
+goblins/demons and five apps live, plan for 10–20k board legs/day; the phase-1 matrix is ~72k
+leg-probabilities/day regardless. Live board archiving is NOT solved by the scrapers (they overwrite
+`*_current.json`) — a Postgres archiver at window + close is an open build.
+
+### 5. Open after this entry
+Builds: day-by-day enrichment factor tables (derive list), A5 projected-lineup proxy, M1 wiring, D1 referee
+live capture, live board archiver, scenario precompute, freshness gates. Small: oreb retune, periods'
+missing dates, dunks (owner call), 3 low-confidence coach dates, empty teams file, Sleeper boost promos,
+ParlayAPI usage logging, fantasy-score check on a live leg in week 1. Owner: Sleeper alt-lines capture,
+Chalkboard proxy capture, PrizePicks calibration slips, Betr token (~Oct 10), Cowork schedule for Betr.
+
+---
+
 ### Pending list from the 2026-09-09/10 entry (kept for history)
 0. ~~Overnight jobs~~ **VERIFIED 05:30Z**: injury report 2025-26 = 176/176 days, 919,949 rows, 7 shards; 2024-25 = 174 days, 418,071 rows, 7 shards (fewer intra-day re-publishes that season — spot-check per month); starters 2023-24 = 32,328 rows, 1,228/1,230 (timeouts on 0022300079, 0022300721 — rerun); officials 2023-24 = 3,690 rows, 1,230/1,230. Every enrichment factor now has its two-season backfill except the boards (waiting on the Odds API upgrade). Status snapshot in config `enrichment_backfill_status_2026_09_10`.
 1. Owner upgrades the Odds API plan → run `odds_api_board_backfill` for both seasons (~1–2 h, resumable) → confirm rows.
