@@ -39,7 +39,8 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 | 9 | Market + boards: ParlayAPI game lines 2 seasons in Postgres; The Odds API history verified (PP+UD boards) and the two-snapshot board puller built (waits on the $119 plan); all four live board sources decided on same-moment evidence (PP, Sleeper, Underdog = OUR scrapers; Fliff = ParlayAPI) | 09-10 | log entry 09-09/10 §5–§6; config `board_sources_decision`, `board_backfill_odds_api`, `market_probe_results_2026_09_10` |
 | 10 | Grader + tiers + market adjuster + baseline depth: `board_outcomes` (6.9M graded legs), `board_tiers` (2.2M, demon/goblin answered), `rung_market` (1.06M priced rungs), baseline at ±10 rungs with combos; index shrink 25→21 GB | 09-11 | log entry 2026-09-11; COMPASS facts 60–65 |
 | 11 | **Day-by-day parity directive** — every daily factor must be backfilled exactly as the live pipeline would produce it; a factor is not done until that exists | 09-11 | `NBA_DAILY_PARITY_AND_BACKFILL.md`; COMPASS facts 58–59 |
-| — | Enrichment engine → scoring engine (hit probability → score → confidence → final board) → slip engine (copula) | next | requires the day-by-day replay harness first |
+| 12 | **Day-by-day baseline history** — 29 stat types × 2 seasons, 18.78M rows; game lines at morning + window; event→game map; stage assignment by publish time; DB upgraded, MLB backtest dropped | 09-12 | log entry 2026-09-12; COMPASS facts 66–69 |
+| — | **Enrichment build**: day-by-day factor tables, A5 lineup proxy, M1 wiring, referee capture, live board archiver → scenario precompute → scoring engine (hit probability → score → confidence → final board) → slip engine | next | `NBA_DAILY_PARITY_AND_BACKFILL.md` §4, §7 |
 
 ---
 
