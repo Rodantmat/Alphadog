@@ -60,7 +60,7 @@ PLAYER_L0 = os.environ.get("BT_PLAYER_L0", "0") == "1"   # REJECTED on data 2026
 L0_MIN, L0_K = 40, 40.0
 # Ordering strength lambda in shift mode. Evidence per prop: threes 1.0; blocks/steals/ftm 0.5; turnovers/fouls
 # tested at 0.5 and 0.25 and were WORSE than replacement -> stay replacement.
-SHIFT_LAMBDA = {p: float(v) for p, v in (kv.split(":") for kv in os.environ.get("BT_SHIFT_LAMBDA", "threes_made:1.0,blocks:0.5,steals:0.5,ftm:0.5").split(","))}
+SHIFT_LAMBDA = {p: float(v) for p, v in (kv.split(":") for kv in os.environ.get("BT_SHIFT_LAMBDA", "threes_made:1.0,blocks:0.5,steals:0.5,ftm:0.5,oreb:0.5").split(","))}
 SLUG = {s: s.replace("-", "_") for s in SEASONS}
 BLOWOUT_MARGIN = 20; COMPETITIVE_MARGIN = 15
 MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6
