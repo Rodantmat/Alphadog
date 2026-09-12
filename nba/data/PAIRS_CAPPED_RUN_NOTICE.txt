@@ -1,0 +1,9 @@
+Marker: the 2025-26 pair snapshots committed at 2026-09-12T06:5x were built with a LEAGUE-WIDE
+leaguedashlineups call, which silently caps at 2,000 rows. That drops exactly the low-minute teammate
+pairs the redistribution model has to account for — the same class of error (missing receivers) that
+invalidated absence panel v1 and v2.
+
+The scraper now pulls PER TEAM (30 calls per snapshot). The capped files must be deleted and rebuilt;
+the scraper skips any snapshot file that already exists, so they cannot simply be overwritten.
+
+Delete: nba/data/nba_pairs_2025_26_*.json  (all 2025-26 weekly snapshots from that first run)
