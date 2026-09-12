@@ -172,8 +172,26 @@ def main():
     tr, te = frames[tr_s], frames[te_s]
     tr = tr[(tr["MIN"] >= 6) & (tr["base_min"] >= 6)]
     te = te[(te["MIN"] >= 6) & (te["base_min"] >= 6)]
-    print(f"\ntrain {len(tr):,} | test {len(te):,} | mean q_ratio {te['q_ratio'].mean():.4f} "
-          f"| share of exposure missing {te['share_missing'].mean():.3f}\n", flush=True)
+    sm, qr = te["share_missing"].mean(), te["q_ratio"]
+    print(f"\ntrain {len(tr):,} | test {len(te):,} | mean q_ratio {qr.mean():.4f} "
+          f"| share of exposure missing {sm:.3f} | q_ratio sd {qr.std():.4f}", flush=True)
+
+    # SANITY GATE - v2 reported verdicts on a broken feature (93% of exposure "missing" because the
+    # exposure vector spanned the whole league). Refuse to grade a degenerate feature.
+    problems = []
+    if sm > 0.60:
+        problems.append(f"share_missing {sm:.2f} is implausibly high - exposure scoping is wrong")
+    if qr.std() < 0.005:
+        problems.append(f"q_ratio sd {qr.std():.4f} - the feature barely varies, nothing to fit")
+    if len(te) < 2000:
+        problems.append(f"only {len(te)} test rows - too thin to grade")
+    if problems:
+        print("\nFEATURE FAILS SANITY GATE, verdicts suppressed:", flush=True)
+        for p in problems:
+            print(f"  - {p}", flush=True)
+        conn.close()
+        return
+    print(f"  sanity gate passed (share_missing {sm:.3f}, q_ratio sd {qr.std():.4f})\n", flush=True)
 
     print(f"{'prop':<14}{'n':>8}{'MAE A2':>10}{'MAE +B4v2':>11}{'gain':>9}   verdict")
     kept = []
