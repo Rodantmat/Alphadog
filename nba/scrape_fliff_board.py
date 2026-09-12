@@ -166,8 +166,8 @@ def main():
                         legs.append({
                             "sport": sport, "conflict_fkey": fkey, "event": f"{c.get('away_team_name')} @ {c.get('home_team_name')}", "event_start_utc": c.get("event_start_timestamp_utc"), "live": bool(c.get("live_status") not in (None, 733)) if False else (fkey.endswith("inplay") if fkey else False),
                             "market": m.get("visual_name"), "market_fkey": m.get("market_fkey"), "market_type": m.get("type"), "subfeed_code": m.get("subfeed_code"), "sgp_mode": m.get("sgp_mode"),
-                            "player": (g.get("group_tag") or "").split("#")[0].split("_", 1)[-1] if g.get("player_fkey") else "", "player_fkey": g.get("player_fkey") or p.get("player_fkey") or "", "group_tag": g.get("group_tag"),
-                            "selection": p.get("t_141_selection_name"), "line": p.get("t_142_selection_param_1"), "coeff_american": p.get("coeff"), "coeff_decimal": p.get("eu_coeff"), "prev_coeff_american": p.get("prev_coeff"),
+                            "player": _player, "player_fkey": _pf, "group_tag": g.get("group_tag"),
+                            "selection": p.get("t_141_selection_name"), "line": _line, "coeff_american": p.get("coeff"), "coeff_decimal": p.get("eu_coeff"), "prev_coeff_american": p.get("prev_coeff"),
                             "coeff_updated_utc": p.get("coeff_updated_utc"), "status": p.get("status"), "proposal_fkey": p.get("proposal_fkey"), "revision_id": p.get("revision_id"), "boosted": bool(p.get("sk_boosted_offer")),
                         })
             time.sleep(0.5)
