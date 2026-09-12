@@ -115,16 +115,30 @@ def rows_sleeper(doc, gd, label):
 
 def rows_generic(doc, app, gd, label):
     out = []
+    skipped = 0
     for l in doc.get("legs") or []:
         line = l.get("line")
-        if line is None or not l.get("player"):
+        if line in (None, "") or not l.get("player"):
+            skipped += 1
             continue
+        try:
+            line = float(line)
+        except (TypeError, ValueError):
+            skipped += 1          # Fliff sends '' on team markets with no numeric line - skip the leg,
+            continue              # never abort the archive (an exception here lost every later app)
         mk = "player_" + str(l.get("stat") or l.get("market") or "").lower().replace(" ", "_")
         side = (l.get("selection") or l.get("side") or "Over").title()
         price = l.get("coeff_american") or l.get("american") or l.get("price")
-        out.append((gd, ev(app, gd, l, "conflict_fkey", "event_id", "game_id", "event"), label, doc.get("meta", {}).get("fetched_at"), app, mk, l["player"],
-                    side if side in ("Over", "Under") else "Over", float(line),
-                    float(price) if price is not None else None, None, None, None, l.get("event_start_utc")))
+        try:
+            price = float(price) if price not in (None, "") else None
+        except (TypeError, ValueError):
+            price = None
+        out.append((gd, ev(app, gd, l, "conflict_fkey", "event_id", "game_id", "event"), label,
+                    doc.get("meta", {}).get("fetched_at"), app, mk, l["player"],
+                    side if side in ("Over", "Under") else "Over", line,
+                    price, None, None, None, l.get("event_start_utc")))
+    if skipped:
+        print(f"  {app}: skipped {skipped} legs with no usable line", flush=True)
     return out
 
 
