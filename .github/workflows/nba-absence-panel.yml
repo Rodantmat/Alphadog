@@ -11,6 +11,10 @@ on:
         description: "comma-separated (2023-24 has no injury archive)"
         default: "2024-25,2025-26"
         required: false
+      sample_dates:
+        description: "test on the first N dates only (0 = full season)"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
