@@ -108,7 +108,7 @@ def rows_sleeper(doc, gd, label):
             m = l.get(key)
             if m is None:
                 continue
-            out.append((gd, None, label, doc.get("meta", {}).get("fetched_at"), "sleeper", mk,
+            out.append((gd, ev("sleeper", gd, l, "game_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "sleeper", mk,
                         l["player"], side, float(l["line"]), None, float(m), None, None, None))
     return out
 
