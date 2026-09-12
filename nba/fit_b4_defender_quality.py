@@ -104,6 +104,9 @@ def main():
         if sample:
             dates = dates[:sample]
         mg = {d: g for d, g in m.groupby("GAME_DATE")}
+        # rolling record of who has played for each team recently, so "absent" means a rotation player
+        # who did not suit up tonight - not simply anyone who has ever faced this offensive player
+        opp_prior_roster = defaultdict(set)
         for gd in dates:
             day = logs[logs["GAME_DATE"] == gd]
             for gid, gdf in day.groupby("GAME_ID"):
