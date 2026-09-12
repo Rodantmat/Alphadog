@@ -41,4 +41,4 @@ jobs:
           PANEL_SEASONS: ${{ github.event.inputs.seasons || '2024-25,2025-26' }}
           PANEL_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
           SHRINK_K: '5'
-        run: python nba/build_absence_panel_v3.py
+        run: python nba/build_redistribution_panel.py
