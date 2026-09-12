@@ -148,6 +148,21 @@ def main():
                 raw_markets.append(m)
                 for g in m.get("groups") or []:
                     for p in g.get("proposals") or []:
+                        # PLAYER: the fkey can sit on the proposal rather than the group, and group_tag
+                        # carries the name either way ("1881_Yandy Diaz#1.5"). Gating on g["player_fkey"]
+                        # alone blanked EVERY player name (found 2026-09-12: all 4,592 legs had player="").
+                        _gt = str(g.get("group_tag") or "")
+                        _pf = g.get("player_fkey") or p.get("player_fkey") or ""
+                        _player = _gt.split("#")[0].split("_", 1)[-1] if (_pf or "_" in _gt) else ""
+                        # LINE: t_142_selection_param_1 is empty on many markets; the number is then the
+                        # suffix of group_tag ("...#1.5") or embedded in the selection name.
+                        _line = p.get("t_142_selection_param_1")
+                        if _line in (None, ""):
+                            if "#" in _gt:
+                                _line = _gt.rsplit("#", 1)[-1]
+                            else:
+                                _m = re.search(r"(-?\d+(?:\.\d+)?)", str(p.get("t_141_selection_name") or ""))
+                                _line = _m.group(1) if _m else ""
                         legs.append({
                             "sport": sport, "conflict_fkey": fkey, "event": f"{c.get('away_team_name')} @ {c.get('home_team_name')}", "event_start_utc": c.get("event_start_timestamp_utc"), "live": bool(c.get("live_status") not in (None, 733)) if False else (fkey.endswith("inplay") if fkey else False),
                             "market": m.get("visual_name"), "market_fkey": m.get("market_fkey"), "market_type": m.get("type"), "subfeed_code": m.get("subfeed_code"), "sgp_mode": m.get("sgp_mode"),
