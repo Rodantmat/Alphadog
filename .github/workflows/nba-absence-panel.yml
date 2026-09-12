@@ -58,6 +58,14 @@ jobs:
           ALLOC_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
           ALLOC_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '60' }}
         run: python nba/fit_minutes_allocator.py
+      - name: Rate response + end-to-end points test
+        if: ${{ github.event.inputs.allocator == '3' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RATE_TRAIN_SEASON: "2024-25"
+          RATE_TEST_SEASON: "2025-26"
+          RATE_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
+        run: python nba/fit_rate_response.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
