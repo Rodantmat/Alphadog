@@ -112,29 +112,35 @@ def main():
                     continue
                 for t in teams:
                     opp = [x for x in teams if x != t][0]
-                    opp_available = team_of_game.get((gid, opp), set())
+                    opp_roster = team_of_game.get((gid, opp), set())          # played tonight
+                    opp_absent = opp_prior_roster.get(opp, set()) - opp_roster  # on the team recently, not tonight
                     for r in gdf[gdf["TEAM"] == t].itertuples(index=False):
                         ex = expo.get(r.PLAYER_ID)
                         if not ex:
                             continue
-                        # defenders this player has faced, split by whether they are available tonight
-                        tot_all = sum(v for v in ex.values())
+                        # SCOPE THE EXPOSURE TO TONIGHT'S OPPONENT. v2's bug: a player's historical
+                        # defenders span the whole league, so 93% of them were "missing" simply because
+                        # they play for other teams - q_ratio then compared a league average against
+                        # tonight's opponent, which is a different quantity entirely.
+                        ex_opp = {d: w for d, w in ex.items() if d in opp_roster or d in opp_absent}
+                        tot_all = sum(ex_opp.values())
                         if tot_all <= 0:
                             continue
+
                         def q(pid):
                             a = dq.get(pid)
                             if not a or a[1] <= 0:
                                 return None
                             return a[0] / a[1]
                         qs_all, ws_all, qs_av, ws_av = [], [], [], []
-                        for d_id, w in ex.items():
+                        for d_id, w in ex_opp.items():
                             qq = q(d_id)
                             if qq is None:
                                 continue
                             qs_all.append(qq); ws_all.append(w)
-                            if d_id in opp_available:
+                            if d_id in opp_roster:
                                 qs_av.append(qq); ws_av.append(w)
-                        if len(qs_all) < 3 or not ws_av or sum(ws_av) <= 0:
+                        if len(qs_all) < 2 or not ws_av or sum(ws_av) <= 0:
                             continue
                         q_full = float(np.average(qs_all, weights=ws_all))
                         q_act = float(np.average(qs_av, weights=ws_av))
