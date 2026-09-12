@@ -103,13 +103,44 @@ def main():
         q = latest[latest["status_u"] == "QUESTIONABLE"]
         # GROUNDING CHECK: P(plays) here is P(MIN > 0), which for fringe players conflates "was
         # available" with "was used". A rotation player listed AVAILABLE should be ~1.0; a deep-bench
-        # or two-way player can be available and still DNP-CD. Split by the player's own as-of minutes
-        # so the status probabilities are not distorted by roster role.
-        base_min = logs.sort_values("GAME_DATE").groupby("PLAYER_ID")["MIN"].apply(
-            lambda s: s.shift(1).rolling(10, min_periods=3).mean())
-        logs2 = logs.assign(base_min=base_min.values)
-        bm = {(r.GAME_DATE, r.PLAYER_ID): r.base_min for r in logs2.itertuples(index=False)}
-        latest["base_min"] = [bm.get((d, p), np.nan) for d, p in zip(latest["game_date"], latest["pid"])]
+        # or two-way player can be available and still DNP-CD.
+        #
+        # The first attempt at this split was WRONG: base_min came from a rolling mean over the player's
+        # own game-log rows, which exist ONLY for games he played. Every report row where he sat got NaN
+        # and fell out of both buckets, so both were conditioned on having played and every rate was
+        # forced to 1.000 by construction. The baseline must come from a source that survives a
+        # non-appearance: his last known minutes level BEFORE the game date, carried forward.
+        lg = logs.sort_values("GAME_DATE")[["GAME_DATE", "PLAYER_ID", "MIN"]].copy()
+        lg["roll"] = lg.groupby("PLAYER_ID")["MIN"].transform(lambda s: s.shift(1).rolling(10, min_periods=3).mean())
+        carry = {}
+        last_level = {}
+        for r in lg.itertuples(index=False):
+            if np.isfinite(r.roll):
+                last_level[r.PLAYER_ID] = float(r.roll)
+            carry[(r.GAME_DATE, r.PLAYER_ID)] = last_level.get(r.PLAYER_ID, np.nan)
+        # for a report row with no log row that day, use the most recent level known before that date
+        levels_by_player = defaultdict(list)
+        for (d, p), v in carry.items():
+            if np.isfinite(v):
+                levels_by_player[p].append((d, v))
+        for p in levels_by_player:
+            levels_by_player[p].sort()
+
+        def level_before(pid, d):
+            arr = levels_by_player.get(pid)
+            if not arr:
+                return np.nan
+            lo, hi, out = 0, len(arr) - 1, np.nan
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                if arr[mid][0] < d:
+                    out = arr[mid][1]; lo = mid + 1
+                else:
+                    hi = mid - 1
+            return out
+        latest["base_min"] = [level_before(p, d) for d, p in zip(latest["game_date"], latest["pid"])]
+        have = latest["base_min"].notna().mean()
+        print(f"\n  baseline attached to {have:.1%} of report rows (must be well above the share that played)")
         rot = latest[latest["base_min"] >= 15]
         print(f"\n  ROTATION PLAYERS ONLY (as-of baseline >= 15 min) - the population the allocator cares about:")
         rs = rot.groupby("status_u")["played"].agg(["count", "mean"])
