@@ -101,6 +101,26 @@ def main():
             print(f"{st[:22]:<22}{int(r['count']):>8,}{r['mean']:>11.3f}   {ld if ld is not None else '-'}")
 
         q = latest[latest["status_u"] == "QUESTIONABLE"]
+        # GROUNDING CHECK: P(plays) here is P(MIN > 0), which for fringe players conflates "was
+        # available" with "was used". A rotation player listed AVAILABLE should be ~1.0; a deep-bench
+        # or two-way player can be available and still DNP-CD. Split by the player's own as-of minutes
+        # so the status probabilities are not distorted by roster role.
+        base_min = logs.sort_values("GAME_DATE").groupby("PLAYER_ID")["MIN"].apply(
+            lambda s: s.shift(1).rolling(10, min_periods=3).mean())
+        logs2 = logs.assign(base_min=base_min.values)
+        bm = {(r.GAME_DATE, r.PLAYER_ID): r.base_min for r in logs2.itertuples(index=False)}
+        latest["base_min"] = [bm.get((d, p), np.nan) for d, p in zip(latest["game_date"], latest["pid"])]
+        rot = latest[latest["base_min"] >= 15]
+        print(f"\n  ROTATION PLAYERS ONLY (as-of baseline >= 15 min) - the population the allocator cares about:")
+        rs = rot.groupby("status_u")["played"].agg(["count", "mean"])
+        for st, r in rs[rs["count"] >= 30].sort_values("count", ascending=False).iterrows():
+            print(f"    {st[:22]:<22}{int(r['count']):>7,}{r['mean']:>9.3f}")
+        fringe = latest[latest["base_min"] < 15]
+        fs = fringe.groupby("status_u")["played"].agg(["count", "mean"])
+        print(f"  FRINGE / DEEP BENCH (< 15 min):")
+        for st, r in fs[fs["count"] >= 30].sort_values("count", ascending=False).iterrows():
+            print(f"    {st[:22]:<22}{int(r['count']):>7,}{r['mean']:>9.3f}")
+
         if len(q) > 200:
             rc = q.groupby("reason_class")["played"].agg(["count", "mean"])
             rc = rc[rc["count"] >= 40].sort_values("mean")
