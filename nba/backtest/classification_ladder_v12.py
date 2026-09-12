@@ -265,7 +265,9 @@ FACTORS_BY_PROP = {
     "assists": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "threes_made": ["f_pace", "f_opp_3pa", "is_home", "is_b2b"],
     "blocks": ["f_pace", "f_opp_paint", "is_home", "is_b2b"], "steals": ["f_pace", "f_opp_tov", "is_home", "is_b2b"],
     "turnovers": ["f_pace", "f_opp_forced", "is_home", "is_b2b"], "fga": ["f_pace", "is_home", "is_b2b"], "fg3a": ["f_pace", "f_opp_3pa", "is_home", "is_b2b"],
-    "ftm": ["f_pace", "f_opp_fouls", "is_home", "is_b2b"], "personal_fouls": ["f_pace", "f_opp_ftr", "is_home", "is_b2b"]}
+    "ftm": ["f_pace", "f_opp_fouls", "is_home", "is_b2b"], "personal_fouls": ["f_pace", "f_opp_ftr", "is_home", "is_b2b"],
+    "fgm": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "fta": ["f_pace", "f_opp_fouls", "is_home", "is_b2b"],
+    "oreb": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "dreb": ["f_pace", "f_opp_def", "is_home", "is_b2b"]}
 FACTORS_ON = os.environ.get("BT_FACTORS", "1") == "1"
 FACTOR_FITS = {}
 
