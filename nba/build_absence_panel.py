@@ -140,7 +140,8 @@ def main():
                            conn, params=(season,))
         base["game_date"] = pd.to_datetime(base["game_date"]).dt.date
         base["player_id"] = base["player_id"].astype(str)
-        print(f"  logs {len(logs):,} | injury rows {len(inj):,} | baseline anchors {len(base):,}", flush=True)
+        nm_to_id = dict(pd.read_sql("SELECT norm_name, player_id FROM nba_ref.player_name_map", conn).values)
+        print(f"  logs {len(logs):,} | injury rows {len(inj):,} | baseline anchors {len(base):,} | name map {len(nm_to_id):,}", flush=True)
 
         # as-of season history for a player's own baseline minutes / rate (strictly before the game)
         logs = logs.sort_values(["PLAYER_ID", "GAME_DATE"])
