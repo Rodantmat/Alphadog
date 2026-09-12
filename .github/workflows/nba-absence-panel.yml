@@ -1,0 +1,38 @@
+name: NBA Absence Panel
+
+# The fitting set for the enrichment layer's largest factors (A2 redistribution, A2b dependent branch,
+# A5 role change, B4 opponent availability, M1 defender quality). Pre-game ruled-out absences only,
+# residuals measured against the day-by-day baseline, with team conservation totals. Fails loudly.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "comma-separated (2023-24 has no injury archive)"
+        default: "2024-25,2025-26"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-absence-panel
+  cancel-in-progress: false
+
+jobs:
+  panel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Build absence panel
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PANEL_SEASONS: ${{ github.event.inputs.seasons || '2024-25,2025-26' }}
+        run: python nba/build_absence_panel.py
