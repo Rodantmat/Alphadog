@@ -77,6 +77,12 @@ PROPS = {
     "fg3a":        {"col": "FG3A", "alpha": 0.12, "k_stab": 20, "step": 1.0, "family": "negbin"},   # anchor-band residual is attempts REGIME (sign flips across seasons)
     "ftm":         {"col": "FTM",  "att_col": "FTA", "alpha": 0.12, "pct_alpha": 0.03, "k_stab": 60, "step": 1.0, "family": "compound"},   # FTA regression 9%; shift lambda 0.5
     "personal_fouls": {"col": "PF", "alpha": 0.10, "k_stab": 100, "step": 1.0, "family": "negbin", "zero_adjust": True},   # top-decile regression 14%
+    # ADDED 2026-09-12 (owner: the live PrizePicks menu carries these; box-score columns already in our logs).
+    # Configs are the closest certified analogue; NOT yet certified - the first history run prints the band tables.
+    "fgm":         {"col": "FGM",  "alpha": 0.15, "k_stab": 20, "step": 1.0, "family": "auto"},     # analogue: fga
+    "fta":         {"col": "FTA",  "alpha": 0.12, "k_stab": 40, "step": 1.0, "family": "negbin"},   # analogue: fg3a
+    "oreb":        {"col": "OREB", "alpha": 0.08, "k_stab": 60, "step": 1.0, "family": "negbin", "zero_adjust": True},   # low-count, zero-inflated
+    "dreb":        {"col": "DREB", "alpha": 0.08, "k_stab": 40, "step": 1.0, "family": "negbin"},   # analogue: rebounds
 }
 VBANDS_ALL = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "STARTER"), (25.5, 31.5, "STAR"), (31.5, 99, "SUPERSTAR")],
               "rebounds": [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
