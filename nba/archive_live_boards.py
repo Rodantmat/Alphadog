@@ -122,7 +122,7 @@ def rows_generic(doc, app, gd, label):
         mk = "player_" + str(l.get("stat") or l.get("market") or "").lower().replace(" ", "_")
         side = (l.get("selection") or l.get("side") or "Over").title()
         price = l.get("coeff_american") or l.get("american") or l.get("price")
-        out.append((gd, None, label, doc.get("meta", {}).get("fetched_at"), app, mk, l["player"],
+        out.append((gd, ev(app, gd, l, "conflict_fkey", "event_id", "game_id", "event"), label, doc.get("meta", {}).get("fetched_at"), app, mk, l["player"],
                     side if side in ("Over", "Under") else "Over", float(line),
                     float(price) if price is not None else None, None, None, None, l.get("event_start_utc")))
     return out
