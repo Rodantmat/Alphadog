@@ -173,6 +173,10 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 
 | If asked about… | Open |
 |---|---|
+| why a factor was rejected, what A2/N1 are worth, the conservation gate, the sanity gate | log entry "2026-09-12 (later)"; COMPASS facts 70–77; config `enrichment_factors_built_2026_09_12` |
+| how a factor becomes a number (components, cells, scenarios, Platt) | `NBA_ENRICHMENT_ENGINE_DESIGN.md` |
+| re-checking whether a prop is calibrated | `nba/check_prop_calibration.py` (maintenance task `calibration`); COMPASS fact 76 |
+| live board history / why boards are not just files | `nba/archive_live_boards.py`; COMPASS fact 75 |
 | whether a factor's backfill is "done", day-by-day parity, leak risks, what All-Star/national TV should do | `NBA_DAILY_PARITY_AND_BACKFILL.md` (governing directive); COMPASS facts 58–59 |
 | the grader, DNP/push/settlement handling, player name resolution | log entry 2026-09-11 §2; COMPASS fact 60; `nba/grade_board_outcomes.py`, `nba/nba_names.py` |
 | goblins/demons — are they worth taking, tiers, anchors, multipliers | log entry 2026-09-11 §3; COMPASS fact 61; config `prizepicks_goblin_demon_tier_spec`, `board_payout_conversion_rules` |
