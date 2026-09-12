@@ -15,6 +15,10 @@ on:
         description: "test on the first N dates only (0 = full season)"
         default: "0"
         required: false
+      allocator:
+        description: "1 = run the minutes allocator sample test instead of the panel"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
