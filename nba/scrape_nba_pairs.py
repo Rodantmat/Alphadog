@@ -51,11 +51,11 @@ KEEP = ["GROUP_ID", "GROUP_NAME", "TEAM_ID", "TEAM_ABBREVIATION", "GP", "MIN",
         "FGM", "FGA", "FG3M", "FG3A", "FTM", "FTA", "OREB", "DREB", "REB", "AST", "TOV", "STL", "BLK", "PTS", "PLUS_MINUS"]
 
 
-def get(season, date_to, proxies):
+def get(season, date_to, proxies, team_id="0"):
     params = {
         "GroupQuantity": "2", "Season": season, "SeasonType": "Regular Season", "MeasureType": "Base",
         "PerMode": "Totals", "LastNGames": "0", "Month": "0", "OpponentTeamID": "0", "PaceAdjust": "N",
-        "Period": "0", "PlusMinus": "N", "Rank": "N", "TeamID": "0", "DateFrom": "", "DateTo": date_to,
+        "Period": "0", "PlusMinus": "N", "Rank": "N", "TeamID": team_id, "DateFrom": "", "DateTo": date_to,
         "Conference": "", "Division": "", "GameSegment": "", "Location": "", "Outcome": "",
         "SeasonSegment": "", "VsConference": "", "VsDivision": "", "ShotClockRange": "",
     }
