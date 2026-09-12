@@ -13,6 +13,7 @@ Leg = one proposal: event, player, market, line, selection, american coeff, deci
 import json
 import os
 import random
+import re
 import string
 import sys
 import time
