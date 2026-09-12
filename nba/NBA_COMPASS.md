@@ -40,7 +40,8 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 | 10 | Grader + tiers + market adjuster + baseline depth: `board_outcomes` (6.9M graded legs), `board_tiers` (2.2M, demon/goblin answered), `rung_market` (1.06M priced rungs), baseline at ±10 rungs with combos; index shrink 25→21 GB | 09-11 | log entry 2026-09-11; COMPASS facts 60–65 |
 | 11 | **Day-by-day parity directive** — every daily factor must be backfilled exactly as the live pipeline would produce it; a factor is not done until that exists | 09-11 | `NBA_DAILY_PARITY_AND_BACKFILL.md`; COMPASS facts 58–59 |
 | 12 | **Day-by-day baseline history** — 29 stat types × 2 seasons, 18.78M rows; game lines at morning + window; event→game map; stage assignment by publish time; DB upgraded, MLB backtest dropped | 09-12 | log entry 2026-09-12; COMPASS facts 66–69 |
-| — | **Enrichment build**: day-by-day factor tables, A5 lineup proxy, M1 wiring, referee capture, live board archiver → scenario precompute → scoring engine (hit probability → score → confidence → final board) → slip engine | next | `NBA_DAILY_PARITY_AND_BACKFILL.md` §4, §7 |
+| 13 | **Enrichment factors**: A2 redistribution SHIPPED (allocator counterfactual, 15 props); N1 status resolution measured; rate response and B4 rejected on held-out tests; live board archiver + calibration checker built | 09-12 | log entry "2026-09-12 (later)"; COMPASS facts 70–77 |
+| — | **Next**: A5 projected lineups, M1 wiring, blocks_against_vulnerability, scenario precompute, freshness gates → scoring engine (hit probability → score → confidence → final board) → slip engine | next | `NBA_ENRICHMENT_ENGINE_DESIGN.md` |
 
 ---
 
