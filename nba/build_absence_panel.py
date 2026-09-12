@@ -55,6 +55,17 @@ def fetch(name, timeout=300):
         return json.load(r)
 
 
+def flip_last_first(s):
+    """The injury report writes 'Doncic, Luka'; the player register writes 'Luka Doncic'.
+    Normalizing without flipping produces 'doncicluka' vs 'lukadoncic' and NOTHING matches -
+    which is exactly why the first panel run returned 0 rows."""
+    s = str(s or "").strip()
+    if "," in s:
+        last, _, first = s.partition(",")
+        s = f"{first.strip()} {last.strip()}"
+    return norm_name(s)
+
+
 def load_logs(slug):
     doc = fetch(f"nba_player_game_log_{slug}.json")
     df = pd.DataFrame(doc["records"])
