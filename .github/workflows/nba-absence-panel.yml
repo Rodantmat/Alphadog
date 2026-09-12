@@ -40,6 +40,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
       - name: Build absence panel
+        if: ${{ github.event.inputs.allocator != '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PANEL_SEASONS: ${{ github.event.inputs.seasons || '2024-25,2025-26' }}
