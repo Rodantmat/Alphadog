@@ -35,4 +35,5 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PANEL_SEASONS: ${{ github.event.inputs.seasons || '2024-25,2025-26' }}
-        run: python nba/build_absence_panel.py
+          PAIR_MIN_GAMES: '5'
+        run: python nba/build_absence_panel_v2.py
