@@ -78,6 +78,22 @@ def build_event_map(conn):
     except Exception as exc:  # noqa: BLE001
         print("teams file:", exc)
     print("team map:", len(abbr_to_full))
+    if len(abbr_to_full) < 30:
+        # nba_teams_current.json was found EMPTY (0 records) - the 30 franchises are static, so a fixed map
+        # is the correct fallback rather than another scrape. Full names normalized like the board's.
+        _static = {
+            "ATL": "Atlanta Hawks", "BOS": "Boston Celtics", "BKN": "Brooklyn Nets", "CHA": "Charlotte Hornets",
+            "CHI": "Chicago Bulls", "CLE": "Cleveland Cavaliers", "DAL": "Dallas Mavericks", "DEN": "Denver Nuggets",
+            "DET": "Detroit Pistons", "GSW": "Golden State Warriors", "HOU": "Houston Rockets", "IND": "Indiana Pacers",
+            "LAC": "Los Angeles Clippers", "LAL": "Los Angeles Lakers", "MEM": "Memphis Grizzlies", "MIA": "Miami Heat",
+            "MIL": "Milwaukee Bucks", "MIN": "Minnesota Timberwolves", "NOP": "New Orleans Pelicans", "NYK": "New York Knicks",
+            "OKC": "Oklahoma City Thunder", "ORL": "Orlando Magic", "PHI": "Philadelphia 76ers", "PHX": "Phoenix Suns",
+            "POR": "Portland Trail Blazers", "SAC": "Sacramento Kings", "SAS": "San Antonio Spurs", "TOR": "Toronto Raptors",
+            "UTA": "Utah Jazz", "WAS": "Washington Wizards",
+        }
+        for ab, full in _static.items():
+            abbr_to_full.setdefault(ab, norm_team(full))
+        print("team map (with static fallback):", len(abbr_to_full))
 
     games = {}
     for slug in ("2024_25", "2025_26"):
