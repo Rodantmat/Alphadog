@@ -89,6 +89,12 @@ jobs:
           B4_TEST_SEASON: "2025-26"
           B4_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
         run: python nba/fit_b4_defender_quality.py
+      - name: Factor N1 - P(plays | status) at the 2:30 PM PT cutoff
+        if: ${{ github.event.inputs.allocator == '7' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          N1_SEASONS: "2024-25,2025-26"
+        run: python nba/measure_n1_status_resolution.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
