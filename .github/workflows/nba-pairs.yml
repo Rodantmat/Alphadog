@@ -42,7 +42,19 @@ jobs:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           PAIRS_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
           PAIRS_EVERY_DAYS: ${{ github.event.inputs.every_days || '7' }}
-        run: python nba/scrape_nba_pairs.py
+          PAIRS_REBUILD: ${{ github.event.inputs.rebuild || '0' }}
+        run: |
+          set -e
+          # the first run used a league-wide call that caps at 2,000 rows; those files must be removed
+          # before rebuilding, since the scraper skips snapshots that already exist
+          if [ "${PAIRS_REBUILD}" = "1" ]; then
+            for s in $(echo "$PAIRS_SEASONS" | tr ',' ' '); do
+              slug=$(echo "$s" | tr '-' '_')
+              rm -f nba/data/nba_pairs_${slug}_*.json
+              echo "removed capped snapshots for $s"
+            done
+          fi
+          python nba/scrape_nba_pairs.py
       - name: Commit snapshots
         run: |
           set -euo pipefail
