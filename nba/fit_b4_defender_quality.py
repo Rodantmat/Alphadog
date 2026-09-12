@@ -153,6 +153,8 @@ def main():
                                      "q_full": q_full, "q_act": q_act, "q_ratio": q_act / q_full,
                                      "share_missing": 1 - sum(ws_av) / tot_all})
             # fold today's matchups into the as-of accumulators AFTER measuring
+            for t, tdf in day.groupby("TEAM"):
+                opp_prior_roster[t].update(tdf["PLAYER_ID"])
             today = mg.get(gd)
             if today is not None:
                 for r in today.itertuples(index=False):
