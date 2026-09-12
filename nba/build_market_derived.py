@@ -119,7 +119,7 @@ def build_event_map(conn):
                     games[gid] = (gd, h, a)      # only lock in a fully resolved parse
         except Exception as exc:  # noqa: BLE001
             print(f"game log {slug}: {exc}")
-    rows = [(gid, gd, h, a) for gid, (gd, h, a) in games.items() if h and a]
+    rows = [(gid, gd, h, a) for gid, (gd, h, a) in games.items()]
     print("games with both teams resolved:", len(rows), "of", len(games))
     if not rows:
         print("NO GAMES RESOLVED - event_game_map skipped")
