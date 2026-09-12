@@ -94,7 +94,11 @@ VBANDS_ALL = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "
               "fga": [(0, 7.5, "LOW"), (7.5, 12.5, "MID"), (12.5, 17.5, "HIGH"), (17.5, 99, "ELITE")],
               "fg3a": [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
               "ftm": [(0, 1.5, "LOW"), (1.5, 3.5, "MID"), (3.5, 5.5, "HIGH"), (5.5, 99, "ELITE")],
-              "personal_fouls": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 99, "HIGH")]}
+              "personal_fouls": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 99, "HIGH")],
+              "fgm":  [(0, 3.5, "LOW"), (3.5, 6.5, "MID"), (6.5, 9.5, "HIGH"), (9.5, 99, "ELITE")],
+              "fta":  [(0, 1.5, "LOW"), (1.5, 3.5, "MID"), (3.5, 6.5, "HIGH"), (6.5, 99, "ELITE")],
+              "oreb": [(0, 1.5, "LOW"), (1.5, 2.5, "MID"), (2.5, 99, "HIGH")],
+              "dreb": [(0, 3.5, "LOW"), (3.5, 5.5, "MID"), (5.5, 7.5, "HIGH"), (7.5, 99, "ELITE")]}
 ROLE_TIERS = [("IRON_MAN", 36, 99), ("HIGH_USAGE_STARTER", 32, 36), ("STARTER", 27, 32), ("ROTATION", 21, 27), ("BENCH", 15, 21), ("FRINGE", 0, 15)]
 P_BLOWOUT_BINS = [0, 2, 4, 6, 8, 10, 12, 15, 99]
 # MIN_RATIO and P_BLOWOUT are derived from TRAIN inside the run (see below) - no pasted constants.
