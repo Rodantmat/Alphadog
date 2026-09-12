@@ -155,14 +155,20 @@ def main():
         if not doc:
             print(f"{app}: no board file", flush=True)
             continue
-        if app == "prizepicks":
-            rows = rows_prizepicks(doc, gd, label)
-        elif app == "underdog":
-            rows = rows_underdog(doc, gd, label)
-        elif app == "sleeper":
-            rows = rows_sleeper(doc, gd, label)
-        else:
-            rows = rows_generic(doc, app, gd, label)
+        try:
+            if app == "prizepicks":
+                rows = rows_prizepicks(doc, gd, label)
+            elif app == "underdog":
+                rows = rows_underdog(doc, gd, label)
+            elif app == "sleeper":
+                rows = rows_sleeper(doc, gd, label)
+            else:
+                rows = rows_generic(doc, app, gd, label)
+        except Exception as exc:  # noqa: BLE001
+            # one app's shape must never cost the others their archive - report and carry on
+            print(f"{app}: PARSE FAILED ({exc}) - skipped, other apps continue", flush=True)
+            failures.append(app)
+            continue
         if not rows:
             print(f"{app}: 0 rows parsed", flush=True)
             continue
