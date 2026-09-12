@@ -1,0 +1,58 @@
+name: NBA Periods History (day-by-day, whole season)
+
+# The certified/at-standard period set: 1Q/1H/2H/4Q points, 1Q rebounds/assists/threes, 4Q OT-excluded (Sleeper).
+# One (periods, props, ot) call each, like the backtest; each builds -> loads -> deletes. Fails loudly.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "2024-25 or 2025-26"
+        default: "2025-26"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-periods-history-${{ github.event.inputs.season }}
+  cancel-in-progress: false
+
+jobs:
+  periods:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy
+      - name: Build + load each period set
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BT_TEST: ${{ github.event.inputs.season }}
+          BT_TRAIN: ${{ github.event.inputs.season == '2024-25' && '2023-24' || '2023-24,2024-25' }}
+          BT_LADDER_STEPS: "10"
+        run: |
+          set -e
+          S=$(echo $BT_TEST | tr '-' '_')
+          run_one () {  # $1=periods $2=props $3=ot
+            echo "=== $BT_TEST :: periods=$1 props=$2 ot=$3 ==="
+            BT_PERIODS="$1" BT_PROPS="$2" BT_OT="$3" python nba/baseline/build_periods_history.py
+            tag=$(echo "$1_$2" | tr ',' '-'); [ "$3" = "exclude" ] && tag="${tag}_otx"
+            f="nba/data/nba_baseline_history_${S}_periods_${tag}.json"
+            test -s "$f"
+            HISTORY_FILE="$f" python nba/load_baseline_history.py
+            rm -f "$f"
+          }
+          run_one q1 points include
+          run_one h1 points include
+          run_one h2 points include
+          run_one q4 points include
+          run_one q1 rebounds include
+          run_one q1 assists include
+          run_one q1 threes_made include
+          run_one q4 points exclude
