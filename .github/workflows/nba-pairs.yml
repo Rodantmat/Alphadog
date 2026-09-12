@@ -15,6 +15,10 @@ on:
         description: "snapshot cadence in days"
         default: "7"
         required: false
+      rebuild:
+        description: "1 = delete existing snapshots for these seasons first (use after a capped run)"
+        default: "0"
+        required: false
 
 permissions:
   contents: write
