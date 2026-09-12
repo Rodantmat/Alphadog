@@ -1,0 +1,53 @@
+name: NBA Combos History (day-by-day, whole season)
+
+# Components first (the singles harness with BT_SAVE_COMPONENTS=1 pickles the FULL test season), then the
+# combos recipe in all-dates mode, then load. Fails loudly.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "2024-25 or 2025-26"
+        default: "2025-26"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-combos-history-${{ github.event.inputs.season }}
+  cancel-in-progress: false
+
+jobs:
+  combos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy
+      - name: Components (full season) then combos
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BT_TEST: ${{ github.event.inputs.season }}
+          BT_TRAIN: ${{ github.event.inputs.season == '2024-25' && '2023-24' || '2023-24,2024-25' }}
+          BT_LADDER_STEPS: "10"
+          BT_INJURY: "1"
+        run: |
+          set -e
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            echo "=== components $BT_TEST :: $pair ==="
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/backtest/classification_ladder_v12.py
+          done
+          ls -la nba/backtest/reports/_comp_*_${BT_TEST}.pkl
+          echo "=== combos $BT_TEST ==="
+          python nba/baseline/build_combos_history.py
+          f="nba/data/nba_baseline_history_$(echo $BT_TEST | tr '-' '_')_combos.json"
+          test -s "$f"
+          HISTORY_FILE="$f" python nba/load_baseline_history.py
+          rm -f "$f"
