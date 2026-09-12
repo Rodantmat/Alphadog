@@ -200,6 +200,8 @@ def main():
                 rows = rows_underdog(doc, gd, label)
             elif app == "sleeper":
                 rows = rows_sleeper(doc, gd, label)
+            elif app == "fliff":
+                rows = rows_fliff(doc, gd, label)
             else:
                 rows = rows_generic(doc, app, gd, label)
         except Exception as exc:  # noqa: BLE001
