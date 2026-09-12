@@ -81,6 +81,13 @@ def get(season, date_to, proxies, team_id="0"):
     raise RuntimeError(f"leaguedashlineups failed ({season} {date_to}): {last}")
 
 
+TEAM_IDS = [1610612737, 1610612738, 1610612751, 1610612766, 1610612741, 1610612739, 1610612742,
+            1610612743, 1610612765, 1610612744, 1610612745, 1610612754, 1610612746, 1610612747,
+            1610612763, 1610612748, 1610612749, 1610612750, 1610612740, 1610612752, 1610612760,
+            1610612753, 1610612755, 1610612756, 1610612757, 1610612758, 1610612759, 1610612761,
+            1610612762, 1610612764]
+
+
 def main():
     proxy = os.environ.get("PROXY_URL", "").strip()
     proxies = {"https": proxy, "http": proxy} if proxy else None
@@ -96,14 +103,20 @@ def main():
             if path.exists():
                 d += timedelta(days=every)
                 continue
-            cols, rows = get(season, d.strftime("%m/%d/%Y"), proxies)
+            # PER TEAM, not league-wide: the league-wide call silently caps at 2,000 rows, which would
+            # drop exactly the low-minute pairs the redistribution model must account for.
+            cols, rows = None, []
+            for tid in TEAM_IDS:
+                c, r = get(season, d.strftime("%m/%d/%Y"), proxies, team_id=str(tid))
+                cols = cols or c
+                rows.extend(r)
+                time.sleep(0.6)
             path.write_text(json.dumps({"meta": {"season": season, "as_of": str(d), "rows": len(rows),
-                                                 "source": "leaguedashlineups GroupQuantity=2 DateTo",
+                                                 "source": "leaguedashlineups GroupQuantity=2 DateTo, PER TEAM (league-wide caps at 2000)",
                                                  "note": "AS-OF: totals for every two-man teammate combination through this date"},
                                         "columns": cols, "rows": rows}, separators=(",", ":")))
             made += 1
             print(f"{season} as-of {d}: {len(rows)} pairs -> {path.name}", flush=True)
-            time.sleep(1.2)
             d += timedelta(days=every)
         print(f"{season}: {made} new snapshots", flush=True)
 
