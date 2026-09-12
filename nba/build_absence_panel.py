@@ -84,7 +84,7 @@ def load_injuries(slug):
         return df
     df["game_date"] = pd.to_datetime(df["game_date"], errors="coerce").dt.date
     df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce", utc=True)
-    df["nm"] = df["player_name"].map(norm_name)
+    df["nm"] = df["player_name"].map(flip_last_first)
     df["status_u"] = df["status"].astype(str).str.upper().str.strip()
     return df
 
