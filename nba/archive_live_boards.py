@@ -113,6 +113,43 @@ def rows_sleeper(doc, gd, label):
     return out
 
 
+def rows_fliff(doc, gd, label):
+    """Fliff's leg shape differs from the others: the line lives on the proposal as
+    t_142_selection_param_1 (the scraper stores it as `line`, but it is a STRING and is empty on team
+    markets), the side is t_141_selection_name (Over/Under/Yes/No/team name), and the price is the
+    American `coeff`. The generic parser skipped all 4,592 legs because it expected a numeric top-level
+    line - this reads Fliff's own fields."""
+    out, skipped = [], 0
+    for l in doc.get("legs") or []:
+        raw = l.get("line")
+        sel = str(l.get("selection") or "").strip()
+        if raw in (None, "") or not l.get("player"):
+            skipped += 1
+            continue
+        try:
+            line = float(raw)
+        except (TypeError, ValueError):
+            skipped += 1
+            continue
+        side = "Over" if sel.lower().startswith(("over", "more", "yes")) else (
+            "Under" if sel.lower().startswith(("under", "less", "no")) else None)
+        if side is None:
+            skipped += 1                 # team markets / moneyline selections: not a player O/U leg
+            continue
+        price = l.get("coeff_american") or l.get("coeff")
+        try:
+            price = float(price) if price not in (None, "") else None
+        except (TypeError, ValueError):
+            price = None
+        mk = "player_" + str(l.get("market") or l.get("stat") or "").lower().replace(" ", "_")
+        out.append((gd, ev("fliff", gd, l, "conflict_fkey", "event"), label,
+                    doc.get("meta", {}).get("fetched_at"), "fliff", mk, l["player"], side, line,
+                    price, None, None, None, l.get("event_start_utc")))
+    if skipped:
+        print(f"  fliff: skipped {skipped} non-player-O/U legs (team markets, no numeric line)", flush=True)
+    return out
+
+
 def rows_generic(doc, app, gd, label):
     out = []
     skipped = 0
