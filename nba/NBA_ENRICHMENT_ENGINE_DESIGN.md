@@ -92,7 +92,88 @@ Rules, all inherited from what the baseline already proved:
 
 ---
 
-## 4. The absence problem: one absence changes BOTH rosters
+## 3a. CONSERVATION — minutes and usage are finite (research 2026-09-12)
+
+**The flaw in the first draft of this document**: independent per-player multipliers cannot respect a
+team's **240 minutes** and ~100 possessions. Every serious system treats an absence as a *redistribution
+of a fixed pool*, not as independent lifts.
+
+Sources: FiveThirtyEight's method (rank-ordered depth chart, unavailable players removed, minutes
+allocated by position with primary-then-secondary eligibility, plus a talent penalty when a player is
+forced far above his projected MPG); RotoGrinders (240 minutes; injuries, role changes and blowouts are
+the three rotation movers); Unabated (sharp prop shop) runs **conditional projection sets** — a base set
+and an alternate set with the questionable player out — which is independent confirmation of our
+scenario precompute; the feature-engineering literature calls usage redistribution the **Wally Pipp
+effect** and uses with/without lineup-level usage differentials.
+
+**Three candidate mechanisms and their failure modes** (Gemini, consistent with the sources):
+
+| Mechanism | Failure mode |
+|---|---|
+| (a) proportional to baseline share, then renormalize | **positionally agnostic** — an out center sends minutes to the backup PG; renormalization smears error across players who were unaffected |
+| (b) depth-chart / positional flow | **rigid** — misses small-ball responses; the "next man up" fallacy (a star out changes the whole offensive structure, not one slot) |
+| (c) multipliers then global renormalization | **worst** — systematically under-projects stable players to absorb error created elsewhere |
+
+**Decision — fitted FLOW model with the constraint built in, not bolted on:**
+
+```
+vacated_minutes(X)  -> share vector over remaining players, FITTED by (role of X, role of receiver,
+                       direct-backup flag, positional group), shrunk toward the coarser level
+vacated_usage(X)    -> a SEPARATE share vector (usage does not follow minutes 1:1 — the player who
+                       takes the minutes is often not the one who takes the shots)
+constraint          -> shares sum to 1 by construction, so team minutes stay 240 and usage conserves
+never               -> a post-hoc global renormalization that touches unaffected players
+```
+
+Small-ball and structural responses are handled by fitting the flow **conditional on the absent
+player's role**, so "center out → forward minutes" is learned rather than assumed.
+
+## 3b. RATE IS DEPENDENT, NOT AN INDEPENDENT MULTIPLIER
+
+Minutes and per-minute rate move together when a teammate is out, so fitting them as two independent
+multipliers double-counts. The causal chain is: absence → usage vacuum → the beneficiary absorbs usage →
+his rate changes. So:
+
+```
+m'  = baseline minutes + flow-allocated vacated minutes          (constrained)
+u'  = baseline usage   + flow-allocated vacated usage            (constrained)
+r'  = f(r_baseline, m', u_absorbed)      <- rate is a FUNCTION of the new state, not a free multiplier
+```
+
+This also localizes the double-count check with the market layer: the market adjuster must never be
+allowed to re-express the same absence signal that already moved m' and u'.
+
+## 3c. SELECTION BIAS in with/without splits — the trap that would silently inflate everything
+
+Historical "without" games are **not** a random sample. They are contaminated by *why* the player was
+out:
+- **blowouts** — beneficiaries' rates inflated in garbage time against third-stringers;
+- **load management** — the star rests against a weak opponent, so the context is non-competitive;
+- **in-game injuries** — partial-game data confounds both sides.
+
+Mitigations, all available to us:
+1. **Fit only on PRE-GAME ruled-out absences**, which we can identify exactly because we hold the
+   injury-report archive at its publish timestamps (this is the cleanest signal and is what our as-of
+   parity rule already gives us).
+2. **Condition on context** — opponent strength, projected spread, and the blowout/competitive flag the
+   baseline already computes; the harness's competitive-minutes definition excludes garbage time.
+3. **Exclude in-game exits** (the baseline's <5-minute and injury-exit filters).
+
+## 3d. FITTING — partial pooling, not independent cells
+
+A key keyed prop × direction × band × role × factor tier is sparse over three seasons. Fitting an
+independent mean per cell is the textbook overfit: a cell with 3 observations is trusted absolutely.
+The principled options are **hierarchical partial pooling** (each cell's effect drawn from a
+distribution centred on its parent level, shrinkage set by the data) or a **regularized interaction
+regression** (Ridge first; Lasso only if selection is wanted).
+
+Our baseline's existing machinery is already approximately this — hierarchical cells with `n/(n+k)`
+shrinkage toward a coarser level and a measured, not seeded, prior strength — so the enrichment layer
+reuses it rather than inventing a second scheme. What changes from the first draft: the fallback chain
+is explicitly a **pooling hierarchy** (cell → parent → prop-level → 1.0), the shrinkage constant is
+fitted per factor family, and the two-season sign rule stays as the acceptance gate.
+
+
 
 A scenario is defined **per game**, not per player, because a single OUT propagates:
 
