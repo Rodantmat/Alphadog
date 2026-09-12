@@ -704,9 +704,97 @@ missing dates, dunks (owner call), 3 low-confidence coach dates, empty teams fil
 ParlayAPI usage logging, fantasy-score check on a live leg in week 1. Owner: Sleeper alt-lines capture,
 Chalkboard proxy capture, PrizePicks calibration slips, Betr token (~Oct 10), Cowork schedule for Betr.
 
+## 2026-09-12 (later) — Enrichment factors: A2 shipped, N1 measured, B4 rejected, and five retracted panels
+
+### 1. The lesson that governs this entry
+Redistribution is only well defined as an **allocation**, never as an observational delta. Five successive
+panels failed the conservation gate (shares summing to 0.08 / −0.05 / −0.37 / 0.25 / 0.49 instead of ~1.0)
+and each failed for a *different surface reason* — a minutes floor on receivers, a `pair_games >= 5`
+threshold, the `leaguedashlineups` 2,000-row API cap, a `single_absence` filter keeping 218 of ~1,150
+team-games, and finally deltas measured against a personal rolling mean. **Every one of them removed the
+players who absorb the vacated minutes.** The root cause of the last is worth remembering: a rolling mean
+has already absorbed the season's earlier absences, so a player averaging 20 minutes *because* the star is
+out shows a delta of ~0 on the next absence game.
+
+A team plays 240 minutes (+25/OT) whether three players are out or none, so the vacated minutes are
+redistributed **by definition**. The model form must encode that, not hope for it.
+
+### 2. Factor A2 — SHIPPED
+`nba/fit_minutes_allocator.py` fits share = `exp(0.2214 + 0.3953·log(as-of min) + 0.5160·log(recent-5) +
+0.0043·log1p(games))` normalised over the available roster × team minutes; recent form outweighs season
+mean. `nba/build_redistribution_factors.py` then takes the **difference of two allocations** — over
+{played + ruled out} versus {played} — so conservation is a property of the model (verified 1.0015).
+Cold start gets the league bench prior (8 min) and is never dropped.
+
+| Test | Result |
+|---|---|
+| Minutes MAE, absence games | **4.641** with outs vs **6.186** ignoring outs vs 5.029 as-of mean |
+| Per-prop MAE gain | pra **+0.347**, pts_reb +0.281, pts_ast +0.253, points +0.097 → **15 of 19 props** |
+| Two-season agreement | min_mult 1.3228 / 1.3147 (0.6%) |
+
+Note the middle row: allocating while *ignoring* absences is **worse than doing nothing** — the
+mathematical statement of why the observational panels failed. Output `nba_score.redistribution_factors`,
+51,806 rows. Skipped props: stocks, blocks, steals, fouls (low-count variance dominates).
+
+### 3. Rejected, with the tests that rejected them
+- **Rate response** (`fit_rate_response.py`): held-out points MAE 4.753 vs 4.733 minutes-only — *worse*.
+  Usage absorption is already carried by the minutes change plus the baseline rate; a separate multiplier
+  double-counts it (engine design §3b). Ship/don't-ship threshold was set before the result.
+- **B4 opponent availability, both formulations**: v1 (opponent vacated minutes + count out) 0 of 19 props;
+  v2 (expected defender quality from the matchup shards) 0 of 11, betas collapsing to −0.056…+0.029 once a
+  scoping bug was fixed. Opponent defence is **already in the baseline**; B4 was only the same-day residual
+  and there is none. The retracted +6.5% observational figure was blowout/garbage-time contamination.
+  Open sub-case: `blocks_against_vulnerability` (rim protectors specifically).
+
+### 4. Factor N1 — measured, and it corrects the league's own table
+At the 2:30 PM PT cutoff, against our injury archive × box scores:
+
+| Status | Measured | League-defined |
+|---|---|---|
+| Out | 0.001 | 0.00 ✓ |
+| **Doubtful** | **0.005** | 0.25 ✗ — doubtful means OUT |
+| Questionable (rotation ≥15 min) | **0.552** | 0.50 |
+| Questionable (fringe) | **0.312** | 0.50 |
+| Available / Probable (rotation) | 0.956 / 0.961 | 1.00 / 0.75 |
+
+The 0.828 headline for "Available" is deep-bench DNP-CD, not scratches. Questionable varies by reason
+(two-way 0.271, back 0.488, soft tissue 0.539) and team (ATL 0.326 … GSW 0.676). The NBA's Dec-2025
+overhaul fixed nominal probabilities and introduced the AVAILABLE status mid-season.
+
+### 5. A2 under window-time information — the number that matters
+A2 was fitted on post-game truth, so its measured gain was an upper bound. Rebuilding the absence input
+from the 2:30 PM report with N1 fractional weights: minutes MAE **6.210 no knowledge / 4.580 window /
+4.368 perfect** → **window captures 88% of perfect knowledge**; uncertainty costs only 0.21 minutes.
+A2 does not collapse without hindsight.
+
+### 6. Infrastructure closed this round
+- **Live board archiver** (`nba/archive_live_boards.py` + `nba-board-archive.yml`): boards now land in
+  `nba_market.board_snapshots` in the same shape as the two-season backfill, so the live season
+  accumulates queryable history instead of overwriting `boards/<app>_<sport>_current.json`. Verified on
+  live MLB boards: Underdog 5,281 legs, Sleeper 1,276. Synthesises a stable `event_id` (live boards have
+  no Odds API id) and **isolates parser failures** so one app's shape cannot cost the others their archive.
+- **Calibration checker** (`nba/check_prop_calibration.py`): re-verifies any prop in `baseline_history`
+  straight from stored data. Until now a prop's verdict existed only in an ephemeral harness log. Validated
+  against points (worst band 0.8 pp).
+- **oreb retuned**: `SHIFT_LAMBDA = 0.5` (matching blocks/steals/ftm) took the worst band from **−21.2 pp
+  to −2.5 pp**. Borderline rather than clean — needs the 2024-25 confirmation before being called certified.
+
+### 7. Method notes worth keeping
+Three bugs this round produced confident-looking but invalid results, each caught by a diagnostic placed
+**before** the output was read: a B4 exposure vector spanning the whole league (93% of defenders trivially
+"missing"), a rotation split that conditioned on having played (forcing every rate to 1.000), and a
+baseline that vanished on non-appearances. A **sanity gate** is now standard — a feature with implausible
+missing-share, near-zero variance or a thin test set has its verdicts *suppressed* rather than graded.
+
+### 8. Open after this entry
+Fliff archiving is blocked upstream: the **scraper** emits empty `player` and `line` on all 4,592 legs
+(today's MLB file is entirely team markets — moneylines, run lines, inning props), so the fix belongs in
+`scrape_fliff_board.py`, not the archiver. Also open: oreb second-season verdict, A5 projected lineups,
+M1 wiring, D1 referee capture, scenario precompute, freshness gates.
+
 ---
 
-### Pending list from the 2026-09-09/10 entry (kept for history)
+
 0. ~~Overnight jobs~~ **VERIFIED 05:30Z**: injury report 2025-26 = 176/176 days, 919,949 rows, 7 shards; 2024-25 = 174 days, 418,071 rows, 7 shards (fewer intra-day re-publishes that season — spot-check per month); starters 2023-24 = 32,328 rows, 1,228/1,230 (timeouts on 0022300079, 0022300721 — rerun); officials 2023-24 = 3,690 rows, 1,230/1,230. Every enrichment factor now has its two-season backfill except the boards (waiting on the Odds API upgrade). Status snapshot in config `enrichment_backfill_status_2026_09_10`.
 1. Owner upgrades the Odds API plan → run `odds_api_board_backfill` for both seasons (~1–2 h, resumable) → confirm rows.
 2. Verify overnight jobs: injury 2025-26 tail + 2024-25 shards; starters/officials 2023-24.
