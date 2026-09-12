@@ -36,7 +36,7 @@ s = rep(s, '''more = rel.assign(side="more", p_side=rel["p_over"], hit=rel["actu
 _tag = (os.environ.get("BT_PERIODS", "all") + "_" + os.environ.get("BT_PROPS", "all") + ("_otx" if os.environ.get("BT_OT", "include") == "exclude" else "")).replace(",", "-")
 _h = rel.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
 _rows = [{"game_date": str(pd.to_datetime(r.GAME_DATE).date()), "player_id": str(r.PLAYER_ID), "game_id": str(r.GAME_ID),
-          "prop": r.prop, "period": r.prop.rsplit("_", 1)[-1].upper(), "ot_rule": os.environ.get("BT_OT", "include"),
+          "prop": r.prop + ("_otx" if os.environ.get("BT_OT", "include") == "exclude" else ""), "period": r.prop.rsplit("_", 1)[-1].upper(),
           "line": float(r.line), "anchor": float(r.anchor), "offset": int(r.offset),
           "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4),
           "p_raw": round(float(getattr(r, "p_raw", r.p_over)), 4),
