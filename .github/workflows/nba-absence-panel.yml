@@ -16,7 +16,11 @@ on:
         default: "0"
         required: false
       allocator:
-        description: "1 = run the minutes allocator sample test instead of the panel"
+        description: "1 = allocator fit test, 2 = redistribution counterfactual"
+        default: "0"
+        required: false
+      write:
+        description: "1 = write redistribution_factors (only after the sample test passes)"
         default: "0"
         required: false
 
