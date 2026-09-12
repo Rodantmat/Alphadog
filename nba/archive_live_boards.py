@@ -150,6 +150,7 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     total = 0
+    failures = []
     for app in apps:
         doc = load(app, sport)
         if not doc:
