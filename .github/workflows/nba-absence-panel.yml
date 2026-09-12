@@ -54,3 +54,11 @@ jobs:
           ALLOC_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
           ALLOC_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '60' }}
         run: python nba/fit_minutes_allocator.py
+      - name: Redistribution factors (allocator counterfactual)
+        if: ${{ github.event.inputs.allocator == '2' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ALLOC_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
+          ALLOC_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '60' }}
+          ALLOC_WRITE: ${{ github.event.inputs.write || '0' }}
+        run: python nba/build_redistribution_factors.py
