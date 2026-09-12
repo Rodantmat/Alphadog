@@ -93,7 +93,7 @@ def rows_underdog(doc, gd, label):
             price = l.get(key) or l.get("over_american" if side == "Over" else "under_american")
             if price is None:
                 continue
-            out.append((gd, None, label, doc.get("meta", {}).get("fetched_at"), "underdog", mk,
+            out.append((gd, ev("underdog", gd, l, "game_id", "match_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "underdog", mk,
                         l["player"], side, float(line), float(price), None, None, None, l.get("event_start_utc")))
     return out
 
