@@ -36,6 +36,17 @@ import psycopg
 BOARDS = Path("boards")
 
 
+def ev(app, gd, doc_or_leg, *keys):
+    """Live boards carry no Odds API event_id, but the column is NOT NULL and the unique index keys on
+    it. Synthesize a stable id from whatever game/event identifier the app provides, so re-running the
+    archiver updates the same rows instead of duplicating them."""
+    for k in keys:
+        v = doc_or_leg.get(k) if isinstance(doc_or_leg, dict) else None
+        if v:
+            return f"live-{app}-{gd}-{v}"
+    return f"live-{app}-{gd}-unknown"
+
+
 def load(app, sport):
     p = BOARDS / f"{app}_{sport}_current.json"
     if not p.exists():
