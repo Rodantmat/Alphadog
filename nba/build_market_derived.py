@@ -109,12 +109,14 @@ def build_event_map(conn):
                     continue
                 # "LAC @ GSW" = away @ home ; "GSW vs. LAC" = home vs away
                 if "@" in m:
-                    away, home = [p.strip() for p in m.split("@")[:2]]
+                    away, home = [p.replace(".", "").strip() for p in m.split("@")[:2]]
                 elif "vs" in m:
-                    home, away = [p.strip().replace(".", "") for p in m.split("vs")[:2]]
+                    home, away = [p.replace(".", "").strip() for p in m.split("vs")[:2]]
                 else:
                     continue
-                games[gid] = (gd, abbr_to_full.get(home.upper(), ""), abbr_to_full.get(away.upper(), ""))
+                h, a = abbr_to_full.get(home.upper(), ""), abbr_to_full.get(away.upper(), "")
+                if h and a:
+                    games[gid] = (gd, h, a)      # only lock in a fully resolved parse
         except Exception as exc:  # noqa: BLE001
             print(f"game log {slug}: {exc}")
     rows = [(gid, gd, h, a) for gid, (gd, h, a) in games.items() if h and a]
