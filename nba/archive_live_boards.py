@@ -188,6 +188,9 @@ def main():
         print(f"{app}: archived {len(rows):,} legs as '{label}'", flush=True)
     print(f"TOTAL {total:,} legs archived for {gd} ({label})", flush=True)
     conn.close()
+    if failures:
+        # fail the job so a broken parser is visible, but only AFTER the healthy apps are safely stored
+        raise SystemExit(f"parse failures: {', '.join(failures)}")
 
 
 if __name__ == "__main__":
