@@ -163,27 +163,29 @@ def main():
                 teams = gdf["TEAM"].unique()
                 if len(teams) != 2:
                     continue
-                # who was RULED OUT pre-game and was a rotation player by his own as-of minutes
+                # who was RULED OUT pre-game: resolve the REPORT's Out/Doubtful rows to player ids,
+                # then keep those who were rotation players for this team by their own as-of minutes.
+                # (An earlier draft matched an arbitrary report name per team - that would have keyed
+                # the whole panel on the wrong absent player.)
                 outs = {}
                 for t in teams:
-                    tdf = gdf[gdf["TEAM"] == t]
                     hist = logs[(logs["TEAM"] == t) & (logs["GAME_DATE"] < gd)]
                     recent = hist[hist["GAME_DATE"] >= (pd.Timestamp(gd) - pd.Timedelta(days=30)).date()]
-                    for pid, pg in recent.groupby("PLAYER_ID"):
-                        if pid in played or pg["MIN"].mean() < ROTATION_MIN:
+                    if recent.empty:
+                        continue
+                    rot = recent.groupby("PLAYER_ID").agg(min_mean=("MIN", "mean"), poss_mean=("POSS_USED", "mean"))
+                    rot = rot[rot["min_mean"] >= ROTATION_MIN]
+                    for nm, (st, _reason, rclass, rteam) in status.items():
+                        if st not in ("OUT", "DOUBTFUL"):
                             continue
-                        nm = None  # resolve by name from the report side
-                        for k, (st, _rs, _rc, rteam) in status.items():
-                            if st in ("OUT", "DOUBTFUL") and rteam and t[:3].upper() in str(rteam).upper()[:3]:
-                                nm = k
-                                break
-                        if nm is None:
+                        pid = nm_to_id.get(nm)
+                        if pid is None or pid not in rot.index or pid in played:
                             continue
+                        mm = float(rot.at[pid, "min_mean"]); pp = float(rot.at[pid, "poss_mean"])
                         outs.setdefault(t, []).append({
-                            "player_id": pid, "min": float(pg["MIN"].mean()),
-                            "poss": float(pg["POSS_USED"].mean()),
-                            "usage_tier": "alpha" if pg["POSS_USED"].mean() >= 20 else ("secondary" if pg["POSS_USED"].mean() >= 14 else "role"),
-                            "status": status.get(nm, ("OUT",))[0], "reason_class": status.get(nm, (None, None, None))[2],
+                            "player_id": pid, "min": mm, "poss": pp,
+                            "usage_tier": "alpha" if pp >= 20 else ("secondary" if pp >= 14 else "role"),
+                            "status": st, "reason_class": rclass,
                         })
                 if not outs:
                     continue
