@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-09-10T22:41:13Z",
-  "fetched_at": "2026-09-10T22:54:32Z",
+  "started_at": "2026-09-12T22:25:08Z",
+  "fetched_at": "2026-09-12T22:42:20Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -39,215 +39,23 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      71
-    ],
-    [
-      "lines[match=142608]",
-      0
-    ],
-    [
-      "pills[match=142608]",
-      2
-    ],
-    [
-      "lines[match=144202]",
-      20
-    ],
-    [
-      "pills[match=144202]",
-      168
-    ],
-    [
-      "lines[match=142982]",
-      20
-    ],
-    [
-      "pills[match=142982]",
-      155
-    ],
-    [
-      "lines[match=144492]",
-      0
-    ],
-    [
-      "pills[match=144492]",
-      1
-    ],
-    [
-      "lines[match=143007]",
-      0
-    ],
-    [
-      "pills[match=143007]",
-      1
-    ],
-    [
-      "lines[match=142342]",
-      0
-    ],
-    [
-      "pills[match=142342]",
-      4
-    ],
-    [
-      "lines[match=142732]",
-      0
-    ],
-    [
-      "pills[match=142732]",
-      1
-    ],
-    [
-      "lines[match=143798]",
-      0
-    ],
-    [
-      "pills[match=143798]",
-      4
-    ],
-    [
-      "lines[match=143225]",
-      0
-    ],
-    [
-      "pills[match=143225]",
-      1
-    ],
-    [
-      "lines[match=143651]",
-      20
-    ],
-    [
-      "pills[match=143651]",
-      123
-    ],
-    [
-      "lines[match=142316]",
-      0
-    ],
-    [
-      "pills[match=142316]",
-      1
-    ],
-    [
-      "lines[match=143757]",
-      0
-    ],
-    [
-      "pills[match=143757]",
-      4
-    ],
-    [
-      "lines[match=143674]",
-      20
-    ],
-    [
-      "pills[match=143674]",
-      129
-    ],
-    [
-      "lines[match=142994]",
-      20
-    ],
-    [
-      "pills[match=142994]",
-      130
-    ],
-    [
-      "lines[match=144360]",
-      0
-    ],
-    [
-      "pills[match=144360]",
-      1
-    ],
-    [
-      "lines[match=142247]",
-      0
-    ],
-    [
-      "pills[match=142247]",
-      1
-    ],
-    [
-      "lines[match=144128]",
-      0
-    ],
-    [
-      "pills[match=144128]",
-      4
-    ],
-    [
-      "lines[match=142519]",
-      0
-    ],
-    [
-      "pills[match=142519]",
-      1
-    ],
-    [
-      "lines[match=144067]",
-      0
-    ],
-    [
-      "pills[match=144067]",
-      1
-    ],
-    [
-      "lines[match=144030]",
-      0
-    ],
-    [
-      "pills[match=144030]",
-      1
-    ],
-    [
-      "lines[match=142366]",
-      0
-    ],
-    [
-      "pills[match=142366]",
-      1
-    ],
-    [
-      "lines[match=144557]",
-      0
-    ],
-    [
-      "pills[match=144557]",
-      1
-    ],
-    [
-      "lines[match=143097]",
-      0
-    ],
-    [
-      "pills[match=143097]",
-      1
-    ],
-    [
-      "lines[match=143493]",
-      0
-    ],
-    [
-      "pills[match=143493]",
-      1
-    ],
-    [
-      "lines[match=142678]",
-      0
-    ],
-    [
-      "pills[match=142678]",
-      1
+      105
     ],
     [
       "lines[match=142515]",
-      0
+      20
     ],
     [
       "pills[match=142515]",
-      1
+      91
+    ],
+    [
+      "lines[match=142678]",
+      20
+    ],
+    [
+      "pills[match=142678]",
+      72
     ],
     [
       "lines[match=144302]",
@@ -255,55 +63,71 @@
     ],
     [
       "pills[match=144302]",
-      1
+      2
+    ],
+    [
+      "lines[match=143097]",
+      20
+    ],
+    [
+      "pills[match=143097]",
+      14
+    ],
+    [
+      "lines[match=143493]",
+      0
+    ],
+    [
+      "pills[match=143493]",
+      5
     ],
     [
       "lines[match=143298]",
-      0
+      20
     ],
     [
       "pills[match=143298]",
-      1
+      131
     ],
     [
       "lines[match=143201]",
-      0
+      20
     ],
     [
       "pills[match=143201]",
-      1
+      158
     ],
     [
       "lines[match=142944]",
-      0
+      20
     ],
     [
       "pills[match=142944]",
-      1
+      154
     ],
     [
       "lines[match=143465]",
-      0
+      20
     ],
     [
       "pills[match=143465]",
-      1
+      160
     ],
     [
       "lines[match=142504]",
-      0
+      20
     ],
     [
       "pills[match=142504]",
-      1
+      157
     ],
     [
       "lines[match=142956]",
-      0
+      20
     ],
     [
       "pills[match=142956]",
-      1
+      154
     ],
     [
       "lines[match=142650]",
@@ -311,23 +135,7 @@
     ],
     [
       "pills[match=142650]",
-      1
-    ],
-    [
-      "lines[match=142766]",
-      0
-    ],
-    [
-      "pills[match=142766]",
-      1
-    ],
-    [
-      "lines[match=144125]",
-      0
-    ],
-    [
-      "pills[match=144125]",
-      1
+      7
     ],
     [
       "lines[match=143788]",
@@ -335,7 +143,15 @@
     ],
     [
       "pills[match=143788]",
-      1
+      8
+    ],
+    [
+      "lines[match=142766]",
+      0
+    ],
+    [
+      "pills[match=142766]",
+      7
     ],
     [
       "lines[match=142487]",
@@ -343,7 +159,15 @@
     ],
     [
       "pills[match=142487]",
-      1
+      7
+    ],
+    [
+      "lines[match=144125]",
+      0
+    ],
+    [
+      "pills[match=144125]",
+      6
     ],
     [
       "lines[match=143143]",
@@ -351,15 +175,7 @@
     ],
     [
       "pills[match=143143]",
-      1
-    ],
-    [
-      "lines[match=143075]",
-      0
-    ],
-    [
-      "pills[match=143075]",
-      1
+      7
     ],
     [
       "lines[match=143052]",
@@ -367,6 +183,22 @@
     ],
     [
       "pills[match=143052]",
+      8
+    ],
+    [
+      "lines[match=143075]",
+      0
+    ],
+    [
+      "pills[match=143075]",
+      6
+    ],
+    [
+      "lines[match=144468]",
+      0
+    ],
+    [
+      "pills[match=144468]",
       1
     ],
     [
@@ -375,14 +207,6 @@
     ],
     [
       "pills[match=144385]",
-      1
-    ],
-    [
-      "lines[match=144468]",
-      0
-    ],
-    [
-      "pills[match=144468]",
       1
     ],
     [
@@ -407,7 +231,7 @@
     ],
     [
       "pills[match=143327]",
-      1
+      7
     ],
     [
       "lines[match=142881]",
@@ -418,85 +242,373 @@
       1
     ],
     [
+      "lines[match=142799]",
+      0
+    ],
+    [
+      "pills[match=142799]",
+      8
+    ],
+    [
+      "lines[match=142853]",
+      0
+    ],
+    [
+      "pills[match=142853]",
+      1
+    ],
+    [
+      "lines[match=142999]",
+      0
+    ],
+    [
+      "pills[match=142999]",
+      1
+    ],
+    [
+      "lines[match=143111]",
+      0
+    ],
+    [
+      "pills[match=143111]",
+      1
+    ],
+    [
+      "lines[match=142949]",
+      0
+    ],
+    [
+      "pills[match=142949]",
+      1
+    ],
+    [
+      "lines[match=142385]",
+      0
+    ],
+    [
+      "pills[match=142385]",
+      1
+    ],
+    [
+      "lines[match=143361]",
+      0
+    ],
+    [
+      "pills[match=143361]",
+      1
+    ],
+    [
+      "lines[match=143518]",
+      0
+    ],
+    [
+      "pills[match=143518]",
+      1
+    ],
+    [
+      "lines[match=143559]",
+      0
+    ],
+    [
+      "pills[match=143559]",
+      1
+    ],
+    [
+      "lines[match=143312]",
+      0
+    ],
+    [
+      "pills[match=143312]",
+      1
+    ],
+    [
+      "lines[match=143259]",
+      0
+    ],
+    [
+      "pills[match=143259]",
+      1
+    ],
+    [
+      "lines[match=144358]",
+      0
+    ],
+    [
+      "pills[match=144358]",
+      0
+    ],
+    [
+      "lines[match=142358]",
+      0
+    ],
+    [
+      "pills[match=142358]",
+      0
+    ],
+    [
+      "lines[match=143067]",
+      0
+    ],
+    [
+      "pills[match=143067]",
+      0
+    ],
+    [
+      "lines[match=144264]",
+      0
+    ],
+    [
+      "pills[match=144264]",
+      0
+    ],
+    [
+      "lines[match=142362]",
+      0
+    ],
+    [
+      "pills[match=142362]",
+      0
+    ],
+    [
+      "lines[match=142357]",
+      0
+    ],
+    [
+      "pills[match=142357]",
+      0
+    ],
+    [
+      "lines[match=143819]",
+      0
+    ],
+    [
+      "pills[match=143819]",
+      0
+    ],
+    [
+      "lines[match=143697]",
+      0
+    ],
+    [
+      "pills[match=143697]",
+      0
+    ],
+    [
+      "lines[match=144257]",
+      0
+    ],
+    [
+      "pills[match=144257]",
+      0
+    ],
+    [
+      "lines[match=142418]",
+      0
+    ],
+    [
+      "pills[match=142418]",
+      0
+    ],
+    [
+      "lines[match=143560]",
+      0
+    ],
+    [
+      "pills[match=143560]",
+      0
+    ],
+    [
+      "lines[match=142570]",
+      0
+    ],
+    [
+      "pills[match=142570]",
+      0
+    ],
+    [
+      "lines[match=142902]",
+      0
+    ],
+    [
+      "pills[match=142902]",
+      0
+    ],
+    [
+      "lines[match=143976]",
+      0
+    ],
+    [
+      "pills[match=143976]",
+      0
+    ],
+    [
+      "lines[match=142831]",
+      0
+    ],
+    [
+      "pills[match=142831]",
+      0
+    ],
+    [
+      "lines[match=142365]",
+      0
+    ],
+    [
+      "pills[match=142365]",
+      0
+    ],
+    [
+      "lines[match=143148]",
+      0
+    ],
+    [
+      "pills[match=143148]",
+      0
+    ],
+    [
+      "lines[match=143775]",
+      0
+    ],
+    [
+      "pills[match=143775]",
+      0
+    ],
+    [
+      "lines[match=144625]",
+      0
+    ],
+    [
+      "pills[match=144625]",
+      0
+    ],
+    [
+      "lines[match=142513]",
+      0
+    ],
+    [
+      "pills[match=142513]",
+      0
+    ],
+    [
+      "lines[match=142593]",
+      0
+    ],
+    [
+      "pills[match=142593]",
+      0
+    ],
+    [
+      "lines[match=142801]",
+      0
+    ],
+    [
+      "pills[match=142801]",
+      0
+    ],
+    [
+      "lines[match=142290]",
+      0
+    ],
+    [
+      "pills[match=142290]",
+      0
+    ],
+    [
+      "lines[match=143426]",
+      0
+    ],
+    [
+      "pills[match=143426]",
+      0
+    ],
+    [
+      "lines[match=143727]",
+      0
+    ],
+    [
+      "pills[match=143727]",
+      0
+    ],
+    [
       "lines_with_stats[players]",
-      11,
-      100
+      63,
+      160
     ],
     [
       "alternate_projections",
-      582,
-      1997,
+      883,
+      2876,
       0,
-      "deduped 16"
+      "deduped 382"
     ],
     [
       "lines[mass=true]",
-      5
+      2
     ],
     [
       "lines[mass=false]",
       0
     ]
   ],
-  "lines": 947,
-  "legs": 947,
-  "ladder_legs": 1997,
-  "ladder_lines_with_alternates": 582,
-  "players": 100,
-  "pregame_legs": 942,
-  "live_legs": 5,
+  "lines": 1534,
+  "legs": 1534,
+  "ladder_legs": 2876,
+  "ladder_lines_with_alternates": 883,
+  "players": 160,
+  "pregame_legs": 1090,
+  "live_legs": 444,
   "by_stat": {
-    "Hits + Runs + RBIs": 94,
-    "Total Bases": 91,
-    "Home Runs": 90,
-    "Runs": 90,
-    "RBIs": 90,
-    "Hits": 89,
-    "Batter Walks": 88,
-    "Moneyline": 47,
-    "Run 1st Inning": 46,
-    "Stolen Bases": 44,
-    "Fantasy Points": 23,
-    "Spread": 12,
-    "Total Runs": 12,
-    "Strikeouts": 11,
-    "Batter Strikeouts": 11,
-    "Pitching Outs": 10,
-    "Hits Allowed": 10,
-    "Walks Allowed": 10,
-    "Earned Runs Allowed": 10,
-    "1st 5 Innings Moneyline": 9,
-    "1st 5 Innings Total Runs": 9,
-    "1st 5 Innings Spread": 9,
-    "Singles": 9,
-    "Doubles": 7,
-    "Team Total Runs": 6,
-    "1st Inn. Strikeouts": 4,
-    "1st Inn. Runs Allowed": 4,
-    "1st Inn. Pitch Count": 4,
-    "1st Inn. Batters Faced": 4,
-    "1st Inn. Hits Allowed": 4
+    "Hits + Runs + RBIs": 156,
+    "Total Bases": 146,
+    "Runs": 144,
+    "Hits": 144,
+    "RBIs": 144,
+    "Batter Walks": 133,
+    "Home Runs": 122,
+    "Moneyline": 61,
+    "Fantasy Points": 60,
+    "Stolen Bases": 50,
+    "Team Total Runs": 42,
+    "Batter Strikeouts": 35,
+    "Total Runs": 34,
+    "Run 1st Inning": 31,
+    "Spread": 29,
+    "Singles": 25,
+    "Doubles": 25,
+    "Strikeouts": 17,
+    "1st 5 Innings Moneyline": 16,
+    "1st 5 Innings Total Runs": 16,
+    "1st 5 Innings Spread": 16,
+    "Hits Allowed": 15,
+    "Pitching Outs": 13,
+    "Walks Allowed": 13,
+    "Earned Runs Allowed": 11,
+    "1st Inn. Runs Allowed": 8,
+    "1st Inn. Strikeouts": 7,
+    "1st Inn. Pitch Count": 7,
+    "1st Inn. Batters Faced": 7,
+    "1st Inn. Hits Allowed": 7
   },
   "by_line_type": {
-    "balanced": 947
+    "balanced": 1534
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 123,
-    "1.0": 101,
-    "1.15": 21,
-    "0.85": 20,
-    "0.81": 17,
-    "1.12": 16,
-    "0.82": 15,
-    "1.1": 14,
-    "0.88": 13,
-    "0.76": 13,
-    "0.83": 12,
-    "1.16": 12,
-    "0.86": 12,
-    "0.9": 12,
-    "0.8": 11
+    "1.0": 163,
+    "None": 153,
+    "0.81": 28,
+    "0.91": 28,
+    "1.14": 23,
+    "1.11": 22,
+    "1.1": 21,
+    "1.05": 19,
+    "0.82": 18,
+    "1.09": 17,
+    "1.12": 17,
+    "0.89": 15,
+    "0.79": 15,
+    "1.17": 14,
+    "0.88": 13
   },
-  "github_run_id": "34538625709"
+  "github_run_id": "34722674080"
 }
