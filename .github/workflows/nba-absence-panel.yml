@@ -216,6 +216,14 @@ jobs:
           CC_TEST: "2025-26"
           CC_K: '400'
         run: python nba/apply_ladder_calibration.py
+      - name: Calibrate ALL props
+        if: ${{ github.event.inputs.allocator == '22' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LC_TRAIN: "2024-25"
+          LC_TEST: "2025-26"
+          LC_K: '400'
+        run: python nba/calibrate_all_props.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
