@@ -32,6 +32,7 @@ def main():
             season text, game_date date, player_id text, game_id text, prop text, period text,
             line numeric, anchor numeric, ladder_offset int, p_more numeric, p_less numeric, p_raw numeric,
             role_tier text, var_band text, used_emp boolean, ladder_steps int, recipe text,
+            proj_min numeric, rate36 numeric,
             loaded_at timestamptz DEFAULT now())""")
         cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS baseline_history_uidx ON nba_score.baseline_history
             (game_date, player_id, game_id, prop, period, line)""")
