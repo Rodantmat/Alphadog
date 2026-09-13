@@ -125,6 +125,18 @@ def main():
         print(f"\n  worst band bias: " + " | ".join(f"{k} {v:.3f}" for k, v in spread.items())
               + f"   -> best {best}")
 
+        print("\n  k sweep on EWMA + archetype shrinkage (worst band bias, lower is better):")
+        for k in (3, 5, 8, 12, 20):
+            col = "p_I" if k == 8 else f"p_K{k}"
+            if k != 8:
+                x[col] = x["base_min"] * x[f"rate_K{k}"] / 36.0
+            tt = x.groupby("band", observed=True).agg(actual=("OREB", "mean"), p=(col, "mean"))
+            wb = float(tt["p"].sub(tt["actual"]).abs().max())
+            mae = float(np.abs(x[col] - x["OREB"]).mean())
+            lo = float(tt["p"].iloc[0] - tt["actual"].iloc[0])
+            hi = float(tt["p"].iloc[-1] - tt["actual"].iloc[-1])
+            print(f"    k={k:<4} worst band {wb:.3f}  MAE {mae:.4f}  low-band {lo:+.3f}  high-band {hi:+.3f}")
+
 
 if __name__ == "__main__":
     main()
