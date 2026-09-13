@@ -27,6 +27,7 @@ Env: DATABASE_URL, ARCHIVE_LABEL (window|close|routine), ARCHIVE_SPORT (nba), AR
 """
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
