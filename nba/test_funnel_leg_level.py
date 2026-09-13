@@ -202,6 +202,16 @@ def main():
     def funnel(d, use_factors):
         """minutes -> team poss -> usage -> FGA -> mix -> efficiency -> points"""
         m = d["b_min"] * (d["min_mult"].fillna(1.0) if use_factors else 1.0)
+        if use_factors:
+            # BLOWOUT RISK on the MINUTES link (Stokastic: "a double-digit spread is the silent killer
+            # of a projection - if a game projects to be a blowout, the starters may sit the entire
+            # fourth quarter and their minutes evaporate"). Applied to minutes, NOT to the final mean,
+            # and scaled by baseline minutes because it is starters who lose the fourth quarter -
+            # a bench player's minutes can RISE in the same game.
+            sp = d["home_spread"].abs()
+            blow = np.where(sp.notna(), 1.0 - BLOWOUT_K * np.clip(sp - 8.0, 0, 14) / 14.0, 1.0)
+            starter_w = np.clip((d["b_min"] - 18.0) / 14.0, 0.0, 1.0)     # 0 for bench, 1 for 32+ min
+            m = m * (1.0 - starter_w * (1.0 - blow))
         pace = d["b_team_poss"]
         if use_factors:
             tot = d["total"]
