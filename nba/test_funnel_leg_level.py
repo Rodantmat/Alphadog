@@ -247,7 +247,8 @@ def main():
                 best, bv = e, v
         globals()[name] = bv
         base_mae = best
-    print(f"fitted efficiency betas: B2(def_fg on 2P%) {B2:+.4f}  B3(def_3p on 3P%) {B3:+.4f}  BF(def_foul on FTA) {BF:+.4f}", flush=True)
+    print(f"fitted: BLOWOUT_K(spread on starter minutes) {BLOWOUT_K:+.4f}  B2(def_fg on 2P%) {B2:+.4f}  "
+          f"B3(def_3p on 3P%) {B3:+.4f}  BF(def_foul on FTA) {BF:+.4f}", flush=True)
 
     te = frames[te_s]
     te = te[te["b_min"].notna() & te["b_3pct"].notna() & te["b_2pct"].notna() & te["b_ftpct"].notna() & (te["b_min"] >= 10)].copy()
