@@ -73,8 +73,14 @@ def main():
         props = want or [r[0] for r in conn.execute(
             "SELECT DISTINCT prop FROM nba_score.baseline_history WHERE season=%s ORDER BY 1", (season,)).fetchall()]
         for prop in props:
-            col = COL.get(prop, prop.upper())
+            if prop in PERIOD_PROPS and not period_avail:
+                print(f"  {season} {prop}: SKIPPED - needs quarter-level data (period box scores), "
+                      f"not derivable from season totals. UNVERIFIED, not certified.", flush=True)
+                continue
+            col = "DOUBLE_DOUBLE" if prop == "double_double" else (
+                "FANTASY_SCORE" if prop == "fantasy_score" else COL.get(prop, prop.upper()))
             if col not in logs.columns:
+                print(f"  {season} {prop}: no box-score basis ({col}) - UNVERIFIED", flush=True)
                 continue
             h = pd.read_sql("""SELECT game_date, player_id, line, p_more FROM nba_score.baseline_history
                                WHERE season=%s AND prop=%s""", conn, params=(season, prop))
