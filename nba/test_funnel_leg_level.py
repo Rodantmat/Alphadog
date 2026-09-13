@@ -240,6 +240,11 @@ def main():
         poss_used = on_court_poss * usage_share.clip(0.02, 0.60)
         fga = poss_used * (d["b_fga"] / d["b_poss"].clip(lower=1)).clip(0.4, 1.2)
         share3 = (d["b_3pa"] / d["b_fga"].clip(lower=1)).clip(0, 0.95)
+        if use_factors:
+            # rim deterrence acts on the SHOT MIX: a strong rim-protecting opponent pushes attempts
+            # away from the rim and out to the perimeter, and lowers 2P% on what still goes inside.
+            rim_z = ((d["opp_rim"] - d["opp_rim"].median()) / max(d["opp_rim"].std(), 1e-6)).fillna(0.0)
+            share3 = (share3 * np.exp(RIM_MIX * rim_z)).clip(0, 0.95)
         a3, a2 = fga * share3, fga * (1 - share3)
         fta = fga * (d["b_fta"] / d["b_fga"].clip(lower=1)).clip(0, 1.2)
         p3, p2, pft = d["b_3pct"], d["b_2pct"], d["b_ftpct"]
