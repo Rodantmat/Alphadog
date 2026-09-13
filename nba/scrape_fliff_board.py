@@ -155,15 +155,24 @@ def main():
                         _gt = str(g.get("group_tag") or "")
                         _pf = g.get("player_fkey") or p.get("player_fkey") or ""
                         _player = _gt.split("#")[0].split("_", 1)[-1] if (_pf or "_" in _gt) else ""
-                        # LINE: t_142_selection_param_1 is empty on many markets; the number is then the
-                        # suffix of group_tag ("...#1.5") or embedded in the selection name.
+                        # LINE: t_142_selection_param_1 is empty on many markets. Prefer the SELECTION
+                        # NAME ("Brandon Pfaadt Over 4.5" -> 4.5); the group_tag suffix carries an extra
+                        # token ("4.5 / (62)") and was producing unusable strings.
                         _line = p.get("t_142_selection_param_1")
                         if _line in (None, ""):
-                            if "#" in _gt:
-                                _line = _gt.rsplit("#", 1)[-1]
+                            _sel = str(p.get("t_141_selection_name") or "")
+                            _m = re.search(r"\b(?:over|under|more|less)\s+(-?\d+(?:\.\d+)?)", _sel, re.I) \
+                                or re.search(r"(-?\d+(?:\.\d+)?)\s*$", _sel)
+                            if _m:
+                                _line = _m.group(1)
+                            elif "#" in _gt:
+                                _m2 = re.search(r"(-?\d+(?:\.\d+)?)", _gt.rsplit("#", 1)[-1])
+                                _line = _m2.group(1) if _m2 else ""
                             else:
-                                _m = re.search(r"(-?\d+(?:\.\d+)?)", str(p.get("t_141_selection_name") or ""))
-                                _line = _m.group(1) if _m else ""
+                                _line = ""
+                        else:
+                            _m3 = re.search(r"(-?\d+(?:\.\d+)?)", str(_line))
+                            _line = _m3.group(1) if _m3 else ""
                         legs.append({
                             "sport": sport, "conflict_fkey": fkey, "event": f"{c.get('away_team_name')} @ {c.get('home_team_name')}", "event_start_utc": c.get("event_start_timestamp_utc"), "live": bool(c.get("live_status") not in (None, 733)) if False else (fkey.endswith("inplay") if fkey else False),
                             "market": m.get("visual_name"), "market_fkey": m.get("market_fkey"), "market_type": m.get("type"), "subfeed_code": m.get("subfeed_code"), "sgp_mode": m.get("sgp_mode"),
