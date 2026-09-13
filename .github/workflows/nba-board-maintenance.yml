@@ -8,8 +8,12 @@ on:
         default: "derived"
         required: false
       date:
-        description: "slate date for coverage check"
+        description: "slate date for coverage check / props for calibration"
         default: "2026-03-15"
+        required: false
+      season:
+        description: "season for the calibration check"
+        default: "2025-26"
         required: false
 
 permissions:
