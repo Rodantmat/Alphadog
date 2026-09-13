@@ -5291,10 +5291,14 @@ async function apiHighHitSlips(env, request) {
   // 25 days underwater; live results since have gone the other way, so live evidence wins.
   // V1 = autoSelectMixedTop55Legs: goblin LESS legs selected on classification.baseline_v6_current
   // (>=90), top decile of the day's qualifying pool, max 2 per game, max 2 slips per player.
-  const [sleeperLegs, ppLegs] = await Promise.all([
-    autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectMixedTop55Legs(env, 'prizepicks').catch(() => [])
+  // V1 OFF AGAIN 2026-09-13: V3's 5-pick is the goblin track in use. V1 and V3 both select goblin
+  // LESS legs from the same board, so running both splits stake across competing configs whose
+  // difference is far larger than their error bars. Re-enable by restoring the await below.
+  const [sleeperLegs] = await Promise.all([
+    autoSelectSleeperHighHitSlipLegs(env)
   ]);
+  const ppLegs = [];
+  const v1Disabled_selector = autoSelectMixedTop55Legs;
   const udLegs = [];   // DISABLED - superseded by Underdog v3 sharp divergence
   const slLegs = [];   // DISABLED - superseded by Sleeper v3 sharp divergence
   // RE-ENABLED 2026-08-27: PrizePicks Goblin returns with an entirely new selection layer. The
