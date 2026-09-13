@@ -65,10 +65,10 @@ def phase_of(dt):
     return "4_push"
 
 
-def load(season, conn, pid_map):
+def load(season, conn, pid_map, prop, market):
     h = pd.read_sql("""SELECT game_date, player_id, line, p_more, p_less
-                       FROM nba_score.baseline_history WHERE season=%s AND prop='points'""",
-                    conn, params=(season,))
+                       FROM nba_score.baseline_history WHERE season=%s AND prop=%s""",
+                    conn, params=(season, prop))
     if h.empty:
         return pd.DataFrame()
     h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
@@ -77,14 +77,16 @@ def load(season, conn, pid_map):
     h = h.drop_duplicates(subset=["game_date", "player_id", "line"])
 
     t = pd.read_sql("""SELECT game_date, player, line, side, tier, kind FROM nba_market.board_tiers
-                       WHERE snapshot_label='window' AND base_market='player_points'""", conn)
+                       WHERE snapshot_label='window' AND base_market=%s""", conn, params=(market,))
+    if t.empty:
+        return pd.DataFrame()
     t["game_date"] = pd.to_datetime(t["game_date"]).dt.date
     t["line"] = t["line"].astype(float)
     t["player_id"] = t["player"].map(norm_name).map(pid_map)
     t = t[t["player_id"].notna()].drop_duplicates(subset=["game_date", "player_id", "line", "side"])
 
     o = pd.read_sql("""SELECT game_date, player, line, side, leg_result FROM nba_market.board_outcomes
-                       WHERE replace(market_key,'_alternate','')='player_points'""", conn)
+                       WHERE replace(market_key,'_alternate','')=%s""", conn, params=(market,))
     o["game_date"] = pd.to_datetime(o["game_date"]).dt.date
     o["line"] = o["line"].astype(float)
     o["player_id"] = o["player"].map(norm_name).map(pid_map)
@@ -99,6 +101,7 @@ def load(season, conn, pid_map):
                         d["leg_result"] == "under_win").astype(int)
     d["phase"] = d["game_date"].map(phase_of)
     d["band"] = pd.cut(d["p"], [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0]).astype(str)
+    d["prop"] = prop
     return d
 
 
