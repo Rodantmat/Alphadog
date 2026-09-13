@@ -230,6 +230,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BM_SEASONS: "2024-25,2025-26"
         run: python nba/build_blowout_model.py
+      - name: Validate the blowout upgrade (sample gates)
+        if: ${{ github.event.inputs.allocator == '24' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BS_SEASONS: "2024-25,2025-26"
+        run: python nba/validate_blowout_upgrade.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
