@@ -73,7 +73,8 @@ def main():
         # The archetype is defined by DEFENSIVE rebound rate: a proxy for size and role that correlates
         # with rebounding behaviour but is NOT the target, so the grouping is not circular.
         d["dreb36"] = np.where(d["MIN"] > 0, d["DREB"] / d["MIN"] * 36, np.nan)
-        d["base_dreb36"] = g["dreb36"].transform(lambda s: s.shift(1).expanding(min_periods=3).mean())
+        g2 = d.groupby("PLAYER_ID")   # `g` was bound before dreb36 existed and cannot see it
+        d["base_dreb36"] = g2["dreb36"].transform(lambda s: s.shift(1).expanding(min_periods=3).mean())
         d["arch"] = pd.qcut(d["base_dreb36"], 5, labels=[f"q{i}" for i in range(1, 6)], duplicates="drop")
         arch_prior = (d.groupby(["arch", "GAME_DATE"], observed=True)["oreb36"].mean()
                         .groupby(level=0).transform(lambda s: s.shift(1).expanding(min_periods=3).mean())
