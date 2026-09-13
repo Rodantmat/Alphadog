@@ -41,15 +41,16 @@ def main():
         cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
         cur.executemany("""INSERT INTO nba_score.baseline_history
             (season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
-             role_tier, var_band, used_emp, ladder_steps, recipe)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+             role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT (game_date, player_id, game_id, prop, period, line) DO UPDATE SET
               p_more=EXCLUDED.p_more, p_less=EXCLUDED.p_less, p_raw=EXCLUDED.p_raw, anchor=EXCLUDED.anchor,
               ladder_offset=EXCLUDED.ladder_offset, role_tier=EXCLUDED.role_tier, var_band=EXCLUDED.var_band,
-              used_emp=EXCLUDED.used_emp, loaded_at=now()""",
+              used_emp=EXCLUDED.used_emp, proj_min=EXCLUDED.proj_min, rate36=EXCLUDED.rate36, loaded_at=now()""",
             [(season, r["game_date"], r["player_id"], r["game_id"], r["prop"], r.get("period") or "FULL",
               r["line"], r.get("anchor"), r.get("offset"), r.get("p_more"), r.get("p_less"), r.get("p_raw"),
-              r.get("role_tier"), r.get("var_band"), r.get("used_emp"), meta.get("ladder_steps"), (meta.get("recipe") or "")[:120])
+              r.get("role_tier"), r.get("var_band"), r.get("used_emp"), meta.get("ladder_steps"),
+              (meta.get("recipe") or "")[:120], r.get("proj_min"), r.get("rate36"))
              for r in rows])
     conn.commit()
     with conn.cursor() as cur:
