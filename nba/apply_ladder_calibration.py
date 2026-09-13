@@ -105,76 +105,83 @@ def load(season, conn, pid_map, prop, market):
     return d
 
 
+PROP_MARKET = {"points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
+               "threes_made": "player_threes", "pra": "player_points_rebounds_assists",
+               "pts_reb": "player_points_rebounds", "pts_ast": "player_points_assists",
+               "reb_ast": "player_rebounds_assists", "steals": "player_steals",
+               "blocks": "player_blocks", "turnovers": "player_turnovers", "stocks": "player_blocks_steals"}
+
+
 def main():
     tr_s, te_s = os.environ.get("CC_TRAIN", "2024-25"), os.environ.get("CC_TEST", "2025-26")
     K = float(os.environ.get("CC_K", "400"))
+    props = [p.strip() for p in os.environ.get("CC_PROPS", ",".join(PROP_MARKET)).split(",") if p.strip()]
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     pid_map = {norm_name(x.get("DISPLAY_FIRST_LAST")): str(x.get("PERSON_ID"))
                for x in fetch("nba_all_players.json").get("records") or []}
-    tr, te = load(tr_s, conn, pid_map), load(te_s, conn, pid_map)
-    if tr.empty or te.empty:
-        print("insufficient data")
-        return
-    print(f"train {tr_s}: {len(tr):,} legs | test {te_s}: {len(te):,} legs | shrink K={K:.0f}", flush=True)
 
-    # fit cell shifts on TRAIN, with a fallback hierarchy
-    def shifts(keys):
-        g = tr.groupby(keys, observed=True).agg(n=("won", "size"), a=("won", "mean"), m=("p", "mean"))
-        g = g[g["n"] >= 100]
-        g["w"] = g["n"] / (g["n"] + K)
-        g["shift"] = g["w"] * (logit(g["a"].values) - logit(g["m"].values))
-        return g["shift"].to_dict()
-
-    s_full = shifts(["kind", "tier", "phase", "band"])
-    s_kpb = shifts(["kind", "phase", "band"])
-    s_pb = shifts(["phase", "band"])
-
-    def apply_shift(row):
-        return (s_full.get((row["kind"], row["tier"], row["phase"], row["band"]))
-                or s_kpb.get((row["kind"], row["phase"], row["band"]))
-                or s_pb.get((row["phase"], row["band"])) or 0.0)
-
-    te = te.copy()
-    te["shift"] = te.apply(apply_shift, axis=1)
-    te["p_cal"] = sigmoid(logit(te["p"].values) + te["shift"].values)
-
-    def score(frame, col):
-        p = np.clip(frame[col].values, 1e-4, 1 - 1e-4)
-        h = frame["won"].values
-        return float(-np.mean(h * np.log(p) + (1 - h) * np.log(1 - p))), float(np.mean((p - h) ** 2))
-
-    ll0, br0 = score(te, "p")
-    ll1, br1 = score(te, "p_cal")
-    print(f"\nOUT-OF-SAMPLE on {te_s}, {len(te):,} legs")
-    print(f"  raw ladder        log-loss {ll0:.4f}  Brier {br0:.4f}")
-    print(f"  CALIBRATED        log-loss {ll1:.4f}  Brier {br1:.4f}   "
-          f"gain {ll0-ll1:+.4f} log-loss, {br0-br1:+.4f} Brier", flush=True)
-
-    print(f"\n  {'phase':<12}{'n':>8}{'raw':>9}{'calibrated':>12}{'gain':>9}")
-    for ph, g in te.groupby("phase", observed=True):
-        if len(g) < 500:
+    # EACH PROP GETS ITS OWN CELLS. A rebound ladder and a threes ladder are different animals - one is
+    # a smooth count with a wide anchor, the other is bursty and zero-inflated - so a shared correction
+    # would blur them. DIRECTION is a cell dimension too: Over and Under on the same ladder can be
+    # miscalibrated in opposite directions, and averaging them hides both.
+    print(f"train {tr_s} -> test {te_s} | shrink K={K:.0f} | props: {len(props)}\n", flush=True)
+    print(f"{'prop':<13}{'n_test':>9}{'raw LL':>9}{'cal LL':>9}{'gain':>9}{'raw Brier':>11}{'cal Brier':>11}   verdict")
+    out_rows, totals = [], []
+    for prop in props:
+        market = PROP_MARKET.get(prop)
+        if not market:
             continue
-        a, _ = score(g, "p")
-        b, _ = score(g, "p_cal")
-        print(f"  {ph:<12}{len(g):>8,}{a:>9.4f}{b:>12.4f}{a-b:>+9.4f}", flush=True)
-
-    print(f"\n  {'kind':<10}{'n':>8}{'raw':>9}{'calibrated':>12}{'gain':>9}")
-    for kd, g in te.groupby("kind", observed=True):
-        if len(g) < 500:
+        tr, te = load(tr_s, conn, pid_map, prop, market), load(te_s, conn, pid_map, prop, market)
+        if tr.empty or te.empty or len(tr) < 3000 or len(te) < 1500:
             continue
-        a, _ = score(g, "p")
-        b, _ = score(g, "p_cal")
-        print(f"  {kd:<10}{len(g):>8,}{a:>9.4f}{b:>12.4f}{a-b:>+9.4f}", flush=True)
 
-    with conn.cursor() as cur:
-        cur.executemany("""INSERT INTO nba_score.factor_gate_results
-            (season, slice, model, n, log_loss, brier, gain_vs_anchor, shrink_beta)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
-            [(te_s, "ladder_all", "raw_ladder", len(te), round(ll0, 4), round(br0, 4), 0.0, K),
-             (te_s, "ladder_all", "phase_band_calibrated", len(te), round(ll1, 4), round(br1, 4),
-              round(ll0 - ll1, 4), K)])
-    conn.commit()
+        def shifts(keys, frame=tr):
+            g = frame.groupby(keys, observed=True).agg(n=("won", "size"), a=("won", "mean"), m=("p", "mean"))
+            g = g[g["n"] >= 100]
+            w = g["n"] / (g["n"] + K)
+            return (w * (logit(g["a"].values) - logit(g["m"].values))).to_dict()
+
+        s_full = shifts(["kind", "tier", "phase", "band", "side"])
+        s_kpbs = shifts(["kind", "phase", "band", "side"])
+        s_pbs = shifts(["phase", "band", "side"])
+        s_bs = shifts(["band", "side"])
+
+        def ap(r):
+            return (s_full.get((r["kind"], r["tier"], r["phase"], r["band"], r["side"]))
+                    or s_kpbs.get((r["kind"], r["phase"], r["band"], r["side"]))
+                    or s_pbs.get((r["phase"], r["band"], r["side"]))
+                    or s_bs.get((r["band"], r["side"])) or 0.0)
+        te = te.copy()
+        te["p_cal"] = sigmoid(logit(te["p"].values) + te.apply(ap, axis=1).values)
+
+        def score(frame, col):
+            p = np.clip(frame[col].values, 1e-4, 1 - 1e-4)
+            h = frame["won"].values
+            return float(-np.mean(h * np.log(p) + (1 - h) * np.log(1 - p))), float(np.mean((p - h) ** 2))
+
+        ll0, br0 = score(te, "p")
+        ll1, br1 = score(te, "p_cal")
+        gain = ll0 - ll1
+        print(f"{prop:<13}{len(te):>9,}{ll0:>9.4f}{ll1:>9.4f}{gain:>+9.4f}{br0:>11.4f}{br1:>11.4f}   "
+              f"{'APPLY' if gain > 0.001 else 'no gain - leave raw'}", flush=True)
+        out_rows.append((te_s, f"prop:{prop}", "raw_ladder", len(te), round(ll0, 4), round(br0, 4), 0.0, K))
+        out_rows.append((te_s, f"prop:{prop}", "phase_band_side_calibrated", len(te),
+                         round(ll1, 4), round(br1, 4), round(gain, 4), K))
+        totals.append((prop, len(te), gain))
+
+    if out_rows:
+        with conn.cursor() as cur:
+            cur.executemany("""INSERT INTO nba_score.factor_gate_results
+                (season, slice, model, n, log_loss, brier, gain_vs_anchor, shrink_beta)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""", out_rows)
+        conn.commit()
+        good = [p for p, _, g in totals if g > 0.001]
+        wn = sum(n for _, n, _ in totals)
+        wg = sum(n * g for _, n, g in totals) / wn if wn else 0
+        print(f"\ncalibration helps on {len(good)} of {len(totals)} props | "
+              f"volume-weighted gain {wg:+.4f} log-loss over {wn:,} legs", flush=True)
+        print(f"apply: {', '.join(sorted(good)) if good else '(none)'}", flush=True)
     conn.close()
 
 
