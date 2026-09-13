@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""
+PROP RELIABILITY SCORE — sets the confidence penalty by MEASUREMENT, not by fiat.
+
+"Penalized" is meaningless until it is a number. This scores every prop on the same scale, so a prop's
+penalty follows from how much worse it actually is than the certified set - fair to the prop, and
+reusable for every prop we add later.
+
+METRICS, all computed leg-level against the box scores (same source as check_prop_calibration):
+  ECE   n-weighted mean |predicted - actual| across confidence bands  <- the honest "how far off"
+  worst the worst single band gap (what the certification gate uses)
+  Brier mean (p - outcome)^2                                          <- accuracy, not just calibration
+  LL    log loss
+  lift  Brier vs a naive always-predict-base-rate model               <- is the prop worth modelling
+
+PENALTY RULE (derived, not assumed):
+  a prop's stated confidence is discounted so that its DELIVERED hit rate matches what it claims.
+  penalty_pp = the prop's ECE minus the median ECE of the certified set. A prop that is 1.5 pp less
+  reliable than the certified median has its confidence read 1.5 pp lower - no more, no less.
+
+Env: DATABASE_URL, REL_SEASONS, REL_PROPS (blank = all in baseline_history)
+"""
+import json
+import os
+import urllib.request
+
+import numpy as np
+import pandas as pd
+import psycopg
+
+RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
+COL = {"points": "PTS", "rebounds": "REB", "assists": "AST", "threes_made": "FG3M", "blocks": "BLK",
+       "steals": "STL", "turnovers": "TOV", "personal_fouls": "PF", "fga": "FGA", "fg3a": "FG3A",
+       "ftm": "FTM", "fgm": "FGM", "fta": "FTA", "oreb": "OREB", "dreb": "DREB"}
+COMBO = {"pra": ("PTS", "REB", "AST"), "pts_reb": ("PTS", "REB"), "pts_ast": ("PTS", "AST"),
+         "reb_ast": ("REB", "AST"), "stocks": ("STL", "BLK")}
+
+
+def fetch(name, timeout=300):
+    with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
+        return json.load(r)
+
+
+def main():
+    seasons = [s.strip() for s in os.environ.get("REL_SEASONS", "2024-25,2025-26").split(",")]
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
+    want = [p.strip() for p in os.environ.get("REL_PROPS", "").split(",") if p.strip()]
+
+    rows = []
+    for season in seasons:
+        slug = season.replace("-", "_")
+        logs = pd.DataFrame(fetch(f"nba_player_game_log_{slug}.json")["records"])
+        logs["GAME_DATE"] = pd.to_datetime(logs["GAME_DATE"]).dt.date
+        logs["PLAYER_ID"] = logs["PLAYER_ID"].astype(str)
+        for name, cols in COMBO.items():
+            logs[name.upper()] = sum(logs[c].fillna(0) for c in cols)
+        props = want or [r[0] for r in conn.execute(
+            "SELECT DISTINCT prop FROM nba_score.baseline_history WHERE season=%s ORDER BY 1", (season,)).fetchall()]
+        for prop in props:
+            col = COL.get(prop, prop.upper())
+            if col not in logs.columns:
+                continue
+            h = pd.read_sql("""SELECT game_date, player_id, line, p_more FROM nba_score.baseline_history
+                               WHERE season=%s AND prop=%s""", conn, params=(season, prop))
+            if h.empty:
+                continue
+            h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
+            h["player_id"] = h["player_id"].astype(str)
+            d = h.merge(logs[["GAME_DATE", "PLAYER_ID", col]], left_on=["game_date", "player_id"],
+                        right_on=["GAME_DATE", "PLAYER_ID"], how="inner")
+            if len(d) < 5000:
+                continue
+            hit = (d[col] > d["line"]).astype(int).values
+            p = d["p_more"].astype(float).values
+            # score the SIDE the model favours, which is how a leg is actually offered
+            p_side = np.where(p >= 0.5, p, 1 - p)
+            hit_side = np.where(p >= 0.5, hit, 1 - hit)
+            band = pd.cut(p_side, [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 1.01], right=False)
+            t = pd.DataFrame({"band": band, "p": p_side, "h": hit_side}).groupby("band", observed=True).agg(
+                n=("h", "size"), pred=("p", "mean"), act=("h", "mean"))
+            t = t[t["n"] >= 200]
+            if t.empty:
+                continue
+            gap = (t["act"] - t["pred"]).abs()
+            ece = float((gap * t["n"]).sum() / t["n"].sum()) * 100
+            worst = float(gap.max()) * 100
+            brier = float(np.mean((p_side - hit_side) ** 2))
+            base = float(hit_side.mean())
+            brier_base = float(np.mean((base - hit_side) ** 2))
+            ll = float(-np.mean(hit_side * np.log(np.clip(p_side, 1e-6, 1)) +
+                                (1 - hit_side) * np.log(np.clip(1 - p_side, 1e-6, 1))))
+            rows.append({"season": season, "prop": prop, "n": len(d), "ECE_pp": ece, "worst_pp": worst,
+                         "brier": brier, "lift_%": 100 * (brier_base - brier) / brier_base, "logloss": ll})
+    conn.close()
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        print("no props scored")
+        return
+    agg = df.groupby("prop").agg(seasons=("season", "nunique"), n=("n", "sum"), ECE_pp=("ECE_pp", "mean"),
+                                 worst_pp=("worst_pp", "max"), brier=("brier", "mean"),
+                                 lift=("lift_%", "mean")).sort_values("ECE_pp")
+    certified = agg[(agg["worst_pp"] <= 2.5) & (agg["seasons"] == len(seasons))]
+    med = float(certified["ECE_pp"].median()) if not certified.empty else float(agg["ECE_pp"].median())
+    print(f"certified set: {len(certified)} props | median ECE {med:.2f} pp\n")
+    print(f"{'prop':<15}{'n':>10}{'ECE pp':>9}{'worst pp':>10}{'brier':>8}{'lift %':>8}   penalty")
+    for prop, r in agg.iterrows():
+        pen = max(0.0, r["ECE_pp"] - med)
+        tag = "certified" if (r["worst_pp"] <= 2.5 and r["seasons"] == len(seasons)) else f"-{pen:.1f} pp"
+        print(f"{prop:<15}{int(r['n']):>10,}{r['ECE_pp']:>9.2f}{r['worst_pp']:>10.2f}"
+              f"{r['brier']:>8.4f}{r['lift']:>8.1f}   {tag}")
+
+
+if __name__ == "__main__":
+    main()
