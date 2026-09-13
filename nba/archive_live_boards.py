@@ -131,8 +131,20 @@ def rows_fliff(doc, gd, label):
         except (TypeError, ValueError):
             skipped += 1
             continue
-        side = "Over" if sel.lower().startswith(("over", "more", "yes")) else (
-            "Under" if sel.lower().startswith(("under", "less", "no")) else None)
+        # SIDE: Fliff's selection is "Brandon Pfaadt Over 4.5" - the direction sits in the MIDDLE, after
+        # the player name. A startswith() test matched only the handful of selections that lead with the
+        # word and dropped 1,376 of 1,394 legs.
+        low = sel.lower()
+        if re.search(r"\b(over|more)\b", low):
+            side = "Over"
+        elif re.search(r"\b(under|less)\b", low):
+            side = "Under"
+        elif low.startswith("yes"):
+            side = "Over"
+        elif low.startswith("no"):
+            side = "Under"
+        else:
+            side = None
         if side is None:
             skipped += 1                 # team markets / moneyline selections: not a player O/U leg
             continue
