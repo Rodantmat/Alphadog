@@ -117,6 +117,14 @@ jobs:
           M1_TEST_SEASON: "2025-26"
           M1_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
         run: python nba/fit_m1_defender_level.py
+      - name: B4 sub-case - rim protection
+        if: ${{ github.event.inputs.allocator == '11' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RIM_TRAIN_SEASON: "2024-25"
+          RIM_TEST_SEASON: "2025-26"
+          RIM_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
+        run: python nba/fit_b4_rim_protection.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
