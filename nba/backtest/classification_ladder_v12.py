@@ -81,7 +81,7 @@ PROPS = {
     # Configs are the closest certified analogue; NOT yet certified - the first history run prints the band tables.
     "fgm":         {"col": "FGM",  "alpha": 0.15, "k_stab": 20, "step": 1.0, "family": "auto"},     # analogue: fga
     "fta":         {"col": "FTA",  "alpha": 0.12, "k_stab": 40, "step": 1.0, "family": "negbin"},   # analogue: fg3a
-    "oreb":        {"col": "OREB", "alpha": 0.08, "k_stab": 60, "step": 1.0, "family": "negbin", "zero_adjust": True},   # zero-inflated; shift lambda 0.5 like blocks/steals (v1 at lambda 1.0 failed: LOW/more 74.3 pred vs 53.1 actual)
+    "oreb":        {"col": "OREB", "alpha": 0.15, "k_stab": 4, "step": 1.0, "family": "negbin", "zero_adjust": True},   # k=60 compressed the spread (worst band bias 0.241: under-predicted low anchors -0.108, over-predicted elite crashers +0.241). A k sweep on EWMA + archetype shrinkage gave worst band 0.045 at k=3-5 with the best MAE, monotone in k. alpha raised 0.08 -> 0.15 (EWMA beat the expanding mean on every band).
     "dreb":        {"col": "DREB", "alpha": 0.08, "k_stab": 40, "step": 1.0, "family": "negbin"},   # analogue: rebounds
 }
 VBANDS_ALL = {"points": [(0, 9.5, "FRINGE"), (9.5, 17.5, "ROLE"), (17.5, 25.5, "STARTER"), (25.5, 31.5, "STAR"), (31.5, 99, "SUPERSTAR")],
