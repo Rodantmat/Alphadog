@@ -149,6 +149,52 @@ Times are Pacific. "Stage" is where the factor is COMPUTED; phase 2 may still *r
 | **Board itself** | DFS apps at 2:45 | 2:45 PM | **phase 2** | |
 | All-Star / national TV | — | — | **not mined** (owner) | |
 
+## 9. BASELINE AND ENRICHMENT ARE ONE SYSTEM (owner directive, 2026-09-13)
+
+> The baseline and the enrichment cannot be two different things. They must agree, complement each
+> other, and produce one final product. All the heavy lifting belongs in the baseline; the enrichment
+> layer exists only to carry what the baseline could not have known.
+
+**The error this corrects.** A2 absence redistribution measured well in isolation (minutes MAE 4.641
+with outs vs 6.186 ignoring them) and was then applied on top of the certified baseline's projected
+mean. Held out on 6,996 real PrizePicks legs:
+
+| | log-loss | Brier |
+|---|---|---|
+| certified baseline alone | **0.7299** | **0.2652** |
+| baseline x A2 | 1.0123 | 0.3317 |
+| baseline x defender | 0.7309 | 0.2656 |
+
+A2 made it dramatically WORSE, because **the baseline's `proj_min` already applies the injury report**
+(the 2026-03-15 replay went from 173 roster players to 161 with `BT_INJURY` on). Multiplying by A2's
+`min_mult` reapplies the same reallocation a second time. The same mistake appeared twice before: a
+hand-built blowout shrink duplicating the recipe's `P(blowout | spread)` mixture, and a funnel rebuilt
+from rolling means that was beaten by the very anchor it bypassed (0.7951 vs 0.7299).
+
+**The rule.**
+```
+baseline   (phase 1, overnight, day-BEFORE report)  = everything knowable then, done properly
+enrichment (phase 2/3, from 2:30 PM)                = ONLY THE DELTA vs what the baseline assumed
+```
+A star already ruled out overnight is priced into `proj_min`; a scratch appearing at 2:30 is not.
+Enrichment applies A2 **only to players whose availability changed after the baseline's cutoff**, and
+only to their team and opponent. Everything else carries the baseline's value forward untouched.
+
+**Why the historical tests misled.** In a replay both layers read the SAME day's report, so the delta is
+empty and A2 is pure duplication. To measure enrichment honestly, the baseline must be rebuilt on the
+**day-before** report and the factor applied against the **day-of** report - the production
+configuration. Any factor test using one report for both layers measures double-counting, not value.
+
+**Consequences for factor work.**
+1. A factor may only touch a component the baseline does NOT contain, or be expressed as a delta against
+   what the baseline assumed.
+2. `proj_min` and `rate36` must be EMITTED by the recipe so enrichment adjusts the right COMPONENT
+   rather than multiplying the product - multiplying a mean by a minutes multiplier is not the same
+   operation as adjusting minutes and re-deriving the mean.
+3. The defender factor is the clean case: the baseline carries TEAM-level opponent defence, not the
+   specific defender, so a player-level term is genuinely additive. It measured neutral on the anchor
+   (0.7309 vs 0.7299) - which is what "no double count, small effect" looks like.
+
 ## 8. The funnel across the three processing stages (2026-09-13)
 
 The engine is not one pass. It is three, with different deadlines and different budgets. The funnel's
