@@ -68,8 +68,33 @@ def main():
         # double-double: two or more of PTS/REB/AST/STL/BLK at 10+
         logs["DOUBLE_DOUBLE"] = (sum((logs[c].fillna(0) >= 10).astype(int)
                                      for c in ("PTS", "REB", "AST", "STL", "BLK")) >= 2).astype(int)
-        # period props need quarter-level data the season logs do not carry
+        # period props: quarter box scores exist as nba_player_game_log_q{1..4}_{season}.json
+        # (scrape_nba_periods.py). Without them these 7 props (~3.8M rows) sit in the table with NO
+        # independent verdict - built from a certified recipe, but never re-checked from stored data.
         period_avail = False
+        try:
+            q = {}
+            for qq in (1, 2, 3, 4):
+                qd = pd.DataFrame(fetch(f"nba_player_game_log_q{qq}_{slug}.json")["records"])
+                qd["GAME_DATE"] = pd.to_datetime(qd["GAME_DATE"]).dt.date
+                qd["PLAYER_ID"] = qd["PLAYER_ID"].astype(str)
+                q[qq] = qd.set_index(["GAME_DATE", "PLAYER_ID"])
+            idx = logs.set_index(["GAME_DATE", "PLAYER_ID"]).index
+            for stat in ("PTS", "REB", "AST", "FG3M"):
+                for tag, parts in (("q1", [1]), ("h1", [1, 2]), ("h2", [3, 4]), ("q4", [4])):
+                    s = None
+                    for part in parts:
+                        col = q[part][stat].reindex(idx).fillna(0) if stat in q[part].columns else None
+                        if col is None:
+                            s = None
+                            break
+                        s = col if s is None else s + col
+                    if s is not None:
+                        logs[f"{stat}_{tag.upper()}"] = s.values
+            period_avail = True
+            print(f"  {season}: quarter logs loaded - period props will be graded", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  {season}: quarter logs unavailable ({str(exc)[:70]}) - period props UNVERIFIED", flush=True)
         props = want or [r[0] for r in conn.execute(
             "SELECT DISTINCT prop FROM nba_score.baseline_history WHERE season=%s ORDER BY 1", (season,)).fetchall()]
         for prop in props:
