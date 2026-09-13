@@ -83,6 +83,12 @@ def main():
         for tag, k, base in (("H", 20.0, "rate_A"), ("I", 8.0, "rate_E")):
             w = d["n_seen"] / (d["n_seen"] + k)
             d[f"rate_{tag}"] = w * d[base] + (1 - w) * d["arch_prior"]
+        # k sweep on the winning form (EWMA + archetype shrinkage). I at k=8 cut the worst band bias
+        # 0.241 -> 0.141 but still under-predicts elite crashers (-0.141 at 2.5+), meaning the prior
+        # pulls them down slightly too hard. Sweep to find where the band bias is flattest.
+        for k in (3.0, 5.0, 12.0, 20.0):
+            w = d["n_seen"] / (d["n_seen"] + k)
+            d[f"rate_K{int(k)}"] = w * d["rate_E"] + (1 - w) * d["arch_prior"]
 
         x = d[d["base_min"].notna() & d["rate_A"].notna() & d["rate_E"].notna()
               & d["rate_F"].notna() & d["rate_H"].notna() & (d["base_min"] >= 8)].copy()
