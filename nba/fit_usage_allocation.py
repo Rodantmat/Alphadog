@@ -148,6 +148,8 @@ def main():
     beta = best_beta
     print(f"fitted betas (standardised, ridge {lam}) "
           f"[log usage, log minutes, is_creator, minutes lift]: {np.round(beta, 4).tolist()}", flush=True)
+    print(f"USAGE_MU = {np.round(mu, 4).tolist()}", flush=True)
+    print(f"USAGE_SD = {np.round(sd, 4).tolist()}", flush=True)
 
     # baselines to beat
     def prop_share(x, col, groups):
