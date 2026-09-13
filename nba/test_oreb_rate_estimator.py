@@ -84,30 +84,36 @@ def main():
             d[f"rate_{tag}"] = w * d[base] + (1 - w) * d["arch_prior"]
 
         x = d[d["base_min"].notna() & d["rate_A"].notna() & d["rate_E"].notna()
-              & d["rate_F"].notna() & (d["base_min"] >= 8)].copy()
-        for tag in ("A", "E", "F", "G"):
+              & d["rate_F"].notna() & d["rate_H"].notna() & (d["base_min"] >= 8)].copy()
+        for tag in ("A", "E", "F", "G", "H", "I"):
             x[f"p_{tag}"] = x["base_min"] * x[f"rate_{tag}"] / 36.0
 
         print(f"\n=== {season}: {len(x):,} player-games | mean actual {x['OREB'].mean():.3f}")
-        print(f"{'estimator':<28}{'MAE':>8}{'bias':>9}{'sd(pred)':>10}   (sd actual {x['OREB'].std():.3f})")
+        print(f"{'estimator':<30}{'MAE':>8}{'bias':>9}{'sd(pred)':>10}   (sd actual {x['OREB'].std():.3f})")
         for tag, name in (("A", "expanding mean"), ("E", "EWMA 0.15"),
-                          ("F", "EB to role tier k=20"), ("G", "EB to role tier k=8")):
+                          ("F", "EB to minutes tier k=20"), ("G", "EB to minutes tier k=8"),
+                          ("H", "EB to DREB archetype k=20"), ("I", "EWMA + archetype k=8")):
             c = f"p_{tag}"
-            print(f"{name:<28}{np.abs(x[c]-x['OREB']).mean():>8.4f}"
+            print(f"{name:<30}{np.abs(x[c]-x['OREB']).mean():>8.4f}"
                   f"{(x[c]-x['OREB']).mean():>+9.4f}{x[c].std():>10.4f}")
+
+        # the smoking-gun test for regression to the mean: correlation of prediction with error
+        for tag in ("A", "E", "H", "I"):
+            r = np.corrcoef(x[f"p_{tag}"], x["OREB"] - x[f"p_{tag}"])[0, 1]
+            print(f"  corr(prediction, error) {tag}: {r:+.4f}   (0 = no regression-to-mean bias)")
 
         print("\n  bias by anchor band - the test that matters (flat across bands = fixed):")
         x["band"] = pd.cut(x["p_A"], [0, 0.5, 1.0, 1.5, 2.5, 10],
                            labels=["<0.5", "0.5-1", "1-1.5", "1.5-2.5", "2.5+"])
         t = x.groupby("band", observed=True).agg(n=("OREB", "size"), actual=("OREB", "mean"),
                                                  A=("p_A", "mean"), E=("p_E", "mean"),
-                                                 F=("p_F", "mean"), G=("p_G", "mean"))
-        print(f"    {'band':<9}{'n':>7}{'actual':>8}{'A':>9}{'E':>9}{'F':>9}{'G':>9}")
+                                                 H=("p_H", "mean"), I=("p_I", "mean"))
+        print(f"    {'band':<9}{'n':>7}{'actual':>8}{'A':>9}{'E':>9}{'H':>9}{'I':>9}")
         for b, r in t.iterrows():
             print(f"    {str(b):<9}{int(r['n']):>7,}{r['actual']:>8.3f}"
                   f"{r['A']-r['actual']:>+9.3f}{r['E']-r['actual']:>+9.3f}"
-                  f"{r['F']-r['actual']:>+9.3f}{r['G']-r['actual']:>+9.3f}")
-        spread = {tag: float(t[tag].sub(t["actual"]).abs().max()) for tag in ("A", "E", "F", "G")}
+                  f"{r['H']-r['actual']:>+9.3f}{r['I']-r['actual']:>+9.3f}")
+        spread = {tag: float(t[tag].sub(t["actual"]).abs().max()) for tag in ("A", "E", "H", "I")}
         best = min(spread, key=spread.get)
         print(f"\n  worst band bias: " + " | ".join(f"{k} {v:.3f}" for k, v in spread.items())
               + f"   -> best {best}")
