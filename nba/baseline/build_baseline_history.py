@@ -64,6 +64,12 @@ _rows = [{"game_date": str(pd.to_datetime(r.GAME_DATE).date()), "player_id": str
           "prop": r.prop, "period": "FULL", "line": float(r.line), "anchor": float(r.anchor), "offset": int(r.offset),
           "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4),
           "p_raw": round(float(getattr(r, "p_raw", r.p_over)), 4),
+          # COMPONENTS: emitted so the enrichment layer can adjust the RIGHT LINK (minutes, rate) and
+          # re-derive the mean, instead of multiplying the finished product. Multiplying a mean by a
+          # minutes multiplier is not the same operation as adjusting minutes - and on top of a baseline
+          # that already applied the injury report it double-counts (log-loss 0.7299 -> 1.0123).
+          "proj_min": round(float(getattr(r, "proj_min", np.nan)), 3) if np.isfinite(getattr(r, "proj_min", np.nan)) else None,
+          "rate36": round(float(getattr(r, "rate36", np.nan)), 4) if np.isfinite(getattr(r, "rate36", np.nan)) else None,
           "role_tier": r.role_tier, "var_band": r.var_band, "used_emp": bool(r.used_emp)}
          for r in _h.itertuples(index=False)]
 _out = Path("nba/data") / f"nba_baseline_history_{_season.replace('-', '_')}_{_props_tag}.json"
