@@ -98,11 +98,13 @@ def two_way_fit(df, value_col, weight_col, ridge):
         sparse.csr_matrix((w, (rows, defs.cat.codes.values)), shape=(n, nd)),
     ]).tocsr()
     y = df[value_col].values * w
-    # ridge via augmented rows (do not penalise the intercept)
-    pen = sparse.hstack([sparse.csr_matrix((1 + no + nd, 1)),
-                         sparse.identity(no + nd, format="csr") * np.sqrt(ridge)]).tocsr()[:, : 1 + no + nd]
-    Xa = sparse.vstack([X, pen[1:]]).tocsr()
-    ya = np.concatenate([y, np.zeros(no + nd)])
+    # Ridge via augmented rows. Build the penalty block DIRECTLY - an earlier version stacked and then
+    # sliced, which was off by one row (ValueError: mismatching dimensions {881, 882}).
+    p = no + nd
+    pen = sparse.hstack([sparse.csr_matrix((p, 1)),                      # intercept unpenalised
+                         sparse.identity(p, format="csr") * np.sqrt(ridge)]).tocsr()
+    Xa = sparse.vstack([X, pen]).tocsr()
+    ya = np.concatenate([y, np.zeros(p)])
     sol = lsqr(Xa, ya, atol=1e-8, btol=1e-8, iter_lim=400)[0]
     beta = sol[1 + no:]
     return dict(zip(defs.cat.categories, beta))
