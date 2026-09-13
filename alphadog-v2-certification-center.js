@@ -5284,10 +5284,17 @@ async function apiHighHitSlips(env, request) {
   // enough - the selector still ran inside this Promise.all and blew the 8s Hyperdrive timeout
   // (HARD_QUERY_TIMEOUT_8000MS), taking the whole endpoint down with it. The function is kept in
   // the file for reference but nothing invokes it.
-  const [sleeperLegs] = await Promise.all([
-    autoSelectSleeperHighHitSlipLegs(env)
+  // ===== 2026-09-11: PP V1 GOBLIN UNDERS RE-ENABLED =====
+  // Operator call: V1 is the only PrizePicks track hitting consistently in live play. V5 (regular-
+  // line workload unders) and V6 (demon unders) are stood down below - their code and notes stay in
+  // the file, they simply build no slips. V1 was previously shelved on a backtest that showed 13 of
+  // 25 days underwater; live results since have gone the other way, so live evidence wins.
+  // V1 = autoSelectMixedTop55Legs: goblin LESS legs selected on classification.baseline_v6_current
+  // (>=90), top decile of the day's qualifying pool, max 2 per game, max 2 slips per player.
+  const [sleeperLegs, ppLegs] = await Promise.all([
+    autoSelectSleeperHighHitSlipLegs(env),
+    autoSelectMixedTop55Legs(env, 'prizepicks').catch((e) => { try { selectorErrors.v1 = String(e && e.message || e); } catch (_) {} return []; })
   ]);
-  const ppLegs = [];
   const udLegs = [];   // DISABLED - superseded by Underdog v3 sharp divergence
   const slLegs = [];   // DISABLED - superseded by Sleeper v3 sharp divergence
   // RE-ENABLED 2026-08-27: PrizePicks Goblin returns with an entirely new selection layer. The
