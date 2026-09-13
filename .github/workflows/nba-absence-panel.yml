@@ -208,6 +208,14 @@ jobs:
           SV_THRESHOLD: '0.66'
           SV_BREAKEVEN: '0.56'
         run: python nba/backtest_tier_selection_value.py
+      - name: Ladder calibration correction
+        if: ${{ github.event.inputs.allocator == '21' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CC_TRAIN: "2024-25"
+          CC_TEST: "2025-26"
+          CC_K: '400'
+        run: python nba/apply_ladder_calibration.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
