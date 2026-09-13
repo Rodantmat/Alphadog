@@ -153,12 +153,39 @@ games["rest_diff"] = (games["home_rest"].fillna(2) - games["away_rest"].fillna(2
 _trg = games[games["season"].isin(TRAIN)]
 HCA = float((_trg["home_margin"] - (_trg["home_net"] - _trg["away_net"])).mean())
 games["derived_spread"] = (games["home_net"] - games["away_net"]) + HCA + 0.5 * games["rest_diff"]
+# MARKET SPREAD OVERRIDE (2026-09-13). The derived spread scores r=0.46 / MAE 11.5 against the final
+# margin. The morning market line is far sharper and, critically, gets the SIGN right - and the sign is
+# what separates a 13-point favourite (blows the game open 39.7% of the time, gets blown out 0.4%) from
+# the underdog side of the same game. That 100:1 asymmetry is invisible to a proxy this noisy.
+# Loaded from nba/data/nba_market_spreads_<season>.json (exported from nba_market.game_lines_snapshots
+# at the MORNING snapshot, so it is as-of legal for a phase-1 build). Falls back to the derived spread
+# per game when no line exists - never silently, the coverage is printed.
+games["spread_used"] = games["derived_spread"]
+try:
+    _ms = {}
+    for _s in SEASONS:
+        _p = f"nba/data/nba_market_spreads_{_s.replace('-', '_')}.json"
+        if os.path.exists(_p):
+            with open(_p) as _f:
+                for _r in json.load(_f).get("rows", []):
+                    if _r.get("home_spread") is not None:
+                        _ms[str(_r["game_id"])] = -float(_r["home_spread"])   # quoted negative for the favourite
+    if _ms:
+        _mk = games["GAME_ID"].astype(str).map(_ms)
+        _cov = float(_mk.notna().mean())
+        games["spread_used"] = np.where(_mk.notna(), _mk, games["derived_spread"])
+        print(f"[blowout] market spread applied to {_cov:.1%} of games "
+              f"({int(_mk.notna().sum())} of {len(games)}); derived spread used for the rest", flush=True)
+    else:
+        print("[blowout] no market spread file found - using the derived spread", flush=True)
+except Exception as _e:
+    print(f"[blowout] market spread load failed ({_e}) - using the derived spread", flush=True)
 games["abs_margin"] = games["home_margin"].abs()
 _trg = games[games["season"].isin(TRAIN)]
-_bl = (_trg["abs_margin"] >= BLOWOUT_MARGIN).groupby(pd.cut(_trg["derived_spread"].abs(), bins=P_BLOWOUT_BINS, include_lowest=True), observed=False).mean()
+_bl = (_trg["abs_margin"] >= BLOWOUT_MARGIN).groupby(pd.cut(_trg["spread_used"].abs(), bins=P_BLOWOUT_BINS, include_lowest=True), observed=False).mean()
 P_BLOWOUT = [float(v) if not np.isnan(v) else 0.2 for v in _bl.values]
-games["p_blowout"] = pd.cut(games["derived_spread"].abs(), bins=P_BLOWOUT_BINS, labels=P_BLOWOUT, include_lowest=True, ordered=False).astype(float)
-games["home_favored"] = games["derived_spread"] > 0
+games["p_blowout"] = pd.cut(games["spread_used"].abs(), bins=P_BLOWOUT_BINS, labels=P_BLOWOUT, include_lowest=True, ordered=False).astype(float)
+games["home_favored"] = games["spread_used"] > 0
 
 pg = players.merge(games[["season", "GAME_ID", "home_id", "home_margin", "abs_margin", "p_blowout", "home_favored"]], on=["season", "GAME_ID"], how="inner")
 pg["team_margin"] = np.where(pg["TEAM_ID"] == pg["home_id"], pg["home_margin"], -pg["home_margin"])
