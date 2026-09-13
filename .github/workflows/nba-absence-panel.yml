@@ -109,6 +109,14 @@ jobs:
           A5_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
           A5_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
         run: python nba/fit_a5_projected_lineups.py
+      - name: Factor M1 defender quality level
+        if: ${{ github.event.inputs.allocator == '10' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          M1_TRAIN_SEASON: "2024-25"
+          M1_TEST_SEASON: "2025-26"
+          M1_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
+        run: python nba/fit_m1_defender_level.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
