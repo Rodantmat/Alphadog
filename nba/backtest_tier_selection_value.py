@@ -87,46 +87,36 @@ def main():
     d["p_model"] = np.where(d["side"] == "Over", d["p_more"], d["p_less"]).astype(float)
     d["won"] = np.where(d["side"] == "Over", d["leg_result"] == "over_win",
                         d["leg_result"] == "under_win").astype(int)
-    print(f"graded tiered legs: {len(d):,} | threshold p>={thr:.2f} | break-even {be:.3f}\n", flush=True)
+    print(f"graded tiered legs: {len(d):,}  — FULL GRID, no selection\n", flush=True)
+    print("Every leg on the board has a final HP from the ladder (anchor +/-10, both directions, all", flush=True)
+    print("tiers). This grid reports the MEASURED hit rate for each cell so ROI can be read per band -", flush=True)
+    print("it does not pick legs. Selection belongs to the slip engine, pricing belongs here.\n", flush=True)
 
-    print(f"{'kind':<10}{'tier':>5}{'n_all':>9}{'hit_all':>9}{'n_sel':>8}{'hit_sel':>9}"
-          f"{'lift':>8}{'afford':>9}   verdict")
+    d["band"] = pd.cut(d["p_model"], [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0])
+    print(f"{'kind':<10}{'tier':>5}{'side':<7}{'band':<14}{'n':>8}{'model':>8}{'ACTUAL':>8}{'gap':>8}   {'be@'+str(be):>7}")
     rows = []
-    for (kind, tier), g in d.groupby(["kind", "tier"]):
-        if len(g) < 500:
+    for (kind, tier, side, band), g in d.groupby(["kind", "tier", "side", "band"], observed=True):
+        if len(g) < 300:
             continue
-        sel = g[g["p_model"] >= thr]
-        if len(sel) < 200:
-            continue
-        hit_all, hit_sel = g["won"].mean(), sel["won"].mean()
-        afford = 1 - be / hit_sel if hit_sel > 0 else -1
-        # goblins: observed factors take 40-53% of payout. demons: need the payout to cover the odds.
-        if kind == "goblin":
-            ok = afford >= 0.40
-            verdict = "PLAYABLE if the haircut is <= %.0f%%" % (afford * 100) if ok else "still -EV (affords %.0f%%, app takes 40-53%%)" % (afford * 100)
-        else:
-            need = be / hit_sel if hit_sel > 0 else 99
-            ok = need <= 1.75
-            verdict = "needs %.2fx (ceiling ~1.75-1.9x) %s" % (need, "OK" if ok else "TOO HIGH")
-        print(f"{kind:<10}{tier:>5}{len(g):>9,}{hit_all:>9.4f}{len(sel):>8,}{hit_sel:>9.4f}"
-              f"{hit_sel-hit_all:>+8.4f}{afford:>9.3f}   {verdict}", flush=True)
-        rows.append((kind, int(tier), len(g), round(float(hit_all), 4), len(sel),
-                     round(float(hit_sel), 4), round(float(hit_sel - hit_all), 4), round(float(afford), 4)))
+        mp, act = float(g["p_model"].mean()), float(g["won"].mean())
+        clears = act - be
+        print(f"{kind:<10}{tier:>5}{side:<7}{str(band):<14}{len(g):>8,}{mp:>8.4f}{act:>8.4f}"
+              f"{act-mp:>+8.4f}   {clears:>+7.4f}", flush=True)
+        rows.append((kind, int(tier), side, str(band), len(g), round(mp, 4), round(act, 4),
+                     round(act - mp, 4), round(clears, 4)))
 
     if rows:
         conn2 = psycopg.connect(os.environ["DATABASE_URL"])
         with conn2.cursor() as cur:
-            cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.tier_selection_value (
-                kind text, tier int, n_all int, hit_all numeric, n_sel int, hit_sel numeric,
-                lift numeric, afford numeric, threshold numeric, breakeven numeric,
-                run_at timestamptz DEFAULT now())""")
-            cur.executemany("""INSERT INTO nba_score.tier_selection_value
-                (kind, tier, n_all, hit_all, n_sel, hit_sel, lift, afford, threshold, breakeven)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                [r + (thr, be) for r in rows])
+            cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.tier_band_calibration (
+                kind text, tier int, side text, band text, n int, model_p numeric, actual numeric,
+                gap numeric, clears_breakeven numeric, breakeven numeric, run_at timestamptz DEFAULT now())""")
+            cur.executemany("""INSERT INTO nba_score.tier_band_calibration
+                (kind, tier, side, band, n, model_p, actual, gap, clears_breakeven, breakeven)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", [r + (be,) for r in rows])
         conn2.commit()
         conn2.close()
-        print(f"\nwrote {len(rows)} tier rows to nba_score.tier_selection_value", flush=True)
+        print(f"\nwrote {len(rows)} cells to nba_score.tier_band_calibration", flush=True)
 
 
 if __name__ == "__main__":
