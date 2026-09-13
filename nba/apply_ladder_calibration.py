@@ -109,7 +109,17 @@ PROP_MARKET = {"points": "player_points", "rebounds": "player_rebounds", "assist
                "threes_made": "player_threes", "pra": "player_points_rebounds_assists",
                "pts_reb": "player_points_rebounds", "pts_ast": "player_points_assists",
                "reb_ast": "player_rebounds_assists", "steals": "player_steals",
-               "blocks": "player_blocks", "turnovers": "player_turnovers", "stocks": "player_blocks_steals"}
+               "blocks": "player_blocks", "turnovers": "player_turnovers",
+               "stocks": "player_blocks_steals", "fga": "player_field_goal_attempts",
+               "fgm": "player_field_goals_made", "fg3a": "player_three_point_attempts",
+               "ftm": "player_free_throws_made", "fta": "player_free_throw_attempts",
+               "oreb": "player_offensive_rebounds", "dreb": "player_defensive_rebounds",
+               "personal_fouls": "player_personal_fouls", "fantasy_score": "player_fantasy_score",
+               "double_double": "player_double_double",
+               "points_q1": "player_points_q1", "points_h1": "player_points_h1",
+               "points_h2": "player_points_h2", "points_q4": "player_points_q4",
+               "points_q4_otx": "player_points_q4_otx", "rebounds_q1": "player_rebounds_q1",
+               "assists_q1": "player_assists_q1", "threes_made_q1": "player_threes_q1"}
 
 
 def main():
