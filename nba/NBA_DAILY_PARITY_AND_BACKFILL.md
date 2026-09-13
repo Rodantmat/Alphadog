@@ -149,7 +149,50 @@ Times are Pacific. "Stage" is where the factor is COMPUTED; phase 2 may still *r
 | **Board itself** | DFS apps at 2:45 | 2:45 PM | **phase 2** | |
 | All-Star / national TV | — | — | **not mined** (owner) | |
 
-### What this means for the two pipelines
+## 8. The funnel across the three processing stages (2026-09-13)
+
+The engine is not one pass. It is three, with different deadlines and different budgets. The funnel's
+links must be placed by **when their inputs become knowable**, not by convenience.
+
+```
+minutes -> team possessions -> usage share -> attempts -> shot mix -> efficiency -> points -> P(over line)
+```
+
+| Link | Input it needs | Knowable | **Stage** |
+|---|---|---|---|
+| `proj_min` base (role tiers, blowout mixture, coach gate) | prior-night box scores + morning spread | overnight | **1 — heavy** |
+| Defender ratings (two-way ridge, 5 channels, weekly refit) | prior games | overnight | **1 — heavy** |
+| Rate cells / dispersion / Platt (the certified recipe) | history as-of | overnight | **1 — heavy** |
+| Factor coefficients (B2/B3/BF, usage allocation, A2 weights) | history as-of | overnight | **1 — heavy** |
+| Team possessions (pace) | morning market total | ~overnight | **1**, refreshed in 2 if the line moved |
+| Availability scenarios (joint per game) | 1 PM ET report (~10 AM PT) | mid-morning | **2 — scenarios** |
+| Minutes + usage allocation PER SCENARIO | who is out in that branch | mid-morning | **2 — scenarios** |
+| Expected defender (exposure-weighted over AVAILABLE opponents) | depends on the branch's opponent roster | mid-morning | **2 — scenarios** |
+| Shot mix + efficiency adjustments | expected defender for that branch | mid-morning | **2 — scenarios** |
+| Full ladder P(stat > line) per scenario | all of the above | mid-morning | **2 — scenarios** |
+| Select the realised branch | 2:30 PM PT report | window | **3 — final** |
+| Market adjuster + rank + slip build | 2:45 board and lines | window | **3 — final** |
+
+### Why the expected-defender feature is stage 2, not stage 1
+It is not a property of the opponent TEAM; it is exposure-weighted over the opponent players who will
+actually be available. A different absence branch changes which defenders a player is exposed to, so it
+has to be recomputed per scenario. The RATINGS are stage 1 (they only need prior games); the JOIN is
+stage 2.
+
+### What stage 3 must NOT do
+No refitting, no re-deriving, no scanning history. It selects the precomputed branch, applies the market
+adjuster, joins the board and ranks. Minutes at most. Everything expensive has already happened.
+
+### The blowout lesson, recorded
+Blowout risk is ALREADY in the baseline, and better than any patch: the recipe derives a
+**P(blowout | spread) lookup** (`P_BLOWOUT_BINS` at 0/2/4/6/8/10/12/15) and role-specific blowout minutes
+ratios from TRAIN, in-run, with no pasted constants (`BLOWOUT_MARGIN = 20`, `COMPETITIVE_MARGIN = 15`).
+A funnel test that built its own crude deterministic spread shrink on top of a ROLLING-MEAN minutes
+estimate made results WORSE - it was double-counting a cruder duplicate of a component the baseline
+already models as a proper mixture. **The funnel's minutes link must consume the recipe's `proj_min`,
+not reconstruct one.** Same lesson as the crude defender metric: use the system's best component, do not
+rebuild a worse one beside it.
+
 - **Phase 1 (baseline/delta, runs ~1 PM PT, can take as long as it needs)** computes every row above
   marked *baseline*, including the referee crew and the day-before injury picture, and produces the
   pre-scored board on the morning lines.
