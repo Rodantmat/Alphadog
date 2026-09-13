@@ -5319,7 +5319,10 @@ async function apiHighHitSlips(env, request) {
   // pools are shallow (98-174 legs vs doubles' 2,790) and displace stronger hitter legs.
   // Earlier readings of +25.9%/+31.5% for V1 were tie-break artifacts: many legs share sig=1.0000
   // and the sort was not deterministic. All figures here use ORDER BY sig DESC, cell, pid.
-  const ppSlipsAll = [];
+  // RE-ENABLED 2026-09-11 per operator: V1 is the PrizePicks track hitting consistently in live
+  // play. The backtest caveats above (13 of 25 days underwater, 9-day sample, doubles-derived
+  // per-leg rate) still stand and are why stake stays modest - but live results outrank them.
+  const ppSlipsAll = buildMixedTop55Slips(ppLegs);
   // V2 DISABLED 2026-09-04, replaced by V3. V2 was 5 hitter cells / cap 2 / 5-pick at ~+30% on 26
   // days. V3 measures +96.3% on 22 days at 96.46% leg accuracy with directly-read multipliers for
   // every cell it keeps. Running both would split stake across configs whose difference is far
