@@ -66,7 +66,7 @@ Mixing (b) into training as if it were (a) is exactly the leak this document exi
 | A2 teammate redistribution | a | ✅ | derived from the as-of OUT list |
 | A3 return ramp | a | ✅ | measured; in baseline v30 |
 | A4 rest / B2B | a | ✅ | from the schedule |
-| A5 lineup change | ⚠️ | **leak risk** | `starter_status` comes from BOX SCORES = post-tip truth. Must NOT be an input to a past day. Needs a projected-lineup proxy built from prior games + the injury report; actual starters are the evaluation target only |
+| A5 lineup change | ⚠️ | **CLOSED — REJECTED** | Tested 2026-09-13: a derived as-of proxy is REDUNDANT (negative on every prop; the allocator's recent-5 minutes already encode starting continuously). No projected lineups needed → **no leak to mitigate** |
 | A7 trade window, A8 rookie/two-way | a | ✅ | transaction logs |
 | B1/B2 spread & total, C3 line movement | a | ✅ | two snapshots per game, both seasons |
 | B3 leverage, B4 opponent | a | ✅ | |
