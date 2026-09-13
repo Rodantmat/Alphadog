@@ -116,12 +116,22 @@ def main():
 
     # first: does phase matter at all? if the gap is the same in every phase, one correction serves.
     print("PHASE CHECK - is the calibration gap regime-dependent?")
-    print(f"  {'phase':<8}{'n':>9}{'model':>9}{'ACTUAL':>9}{'gap':>9}")
+    print(f"  {'phase':<12}{'n':>9}{'model':>9}{'ACTUAL':>9}{'gap':>9}")
     for ph, g in d.groupby("phase", observed=True):
         if len(g) < 500:
             continue
-        print(f"  {str(ph):<8}{len(g):>9,}{g['p_model'].mean():>9.4f}{g['won'].mean():>9.4f}"
+        print(f"  {str(ph):<12}{len(g):>9,}{g['p_model'].mean():>9.4f}{g['won'].mean():>9.4f}"
               f"{g['won'].mean()-g['p_model'].mean():>+9.4f}", flush=True)
+    # finer look at the two boundaries the research flags as sharp: the All-Star break and the last
+    # two weeks, when seed-locked teams shut stars down
+    print("\n  boundary detail (the research says these are step changes, not gradual):")
+    for label, mask in (("pre-ASB fortnight", (d["game_date"].map(lambda x: x.month == 2 and x.day < 15))),
+                        ("post-ASB fortnight", (d["game_date"].map(lambda x: x.month == 2 and x.day >= 15))),
+                        ("final fortnight", (d["game_date"].map(lambda x: x.month == 4)))):
+        g = d[mask]
+        if len(g) >= 400:
+            print(f"  {label:<20}{len(g):>9,}{g['p_model'].mean():>9.4f}{g['won'].mean():>9.4f}"
+                  f"{g['won'].mean()-g['p_model'].mean():>+9.4f}", flush=True)
     print("", flush=True)
 
     d["band"] = pd.cut(d["p_model"], [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0])
