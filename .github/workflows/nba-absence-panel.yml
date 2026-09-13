@@ -201,6 +201,13 @@ jobs:
           EB_SEASONS: "2024-25,2025-26"
           EB_PROP: ${{ github.event.inputs.prop || 'points' }}
         run: python nba/backtest_edge_vs_board.py
+      - name: Tier selection value
+        if: ${{ github.event.inputs.allocator == '20' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SV_THRESHOLD: '0.66'
+          SV_BREAKEVEN: '0.56'
+        run: python nba/backtest_tier_selection_value.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
