@@ -1,0 +1,43 @@
+name: NBA Referee Assignments (daily capture)
+
+# D1: assignments post each MORNING (~6-7 AM PT) and are never archived. The historical crew comes from
+# box scores (a faithful reconstruction - officials post before our 2:30 PM window, COMPASS fact 58),
+# but the published ASSIGNMENT only exists going forward if we store it. This starts that archive.
+#
+# Phase 1 / baseline stage: a morning fact, not a window fact.
+
+on:
+  schedule:
+    - cron: '30 15 * * *'      # 08:30 UTC-7 = ~08:30 PT, after the morning posting
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "game date YYYY-MM-DD (blank = today Pacific)"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-referees
+  cancel-in-progress: false
+
+jobs:
+  referees:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" curl_cffi
+      - name: Capture referee assignments
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          REF_DATE: ${{ github.event.inputs.date || '' }}
+        run: python nba/scrape_referee_assignments.py
