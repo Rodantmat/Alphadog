@@ -82,6 +82,25 @@ def build(season, conn, sample):
     logs["b_team_poss"] = logs.groupby("TEAM")["team_poss"].transform(
         lambda s: s.shift(1).rolling(10, min_periods=3).mean())
 
+    # OPPONENT RIM DETERRENCE (level, not absence-driven). B4 v3 tested the ABSENCE of a rim protector
+    # against the final mean and failed. The mechanism per the deterrence literature is that a rim
+    # protector REALLOCATES shots - fewer at the rim, more from midrange/three - rather than reducing
+    # attempts. So it belongs at the SHOT-MIX link, and the feature is the opponent's rim protection
+    # PRESENT tonight, not what is missing.
+    blk = logs.groupby("PLAYER_ID").apply(
+        lambda x: pd.Series(
+            (x["BLK"].shift(1).rolling(15, min_periods=5).sum() /
+             x["MIN"].shift(1).rolling(15, min_periods=5).sum() * 36).values, index=x.index),
+        include_groups=False).reset_index(level=0, drop=True)
+    logs["b_blk36"] = blk
+    team_rim = (logs.assign(w=logs["b_blk36"].fillna(0) * logs["b_min"].fillna(0) / 36.0)
+                    .groupby(["GAME_ID", "TEAM"])["w"].sum().rename("rim_level").reset_index())
+    pair = logs[["GAME_ID", "TEAM"]].drop_duplicates().merge(team_rim, on=["GAME_ID", "TEAM"], how="left")
+    opp_rim = pair.merge(pair, on="GAME_ID")
+    opp_rim = opp_rim[opp_rim["TEAM_x"] != opp_rim["TEAM_y"]][["GAME_ID", "TEAM_x", "rim_level_y"]]
+    opp_rim.columns = ["GAME_ID", "TEAM", "opp_rim"]
+    logs = logs.merge(opp_rim, on=["GAME_ID", "TEAM"], how="left")
+
     # factors
     fac = pd.read_sql("""SELECT game_id, player_id, min_mult, usage_mult, alloc_actual, n_out
                          FROM nba_score.redistribution_factors WHERE season=%s""", conn, params=(season,))
