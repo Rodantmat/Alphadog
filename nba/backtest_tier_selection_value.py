@@ -87,6 +87,18 @@ def main():
     d["p_model"] = np.where(d["side"] == "Over", d["p_more"], d["p_less"]).astype(float)
     d["won"] = np.where(d["side"] == "Over", d["leg_result"] == "over_win",
                         d["leg_result"] == "under_win").astype(int)
+
+    # SEASON PHASE. A full-season average hides three different regimes:
+    #   EARLY  - rotations unsettled, small samples, the model's priors dominate
+    #   MID    - the stable core of the season
+    #   LATE   - rest management and tanking; stars lose minutes for reasons no box score predicts
+    # The correction must be phase-conditional, and the phase pattern is what transfers to a NEW season
+    # (the model cannot know 2026-27 rotations, but it can know that October behaves like October).
+    gnum = (d.sort_values("game_date")
+              .groupby(["player_id", d["game_date"].map(lambda x: x.year if x.month >= 10 else x.year - 1)])
+              .cumcount() + 1)
+    d["team_game_no"] = gnum.reindex(d.index)
+    d["phase"] = pd.cut(d["team_game_no"], [0, 15, 60, 200], labels=["early", "mid", "late"])
     print(f"graded tiered legs: {len(d):,}  — FULL GRID, no selection\n", flush=True)
     print("Every leg on the board has a final HP from the ladder (anchor +/-10, both directions, all", flush=True)
     print("tiers). This grid reports the MEASURED hit rate for each cell so ROI can be read per band -", flush=True)
