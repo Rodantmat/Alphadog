@@ -6128,6 +6128,7 @@ async function apiHighHitSlips(env, request) {
   const demonSlips = []; // PAUSED - see comment above.
   const generated_slips = [...demonSlips, ...ppSlips, ...v2Slips, ...v3Slips, ...v4Slips, ...v5Slips, ...v6Slips, ...udSlips, ...udwSlips, ...slwSlips, ...sleeperSlips];
   // Track labels for the client summary (grouped by strategy, not by source key).
+  for (const s of ppSlips) s.track_label = "PP V1";
   for (const s of v3Slips) s.track_label = "PP V3";
   for (const s of v4Slips) s.track_label = "PP V4";
   for (const s of v5Slips) s.track_label = "PP V5";
