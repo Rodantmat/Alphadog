@@ -5293,7 +5293,7 @@ async function apiHighHitSlips(env, request) {
   // (>=90), top decile of the day's qualifying pool, max 2 per game, max 2 slips per player.
   const [sleeperLegs, ppLegs] = await Promise.all([
     autoSelectSleeperHighHitSlipLegs(env),
-    autoSelectMixedTop55Legs(env, 'prizepicks').catch((e) => { try { selectorErrors.v1 = String(e && e.message || e); } catch (_) {} return []; })
+    autoSelectMixedTop55Legs(env, 'prizepicks').catch(() => [])
   ]);
   const udLegs = [];   // DISABLED - superseded by Underdog v3 sharp divergence
   const slLegs = [];   // DISABLED - superseded by Sleeper v3 sharp divergence
