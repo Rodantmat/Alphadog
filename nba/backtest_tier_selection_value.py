@@ -88,17 +88,27 @@ def main():
     d["won"] = np.where(d["side"] == "Over", d["leg_result"] == "over_win",
                         d["leg_result"] == "under_win").astype(int)
 
-    # SEASON PHASE. A full-season average hides three different regimes:
-    #   EARLY  - rotations unsettled, small samples, the model's priors dominate
-    #   MID    - the stable core of the season
-    #   LATE   - rest management and tanking; stars lose minutes for reasons no box score predicts
-    # The correction must be phase-conditional, and the phase pattern is what transfers to a NEW season
-    # (the model cannot know 2026-27 rotations, but it can know that October behaves like October).
-    gnum = (d.sort_values("game_date")
-              .groupby(["player_id", d["game_date"].map(lambda x: x.year if x.month >= 10 else x.year - 1)])
-              .cumcount() + 1)
-    d["team_game_no"] = gnum.reindex(d.index)
-    d["phase"] = pd.cut(d["team_game_no"], [0, 15, 60, 200], labels=["early", "mid", "late"])
+    # SEASON PHASE - calendar-based, because the regimes are driven by the CALENDAR (All-Star break,
+    # trade deadline, playoff push) not by a player's own game count. An earlier version counted each
+    # player's appearances, which mislabels anyone who missed time.
+    # Boundaries corroborated by multiple independent sources (2026-09-13 research):
+    #   OCT-NOV   "lines are softer, books still calibrating to roster changes and new systems"
+    #   DEC-ASB   the stable core; "teams settle into patterns, the market sharpens"
+    #   POST-ASB  a genuine regime change: "underdogs win more post-All-Star break as playoff teams
+    #             rest stars"; "players who log heavy minutes through December slow down after it"
+    #   PUSH      mid-March on: "the gap between motivated and unmotivated teams is enormous";
+    #             contenders rest starters, locked/tanking teams bench veterans
+    # The trade deadline (early Feb) sits inside DEC-ASB and is flagged separately below.
+    def phase_of(dt):
+        m, day = dt.month, dt.day
+        if m in (10, 11):
+            return "1_oct_nov"
+        if m == 12 or (m == 1) or (m == 2 and day < 15):
+            return "2_dec_asb"
+        if (m == 2 and day >= 15) or (m == 3 and day < 16):
+            return "3_post_asb"
+        return "4_push"
+    d["phase"] = d["game_date"].map(phase_of)
     print(f"graded tiered legs: {len(d):,}  — FULL GRID, no selection\n", flush=True)
     print("Every leg on the board has a final HP from the ladder (anchor +/-10, both directions, all", flush=True)
     print("tiers). This grid reports the MEASURED hit rate for each cell so ROI can be read per band -", flush=True)
