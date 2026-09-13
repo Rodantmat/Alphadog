@@ -103,7 +103,9 @@ def main():
                       f"not derivable from season totals. UNVERIFIED, not certified.", flush=True)
                 continue
             col = "DOUBLE_DOUBLE" if prop == "double_double" else (
-                "FANTASY_SCORE" if prop == "fantasy_score" else COL.get(prop, prop.upper()))
+                "FANTASY_SCORE" if prop == "fantasy_score" else (
+                    f"{PERIOD_PROPS[prop][0]}_{PERIOD_PROPS[prop][1].upper()}" if prop in PERIOD_PROPS
+                    else COL.get(prop, prop.upper())))
             if col not in logs.columns:
                 print(f"  {season} {prop}: no box-score basis ({col}) - UNVERIFIED", flush=True)
                 continue
