@@ -196,14 +196,16 @@ def main():
         return float(-np.mean(h * np.log(p) + (1 - h) * np.log(1 - p))), float(np.mean((p - h) ** 2))
 
     print(f"\nALL {len(m):,} legs")
-    for tag, name in (("A", "anchor"), ("F", "flat A2"), ("N", "NOVELTY-WEIGHTED A2")):
+    for tag, name in (("A", "anchor"), ("F", "flat A2"), ("N", "novelty-weighted A2"),
+                      ("S", "SHRUNK + novelty A2")):
         ll, br = score(m, tag)
         print(f"  {name:<24} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
 
     hi = m[(m["min_mult"] != 1.0) & (m["novelty"] >= 0.8)]
     if len(hi) > 300:
         print(f"\nHIGH-NOVELTY legs ({len(hi):,}) - the absence is genuinely new information:")
-        for tag, name in (("A", "anchor"), ("F", "flat A2"), ("N", "NOVELTY-WEIGHTED A2")):
+        for tag, name in (("A", "anchor"), ("F", "flat A2"), ("N", "novelty-weighted A2"),
+                          ("S", "SHRUNK + novelty A2")):
             ll, br = score(hi, tag)
             print(f"  {name:<24} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
     lo = m[(m["min_mult"] != 1.0) & (m["novelty"] < 0.3)]
