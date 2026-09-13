@@ -143,10 +143,24 @@ def main():
                     alloc_full = alloc_full_all[: len(a)]
                 else:
                     alloc_full = alloc_actual
-                # usage: vacated possessions allocated on the players' own usage weight
-                wp_a = np.clip(a["bposs"].values, 0.5, None)
+                # usage: vacated possessions allocated by the FITTED share model, not by assuming
+                # proportionality to baseline usage. That assumption was measured NEGATIVELY correlated
+                # (-0.0235) with who actually absorbs the shots; the fitted model reaches +0.1225 held
+                # out. Dominant term is the player's MINUTES LIFT (+0.026 standardised) - who absorbs
+                # the shots follows whose minutes grow, not who was already high-usage (usage -0.008,
+                # minutes -0.005, creator flag -0.005).
                 vac_poss = sum(x["bposs"] for x in absent)
-                usage_mult = 1 + (vac_poss * wp_a / wp_a.sum()) / np.clip(a["bposs"].values, 0.5, None) if absent else np.ones(len(a))
+                if absent:
+                    lift = np.log(np.clip(alloc_actual, 5, None) / np.clip(a["base"].values, 5, None))
+                    z = np.column_stack([np.log(np.clip(a["bposs"].values, 0.5, None)),
+                                         np.log(np.clip(a["base"].values, 5, None)),
+                                         (a["bposs"].values >= 14).astype(float), lift])
+                    z = (z - USAGE_MU) / USAGE_SD
+                    w_u = np.exp(np.clip(z @ USAGE_BETA, -20, 20))
+                    share_u = w_u / w_u.sum() if w_u.sum() > 0 else np.full(len(a), 1.0 / len(a))
+                    usage_mult = 1 + (vac_poss * share_u) / np.clip(a["bposs"].values, 0.5, None)
+                else:
+                    usage_mult = np.ones(len(a))
                 for i, r in a.iterrows():
                     out.append({"season": season, "game_date": gd, "game_id": gid, "team": t,
                                 "player_id": r["pid"], "n_out": len(absent), "games": r["games"],
