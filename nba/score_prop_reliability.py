@@ -92,7 +92,8 @@ def main():
                         right_on=["GAME_DATE", "PLAYER_ID"], how="inner")
             if len(d) < 5000:
                 continue
-            hit = (d[col] > d["line"]).astype(int).values
+            hit = (d[col] > d["line"]).astype(int).values if prop != "double_double" \
+                else (d[col] >= 1).astype(int).values     # Yes/No market: the 0.5 line means "did it happen"
             p = d["p_more"].astype(float).values
             # score the SIDE the model favours, which is how a leg is actually offered
             p_side = np.where(p >= 0.5, p, 1 - p)
