@@ -161,7 +161,7 @@ def main():
     p0 = prop_share(te, "base_poss", gte)                 # the current ASSUMPTION
     te = te.assign(_gain_min=(te["alloc_actual"] - te["base_min"]).clip(lower=0))
     p1 = prop_share(te, "_gain_min", gte)                 # usage follows minutes 1:1
-    p2 = softmax_shares(Xte, beta, gte)                   # fitted
+    p2 = softmax_shares(Zte, beta, gte)                   # fitted (standardised design)
 
     for name, p in (("P0 proportional to baseline usage (current assumption)", p0),
                     ("P1 proportional to allocated minutes", p1),
