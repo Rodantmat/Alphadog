@@ -157,6 +157,25 @@ def main():
     eff = 1.0 + d["novelty"] * (d["min_mult"] - 1.0)
     d["N"] = d["proj_min"] * eff * d["rate36"] / 36.0
 
+    # ARM S - SHRUNK: refit the magnitude against the BASELINE'S OWN RESIDUAL.
+    # A2's multiplier was fitted to explain minutes against a rolling mean. The baseline's proj_min is
+    # far better than a rolling mean and already anticipates rotation, so the residual A2 should correct
+    # is much smaller than the multiplier it fitted. The enrichment question is not "how do 240 minutes
+    # divide" (the baseline's job) but "given the baseline already projects N minutes tonight, how much
+    # does a NEW absence add on top of that?". Fit on the first half, apply to the second.
+    fit = d[(d["proj_min"] > 8) & (d["MIN"] > 0) & (eff != 1.0)].copy()
+    fit["x"] = np.log(np.clip(1.0 + fit["novelty"] * (fit["min_mult"] - 1.0), 0.5, 2.5))
+    fit["y"] = np.log(np.clip(fit["MIN"] / fit["proj_min"], 0.3, 3.0))
+    h = len(fit) // 2
+    if h > 500:
+        a = fit.iloc[:h]
+        beta_s = float(np.linalg.lstsq(np.column_stack([np.ones(len(a)), a["x"]]), a["y"], rcond=None)[0][1])
+    else:
+        beta_s = 1.0
+    print(f"\nSHRINK FIT: the baseline's minutes residual moves {beta_s:.3f} for every 1.0 of A2's "
+          f"claimed log-lift (1.0 would mean A2 is exactly right; <1 means it overstates)", flush=True)
+    d["S"] = d["proj_min"] * np.power(np.clip(eff, 0.5, 2.5), beta_s) * d["rate36"] / 36.0
+
     board = pd.read_sql("""SELECT game_date, player, line FROM nba_market.board_snapshots
                            WHERE bookmaker='prizepicks' AND snapshot_label='window'
                              AND market_key='player_points' AND side='Over'""", conn)
