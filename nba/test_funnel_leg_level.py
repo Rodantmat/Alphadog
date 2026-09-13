@@ -94,7 +94,9 @@ def build(season, conn, sample):
     dr["player_id"] = dr["player_id"].astype(str)
 
     # market total -> expected pace
-    sp = pd.read_sql("""SELECT m.game_id, avg(CASE WHEN s.market='totals' AND s.outcome='Over' THEN s.point END) AS total
+    sp = pd.read_sql("""SELECT m.game_id,
+                               avg(CASE WHEN s.market='totals' AND s.outcome='Over' THEN s.point END) AS total,
+                               max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team THEN s.point END) AS home_spread
                         FROM nba_market.game_lines_snapshots s
                         JOIN nba_market.event_game_map m ON m.event_id=s.event_id
                         WHERE s.snapshot_label='morning' GROUP BY 1""", conn)
