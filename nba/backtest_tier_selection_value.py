@@ -104,27 +104,37 @@ def main():
     print("tiers). This grid reports the MEASURED hit rate for each cell so ROI can be read per band -", flush=True)
     print("it does not pick legs. Selection belongs to the slip engine, pricing belongs here.\n", flush=True)
 
+    # first: does phase matter at all? if the gap is the same in every phase, one correction serves.
+    print("PHASE CHECK - is the calibration gap regime-dependent?")
+    print(f"  {'phase':<8}{'n':>9}{'model':>9}{'ACTUAL':>9}{'gap':>9}")
+    for ph, g in d.groupby("phase", observed=True):
+        if len(g) < 500:
+            continue
+        print(f"  {str(ph):<8}{len(g):>9,}{g['p_model'].mean():>9.4f}{g['won'].mean():>9.4f}"
+              f"{g['won'].mean()-g['p_model'].mean():>+9.4f}", flush=True)
+    print("", flush=True)
+
     d["band"] = pd.cut(d["p_model"], [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0])
-    print(f"{'kind':<10}{'tier':>5}{'side':<7}{'band':<14}{'n':>8}{'model':>8}{'ACTUAL':>8}{'gap':>8}   {'be@'+str(be):>7}")
+    print(f"{'kind':<9}{'tier':>5}{'phase':<7}{'band':<14}{'n':>7}{'model':>8}{'ACTUAL':>8}{'gap':>8}")
     rows = []
-    for (kind, tier, side, band), g in d.groupby(["kind", "tier", "side", "band"], observed=True):
-        if len(g) < 300:
+    for (kind, tier, phase, band), g in d.groupby(["kind", "tier", "phase", "band"], observed=True):
+        if len(g) < 200:
             continue
         mp, act = float(g["p_model"].mean()), float(g["won"].mean())
-        clears = act - be
-        print(f"{kind:<10}{tier:>5}{side:<7}{str(band):<14}{len(g):>8,}{mp:>8.4f}{act:>8.4f}"
-              f"{act-mp:>+8.4f}   {clears:>+7.4f}", flush=True)
-        rows.append((kind, int(tier), side, str(band), len(g), round(mp, 4), round(act, 4),
-                     round(act - mp, 4), round(clears, 4)))
+        print(f"{kind:<9}{tier:>5}{str(phase):<7}{str(band):<14}{len(g):>7,}{mp:>8.4f}{act:>8.4f}"
+              f"{act-mp:>+8.4f}", flush=True)
+        rows.append((kind, int(tier), str(phase), str(band), len(g), round(mp, 4), round(act, 4),
+                     round(act - mp, 4), round(act - be, 4)))
 
     if rows:
         conn2 = psycopg.connect(os.environ["DATABASE_URL"])
         with conn2.cursor() as cur:
-            cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.tier_band_calibration (
-                kind text, tier int, side text, band text, n int, model_p numeric, actual numeric,
+            cur.execute("DROP TABLE IF EXISTS nba_score.tier_band_calibration")
+            cur.execute("""CREATE TABLE nba_score.tier_band_calibration (
+                kind text, tier int, phase text, band text, n int, model_p numeric, actual numeric,
                 gap numeric, clears_breakeven numeric, breakeven numeric, run_at timestamptz DEFAULT now())""")
             cur.executemany("""INSERT INTO nba_score.tier_band_calibration
-                (kind, tier, side, band, n, model_p, actual, gap, clears_breakeven, breakeven)
+                (kind, tier, phase, band, n, model_p, actual, gap, clears_breakeven, breakeven)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", [r + (be,) for r in rows])
         conn2.commit()
         conn2.close()
