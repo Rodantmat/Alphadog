@@ -23,6 +23,10 @@ on:
         description: "1 = write redistribution_factors (only after the sample test passes)"
         default: "0"
         required: false
+      prop:
+        description: "prop for the edge backtest"
+        default: "points"
+        required: false
 
 permissions:
   contents: read
