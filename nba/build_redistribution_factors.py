@@ -93,11 +93,11 @@ def main():
     print(f"{season}: logs {len(logs):,} | injury {len(inj):,}", flush=True)
 
     BETA_MIN = np.array([0.2214, 0.3953, 0.5160, 0.0043])     # fitted by fit_minutes_allocator.py
-# Fitted usage allocation (fit_usage_allocation.py, ridge 0.05 on the standardised design).
-# Features: [log baseline usage, log baseline minutes, is_creator(>=14 poss), log minutes lift]
-USAGE_BETA = np.array([-0.0081, -0.0049, -0.0047, 0.0262])
-USAGE_MU = np.array([2.1981, 3.0373, 0.2480, 0.0565])     # MEASURED by the fit, not assumed
-USAGE_SD = np.array([0.6087, 0.4296, 0.4319, 0.1919])
+    # Fitted usage allocation (fit_usage_allocation.py, ridge 0.05 on the standardised design).
+    # Features: [log baseline usage, log baseline minutes, is_creator(>=14 poss), log minutes lift]
+    USAGE_BETA = np.array([-0.0081, -0.0049, -0.0047, 0.0262])
+    USAGE_MU = np.array([2.1981, 3.0373, 0.2480, 0.0565])      # MEASURED by the fit, not assumed
+    USAGE_SD = np.array([0.6087, 0.4296, 0.4319, 0.1919])
     hist = defaultdict(lambda: [0.0, 0.0, 0])                  # pid -> [min, poss, games]
     recent_m, recent_p = defaultdict(list), defaultdict(list)
     last_team = {}
