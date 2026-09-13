@@ -195,25 +195,42 @@ def main():
         h = (frame["PTS"] > frame["line"].astype(float)).astype(int)
         return float(-np.mean(h * np.log(p) + (1 - h) * np.log(1 - p))), float(np.mean((p - h) ** 2))
 
-    print(f"\nALL {len(m):,} legs")
-    for tag, name in (("A", "anchor"), ("F", "flat A2"), ("N", "novelty-weighted A2"),
-                      ("S", "SHRUNK + novelty A2")):
-        ll, br = score(m, tag)
-        print(f"  {name:<24} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
+    # Write results to the DATABASE, not just the log. Twice this session a conclusion was drawn from a
+    # truncated CI log window that clipped a block mid-way. Results that matter must be queryable.
+    out_rows = []
+    slices = [("all", m), ("fires", m[m["min_mult"] != 1.0]),
+              ("high_novelty", m[(m["min_mult"] != 1.0) & (m["novelty"] >= 0.8)]),
+              ("low_novelty", m[(m["min_mult"] != 1.0) & (m["novelty"] < 0.3)])]
+    for sname, frame in slices:
+        if len(frame) < 200:
+            continue
+        base_ll, base_br = score(frame, "A")
+        for tag, name in (("A", "anchor"), ("F", "flat_A2"), ("N", "novelty_A2"), ("S", "shrunk_novelty_A2")):
+            ll, br = score(frame, tag)
+            out_rows.append((season, sname, name, len(frame), round(ll, 4), round(br, 4),
+                             round(base_ll - ll, 4), round(float(beta_s), 4)))
+    conn2 = psycopg.connect(os.environ["DATABASE_URL"])
+    with conn2.cursor() as cur:
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.factor_gate_results (
+            season text, slice text, model text, n int, log_loss numeric, brier numeric,
+            gain_vs_anchor numeric, shrink_beta numeric, run_at timestamptz DEFAULT now())""")
+        cur.executemany("""INSERT INTO nba_score.factor_gate_results
+            (season, slice, model, n, log_loss, brier, gain_vs_anchor, shrink_beta)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""", out_rows)
+    conn2.commit()
+    conn2.close()
 
-    hi = m[(m["min_mult"] != 1.0) & (m["novelty"] >= 0.8)]
-    if len(hi) > 300:
-        print(f"\nHIGH-NOVELTY legs ({len(hi):,}) - the absence is genuinely new information:")
-        for tag, name in (("A", "anchor"), ("F", "flat A2"), ("N", "novelty-weighted A2"),
-                          ("S", "SHRUNK + novelty A2")):
-            ll, br = score(hi, tag)
-            print(f"  {name:<24} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
-    lo = m[(m["min_mult"] != 1.0) & (m["novelty"] < 0.3)]
-    if len(lo) > 300:
-        print(f"\nLOW-NOVELTY legs ({len(lo):,}) - already priced into recent form:")
-        for tag, name in (("A", "anchor"), ("F", "flat A2")):
-            ll, br = score(lo, tag)
-            print(f"  {name:<24} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
+    # one compact line per slice so nothing can be clipped mid-block
+    print("", flush=True)
+    for sname, frame in slices:
+        if len(frame) < 200:
+            continue
+        parts = []
+        base_ll, _ = score(frame, "A")
+        for tag, name in (("A", "anchor"), ("F", "flat"), ("N", "novelty"), ("S", "shrunk")):
+            ll, _ = score(frame, tag)
+            parts.append(f"{name} {ll:.4f}" + ("" if tag == "A" else f" ({base_ll-ll:+.4f})"))
+        print(f"{sname:<14} n={len(frame):>6,}  " + " | ".join(parts), flush=True)
 
 
 if __name__ == "__main__":
