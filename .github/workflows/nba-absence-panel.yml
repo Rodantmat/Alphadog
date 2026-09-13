@@ -224,6 +224,12 @@ jobs:
           LC_TEST: "2025-26"
           LC_K: '400'
         run: python nba/calibrate_all_props.py
+      - name: Blowout model v2 (market spread)
+        if: ${{ github.event.inputs.allocator == '23' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BM_SEASONS: "2024-25,2025-26"
+        run: python nba/build_blowout_model.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
