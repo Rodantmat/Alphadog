@@ -95,7 +95,11 @@ def main():
     # 2) P(blowout) by market spread bucket - and the ASYMMETRY by side
     have["blowout"] = (have["margin"].abs() >= 20).astype(int)
     have["won"] = (have["margin"] > 0).astype(int)
-    have["fav"] = (have["mkt_spread_x"] < 0).astype(int)
+    # SIGN CONVENTION: the Odds API quotes the HOME spread negative for a favourite (home -7 => home is
+    # favoured by 7). mkt_spread_x flips it to TEAM_x's perspective, so after the flip a POSITIVE value
+    # means TEAM_x is favoured. An earlier version tested `< 0` and produced impossible rows - a "13+
+    # point favourite" winning by 20+ only 0.35% of the time - which is how the inversion was caught.
+    have["fav"] = (have["mkt_spread_x"] > 0).astype(int)
     have["absspread"] = have["mkt_spread_x"].abs()
     print(f"\n2) P(blowout >= 20) BY MARKET SPREAD")
     print(f"   {'spread':<12}{'n':>7}{'P(blowout)':>12}{'P(win by 20+)':>15}{'P(lose by 20+)':>16}")
