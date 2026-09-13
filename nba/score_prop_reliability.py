@@ -63,6 +63,13 @@ def main():
         logs["PLAYER_ID"] = logs["PLAYER_ID"].astype(str)
         for name, cols in COMBO.items():
             logs[name.upper()] = sum(logs[c].fillna(0) for c in cols)
+        # fantasy score - identical formula for PrizePicks and Underdog (verified 2026-09-11)
+        logs["FANTASY_SCORE"] = sum(logs[c].fillna(0) * w for c, w in FANTASY_W.items())
+        # double-double: two or more of PTS/REB/AST/STL/BLK at 10+
+        logs["DOUBLE_DOUBLE"] = (sum((logs[c].fillna(0) >= 10).astype(int)
+                                     for c in ("PTS", "REB", "AST", "STL", "BLK")) >= 2).astype(int)
+        # period props need quarter-level data the season logs do not carry
+        period_avail = False
         props = want or [r[0] for r in conn.execute(
             "SELECT DISTINCT prop FROM nba_score.baseline_history WHERE season=%s ORDER BY 1", (season,)).fetchall()]
         for prop in props:
