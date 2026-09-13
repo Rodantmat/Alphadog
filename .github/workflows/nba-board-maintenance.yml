@@ -15,6 +15,10 @@ on:
         description: "season for the calibration check"
         default: "2025-26"
         required: false
+      props:
+        description: "props for the reliability score (blank = every prop in baseline_history)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
