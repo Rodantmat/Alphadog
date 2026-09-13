@@ -5377,7 +5377,10 @@ async function apiHighHitSlips(env, request) {
   // V5's edge is structural (workload caps accumulation) and holds walk-forward on both halves.
   // V4 code is retained below but produces no slips.
   const selectorErrors = {};
-  const v5Legs = await autoSelectStrategyV5Legs(env).catch((e) => { selectorErrors.v5 = String(e && e.message || e); return []; });
+  const v5Legs = [];  // STOOD DOWN 2026-09-11 per operator: V1 goblin unders re-enabled in its
+  // place. The selector autoSelectStrategyV5Legs and all of its notes are left intact below; only
+  // this call is cut, so re-enabling is a one-line change back to the await.
+  const v5LegsDisabled_selector = autoSelectStrategyV5Legs;
   const v5Slips = [];
   {
     // One leg per game - two capped pitchers in the same game are correlated through game script.
