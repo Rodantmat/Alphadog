@@ -5941,7 +5941,11 @@ async function apiHighHitSlips(env, request) {
   // SUB/SHRINK (measured on real legs): demon drop -> sub demon (+182%) -> else sub 2nd goblin
   // (+98%) -> else shrink to D+G 2-pick Power (+47%). Goblin drop -> shrink to D+D 2-pick Power
   // 10x (+220%; the goblin only bought the Flex insurance) or sub goblin to keep Flex (+135%).
-  const v6Demons = await autoSelectDemonUnderLegs(env).catch((e) => { selectorErrors.v6 = String(e && e.message || e); return []; });
+  const v6Demons = [];  // STOOD DOWN 2026-09-11 per operator: demon unders off while V1 goblin
+  // unders carry PrizePicks. autoSelectDemonUnderLegs and its measurement notes stay in the file;
+  // only this call is cut. V6 is a 13x lottery at ~20% sweep - correct by design, but it should not
+  // be the thing carrying the book while a steadier track is available.
+  const v6DemonsDisabled_selector = autoSelectDemonUnderLegs;
   const v3UsedForV3 = new Set(v3Slips.flatMap(s => (s.legs || []).map(l => l.board_row_id)));
   const v6GoblinPool = v3Legs.filter(l => !v3UsedForV3.has(l.board_row_id));   // never double-stake a V3 leg
   const v6Slips = [];
