@@ -183,7 +183,7 @@ def main():
     board["game_date"] = pd.to_datetime(board["game_date"]).dt.date
     board["player_id"] = board["player"].map(norm_name).map(pid_map)
     m = board[board["player_id"].notna()].merge(
-        d[["GAME_DATE", "PLAYER_ID", "PTS", "A", "F", "N", "min_mult", "novelty"]],
+        d[["GAME_DATE", "PLAYER_ID", "PTS", "A", "F", "N", "S", "min_mult", "novelty"]],
         left_on=["game_date", "player_id"], right_on=["GAME_DATE", "PLAYER_ID"], how="inner")
     if len(m) < 500:
         print(f"only {len(m)} legs matched", flush=True)
