@@ -67,6 +67,22 @@ def main():
             w = d["n_seen"] / (d["n_seen"] + k)
             d[f"rate_{tag}"] = w * d["rate_A"] + (1 - w) * d["role_prior"]
 
+        # H: shrink toward an ARCHETYPE prior, not a minutes tier. Gemini's critique of F/G is exact:
+        # "starter" mixes a crash-first center with a wing who never crashes, so shrinking to that group
+        # is worse than not shrinking at all - which is what the sign flip showed (+0.192 / -0.658).
+        # The archetype is defined by DEFENSIVE rebound rate: a proxy for size and role that correlates
+        # with rebounding behaviour but is NOT the target, so the grouping is not circular.
+        d["dreb36"] = np.where(d["MIN"] > 0, d["DREB"] / d["MIN"] * 36, np.nan)
+        d["base_dreb36"] = g["dreb36"].transform(lambda s: s.shift(1).expanding(min_periods=3).mean())
+        d["arch"] = pd.qcut(d["base_dreb36"], 5, labels=[f"q{i}" for i in range(1, 6)], duplicates="drop")
+        arch_prior = (d.groupby(["arch", "GAME_DATE"], observed=True)["oreb36"].mean()
+                        .groupby(level=0).transform(lambda s: s.shift(1).expanding(min_periods=3).mean())
+                        .rename("arch_prior").reset_index())
+        d = d.merge(arch_prior, on=["arch", "GAME_DATE"], how="left")
+        for tag, k, base in (("H", 20.0, "rate_A"), ("I", 8.0, "rate_E")):
+            w = d["n_seen"] / (d["n_seen"] + k)
+            d[f"rate_{tag}"] = w * d[base] + (1 - w) * d["arch_prior"]
+
         x = d[d["base_min"].notna() & d["rate_A"].notna() & d["rate_E"].notna()
               & d["rate_F"].notna() & (d["base_min"] >= 8)].copy()
         for tag in ("A", "E", "F", "G"):
