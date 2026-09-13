@@ -249,7 +249,7 @@ def main():
         fta = fga * (d["b_fta"] / d["b_fga"].clip(lower=1)).clip(0, 1.2)
         p3, p2, pft = d["b_3pct"], d["b_2pct"], d["b_ftpct"]
         if use_factors:
-            p2 = p2 * np.exp(np.where(d["def_fg"].notna(), 0.0, 0.0) + d["def_fg"].fillna(0.0) * B2)
+            p2 = p2 * np.exp(d["def_fg"].fillna(0.0) * B2 + RIM_EFF * ((d["opp_rim"] - d["opp_rim"].median()) / max(d["opp_rim"].std(), 1e-6)).fillna(0.0))
             p3 = p3 * np.exp(d["def_3p"].fillna(0.0) * B3)
             fta = fta * np.exp(d["def_foul"].fillna(0.0) * BF)
         return a3 * p3.clip(0.1, 0.6) * 3 + a2 * p2.clip(0.2, 0.8) * 2 + fta * pft.clip(0.4, 1.0)
