@@ -180,6 +180,16 @@ jobs:
         run: |
           python -m pip install -q scipy
           python nba/test_component_application.py
+      - name: A2 novelty weighting
+        if: ${{ github.event.inputs.allocator == '18' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NV_SEASON: ${{ github.event.inputs.seasons || '2025-26' }}
+          NV_LOOKBACK: '10'
+          NV_SAMPLE_DATES: ${{ github.event.inputs.sample_dates || '0' }}
+        run: |
+          python -m pip install -q scipy
+          python nba/test_a2_novelty.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
