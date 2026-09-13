@@ -98,11 +98,17 @@ What must stay true as the baseline changes:
 
 ## 6. Open work created by this directive
 
-1. **A5 projected lineups** — build a projected starter/rotation proxy that is as-of correct; stop any
-   use of box-score starters as an input.
+1. ~~**A5 projected lineups**~~ — **CLOSED 2026-09-13: REJECTED AS REDUNDANT.** The proxy was built
+   (last game's starters minus those ruled out, plus the highest as-of-minutes replacement) and tested
+   held-out: negative on every prop (points −0.032, rebounds −0.008, assists −0.008, pra −0.035 MAE).
+   The allocator already uses recent-5 minutes, which encodes starting status *continuously and with
+   magnitude*; a binary starter flag discards that magnitude. **The leak risk dissolves rather than
+   needing mitigation — we do not need projected lineups, so there is nothing to leak.**
 2. **D1 referee assignments** — build the live daily capture. (Correction: assignments ARE knowable
    before the window — see §7 — so the box-score crew is a faithful historical reconstruction.)
 3. **M1 integration** — fold measured defender quality into the harness as a factor layer.
+   (Note: B4, the same-day opponent-availability residual, was REJECTED in both formulations — opponent
+   defence is already carried by the baseline. M1 as a *baseline-stage* factor is untouched by that.)
 4. **Day-by-day replay harness** — `nba/baseline/build_baseline_history.py` produces the full-season
    baseline per prop pair in one run; the enrichment equivalent walks the same dates.
 5. **An audit** that, for any replayed day, can answer "what was known at the cutoff" for every factor.
