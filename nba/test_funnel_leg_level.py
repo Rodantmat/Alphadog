@@ -233,10 +233,12 @@ def main():
     # fit the three efficiency betas on TRAIN by simple search
     tr = frames[tr_s]
     tr = tr[tr["b_min"].notna() & tr["b_3pct"].notna() & tr["b_2pct"].notna() & tr["b_ftpct"].notna() & (tr["b_min"] >= 10)]
-    global B2, B3, BF
+    global B2, B3, BF, BLOWOUT_K
     B2 = B3 = BF = 0.0
+    BLOWOUT_K = 0.0
     base_mae = np.abs(funnel(tr, True) - tr["PTS"]).mean()
-    for name, lo, hi in (("B2", -0.05, 0.05), ("B3", -0.10, 0.10), ("BF", -0.10, 0.10)):
+    for name, lo, hi in (("BLOWOUT_K", 0.0, 0.25), ("B2", -0.05, 0.05),
+                         ("B3", -0.10, 0.10), ("BF", -0.10, 0.10)):
         best, bv = base_mae, 0.0
         for v in np.linspace(lo, hi, 21):
             globals()[name] = v
