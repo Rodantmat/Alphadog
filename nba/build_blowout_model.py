@@ -84,8 +84,8 @@ def main():
     print(f"team-games with a market spread: {len(have):,}", flush=True)
 
     # 1) how good is the market spread at predicting the final margin?
-    r_mkt = float(np.corrcoef(-have["mkt_spread_x"], have["margin"])[0, 1])
-    mae_mkt = float(np.abs(-have["mkt_spread_x"] - have["margin"]).mean())
+    r_mkt = float(np.corrcoef(have["mkt_spread_x"], have["margin"])[0, 1])
+    mae_mkt = float(np.abs(have["mkt_spread_x"] - have["margin"]).mean())
     print(f"\n1) MARGIN PREDICTION")
     print(f"   market spread   r {r_mkt:.4f}   MAE {mae_mkt:.2f}")
     print(f"   derived spread  r 0.4600   MAE 11.50   (COMPASS fact 13, the baseline's current input)")
