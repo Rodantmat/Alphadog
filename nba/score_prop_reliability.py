@@ -34,6 +34,14 @@ COL = {"points": "PTS", "rebounds": "REB", "assists": "AST", "threes_made": "FG3
        "ftm": "FTM", "fgm": "FGM", "fta": "FTA", "oreb": "OREB", "dreb": "DREB"}
 COMBO = {"pra": ("PTS", "REB", "AST"), "pts_reb": ("PTS", "REB"), "pts_ast": ("PTS", "AST"),
          "reb_ast": ("REB", "AST"), "stocks": ("STL", "BLK")}
+# DERIVED props the box-score columns do not carry directly. Ten props (5.4M rows - a THIRD of
+# baseline_history) were silently skipped by the first version of this scorer because it only looked for
+# a matching column: the 7 period props, fantasy_score, double_double and stocks. Unverified is not the
+# same as fine, so they are graded here.
+FANTASY_W = {"PTS": 1.0, "REB": 1.2, "AST": 1.5, "STL": 3.0, "BLK": 3.0, "TOV": -1.0}   # PrizePicks AND Underdog
+PERIOD_PROPS = {"points_q1": ("PTS", "q1"), "points_h1": ("PTS", "h1"), "points_h2": ("PTS", "h2"),
+                "points_q4": ("PTS", "q4"), "points_q4_otx": ("PTS", "q4"),
+                "rebounds_q1": ("REB", "q1"), "assists_q1": ("AST", "q1"), "threes_made_q1": ("FG3M", "q1")}
 
 
 def fetch(name, timeout=300):
