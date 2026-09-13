@@ -195,7 +195,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EB_SEASONS: "2024-25,2025-26"
-          EB_PROP: ${{ github.event.inputs.seasons || 'points' }}
+          EB_PROP: ${{ github.event.inputs.prop || 'points' }}
         run: python nba/backtest_edge_vs_board.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
