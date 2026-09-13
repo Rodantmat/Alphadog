@@ -127,14 +127,27 @@ def main():
     ytr = tr["realised_share"].values
     yte = te["realised_share"].values
 
-    # fit by simple gradient descent on the softmax share loss (few parameters, convex enough)
-    beta = np.zeros(Xtr.shape[1])
-    lr = 0.15
-    for it in range(400):
-        p = softmax_shares(Xtr, beta, gtr)
-        grad = Xtr.T @ (p - ytr) / len(ytr)
+    # Fit by gradient descent WITH L2 regularisation. The unregularised version produced betas of
+    # -15.7 and -22.0 - a fit that extreme will not generalise even when it tests well, because the
+    # softmax only cares about DIFFERENCES within a team-game, so the scale can run away freely.
+    # Standardise the design as well, so the penalty applies evenly across features.
+    mu, sd = Xtr.mean(axis=0), Xtr.std(axis=0).clip(min=1e-6)
+    Ztr, Zte = (Xtr - mu) / sd, (Xte - mu) / sd
+    lam = float(os.environ.get("UA_RIDGE", "0.05"))
+    beta = np.zeros(Ztr.shape[1])
+    lr = 0.5
+    best, best_beta = np.inf, beta.copy()
+    for it in range(600):
+        p = softmax_shares(Ztr, beta, gtr)
+        grad = Ztr.T @ (p - ytr) / len(ytr) + lam * beta
         beta -= lr * grad
-    print("fitted betas [log usage, log minutes, is_creator, minutes lift]:", np.round(beta, 4).tolist(), flush=True)
+        if it % 50 == 0:
+            loss = np.abs(softmax_shares(Ztr, beta, gtr) - ytr).mean()
+            if loss < best:
+                best, best_beta = loss, beta.copy()
+    beta = best_beta
+    print(f"fitted betas (standardised, ridge {lam}) "
+          f"[log usage, log minutes, is_creator, minutes lift]: {np.round(beta, 4).tolist()}", flush=True)
 
     # baselines to beat
     def prop_share(x, col, groups):
