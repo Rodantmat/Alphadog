@@ -142,9 +142,13 @@ def rows_fliff(doc, gd, label):
         except (TypeError, ValueError):
             price = None
         mk = "player_" + str(l.get("market") or l.get("stat") or "").lower().replace(" ", "_")
+        # Fliff sends event_start_utc as epoch MILLISECONDS; the column is a timestamp
+        _start = l.get("event_start_utc")
+        if isinstance(_start, (int, float)):
+            _start = datetime.fromtimestamp(_start / 1000.0, tz=timezone.utc).isoformat()
         out.append((gd, ev("fliff", gd, l, "conflict_fkey", "event"), label,
                     doc.get("meta", {}).get("fetched_at"), "fliff", mk, l["player"], side, line,
-                    price, None, None, None, l.get("event_start_utc")))
+                    price, None, None, None, _start))
     if skipped:
         print(f"  fliff: skipped {skipped} non-player-O/U legs (team markets, no numeric line)", flush=True)
     return out
