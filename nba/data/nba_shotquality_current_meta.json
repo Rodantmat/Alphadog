@@ -1,11 +1,11 @@
 {
-  "fetched_at": "2026-09-08T03:14:24Z",
+  "fetched_at": "2026-09-14T15:54:36Z",
   "per_bucket": {
     "0-2 Feet - Very Tight": null,
     "2-4 Feet - Tight": null,
     "4-6 Feet - Open": null,
     "6+ Feet - Wide Open": null
   },
-  "row_count": 2244,
+  "row_count": 2267,
   "error": null
 }

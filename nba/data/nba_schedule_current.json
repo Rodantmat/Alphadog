@@ -21031,6 +21031,21 @@
       "game_label": "Preseason"
     },
     {
+      "game_id": "0012600067",
+      "season": "2026-27",
+      "game_date": "2026-10-04T00:00:00Z",
+      "game_datetime_utc": "2026-10-04T23:00:00Z",
+      "home_team_id": 1610612743,
+      "home_team_tricode": "DEN",
+      "away_team_id": 1610612762,
+      "away_team_tricode": "UTA",
+      "arena_name": "CU Events Center",
+      "arena_city": "Boulder",
+      "game_status": 1,
+      "game_status_text": "7:00 pm ET",
+      "game_label": "Preseason"
+    },
+    {
       "game_id": "0012600004",
       "season": "2026-27",
       "game_date": "2026-10-05T00:00:00Z",
