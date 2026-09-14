@@ -236,6 +236,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BS_SEASONS: "2024-25,2025-26"
         run: python nba/validate_blowout_upgrade.py
+      - name: Team matchup v2 (market total)
+        if: ${{ github.event.inputs.allocator == '25' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TM_SEASONS: "2024-25,2025-26"
+        run: python nba/build_matchup_model.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
