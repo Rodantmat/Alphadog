@@ -38,6 +38,14 @@ def main():
             (game_date, player_id, game_id, prop, period, line)""")
         cur.execute("CREATE INDEX IF NOT EXISTS baseline_history_lookup ON nba_score.baseline_history (game_date, player_id, prop)")
         prop_set = sorted({r["prop"] for r in rows})
+        # SERIALISE THE WRITE. Four rebuild jobs running in parallel deadlocked here on 2026-09-13:
+        #   psycopg.errors.DeadlockDetected on DELETE FROM nba_score.baseline_history
+        #   Process A waits for RowExclusiveLock ... blocked by B; B waits ... blocked by A
+        # Delete-then-insert inside one transaction takes row locks in whatever order the planner picks,
+        # so two concurrent loaders on the same table can cycle. A table-scoped advisory lock makes the
+        # loaders queue instead of deadlocking - they still run in parallel, only the WRITE is serialised
+        # (seconds), so the expensive build stays parallel. Released automatically at commit.
+        cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
         cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
         cur.executemany("""INSERT INTO nba_score.baseline_history
             (season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
