@@ -193,7 +193,6 @@ def main():
                 c[2] += float(rprob)
                 c[3] += len(branches)
             for r in day.itertuples(index=False):
-                last_team[r.PLAYER_ID] = r.TEAM
                 h = hist[r.PLAYER_ID]
                 h[0] += float(r.MIN); h[1] += 1
 
