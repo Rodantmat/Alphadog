@@ -159,6 +159,14 @@ def main():
     tr, te = build(tr_s, pid_map), build(te_s, pid_map)
     print(f"train {tr_s}: {len(tr):,} Questionable rows | test {te_s}: {len(te):,}", flush=True)
     print(f"base rate: train {tr['played'].mean():.4f} | test {te['played'].mean():.4f}\n", flush=True)
+    # GUARD: a uniform label is always a bug, never a result. The first run produced base=0/1 and
+    # "divide by zero encountered in log", then reported 0.0000 accuracy as if it were a finding.
+    for nm, f in (("train", tr), ("test", te)):
+        b = float(f["played"].mean())
+        if not (0.2 < b < 0.8) or len(f) < 200:
+            print(f"ABORT: {nm} base rate {b:.4f} on {len(f):,} rows is not a plausible "
+                  f"Questionable play rate - the label or feature build is broken, not the model.", flush=True)
+            return
 
     # hierarchical shrunk cells, coarse -> fine, each fitted on TRAIN only
     def cell(keys, K=25.0):
