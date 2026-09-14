@@ -111,8 +111,28 @@ def main():
         inj["nm"] = inj["player_name"].map(flip_last_first)
         inj["status_u"] = inj["status"].astype(str).str.upper().str.strip()
         inj["pid"] = inj["nm"].map(pid_map)
-        inj = inj[inj["pid"].notna()]
-        print(f"{season}: {len(logs):,} player-games | {len(inj):,} resolvable injury rows", flush=True)
+        inj = inj[inj["pid"].notna() & inj["matchup"].notna()]
+        # RESOLVE THE GAME FROM THE REPORT ITSELF. Every injury row carries `matchup` ("HOU@OKC") and
+        # `team` (full club name). A first version inferred the player's team from a backward-looking
+        # accumulator built as the loop advanced, which rejected almost everyone and produced 0 games
+        # with uncertainty for a whole season against 363,689 injury rows. The report already says which
+        # game the player belongs to - use it.
+        inj["mk"] = inj["matchup"].astype(str).str.upper().str.replace(" ", "", regex=False)
+        print(f"{season}: {len(logs):,} player-games | {len(inj):,} resolvable injury rows | "
+              f"{int((inj['status_u']=='QUESTIONABLE').sum()):,} QUESTIONABLE", flush=True)
+
+        # map (game_date, 'AWY@HOM') -> GAME_ID using the box scores
+        gmap = {}
+        for gid, gdf in logs.groupby("GAME_ID"):
+            ts = list(gdf["TEAM"].unique())
+            if len(ts) != 2:
+                continue
+            gd0 = gdf["GAME_DATE"].iloc[0]
+            gmap[(gd0, f"{ts[0]}@{ts[1]}")] = gid
+            gmap[(gd0, f"{ts[1]}@{ts[0]}")] = gid
+        inj["game_id"] = [gmap.get((d, m)) for d, m in zip(inj["game_date"], inj["mk"])]
+        matched = float(inj["game_id"].notna().mean())
+        print(f"  injury rows matched to a game: {matched:.1%}", flush=True)
 
         # as-of minutes so "rotation" vs "fringe" is decided on what was knowable
         hist = defaultdict(lambda: [0.0, 0])
