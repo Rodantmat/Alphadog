@@ -322,12 +322,17 @@ pg["f_impl_opp"] = np.log(pg["implied_opp"].fillna(_LG_IMPL).clip(lower=80) / _L
 pg["f_opp_paint"] = _lf("opp_PCT_PTS_PAINT", LG["PCT_PTS_PAINT"])
 pg["f_opp_3pa"] = _lf("opp_allowed_3pa_share", LG["allowed_3pa_share"])
 FACTORS_BY_PROP = {
-    "points": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "rebounds": ["f_pace", "f_opp_miss", "f_opp_oreb", "is_home", "is_b2b"],
-    "assists": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "threes_made": ["f_pace", "f_opp_3pa", "is_home", "is_b2b"],
-    "blocks": ["f_pace", "f_opp_paint", "is_home", "is_b2b"], "steals": ["f_pace", "f_opp_tov", "is_home", "is_b2b"],
-    "turnovers": ["f_pace", "f_opp_forced", "is_home", "is_b2b"], "fga": ["f_pace", "is_home", "is_b2b"], "fg3a": ["f_pace", "f_opp_3pa", "is_home", "is_b2b"],
-    "ftm": ["f_pace", "f_opp_fouls", "is_home", "is_b2b"], "personal_fouls": ["f_pace", "f_opp_ftr", "is_home", "is_b2b"],
-    "fgm": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "fta": ["f_pace", "f_opp_fouls", "is_home", "is_b2b"],
+    # f_impl_own / f_impl_opp added 2026-09-14: the market-implied scoring environment for this team and
+    # its opponent. They sit ALONGSIDE the derived factors, not instead of them - each coefficient is fit
+    # on TRAIN and lands at ~0 if it adds nothing, so the derived profile keeps whatever it earns.
+    # Measured: implied team score r 0.4637 vs derived r 0.2364; player production runs 1.0140 against the
+    # strongest implied defences to 1.0358 against the weakest, monotone across 41,497 player-games.
+    "points": ["f_pace", "f_opp_def", "f_impl_own", "f_impl_opp", "is_home", "is_b2b"], "rebounds": ["f_pace", "f_opp_miss", "f_opp_oreb", "f_impl_own", "f_impl_opp", "is_home", "is_b2b"],
+    "assists": ["f_pace", "f_opp_def", "f_impl_own", "f_impl_opp", "is_home", "is_b2b"], "threes_made": ["f_pace", "f_opp_3pa", "f_impl_own", "f_impl_opp", "is_home", "is_b2b"],
+    "blocks": ["f_pace", "f_opp_paint", "f_impl_opp", "is_home", "is_b2b"], "steals": ["f_pace", "f_opp_tov", "f_impl_opp", "is_home", "is_b2b"],
+    "turnovers": ["f_pace", "f_opp_forced", "f_impl_own", "is_home", "is_b2b"], "fga": ["f_pace", "f_impl_own", "f_impl_opp", "is_home", "is_b2b"], "fg3a": ["f_pace", "f_opp_3pa", "f_impl_own", "is_home", "is_b2b"],
+    "ftm": ["f_pace", "f_opp_fouls", "f_impl_own", "is_home", "is_b2b"], "personal_fouls": ["f_pace", "f_opp_ftr", "f_impl_opp", "is_home", "is_b2b"],
+    "fgm": ["f_pace", "f_opp_def", "f_impl_own", "f_impl_opp", "is_home", "is_b2b"], "fta": ["f_pace", "f_opp_fouls", "f_impl_own", "is_home", "is_b2b"],
     "oreb": ["f_pace", "f_opp_def", "is_home", "is_b2b"], "dreb": ["f_pace", "f_opp_def", "is_home", "is_b2b"]}
 FACTORS_ON = os.environ.get("BT_FACTORS", "1") == "1"
 FACTOR_FITS = {}
