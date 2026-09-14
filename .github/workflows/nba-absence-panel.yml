@@ -250,6 +250,13 @@ jobs:
           SC_MAX_BRANCHES: '64'
           SC_KEEP_ONLY_REALISED: '1'
         run: python nba/build_scenario_calibration.py
+      - name: N1 v2 granular resolution
+        if: ${{ github.event.inputs.allocator == '27' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          N1_TRAIN: "2024-25"
+          N1_TEST: "2025-26"
+        run: python nba/fit_n1_granular.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
