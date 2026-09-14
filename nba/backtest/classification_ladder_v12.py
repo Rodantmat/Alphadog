@@ -272,6 +272,33 @@ pg["OPP_ID"] = np.where(pg["TEAM_ID"] == pg["home_id"], games.set_index(["season
 pg = pg.merge(asof[["season", "TEAM_ID", "GAME_ID", "asof_PACE"]].rename(columns={"asof_PACE": "own_pace"}), on=["season", "TEAM_ID", "GAME_ID"], how="left")
 pg = pg.merge(asof.rename(columns={"TEAM_ID": "OPP_ID", **{"asof_" + c_: "opp_" + c_ for c_ in FCOLS}}), on=["season", "OPP_ID", "GAME_ID"], how="left")
 pg["is_home"] = (pg["TEAM_ID"] == pg["home_id"]).astype(float)
+# MARKET-IMPLIED GAME ENVIRONMENT (2026-09-14). The derived opponent profile above is rolled from our own
+# box scores; the comment on the factor layer already flags PACE as unstable across seasons (0.30/0.16,
+# 0.23/-0.03). The market total is the book's estimate of the whole environment - pace, efficiency and
+# both teams' quality in one number - and it measures far better:
+#     predicting a team's actual points:  derived season-to-date mean r 0.2364  vs  MARKET-IMPLIED r 0.4637
+#     player production by opponent implied total: 1.0140 (strong D) -> 1.0358 (weak D), monotone
+# implied_own = total/2 - spread/2 ; implied_opp = total/2 + spread/2   (spread from the team's view)
+# Fitted like every other factor - the coefficient may land at ~0 if it adds nothing.
+try:
+    _mt, _msp = {}, {}
+    for _s in SEASONS:
+        _p = DATA / f"nba_market_spreads_{SLUG[_s]}.json"
+        if _p.exists():
+            for _r in json.loads(_p.read_text()).get("rows", []):
+                if _r.get("total") is not None:
+                    _mt[str(_r["game_id"])] = float(_r["total"])
+                if _r.get("home_spread") is not None:
+                    _msp[str(_r["game_id"])] = float(_r["home_spread"])
+    _tot = pg["GAME_ID"].astype(str).map(_mt)
+    _hsp = pg["GAME_ID"].astype(str).map(_msp)
+    _own_spread = np.where(pg["is_home"] == 1, -_hsp, _hsp)      # positive = this team favoured
+    pg["implied_own"] = _tot / 2.0 + _own_spread / 2.0
+    pg["implied_opp"] = _tot / 2.0 - _own_spread / 2.0
+    print(f"[matchup] market-implied totals on {float(pg['implied_own'].notna().mean()):.1%} of player-games", flush=True)
+except Exception as _e:
+    pg["implied_own"] = np.nan; pg["implied_opp"] = np.nan
+    print(f"[matchup] market totals unavailable ({_e}) - implied environment factors disabled", flush=True)
 pg = pg.sort_values(["season", "PLAYER_ID", "GAME_DATE"]).reset_index(drop=True)
 pg["prev_gd"] = pg.groupby(["season", "PLAYER_ID"])["GAME_DATE"].shift(1)
 pg["is_b2b"] = [(1.0 if (isinstance(p_, date) and (g_ - p_).days == 1) else 0.0) for g_, p_ in zip(pg["GAME_DATE"], pg["prev_gd"])]
