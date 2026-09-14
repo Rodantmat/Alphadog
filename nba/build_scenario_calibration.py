@@ -136,29 +136,31 @@ def main():
 
         # as-of minutes so "rotation" vs "fringe" is decided on what was knowable
         hist = defaultdict(lambda: [0.0, 0])
-        last_team = {}
         out_rows, cal = [], defaultdict(lambda: [0, 0, 0.0, 0.0])
-        status_by_day = {d: dict(zip(g["pid"], g["status_u"])) for d, g in inj.groupby("game_date")}
+        # uncertain players keyed by the GAME the report itself assigns them to
+        q = inj[(inj["status_u"] == "QUESTIONABLE") & inj["game_id"].notna()]
+        # LAST report before tip per (game, player) - the status that actually stood at decision time
+        q = q.sort_values("snapshot_ts") if "snapshot_ts" in q.columns else q
+        unc_by_game = defaultdict(list)
+        for r in q.drop_duplicates(subset=["game_id", "pid"], keep="last").itertuples(index=False):
+            unc_by_game[r.game_id].append(r.pid)
+        print(f"  games with at least one QUESTIONABLE: {len(unc_by_game):,}", flush=True)
 
         for gd in sorted(logs["GAME_DATE"].unique()):
             day = logs[logs["GAME_DATE"] == gd]
             played = set(day["PLAYER_ID"])
-            st = status_by_day.get(gd, {})
             for gid, gdf in day.groupby("GAME_ID"):
-                teams = list(gdf["TEAM"].unique())
-                if len(teams) != 2:
+                cand = unc_by_game.get(gid) or []
+                if not cand:
                     continue
-                # UNCERTAIN players on either team: listed Questionable with a real as-of role
                 unc = []
-                for pid, status in st.items():
-                    if status != "QUESTIONABLE" or last_team.get(pid) not in teams:
-                        continue
+                for pid in cand:
                     h = hist.get(pid)
                     if not h or h[1] == 0:
                         continue
                     mpg = h[0] / h[1]
                     if mpg < 8:
-                        continue
+                        continue                      # not a rotation player: nothing to branch on
                     p = P_PLAY["QUESTIONABLE_ROTATION"] if mpg >= 15 else P_PLAY["QUESTIONABLE_FRINGE"]
                     unc.append((pid, p, pid in played))
                 if not unc:
