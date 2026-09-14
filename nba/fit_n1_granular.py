@@ -106,38 +106,43 @@ def build(season, pid_map):
     q["improved"] = (q["last_rank"] > q["first_rank"]).astype(int)
     q["degraded"] = (q["last_rank"] < q["first_rank"]).astype(int)
 
-    played = {(r.GAME_DATE, r.PLAYER_ID): float(r.MIN) for r in logs.itertuples(index=False)}
-    q["played"] = [1 if played.get((d, p), 0) > 0 else 0 for d, p in zip(q["game_date"], q["pid"])]
+    played_set = {(r.GAME_DATE, r.PLAYER_ID) for r in logs.itertuples(index=False) if float(r.MIN) > 0}
+    q["played"] = [1 if (d, p) in played_set else 0 for d, p in zip(q["game_date"], q["pid"])]
 
-    # as-of role, consecutive games missed, and rest
-    hist = defaultdict(lambda: [0.0, 0])
-    missed = defaultdict(int)
-    lastdate = {}
-    dates = sorted(set(logs["GAME_DATE"]) | set(q["game_date"]))
+    # As-of role, consecutive games missed and rest - rebuilt cleanly. The first version interleaved a
+    # stray no-op loop with the accumulators and corrupted the frame: `base` came out 0 or 1, which threw
+    # "divide by zero encountered in log" and produced 0.0000 accuracy. A uniform label is always a bug,
+    # never a result, so main() now asserts 0.2 < base < 0.8 before fitting anything.
+    mins = defaultdict(lambda: [0.0, 0])
+    missed, lastdate = defaultdict(int), {}
     role, cons, rest = {}, {}, {}
-    played_by_date = logs.groupby("GAME_DATE")["PLAYER_ID"].apply(set).to_dict()
-    team_dates = defaultdict(set)
+    q_dates = set(q["game_date"])
+    by_date = {d: g for d, g in logs.groupby("GAME_DATE")}
+    team_played = logs.groupby(["GAME_DATE", "TEAM"])["PLAYER_ID"].apply(set).to_dict()
+    team_of = {}
     for r in logs.itertuples(index=False):
-        team_dates[r.TEAM].add(r.GAME_DATE)
-    for d in dates:
-        pl = played_by_date.get(d, set())
-        for (gd, pid) in list(zip(q["game_date"], q["pid"])):
-            pass
-        for pid in set(q[q["game_date"] == d]["pid"]):
-            h = hist.get(pid)
-            role[(d, pid)] = (h[0] / h[1]) if h and h[1] else np.nan
-            cons[(d, pid)] = missed.get(pid, 0)
-            rest[(d, pid)] = (d - lastdate[pid]).days if pid in lastdate else 99
-        for pid in pl:
-            h = hist[pid]
-            h[0] += 0; h[1] += 0
-        for r in logs[logs["GAME_DATE"] == d].itertuples(index=False):
-            h = hist[r.PLAYER_ID]
+        team_of[r.PLAYER_ID] = r.TEAM
+    for d in sorted(set(logs["GAME_DATE"]) | q_dates):
+        if d in q_dates:                                   # snapshot the as-of state BEFORE folding today in
+            for pid in set(q[q["game_date"] == d]["pid"]):
+                h = mins.get(pid)
+                role[(d, pid)] = (h[0] / h[1]) if h and h[1] else np.nan
+                cons[(d, pid)] = missed.get(pid, 0)
+                rest[(d, pid)] = (d - lastdate[pid]).days if pid in lastdate else 99
+        day = by_date.get(d)
+        if day is None:
+            continue
+        played_today = set(day["PLAYER_ID"])
+        for r in day.itertuples(index=False):
+            h = mins[r.PLAYER_ID]
             h[0] += float(r.MIN); h[1] += 1
             missed[r.PLAYER_ID] = 0
             lastdate[r.PLAYER_ID] = d
-        for pid in set(q[q["game_date"] == d]["pid"]) - pl:
-            missed[pid] = missed.get(pid, 0) + 1
+        # a player whose TEAM played today but who did not appear has missed a game
+        for t in day["TEAM"].unique():
+            for pid, tm in team_of.items():
+                if tm == t and pid not in played_today and mins.get(pid, [0, 0])[1] > 0:
+                    missed[pid] = missed.get(pid, 0) + 1
 
     q["mpg"] = [role.get((d, p), np.nan) for d, p in zip(q["game_date"], q["pid"])]
     q["games_missed"] = [cons.get((d, p), 0) for d, p in zip(q["game_date"], q["pid"])]
