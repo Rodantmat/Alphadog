@@ -312,6 +312,13 @@ pg["f_opp_tov"] = _lf("opp_TM_TOV_PCT", LG["TM_TOV_PCT"])
 pg["f_opp_forced"] = _lf("opp_OPP_TOV_PCT", LG["OPP_TOV_PCT"])
 pg["f_opp_ftr"] = _lf("opp_FTA_RATE", LG["FTA_RATE"])
 pg["f_opp_fouls"] = _lf("opp_OPP_FTA_RATE", LG["OPP_FTA_RATE"])
+# market-implied environment, same log-ratio form as every other factor so the fit treats them alike.
+# f_impl_own  = this team's implied scoring environment (pace x quality, the book's view)
+# f_impl_opp  = the OPPONENT's implied total - HIGH means a weak defence, which is the matchup asymmetry
+#               the owner called non-negotiable (measured 1.0140 strong-D -> 1.0358 weak-D, monotone)
+_LG_IMPL = float(np.nanmedian(pg["implied_own"])) if pg["implied_own"].notna().any() else 114.0
+pg["f_impl_own"] = np.log(pg["implied_own"].fillna(_LG_IMPL).clip(lower=80) / _LG_IMPL)
+pg["f_impl_opp"] = np.log(pg["implied_opp"].fillna(_LG_IMPL).clip(lower=80) / _LG_IMPL)
 pg["f_opp_paint"] = _lf("opp_PCT_PTS_PAINT", LG["PCT_PTS_PAINT"])
 pg["f_opp_3pa"] = _lf("opp_allowed_3pa_share", LG["allowed_3pa_share"])
 FACTORS_BY_PROP = {
