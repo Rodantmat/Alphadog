@@ -242,6 +242,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           TM_SEASONS: "2024-25,2025-26"
         run: python nba/build_matchup_model.py
+      - name: Scenario precompute calibration
+        if: ${{ github.event.inputs.allocator == '26' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SC_SEASONS: "2024-25,2025-26"
+          SC_MAX_BRANCHES: '64'
+          SC_KEEP_ONLY_REALISED: '1'
+        run: python nba/build_scenario_calibration.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
