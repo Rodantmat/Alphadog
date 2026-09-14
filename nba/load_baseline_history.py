@@ -28,6 +28,13 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     with conn.cursor() as cur:
+        # LOCK FIRST, BEFORE ANY DDL. A previous version took this advisory lock AFTER the
+        # CREATE TABLE / CREATE INDEX IF NOT EXISTS statements - but those already take table locks, so
+        # one process held table locks and waited for the advisory lock while another held the advisory
+        # lock and waited for the table locks. That INVERTED the lock order and produced a second
+        # deadlock:  "Process A waits for RowExclusiveLock ... Process B waits for ExclusiveLock on
+        # advisory lock". Every concurrent loader must acquire the SAME lock FIRST and in the SAME order.
+        cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.baseline_history (
             season text, game_date date, player_id text, game_id text, prop text, period text,
             line numeric, anchor numeric, ladder_offset int, p_more numeric, p_less numeric, p_raw numeric,
