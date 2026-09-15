@@ -333,7 +333,20 @@ def main():
         cands[label] = (st, ll)
         print(f"  {label:<34}{a:>7.4f}{u:>8.4f}{cs:>8.1%}{ca:>10.4f}{ll:>9.4f}", flush=True)
     best = min(cands, key=lambda k: cands[k][1])
-    print(f"\n  BEST by log-loss: {best}", flush=True)
+    # SELECTION RULE: log-loss is NOT the objective here. This model's job is to produce ACTIONABLE
+    # calls - the engine routes anything it cannot call to the scenario layer, which enumerates and
+    # selects rather than guessing. So the winner is chosen on CONFIDENT-BAND YIELD (share x accuracy),
+    # not on average sharpness over coin flips. Measured 2026-09-15 (1,322 held-out Questionables):
+    #   pooled, base            log-loss 0.6727  AUC 0.6237  conf 2.8% @ 70.3%
+    #   pooled + player history log-loss 0.6780  AUC 0.6216  conf 4.1% @ 79.6%   <- WINNER
+    #   per-tier, base          log-loss 0.6963  AUC 0.5894  conf 4.8% @ 67.2%
+    #   per-tier + history      log-loss 0.6997  AUC 0.5892  conf 6.7% @ 70.5%
+    # Per-tier splitting is harmful in both variants (AUC 0.62 -> 0.59): ~1,300 training rows split three
+    # ways overfits, and the pooled model already splits on role where role matters.
+    yield_of = {k: grade(v[0])[2] * grade(v[0])[3] for k, v in cands.items()}
+    best = max(yield_of, key=lambda k: yield_of[k] if yield_of[k] == yield_of[k] else -1)
+    print(f"\n  BEST by confident-band yield: {best}  "
+          f"(log-loss winner would have been {min(cands, key=lambda k: cands[k][1])})", flush=True)
     # WRITE THE VERDICT TO THE DATABASE. factor_gate_results exists precisely so a result is not trapped
     # in a CI log - and this script was not using it, so three ablation runs produced numbers the log
     # window clipped before they could be read. A verdict that only exists in stdout is not a verdict.
