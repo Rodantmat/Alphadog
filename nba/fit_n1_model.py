@@ -158,6 +158,29 @@ def build(season, pid_map):
         return min((d - prev[-1]).days, 30) if prev else 30
     q["days_rest"] = [days_rest(p, d) for d, p in zip(q["game_date"], q["pid"])]
     q["is_b2b"] = (q["days_rest"] <= 1).astype(int)
+    # RULE-BASED FEATURES from the official NBA reporting policy (2026-09-15 research):
+    #  * the game-day report is due 11am-1pm local, but 8-10am for tips at 5pm or EARLIER. So for an
+    #    early game our 2:30 PM cutoff sits AFTER the final deadline and the status is near-resolved;
+    #    for a late game it does not. This is the single largest discriminator we were not using.
+    #  * "a team may only list a player as Out or Doubtful for a ROAD game if the player did not travel
+    #    or is not present in the visiting market" - so a road Questionable carries different meaning.
+    #  * the Active List locks 60 minutes before tip; hours-to-tip measures how much resolving time is
+    #    still to come after our cutoff.
+    def tip_hour(s):
+        try:
+            h, m = str(s).split(":")[:2]
+            return int(h) + int(m) / 60.0
+        except Exception:  # noqa: BLE001
+            return np.nan
+    gt = asof.sort_values("snapshot_ts").groupby(["game_date", "pid"], as_index=False).agg(
+        game_time=("game_time", "last"), matchup=("matchup", "last"))
+    q = q.merge(gt, on=["game_date", "pid"], how="left")
+    q["tip_hour"] = q["game_time"].map(tip_hour)
+    q["is_early_tip"] = (q["tip_hour"] <= 17.0).astype(int)          # 5pm or earlier -> 8-10am deadline
+    q["hours_to_tip"] = (q["tip_hour"] - 14.5).clip(lower=0, upper=12)  # from our 2:30 PM cutoff
+    # road: the report's `team` is the player's club; matchup is AWY@HOM, so away = first token
+    q["is_road"] = [1 if isinstance(m, str) and "@" in m and str(t).split()[-1][:3].upper() == m.split("@")[0][:3].upper()
+                    else 0 for m, t in zip(q["matchup"], q["team"])]
     q["season"] = season
     q = q[q["mpg"].notna() & (q["career_games"] >= 3)].copy()
     print(f"  {season}: {len(q):,} Questionable rows with features | play rate {q['played'].mean():.4f}", flush=True)
