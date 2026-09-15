@@ -334,6 +334,29 @@ def main():
         print(f"  {label:<34}{a:>7.4f}{u:>8.4f}{cs:>8.1%}{ca:>10.4f}{ll:>9.4f}", flush=True)
     best = min(cands, key=lambda k: cands[k][1])
     print(f"\n  BEST by log-loss: {best}", flush=True)
+    # WRITE THE VERDICT TO THE DATABASE. factor_gate_results exists precisely so a result is not trapped
+    # in a CI log - and this script was not using it, so three ablation runs produced numbers the log
+    # window clipped before they could be read. A verdict that only exists in stdout is not a verdict.
+    try:
+        import psycopg
+        with psycopg.connect(os.environ["DATABASE_URL"]) as cx, cx.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.factor_gate_results (
+                season text, slice text, model text, n int, log_loss numeric, brier numeric,
+                gain_vs_anchor numeric, shrink_beta numeric, run_at timestamptz DEFAULT now())""")
+            cur.execute("DELETE FROM nba_score.factor_gate_results WHERE slice = 'n1_ablation'")
+            rows = []
+            for label, (pv, ll) in cands.items():
+                a, u, cs, ca, _ = grade(pv)
+                rows.append((te_s, "n1_ablation", label, len(te), round(float(ll), 5), round(float(u), 4),
+                             round(float(ca) if ca == ca else 0.0, 4), round(float(cs), 4)))
+            cur.executemany("""INSERT INTO nba_score.factor_gate_results
+                (season, slice, model, n, log_loss, brier, gain_vs_anchor, shrink_beta)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""", rows)
+            cx.commit()
+        print("  wrote the ablation to nba_score.factor_gate_results "
+              "(brier col = AUC, gain col = confident-band accuracy, shrink col = confident share)", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  could not persist the ablation ({str(exc)[:60]})", flush=True)
     p2 = cands[best][0]
     p3 = p2
 
