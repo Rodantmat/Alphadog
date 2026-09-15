@@ -181,42 +181,50 @@ def build(season, pid_map):
     # road: the report's `team` is the player's club; matchup is AWY@HOM, so away = first token
     q["is_road"] = [1 if isinstance(m, str) and "@" in m and str(t).split()[-1][:3].upper() == m.split("@")[0][:3].upper()
                     else 0 for m, t in zip(q["matchup"], q["team"])]
-    # MARKET LINE MOVEMENT - the single strongest resolution signal available to us. Books employ
-    # traders watching shootaround and beat reporters; "one star ruled out can swing a spread 4-5 points
-    # within minutes" and "beat reporters at shootaround, warmups, travel updates move markets BEFORE
-    # anything is official". So the move between our MORNING snapshot and the WINDOW snapshot (14:45 PT)
-    # encodes information the injury report has not yet published.
-    #   spread_move_vs_team > 0  -> the market got WORSE for this player's team -> he is likelier OUT
-    #   total_move           < 0 -> the market expects less scoring, often a star sitting
+    # MARKET LINE MOVEMENT, done correctly this time. Books employ traders watching shootaround and beat
+    # reporters: "one star ruled out can swing a spread 4-5 points within minutes" and reporters "move
+    # markets BEFORE anything is official". So the move from the morning snapshot to the window snapshot
+    # (14:45 PT) carries information the injury report has not published yet.
+    #
+    # THE EARLIER ATTEMPT FAILED ON THE JOIN, NOT THE IDEA: a miss defaulted to 0.0, which the model read
+    # as "no movement" rather than "unknown", diluting the signal (confident band 4.2% -> 3.3%). Now:
+    #   * join on the (game_date, matchup) -> game_id map that already works elsewhere in this file
+    #   * a miss is np.nan, NOT 0.0 - LightGBM handles NaN natively and learns the missing pattern
+    #   * a has_move indicator so the model can separate "no movement" from "no data"
     try:
         ms = fetch(f"nba_market_spreads_{slug}.json")
         mv = {}
         for r in ms.get("rows", []):
-            hs, hw, tot = r.get("home_spread"), r.get("home_spread_window"), r.get("total")
+            hs, hw = r.get("home_spread"), r.get("home_spread_window")
             if hs is not None and hw is not None:
-                mv[(r.get("game_date"), )] = None
-                mv[str(r["game_id"])] = (float(hw) - float(hs), float(tot) if tot else np.nan)
+                mv[str(r["game_id"])] = float(hw) - float(hs)     # change in the HOME spread
         gm = {}
         for gid, gdf in logs.groupby("GAME_ID"):
             ts = list(gdf["TEAM"].unique())
-            if len(ts) == 2:
-                d0 = gdf["GAME_DATE"].iloc[0]
-                gm[(d0, f"{ts[0]}@{ts[1]}")] = (gid, ts[1])   # (game, home team)
-                gm[(d0, f"{ts[1]}@{ts[0]}")] = (gid, ts[0])
-        moves, tmoves = [], []
+            if len(ts) != 2:
+                continue
+            d0 = gdf["GAME_DATE"].iloc[0]
+            gm[(d0, f"{ts[0]}@{ts[1]}")] = gid
+            gm[(d0, f"{ts[1]}@{ts[0]}")] = gid
+        moves = []
         for d, mk, road in zip(q["game_date"], q["matchup"], q["is_road"]):
-            key = gm.get((d, str(mk).upper().replace(" ", "")))
-            v = mv.get(key[0]) if key else None
-            if not v:
-                moves.append(0.0); tmoves.append(0.0); continue
-            dmove = v[0]                                    # change in the HOME spread
-            # sign it toward the player's own team: a road player's team worsens when home spread falls
-            moves.append(-dmove if road else dmove)
-            tmoves.append(0.0)
+            gid = gm.get((d, str(mk).upper().replace(" ", "")))
+            v = mv.get(gid) if gid else None
+            if v is None:
+                moves.append(np.nan)
+            else:
+                # sign it toward the player's own team: a POSITIVE value means the market moved AGAINST
+                # his team, which is what happens when the market learns he is sitting
+                moves.append(-v if road else v)
         q["spread_move_vs_team"] = moves
+        q["has_move"] = q["spread_move_vs_team"].notna().astype(int)
+        cov = float(q["has_move"].mean())
+        print(f"  market movement joined on {cov:.1%} of rows "
+              f"(mean |move| {float(q['spread_move_vs_team'].abs().mean() or 0):.2f} pts)", flush=True)
     except Exception as exc:  # noqa: BLE001
         print(f"  market movement unavailable ({str(exc)[:50]})", flush=True)
-        q["spread_move_vs_team"] = 0.0
+        q["spread_move_vs_team"] = np.nan
+        q["has_move"] = 0
     q["season"] = season
     q = q[q["mpg"].notna() & (q["career_games"] >= 3)].copy()
     # PLAYER-SPECIFIC QUESTIONABLE HISTORY - the strongest per-player signal available. Some players are
