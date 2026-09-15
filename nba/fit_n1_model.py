@@ -201,7 +201,8 @@ def main():
     base = float(tr["played"].mean())
     print(f"\nbase rate: train {base:.4f} | test {te['played'].mean():.4f}", flush=True)
 
-    FEATS = ["mpg", "days_rest", "is_b2b", "career_games", "n_snaps", "improved", "degraded"]
+    FEATS = ["mpg", "days_rest", "is_b2b", "career_games", "n_snaps", "improved", "degraded",
+             "is_early_tip", "hours_to_tip", "is_road", "tip_hour"]
     CATS = ["reason_class", "team", "phase"]
     for f in (tr, te):
         for c in CATS:
