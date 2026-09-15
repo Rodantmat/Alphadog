@@ -219,6 +219,17 @@ def build(season, pid_map):
         q["spread_move_vs_team"] = 0.0
     q["season"] = season
     q = q[q["mpg"].notna() & (q["career_games"] >= 3)].copy()
+    # PLAYER-SPECIFIC QUESTIONABLE HISTORY - the strongest per-player signal available. Some players are
+    # chronically listed and always suit up; others are true game-time calls. Computed AS-OF (expanding,
+    # shifted) and shrunk toward the population rate so a player's first listing is not over-trusted.
+    q = q.sort_values("game_date")
+    gq = q.groupby("pid")["played"]
+    prior_n = gq.transform(lambda s: s.shift(1).expanding().count()).fillna(0)
+    prior_p = gq.transform(lambda s: s.shift(1).expanding().mean())
+    pop = float(q["played"].mean())
+    K = 4.0
+    q["player_q_rate"] = ((prior_n * prior_p.fillna(pop)) + K * pop) / (prior_n + K)
+    q["player_q_n"] = prior_n
     print(f"  {season}: {len(q):,} Questionable rows with features | play rate {q['played'].mean():.4f}", flush=True)
     return q
 
