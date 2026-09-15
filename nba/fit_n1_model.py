@@ -353,10 +353,28 @@ def main():
     #   per-tier + history      log-loss 0.6997  AUC 0.5892  conf 6.7% @ 70.5%
     # Per-tier splitting is harmful in both variants (AUC 0.62 -> 0.59): ~1,300 training rows split three
     # ways overfits, and the pooled model already splits on role where role matters.
-    yield_of = {k: grade(v[0])[2] * grade(v[0])[3] for k, v in cands.items()}
-    best = max(yield_of, key=lambda k: yield_of[k] if yield_of[k] == yield_of[k] else -1)
-    print(f"\n  BEST by confident-band yield: {best}  "
-          f"(log-loss winner would have been {min(cands, key=lambda k: cands[k][1])})", flush=True)
+    # SELECTION RULE. Not log-loss: the model's job is ACTIONABLE calls, and anything it cannot call is
+    # routed to the scenario layer, which enumerates and selects rather than guessing. But not raw yield
+    # (share x accuracy) either - a naive yield ranking put "per-tier + player history" on top purely
+    # because it flags 6.7% of cases, despite 70.5% accuracy against 79.6% and a materially worse AUC
+    # (0.589 vs 0.622). A WIDER BAND OF WEAKER CALLS IS NOT BETTER: a wrong confident call costs a leg.
+    # So: an ACCURACY FLOOR first, then maximise the share that clears it, with AUC as the tie-break.
+    ACC_FLOOR = float(os.environ.get("N1_ACC_FLOOR", "0.75"))
+    scored = {}
+    for k, v in cands.items():
+        a, u, cs, ca, ll = grade(v[0])
+        scored[k] = {"acc": a, "auc": u, "share": cs, "conf_acc": ca, "ll": ll}
+    eligible = {k: s for k, s in scored.items() if s["conf_acc"] == s["conf_acc"] and s["conf_acc"] >= ACC_FLOOR}
+    if eligible:
+        best = max(eligible, key=lambda k: (eligible[k]["share"], eligible[k]["auc"]))
+        print(f"\n  SELECTED: {best}  ({eligible[best]['conf_acc']:.1%} confident accuracy on "
+              f"{eligible[best]['share']:.1%} of cases, AUC {eligible[best]['auc']:.4f})", flush=True)
+        print(f"  {len(cands)-len(eligible)} configuration(s) rejected by the {ACC_FLOOR:.0%} accuracy floor:",
+              ", ".join(f"{k} ({scored[k]['conf_acc']:.1%})" for k in cands if k not in eligible), flush=True)
+    else:
+        best = max(scored, key=lambda k: scored[k]["auc"])
+        print(f"\n  NO configuration clears the {ACC_FLOOR:.0%} accuracy floor - falling back to the "
+              f"best AUC: {best}", flush=True)
     # WRITE THE VERDICT TO THE DATABASE. factor_gate_results exists precisely so a result is not trapped
     # in a CI log - and this script was not using it, so three ablation runs produced numbers the log
     # window clipped before they could be read. A verdict that only exists in stdout is not a verdict.
