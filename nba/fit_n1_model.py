@@ -181,6 +181,42 @@ def build(season, pid_map):
     # road: the report's `team` is the player's club; matchup is AWY@HOM, so away = first token
     q["is_road"] = [1 if isinstance(m, str) and "@" in m and str(t).split()[-1][:3].upper() == m.split("@")[0][:3].upper()
                     else 0 for m, t in zip(q["matchup"], q["team"])]
+    # MARKET LINE MOVEMENT - the single strongest resolution signal available to us. Books employ
+    # traders watching shootaround and beat reporters; "one star ruled out can swing a spread 4-5 points
+    # within minutes" and "beat reporters at shootaround, warmups, travel updates move markets BEFORE
+    # anything is official". So the move between our MORNING snapshot and the WINDOW snapshot (14:45 PT)
+    # encodes information the injury report has not yet published.
+    #   spread_move_vs_team > 0  -> the market got WORSE for this player's team -> he is likelier OUT
+    #   total_move           < 0 -> the market expects less scoring, often a star sitting
+    try:
+        ms = fetch(f"nba_market_spreads_{slug}.json")
+        mv = {}
+        for r in ms.get("rows", []):
+            hs, hw, tot = r.get("home_spread"), r.get("home_spread_window"), r.get("total")
+            if hs is not None and hw is not None:
+                mv[(r.get("game_date"), )] = None
+                mv[str(r["game_id"])] = (float(hw) - float(hs), float(tot) if tot else np.nan)
+        gm = {}
+        for gid, gdf in logs.groupby("GAME_ID"):
+            ts = list(gdf["TEAM"].unique())
+            if len(ts) == 2:
+                d0 = gdf["GAME_DATE"].iloc[0]
+                gm[(d0, f"{ts[0]}@{ts[1]}")] = (gid, ts[1])   # (game, home team)
+                gm[(d0, f"{ts[1]}@{ts[0]}")] = (gid, ts[0])
+        moves, tmoves = [], []
+        for d, mk, road in zip(q["game_date"], q["matchup"], q["is_road"]):
+            key = gm.get((d, str(mk).upper().replace(" ", "")))
+            v = mv.get(key[0]) if key else None
+            if not v:
+                moves.append(0.0); tmoves.append(0.0); continue
+            dmove = v[0]                                    # change in the HOME spread
+            # sign it toward the player's own team: a road player's team worsens when home spread falls
+            moves.append(-dmove if road else dmove)
+            tmoves.append(0.0)
+        q["spread_move_vs_team"] = moves
+    except Exception as exc:  # noqa: BLE001
+        print(f"  market movement unavailable ({str(exc)[:50]})", flush=True)
+        q["spread_move_vs_team"] = 0.0
     q["season"] = season
     q = q[q["mpg"].notna() & (q["career_games"] >= 3)].copy()
     print(f"  {season}: {len(q):,} Questionable rows with features | play rate {q['played'].mean():.4f}", flush=True)
