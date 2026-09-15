@@ -308,6 +308,35 @@ def main():
         cr = float(np.mean(np.where(p3[conf] >= 0.5, y[conf], 1 - y[conf])))
         print(f"\n  CONFIDENT (p<=0.20 or p>=0.80): {conf.mean():.1%} of Questionables, {cr:.1%} correct", flush=True)
 
+    # HOLD-UP CHECK BY SEASON PHASE. Rotations, rest policy and the meaning of a Questionable all shift
+    # across the season (the calibration work measured the gap decaying +1.46 -> +0.13 pp Oct-Nov to the
+    # playoff push). A model that only holds on average is not usable day by day.
+    print(f"\nBY SEASON PHASE - does it hold in every regime?")
+    print(f"  {'phase':<12}{'n':>7}{'play rate':>11}{'accuracy':>10}{'conf share':>12}{'conf acc':>10}")
+    te2 = te.copy(); te2["p"] = p3
+    for ph, g in te2.groupby("phase", observed=True):
+        if len(g) < 80:
+            continue
+        pv, yv = g["p"].values, g["played"].values
+        acc = float(((pv >= 0.5) == yv).mean())
+        c = (pv <= 0.20) | (pv >= 0.80)
+        ca = float(np.mean(np.where(pv[c] >= 0.5, yv[c], 1 - yv[c]))) if c.sum() else float("nan")
+        print(f"  {ph:<12}{len(g):>7,}{float(yv.mean()):>11.4f}{acc:>10.4f}"
+              f"{float(c.mean()):>12.1%}{ca:>10.4f}", flush=True)
+
+    # AND BY ROLE - a star Questionable and a fringe Questionable are different decisions
+    print(f"\nBY ROLE:")
+    te2["roleb"] = pd.cut(te2["mpg"], [0, 15, 25, 60], labels=["fringe <15", "rotation 15-25", "starter 25+"])
+    for rb, g in te2.groupby("roleb", observed=True):
+        if len(g) < 80:
+            continue
+        pv, yv = g["p"].values, g["played"].values
+        acc = float(((pv >= 0.5) == yv).mean())
+        c = (pv <= 0.20) | (pv >= 0.80)
+        ca = float(np.mean(np.where(pv[c] >= 0.5, yv[c], 1 - yv[c]))) if c.sum() else float("nan")
+        print(f"  {str(rb):<16}{len(g):>7,}  play {float(yv.mean()):.4f}  acc {acc:.4f}  "
+              f"conf {float(c.mean()):.1%} @ {ca:.4f}", flush=True)
+
 
 if __name__ == "__main__":
     main()
