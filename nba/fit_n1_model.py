@@ -123,7 +123,14 @@ def build(season, pid_map):
 
     order = {"OUT": 0, "DOUBTFUL": 1, "QUESTIONABLE": 2, "PROBABLE": 3, "AVAILABLE": 4}
     inj["rank"] = inj["status_u"].map(order)
-    g = inj.sort_values("snapshot_ts").groupby(["game_date", "pid"], as_index=False)
+    # THE STATUS AT THE DECISION CUTOFF, NOT THE FINAL ONE. Filtering on the LAST snapshot's status
+    # returned 7 rows from 2,000+ Questionables - because by the final report almost every Questionable
+    # has already resolved to Out or Available. THE FINAL STATUS IS THE ANSWER, NOT THE FEATURE.
+    # The engine decides at 2:30 PM PT (21:30 UTC in PST / 22:30 in PDT); use the last snapshot at or
+    # before that, which is what the engine will actually see.
+    inj["cutoff"] = pd.to_datetime(inj["game_date"].astype(str)).dt.tz_localize("UTC") + pd.Timedelta(hours=22, minutes=30)
+    asof = inj[inj["snapshot_ts"] <= inj["cutoff"]]
+    g = asof.sort_values("snapshot_ts").groupby(["game_date", "pid"], as_index=False)
     agg = g.agg(last_status=("status_u", "last"), first_rank=("rank", "first"),
                 last_rank=("rank", "last"), n_snaps=("status_u", "size"),
                 team=("team", "last"), reason_class=("reason_class", "last"))
