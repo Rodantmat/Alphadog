@@ -270,36 +270,72 @@ def main():
     p1 = np.array([c_rr.get((rc, rolec_te.iloc[i]), c_r.get(rc, base))
                    for i, rc in enumerate(te["reason_class"])], dtype=float)
 
-    # L2 gradient boosting — PER ROLE TIER. A fringe player's availability is roster logistics (two-way
-    # call-ups, deep-bench precaution); a starter's is load management and deliberate gamesmanship. The
-    # pooled model measured 65.8% accuracy on fringe (86.7% on its confident band) but only 57.1% on
-    # starters - different decision processes, so they get different models rather than one model with
-    # role as a feature.
+    # ABLATION - one variable at a time. A previous run changed TWO things simultaneously (added the
+    # player history feature AND split into per-tier models) and then blamed the split for the drop.
+    # That comparison was invalid. Each configuration is fitted and scored on the same rows here.
+    BASE_FEATS = ["mpg", "days_rest", "is_b2b", "career_games", "n_snaps", "improved", "degraded",
+                  "is_early_tip", "hours_to_tip", "is_road", "tip_hour"]
+    HIST_FEATS = BASE_FEATS + ["player_q_rate", "player_q_n"]
+
+    def fit_pred(feats, per_tier):
+        try:
+            import lightgbm as lgb
+        except Exception:  # noqa: BLE001
+            return p1
+        if not per_tier:
+            m = lgb.train({"objective": "binary", "learning_rate": 0.05, "num_leaves": 15,
+                           "min_data_in_leaf": 40, "feature_fraction": 0.8, "bagging_fraction": 0.8,
+                           "bagging_freq": 1, "verbose": -1, "seed": 7},
+                          lgb.Dataset(tr[feats + CATS], label=tr["played"], categorical_feature=CATS),
+                          num_boost_round=300)
+            return m.predict(te[feats + CATS])
+        out = np.full(len(te), np.nan)
+        for tname in ("fringe", "rotation", "starter"):
+            a = tr[tr["tier"] == tname]
+            bm = (te["tier"] == tname).values
+            if len(a) < 150 or bm.sum() == 0:
+                continue
+            m = lgb.train({"objective": "binary", "learning_rate": 0.05,
+                           "num_leaves": 7 if len(a) < 600 else 15,
+                           "min_data_in_leaf": max(15, len(a) // 25), "feature_fraction": 0.8,
+                           "bagging_fraction": 0.8, "bagging_freq": 1, "verbose": -1, "seed": 7},
+                          lgb.Dataset(a[feats + CATS], label=a["played"], categorical_feature=CATS),
+                          num_boost_round=250)
+            out[bm] = m.predict(te.loc[bm, feats + CATS])
+        return np.where(np.isfinite(out), out, p1)
+
     def tier_of(f):
         return pd.cut(f["mpg"], [0, 15, 25, 60], labels=["fringe", "rotation", "starter"])
     tr["tier"], te["tier"] = tier_of(tr), tier_of(te)
-    p2 = np.full(len(te), np.nan)
-    try:
-        import lightgbm as lgb
-        for tname in ("fringe", "rotation", "starter"):
-            a = tr[tr["tier"] == tname]
-            bmask = (te["tier"] == tname).values
-            if len(a) < 150 or bmask.sum() == 0:
-                continue
-            params = {"objective": "binary", "learning_rate": 0.05,
-                      "num_leaves": 7 if len(a) < 600 else 15,
-                      "min_data_in_leaf": max(15, len(a) // 25), "feature_fraction": 0.8,
-                      "bagging_fraction": 0.8, "bagging_freq": 1, "verbose": -1, "seed": 7}
-            m = lgb.train(params, lgb.Dataset(a[FEATS + CATS], label=a["played"],
-                                              categorical_feature=CATS), num_boost_round=250)
-            p2[bmask] = m.predict(te.loc[bmask, FEATS + CATS])
-            imp = sorted(zip(FEATS + CATS, m.feature_importance("gain")), key=lambda x: -x[1])[:5]
-            print(f"  {tname:<9} n_train={len(a):>5,}  top: " + ", ".join(f"{k}" for k, _ in imp), flush=True)
-        # any tier too thin to model falls back to the hierarchical prior
-        p2 = np.where(np.isfinite(p2), p2, p1)
-    except Exception as exc:  # noqa: BLE001
-        print(f"\nLightGBM unavailable ({str(exc)[:60]}) - L1 prior only", flush=True)
-        p2 = p1
+
+    y = te["played"].values
+    def grade(p):
+        p = np.clip(p, 1e-4, 1 - 1e-4)
+        acc = float(((p >= 0.5) == y).mean())
+        o = np.argsort(p); n1, n0 = y.sum(), len(y) - y.sum()
+        auc = float((np.sum(np.where(y[o] == 1, np.arange(len(y)), 0)) - n1 * (n1 - 1) / 2) / max(n1 * n0, 1))
+        c = (p <= 0.20) | (p >= 0.80)
+        ca = float(np.mean(np.where(p[c] >= 0.5, y[c], 1 - y[c]))) if c.sum() else float("nan")
+        ll = float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+        return acc, auc, float(c.mean()), ca, ll
+
+    print(f"\nABLATION on {te_s} ({len(te):,} rows) - one variable at a time")
+    print(f"  {'configuration':<34}{'acc':>7}{'AUC':>8}{'conf%':>8}{'conf acc':>10}{'logloss':>9}")
+    cands = {}
+    for label, feats, pt in (("pooled, base features", BASE_FEATS, False),
+                             ("pooled + player history", HIST_FEATS, False),
+                             ("per-tier, base features", BASE_FEATS, True),
+                             ("per-tier + player history", HIST_FEATS, True)):
+        pp = fit_pred(feats, pt)
+        st = 1 / (1 + np.exp(-(0.35 * np.log(np.clip(p1, 1e-3, 1 - 1e-3) / (1 - np.clip(p1, 1e-3, 1 - 1e-3)))
+                              + 0.65 * np.log(np.clip(pp, 1e-3, 1 - 1e-3) / (1 - np.clip(pp, 1e-3, 1 - 1e-3))))))
+        a, u, cs, ca, ll = grade(st)
+        cands[label] = (st, ll)
+        print(f"  {label:<34}{a:>7.4f}{u:>8.4f}{cs:>8.1%}{ca:>10.4f}{ll:>9.4f}", flush=True)
+    best = min(cands, key=lambda k: cands[k][1])
+    print(f"\n  BEST by log-loss: {best}", flush=True)
+    p2 = cands[best][0]
+    p3 = p2
 
     # L3 stack in log-odds
     def lo(p):
