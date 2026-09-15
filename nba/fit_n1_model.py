@@ -238,7 +238,11 @@ def main():
     print(f"\nbase rate: train {base:.4f} | test {te['played'].mean():.4f}", flush=True)
 
     FEATS = ["mpg", "days_rest", "is_b2b", "career_games", "n_snaps", "improved", "degraded",
-             "is_early_tip", "hours_to_tip", "is_road", "tip_hour", "spread_move_vs_team"]
+             "is_early_tip", "hours_to_tip", "is_road", "tip_hour"]
+    # spread_move_vs_team was TESTED AND REMOVED (2026-09-15): confident band fell 4.2% -> 3.3% and its
+    # accuracy 80.0% -> 77.3%. The idea is sound - books trade on beat-writer news before the report
+    # publishes - but the join defaults a miss to 0.0, which the model reads as "no movement" rather than
+    # "unknown", diluting a strong signal into noise. Re-test only with an explicit missing indicator.
     CATS = ["reason_class", "team", "phase"]
     for f in (tr, te):
         for c in CATS:
