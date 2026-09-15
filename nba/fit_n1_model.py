@@ -284,6 +284,7 @@ def main():
     BASE_FEATS = ["mpg", "days_rest", "is_b2b", "career_games", "n_snaps", "improved", "degraded",
                   "is_early_tip", "hours_to_tip", "is_road", "tip_hour"]
     HIST_FEATS = BASE_FEATS + ["player_q_rate", "player_q_n"]
+    MKT_FEATS = HIST_FEATS + ["spread_move_vs_team", "has_move"]
 
     def fit_pred(feats, per_tier):
         try:
