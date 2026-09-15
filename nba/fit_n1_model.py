@@ -333,6 +333,7 @@ def main():
     cands = {}
     for label, feats, pt in (("pooled, base features", BASE_FEATS, False),
                              ("pooled + player history", HIST_FEATS, False),
+                             ("pooled + history + MARKET MOVE", MKT_FEATS, False),
                              ("per-tier, base features", BASE_FEATS, True),
                              ("per-tier + player history", HIST_FEATS, True)):
         pp = fit_pred(feats, pt)
