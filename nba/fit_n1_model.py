@@ -337,11 +337,10 @@ def main():
     p2 = cands[best][0]
     p3 = p2
 
-    # L3 stack in log-odds
+    # L3 stack already applied inside the ablation; report the winning configuration
     def lo(p):
         p = np.clip(p, 1e-3, 1 - 1e-3)
         return np.log(p / (1 - p))
-    p3 = 1 / (1 + np.exp(-(0.35 * lo(p1) + 0.65 * lo(p2))))
 
     y = te["played"].values
     def report(nm, p):
