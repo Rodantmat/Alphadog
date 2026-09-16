@@ -86,6 +86,20 @@ def main():
     scen_by_game = {str(r.game_id): (int(r.n_uncertain), float(r.branch_prob)) for r in scen.itertuples(index=False)}
     print(f"games with pre-game availability uncertainty: {len(scen_by_game):,}", flush=True)
 
+    # MARKET BACKING. Two things: does the GAME have a market line at all, and how many books price
+    # THIS EXACT RUNG. A rung nobody prices is one we are guessing at alone; a rung several books agree
+    # on is corroborated by people with money at risk.
+    mg = pd.read_sql("""SELECT DISTINCT m.game_id FROM nba_market.game_lines_snapshots s
+                        JOIN nba_market.event_game_map m ON m.event_id = s.event_id""", conn)
+    mkt_games = set(mg["game_id"].astype(str))
+    rm = pd.read_sql("""SELECT game_date, player_id, prop, line, n_books FROM nba_market.rung_market""", conn)
+    mkt_rung = {}
+    if not rm.empty:
+        rm["game_date"] = pd.to_datetime(rm["game_date"]).dt.date
+        mkt_rung = {(str(r.game_date), str(r.player_id), str(r.prop), float(r.line)): float(r.n_books)
+                    for r in rm.itertuples(index=False)}
+    print(f"market backing: {len(mkt_games):,} games with lines | {len(mkt_rung):,} priced rungs", flush=True)
+
     if write:
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.final_hp (
