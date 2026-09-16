@@ -74,7 +74,8 @@ def sigmoid(z):
 
 def main():
     seasons = [s.strip() for s in os.environ.get("FE_SEASONS", "2025-26").split(",")]
-    props = [p.strip() for p in os.environ.get("FE_PROPS", "").split(",") if p.strip()]
+    props = [p.strip() for p in os.environ.get("FE_PROPS", "").split(",")
+             if p.strip() and p.strip().upper() != "ALL"]
     write = os.environ.get("FE_WRITE", "0") == "1"
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
