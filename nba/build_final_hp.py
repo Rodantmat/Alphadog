@@ -125,11 +125,16 @@ def main():
                               for ph, bd, sd in zip(d["phase"], d["band"], d["side"])]
             d["final_hp"] = sigmoid(logit(d["baseline_hp"].values) + d["cal_shift"].values)
 
-            # 5) SCORE - edge over what the board requires, not the probability itself
-            be = BREAKEVEN["standard"]
-            d["score"] = (d["final_hp"] - be) * 100.0
-
-            # 6) CONFIDENCE - measured reliability only, never inflates the probability
+            # 6) CONFIDENCE - how much to trust THIS leg's number. Three independent pillars, each
+            # measured, never inflating the probability:
+            #   A. DATA EXISTENCE AND COMPLETION - were the inputs this leg needs actually present for
+            #      this day? (baseline components, resolved availability, a market line for the game)
+            #   B. DATA QUALITY AND CERTAINTY - how reliable has this exact cell been historically
+            #      (band gap), how deep is the sample behind it, is the prop certified or penalized,
+            #      and was availability resolved or still uncertain at the decision point
+            #   C. MARKET BACKING - is there a real board line at this rung, and how much market data
+            #      stands behind it (book count in rung_market). A rung nobody prices is a rung we are
+            #      guessing at alone; a rung ten books agree on is corroborated.
             pen = PENALIZED.get(prop, 0.0)
             gaps, ns = [], []
             for ph, bd in zip(d["phase"], d["band"]):
@@ -137,14 +142,38 @@ def main():
                 gaps.append(g); ns.append(n)
             gaps = np.asarray(gaps); ns = np.asarray(ns, dtype=float)
             unc = np.array([scen_by_game.get(str(g), (0, 1.0))[0] for g in d["game_id"]], dtype=float)
-            conf = (1.0
-                    - np.clip(gaps / 0.06, 0, 1) * 0.35        # how far this cell historically missed
-                    - np.clip(pen / 0.004, 0, 1) * 0.15        # prop-level penalty (fact 80)
-                    - np.clip(1.0 - ns / 1500.0, 0, 1) * 0.15  # thin cell = less trust
-                    - np.clip(unc / 4.0, 0, 1) * 0.35)         # unresolved availability in this game
-            d["confidence"] = np.clip(conf, 0.05, 1.0)
-            d["conf_tier"] = pd.cut(d["confidence"], [0, .55, .70, .85, 1.01],
+            bprob = np.array([scen_by_game.get(str(g), (0, 1.0))[1] for g in d["game_id"]], dtype=float)
+
+            # A. existence / completion
+            has_components = d["anchor"].notna().values.astype(float)
+            has_market_game = np.array([1.0 if str(g) in mkt_games else 0.0 for g in d["game_id"]])
+            c_exist = 0.5 * has_components + 0.5 * has_market_game
+
+            # B. quality / certainty
+            q_band = 1.0 - np.clip(gaps / 0.06, 0, 1)                 # historical miss of this cell
+            q_depth = np.clip(ns / 1500.0, 0, 1)                      # sample behind the cell
+            q_prop = 1.0 - np.clip(pen / 0.004, 0, 1) * 0.5           # certified vs penalized
+            q_avail = np.where(unc > 0, np.clip(bprob / 0.5, 0, 1), 1.0)   # resolved vs still uncertain
+            c_quality = 0.35 * q_band + 0.25 * q_depth + 0.15 * q_prop + 0.25 * q_avail
+
+            # C. market backing
+            rung_key = list(zip(d["game_date"].astype(str), d["player_id"].astype(str),
+                                [prop] * len(d), d["line"].astype(float)))
+            nbooks = np.array([mkt_rung.get(k, 0) for k in rung_key], dtype=float)
+            c_market = np.clip(nbooks / 4.0, 0, 1)                    # 4+ books = fully corroborated
+
+            d["c_exist"], d["c_quality"], d["c_market"] = c_exist, c_quality, c_market
+            d["confidence"] = np.clip(0.30 * c_exist + 0.45 * c_quality + 0.25 * c_market, 0.02, 1.0)
+            d["conf_tier"] = pd.cut(d["confidence"], [0, .45, .62, .80, 1.01],
                                     labels=["low", "medium", "high", "elite"]).astype(str)
+
+            # 5) SCORE - final HP AND confidence together. A 92% leg nobody else prices differently is
+            # not an opportunity; a 64% leg the board needs 57% for, corroborated by several books, is.
+            # edge = how far the final HP clears what the board requires; score weights it by how much
+            # we trust the number.
+            be = BREAKEVEN["standard"]
+            edge = (d["final_hp"].values - be) * 100.0
+            d["score"] = np.round(edge * d["confidence"].values, 3)
             d["prop_tier"] = "penalized" if pen > 0 else "certified"
             d["n_uncertain"] = unc.astype(int)
             d["season"] = season
