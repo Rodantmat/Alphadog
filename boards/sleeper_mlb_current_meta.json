@@ -1,52 +1,52 @@
 {
   "ok": true,
   "source": "https://api.sleeper.app/lines/available?dynamic=true",
-  "started_at": "2026-09-16T13:30:37Z",
-  "fetched_at": "2026-09-16T13:30:43Z",
+  "started_at": "2026-09-16T18:11:59Z",
+  "fetched_at": "2026-09-16T18:11:59Z",
   "sport": "mlb",
-  "legs": 2156,
+  "legs": 1711,
   "unknown_players": 0,
   "by_wager_type": {
-    "hits": 293,
-    "total_bases": 289,
-    "singles": 288,
-    "runs": 287,
-    "rbis": 284,
-    "hits_runs_rbis": 281,
-    "bat_walks": 232,
-    "earned_runs": 30,
-    "first_inning_runs": 30,
-    "hits_allowed": 30,
-    "strike_outs": 30,
-    "outs": 28,
-    "walks": 25,
-    "doubles": 12,
+    "hits": 232,
+    "total_bases": 232,
+    "singles": 228,
+    "runs": 227,
+    "rbis": 225,
+    "hits_runs_rbis": 221,
+    "bat_walks": 188,
+    "earned_runs": 24,
+    "first_inning_runs": 24,
+    "hits_allowed": 24,
+    "strike_outs": 24,
+    "outs": 22,
+    "walks": 19,
     "home_runs": 9,
-    "stolen_bases": 8
+    "stolen_bases": 7,
+    "doubles": 5
   },
   "by_line_type": {
-    "normal": 2156
+    "normal": 1711
   },
   "by_game_status": {
-    "pre_game": 2156
+    "pre_game": 1711
   },
-  "players": 333,
+  "players": 265,
   "multiplier_values": {
-    "1.78": 53,
-    "1.53": 29,
-    "1.50": 28,
-    "1.83": 26,
-    "1.54": 25,
-    "1.56": 24,
-    "1.61": 22,
-    "1.60": 22,
-    "1.55": 22,
-    "1.52": 22,
+    "1.78": 43,
+    "1.58": 22,
     "2.08": 21,
-    "2.26": 21,
-    "1.85": 21,
-    "1.81": 20,
-    "1.51": 20
+    "1.55": 21,
+    "1.54": 20,
+    "1.57": 20,
+    "2.23": 20,
+    "2.03": 19,
+    "1.53": 19,
+    "1.56": 18,
+    "2.05": 18,
+    "1.50": 18,
+    "1.49": 18,
+    "1.96": 18,
+    "1.97": 17
   },
-  "github_run_id": "35102280825"
+  "github_run_id": "35132820099"
 }
