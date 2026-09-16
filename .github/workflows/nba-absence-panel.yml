@@ -266,6 +266,14 @@ jobs:
         run: |
           python -m pip install -q lightgbm
           python nba/fit_n1_model.py
+      - name: Final calculation engine (HP, score, confidence)
+        if: ${{ github.event.inputs.allocator == '29' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
+          FE_PROPS: ${{ github.event.inputs.prop || '' }}
+          FE_WRITE: ${{ github.event.inputs.write || '0' }}
+        run: python nba/build_final_hp.py
       - name: Redistribution factors (allocator counterfactual)
         if: ${{ github.event.inputs.allocator == '2' }}
         env:
