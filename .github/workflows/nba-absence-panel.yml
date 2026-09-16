@@ -266,6 +266,13 @@ jobs:
         run: |
           python -m pip install -q lightgbm
           python nba/fit_n1_model.py
+      - name: Gate remaining enrichment factors
+        if: ${{ github.event.inputs.allocator == '30' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RF_TRAIN: "2024-25"
+          RF_TEST: "2025-26"
+        run: python nba/gate_remaining_factors.py
       - name: Final calculation engine (HP, score, confidence)
         if: ${{ github.event.inputs.allocator == '29' }}
         env:
