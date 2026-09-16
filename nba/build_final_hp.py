@@ -107,6 +107,7 @@ def main():
                 side text, ladder_offset int, anchor numeric,
                 baseline_hp numeric, final_hp numeric, cal_shift numeric,
                 score numeric, confidence numeric, conf_tier text,
+                c_exist numeric, c_quality numeric, c_market numeric,
                 prop_tier text, band text, phase text, n_uncertain int,
                 built_at timestamptz DEFAULT now())""")
             cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS final_hp_uidx
