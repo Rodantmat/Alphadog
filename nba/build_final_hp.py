@@ -36,11 +36,15 @@ Env: DATABASE_URL, FE_SEASONS, FE_PROPS (blank = all), FE_WRITE (1 = write nba_s
 """
 import json
 import os
+import sys
 import urllib.request
 
 import numpy as np
 import pandas as pd
 import psycopg
+
+sys.path.insert(0, "nba")
+from nba_names import norm_name  # noqa: E402
 
 RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
 # measured break-even by PrizePicks structure (config prizepicks_goblin_demon_tier_spec)
