@@ -24,7 +24,7 @@ on:
         default: "0"
         required: false
       prop:
-        description: "prop for the edge backtest"
+        description: "prop for the edge backtest / final engine (ALL = every prop)"
         default: "points"
         required: false
 
