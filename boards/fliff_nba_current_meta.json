@@ -2,8 +2,8 @@
   "ok": true,
   "source": "fliff fc_mobile_api_public (ping -> sync 3054 -> per-conflict sync 3062)",
   "sport": "nba",
-  "started_at": "2026-09-15T21:43:11Z",
-  "fetched_at": "2026-09-15T21:43:11Z",
+  "started_at": "2026-09-16T00:45:20Z",
+  "fetched_at": "2026-09-16T00:45:21Z",
   "feed_host": "https://herald-2.app.getfliff.com/",
   "app_version": "5.0.34.285",
   "server_build": 5607,
@@ -13,9 +13,9 @@
   "legs": 0,
   "errors": [],
   "channels_seen": {
-    "452": 75,
+    "452": 84,
     "43005": 35,
-    "441": 29,
+    "441": 30,
     "4951": 28,
     "4397": 18,
     "4230": 18,
@@ -41,10 +41,10 @@
     "43049": 9,
     "43024": 9,
     "43046": 9,
-    "43031": 9,
-    "467": 8
+    "43033": 9,
+    "43031": 9
   },
   "by_market": {},
   "players": 0,
-  "github_run_id": "35027130021"
+  "github_run_id": "35041271768"
 }
