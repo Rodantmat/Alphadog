@@ -198,20 +198,23 @@ def main():
                          r.side, int(r.ladder_offset), float(r.anchor) if r.anchor == r.anchor else None,
                          round(float(r.baseline_hp), 5), round(float(r.final_hp), 5),
                          round(float(r.cal_shift), 5), round(float(r.score), 3),
-                         round(float(r.confidence), 4), r.conf_tier, r.prop_tier, r.band, r.phase,
-                         int(r.n_uncertain))
+                         round(float(r.confidence), 4), r.conf_tier,
+                         round(float(r.c_exist), 4), round(float(r.c_quality), 4), round(float(r.c_market), 4),
+                         r.prop_tier, r.band, r.phase, int(r.n_uncertain))
                         for r in d.itertuples(index=False)]
                 with conn.cursor() as cur:
                     cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.final_hp'))")
                     cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s", (season, prop))
                     cur.executemany("""INSERT INTO nba_score.final_hp
                         (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
-                         baseline_hp, final_hp, cal_shift, score, confidence, conf_tier, prop_tier,
-                         band, phase, n_uncertain)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                         baseline_hp, final_hp, cal_shift, score, confidence, conf_tier,
+                         c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE SET
                           final_hp=EXCLUDED.final_hp, score=EXCLUDED.score,
-                          confidence=EXCLUDED.confidence, conf_tier=EXCLUDED.conf_tier""", rows)
+                          confidence=EXCLUDED.confidence, conf_tier=EXCLUDED.conf_tier,
+                          c_exist=EXCLUDED.c_exist, c_quality=EXCLUDED.c_quality,
+                          c_market=EXCLUDED.c_market""", rows)
                 conn.commit()
             total += len(d)
             moved = float(np.abs(d["final_hp"] - d["baseline_hp"]).mean())
