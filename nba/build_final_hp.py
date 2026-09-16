@@ -92,12 +92,21 @@ def main():
     mg = pd.read_sql("""SELECT DISTINCT m.game_id FROM nba_market.game_lines_snapshots s
                         JOIN nba_market.event_game_map m ON m.event_id = s.event_id""", conn)
     mkt_games = set(mg["game_id"].astype(str))
-    rm = pd.read_sql("""SELECT game_date, player_id, prop, line, n_books FROM nba_market.rung_market""", conn)
+    # rung_market keys on PLAYER NAME and `market`, with the book count in `books` - not player_id /
+    # prop / n_books. Resolved through nba_ref.player_name_map, the same map the grader uses.
+    nm = pd.read_sql("SELECT norm_name, player_id FROM nba_ref.player_name_map", conn)
+    name_to_id = dict(zip(nm["norm_name"], nm["player_id"].astype(str)))
+    rm = pd.read_sql("""SELECT game_date, player, market, line, books FROM nba_market.rung_market""", conn)
     mkt_rung = {}
     if not rm.empty:
         rm["game_date"] = pd.to_datetime(rm["game_date"]).dt.date
-        mkt_rung = {(str(r.game_date), str(r.player_id), str(r.prop), float(r.line)): float(r.n_books)
-                    for r in rm.itertuples(index=False)}
+        rm["pid"] = rm["player"].map(lambda s: name_to_id.get(norm_name(s)))
+        rm["prop_key"] = rm["market"].astype(str).str.replace("player_", "", regex=False) \
+                                     .str.replace("_alternate", "", regex=False)
+        rm = rm[rm["pid"].notna()]
+        for r in rm.itertuples(index=False):
+            k = (str(r.game_date), str(r.pid), str(r.prop_key), float(r.line))
+            mkt_rung[k] = max(mkt_rung.get(k, 0), float(r.books or 0))
     print(f"market backing: {len(mkt_games):,} games with lines | {len(mkt_rung):,} priced rungs", flush=True)
 
     if write:
