@@ -266,6 +266,14 @@ jobs:
         run: |
           python -m pip install -q lightgbm
           python nba/fit_n1_model.py
+      - name: As-of ladder calibration (parity fix)
+        if: ${{ github.event.inputs.allocator == '31' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AC_SEASONS: "2024-25,2025-26"
+          AC_K: '400'
+          AC_CADENCE_DAYS: '7'
+        run: python nba/build_asof_calibration.py
       - name: Gate remaining enrichment factors
         if: ${{ github.event.inputs.allocator == '30' }}
         env:
