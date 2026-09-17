@@ -108,7 +108,11 @@ def main():
     # 2) THE GUARANTEE - do high-confidence groups actually realise lower normalized residuals?
     print("\n2) HELD-OUT CHECK - does the new confidence predict realised reliability?")
     print(f"   {'conf quintile':<16}{'n':>9}{'predicted s':>13}{'REALISED s':>12}{'hit rate':>10}{'stated':>9}")
-    hold["q"] = pd.qcut(hold["conf_new"], 5, labels=["worst", "low", "mid", "good", "best"], duplicates="drop")
+    # qcut with duplicates="drop" can collapse edges when many legs share the same expected score
+    # (whole groups get one value), leaving fewer bins than labels -> "Bin labels must be one fewer
+    # than the number of bin edges". Rank first so the quintiles are always well defined.
+    hold["q"] = pd.qcut(hold["s_expected"].rank(method="first"), 5,
+                        labels=["best", "good", "mid", "low", "worst"])
     rows = []
     for q, s in hold.groupby("q", observed=True):
         print(f"   {str(q):<16}{len(s):>9,}{float(s['s_expected'].mean()):>13.4f}"
