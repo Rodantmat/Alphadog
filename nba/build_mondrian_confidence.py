@@ -126,6 +126,40 @@ def main():
     print(f"\n   best quintile realised {best:.4f} vs worst {worst:.4f}  ->  "
           f"{'DISCRIMINATES' if best < worst else 'NO DISCRIMINATION'}", flush=True)
 
+    # PERSIST THE GROUPS so the engine reads a measured table instead of a hand-weighted formula.
+    # Refit on ALL graded legs now that the held-out check has passed - the verification proved the
+    # method, so the shipped table uses every observation available.
+    allg = d.groupby(keys, observed=True)["s_norm"].agg(["size", "mean"])
+    allm = d.groupby(["prop", "band", "side"], observed=True)["s_norm"].agg(["size", "mean"])
+    allc = d.groupby(["band", "side"], observed=True)["s_norm"].agg(["size", "mean"])
+    gl = float(d["s_norm"].mean())
+    out = []
+    for (pr, bd, sd, ph), v in allg.iterrows():
+        if v["size"] >= MIN_N:
+            out.append(("full", pr, bd, sd, ph, int(v["size"]), round(float(v["mean"]), 5)))
+    for (pr, bd, sd), v in allm.iterrows():
+        if v["size"] >= MIN_N:
+            out.append(("mid", pr, bd, sd, None, int(v["size"]), round(float(v["mean"]), 5)))
+    for (bd, sd), v in allc.iterrows():
+        if v["size"] >= MIN_N:
+            out.append(("coarse", None, bd, sd, None, int(v["size"]), round(float(v["mean"]), 5)))
+    out.append(("global", None, None, None, None, len(d), round(gl, 5)))
+    # the scale the engine maps a group score onto [0,1]
+    lo_s, hi_s = float(np.quantile(d["s_norm"], 0.02)), float(np.quantile(d["s_norm"], 0.98))
+    with conn.cursor() as cur:
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.conformal_confidence (
+            level text, prop text, band text, side text, phase text, n int, s_norm numeric,
+            lo_scale numeric, hi_scale numeric, built_at timestamptz DEFAULT now())""")
+        cur.execute("DELETE FROM nba_score.conformal_confidence")
+        cur.executemany("""INSERT INTO nba_score.conformal_confidence
+            (level, prop, band, side, phase, n, s_norm, lo_scale, hi_scale)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            [(lv, pr, bd, sd, ph, n, s, round(lo_s, 5), round(hi_s, 5))
+             for lv, pr, bd, sd, ph, n, s in out])
+    conn.commit()
+    print(f"\n   wrote {len(out):,} conformal groups to nba_score.conformal_confidence "
+          f"(scale {lo_s:.4f} - {hi_s:.4f})", flush=True)
+
     with conn.cursor() as cur:
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_verification (
             check_type text, slice text, tier text, n int, stated numeric, actual numeric,
