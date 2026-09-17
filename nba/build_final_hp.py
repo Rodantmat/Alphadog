@@ -175,8 +175,8 @@ def main():
             d["band"] = pd.cut(d["baseline_hp"], [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0]).astype(str)
 
             # 3) CALIBRATION CORRECTION in log-odds
-            d["cal_shift"] = [shift.get((prop, ph, bd, sd), 0.0)
-                              for ph, bd, sd in zip(d["phase"], d["band"], d["side"])]
+            d["cal_shift"] = [shift_for(prop, ph, bd, sd, gd)
+                              for ph, bd, sd, gd in zip(d["phase"], d["band"], d["side"], d["game_date"])]
             d["final_hp"] = sigmoid(logit(d["baseline_hp"].values) + d["cal_shift"].values)
 
             # 6) CONFIDENCE - how much to trust THIS leg's number. Three independent pillars, each
