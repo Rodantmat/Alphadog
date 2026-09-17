@@ -112,12 +112,19 @@ def build(season, conn, pid_map, coach_dates):
     f["game_date"] = pd.to_datetime(f["game_date"]).dt.date
     f["player_id"] = f["player_id"].astype(str)
 
-    o = pd.read_sql("""SELECT game_date, player, line, side, leg_result, market_key
-                       FROM nba_market.board_outcomes""", conn)
+    # Pull ONLY the graded legs that can join, and do the reduction in SQL. Loading all 6.9M
+    # board_outcomes rows into the runner killed it with a shutdown signal (memory), not an error.
+    o = pd.read_sql("""SELECT o.game_date, o.player, o.line, o.side, o.leg_result,
+                              replace(replace(o.market_key,'player_',''),'_alternate','') AS prop
+                       FROM nba_market.board_outcomes o
+                       WHERE o.leg_result IN ('over_win','under_win')
+                         AND o.game_date BETWEEN %s AND %s
+                         AND replace(replace(o.market_key,'player_',''),'_alternate','')
+                             IN ('points','rebounds','assists','threes_made','pra','pts_reb','pts_ast','reb_ast')""",
+                    conn, params=(lo_d, hi_d))
     o["game_date"] = pd.to_datetime(o["game_date"]).dt.date
     o["player_id"] = o["player"].map(norm_name).map(pid_map)
-    o["prop"] = o["market_key"].str.replace("player_", "", regex=False).str.replace("_alternate", "", regex=False)
-    o = o[o["player_id"].notna() & o["leg_result"].isin(["over_win", "under_win"])]
+    o = o[o["player_id"].notna()]
     o["line"] = o["line"].astype(float)
     f["line"] = f["line"].astype(float)
 
