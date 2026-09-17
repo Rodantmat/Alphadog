@@ -106,11 +106,15 @@ def build(season, conn, pid_map, coach_dates):
             coach_since[(t, d)] = min((d - prior[-1]).days, 60) if prior else 999
 
     f = pd.read_sql("""SELECT game_date, game_id, player_id, prop, line, side, final_hp
-                       FROM nba_score.final_hp WHERE season=%s""", conn, params=(season,))
+                       FROM nba_score.final_hp
+                       WHERE season=%s AND prop IN
+                         ('points','rebounds','assists','threes_made','pra','pts_reb','pts_ast','reb_ast')""",
+                    conn, params=(season,))
     if f.empty:
         return pd.DataFrame()
     f["game_date"] = pd.to_datetime(f["game_date"]).dt.date
     f["player_id"] = f["player_id"].astype(str)
+    lo_d, hi_d = f["game_date"].min(), f["game_date"].max()
 
     # Pull ONLY the graded legs that can join, and do the reduction in SQL. Loading all 6.9M
     # board_outcomes rows into the runner killed it with a shutdown signal (memory), not an error.
