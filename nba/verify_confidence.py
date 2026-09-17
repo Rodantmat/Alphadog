@@ -52,44 +52,31 @@ def main():
     pid_map = {norm_name(x.get("DISPLAY_FIRST_LAST")): str(x.get("PERSON_ID"))
                for x in fetch("nba_all_players.json").get("records") or []}
 
-    frames = []
-    for season in seasons:
-        f = pd.read_sql("""SELECT game_date, player_id, prop, line, side, final_hp, confidence,
-                                  conf_tier, c_exist, c_quality, c_market, phase
-                           FROM nba_score.final_hp WHERE season=%s AND prop = ANY(%s)""",
-                        conn, params=(season, list(PROPS)))
-        if f.empty:
-            continue
-        f["game_date"] = pd.to_datetime(f["game_date"]).dt.date
-        f["player_id"] = f["player_id"].astype(str)
-        f["line"] = f["line"].astype(float)
-        f["season"] = season
-        frames.append(f)
-    if not frames:
-        print("no final_hp rows for these props")
-        return
-    f = pd.concat(frames, ignore_index=True)
-
-    o = pd.read_sql("""SELECT game_date, player, line, side, leg_result,
-                              replace(replace(market_key,'player_',''),'_alternate','') AS prop
-                       FROM nba_market.board_outcomes
-                       WHERE leg_result IN ('over_win','under_win')
-                         AND replace(replace(market_key,'player_',''),'_alternate','') = ANY(%s)""",
-                    conn, params=(list(PROPS),))
-    o["game_date"] = pd.to_datetime(o["game_date"]).dt.date
-    o["player_id"] = o["player"].map(norm_name).map(pid_map)
-    o = o[o["player_id"].notna()]
-    o["line"] = o["line"].astype(float)
-
-    d = f.merge(o[["game_date", "player_id", "prop", "line", "side", "leg_result"]],
-                on=["game_date", "player_id", "prop", "line", "side"], how="inner")
+    # DO THE JOIN IN SQL. Pulling final_hp for eight props across both seasons into the runner killed it
+    # with a shutdown signal (memory) - the same failure that killed the factor gate. Postgres joins
+    # final_hp to board_outcomes and returns only the graded legs, which is a fraction of the rows.
+    d = pd.read_sql("""
+        SELECT f.season, f.game_date, f.prop, f.side, f.final_hp, f.confidence, f.conf_tier,
+               f.c_exist, f.c_quality, f.c_market, f.phase,
+               CASE WHEN f.side='Over' THEN (o.leg_result='over_win')::int
+                    ELSE (o.leg_result='under_win')::int END AS won
+        FROM nba_score.final_hp f
+        JOIN nba_ref.player_name_map m ON m.player_id = f.player_id
+        JOIN nba_market.board_outcomes o
+          ON o.game_date = f.game_date
+         AND lower(regexp_replace(o.player,'[^A-Za-z]','','g')) = m.norm_name
+         AND o.line = f.line
+         AND o.side = f.side
+         AND replace(replace(o.market_key,'player_',''),'_alternate','') = f.prop
+        WHERE f.season = ANY(%s)
+          AND f.prop = ANY(%s)
+          AND o.leg_result IN ('over_win','under_win')""",
+        conn, params=(seasons, list(PROPS)))
     if d.empty:
         print("no graded legs matched")
         return
-    d["won"] = np.where(d["side"] == "Over", d["leg_result"] == "over_win",
-                        d["leg_result"] == "under_win").astype(int)
-    d["hp_band"] = pd.cut(d["final_hp"].astype(float), [0, .4, .5, .6, .7, .8, 1.01]).astype(str)
     d["final_hp"] = d["final_hp"].astype(float)
+    d["hp_band"] = pd.cut(d["final_hp"], [0, .4, .5, .6, .7, .8, 1.01]).astype(str)
     print(f"graded legs with a confidence value: {len(d):,}\n", flush=True)
 
     # 1) the core test - does the gap shrink as confidence rises, WITHIN an HP band?
