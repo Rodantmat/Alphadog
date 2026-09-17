@@ -140,6 +140,32 @@ def main():
             mkt_rung[k] = max(mkt_rung.get(k, 0), float(r.books or 0))
     print(f"market backing: {len(mkt_games):,} games with lines | {len(mkt_rung):,} priced rungs", flush=True)
 
+    # CONFORMAL CONFIDENCE GROUPS - measured, with the same fallback hierarchy the fit used
+    cc = pd.read_sql("""SELECT level, prop, band, side, phase, s_norm, lo_scale, hi_scale
+                        FROM nba_score.conformal_confidence""", conn)
+    CONF_FULL, CONF_MID, CONF_COARSE = {}, {}, {}
+    CONF_GLOBAL, CONF_LO, CONF_HI = 0.85, 0.60, 1.00
+    if not cc.empty:
+        for r in cc.itertuples(index=False):
+            if r.level == "full":
+                CONF_FULL[(r.prop, r.band, r.side, r.phase)] = float(r.s_norm)
+            elif r.level == "mid":
+                CONF_MID[(r.prop, r.band, r.side)] = float(r.s_norm)
+            elif r.level == "coarse":
+                CONF_COARSE[(r.band, r.side)] = float(r.s_norm)
+            else:
+                CONF_GLOBAL = float(r.s_norm)
+            CONF_LO, CONF_HI = float(r.lo_scale), float(r.hi_scale)
+        print(f"conformal confidence: {len(CONF_FULL):,} full / {len(CONF_MID):,} mid / "
+              f"{len(CONF_COARSE):,} coarse groups, scale {CONF_LO:.3f}-{CONF_HI:.3f}", flush=True)
+    else:
+        print("conformal_confidence is EMPTY - confidence falls back to the global score", flush=True)
+
+    def conf_group(prop, band, side, phase):
+        return (CONF_FULL.get((prop, band, side, phase))
+                or CONF_MID.get((prop, band, side))
+                or CONF_COARSE.get((band, side)) or CONF_GLOBAL)
+
     if write:
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.final_hp (
