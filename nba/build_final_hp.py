@@ -80,9 +80,34 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
-    cal = pd.read_sql("SELECT prop, phase, band, side, log_odds_shift FROM nba_score.ladder_calibration", conn)
-    shift = {(r.prop, r.phase, r.band, r.side): float(r.log_odds_shift) for r in cal.itertuples(index=False)}
-    print(f"calibration cells: {len(shift):,}", flush=True)
+    # AS-OF CALIBRATION. The engine reads nba_score.ladder_calibration_asof, whose cells are refit from
+    # legs STRICTLY BEFORE each as-of date (weekly cadence), with the prior season's same-phase cell
+    # inherited until current-season evidence exists. The earlier pasted table (fitted on one season,
+    # applied to another) violated NBA_DAILY_PARITY §5 - "no constant is carried between days" - and
+    # leaked on a same-season replay. For a given leg we take the LATEST as-of cell at or before its
+    # game date, which is exactly what the live pipeline would hold that day.
+    ca = pd.read_sql("""SELECT as_of_date, prop, phase, band, side, log_odds_shift
+                        FROM nba_score.ladder_calibration_asof ORDER BY as_of_date""", conn)
+    asof_cal = defaultdict(list)
+    if not ca.empty:
+        ca["as_of_date"] = pd.to_datetime(ca["as_of_date"]).dt.date
+        for r in ca.itertuples(index=False):
+            asof_cal[(r.prop, r.phase, r.band, r.side)].append((r.as_of_date, float(r.log_odds_shift)))
+    print(f"as-of calibration cells: {len(asof_cal):,} keys, {len(ca):,} dated rows", flush=True)
+
+    def shift_for(prop, phase, band, side, gd):
+        """the latest cell published at or before this game date - never a future one"""
+        arr = asof_cal.get((prop, phase, band, side))
+        if not arr:
+            return 0.0
+        lo, hi, out = 0, len(arr) - 1, 0.0
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            if arr[mid][0] <= gd:
+                out = arr[mid][1]; lo = mid + 1
+            else:
+                hi = mid - 1
+        return out
 
     tb = pd.read_sql("""SELECT kind, phase, band, n, gap FROM nba_score.tier_band_calibration""", conn)
     bandgap = {(r.kind, r.phase, r.band): (abs(float(r.gap)), int(r.n)) for r in tb.itertuples(index=False)}
