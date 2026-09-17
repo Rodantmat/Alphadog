@@ -266,6 +266,13 @@ jobs:
         run: |
           python -m pip install -q lightgbm
           python nba/fit_n1_model.py
+      - name: Mondrian conformal confidence
+        if: ${{ github.event.inputs.allocator == '33' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MC_SEASONS: "2024-25,2025-26"
+          MC_MIN_N: '400'
+        run: python nba/build_mondrian_confidence.py
       - name: Verify confidence bands (fact 5b)
         if: ${{ github.event.inputs.allocator == '32' }}
         env:
