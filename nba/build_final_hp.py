@@ -272,7 +272,7 @@ def main():
             d["c_exist"] = has_components
             d["c_quality"] = np.clip(conf, 0, 1)
             d["c_market"] = c_market
-            d["conf_tier"] = pd.cut(d["confidence"], [0, .35, .55, .75, 1.01],
+            d["conf_tier"] = pd.cut(d["confidence"], [-0.01] + CUTS + [1.01],
                                     labels=["low", "medium", "high", "elite"]).astype(str)
 
             # 5) SCORE - final HP AND confidence together. A 92% leg nobody else prices differently is
