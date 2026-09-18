@@ -171,6 +171,12 @@ def main():
                 or CONF_MID.get((prop, band, side))
                 or CONF_COARSE.get((band, side)) or CONF_GLOBAL)
 
+    def conf_n(prop, band, side, phase):
+        """evidence behind the group that priced this leg - a continuous per-leg term"""
+        return (CONF_N_FULL.get((prop, band, side, phase))
+                or CONF_N_MID.get((prop, band, side))
+                or CONF_N_COARSE.get((band, side)) or CONF_N_GLOBAL)
+
     # TIER CUTPOINTS ARE DERIVED IN-RUN, NEVER PASTED. COMPASS fact 6 names "tier cutpoints" explicitly
     # among the values that must be computed from history as of the day. The first version used fixed
     # cuts (0.35/0.55/0.75) against a confidence distribution that actually spans ~0.52-0.61, which left
