@@ -46,6 +46,25 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
+    # JOIN PERFORMANCE. The sampling query joins on lower(regexp_replace(player,...)), and a FUNCTION on
+    # the join column cannot use a plain index - Postgres falls back to repeated sequential scans over
+    # board_outcomes (6.9M rows), rung_market (1.1M) and board_tiers (2.2M). The first attempt ran 15+
+    # minutes without finishing. Expression indexes fix it. Built here rather than from the SQL bridge,
+    # whose request timeout fires long before a multi-million-row index completes.
+    print("ensuring expression indexes for the name join (first run builds them; minutes)", flush=True)
+    for tbl, idx in (("nba_market.board_outcomes", "board_outcomes_nm_idx"),
+                     ("nba_market.rung_market", "rung_market_nm_idx"),
+                     ("nba_market.board_tiers", "board_tiers_nm_idx")):
+        try:
+            with conn.cursor() as cur:
+                cur.execute(f"""CREATE INDEX IF NOT EXISTS {idx} ON {tbl}
+                    (lower(regexp_replace(player,'[^A-Za-z]','','g')), game_date, line)""")
+            conn.commit()
+            print(f"  {idx} ready", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            conn.rollback()
+            print(f"  {idx} skipped ({str(exc)[:60]})", flush=True)
+
     # One SQL pass - joins stay in Postgres (three prior jobs were killed pulling millions of rows).
     d = pd.read_sql("""
         SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.line, f.final_hp, f.anchor,
