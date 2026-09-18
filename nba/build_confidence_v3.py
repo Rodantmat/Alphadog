@@ -225,6 +225,49 @@ def main():
 
     # the same eleven factors used per prop inside the loop, now over the whole frame
     d["confidence"] = confidence_of(d)
+    # ---- FIT THE WEIGHTS TO MEASURED ASSERTIVENESS ------------------------------------------------
+    # The hand-assigned weights produce the RIGHT ORDERING (fringe lowest confidence and worst gap,
+    # iron-man highest and best) but far too FLAT a spread: confidence spans 0.8522-0.9135, six points,
+    # while realised gaps vary 35x (0.0008 to 0.0283). A thermometer whose range is a tenth of the
+    # thing it measures cannot separate an assertive leg from a shaky one.
+    # So: regress the factors on the CELL-LEVEL realised gap and take the weights from the data. This is
+    # the "ML-assisted tuning" the data-quality literature recommends - weights come from how strongly
+    # each dimension predicts downstream failure, not from judgement.
+    print("\nFITTING WEIGHTS TO MEASURED ASSERTIVENESS", flush=True)
+    cell_keys = ["prop", "role_tier", "rung_dist", "kind"]
+    cell = d.groupby(cell_keys, observed=True).agg(
+        n=("won", "size"), hit=("won", "mean"), hp=("final_hp", "mean")).reset_index()
+    cell = cell[cell["n"] >= 300].copy()
+    cell["gap"] = (cell["hit"] - cell["hp"]).abs()
+    if len(cell) >= 30:
+        fac = d.groupby(cell_keys, observed=True)[FACTOR_COLS].mean().reset_index()
+        m = cell.merge(fac, on=cell_keys, how="inner")
+        X = np.column_stack([np.ones(len(m))] + [m[c].values for c in FACTOR_COLS])
+        # target: assertiveness = -log(gap), so a small gap is a HIGH target
+        y = -np.log(np.clip(m["gap"].values, 1e-4, 0.2))
+        w = np.sqrt(m["n"].values)                      # weight cells by evidence
+        beta, *_ = np.linalg.lstsq(X * w[:, None], y * w, rcond=None)
+        raw = beta[1:]
+        # keep only factors that point the RIGHT way (more of it => more assertive), renormalise
+        raw = np.where(raw > 0, raw, 0.0)
+        fitted = raw / raw.sum() if raw.sum() > 0 else np.full(len(FACTOR_COLS), 1.0 / len(FACTOR_COLS))
+        print("  fitted weights:", ", ".join(f"{c} {v:.3f}" for c, v in zip(FACTOR_COLS, fitted)), flush=True)
+        F = d[FACTOR_COLS].values
+        s = F @ fitted
+        # spread to the full usable range by rank, so the thermometer's range matches what it measures
+        lo_s, hi_s = np.quantile(s, 0.02), np.quantile(s, 0.98)
+        d["confidence"] = np.clip(0.55 + 0.44 * (s - lo_s) / max(hi_s - lo_s, 1e-9), 0.45, 0.99)
+        print(f"  confidence after fitting: p10 {d['confidence'].quantile(.10):.4f}  "
+              f"p50 {d['confidence'].quantile(.50):.4f}  p90 {d['confidence'].quantile(.90):.4f}", flush=True)
+        # verify the fit discriminates on the SAME cells
+        m["conf_fit"] = (m[FACTOR_COLS].values @ fitted)
+        r = float(np.corrcoef(m["conf_fit"], -np.log(np.clip(m["gap"], 1e-4, 0.2)))[0, 1])
+        print(f"  correlation between fitted confidence and cell assertiveness: {r:+.4f}", flush=True)
+        for lo, hi, lab in ((0, .25, "lowest quartile"), (.75, 1.01, "highest quartile")):
+            q = m[(m["conf_fit"] >= m["conf_fit"].quantile(lo)) & (m["conf_fit"] <= m["conf_fit"].quantile(hi))]
+            if len(q):
+                print(f"    {lab:<18}cells {len(q):>4}  mean |gap| {float(q['gap'].mean()):.4f}", flush=True)
+
     print("CONFIDENCE DISTRIBUTION (absolute - high by design, because the data is good)")
     for q in (0.01, 0.10, 0.25, 0.50, 0.75, 0.90, 0.99):
         print(f"  p{int(q*100):<3} {d['confidence'].quantile(q):.4f}", flush=True)
