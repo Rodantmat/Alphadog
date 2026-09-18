@@ -183,8 +183,26 @@ def main():
     # the LOW tier EMPTY and ELITE at 0.04% of legs - the exact failure the calibration literature warns
     # about: fixed-width bins leave bins empty and "have higher bias than equal-mass binning".
     # So: EQUAL-MASS quartiles of the group-confidence distribution, weighted by each group's n.
-    if not cc.empty:
-        gvals, gw = [], []
+    # TIER CUTPOINTS FROM THE ACTUAL LEG DISTRIBUTION. Earlier versions derived them from the GROUP
+    # table, but leg confidence = 0.55*group + 0.15*market + 0.15*depth + 0.15*extremity, so the two
+    # distributions differ and the cuts landed inside a tie (low 54% / medium 46% / high 0.1% / elite 0).
+    # Sample legs already written and take equal-mass quartiles of THEIR confidence; fall back to the
+    # group distribution only on a cold table.
+    CUTS = None
+    try:
+        q = pd.read_sql("""SELECT percentile_cont(ARRAY[0.25,0.50,0.75]) WITHIN GROUP (ORDER BY confidence) AS c
+                           FROM (SELECT confidence FROM nba_score.final_hp
+                                 WHERE confidence IS NOT NULL LIMIT 500000) s""", conn)
+        if not q.empty and q.iloc[0, 0] is not None:
+            cand = [float(x) for x in q.iloc[0, 0]]
+            if len(set(cand)) == 3:
+                CUTS = sorted(cand)
+                print(f"tier cutpoints from the LIVE LEG distribution: {[round(c,4) for c in CUTS]}", flush=True)
+            else:
+                print(f"leg sample is degenerate {cand} - falling back to the group distribution", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"leg-distribution sample unavailable ({str(exc)[:50]})", flush=True)
+    if CUTS is None and not cc.empty:
         # `n` is not addressable via itertuples - it collides with the namedtuple's own field naming
         # ("AttributeError: 'Pandas' object has no attribute 'n'"). Use the column directly.
         for lvl, s_norm, n_obs in zip(cc["level"], cc["s_norm"], cc["n"]):
