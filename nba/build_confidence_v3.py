@@ -129,6 +129,16 @@ def main():
         "SELECT DISTINCT prop FROM nba_score.final_hp WHERE season = ANY(%s) ORDER BY 1",
         (seasons,)).fetchall()]
     print(f"sampling {len(props)} props one at a time", flush=True)
+    # WRITE INSIDE THE LOOP. A previous run accumulated 30 props in memory and wrote at the end, so a
+    # stall anywhere produced NOTHING and said nothing about where it stalled - the same failure as
+    # trusting CI logs instead of the database. Each prop now lands immediately: progress is visible,
+    # partial results survive, and a stall names the prop it stalled on.
+    with conn.cursor() as cur:
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_verification (
+            check_type text, slice text, tier text, n int, stated numeric, actual numeric,
+            gap numeric, run_at timestamptz DEFAULT now())""")
+        cur.execute("DELETE FROM nba_score.confidence_verification WHERE tier='v3'")
+    conn.commit()
     frames = []
     for prop in props:
         part = pd.read_sql("""
