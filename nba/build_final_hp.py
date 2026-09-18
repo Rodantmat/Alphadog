@@ -181,6 +181,23 @@ def main():
                 or CONF_N_MID.get((prop, band, side))
                 or CONF_N_COARSE.get((band, side)) or CONF_N_GLOBAL)
 
+    # MEASURED CONFIDENCE MODEL (v3). Deduction sizes fitted from realised |gap| separation across
+    # 2.23M graded legs by nba/build_confidence_v3.py. Absent = fall back to the conformal blend.
+    CONF_DEDUCT, CONF_BASE, CONF_FLOOR = {}, 99.0, 55.0
+    try:
+        cm = pd.read_sql("SELECT factor, deduction, base, floor FROM nba_score.confidence_model", conn)
+        if not cm.empty:
+            CONF_DEDUCT = {r.factor: float(r.deduction) for r in cm.itertuples(index=False)
+                           if float(r.deduction) > 0}
+            CONF_BASE = float(cm["base"].iloc[0])
+            CONF_FLOOR = float(cm["floor"].iloc[0])
+            print(f"confidence model: {len(CONF_DEDUCT)} measured deductions, base {CONF_BASE:.0f}, "
+                  f"floor {CONF_FLOOR:.0f}", flush=True)
+        else:
+            print("confidence_model is EMPTY - falling back to the conformal blend", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"confidence_model unavailable ({str(exc)[:50]}) - conformal blend", flush=True)
+
     # TIER CUTPOINTS ARE DERIVED IN-RUN, NEVER PASTED. COMPASS fact 6 names "tier cutpoints" explicitly
     # among the values that must be computed from history as of the day. The first version used fixed
     # cuts (0.35/0.55/0.75) against a confidence distribution that actually spans ~0.52-0.61, which left
