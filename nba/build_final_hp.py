@@ -340,8 +340,10 @@ def main():
                               for bd, sd, ph in zip(d["band"], d["side"], d["phase"])], dtype=float)
             depth = np.clip(np.log1p(grp_n) / np.log1p(50000.0), 0, 1)
             extremity = np.clip(np.abs(d["final_hp"].values - 0.5) / 0.5, 0, 1)
-            d["confidence"] = np.clip(0.55 * conf + 0.15 * c_market + 0.15 * depth
-                                      + 0.15 * extremity - 0.05 * (pen > 0), 0.02, 1.0)
+            # v3 wins when the measured model is present; the conformal blend is the fallback
+            d["confidence"] = conf_v3 if conf_v3 is not None else np.clip(
+                0.55 * conf + 0.15 * c_market + 0.15 * depth
+                + 0.15 * extremity - 0.05 * (pen > 0), 0.02, 1.0)
             d["c_exist"] = has_components
             d["c_quality"] = np.clip(conf, 0, 1)
             d["c_market"] = c_market
