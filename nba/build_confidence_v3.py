@@ -66,29 +66,48 @@ def main():
             print(f"  {idx} skipped ({str(exc)[:60]})", flush=True)
 
     # One SQL pass - joins stay in Postgres (three prior jobs were killed pulling millions of rows).
+    # QUERY SHAPE. The first version drove from final_hp (38.7M rows) outward, with two LEFT JOINs that
+    # have no unique constraint - rows multiplied before anything filtered, and it ran 29 minutes without
+    # finishing even after the expression indexes were built. Indexes could not save the wrong shape.
+    # Correct shape: START from the ~1.2M GRADED legs, pre-aggregate the market tables to ONE row per
+    # key in CTEs so nothing multiplies, then join INTO final_hp through its unique index on
+    # (game_date, player_id, prop, line, side).
     d = pd.read_sql("""
-        SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.line, f.final_hp, f.anchor,
+        WITH graded AS (
+            SELECT o.game_date, o.line, o.side, o.leg_result,
+                   lower(regexp_replace(o.player,'[^A-Za-z]','','g')) AS nm,
+                   replace(replace(o.market_key,'player_',''),'_alternate','') AS prop
+            FROM nba_market.board_outcomes o
+            WHERE o.leg_result IN ('over_win','under_win')
+        ),
+        g2 AS (
+            SELECT g.*, m.player_id
+            FROM graded g JOIN nba_ref.player_name_map m ON m.norm_name = g.nm
+        ),
+        rm AS (            -- one row per key, so the join cannot multiply
+            SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line,
+                   max(books) AS books, avg(p_over_book) AS p_over_book
+            FROM nba_market.rung_market GROUP BY 1,2,3
+        ),
+        bt AS (
+            SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line, side,
+                   min(kind) AS kind, min(tier) AS tier
+            FROM nba_market.board_tiers WHERE snapshot_label='window' GROUP BY 1,2,3,4
+        )
+        SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.final_hp, f.anchor,
                f.n_uncertain, f.ladder_offset, f.player_id,
                b.proj_min, b.rate36, b.used_emp, b.role_tier,
-               r.books, r.p_over_book,
-               t.kind, t.tier,
-               CASE WHEN f.side='Over' THEN (o.leg_result='over_win')::int
-                    ELSE (o.leg_result='under_win')::int END AS won
-        FROM nba_score.final_hp f
-        JOIN nba_ref.player_name_map m ON m.player_id = f.player_id
-        JOIN nba_market.board_outcomes o
-          ON o.game_date=f.game_date AND o.line=f.line AND o.side=f.side
-         AND lower(regexp_replace(o.player,'[^A-Za-z]','','g'))=m.norm_name
-         AND replace(replace(o.market_key,'player_',''),'_alternate','')=f.prop
+               rm.books, rm.p_over_book, bt.kind, bt.tier,
+               CASE WHEN g2.side='Over' THEN (g2.leg_result='over_win')::int
+                    ELSE (g2.leg_result='under_win')::int END AS won
+        FROM g2
+        JOIN nba_score.final_hp f
+          ON f.game_date=g2.game_date AND f.player_id=g2.player_id AND f.prop=g2.prop
+         AND f.line=g2.line AND f.side=g2.side AND f.season = ANY(%s)
         LEFT JOIN nba_score.baseline_history b
           ON b.game_date=f.game_date AND b.player_id=f.player_id AND b.prop=f.prop AND b.line=f.line
-        LEFT JOIN nba_market.rung_market r
-          ON r.game_date=f.game_date AND r.line=f.line
-         AND lower(regexp_replace(r.player,'[^A-Za-z]','','g'))=m.norm_name
-        LEFT JOIN nba_market.board_tiers t
-          ON t.game_date=f.game_date AND t.line=f.line AND t.side=f.side
-         AND lower(regexp_replace(t.player,'[^A-Za-z]','','g'))=m.norm_name
-        WHERE f.season = ANY(%s) AND o.leg_result IN ('over_win','under_win')
+        LEFT JOIN rm ON rm.game_date=g2.game_date AND rm.nm=g2.nm AND rm.line=g2.line
+        LEFT JOIN bt ON bt.game_date=g2.game_date AND bt.nm=g2.nm AND bt.line=g2.line AND bt.side=g2.side
         """, conn, params=(seasons,))
     if d.empty:
         print("no graded legs")
