@@ -72,6 +72,24 @@ def main():
     # Correct shape: START from the ~1.2M GRADED legs, pre-aggregate the market tables to ONE row per
     # key in CTEs so nothing multiplies, then join INTO final_hp through its unique index on
     # (game_date, player_id, prop, line, side).
+    # The baseline_history LEFT JOIN was the real bottleneck: 19.34M rows joined on
+    # (game_date, player_id, prop, line), but its only index is the unique key
+    # (game_date, player_id, game_id, prop, period, line) - a lookup missing game_id and period in the
+    # MIDDLE of that key cannot use it, so every row drove a sequential scan. Two query shapes both hit
+    # a 28-minute wall because of this, not because of the join order.
+    # Fix: build the covering index once, in-job (the SQL bridge times out long before it completes).
+    print("ensuring the baseline_history covering index (first run builds it; minutes)", flush=True)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE INDEX IF NOT EXISTS baseline_history_lookup_idx
+                ON nba_score.baseline_history (game_date, player_id, prop, line)
+                INCLUDE (proj_min, rate36, used_emp, role_tier)""")
+        conn.commit()
+        print("  baseline_history_lookup_idx ready", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        conn.rollback()
+        print(f"  baseline_history_lookup_idx skipped ({str(exc)[:70]})", flush=True)
+
     d = pd.read_sql("""
         WITH graded AS (
             SELECT o.game_date, o.line, o.side, o.leg_result,
