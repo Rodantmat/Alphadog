@@ -264,21 +264,36 @@ def main():
         raw = np.where(raw > 0, raw, 0.0)
         fitted = raw / raw.sum() if raw.sum() > 0 else np.full(len(FACTOR_COLS), 1.0 / len(FACTOR_COLS))
         print("  fitted weights:", ", ".join(f"{c} {v:.3f}" for c, v in zip(FACTOR_COLS, fitted)), flush=True)
+        # ---- DEDUCTION MODEL -----------------------------------------------------------------------
+        # Confidence starts at 100 and loses points for SPECIFIC, NAMED deficiencies. Not a rank spread
+        # (that forces a distribution, the same error as quartile tiers) and not a weighted average of
+        # things that are all near 1. A leg with every component present, main-source, market-backed and
+        # a steady player scores ~100. Missing market backing costs points. A derived rather than
+        # empirical cell costs points. An oscillating player costs points. A tail rung costs points.
+        #
+        # THE SIZE of each deduction is MEASURED, not chosen: it is the fitted coefficient rescaled so
+        # the worst realistic combination lands near 70 and a perfect leg at ~99. That keeps the number
+        # interpretable - "this leg is 87 because the market does not price this rung and the player
+        # swings" - instead of an opaque score.
+        DEDUCT_BUDGET = 30.0                      # worst case loses ~30 points, so the floor is ~70
+        ded = fitted / fitted.sum() * DEDUCT_BUDGET
+        print("  deductions at full deficiency (points off 100):",
+              ", ".join(f"{c.replace('f_','')} -{v:.1f}" for c, v in zip(FACTOR_COLS, ded)), flush=True)
         F = d[FACTOR_COLS].values
-        s = F @ fitted
-        # spread to the full usable range by rank, so the thermometer's range matches what it measures
-        lo_s, hi_s = np.quantile(s, 0.02), np.quantile(s, 0.98)
-        d["confidence"] = np.clip(0.55 + 0.44 * (s - lo_s) / max(hi_s - lo_s, 1e-9), 0.45, 0.99)
-        print(f"  confidence after fitting: p10 {d['confidence'].quantile(.10):.4f}  "
-              f"p50 {d['confidence'].quantile(.50):.4f}  p90 {d['confidence'].quantile(.90):.4f}", flush=True)
-        # verify the fit discriminates on the SAME cells
-        m["conf_fit"] = (m[FACTOR_COLS].values @ fitted)
+        lost = ((1.0 - F) * ded).sum(axis=1)      # each factor is 0-1; 1 = no deficiency
+        d["confidence"] = np.clip(99.0 - lost, 55.0, 99.5) / 100.0
+        print(f"  confidence: p05 {d['confidence'].quantile(.05)*100:.1f}  "
+              f"p25 {d['confidence'].quantile(.25)*100:.1f}  p50 {d['confidence'].quantile(.50)*100:.1f}  "
+              f"p75 {d['confidence'].quantile(.75)*100:.1f}  p95 {d['confidence'].quantile(.95)*100:.1f}",
+              flush=True)
+        m["conf_fit"] = 99.0 - ((1.0 - m[FACTOR_COLS].values) * ded).sum(axis=1)
         r = float(np.corrcoef(m["conf_fit"], -np.log(np.clip(m["gap"], 1e-4, 0.2)))[0, 1])
-        print(f"  correlation between fitted confidence and cell assertiveness: {r:+.4f}", flush=True)
+        print(f"  correlation between confidence and cell assertiveness: {r:+.4f}", flush=True)
         for lo, hi, lab in ((0, .25, "lowest quartile"), (.75, 1.01, "highest quartile")):
             q = m[(m["conf_fit"] >= m["conf_fit"].quantile(lo)) & (m["conf_fit"] <= m["conf_fit"].quantile(hi))]
             if len(q):
-                print(f"    {lab:<18}cells {len(q):>4}  mean |gap| {float(q['gap'].mean()):.4f}", flush=True)
+                print(f"    {lab:<18}cells {len(q):>4}  mean confidence {float(q['conf_fit'].mean()):.1f}  "
+                      f"mean |gap| {float(q['gap'].mean()):.4f}", flush=True)
 
     print("CONFIDENCE DISTRIBUTION (absolute - high by design, because the data is good)")
     for q in (0.01, 0.10, 0.25, 0.50, 0.75, 0.90, 0.99):
