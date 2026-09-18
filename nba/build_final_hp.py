@@ -141,7 +141,7 @@ def main():
     print(f"market backing: {len(mkt_games):,} games with lines | {len(mkt_rung):,} priced rungs", flush=True)
 
     # CONFORMAL CONFIDENCE GROUPS - measured, with the same fallback hierarchy the fit used
-    cc = pd.read_sql("""SELECT level, prop, band, side, phase, s_norm, lo_scale, hi_scale
+    cc = pd.read_sql("""SELECT level, prop, band, side, phase, n, s_norm, lo_scale, hi_scale
                         FROM nba_score.conformal_confidence""", conn)
     CONF_FULL, CONF_MID, CONF_COARSE = {}, {}, {}
     CONF_GLOBAL, CONF_LO, CONF_HI = 0.85, 0.60, 1.00
