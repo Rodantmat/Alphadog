@@ -75,6 +75,11 @@ def confidence_of(d, attach=False):
     f_agree = np.where(d["p_over_book"].notna(), agree, 0.55)
     raw = (0.16 * f_complete + 0.12 * f_prov + 0.10 * f_time + 0.14 * f_depth
            + 0.10 * f_vol + 0.08 * f_exp + 0.12 * f_role + 0.08 * f_books + 0.10 * f_agree)
+    if attach:
+        for name, val in (("f_complete", f_complete), ("f_prov", f_prov), ("f_time", f_time),
+                          ("f_depth", f_depth), ("f_role", f_role), ("f_vol", f_vol),
+                          ("f_exp", f_exp), ("f_books", f_books), ("f_agree", f_agree)):
+            d[name] = np.asarray(val, dtype=float)
     # a fully-supported leg reads ~0.97, a data-starved one ~0.45 - NEVER the meaningless 20-40% band,
     # because the core factors are always present
     return pd.Series(np.clip(0.45 + 0.55 * raw, 0.35, 0.99), index=d.index)
