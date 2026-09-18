@@ -90,19 +90,37 @@ def main():
         conn.rollback()
         print(f"  baseline_history_lookup_idx skipped ({str(exc)[:70]})", flush=True)
 
-    d = pd.read_sql("""
-        WITH graded AS (
-            SELECT o.game_date, o.line, o.side, o.leg_result,
+    # THE ACTUAL BOTTLENECK, from EXPLAIN rather than guesswork. Two rewrites and two indexes failed
+    # because the planner was never going to use an index: the join key contained
+    # replace(replace(o.market_key,...)) and lower(regexp_replace(o.player,...)) - FUNCTIONS on the join
+    # columns - so Postgres fell back to a Parallel Hash Join that built a hash table from 8,270,978
+    # final_hp rows (cost 1.8M), which spills to disk and never finishes.
+    #
+    # Fix: MATERIALIZE the graded side into a temp table with every function already resolved to a plain
+    # column, ANALYZE it so the planner has real statistics, then join on plain equality. That lets it
+    # nested-loop into final_hp's unique index (game_date, player_id, prop, line, side) instead of
+    # hashing the whole table.
+    print("materialising the graded side (functions resolved to plain columns)", flush=True)
+    with conn.cursor() as cur:
+        cur.execute("DROP TABLE IF EXISTS tmp_graded")
+        cur.execute("""
+            CREATE TEMP TABLE tmp_graded AS
+            SELECT o.game_date, o.line, o.side, m.player_id,
+                   replace(replace(o.market_key,'player_',''),'_alternate','') AS prop,
                    lower(regexp_replace(o.player,'[^A-Za-z]','','g')) AS nm,
-                   replace(replace(o.market_key,'player_',''),'_alternate','') AS prop
+                   CASE WHEN o.side='Over' THEN (o.leg_result='over_win')::int
+                        ELSE (o.leg_result='under_win')::int END AS won
             FROM nba_market.board_outcomes o
-            WHERE o.leg_result IN ('over_win','under_win')
-        ),
-        g2 AS (
-            SELECT g.*, m.player_id
-            FROM graded g JOIN nba_ref.player_name_map m ON m.norm_name = g.nm
-        ),
-        rm AS (            -- one row per key, so the join cannot multiply
+            JOIN nba_ref.player_name_map m
+              ON m.norm_name = lower(regexp_replace(o.player,'[^A-Za-z]','','g'))
+            WHERE o.leg_result IN ('over_win','under_win')""")
+        cur.execute("CREATE INDEX ON tmp_graded (game_date, player_id, prop, line, side)")
+        cur.execute("ANALYZE tmp_graded")
+        cur.execute("SELECT count(*) FROM tmp_graded")
+        print(f"  graded legs materialised: {cur.fetchone()[0]:,}", flush=True)
+
+    d = pd.read_sql("""
+        WITH rm AS (
             SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line,
                    max(books) AS books, avg(p_over_book) AS p_over_book
             FROM nba_market.rung_market GROUP BY 1,2,3
@@ -115,17 +133,16 @@ def main():
         SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.final_hp, f.anchor,
                f.n_uncertain, f.ladder_offset, f.player_id,
                b.proj_min, b.rate36, b.used_emp, b.role_tier,
-               rm.books, rm.p_over_book, bt.kind, bt.tier,
-               CASE WHEN g2.side='Over' THEN (g2.leg_result='over_win')::int
-                    ELSE (g2.leg_result='under_win')::int END AS won
-        FROM g2
+               rm.books, rm.p_over_book, bt.kind, bt.tier, g.won
+        FROM tmp_graded g
         JOIN nba_score.final_hp f
-          ON f.game_date=g2.game_date AND f.player_id=g2.player_id AND f.prop=g2.prop
-         AND f.line=g2.line AND f.side=g2.side AND f.season = ANY(%s)
+          ON f.game_date=g.game_date AND f.player_id=g.player_id AND f.prop=g.prop
+         AND f.line=g.line AND f.side=g.side
         LEFT JOIN nba_score.baseline_history b
-          ON b.game_date=f.game_date AND b.player_id=f.player_id AND b.prop=f.prop AND b.line=f.line
-        LEFT JOIN rm ON rm.game_date=g2.game_date AND rm.nm=g2.nm AND rm.line=g2.line
-        LEFT JOIN bt ON bt.game_date=g2.game_date AND bt.nm=g2.nm AND bt.line=g2.line AND bt.side=g2.side
+          ON b.game_date=g.game_date AND b.player_id=g.player_id AND b.prop=g.prop AND b.line=g.line
+        LEFT JOIN rm ON rm.game_date=g.game_date AND rm.nm=g.nm AND rm.line=g.line
+        LEFT JOIN bt ON bt.game_date=g.game_date AND bt.nm=g.nm AND bt.line=g.line AND bt.side=g.side
+        WHERE f.season = ANY(%s)
         """, conn, params=(seasons,))
     if d.empty:
         print("no graded legs")
