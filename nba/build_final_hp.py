@@ -218,7 +218,7 @@ def main():
             CUTS = [float(v[np.searchsorted(cw, q)]) for q in (0.25, 0.50, 0.75)]
         else:
             CUTS = [0.35, 0.55, 0.75]
-    else:
+    elif CUTS is None:
         CUTS = [0.35, 0.55, 0.75]
     CUTS = sorted(set(CUTS))
     while len(CUTS) < 3:                      # degenerate distribution - keep four usable edges
