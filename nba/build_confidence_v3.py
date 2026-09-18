@@ -168,7 +168,19 @@ def main():
             """, conn, params=(seasons, prop, prop))
         if not part.empty:
             frames.append(part)
-            print(f"  {prop:<18}{len(part):>9,} graded legs", flush=True)
+            # score THIS prop now and persist it, so the run is never all-or-nothing
+            pc = part.copy()
+            pc_conf = confidence_of(pc)
+            pc["confidence"] = pc_conf
+            gap = abs(float(pc["won"].mean()) - float(pc["final_hp"].mean()))
+            with conn.cursor() as cur:
+                cur.execute("""INSERT INTO nba_score.confidence_verification
+                    (check_type, slice, tier, n, stated, actual, gap) VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                    ("group_prop", prop, "v3", len(pc), round(float(pc_conf.mean()), 4),
+                     round(float(pc["won"].mean()), 4), round(gap, 4)))
+            conn.commit()
+            print(f"  {prop:<18}{len(part):>9,} legs   conf {float(pc_conf.mean()):.4f}   "
+                  f"|gap| {gap:.4f}", flush=True)
     if not frames:
         print("no graded legs matched")
         return
