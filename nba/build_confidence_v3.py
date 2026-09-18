@@ -234,8 +234,9 @@ def main():
         return
     print(f"graded legs: {len(d):,}\n", flush=True)
 
-    # the same eleven factors used per prop inside the loop, now over the whole frame
-    d["confidence"] = confidence_of(d)
+    d["rung_dist"] = pd.cut(np.abs(d["ladder_offset"].fillna(0)), [-1, 0, 2, 5, 20],
+                            labels=["anchor", "near", "mid", "tail"]).astype(str)
+    d["confidence"] = confidence_of(d, attach=True)
     # ---- FIT THE WEIGHTS TO MEASURED ASSERTIVENESS ------------------------------------------------
     # The hand-assigned weights produce the RIGHT ORDERING (fringe lowest confidence and worst gap,
     # iron-man highest and best) but far too FLAT a spread: confidence spans 0.8522-0.9135, six points,
