@@ -225,41 +225,6 @@ def main():
 
     # the same eleven factors used per prop inside the loop, now over the whole frame
     d["confidence"] = confidence_of(d)
-    # provenance: an EMPIRICAL cell is main-source evidence; the parametric shape is a derived fallback
-    f2_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3
-    # timeliness: availability resolved at the cutoff, or still open
-    f3_time = np.where(d["n_uncertain"].fillna(0) > 0, 0.65, 1.0)
-    # evidence depth: how far this rung sits from the anchor. The ladder's tails rest on less data -
-    # this is the OOD term: "epistemic uncertainty is highest where training data is sparse"
-    f4_depth = np.clip(1.0 - np.abs(d["ladder_offset"].fillna(0)) / 14.0, 0.25, 1.0)
-
-    # ---- SUBJECT family ---------------------------------------------------------------------------
-    role_rank = {"IRON_MAN": 1.0, "HIGH_USAGE_STARTER": 0.97, "STARTER": 0.93,
-                 "ROTATION": 0.85, "BENCH": 0.70, "FRINGE": 0.50}
-    f8_role = d["role_tier"].map(role_rank).fillna(0.75).astype(float)
-    # player volatility, computed from his own realised legs (game-to-game and DOWNSIDE separately -
-    # the negative-volatility metric from the player-valuation literature)
-    pv = d.groupby("player_id")["won"].agg(["size", "mean"])
-    pv["vol"] = np.sqrt(pv["mean"] * (1 - pv["mean"]))
-    volmap = pv["vol"].to_dict()
-    nmap = pv["size"].to_dict()
-    f5_vol = 1.0 - np.clip(d["player_id"].map(volmap).fillna(0.5).astype(float), 0, 0.5) * 0.6
-    # experience: a player with few observed legs is OUT OF DISTRIBUTION for us
-    f7_form = np.clip(np.log1p(d["player_id"].map(nmap).fillna(20).astype(float)) / np.log1p(800.0), 0.3, 1.0)
-
-    # ---- MARKET family ----------------------------------------------------------------------------
-    f9_books = np.clip(d["books"].fillna(0).astype(float) / 4.0, 0, 1)
-    # market agreement: does the de-vigged book probability agree with our HP? disagreement is a flag
-    agree = 1.0 - np.clip(np.abs(d["p_over_book"].astype(float) - d["final_hp"].astype(float)).fillna(0.25) / 0.30, 0, 1)
-    f10_agree = np.where(d["p_over_book"].notna(), agree, 0.55)   # no book price = neither agree nor disagree
-
-    d["confidence"] = (0.16 * f1_complete + 0.12 * f2_prov + 0.10 * f3_time + 0.14 * f4_depth
-                       + 0.10 * f5_vol + 0.08 * f7_form + 0.12 * f8_role
-                       + 0.08 * f9_books + 0.10 * f10_agree)
-    # scale so a fully-supported leg reads ~0.97 and a data-starved one ~0.45 - NEVER the 20-40% band,
-    # because we always hold the core factors; the spread comes from provenance, market and subject.
-    d["confidence"] = np.clip(0.45 + 0.55 * d["confidence"], 0.35, 0.99)
-
     print("CONFIDENCE DISTRIBUTION (absolute - high by design, because the data is good)")
     for q in (0.01, 0.10, 0.25, 0.50, 0.75, 0.90, 0.99):
         print(f"  p{int(q*100):<3} {d['confidence'].quantile(q):.4f}", flush=True)
