@@ -203,6 +203,7 @@ def main():
     except Exception as exc:  # noqa: BLE001
         print(f"leg-distribution sample unavailable ({str(exc)[:50]})", flush=True)
     if CUTS is None and not cc.empty:
+        gvals, gw = [], []
         # `n` is not addressable via itertuples - it collides with the namedtuple's own field naming
         # ("AttributeError: 'Pandas' object has no attribute 'n'"). Use the column directly.
         for lvl, s_norm, n_obs in zip(cc["level"], cc["s_norm"], cc["n"]):
