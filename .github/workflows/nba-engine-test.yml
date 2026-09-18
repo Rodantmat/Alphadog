@@ -53,6 +53,13 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Confidence v2 (data thermometer)
+        if: ${{ github.event.inputs.task == 'confidence_v2' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CV2_SEASONS: "2024-25,2025-26"
+        run: python nba/build_confidence_v2.py
+
       - name: Confidence verification
         if: ${{ github.event.inputs.task == 'confidence' }}
         env:
