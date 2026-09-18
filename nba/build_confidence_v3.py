@@ -297,6 +297,18 @@ def main():
             ded = np.array([sep[c] / tot for c in FACTOR_COLS]) * DEDUCT_BUDGET
         print("  deductions at full deficiency (points off 99):",
               ", ".join(f"{c.replace('f_','')} -{v:.1f}" for c, v in zip(FACTOR_COLS, ded)), flush=True)
+        # PERSIST so build_final_hp.py applies exactly this, measured, logic to all 38.7M legs.
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.confidence_model (
+                factor text PRIMARY KEY, deduction numeric, separation numeric,
+                base numeric, floor numeric, built_at timestamptz DEFAULT now())""")
+            cur.execute("DELETE FROM nba_score.confidence_model")
+            cur.executemany("""INSERT INTO nba_score.confidence_model
+                (factor, deduction, separation, base, floor) VALUES (%s,%s,%s,%s,%s)""",
+                [(c, round(float(v), 4), round(float(sep[c]), 6), 99.0, 55.0)
+                 for c, v in zip(FACTOR_COLS, ded)])
+        conn.commit()
+        print(f"  persisted {len(FACTOR_COLS)} deductions to nba_score.confidence_model", flush=True)
         F = d[FACTOR_COLS].values
         lost = ((1.0 - F) * ded).sum(axis=1)
         d["confidence"] = np.clip(99.0 - lost, 55.0, 99.5) / 100.0
