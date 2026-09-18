@@ -223,10 +223,8 @@ def main():
         return
     print(f"graded legs: {len(d):,}\n", flush=True)
 
-    # ---- DATA family ------------------------------------------------------------------------------
-    f1_complete = (d["anchor"].notna().astype(float) * 0.4
-                   + d["proj_min"].notna().astype(float) * 0.3
-                   + d["rate36"].notna().astype(float) * 0.3)
+    # the same eleven factors used per prop inside the loop, now over the whole frame
+    d["confidence"] = confidence_of(d)
     # provenance: an EMPIRICAL cell is main-source evidence; the parametric shape is a derived fallback
     f2_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3
     # timeliness: availability resolved at the cutoff, or still open
