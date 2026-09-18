@@ -264,37 +264,53 @@ def main():
         raw = np.where(raw > 0, raw, 0.0)
         fitted = raw / raw.sum() if raw.sum() > 0 else np.full(len(FACTOR_COLS), 1.0 / len(FACTOR_COLS))
         print("  fitted weights:", ", ".join(f"{c} {v:.3f}" for c, v in zip(FACTOR_COLS, fitted)), flush=True)
-        # ---- DEDUCTION MODEL -----------------------------------------------------------------------
-        # Confidence starts at 100 and loses points for SPECIFIC, NAMED deficiencies. Not a rank spread
-        # (that forces a distribution, the same error as quartile tiers) and not a weighted average of
-        # things that are all near 1. A leg with every component present, main-source, market-backed and
-        # a steady player scores ~100. Missing market backing costs points. A derived rather than
-        # empirical cell costs points. An oscillating player costs points. A tail rung costs points.
+        # ---- DEDUCTION MODEL, ANCHORED ON MEASURED ASSERTIVENESS ------------------------------------
+        # The regression alone COLLAPSED: targeting -log(gap) across cells whose gaps are all tiny
+        # (0.0004 to 0.028) leaves almost no variance to fit, so the coefficients came out near-uniform
+        # and EVERY group scored 90.8 - fringe players (gap 0.0283) identical to iron-men (0.0008).
+        # A thermometer that reads the same everywhere measures nothing.
         #
-        # THE SIZE of each deduction is MEASURED, not chosen: it is the fitted coefficient rescaled so
-        # the worst realistic combination lands near 70 and a perfect leg at ~99. That keeps the number
-        # interpretable - "this leg is 87 because the market does not price this rung and the player
-        # swings" - instead of an opaque score.
-        DEDUCT_BUDGET = 30.0                      # worst case loses ~30 points, so the floor is ~70
-        ded = fitted / fitted.sum() * DEDUCT_BUDGET
-        print("  deductions at full deficiency (points off 100):",
+        # The fix is to anchor on the thing we actually want to predict. Each factor's deduction is set
+        # by how much realised gap SEPARATES its high-value legs from its low-value legs:
+        #     separation(factor) = mean|gap| where the factor is LOW  -  mean|gap| where it is HIGH
+        # A factor that genuinely marks unreliable legs earns a large deduction; one that separates
+        # nothing earns none. That is measured discrimination, not a regression on a flat target.
+        sep = {}
+        for c in FACTOR_COLS:
+            v = d[c].astype(float)
+            hi_m = d[v >= v.quantile(0.70)]
+            lo_m = d[v <= v.quantile(0.30)]
+            if len(hi_m) < 5000 or len(lo_m) < 5000:
+                sep[c] = 0.0
+                continue
+            g_hi = abs(float(hi_m["won"].mean()) - float(hi_m["final_hp"].mean()))
+            g_lo = abs(float(lo_m["won"].mean()) - float(lo_m["final_hp"].mean()))
+            sep[c] = max(g_lo - g_hi, 0.0)          # positive only: low factor => worse gap
+        tot = sum(sep.values())
+        print("  measured separation per factor (|gap| low minus high):",
+              ", ".join(f"{c.replace('f_','')} {v:+.4f}" for c, v in sep.items()), flush=True)
+        if tot <= 0:
+            print("  NO factor separates - confidence cannot be calibrated from these; leaving flat", flush=True)
+            ded = np.full(len(FACTOR_COLS), 0.0)
+        else:
+            DEDUCT_BUDGET = 29.0                    # worst realistic combination lands near 70
+            ded = np.array([sep[c] / tot for c in FACTOR_COLS]) * DEDUCT_BUDGET
+        print("  deductions at full deficiency (points off 99):",
               ", ".join(f"{c.replace('f_','')} -{v:.1f}" for c, v in zip(FACTOR_COLS, ded)), flush=True)
         F = d[FACTOR_COLS].values
-        lost = ((1.0 - F) * ded).sum(axis=1)      # each factor is 0-1; 1 = no deficiency
+        lost = ((1.0 - F) * ded).sum(axis=1)
         d["confidence"] = np.clip(99.0 - lost, 55.0, 99.5) / 100.0
         print(f"  confidence: p05 {d['confidence'].quantile(.05)*100:.1f}  "
               f"p25 {d['confidence'].quantile(.25)*100:.1f}  p50 {d['confidence'].quantile(.50)*100:.1f}  "
-              f"p75 {d['confidence'].quantile(.75)*100:.1f}  p95 {d['confidence'].quantile(.95)*100:.1f}",
-              flush=True)
-        m["conf_fit"] = 99.0 - ((1.0 - m[FACTOR_COLS].values) * ded).sum(axis=1)
-        r = float(np.corrcoef(m["conf_fit"], -np.log(np.clip(m["gap"], 1e-4, 0.2)))[0, 1])
-        print(f"  correlation between confidence and cell assertiveness: {r:+.4f}", flush=True)
-        for lo, hi, lab in ((0.0, 0.25, "lowest quartile"), (0.75, 1.0, "highest quartile")):
-            # 1.0 not 1.01 - .quantile() requires [0,1]; 1.01 is only valid as a pd.cut bin edge
-            q = m[(m["conf_fit"] >= m["conf_fit"].quantile(lo)) & (m["conf_fit"] <= m["conf_fit"].quantile(hi))]
-            if len(q):
-                print(f"    {lab:<18}cells {len(q):>4}  mean confidence {float(q['conf_fit'].mean()):.1f}  "
-                      f"mean |gap| {float(q['gap'].mean()):.4f}", flush=True)
+              f"p75 {d['confidence'].quantile(.75)*100:.1f}  p95 {d['confidence'].quantile(.95)*100:.1f}  "
+              f"spread {(d['confidence'].quantile(.95)-d['confidence'].quantile(.05))*100:.1f} pts", flush=True)
+        # DOES IT DISCRIMINATE? bucket legs by confidence and compare realised gaps
+        print("  verification - realised |gap| by confidence decile:", flush=True)
+        dq = d.assign(cb=pd.qcut(d["confidence"].rank(method="first"), 5,
+                                 labels=["lowest", "low", "mid", "high", "highest"]))
+        for k, g in dq.groupby("cb", observed=True):
+            print(f"    {str(k):<9}n={len(g):>8,}  conf {float(g['confidence'].mean())*100:5.1f}  "
+                  f"|gap| {abs(float(g['won'].mean())-float(g['final_hp'].mean())):.4f}", flush=True)
 
     print("CONFIDENCE DISTRIBUTION (absolute - high by design, because the data is good)")
     for q in (0.01, 0.10, 0.25, 0.50, 0.75, 0.90, 0.99):
