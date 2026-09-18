@@ -270,7 +270,22 @@ def main():
             # plan), even though conformal confidence no longer weights it directly - the groups absorb
             # it through their realised residuals.
             unc = np.array([scen_by_game.get(str(g), (0, 1.0))[0] for g in d["game_id"]], dtype=float)
-            d["confidence"] = np.clip(0.85 * conf + 0.15 * c_market - 0.05 * (pen > 0), 0.02, 1.0)
+            # CONFIDENCE RESOLUTION. Measured on 1.7M legs: only 95 DISTINCT confidence values, because
+            # the conformal score is GROUP-level (362 combinations collapsing to 95 values) and c_market
+            # adds just 5 levels. ~18,000 legs share each value, so no quantile scheme can produce
+            # balanced tiers - the cut always lands inside a tie. Four attempts at re-binning failed for
+            # this reason; the defect was resolution, not the cutpoints.
+            # So confidence now carries CONTINUOUS per-leg terms alongside the group score:
+            #   depth   - how much evidence stands behind this leg's group (log-scaled)
+            #   extremity - distance from 0.50: a leg at 0.85 is inherently easier to be right about
+            #               than one at 0.51, and that varies continuously per leg
+            #   market  - book count at this exact rung (kept; it measured +0.0015)
+            grp_n = np.array([conf_n(prop, bd, sd, ph)
+                              for bd, sd, ph in zip(d["band"], d["side"], d["phase"])], dtype=float)
+            depth = np.clip(np.log1p(grp_n) / np.log1p(50000.0), 0, 1)
+            extremity = np.clip(np.abs(d["final_hp"].values - 0.5) / 0.5, 0, 1)
+            d["confidence"] = np.clip(0.55 * conf + 0.15 * c_market + 0.15 * depth
+                                      + 0.15 * extremity - 0.05 * (pen > 0), 0.02, 1.0)
             d["c_exist"] = has_components
             d["c_quality"] = np.clip(conf, 0, 1)
             d["c_market"] = c_market
