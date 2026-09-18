@@ -289,7 +289,8 @@ def main():
         m["conf_fit"] = 99.0 - ((1.0 - m[FACTOR_COLS].values) * ded).sum(axis=1)
         r = float(np.corrcoef(m["conf_fit"], -np.log(np.clip(m["gap"], 1e-4, 0.2)))[0, 1])
         print(f"  correlation between confidence and cell assertiveness: {r:+.4f}", flush=True)
-        for lo, hi, lab in ((0, .25, "lowest quartile"), (.75, 1.01, "highest quartile")):
+        for lo, hi, lab in ((0.0, 0.25, "lowest quartile"), (0.75, 1.0, "highest quartile")):
+            # 1.0 not 1.01 - .quantile() requires [0,1]; 1.01 is only valid as a pd.cut bin edge
             q = m[(m["conf_fit"] >= m["conf_fit"].quantile(lo)) & (m["conf_fit"] <= m["conf_fit"].quantile(hi))]
             if len(q):
                 print(f"    {lab:<18}cells {len(q):>4}  mean confidence {float(q['conf_fit'].mean()):.1f}  "
