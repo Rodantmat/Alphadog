@@ -166,6 +166,33 @@ def main():
                 or CONF_MID.get((prop, band, side))
                 or CONF_COARSE.get((band, side)) or CONF_GLOBAL)
 
+    # TIER CUTPOINTS ARE DERIVED IN-RUN, NEVER PASTED. COMPASS fact 6 names "tier cutpoints" explicitly
+    # among the values that must be computed from history as of the day. The first version used fixed
+    # cuts (0.35/0.55/0.75) against a confidence distribution that actually spans ~0.52-0.61, which left
+    # the LOW tier EMPTY and ELITE at 0.04% of legs - the exact failure the calibration literature warns
+    # about: fixed-width bins leave bins empty and "have higher bias than equal-mass binning".
+    # So: EQUAL-MASS quartiles of the group-confidence distribution, weighted by each group's n.
+    if not cc.empty:
+        gvals, gw = [], []
+        for r in cc.itertuples(index=False):
+            if r.level == "global":
+                continue
+            c = 1.0 - (float(r.s_norm) - CONF_LO) / max(CONF_HI - CONF_LO, 1e-9)
+            gvals.append(min(max(c, 0.0), 1.0)); gw.append(float(r.n))
+        if gvals:
+            order = np.argsort(gvals)
+            v = np.asarray(gvals)[order]; w = np.asarray(gw)[order]
+            cw = np.cumsum(w) / w.sum()
+            CUTS = [float(v[np.searchsorted(cw, q)]) for q in (0.25, 0.50, 0.75)]
+        else:
+            CUTS = [0.35, 0.55, 0.75]
+    else:
+        CUTS = [0.35, 0.55, 0.75]
+    CUTS = sorted(set(CUTS))
+    while len(CUTS) < 3:                      # degenerate distribution - keep four usable edges
+        CUTS.append(min(1.0, CUTS[-1] + 0.01))
+    print(f"tier cutpoints derived in-run (equal mass): {[round(c, 4) for c in CUTS]}", flush=True)
+
     if write:
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.final_hp (
