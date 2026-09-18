@@ -41,6 +41,39 @@ import pandas as pd
 import psycopg
 
 
+def confidence_of(d):
+    """The eleven epistemic factors. ABSOLUTE - no quantiles, no ranking against other legs.
+
+    Measures how well OUR DATA supports this leg's hit probability, never how random the outcome is.
+    The aleatoric part (a 0.50 leg is a coin flip) is ALREADY stated by the HP itself; encoding it here
+    would double-count it, which is what broke every earlier version."""
+    role_rank = {"IRON_MAN": 1.0, "HIGH_USAGE_STARTER": 0.97, "STARTER": 0.93,
+                 "ROTATION": 0.85, "BENCH": 0.70, "FRINGE": 0.50}
+    # DATA family
+    f_complete = (d["anchor"].notna().astype(float) * 0.4
+                  + d["proj_min"].notna().astype(float) * 0.3
+                  + d["rate36"].notna().astype(float) * 0.3)
+    f_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3      # empirical cell vs fallback
+    f_time = np.where(d["n_uncertain"].fillna(0) > 0, 0.65, 1.0)        # availability resolved?
+    f_depth = np.clip(1.0 - np.abs(d["ladder_offset"].fillna(0)) / 14.0, 0.25, 1.0)   # OOD: rung distance
+    # SUBJECT family
+    f_role = d["role_tier"].map(role_rank).fillna(0.75).astype(float)
+    pv = d.groupby("player_id")["won"].agg(["size", "mean"])
+    volmap = np.sqrt(pv["mean"] * (1 - pv["mean"])).to_dict()
+    nmap = pv["size"].to_dict()
+    f_vol = 1.0 - np.clip(d["player_id"].map(volmap).fillna(0.5).astype(float), 0, 0.5) * 0.6
+    f_exp = np.clip(np.log1p(d["player_id"].map(nmap).fillna(20).astype(float)) / np.log1p(800.0), 0.3, 1.0)
+    # MARKET family
+    f_books = np.clip(d["books"].fillna(0).astype(float) / 4.0, 0, 1)
+    agree = 1.0 - np.clip((d["p_over_book"].astype(float) - d["final_hp"].astype(float)).abs().fillna(0.25) / 0.30, 0, 1)
+    f_agree = np.where(d["p_over_book"].notna(), agree, 0.55)
+    raw = (0.16 * f_complete + 0.12 * f_prov + 0.10 * f_time + 0.14 * f_depth
+           + 0.10 * f_vol + 0.08 * f_exp + 0.12 * f_role + 0.08 * f_books + 0.10 * f_agree)
+    # a fully-supported leg reads ~0.97, a data-starved one ~0.45 - NEVER the meaningless 20-40% band,
+    # because the core factors are always present
+    return pd.Series(np.clip(0.45 + 0.55 * raw, 0.35, 0.99), index=d.index)
+
+
 def main():
     seasons = [s.strip() for s in os.environ.get("C3_SEASONS", "2024-25,2025-26").split(",")]
     conn = psycopg.connect(os.environ["DATABASE_URL"])
