@@ -293,17 +293,39 @@ def main():
             s_exp = np.array([conf_group(prop, bd, sd, ph)
                               for bd, sd, ph in zip(d["band"], d["side"], d["phase"])])
             conf = 1.0 - (s_exp - CONF_LO) / max(CONF_HI - CONF_LO, 1e-9)
-            # market backing is the one hand-built pillar that MEASURED positive (+0.0015), so it is
-            # kept as a small modifier rather than discarded
             rung_key = list(zip(d["game_date"].astype(str), d["player_id"].astype(str),
                                 [prop] * len(d), d["line"].astype(float)))
             nbooks = np.array([mkt_rung.get(k, 0) for k in rung_key], dtype=float)
             c_market = np.clip(nbooks / 4.0, 0, 1)
             has_components = d["anchor"].notna().values.astype(float)
-            # scenario uncertainty is still CARRIED on the row (it is useful downstream and in the diet
-            # plan), even though conformal confidence no longer weights it directly - the groups absorb
-            # it through their realised residuals.
             unc = np.array([scen_by_game.get(str(g), (0, 1.0))[0] for g in d["game_id"]], dtype=float)
+            # ---- v3 DATA THERMOMETER, applied when the measured model exists -------------------------
+            # Starts at 99 and loses points for NAMED deficiencies, with deduction sizes MEASURED from
+            # realised |gap| separation across 2.23M graded legs (nba_score.confidence_model) rather than
+            # assigned. EPISTEMIC ONLY: it never encodes the event's own randomness, which the HP already
+            # states - a 0.50 probability IS "this is a coin flip". The conformal version it replaces
+            # scored |won-hp|/sqrt(p(1-p)) and so was dominated by aleatoric noise, marking a coin-flip
+            # leg with perfect data as unreliable.
+            if CONF_DEDUCT:
+                fmap = {
+                    "f_complete": has_components * 0.4 + 0.6,
+                    "f_prov": np.full(len(d), 0.65),
+                    "f_time": np.where(unc > 0, 0.65, 1.0),
+                    "f_depth": np.clip(1.0 - np.abs(d["ladder_offset"].fillna(0).values) / 14.0, 0.25, 1.0),
+                    "f_role": np.full(len(d), 0.85),
+                    "f_vol": np.full(len(d), 0.75),
+                    "f_exp": np.full(len(d), 0.75),
+                    "f_books": c_market,
+                    "f_agree": np.full(len(d), 0.55),
+                }
+                lost = np.zeros(len(d))
+                for fname, dedv in CONF_DEDUCT.items():
+                    if fname in fmap:
+                        lost = lost + (1.0 - np.clip(fmap[fname], 0, 1)) * dedv
+                conf_v3 = np.clip(CONF_BASE - lost - 2.0 * (PENALIZED.get(prop, 0.0) > 0),
+                                  CONF_FLOOR, 99.5) / 100.0
+            else:
+                conf_v3 = None
             # CONFIDENCE RESOLUTION. Measured on 1.7M legs: only 95 DISTINCT confidence values, because
             # the conformal score is GROUP-level (362 combinations collapsing to 95 values) and c_market
             # adds just 5 levels. ~18,000 legs share each value, so no quantile scheme can produce
