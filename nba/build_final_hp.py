@@ -147,20 +147,24 @@ def main():
     CONF_N_FULL, CONF_N_MID, CONF_N_COARSE = {}, {}, {}
     CONF_GLOBAL, CONF_LO, CONF_HI, CONF_N_GLOBAL = 0.85, 0.60, 1.00, 1000.0
     if not cc.empty:
-        for r in cc.itertuples(index=False):
-            if r.level == "full":
-                CONF_FULL[(r.prop, r.band, r.side, r.phase)] = float(r.s_norm)
-                CONF_N_FULL[(r.prop, r.band, r.side, r.phase)] = float(r._6)
-            elif r.level == "mid":
-                CONF_MID[(r.prop, r.band, r.side)] = float(r.s_norm)
-                CONF_N_MID[(r.prop, r.band, r.side)] = float(r._6)
-            elif r.level == "coarse":
-                CONF_COARSE[(r.band, r.side)] = float(r.s_norm)
-                CONF_N_COARSE[(r.band, r.side)] = float(r._6)
+        # Explicit column zip - `n` is not reachable as r.n (namedtuple collision) and positional
+        # access (r._6) is a guess that broke the moment the SELECT changed. Name the columns.
+        for lvl, pr, bd, sd, ph, n_obs, s_norm, lo_s, hi_s in zip(
+                cc["level"], cc["prop"], cc["band"], cc["side"], cc["phase"],
+                cc["n"], cc["s_norm"], cc["lo_scale"], cc["hi_scale"]):
+            if lvl == "full":
+                CONF_FULL[(pr, bd, sd, ph)] = float(s_norm)
+                CONF_N_FULL[(pr, bd, sd, ph)] = float(n_obs)
+            elif lvl == "mid":
+                CONF_MID[(pr, bd, sd)] = float(s_norm)
+                CONF_N_MID[(pr, bd, sd)] = float(n_obs)
+            elif lvl == "coarse":
+                CONF_COARSE[(bd, sd)] = float(s_norm)
+                CONF_N_COARSE[(bd, sd)] = float(n_obs)
             else:
-                CONF_GLOBAL = float(r.s_norm)
-                CONF_N_GLOBAL = float(r._6)
-            CONF_LO, CONF_HI = float(r.lo_scale), float(r.hi_scale)
+                CONF_GLOBAL = float(s_norm)
+                CONF_N_GLOBAL = float(n_obs)
+            CONF_LO, CONF_HI = float(lo_s), float(hi_s)
         print(f"conformal confidence: {len(CONF_FULL):,} full / {len(CONF_MID):,} mid / "
               f"{len(CONF_COARSE):,} coarse groups, scale {CONF_LO:.3f}-{CONF_HI:.3f}", flush=True)
     else:
