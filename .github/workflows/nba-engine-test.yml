@@ -53,6 +53,13 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Confidence v3 (epistemic thermometer + group sampling)
+        if: ${{ github.event.inputs.task == 'confidence_v3' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          C3_SEASONS: "2024-25,2025-26"
+        run: python nba/build_confidence_v3.py
+
       - name: Confidence v2 (data thermometer)
         if: ${{ github.event.inputs.task == 'confidence_v2' }}
         env:
