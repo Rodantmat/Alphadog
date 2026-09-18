@@ -41,12 +41,18 @@ import pandas as pd
 import psycopg
 
 
-def confidence_of(d):
-    """The eleven epistemic factors. ABSOLUTE - no quantiles, no ranking against other legs.
+FACTOR_COLS = ["f_complete", "f_prov", "f_time", "f_depth", "f_role", "f_vol", "f_exp",
+               "f_books", "f_agree"]
+
+
+def confidence_of(d, attach=False):
+    """The epistemic factors. ABSOLUTE - no quantiles, no ranking against other legs.
 
     Measures how well OUR DATA supports this leg's hit probability, never how random the outcome is.
     The aleatoric part (a 0.50 leg is a coin flip) is ALREADY stated by the HP itself; encoding it here
-    would double-count it, which is what broke every earlier version."""
+    would double-count it, which is what broke every earlier version.
+    With attach=True the individual factor columns are written onto the frame so the weights can be
+    FITTED against measured assertiveness rather than assigned by hand."""
     role_rank = {"IRON_MAN": 1.0, "HIGH_USAGE_STARTER": 0.97, "STARTER": 0.93,
                  "ROTATION": 0.85, "BENCH": 0.70, "FRINGE": 0.50}
     # DATA family
