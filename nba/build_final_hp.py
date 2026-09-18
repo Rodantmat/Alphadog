@@ -174,11 +174,13 @@ def main():
     # So: EQUAL-MASS quartiles of the group-confidence distribution, weighted by each group's n.
     if not cc.empty:
         gvals, gw = [], []
-        for r in cc.itertuples(index=False):
-            if r.level == "global":
+        # `n` is not addressable via itertuples - it collides with the namedtuple's own field naming
+        # ("AttributeError: 'Pandas' object has no attribute 'n'"). Use the column directly.
+        for lvl, s_norm, n_obs in zip(cc["level"], cc["s_norm"], cc["n"]):
+            if lvl == "global":
                 continue
-            c = 1.0 - (float(r.s_norm) - CONF_LO) / max(CONF_HI - CONF_LO, 1e-9)
-            gvals.append(min(max(c, 0.0), 1.0)); gw.append(float(r.n))
+            c = 1.0 - (float(s_norm) - CONF_LO) / max(CONF_HI - CONF_LO, 1e-9)
+            gvals.append(min(max(c, 0.0), 1.0)); gw.append(float(n_obs))
         if gvals:
             order = np.argsort(gvals)
             v = np.asarray(gvals)[order]; w = np.asarray(gw)[order]
