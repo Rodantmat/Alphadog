@@ -237,6 +237,10 @@ def main():
             nbooks = np.array([mkt_rung.get(k, 0) for k in rung_key], dtype=float)
             c_market = np.clip(nbooks / 4.0, 0, 1)
             has_components = d["anchor"].notna().values.astype(float)
+            # scenario uncertainty is still CARRIED on the row (it is useful downstream and in the diet
+            # plan), even though conformal confidence no longer weights it directly - the groups absorb
+            # it through their realised residuals.
+            unc = np.array([scen_by_game.get(str(g), (0, 1.0))[0] for g in d["game_id"]], dtype=float)
             d["confidence"] = np.clip(0.85 * conf + 0.15 * c_market - 0.05 * (pen > 0), 0.02, 1.0)
             d["c_exist"] = has_components
             d["c_quality"] = np.clip(conf, 0, 1)
