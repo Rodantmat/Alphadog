@@ -119,31 +119,50 @@ def main():
         cur.execute("SELECT count(*) FROM tmp_graded")
         print(f"  graded legs materialised: {cur.fetchone()[0]:,}", flush=True)
 
-    d = pd.read_sql("""
-        WITH rm AS (
-            SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line,
-                   max(books) AS books, avg(p_over_book) AS p_over_book
-            FROM nba_market.rung_market GROUP BY 1,2,3
-        ),
-        bt AS (
-            SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line, side,
-                   min(kind) AS kind, min(tier) AS tier
-            FROM nba_market.board_tiers WHERE snapshot_label='window' GROUP BY 1,2,3,4
-        )
-        SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.final_hp, f.anchor,
-               f.n_uncertain, f.ladder_offset, f.player_id,
-               b.proj_min, b.rate36, b.used_emp, b.role_tier,
-               rm.books, rm.p_over_book, bt.kind, bt.tier, g.won
-        FROM tmp_graded g
-        JOIN nba_score.final_hp f
-          ON f.game_date=g.game_date AND f.player_id=g.player_id AND f.prop=g.prop
-         AND f.line=g.line AND f.side=g.side
-        LEFT JOIN nba_score.baseline_history b
-          ON b.game_date=g.game_date AND b.player_id=g.player_id AND b.prop=g.prop AND b.line=g.line
-        LEFT JOIN rm ON rm.game_date=g.game_date AND rm.nm=g.nm AND rm.line=g.line
-        LEFT JOIN bt ON bt.game_date=g.game_date AND bt.nm=g.nm AND bt.line=g.line AND bt.side=g.side
-        WHERE f.season = ANY(%s)
-        """, conn, params=(seasons,))
+    # LOOP PER PROP. EXPLAIN settled where the cost actually is: for ONE prop the plan is healthy -
+    # Index Scan on final_hp, Index Only Scan on baseline_history_lookup_idx, cost 1.18M with an
+    # 841k-row incremental sort. Run all 30 props in a single query and that sort becomes ~19.6M rows in
+    # one merge join, which is what stalled three attempts. The market CTEs are cheap (56k, using
+    # rung_market_nm_idx) and baseline_history is cheap per prop - the killer was doing it all at once.
+    # build_final_hp.py already loops per prop for the same reason.
+    props = [r[0] for r in conn.execute(
+        "SELECT DISTINCT prop FROM nba_score.final_hp WHERE season = ANY(%s) ORDER BY 1",
+        (seasons,)).fetchall()]
+    print(f"sampling {len(props)} props one at a time", flush=True)
+    frames = []
+    for prop in props:
+        part = pd.read_sql("""
+            WITH rm AS (
+                SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line,
+                       max(books) AS books, avg(p_over_book) AS p_over_book
+                FROM nba_market.rung_market GROUP BY 1,2,3
+            ),
+            bt AS (
+                SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line, side,
+                       min(kind) AS kind, min(tier) AS tier
+                FROM nba_market.board_tiers WHERE snapshot_label='window' GROUP BY 1,2,3,4
+            )
+            SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.final_hp, f.anchor,
+                   f.n_uncertain, f.ladder_offset, f.player_id,
+                   b.proj_min, b.rate36, b.used_emp, b.role_tier,
+                   rm.books, rm.p_over_book, bt.kind, bt.tier, g.won
+            FROM tmp_graded g
+            JOIN nba_score.final_hp f
+              ON f.game_date=g.game_date AND f.player_id=g.player_id AND f.prop=g.prop
+             AND f.line=g.line AND f.side=g.side
+            LEFT JOIN nba_score.baseline_history b
+              ON b.game_date=g.game_date AND b.player_id=g.player_id AND b.prop=g.prop AND b.line=g.line
+            LEFT JOIN rm ON rm.game_date=g.game_date AND rm.nm=g.nm AND rm.line=g.line
+            LEFT JOIN bt ON bt.game_date=g.game_date AND bt.nm=g.nm AND bt.line=g.line AND bt.side=g.side
+            WHERE f.season = ANY(%s) AND f.prop = %s AND g.prop = %s
+            """, conn, params=(seasons, prop, prop))
+        if not part.empty:
+            frames.append(part)
+            print(f"  {prop:<18}{len(part):>9,} graded legs", flush=True)
+    if not frames:
+        print("no graded legs matched")
+        return
+    d = pd.concat(frames, ignore_index=True)
     if d.empty:
         print("no graded legs")
         return
