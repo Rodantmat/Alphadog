@@ -1,4 +1,1 @@
-Trigger for nba-probe.yml
-script: probe_underdog4.py
-last_triggered_utc: 2026-09-10T04:15:00Z
-trigger_reason: Underdog pre-game board variants (proxy-only, spaced)
+probe_pp_multipliers.py
