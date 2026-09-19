@@ -40,9 +40,18 @@ def main():
             cur.execute(f"SELECT count(*) FROM {t}")
             b_rows = cur.fetchone()[0]
         started = time.time()
+        # PLAIN VACUUM, not FULL. VACUUM FULL rewrites the table and therefore needs FREE DISK EQUAL TO
+        # THE TABLE SIZE - on final_hp (13 GB) that is exactly the space we do not have, and the attempt
+        # ran 15 minutes before the server terminated the connection. Plain VACUUM needs no copy: it
+        # marks dead tuples reusable so the next rewrite REUSES that space instead of growing the file.
+        # It does not hand space back to the OS, but it stops the growth, which is the real problem -
+        # final_hp went 11 GB -> 13 GB purely through repeated per-prop replications.
+        # NOTHING is deleted either way; the row-count guard below proves it.
+        mode = os.environ.get("DIET_MODE", "plain").lower()
+        stmt = f"VACUUM (FULL, ANALYZE) {t}" if mode == "full" else f"VACUUM (ANALYZE) {t}"
         try:
             with conn.cursor() as cur:
-                cur.execute(f"VACUUM (FULL, ANALYZE) {t}")
+                cur.execute(stmt)
         except Exception as exc:  # noqa: BLE001
             print(f"{t:<34}  SKIPPED ({str(exc)[:70]})", flush=True)
             continue
