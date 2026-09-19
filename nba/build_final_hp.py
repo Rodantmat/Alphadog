@@ -380,6 +380,10 @@ def main():
             # 0-100 scale. Edge over break-even still matters for slip selection, but it belongs beside
             # the score, not as the score.
             d["score"] = np.round(d["final_hp"].values * d["confidence"].values * 100.0, 2)
+            # EDGE kept alongside as its own column - how far the HP clears what the board requires.
+            # It drives slip SELECTION (a 64% leg where the board needs 57% is an opportunity; a 92% leg
+            # everyone prices at 92% is not), while SCORE answers "how good is this leg".
+            d["edge"] = np.round((d["final_hp"].values - BREAKEVEN["standard"]) * 100.0, 2)
             d["prop_tier"] = "penalized" if pen > 0 else "certified"
             d["n_uncertain"] = unc.astype(int)
             d["season"] = season
