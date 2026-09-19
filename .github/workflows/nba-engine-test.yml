@@ -53,6 +53,14 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Certify a pipeline (p1 / p2 / p3)
+        if: ${{ github.event.inputs.task == 'certify' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PIPE: ${{ github.event.inputs.props }}
+          CERT_STRICT: '0'
+        run: python nba/certify_pipeline.py
+
       - name: Report cutoff measurement (is 1 PM PT enough?)
         if: ${{ github.event.inputs.task == 'cutoff' }}
         env:
