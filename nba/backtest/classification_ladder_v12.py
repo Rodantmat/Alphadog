@@ -560,7 +560,8 @@ for prop, cfg in PROPS.items():
             pu = np.where(un, stats.norm.cdf(line_, fr["proj_mean"], np.sqrt(fr["proj_var"])), [nb_cdf(kk, m, v) for kk, m, v in zip(k_, fr["proj_mean"], fr["proj_var"])])
         return 1 - pu
     if prop in SHIFT_MODE_PROPS:
-        for off in range(-LADDER_STEPS, LADDER_STEPS + 1): d[f"pp_{off}"] = param_p_over(d, off)
+        _depth = ladder_depth(prop)
+        for off in range(-_depth, _depth + 1): d[f"pp_{off}"] = param_p_over(d, off)
     test_all = d[d["season"].isin(TEST)]
     emp_hits = 0
     for month, test in test_all.groupby("ym_dt"):   # walk-forward monthly rebuild
