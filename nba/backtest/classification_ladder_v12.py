@@ -64,6 +64,33 @@ SHIFT_LAMBDA = {p: float(v) for p, v in (kv.split(":") for kv in os.environ.get(
 SLUG = {s: s.replace("-", "_") for s in SEASONS}
 BLOWOUT_MARGIN = 20; COMPETITIVE_MARGIN = 15
 MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6
+# PER-PROP LADDER DEPTH (2026-09-19). A single fixed depth is wrong in BOTH directions, measured against
+# what the books actually offer on a real slate (2026-01-15, 60k+ board legs joined to our anchors):
+#     prop      anchor   p95 |line-anchor|   max     fixed +/-10
+#     points     15.9          13.0          32.0    SHORT by 3
+#     rebounds    5.7           5.0          11.0    wasteful (2x)
+#     assists     4.3           4.0          10.0    wasteful
+#     steals      1.1           1.0           1.0    wasteful (10x)
+#     blocks      0.8           1.0           1.0    wasteful (10x)
+# The pattern is PROPORTIONAL: books ladder out to roughly 85-90% of the anchor, consistently across
+# props. So depth is set per prop from its own anchor scale rather than by one number - which EXTENDS
+# points (where we were short and every deep rung was being interpolated) while CUTTING the low-count
+# props (where we were generating rungs at negative stat values that no book will ever offer).
+# Net effect on build size is roughly neutral; net effect on BOARD COVERAGE is what matters.
+LADDER_DEPTH = {
+    "points": 14, "pra": 16, "pts_reb": 15, "pts_ast": 14, "fantasy_score": 16,
+    "rebounds": 6, "assists": 5, "reb_ast": 7, "fga": 10, "fgm": 6, "fg3a": 6,
+    "threes_made": 4, "ftm": 5, "fta": 5, "dreb": 5, "oreb": 3,
+    "steals": 2, "blocks": 2, "turnovers": 3, "personal_fouls": 3,
+}
+
+
+def ladder_depth(prop):
+    """rungs each side of the anchor for this prop; env override wins, else the measured table"""
+    env = os.environ.get("BT_LADDER_STEPS")
+    if env:
+        return int(env)
+    return LADDER_DEPTH.get(prop, 10)
 PROPS = {
     "points":      {"col": "PTS",  "alpha": 0.12, "k_stab": 25, "step": 1.0, "family": "auto"},
     "rebounds":    {"col": "REB",  "alpha": 0.08, "k_stab": 40, "step": 1.0, "family": "negbin"},
