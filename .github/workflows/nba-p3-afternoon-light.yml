@@ -92,8 +92,19 @@ jobs:
           python nba/scrape_nba_lineups.py
           python nba/scrape_referee_assignments.py
 
-      # 2) THE BOARD: what is actually offered today, across every app
-      - name: Board scrapers
+      # 2) THE BOARD: what is actually offered today, across every app.
+      # PrizePicks FIRST - it is the app the owner actually plays, and its producer lives at the repo
+      # root (main.py, league_id 7 for NBA) rather than in nba/. Leaving it out would score against a
+      # board that does not include the primary book.
+      - name: PrizePicks board
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PP_LEAGUE_ID: "7"
+          PP_SPORT: "nba"
+        run: python main.py
+
+      - name: Other board scrapers
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
@@ -108,6 +119,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/archive_live_boards.py
+
+      # Classify every board leg as standard / goblin / demon with its tier and anchor. The score and
+      # the slip engine both need this - a rung's break-even depends on which variation it is.
+      - name: Board tiers (goblin / standard / demon)
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/maintenance_shrink_board_index.py
 
       # 3) THE MARKET at the window - de-vigged book probability per rung
       - name: Market snapshot and rung market
