@@ -170,7 +170,9 @@ jobs:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           BT_ASOF: ${{ steps.d.outputs.asof }}
           BT_CUTOFF: "baseline"
-          BT_LADDER_STEPS: "10"
+          # NO BT_LADDER_STEPS - setting it would override the measured PER-PROP depth table in
+          # classification_ladder_v12.py (LADDER_DEPTH). Points needs 14 rungs, steals needs 2; one
+          # number cannot be right for both. Set it only to force a uniform depth for a diagnostic.
           BT_INJURY: "1"
           BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
         run: |
