@@ -631,7 +631,7 @@ for prop, cfg in PROPS.items():
             rel = pd.DataFrame({"prop": prop, "offset": off, "p_over": p_over, "p_param": p_param, "actual": actual_over, "anchor": test["anchor"].values, "line": line.values, "PLAYER_ID": test["PLAYER_ID"].values, "GAME_ID": test["GAME_ID"].values, "season": test["season"].values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": ~np.isnan(p_emp), "month": str(month)})
             reliab.append(rel)
     test = test_all
-    print(f"{prop}: empirical cell coverage {emp_hits / (len(test) * (2 * LADDER_STEPS + 1)):.1%} of test predictions, {len(emp)} cells")
+    print(f"{prop}: empirical cell coverage {emp_hits / (len(test) * (2 * _depth + 1)):.1%} of test predictions, {len(emp)} cells, depth +/-{_depth}")
 rel = pd.concat(reliab, ignore_index=True)
 rel.to_pickle(OUT / "_rel_stage1.pkl")
 
