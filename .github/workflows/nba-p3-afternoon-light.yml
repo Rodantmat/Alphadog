@@ -152,24 +152,34 @@ jobs:
             done
           fi
 
-      # 4) THE FINAL NUMBER: the day-of report changes availability, which changes projected minutes,
-      # which changes the projection - so the baseline for today's slate is REBUILT with the day-of
-      # information before the final engine runs. This is the "rescore only the legs the report
-      # touches" step; without it P3 would score last night's availability picture.
-      - name: Rebuild today's baseline with the day-of report
+      # 4) THE FINAL NUMBER. The day-of report changes availability -> projected minutes -> the
+      # projection, so today's baseline is REBUILT reading the report at the PHASE1 cutoff before the
+      # final engine runs. Without this, P3 would score last night's availability picture and the whole
+      # point of the 1:15 PM cutoff is lost.
+      # BT_CUTOFF="phase1" is nba_asof.py's 16:00 ET = 1:00 PM PT - the moment every club has filed
+      # (11am-1pm LOCAL, Pacific clubs last). NOT "phase2" (17:45 ET = 2:45 PM PT), which only chased
+      # the league's 5:30 PM ET republication - see COMPASS fact 107.
+      - name: Rebuild today's baseline at the PHASE1 cutoff (day-of report)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
-          ASOF: ${{ steps.d.outputs.asof }}
-          BT_WINDOW: "dayof"
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+          BT_CUTOFF: "phase1"
+          BT_LADDER_STEPS: "10"
+          BT_INJURY: "1"
+          BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
         run: |
           set -euo pipefail
+          mkdir -p nba/backtest/reports
           for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
                       "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
             BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
           done
-          BT_MODE="combos" python nba/baseline/build_baseline_ladder.py
-          BT_MODE="periods" python nba/baseline/build_baseline_ladder.py
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
+          done
+          python nba/baseline/build_combos_ladder.py
+          python nba/baseline/build_periods_ladder.py
 
       - name: Load the day-of baseline
         env:
