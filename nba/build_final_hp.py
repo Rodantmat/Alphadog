@@ -80,6 +80,12 @@ def main():
     props = [p.strip() for p in os.environ.get("FE_PROPS", "").split(",")
              if p.strip() and p.strip().upper() != "ALL"]
     write = os.environ.get("FE_WRITE", "0") == "1"
+    # FE_DATE scopes the run to ONE slate. P3 sets it so the afternoon pipeline rescores only today's
+    # legs (seconds) instead of all 38.7M (~90 minutes). Blank = every date, which is what the
+    # two-season replications use.
+    FE_DATE = (os.environ.get("FE_DATE") or "").strip()
+    if FE_DATE:
+        print(f"scoped to slate {FE_DATE}", flush=True)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
