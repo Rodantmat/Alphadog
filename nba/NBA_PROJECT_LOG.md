@@ -647,7 +647,11 @@ post-tip windows remain, 9 snapshots unrecoverable (0.18%).
 
 ---
 
+## 2026-09-12 — Day-by-day baseline complete; game lines; event map; stage assignment
+
 ## 2026-09-13 → 09-19 — The three non-negotiables, the final calculation engine, and confidence
+
+This stretch took the system from "a certified baseline with a factor registry" to "a final number per leg".
 Written after the fact from the working session; every figure below is measured and queryable.
 
 ### 1. Enrichment round 1 closed — seven candidates, one survivor, then none
