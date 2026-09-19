@@ -215,6 +215,11 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 | how a factor becomes a number (components, cells, scenarios, Platt) | `NBA_ENRICHMENT_ENGINE_DESIGN.md` |
 | re-checking whether a prop is calibrated | `nba/check_prop_calibration.py` (maintenance task `calibration`); COMPASS fact 76 |
 | live board history / why boards are not just files | `nba/archive_live_boards.py`; COMPASS fact 75 |
+| **the final number — final HP, confidence, score, edge; where they live** | `nba/build_final_hp.py` → `nba_score.final_hp`; COMPASS facts 99, 103; config `final_engine_complete_2026_09_18` |
+| **what confidence MEANS and why it is high, not a probability** | COMPASS facts 101–102; `nba/build_confidence_v3.py`, `nba_score.confidence_model` |
+| **why the calibration must be as-of, and how a new season starts sharp** | COMPASS fact 100; `nba/build_asof_calibration.py` → `nba_score.ladder_calibration_asof` |
+| **a query that will not finish / join performance** | COMPASS fact 104 — read EXPLAIN first; a function on a join column defeats every index |
+| **PrizePicks goblin/demon multipliers — where they are NOT, and the capture to do** | COMPASS fact 105; config `deferred_prizepicks_multiplier_capture`; `PRIZEPICKS_PRICING_MODEL_SOLVED.md` |
 | whether a factor's backfill is "done", day-by-day parity, leak risks, what All-Star/national TV should do | `NBA_DAILY_PARITY_AND_BACKFILL.md` (governing directive); COMPASS facts 58–59 |
 | the grader, DNP/push/settlement handling, player name resolution | log entry 2026-09-11 §2; COMPASS fact 60; `nba/grade_board_outcomes.py`, `nba/nba_names.py` |
 | goblins/demons — are they worth taking, tiers, anchors, multipliers | log entry 2026-09-11 §3; COMPASS fact 61; config `prizepicks_goblin_demon_tier_spec`, `board_payout_conversion_rules` |
