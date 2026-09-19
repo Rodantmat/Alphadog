@@ -579,7 +579,7 @@ for prop, cfg in PROPS.items():
                 if row["count"] >= EMP_MIN: emp2[(v, r, off)] = (float(row["mean"]), int(row["count"]), float(row["pp"]))
             for v, row in key.groupby("v").agg(mean=("hit", "mean"), count=("hit", "size"), pp=("pp", "mean")).iterrows():
                 if row["count"] >= EMP_MIN: emp3[(v, off)] = (float(row["mean"]), int(row["count"]), float(row["pp"]))
-        for off in range(-LADDER_STEPS, LADDER_STEPS + 1):
+        for off in range(-_depth, _depth + 1):
             line = (test["anchor"] + off * cfg["step"]).clip(lower=0.5)
             k_int = np.floor(line).astype(int)
             use_normal = (cfg["family"] == "auto") & (test["proj_mean"] >= 10)
