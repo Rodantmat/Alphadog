@@ -42,7 +42,7 @@ import psycopg
 
 
 FACTOR_COLS = ["f_complete", "f_prov", "f_time", "f_depth", "f_role", "f_vol", "f_exp",
-               "f_books", "f_agree"]
+               "f_books", "f_agree", "f_phase"]
 
 
 def confidence_of(d, attach=False):
