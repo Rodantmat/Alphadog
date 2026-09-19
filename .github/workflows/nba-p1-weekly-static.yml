@@ -1,0 +1,121 @@
+name: NBA P1 Weekly Static
+
+# PIPELINE 1 OF 3 (COMPASS fact 107). The slow-moving layer: rosters, team identity, weekly as-of
+# tables, coaching changes. Things that shift on a WEEK scale, not a game scale.
+#
+# SCHEDULE: Mondays 12:00 PT. Deliberately far from the overnight pipeline (P2, daily 01:00 PT) so the
+# two can never contend for the database or the repo. 12:00 PT Monday = 19:00 UTC Monday in PST and
+# 19:00 UTC = 12:00 PDT — the season crosses DST, so the cron is set in UTC and the hour drifts by one
+# between November and March. That is harmless here: nothing in this pipeline is cutoff-sensitive, which
+# is exactly why the weekly layer is the right place for it.
+#
+# WHY WEEKLY AND NOT DAILY: these tables are as-of weekly by construction (COMPASS fact 51 / the parity
+# doc) — refitting them daily would not change a value but would burn the NBA stats endpoints, which
+# rate-limit hard and are the reason the delta pipeline exists at all.
+#
+# FAILURE POLICY: steps report loudly. The overnight-queue comment says it plainly — `|| echo failed`
+# is how a missing 44% of the board went unnoticed for two days. Each step here either succeeds or the
+# job goes red. The only tolerated failures are the ones marked, with the reason given.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons_n:
+        description: "how many seasons of weekly tables to refresh (1 = current only)"
+        default: "1"
+        required: false
+  schedule:
+    - cron: '0 19 * * 1'        # Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-p1-weekly
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy curl_cffi lxml html5lib
+
+      # --- identity: who is on which team. Trades and two-way call-ups move these weekly. -----------
+      - name: Teams and arenas
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_stats_teams.py
+          python nba/scrape_nba_stats_arenas.py
+
+      - name: Players and bio
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_stats_players.py
+          python nba/scrape_nba_player_bio.py
+
+      # --- weekly AS-OF tables: every value computed from games strictly before the snapshot date ----
+      - name: Weekly as-of season tables (pt_defend, hustle, clutch, coaches, all_players)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          SEASONS_N: ${{ github.event.inputs.seasons_n || '1' }}
+          MODE: "season"
+        run: python nba/scrape_nba_season_tables.py
+
+      - name: Team stats, on/off, playtypes, tracking
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_team_stats.py
+          python nba/scrape_nba_onoff.py
+          python nba/scrape_nba_playtypes.py
+          python nba/scrape_nba_player_tracking.py
+
+      - name: DARKO and shot quality
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_darko.py
+          python nba/scrape_nba_shotquality.py
+
+      # --- derived weekly models that the baseline reads ------------------------------------------
+      - name: Defender ratings (two-way ridge, weekly as-of)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_defender_ratings.py
+
+      - name: Static context (coach changes)
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/build_static_context.py
+
+      - name: Commit weekly data files
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/*.json || true
+          if git diff --cached --quiet; then echo "No weekly file changes."; exit 0; fi
+          git commit -m "NBA P1 weekly static [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+          done
+          exit 1
+
+      - name: Certify the weekly layer
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/certify_pipeline.py
+        # certify_pipeline.py with PIPE=p1 asserts the weekly artefacts are present and fresh;
+        # it FAILS the job if a table is stale, so a silently-skipped scraper cannot pass unnoticed.
