@@ -74,8 +74,37 @@ def main():
     if not expected:
         print(f"No COMPLETED games in the schedule for {season} in range "
               f"[{d_from or 'start'} .. {d_to or 'end'}].")
-        print("Nothing to audit - this is EXPECTED in the off-season. Not a failure.")
-        sys.exit(0)
+        # FALL BACK TO AN INDEPENDENT WITNESS. nba_schedule_current.json only carries the UPCOMING
+        # season, so in the off-season - or when auditing a past season - it has nothing to compare
+        # against. The TEAM game log is a SEPARATE pull from the player game log, so using it as the
+        # expected set is a genuine cross-check, not a circular one: if the player-log delta dropped a
+        # night, the team log still has it (and vice versa, which the audit also reports).
+        try:
+            tlogs = fetch(f"nba_team_game_log_{slug}.json")["records"]
+        except Exception as exc:  # noqa: BLE001
+            print(f"No team-log witness either ({str(exc)[:60]}). Nothing to audit - "
+                  f"EXPECTED in the off-season. Not a failure.")
+            sys.exit(0)
+        if not tlogs:
+            print("Team log empty. Nothing to audit - EXPECTED in the off-season. Not a failure.")
+            sys.exit(0)
+        print(f"Falling back to the TEAM GAME LOG as the independent witness "
+              f"({len(tlogs):,} team-games).\n")
+        expected, exp_teams = defaultdict(set), defaultdict(set)
+        for r in tlogs:
+            gd = str(r.get("GAME_DATE"))[:10]
+            gid = str(r.get("GAME_ID"))
+            if d_from and gd < d_from:
+                continue
+            if d_to and gd > d_to:
+                continue
+            expected[gd].add(gid)
+            tm = str(r.get("TEAM_ABBREVIATION") or str(r.get("MATCHUP", "")).split(" ")[0])[:3].upper()
+            if tm:
+                exp_teams[gid].add(tm)
+        if not expected:
+            print("Witness has no games in range. Nothing to audit. Not a failure.")
+            sys.exit(0)
 
     # --- what the delta actually holds ---------------------------------------------------------
     logs = fetch(f"nba_player_game_log_{slug}.json")["records"]
