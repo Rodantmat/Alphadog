@@ -1303,6 +1303,18 @@ export default {
         try {
           return await runPlayerPropContext(env, input);
         } catch (err) {
+          // DIAGNOSTIC FIX 2026-09-19 (Cowork-supervised 1pm slot): the ctx.waitUntil() detachment above
+          // means a thrown error here is otherwise invisible - no HTTP caller is listening for this
+          // rejection any more, and this worker has no control-log table (confirmed: no controlLog/
+          // control.* writes anywhere else in this file, unlike the daily-context workers). Without this,
+          // an uncaught exception leaves the batch permanently stuck at its 'running_*' checkpoint with
+          // zero diagnostic trail, indistinguishable from a slow-but-healthy fetch. Mark the batch failed
+          // with the real error so a stall is diagnosable instead of silent.
+          try {
+            const errClient = pg(env);
+            await errClient`UPDATE market.context_probe_batches SET status='worker_exception_uncaught', certification_status='MARKET_LINE_SHAPE_CLASSIFIER_UNCAUGHT_EXCEPTION', output_json=${safeJson({ error: String(err && err.stack ? err.stack : err) }, 4000)}, updated_at=now() WHERE request_id=${input.request_id || null} AND status LIKE 'running_%'`;
+            await errClient.end({ timeout: 1 }).catch(() => {});
+          } catch (_) {}
           return { ok: false, error: String(err && err.stack ? err.stack : err) };
         }
       })();
