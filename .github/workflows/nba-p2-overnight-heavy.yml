@@ -70,6 +70,15 @@ jobs:
           python nba/scrape_nba_daily_delta.py
           python nba/scrape_nba_per_game_delta.py
 
+      # The DAY-BEFORE injury report (due 5 PM local the day before) is an overnight input: it is what
+      # the baseline uses for availability before the day-of report lands in P3.
+      - name: Injury report (day-before filing)
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          IR_MODE: "recent"
+        run: python nba/scrape_nba_injury_report.py
+
       - name: Baseline inputs - season files, quarters, schedule
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
