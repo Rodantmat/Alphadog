@@ -24,10 +24,16 @@ NBA IS OUT OF SEASON (opens October), so this runs MLB (2) and WNBA (3), per the
 Reports only. Writes nothing. Places nothing.
 """
 import json
-import urllib.request
-import urllib.error
+import os
+from curl_cffi import requests
 
 BASE = "https://api.prizepicks.com"
+# EXACTLY the transport the working MLB producer (main.py) uses: curl_cffi with chrome124 TLS
+# impersonation THROUGH the PROXY_URL proxy. Plain urllib from a GitHub runner gets a DataDome captcha
+# (geo.captcha-delivery.com) on every path - that is a bot wall, not a missing endpoint, so probe 2's
+# 403s told us nothing about whether these endpoints exist.
+PROXY = (os.getenv("PROXY_URL") or "").strip()
+PROXIES = {"http": PROXY, "https": PROXY} if PROXY else None
 UA = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
@@ -35,22 +41,17 @@ UA = {
     "Accept-Language": "en-US,en;q=0.9",
     "Origin": "https://app.prizepicks.com",
     "Referer": "https://app.prizepicks.com/",
-    "sec-ch-ua": '"Chromium";v="139", "Not;A=Brand";v="99"',
-    "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-site",
 }
-HINT = ("multip", "payout", "factor", "coeff", "odds", "boost", "premium", "scal", "pick", "combo")
+HINT = ("multip", "payout", "factor", "coeff", "boost", "premium", "scal", "combo")
 
 
 def get(url, timeout=25):
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
-            body = r.read().decode("utf-8", "replace")
-            try:
-                return r.status, json.loads(body)
-            except Exception:  # noqa: BLE001
-                return r.status, body[:1500]
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode("utf-8", "replace")[:400]
+        r = requests.get(url, headers=UA, proxies=PROXIES, timeout=timeout, impersonate="chrome124")
+        try:
+            return r.status_code, r.json()
+        except Exception:  # noqa: BLE001
+            return r.status_code, (r.text or "")[:1200]
     except Exception as exc:  # noqa: BLE001
         return None, str(exc)[:160]
 
