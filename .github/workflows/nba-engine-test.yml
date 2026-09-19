@@ -23,6 +23,10 @@ on:
         description: "2024-25 or 2025-26"
         default: "2025-26"
         required: false
+      date:
+        description: "single slate date for a scoped run (blank = all dates)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
