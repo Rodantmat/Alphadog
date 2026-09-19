@@ -179,6 +179,24 @@ jobs:
           done
           python nba/baseline/build_combos_ladder.py
           python nba/baseline/build_periods_ladder.py
+          # merge the per-pair artefacts into the file the loader reads (see P2 for the reasoning)
+          rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
+          python - <<'EOF'
+          import json, glob, os
+          asof = os.environ["BT_ASOF"]; rows = []; meta = None
+          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+          if not meta:
+              raise SystemExit(f"ABORT: no per-pair ladder files for {asof}")
+          meta["rows"] = len(rows)
+          meta["props"] = sorted({r["prop"] for r in rows})
+          meta["players"] = len({r["player_id"] for r in rows})
+          json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+          json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
+          print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
+          for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"):
+              os.remove(f)
+          EOF
 
       - name: Load the day-of baseline
         env:
