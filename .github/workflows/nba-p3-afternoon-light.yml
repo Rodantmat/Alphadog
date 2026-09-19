@@ -1,0 +1,152 @@
+name: NBA P3 Afternoon Light
+
+# PIPELINE 3 OF 3 (COMPASS fact 107). The day-of run, after the injury-report cutoff.
+#
+# CUTOFF 1:15 PM PT — and that number is EVIDENCE, not inheritance. The game-day injury report is due
+# 11am-1pm LOCAL TO EACH GAME'S MARKET, so Eastern clubs file by 10 AM PT and PACIFIC clubs are last at
+# 1:00 PM PT. Every other daily input lands earlier: referees ~6-7 AM, market spread from the 08:00
+# snapshot, projected lineups through the morning, boards on demand. The injury report is the ONLY
+# binding constraint, so 1:15 PM PT is the first moment the full slate is knowable.
+# (The old "2:30 PM PT" was my drift - it came from a list of observed injury-PDF timestamps in
+# EASTERN. 2:30 PM ET is 11:30 AM PT. See COMPASS fact 107 for the full trace.)
+#
+# NO CRON YET — the NBA season opens in October. A scheduled job failing nightly against an empty
+# slate teaches everyone to ignore red builds. Cron goes in at season start: '15 21 * * *' = 21:15 UTC
+# = 1:15 PM PST (and 2:15 PM PDT, which still clears the earliest 4 PM PT tip by 105 minutes).
+#
+# NO SCENARIO PRECOMPUTE. Its whole value was "enumerate every availability branch now, SELECT the
+# realised one at a later window". With ONE window there is nothing to select with, so enumeration is
+# pure cost (~0.5-1M rows/day). Residual availability uncertainty is carried by N1 probability-weighted
+# availability inside the projection, where it belongs.
+#
+# NO FRESHNESS GATE. At a single cutoff every leg carries the same report generation - a freshness term
+# would penalise uniformly and discriminate nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      asof:
+        description: "slate date (blank = today PT). Use a past date to REPLAY/simulate."
+        default: ""
+        required: false
+      skip_scrape:
+        description: "true = skip live scrapes, score from what is already stored (replay)"
+        default: "false"
+        required: false
+      season:
+        description: "season"
+        default: "2025-26"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-p3-afternoon
+  cancel-in-progress: false
+
+jobs:
+  afternoon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib
+
+      - name: Resolve slate date and assert the cutoff has passed
+        id: d
+        run: |
+          A="${{ github.event.inputs.asof }}"
+          if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
+          H=$(TZ=America/Los_Angeles date +%H%M)
+          echo "asof=$A" >> $GITHUB_OUTPUT
+          echo "Slate $A, local time $H PT"
+          # A manual replay of a PAST date is always fine. A run for TODAY before 13:00 PT would be
+          # scoring an incomplete slate - Pacific clubs may not have filed yet - so refuse it.
+          if [ "$A" = "$(TZ=America/Los_Angeles date +%F)" ] && [ "$H" -lt "1300" ]; then
+            echo "::error::Refusing to run for TODAY before 13:00 PT - Pacific clubs file until 1:00 PM PT."
+            exit 1
+          fi
+
+      # 1) THE BINDING INPUT: the day-of injury report
+      - name: Day-of injury report
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          IR_MODE: "today"
+        run: python nba/scrape_nba_injury_report.py
+
+      - name: Projected lineups and referee assignments
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python nba/scrape_nba_lineups.py
+          python nba/scrape_referee_assignments.py
+
+      # 2) THE BOARD: what is actually offered today, across every app
+      - name: Board scrapers
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          SPORT: "nba"
+        run: |
+          python nba/scrape_sleeper_board.py
+          python nba/scrape_underdog_board.py
+          python nba/scrape_fliff_board.py
+
+      - name: Archive boards into Postgres
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/archive_live_boards.py
+
+      # 3) THE MARKET at the window - de-vigged book probability per rung
+      - name: Market snapshot and rung market
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python nba/export_market_spreads.py
+          python nba/build_rung_market.py
+
+      - name: Commit day-of data
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/*.json boards/*.json || true
+          if git diff --cached --quiet; then echo "No day-of file changes."; else
+            git commit -m "NBA P3 day-of data [skip ci]"
+            for i in 1 2 3 4 5; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            done
+          fi
+
+      # 4) THE FINAL NUMBER: final HP -> confidence -> score + edge, for today's slate only
+      - name: Final calculation engine
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
+          FE_PROPS: "ALL"
+          FE_WRITE: "1"
+          FE_DATE: ${{ steps.d.outputs.asof }}
+        run: python nba/build_final_hp.py
+
+      # 5) CERTIFY: today's legs scored, confidence non-null, score in 0-100, board captured
+      - name: Certify P3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PIPE: "p3"
+          CERT_DATE: ${{ steps.d.outputs.asof }}
+        run: python nba/certify_pipeline.py
