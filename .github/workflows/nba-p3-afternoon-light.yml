@@ -152,7 +152,31 @@ jobs:
             done
           fi
 
-      # 4) THE FINAL NUMBER: final HP -> confidence -> score + edge, for today's slate only
+      # 4) THE FINAL NUMBER: the day-of report changes availability, which changes projected minutes,
+      # which changes the projection - so the baseline for today's slate is REBUILT with the day-of
+      # information before the final engine runs. This is the "rescore only the legs the report
+      # touches" step; without it P3 would score last night's availability picture.
+      - name: Rebuild today's baseline with the day-of report
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          ASOF: ${{ steps.d.outputs.asof }}
+          BT_WINDOW: "dayof"
+        run: |
+          set -euo pipefail
+          for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
+                      "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
+            BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
+          done
+          BT_MODE="combos" python nba/baseline/build_baseline_ladder.py
+          BT_MODE="periods" python nba/baseline/build_baseline_ladder.py
+
+      - name: Load the day-of baseline
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOAD_ASOF: ${{ steps.d.outputs.asof }}
+        run: python nba/load_baseline_ladder.py
+
       - name: Final calculation engine
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
