@@ -151,84 +151,40 @@ jobs:
             done
           fi
 
-      # 4) THE FINAL NUMBER. The day-of report changes availability -> projected minutes -> the
-      # projection, so today's baseline is REBUILT reading the report at the PHASE1 cutoff before the
-      # final engine runs. Without this, P3 would score last night's availability picture and the whole
-      # point of the 1:15 PM cutoff is lost.
-      # BT_CUTOFF="phase1" is nba_asof.py's 16:00 ET = 1:00 PM PT - the moment every club has filed
-      # (11am-1pm LOCAL, Pacific clubs last). NOT "phase2" (17:45 ET = 2:45 PM PT), which only chased
-      # the league's 5:30 PM ET republication - see COMPASS fact 107.
-      - name: Rebuild today's baseline at the PHASE1 cutoff (day-of report)
+      # 4) SCORE THE BOARD. P3 IS BOARD-SCOPED: every leg the apps actually offer - all prop lines,
+      # every ladder rung, both directions, goblins/standards/demons, across PrizePicks, Underdog,
+      # Sleeper and Fliff. NOT the full internal ladder.
+      #
+      # WHY THIS SHAPE, measured: an earlier version rebuilt all 8 prop pairs here and ran 35+ minutes
+      # without finishing. That is disqualifying for a pipeline that must start at 1:15 PM PT and be
+      # done before ~1:30. The cost is NOT per-player scoring - it is REFITTING the recipe (tier tables,
+      # factor betas, dispersion) over three seasons, ~8 minutes per pair.
+      #
+      # And that refit CANNOT have changed: it uses only games strictly BEFORE today, so it is identical
+      # at 1 AM (P2) and 1:15 PM (P3). P3 refitting it is 64 minutes spent recomputing a model that is
+      # provably unchanged.
+      #
+      # What DOES change between P2 and P3 is the availability list. A player moves Questionable -> Out,
+      # the allocator redistributes his minutes, and the projection shifts FOR HIS TEAM ONLY.
+      #
+      # So: load P2's fit, apply the availability delta to affected teams, and score exactly the legs
+      # the board offers. Cost then tracks BOARD SIZE and NUMBER OF STATUS CHANGES - both bounded - not
+      # the fitting cost, which is fixed and belongs overnight. This is also the only shape that scales
+      # as the board grows with new goblins/demons and full ladders across four apps.
+      - name: Availability delta (which teams changed since the day-before report)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PROXY_URL: ${{ secrets.PROXY_URL }}
-          BT_ASOF: ${{ steps.d.outputs.asof }}
-          BT_CUTOFF: "phase1"
-          BT_LADDER_STEPS: "10"
-          BT_INJURY: "1"
-          BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
-        run: |
-          set -euo pipefail
-          mkdir -p nba/backtest/reports
-          for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
-                      "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
-            BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
-          done
-          for pair in points,rebounds assists,steals blocks,turnovers; do
-            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
-          done
-          python nba/baseline/build_combos_ladder.py
-          python nba/baseline/build_periods_ladder.py
-          # merge the per-pair artefacts into the file the loader reads (see P2 for the reasoning)
-          rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
-          python - <<'EOF'
-          import json, glob, os
-          asof = os.environ["BT_ASOF"]; rows = []; meta = None
-          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
-              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
-          if not meta:
-              raise SystemExit(f"ABORT: no per-pair ladder files for {asof}")
-          meta["rows"] = len(rows)
-          meta["props"] = sorted({r["prop"] for r in rows})
-          meta["players"] = len({r["player_id"] for r in rows})
-          json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
-          json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
-          print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
-          for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"):
-              os.remove(f)
-          EOF
+          DELTA_ASOF: ${{ steps.d.outputs.asof }}
+          DELTA_FROM: "baseline"
+          DELTA_TO: "phase1"
+        run: python nba/build_availability_delta.py
 
-      # Commit before loading - the loader reads the artefact over HTTP from the repo, not local disk.
-      - name: Commit the day-of ladder
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/nba_baseline_ladder_*.json || true
-          if git diff --cached --quiet; then
-            echo "ABORT: nothing to commit - the merge produced no ladder file"; exit 1
-          fi
-          git commit -m "NBA P3 day-of ladder ${{ steps.d.outputs.asof }} [skip ci]"
-          for i in 1 2 3 4 5; do
-            if git push origin HEAD:main; then exit 0; fi
-            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
-          done
-          exit 1
-
-      - name: Load the day-of baseline
+      - name: Score the board (all apps, all rungs, both directions)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          LOAD_ASOF: ${{ steps.d.outputs.asof }}
-        run: python nba/load_baseline_ladder.py
-
-      - name: Final calculation engine
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          FE_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
-          FE_PROPS: "ALL"
-          FE_WRITE: "1"
-          FE_DATE: ${{ steps.d.outputs.asof }}
-        run: python nba/build_final_hp.py
+          BS_ASOF: ${{ steps.d.outputs.asof }}
+          BS_SEASON: ${{ github.event.inputs.season || '2025-26' }}
+        run: python nba/score_board_legs.py
 
       # 5) CERTIFY: today's legs scored, confidence non-null, score in 0-100, board captured
       - name: Certify P3
