@@ -326,14 +326,19 @@ def main():
             if CONF_DEDUCT:
                 fmap = {
                     "f_complete": has_components * 0.4 + 0.6,
-                    "f_prov": np.full(len(d), 0.65),
+                    # REAL per-leg values now, not placeholders. role_tier and used_emp come straight
+                    # from baseline_history; without them confidence spanned only 0.89-0.96 and score
+                    # was ranked almost entirely by HP. Role is the factor that MEASURED the largest
+                    # separation (0.008477 - fringe players miss by 0.0283 vs iron-men at 0.0008), so
+                    # leaving it constant threw away most of the thermometer's discriminating power.
+                    "f_prov": np.where(d["used_emp"].fillna(False).values, 1.0, 0.30),
                     "f_time": np.where(unc > 0, 0.65, 1.0),
                     "f_depth": np.clip(1.0 - np.abs(d["ladder_offset"].fillna(0).values) / 14.0, 0.25, 1.0),
-                    "f_role": np.full(len(d), 0.85),
+                    "f_role": d["role_tier"].map(ROLE_RANK).fillna(0.75).values,
                     "f_vol": np.full(len(d), 0.75),
                     "f_exp": np.full(len(d), 0.75),
                     "f_books": c_market,
-                    "f_agree": np.full(len(d), 0.55),
+                    "f_agree": np.where(c_market > 0, 0.85, 0.55),
                     "f_phase": d["phase"].map(
                         {"1_oct_nov": 0.80, "2_dec_asb": 1.00, "3_post_asb": 0.88, "4_push": 0.92}
                     ).fillna(0.90).values,
