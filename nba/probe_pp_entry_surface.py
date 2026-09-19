@@ -64,9 +64,15 @@ def flag(doc):
 
 def main():
     print("=" * 78)
-    print("PRIZEPICKS ENTRY / QUOTE SURFACE PROBE")
+    print("PRIZEPICKS ENTRY / QUOTE SURFACE PROBE (curl_cffi chrome124 + PROXY_URL)")
+    print(f"proxy configured: {bool(PROXIES)}")
     print("board payload already ruled out: 0 hits for multiplier|payout|factor|coefficient")
     print("=" * 78, flush=True)
+    st, doc = get("https://ipinfo.io/json", timeout=20)
+    if st == 200 and isinstance(doc, dict):
+        print(f"egress ip {doc.get('ip')} {doc.get('country')}/{doc.get('region')}", flush=True)
+    else:
+        print(f"proxy preflight: {st} {str(doc)[:90]}", flush=True)
 
     # 1) documents that would carry a payout MATRIX
     print("\n-- PAYOUT / CONFIG DOCUMENTS --", flush=True)
