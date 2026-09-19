@@ -51,6 +51,8 @@ RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
 # measured break-even by PrizePicks structure (config prizepicks_goblin_demon_tier_spec)
 BREAKEVEN = {"standard": 0.560, "goblin": 0.560, "demon": 0.560}
 PENALIZED = {"fantasy_score": 0.003, "double_double": 0.004, "oreb": 0.001}   # derived, fact 80
+ROLE_RANK = {"IRON_MAN": 1.0, "HIGH_USAGE_STARTER": 0.97, "STARTER": 0.93,
+             "ROTATION": 0.85, "BENCH": 0.70, "FRINGE": 0.50}
 
 
 def phase_of(dt):
