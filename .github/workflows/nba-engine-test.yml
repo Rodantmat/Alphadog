@@ -50,6 +50,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FE_SEASONS: ${{ github.event.inputs.season }}
           FE_PROPS: ${{ github.event.inputs.props }}
+          FE_DATE: ${{ github.event.inputs.date }}
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
