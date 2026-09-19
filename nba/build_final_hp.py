@@ -334,6 +334,9 @@ def main():
                     "f_exp": np.full(len(d), 0.75),
                     "f_books": c_market,
                     "f_agree": np.full(len(d), 0.55),
+                    "f_phase": d["phase"].map(
+                        {"1_oct_nov": 0.80, "2_dec_asb": 1.00, "3_post_asb": 0.88, "4_push": 0.92}
+                    ).fillna(0.90).values,
                 }
                 lost = np.zeros(len(d))
                 for fname, dedv in CONF_DEDUCT.items():
