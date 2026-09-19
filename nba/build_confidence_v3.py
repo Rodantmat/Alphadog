@@ -317,12 +317,27 @@ def main():
         else:
             DEDUCT_BUDGET = 29.0                    # worst realistic combination lands near 70
             share = np.array([sep[c] / tot for c in FACTOR_COLS])
-            # CAP any single factor at 35% of the budget. Without this, the first run put the whole 29
-            # points on f_books (the only factor the coarse test saw), so a leg on an unpriced rung fell
-            # 99 -> 70 for that reason alone - not a fair reading of its data quality. A thermometer
-            # should not rest on one sensor.
-            share = np.minimum(share, 0.35)
-            share = share / share.sum() if share.sum() > 0 else share
+            # CAP any single factor, then redistribute the EXCESS to the others - clipping and then
+            # renormalising by the sum does nothing when one factor holds almost all the mass (clip to
+            # 0.35, divide by 0.35, and it is back at 1.0). That is what let f_role take 28.87 of 29
+            # points. Iterate: clip, hand the surplus to the uncapped factors, repeat.
+            CAP = 0.40
+            for _ in range(10):
+                over = share > CAP
+                if not over.any():
+                    break
+                excess = (share[over] - CAP).sum()
+                share[over] = CAP
+                room = ~over
+                if not room.any() or share[room].sum() <= 0:
+                    break
+                share[room] += excess * (share[room] / share[room].sum())
+            # a factor that measured NO separation still gets a small floor - absence of measured signal
+            # is not proof of irrelevance when the HP is calibrated this uniformly (every slice within
+            # 0.16 pp), and a missing component genuinely IS missing data whatever the residual says
+            FLOOR_SHARE = 0.04
+            share = np.maximum(share, FLOOR_SHARE)
+            share = share / share.sum()
             ded = share * DEDUCT_BUDGET
         print("  deductions at full deficiency (points off 99):",
               ", ".join(f"{c.replace('f_','')} -{v:.1f}" for c, v in zip(FACTOR_COLS, ded)), flush=True)
