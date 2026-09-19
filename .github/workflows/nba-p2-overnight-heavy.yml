@@ -110,19 +110,45 @@ jobs:
           GAP_SEASON: ${{ github.event.inputs.season || '2025-26' }}
         run: python nba/check_delta_gaps.py
 
-      # 3) MARKET inputs the baseline needs (blowout + matchup run on the real market line)
+      # 3) GRADE last night's board. This must happen BEFORE the calibration refit, because the
+      # as-of calibration and the confidence deductions both learn from graded outcomes - ungraded
+      # legs mean yesterday's evidence is invisible to today's cells.
+      - name: Grade last night's board outcomes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/grade_board_outcomes.py
+
+      # 4) MARKET inputs the baseline needs (blowout + matchup run on the real market line)
       - name: Market spreads and totals
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/export_market_spreads.py
 
-      # 4) BUILD the baseline ladder for today's slate
-      - name: Build baseline ladder
+      # 5) BUILD the baseline ladder for today's slate - PER PROP PAIR. The builder is written to run
+      # one pair per invocation (~8 min each); calling it once would silently produce only the default
+      # pair and the slate would be missing 28 of 30 props.
+      - name: Build baseline ladder (all prop pairs)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
           ASOF: ${{ steps.d.outputs.asof }}
-        run: python nba/baseline/build_baseline_ladder.py
+        run: |
+          set -euo pipefail
+          for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
+                      "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
+            echo "=== baseline pair: $PAIR"
+            BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
+          done
+
+      - name: Build combos and periods for today's slate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          ASOF: ${{ steps.d.outputs.asof }}
+        run: |
+          set -euo pipefail
+          BT_MODE="combos" python nba/baseline/build_baseline_ladder.py
+          BT_MODE="periods" python nba/baseline/build_baseline_ladder.py
 
       - name: Load baseline into Postgres
         env:
@@ -130,12 +156,24 @@ jobs:
           LOAD_ASOF: ${{ steps.d.outputs.asof }}
         run: python nba/load_baseline_ladder.py
 
-      # 5) REFIT the as-of calibration so today uses cells fitted on games strictly before today
+      # 6) REFIT the learned layers on everything graded up to LAST NIGHT - strictly before today,
+      # so today's scoring never sees its own outcome.
       - name: As-of ladder calibration
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AC_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
         run: python nba/build_asof_calibration.py
+
+      - name: Refit the blowout model
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_blowout_model.py
+
+      - name: Refit the confidence deduction model
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          C3_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
+        run: python nba/build_confidence_v3.py
 
       # 6) CERTIFY: today's baseline exists, >= 25 props, zero invalid probabilities
       - name: Certify P2
