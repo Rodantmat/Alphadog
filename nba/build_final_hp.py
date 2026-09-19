@@ -270,8 +270,10 @@ def main():
         for prop in plist:
             h = pd.read_sql("""SELECT game_date, game_id, player_id, prop, line, anchor, ladder_offset,
                                       p_more, p_less, role_tier, used_emp
-                               FROM nba_score.baseline_history WHERE season=%s AND prop=%s""",
-                            conn, params=(season, prop))
+                               FROM nba_score.baseline_history
+                               WHERE season=%s AND prop=%s
+                                 AND (%s = '' OR game_date = NULLIF(%s,'')::date)""",
+                            conn, params=(season, prop, FE_DATE, FE_DATE))
             if h.empty:
                 continue
             h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
