@@ -79,6 +79,21 @@ jobs:
           IR_MODE: "recent"
         run: python nba/scrape_nba_injury_report.py
 
+      # Per the parity doc's stage table these are BASELINE-stage factors, not day-of:
+      #   D1 referee crew      - assignments post ~6-7 AM PT, "crews rarely change after posting"
+      #   M1 defender quality  - matchup shards from last night; a scratch only shifts it as a phase-2
+      #                          DELTA, not a recompute
+      # Putting them in the afternoon run would mine them hours later than they are available and make
+      # the light pipeline heavier for no gain.
+      - name: Referee assignments and per-game matchups (baseline-stage factors)
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python nba/scrape_referee_assignments.py
+          python nba/scrape_nba_matchups_pergame.py
+
       - name: Baseline inputs - season files, quarters, schedule
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
