@@ -116,6 +116,5 @@ jobs:
       - name: Certify the weekly layer
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PIPE: "p1"
         run: python nba/certify_pipeline.py
-        # certify_pipeline.py with PIPE=p1 asserts the weekly artefacts are present and fresh;
-        # it FAILS the job if a table is stale, so a silently-skipped scraper cannot pass unnoticed.
