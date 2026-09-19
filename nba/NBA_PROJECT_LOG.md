@@ -729,7 +729,9 @@ its bundles cannot be scanned, and eight commercial scrapers exposing the LABEL 
 expose real multipliers for Underdog/Sleeper/Pick6. It is priced server-side at entry build. Deferred with the
 Sleeper ladder and Chalkboard; the capture is one logged-in browser session (DevTools → Network → Copy as cURL).
 
+---
 
+## 2026-09-12 — Day-by-day baseline complete; game lines; event map; stage assignment
 
 ### 1. Stage assignment by publish time (owner directive)
 Anything knowable before 2:30 PM PT is computed in **phase 1** (baseline/delta); the **phase 2** window
