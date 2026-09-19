@@ -647,7 +647,87 @@ post-tip windows remain, 9 snapshots unrecoverable (0.18%).
 
 ---
 
-## 2026-09-12 — Day-by-day baseline complete; game lines; event map; stage assignment
+## 2026-09-13 → 09-19 — The three non-negotiables, the final calculation engine, and confidence
+
+This stretch took the system from "a certified baseline with a factor registry" to "a final number per leg".
+Written after the fact from the working session; every figure below is measured and queryable.
+
+### 1. Enrichment round 1 closed — seven candidates, one survivor, then none
+
+A2 teammate redistribution was tested in FOUR forms (flat on the mean, component-level, novelty-weighted,
+magnitude-refit) and **closed**: the certified anchor wins every slice, and worst on the HIGH-NOVELTY slice
+where the mechanism predicted it should win (−0.051 vs −0.013). B4 closed in three formulations, A5 and M1
+rejected, and A3/A4/K1 later gated at the leg level with gains of 0.00000 to −0.00003. Evidence in
+`nba_score.factor_gate_results`. The pattern: the baseline already carries what these factors re-express,
+and `NBA_DAILY_PARITY_AND_BACKFILL.md` §7 had already assigned A3/A4/D2/K1 to the BASELINE stage — so
+several were never enrichment candidates at all.
+
+**The method lesson that matters more than the verdicts**: a null is only as strong as the feature and the
+metric behind it. The defender factor was rejected on a crude "points allowed per possession" metric that
+confounds the defender with WHO he guarded; rebuilt as a two-way ridge (`nba_ref.defender_ratings`, 111,768
+ratings, 5 channels, reliability-shrunk) it wired in on 4 props — and every win came from the INTERACTION
+form, not the main effect. MAE on the mean was also the wrong gate: the product is P(stat > line), so
+verdicts moved to leg-level log-loss on real board lines.
+
+### 2. The three non-negotiable factors (owner directive)
+
+**BLOWOUT** — the recipe derived `P(blowout)` from a spread scoring r=0.46 / MAE 11.5 while 307,604 real
+market rows sat unused. Now on the morning market line (`nba/export_market_spreads.py`, 2,454 games, 100%
+coverage, as-of legal at 08:00 PT). Measured: a 13+ favourite blows the game open **39.7%** of the time and
+is blown out **0.4%** — a 100:1 asymmetry the proxy could not resolve. Two beliefs corrected: winning
+blowouts cost starters MORE minutes than losing ones (3.99 vs 2.86), and competitive games run starters
+**3.3% ABOVE** baseline. Sample-gated across 24,025 player-games; all the gain sits in the 11+ spread band.
+
+**TEAM MATCHUP** — market-implied team/opponent totals (`total/2 ∓ spread/2`) into all 15 single-prop factor
+sets. Implied team score predicts actual points at **r=0.4637 vs 0.2364** for the derived estimate; player
+production runs 1.0140 against the strongest implied defences to 1.0358 against the weakest.
+
+**SCENARIO PRECOMPUTE** — 1,651 uncertain games enumerated, **only the realised branch stored**. Justified by
+measurement: with three Questionables the most-likely branch is right only ~17% of the time, and the N1 v3
+availability model shows **79% of Questionables are genuine coin flips at 2:30 PM** because the Active List
+does not lock until 60 minutes before tip. Prediction handles what is knowable (fringe players, 66% accuracy,
+79.6% on the confident band); enumeration handles the rest.
+
+### 3. The final calculation engine
+
+`nba/build_final_hp.py` → `nba_score.final_hp`. **60/60 season-props, both seasons, ~38.7M legs, zero invalid
+probabilities.** 0.5643 log-loss on 1,248,826 graded PrizePicks legs. Tier shape exactly as it should be:
+easy goblins **0.6996**, standard **0.5014**, hard demons **0.2167**.
+
+**A parity violation was found and fixed en route**: the calibration table was fitted on one season and pasted
+onto the other — a constant carried between days, forbidden by §5 and fact 6, and leaking on a same-season
+replay. Replaced by weekly as-of refits with prior-season same-phase inheritance, which is what lets ONE code
+path serve a replay, a live day, and opening night.
+
+**Confidence took three attempts** and the failures are instructive: equal-mass quartiles force 25% of legs to
+be "low" however good the data; hand-weighted pillars failed verification (existence separated nothing, quality
+was INVERTED); and the conformal version was dominated by aleatoric noise, so a coin-flip leg with perfect data
+scored badly. The resolution was the aleatoric/epistemic split — **confidence measures our ignorance only**,
+because the event's randomness is ALREADY stated by the HP. Final form: start at 99, deduct for named
+deficiencies, weights MEASURED from realised-gap separation. Mean 0.92–0.95, as it should be when the data is
+good.
+
+**Score became 0–100 and ENHANCING**: a straight `hp × conf` product kills good legs (0.95 HP at 0.90 confidence
+→ 85.5, worse than the probability alone). Confidence now pivots around a 0.85 neutral — verified live, 0.434 HP
+at 0.952 confidence (62.71) outranks 0.468 HP at 0.884 (52.78). `edge` split into its own column.
+
+### 4. Infrastructure and method
+
+Four permanent indexes (three expression indexes for the normalised-name joins, 487 MB; one covering index on
+`baseline_history`, 1,334 MB) and a separate no-write test workflow so validation never queues behind a build.
+**The performance lesson cost ~90 minutes three times before EXPLAIN was consulted**: a function on a join
+column means no index can ever be used, and the planner was hashing 8.27M rows. Also: write results INSIDE the
+loop, or a stall produces nothing and tells you nothing.
+
+### 5. PrizePicks multipliers — ruled out, deferred
+
+The per-leg goblin/demon factor is **not on any public surface**: zero hits across 691,431 lines of the live
+board, ~20 guessed endpoints all DataDome-403 even through the working proxy, the app shell itself walled so
+its bundles cannot be scanned, and eight commercial scrapers exposing the LABEL only while the same vendors
+expose real multipliers for Underdog/Sleeper/Pick6. It is priced server-side at entry build. Deferred with the
+Sleeper ladder and Chalkboard; the capture is one logged-in browser session (DevTools → Network → Copy as cURL).
+
+
 
 ### 1. Stage assignment by publish time (owner directive)
 Anything knowable before 2:30 PM PT is computed in **phase 1** (baseline/delta); the **phase 2** window
