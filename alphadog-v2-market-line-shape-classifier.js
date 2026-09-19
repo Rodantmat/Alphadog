@@ -1288,12 +1288,37 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       if (input.mode && ![MODE_HITTER, MODE_PITCHER, "hitter_props", "pitcher_props", "market_pitcher_props"].includes(String(input.mode))) return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", supported_modes: [MODE_HITTER, MODE_PITCHER], received_mode: input.mode }, 400);
-      try {
-        const output = await runPlayerPropContext(env, input);
-        return jsonResponse(output, output.ok !== false ? 200 : 500);
-      } catch (err) {
-        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: input.run_id || null, mode: input.mode || null, status: "market_line_shape_classifier_exception", certification: "MARKET_LINE_SHAPE_CLASSIFIER_EXCEPTION", certification_grade: "FAILED", error: String(err && err.stack ? err.stack : err), external_calls_performed: 0 }, 500);
-      }
+      // FIXED 2026-09-19 (Cowork-supervised 1pm slot): this handler used to await runPlayerPropContext()
+      // directly, so a caller disconnect (the ~40s probe timeout the master-run supervisor uses) tore down
+      // the whole execution before fetchParlayProps() (budgeted up to PARLAY_TOTAL_FETCH_BUDGET_MS+5000 =
+      // 245s for a non-backend caller) could write a single row - confirmed live: 3 consecutive retries with
+      // the same request_id each produced a fresh batch_id stuck at running_*_parlay_prop_fetch with zero
+      // rows in market.context_probe_player_props, so findRecoverablePlayerPropBatch() had no evidence to
+      // resume from and every retry restarted from scratch instead of resuming. Same root cause and same fix
+      // as alphadog-v2-score-prep's ctx.waitUntil() change: detach the real work so it survives the caller
+      // disconnecting, and respond immediately so the response cycle actually completes. Callers already
+      // poll market.context_probe_batches / market.context_probe_player_props for real completion per the
+      // master-run runbook's SELF-HEALING PROTOCOL.
+      const workPromise = (async () => {
+        try {
+          return await runPlayerPropContext(env, input);
+        } catch (err) {
+          return { ok: false, error: String(err && err.stack ? err.stack : err) };
+        }
+      })();
+      ctx.waitUntil(workPromise.catch(() => {}));
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        request_id: input.request_id || null,
+        mode: input.mode || null,
+        status: "ACCEPTED_PLAYER_PROP_CONTEXT_RUNNING_IN_BACKGROUND",
+        note: "Work continues via ctx.waitUntil() after this response returns. Poll market.context_probe_batches (status/updated_at) and market.context_probe_player_props (batch_id) for real completion; do not treat this response as certified completion.",
+        timestamp_utc: nowUtc()
+      });
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic", "POST /backfill-historical", "POST /capture-sleeper-source-prices"], timestamp_utc: nowUtc() }, 404);
   }
