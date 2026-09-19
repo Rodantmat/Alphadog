@@ -306,7 +306,14 @@ def main():
             ded = np.full(len(FACTOR_COLS), 0.0)
         else:
             DEDUCT_BUDGET = 29.0                    # worst realistic combination lands near 70
-            ded = np.array([sep[c] / tot for c in FACTOR_COLS]) * DEDUCT_BUDGET
+            share = np.array([sep[c] / tot for c in FACTOR_COLS])
+            # CAP any single factor at 35% of the budget. Without this, the first run put the whole 29
+            # points on f_books (the only factor the coarse test saw), so a leg on an unpriced rung fell
+            # 99 -> 70 for that reason alone - not a fair reading of its data quality. A thermometer
+            # should not rest on one sensor.
+            share = np.minimum(share, 0.35)
+            share = share / share.sum() if share.sum() > 0 else share
+            ded = share * DEDUCT_BUDGET
         print("  deductions at full deficiency (points off 99):",
               ", ".join(f"{c.replace('f_','')} -{v:.1f}" for c, v in zip(FACTOR_COLS, ded)), flush=True)
         # PERSIST so build_final_hp.py applies exactly this, measured, logic to all 38.7M legs.
