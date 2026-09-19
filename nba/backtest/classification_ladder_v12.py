@@ -568,7 +568,7 @@ for prop, cfg in PROPS.items():
         hist = d[(d["season"].isin(TRAIN) | (d["ym_dt"] < month)) & d["tier"].notna()]
         # HIERARCHICAL EMPIRICAL TABLES: L1 tier x role x rung -> L2 band x role x rung -> L3 band x rung
         emp, emp2, emp3 = {}, {}, {}
-        for off in range(-LADDER_STEPS, LADDER_STEPS + 1):
+        for off in range(-_depth, _depth + 1):
             line_tr = (hist["anchor"] + off * cfg["step"]).clip(lower=0.5)
             hit = (hist[col] > line_tr).astype(int)
             key = pd.DataFrame({"t": hist["tier"].values, "r": hist["role_tier"].values, "v": hist["var_band"].values, "hit": hit.values,
