@@ -73,6 +73,15 @@ def confidence_of(d, attach=False):
     f_books = np.clip(d["books"].fillna(0).astype(float) / 4.0, 0, 1)
     agree = 1.0 - np.clip((d["p_over_book"].astype(float) - d["final_hp"].astype(float)).abs().fillna(0.25) / 0.30, 0, 1)
     f_agree = np.where(d["p_over_book"].notna(), agree, 0.55)
+    # SEASON PHASE as a confidence factor, not just a reporting slice. The regimes differ in how much
+    # the system can know: OCT-NOV the current-season cells are thin and the model leans on priors;
+    # DEC-ASB is the stable core; POST-ASB carries rest management the box score cannot predict; the
+    # PUSH splits motivated teams from checked-out ones. The calibration work measured the gap decaying
+    # +1.46 / +1.30 / +0.88 / +0.13 pp across those four, so the data's reliability genuinely varies by
+    # calendar regime - which is a confidence question, not a probability one.
+    phase_rank = {"1_oct_nov": 0.80, "2_dec_asb": 1.00, "3_post_asb": 0.88, "4_push": 0.92}
+    f_phase = d["phase"].map(phase_rank).fillna(0.90).astype(float) if "phase" in d.columns \
+        else pd.Series(0.90, index=d.index)
     raw = (0.16 * f_complete + 0.12 * f_prov + 0.10 * f_time + 0.14 * f_depth
            + 0.10 * f_vol + 0.08 * f_exp + 0.12 * f_role + 0.08 * f_books + 0.10 * f_agree)
     if attach:
