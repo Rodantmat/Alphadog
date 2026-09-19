@@ -87,7 +87,8 @@ def confidence_of(d, attach=False):
     if attach:
         for name, val in (("f_complete", f_complete), ("f_prov", f_prov), ("f_time", f_time),
                           ("f_depth", f_depth), ("f_role", f_role), ("f_vol", f_vol),
-                          ("f_exp", f_exp), ("f_books", f_books), ("f_agree", f_agree)):
+                          ("f_exp", f_exp), ("f_books", f_books), ("f_agree", f_agree),
+                          ("f_phase", f_phase)):
             d[name] = np.asarray(val, dtype=float)
     # a fully-supported leg reads ~0.97, a data-starved one ~0.45 - NEVER the meaningless 20-40% band,
     # because the core factors are always present
