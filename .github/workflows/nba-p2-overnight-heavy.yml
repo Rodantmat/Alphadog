@@ -1,0 +1,137 @@
+name: NBA P2 Overnight Heavy
+
+# PIPELINE 2 OF 3 (COMPASS fact 107). The heavy overnight run: mine last night's games, then rebuild
+# the baseline for today's slate.
+#
+# NO CRON YET — deliberately. The NBA season opens in October; until real games exist there is nothing
+# for this to mine, and a scheduled job failing nightly against an empty schedule trains everyone to
+# ignore red builds. The cron goes in when the season starts (target: daily 09:00 UTC = 01:00 PT,
+# which is after the last West-Coast game finalises and leaves eight hours before P3's 1:15 PM cutoff).
+# Until then: workflow_dispatch, and REPLAY any past date to prove the path end to end.
+#
+# THIS IS A DELTA. It adds last night to a cumulative store, which has exactly one dangerous failure
+# mode: a missed night is SILENT. Row counts still rise, nothing errors, and every as-of value computed
+# after the hole is quietly wrong. So the pipeline AUDITS ITSELF against the schedule (step 2) and
+# CERTIFIES its output (step 6), and both fail the job loudly. No `|| echo failed` anywhere — that
+# pattern is how a missing 44% of the board went unnoticed for two days.
+
+on:
+  workflow_dispatch:
+    inputs:
+      asof:
+        description: "slate date to build (blank = today PT). Use a past date to REPLAY/simulate."
+        default: ""
+        required: false
+      skip_mining:
+        description: "true = skip the scrape and only rebuild the baseline (for replay on existing data)"
+        default: "false"
+        required: false
+      season:
+        description: "season for the gap audit"
+        default: "2025-26"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-p2-overnight
+  cancel-in-progress: false
+
+jobs:
+  overnight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib
+
+      - name: Resolve slate date
+        id: d
+        run: |
+          A="${{ github.event.inputs.asof }}"
+          if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
+          echo "asof=$A" >> $GITHUB_OUTPUT
+          echo "Building slate for $A"
+
+      # 1) MINE last night. Bulk current-season refresh + per-game starters/officials for new games.
+      - name: Daily delta ingestion
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_daily_delta.py
+          python nba/scrape_nba_per_game_delta.py
+
+      - name: Baseline inputs - season files, quarters, schedule
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PERIODS_SEASONS: "1"
+        run: |
+          python nba/sync_season_files_from_delta.py
+          python nba/scrape_nba_periods.py
+          python nba/scrape_nba_schedule.py
+
+      - name: Commit mined data
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/*.json || true
+          if git diff --cached --quiet; then echo "No data changes."; else
+            git commit -m "NBA P2 overnight mining [skip ci]"
+            for i in 1 2 3 4 5; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            done
+          fi
+
+      # 2) AUDIT THE DELTA. The one check that catches a silent hole - against the SCHEDULE, not itself.
+      - name: Delta gap audit (no missing dates, games, teams or rosters)
+        env:
+          GAP_SEASON: ${{ github.event.inputs.season || '2025-26' }}
+        run: python nba/check_delta_gaps.py
+
+      # 3) MARKET inputs the baseline needs (blowout + matchup run on the real market line)
+      - name: Market spreads and totals
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/export_market_spreads.py
+
+      # 4) BUILD the baseline ladder for today's slate
+      - name: Build baseline ladder
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          ASOF: ${{ steps.d.outputs.asof }}
+        run: python nba/baseline/build_baseline_ladder.py
+
+      - name: Load baseline into Postgres
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOAD_ASOF: ${{ steps.d.outputs.asof }}
+        run: python nba/load_baseline_ladder.py
+
+      # 5) REFIT the as-of calibration so today uses cells fitted on games strictly before today
+      - name: As-of ladder calibration
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AC_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
+        run: python nba/build_asof_calibration.py
+
+      # 6) CERTIFY: today's baseline exists, >= 25 props, zero invalid probabilities
+      - name: Certify P2
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PIPE: "p2"
+          CERT_DATE: ${{ steps.d.outputs.asof }}
+        run: python nba/certify_pipeline.py
