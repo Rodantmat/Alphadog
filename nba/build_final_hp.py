@@ -370,13 +370,16 @@ def main():
             d["conf_tier"] = pd.cut(d["confidence"], [-0.01] + CUTS + [1.01],
                                     labels=["low", "medium", "high", "elite"]).astype(str)
 
-            # 5) SCORE - final HP AND confidence together. A 92% leg nobody else prices differently is
-            # not an opportunity; a 64% leg the board needs 57% for, corroborated by several books, is.
-            # edge = how far the final HP clears what the board requires; score weights it by how much
-            # we trust the number.
-            be = BREAKEVEN["standard"]
-            edge = (d["final_hp"].values - be) * 100.0
-            d["score"] = np.round(edge * d["confidence"].values, 3)
+            # 5) SCORE - 0 to 100. Final HP AND confidence together, as the owner specified: a leg with
+            # a high hit probability that our data strongly supports scores high; a coin-flip leg or one
+            # we cannot stand behind scores low.
+            #     score = final_hp x confidence x 100
+            # HP 0.95 with confidence 0.95 -> 90.  HP 0.50 with confidence 0.95 -> 47.5.
+            # HP 0.95 with confidence 0.70 -> 66.5 (the same probability, trusted less).
+            # A previous version scored EDGE x confidence, which ran -53 to +42 - an edge metric, not the
+            # 0-100 scale. Edge over break-even still matters for slip selection, but it belongs beside
+            # the score, not as the score.
+            d["score"] = np.round(d["final_hp"].values * d["confidence"].values * 100.0, 2)
             d["prop_tier"] = "penalized" if pen > 0 else "certified"
             d["n_uncertain"] = unc.astype(int)
             d["season"] = season
