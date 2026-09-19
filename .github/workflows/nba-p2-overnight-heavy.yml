@@ -183,6 +183,34 @@ jobs:
           python nba/baseline/build_combos_ladder.py
           python nba/baseline/build_periods_ladder.py
 
+      # MERGE the per-pair artefacts into the single file the loader reads. The builder writes
+      # nba_baseline_ladder_<asof>_<pair>.json per invocation; load_baseline_ladder.py reads
+      # nba_baseline_ladder_<asof>.json. Without this step the loader finds nothing and aborts.
+      # (It also has its own guard - "ABORT: artifact has no combo props" - which is why combos must
+      # be built before the merge, not after.)
+      - name: Merge per-pair ladders
+        env:
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+        run: |
+          set -euo pipefail
+          rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
+          python - <<'EOF'
+          import json, glob, os
+          asof = os.environ["BT_ASOF"]; rows = []; meta = None
+          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+          if not meta:
+              raise SystemExit(f"ABORT: no per-pair ladder files for {asof} - the builds produced nothing")
+          meta["rows"] = len(rows)
+          meta["props"] = sorted({r["prop"] for r in rows})
+          meta["players"] = len({r["player_id"] for r in rows})
+          json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+          json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
+          print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
+          for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"):
+              os.remove(f)
+          EOF
+
       - name: Load baseline into Postgres
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
