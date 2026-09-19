@@ -392,7 +392,7 @@ def main():
                 rows = [(season, r.game_date, str(r.game_id), str(r.player_id), prop, float(r.line),
                          r.side, int(r.ladder_offset), float(r.anchor) if r.anchor == r.anchor else None,
                          round(float(r.baseline_hp), 5), round(float(r.final_hp), 5),
-                         round(float(r.cal_shift), 5), round(float(r.score), 3),
+                         round(float(r.cal_shift), 5), round(float(r.score), 2), round(float(r.edge), 2),
                          round(float(r.confidence), 4), r.conf_tier,
                          round(float(r.c_exist), 4), round(float(r.c_quality), 4), round(float(r.c_market), 4),
                          r.prop_tier, r.band, r.phase, int(r.n_uncertain))
