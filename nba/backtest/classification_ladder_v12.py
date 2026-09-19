@@ -559,8 +559,9 @@ for prop, cfg in PROPS.items():
             un = (cfg["family"] == "auto") & (fr["proj_mean"] >= 10)
             pu = np.where(un, stats.norm.cdf(line_, fr["proj_mean"], np.sqrt(fr["proj_var"])), [nb_cdf(kk, m, v) for kk, m, v in zip(k_, fr["proj_mean"], fr["proj_var"])])
         return 1 - pu
+    _depth = ladder_depth(prop)          # defined for EVERY prop - the empirical tables and the
+                                         # scoring loop below both use it, not just shift-mode props
     if prop in SHIFT_MODE_PROPS:
-        _depth = ladder_depth(prop)
         for off in range(-_depth, _depth + 1): d[f"pp_{off}"] = param_p_over(d, off)
     test_all = d[d["season"].isin(TEST)]
     emp_hits = 0
