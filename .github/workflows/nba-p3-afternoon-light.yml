@@ -83,14 +83,13 @@ jobs:
           IR_MODE: "today"
         run: python nba/scrape_nba_injury_report.py
 
-      - name: Projected lineups and referee assignments
-        if: ${{ github.event.inputs.skip_scrape != 'true' }}
-        env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          python nba/scrape_nba_lineups.py
-          python nba/scrape_referee_assignments.py
+      # A5 LINEUP CHANGE IS CLOSED — REJECTED (parity doc §factor table, tested 2026-09-13): a derived
+      # as-of proxy is REDUNDANT, negative on every prop, because the allocator's recent-5 minutes
+      # already encode starting continuously. "No projected lineups needed -> no leak to mitigate."
+      # So there is NO lineup scrape here. Referees are a BASELINE-stage factor and run in P2.
+      #
+      # A6 late scratch and A9 suspension come from the SAME injury-report scrape above - they are
+      # statuses within it, not separate sources.
 
       # 2) THE BOARD: what is actually offered today, across every app.
       # PrizePicks FIRST - it is the app the owner actually plays, and its producer lives at the repo
