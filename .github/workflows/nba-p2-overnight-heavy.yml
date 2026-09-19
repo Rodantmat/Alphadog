@@ -145,6 +145,29 @@ jobs:
             BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
           done
 
+      # Combos and periods have their own DAILY builders (the *_history.py versions are the season
+      # backfills). Combos need the singles COMPONENTS pickled first - that is what BT_SAVE_COMPONENTS
+      # does - so the order here is: components -> combos -> periods. Getting this order wrong produces
+      # a slate with no combos, which is 44% of the board.
+      - name: Components, combos and periods for today's slate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+          BT_CUTOFF: "baseline"
+          BT_LADDER_STEPS: "10"
+          BT_INJURY: "1"
+          BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            echo "=== components :: $pair"
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
+          done
+          python nba/baseline/build_combos_ladder.py
+          python nba/baseline/build_periods_ladder.py
+
       - name: Load baseline into Postgres
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
