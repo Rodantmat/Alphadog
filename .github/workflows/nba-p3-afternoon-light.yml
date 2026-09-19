@@ -198,6 +198,23 @@ jobs:
               os.remove(f)
           EOF
 
+      # Commit before loading - the loader reads the artefact over HTTP from the repo, not local disk.
+      - name: Commit the day-of ladder
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/nba_baseline_ladder_*.json || true
+          if git diff --cached --quiet; then
+            echo "ABORT: nothing to commit - the merge produced no ladder file"; exit 1
+          fi
+          git commit -m "NBA P3 day-of ladder ${{ steps.d.outputs.asof }} [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+          done
+          exit 1
+
       - name: Load the day-of baseline
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
