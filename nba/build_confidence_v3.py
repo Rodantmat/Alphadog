@@ -278,14 +278,26 @@ def main():
         sep = {}
         for c in FACTOR_COLS:
             v = d[c].astype(float)
-            hi_m = d[v >= v.quantile(0.70)]
-            lo_m = d[v <= v.quantile(0.30)]
-            if len(hi_m) < 5000 or len(lo_m) < 5000:
+            # MEASURE AT THE ACTUAL EXTREMES, not a 30/70 quantile cut. The first version compared the
+            # top 30% against the bottom 30% and found only f_books separating - but FRINGE players are
+            # 2.6% of legs (58,969 of 2.23M), so they sat deep inside a bottom bucket dominated by
+            # ROTATION. The test compared 0.85 against 0.95 and correctly saw nothing, while the real
+            # signal (fringe |gap| 0.0283 vs iron-man 0.0008, a 35x difference) lived in a tail it never
+            # isolated. A signal concentrated in a small tail is invisible to a coarse quantile split.
+            lo_cut, hi_cut = v.quantile(0.05), v.quantile(0.95)
+            if hi_cut - lo_cut < 1e-6:              # factor is constant - it cannot separate anything
+                sep[c] = 0.0
+                continue
+            hi_m = d[v >= hi_cut]
+            lo_m = d[v <= lo_cut]
+            if len(hi_m) < 2000 or len(lo_m) < 2000:
                 sep[c] = 0.0
                 continue
             g_hi = abs(float(hi_m["won"].mean()) - float(hi_m["final_hp"].mean()))
             g_lo = abs(float(lo_m["won"].mean()) - float(lo_m["final_hp"].mean()))
-            sep[c] = max(g_lo - g_hi, 0.0)          # positive only: low factor => worse gap
+            sep[c] = max(g_lo - g_hi, 0.0)
+            print(f"    {c:<12} lo n={len(lo_m):>7,} |gap| {g_lo:.4f}   hi n={len(hi_m):>7,} "
+                  f"|gap| {g_hi:.4f}   separation {sep[c]:+.5f}", flush=True)
         tot = sum(sep.values())
         print("  measured separation per factor (|gap| low minus high):",
               ", ".join(f"{c.replace('f_','')} {v:+.4f}" for c, v in sep.items()), flush=True)
