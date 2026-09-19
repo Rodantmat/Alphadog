@@ -126,12 +126,17 @@ jobs:
 
       # 5) BUILD the baseline ladder for today's slate - PER PROP PAIR. The builder is written to run
       # one pair per invocation (~8 min each); calling it once would silently produce only the default
-      # pair and the slate would be missing 28 of 30 props.
+      # pair and the slate would be missing most of the 30 props.
+      # ENV NAMES ARE FROM THE SCRIPT, NOT GUESSED: BT_ASOF (slate), BT_PROPS (pair), BT_REPLAY (allow
+      # a finished game when replaying), BT_CUTOFF (which as-of cutoff from nba_asof.py to read the
+      # injury report at). The overnight run uses "baseline" = 09:00 ET.
       - name: Build baseline ladder (all prop pairs)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
-          ASOF: ${{ steps.d.outputs.asof }}
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+          BT_CUTOFF: "baseline"
+          BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
         run: |
           set -euo pipefail
           for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
@@ -139,16 +144,6 @@ jobs:
             echo "=== baseline pair: $PAIR"
             BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
           done
-
-      - name: Build combos and periods for today's slate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PROXY_URL: ${{ secrets.PROXY_URL }}
-          ASOF: ${{ steps.d.outputs.asof }}
-        run: |
-          set -euo pipefail
-          BT_MODE="combos" python nba/baseline/build_baseline_ladder.py
-          BT_MODE="periods" python nba/baseline/build_baseline_ladder.py
 
       - name: Load baseline into Postgres
         env:
