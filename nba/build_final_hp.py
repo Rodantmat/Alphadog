@@ -377,16 +377,22 @@ def main():
             d["conf_tier"] = pd.cut(d["confidence"], [-0.01] + CUTS + [1.01],
                                     labels=["low", "medium", "high", "elite"]).astype(str)
 
-            # 5) SCORE - 0 to 100. Final HP AND confidence together, as the owner specified: a leg with
-            # a high hit probability that our data strongly supports scores high; a coin-flip leg or one
-            # we cannot stand behind scores low.
-            #     score = final_hp x confidence x 100
-            # HP 0.95 with confidence 0.95 -> 90.  HP 0.50 with confidence 0.95 -> 47.5.
-            # HP 0.95 with confidence 0.70 -> 66.5 (the same probability, trusted less).
-            # A previous version scored EDGE x confidence, which ran -53 to +42 - an edge metric, not the
-            # 0-100 scale. Edge over break-even still matters for slip selection, but it belongs beside
-            # the score, not as the score.
-            d["score"] = np.round(d["final_hp"].values * d["confidence"].values * 100.0, 2)
+            # 5) SCORE - 0 to 100. Confidence CONFIRMS a strong leg, it does not tax one.
+            # A straight product (hp x conf) KILLS good legs: 0.95 HP with 0.90 confidence scores 85.5,
+            # WORSE than the probability alone. Backwards - well-supported data should make a strong hit
+            # probability MORE assertive, not less.
+            # So confidence acts around a NEUTRAL point: above it the score is lifted toward 100, below
+            # it the score is pulled down. Data we stand behind enhances; thin data penalises.
+            #     score = hp*100 + (100 - hp*100) * lift        when conf > neutral   (toward 100)
+            #     score = hp*100 * (1 - drop)                   when conf < neutral   (toward 0)
+            # 0.95 HP / 0.95 conf -> 97.4 (enhanced)   0.95 HP / 0.70 conf -> 81.7 (penalised)
+            # 0.50 HP / 0.95 conf -> 63.2              0.22 HP / 0.95 conf -> 42.4
+            CONF_NEUTRAL = 0.85
+            hp100 = d["final_hp"].values * 100.0
+            cdev = (d["confidence"].values - CONF_NEUTRAL) / (1.0 - CONF_NEUTRAL)   # +1 at 1.0, -ve below
+            lift = np.clip(cdev, 0, 1) * 0.50            # up to half the remaining headroom to 100
+            drop = np.clip(-cdev, 0, 1) * 0.35           # up to 35% off when the data is thin
+            d["score"] = np.round(np.clip(hp100 + (100.0 - hp100) * lift - hp100 * drop, 0, 100), 2)
             # EDGE kept alongside as its own column - how far the HP clears what the board requires.
             # It drives slip SELECTION (a 64% leg where the board needs 57% is an opportunity; a 92% leg
             # everyone prices at 92% is not), while SCORE answers "how good is this leg".
