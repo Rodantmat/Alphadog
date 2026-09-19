@@ -402,11 +402,11 @@ def main():
                     cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s", (season, prop))
                     cur.executemany("""INSERT INTO nba_score.final_hp
                         (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
-                         baseline_hp, final_hp, cal_shift, score, confidence, conf_tier,
+                         baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
                          c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE SET
-                          final_hp=EXCLUDED.final_hp, score=EXCLUDED.score,
+                          final_hp=EXCLUDED.final_hp, score=EXCLUDED.score, edge=EXCLUDED.edge,
                           confidence=EXCLUDED.confidence, conf_tier=EXCLUDED.conf_tier,
                           c_exist=EXCLUDED.c_exist, c_quality=EXCLUDED.c_quality,
                           c_market=EXCLUDED.c_market""", rows)
