@@ -53,6 +53,12 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Delta gap audit (simulate P2 step 2)
+        if: ${{ github.event.inputs.task == 'gaps' }}
+        env:
+          GAP_SEASON: ${{ github.event.inputs.season }}
+        run: python nba/check_delta_gaps.py
+
       - name: Certify a pipeline (p1 / p2 / p3)
         if: ${{ github.event.inputs.task == 'certify' }}
         env:
