@@ -53,6 +53,13 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Storage diet (VACUUM FULL + index audit)
+        if: ${{ github.event.inputs.task == 'diet' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIET_TABLES: ${{ github.event.inputs.props }}
+        run: python nba/run_storage_diet.py
+
       - name: Confidence v3 (epistemic thermometer + group sampling)
         if: ${{ github.event.inputs.task == 'confidence_v3' }}
         env:
