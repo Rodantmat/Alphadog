@@ -34,15 +34,17 @@ import os
 
 import psycopg
 
-SQL = """
+DDL = """
 CREATE TABLE IF NOT EXISTS nba_market.board_tiers_v2 (
     game_date date, snapshot_label text, bookmaker text, player text, nm text,
     base_market text, side text, line numeric, kind text,
     anchor_line numeric, anchor_type text, tier bigint, position_vs_anchor text,
-    built_at timestamptz DEFAULT now());
+    built_at timestamptz DEFAULT now())
+"""
 
-TRUNCATE nba_market.board_tiers_v2;
-
+# psycopg refuses "multiple commands in a prepared statement" the moment a query carries parameters,
+# so the DDL, the truncate and the parameterised INSERT are three separate executes - not one blob.
+SQL = """
 WITH pp AS (
   SELECT DISTINCT game_date, snapshot_label, bookmaker, player,
          lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm,
