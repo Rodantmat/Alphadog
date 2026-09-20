@@ -253,6 +253,223 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 80 — THE FOUR `run_job` RESULTS AND `check_bindings`, RE-RUN LIVE *(added 2026-09-20)*
+*Angle: the live-system **responses** T1 received — one `check_bindings`, three `run_job` calls
+against the NBA worker, one against MLB's control room — **with `check_bindings` re-run today for
+comparison**. **VERIFIED live 2026-09-20.***
+
+### ✅ THE ENVIRONMENT SURFACE IS UNCHANGED SINCE T1 — and the D1 zeros still hold
+**`check_bindings` re-run today returns the same shape T1 saw**: **all 12 D1 bindings `false`**
+(`CONTROL_DB`, `CONFIG_DB`, `REF_DB`, `STATS_HITTER_DB`, `STATS_PITCHER_DB`, `TEAM_DB`, `DAILY_DB`,
+`MARKET_DB`, `CONTEXT_DB`, `SCORE_DB`, `ARCHIVE_DB`, `SCORING_DB`), **20 vars present**,
+**11 secrets present**, `control_room_service_binding_present: true`.
+**The twelve D1 names still exist as binding slots and every one is unbound** — consistent with the
+2026-08-12 decommission and with pass 40's finding that six MLB workers still carry D1 bindings in
+config. **Recorded as a clean re-verification**, not a new finding.
+
+### ⚠⚠ THE MECHANISM BEHIND §0.3 — **NBA workers are given six vars, and none of them is an operating constant**
+`NBA_WORKERS.md` §0.3 records that **every NBA worker's operating constants are hardcoded** and that
+the founding rule is not holding. **This pass found why the hole exists, in the generator's source.**
+
+**MLB's shared `VARS` carries the operational caps** — **VERIFIED live via `check_bindings`**:
+`MAX_TICK_MS`, `MAX_API_CALLS_PER_TICK`, `MAX_ROWS_PER_TICK`, `LOCK_STALE_MINUTES`,
+`WORKER_SAFE_MODE`, `DEBUG_MODE`, `MANUAL_SQL_ENABLED`, `CONFIG_PHASE`, `DEFAULT_DAY_SCOPE`,
+`DEFAULT_SLATE_MODE`, and four API base URLs — **20 in total.**
+
+**`generate_wrangler_configs.py` gives an NBA worker exactly six**, in a block that says so outright:
+> *"NBA expansion (additive only): every NBA worker gets … **its own vars, never the shared MLB VARS
+> dict mutated in place**."*
+```python
+cfg["vars"] = {
+    "SYSTEM_ENV":  VARS.get("SYSTEM_ENV", "production"),
+    "SYSTEM_TIMEZONE": VARS.get("SYSTEM_TIMEZONE", "America/Los_Angeles"),
+    "ACTIVE_SPORT": "basketball_nba",
+    "NBA_STATS_API_BASE_URL": "https://stats.nba.com/stats",
+    "WORKER_SAFE_MODE": VARS.get("WORKER_SAFE_MODE", "false"),
+    "DEBUG_MODE":  VARS.get("DEBUG_MODE", "false"),
+}
+```
+**✅ The isolation is real and deliberate** — this is exactly the additive design pass 65 traced, and
+it is why no MLB var leaks into an NBA worker.
+**⚠ But it also means an NBA worker has nowhere to read a timeout, a retry count, a chunk size or a
+row cap from.** **`nba_config.system_settings` exists and is read by no code** (pass 33), and **the
+vars block carries no operational constant at all.** **So the constants had nowhere to live except
+the source**, which is precisely what §0.3 catalogues. **The rule did not fail through neglect; the
+plumbing for it was never built on either side.** Recorded as the mechanism, not a new violation.
+
+### ⚠ A small inconsistency: `ACTIVE_SPORT` uses two different naming conventions
+**VERIFIED**: `vars.production.json` (MLB) sets **`"ACTIVE_SPORT": "MLB"`**; the generator sets
+**`"ACTIVE_SPORT": "basketball_nba"`** for NBA workers. **A league abbreviation on one side and a
+ParlayAPI-style sport key on the other, in the same variable name.** Harmless while nothing compares
+them across sports; **recorded because any future code that does compare them will be wrong.**
+
+### What the three NBA `run_job` results actually reported
+| Call | Result |
+|---|---|
+| `run` (first) | `teams_written: 30`, `aliases_written: 157`, `teams_unchanged_skipped: 0`, **`elapsed_ms: 78,616`**, `external_calls_performed: 0`, `source_key: STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR`, `source_fetch_error: "nba_stats_api_http_520"` |
+| `run` (second) | **`teams_written: 0`, `teams_unchanged_skipped: 30`**, `aliases_written: 157`, **`elapsed_ms: 73,240`** |
+| `probe-sources` | `stats.nba.com/stats/leaguestandingsv3` → **HTTP 520**, body = Cloudflare's own *"Error 520: Web server is returning an unknown error … the origin web server sent a response that Cloudflare could not parse"* |
+
+**✅ The idempotency is demonstrated, not asserted**: the second run wrote **zero** team rows and
+skipped **30 unchanged** — the *"only updates rows that actually changed"* behaviour recorded in
+`NBA_DATABASE.md`, shown working on the very first repeat.
+
+⚠ **And a measurement worth flagging: a 30-row upsert took 78.6 seconds, then 73.2 seconds.**
+That is **the write path, not the fetch** — `external_calls_performed: 0` on both. **Why a 30-row
+idempotent upsert through Hyperdrive costs over a minute is NOT RECORDED**, and this pass does not
+explain it. It is consistent with pass 66's measurement that **`run_job` averaged 49.5 s over four
+calls**, and it is the kind of number that matters when 21 workers run in sequence.
+
+### The one MLB call, and what it returned
+`run_job {"job": "trigger", "target": "CONTROL_ROOM"}` → **HTTP 400**,
+`"error": "unknown_or_not_enabled_v2_control_room_job"`, from
+`alphadog-v2-control-room-v1.6.215-baseline-v5-classification-rescue-target-batch`.
+**The call was rejected by MLB's own worker** — **nothing was triggered** — which is one more
+independent data point for the isolation record, and it captures the control room's exact deployed
+version string at 2026-08-31.
+
+---
+
+## FROM T1 PASS 79 — THE CI LOGS THEMSELVES: THE PRIMARY EVIDENCE BEHIND THE TARPIT DIAGNOSIS *(added 2026-09-20)*
+*Angle: the six `github_get_workflow_run_log` calls, read for their **`log_text`** rather than their
+run IDs (pass 40) or their timing (pass 66). **This is the raw CI output T1 actually saw.**
+**MEASURED and quoted from the export.***
+
+### ⚠⚠ THE ESCALATION LADDER, EXACT — and the documents record the conclusion without it
+`NBA_RECIPE.md` and `NBA_SYSTEM_ARCHITECTURE.md` record the tarpit conclusion. **The evidence that
+produced it is three runs with three different settings, and every one failed the same way:**
+
+| Run | Setting | Result |
+|---|---|---|
+| **33444713366** | `read timeout=30`, single attempt | `NBA teams scrape FAILED: HTTPSConnectionPool(host='stats.nba.com', port=443): **Read timed out. (read timeout=30)**` |
+| **33444861845** | `read timeout=60`, **3 attempts** | `Attempt 1/3 failed`, `Attempt 2/3 failed`, `Attempt 3/3 failed` — **all `Read timed out. (read timeout=60)`** |
+| **33445264412** | **proxy enabled**, `read timeout=30`, 3 attempts | `Attempt 1/3 failed **(proxy=yes)**`, 2/3, 3/3 — **all `Read timed out.`** |
+
+**Doubling the timeout changed nothing. Adding a proxy changed nothing. Three attempts changed
+nothing.** **Not once was there a 403, a connection refusal, a TLS error or an HTTP status** —
+**every single failure is a READ TIMEOUT**, i.e. the connection was accepted and then held open with
+no response. **That is the entire evidentiary basis for the tarpit diagnosis**, and it is why the
+answer was TLS fingerprint impersonation (`curl_cffi`) rather than headers, IP or retries.
+
+⚠ **None of these strings appears in any document**: `Read timed out`, `read timeout`,
+`Attempt 1/3`, `proxy=yes`. **`timeout=30` and `timeout=60` appear, but as worker configuration
+values, not as this ladder.** **The conclusion was carried forward; the measurements were not.**
+**They are recorded here because they are the reusable part**: *a read timeout that survives a longer
+timeout and a different egress is a tarpit, not a block.*
+
+### The deploy failure's exact fingerprint
+Run **33429867514**, the first deploy failure, returns one error line:
+> `✘ [ERROR] **The entry-point file at "nba/alphadog-v2-nba-static-teams.js" was not found.**`
+
+**This is the `nba/nba/` path-doubling bug** — wrangler resolves `main` relative to the config file's
+own directory, so a config already inside `nba/` must not re-prefix the path. **The bug is documented
+in four places; the exact wrangler error string is not**, and it is the string anyone would search
+for when it recurs. **Recorded verbatim for that reason.**
+
+⚠ **The failed job had SEVENTEEN steps and FOUR failed**: `Deploy selected Workers`,
+`Record last successful deploy marker`, **`Post Setup Python`** and **`Post Setup Node`**. **The last
+two are post-job cleanup steps that failed as a consequence** — **so one real failure produced four
+red steps.** Worth knowing before reading a failed deploy as four separate problems.
+
+**The scrape failures have the same shape**: every one shows **three** failed steps —
+`Scrape NBA teams from stats.nba.com`, **`Commit NBA data JSON to main`** and `Post Set up Python`.
+**The commit step fails because the scrape produced nothing to commit.** ✅ **And each run ends with
+`##[error]Process completed with exit code 1`** — **the job failed loudly, with no
+`|| echo failed` swallowing it**, which is the discipline the P2 header states as a rule.
+
+### The tool's real behaviour, measured — a correction to how pass 40 framed it
+Pass 40 recorded that `github_get_workflow_run_log` returned **404** for an in-flight run and
+concluded logs are *"not retrievable in flight and expire afterwards."* **That is correct as far as
+it goes.** **What the five successful calls show is that the tool does return log text, with a
+server-side grep** — and the numbers are worth having:
+
+| Run | `total_log_lines` | `returned_lines` | `tail_lines` asked |
+|---|---|---|---|
+| 33429867514 (deploy) | **9,551** | **40** | 150 |
+| 33431309511 (deploy) | **9,627** | **40** | 60 |
+| 33444713366 (scrape) | 184 | 8 | 80 |
+| 33444861845 (scrape) | 187 | 32 | 80 |
+| 33445264412 (scrape) | 188 | **40** | 40 |
+
+**A deploy log is ~50× larger than a scrape log** (9,551 vs 184 lines). ⚠ **And `returned_lines`
+never exceeded 40, even when `tail_lines` asked for 150** — **an effective 40-line cap on what comes
+back**, which is **NOT RECORDED** anywhere. **Anyone diagnosing a large deploy failure gets at most
+40 matching lines out of ~9,500 and must choose the grep pattern accordingly.**
+
+---
+
+## FROM T1 PASS 78 — T1'S READING LIST, COUNTED AGAINST THE REPO IT WAS READING *(added 2026-09-20)*
+*Angle: pass 73 counted what T1 **wrote**. This counts what it **read** — every `github_get_file`,
+`github_grep_file` and `github_list_dir` call, with the denominator measured on the live clone.
+**MEASURED from the export and VERIFIED against the repo.***
+
+### The whole reading surface: **32 calls, 20 distinct paths, 4 directory listings**
+| What was read | Calls |
+|---|---|
+| `alphadog-v2-admin-sql.js` | **7** — 1 full read + **6 greps** |
+| `nba/NBA_PROJECT_LOG.md` | 3 (re-read before each append) |
+| `nba/alphadog-v2-nba-static-teams.js` | 3 |
+| `nba/data/nba_teams_current.json` | 2 |
+| **The three handoff documents** — blueprint, lessons, domain mapping | **1 each, full** |
+| `alphadog-v2-static-teams.js` (the MLB worker template) | 1 |
+| `generate_wrangler_configs.py`, `github_mobile_deploy_workers.py`, `github_write_worker_secrets_file.py` | 1 each |
+| `.github/workflows/scrape.yml`, `alphadog-v2-github-auto-deploy.yml`, `.github/workflows/nba-scrape.yml` | 1 each |
+| `alphadog-v2-parlay-sleeper-board.js`, `alphadog-v2-prizepicks-github-board.js` | **grep only — never read in full** |
+| `github_list_dir` on **`/`, `nba`, `.github`, `.github/workflows`** | 4 |
+
+**The three handoff documents were each read exactly once, in full** — matching the founding
+instruction *"read all three in full before doing anything else."* ✅
+
+### ⚠⚠ THE MEASURED SEARCH SPACE: **NINE MLB FILES, OUT OF 372 AT THE REPO ROOT ALONE**
+**VERIFIED on the live clone**: the repo root holds **140 `.js` MLB workers, 11 `.py` scripts and
+41 `.md` documents — 372 files in total** — plus **6 MLB workflows** and the `gbdt_training/`
+directory's 28 files.
+
+**T1 opened nine MLB files**: `alphadog-v2-static-teams.js`, `alphadog-v2-admin-sql.js`,
+`alphadog-v2-parlay-sleeper-board.js`, `alphadog-v2-prizepicks-github-board.js`,
+`generate_wrangler_configs.py`, `github_mobile_deploy_workers.py`,
+`github_write_worker_secrets_file.py`, `.github/workflows/scrape.yml`,
+`alphadog-v2-github-auto-deploy.yml`. **Two of the four workers were only grepped, never read.**
+
+**This is the measurement that pass 40's finding was missing.** Pass 40 established that T1's central
+discovery — *"scrape on a GitHub runner because Cloudflare cannot reach the host"* — was **prior
+art already written into `gbdt_training/d1_client.py`**, and cost four failed runs and 25 polling
+sleeps to rediscover. **Now the reason is measurable rather than inferred: `gbdt_training/` was never
+opened, and neither were 363 of the 372 root files.** **The search space for *"has MLB already solved
+this"* was nine files.**
+
+**Stated at its real strength**: **reading nine files was not unreasonable** — they were the right
+nine for the task, chosen by the investigation method at `NBA_WORKERS.md` §0a (registry first,
+targeted grep second, full read only when necessary), and **that method is correct and is why the
+work was fast.** **The finding is that the method optimises for "answer this question" and has no step
+for "has this already been solved here"**, and **pass 40 measured what that costs.** The two findings
+complete each other.
+
+### The eight grep patterns are a compact record of what T1 needed to know
+| Target | Pattern |
+|---|---|
+| `alphadog-v2-parlay-sleeper-board.js` | `sport\|basketball\|baseball_mlb` |
+| `alphadog-v2-admin-sql.js` | `target\|BASE_HITTER_GAME_LOGS_WORKER\|run_job` |
+| `alphadog-v2-admin-sql.js` | `bindingName ===` |
+| `alphadog-v2-admin-sql.js` | `NBA_STATIC_TEAMS_WORKER.*\{\|binding\.fetch` |
+| `alphadog-v2-prizepicks-github-board.js` | `raw.githubusercontent\|api.github.com\|GITHUB_TOKEN` |
+| `alphadog-v2-admin-sql.js` | `function toolGithub\|GITHUB_TOKEN\|api.github.com` |
+| `alphadog-v2-admin-sql.js` | `this\.server\.tool\(\|"github_grep_file"\|"github_list_dir"` |
+| `alphadog-v2-admin-sql.js` | `github_trigger_workflow` |
+
+**Six of the eight target the MCP bridge**, which is the file T1 had to understand to extend its own
+tooling — **the bridge was the single most-read file of the session.** ⚠ And the
+`prizepicks-github-board` grep (`raw.githubusercontent|api.github.com|GITHUB_TOKEN`) is **the exact
+moment the GitHub-committed-JSON pattern was identified**, three patterns wide.
+
+⚠ **Note the pattern T1 used to read the board worker's fetch surface** — it searched for **both**
+`raw.githubusercontent` and `api.github.com`. **The MLB board worker it was copying uses one of
+them; the NBA workers built in that era use the Contents API** (pass 71 — 10 of 21 still do).
+**Which of the two the MLB template actually used, and whether the choice was read or assumed, is
+NOT RECORDED** — the grep result is in the transcript but the reasoning is not.
+
+---
+
 ## FROM T1 PASS 77 — THE FOURTEEN ASSISTANT MESSAGES, READ AS THE OWNER-FACING RECORD *(added 2026-09-20)*
 *Angle: **only the text the owner actually saw** — T1's 14 assistant message turns (43,216 characters),
 stripped of thinking, tool calls and tool results, with each factual claim tested against the live
