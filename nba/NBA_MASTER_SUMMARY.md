@@ -1739,13 +1739,20 @@ noisy**, not a primary signal — a self-correction made immediately after build
    not just parsing rendered text (a different, less-proven technique)."* **This is what the SvelteKit
    hydration extraction in T3 solves.**
 
-#### T2.15f — **AN ARCHITECTURAL RECOMMENDATION — was it followed?**
+#### T2.15f — **AN ARCHITECTURAL RECOMMENDATION — and it WAS followed**
 > *"**don't hard-wire 'DARKO' everywhere — build a generic `player_impact_rating` concept** so it can
 > be swapped out later if DARKO disappears."*
 
-Given the single-maintainer risk, this was the recommended design. **Whether it was implemented that
-way, or DARKO was hard-wired, is not established in T2** — the build lands in T3. **Flagged in
-OPEN_ITEMS as a question to resolve when T3 is documented.**
+**RESOLVED 2026-09-20 by direct check: the recommendation was implemented.** The table is
+**`nba_stats.player_impact_rating`**, not `nba_stats.darko` — so the source can be swapped without
+touching every consumer. The scraper (`nba/scrape_nba_darko.py`) names DARKO; the storage layer does
+not. **Good separation, made on a stated risk rather than after being burned by it.**
+
+The scraper's own docstring confirms the reasoning and adds one detail not in T2's chat text:
+> *"crucially uses **the exact same NBA person IDs already in our system** (nba_id: 203999 = Jokić)"*
+
+**DARKO keys on `nba_player_id` directly** — no name matching, so the diacritic problem (T2.9c) does
+not apply to it.
 
 **T2 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
 
