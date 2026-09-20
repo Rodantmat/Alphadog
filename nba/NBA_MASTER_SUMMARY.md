@@ -609,6 +609,14 @@ Plus the decisive instruction that overruled the shared control plane:
 holds your first tunable variables (timeout, retry limit, chunk size, differential cadence) —
 SQL-editable, no hardcoding, as you required."*
 
+> ⚠ **FALSIFIED 2026-09-20 (pass 37, on pass 36's evidence).** The table exists and holds those rows
+> — true. **"No hardcoding, as you required" — false.** **VERIFIED: nothing in the codebase reads
+> `nba_config.system_settings`** (zero occurrences across all 190 `.py`/`.js` files and the MCP admin
+> bridge), and timeouts, retry counts and chunk sizes are Python literals. **The requirement was
+> reported satisfied on the strength of the table EXISTING.** Same *declared done, never wired* shape
+> as the weekly differential worker. **Annotated, not rewritten** — it is an accurate record of what
+> was claimed at the time. See `NBA_OPEN_ITEMS.md` → FROM T1 PASS 36 and PASS 37.
+
 ### T1.18 — PASS 8 (added 2026-09-20; artefact inventory sweep) — **NOTHING NEW**
 
 A complete regex sweep of every file path mentioned in T1 returned exactly the artefacts already
