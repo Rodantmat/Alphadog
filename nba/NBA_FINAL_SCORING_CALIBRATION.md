@@ -752,7 +752,57 @@ source of a wrong final probability."*)
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7n. THE OUTCOME-GRADING ENGINE — isolation design
+*Source: T1, blueprint §4c. Recorded 2026-09-20.*
+
+### Isolation-by-design as a SAFETY PROPERTY, not an accident
+> *"The grader **ONLY EVER READS from historical board/game-log tables** and **ONLY EVER WRITES to a
+> DEDICATED OUTCOME-HISTORY TABLE** — **it NEVER touches any table the LIVE BOARD-SERVING PATH
+> reads.**
+> **This means a bug in the grader CANNOT CORRUPT TODAY'S LIVE BOARD; its BLAST RADIUS is limited to
+> producing wrong or missing *TRAINING* data**, which **a SEPARATE DOWNSTREAM VALIDATION STEP checks
+> BEFORE any calibration correction is ever applied.**
+> **Build NBA's outcome grader with this same isolation FROM DAY ONE — a real, LOAD-BEARING SAFETY
+> PROPERTY, not an afterthought.**"*
+
+**✅ NBA's grader has the read side right**: `grade_board_outcomes.py` reads `board_snapshots` and game
+logs, writes `nba_market.board_outcomes` (6.9M legs) — a dedicated outcome table.
+
+**⚠ But the blast radius is NOT fully contained, because of P2's ordering.** The pipeline runs
+**grade (step 3) → … → calibration refit (step 14)** in the same workflow, and the refit writes
+`ladder_calibration_asof`, which **`build_final_hp.py` reads on the next run.**
+
+**So the path from grader to live numbers exists**: bad grades → bad `log_odds_shift` → bad
+`final_hp`. **The isolation the blueprint describes depends on the second clause — *"a separate
+downstream validation step checks before any calibration correction is ever applied"* — and no such
+validation step between grading and the refit is recorded.**
+
+**The ordering itself is correct and deliberate** (*"grading must run before the refit, or yesterday's
+evidence is invisible to today's cells"*). **What is missing is the check between them.**
+
+### Map every canonical prop to an explicit expression against raw game-log columns
+> *"e.g. **a composite fantasy-score prop as an EXPLICIT WEIGHTED SUM of raw counting stats** — **keep
+> this map IN ONE PLACE, VERSIONED**, and **FLAG any prop whose scoring formula HASN'T BEEN
+> INDEPENDENTLY VALIDATED against a confirmed, authoritative spec AS A KNOWN, EXPLICIT GAP rather than
+> silently trusting an assumed formula** — **this is the EXACT MECHANISM that would have caught the
+> FANTASY-SCORE FORMULA BUG much earlier.**"*
+
+**NBA has the map in two places, not one:**
+| Location | Contents |
+|---|---|
+| `nba_ref.prop_taxonomy` (28 rows) | the canonical prop list |
+| **`norm_market()` in `score_board_legs.py`** | board key → our prop name |
+| `classification_ladder_v12.py`'s `PROPS` | prop → **source column** (`"col": "PF"`, `"col": "FGM"`) |
+
+**The `PROPS` config IS the expression map for singles** — each prop names its raw game-log column.
+**Combos and `fantasy_score` are where the explicit weighted sum lives, and that is the one flagged by
+this rule**: the scale `1 / 1.2 / 1.5 / 3 / 3 / −1` was **validated against all three apps in T9** —
+so **NBA did the validation this asks for**, though the result is recorded in a transcript rather than
+versioned beside the map.
+
+**The instruction not followed**: *"flag any prop whose formula hasn't been independently validated
+**as a known, explicit gap**."* **`double_double` (sentinel −1.0), `stocks`, and the period props do
+not carry such a flag.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
