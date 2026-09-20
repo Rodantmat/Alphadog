@@ -22,7 +22,69 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
-## 0c. ⚠⚠ STATIC MANIFESTS DESCRIBE THE ARCHITECTURE THAT WAS SCAFFOLDED, NOT THE ONE RUNNING
+## 0d. ⚠⚠ SYSTEM SELF-KNOWLEDGE — read before assuming anything is "live"
+*Source: T1, blueprint §6 — **"file names, job_key names, and 'is this worker active' assumptions are
+FREQUENTLY WRONG, and this cost real debugging time more than once."*** Recorded 2026-09-20.
+
+### 1. One physical file can serve MANY unrelated logical roles
+> *"**A single physical worker file can serve MANY UNRELATED LOGICAL ROLES, selected AT RUNTIME by a
+> `mode` PARAMETER, not by which file it is.** MLB's most extreme case: **ONE 700 KB+ FILE SERVES ~24
+> DIFFERENT LOGICAL FUNCTIONS across multiple job_key aliases.**
+> **NEVER ASSUME 'ONE FILE = ONE JOB.'**
+> If you're tempted to reuse an existing file for a new purpose via a mode switch, **that's CONSISTENT
+> WITH THE ESTABLISHED PATTERN — but DOCUMENT THE MODE DISPATCH TABLE EXPLICITLY IN ONE PLACE, don't
+> let it become IMPLICIT.**"*
+
+**⚠ NBA uses mode switches throughout, and the dispatch table is NOT documented in one place.**
+| File | Modes |
+|---|---|
+| `scrape_nba_injury_report.py` | **`INJURY_MODE`** = `daily` / `probe` / backfill *(with `INJURY_FROM`/`TO`)* |
+| The backfill worker | **`mode`** = default / **`weekly`** (splits + career totals only) |
+| The measure-types writer | **`file_prefix`** — backfill vs delta files |
+| `scrape_nba_season_tables.py` | **`MODE`** = `season`, plus `SEASONS_N` |
+| The certifiers | **`PIPE`** = `p1` / `p2` / `p3` |
+| P2 itself | **`skip_mining`**, **`asof`**, **`season`** — replay vs live |
+| The recipe | **`BT_CARRY`**, `BT_PROPS`, `BT_CUTOFF`, `BT_REPLAY`, `BT_TRAIN`/`BT_TEST`, `BT_PLAYER_L0`, `BT_SHIFT_LAMBDA`, `BT_LADDER_STEPS`, `BT_SAVE_COMPONENTS` |
+
+**The table above IS the missing dispatch documentation**, assembled here for the first time.
+**Note `INJURY_MODE` specifically**: the workflow comment records *"**`INJURY_MODE`, not `IR_MODE`
+(verified in the script; MY FIRST GUESS WAS WRONG)**" — the exact cost this lesson describes.
+
+### 2. A file name can be a complete DEAD STUB
+> *"**A worker's own literal file name can be A COMPLETE DEAD STUB** while **ALL ITS REAL WORK HAPPENS
+> UNDER OTHER job_key/mode ALIASES that have NOTHING TO DO WITH THE FILE'S NAME.**
+> **Don't trust a file name as a description of current behaviour.**"*
+
+**NBA's live instance of the inverse**: `classification_ladder_v12.py` **is at v18** — the file name
+under-describes it by six versions. **And T7's three-generation trap is this lesson exactly**:
+`alphadog-v2-base-classification-v5.js` is dead and says so; the live logic is a **function name**,
+`runClassificationBaselineV6ToPostgres`.
+
+### 3. "WIRED BUT NOT IMPLEMENTED" is a recurring shape
+> *"**A dispatch guard function AND CALL SITE CAN EXIST and route to A HANDLER FUNCTION THAT WAS NEVER
+> ACTUALLY WRITTEN**, causing **A CRASH ONLY WHEN THAT SPECIFIC PATH IS FINALLY EXERCISED.**
+> **When wiring a new NBA worker into any dispatch table, VERIFY THE HANDLER FUNCTION ACTUALLY EXISTS
+> — don't just verify THE ROUTING COMPILES.**"*
+
+**This is §4h's called-but-undefined risk seen from the dispatch side**, and it is why NBA's wiring is
+**four edits** rather than three — each is a place the routing can exist without the destination.
+
+### 4. A batch of stubs can look entirely real from outside
+> *"**A large batch of NEAR-IDENTICAL PLACEHOLDER/STUB FILES can look REAL FROM THE OUTSIDE** —
+> **plausible file sizes, real-looking names** — **while being 100% UNIMPLEMENTED DUMMIES that were
+> SCAFFOLDED EARLY AND ABANDONED when the design changed.**
+> **MLB has 19 such per-prop 'SCORE' WORKERS, ALL RETURNING A HARDCODED
+> `DUMMY_READY` / `DUMMY_ONLY_NOT_REAL_DATA` RESPONSE, NEVER ONCE INVOKED.**"*
+
+**✅ Already recorded in this documentation**: *"MLB ~130 workers deployed vs 116 registry rows — **~19
+are dead stubs at ~5.3 KB, still `enabled=1`**."* **This is the same 19**, and the detail now has its
+source: they return a hardcoded dummy response and **were never once invoked.**
+
+**The NBA-side implication**: `nba/worker_manifest_nba.json` lists workers by name and size. **Neither
+signal distinguishes a real worker from a stub** — only invocation history does.
+
+---
+
 *Source: T1, blueprint §5b — "a powerful, generalizable warning." Recorded 2026-09-20.*
 
 > *"MLB found **MULTIPLE STATIC JSON MANIFEST FILES in its own repo that LOOKED AUTHORITATIVE** —
