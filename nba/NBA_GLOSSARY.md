@@ -541,6 +541,12 @@ plaintext in five of the twenty transcripts**, which are not yet committed — s
 top of `NBA_OPEN_ITEMS.md`. → `NBA_DATABASE.md` `nba_config.external_credentials` ·
 `NBA_OPEN_ITEMS.md` *FROM T1 PASS 67*.
 
+**`nba_control`** · LIVE, VERIFIED · The two-table run-bookkeeping schema created in T1
+(`job_runs`, `worker_run_log`). **Both hold 0 rows, and the string `nba_control` appears in no
+non-markdown file in the repo** — every user of `worker_run_log`/`job_runs` is an MLB file at the
+root. **21 NBA workers are registered and enabled and their output tables are populated, so they run
+and nothing records it.** → `NBA_DATABASE.md` §3 · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 68*.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
