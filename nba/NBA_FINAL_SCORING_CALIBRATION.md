@@ -369,6 +369,33 @@ lands in the table. *"A verdict that only exists in stdout is not a verdict."*
 
 ---
 
+## 7g. SAME-GAME CORRELATION — real, but smaller than folklore *(lesson #12)*
+
+> *"External research (published DFS/sharp-bettor material) **correctly predicted that pick'em
+> platforms price legs as INDEPENDENT even though same-game props are genuinely correlated** — but
+> **MLB's own measurement found the raw effect was INFLATED BY MULTIPLE CONTAMINATION SOURCES**:
+> **pooling across props with different base rates**, **unweighted game-size averaging**, and
+> **nested / nearly-deterministic** [pairs]."*
+
+**Three contamination sources, each of which inflates a measured correlation:**
+| Source | Why it inflates |
+|---|---|
+| **Pooling across props with different base rates** | a mixture of populations shows association that exists in neither |
+| **Unweighted game-size averaging** | high-scoring games dominate the raw average |
+| **Nested / nearly-deterministic pairs** | e.g. points and PRA for the same player are not two observations |
+
+**This matters directly for combos and slips.** NBA's combo work uses **per-player covariance estimated
+from that player's own per-game P/R/A** — which avoids source 1 (no pooling across players or props)
+and source 3 (components are modelled jointly, not paired as if independent). **Source 2 — weighting —
+is worth checking**, since a per-player covariance averaged across games without volume weighting has
+the same exposure.
+
+**And platforms "actively price against it"** — consistent with §0.1's measured discount on
+same-team/same-game legs. **So correlation is real, smaller than commonly claimed, and already partly
+priced out by the platform.** Any slip-construction edge from correlation has to clear all three.
+
+---
+
 ## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
 
 ### 8.1 Blowout — on the REAL market spread
