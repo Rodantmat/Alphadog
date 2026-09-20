@@ -66,6 +66,33 @@ original form — those sessions **are** transcript files now (T17 and T18), and
 **⚠ Separately**: `nba/transcripts/` **in the repo holds only `README.md` and `journal.txt`** — the 20
 `.txt` files are **not committed**. **This table, not that folder, is the inventory.**
 
+---
+
+### ⚠ STANDING RULE — THE LEDGER ROW IS PART OF THE PASS, NOT A SUMMARY OF IT
+*Owner instruction, 2026-09-20. **Inserted into the execution loop between steps 7 and 8.***
+
+**After incrementing or resetting a clean count, the transcript's row in this table is updated
+immediately, in the same pass.** A pass is **not finished** until the row matches the entry just
+written. Every row states, always:
+
+1. **the current clean count** — `0/3` · `CLEAN 1/3` · `CLEAN 2/3` · `DONE — 3/3`
+2. **total passes run**
+3. **what the most recent pass found**, or that it was clean
+4. **the pass numbers of any consecutive clean run in progress**
+
+**If the row and the body ever disagree, THE BODY ENTRIES ARE AUTHORITATIVE and the row is corrected
+to match them — never the reverse.**
+
+**Why this is a rule and not a habit.** The row drifted four passes behind the body (it still read
+*"29 passes"* while §T1.63 was written) and was corrected 2026-09-20. **That is the same defect class
+this documentation set already records twice**: the `minutes_mixture` config-vs-code drift in
+`NBA_OPEN_ITEMS.md`, and `NBA_SYSTEM_ARCHITECTURE.md`'s *"two files meant to be exact copies can
+silently drift out of sync, with only the self-reported version string revealing the drift."*
+**It is also blueprint §9 failure mode #6** — *silent drift with no error thrown, the output just
+wrong-but-plausible.* **The at-a-glance state is what a future reader trusts first, so it is the thing
+most worth keeping true** — and a stale ledger is the single most likely way this effort ends early
+against a wrong picture of what remains.
+
 | # | File | Pass status |
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 33 passes.** Pass 33 found new material — **a confirmed destructive bug** (`FE_DATE` scopes the read, not the `DELETE`; ~19.5M rows of `final_hp` lost, §T1.63). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
