@@ -573,6 +573,28 @@ availability, and only for the affected teams.
 
 **NO lineup scrape** (A5 closed). **NO scenario precompute.** **NO freshness gate.**
 
+### ⚠ P3 does NOT run `build_final_hp.py` — and a live comment says it does
+*Recorded 2026-09-20 (T1 pass 33). **VERIFIED** by reading `.github/workflows/nba-p3-afternoon-light.yml`.*
+
+**P3's scoring step is step 9 above — `python nba/score_board_legs.py`.** `build_final_hp.py` appears
+in `nba-absence-panel.yml`, `nba-engine-test.yml` and `build_confidence_v3.py`, **and in no P-pipeline
+workflow.** The two engines are distinct: **`build_final_hp.py` scores the internal ladder into
+`nba_score.final_hp`; `score_board_legs.py` scores the board into `nba_score.board_scored`** — which
+is what §4's *"P3 IS BOARD-SCOPED"* rule requires.
+
+**The drift**: a comment inside `build_final_hp.py` asserts *"**P3 sets it** [`FE_DATE`] so the
+afternoon pipeline rescores only today's legs (seconds) instead of all 38.7M (~90 minutes)."*
+**That describes an architecture that does not exist**, and `NBA_WORKERS.md` had inherited the claim.
+⚠ **It matters because `FE_DATE` is destructive** — it scopes the read and not the delete, and the
+2025-26 partition of `final_hp` has already been reduced to a single date. **Top of
+`NBA_OPEN_ITEMS.md`.**
+
+**Blueprint §9 failure mode #6** — *"silent config/formula drift… the output is just silently
+wrong-but-plausible"* — **in documentation rather than in config.** The fix §9 prescribes is the
+**whole-universe comparison**: diff every documented step against the workflow that actually runs it.
+**That diff has been run for P3's scoring step only.** The rest of P1, P2 and P3 are **NOT VERIFIED
+step-by-step against their workflow files.**
+
 ---
 
 ## 5. THE CALCULATION CHAIN
