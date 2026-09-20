@@ -205,6 +205,59 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 47 — WHOLE-UNIVERSE DIFF OF THE LIVE SCHEMA AGAINST `NBA_DATABASE.md` *(added 2026-09-20)*
+*Angle: blueprint §9 technique 1 — *"diff the live config against the real logic for **every entry**
+at once"* — applied to **the database** rather than to config. T1's DDL block (lines 11000–14000)
+created the skeleton; **this pass lists every live NBA table and diffs it against the document whose
+mandate is "a comprehensive complete list of all tables and columns."* All VERIFIED by live SQL
+2026-09-20.*
+
+### ⚠⚠ **17 of the 85 live NBA tables are absent from `NBA_DATABASE.md`** — 20% of the schema
+**85 base tables exist across 14 `nba_*` schemas.** These seventeen appear nowhere in the catalogue:
+
+| Schema | Missing tables |
+|---|---|
+| `nba_calendar` | **`games`** — ⚠ *quoted elsewhere in the documents as **2,666 games** and used as the dynamic-trigger input, yet it has **no entry** in the table catalogue* |
+| `nba_config` | **`variation_bands`** (documented as **25 rows** in other repo files, **not** in this one) |
+| `nba_market` | `board_backfill_log` · **`board_tiers_v2`** *(documented in `NBA_GOBLIN_DEMON.md`, absent here)* · `game_lines_snapshot_log` · `schedule_norm` |
+| `nba_score` | `absence_panel_teams` · `redistribution_factors` · `scenario_calibration` · `tier_band_calibration` · `tier_selection_value` |
+| `nba_stats` | `player_game_log_advanced` · `player_onoff_profile` · `player_playtype_profile` · `player_tracking_detail` |
+| `nba_team` | `playtype_profile` · `team_game_log_advanced` |
+
+**Several are not obscure**: `nba_calendar.games` is the calendar the whole pipeline schedules
+against; `board_tiers_v2` is the corrected goblin/demon taxonomy; `scenario_calibration` and
+`tier_band_calibration` are calibration outputs. **They are documented in *other* files — the
+catalogue is what lacks them**, which is the failure mode the twelve-document split exists to
+prevent.
+
+### ⚠ **6 of the 14 NBA schemas hold ZERO tables** — created in T1, never populated
+**VERIFIED by live count:**
+
+| Schema | Tables |
+|---|---|
+| **`nba_archive`, `nba_backtest`, `nba_classification`, `nba_context`, `nba_daily`, `nba_scoring`** | **0** |
+| `nba_calendar` | 1 |
+| `nba_control` | 2 |
+| `nba_team` | 9 |
+| `nba_config` · `nba_market` | 11 each |
+| `nba_ref` | 14 |
+| `nba_score` | 18 |
+| `nba_stats` | 19 |
+
+**All fourteen were created in one `CREATE SCHEMA IF NOT EXISTS` statement in T1** — mirroring MLB's
+schema list — **and six were never used.** This is exactly the *"tables planned and never created"*
+the owner's mandate for this documentation asks to be recorded, **and it had not been.**
+
+**What it tells you**: the schema skeleton was **mirrored from MLB's shape, not derived from NBA's
+needs.** Several of the six have live equivalents **under a different name** — backtest work lives in
+`nba_score.*` and in the repo's `backtest/` directory, not in `nba_backtest`; classification output
+lives in `nba_score.baseline_*`, not in `nba_classification`. **So the empty schemas are not missing
+functionality; they are a naming layer that was never adopted.**
+⚠ **The risk is a future reader assuming otherwise** — searching `nba_classification` for the
+classifier's output and finding nothing. **Flagged; not fixed** (dropping them is a write).
+
+---
+
 ## FROM T1 PASS 46 — `run_job` HAS 14 MODES AND THE TOOL DOC IS STALE *(added 2026-09-20)*
 *Angle: T1's four `run_job` calls, read as an API surface rather than as events, then **the live
 bridge `alphadog-v2-admin-sql.js` grepped to enumerate the whole surface**. All VERIFIED 2026-09-20.*
