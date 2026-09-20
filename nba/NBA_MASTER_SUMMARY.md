@@ -4178,6 +4178,43 @@ parameters, not just the code shape**."*
 
 **T7 PASS 5: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.12 — PASS 6 — the delta path proven end-to-end, and a design detail worth copying
+
+#### T7.12a — **`known_empty_games` — a skip list that prevents a permanent daily cost**
+> *"The per-game delta persists a **`known_empty_games` skip list**. **Without it, the 3 games the
+> source itself returns empty would be re-fetched EVERY SINGLE DAY FOREVER.** Real run confirmed:
+> attempted 3, all empty, recorded, and they're now **excluded for good**."*
+
+**This is the right way to handle the accepted 0.24% gap from T6.2b.** The alternative — treating them
+as perpetually "missing" — would mean three wasted calls every day of the season, and a completeness
+check that never reports clean. **A permanent source gap needs a permanent record, not a retry loop.**
+
+#### T7.12b — **The derivation was dry-run against real files BEFORE any network call**
+> *"I **dry-ran the derivation logic against the real committed files before any network call** — it
+> produced **exactly the right delta (starter: 0, officials: those 3)**."*
+
+**The delta logic was validated against a known-correct answer with zero API cost** — the same method
+as T5's 7-call diagnostic and T6's 5-sample v3 test, taken one step further: **no calls at all.**
+
+#### T7.12c — The four closures, with their mechanics
+| Gap | How it was closed |
+|---|---|
+| DvP had no recurring path | Runs **inside the daily-delta worker after game logs load** — **210 rows (30 × 7)**, i.e. **current season only**, not the 630 three-season backfill |
+| Splits + career totals had no recurring path | Backfill worker gained **`{"mode":"weekly"}`** — *"loads only those two in **~6s instead of re-touching 79k rows**"*; **splits season read from the scraper meta, not hardcoded** |
+| New games surfaced but **never fetched** | **`scrape_nba_per_game_delta.py`** — *"derives the delta **purely from committed files**, fetches **only new games**, **appends** to the season file"* |
+| Writers hardcoded `_2025_26` | Season-aware via the delta meta — *"would have **silently loaded last season forever in October**"* |
+
+**Note the `mode` pattern**: rather than build a fifth worker, an existing one gained a mode input that
+scopes it to two tables and runs in **~6 seconds instead of touching 79,000 rows**. **Reuse with a
+narrowing parameter, not duplication.**
+
+#### T7.12d — The DvP recompute is single-season by design
+**210 rows = 30 teams × 7 positions × 1 season.** The three-season table (630 rows) came from the
+backfill; **the recurring path maintains the current season only**, which is correct — historical
+seasons do not change.
+
+**T7 PASS 6: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
