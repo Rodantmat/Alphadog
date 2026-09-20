@@ -620,7 +620,46 @@ bottom 15% or 5+ PF"*, with `P(dud)` from the player's own history and PF rate.
 `classification_ladder_v12.py` is not established.** It is a distinct mechanism — early exit for fouls
 truncates minutes in *competitive* games, which the blowout model by construction does not cover.
 
-### NOT IMPLEMENTED (design specified it) · **team-specific blowout benching**The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
+### NOT IMPLEMENTED (specified, MEASURED, justified — and still unbuilt) · **team-specific blowout benching**
+The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
+that *"coaches differ in how they empty benches."*
+
+**⚠ T8 MEASURED IT AND CONFIRMED IT WAS WORTH HAVING:**
+> *"**Team-specific starter pull: 0.81 (Orlando) to 1.10 (Dallas)** — **a 30% spread — the
+> team-specific design is justified.**"*
+
+**`nba_score.blowout_model` is still league-wide**, keyed on margin band + side only (7
+`minutes_by_margin` rows). **A 30% spread between the most and least bench-emptying coaches is being
+averaged away**, with 24,025 player-games available to fit a per-team term.
+
+### CORRECTION · the blowout asymmetry is NOT what DataStreak claimed
+DataStreak reported *"the favourite's starters hit hardest."* **On our own 79,138 player-games it did
+not reproduce** — favoured starters **47.7%** over-rate, underdog starters **39.4%**.
+> *"Won: **51.9% over-rate (NOT a penalty)**. Lost: **36.9% (a 12-point collapse)**. **The losing side
+> is benched *and* played badly to get there.**"*
+
+| | Won blowout | Lost blowout |
+|---|---|---|
+| Minutes ratio (`blowout_model.v1`) | **0.8748** — benched harder | 0.9124 |
+| Over-rate | **51.9%** | **36.9%** |
+
+**Both are real and point opposite ways.** A starter in a won blowout plays fewer minutes but was
+productive in them. **The engine keys on minutes, so it captures the mechanism correctly** — but the
+over-rate literature is backwards on our data.
+
+### ⚠ B2B IS AN AVAILABILITY FACTOR, NOT A MINUTES FACTOR
+Published ranges (veterans −1.5 to −3.0 min on zero rest) **did not reproduce**:
+> *"Stars on zero rest: **~0 to −0.4 min *when they play***. **Bench and rotation GAIN +0.6 to +2.5.**
+> The mechanism is **DNP-Rest: stars sit ENTIRELY**, so the star B2B effect is a **P(available) effect
+> belonging in the P(start) model**, and the bench gains are the redistribution."*
+
+**The published figure averages over a population containing zeros**; conditioning on *playing*
+dissolves it. **Whether A4 is implemented as an availability term or a minutes term determines whether
+it measures anything at all.** The quantifying data exists: `player_game_starter_status.comment`
+carries **`DND - Rest`**.
+
+### SUPERSEDED — the old team-specific entry
+The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
 that *"coaches differ in how they empty benches"* and the scale should be *"asymmetric and
 **team-specific**."*
 
