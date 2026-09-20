@@ -226,9 +226,31 @@ why multiple candidate URLs are mandatory. **Candidate selection by future-picka
 
 ### Research sources used
 **Gemini** (`call_gemini` on the bridge) — *"not absolute truth, a tool to bring more information to
-the table in a different point of view."* **Corrected on checkable facts at least five times**: the
-1,230-call estimate, "starters are inferable from game logs", "Team Pace is missing", "potential
-assists aren't in our data", and "tier globally".
+the table in a different point of view."*
+
+**The documented correct usage pattern (T1, lessons #4 and #21):**
+1. **Ask it to SET ITS OWN FALSIFICATION BAR BEFORE SEEING THE RESULT** — minimum sample size,
+   **required monotonicity**, minimum edge over baseline — then check the actual number against that
+   pre-stated bar.
+2. **Multiple SMALL passes, not one large dump** — *"large single prompts caused DRIFT."* Working
+   pattern: **present data + sharp questions → get a diagnosis → reference that diagnosis explicitly in
+   a follow-up, without re-pasting everything.**
+3. **Present your own known verification errors and EVERY control tested, not just the favourable
+   ones.**
+4. **Check the METHOD, then RE-DERIVE the conclusion yourself.**
+
+**Stated as *"valuable but NOT infallible in EITHER direction"*** — and the NBA record shows both:
+| Caught something real | Was wrong |
+|---|---|
+| garbage-time filtering (T2) | 1,230 calls for advanced stats — **actually 2** (T4) |
+| the schedule as *"the chassis"* (T3) | *"starters inferable from game logs via `GS`"* (T5) |
+| peer-reviewed altitude / jet-lag factors (T7) | *"Team Pace still needed"* (T5) |
+| **self-corrected its own on/off ranking** (T3) | *"tier globally"* (T7) |
+| the Shot Quality Delta methodology (T3) | *"potential assists aren't in our data"* (T7) |
+| proposed halftime foul count → correctly rejected as in-game data (T9) | |
+
+**Not recorded in any NBA session**: asking it to state a falsification bar **before** seeing a result.
+**Usage has been synthesis and critique.**
 **OpticOdds** (industry pricing vendor) · **Unabated** · **DataStreak** (40,856 graded props) ·
 **RotoGrinders** · **Cleaning the Glass / Ben Falk** (garbage-time filtering) ·
 ***J. Sports Sciences* 2025** (altitude, p=0.005) · **PMC 10-season study** (eastward jet lag) ·
