@@ -143,6 +143,17 @@ GitHub-runner OOM kills on million-row pulls.)*
 
 ## 5. DATA SOURCES
 
+### The original MLB→NBA source mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §3)*
+| MLB source | NBA equivalent, as stated | How it turned out |
+|---|---|---|
+| **MLB Stats API** (game logs, box scores, schedule) | *"**NBA Stats API (stats.nba.com) or a wrapper (balldontlie.io, etc.) — pick ONE AUTHORITATIVE SOURCE and mirror MLB's 'base layer' pattern (raw ingestion → delta updates → certified/promoted state)**. **Verify rate limits and terms of service** before building a scraper-dependent pipeline around it."* | **stats.nba.com chosen.** The raw→delta→certified pattern is what P1/P2/P3 implement |
+| **Baseball Savant** (exit velo, quality of contact) | *"NBA advanced stats (tracking via stats.nba.com, or a paid provider) — **LOWER PRIORITY given quality-of-contact-style metrics don't port over**. **Deprioritize relative to MLB's investment in this area.**"* | Tracking was built (8 families, 4,652 rows) but **after** the base layer |
+| **ParlayAPI** | *"**Same service, same account, `basketball_nba` sport key** — **no new vendor onboarding needed** — **this is THE SINGLE BIGGEST HEAD START NBA HAS over where MLB started.**"* | **Superseded for boards** — own scrapers beat it (ParlayAPI drops ~25% of rungs). Retained only to validate the derived spread |
+
+**Note the stated head start was ParlayAPI, and it is the one that did not hold.** The actual head
+starts proved to be the **infrastructure** (Workers, deploy pipeline, `curl_cffi`, the bridge) and the
+**research standard**, not the board vendor.
+
 ### `stats.nba.com` — the primary source
 Endpoints in use: `leaguestandingsv3` · `commonallplayers` · **`playerindex`** (the only one with a real
 `POSITION` field) · `teamdetails` (→ `TeamBackground`) · `leaguedashplayerbiostats` ·
