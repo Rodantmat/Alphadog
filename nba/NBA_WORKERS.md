@@ -124,6 +124,11 @@ files**, which remained in the repo long enough to be counted during T1's recon 
 ---
 
 ## 0a. THE INVESTIGATION METHODOLOGY — for understanding a large existing system
+*⚠ **Provenance, recorded 2026-09-20 (T1 pass 39)**: this method was **the only option available**,
+not a chosen technique — T1's own `view` calls target `/dev/null` and state *"no direct file view tool
+for remote repo; use `github_get_file` range instead."* Recorded so it is not mistaken for a
+preference.*
+
 *Source: T1, blueprint §6b — worked out for "a genuinely huge (1MB+) orchestrator file, worth reusing
 directly rather than reading the whole file top to bottom." Recorded 2026-09-20.*
 
