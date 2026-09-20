@@ -661,7 +661,48 @@ validated separately, which is exactly what this pattern demands.**
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7l. TWO OPERATIONAL DISCIPLINES
+*Source: T1, blueprint §4a. Recorded 2026-09-20.*
+
+### 1. Verify you are looking at data generated AFTER the fix deployed
+> *"**Before re-diagnosing an apparently-still-present issue, verify you're looking at FRESH DATA
+> GENERATED *AFTER* THE RELEVANT FIX DEPLOYED, not stale data from before it.** MLB **nearly wasted
+> real effort RE-FINDING ALREADY-FIXED BUGS** because **the scoring pipeline hadn't been RE-RUN since
+> a fix shipped.**"*
+
+**This is the stale-output trap, and it recurs throughout the NBA build** — every instance of
+*"the patch aborted on an assertion; the file wasn't modified, so that output is the OLD run"* (T8,
+T9) is the same failure caught in time. **The NBA habit of checking whether a patch actually applied
+before reading numbers is this discipline in practice.**
+
+### 2. Input-side correct ≠ output-side improved
+> *"**Confirming a fix looks STRUCTURALLY CORRECT ON THE INPUT SIDE (bad values gone, caps behaving,
+> no more amplification) is NOT the same as confirming THE OUTPUT SIDE ACTUALLY IMPROVED** — that
+> **requires waiting for real games to be played and graded**. **Don't conflate the two; STATE
+> EXPLICITLY WHICH ONE YOU'VE VERIFIED.**"*
+
+**Directly applicable to the current state of this system.** Almost everything verified so far is
+**input-side**: the season fix holds, the mixture is configured, the ladder reproduces exactly, the
+availability delta produces no NaNs. **Output-side improvement cannot be confirmed until real games
+are graded** — which is the same boundary as lesson #16's real-quote confirmation and the §18 sample
+posture (*"fewer than 15 real days is not yet a result at all"*).
+
+**The instruction is to state which one** — so, explicitly: **the NBA system is verified input-side
+and calibrated against history; no output-side improvement claim is available until the season
+grades.**
+
+### ⚠ A calibration-specific instance of the "file name / liveness" trap
+> *"**A worker's own health-check response can explicitly SELF-REPORT AS DEAD/DEPRECATED while its
+> FORMULAS STILL REPRESENT THE REAL DESIGN LINEAGE the currently-live replacement is based on** —
+> **informative to read, bu[t not the live logic]**."*
+
+**This is the three-generation trap from T7 seen from the other side.** There, two MLB classification
+files declared themselves *"CONFIRMED DEAD — do not build on this"* and the live one was a function
+name (`runClassificationBaselineV6ToPostgres`). **Here the blueprint adds the nuance: a dead file is
+still worth READING for design lineage — it is only worth not PORTING.**
+
+**Both halves matter**: T7 read the live function line by line *and* correctly identified the dead
+ones — *"porting from either dead version would have locked in wrong logic."*
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
