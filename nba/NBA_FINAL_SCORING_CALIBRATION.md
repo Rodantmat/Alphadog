@@ -472,18 +472,39 @@ goblins/standards/demons — **not** the full internal ±10 ladder for rungs nob
 
 ## 13. THE VALIDATION GATE FOR ANY STRATEGY *(T1, inherited from MLB's lessons document)*
 
-### 13.1 It must be a **DAY-LEVEL BLOCK BOOTSTRAP**
-> *"The current, more rigorous standard **beyond a simple weighted t-test**: a **DAY-LEVEL BLOCK
-> BOOTSTRAP**. **Resample entire DAYS with replacement — NEVER individual legs, which would
-> reintroduce the same-day correlation problem** — rebuild the aggregate… and **repeat this thousands
-> of times** to build a real distribution of outcomes."*
+### 13.1 It must be a **DAY-LEVEL BLOCK BOOTSTRAP** — and properly VOLUME-WEIGHTED
 
-**⚠ The resampling unit is the DAY, not the leg.** Legs on the same slate share game scripts,
-blowouts, pace and officiating — resampling legs treats correlated observations as independent and
-**inflates the apparent sample**, which is the exact error the gate exists to prevent.
+**Lesson #6 is stated as *"one of the single highest-value lessons from the entire research
+program"*, and it errs in BOTH directions.**
 
-**And the weighted t-test is explicitly named as insufficient**: *"doing this [correlation handling]
-incorrectly can produce a wrong answer in either direction."*
+#### Direction 1 — pooled-leg significance is inflated
+> *"**Treating same-day legs as independent observations when computing standard error INFLATES
+> APPARENT SIGNIFICANCE BY 3–5×**, because **legs within a day are correlated (a strong slate lifts
+> everything together)**. Multiple cases of **a pooled Z-score of 3–5+ collapsing to a clustered
+> t-statistic under 1.5** once properly clustered by day.
+> **Always compute significance at the DAY level — treat each day as one observation, N = number of
+> DAYS, not number of legs.**"*
+
+#### Direction 2 — an UNWEIGHTED day-level test causes FALSE REJECTIONS
+> *"**But a naive, UNWEIGHTED day-level test — treating a 7-leg day and a 38-leg day as equally
+> informative observations — is itself a real, CONFIRMED SOURCE OF FALSE REJECTIONS**, not just a
+> conservative simplification: **a real case where an unweighted daily t-test FAILED (t = 1.573) on
+> data where a VOLUME-WEIGHTED version of the identical test PASSED DECISIVELY (t = 2.755)** — **an
+> adversarial review caught this specific flaw.**
+> **The correct method WEIGHTS each day's contribution.**"*
+
+| Method | Error |
+|---|---|
+| Pooled at leg level | **inflates significance 3–5×** → false positives |
+| Day level, **unweighted** | **t = 1.573 vs 2.755** on identical data → **false rejections** |
+| **Day level, volume-weighted** | correct |
+
+**⚠ This is the second recorded instance of over-strictness as a real error** — lesson #9 names the
+same asymmetry from the other side. **Neither direction is the safe default.**
+
+**Consequence for the bootstrap**: resample **entire days with replacement** — *"never individual
+legs, which would reintroduce the same-day correlation problem"* — **and weight each day by its
+volume.**
 
 ### 13.2 The three conditions — all of them, not any one
 > *"**The decisive gate: at least 95% of resamples positive, a 95% confidence interval whose lower
