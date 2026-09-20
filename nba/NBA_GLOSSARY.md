@@ -515,6 +515,14 @@ distinguishes a worker that failed from one never invoked from one the platform 
 routed to `https://internal/probe-sources`. **Absent from `NBA_WORKERS.md`'s mode-dispatch table
 until 2026-09-20.** → `NBA_WORKERS.md` §0.15.
 
+**the two ID conventions** · LIVE · `player_id` is **prefixed `nba_<id>`** in `nba_ref.*` and
+`nba_stats.*`, and **bare numeric** in every `nba_score.*` table. **VERIFIED 2026-09-20**:
+`nba_score.board_scored` → `nba_ref.players` on `player_id` matches **0 of 110,955**; with
+`'nba_'||player_id`, **110,955**. **Types are uniform (all TEXT); only the values differ.** Latent —
+the scoring path joins score→score — but **any cross-layer join returns nothing, silently.**
+**Blueprint §2's named multi-table ID bug, reproduced.** → `NBA_DATABASE.md` ·
+`NBA_OPEN_ITEMS.md` *FROM T1 PASS 50*.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
