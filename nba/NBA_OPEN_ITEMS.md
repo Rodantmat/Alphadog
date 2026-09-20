@@ -855,7 +855,7 @@ left to later"* — and **"later" is the undocumented doubling.** The two findin
 
 ### ⚠ NOT RECORDED · the "additive only" doctrine was a JUDGEMENT CALL made against a stated constraint, not a given
 Every document states the rule as absolute — *"No MLB edits, ever. Everything additive"*
-(`NBA_RECIPE.md` §1.2). **The transcript shows it being decided, under pressure, in thinking:**
+(`NBA_RECIPE.md` STEP 0, rule 2 — *pointer corrected 2026-09-20, pass 74; it previously read §1.2, a section that does not exist*). **The transcript shows it being decided, under pressure, in thinking:**
 
 | Block | Stated |
 |---|---|
