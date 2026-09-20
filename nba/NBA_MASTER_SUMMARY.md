@@ -2450,6 +2450,44 @@ calls) and was still in progress when the transcript ends.
 
 **T4 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T4.8 — PASS 2 FINDINGS (added 2026-09-20; DDL) — **NEW MATERIAL**
+
+#### T4.8a — **`data_quality` is used as designed — and the delta proves it**
+| Table | `data_quality` default |
+|---|---|
+| `player_shot_quality` | **`'real'`** — straight from the endpoint |
+| `player_shot_zone_profile` | **`'real'`** |
+| **`player_shot_quality_delta`** | **`'derived'`** — it is COMPUTED from the other two |
+
+**This is the column doing exactly its job**: the two scraped tables are `'real'`, the computed one is
+`'derived'`. The distinction established in T1's very first DDL is being applied consistently three
+sessions later.
+
+#### T4.8b — `player_shot_quality` full DDL
+**Composite PK `(player_id, close_def_dist_range)`** — one row per player per defender-distance bucket.
+Columns: `fga_frequency` (**the shot-diet weight the formula needs**), `fgm`, `fga`, `fg_pct`,
+`efg_pct`, `fg3a_frequency`, `fg3_pct`.
+**`fga_frequency` is the key column** — it is what weights the league averages in step 2 of the Shot
+Quality Delta formula.
+
+#### T4.8c — `player_shot_zone_profile`
+**Composite PK `(player_id, zone)`** — `fgm`, `fga`, `fg_pct` per court zone.
+
+#### T4.8d — `nba_stats.player_game_log` — the full column list
+`player_id`, `nba_player_id`, `game_id`, `season`, `team_id`, `game_date`, `matchup`, `wl`, `min`,
+`fgm/fga/fg_pct`, `fg3m/fg3a/fg3_pct`, `ftm/fta/ft_pct`, `oreb/dreb/reb`, `ast`, `tov`, `stl`, `blk`,
+**`blka`** (blocked attempts), `pf`, **`pfd`** (personal fouls drawn), `pts`, `plus_minus`,
+**`nba_fantasy_pts`**, **`dd2`**, **`td3`**.
+
+**Note three columns that later become props**: `nba_fantasy_pts` (the `fantasy_score` prop),
+`dd2` (`double_double`), and `blka`/`pfd` — the rarely-used ones. **The prop menu was already
+supported by the game-log schema before the prop layer existed.**
+
+#### T4.8e — `nba_team.team_game_log`
+Same shape minus the player-specific fields (`blka`, `pfd`, `nba_fantasy_pts`, `dd2`, `td3`).
+
+**T4 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
