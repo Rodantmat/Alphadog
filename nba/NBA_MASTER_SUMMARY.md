@@ -1456,6 +1456,35 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.79 — PASS 49 (angle: **Domain Mapping §1 and §3 read CLAUSE BY CLAUSE, not section by section**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 49. Source:
+`nba/NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1, §3 — in the repo as clean markdown. **Pass 31
+marked these "documented" at section level without reading their rows.***
+
+- **⚠ The package's single strongest stated advantage is the one thing NBA replaced.** §3 calls
+  ParlayAPI *"**the single biggest head start NBA has over where MLB started**."* **It was superseded
+  by NBA's own scrapers (~25% more ladder rungs) and was never independently verified** — the
+  coverage gap was closed by replacement, not by test (§T1.62).
+  **The useful inference, recorded as a filter for the ~40% of `ALPHADOG_DOS_AND_DONTS.md` and
+  `ALPHADOG_SYSTEM_MAP.md` still unread (§T1.67): weight MEASURED EXPERIENCE over FORWARD-LOOKING
+  ASSESSMENTS.** The handoff's claims that held are the ones grounded in MLB's own measurements.
+- **⚠ Combo props were instructed to be first-class from day one, with a named cost.**
+  *"Treat these as a first-class prop family from day one, not an afterthought, since MLB's own combo
+  prop (`hits_runs_rbis`) caused real analysis headaches from being treated as a bolt-on."*
+  **`NBA_DATABASE.md` had the cost; the instruction was recorded nowhere.** ✅ It was followed —
+  recorded now at `NBA_BASELINE_CALIBRATION.md` §7, **so a future change that makes combos a special
+  case knows it is reverting a paid-for decision.**
+- **⚠ Per-prop tier spacing was instructed and is still pooled.** *"Verify tier-count and
+  **tier-spacing conventions PER PROP** before assuming they match MLB's."* `NBA_GOBLIN_DEMON.md` §10
+  records the prediction was right; **§7's "~85–90% of the anchor" from 60k+ legs is an aggregate**,
+  against that layer's own rule *"read these per cell, not as aggregates."* **Compounds with lesson
+  #27 (§T1.60): tier spacing per prop and partial-credit structure per platform are both
+  unverified, and both are first-order inputs to Flex EV.**
+- **✅ Verified present**: the ToS/rate-limit instruction, the no-pitcher-analogue simplification, the
+  Savant-to-tracking deprioritisation, and the per-platform fantasy-score formula rule.
+
+---
+
 ### T1.78 — PASS 48 (angle: **full sequential narrative read — all 85 assistant blocks in order**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 48. This is the method
 passes 26–28 used, re-run now that the embedded documents have actually been swept (§T1.59).*
