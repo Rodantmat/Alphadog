@@ -530,6 +530,36 @@ separate certified files each with its own constant.
 
 ---
 
+### ⚠⚠ `FE_DATE` IS A READ FILTER, NOT A WRITE SCOPE — **confirmed destructive**
+*Found 2026-09-20 (T1 pass 33) by running §0e's scope-parameter audit against the first parameter on
+the list. **VERIFIED by grep of `nba/build_final_hp.py` and by live SQL.***
+
+**The read is scoped:**
+```sql
+FROM nba_score.baseline_history
+WHERE season=%s AND prop=%s AND (%s = '' OR game_date = NULLIF(%s,'')::date)
+```
+**The write is not:**
+```sql
+DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s    -- no game_date
+```
+**A slate-scoped run with `FE_WRITE=1` replaces the entire season × prop partition with that one
+slate.** Measured damage, live 2026-09-20: **the 2025-26 partition of `nba_score.final_hp` holds one
+date and 140,130 rows against a documented 38.7M-row table.** Full entry at the top of
+`NBA_OPEN_ITEMS.md`; row counts in `NBA_DATABASE.md`.
+
+**⚠ The previous description in the table above was inherited from a comment in the source file that
+is itself wrong.** The comment reads *"P3 sets it so the afternoon pipeline rescores only today's
+legs."* **VERIFIED: P3 does not set `FE_DATE`, and P3 does not run `build_final_hp.py`** — its scoring
+step is `python nba/score_board_legs.py`. The only repo caller that sets `FE_DATE` is
+`.github/workflows/nba-engine-test.yml`, **with `FE_WRITE: '0'`**.
+
+**This is §0e's audit finding its first hit on its first candidate.** The remaining scope parameters
+in that table — `BT_*`, `PIPE`, the scraper date ranges, the writer-worker mode branches — **are still
+NOT AUDITED.**
+
+---
+
 ## 6. VERIFIERS
 | Script | Asserts |
 |---|---|
