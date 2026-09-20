@@ -3798,6 +3798,106 @@ The classification/baseline **design** session — the full prop universe across
 layers, the **5-dimension tiering architecture** (player / rate / role tiers, factor tiers, variation
 bands, direction, prop line), and the design document that gets materialised into `nba_config`.
 
+---
+
+## T7 — `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt`
+**Delta completion · the final audit · THE SEASON-HARDCODING FINDING · the deep documentation
+checkpoint · data-universe research**
+*154 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+**⚠ Note on the journal's label**: the journal describes T7 as the classification/baseline design
+session. **The transcript's actual content is different** — it finishes the delta worker, runs the
+final completeness audit, uncovers a systemic season-hardcoding bug, writes the deep documentation
+checkpoint, and researches the data universe. **The tiering-architecture design is in T8.**
+*(This matches the T4.13 finding that transcript phase labels are approximate.)*
+
+### T7.1 — **THE SEASON-HARDCODING BUG — the most dangerous finding in the transcripts**
+
+Triggered by the owner's simulation question, which *"surfaced real gaps"* when taken seriously.
+
+> *"Confirmed — and this is a **systemic finding, not an isolated one**… **Confirmed on 6 scrapers
+> checked directly — the pattern is universal.**"*
+
+> *"**Every weekly scraper** (bio, tracking, playtypes, shot quality, lineups, splits) **hardcodes
+> `Season=2025-26`**. **On Oct 3, the whole weekly cycle would SILENTLY KEEP PULLING LAST SEASON'S
+> FROZEN DATA WHILE REPORTING SUCCESS** — **the most dangerous kind of failure**. Only the daily-delta
+> scraper auto-detects season."*
+
+**The season opens 2026-10-03. Without this fix, P1 would run every Monday, report green, and serve
+2025-26 data into a 2026-27 pipeline indefinitely.**
+
+**Fix: one shared `detect_current_season()` utility applied everywhere** — the same one the delta
+scraper already had. **Patched across 9 stats scrapers**, with `active_stats_season` vs
+`current_season` distinguished (players/teams/schedule keep `current_season`).
+**DARKO needs no season parameter** — it always serves current.
+**Schedule was hardcoded to a 2-season list** → made dynamic (prior + current).
+**Shot quality had TWO hardcoded URLs** — both patched, plus a missing `SEASON` import.
+**All patched scrapers were syntax-checked in the sandbox before shipping.**
+
+### T7.2 — The four other delta-path gaps found by the same question
+| Gap | Severity | What was wrong |
+|---|---|---|
+| **Splits + career totals** | Medium | *"Only exist in the one-time backfill — **no recurring refresh at all**, so they'd go stale as the season progresses. They're cumulative aggregates, so weekly is the right cadence."* |
+| **Defence-vs-Position** | Medium | *"Derived via a **one-off manual SQL** — no worker recomputes it as new game logs arrive."* |
+| **Starter-status + officials for NEW games** | Medium | *"The scrapers hardcode 'all games from the full-season JSON.' Need a **delta mode**… daily volume is tiny (~5–15 games ≈ 10–30 calls)."* |
+| **New players (rookies/signings)** | Low | *"Won't exist in `nba_ref.players` until the weekly players scrape; game logs still insert fine (**no FK**), but **position-dependent derived tables silently skip them** until the roster catches up."* |
+
+### T7.3 — **The replay-mode idea, proposed here and built much later**
+> *"A **'replay mode' for the delta pipeline**: replay 2025-26 **day-by-day as if it were arriving
+> fresh** — game logs → starter-status delta → officials delta → DvP recompute → completeness check —
+> using only historical data. That validates **the entire delta logic end-to-end before Oct 3, without
+> a single live game**."*
+
+**This is exactly what the live session's P2 replay (`asof` + `skip_mining=true`) and the 2025-11-29
+P3 verification do** — proposed in T7, realised thirteen transcripts later.
+
+### T7.4 — The owner's simulation insight, confirmed
+> **OWNER:** *"with the previous seasons, I am sure you can **simulate the classification/baseline
+> pipeline**, which is already enough to define logic, define the player tiers, the metrics…"*
+
+> *"**Your simulation insight is right, and it's a strong one.** With 3 complete seasons, the entire
+> baseline/classification pipeline can be **developed and validated fully offline** — walk-forward on
+> 2025-26 (**treat each date as 'today', compute from prior data only, compare to the actual
+> result**). Player tiers, metrics, shrinkage weights, EWMA alpha, variance windows — all definable and
+> testable with **zero live data. No reason to wait for October for any of that.**"*
+
+**This is the as-of walk-forward method that the entire backtest harness implements.**
+
+### T7.5 — The final 100% audit, and one more gap closed
+Owner: *"Do one last pass and be sure we are covering 100% of static, weekly and backfill"*
+
+**Audited against the planning docs, not memory**: *"starting with the original planning docs to check
+against what's actually been built, rather than relying on memory of what I think I did"*, then
+*"checking actual row counts across every table in every NBA schema, to catch anything that **exists
+structurally but is empty or stale**."*
+
+**A gap found in the assistant's own work**: *"my own daily-delta worker's **docstring promised** it
+would identify new games needing starter-status/officials data, but **I never actually implemented
+that part**."* Closed in the same session.
+**Then a column error on the fix** — `player_game_log` has no team tricode columns (those are on
+`nba_calendar.games`) → used the `matchup` field instead.
+**Verified against known reality**: *"**0 missing starter-status games, 3 missing officials games** (the
+same 3 real ones already documented)."*
+
+**`prop_taxonomy` found empty** — correctly judged *"a scoring/master-run concept, not static/backfill
+scope."* **Differential logs empty** — *"correct and expected (only one baseline run so far)."*
+
+### T7.6 — The deep documentation checkpoint
+Owner: *"I need you to detailed document your work so far, deep detail, research, sources, methods,
+connections, data, tables, structure, everything that matters… to the point any new chat…"*
+
+→ **`nba/NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md`, 30 KB**, built in sections, with
+*"fresh, verified numbers one more time before writing this, so the documentation is **accurate rather
+than based on memory** of earlier counts."*
+**The memory file was updated to point at it**, *"so future sessions find it immediately."*
+
+### T7.7 — Another Gemini correction
+> *"Verified — Gemini was **wrong** on one point: **potential assists, adjusted assists, secondary
+> assists, and assist-points-created are already in our tracking data** (the Passing measure type).
+> **Good that I checked.**"*
+
+**T7 PASS 1: complete sequential read. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
