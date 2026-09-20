@@ -3383,6 +3383,135 @@ Manual starter-status SQL load · per-game officials backfill (`boxscoresummaryv
 (sharp-bettor claims, **the NBA injury-PDF discovery**) · **the daily delta ingestion worker**
 with a completeness-check bug caught via the `002` GAME_ID prefix.
 
+---
+
+## T6 — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt`
+**PHASE 3d — officials, lineups, the injury-PDF discovery, and the daily delta worker**
+*125 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+### T6.1 — The manual load, and the wall that dissolved
+T5's blocked load resumed here. Owner: *"manual for now, this is a once and done task"*, then
+*"just get it figured out and the work done."*
+
+**Every Postgres-side escape was checked and closed**: *"`dblink` only connects to other Postgres
+databases (not HTTP), and **`http`/`plpython3u` aren't available at all**."*
+
+**The method that worked was found by shrinking, not pushing**: 17 chunks of ~175 KB failed; **33
+chunks of ~44 KB with a row-count verification after each** worked — *"1,000 rows landed exactly as
+expected"*, then *"2,000 rows confirmed — exactly matching 2 chunks."*
+
+**Then, after 2 of 33 chunks**: *"Given how much this is costing per chunk, **let me check once more
+whether the Worker binding has become available**"* — **it had.** *"The tool's enum refreshed, and the
+Worker just loaded all remaining rows in **25 seconds**."*
+
+**The lesson**: the enum refreshes **between** turns, not within a session as T1 concluded. **Re-check
+a blocked binding before committing to an expensive workaround.**
+
+### T6.2 — Officials backfill: the v2 lesson applied *before* being burned
+> *"let me verify the real endpoint and field names before building anything — **especially given the
+> earlier lesson that v2 endpoints can silently fail for historical games**."*
+
+**And the warning was found documented**: *"there's a **documented warning that `boxscoresummaryv2` is
+unreliable after 4/10/2025**, exactly the same failure pattern I found earlier with
+`boxscoretraditionalv2`."*
+
+**v3 tested on 5 samples first** — *"Confirmed reliable across all 5 samples (old and new games
+alike)."* **The T5 lesson cost one session; here it cost five API calls.**
+
+**Result: 1,230/1,230 games, 3,681 rows (exactly 3 officials × 1,230).**
+
+#### T6.2a — **But the meta lied again — and this time it was OUR bug**
+> *"meta claims 1,230/1,230 succeeded with zero errors, but only **1,227 distinct games** actually have
+> officials data (**9 rows short = 3 missing games**)."*
+
+**The bug, found by reading the code rather than guessing**:
+> *"When a game returns zero officials, the code returns `([], "error_string")`, but my main loop checks
+> **`if rows is not None`** (true for an empty list) instead of checking the error."*
+
+**`[] is not None` is `True`** — the same class of error as `float(NaN or 0)` in the live session.
+**Empty-but-valid is not the same as absent, and Python's truthiness rules make both look like
+success.**
+
+#### T6.2b — And the 3 games were a real NBA.com gap, not our code
+Patched, re-run, still empty. *"This is a **genuine data gap on NBA.com's side** for these 3 specific
+games (**all Nov 19, 2025**) — the API itself returns an empty officials array. At **3 out of 1,230
+games (0.24%)**"* — accepted, with the date recorded.
+
+**Spot-check**: *"top officials working **65-66 games** out of ~1,227 tracked, consistent with real NBA
+referee workloads (**~65-70 games per season** for full-time officials)."*
+
+### T6.3 — Lineup synergy: cheap, and two real bugs
+**4 bulk calls total** — one per lineup size (2/3/4/5-man), whole league. *"Much cheaper than the
+previous two backfills."* **8,000 combinations, 2,000 per group size.**
+
+**BUG 1 — Postgres array literals.** *"A real Postgres array-literal formatting issue."* First fix
+attempt with `sql.array()` was reconsidered before shipping — *"may not compose well inside the bulk-row
+helper. A **manually-built Postgres array literal string is safer and more predictable**."*
+
+**BUG 2 — a PK that was genuinely too narrow, with a real-world reason:**
+> *"the same `group_id` can **legitimately appear for two different teams within a season** (e.g.
+> **traded players who happened to pair up elsewhere too**), and my primary key is **missing
+> `team_id`**."*
+
+**Compare T5.8a**: the splits PK omitted `season` and nobody noticed. **Here the same class of flaw was
+caught because the load failed loudly.** *(Which is itself the argument for constraints: the lineup PK
+failed; the splits PK silently overwrote.)*
+
+**Spot-check**: *"Real, sensible NBA starting lineups (Timberwolves, Knicks, Pistons, Hornets, Hawks)
+with real minutes and plus-minus values."*
+
+### T6.4 — **THE INJURY-PDF DISCOVERY**
+Owner: *"Double check, look into strong systems, deep online research and after that Gemini insight"*
+
+> *"Major finding — the NBA publishes **official pregame injury reports as public PDFs** directly from
+> **their own CDN**, with real **historical coverage back to 2021-22**. This is the real, legitimate
+> source… **several times daily, going back years**."*
+
+**Flagged rather than built**: *"Given the scope and technical shift involved (**PDF parsing**)…"*
+→ **built in T10**, and it becomes the backbone of the entire availability layer (N1, the day-before
+and day-of reports, the 1:15 PM cutoff).
+
+### T6.5 — **The owner's scope correction**
+> **OWNER:** *"We still **not touching the daily context (master run) nor the baseline logic**, we still
+> backfilling, static and delta (**baseline pipeline**) backfill"*
+
+> *"**You're right — thanks for the correction.** Let me check the real current state of the daily delta
+> layer specifically, since that was flagged as an open gap early on and I haven't verified whether it
+> actually exists."*
+
+**CONFIRMED**: *"there's **no delta-phase worker anywhere in the registry**. This is the real, concrete
+gap that's been **flagged since the very start of this whole NBA build and never actually closed**."*
+
+**The owner's correction redirected effort from a new research thread back to the oldest open gap.**
+
+### T6.6 — The daily delta worker, and the completeness check's three wrong answers
+
+**Built for future-readiness, honestly stated**: *"2025-26 is fully complete (1400/1400), and 2026-27
+hasn't started yet (0/1266, begins Oct 3, 2026). This worker is **genuinely for future-readiness, not
+live testing today**."*
+
+**Mechanical verification at zero**: *"Correctly detected 2026-27, correctly returned **0 rows with zero
+errors** — exactly as expected for a season with no games played yet."*
+
+**Then the logic was tested against non-trivial data** — *"let's also verify the completeness-check
+LOGIC against real, non-trivial data — **the fully-complete 2025-26 season**"*:
+
+| Attempt | Result |
+|---|---|
+| 1. Naive count | **170-game gap** — explained as *"preseason, playoffs, All-Star weekend, and Cup knockout games"*, all correctly out of scope |
+| 2. Blank-label filter | *"**too aggressive** — it excludes legitimate regular-season games with special branding (**NBA Cup group stage, Rivals Week, international games**)"* |
+| 3. **`GAME_ID` prefix `002`** | *"a well-known, **precise convention** for game type, rather than relying on free-text labels"* — **verified first**: *"`002` = **1230 games, precisely matching** the known-correct regular season count"* |
+
+**`1230 = 1230, exact match.`**
+
+**This is the origin of the `002` prefix convention** used by `check_delta_gaps.py` today.
+
+### T6.7 — A small honesty note
+> *"**I accidentally dropped a useful earlier lesson in that edit — let me restore it.**"*
+Documentation damage caught and reverted in the same session.
+
+**T6 PASS 1: complete sequential read. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
