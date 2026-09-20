@@ -271,6 +271,74 @@ is that data come from nba.com itself, as MLB's does. Treat balldontlie as conti
 
 ---
 
+## FROM T1 PASS 30 — THE RESEARCH STANDARD WAS MISCOUNTED *(added 2026-09-20)*
+
+### ⚠ CORRECTION · **The research standard has 27 lessons, not 26** — and #27 was undocumented
+**VERIFIED 2026-09-20, two independent ways:**
+1. Direct grep of the source: `grep -c "^### [0-9]\+\." NBA_LESSONS_LEARNED_FROM_MLB.md` → **27**.
+2. Grep of T1 itself: the pasted copy inside the transcript carries `### 27.` in Part A.
+
+**The "26" figure appears in the owner's work order and propagated into
+`NBA_FINAL_SCORING_CALIBRATION.md` (two places, both now corrected) and into
+`NBA_GOBLIN_DEMON.md` §6. It was never checked against the file.** **Lesson #27 had no entry in any
+of the twelve documents** — it is now recorded at `NBA_FINAL_SCORING_CALIBRATION.md` §14 and
+`NBA_MULTIPLIERS.md` §0.2h.
+
+**This is a live instance of the documentation-gap discipline at the top of this file**: a number
+repeated often enough to look settled, never verified against its own source. **Cheap to check, and
+it hid a whole lesson.**
+
+### ⚠ OPEN · **Flex partial-credit structure is verified for PrizePicks only** *(lesson #27)*
+**The lesson**: *"one platform's partial-hit Flex payouts were **flat, fixed values independent of how
+large the underlying full-hit multiplier was**, while a different platform's **scaled proportionally
+with its own full-hit multiplier**… **verify each platform's actual mechanic directly from real
+observed data before building any EV model that depends on it.**"*
+
+**Where NBA stands:**
+- **PrizePicks** — **flat** tiers `4/5 = 0.5`, `3/5 = 0.25`, from **two independent MLB-side
+  observations** (`NBA_MULTIPLIERS.md` §0.2). Labelled *first pass* under #26. **No NBA-side
+  observation exists.**
+- **Underdog, Sleeper** — **NOT RECORDED.** And the **informed prior points away from flat**: §0.2e
+  records both as pricing **per-leg dynamically** rather than off a flat published table, which is the
+  shape that would scale partial tiers proportionally. **These two findings had never been read
+  against each other.**
+- **Betr, Fliff** — **NOT RECORDED.**
+
+**Why it is not cosmetic**: Flex EV is a **weighted sum over the partial tiers**, so a wrong tier
+shape biases **every** slip priced on that platform in the same direction. It also means
+**§0.2d.2's "Flex can flip an EV-negative Power pool positive" argument cannot be evaluated** on any
+platform whose tier shape is unverified.
+
+**The fix is one observed slip per platform, and costs nothing** — the payout displays **before**
+placing (#16). Build two slips of the same shape with materially different headline multipliers and
+read the partial tiers off both: **identical → flat; moving with the headline → proportional.**
+**`NBA_MULTIPLIERS.md` §4b's capture protocol does not currently include this test** — recorded there
+as question 5.
+
+### ⚠ GAP · **Parts G and H of the research standard are not in the twelve documents**
+Every reference in these documents describes the standard as *"the 26 lessons plus Parts A–F."*
+**The current `NBA_LESSONS_LEARNED_FROM_MLB.md` carries Parts A, B, C, D, E, F, G and H.** VERIFIED by
+grep 2026-09-20:
+
+| Part | Title, verbatim | Items |
+|---|---|---|
+| **G** | *"Lessons earned by the NBA baseline work itself (2026-09-09), now part of the standard"* | **10** |
+| **H** | *"Lessons from the enrichment backfill, market and board-sourcing phase (2026-09-10)"* | **12** |
+
+**These are NBA-earned, not MLB-inherited** — the first NBA content ever added to the standard.
+**Both postdate T1** (2026-09-03), so they are **not T1 material**: they were written by the sessions
+that became **T7–T11** and are swept with those transcripts. **Recorded here so the gap is not lost.**
+**Total standard: 27 + 10 + 12 = 49 numbered items. The twelve documents currently carry 27.**
+
+⚠ **Two Part G items already collide with things recorded elsewhere as open**, which is why this
+cannot wait for T7: **G1** (*"certify at the leg level, never the aggregate"* — with a measured
+instance, *"3PM 'more' 60–65 at −4.6pp inside a ladder within ±1pp"*) is the same argument as
+blueprint §7f recorded at pass 29, **now with an NBA number attached**; and **G8** (*"the season
+opening is a regime the mid-season certification never sees"*) is **season-start critical** with the
+season opening **2026-10-03**.
+
+---
+
 ## FROM T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
 *added 2026-09-20*
 
