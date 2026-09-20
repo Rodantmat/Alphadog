@@ -1649,6 +1649,46 @@ what produced DARKO, proving the boundary was drawn one source too early.
 
 **T2 PASS 6: NEW MATERIAL. Clean count 0/3.**
 
+### T2.14 — PASS 7 FINDINGS (added 2026-09-20; the status-summary blocks) — **NEW MATERIAL**
+
+#### T2.14a — Arenas: the exact capacity split
+**19 of 30 arenas have a real capacity; 11 carry an honest null** *"(source itself lacks it)"*.
+Previously recorded only as "some null". **This is the number to check against if the arena scraper
+is ever suspected of failing** — 11 nulls is correct, not a partial load.
+
+#### T2.14b — The exact Postgres error behind the "Undrafted" bug
+> **`invalid input syntax for type integer: "Undrafted"`**
+
+The literal message. *"Fixed with a defensive integer coercion, redeployed, and it succeeded cleanly
+on retry."*
+
+#### T2.14c — The proven pipeline, stated as one chain
+> *"bump `nba/TRIGGER_NBA_SCRAPE.txt` → GitHub Actions runs **`curl_cffi`** (Chrome TLS impersonation,
+> **required** — plain `requests` gets silently tarpitted) → commits real JSON → Cloudflare Worker
+> reads it via **GitHub's Contents API** → writes to Postgres → **I verify independently against the
+> DB, not just the worker's own report**."*
+
+**This is the canonical description of the static path**, and every static worker follows it.
+
+#### T2.14d — Seven static-differential workers
+The final count for Phase 3a's worker layer: **teams · players · arenas · officials · player bio ·
+player tracking · team stats**, plus on/off added after. *"All 7 static-differential workers now live
+and verified."*
+
+#### T2.14e — A session constraint that shaped the work
+> *"massive progress, **hitting the tool-call limit for this turn**"*
+
+The team-stats worker was *"written, deployed, and registered, but I hit the tool limit before calling
+`run_job` on it"* — with the data already confirmed in the committed JSON. **Work was left in a
+documented, resumable state rather than reported as complete**, and the next turn picked it up.
+
+#### T2.14f — "This is your real 'speed' data"
+On tracking: *"582/582 players written to `nba_stats.player_tracking_profile` — this is your real
+**'speed' data, actual in-game tracking, not a proxy**."* The owner had asked for player speed by name
+in message 460; this closes that request explicitly.
+
+**T2 PASS 7: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
