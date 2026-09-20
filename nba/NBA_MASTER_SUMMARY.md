@@ -1650,7 +1650,8 @@ sharper failure mode) · `OPEN_ITEMS` (*FROM T1 PASS 69*) · this entry.
 ### T1.98 — PASS 68 (angle: **LIVENESS — pass 45 proved T1's artefacts exist; this asks whether they run**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 68.*
 
-**FINDING 1 — ⚠⚠ NBA HAS NO RUN HISTORY AT ALL, and two documents said it did.**
+**FINDING 1 — ⚠⚠ NBA HAS NO CENTRAL RUN HISTORY, and two documents said it did.**
+*⚠ Heading corrected 2026-09-20 (T1 pass 76): this originally read "NO RUN HISTORY AT ALL", which is too broad. **`nba_score.baseline_ladder_runs` holds 3 real rows with rich per-run provenance** (VERIFIED). **The accurate statement: per-component run logs exist in `nba_score.*_runs`; the central control plane is empty.** All the `nba_control` evidence below stands unchanged.*
 **VERIFIED three ways**: `nba_control.job_runs` **0 rows**; `nba_control.worker_run_log` **0 rows**;
 and the string `nba_control` appears in **no non-markdown file anywhere in the repo**. Every file
 that does use `worker_run_log`/`job_runs` is an **MLB** file at the repo root. Meanwhile **21 NBA
