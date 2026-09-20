@@ -156,6 +156,39 @@ bands. **And the measured `LADDER_DEPTH` (p95 = 13 rungs for points) agrees to w
 
 ---
 
+## 5.0c **THE DURABLE PRICING MECHANICS** *(lesson #24 — held across MLB's entire history)*
+
+**These three qualitative behaviours survived MLB's whole run; the exact numeric ratios attached to
+them did not.**
+
+| Behaviour | Detail |
+|---|---|
+| **One variant prices FLAT** | *"one Goblin/Demon-style variant **prices flat REGARDLESS of the underlying event's rarity**"* |
+| **The other SCALES with rarity** | *"the **higher-risk variant scales its payout with how rare the specific event is**"* |
+| **Pairing is irrelevant to pricing** | *"**game or team pairing has NO EFFECT on pricing**"* |
+
+**Read together with the four measured mechanics in `NBA_MULTIPLIERS.md` §0.1**, this gives the shape
+of the pricing function:
+- **The safe variant (goblin) is flat** — its payout does not respond to how safe the specific line is.
+  **So a goblin on a 40%-clear line and one on a 15%-clear line pay the same.** That is precisely the
+  *"directionally but not proportionally"* mispricing of lesson #13, seen from the goblin side.
+- **The risky variant (demon) scales with rarity** — so demon pricing *does* respond to the event,
+  which is why demon T+1 can clear break-even while T+2 and T+3 cannot.
+- **Pairing has no effect on PRICING**, yet §0.1 records that *"same-team/same-game legs get a small
+  multiplier discount."* **These are not contradictory**: the discount is applied at **slip
+  construction**, not in the leg's own price. **Correlation is priced at the slip level, not the leg
+  level.**
+
+### ⚠ THE NUMBERS DECAY — the mechanics do not
+> *"the ***exact* numeric ratios quoted in that same original research were later confirmed to have
+> GENUINELY DECAYED AND CHANGED OVER TIME as the platform's own real pricing evolved.**"*
+
+**So `NBA_MULTIPLIERS.md` must treat every number as perishable and every mechanic as durable** — and
+even the mechanics have limits, since the More-only rule was itself a durable mechanic **until
+2026-08**.
+
+---
+
 ## 5.0b ⚠ **THE STRUCTURAL MISPRICING — real, measured, and never exploited**
 
 **Lesson #13, the one the handoff calls *"a real, load-bearing finding"*:**
