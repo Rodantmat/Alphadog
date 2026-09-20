@@ -277,7 +277,46 @@ report a valid zero; on a DataDome block it should fail — and the two look ide
 scraper.**
 
 **And the first lesson applies directly**: NBA **already has the correct pattern** in the delta
-worker's calendar-based pre-flight. **Copying it to the board producer beats inventing a new check.**
+worker's calendar-based pre-flight. ### ⚠⚠ THE DEEPER ROOT CAUSE — "correctly coded" is not "actually running"
+> *"**The calendar tables that *SHOULD* have answered this question ALREADY EXISTED IN THE SCHEMA** —
+> **but ONE HAD NEVER BEEN POPULATED AT ALL (ZERO ROWS, EVER), and THE OTHER WAS WEEKS STALE.**
+> **The actual root cause WASN'T A MISSING FEATURE in the worker throwing the error — it was that THE
+> ONE OTHER WORKER CAPABLE OF KEEPING THE REAL GAME CALENDAR FRESH HAD A FULLY-BUILT, REAL
+> IMPLEMENTATION BUT HAD SIMPLY NEVER BEEN WIRED INTO ANY AUTOMATED SCHEDULE.**
+> **For NBA: build the 'is a game genuinely scheduled today' calendar signal as ITS OWN
+> INDEPENDENTLY-VERIFIED, ACTIVELY-SCHEDULED SOURCE OF TRUTH from day one, NOT something any
+> individual pipeline stage tries to infer from its own inputs** — **AND CONFIRM WHATEVER WORKER
+> MAINTAINS IT IS ACTUALLY RUNNING ON A REAL SCHEDULE, NOT JUST CORRECTLY CODED.**"*
+
+### ✅ THE CALENDAR ITSELF IS SAFE — verified 2026-09-20
+**`scrape_nba_schedule.py` runs in P2**, line 108, in the *"Baseline inputs — season files, quarters,
+schedule"* step. **The calendar is refreshed nightly**, and it holds **2,666 games**.
+
+**So NBA does not have MLB's exact failure**: its arbiter of truth is actively scheduled, and the
+delta worker's pre-flight consults it rather than inferring from its own inputs.
+
+### ⚠⚠ BUT NBA HAS THE IDENTICAL FAILURE ON A DIFFERENT WORKER
+***"Fully-built, real implementation, never wired into any automated schedule"* is a verbatim
+description of the weekly differential worker.**
+
+| | MLB's calendar worker | **NBA's differential worker** |
+|---|---|---|
+| Implementation | fully built | **fully built (T3)** |
+| Scheduled | **never wired** | **never wired** — P1 does not call it |
+| Observable state | one table 0 rows ever, one weeks stale | **all three `*_differential_log` tables 0 rows; snapshot frozen 2026-09-03** |
+| Consequence | zero-vs-broken indistinguishable | **trades, signings, renames undetected** |
+
+**And the instruction — *"confirm whatever worker maintains it is ACTUALLY RUNNING on a real schedule,
+NOT JUST CORRECTLY CODED"* — is the check that would have caught it.** It was caught here by querying
+the tables, which is the same check applied to the output rather than the schedule.
+
+**⚠ Also worth applying to the other never-scheduled items**: `scrape_nba_splits.py` and career
+totals were **put on the weekly cycle in T7 and dropped in the P1 rebuild** — **correctly coded, not
+running.**
+
+**The generalisable form**: *"a fully-built implementation that was never scheduled"* is a distinct
+failure class from a bug, and **the only reliable detector is observing the output, not reading the
+code.**
 
 ---
 
