@@ -1254,30 +1254,40 @@ directly"*:
 **14.5% of rows, from a rounding convention alone.** And the named cases are **tier cutoffs and
 threshold classifications** — which is what NBA's entire tiering layer consists of.
 
-**⚠ NBA's exposure is broad and sits exactly on boundaries:**
-| Boundary | Convention matters at |
+**⚠ NBA's exposure — CHECKED 2026-09-20, and it is SMALLER than feared:**
+
+**Every `round()` in `classification_ladder_v12.py` is for REPORTING, not classification:**
+| Line | Use |
 |---|---|
-| **`ROLE_TIERS`** — 36 / 32 / 27 / 21 / 15 | a `mu_role` of exactly 27.0 or 32.0 |
-| **Rate-tier quantile assignment** (`MAX_TIERS=24`) | every tier edge |
-| **`variation_band`** — `<9.5 / 9.5–17.5 / 18.5–25.5 / 26.5–31.5 / 31.5+` | every band edge |
-| **`BLOWOUT_MARGIN=20` / `COMPETITIVE_MARGIN=15`** | a margin of exactly 15 or 20 |
-| **`P_BLOWOUT_BINS`** `[0,2,4,6,8,10,12,15,99]` | every bin edge |
-| **Prop lines at `.5`** | ✅ **half-lines avoid ties by design** — the one place NBA is structurally safe |
+| 385 | `print("RETURN RAMP multipliers…")` — console output |
+| 492 | `FACTOR_FITS[prop]` — recording fitted coefficients |
+| 535 | `FACTOR_FITS["season_phase"]` — recording |
+| 672 | `platt_log` — recording A, B, `max_shift` |
+| 685 | the summary table — `mean_pred`, `gap_pp`, `brier`, `logloss` |
+| **397** | **the ONLY functional one** — `_compound_cdf_cached(int(k), round(att_mean,1), round(att_var,1), round(pct,2))` — **deliberate quantisation for a CACHE KEY** |
 
-**Python and Postgres disagree by default, which is the concrete hazard here:**
-- **Python's `round()` is round-half-to-EVEN** (banker's rounding) — `round(2.5)` → `2`
-- **Postgres `round(numeric)` is round-half-AWAY-FROM-ZERO** — `round(2.5)` → `3`
+**✅ Tier assignment does NOT round.** `role_tier()` uses **interval comparison**:
+```python
+for k, lo, hi in ROLE_TIERS:
+    if lo <= m < hi: return k
+```
+**A comparison has no rounding convention** — so the 36/32/27/21/15 boundaries are convention-safe.
+The same holds for `variation_band`, `P_BLOWOUT_BINS` and the margin thresholds, which are all
+interval tests.
 
-**NBA computes the ladder in PYTHON (`classification_ladder_v12.py`, pandas/numpy) and stores,
-queries and re-derives in POSTGRES.** **That is precisely the two-convention split the bug describes**,
-and **numpy's `round` is also half-to-even.**
+**And prop lines end in `.5`**, so ties at the line itself cannot occur by construction.
 
-**Where it would surface**: a player whose `mu_role` sits at a tier edge could be classified
-differently by the Python builder and by any SQL that re-derives the tier — **and tier
-misclassification is already recorded as *"a quiet, indirect source of a wrong final probability."***
+**⚠ Two residual exposures worth noting:**
+1. **Line 397's cache-key rounding** uses Python's half-to-even. Two genuinely different
+   `att_mean` values that round to the same 0.1 share a cached CDF — **a deliberate trade, but the
+   boundary case is convention-dependent.**
+2. **The reporting rounds feed `factor_fits` and `platt_fits` INTO `baseline_ladder_runs`** — so the
+   **stored** coefficients are half-to-even rounded, while any Postgres re-derivation would round
+   half-away-from-zero. **These are audit records, not inputs**, so the impact is cosmetic — but a
+   comparison between a stored fit and a recomputed one could differ in the last digit.
 
-**Not recorded as checked.** The test is small: pick the boundary values and compare Python's
-classification against a SQL re-derivation on the same inputs.
+**Net: the 14.5% failure mode does not apply to NBA's tier assignment.** The risk is confined to the
+compound-CDF cache key and to displayed/stored precision.
 
 ### ⚠ MEASURE THE ACTUAL FIRING HISTORY, NOT THE DESIGNED SCHEDULE
 > *"MLB's real, intended **'runs four times daily' schedule was found, ON DIRECT MEASUREMENT, to
