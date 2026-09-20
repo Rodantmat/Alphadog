@@ -205,6 +205,32 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 58 — BLUEPRINT §4j–§4n BY CONCEPT — ✅ **CLEAN** *(added 2026-09-20)*
+*Angle: the sound method applied to the blueprint's operational and data-mining subsections. **Every
+lesson in §4j, §4k, §4m and §4n has an entry. Nothing new.***
+
+**§4j, both patterns present**: *"two files meant to be exact copies can silently drift out of
+sync"* (`NBA_OPEN_ITEMS.md`, `NBA_MASTER_SUMMARY.md` — and cited again at *PASS 42* as the class the
+ledger drift belonged to) · the **global lock / "busy" response** pattern, with the *"one to two
+minutes"* wait before concluding a job is stuck.
+
+**§4k, all eight base-layer lessons present** *(all in `NBA_SYSTEM_ARCHITECTURE.md` §4c, several
+cross-referenced elsewhere)*: adopt existing correct data rather than blindly re-fetching ·
+never validate against an old/reference database as ground truth · **verify every column that should
+refresh is in the `ON CONFLICT DO UPDATE` list** · **bounded rolling re-verification window** rather
+than a frozen cutoff · **a shared helper's own hidden internal cap** overriding the caller's setting ·
+rebuild a proven pattern rather than port a problematic legacy one · **check whether the need can be
+derived purely via SQL** from data already collected (MLB's bullpen-appearances case) · **classify
+each source's real shape** — per-game vs season-to-date aggregate — before designing its mining.
+
+**§4m** is the source of `NBA_SYSTEM_ARCHITECTURE.md` §2c in full. **§4n** is cited by section in
+three places — the quantified numeric-precision bug, the already-migrated-system caveat, and the
+legacy-guard problem applied to an inherited tuning constant.
+
+**PASS 58 IS CLEAN — 1 of 3.**
+
+---
+
 ## FROM T1 PASS 57 — TWO BACKTEST TRAPS FROM PART D, BOTH LIVE IN NBA *(added 2026-09-20)*
 *Angle: Part D's two remaining trailing subsections, read by concept. **Neither appears in the twelve
 documents, and each has a live NBA instance.***
