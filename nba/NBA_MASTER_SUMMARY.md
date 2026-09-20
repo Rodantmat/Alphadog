@@ -1948,6 +1948,30 @@ see if there is any weekly candidate"*
 
 **T3 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T3.7 — PASS 2 FINDINGS (added 2026-09-20; DDL) — **NEW MATERIAL**
+
+**`nba_stats.player_impact_rating` full DDL** — and it carries more than the headline metric:
+`dpm` (Daily Plus Minus) · **`o_dpm` / `d_dpm`** (offensive/defensive split) ·
+**`box_dpm` / `on_off_dpm`** (the two components DARKO blends) · `rank`.
+**So the on/off signal is present inside DARKO too** — `on_off_dpm` is DARKO's noise-stripped version
+of the same idea our own `teamplayeronoffdetails` scrape produces raw. That is a second, independent
+reason the raw on/off splits are a secondary signal.
+
+**The differential layer is SIX tables, three snapshot/log pairs** (now in DATABASE):
+`player_roster_snapshot` + `player_differential_log` · `team_roster_snapshot` +
+`team_differential_log` · `official_roster_snapshot` + `official_differential_log`.
+
+**The two log shapes differ deliberately:**
+- **Player log** is purpose-built for team moves — `old_team_id` / `new_team_id` — because that is the
+  change that matters for props.
+- **Team log is field-level** — `field_name` / `old_value` / `new_value` — because a team can change in
+  many ways (rename, relocation, conference/division realignment) and none is predictable.
+- **Official log is existence-only** — an official appears or departs; there is no field to track.
+
+**Each is shaped to its own change profile rather than forced into one schema.**
+
+**T3 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
