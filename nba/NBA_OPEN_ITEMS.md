@@ -866,6 +866,41 @@ have none.
 **The discipline named — check the sport's own official API before any third party — was followed and
 produced a split answer**: assignments yes, roster no.
 
+**5. The exact list of "static differential" entities**
+> *"the person named **calendar / teams / players / rosters / arenas / referees**; confirm this is the
+> full v1 list or whether anything else (e.g. **an alias table**, **a stadium/arena-context table
+> analogous to MLB's park factors**) belongs in the same run."*
+
+**Resolved — both suggested additions were built**: `nba_ref.team_aliases` (162) and
+`nba_ref.player_aliases` are the alias tables; `nba_ref.arenas` (30) is the arena-context table.
+**⚠ But `arenas` carries the park-factor analogue only as empty columns** — `altitude_ft` and
+`timezone` are **0-of-30 populated** (see the cheap-fix entry above).
+
+**6. ⚠ THE QUESTION THAT DEFINED THE ENTIRE OFFSEASON BUILD**
+> *"**With no live season for ~1 month, what's the real, useful scope of 'backfill + design' work
+> right now** — i.e. **which specific static/historical data sources can genuinely be probed and
+> locked TODAY**, versus **which board/market/live-context work HAS TO WAIT until the season starts**
+> regardless of how much design work is done in advance.
+> **Recommend addressing this concretely as the VERY NEXT STEP, before opening multiple new per-domain
+> chats, so each new chat has a real, doable ta[sk].**"*
+
+**This question shaped everything that followed.** The answer, as executed across T1–T9:
+| Doable without a season | Had to wait |
+|---|---|
+| all static/reference data | live board capture |
+| 3 seasons of game logs (79,358 rows) | goblin/demon tier certification |
+| the full baseline + calibration to leg level | the multiplier observation study |
+| combos, periods, the production builder | real-money/quote confirmation |
+| the delta path, proven by replay | selection and slip strategy |
+
+**And the owner's own later framing confirmed the split** — *"with the previous seasons, I am sure you
+can **simulate** the classification/baseline pipeline, which is already enough to define logic, define
+the player tiers, the metrics"* (T7), answered with *"**no reason to wait for October for any of
+that**."*
+
+**The one thing the plan expected to be doable and wasn't**: the board scraper first (startup plan
+step 3) — see `NBA_RECIPE.md` STEP 0b.
+
 ### ⚠ EIGHT PLANNED SCHEMAS WERE NEVER CREATED
 T1's naming convention specified **fourteen** `nba_`-prefixed schemas:
 `nba_ref` · `nba_calendar` · `nba_stats` · `nba_team` · `nba_daily` · `nba_context` · `nba_market` ·
