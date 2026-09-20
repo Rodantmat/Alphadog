@@ -1179,22 +1179,45 @@ NBA.
 
 Everything else in the segment is documented.
 
-### T1.52 — CURRENT STATE OF T1
+### T1.52 — PASS 25 COMPLETE — segments 4, 5, 6 all **CLEAN**
 
-**Pass 25 in progress: segments 1 (new), 2 (clean), 3 (minor new). Clean count: 0/3.**
+| Segment | Blocks | Result |
+|---|---|---|
+| 1 | 1–54 | **NEW** — dead-stub count and detection method; third blueprint correction |
+| 2 | 55–75 | CLEAN |
+| 3 | 76–131 | **MINOR NEW** — `schema_ref_db.sql` as the reference-layer DDL source |
+| 4 | 132–205 | CLEAN |
+| 5 | 206–300 | CLEAN |
+| 6 | 440–end | CLEAN |
 
-**Running total: 25 passes, 23 found new material.**
+**Pass 25: NEW MATERIAL (segments 1 and 3). Clean count remains 0/3.**
 
-**Segments 4–6 of pass 25 still to read.** A pass counts as clean only if ALL SIX segments are clean.
+Segments 4–6 contained only already-documented material: the full-fleet redeploy and path bug (T1.21,
+T1.42), the `host_not_allowed` finding (T1.17), the Cloudflare-to-Cloudflare root cause (T1.22),
+balldontlie's terms (T1.44), the GitHub-Actions discovery (T1.6), the four-failure chain and
+`curl_cffi` (T1.7, T1.48), and the two-click UI detail (T1.48).
 
-**The three findings pass 25 has produced so far** are all of the same type — **provenance**:
-- ~19 of 116 registry rows are dead stubs (~5.3 KB signature) → the real worker count is ~97
-- the blueprint was corrected in **three** places, not two
-- the reference-layer DDL came from `schema_ref_db.sql`, not from scratch
+### T1.53 — CURRENT STATE OF T1
 
-**Pattern worth noting**: passes 24 and 25 keep finding the same class of thing — **where something
-came from**. The targeted sweeps captured *what* exists; sequential reading captures *why it looks
-that way*, which is the part that is useful when changing it.
+**25 passes. 23 found new material. Clean count: 0/3.**
+
+**Pass 25's yield was 2 findings from 6 segments** — down from pass 24's 6 from 6. The rate is falling,
+which is what convergence looks like.
+
+**Next: pass 26 — full sequential re-read, all six segments.** If it is entirely clean, the count
+begins at 1/3.
+
+**Everything found in passes 24–25, consolidated** (all provenance-type findings):
+| Finding | Why it matters |
+|---|---|
+| Owner supplied *"mlb calls referees Umpire"* | the referee analogue was given, not derived |
+| `STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR` | the recorded value was truncated |
+| balldontlie: 5 req/min, 401 without key | why it could never have carried the system |
+| Phase 1 → 3d plan; filenames deviate from it | transcript phase labels are approximate |
+| ~19 of 116 registry rows are dead stubs (~5.3 KB) | **real worker count is ~97** |
+| Blueprint corrected in **three** places | schema count was also wrong |
+| `schema_ref_db.sql` is the DDL pattern source | `source_key`/`raw_json`/`data_quality` were inherited |
+| `curl_cffi`, `PROXY_URL`, GitHub Actions all came from MLB's code | **the remedy at every wall was read, not invented** |
 
 **Two corrections this pass produced**, both from reading rather than grepping:
 1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
