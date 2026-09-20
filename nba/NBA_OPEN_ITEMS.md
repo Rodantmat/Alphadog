@@ -814,6 +814,23 @@ the anchor's own as-of construction with the same method used on candidates.
 **Note this is not a claim that the anchor leaks.** It is a recorded gap between the rule and what has
 been verified.
 
+### 💰 UNVERIFIED SPEND · BallDontLie GOAT tier — $39.99/month, possibly unused
+T1 records a **paid, verified BallDontLie integration**:
+> *"Fully operational with **paid GOAT tier ($39.99/month)**. Rate limit **600 requests/min** (10× the
+> free tier). `/stats` → 200 OK (**CRITICAL — paid tier only**). API key confirmed active.
+> Timeout raised **10s → 30s**. **API is SLOW (10–30 s per request) but functional; CACHING CRITICAL
+> for production.**"*
+
+**Nothing in any later transcript uses it.** The build took **stats.nba.com** as its primary source
+from T1 onward, and T9's historical-prop research records *"balldontlie: **no history**"* as the reason
+it was ruled out for board data.
+
+**Not referenced in P1, P2 or P3.** No scraper in `nba/` is recorded as calling it.
+
+**To check**: whether the subscription is still being billed, and whether anything at all consumes it.
+**If unused, it is a recurring cost with no consumer.**
+*(Documentation only — no action taken, per the standing rule.)*
+
 ### ⚠ THE FACTOR GATE — neither branch of the multiple-comparisons rule has been applied
 Lesson #7 (T1) requires the significance bar to match how the test was run:
 | Situation | Correct bar |
