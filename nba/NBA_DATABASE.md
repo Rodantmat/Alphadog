@@ -445,6 +445,29 @@ historical games — 1,228 games once "succeeded" and yielded 799 rows where ~30
 v3 schema: flat per-player fields (`personId`, `position`, `comment`) nested under
 `boxScoreTraditional.homeTeam.players` / `awayTeam.players`.
 
+### `nba_stats.game_officials` — 3,681 rows *(T6)*
+`game_id`, `official_id`, `nba_official_id`, `full_name`, **`jersey_num`**, **`assignment`** —
+PK `(game_id, official_id)`. **1,227 of 1,230 games** (3 officials × 1,227 + partials).
+**`assignment`** carries the crew role (crew chief / referee / umpire), not just presence.
+`source_key DEFAULT 'NBA_GITHUB_COMMITTED_ONETIME_BACKFILL_V3'` — **the `_V3` is encoded in the
+provenance**, so any row from the broken v2 path would be distinguishable.
+**⚠ SOURCE MUST BE `boxscoresummaryv3`** — v2 is **documented unreliable after 2025-04-10**, the same
+pattern as `boxscoretraditionalv2`.
+**⚠ 3 games (all 2025-11-19) have NO officials on NBA.com's side** — the API returns an empty array.
+0.24%, accepted, not a bug.
+Spot-check: top officials work **65–66 games**, matching real full-time referee workloads (~65–70).
+
+### `nba_team.lineup_profile` — 8,000 rows *(T6)*
+`group_quantity` (2/3/4/5), `group_id`, **`player_ids TEXT[]`**, `group_name`, `team_id`, `season`,
+then the full statistical line (`gp`, `w`, `l`, `w_pct`, `min`, shooting, `blka`, `pfd`, `pts`,
+`plus_minus`).
+**2,000 rows per group size.** Source: **`leaguedashlineups` — only 4 bulk calls**, one per size.
+**`player_ids` is a genuine Postgres array**, so *"which lineups contain player X"* is a single
+`player_ids @> ARRAY[...]` query rather than a join table. **This is what caused the array-literal
+formatting bug**, fixed with a manually-built literal rather than `sql.array()`.
+**⚠ PK must include `team_id`** — *"the same `group_id` can legitimately appear for two different teams
+within a season (traded players who happened to pair up elsewhere too)."*
+
 ### Depth available vs depth taken *(T4)*
 Box scores exist league-wide back to **1996-97**; advanced stats from **1997**.
 **Only 3 seasons were taken (2023-24, 2024-25, 2025-26)** — deliberately.
