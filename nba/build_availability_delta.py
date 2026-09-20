@@ -79,15 +79,22 @@ def main():
     if day.empty:
         print(f"no injury rows for {asof} - no delta"); return
     day["status_u"] = day["status"].astype(str).str.upper().str.strip()
-    local = day["snapshot_ts"].dt.tz_convert(PT)
-    day["h"] = local.dt.hour + local.dt.minute / 60.0
 
-    # BEFORE = last snapshot at or before ~09:00 PT (what P2 saw overnight)
-    # AFTER  = last snapshot at or before 13:15 PT (the P3 cutoff)
-    before = (day[day["h"] <= 9.0].sort_values("snapshot_ts")
+    # ABSOLUTE TIMESTAMPS, NOT HOUR-OF-DAY. The first version computed h = hour(snapshot_ts) and took
+    # `before` as h <= 9.0, which EXCLUDED the day-before report entirely - that report is filed ~5 PM
+    # LOCAL the previous evening, so its hour-of-day is 17.0 and it failed an h<=9 test even though it
+    # is exactly what P2 built from. The diff was then "today 9 AM vs today 1:15 PM" instead of
+    # "what P2 saw vs what P3 sees", which is why 20 real status changes produced zero reallocations.
+    gd = datetime.fromisoformat(asof).date()
+    p2_build = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=1)    # P2 ~01:00 PT
+    p3_cut = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=13, minutes=15)
+    print(f"  P2 view: snapshots <= {p2_build:%Y-%m-%d %H:%M %Z}   "
+          f"P3 view: <= {p3_cut:%Y-%m-%d %H:%M %Z}", flush=True)
+
+    before = (day[day["snapshot_ts"] <= p2_build].sort_values("snapshot_ts")
               .drop_duplicates(subset=["player_name"], keep="last")
               .set_index("player_name")["status_u"].to_dict())
-    after = (day[day["h"] <= 13.25].sort_values("snapshot_ts")
+    after = (day[day["snapshot_ts"] <= p3_cut].sort_values("snapshot_ts")
              .drop_duplicates(subset=["player_name"], keep="last")
              .set_index("player_name")["status_u"].to_dict())
     changed = {p: (before.get(p), s) for p, s in after.items() if before.get(p) != s}
