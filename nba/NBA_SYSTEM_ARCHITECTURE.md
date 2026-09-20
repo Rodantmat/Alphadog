@@ -376,7 +376,52 @@ anything added by hand.
 **Deploy order matters:** the fleet deploys **alphabetically from the file diff**, so `admin-sql`
 (which holds new workers' bindings) sorted before them and failed. The last-deploy fix is permanent.
 
-### ⚠ THE HARDCODED WHITELIST-TUPLE TRAP — named specifically
+### ⚠ CHUNKING / MULTI-TICK CONTINUATION — and the per-tick trap
+> *"**Cloudflare Workers have REAL EXECUTION-TIME CONSTRAINTS.** The proven MLB pattern: **PROCESS A
+> BOUNDED SLICE PER INVOCATION, TRACK CONTINUATION STATE, and ONLY MARK A SOURCE 'FULLY SYNCED' ON THE
+> FINAL TICK once THE COMPLETE FRESH DATASET HAS BEEN SEEN** — **NEVER PER-TICK, or INTERMEDIATE TICKS
+> WILL INCORRECTLY TREAT UNPROCESSED ROWS AS STALE/INACTIVE.**"*
+
+**The trap is specific**: marking synced per-tick makes rows that simply have not been reached yet
+look **deactivated**. **A worker that deactivates by absence must only do so once it has seen
+everything.**
+
+**⚠ Directly relevant to NBA's `active` columns.** `nba_ref.team_aliases` and `player_aliases` carry
+**`active INT DEFAULT 1`**, and the differential/snapshot layer deactivates by absence. **If any of
+those writers is chunked, mid-run state would mark unreached rows inactive.**
+
+**And the chunk-kill signature is the other half**: *"the signature of a chunk being killed by the
+platform MID-LOOP BEFORE IT CAN CHECKPOINT"* — **a kill between ticks leaves exactly that
+half-deactivated state** unless "fully synced" is final-tick-only.
+
+### FRESHNESS GATES / WATERMARKS — with MLB's actual windows
+> *"For any external source with **no cheap 'what changed since X' signal**: **SKIP AN EXPENSIVE FULL
+> RE-MINE IF A CERTIFIED/PROMOTED RUN COMPLETED WITHIN A BOUNDED FRESHNESS WINDOW** — **MLB used 20
+> HOURS for daily-ish sources, 3 HOURS for market/pricing sources it wanted fresher.**
+> **ALWAYS ALLOW AN EXPLICIT `force_refresh` OVERRIDE.**"*
+
+**Two windows named: 20h for daily sources, 3h for market/pricing.**
+
+**NBA's equivalent is the certifier's staleness assertion** — P1 asserts *"freshness ≤ 8 days"* and
+**correctly failed on defender ratings 6 days stale**. **But that is a FAILURE gate, not a SKIP
+gate**: it refuses to certify stale data rather than skipping a re-mine of fresh data.
+
+**⚠ NBA has no freshness skip gate recorded**, which is why the weekly scrapers re-pull whole
+aggregates unconditionally. **For P1 that is correct** (§4k.7 — aggregates need refetch-and-replace).
+**For P2's board and market scrapes, a 3-hour-style window would be the applicable pattern**, and
+`force_refresh` maps onto the existing `skip_mining` input inverted.
+
+### THE DIFFERENTIAL WRITE PATTERN — *"the actual core design philosophy"*
+> *"**LOAD CURRENT STATE FROM POSTGRES FIRST, COMPARE EACH INCOMING ROW FIELD-BY-FIELD, and ONLY
+> INSERT/UPDATE r[ows that genuinely changed]** — **worth replicating EXACTLY.**"*
+
+**✅ NBA implements this**: `teamHasRealChange()` gates the write, and `*_written` counters report
+**rows upserted in that run** (155/157) rather than the table total (162) — *"not a fallback-to-live
+progression"*, as T2 resolved.
+
+**⚠ And it is precisely why the upsert update-clause audit matters**: a differential writer that
+compares field-by-field **but omits a field from its `DO UPDATE SET`** will detect the change,
+attempt the write, and **silently leave that field frozen.**
 > *"**The wrangler-config generator had a HARDCODED WHITELIST TUPLE of WHICH WORKERS GET CERTAIN
 > BINDINGS (e.g. HYPERDRIVE)** — **a new worker NOT IN THAT TUPLE SILENTLY DEPLOYS WITHOUT THE BINDING
 > IT NEEDS, producing A CONFUSING DOWNSTREAM ERROR WITH NO OBVIOUS CONNECTION TO THE ACTUAL CAUSE.**
