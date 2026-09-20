@@ -107,12 +107,16 @@ jobs:
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
-          # VERIFIED NAMES. Each scraper has its OWN variable - a generic SPORT does nothing, and the
-          # defaults are multi-sport ("mlb,nba"), so an unset variable silently scrapes MLB too and
-          # doubles the runtime of a pipeline that must finish in minutes.
+          # VERIFIED NAMES, and they are NOT uniform - each scraper has its own. A generic SPORT does
+          # nothing. Sleeper's default is multi-sport ("mlb,nba"), so leaving it unset silently scrapes
+          # MLB too and doubles the runtime of a pipeline that must finish in minutes.
           SLEEPER_SPORTS: "nba"
-          UNDERDOG_SPORTS: "nba"
-          FLIFF_SPORTS: "nba"
+          # OUTPUT DIRS ARE ALSO NOT UNIFORM: Sleeper defaults to "." (the repo ROOT) while Underdog
+          # defaults to "boards". The commit step below only adds boards/ and nba/data/, so an unset
+          # SLEEPER_OUT_DIR drops the file at the root where it is never committed - and the archiver,
+          # which reads committed files, would silently never see Sleeper's board.
+          SLEEPER_OUT_DIR: "boards"
+          UNDERDOG_OUT_DIR: "boards"
         run: |
           python nba/scrape_sleeper_board.py
           python nba/scrape_underdog_board.py
