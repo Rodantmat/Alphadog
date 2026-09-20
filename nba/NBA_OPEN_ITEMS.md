@@ -1,5 +1,41 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 LIVE CREDENTIAL IS IN THESE DOCUMENTS, NOT JUST IN THE TRANSCRIPTS — owner action required
+*Found 2026-09-20 by the T1 judgment pass (pass 88). **VERIFIED** by grep of all 30 `nba/*.md` files.*
+
+**`NBA_MASTER_SUMMARY.md` line 1034 contains the balldontlie.io API key in full, verbatim**, in a
+table cell reading `` `dcb12926-…-d7bdd3f13d6d` (balldontlie key) | T1.5 ``.
+
+**How it got there**: pass 19 ran a sweep for every hex string, ID and UUID in T1 and tabulated what
+it found against where each was already documented. **It quoted the key instead of referring to it.**
+The table's own purpose — "these values are all already documented, nothing new here" — is what made
+the quoting feel harmless. It was not.
+
+**Why this is worse than the transcript exposure the BLOCKER below describes.** That BLOCKER warns
+the owner that the 20 transcript `.txt` files carry this key 21 times and must be redacted **by
+value** before they are committed. **It points outward at files that are not in the repo yet. This
+one is already in the repo, committed and pushed, since pass 19** — and pass 81 added a GitHub Pages
+warning to that same BLOCKER, which applies here with full force.
+
+**Redacting line 1034 is not the fix, and that is the important part.** The value has been in the
+commit history of `Rodantmat/Alphadog` since pass 19. Removing it from the current file removes it
+from `HEAD` and from nothing else. **The only real remedy is to rotate the key at balldontlie.io**,
+after which the exposed string is worthless and the line can be cleaned up at leisure.
+
+**Owner action, in order:**
+1. **Rotate the balldontlie.io API key.** Treat the current value as burned.
+2. Update `nba_config.external_credentials` with the new value — **and note that the column is named
+   `credential_value_encrypted` while the value stored in it is plaintext**, which is how a key
+   ends up quotable in the first place. *(The column-name-vs-contents mismatch is already recorded
+   at `NBA_DATABASE.md`; this is the first time it has had a consequence.)*
+3. Only then redact line 1034 and the transcript occurrences.
+
+**Not fixed by this session, per the owner's standing instruction** that issues are documented now
+and fixed after the sweep finishes. **That instruction is the right call here anyway**, because
+step 1 is the fix and it is not a documentation edit.
+
+---
+
 ## ⚠ `nba/tools/sweep_coverage.py` IS COMMITTED BUT NOT REPRODUCIBLE — read before trusting any coverage number in these documents
 *Recorded 2026-09-20.*
 
