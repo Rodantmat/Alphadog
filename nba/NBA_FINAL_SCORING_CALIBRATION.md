@@ -552,19 +552,61 @@ taken."*
 | **26** | **Explicitly track a finding's CONFIDENCE TIER** — *"'first real pass' and 'independently re-validated' are NOT the same claim"* |
 
 ### The ones this project has already proved the hard way
-- **#2** → the phantom-edge risk in the goblin/demon economics (`NBA_GOBLIN_DEMON.md` §5.0)
-- **#6** → the day-level block bootstrap (§13.1) — *resample days, never legs*
+
+#### ⚠ #15 IS THE DOMINANT FAILURE MODE — six separate instances in MLB alone
+> *"**The DOMINANT SINGLE FAILURE MODE across MLB's entire research program (at least SIX distinct,
+> separately-discovered instances) was a GROUPING KEY OR JOIN THAT FAILED TO ISOLATE the spec[ific
+> thing it claimed to].**"*
+
+**NBA has already had at least four of its own:**
+| Instance | Effect |
+|---|---|
+| `norm_market()` naive `replace('player_','')` | **23,286 legs — 44% of the board — scored nothing, silently** |
+| The splits PK omitting `season` | only one season can ever exist |
+| The lineup PK omitting `team_id` | traded players collide (**failed loudly** — the good case) |
+| The gap sample grouping on `matchup` | every game listed twice |
+
+**This is the bug class to look for first in any new table.** *"Before trusting any grouping key or
+join, sanity-check that it actually isolates what it claims to."*
+
+#### #18 — THE SAMPLE-SIZE POSTURE, adopt as a mechanical default
+> *"**fewer than 15 real days is NOT YET A RESULT AT ALL; 15–30 days is DIRECTIONAL ONLY; 30–70 days is
+> usable WITH REAL CAVEATS STATED; 70+ days is GENUINELY REPORTABLE.**
+> **Days of real, distinct data matter FAR MORE than total leg count — a large leg count concentrated
+> in a handful of days is A SMALL-SAMPLE FINDING WEARING A LARGE-N DISGUISE.**"*
+
+**This is the standard the NBA season should be measured against from opening night**, and it explains
+why the bootstrap resamples **days**, not legs (§13.1).
+
+#### #5 — the three checks on every number before reporting it
+**(a) Correct lane/join** — *"via a VALIDATED JOIN, not a raw flag that may be stale or wrong"*
+**(b) Corrupted/known-bad day exclusion** — exclude any day with a confirmed data-quality issue
+**(c) Day-robustness / leave-one-day-out** — *"a pooled, aggregate result can be **entirely carried by
+one or two outlier days**; always break down by day and check the sign holds broadly."*
+
+**Check (a) is the guard against #15.** Check (c) is the same instinct as the bootstrap's third
+condition, applied to every number rather than only to strategies.
+
+#### The rest, mapped
+- **#2** → the phantom-edge risk in the goblin/demon economics
+- **#6** → the day-level block bootstrap — *resample days, never legs*
 - **#11** → **A2**: a plausible causal story (Wally Pipp) that failed every test
-- **#13** → **directional but not proportional** is why the market is *"a confidence adjuster and
-  ranking signal, not ground truth"* (COMPASS 62)
+- **#13** → **the structural mispricing MLB never harvested** — see §15.0
 - **#14** → the fantasy-scale check across all three apps
-- **#20** → `gain_vs_anchor` — success measured against **not having the factor at all**
-- **#24** → goblin/demon mechanics transferred to NBA; **tier count and spacing did not**
+- **#20** → `gain_vs_anchor`, and *"**be willing to recommend REMOVAL**"* — the bar is whether a
+  component **beats not having it at all**
+- **#24** → goblin/demon mechanics transferred; **tier count and spacing did not**
 - **#26** → the two-observation Flex partial tiers, correctly hedged
 
-**#7 (multiple comparisons) and #17 (report the range) are the two with no visible NBA implementation**
-— worth checking when the factor-gate results are next reviewed, since the gate scanned many
-prop × band × side cells.
+#### ⚠ The three with no visible NBA implementation
+- **#7 multiple-comparisons correction** — the factor gate scanned many prop × band × side cells;
+  *"a single, PRE-REGISTERED confirmatory test on one specific cell"* is the exemption, and the gate
+  runs were not pre-registered per cell
+- **#17 report the RANGE, not the best number** — *"reporting only the maximum found is itself a form
+  of selection bias, distinct from but related to #7"*
+- **#25 compounding safety margins** — MLB deployed *"an extra, deliberate conservative discount ON TOP
+  OF an already-real, already-conservative observed ratio"*, which **compounds absurdly once
+  exponentiated across a multi-leg slip.** Relevant the moment slip-level EV is computed.
 
 ---
 
