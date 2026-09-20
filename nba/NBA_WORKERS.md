@@ -791,6 +791,26 @@ the suspect.
 
 ---
 
+## 6c. ⚠ THE DESTRUCTIVE AUDIT ABOVE COVERS SQL ONLY — workflows can delete files too
+*Recorded 2026-09-20 (T1 pass 70). **VERIFIED** on the live clone.*
+
+§6b is titled *"every destructive statement in the codebase."* **It enumerates SQL.**
+**`.github/workflows/nba-pairs.yml` deletes committed repository files with a shell command**, gated
+on a `workflow_dispatch` input:
+```yaml
+if [ "${PAIRS_REBUILD}" = "1" ]; then
+  for s in $(echo "$PAIRS_SEASONS" | tr ',' ' '); do
+    slug=$(echo "$s" | tr '-' '_')
+    rm -f nba/data/nba_pairs_${slug}_*.json
+```
+**Default `0`, manual-only — it cannot fire by accident.** Its stated purpose: the first run used a
+league-wide call capped at 2,000 rows, and *"those files must be removed before rebuilding, since the
+scraper skips snapshots that already exist."*
+⚠ **Only this one workflow was examined closely. Whether any of the other 31 `nba-*.yml` files
+carries a destructive shell step is NOT RECORDED.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 70*.
+
+---
+
 ## 7. WORKFLOWS
 | Workflow | Trigger |
 |---|---|
