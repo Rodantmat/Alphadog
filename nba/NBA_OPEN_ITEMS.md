@@ -1397,7 +1397,7 @@ improvement should be done," is not visible in the record.**
 
 ### ⚠⚠ CORRECTION · `NBA_SYSTEM_DESIGN.md` §0.8 claimed blueprint §4o was followed. In T1 it was not.
 **VERIFIED by extracting every `bash_tool` call in T1.** The session's entire local execution is
-**two syntax checks, two `cat`s, and THIRTEEN polling sleeps** — `sleep 30, 40, 45, 50, 55, 60, 70,
+**two syntax checks, two `cat`s, and TWENTY-FIVE polling sleeps** *(corrected 2026-09-20, pass 66)* — `sleep 30, 40, 45, 50, 55, 60, 70,
 90, 150, 240, 280, 290`, each `; echo done`, each waiting on a GitHub Actions run.
 **§4o forbids exactly this**: *"do not sit there repeatedly polling or re-checking its status turn by
 turn — that burns real attention and session budget for no benefit."*
