@@ -5623,6 +5623,85 @@ default** with its rejection reason inline.
 
 **T8 PASS 7: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.16 — PASS 8 — **THE FULL PROP × LAYER MATRIX**
+
+#### T8.16a — Period props cost 4 calls, not 5,000
+> *"**4 cheap bulk calls per season instead of ~5,000 per-game calls.**"*
+Spot-checks: LeBron **9.6 min / 10 pts** in a 1Q row; **Dalton Knecht 12.0 min / 17 pts in a Q4 row —
+*"a bench player playing the entire fourth, the exact 'garbage-time accumulator' pattern."***
+
+#### T8.16b — **Each period layer has its own model, shape, factors — and a TRAP**
+| Layer | Minutes model | Distinct factors | **TRAP** |
+|---|---|---|---|
+| **1Q** | *"Mixture **collapses**: starters ≈ tight **9–11 min**; bench ≈ zero-inflated"* | opp 1Q defence by position, fast-starter tendency, opening script, early pace | ***"Per-minute rates are NOT constant across quarters — 1Q usage differs systematically"*** |
+| **1H** | *"**Dud component returns** (2 early fouls = sits most of Q2); blowout minimal"* | **bench-unit matchups drive Q2** | ***"1H ≠ 50% of full game — it's ~48–49% (no OT, 2H pace rises)"*** |
+| **2H / 4Q** | *"Full mixture, **bimodal or trimodal** for stars. **Sample minutes first, then outcome conditional on them**"* | **clutch usage (closers)**, garbage-time accumulators, **P(OT)** | ***"PP/UD include OT, Sleeper doesn't — DIFFERENT PRODUCTS, DIFFERENT MODELS; a 1-point spread carries ~7–8% OT probability"*** |
+
+**⚠ THE OT TRAP IS NOW QUANTIFIED.** I flagged app-specific OT handling from T7's prop map; **T8 puts a
+number on it: ~7–8% OT probability on a 1-point spread**, and states the consequence bluntly —
+**different products need different models**, not one model graded differently. **OPEN_ITEMS updated.**
+
+**And "1H ≠ 50%" is a trap that would silently halve-scale everything** — the real figure is 48–49%
+because 2H pace rises and OT is excluded.
+
+#### T8.16c — **More-only layers change the OBJECTIVE, not just the parameters**
+> *"This **changes the objective: we're not modelling the mean, we're modelling the RIGHT TAIL
+> (80th–99th percentile)**. **A Gaussian will be systematically wrong there (thin tails).** Design: the
+> **empirical per-tier distribution is primary**; parametric fallbacks must be **fat-tailed (Student-t
+> / skew), NEVER plain Normal**. …this is likely the **#1 area where a sharp baseline earns the
+> most**, because **naive book models mis-price tails**."*
+
+**This is the strategic thesis of the whole goblin/demon effort**, stated in one line: the edge is in
+the tails because that is where everyone else's Gaussian is wrong.
+
+#### T8.16d — **Attempt-volume props are both a product AND an input**
+> *"**`Points = FGA × FG% + FTM`** — attempts are **pure role/intent with no shooting-percentage
+> noise**… **A key structural insight**: these are also **the cleanest *inputs* to the points model
+> itself**."*
+
+**FGA and 3PA are the lowest-variance offensive props** *and* the cleanest decomposition of points.
+**Which is why `fga` is the one extension prop already CERTIFIED** (T8.12b).
+
+#### T8.16e — FTM and fouls decompose into factors we already hold
+- **FTM** = foul-drawing rate (**`PFD` — we have it**) × opponent foul rate × FT% (**long memory**)
+- **Fouls** = PF/min × opponent drive rate × guarding assignment × **referee crew (historical crew
+  table as the baseline artefact)**
+
+**`PFD` was in `player_game_log` from T4's very first DDL** — noted then as one of *"three columns that
+later become props."*
+
+#### T8.16f — **Double-double: the near-miss trap**
+> *"Joint simulation frequency of ≥10 in two/three categories — **NOT `min` of marginals (ignores the
+> correlation term)**. **The near-miss trap: tier on `P(DD)` from simulation, NEVER on mean stats — a
+> 12/12 player is a FAR better DD bet than a 30/9.9 player.**"*
+
+**A 30-point scorer averaging 9.9 rebounds looks elite on means and is a poor DD bet.** Tiering on
+means would rank him above the 12/12 player; tiering on simulated `P(DD)` gets it right.
+*"TD only exists for elite candidates; **the weakest category (usually rebounds) decides**."*
+
+#### T8.16g — **Fantasy score reintroduces MLB's lumpiness**
+> *"Simulated from components, **never fit directly**. The **3× multiplier on blocks/steals**
+> reintroduces **exactly MLB's home-run lumpiness** — **a single steal is a 3-point jump** — producing
+> a **fat right tail a direct fit would smooth away**."*
+
+**The scoring system creates the distribution problem.** 1 / 1.2 / 1.5 / 3 / 3 / −1 means low-frequency
+high-weight events dominate the tail — the same shape MLB solved with a two-component mixture.
+
+#### T8.16h — The with/without table's source, named again
+> *"the **with/without-teammate table built from the DNP/DND reasons already in our game logs** (**the
+> 'older injury reports' as history**, so the baseline knows what happens when a teammate sits)"*
+
+**Third independent naming of `player_game_starter_status.comment` as a designed input** (after T7.20a
+and T8.13c). **The field I flagged as unused in T6 has three separate designed consumers.**
+
+#### T8.16i — The design document
+**`nba/NBA_CLASSIFICATION_BASELINE_DESIGN.md`** — *"architecture, the boundary, the full prop universe,
+ladder anchoring, the component model, all five tiering dimensions, the per-prop lock table, the
+combination math, and the backtest plan."*
+> *"**Every number in it is a seed; the backtest owns the sharpening.**"*
+
+**T8 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
