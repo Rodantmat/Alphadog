@@ -251,12 +251,32 @@ Three safeguards, each answering a failure this project actually had:
 
 | Pipeline | Verified |
 |---|---|
-| **P1** | Certifier run live — correctly FAILED on stale defender ratings |
-| **P2** | Gap audit proven on all of 2024-25 (0 missing dates/games/half-captured; 2 truncated flagged). Full run pending. |
+| **P1** | Certifier run live — correctly FAILED on stale defender ratings. **⚠ Three steps dropped; loader question open (§2).** |
+| **P2** | Gap audit proven on all of 2024-25 (0 missing dates/games/half-captured; 2 truncated flagged). Full run pending. **`scrape_nba_per_game_delta.py` confirmed present.** |
 | **P3** | **Full chain proven on 2025-11-29** — Klay Thompson flips OUT after P2 → 3,446 teammate overrides at ~1.3 pp → his 828 legs zeroed → 58,395 legs scored → **his Overs 0.0122, Unders 0.9834** |
 
-**Open before opening day:** see `NBA_OPEN_ITEMS.md` — chiefly the PrizePicks NBA producer wiring,
-the four-way tier taxonomy, and the scoped ladder-depth expansion.
+### The production contract the pipelines implement
+From `nba_config.classification_config.production_baseline_ladder`:
+- **Builder**: a **patcher** over `classification_ladder_v12.py` — *"single source of truth; anchors
+  assert"*
+- **Slate**: schedule games on ASOF (`status != final`; replay allows final) × **each team's roster
+  from its last 3 games** — not from `nba_ref.players`, which sidesteps the new-player lag
+- **`asof_lag: 0 days`** — daily-exact walk-forward; **Platt fit on the season's prior months**
+- **Validated**: replay 2026-03-15 — 7 games, 194 roster rows, **173 projected players, 4,498 rows**;
+  **43 roster players were DNP — "enrichment removes"**
+
+### The pipeline-level safeguards, and the failure each answers
+| Safeguard | Answers |
+|---|---|
+| **Delta gap audit** (P2) | a silent hole corrupts every as-of value computed after it |
+| **Pre-flight completeness check** (delta worker) | *"halt and warn, don't silently proceed on an incomplete night"* |
+| **Certifier per pipeline** | a pipeline that cannot fail loudly cannot run unattended |
+| **P3's cutoff assertion** | scoring a slate clubs have not filed for |
+| **Anchor assertions in the patcher** | a drifted patch writing silently |
+| **`known_empty_games`** | three permanently-empty games re-fetched every day forever |
+| **`BT_CARRY`** | **October producing ZERO projections** |
+
+**Open before opening day:** see `NBA_OPEN_ITEMS.md` — ranked, with the Postgres-loader question first.
 </content>
 </parameter>
 <parameter name="message">docs: NBA system design - the three pipelines in detail
