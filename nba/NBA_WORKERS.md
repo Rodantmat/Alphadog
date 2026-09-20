@@ -22,6 +22,21 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.25 ⚠ THE PRE-COMMIT SYNTAX GATE — the only local check before an auto-deploying push
+*Recorded 2026-09-20 (T1 pass 38). **VERIFIED** from T1's own `bash_tool` history.*
+
+| Language | Gate |
+|---|---|
+| Worker JS | **`node --check <file>.js && echo SYNTAX_OK`** |
+| Scraper Python | **`python3 -m py_compile <file>.py && echo SYNTAX_OK`** |
+
+Run immediately before the commit. **A push to `main` auto-deploys and there is no staging
+environment**, so this is the last cheap point. **It catches syntax only** — not a missing binding,
+not a wrong column name, not an unwired dispatch branch, which are what §0's four-step pattern
+exists to prevent. *(`NBA_RECIPE.md` had recorded only the `node --check` half.)*
+
+---
+
 ## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
