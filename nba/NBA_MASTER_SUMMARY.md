@@ -1240,7 +1240,38 @@ structure of the generator, already covered by the four-step wiring pattern (T2.
 | 26 (6 segments) | **0** |
 
 **Two more complete clean sequential passes required before T1 is DONE** and T2 can begin its own
-cycle. The method is fixed: full sequential read, all six segments, no targeted sweeps.
+cycle. The method is fixed: full sequential read, all six segments, no targeted sweaps.
+
+### T1.56 — PASS 27 COMPLETE — **ALL 87 CONTENT BLOCKS CLEAN · CLEAN 2/3**
+
+A full sequential read of every one of T1's **87 message-level content blocks** (the 292 figure counts
+tool_use and tool_result items; 87 are actual text messages). Read in two halves, blocks 21→176 and
+408→552, covering the complete arc:
+
+recon → owner directive → Phase 2 draft → the separate-universe instruction → 14 schemas → first
+worker → the deploy fork → shared-script patches → full-fleet redeploy and path bug → `run_job`
+wiring → `/debug-fetch` → Cloudflare 520 → credential storage → `/probe-sources` → the
+GitHub-Actions discovery → the bridge tool → the tool-list limitation → the handoff → the
+parallel-chat exchange → *"no manual"* → the file trigger → four timeout failures → proxy → tarpit →
+`curl_cffi` success → the abbreviation gap → the static ID→abbreviation map → rewiring the Worker to
+read the committed file → final deploy.
+
+**Every block maps to an existing entry. Nothing new.**
+
+**CLEAN PASS 2 of 3.**
+
+### T1.57 — CURRENT STATE OF T1
+
+**27 passes. 23 found new material. Clean count: 2/3** (passes 26, 27).
+
+| Pass | Segments | New findings |
+|---|---|---|
+| 24 | 6 | 6 |
+| 25 | 6 | 2 |
+| 26 | 6 | **0** |
+| 27 | full, 87 blocks | **0** |
+
+**ONE more complete clean sequential pass and T1 is DONE (3/3).**
 
 **Everything found in passes 24–25, consolidated** (all provenance-type findings):
 | Finding | Why it matters |
