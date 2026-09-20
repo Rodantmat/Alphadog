@@ -1456,6 +1456,147 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.96 — PASS 66 (angle: **the CLOCK — all 552 timestamped blocks reconstructed into a timeline and a per-tool cost table**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full measurement, with both tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 66.*
+
+**Angle**: no prior pass had used the timestamps. **MEASURED, not inferred.**
+
+**FINDING 1 — T1 is 15h 07m 46s wall clock, and 85% of it is the owner being away.**
+**MEASURED**: 2026-08-31 **07:16:12Z → 22:23:58Z**. Two absence gaps — **11h 40m 22s** and
+**1h 12m 31s** — total **12h 52m 53s**. **Actual session activity is about 2h 14m 53s.**
+⚠ And **the entire Phase-1 recon took 3m 03s** — bindings, workflow runs, the Postgres schema
+sweep, the worker registry and the findings banner. The *"given effort constraints"* language of
+thinking block 5 (pass 65) sits inside that three-minute window.
+
+**FINDING 2 — ⚠⚠ the 1h 12m gap is the measured cost of the frozen MCP tool schema.** It falls
+exactly between the handoff message and the owner's return, and **the reconnect did not deliver the
+new tool.** **54% of the active session was spent on a workaround that produced nothing**; the
+trigger-file architecture was built in the 32 minutes after it.
+
+**FINDING 3 — ⚠ a correction to a number this documentation itself recorded.** **Pass 38 wrote
+"thirteen polling sleeps" in six places; the measured count is TWENTY-FIVE**, totalling
+**2,416 s = 40m 16s**. The earlier figure counted **distinct durations, not calls**. Also corrected:
+**31 `bash_tool` calls, not 62** (the 62 counted `tool_use` and `tool_result` blocks separately).
+**All six sites corrected in place, with what superseded what.**
+**And the sharper fact**: total `bash_tool` time is 2,423 s, so **all but ~7 seconds of the session's
+local shell time was spent sleeping** — the six non-sleep calls are two syntax checks, two `cat`s
+and **two `echo`s used to hold a thought.**
+
+**FINDING 4 — the per-tool cost table.** Total tool wait **3,736 s (1h 02m), ~46% of active time**.
+**The polling pattern is 56 calls** — 25 sleeps plus **31 `github_list_workflow_runs`** — whose
+entire purpose was waiting. **T1 made 60 repo writes** (49 `github_patch_file` + 11
+`github_put_file`). **`run_job` is the slowest non-sleep tool, 49.5 s mean over 4 calls.**
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 66*, full content — measured numbers) ·
+`SYSTEM_DESIGN` §0.8, `MASTER_SUMMARY` §T1.68/§T1.80/§T1.70 and `OPEN_ITEMS` ×3 (the
+six corrected sites) · `GLOSSARY` (term renamed) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 66 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.95 — PASS 65 (angle: **the 52 `thinking` blocks — reasoning the transcript records but the session never said**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail, with every block quoted: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 65.*
+
+**Angle**: T1's **52 `thinking` blocks (33,739 chars)**, extracted by parsing the raw export as JSON.
+**No prior pass had read them.** Every earlier angle read what the session *said, ran, wrote or
+persisted*; these are the stated reasons behind decisions, **never repeated in any visible message.**
+
+**FINDING 1 — ⚠⚠ a documented claim corrected.** `NBA_DATABASE.md` described
+**`nba_ref.teams.arena_id`** as a link to `nba_ref.arenas`. **VERIFIED live: NULL on all 30 rows,
+and written by no code** (zero writes across 190 files). **The real link is `nba_ref.arenas.team_id`
+— 30/30 populated, 30 distinct teams (VERIFIED).** No data is missing; **the column is a trap** — a
+join through it returns 30 NULLs and reads as a scrape failure. Thinking block 16 records the cause:
+the assignment was *"defer[red] to a dedicated verification pass later"* that **never ran and became
+unnecessary.** Corrected in place. **Not fixed, per the standing instruction.**
+
+**FINDING 2 — ⚠ decisions bounded by a REASONING-EFFORT BUDGET, recorded only in thinking.** Five
+blocks cut work short for budget rather than evidence (5, 10, 13, 16, 28). **Block 10 is the direct
+cause of a gap found independently at pass 62**: *"given the low reasoning effort … rather than
+exhaustively detailing every taxonomy point — that's better left to later."* **Pass 62 found the prop
+taxonomy had gone 14 planned → 28 live with no decision recorded. This is that decision, and
+"later" is the undocumented doubling.** The two findings close on each other.
+
+**FINDING 3 — ⚠ "additive only" was a JUDGEMENT CALL against a stated constraint, not the premise.**
+Blocks 17/18/24: the literal rule was *no MLB edits*; the shared deploy scripts made that impossible;
+*"given the user's tolerance for minor changes as long as MLB isn't disrupted, I'll modify the script
+additively."* **That is why `worker_manifest_nba.json` is a separate file** rather than new rows in
+the MLB manifest — a design whose reason was never written down. **The constraint held in the end**
+(116 rows, 0 NBA).
+
+**FINDING 4 — ⚠ why `nba_control` has no `job_queue`.** **VERIFIED: it holds exactly `job_runs` and
+`worker_run_log`.** Block 15 gives the inference the documents omit — *"the MLB version exists
+specifically to support orchestrator dispatch"*, so with no orchestrator NBA needs only run history.
+**The absence is a decision, not an omission.**
+
+**FINDING 5 — ⚠ the MCP tool schema is frozen per conversation, and a NEW CHAT did not clear it.**
+Blocks 41/43/46 give the full causal chain behind the trigger-file architecture, including a failed
+workaround and **two unconfirmed hypotheses for why a fresh chat still did not see the new tool**
+(Durable Object not restarted; per-user connector schema caching) — cause **NOT RECORDED**.
+**`nba/TRIGGER_NBA_*.txt` is the last step of that chain**; the documents had the step without it.
+
+**FINDING 6 — a superseded hypothesis worth keeping.** Block 50 concluded the hang was *"not a
+network/IP block but something wrong with the request itself"* — **wrong, corrected within two
+blocks.** Kept because the ladder (**instant 403/520 from Cloudflare vs a 60-second hang from a clean
+origin**) is the reusable test that distinguishes an IP block from a TLS-fingerprint tarpit.
+
+**Checked and confirmed NOT new**: the empty `abbreviation` from `leaguestandingsv3` (already
+`NBA_DATABASE.md` line 129); the nba.com-family block (`RECIPE` STEP 3.6); officials mined from box
+scores (`DATABASE`).
+
+**Routed to**: `DATABASE` (two corrections — `teams.arena_id`, `arenas.team_id`) ·
+`OPEN_ITEMS` (*FROM T1 PASS 65*, full content) · `SYSTEM_ARCHITECTURE` §4 (the additive doctrine's
+origin) · `GLOSSARY` · this entry.
+**Considered, no change warranted**: `RECIPE`, `WORKERS`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`,
+`FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 65 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.94 — PASS 64 (angle: **the transcript corpus as an ARTEFACT — every export parsed as JSON and audited for truncation**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail, with the per-file table and the recovery procedure:
+`NBA_OPEN_ITEMS.md` → FROM T1 PASS 64.*
+
+**Angle**: every prior pass read the transcripts. This one **audited them** — all 20 raw exports
+parsed as JSON and checked for content that is described but not present.
+
+**FINDING 1 — the exports carry 14 truncation markers, all in T1–T6, none in T7–T20.** **VERIFIED.**
+Every one cuts at exactly **65,503–65,504 characters** — a uniform **64 KiB display cap** — and every
+one sits in a `display_content.json_block` field, the *display* copy of a tool result.
+
+**FINDING 2 — 8 of the 14 lose nothing.** The sibling `content` field holds the full text, matching
+the stated total exactly. **T1's single marker is one of these** (96,015 chars, `github_get_file`),
+so **T1's sweep is not compromised and no prior T1 pass needs revisiting.**
+
+**FINDING 3 — ⚠ 6 of the 14 are genuine losses: 5,564,467 characters absent.** There `content` is a
+212-char stub pointing at `/mnt/user-data/tool_results/…`, **a path that no longer exists** (VERIFIED).
+The largest single loss is **2,133,514 chars in T4**.
+
+**FINDING 4 — ✅ but all six are recoverable, and the loss is not of unique material.** All six are
+`github_get_file` calls on **committed `nba/data/*.json` paths**; **all five distinct paths exist in
+the live clone** and **all have `git` history spanning the transcript dates** (VERIFIED), so the
+version the session saw is retrievable with `git show <commit>:<path>`. **No owner instruction, no
+assistant reasoning, no SQL and no decision falls inside any marker** — every one is a data-file body.
+**A standing recovery procedure for T2–T6 is now recorded** in `NBA_OPEN_ITEMS.md`.
+
+**FINDING 5 — ⚠ a method failure recorded against myself.** The first grep used a literal em-dash and
+returned zero matches in all 20 raw files; the exports store it escaped as `—`. **I briefly held
+a confident negative.** **Third instance of the pass-53 rule, first one caused by an escape sequence
+rather than a character variant** — the rule is extended to require grepping the escaped form, or
+parsing as JSON.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 64* — full content) · `WORKERS` §0a (the measured threshold
+that forces targeted search over full reads) · `GLOSSARY` · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `SYSTEM_DESIGN`,
+`BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 64 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.93 — PASS 63 (angle: **blueprint §5–§7e — the last unswept clause-level region**) — **MINOR NEW · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 63.*
 
