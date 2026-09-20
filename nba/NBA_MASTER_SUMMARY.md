@@ -5481,6 +5481,80 @@ indistinguishable from zero.**
 
 **T8 PASS 5: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.14 — PASS 6 — **THE LEG-LEVEL STANDARD, AND THE TWO-SEASON HOLDOUT**
+
+#### T8.14a — The first leg-level assessment, with one prop failing
+| Prop | Ladder (13 rungs) | Confidence bands | Verdict |
+|---|---|---|---|
+| **Points** | 0.7 pp | all within ~2 pp | **Meets standard** |
+| **Rebounds** | 0.7 pp | all within ~2 pp | **Meets standard** (ELITE band shape residual ±4) |
+| **Assists** | 1.1 pp | within 2.5 | Close (HIGH band low rungs −3.3) |
+| **3PM** | 1.8 pp | **60–65 "more" −4.6 on 7,676 legs** | **Not yet** |
+
+**Worst-cell count went 39 → 28 across three iterations.**
+> *"**Per your directive, I have not moved to new props.**"* — three open items recorded with
+diagnoses and next candidates rather than left behind.
+
+#### T8.14b — **The bias is MONOTONE in the variation band — the locked principle in numbers**
+> *"The bias is **monotone in the variation band at any single shrinkage k** (top band
+> under-projected, upper-middle over-projected): **the quantile tier prior COMPRESSES THE EXTREMES**.
+> **That's your locked principle showing up in numbers**, and it's **why per-band cells fixed what
+> per-prop k couldn't**."*
+
+**This is the empirical vindication of the variation dimension** (T8.11d). The owner insisted variations
+get their own tier logic; the data shows a *monotone* bias across bands that no single shrinkage
+constant can remove. **A structural argument confirmed by a structural residual.**
+
+#### T8.14c — **Why one k cannot work — measured**
+> *"Data-fit prior strength is **k≈2 against the population** but **k≈100–250 against tier-mates
+> (circular)** — **a single k genuinely cannot serve all bands.**"*
+
+**Two order-of-magnitude-different answers depending on what the prior is measured against** — and the
+tier-mate figure is flagged as **circular**, since tier-mates were selected for similarity.
+
+#### T8.14d — **A model REJECTED BEFORE being built, on a variance test**
+> *"**3PM makes given attempts are BINOMIAL** (var ratio **0.94** in every attempt band) — **so
+> beta-binomial was rejected *before* being built**; attempts are Poisson."*
+
+**Beta-binomial would model overdispersion in the make rate. A variance ratio of 0.94 says there is
+none** — makes-given-attempts is plain binomial, and the overdispersion lives entirely in *attempts*.
+**One variance check saved building the wrong model**, and it decomposes the prop correctly:
+**attempts Poisson, makes binomial.**
+
+And the honest note on what *was* built: *"the 3PM compound model, **though correct in structure, did
+not resolve the within-rung ordering**."*
+
+#### T8.14e — **A rigour note on the holdout that most people would skip**
+> *"**One honesty note**: the band mean-ratio cells were ***fit* on 2024-25**, so for that season
+> **I'll run them DISABLED (fully out-of-sample)** and report that the core method — tiers, empirical
+> tables, Platt — **holds or doesn't on its own**."*
+
+**The holdout season had contributed to fitting some cells, so those cells were switched OFF for it.**
+Anything less would have leaked. **The reported holdout is the core method unaided.**
+
+#### T8.14f — **THE FINAL RESULT — both seasons, same configuration, no re-tuning**
+| | **2025-26** (history: 2 seasons) | **2024-25 holdout** (history: 2023-24 only) |
+|---|---|---|
+| Points ladder (13 rungs) | 0.9 pp | 1.2 pp |
+| Rebounds ladder | 0.7 pp | 0.8 pp |
+| Assists ladder | 1.4 pp | 0.7 pp |
+| 3PM ladder | 1.3 pp | 1.1 pp |
+| Confidence bands (n≥1000) over 2.5 pp | **3 of 76** | **3 of 77** |
+| **Points/rebounds confidence bands** | **0 misses of 37** | **0 misses of 37** |
+
+> *"The three residual band misses are **the same character in both seasons**: the thinnest 'less'
+> bands for assists and 3PM (**n ≈ 1,800–3,400**), all between **2.6 and 3.9 pp**. **Every band with
+> real volume hits its stated rate.**"*
+
+**`0 misses of 37` in BOTH seasons is the strongest single result in the transcripts.** The holdout had
+only one season of history and was run with the fitted cells disabled — and it matched.
+
+**And this result is carried in the live code's header**: T7.21e records
+*"Holdout 2024-25 unchanged (**1.2 / 0.8 / 0 of 37**)"* — **the same three numbers.** The harness
+asserts against its own certified result on every run.
+
+**T8 PASS 6: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
