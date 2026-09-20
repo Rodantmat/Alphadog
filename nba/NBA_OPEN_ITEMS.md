@@ -1203,6 +1203,36 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
+### ⚠⚠ UPSERT UPDATE-CLAUSE AUDIT — a silent-staleness bug class, never checked
+T1's blueprint §4k:
+> *"**When using an `ON CONFLICT DO UPDATE`-style upsert, VERIFY EVERY COLUMN THAT SHOULD EVER BE
+> REFRESHED ON A REPEAT WRITE IS ACTUALLY LISTED IN THE UPDATE CLAUSE.**
+> MLB found **a real, specific bug where SEVERAL COLUMNS WERE MISSING from an upsert's update list** —
+> meaning **those columns were SET CORRECTLY ON FIRST INSERT but SILENTLY FROZEN AT THAT ORIGINAL
+> VALUE FOREVER AFTERWARD, NEVER UPDATED AGAIN.**"*
+
+**No error, no symptom.** The row exists, the value looks plausible, and it is from whenever the row
+was first written.
+
+**⚠ NBA is broadly exposed — every writer Worker upserts**: `nba_ref.teams`, `players`, `arenas`,
+`officials`, `team_aliases`, `player_aliases`, the `nba_stats` tables, `baseline_ladder`
+(*"idempotent on PK (asof, player_id, game_id, prop, period, ot_rule, line)"*), `board_outcomes`.
+
+**Two NBA findings already match the shape:**
+- **`nba_ref.arenas`: 19/30 have `capacity`, 0/30 have `altitude_ft`/`timezone`** — a partially
+  populated table where some columns never refresh
+- **The position column was empty for three sessions** — *"the scraper never extracted it **and** the
+  worker never wrote it"* — the same frozen-silently outcome from the write side
+
+**⚠ And the differential layer depends on this working.** T3 records that the snapshot tables *"had to
+exist BEFORE the next upsert **because the writers OVERWRITE**."* **If a snapshot column is missing
+from its update clause, the differential compares against a frozen value and correctly reports NO
+CHANGE — a false negative on trades, signings and renames**, which is precisely what that layer
+exists to catch.
+
+**The check is mechanical**: for each writer, compare the `INSERT` column list against the
+`DO UPDATE SET` list. **Not recorded as having been run.**
+
 ### ⚠ NBA'S DIRECT DISPATCH HAS NO "BUSY" REJECTION
 T1's blueprint §4j:
 > *"**When a job appears stuck in a running state with no progress, the correct response is usually to
