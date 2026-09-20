@@ -44,7 +44,7 @@ material; it is not a rerun.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | **PASS 1 — INCOMPLETE** |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | **PASS 7 — still finding new material** |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | **PASS 1 — INCOMPLETE** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | pending |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | pending |
