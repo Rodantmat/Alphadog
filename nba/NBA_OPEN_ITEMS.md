@@ -205,6 +205,65 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 43 — A STALE SCHEMA MANIFEST, AND NBA HAS NO SCHEMA FILES AT ALL *(added 2026-09-20)*
+*Angle: the **repo-root file listing** returned by T1's `github_list_dir` (T1 lines ~5114–8800),
+read as an inventory rather than as scenery, then **verified against the live clone**.*
+
+### ⚠⚠ `schema_manifest.json` DESCRIBES A BACKEND THAT HAS NOT EXISTED SINCE 2026-08-12
+**VERIFIED by reading the live file.** Its own header:
+```json
+"version": "alphadog-v2-schema-phase-pack-v0.1",
+"date":    "2026-05-18",
+"target":  "AlphaDog v2 new D1 databases only"
+```
+It names **11 D1 databases** — `CONTROL_DB, CONFIG_DB, REF_DB, STATS_HITTER_DB, STATS_PITCHER_DB,
+TEAM_DB, DAILY_DB, MARKET_DB, CONTEXT_DB, SCORE_DB, ARCHIVE_DB` — and carries `apply_order` and
+`expected_worker_count`. **D1 was fully decommissioned system-wide on 2026-08-12**
+(`NBA_MASTER_SUMMARY.md` §T1.17). **The manifest is four months old and describes a dead
+architecture.**
+
+**And so do its eleven companion files**, all at the repo root, **133 KB in total**:
+`schema_config_db.sql` **24,405 B** · `schema_team_db.sql` **24,286 B** ·
+`schema_stats_pitcher_db.sql` **24,059 B** · `schema_stats_hitter_db.sql` **23,101 B** ·
+`schema_daily_db.sql` **18,769 B** · `schema_market_db.sql` **5,654 B** ·
+`schema_control_db.sql` **4,925 B** · `schema_ref_db.sql` **2,838 B** ·
+`schema_score_db.sql` **2,336 B** · `schema_context_db.sql` **1,493 B** ·
+`schema_archive_db.sql` **1,349 B**.
+
+**Their DDL is SQLite/D1-flavoured and flat-named** — `schema_ref_db.sql` defines **`ref_teams`**
+with `applied_at TEXT DEFAULT CURRENT_TIMESTAMP` — **not the Postgres `ref.teams` that actually
+exists.** So they are wrong in **naming**, in **type system**, and in **target backend**.
+
+**⚠⚠ This is blueprint §5b standing in the repository, verbatim**: *"static manifest/mapping files
+can silently describe an earlier architecture, not the current one — a powerful, generalizable
+warning."* **The warning NBA inherited has an instance sitting one directory above `nba/`.**
+
+**⚠ And NBA was pointed at one of these files as a template.** `NBA_MASTER_SUMMARY.md` §T1.51 records
+T1's own recommendation: *"look at the MLB static-teams worker as a structural template, and **check
+`schema_ref_db.sql` for the full static-layer pattern**."* **`schema_ref_db.sql` is a D1-era file.**
+**Whether that recommendation was acted on is NOT RECORDED.** The outcome suggests it was not
+followed literally — NBA's tables are Postgres with real schemas (`nba_ref.teams`, not `nba_ref_teams`)
+— **but the pointer was to a stale file and nothing in the record flags it as such.**
+
+### ⚠ NBA HAS NO COMMITTED SCHEMA FILES — the asymmetry cuts both ways
+**VERIFIED**: `ls nba/*.sql` returns **nothing**. MLB has **eleven** committed schema files (stale);
+**NBA has zero.**
+
+| | MLB | NBA |
+|---|---|---|
+| Committed DDL | 11 files, 133 KB | **none** |
+| Currency | **stale since 2026-08-12** | n/a |
+| Can be diffed against the live database | yes (and would fail) | **no — there is nothing to diff** |
+
+**Nothing has gone stale because nothing was written.** But the cost is real and is the same cost
+recorded elsewhere in this file: **blueprint §9's whole-universe comparison — *"diff the live config
+against the real formula for every entry at once"* — has no NBA schema artefact to diff against.**
+The live schema is the only record of itself. **`NBA_DATABASE.md` is the closest thing NBA has to a
+schema file, and it is prose.**
+**NOT RECORDED as a decision** — there is no entry saying NBA deliberately skipped committed DDL.
+
+---
+
 ## FROM T1 PASS 42 — `NBA_PROJECT_LOG.md` IS MISSING ITS FOUNDING ENTRY *(added 2026-09-20)*
 *Angle: diff the project-log entries **written during T1** against the repo's `NBA_PROJECT_LOG.md`
 today. **VERIFIED by grep of both.***
