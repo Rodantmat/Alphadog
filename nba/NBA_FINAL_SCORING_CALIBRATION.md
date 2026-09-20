@@ -822,6 +822,31 @@ within a tier**.
 
 **NBA state:** no pools have been built — slip-strategy phase not begun.
 
+### Rule B0c — a ranked-greedy backtest must be tested against multiple tie-break orders
+*Source: T1, Part D. Recorded 2026-09-20.*
+
+> *"When legs are selected by ranking within a bucket and **many legs share the same or very similar
+> scores**, the specific tie-break rule (which of several equally-ranked legs gets picked) **can by
+> itself swing a backtest's reported ROI dramatically** — a real case of **the same configuration
+> swinging from +25.9% to +12.5% PURELY from tie-break order, with 69% OF LEGS TIED within a day on
+> the ranking field used**.
+> **Any backtest built by ranking legs within a bucket must be re-run with at least one alternate,
+> equally-legitimate deterministic tie-break order (e.g. an ID sorted ascending vs descending) and
+> THE RANGE REPORTED.**"*
+
+**Figures as stated:** +25.9% → +12.5% from tie-break order alone; **69% of legs tied** within a day
+on the ranking field.
+
+**Relation to other recorded rules:** the required output — *"the range reported"* — is lesson #17
+(*"report the range a finding actually spans, not the single best number found"*), applied to
+tie-breaks.
+
+**NBA state:** the certified backtest ranks by **rate tier within role tier** (quantile), and the
+scoring engine produces a continuous `score` 0–100. **No ranked-greedy selection backtest has been
+run** — that belongs to the slip-strategy phase.
+**Relevant when it is**: `score` is continuous and unlikely to tie, but any bucket-level selection
+(e.g. "top N legs in a tier") inherits this requirement.
+
 ---
 
 ## 19. WHERE EDGE IS NOW EXPECTED TO COME FROM
