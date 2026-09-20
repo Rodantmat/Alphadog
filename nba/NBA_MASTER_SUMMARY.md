@@ -2258,6 +2258,24 @@ check (T3.5), the 12-worker inventory (T3.13), and the shot-quality finding with
 
 **Two more consecutive clean full passes required before T3 is DONE.**
 
+### T3.16 — PASS 9 (full sequential, 200-char context, all blocks) — **CLEAN 2/3**
+
+Complete re-read with wider context. **Every block maps to a documented entry.** Confirmed in this pass
+with no new material: the DARKO reconnaissance-before-building sequence, the 50/530 partial and the
+honest flag, the SvelteKit discovery, the self-caught `//` vs `#` slip, the hydration-script win, the
+bare-decimal JSON repair, Jokić +6.76 / Wembanyama +6.37, the differential build and its four-stage
+test, the schedule-as-chassis finding, `synergyplaytypes` verification, 1,400 + 1,266 = 2,666, the
+1 MB Contents API bug and the `raw.githubusercontent.com` fix, the Abu Dhabi preseason and Quebec
+City / Hawaii venue spot-checks, and the play-type defensive fallback.
+
+**CLEAN PASS 2 of 3.**
+
+### T3.17 — CURRENT STATE OF T3
+
+**9 passes. 7 found new material. Clean count: 2/3** (passes 8, 9).
+
+**ONE more complete clean sequential pass and T3 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
