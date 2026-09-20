@@ -452,6 +452,43 @@ signal at 5/1,349 would be this bug.
 **✅ And this is the discipline NBA follows consistently** — *"verify independently"*, *"check actual
 row counts"*, *"exactly matches known reality."* **The v2-endpoint case is the canonical proof: 1,228
 reported successes, 799 actual rows, caught only by comparing against expected magnitude.**
+
+**4. Never assume two similarly-named data sources are the same data**
+> *"MLB found **real cases of A LEGACY TABLE AND ITS SUPPOSED NEWER COUNTERPART holding GENUINELY
+> DIFFERENT ROW COUNTS, ID CONVENTIONS, AND POPULATION CODE PATHS.** **Treat them as FULLY INDEPENDENT
+> until DIRECTLY PROVEN OTHERWISE.**"*
+
+**⚠ NBA has near-identical name pairs by design**: `player_game_log` / `_advanced` / `_usage` /
+`_scoring`; `team_game_log_four_factors` / `_scoring`; `board_tiers` / `_ud` / `_v2`;
+`ladder_calibration` / `_asof`.
+**Two pairs are confirmed genuinely different**: the team advanced table **lacks `usg_pct` and
+`reb_pct`** the player one has; **`board_tiers` v1 uses a two-way price-derived taxonomy while
+`board_tiers_ud` uses the four-way fair-rung one.** **Same name shape, different semantics.**
+
+**5. ⚠⚠ A "CANCELLED" CI JOB DOES NOT MEAN THE DEPLOY IS FINE**
+> *"**A WORKER KEPT RUNNING OLD CODE BECAUSE ITS DEPLOY WAS SILENTLY SKIPPED** — since **A GIVEN
+> PUSH'S CI DIFF IS COMPUTED ONLY AGAINST THAT PUSH'S *IMMEDIATE PARENT COMMIT*, NOT THE FULL RECENT
+> CHANGE HISTORY** — **a file needing redeploy CAN FALL OUTSIDE a specific push's detected change
+> scope.**
+> **ALWAYS VERIFY THE DEPLOYED VERSION STRING IN A LIVE TEST RESPONSE, NEVER JUST A CI RUN'S
+> CONCLUSION STATUS.**"*
+
+**A structural property of diff-based deploys** — and NBA's is diff-based: *"the fleet deploys
+**alphabetically from the file diff**."*
+
+**⚠ The risk window is rapid successive pushes**, which this build does constantly. **A worker changed
+two commits ago can fall outside the current push's diff and never redeploy**, while CI reports
+success.
+
+**NBA has the verification mechanism**: `VERSION = "alphadog-v2-nba-baseline-ladder-v0.1.0"` and the
+health-check endpoints. **Checking it after a deploy closes this.**
+
+**And it pairs with the stale-CDN gotcha**: after a push, **the deploy status can say success without
+deploying, and the raw URL can serve pre-deploy content.** **Only a live response from the worker
+itself settles it.**
+
+---
+
 *Source: T1, blueprint §7b. Recorded 2026-09-20.*
 
 > *"MLB later hit **a real, INTERMITTENT Hyperdrive connection-closed failure, RULED OUT ACROSS THREE
