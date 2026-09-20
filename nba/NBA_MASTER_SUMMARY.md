@@ -4480,6 +4480,72 @@ the factor-gate harness in T15/T16 exists to do.
 
 **T7 PASS 9: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.16 — PASS 10 — **THE 3-APP PROP MAP, AND PEER-REVIEWED FACTORS**
+
+Built after the owner's correction: *"you should have a map/list of all possible available prop lines
+already for the 3 apps we use, otherwise **you cannot properly do a factors research**."*
+
+#### T7.16a — The shared core (all three apps)
+Points · Rebounds · Assists · 3PM · Blocks · Steals · Turnovers · P+R · P+A · R+A ·
+Stocks (Blk+Stl) · PRA · **Fantasy Score**
+
+**Fantasy Score uses one shared scale — `1 / 1.2 / 1.5 / 3 / 3 / −1`** — *"resolved from **PrizePicks'
+official page after a conflicting third-party source**."* **A disagreement between sources settled at
+the primary, not averaged.**
+
+#### T7.16b — **Period variants, and an OT rule that is GRADING-CRITICAL**
+1Q · 1H · 2H · 4Q for the main stats, **with app-specific OT rules**:
+> *"**PrizePicks/Underdog include OT in 2H/4Q; Sleeper's quarter markets EXCLUDE it.**"*
+
+**The same nominal prop grades differently by app.** A 4Q line that pushes on PrizePicks can win or
+lose on Sleeper when a game goes to overtime. **This is a per-app grading rule, not a modelling
+detail** — and it is exactly the kind of thing COMPASS fact 60's "leg truth and operator settlement
+are separate" exists for.
+
+#### T7.16c — App-specific additions
+| App | Exclusive props |
+|---|---|
+| **Underdog** | Personal Fouls · FT Made · FG Attempts · 3PT Attempts · **points per individual quarter** · **First 5 Minutes** stats · First FG/3PT attempt make-or-miss · **First to 10+ Points** · Game/Team High Scorer |
+| **Sleeper** | **Double-Double · Triple-Double** · **milestone/alternate lines (20+/25+/30+)** — *"Sleeper's equivalent of Goblin/Demon ladders"* |
+| **PrizePicks** | Demon and Goblin variants |
+
+**⚠ THE CLAIM THAT LATER BECAME FALSE**: *"PrizePicks: Demon and Goblin variants — **both More-only
+(confirmed officially)**, so the 'less' side exists only on standard lines."*
+**This was true when written and verified against PrizePicks' own documentation.** **PrizePicks enabled
+Less in 2026-08** (MLB and WNBA first). **This is the origin of the `board_tiers` v1 two-way taxonomy**
+that the four-way rule replaces — the v1 design was correct for the world it was built in.
+
+**And the Sleeper note corrects a later assumption**: the live session recorded *"Sleeper has no
+alternate lines."* **T7 found milestone lines (20+/25+/30+) — Sleeper's ladder equivalent.** Worth
+re-checking.
+
+#### T7.16d — Priority tiers for the baseline matrix
+| Tier | Contents | Status |
+|---|---|---|
+| **A** | the shared core, all apps | built |
+| **B** | period variants · Double-Double/Triple-Double · FTM/FGA/3PA — *"all directly derivable from our game logs"* | built (periods, `dd2`) |
+| **C** | first-basket · high-scorer · first-5-minutes — *"need **play-by-play we don't have**; **deferred**"* | still deferred |
+
+#### T7.16e — **PEER-REVIEWED FACTORS the sweep added**
+| Factor | Evidence | Derivable? |
+|---|---|---|
+| **Altitude** (Denver, Utah) | ***J. Sports Sciences* 2025**: defensive performance varies significantly with elevation (**p=0.005**); shot selection shifts toward 3PA; ***4Q starter minutes/efficiency reduced*** | **Yes — `nba_ref.arenas.altitude_ft` exists from T1** |
+| **Eastward jet lag** | **Peer-reviewed, 10 seasons (PMC)**: west→east travel impairs performance; ***effect ~DOUBLE the reverse direction*** | Yes — needs arena time zone (static, small add) |
+| **Schedule density** (3-in-4, 5-in-7, 5-day cumulative load) | Same study (**p=0.065**) + feature-engineering literature | Yes — pure schedule |
+| **Rest × position × age interactions** | *"**perimeter shooters and veterans hit hardest on 0 rest**; rim protectors less so"* | Yes — position and age are in our data |
+| **Late-season phase** (eliminated/tanking teams rest veterans, play youth) | Widely observed; partially live | Partially — flagged lower-confidence, **backtest decides** |
+
+**Two of these are notable for being *already supported by data built earlier*:**
+- **`altitude_ft` was put in `nba_ref.arenas` in T1's very first DDL**, before any factor needed it.
+  The peer-reviewed justification arrived six transcripts later.
+- **The jet-lag asymmetry (west→east ≈ double) is directionally specific** — a symmetric travel-distance
+  factor would wash it out. **D2 (travel) must be directional to capture this.**
+
+> *"These go into the design as **rate-stat modifiers and minutes-model inputs, not as hand-waved
+> adjustments** — **each gets validated on the 3-season data before it earns a weight**."*
+
+**T7 PASS 10: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
