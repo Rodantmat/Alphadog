@@ -107,6 +107,37 @@ against a wrong picture of what remains.
 
 ---
 
+# ⚠ SCOPE AND LEDGER RULES — owner instruction, 2026-09-20
+
+## The ledger row carries four fields and nothing else
+Every transcript row in the table above holds **only**: the clean count, the pass count, the
+last pass's outcome, and a **section range pointing at the numbered entries below.**
+**The narrative belongs in the §T*n*.x entries, not in the cell.** This is the pointer-style rule
+applied to the ledger itself. *(The T1 row had grown to 5,512 characters carrying seventeen passes of
+findings; it was restructured 2026-09-20 on the owner's instruction. Nothing was lost — every
+sentence removed from it already existed in §T1.94–§T1.112.)*
+
+## ⚠⚠ WHAT RESETS A CLEAN COUNT — the distinction, from pass 83 onward, for every transcript
+**The sweep documents what a transcript contains. It also verifies those contents against the live
+system. Only the first of those can reset a clean count.**
+
+| Kind of finding | Example | Effect on the clean count |
+|---|---|---|
+| **Transcript material** — *"T1 says X, and X is not documented"* | a rule stated in an owner message; a decision recorded only in a thinking block; an error string in a tool result | **NEW MATERIAL — count resets to 0** |
+| **Verification of a transcript claim** — confirming or correcting it against live SQL or code | *"T1's handoff says `nba_control` is 'own run history' — live check: 0 rows, no writer"* | **NEW MATERIAL — count resets.** This is the most valuable work in these documents and is explicitly transcript material. |
+| **`[LIVE-AUDIT]`** — *"the live system currently has condition Y"*, not traceable to anything the transcript says | an empty table, a missing cron, a worker on an old API, an undocumented workflow, a repo-layout hazard | **Recorded in `NBA_OPEN_ITEMS.md`, tagged `[LIVE-AUDIT]`, and the clean count is UNAFFECTED.** If the transcript itself yielded nothing new, the pass counts as **clean**. |
+
+**Why the rule exists** *(owner, 2026-09-20)*: *"A live-system audit can always find one more thing,
+so T1 will never go clean while that counts as new material."* **The audit work is kept** — nothing
+already recorded is discarded or downgraded — **but it no longer gates a transcript's completion.**
+
+⚠ **Applied from pass 83 forward, and not retroactively.** Passes 64–82 were counted under the
+old rule; **their entries stand exactly as written**, and the clean count they produced (**0/3**)
+stands with them. **The findings from those passes that would now be tagged `[LIVE-AUDIT]` are
+listed in `NBA_OPEN_ITEMS.md` under their own pass sections** and keep their full detail.
+
+---
+
 # ⚠ DRIFT NOTICE — 2026-09-20
 
 **A pass is only clean if it leaves ALL documents current. From T3 onward it did not.**
