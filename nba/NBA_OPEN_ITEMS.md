@@ -1025,6 +1025,35 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠ TWO DIAGNOSTIC SAFEGUARDS SPECIFIED FOR DAY ONE — neither built
+T1's blueprint §4b names two **diagnostic-only (never automatically acting)** safeguards, *"since they
+directly target the exact failure classes documented elsewhere in this package."*
+
+**1. Coverage-gap check**
+> *"surfaces any **(prop, side, high-confidence bucket)** combination showing **a real,
+> resolved-outcome deviation past a threshold WITH ZERO ACTIVE CORRECTION COVERING IT** — **precisely
+> the mechanism that would catch A SILENT FORMULA/CALIBRATION REGRESSION BEFORE IT RUNS FOR WEEKS
+> UNDETECTED.**"*
+
+**Both inputs exist**: `board_outcomes` (6.9M graded legs) and `factor_profile_cells` (35 fitted cells
+against a **460-row** relevance matrix). **The 35-vs-460 gap is the exact surface this scans.**
+**The stated purpose — catching a silent regression before weeks pass — is the failure an unattended
+season-long pipeline is most exposed to.**
+
+**2. Role/context-discontinuity check**
+> *"**flags when a player's most recent real performance context differs sharply from their trailing
+> sample** — a bench player suddenly starting, a return from a long injury layoff — **surfacing the
+> risk that a baseline sample MIXES AN OLD, NO-LONGER-RELEVANT CONTEXT WITH THE CURRENT ONE.**"*
+
+**⚠ NBA built the CORRECTIONS but not the FLAG.** Both named cases are already *acted on*: the
+team-change discount and role-change detector handle *"a bench player suddenly starting"*; the return
+ramp (A3) handles *"a return from a long injury layoff."*
+
+**The specification is for a diagnostic, precisely because the correction may be wrong.** A silently
+applied window reset on a misread context **produces a confident wrong number with nothing surfacing
+it** — the same shape as tier misclassification being *"a quiet, indirect source of a wrong final
+probability."*
+
 ### ⚠ UNCERTIFIED PROPS SHARE THE MAIN SYSTEM'S THRESHOLDS
 T1's blueprint §4b prescribes a **separate, clearly-labelled calibration path** for thin-data props —
 MLB has one for its *"expansion scope"* props with **a completely different prior-strength scale and
