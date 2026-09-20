@@ -20,6 +20,18 @@ NBA is a **completely separate namespace** from MLB — separate schemas, separa
 separate workers, separate repo folder. This was an explicit owner directive, overruling an initial
 proposal to share the control plane.
 
+> ✅ **ISOLATION RE-VERIFIED BY LIVE SQL, 2026-09-20 (T1 pass 41).**
+> **18 non-NBA schemas + 14 NBA schemas = 32.** The MLB count is **exactly what T1's Phase-1 recon
+> returned on 2026-08-31** — unchanged after a complete NBA build.
+> **And the three shared MLB board tables still hold zero NBA rows**:
+> `market.prizepicks_board_current` **8,720 rows, all `league='mlb'`** ·
+> `market.sleeper_board_current` **811 rows, all `baseball_mlb`/`MLB`** ·
+> `market.underdog_board_current` **2,449 rows, all `baseball_mlb`/`MLB`**.
+> **This closes System Draft §5 open question 2** (reuse the shared board tables filtered by sport,
+> or build `nba_market` ones) **by observation**: NBA built its own and never wrote to the shared
+> tables. The `sport`/`league` columns there remain **unused as discriminators** — one value each.
+> `NBA_OPEN_ITEMS.md` → FROM T1 PASS 41.
+
 ### MLB schemas (18, for reference only — never written by NBA)
 `archive` · `backtest` · `calendar` · `certifier` · `classification` · `config` · `context` ·
 `context_cert` · `control` · `daily` · `market` · `public` · `ref` · `score` · `scoring` ·
