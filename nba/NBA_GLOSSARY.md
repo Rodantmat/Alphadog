@@ -80,7 +80,9 @@ shooter together, **shrinking away the make-rate ordering the parametric already
 **structure vs regime** · T8 · The distinction the season holdout exists to draw. **Structure**
 reproduces across seasons and can be frozen into a cell. **Regime** flips sign and must be handled by
 walk-forward refitting instead. **The holdout was the owner's suggestion as a robustness check and
-produced a permanent selection criterion.** The historical-only projection
+produced a permanent selection criterion.**
+
+**baseline** · T4, T7, T8, T9 · *"The heart of the system"* (owner, T1). The historical-only projection
 producing hit probability and confidence. **Strictly historical — enrichment is separate** (T4).
 **The five-step design (T4, `nba/NBA_BASELINE_METHODOLOGY.md`)**: EWMA per-36 rate with Bayesian
 shrinkage → separate faster-moving minutes projection → pace + opponent-defence multipliers → raw
