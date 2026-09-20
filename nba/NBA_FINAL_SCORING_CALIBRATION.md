@@ -1225,6 +1225,15 @@ used as a data source, and its methodology is published).
 ## 7p. TWO BUILD-DISCIPLINE PRINCIPLES
 *Source: T1, blueprint §4d. Recorded 2026-09-20.*
 
+> ⚠ **STATUS 2026-09-20 (T1 pass 36): this principle is NOT HOLDING in NBA.** **VERIFIED** by grep of
+> all 190 `.py`/`.js` files plus the MCP admin bridge: **`nba_config.factor_registry` (67 rows),
+> `factor_relevance` (460), `factor_profile_cells` (35) and `classification_config` are read by
+> NOTHING** — those strings appear zero times in the codebase. `factor_profile_cells` is documented as
+> holding *"the fitted lifts/penalties, in exactly MLB's cell form"*; **no code loads them.** The only
+> `nba_config` table anything reads is `external_credentials`.
+> **The principle below is the design. It is not the live behaviour.** Full entry, with a measured
+> config-vs-code diff on the decay parameters: `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 36*.
+
 ### 1. Every tunable parameter gets its OWN DATABASE COLUMN
 > *"**Every tunable numeric parameter gets its OWN DEDICATED DATABASE COLUMN, NEVER embedded as a
 > LITERAL NUMBER INSIDE AN OPAQUE FORMULA-EXPRESSION STRING** — **this is what actually LETS A
