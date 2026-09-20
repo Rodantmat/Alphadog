@@ -1487,6 +1487,96 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.113 — PASS 83 (angle: **the 7 files T1 wrote IN FULL, read as source**) — **NEW MATERIAL · CLEAN COUNT RESET TO 0/3**
+*Recorded 2026-09-20. **First pass under the owner's scope rule of 2026-09-20** — see
+§SCOPE AND LEDGER RULES above. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 83.*
+
+**TRANSCRIPT MATERIAL (resets the count)**
+
+**FINDING 1 — ⚠⚠ a correction to pass 75: THREE NBA workflows carry a cron, not two.**
+**`nba-scrape.yml` has `cron: '0 9 * * 1'`** — **written by T1 and unchanged today.** Pass 75's scan
+used `grep -A2 "schedule:"` and **three comment lines pushed the cron out of the window.**
+**Third instance of the pass-53 rule** (after the `—` escape at pass 64 and `3-5x` vs `3–5×`).
+**Rule extended: when scanning YAML for a key's value, match key and value independently, never by
+proximity.** **P2 and P3 genuinely have no cron** — that part of pass 75 stands.
+
+**FINDING 2 — T1 wrote the owner's cadence instruction into the file, and it was never recorded.**
+The comment beside the cron: *"**per the person's own instruction (2026-08-31): teams/static data
+changes rarely, so a weekly re-check is enough once backfill is done** … **matches the general
+weekly-differential convention already used for MLB**."* **The cron value is documented in two
+places; the instruction and the MLB-convention rationale are not.**
+
+**FINDING 3 — ⚠ T1 originated the `[skip ci]` convention.** Its commit step is
+`git commit -m "Update NBA teams JSON **[skip ci]**"`, so a data commit would not retrigger the
+deploy pipeline. **The convention is documented; its origin is not** — nor are the committer
+identity, `git push origin HEAD:main`, the empty-diff early exit, or the concurrency group
+`alphadog-nba-scraper` with `cancel-in-progress: false`.
+⚠⚠ **And pass 81 completes it: `[skip ci]` does not suppress Pages**, so **every automated data
+commit this weekly scraper makes also fires a Pages build** — permanent, not an artefact of this
+documentation effort.
+✅ **The empty-diff guard is good practice worth naming**: the scraper commits only when the data
+changed — the file-level twin of the *"only update rows that actually changed"* behaviour pass 80
+measured in the worker.
+
+**FINDING 4 — ⚠ a scheduling collision to consider.** **P2's planned cron is also 09:00 UTC.** If
+P2 is given `0 9 * * *`, **it collides with `nba-scrape.yml` every Monday at the same minute**, with
+both hitting stats.nba.com at once — a source the pass-79 evidence shows punishes concurrency-blind
+clients. **Whether it matters is NOT RECORDED.** Flagged for when the cron goes in.
+
+**`[LIVE-AUDIT]` — recorded, clean count unaffected**
+- **`nba-scrape.yml` now runs 16 scrapers in a job still named `scrape-nba-teams`** — the job name
+  no longer describes the job. Its `continue-on-error` policy is **already documented** (§T2.10a);
+  not new.
+- **`NBA_SYSTEM_DRAFT.md` has been frozen since 2026-09-02**, 4 commits, while 21 workers and 32
+  workflows were built — **and 6 of the twelve cite it** (pass 74). Blueprint §5b's warning turned
+  on an NBA document.
+- Growth of T1's seven artefacts, measured: `NBA_PROJECT_LOG.md` **×22 over 47 commits**;
+  `nba-scrape.yml` **×4.7 over 31**; `worker_manifest_nba.json` 58 B → 868 B (**1 → 21 workers**).
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 83*, plus the pass-75 correction in place) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 83 FOUND TRANSCRIPT MATERIAL. CLEAN COUNT RESET TO 0/3.**
+
+---
+
+### T1.112 — PASS 82 (angle: **the web-research RESULTS — what came back, not what was asked**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full quotes: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 82.*
+
+**FINDING 1 — ⚠⚠ the 30-team check rested on a search that returned WNBA results, and the three
+teams are now named.** T1's relocation query returned *"The **Toronto Tempo** were added to the
+Eastern Conference in 2026. The **Connecticut Sun** relocated to Houston… The **Cleveland
+Rockers**…"* — **all three are WNBA franchises**, in text that reads exactly like NBA realignment.
+**✅ T1 caught it** (*"fan-wiki speculation and unrelated WNBA news"*) and pass 38 recorded the
+caveat. **What is new is naming the contamination**: **"Toronto Tempo" appears in no document**, the
+**hardcoded 30-team fallback rests on this search, dated 2026-08-31, NOT RECORDED as re-checked**,
+and **an NBA/WNBA collision is the repeatable failure mode for any league-structure query.**
+
+**FINDING 2 — ⚠ a closed loop in the tooling: you cannot fetch a worker you just deployed.**
+`web_fetch` on the new worker's `/health` returned **`PERMISSIONS_ERROR` — *"This URL was not in any
+prior search or fetch result. web_search for it first, then fetch the result link."*** The follow-up
+search returned `nba_api` documentation, **because a fresh private Workers subdomain is indexed
+nowhere.** **Fetch requires a search result → search cannot find a new private endpoint → it cannot
+be fetched.** **Neither the error type nor the rule appears in any document.**
+**This is why verification went through Postgres row counts instead** — a practice the documents
+record as good, **and it is** — **but it was also the only option available**, the same provenance
+correction pass 39 made for the §0a method.
+
+**FINDING 3 — checked and confirmed NOT new**: the canonical `nba_api` header set (already in two
+documents); the `data.nba.net` endpoint catalogue (`data/10s/prod` already recorded); BallDontLie's
+free and paid tiers, **including the UNVERIFIED SPEND item at $39.99/month.**
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 82*) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 82 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.111 — PASS 81 (angle: **the 31 workflow-run LISTINGS — everything that appeared alongside the runs T1 was waiting for**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 81.*
 
