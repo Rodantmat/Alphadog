@@ -630,6 +630,81 @@ capture pattern exists on the MLB side.
 
 ---
 
+## 8b. ⚠ THE REQUIRED REPORT LAYOUT — and the normalization rule behind it
+*Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§7**. **Recorded 2026-09-20 (T1 pass 31) —
+§7 was entirely undocumented.** Stated as **"the exact day-by-day table layout they expect for any
+backtest or real-slip report — reuse directly for NBA."***
+
+```
+|Date     |Slips |Full hits|5/6  |≤4/6 |Staked |Return     |Profit      |ROI        |
+|---------|------|---------|-----|-----|-------|-----------|------------|-----------|
+|08-12    |5     |3        |2    |0    |$5     |$7.27      |+$2.27      |+45.4%     |
+|**TOTAL**|**83**|**75**   |**8**|**0**|**$83**|**$183.20**|**+$100.20**|**+120.8%**|
+```
+
+**Three properties are specified, each for a reason:**
+| Property | Stated reason |
+|---|---|
+| **One dollar per slip** | the reporting convention — it makes ROI directly readable off the staked column |
+| **The TOTAL row bolded** | the owner is *"scanning on a phone screen"* |
+| **Partial-hit columns (`5/6`, `≤4/6`) included explicitly** | *"so the actual failure mode — **how close a miss came to hitting** — stays visible rather than being collapsed into a single win/loss count"* |
+
+**⚠ The partial-hit columns are not presentation — they are this document's subject.** `5/6` and
+`≤4/6` **are the Flex partial tiers**. A report in this layout **is** the empirical distribution that
+§0.2's tier table has to be priced against, and **the shape lesson #27 warns differs by platform**
+(§0.2h) is exactly what those two columns measure. **A win/loss-only report cannot validate a Flex EV
+model at all.**
+
+### The normalization rule — stated as a real, confirmed push-back
+> *"**ROI is the real target, not total profit** — **profit can be increased simply by wagering more,
+> ROI cannot. Always normalize by CAPITAL DEPLOYED, not by slip or leg count.**"*
+
+and the case that produced it:
+> *"a **real, confirmed case**: comparing profit at a fixed dollar-per-slip rate when **capital
+> deployed, not slip count, was the actual real-world constraint**. **Always identify what's genuinely
+> fixed in the real scenario before choosing what to normalize by.**"*
+
+**⚠ Note the tension, and it is deliberate**: the layout uses **$1/slip** as a *reporting* convention,
+while the *decision* rule normalizes by **capital deployed**. **They are not the same thing** — the
+convention makes the table readable; the rule governs what any comparison between strategies is
+divided by. **Confusing the two is precisely the error the push-back names.**
+
+### And the risk posture that governs what gets presented
+> *"Will accept **a smaller real sample size in exchange for a materially higher ROI**, provided the
+> underlying mechanism is sound — **the job is to present the real number and its real risk honestly,
+> then let them choose, NOT to pre-filter options** based on an assumption about what they'd want."*
+
+**Directly binding on this document.** The goblin/demon economics (`NBA_GOBLIN_DEMON.md` §5) and the
+139-leg `equal_scale_v1` sample (§8) are both thin. **The rule is not "suppress thin results" — it is
+"report the number and its real risk, and do not decide for the owner."** Pairs with **#26** (state
+the confidence tier) and **#19** (language no stronger than the evidence).
+
+**Status**: ⚠ **this layout has never been produced for NBA.** There is no NBA slip history to fill
+it — `nba_score.real_slip_leg_observations` holds **139 legs**, not dated slips. Recorded in
+`NBA_OPEN_ITEMS.md`.
+
+---
+
+## 8c. STANDING UI RULES THAT BIND THE MULTIPLIER SURFACE
+*Same source, same pass.*
+
+1. **Every deployed strategy needs a real backup-leg substitution system** for when a recommended leg
+   becomes unavailable.
+2. **Slip-leg checkboxes default to CHECKED.**
+3. ⚠ **A real multiplier value the person has manually entered must NEVER be lost or reset on a UI
+   re-render.**
+
+**Rule 3 belongs to this document specifically.** §2 records that **PrizePicks multipliers cannot be
+obtained programmatically** — *"ruled out exhaustively, four independent lines of evidence, all
+negative"* — so **every PrizePicks multiplier in the system is a value a human typed in.** A
+re-render that drops one destroys data that **cost a logged-in browser session to obtain** and that
+**no API can re-fetch.** **The capture protocol in §4b produces exactly these hand-entered values.**
+
+**Status**: the certification-center UI is inherited from MLB and recorded as *"nothing to build."*
+**Whether it satisfies rules 1–3 for NBA legs is NOT RECORDED.**
+
+---
+
 ## 9. OPEN ITEMS
 
 1. **The PrizePicks capture is deferred** — needs one logged-in browser session on a computer.
