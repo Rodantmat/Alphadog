@@ -372,6 +372,97 @@ Deliberate: the owner specified no orchestrator. Copy that precedent for any new
 
 ---
 
+## FROM T1 PASS 29 — BLUEPRINT §7f, §7g, §9 *(added 2026-09-20)*
+*These three blueprint sections were **unswept** until this pass. Earlier T1 passes covered blueprint
+§1–§7e plus the lessons document; **§8 was already captured** at `NBA_SYSTEM_ARCHITECTURE.md` §8b
+(corrupt-and-fix testing). §7f, §7g and §9 were not.*
+
+### ⚠ GAP · No per-subgroup check and no human-review gate recorded on the calibration refit
+**Blueprint §7f** (recorded in full at `NBA_FINAL_SCORING_CALIBRATION.md` §7m2) states the rule:
+*"an aggregate validation metric passing is **necessary but not sufficient**… keep a **human review
+step before applying any calibration correction** even when it has technically passed validation,"*
+with a recommended cadence of *"**weekly recalibration checks, trigger-based re-fitting and mandatory
+human review before applying — not full unattended automation.**"*
+
+**NBA's refit runs unattended inside P2, nightly.** Whether it validates per `side` / `phase` / `band`
+rather than on the pooled average, and whether any human gate exists before a shift is applied, is
+**NOT RECORDED as built** — no such check appears in the transcripts or in the calibration document.
+**MLB's own instance of this failure cost 30–45 percentage points of overconfidence on two props for
+roughly two and a half weeks, undetected.** `ladder_calibration_asof` is keyed on `side`, so the
+subgroup dimension MLB collapsed **already exists in NBA's schema** and a per-side validation is
+available at zero data cost.
+**SEASON-START RELEVANT** — the exposure is an unattended season-long pipeline.
+
+### ⚠ BUG CLASS TO GUARD · a "limit to these items" parameter that filters the RESPONSE, not the WRITE
+*Source: T1, blueprint §7g, first of two named bugs.*
+> *"MLB found a function whose **'which props to touch' input parameter correctly filtered its own
+> RESPONSE SUMMARY, but the underlying WRITE LOGIC IGNORED THAT FILTER ENTIRELY** and touched every
+> eligible row regardless — **invisible except by noticing unrelated timestamps had also updated.**"*
+
+Stated as **not unsafe in that specific case** (every write, filtered or not, passed the same
+validation gate) — *"but the parameter's name implied a selectivity that didn't actually exist."*
+**The standing check**: *"when adding any 'limit to these specific items' parameter to an NBA worker,
+**verify it constrains the actual WRITE PATH, not just what gets echoed back in the response.**"*
+**NBA workers carrying mode/scope parameters have NOT been audited against this** — not recorded.
+
+### ⚠ BUG CLASS TO GUARD · `NOT IN` built from an array parameter → "malformed array literal"
+*Source: T1, blueprint §7g, second of two named bugs.*
+> *"A **`NOT IN` clause built from an ARRAY PARAMETER via a query-builder's TAGGED-TEMPLATE ARRAY
+> HANDLING can be unreliable, especially WHEN THE ARRAY IS EMPTY**, producing a real **'malformed
+> array literal'** error."*
+
+**The prescribed fix pattern**: *"use an **explicit array-literal-with-cast pattern** and an
+**explicit EMPTY-ARRAY BRANCH** instead of relying on implicit array-to-SQL handling for this specific
+clause shape."* This is a **shared-stack gotcha** — same Postgres/Hyperdrive path MLB hit it on.
+**Whether any NBA worker builds a `NOT IN` this way is NOT RECORDED** — not searched for as of this
+pass.
+
+### ⚠ SIX NAMED PIPELINE FAILURE MODES — §9 says build checks for ALL SIX from day one
+*Source: T1, blueprint §9 — a whole methodology built from **"a real multi-bug night."***
+Full text recorded at `NBA_SYSTEM_DESIGN.md` §6b. **None of the six is recorded as having a check
+built in NBA.** Listed here because §9's own instruction is *"build checks for all six into NBA's
+pipeline from the start."*
+
+| # | Failure mode | Prescribed check | Built in NBA? |
+|---|---|---|---|
+| 1 | Reconciliation trusting a **still-actively-writing** batch | require the row count **stable across two reads separated by a real wait** | **NOT RECORDED** |
+| 2 | Reconciliation trusting a **permanently-dead writer** (also shows a stable count) | check **data composition**, not count — a died-mid-write batch recovers as **100% one category / 0% of what was written later**; refuse to reconcile if a category with real upstream supply is wholly absent | **NOT RECORDED** |
+| 3 | A completion check satisfied by **stale evidence from a PRIOR run** | use a check only **this run's own fresh output** can satisfy — e.g. `MAX(updated_at)` per entity falling **inside this run's execution window** | **NOT RECORDED** |
+| 4 | A **"deactivated" correction still silently applying**, because the label doesn't defeat the live filter condition (e.g. a substring match a prefix doesn't break) | read **the exact filter condition in live code** and confirm the deactivation genuinely fails it | **NOT RECORDED** |
+| 5 | **Raw source-API field ambiguity** corrupting a value, when the heuristic is built on a different field that merely *correlates* with the ambiguity | find the source's **genuine disambiguating field** (often a human-readable label string) | **NOT RECORDED** |
+| 6 | **Silent config/formula drift across a whole universe**, no error thrown — output silently wrong-but-plausible | periodically **diff live config against the actual formula for the ENTIRE universe in one pass** | **NOT RECORDED** |
+
+**⚠ Failure mode #6 is not hypothetical here.** The already-recorded **`minutes_mixture` drift** —
+config specifying three components the recipe does not implement — **is exactly this failure mode,
+already live in NBA.** §9 names the fix (whole-universe config-vs-formula diff) and it has not been
+run.
+
+**⚠ Failure mode #2 has a live analogue too**: board composition. §9's own board check —
+*"verify that BOTH expected output categories (a PRIMARY/high-confidence tier and a REVIEW/lower-
+confidence tier) are present in plausible proportions — **a 100%/0% split is a red flag even when the
+total row count exactly matches expectations**"* — is **not recorded as implemented** on
+`nba_score.board_scored`.
+
+### ⚠ CONTRADICTION · T1's clean count — the work order and `NBA_MASTER_SUMMARY.md` disagree
+**Flagged, not resolved.**
+- `NBA_MASTER_SUMMARY.md` §T1.58 and its status table record **T1 as ✅ DONE — 3/3 clean (passes 26,
+  27, 28)**, on the basis of full sequential reads of all 87 content blocks.
+- The owner's work order dated **2026-09-20** records **T1 as 0/3, ACTIVE, ~30 passes done, "still
+  producing new material on essentially every pass,"** with the resume point given explicitly as
+  **"blueprint §7f onward."**
+
+**This pass resolves which is factually right without resolving the count**: blueprint **§7f, §7g and
+§9 were genuinely undocumented**, and all three produced new material recorded above. **The 3/3 was
+earned against T1's conversational body and its 87 message blocks, not against the four handoff
+documents embedded inside T1.** The pass-24–28 method — *"full sequential read, all six segments"* —
+was reading **message blocks**, and a 95 KB blueprint pasted inside one block is not covered by
+reading that block's first 200 characters.
+**Per rule 1.2, the new material resets T1 to 0/3 regardless.** The count is treated as **0/3 from
+pass 29**, matching the owner's work order. **The DONE marking in `NBA_MASTER_SUMMARY.md` is
+superseded, and the reason is recorded there.**
+
+---
+
 ## FROM T2 PASS 2 *(added 2026-09-20)*
 
 ### OPEN GAP · **garbage time is NOT filtered out of our season aggregates**
