@@ -129,6 +129,55 @@ master-run's Daily Context or Scoring stages touch it"* → **P2 must complete b
 
 ---
 
+## 0.8 CHAIN INDEPENDENCE — don't build one monolithic run
+*Source: T1, blueprint §4o. Recorded 2026-09-20.*
+
+### The operational rule it comes from
+> *"**When triggering a full run, backfill, or any multi-stage chain genuinely expected to take
+> several minutes or more, DO NOT sit there REPEATEDLY POLLING or RE-CHECKING its status turn by
+> turn** — that **burns real attention and session budget for no benefit, since THE JOB RUNS
+> INDEPENDENTLY OF WHETHER ANYONE IS WATCHING IT.**
+> **The correct pattern: TRIGGER IT, DO ONE REAL CONFIRMATION CHECK that it has genuinely started,
+> REPORT THAT PLAINLY, and then STAND BY.**"*
+
+### ⚠ The design consequence
+> *"**DON'T design ONE GIANT COMBINED CHAIN where a SLOW EARLY STAGE SILENTLY DELAYS OR BLOCKS EVERY
+> LATER STAGE for an UNBOUNDED amount of time.**
+> **Each major layer — the BOARD layer, the DAILY-CONTEXT layer, the MARKET layer, the SCORING
+> layer — should be ITS OWN GENUINELY INDEPENDENT, SELF-GATING, SELF-CONTINUING CHAIN that can be
+> TRIGGERED ON ITS OWN and CHECKED ON ONLY WHEN ASKED** — **trigger one, let it finish in the
+> background, then trigger the next** — **rather than A SINGLE MONOLITHIC RUN where an EARLY
+> BOTTLENECK SILENTLY STALLS EVERYTHING DOWNSTREAM.**"*
+
+### ⚠ NBA built the opposite for P3, deliberately
+**P3 runs board → daily context → market → scoring as SEQUENTIAL STEPS IN ONE WORKFLOW.** The four
+layers named here as *"genuinely independent chains"* are **one monolithic run** in NBA's design.
+
+**The trade is real and cuts both ways:**
+| One workflow (NBA's P3) | Four independent chains (prescribed) |
+|---|---|
+| ✅ **Ordering is enforced by construction** — the Board-before-Daily-Context bug (§0.7) cannot occur | ⚠ ordering must be managed |
+| ✅ One concurrency group, one certifier, one failure surface | ⚠ four of each |
+| ⚠ **A slow board scrape delays scoring** | ✅ a slow stage blocks only itself |
+| ⚠ **An early failure means no scoring at all that day** | ✅ later layers can still run on prior data |
+
+**NBA's mitigation is time budget, not independence**: P3 runs at **1:15 PM PT** against a first tip
+no earlier than ~4 PM PT, so there is slack. **But the failure mode the blueprint names is exactly
+"an early bottleneck silently stalls everything downstream", and P3 has that shape.**
+
+**⚠ The sharpest case is the board scrape.** It is step one, it depends on an external DataDome-guarded
+host, and **everything downstream is board-scoped** — so a board failure produces **a run that
+completes with almost nothing scored**, rather than a loud stop.
+
+**P1 and P2 are less exposed**: P1's steps are independent scrapers, and P2's heavy stages
+(mine → grade → refit → build) have genuine data dependencies that justify sequencing.
+
+**The operational half IS followed**: the build record shows *"trigger, confirm once, report"* —
+*"while that builds (~50 min for six pairs), the loader worker"*, *"let me check the run directly
+rather than keep polling blindly."*
+
+---
+
 ## 1. THE CUTOFF — why 1:15 PM PT
 
 **The binding constraint is the game-day injury report.** It is due **11am–1pm LOCAL to each game's
