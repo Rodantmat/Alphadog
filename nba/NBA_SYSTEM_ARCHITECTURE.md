@@ -55,6 +55,41 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
 
 ---
 
+### ⚠⚠ NEVER HARDCODE A FIXED UTC OFFSET FOR A US TIMEZONE
+*Source: T1, blueprint §7e. Recorded 2026-09-20.*
+> *"**NEVER HARDCODE A FIXED UTC OFFSET FOR A US TIMEZONE IN SCHEDULING LOGIC — IT CHANGES TWICE A
+> YEAR WITH DAYLIGHT SAVING TIME.**
+> **Use A REAL TIMEZONE-AWARE FUNCTION** — e.g. a standard library's timezone-formatting capability
+> **WITH AN EXPLICIT NAMED TIMEZONE** — **for ANY TIME-OF-DAY SCHEDULING CHECK.**"*
+
+**⚠ This is live for NBA, and the season crosses DST on 2026-11-01.**
+
+**Where NBA is exposed:**
+| Surface | Form | Risk |
+|---|---|---|
+| **P1 cron `0 19 * * 1`** | UTC | **drifts an hour across DST** — documented as *"harmless, because nothing here is cutoff-sensitive"* ✅ |
+| **P2 cron 01:00 PT** | UTC in the workflow | **drifts an hour** — and P2's margin is already **2 hours tighter** than the lag research endorsed |
+| **P3 cron 1:15 PM PT** | UTC in the workflow | **drifts an hour** — against a cutoff that IS time-sensitive |
+| **`nba_asof.py` — `PHASE1_CUTOFF_LOCAL = "16:00"`** | **a LOCAL time string**, not an offset | ✅ **the correct form** |
+| The injury-report archive | *"the season crosses DST"* — already recorded as a caveat on the hourly backfill | ⚠ noted |
+
+**✅ `nba_asof.py` gets it right** — storing `"16:00"` as a **local wall-clock time** with the timezone
+resolved at use is exactly the prescribed pattern, not a fixed offset.
+
+**⚠ The crons are the exposure.** GitHub Actions crons are **UTC-only** — there is no named-timezone
+option — so **a PT-anchored schedule necessarily drifts one hour twice a year.**
+
+**Consequences by pipeline:**
+- **P1**: genuinely harmless, and documented as such.
+- **P3**: the **cutoff assertion protects correctness** — it refuses to score a slate clubs have not
+  filed for — **so a drifted P3 fails safe rather than scoring stale.** But on 2026-11-01 the run
+  moves to **12:15 PM PT**, an hour before the injury-report cutoff logic expects.
+- **P2**: **the one that matters.** A drift to **00:00 PT / 03:00 ET** puts the delta run **an hour
+  closer to the publishing window**, compounding the missing grace window.
+
+**The generalisable check**: any comparison of "now" against a fixed hour must resolve the timezone by
+name (`America/Los_Angeles`), **never by a stored `-08:00` / `-07:00`.**
+
 ## 1c. THE DATABASE-DISCIPLINE RULE, STATED PRECISELY
 *Source: T1, blueprint §7e — **"the single most important database-discipline rule from the whole MLB
 migration."*** Recorded 2026-09-20.
