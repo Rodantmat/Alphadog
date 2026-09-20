@@ -507,6 +507,35 @@ Plus the decisive instruction that overruled the shared control plane:
 holds your first tunable variables (timeout, retry limit, chunk size, differential cadence) —
 SQL-editable, no hardcoding, as you required."*
 
+### T1.18 — PASS 8 (added 2026-09-20; artefact inventory sweep) — **NOTHING NEW**
+
+A complete regex sweep of every file path mentioned in T1 returned exactly the artefacts already
+documented in T1.10 and T1.17, with their mention counts:
+`nba/NBA_PROJECT_LOG.md` (7) · `nba/alphadog-v2-nba-static-teams.js` (4) ·
+`nba/scrape_nba_stats_teams.py` (3) · `nba/NBA_SYSTEM_DRAFT.md` (3) ·
+`.github/workflows/nba-scrape.yml` (3) · `nba/NBA_ARCHITECTURE_BLUEPRINT.md` (2) ·
+`nba/NBA_LESSONS_LEARNED_FROM_MLB.md` (1) · `nba/NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` (1) ·
+`nba/NBA_AVAILABLE_TOOLS.md` (1) · `.github/workflows/scrape.yml` (1, MLB's, read as the template).
+
+**This is CLEAN PASS 1 of 3 — but only on the artefact dimension.** The pass rule is not yet satisfied:
+a clean pass must find nothing new across ALL dimensions (narrative text, tool results, SQL bodies,
+written file contents, artefacts, owner instructions). Passes 2–7 each found substantial new material
+on a dimension the previous pass had not examined, which is why the count could not start until now.
+
+**Dimensions verified so far for T1:**
+| Dimension | Pass | Result |
+|---|---|---|
+| narrative text (truncated) | 1 | new material |
+| tool RESULTS | 2 | new material — MLB universe, 116 workers, column lists |
+| full SQL bodies | 3 | new material — 3-run model, 14 schemas, naming convention |
+| remaining DDL + settings | 4 | new material — full `nba_ref` DDL, seeded settings, original cron |
+| founding handoff text | 5 | new material — the handoff, the parallel-chat episode |
+| owner specification (full) | 6 | new material — Run 3's four stages, the hard constraints |
+| caveats and limits | 7 | new material — `host_not_allowed`, D1 date, `NBA_AVAILABLE_TOOLS.md` |
+| artefact inventory | 8 | **CLEAN** |
+
+**Next for T1: two more full-dimension passes must both come back clean.**
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
