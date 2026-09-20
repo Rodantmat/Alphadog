@@ -210,6 +210,31 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 
 ## 2. `nba_config` — NBA control configuration *(T1)*
 
+> ### ⚠⚠ READ FIRST — **nothing in the codebase reads any of these tables except `external_credentials`**
+> *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files in `nba/` **and** the MCP
+> admin bridge `alphadog-v2-admin-sql.js`.*
+>
+> The strings **`classification_config`, `factor_registry`, `factor_relevance`,
+> `factor_profile_cells`, `stat_decay_config`, `ewma_alpha`, `system_settings`, `role_tiers`** appear
+> **ZERO times** in the codebase. The only config table anything reads is
+> **`nba_config.external_credentials`** (12 call sites, all fetching API keys).
+>
+> **These tables are a documented design that no running code consults.** Their values are
+> **maintained by hand alongside hardcoded constants**, not loaded from here. Editing a row changes
+> nothing and raises no error.
+>
+> **This is the owner's founding rule not holding**: *"any future variable numbers must reside on the
+> database, not hard coded… so all these are **easily changed by SQL command instead of coding and
+> deploys**"* — a rule whose purpose is operational, because the owner has **no terminal**
+> (`NBA_SYSTEM_ARCHITECTURE.md` §1a). **A cap, penalty or timeout change today needs a code edit, a
+> commit and a deploy.**
+>
+> **It also reframes the recorded `minutes_mixture` drift**: that is not config and code diverging —
+> **there is no coupling to diverge.** Full entry, including a measured config-vs-code diff:
+> `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 36*.
+>
+> **Not claimed**: that the values here are wrong. Only that nothing reads them.
+
 ### `nba_config.worker_definitions`
 `worker_name` TEXT **PK** · `job_key` TEXT **UNIQUE** · `worker_group` · `phase_key` ·
 `display_name` · `enabled` INT DEFAULT 1 · `notes` · `updated_at`
