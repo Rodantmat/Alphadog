@@ -766,7 +766,7 @@ own directory, so a config already inside `nba/` must not re-prefix the path. **
 in four places; the exact wrangler error string is not**, and it is the string anyone would search
 for when it recurs. **Recorded verbatim for that reason.**
 
-⚠ **The failed job had SEVENTEEN steps and FOUR failed**: `Deploy selected Workers`,
+⚠⚠ **CORRECTED 2026-09-20 (pass 86): ONE step failed, not four.** *The run had 17 steps — **13 success, 1 failure, 3 skipped**. The only `failure` is `Deploy selected Workers`; the others were **`skipped`** because the step before them failed. My filter treated "not success" as failure. **Fourth instance of the pass-53 rule** — see FROM T1 PASS 86. The original text follows.* ⚠ **The failed job had SEVENTEEN steps and FOUR failed**: `Deploy selected Workers`,
 `Record last successful deploy marker`, **`Post Setup Python`** and **`Post Setup Node`**. **The last
 two are post-job cleanup steps that failed as a consequence** — **so one real failure produced four
 red steps.** Worth knowing before reading a failed deploy as four separate problems.
