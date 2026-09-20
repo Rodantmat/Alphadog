@@ -76,7 +76,11 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
   decommissioned system-wide on 2026-08-12; NBA is Postgres-only from day one.)*
 - **Deploy pipeline**: GitHub repo → `alphadog-v2-github-auto-deploy.yml` → auto-deploys on push.
   **`generate_wrangler_configs.py` regenerates EVERY `wrangler.*.jsonc` from a Python template BEFORE
-  EVERY DEPLOY** — the mechanism behind the "anything not in the generator is erased" rule (§4).
+  EVERY DEPLOY** — *"**NEVER hand-edit a wrangler config file expecting it to survive, IT WILL BE
+  SILENTLY OVERWRITTEN.**"* **The overwrite is silent** — no warning, no diff, no failure.
+- **MCP bridge**: *"Build this FIRST — **it's the tool surface every subsequent session (including
+  yours) will actually use**."* Exposes `run_sql`/`run_sql_postgres`, the GitHub file tools, and a
+  **Gemini proxy endpoint**.
 - **The MCP admin-bridge worker** (`alphadog-v2-admin-sql.js`) and its `run_sql_postgres` / GitHub
   tool surface.
 - **`config.worker_definitions` / `config.worker_schedules` / `control.job_queue` /
