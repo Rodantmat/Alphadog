@@ -1456,6 +1456,27 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.85 — PASS 55 (angle: third bold-claim sample) — ⚠ **VOID — THE INSTRUMENT FAILED**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 55.*
+
+**The sample returned 26 misses out of 26 — including claims this sweep had already quoted from the
+twelve documents by hand.** The cause is the corpus, not the coverage: **the documents re-case and
+re-bold everything they quote**, so any contiguous-substring match breaks on the first inserted `**`
+or capitalisation change. Known-present claims returned MISS, including *"two files meant to be exact
+copies… drift out of sync"* and *"this four-stage order is load-bearing."*
+
+**VOID, not clean and not new.** A clean pass means the transcript yielded nothing new; **this pass
+yielded nothing measurable.** Counting it clean would inflate the streak on a broken instrument —
+**the exact failure the DRIFT NOTICE and the superseded 3/3 at §T1.58 both record.** Excluded from
+the count in both directions.
+
+**Standing method rule, from passes 53 and 55 together**: never establish a negative from a
+formatted-string grep; never establish coverage from phrase matching at all; **read the source
+section, decide what it asserts, search the documents for the CONCEPT, then read the hit to confirm
+it is the same claim.** That is what every finding in passes 29–54 actually rests on.
+
+---
+
 ### T1.84 — PASS 54 (angle: **sample the IDENTIFIERS** — 30 of 148 backticked names, normalised matching) — **MINOR NEW · CLEAN COUNT RESET TO 0**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 54. 28 of 30 documented; one miss is Part H
 material postdating T1 (`product_experience_id`, already open at §T1.60); one is a genuine T1 find.*
