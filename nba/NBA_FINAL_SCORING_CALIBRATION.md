@@ -92,6 +92,52 @@ uses Platt rather than any ML signal.)*
 
 ---
 
+## 0d. PER-FACTOR GRIDS, AND HOW TO COMBINE THEM
+*Source: T1, blueprint §4d. Recorded 2026-09-20.*
+
+### Each factor gets its own independently-scoped grid
+> *"**Give each factor ITS OWN INDEPENDENTLY-SCOPED GRID, with DEPTH EARNED BY REAL EVIDENCE, not
+> applied uniformly.**
+> MLB **confirmed MATHEMATICALLY that a FULL JOINT CROSS-PRODUCT across all factors would create TENS
+> OF THOUSANDS OF CELLS against a training set of roughly 100,000 ROWS** — **meaning MOST CELLS WOULD
+> NEVER SEE ENOUGH REAL DATA.**
+> **Some factors genuinely need real TIERS, DIRECTION and GRADUATED BANDS; others are better served by
+> a PURE CONTINUOUS FORMULA; others are closer to a BINARY GATE. DECIDE THIS PER FACTOR, FROM REAL
+> EVIDENCE, not by applying the same structure to every factor FOR CONSISTENCY'S SAKE.**"*
+
+**✅ This is exactly the T8 factor-tier table** — rest/B2B as **tiered bands**, altitude as
+**continuous gated >1500 m**, DvP as **quantile bands**, pace as **continuous log**, scheme as
+**binary gates**, blowout/OT/foul as **minutes inputs**. **Each form earned by its own evidence**, with
+cutpoints *"data-driven (CART), validated out-of-sample, fixed for a season — never arbitrary."*
+
+**The cell-count arithmetic is worth holding against NBA's own numbers**: MLB found tens of thousands
+of cells against **~100,000 training rows**. **NBA has 79,358 player-games** — the same order — and a
+cell key of **`factor × prop × tier × role_tier × direction × variation_band`**.
+**`factor_relevance` (460 rows) is what prevents the cross-product**: it gates which factors are
+candidates per prop *before* any tier logic. **35 fitted cells against 460 relevance rows is the
+sparsity this warning predicts**, and it is being handled by gating rather than by fitting everything.
+
+### Combine additively in LOG-RATE SPACE by default
+> *"**Combine multiple applicable factors ADDITIVELY IN LOG-RATE SPACE (standard regression practice)
+> as the DEFAULT combination method** — **this avoids NAIVE MULTIPLICATIVE STACKING silently
+> double-counting correlated factors.**
+> **Reserve the RSS (root-sum-squares) approach SPECIFICALLY for factor clusters KNOWN TO BE
+> GENUINELY, STRONGLY CORRELATED with the same underlying signal** — **the two tech[niques are for
+> different situations]**."*
+
+**✅ NBA combines in log-rate space** — *"every coefficient is fit on train **in log-rate space**, so
+unneeded factors go to zero on their own"* — and the enrichment record stores **`log_rate_adjustment`**
+as its primary field, with `rate_multiplier` as the derived view.
+
+**⚠ The RSS half is still absent** (§7k pattern 3), and this passage clarifies its scope: **RSS is not
+the general combiner — additive log-rate is.** RSS applies **only to known-correlated clusters**, which
+is why `factor_registry`'s **macro-cluster** column exists.
+
+**So the design is: additive log-rate everywhere, RSS within a declared cluster.** NBA has the first
+and the cluster labels, but not the second.
+
+---
+
 ## 1. THE CHAIN
 
 **⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
