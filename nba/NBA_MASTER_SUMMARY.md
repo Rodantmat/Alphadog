@@ -3697,6 +3697,35 @@ pass, which is exactly why the logic was then tested against the full 2025-26 se
 
 **T6 PASS 5: NEW MATERIAL (including a correction). Clean count 0/3.**
 
+### T6.12 — PASS 6 (full sequential, all 125 blocks) — **CLEAN 1/3**
+
+Complete read from block 5 → 624. **Every block maps to a documented entry**: the chunked load and the
+enum refresh (T6.1), the officials build with the v2 warning found in advance (T6.2), the
+truthiness bug and the 3-game NBA.com gap (T6.2a–b), lineups with both bugs (T6.3), the schema-audit
+gaps (T6.10c), the injury-PDF discovery (T6.4), the owner's scope correction (T6.5), and the delta
+worker with its three-attempt completeness check (T6.6, T6.11).
+
+One detail confirmed here: the **officials writer's enum picked up immediately** — *"The tool's enum
+picked this one up right away"* — in contrast to the starter-status writer that needed a turn boundary.
+**The refresh is not deterministic**, which is why re-checking is worth a single call.
+
+**CLEAN PASS 1 of 3.**
+
+### T6.13 — CURRENT STATE OF T6
+
+**6 passes. 5 found new material. Clean count: 1/3** (pass 6).
+
+| Pass | Method | New findings |
+|---|---|---|
+| 1 | full sequential | the whole T6 narrative — 7 sections |
+| 2 | DDL | `game_officials` `assignment`/`_V3` key; `lineup_profile` `TEXT[]` |
+| 3 | research conclusion | **the XYZ-tracking tell; the priority ranking that held** |
+| 4 | milestones + live check | **4,319 coach's-decision DNPs**; the `comment` format split |
+| 5 | delta worker close | **the pre-flight check DOES exist — T4.12c corrected** |
+| 6 | full sequential | **CLEAN** |
+
+**Two more consecutive clean full passes required before T6 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
