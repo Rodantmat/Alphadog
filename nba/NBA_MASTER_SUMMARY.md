@@ -4953,6 +4953,30 @@ Eight spread bins, **finer at the low end** (2-point steps to 12, then 12–15, 
 
 **T7 PASS 16: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.23 — PASS 17 — **MINOR NEW** (two method notes)
+
+#### T7.23a — The retroactive-lines question was checked through existing plumbing
+> *"Let me start with [retroactive prop lines] since it **determines whether we'll have real
+> ground-truth lines to backtest against** — and **I can check it concretely through the MLB
+> integration that already exists**."*
+
+**Not researched from documentation — probed through MLB's live ParlayAPI integration.** The
+capability question was answered by testing the actual connection, which is why the verdict
+(*"game lines back to 2007, no historical props"*) was stated with confidence.
+
+**And it was sequenced first for a reason**: it gates whether a market-based backtest is even possible,
+so the answer changes what the other two research streams need to deliver.
+
+#### T7.23b — Points was deliberately not re-researched
+> *"**Points was largely covered by the minutes/usage research**; the props with **genuinely different
+> drivers** are **rebounds, assists, 3PM, and stocks**."*
+
+**The prop-by-prop study scoped itself to the props whose drivers differ**, rather than running the
+same search five more times. Points is a minutes-and-usage bet and the minutes model had already
+covered it.
+
+**T7 PASS 17: MINOR NEW. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
