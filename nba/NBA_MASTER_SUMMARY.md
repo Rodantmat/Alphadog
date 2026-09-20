@@ -998,8 +998,45 @@ re-read can close a transcript.** Passes 24+ are therefore full re-reads in segm
 **24 passes. 17 found new material. Clean count: 0/3.**
 
 **Method for the remaining passes:** full sequential re-read in segments of ~55 message-blocks.
-T1 has ~292 blocks → roughly 6 segments per pass. Segment 1 (blocks 75–130) is done and found new
-material. **Segments 2–6 of pass 24 must still be read**, then two further complete clean passes.
+T1 has ~292 blocks → roughly 6 segments per pass.
+
+### T1.42 — PASS 24, SEGMENT 2 (blocks 131–200) — **NEW MATERIAL**
+
+**A CORRECTION TO A VALUE RECORDED IN PASS 15.** The `source_key` is not
+`FALLBACK_AFTER_FETCH_ERROR` — the full value is:
+> **`STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR`**
+
+Pass 15 captured a truncated form from a grep window. **The full string is what to search for.**
+Corrected in DATABASE and OPEN_ITEMS.
+
+**THE DISPATCH PATTERN NBA WORKERS COPY, named exactly:**
+> *"using **`BASE_HITTER_GAME_LOGS_WORKER`'s exact style (direct call, bypasses queue entirely)**"*
+
+So NBA workers are wired for **direct invocation**, not queued dispatch — deliberately, because the
+owner wanted no orchestrator. `BASE_HITTER_GAME_LOGS_WORKER` is the MLB precedent to copy when adding
+any new NBA worker to the bridge.
+
+**THE FULL-FLEET REDEPLOY IS CONFIRMED SAFE**, not merely assumed:
+> *"I confirmed in the log this was a **clean, idempotent redeploy (same configs, same code)** — not a
+> functional change to anything MLB."*
+
+**The live-fetch failure at this point was a 520**, and the fallback worked exactly as designed — which
+is what made the honest "seeded via fallback, not live API" statement possible.
+
+**Segment 2 of pass 24: NEW MATERIAL. Clean count remains 0/3.**
+
+### T1.43 — CURRENT STATE OF T1
+
+**24 passes (segments 1–2 of the full re-read done). 18 found new material. Clean count: 0/3.**
+
+**Segments 3–6 of pass 24 still to read** (blocks ~200–292), then two further complete clean passes.
+
+**Two corrections this pass produced**, both from reading rather than grepping:
+1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
+2. The `source_key` value was recorded truncated.
+
+**Both are the kind of error that only a sequential read catches** — a grep window cuts a string, and a
+pattern-bound sweep never sees a line that matches no pattern.
 
 ---
 
