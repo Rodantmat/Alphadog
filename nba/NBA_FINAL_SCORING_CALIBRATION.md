@@ -542,7 +542,45 @@ table, exactly as specified.**
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7j. ⚠ THE ENRICHMENT-DISPLACEMENT DIAGNOSTIC — cheap, and never run on NBA
+*Source: T1, blueprint §4a — described as **"a real, dense case study worth internalizing BEFORE
+writing the scoring engine."*** Recorded 2026-09-20.
+
+### The finding it produced
+> *"MLB ran a real audit that found its scoring engine was **WELL-CALIBRATED AT THE BASELINE LEVEL but
+> BADLY OVERCONFIDENT once enrichment factors moved the number away from baseline**."*
+
+### The technique
+> *"**Split graded legs by HOW FAR THE ENRICHMENT LAYER MOVED THE FINAL PROBABILITY AWAY FROM THE
+> BASELINE MODEL'S OWN NUMBER, then compare predicted-vs-actual SEPARATELY FOR EACH BUCKET.**"*
+
+**The measured result:**
+| Bucket | Calibration gap |
+|---|---|
+| **Baseline-dominated legs** | *"nearly perfectly calibrated — **~1 point gap**"* |
+| **Heavy-enrichment legs** | ***"a 5+ POINT OVERCONFIDENCE GAP"*** |
+
+> *"**This SINGLE CHECK immediately LOCALIZES whether a calibration problem lives in the BASELINE MODEL
+> or the ENRICHMENT LAYER, WITHOUT DEBUGGING EVERY FACTOR INDIVIDUALLY FIRST.**"*
+
+### ⚠ NBA has every input this needs, and has never run it
+**`nba_score.final_hp` carries both numbers on every row**: **`baseline_hp`** and **`final_hp`**, plus
+**`cal_shift`**. **The displacement is `final_hp − baseline_hp`, already stored — no computation
+required beyond a bucketed group-by against `board_outcomes`.**
+
+**Why it matters here specifically:**
+- NBA's measured factor effect is **Brier +0.1–0.3%**, i.e. **the enrichment layer moves the number
+  very little on average** — so most legs would fall in the baseline-dominated bucket.
+- **But the average is not the question.** The diagnostic asks about the *tail* of displacement — the
+  legs the enrichment layer moved **most** — and those are exactly the legs where availability deltas
+  fire (`now_out` moves a leg by **0.2640 on average, max 0.9924**).
+- **A `now_out` override is the largest displacement the system produces**, and it is applied with a
+  **reallocation sensitivity parameter (0.15 per tier) that is ESTIMATED, not measured.**
+
+**So the highest-displacement bucket is also the one with the least-validated parameter.** The
+diagnostic is one query and would answer whether that matters.
+
+**Recorded in `NBA_OPEN_ITEMS.md`.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
