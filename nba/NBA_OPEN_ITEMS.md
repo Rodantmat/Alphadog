@@ -537,6 +537,29 @@ covered.** Recorded so the absence is not later mistaken for missing role data.
 `w`, `l`, `w_pct` columns exist on both splits tables and `wins_losses` holds 1,135 rows.
 **The T4 caution — "collect it, but don't naively feed it to a model" — is not enforced by anything.**
 
+### SCOPE DECISION (owner-approved, not a gap) · starter status = ONE season only
+Per-game starter/bench status costs **~3,690 calls across 3 seasons**. It was flagged rather than run,
+and the owner approved starting with **the most recent season only (1,230 calls)**.
+**✅ Verified live 2026-09-20: 32,179 rows · 1,230 games · 12,300 starters · 591 players — 2025-26
+only.**
+
+**The consequence to keep in view**: game logs span **three** seasons; per-game starter status spans
+**one**. Any model trained across all three has this feature for a third of its data.
+Gemini rated it *"foundational, non-negotiable — a player's role is **the single biggest driver of
+opportunity**, and it can **shift game-to-game in ways season averages miss entirely**."*
+**Extending it to 2023-24 and 2024-25 costs ~2,460 more calls.**
+
+### COVERAGE ASYMMETRY SUMMARY *(added 2026-09-20)*
+What actually spans three seasons versus one:
+| Dataset | Seasons |
+|---|---|
+| Player game logs (base + advanced) | **3** — 79,358 rows |
+| Team game logs | **3** — 7,380 rows |
+| `defense_vs_position` | **3** — 630 rows |
+| **Player/team splits** | **1** — PK cannot hold more |
+| **Per-game starter status** | **1** — owner-approved scope |
+| Career totals | all-time, 3,644 rows |
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
