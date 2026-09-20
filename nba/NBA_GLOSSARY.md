@@ -388,6 +388,15 @@ the cutoff** because the Active List locks 60 minutes before tip.
 
 ## P–S
 
+**operating model, the owner's** · T1 (`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §7) · The stated
+working constraints, *"apply from the very first NBA interaction."* **Owns and operates the system
+alone from a phone, no terminal — the assistant is the only interface to database, repo and deploy.**
+Output: **lead with the answer, tables over prose past two numbers, bold the number that matters, a
+one-word reply means execute the next step autonomously.** Decisions: **ROI over profit, normalize by
+capital deployed**; a smaller sample is acceptable for materially higher ROI, **present the risk, do
+not pre-filter**; *"every check"* means every check; **believe an owner-reported anomaly and
+investigate it.** → `NBA_MASTER_SUMMARY.md` §T1.61 · `NBA_SYSTEM_ARCHITECTURE.md` §1a.
+
 **per-subgroup validation** · T1 (blueprint §7f) · The rule that **an aggregate out-of-sample pass is
 necessary but not sufficient**: a proposed calibration correction must be checked against **every
 meaningfully distinct subgroup it will be applied to** — both sides of a market, every tier — not the
