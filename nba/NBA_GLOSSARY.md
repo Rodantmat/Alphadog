@@ -222,7 +222,26 @@ where goblins flip to demons. *"10.5 goblin, 11.5 goblin, 12.5 demon → 12 is t
 ## L–N
 
 **ladder** · T13, LIVE · The rungs around an anchor. Per app: PrizePicks in the raw feed; Underdog
-`alternate_projections`; Fliff separate proposals; Betr tiers; **Sleeper has none**.
+`alternate_projections`; Fliff separate proposals; Betr tiers; **Sleeper has none** *(⚠ but T7's
+verified inventory found Sleeper milestone lines 20+/25+/30+ — see OPEN_ITEMS)*.
+**Width, from three converging sources (T7)**: books ladder a 24.5 player **~19.5 to ~31.5 ≈ ±1 SD**;
+Unabated prices off the player's full outcome distribution; **Goblin ≈ 25th–35th percentile,
+Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.** The live `LADDER_DEPTH` measurement
+(p95 = 13 rungs for points) **agrees with this to within one rung.**
+
+**lifts / penalties / caps** · T7 · **Lifts and penalties are factor-driven adjustments inside each
+tier's pipeline.** **Caps are explicitly a LAST RESORT** — *"the preference is logic that lands on the
+right number on its own."* Same instinct as the blowout minutes-mixture.
+
+**variation** · T7 · **The line band within a prop.** Owner: *"PRA 20.5, 21.5, 23.5 — each one is one
+variation. And each variation is gonna have more or less as well."* **Prop line × variation ×
+direction** is the full matrix. **The distribution family itself changes by variation** — a 3.5-points
+player gets Negative Binomial, a 33.5-points player gets Normal.
+
+**what does NOT transfer from MLB** · T7 · **The fixed 5/10/20/season recency blend** —
+*"flagged as the single biggest thing that does NOT transfer."* NBA replaced it with
+`nba_config.stat_decay_config` (13 per-stat alphas). **Everything else in MLB's v6 logic was ported
+deliberately; this one part was rejected on evidence.**
 
 **M1 — defender quality** · T11, T16 · Rejected on a crude metric, then **rebuilt as a two-way ridge**
 (`nba_ref.defender_ratings`, 111,768 ratings) and wired on 4 props — **all gains from the INTERACTION
