@@ -530,6 +530,8 @@ baseline earns the most**, because **naive book models mis-price tails**."*
 **That is now the standing hypothesis by ELIMINATION, not merely by design** — and it is testable the
 moment real board data with goblin/demon rungs is in hand. **Worth making explicit before the season,
 because it determines what the slip-building phase should optimise for.**
+
+### STRUCTURAL FINDING · **the props that won't certify are the OPPONENT-driven ones**
 > *"the **'close' props are EXACTLY the ones whose primary drivers are *opponent* stats** — **steals ←
 > opponent turnover rate**…"* (T9)
 
