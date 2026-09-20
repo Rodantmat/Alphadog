@@ -1405,6 +1405,77 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.62 — PASS 32 (angle: **diff T1's pasted copy of a document against the repo file today**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: T1 contains four handoff documents **as they stood on 2026-09-03**. The same four files
+live in the repo **as they stand now**. **Nobody had diffed them.** A section that exists in one and
+not the other is, by construction, either a later addition or a deletion — **and both are findings.**
+
+**Applied to `NBA_SYSTEM_DRAFT.md`:**
+
+| In T1 (2026-09-03) | In the repo today | Verdict |
+|---|---|---|
+| §1 Naming · §2 Reused vs new · §3 Prop taxonomy · §4 Layer ordering | same | — |
+| — | **§4b Real operating cadence — "locked 2026-09-03"** | **later addition** — three elements never recorded, below |
+| **§5 Open questions — explicit, not silently decided** *(6 items)* | **⚠ HEADING GONE; the list survives, duplicated and mis-numbered** | **document defect — recorded in `NBA_OPEN_ITEMS.md`** |
+| §6 Immediate next step | same | — |
+
+**FINDING 1 — a live repo file is structurally broken.** `nba/NBA_SYSTEM_DRAFT.md` today has **no
+`## 5.` heading**, and beneath §4b carries a numbered list running **1, 2, 3, 4, 3, 4, 5, 6** —
+items 1–4 rewritten as `ANSWERED (2026-08-31)`, followed by **the original, un-answered text of items
+3–6, still present.** Items 3 and 4 appear twice, in two different states, under no section title.
+**VERIFIED by direct comparison.** **Not fixed, per the standing instruction.** **This is blueprint
+§9's failure mode #3 in documentation form**: stale evidence from an earlier state surviving beside
+the new state, with nothing erroring.
+
+**FINDING 2 — two of the four "ANSWERED" items are answered with an expectation, not a
+verification.** *"The person states ParlayAPI should have real backdata… **still needs a real, direct
+test (not yet performed)**."* **ParlayAPI was never verified — it was superseded by own scrapers**
+(`NBA_SYSTEM_ARCHITECTURE.md`, ~25% of rungs recovered). **The open question was closed by
+replacement; the file still reads as closed by answer.**
+
+**FINDING 3 — the master run's trigger was specified as a computation, not a time.** *"Must be
+**computed dynamically** from… **today's earliest `game_datetime_utc` minus 2 hours** — not a
+hardcoded time-of-day like the other two runs."* §0.7 already recorded that P3 ships fixed and
+*"breaks on early-tip days"*; **what was missing is that the dynamic alternative was fully specified
+down to the table and column, and the input already exists** — `nba_calendar.games`, 2,666 games.
+⚠ **And it conflicts structurally with §1's cutoff**: the cutoff is a lower bound (Pacific clubs file
+by 1:00 PM PT), §4b's rule is an upper bound (first tip − 2h). **On a day tipping before 3:00 PM PT,
+no time satisfies both.** Flagged, not resolved.
+
+**FINDING 4 — the optional second run, and the architectural reason it exists.** *"Once, **sometimes
+twice a day**… an optional second run 'only if needed' — **a late injury designation change or
+significant line movement**… **exactly the cheap, fast re-run THE TWO-STAGE BASELINE/ENRICHMENT
+SEPARATION WAS DESIGNED TO MAKE POSSIBLE** — re-run the Scoring Engine against the already-cached
+baseline plus fresh enrichment/market data, **not recompute anything expensive**."*
+⚠ **This is the stated purpose of the two-layer split and it was nowhere in the documents.**
+`FINAL_SCORING_CALIBRATION.md` §2 records the split as a **correctness** boundary. **§4b says it was
+also an operational one from the start.** **NOT BUILT** — P3 documents one run, and neither trigger
+condition has a detector.
+
+**FINDING 5 — the ~11:00 AM delta time was derived, not chosen.** *"~2:00am ET latest-possible-game-
+end + 10–15 min data-finalization window — **confirmed via research and Gemini consultation on
+2026-09-03**."* **P2 ships at 01:00 PT = 04:00 ET, clearing the constraint by ~2 hours.** The shipped
+time is safe with a much thinner margin than specified. **Recorded because it is the floor any future
+re-timing of P2 must respect.**
+
+**FINDING 6 — "no cron" meant "no worker schedules itself."** *"These times are the real, intended
+**Claude Coworker-scheduled-task** trigger times… **not in-code scheduling logic to be built into any
+NBA worker.**"* **P1 already carries a GitHub Actions cron.** Whether a workflow cron counts as
+*"in-code scheduling logic"* is **not stated anywhere** — and it bears directly on whether P2 and P3
+may simply be given crons before **2026-10-03**. Flagged, not resolved.
+
+**Routed to**: `SYSTEM_DESIGN` §0.95 · `OPEN_ITEMS` (*FROM T1 PASS 32*) ·
+`FINAL_SCORING_CALIBRATION` §2 · `GLOSSARY` · this entry.
+**Considered, no change warranted**: `DATABASE` (`nba_calendar.games` and `game_datetime_utc` are
+already recorded; only their *use* is new) · `WORKERS` · `RECIPE` · `SYSTEM_ARCHITECTURE` ·
+`BASELINE_CALIBRATION` · `MULTIPLIERS` · `GOBLIN_DEMON`.
+
+**PASS 32 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.61 — PASS 31 (angle: **the Domain Mapping document's own section list, §1–§8**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
