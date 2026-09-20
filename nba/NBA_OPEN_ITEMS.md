@@ -205,6 +205,274 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 66 — THE TIMELINE: WHERE T1'S FIFTEEN HOURS ACTUALLY WENT *(added 2026-09-20)*
+*Angle: **the `start_timestamp` / `stop_timestamp` on all 552 timestamped blocks**, reconstructed
+into a timeline and a per-tool cost table. No prior pass had used the clock. **These are measured
+numbers and stay as full content.***
+
+### The session is 15h 07m 46s wall clock — and 85% of it is the owner being away
+**MEASURED**: T1 runs **2026-08-31 07:16:12Z → 22:23:58Z = 15h 07m 46s**.
+
+| Segment | Duration | What it is |
+|---|---|---|
+| 07:16:12 → 07:19:15 | **3m 03s** | **the ENTIRE Phase-1 recon** — bindings, workflow runs, the Postgres schema sweep, the worker registry, and the findings banner |
+| 07:19:15 → 18:59:48 | **11h 40m 22s** | owner absent |
+| 18:59:48 → 20:39:12 | 1h 39m | the build — workers, scrapers, deploy-script edits, the Cloudflare diagnosis |
+| 20:39:12 → 21:51:54 | **1h 12m 31s** | **the MCP connector reconnect that did not work** |
+| 21:51:54 → 22:23:58 | 32m | the trigger-file workaround and the first successful scrape |
+
+**Two human-absence gaps total 12h 52m 53s — 85% of the span.** **Actual session activity is
+about 2h 14m 53s.** ⚠ **Every "T1 took fifteen hours" reading of this transcript is wrong**; nothing
+in the documents said that, but nothing prevented it either.
+
+### ⚠⚠ The 1h 12m gap is the MEASURED cost of the frozen tool schema
+That gap sits exactly between the handoff message (*"compile a self-contained handoff message … the
+user can carry into a new chat"*, thinking block 42) and the return (block 45: *"the user reconnected
+as I suggested, sent my message to the new chat"*). **The reconnect did not deliver the new tool**
+(pass 65, finding 5). **So the per-conversation tool-schema freeze cost 1h 12m 31s of a 2h 15m
+working session — 54% of the active time — and produced nothing.** The trigger-file architecture is
+what was built instead, in the 32 minutes that followed.
+
+### ⚠ A CORRECTION TO A NUMBER THIS DOCUMENTATION ITSELF RECORDED
+**Pass 38 recorded "thirteen polling sleeps" in six places across four documents. The measured count
+is TWENTY-FIVE.** The earlier figure counted the **distinct sleep durations** (`30, 40, 45, 50, 55,
+60, 70, 90, 150, 240, 280, 290` — twelve values plus one) rather than the calls. **Corrected at all
+six sites 2026-09-20.**
+
+**The full measurement** — **MEASURED from `tool_use` → `tool_result` timestamps**:
+- **31 `bash_tool` calls**, not 62 *(the earlier "62" counted `tool_use` and `tool_result` blocks
+  separately — 31 pairs)*.
+- **25 of the 31 are `sleep N; echo done`**, totalling **2,416 s = 40m 16s**.
+- Total `bash_tool` wall time is **2,423 s** — so **all but ~7 seconds of the session's entire local
+  shell time was spent sleeping.**
+- The six non-sleep calls are: **`node --check` · `python3 -m py_compile` · two `cat`s · and two
+  `echo`s used as a scratchpad** (`echo checking`; `echo "need to check if there's a way to trigger
+  workflow_dispatch via the Alphadog Bridge tools"`). **The `echo`s are a shell invoked to hold a
+  thought** — recorded because it shows how narrow the local surface was.
+
+### The per-tool cost table — total tool wait 3,736 s (1h 02m), ~46% of active time
+| Tool | Calls | Total s | Mean s |
+|---|---|---|---|
+| `bash_tool` | 31 | **2,423** | 78.1 |
+| `run_sql_postgres` | 24 | 349 | 14.5 |
+| `github_patch_file` | **49** | 347 | 7.1 |
+| `run_job` | 4 | 198 | **49.5** |
+| `github_put_file` | 11 | 184 | 16.7 |
+| `create_file` | 2 | 71 | 35.6 |
+| `github_list_workflow_runs` | **31** | 54 | 1.8 |
+| `github_get_file` | 20 | 31 | 1.6 |
+| `github_grep_file` | 8 | 18 | 2.3 |
+| `github_get_workflow_run_log` | 6 | 12 | 2.0 |
+| `web_search` | 6 | 6 | 1.0 |
+| everything else | 11 | 43 | — |
+
+**Three things this table establishes:**
+1. **The polling pattern is 25 sleeps paired with 31 `github_list_workflow_runs` calls** — 56 tool
+   calls whose entire purpose was waiting. **Blueprint §4o exists to prevent exactly this**, and the
+   structural cause (no dispatch tool, so no completion signal) is at `NBA_SYSTEM_DESIGN.md` §0.8.
+2. **T1 made 60 repo writes** — 49 `github_patch_file` + 11 `github_put_file`. The pass-45 inventory
+   of artefacts is the *what*; this is the *how many*.
+3. **`run_job` is the slowest non-sleep tool at 49.5 s mean** over 4 calls — worth knowing before
+   anyone plans a loop around it. **Not a recommendation to use it; the standing instruction forbids
+   it during this documentation effort.**
+
+---
+
+## FROM T1 PASS 65 — THE 52 `thinking` BLOCKS: REASONING THE TRANSCRIPT RECORDS BUT THE SESSION NEVER SAID *(added 2026-09-20)*
+*Angle: T1's **52 `thinking` blocks (33,739 characters)**, extracted by parsing the raw export as
+JSON. **No prior pass had read them** — every previous angle read what the session said, ran, wrote
+or persisted. These are the decisions' stated reasons, recorded at the moment each was made and
+**never repeated in any visible message.** 45 of the 52 carry `summaries`; 7 are marked
+`thinking_hidden`.*
+
+### ⚠⚠ A DOCUMENTED CLAIM IS WRONG · **`nba_ref.teams.arena_id` is NULL on all 30 rows and written by no code**
+`NBA_DATABASE.md` described the column as **`arena_id | TEXT | → nba_ref.arenas`** — i.e. a working
+link. **VERIFIED live 2026-09-20: 30 of 30 rows are NULL**, and **grep of all 190 code files finds
+zero writes to it.** Corrected in place.
+
+**The relationship is real but runs the other way.** **VERIFIED**: `nba_ref.arenas` holds **30 rows,
+`team_id` populated on all 30, 30 distinct teams** — written by `alphadog-v2-nba-static-arenas.js`
+(`INSERT INTO nba_ref.arenas (arena_id, arena_name, team_id, …)`). **So no data is missing; the
+column is vestigial.** The risk is narrow and specific: **anything joining `teams.arena_id →
+arenas.arena_id` returns 30 NULLs and looks like a scrape failure.** Join on `arenas.team_id`
+instead.
+
+**And the transcript records exactly why it is empty.** Thinking block 16:
+> *"I'll **defer arena assignment to a dedicated verification pass later** and focus now on writing
+> the static teams worker … **leaving arena_id null to be filled in afterward**."*
+
+**That verification pass never ran** — and it also stopped being necessary once the arenas worker
+built the reverse link. **So this is a stale intention, not an outstanding task.** Recorded as a trap
+column, not as work to do. ⚠ **Not fixed, per the standing instruction.**
+
+### ⚠ NOT RECORDED · several Phase-1 and Phase-2 decisions were bounded by a REASONING-EFFORT BUDGET, stated only in thinking
+Five separate blocks cut work short for budget rather than evidence:
+
+| Block | Stated |
+|---|---|
+| 5 | *"**Given effort constraints, I don't want to keep fetching every live detail indefinitely** — I've gathered enough to move forward."* |
+| 10 | *"**Given the low reasoning effort, I'll keep the draft efficient rather than exhaustively detailing every taxonomy point** — that's better left to later."* |
+| 13 | *"**Given the low effort budget against this task's real scope, I need to be pragmatic**."* |
+| 16 | *"**Given the constraints, I'll defer arena assignment to a dedicated verification pass later.**"* |
+| 28 | *"**Given the effort constraints, I'll pragmatically switch strategy**: use balldontlie…"* |
+
+**Why this matters, stated at its real strength**: none of these was a wrong call, and the work that
+followed was sound. But **the documents present these outcomes as design decisions, and at least two
+of them were scope reductions with the reason recorded nowhere a reader could find it.**
+⚠ **Block 10 is the direct, documented cause of a gap found independently 33 passes later**: pass 62
+established that **the prop taxonomy went from 14 planned to 28 live with no decision recorded**.
+Block 10 is the decision — *"rather than exhaustively detailing every taxonomy point, that's better
+left to later"* — and **"later" is the undocumented doubling.** The two findings close on each other.
+
+### ⚠ NOT RECORDED · the "additive only" doctrine was a JUDGEMENT CALL made against a stated constraint, not a given
+Every document states the rule as absolute — *"No MLB edits, ever. Everything additive"*
+(`NBA_RECIPE.md` §1.2). **The transcript shows it being decided, under pressure, in thinking:**
+
+| Block | Stated |
+|---|---|
+| 17 | *"There's a real gap though: this worker file won't actually deploy … until it's added to `generate_wrangler_configs.py` … and **since I can't touch `generate_wrangler_configs.py` under the "no edits to MLB system" constraint, I need to think through how to handle that.**"* |
+| 18 | *"**Given the user's tolerance for minor changes as long as MLB isn't disrupted, I'll modify the script additively** — checking the `nba/` path and pulling NBA workers from a separate manifest file rather than mixing them into the main one."* |
+| 24 | *"I'll move forward with this **since it's an additive, infrastructure-only change that doesn't touch MLB behavior**."* |
+
+**"Additive" is the resolution of a conflict, not the starting premise**: the literal constraint was
+*no edits*, the shared deploy scripts made that impossible, and **the separate-manifest design exists
+specifically to keep the edit additive.** That is why `worker_manifest_nba.json` is a separate file
+rather than new rows in `worker_manifest.json` — a design whose *reason* was never written down.
+**Recorded as provenance. The constraint held in the end** — `config.worker_definitions` still shows
+**116 rows, 0 NBA** (`NBA_SYSTEM_ARCHITECTURE.md` §1).
+
+### ⚠ NOT RECORDED · why `nba_control` has no `job_queue`
+**VERIFIED live: `nba_control` holds exactly two tables — `job_runs` and `worker_run_log`.** The
+documents record *"NBA has no orchestrator by design"*; **they do not record the inference that
+followed from it.** Thinking block 15:
+> *"Since NBA has no orchestrator dispatching jobs, I'm reconsidering whether we even need a
+> `job_queue` table there — **the MLB version exists specifically to support orchestrator dispatch.**
+> What NBA likely needs instead is just `job_runs` or a `worker_run_log` for tracking history, since
+> jobs are triggered manually by hitting each worker's `/run` endpoint directly."*
+
+**The live schema matches that reasoning exactly.** Recorded so the absence reads as a decision
+rather than an omission.
+
+### ⚠ NOT RECORDED · the MCP tool schema is FROZEN for the life of a conversation — and a new chat did not clear it
+`NBA_MASTER_SUMMARY.md` §T1.17 records that `github_trigger_workflow` was absent. **The transcript
+records the mechanism and a failed workaround:**
+> *(block 41)* *"**my tool schema was fixed at the start of this conversation, before I added that new
+> tool to the MCP server code.** This means I can extend the server, but **I can't actually invoke the
+> newly added tool within this same session until the connection refreshes.**"*
+> *(block 43)* *"It's strange that **the tool isn't showing up even in a new chat session** … maybe the
+> Durable Object instance didn't restart, or **there's some session caching issue** … it's possible
+> **the connector itself caches tool schemas per-user and doesn't refresh instantly across new
+> conversations**."*
+> *(block 46)* *"since function calling requires an exact schema definition, and `github_trigger_workflow`
+> isn't in my available tools list, **I literally [cannot]**…"*
+
+**This is the full causal chain behind the trigger-file architecture**: schema frozen per
+conversation → a new chat did not pick it up either (cause **NOT RECORDED**, two hypotheses offered
+and neither confirmed) → repository_dispatch needs an API call with no tool → **push is the only
+event the assistant can raise**, so a dedicated marker file becomes the trigger button (block 47).
+**The `nba/TRIGGER_NBA_*.txt` files are the last step of that chain**, and the documents record the
+step without the chain.
+
+### ⚠ A SUPERSEDED HYPOTHESIS, worth keeping because it shows the diagnostic ladder
+Block 50, after the GitHub Actions runs also hung:
+> *"stats.nba.com hangs regardless of origin — Cloudflare Worker got instant rejection, GitHub Actions
+> direct timed out, and GitHub Actions via proxy also timed out — **suggesting this isn't a
+> network/IP block but something wrong with the request itself**."*
+
+**That hypothesis was wrong and was corrected within two blocks** — block 49 had already named the
+real pattern (*"deliberate tarpitting … letting connections dangle indefinitely instead of returning
+a 403"*) and `curl_cffi` TLS impersonation resolved it. **Recorded because the documents keep only the
+answer**, and the ladder — *instant 403/520 from Cloudflare* vs *60-second hang from a clean origin* —
+**is the diagnostic that distinguishes an IP block from a TLS-fingerprint tarpit**, which is reusable.
+
+### Already recorded, confirmed not new *(checked, no change)*
+- **`abbreviation` came back empty from `leaguestandingsv3`** and is derived from a hardcoded
+  `TEAM_ID_TO_ABBREVIATION` map — **already at `NBA_DATABASE.md` line 129**, and the map carries its
+  own justification in `scrape_nba_stats_teams.py` lines 51–55.
+- **The whole nba.com family blocks Workers** — `NBA_RECIPE.md` STEP 3.6.
+- **Officials must be mined cumulatively from box scores, not a roster endpoint** (block 13) —
+  already in `NBA_DATABASE.md`.
+
+---
+
+## FROM T1 PASS 64 — THE TRANSCRIPT CORPUS IS NOT COMPLETE, AND THE GAP IS MEASURED *(added 2026-09-20)*
+*Angle: **the transcripts as an artefact rather than as a text** — every export parsed as JSON and
+audited for truncation. **VERIFIED** by parsing all 20 raw exports and by checking the affected paths
+against the live clone and its `git log`. **This is full content, not a pointer: it is a measured
+number and it changes how the remaining sweeps must be read.***
+
+### ⚠⚠ FOURTEEN TRUNCATION MARKERS EXIST IN THE EXPORTS — all in **T1–T6**, none in T7–T20
+**VERIFIED.** Every marker has the identical form `…[truncated — N chars total]` and every one cuts at
+**exactly 65,503–65,504 characters** — a uniform **64 KiB (65,536) display cap**, not a variable one.
+**All 14 sit in a `display_content.json_block` field**, i.e. the *display* copy of a tool result.
+
+| Transcript | Markers |
+|---|---|
+| **T1** `…phase1-static` | 1 |
+| **T2** `…phase3a-enrichment-complete` | 1 |
+| **T3** `…phase3a-final-complete` | **4** |
+| **T4** `…phase3b-backfill-complete` | 2 |
+| **T5** `…phase3c-starter-status-complete` | 3 |
+| **T6** `…phase3d-delta-complete` | 3 |
+| **T7–T20** | **0** |
+
+### ✅ **8 of the 14 lose nothing** — the full text survives in the sibling `content` field
+**VERIFIED**: in eight cases `len(content)` equals the stated total exactly (96,015 · 106,826 ·
+136,306 · 177,815 ×3 · 178,281 ×2). **Only the display copy was cut; the machine-readable copy is
+whole.** **T1's single marker is one of these** — `github_get_file` on a 96,015-char result, present
+in full. **T1's sweep is therefore NOT compromised by truncation**, and no prior T1 pass needs
+revisiting on this account.
+
+### ⚠⚠ **6 of the 14 are genuine losses** — `content` is a 212-character stub
+In six cases `content` holds only:
+> *"Tool result too large for context, stored at
+> `/mnt/user-data/tool_results/Alphadog_Bridge_github_get_file_<tool_use_id>.json`. Use grep to search
+> for specific content or head/tail to read portions."*
+
+**That spill path does not exist today** (VERIFIED — `/mnt/user-data/tool_results` is absent in this
+session). **5,564,467 characters are absent from the exports**, distributed as:
+
+| Transcript | Fetched path | Stated size | Present |
+|---|---|---|---|
+| **T2** | `nba/data/nba_onoff_current.json` | 208,560 | 65,503 |
+| **T3** | `nba/data/nba_darko_debug_html_snippet.txt` | 441,774 | 65,503 |
+| **T3** | `nba/data/nba_schedule_current.json` | 726,393 | 65,503 |
+| **T3** | `nba/data/nba_schedule_current.json` *(second fetch)* | 1,387,886 | 65,503 |
+| **T3** | `nba/data/nba_playtypes_player_current.json` | 1,059,358 | 65,503 |
+| **T4** | `nba/data/nba_player_career_totals.json` | 2,133,514 | 65,503 |
+
+### ✅ **AND ALL SIX ARE RECOVERABLE** — state this at the right strength
+**Every one of the six is a `github_get_file` call on a committed repo path, and all five distinct
+paths exist in the live clone today** (VERIFIED: 189,215 · 432,513 · 1,225,505 · 927,975 · 1,611,511
+bytes). **Every one also has `git` history spanning the transcript dates** (VERIFIED: first commits
+2026-09-01 … 2026-09-03, later commits through 2026-09-14), so **the version the session actually saw
+is retrievable with `git show <commit>:<path>`** rather than from the transcript.
+
+**So the correct statement is: nothing unique was lost.** What the exports lost was a *copy* of files
+the repository still holds. **No transcript content — no owner instruction, no assistant reasoning, no
+SQL, no decision — falls inside any of the 14 markers.** Every marker is a data-file body.
+
+### The standing rule this creates for T2–T6
+**When a T2–T6 pass reaches a truncated block, do not record the gap as unknowable.** The procedure is:
+1. read the `tool_use` block that precedes it to get the fetched `path`;
+2. `git log --follow -- <path>` to find the commit nearest the transcript's date;
+3. `git show <commit>:<path>` for the text the session saw.
+
+**Recorded as a method rule, not an action item.** ⚠ **It does mean a T2–T6 sweep that reads only the
+plaintext rendering will silently skip up to 2.1 MB in a single block** — which is exactly the kind of
+false-negative the pass-53 method rule warns about.
+
+### ⚠ A collateral method failure, recorded against myself
+The first grep for these markers used a literal em-dash and returned **zero matches in every raw
+file** — the exports store it escaped as `—`. **I briefly held a confident negative that the raw
+transcripts were clean and the markers were an artefact of my own conversion.** They are not.
+**This is the third instance of the pass-53 rule** (*never establish a negative from a
+formatted-string grep*) **and the first where the formatting difference was an escape sequence rather
+than a character variant.** The rule is extended accordingly: **grep the raw export for the escaped
+form as well as the rendered form, or parse it as JSON.**
+
+---
+
 ## FROM T1 PASS 63 — BLUEPRINT §5–§7e BY CONCEPT — **one clause** *(added 2026-09-20)*
 *Angle: the last unswept clause-level region of the blueprint — §5, §5a, §5b, §6, §6a, §6b, §7,
 §7a–§7e. **Near-clean: one clause of ten checked is undocumented.***
