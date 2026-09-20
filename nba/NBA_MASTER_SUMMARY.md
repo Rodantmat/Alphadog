@@ -1456,6 +1456,28 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.71 — PASS 41 (angle: **re-run T1's Phase-1 recon against the live database**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 41. Recon SQL: T1 lines
+1906–3424.*
+
+- **✅ VERIFIED — the MLB schema count is unchanged: 18**, exactly what T1's recon returned on
+  **2026-08-31**. Live today: **18 non-NBA + 14 NBA = 32**. **Third independent confirmation that
+  *"additive only, no MLB-system side effects"* held**, after the 116-row registry with 0 NBA rows.
+- **✅ VERIFIED — the shared MLB board tables hold ZERO NBA rows**: `prizepicks_board_current`
+  **8,720** (`league='mlb'`), `sleeper_board_current` **811**, `underdog_board_current` **2,449**
+  (both `baseball_mlb`/`MLB`). **One distinct value per table.**
+- **This closes System Draft §5 open question 2** — reuse the shared board tables filtered by sport,
+  or build `nba_market` ones — **by observation, not by decision record.** It was never formally
+  closed; the section it lived in is itself broken (§T1.62).
+- **The `sport`/`league` columns remain unused as discriminators**, exactly as T1 predicted: *"the
+  column existing doesn't mean the pipeline is sport-generic."*
+- **The 11-query recon is a reusable procedure**: look for the thing → anything named like it → the
+  mechanism that would make sharing possible → whether that mechanism is actually used. ⚠ It also
+  contains its own worked example of verifying a schema before trusting a query (the `active` vs
+  `enabled` correction loop).
+
+---
+
 ### T1.70 — PASS 40 (angle: **deploy/dispatch tool RESULTS, checked against a live clone**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 40.*
 
