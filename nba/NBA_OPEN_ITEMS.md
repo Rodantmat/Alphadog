@@ -271,6 +271,86 @@ is that data come from nba.com itself, as MLB's does. Treat balldontlie as conti
 
 ---
 
+## FROM T1 PASS 32 — THE LOCKED CADENCE, AND A BROKEN SECTION IN A LIVE REPO FILE *(added 2026-09-20)*
+*Source: T1, `NBA_SYSTEM_DRAFT.md` §4b and §5. Full text at `NBA_SYSTEM_DESIGN.md` §0.95 and
+`NBA_MASTER_SUMMARY.md` §T1.62.*
+
+### ⚠⚠ DOCUMENT DEFECT · **`nba/NBA_SYSTEM_DRAFT.md` has a broken, duplicated Section 5**
+**VERIFIED by direct comparison of the repo file against T1's pasted copy, 2026-09-20.**
+
+**In T1** the document runs `§1 · §2 · §3 · §4 · §5 Open questions — explicit, not silently decided ·
+§6 Immediate next step`, with **six numbered open questions** under §5.
+
+**In the repo file today** it runs `§1 · §2 · §3 · §4 · §4b · §6`. **There is no `## 5.` heading at
+all** — and yet **the list is still there**, dangling under §4b, in this state:
+- items **1, 2, 3, 4** rewritten as **`ANSWERED (2026-08-31)`**, then
+- items **3, 4, 5, 6** — **the ORIGINAL, un-answered text of the same list, still present, still
+  numbered 3–6.**
+
+**So items 3 and 4 appear twice, in two different states, under no heading.** A reader arriving at
+`NBA_SYSTEM_DRAFT.md` today sees a numbered list that runs **1, 2, 3, 4, 3, 4, 5, 6** with no
+section title.
+
+**What appears to have happened** — *stated as inference, flagged not resolved*: §4b was inserted
+2026-09-03, four of the six open questions were answered in place on 2026-08-31, and **the `## 5.`
+heading was lost in one of those edits while the original items 3–6 were never removed.**
+**NOT FIXED, per the standing instruction.** **This is blueprint §9 failure mode #3 in documentation
+form** — stale evidence from an earlier state surviving alongside the new state, with nothing
+erroring.
+
+**⚠ And two of the four ANSWERED items are answered with expectations, not verifications** —
+*"the person states ParlayAPI should have real backdata… **still needs a real, direct test (not yet
+performed)** before being trusted as more than a stated expectation."* **ParlayAPI was never verified;
+it was superseded** (`NBA_SYSTEM_ARCHITECTURE.md`). **The open question was closed by replacement, and
+the file still reads as though it were closed by answer.**
+
+### ⚠ NOT BUILT · **the optional second master run**
+§4b specifies the master run as *"once, **sometimes twice a day**… an **optional second run later
+'only if needed'** — e.g. **a late injury designation change or significant line movement after the
+first run**."*
+
+**P3 (`NBA_SYSTEM_DESIGN.md` §4) documents one run, with a cutoff, and no second-run path.**
+**Neither trigger condition has a detector**: nothing watches for a designation change after 1:15 PM
+PT, and nothing watches for line movement.
+**The cost objection does not apply.** §4's own reasoning — *"the refit uses only games strictly
+before today, so **it is identical at 1 AM and 1:15 PM**"* — means **a second run costs the board
+scrape, the availability delta and the scoring, not the refit.** And §4b states this is precisely what
+the two-stage baseline/enrichment separation was designed to make possible.
+**SEASON-START RELEVANT** — a star ruled out at 5 PM on a 7 PM tip is the exact case, and the system
+would carry a 1:15 PM view of him into the night.
+
+### ⚠ NOT BUILT · **the dynamic master-run trigger**, and a structural conflict with the cutoff
+§4b: *"this trigger time **must be computed dynamically** from **today's earliest `game_datetime_utc`
+minus 2 hours** — **not a hardcoded time-of-day.**"* **P3 ships a fixed `15 21 * * *`.**
+`NBA_SYSTEM_DESIGN.md` §0.7 already flags this as *"breaks on early-tip days."*
+
+**What this pass adds**: **the input exists.** `nba_calendar.games` holds **2,666 games** and carries
+`game_datetime_utc`. **Nothing was missing but the implementation.**
+⚠ **And the two rules genuinely conflict on early-tip days** — this is not a defect in either:
+- **§1's cutoff** is a LOWER bound: *Pacific clubs file their injury report last, by 1:00 PM PT*, so
+  **P3 refuses to run for today before 13:00 PT.**
+- **§4b's rule** is an UPPER bound: **first tip minus 2 hours.**
+- On a day whose earliest tip is **before 3:00 PM PT**, the upper bound falls below the lower bound
+  and **no time satisfies both.** **Flagged, not resolved** — the resolution is a product decision
+  (run late and incomplete, or run early and miss Pacific filings).
+
+### ⚠ CONSTRAINT RECORDED · the physical floor under the overnight run
+§4b derives ~11:00 AM from *"**~2:00am ET latest-possible-game-end + 10–15 min data-finalization
+window** — confirmed via **research and Gemini consultation on 2026-09-03**."*
+**P2 ships at 01:00 PT = 04:00 ET**, clearing it by ~2 hours. **The shipped time is safe; the margin
+is much thinner than the specified one.** Recorded because **this is the number any future re-timing
+of P2 must respect**, and it was previously only implicit.
+
+### ⚠ AMBIGUITY · what "no cron/orchestrator automation" actually forbids
+§4b: *"these times are the real, intended **Claude Coworker-scheduled-task** trigger times… **not
+in-code scheduling logic to be built into any NBA worker.**"*
+**The rule is "no worker schedules itself," not "nothing is scheduled."** **P1 already carries a
+GitHub Actions cron** (`0 19 * * 1`). **Whether a workflow cron counts as "in-code scheduling logic"
+is not stated anywhere.** **Flagged, not resolved** — it bears directly on whether P2 and P3 may
+simply be given crons before **2026-10-03**.
+
+---
+
 ## FROM T1 PASS 31 — THE OPERATING MODEL AND THE NON-GOALS *(added 2026-09-20)*
 *`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§7 was entirely undocumented** across all twelve
 documents; **§6** existed only as scattered facts, never as the instruction list it is. Full text at
