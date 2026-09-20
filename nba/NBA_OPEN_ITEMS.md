@@ -1288,6 +1288,8 @@ one** — and guessing would silently create a certification claim.
 **The `enabled=1` MLB registry rows are a second instance**: **~19 of 116 are dead stubs at ~5.3 KB,
 still flagged enabled.** **The flag and the reality contradict**, and it is recorded rather than
 "corrected."
+
+### ⚠ "NO GAMES SCHEDULED" IS NOT A FIRST-CLASS STATE — and Oct 1–2 are zero-game days
 T1's blueprint §5, listed as *"a real, confirmed architecture gap in MLB, **worth designing around
 from the start for NBA**"*:
 > *"**The system COULD NOT ORIGINALLY DISTINGUISH 'GENUINELY ZERO GAMES TODAY' (e.g. ALL-STAR BREAK)
