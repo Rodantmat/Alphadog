@@ -614,6 +614,41 @@ one or two outlier days**; always break down by day and check the sign holds bro
 **Check (a) is the guard against #15.** Check (c) is the same instinct as the bootstrap's third
 condition, applied to every number rather than only to strategies.
 
+#### #10 — enumerate every data source before declaring something untestable
+*Stated in the source as **"the second-highest-value lesson from the whole program."***
+> *"MLB repeatedly **assumed a question was unanswerable from real data, then later discovered
+> HUNDREDS TO TENS OF THOUSANDS of relevant real rows sitting in a table nobody had checked**, because
+> **the search stopped at the first or most obvious table**. Before concluding 'untestable',
+> **systematically list every schema/table that could plausibly hold the answer** — **check what code
+> actually WRITES where, INCLUDING TABLES THAT A GIVEN PIPELINE STAGE EXPLICITLY SKIPS — that's often
+> exactly where undiscovered real data hides** — **don't stop at the first negative result.**"*
+
+**NBA instances of the pattern:**
+- `player_game_starter_status.comment` held **5,500+ labelled absence reasons** (4,319 coach's
+  decisions, 975 DND-Injury) as a byproduct of the starter backfill — found only by inspecting the
+  column.
+- `nba_ref.arenas.altitude_ft` and `.timezone` are the inverse case: **columns that exist and are
+  empty**, which a source enumeration would also surface.
+- The T7 audit method — *"checking actual row counts across every table in every NBA schema, to catch
+  anything that **exists structurally but is empty or stale**"* — is this lesson as a procedure.
+
+#### #17 — report the range, not the best number found while searching
+> *"Sweeping many cells, thresholds, or windows and **reporting only the maximum found is itself a
+> form of selection bias**, distinct from but related to the multiple-comparisons correction in #7 —
+> a real, concrete case of **a headline result (+106% over a 15-day window) shrinking to +52% once the
+> window was honestly extended to 24 days**, **purely because the original number had been THE PEAK OF
+> A SEARCH, not a stable estimate**. **Report the full range or the honest current estimate across all
+> data available.**"*
+
+**Figures as stated:** +106% over 15 days → **+52%** over 24 days.
+**Related**: Rule B0c requires the same output for tie-break order — *"and the range reported."*
+
+#### #1 — the fair-odds gate, applied FIRST
+> *"Before trusting any high hit-rate finding, compute the implied house edge: **`p × m`**… If this
+> implies the platform is handing out a large, systematic edge on a repeatable, high-volume line,
+> **the multiplier attribution is wrong, not the market.**"*
+Recorded in full at `NBA_MULTIPLIERS.md` §0.3.
+
 #### #9 — **MOVING THE GOALPOSTS ONLY WHEN SOMETHING LOOKS PROMISING IS ALSO BIAS**
 > *"MLB found and named a specific, subtle failure mode: **introducing a stricter statistical test
 > SPECIFICALLY BECAUSE a result survived further than expected** (**moving the goalposts only when
