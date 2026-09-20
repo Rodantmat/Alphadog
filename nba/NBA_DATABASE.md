@@ -338,6 +338,37 @@ De-vigged book probability **at the DFS rungs only**, built in monthly blocks.
 `nba_stats.player_game_log` (41 MB) and the season/quarter files. Most bulk historical data lives as
 committed JSON in `nba/data/`, not in Postgres — see the ARCHITECTURE document.
 
+### `nba_stats.player_game_log` — the game-log spine *(T4)*
+`player_id`, `nba_player_id`, `game_id`, `season`, `team_id`, `game_date`, `matchup`, `wl`, `min`,
+`fgm/fga/fg_pct`, `fg3m/fg3a/fg3_pct`, `ftm/fta/ft_pct`, `oreb/dreb/reb`, `ast`, `tov`, `stl`, `blk`,
+**`blka`** (blocked attempts), `pf`, **`pfd`** (fouls drawn), `pts`, `plus_minus`,
+**`nba_fantasy_pts`**, **`dd2`**, **`td3`**, + `source_key` / `data_quality` / `updated_at`.
+
+**26,651 rows for 2025-26.** Three columns here become props directly: `nba_fantasy_pts` →
+`fantasy_score`, `dd2` → `double_double`, and `blka`/`pfd` support the rare props.
+**The prop menu was already supported by this schema before the prop layer existed.**
+
+### `nba_team.team_game_log` *(T4)*
+Same shape minus the player-only fields. **2,460 rows for 2025-26 — exactly 30 teams × 82 games**,
+which is a complete-season assertion, not just a count.
+
+### Career totals *(T4)*
+**3,644 season rows across 582 players.**
+**⚠ TRADED PLAYERS**: they get **separate per-team rows PLUS a combined total row at `TEAM_ID = 0`**,
+and the two sum correctly. **A naive `SUM()` double-counts them.** Verified empirically after search
+could not settle it.
+
+### Shot-quality trio *(T3 design, T4 build)*
+| Table | PK | Notes |
+|---|---|---|
+| `nba_stats.player_shot_quality` | **(`player_id`, `close_def_dist_range`)** | `fga_frequency` ← **the shot-diet weight the delta formula needs**, `fgm`, `fga`, `fg_pct`, `efg_pct`, `fg3a_frequency`, `fg3_pct`. `data_quality` **`'real'`** |
+| `nba_stats.player_shot_quality_delta` | `player_id` | `actual_efg_pct`, `expected_efg_pct`, `shot_quality_delta`, `total_fga`. `data_quality` **`'derived'`** — it is computed |
+| `nba_stats.player_shot_zone_profile` | **(`player_id`, `zone`)** | `fgm`, `fga`, `fg_pct`. `data_quality` **`'real'`** |
+
+**582/582 deltas computed.** Verified: **Jokić 61.9% actual eFG vs 53.8% expected = +8.06%.**
+**⚠ `leaguedashplayershotlocations` returns `resultSets` as a DICT, not a list** — unlike every other
+stats.nba.com endpoint.
+
 ---
 
 ## 7. MLB tables referenced as models (never written by NBA)
