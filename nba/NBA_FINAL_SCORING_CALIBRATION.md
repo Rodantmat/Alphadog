@@ -328,6 +328,47 @@ cells — which is why P2 step 3 (grade) precedes step 14 (refit).
 
 ---
 
+## 4b. TRI-STATE DATA-QUALITY TAGGING — a required companion design
+*Source: T1, blueprint §4g. Recorded 2026-09-20.*
+
+> *"**EVERY enrichment factor's real influence should be WEIGHTED BY THE RELIABILITY OF ITS OWN
+> UNDERLYING DATA** — **how much data actually exists for that factor ON THAT SPECIFIC LEG, HOW FRESH
+> IT IS, and WHETHER IT'S A REAL, DIRECTLY-OBSERVED VALUE OR A DERIVED/ESTIMATED FALLBACK.**
+> MLB implements this as **an EXPLICIT TRI-STATE TAG — REAL / DERIVED / TEMPORARY — NOT a binary
+> present-or-absent flag** — **letting downstream consumers WEIGHT A VALUE'S REAL TRUSTWORTHINESS
+> rather than treating EVERY POPULATED FIELD AS EQUALLY RELIABLE.**
+> **Build this into NBA's own data model FROM THE START**, and **decide EXPLICITLY, UPFRONT, whether
+> the reliability weighting applies INSIDE the enrichment factor itself or downstream.**"*
+
+**A populated field is not automatically a trustworthy one** — a binary flag cannot express that a
+value is present *because something substituted for it*.
+
+### ⚠ NBA expresses this through CONFIDENCE, not through a tag on the value
+| Mechanism | Expresses | Form |
+|---|---|---|
+| `used_emp` (`baseline_ladder`) | empirical table vs parametric fallback | binary |
+| `interpolated` (`board_scored`), −4 confidence | off-ladder rung interpolated | binary |
+| `source` (`ladder_calibration_asof`) — `own` / `prior_season` | own vs inherited evidence | binary |
+| **`anchor_type` (`board_tiers`) — `explicit` / `switch_point`** | **observed vs DERIVED anchor** | binary, closest in spirit |
+| `c_exist` / `c_quality` / `f_prov` | provenance and data quality | **continuous deductions** |
+
+**Routing reliability through the measured confidence model rather than a label is defensible and
+arguably stronger** — `f_prov` is a measured deduction, not an assertion.
+
+**⚠ The undecided half is the second clause**: *"decide explicitly, upfront, whether the weighting
+applies **inside the enrichment factor itself** or **downstream**."* **NBA applies it downstream.**
+The enrichment record has a separate `confidence_adjustment` field, so a factor *can* move confidence
+— **but no factor is recorded as weighting its own contribution by its data's reliability.**
+
+**Two live cases where a "derived" or "temporary" tag would have been load-bearing:**
+- **The derived-spread proxy (r=0.46)** stood in for the market spread until T16 replaced it.
+  **Nothing in the data model marked its outputs as resting on a proxy.**
+- **The availability delta's `0.15 per tier` sensitivity is ESTIMATED, not measured** — "temporary" in
+  this taxonomy — **yet its overrides look identical to measured ones**, and they are the largest
+  displacements the system produces (`now_out` avg 0.2640, max 0.9924).
+
+---
+
 ## 5. CONFIDENCE — a data thermometer, not a probability
 
 ### 5.1 The principle
