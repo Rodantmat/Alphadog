@@ -249,6 +249,13 @@ Hit 32.9/21.3/14.8% at T+1/+2/+3, needing 1.48/2.30/3.31× against a ~1.75–1.9
 
 ## E–F
 
+**`FE_DATE`** · `nba/build_final_hp.py` · ⚠⚠ **A READ FILTER, NOT A WRITE SCOPE.** It scopes the
+`SELECT` from `baseline_history` to one slate; the `DELETE FROM nba_score.final_hp WHERE season AND
+prop` carries **no date predicate**, so a scoped write **replaces the whole season × prop partition
+with one slate**. **CONFIRMED FIRED**: the 2025-26 partition holds **one date and 140,130 rows**
+against a documented 38.7M-row table — **~19.5M rows**, recoverable from `baseline_history`.
+**Blueprint §7g bug class 1.** → `NBA_OPEN_ITEMS.md` (top) · `NBA_DATABASE.md` · `NBA_WORKERS.md` §5.
+
 **flat vs proportional partial credit** · T1, **lesson #27** · The structural difference between DFS
 platforms' Flex partial-hit payouts: **flat fixed values independent of the full-hit multiplier** on
 one platform, **scaling proportionally with it** on another. *"The two structures produce meaningfully
