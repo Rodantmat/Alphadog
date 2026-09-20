@@ -842,15 +842,33 @@ without embarrassment — *"the certified anchor wins every slice"* **is the cor
 the right question.**
 
 #### #21 — **THE STRUCTURED ORDER FOR AN ADVERSARIAL CONSULTATION**
-> *"A specific, structured order… worked well throughout MLB's own history: **present the mechanics
-> you've derived (INCLUDING ANY VERIFICATION ERRORS ALREADY FOUND), the signal itself and why it's
-> believed clean, the full results INCLUDING EVERY CONTROL TESTED (not just the favourable ones), the
-> specific te[st]**…"*
-> *"…**use it to check your METHOD, then RE-DERIVE THE CONCLUSION YOURSELF.**"*
+> *"A specific, structured order… worked well throughout: **present the mechanics you've derived
+> (INCLUDING ANY VERIFICATION ERRORS ALREADY FOUND), the signal itself and why it's believed clean,
+> the full results INCLUDING EVERY CONTROL TESTED (not just the favourable ones), the specific test
+> that's currently failing or in question, and END WITH DIRECT, NUMBERED QUESTIONS — explicitly
+> including a version of 'AM I BEING TOO HARSH, OR TOO LENIENT?'**"*
 
-**Four elements, and the two in caps are the ones usually omitted**: your own known errors, and the
-unfavourable controls. **Withholding either turns an adversarial review into a rubber stamp** —
-which #4 names as the failure mode.
+**Five elements, in order:**
+1. the mechanics derived — **including your own verification errors already found**
+2. the signal, and why it is believed clean
+3. the full results — **including every control tested, not just the favourable ones**
+4. the specific test currently failing or in question
+5. **direct, numbered questions — one of them asking "am I being too harsh, or too lenient?"**
+
+**Element 5 is the guard against #9 and #6's over-strictness errors** — it asks the reviewer to check
+the bar in *both* directions, not only for leniency.
+
+#### ⚠ #21's nuance — a correct critique can carry an incorrect verdict
+> *"**An adversarial reviewer can CORRECTLY DIAGNOSE A FLAW in your statistical method WHILE ITS OWN
+> STATED FINAL VERDICT IS STILL COMPUTED USING THAT SAME FLAWED METHOD**, producing **a conclusion
+> that doesn't actually follow from its own correct critique.**
+> **Take a reviewer's methodological correction seriously, but ALWAYS RE-DERIVE THE ACTUAL NUMERIC
+> CONCLUSION YOURSELF using the corrected method** — **don't accept a final verdict at face value just
+> because the reasoning that led to it sounded right.**"*
+
+**The failure mode is specific: the critique and the verdict come apart.** Sound reasoning followed by
+a number computed the old way. **Separating "was the method criticism right?" from "is the stated
+conclusion right?" is the whole discipline** — and the second must be recomputed, not accepted.
 
 #### #22 — **A CONTROL CASE WITH A KNOWN ANSWER, as a required sanity check**
 > *"MLB's original multiplier-observation study **deliberately included a real slip built ENTIRELY
