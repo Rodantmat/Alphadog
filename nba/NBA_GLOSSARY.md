@@ -473,6 +473,25 @@ stats disagreeing, 3 on the decay rate itself**. **Editing these tables by SQL c
 → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 36* · `NBA_DATABASE.md` §2 banner ·
 `NBA_BASELINE_CALIBRATION.md` §0y.
 
+**the case collision** · LIVE · **`BACKUPS/` and `backups/` both exist at the repo root** — VERIFIED
+on a live clone 2026-09-20. **Any macOS or Windows clone collapses them.** →
+`NBA_SYSTEM_ARCHITECTURE.md` §8.
+
+**the fourth store** · T1, LIVE · The assistant memory files `/areas/alphadog.md` (MLB, 6,140 B) and
+`/areas/alphadog-nba.md` (NBA, 4,471 B) — durable state **outside GitHub, Postgres and version
+control**, **capped at 49,152 B per file**. → `NBA_SYSTEM_ARCHITECTURE.md` §8d.
+
+**the MLB source library** · T1 · The **23 MLB-side `.md` documents** the transfer package was
+distilled from — **eleven read in full**, two in part (**~40% of `ALPHADOG_DOS_AND_DONTS.md` and
+`ALPHADOG_SYSTEM_MAP.md` still unread: PARTS 3-5, Sections 3-9**), the rest never read. **17 of 23
+were catalogued nowhere until 2026-09-20.** → `NBA_SYSTEM_ARCHITECTURE.md` §8c.
+
+**polling sleeps, the thirteen** · T1 · The session's entire local execution beyond two syntax
+checks: `sleep 30/40/45/50/55/60/70/90/150/240/280/290; echo done`. **The behaviour blueprint §4o
+forbids**; the owner interrupted it — *"what is going on? what are these waits for?"* **Cause was
+structural**: no `github_trigger_workflow`, so no completion signal existed to await. →
+`NBA_SYSTEM_DESIGN.md` §0.8.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
