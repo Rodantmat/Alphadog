@@ -266,6 +266,170 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 87 — THE 18 MLB PATCHES, READ AS DIFFS *(added 2026-09-20)*
+*Angle: pass 73 counted T1's writes by path. **This reads the `old_str`/`new_str` of every patch that
+touched an MLB file** — 18 calls across `generate_wrangler_configs.py`,
+`github_mobile_deploy_workers.py` and `alphadog-v2-admin-sql.js` — and checks each against the live
+file. **VERIFIED by `github_grep_file` on the deployed bridge, 2026-09-20.***
+
+### ⚠⚠ ONE NBA CHANGE EDITED THE **SHARED DISPATCH PATH**, AND ITS SAFETY RESTS ON AN UNSTATED INVARIANT
+**Sixteen of the eighteen patches are guarded branches or appends** —
+`if worker_name.startswith("alphadog-v2-nba-")`, `if worker in NBA_WORKER_SET`,
+`else if (bindingName === "NBA_STATIC_TEAMS_WORKER")`. **MLB's existing behaviour is reached by the
+same code it always was.**
+
+**Two patches changed code every target runs through.** The significant one is in the bridge's
+dispatch:
+```js
+// before (T1's old_str)                    // after (T1's new_str)
+const resp = await binding.fetch(path, {    const method = body === null ? "GET" : "POST";
+  method: "POST",                           const fetchOpts = method === "GET"
+  headers: {...},                             ? { method: "GET" }
+  body: JSON.stringify(body)                  : { method: "POST", headers: {...}, body: JSON.stringify(body) };
+});                                         const resp = await binding.fetch(path, fetchOpts);
+```
+**This line runs for every `run_job` target, MLB included.** It exists for **one NBA job mode** —
+`probe-sources`, the read-only GET diagnostic that produced the 403/520/526 evidence (pass 80).
+
+**✅ The isolation holds, and it is VERIFIED rather than assumed.** **Live grep of the deployed
+`alphadog-v2-admin-sql.js`, 2026-09-20**: **`body = null` appears exactly once, at line 683**, inside
+the NBA branch, gated on `job === "probe-sources"`. **All eleven MLB branches assign an object**
+(`body = { ... }`), so **no MLB target can reach the GET path.**
+
+**⚠ But the guarantee is an invariant nobody wrote down**: *no MLB branch may ever set
+`body = null`.* **The day one does — for any reason — that target silently becomes a GET with no
+body.** **The isolation claim *"provably zero-impact on MLB"* is true of the other sixteen patches by
+construction; for this one it is true by a property of the surrounding code that is not asserted
+anywhere.** **Recorded as a maintenance constraint on an MLB file, which is exactly the kind of
+inheritance the additive rule was meant to avoid.**
+
+**The second shared-path change is benign and worth naming for completeness**: in
+`github_mobile_deploy_workers.py`, `Path(f"{worker}.js")` became `Path(js_path)` where
+`js_path = worker_js_path(worker)`. **That helper returns the original path for every non-NBA
+worker**, so MLB resolution is unchanged — **but again the safety lives in the helper, not in the
+call site.**
+
+### ✅ THE BRANCH GREW FROM ONE BINDING TO TWENTY-ONE, EXACTLY AS T1 PREDICTED
+T1's comment on the branch it created:
+> *"**each NBA worker added here needs its own binding + branch, same as this one.**"*
+
+**VERIFIED live**: line 679 is now a single `else if` testing **twenty-one binding names** in one
+`||` chain — `NBA_STATIC_TEAMS_WORKER` through `NBA_BASELINE_LADDER_WORKER`.
+**The prediction was right and the shape it produced is a 21-term boolean on one line.**
+**This is the mechanism behind pass 46's count of 21 NBA dispatch bindings and pass 69's 21/21/21**,
+and **it is the cost of the direct-call design**: no registry lookup, so every worker is a literal.
+
+### The `main_file` bug, introduced and fixed four patches apart — the exact diff
+**Patch 2** wrote:
+```python
+if worker_name.startswith("alphadog-v2-nba-"):
+    return f"./nba/{worker_name}.js" if Path(f"nba/{worker_name}.js").exists() else "./worker.js"
+```
+**Patch 8 replaced it** with the version that returns `./{worker_name}.js` and carries the
+explanation now in the live file (*"wrangler resolves `main` relative to the config file's own
+directory … it must NOT be re-prefixed with `nba/` here"*).
+**Between those two patches sits deploy run 33429867514 and its one error line** —
+*"The entry-point file at `nba/alphadog-v2-nba-static-teams.js` was not found"* (pass 79).
+**The documents record the bug and the fix; the introducing diff was never shown.** **Recorded
+because the wrong version looks correct in isolation** — it is the *config's own location* that makes
+it wrong, and that is not visible from the function.
+
+### What the eighteen patches actually did, grouped
+| File | Patches | What they add |
+|---|---|---|
+| `generate_wrangler_configs.py` | **7** | the NBA manifest merge · `main_file` NBA branch (×2, the second correcting the first) · the NBA `cfg` block (Hyperdrive, `nodejs_compat`, six vars) · the `nba/wrangler.*.jsonc` write loop · two service-binding list additions |
+| `alphadog-v2-admin-sql.js` | **8** | the `NBA_STATIC_TEAMS_WORKER` binding in `bindingMap` · the dispatch branch · `probe-sources` GET handling · the shared GET/POST change · the `target` enum entry · the tool description · **the whole `github_trigger_workflow` tool registration and handler** |
+| `github_mobile_deploy_workers.py` | **3** | the NBA manifest merge · `config_for_worker` NBA branch · the `worker_js_path` call-site change |
+
+⚠ **The `github_trigger_workflow` registration is the largest single MLB-file addition in T1** — a
+complete new MCP tool, description and handler, added to the bridge. **It is the capability pass 65
+traced: built in-session, uncallable in-session, available from the next one.**
+
+---
+
+## FROM T1 PASS 86 — THE SCRAPER T1 WROTE, AND A CORRECTION TO PASS 79 *(added 2026-09-20)*
+*Angle: the last unread `put_file` body — **`nba/scrape_nba_stats_teams.py`, 3,953 bytes as written**
+— read as source, with its failure path traced through the real CI step conclusions.
+**VERIFIED from the export's own step lists and from the live workflow.***
+
+### ⚠⚠ A CORRECTION TO PASS 79: **every failed run had exactly ONE failed step**
+**Pass 79 wrote that the deploy failure produced *"four red steps"* and that each scrape failure
+showed *"three failed steps each"*. That is wrong, and it is my error.**
+
+**VERIFIED from the step conclusions in the export:**
+| Run | success | **failure** | skipped | The one step that failed |
+|---|---|---|---|---|
+| 33429867514 (deploy) | 13 | **1** | 3 | `Deploy selected Workers` |
+| 33431309511 (deploy) | 17 | 0 | 0 | — |
+| 33444713366 (scrape) | 6 | **1** | 2 | `Scrape NBA teams from stats.nba.com` |
+| 33444861845 (scrape) | 6 | **1** | 2 | `Scrape NBA teams from stats.nba.com` |
+| 33445264412 (scrape) | 6 | **1** | 2 | `Scrape NBA teams from stats.nba.com` |
+
+**The steps I called failed were `skipped`.** My filter treated *"conclusion is not success"* as
+failure, and **GitHub reports a step that never ran as `skipped`, not `failure`.**
+**The corrected reading is better, not worse**: **one real failure, one red step, and the steps after
+it did not run.** `Commit NBA data JSON to main` and `Post Set up Python` were **skipped**, and
+`Post Checkout main` and `Complete job` still succeeded.
+**Fourth instance of the pass-53 rule** — and the first where the false value came from **my own
+comparison** rather than a grep. **Rule extended: when classifying a status field, enumerate its
+values; never define one status as "not the good one."**
+
+### ⚠⚠ AND THE CORRECTION EXPOSES A REAL ONE: **T1's stated intent was defeated by the step order**
+T1 wrote this comment into the scraper, at the `sys.exit(1)`:
+> *"Non-zero exit so the workflow run is visibly marked failed, **but the meta file (with the real
+> error recorded) still gets committed** — matches the honest-failure-recording discipline
+> established for this whole project rather than silently leaving stale data."*
+
+**The meta file did not get committed.** **VERIFIED**: on all three failed scrape runs the
+`Commit NBA data JSON to main` step is **`skipped`**, because the scrape step failed and T1's
+workflow gave the commit step no condition. **The error was written to
+`nba_teams_current_meta.json` inside the runner and discarded with the runner.**
+
+**So the honest-failure discipline was stated, implemented in the script, and cancelled by the
+workflow's default step behaviour.** **Nothing recorded this** — the intent is in the code, the
+outcome is in the step list, and no document holds either.
+
+**✅ And it is mostly fixed today, by accident rather than by design.** **VERIFIED on the live
+workflow**: **15 of the 16 scrape steps now carry `continue-on-error: true`**, which marks them
+successful for the purposes of what follows, **so the commit step now runs and their meta files do
+get committed.** ⚠ **The teams scraper is still the exception** — it is the first step and the
+only one *without* `continue-on-error`, **so a teams failure still skips the commit and still
+discards its own error record.** **The one scraper whose failure T1 was writing that comment about is
+the one still affected.**
+
+### ⚠ The failure path also blanks the data file — contained, but worth knowing
+```python
+except Exception as exc:
+    teams, http_status, error = [], None, str(exc)
+OUTPUT_PATH.write_text(json.dumps({"teams": teams}, indent=2), encoding="utf-8")
+```
+**On any failure the script writes `{"teams": []}` over `nba_teams_current.json` before exiting.**
+**✅ Contained in practice**, for the same reason the meta file never lands: **the commit step is
+skipped, so the blanked file dies with the runner and the repo keeps the last good copy.**
+**Stated at its real strength: this has never caused data loss and cannot while the commit step is
+skipped.** **It is recorded because the containment is incidental** — it depends on the step being
+skipped, and **15 of the 16 scrape steps are now `continue-on-error: true`, which is exactly the
+condition that stops steps being skipped.** **Whether the other 15 scrapers blank their own outputs
+on failure is NOT RECORDED**, and this pass did not check them.
+
+### ✅ The scraper's headers are the canonical set — unlike the worker's
+| | `Referer` / `origin` | User agent |
+|---|---|---|
+| **`scrape_nba_stats_teams.py`** (T1) | **`https://stats.nba.com/`** — correct | **a real Chrome 128 string** |
+| `alphadog-v2-nba-static-teams.js` (T1) | `https://www.nba.com` — **wrong**, T1 later said so | `Mozilla/5.0 (compatible; AlphaDog-NBA-StaticTeams/0.1)` — **self-identifying** |
+
+**T1 got the headers right in the Python and wrong in the JavaScript, in the same session.** The
+Python also carries `Host`, `Accept`, `Accept-Language`, `Accept-Encoding: gzip, deflate, br`,
+`Connection: keep-alive`, `x-nba-stats-origin: stats`, `x-nba-stats-token: true` — **the full
+`nba_api` set recovered at pass 82.** Recorded because **pass 84 noted only the worker's error**, and
+the contrast is the point: **the correct header set existed in the repo the whole time.**
+
+✅ **And `timeout=30` in this original matches the first CI failure exactly** —
+`Read timed out. (read timeout=30)` at run 33444713366 (pass 79). **The transcript, the source and
+the CI log agree.**
+
+---
+
 ## FROM T1 PASS 85 — THE TRIGGER FILE IS AN AUDIT LOG, AND IT RECORDS THE HYPOTHESIS LADDER *(added 2026-09-20)*
 *Angle: the **five `TRIGGER_NBA_SCRAPE.txt` bodies** T1 wrote — the only file it rewrote more than
 twice. Treated everywhere as a bare marker; **it is not.** **VERIFIED against the live repo.***
