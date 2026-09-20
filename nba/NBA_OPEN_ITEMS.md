@@ -901,6 +901,32 @@ that**."*
 **The one thing the plan expected to be doable and wasn't**: the board scraper first (startup plan
 step 3) — see `NBA_RECIPE.md` STEP 0b.
 
+### ⚠ THE CANONICAL-ID RULE — decided in T1, worth auditing
+> *"**Naming discipline that mattered in MLB, KEEP IT IDENTICAL: use ONE CANONICAL ID FORMAT FROM DAY
+> ONE.** MLB had **a real, MULTI-TABLE BUG from mixing bare numeric team IDs with a prefixed format
+> like `mlb_133`** — **GREP FOR FORMAT INCONSISTENCY PROACTIVELY, DON'T WAIT FOR IT TO SURFACE AS A
+> DOWNSTREAM SYMPTOM.**
+> **For NBA, decide the ID convention (e.g. `nba_<team_id>`) BEFORE WRITING THE FIRST TABLE and apply
+> it everywhere.**"*
+
+**What NBA actually uses**: `nba_ref.teams` carries **`team_id` TEXT** *and* **`nba_team_id` BIGINT**
+side by side — i.e. **both a prefixed/text form and the bare numeric form, by design**, with the
+aliases keyed on `alias_key`.
+
+**Two known ID incidents already in the record, both of the flagged family:**
+| Incident | Detail |
+|---|---|
+| **`PLAYER_ID` cast to string too late** | *"the virtual rows are built **before `PLAYER_ID` is cast to string**, so the roster ids come out as **ints**"* (T9) — a one-line fix |
+| **`player_id` lowercase vs `PLAYER_ID`** | the bio file used `players`/`player_id`/`age`, not `records`/`PLAYER_ID`/`AGE` — **every age was NaN** and the B2B table was silently empty (T8) |
+
+**Neither was a prefix mismatch, but both were ID-format mismatches producing silent wrong results** —
+which is the failure class the rule exists to prevent.
+
+**The instruction not followed**: *"grep for format inconsistency **proactively**."* **No proactive
+ID-format audit is recorded in any transcript.** With `team_id` TEXT and `nba_team_id` BIGINT
+coexisting across `nba_ref`, `nba_team`, `nba_stats` and `nba_calendar`, **a proactive grep is the
+cheap version of the check the rule asks for.**
+
 ### ⚠ EIGHT PLANNED SCHEMAS WERE NEVER CREATED
 
 **T1 specified fourteen `nba_`-prefixed schemas, ported from MLB's per-domain convention.** The
