@@ -429,6 +429,54 @@ are Power-shaped reasoning that does not carry to Flex unless the tier shape is 
 
 ## 7. LADDER DEPTH — measured against the real board
 
+> ### ⚠⚠ THE VOLUME-VS-DEPTH TRADEOFF — the handoff's named NBA-transferable pattern, never tested
+> *Source: T1, `NBA_LESSONS_LEARNED_FROM_MLB.md` Part D, "a concrete, well-documented real
+> NBA-transferable structural pattern worth testing for directly." **Recorded 2026-09-20 (T1 pass 56)
+> — the pattern appeared in none of the twelve documents. Volumes below are VERIFIED by live SQL.***
+>
+> > *"MLB found that **a prop's real hit rate climbs meaningfully and repeatably as tier/ladder-depth
+> > increases** (the farther a line sits from its real anchor, the safer the 'easy-direction' bet
+> > becomes) — and **the genuinely usable sweet spot was NOT the theoretical deepest tier** (almost
+> > always a thin, one-off, unreliable sample) **but THE DEEPEST TIER THAT STILL CARRIES REAL VOLUME**
+> > (MLB's rule of thumb: **n ≥ 10–20 real observations**). If NBA's platforms offer an equivalent
+> > tiered-line ladder… **test for this same volume-vs-depth tradeoff directly rather than assuming
+> > either extreme.**"*
+>
+> **The volume half has never been read. It is one query, and the data is already there** —
+> `nba_market.board_tiers_v2`, **~2.19M legs**:
+>
+> | tier | legs | distinct player-props | | tier | legs | distinct player-props |
+> |---|---|---|---|---|---|---|
+> | **−7** | 1 | 1 | | **0** | **788,680** | 5,447 |
+> | **−6** | 21 | 14 | | **+1** | 109,544 | 3,544 |
+> | **−5** | 207 | 87 | | **+2** | **351,329** | 3,811 |
+> | **−4** | 1,600 | 547 | | **+3** | **244,731** | 3,501 |
+> | **−3** | **62,542** | 2,052 | | **+4** | **117,010** | **2,758** |
+> | **−2** | **165,711** | 3,103 | | **+5** | 3,794 | 902 |
+> | **−1** | **353,579** | 3,819 | | **+6** | 515 | 236 |
+> | | | | | **+7 / +8** | 85 / 5 | 56 / 5 |
+>
+> **Applying MLB's rule to these volumes:**
+> - **Goblin side — the deepest tier with real volume is T−3** (62,542 legs, 2,052 player-props).
+>   **T−4 falls to 1,600 — a 39× collapse**; T−5 is 207, T−6 is 21, T−7 is 1.
+>   **§5's goblin economics already stop at T−3** — so the documented range matches the
+>   volume-supported range, **but that was never the stated reason.** It is now.
+> - **⚠⚠ Demon side — the deepest tier with real volume is T+4, and §5's economics stop at T+3.**
+>   **T+4 carries 117,010 legs across 2,758 distinct player-props** — far above any thin-sample
+>   threshold — and **is not priced anywhere in this document.** **T+5 is where the collapse
+>   happens** (3,794, a 31× fall).
+>   **This is exactly the sweet spot the lesson points at: not the theoretical deepest tier, but the
+>   deepest one with real volume.** **NOT RECORDED as tested.**
+> - **⚠ And the ladder is asymmetric in a way nothing records**: the goblin side decays monotonically
+>   (−1 → −2 → −3 → −4 falling steadily), while the demon side does not — **T+1 (109,544) carries
+>   LESS volume than T+2 (351,329) and T+3 (244,731).** **Why T+1 is under-offered relative to its
+>   neighbours is NOT ESTABLISHED**, and it matters because **§5 records T+1 as "the only demon tier
+>   ever worth solving."**
+>
+> **What this does not claim**: nothing here measures hit rate — the volumes come from
+> `board_tiers_v2`, the rates from `board_outcomes`. **The pairing is the test the lesson asks for,
+> and it has not been run.**
+
 > ### ⚠ THE HANDOFF ASKED FOR THIS **PER PROP**, AND IT IS STILL POOLED
 > *Recorded 2026-09-20 (T1 pass 49). Source: `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1.*
 >
