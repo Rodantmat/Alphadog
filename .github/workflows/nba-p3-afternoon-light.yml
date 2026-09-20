@@ -95,7 +95,7 @@ jobs:
       # PrizePicks FIRST - it is the app the owner actually plays, and its producer lives at the repo
       # root (main.py, league_id 7 for NBA) rather than in nba/. Leaving it out would score against a
       # board that does not include the primary book.
-      # PRIZEPICKS IS NOT WIRED FOR NBA YET - and this is a HARD GAP, not a配置 detail.
+      # PRIZEPICKS IS NOT WIRED FOR NBA YET - and this is a HARD GAP, not a configuration detail.
       # main.py at the repo root is the MLB producer and it is HARDCODED: league_id=2 appears as a
       # literal in all four URLs and the output is fixed to prizepicks_mlb_current.json. There is NO
       # environment variable - a PP_LEAGUE_ID would do nothing. Running it here would have scraped
