@@ -289,7 +289,32 @@ was_most_likely, rank_by_prob, phase`. **Only the realised branch is stored.**
 cal_shift, final_hp, confidence, score, edge, interpolated, built_at`. The board-scoped output.
 
 ### Others
-`nba_score.blowout_model` (35 rows) · `nba_score.tier_band_calibration` (149) ·
+### `nba_score.blowout_model` — 35 rows *(T16 build, T4 design warning)*
+Two `kind`s:
+
+**`minutes_by_margin`** — 7 rows, one per margin band. **`v1` is a RATIO relative to the player's own
+baseline; `v2` is absolute minutes lost.**
+| `side` | `lo`..`hi` | `n` | **`v1` ratio** | `v2` min lost |
+|---|---|---|---|---|
+| competitive | −12..12 | 12,966 | **1.0333** | −1.0140 |
+| won by 12–20 | 12..20 | 3,001 | 0.9760 | 0.790 |
+| won by 20–25 | 20..25 | 1,120 | 0.9194 | 2.586 |
+| **won by 25+** | 25..99 | 1,597 | **0.8748** | 3.992 |
+| lost by 12–20 | −20..−12 | 2,672 | 0.9721 | 0.903 |
+| lost by 20–25 | −25..−20 | 929 | 0.9364 | 2.056 |
+| lost by 25+ | −99..−25 | 1,306 | 0.9124 | 2.856 |
+
+**⚠ READ `v1` AS A DEVIATION, NOT A PENALTY.** Competitive sits **above** 1.0 and every blowout band
+below it, because the ratios are measured against the **same blended historical average the baseline
+uses**. Applying them **re-centres** the projection onto the expected game script.
+**This is what prevents the double-counting the T4 methodology warned about** — the baseline's minutes
+already include blowout games, so an absolute penalty would subtract twice.
+
+**`p_blowout`** — per spread band, `side` = favourite/underdog, with three probabilities in
+`v1`/`v2`/`v3` (blow-open, blown-out, and the residual). Example, spread 0–2 favourite:
+0.1634 / 0.0842 / 0.0792.
+Measured on the **real market spread** (307,604 rows available, 2,454 games, 100% coverage) after the
+derived r=0.46 proxy was replaced.
 `nba_score.confidence_verification` · `nba_score.availability_delta` ·
 `nba_score.real_slip_leg_observations` (139 legs, `decomposition_method='equal_scale_v1'`)
 
