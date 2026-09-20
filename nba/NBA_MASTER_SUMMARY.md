@@ -3322,6 +3322,24 @@ call**, and it is the same egress restriction recorded in T1.17.
 
 **Two more consecutive clean full passes required before T5 is DONE.**
 
+### T5.13 — PASS 7 (full sequential, 210-char context) — **CLEAN 2/3**
+
+Complete re-read at wider context, head and tail. **Every block maps to a documented entry. Nothing
+new.**
+
+One phrase confirmed in full: the `START_POSITION` finding was corroborated *"by **someone in the wild
+asking the exact same question**"* — i.e. the absence of a bulk equivalent was confirmed against a
+public discussion, not only against documentation. **A third form of verification alongside schema
+checks and empirical calls.**
+
+**CLEAN PASS 2 of 3.**
+
+### T5.14 — CURRENT STATE OF T5
+
+**7 passes. 5 found new material. Clean count: 2/3** (passes 6, 7).
+
+**ONE more complete clean sequential pass and T5 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
