@@ -100,18 +100,42 @@ plus burst games).
 ## 3. THE COMPUTATION, IN ORDER
 
 ### 3.1 Minutes — the biggest error source
+
 > *"minutes projection is **the single biggest source of error in any player-prop model**."* — T4
 
-**`comp_min` = minutes in COMPETITIVE games with `PF < 6`.**
+#### THE CONFIGURED THREE-COMPONENT MIXTURE — `nba_config.classification_config.minutes_mixture`
+```json
+{"components": ["normal_truncated", "blowout_truncated", "dud_lognormal"],
+ "normal_filter": {"max_margin": 15, "max_pf": 5, "min_pct_own_avg": 0.4},
+ "dud_filter":    {"bottom_pct": 15, "or_pf_ge": 5},
+ "blowout_threshold_margin": 20,
+ "team_constraint": 240,
+ "renormalization": "tiered_inelastic"}
+```
+*"Three-component minutes model; **f(spread) and E[min|blowout] fit on own data PER TEAM**"*
+
+**Every part of the T7 design is in this config:**
+| Element | Value |
+|---|---|
+| **`dud_lognormal`** | **the dud component IS configured** — bottom 15% of own average, **or PF ≥ 5** |
+| `normal_filter` | margin < 15, PF ≤ 5, **and `min_pct_own_avg: 0.4`** — the ≥40%-of-median floor |
+| `blowout_threshold_margin` | 20 |
+| **`team_constraint: 240`** with **`renormalization: "tiered_inelastic"`** | *"stars' minutes are inelastic, fringe minutes absorb the adjustment. **Not pro-rata**"* |
+| **`E[min|blowout]` fit PER TEAM** | the team-specific term — **configured, and NOT in `blowout_model`** |
+
+**⚠ THE CONFIG AND THE CODE DISAGREE.** `classification_ladder_v12.py` implements
+`comp_min = competitive & PF < 6` — **the `normal_filter` only.** There is no `dud` term, no
+`tiered_inelastic` renormalisation and no per-team blowout in the file.
+**So the full design is recorded in `classification_config` and partially implemented in the recipe.**
+Recorded in `NBA_OPEN_ITEMS.md`.
+
+**In the code:**
 ```python
 pg["competitive"] = pg["abs_margin"] < COMPETITIVE_MARGIN   # 15
 pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan)
 ```
 `mu_role` = `shift(1).rolling(20, min_periods=5).mean()` of `comp_min`.
-
-**⚠ Duds are EXCLUDED, not MIXED** — see `NBA_OPEN_ITEMS.md`. The design asked for
-`P(dud)` modelled and mixed; the full-game ladder removes those games instead. **The period layer DOES
-mix** (§6).
+**The period layer DOES implement the mixture** (§6) — sit-out rate and "plays" ratio per role × state.
 
 ### 3.2 Cross-season carryover — the season-opening fix
 > *"without it **the opening month has ZERO projections and November only 62% coverage**"* (within-season
