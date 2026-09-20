@@ -95,14 +95,17 @@ jobs:
       # PrizePicks FIRST - it is the app the owner actually plays, and its producer lives at the repo
       # root (main.py, league_id 7 for NBA) rather than in nba/. Leaving it out would score against a
       # board that does not include the primary book.
-      - name: PrizePicks board
-        if: ${{ github.event.inputs.skip_scrape != 'true' }}
-        env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
-          PP_LEAGUE_ID: "7"
-          PP_SPORT: "nba"
-        run: python main.py
-
+      # PRIZEPICKS IS NOT WIRED FOR NBA YET - and this is a HARD GAP, not a配置 detail.
+      # main.py at the repo root is the MLB producer and it is HARDCODED: league_id=2 appears as a
+      # literal in all four URLs and the output is fixed to prizepicks_mlb_current.json. There is NO
+      # environment variable - a PP_LEAGUE_ID would do nothing. Running it here would have scraped
+      # BASEBALL, written it to the MLB file, and left P3 believing it had the NBA board.
+      # COMPASS fact 176 says "PrizePicks stays the MLB producer (repo root) with league_id=7 for NBA",
+      # so the NBA producer is planned but does not exist. Until it does, PrizePicks legs reach the
+      # board only via the Odds API feed (bookmaker='prizepicks' in board_snapshots), which carries the
+      # standard markets but NOT the DFS-only ones (fantasy_score, period props) or the goblin/demon
+      # multipliers.
+      # TODO before opening day: parameterise main.py for league_id/output, or add an NBA producer.
       - name: Other board scrapers
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
