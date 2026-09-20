@@ -1842,7 +1842,111 @@ Deferred in T2 to Phase 3b, and **never picked up there.**
 
 ## NEXT: T3 begins its own cycle.
 `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` — DARKO build, weekly differential,
-schedule (2,666 games), play types, tracking detail, shot quality. **Not yet started.**
+schedule (2,666 games), play types, tracking detail, shot quality.
+
+---
+
+## T3 — `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt`
+**PHASE 3a FINAL — DARKO, the weekly differential, schedule, play types, tracking detail, shot quality**
+*117 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+### T3.1 — DARKO: four failures before the real mechanism
+
+Owner go-ahead: *"If that does the same reliable work, continue"*.
+
+1. **Checked for embedded data first** rather than guessing at hidden endpoints — *"common for
+   Next.js-style apps."*
+2. **The page is server-side rendered — no JS wall.** And a decisive bonus: *"the player URLs use the
+   **exact same NBA person IDs** already in our system."*
+3. **First build guessed the pagination scheme and got 50 of 530** — *"honestly flagged that the guessed
+   pagination params didn't work"* rather than shipping a partial load.
+4. **It's SvelteKit, not Next.js** — *"that's why `__NEXT_DATA__` didn't match."*
+5. **A self-caught syntax slip**: *"I used `//` instead of `#` on one comment line"* — checked before
+   triggering, not after.
+6. **THE WIN**: *"The full dataset for all 530 players is embedded directly in the page's **SvelteKit
+   hydration script** (`kit.start(app, element, {...})`)."*
+7. **One more real obstacle**: JavaScript's bare `.534094` decimals are **invalid JSON** and need a
+   leading zero before parsing.
+8. **530/530 parsed**, values matched the earlier `web_fetch` exactly — **Jokić +6.76, Wembanyama
+   +6.37**.
+9. Verified against the **real captured HTML** before pushing, then end-to-end, then independently in
+   Postgres.
+
+### T3.2 — The weekly differential — and the owner's sequencing correction
+
+> **OWNER:** *"**No, first you need to create the weekly function that will mine the differential** of
+> it, players changing teams, new players, all possible changes that the 'static' data you did."*
+
+**The sequencing insight, accepted immediately:** *"the regular upsert workers **already overwrite**
+`nba_ref.players` on every run, so I can't diff against 'current DB state' after they've run."*
+**→ A snapshot layer was required, and had to exist BEFORE the next upsert.**
+
+**Then it was actually proven, not assumed:**
+- Baseline established: **582 players / 30 teams / 80 officials** snapshotted
+- Two consecutive runs → **zero false-positive events** — correct
+- **But that only proves it doesn't fire wrongly.** So a change was *simulated*: LeBron's team edited,
+  one official's ID renamed.
+- **First simulated test: zero events — wrong.** Diagnosed as a **race** (the edit hadn't landed before
+  the trigger), so the test was redone *"more rigorously — verify the edit actually lands before
+  triggering."*
+- **Confirmed working**: `LeBron James: nba_1610612738 → nba_1610612747`, persisted to the log table.
+- **Then a phantom event**: LeBron's change fired again when nothing had been touched. Diagnosed as a
+  **Hyperdrive caching artifact** — *"Cloudflare's Hyperdrive caches query results briefly; since I
+  triggered runs seconds apart…"* — **not a logic bug.**
+- Final clean run: **zero events**, test artifacts removed.
+
+**This is the most rigorously tested component in T1–T3**: baseline → no false positives → simulated
+true positive → race diagnosed → cache artifact diagnosed → clean baseline restored.
+
+**Owner:** *"No, leave like this for now."*
+
+### T3.3 — Season schedule: a gap named in the first architecture list, never built
+
+> *"the season schedule/calendar (**named in your very first architecture list, never actually built**)"*
+
+- Source `scheduleleaguev2`, structure verified first:
+  `{"leagueSchedule": {"gameDates": [{"gameDate": "...", "games": [{...}]}]}}`
+- **1,400 games** from the completed 2025-26 season on the first attempt
+- **The 2026-27 schedule is ALREADY PUBLISHED — 1,266 games.** Total **2,666**.
+- **A REAL BUG WITH A GENERAL LESSON**: the file is **1.2 MB, over GitHub's Contents API 1 MB
+  inline-content limit**, and *"the Worker's fetch via that API **silently got empty content**."*
+  **Fix: `raw.githubusercontent.com` instead of the Contents API.** *(This is COMPASS-worthy: any
+  committed artefact over 1 MB must be read via raw, not the API.)*
+- **2,666/2,666 written**, verified with team joins and real venues — *"Videotron Centre in Quebec
+  City, Stan Sheriff Center in Hawaii — real NBA preseason exhibition sites."*
+- **2026-27 runs Oct 3 2026 → Apr 11 2027**, *"exactly matching 'about a month away' from today."*
+
+### T3.4 — Play types (Synergy)
+
+- `synergyplaytypes` — Gemini's highest-priority new item, **schema verified before building**
+  (`POSS_PCT`, `PPP`, `FG_PCT` per play type, player and team level)
+- Built with a defensive design: *"testing whether `PlayType=` empty returns all play types in one call,
+  **with defensive fallback to looping if not**"* — **the fallback path was the one that worked**
+- **3,364 player records, 630 team records**, all 11 play types
+- Spot-check: *"Jokić's post-up-heavy offensive profile (**22.5% of possessions in post-ups**) matches
+  his well-known real-world playstyle"*
+
+### T3.5 — Tracking detail
+
+Owner checkpoint: *"All this still weekly data right? If so continue"* — answered directly:
+*"Yes — same weekly/semi-static shape… season-long tracking aggregates, one call per stat family."*
+
+- **8 tracking types, 4,652 records**, zero errors
+- Spot-check with real meaning: *"Jokić's **`POTENTIAL_AST` (17.6) is much higher than his real assists
+  (10.7)** — a genuine, well-known signature of his elite passing rate"*
+- **12 workers now live and verified.**
+
+### T3.6 — Shot quality: the last static candidate
+
+Owner: *"do another online research pass and look for what the strong systems similar to ours use and
+see if there is any weekly candidate"*
+
+- Found **"Quantified Shot Quality"** from professional betting-model write-ups
+- **`leaguedashplayerptshot`** — free, public **shot-quality-by-contest-level** data:
+  **0–2 ft "Very Tight" through 6+ ft "Wide Open"**
+- *"Gemini didn't just validate it, it gave me a **concrete, buildable methodology**."*
+
+**T3 PASS 1: complete sequential read. Clean count 0/3.**
 
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
