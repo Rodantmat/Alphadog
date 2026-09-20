@@ -589,7 +589,41 @@ same family: the default scraped MLB and wrote to a path nothing committed.)*
 instead errors or silently changes the predicate. **`known_empty_games` is exactly this shape**: a
 skip list that is empty on day one.
 
-### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
+### ⚠ THE PASS-COUNT PRECEDENT — MLB needed 13 passes to reach two consecutive clean
+Part E records what the standard actually cost in practice:
+> *"a real scrutiny effort that **would have stopped after an early clean-seeming pass** instead
+> **kept finding genuinely new, real issues across 13 TOTAL PASSES before finally reaching TWO
+> CONSECUTIVE CLEAN ONES**. **Apply the same discipline to any NBA system component receiving a
+> dedicated verification effort — the scoring engine, the outcome grader, a new enrichment factor —
+> rather than treating a single clean-looking check as sufficient.**"*
+
+**Three named NBA components are due this treatment and have not had it**: **the scoring engine**,
+**the outcome grader**, and **each new enrichment factor**.
+
+### ⚠ BUG PATTERN · an "unprocessed rows" filter that loops forever
+> *"**A 'still needs processing' filter that doesn't exclude rows which can STRUCTURALLY NEVER satisfy
+> the condition being waited on causes a GENUINE INFINITE LOOP, not slow progress.** MLB found a real
+> case of a scoring query filtering only on **'score is still null'**, without also excluding rows that
+> **could never receive a score because a hard prerequisite value was itself missing** — the pipeline
+> **endlessly re-attempted the same unscoreable rows forever**, and the apparent 'progress' (**a
+> slowly ticking percentage**) was **actually STUCK, not advancing**."*
+
+> **The rule**: *"**Any NBA processing loop with a 'find rows still needing work' filter must ALSO
+> explicitly exclude rows that can never satisfy that condition, OR verify TOTAL ADDRESSABLE COUNT is
+> actually SHRINKING over time — not just that some percentage metric is moving.**"*
+
+**Live instances to check in this build:**
+| Loop | Rows that can never satisfy |
+|---|---|
+| **`score_board_legs.py`** | legs whose prop has **no ladder** (`double_double` carries a sentinel −1.0), legs for players with **no `mu_role`** (`role_tier is None` → NaN), **unmapped `market_key`s** |
+| **`grade_board_outcomes.py`** | `unmatched_player` / `unmatched_not_in_season` legs — **permanently ungradeable** |
+| **The per-game delta** | ✅ **already solved** — `known_empty_games` is exactly this exclusion: *"without it the 3 games the source returns empty would be re-fetched every single day forever"* |
+
+**`known_empty_games` is the correct pattern, already proven in this codebase.** The same shape should
+exist wherever a loop asks "what still needs work?"
+
+**And the diagnostic**: **a percentage that ticks is not progress.** Check the **absolute addressable
+count** is falling.
 
 **MLB's lessons document devotes an entire section — Part C, *"the pipeline/data-quality bug family to
 actively guard against in NBA FROM DAY ONE"* — to this.**
