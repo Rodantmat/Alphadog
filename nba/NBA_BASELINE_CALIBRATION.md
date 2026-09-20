@@ -832,6 +832,29 @@ trigger-based part is absent, and the human review is absent.**
 automatically — **but it cannot catch a plausible-magnitude correction that is wrong for one
 subgroup.** That is exactly the case this lesson describes.
 
+### ⚠ WHAT THE MISSING REVIEW STEP COST MLB — the precedent behind the rule
+*Added 2026-09-20 (T1 pass 29). Blueprint §7f, final paragraph — **not previously recorded**.*
+
+> *"MLB's own history includes a real, costly case of **TWO PROPS RUNNING WITH ZERO ACTIVE CORRECTION
+> FOR ROUGHLY TWO AND A HALF WEEKS** after a root-cause fix, showing real **30–45 PERCENTAGE POINT
+> OVERCONFIDENCE GAPS**, **UNDETECTED UNTIL SOMEONE MANUALLY CHECKED** — directly motivating the
+> coverage-gap diagnostic described in Section 4c above."*
+
+**Three things this pins down that the rest of §5.6 did not:**
+1. **The failure is silent and long-lived, not loud.** Nothing errored for two and a half weeks. The
+   only detection event on record is *a person looking.*
+2. **The magnitude is not marginal** — **30–45 percentage points** of overconfidence. That is a leg
+   sold at 80% hitting at 35–50%.
+3. **§7f and the coverage-gap check are ONE design, split across the blueprint.** The blueprint states
+   the precedent *"directly motivated"* the diagnostic recorded at
+   `NBA_FINAL_SCORING_CALIBRATION.md` §7m Safeguard 1. **That diagnostic is NOT RECORDED as built for
+   NBA.** So the missing human review and the missing coverage-gap check are **the same gap seen from
+   two sides**, and NBA currently has neither.
+
+**The exposure profile for NBA is worse than MLB's in one specific way**: MLB's gap ran two and a half
+weeks with someone available to notice. **NBA's P2 is designed to run unattended through a
+season**, and the season opens **2026-10-03**. **SEASON-START RELEVANT.**
+
 **① A band cell is kept ONLY if its sign is consistent across seasons.**
 Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands **+2.8 / −3.6** →
 **regime**, dropped (*"frozen cells actively hurt"*); walk-forward tables + in-season Platt carry it.
