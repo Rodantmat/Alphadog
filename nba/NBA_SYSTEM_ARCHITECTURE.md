@@ -382,9 +382,29 @@ set is not the value used."**
 - **The classification port** — two of three MLB generations were **dead and said so**; the live one
   was read line by line and **the recency blend was rejected outright** rather than ported.
 
-**And the inverse discipline is also in the record**: `curl_cffi` and the writer-Worker shape **were**
-copied wholesale, because those patterns were proven *good*. **The rule is about porting patterns that
-have already caused problems — not about avoiding reuse.**
+### 6. ✅ Check whether the data is DERIVABLE BY SQL before building an integration
+> *"**Before building a new external data-mining integration, CHECK WHETHER THE NEEDED INFORMATION CAN
+> BE DERIVED PURELY VIA SQL FROM DATA ALREADY BEING COLLECTED FOR A DIFFERENT PURPOSE.**
+> MLB found a real case where **a seemingly separate data need REQUIRED ZERO NEW EXTERNAL API
+> INTEGRATION AT ALL** — it was **fully derivable from data already being mined for a different
+> reason** (*any pitcher's appearance in a game where they aren't the designated starter is, by
+> definition, a bullpen appearance*), **computed with a SINGLE SQL JOIN.**
+> **Check for this opportunity on EVERY new NBA data need.**"*
+
+**✅ NBA hit this at least twice, and the record says so in the same terms:**
+| Need | How it was satisfied |
+|---|---|
+| **Defence-vs-Position** (630 rows) | *"**free from data already held**"* — a **one-off SQL derivation** from game logs + positions, no new endpoint |
+| **OT contribution per player** | *"**full-game MINUS quarters** isolates each player's OT contribution"* — arithmetic on data already scraped, **no OT endpoint exists or was needed** |
+| Halves (1H/2H) | *"**Q1+Q2 / Q3+Q4**"* — same |
+
+**And the T2 case is the same principle applied to a purchase decision**: **Team Pace** was proposed
+as a gap by Gemini and found *"**already covered** by what we have"* — **an integration avoided by
+checking first.**
+
+**⚠ The counter-case worth noting**: **Defence-vs-Position was derived by a ONE-OFF MANUAL SQL** and
+therefore had **no recurring path** until T7 placed the recompute inside the delta worker. **Derivable
+by SQL is not the same as maintained** — a derived table still needs an owner in a pipeline.
 
 ### The original MLB→NBA source mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §3)*
 | MLB source | NBA equivalent, as stated | How it turned out |
