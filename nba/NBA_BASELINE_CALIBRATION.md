@@ -264,6 +264,38 @@ not sample count.** **That is a reliability-adjacent classifier built on a non-s
 (fringe 0.0283 vs iron-man 0.0008), which is **an empirical error measurement**, not a reliability
 tier in the sense meant here. **But `c_exist` / `c_quality` / `f_prov` in the confidence model are
 closer to reliability tiers**, and whether any of them blend non-count signals is unverified.
+
+### 3. A SEPARATE, LABELLED PATH FOR THIN-DATA PROPS
+> *"**A separate, PARALLEL calibration system with ENTIRELY DIFFERENT THRESHOLDS may be needed for
+> lower-priority or lower-data props** — MLB has one for its **'expansion scope' props**, with **a
+> COMPLETELY DIFFERENT PRIOR-STRENGTH SCALE and HARD FLOOR/CEILING CAPS the main system doesn't
+> use**. …**design it as an EXPLICITLY SEPARATE, CLEARLY-LABELLED path FROM DAY ONE — DON'T let it
+> SILENTLY SHARE THRESHOLDS with the main system, and DON'T ASSUME A FIX TO ONE TOUCHES THE OTHER.**"*
+
+**⚠ NBA already has thin-data props on the shared path.** `fgm` and `fta` are recorded as
+*"configs are the **closest certified analogue** — NOT yet certified"* — **certified thresholds
+assigned by analogy**, with no separate label beyond a code comment. `turnovers`, `fg3a`, `ftm`,
+`personal_fouls` are *"configured, NOT yet run."*
+Per-prop tuning exists (`k_stab`, `SHIFT_LAMBDA`) — **but that is parameter variation within one
+system, not the separate labelled path specified.** No hard floor/ceiling caps, no distinct
+prior-strength scale.
+
+### 4. ⚠ MISCLASSIFICATION IS A QUIET SOURCE OF A WRONG PROBABILITY
+> *"**Player/context classification tiers DETERMINE WHICH PRIOR A PLAYER GETS SHRUNK TOWARD — a
+> MISCLASSIFICATION here is a QUIET, INDIRECT SOURCE OF A WRONG FINAL PROBABILITY**, not just a
+> display [issue]."*
+
+**The tier is not a label — it selects the prior.** A player in the wrong `role_tier` is shrunk toward
+the wrong mean, producing a plausible probability with no error anywhere.
+
+**NBA's exposure:**
+- `role_tier` comes from **`mu_role` = a 20-game rolling mean with `min_periods=5`** — so **5–19 games
+  yields a tier from a thin window**
+- **The team-change discount resets that window** (≥5 competitive games with a new team → use only
+  those) — **a traded player is re-tiered on as few as 5 games**
+- `role_tier is None` drops the leg entirely (visible), **but a WRONG tier is silent**
+- ⚠ **T8's v9 made role tiers load-bearing twice** — *"rate tiers ranked WITHIN role tier"* — so a
+  misclassified role tier now selects the wrong prior for **both** dimensions
 **Cascade**: **empirical per-tier outcome table** (requires **≥300 games/tier**; *"sums real observed
 P(0..threshold), **no assumed family**"*) → **NegBin/Poisson** for counts → **Normal** with a real
 prediction interval.
