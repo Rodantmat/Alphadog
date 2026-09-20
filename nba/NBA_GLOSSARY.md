@@ -225,6 +225,13 @@ scripts. **Provably zero-impact on MLB.** Any future edit must keep it.
 
 ## D
 
+**day-by-day table** · T1 (`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §7) · The **exact layout the owner
+expects for any backtest or real-slip report**, specified verbatim and *"reuse directly for NBA"*:
+`Date · Slips · Full hits · 5/6 · ≤4/6 · Staked · Return · Profit · ROI`, **$1/slip**, **TOTAL row
+bolded**, **partial-hit columns explicit** *"so the actual failure mode stays visible."* Owed
+*"before being asked, every time a finding is reported."* **NEVER PRODUCED for NBA** — no slip
+history exists. → `NBA_MULTIPLIERS.md` §8b · `NBA_OPEN_ITEMS.md`.
+
 **DARKO** · T2, T3 · DPM ratings, SvelteKit hydration extraction, 530/530.
 
 **DataDome** · LIVE · The wall on `app.prizepicks.com` and its payout endpoints. **Not defeated** —
