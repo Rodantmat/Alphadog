@@ -512,8 +512,18 @@ shape."*
 
 **This is a shared-infrastructure gotcha, not an MLB-only one** — same Postgres, same Hyperdrive
 path, same query-builder idiom. It belongs beside the §4m gotchas in §2c above.
-**Whether any NBA worker builds a `NOT IN` this way is NOT RECORDED** — not searched as of this pass.
-Logged in `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
+**✅ VERIFIED ABSENT FROM NBA — 2026-09-20 (T1 pass 33).** A grep of **every `.py` and `.js` file in
+`nba/`** (190 files, including `backtest/` and `workflows/`) for `NOT IN` in any case returns **no SQL
+occurrence**. The nine hits are all **Python tuple-membership tests** (`if st not in ("OUT",
+"DOUBTFUL")`, `if price not in (None, "")`), not SQL clauses. **No NBA query builds a `NOT IN` from an
+array parameter, so this bug class cannot currently fire.**
+
+**⚠ Stated with the limits of the method, per rule 1.6.** This is a **text search of the current
+repo**, so it is evidence about **today's code**, not a guarantee about future code, and it would not
+catch a `NOT IN` assembled from string fragments at runtime or one living outside `nba/`. **The
+blueprint's prescribed pattern — an explicit array-literal-with-cast plus an explicit empty-array
+branch — remains the rule for any `NOT IN` added later.**
+*(This entry supersedes the "NOT RECORDED — not searched" note first written at pass 29.)*
 
 ### ⚠ Related, already-recorded: Hyperdrive read staleness
 Blueprint §9 adds a third stack-level caution that belongs here: *"**connection-pool-fronted reads can
