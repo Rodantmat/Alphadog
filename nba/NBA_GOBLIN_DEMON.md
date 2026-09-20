@@ -308,6 +308,33 @@ A demon row carries **`odds_type`**, **`adjusted_odds` as a BOOLEAN**, and **`li
 
 ---
 
+## 6. THE RESEARCH STANDARD APPLIED TO THIS LAYER
+
+**Five of the 26 lessons bear directly on goblin/demon work.** Full list in
+`NBA_FINAL_SCORING_CALIBRATION.md` §14.
+
+| Lesson | Applied here |
+|---|---|
+| **#2 — never apply a tier-level multiplier to a heterogeneous population** | §5.0 — the economics tables are tier aggregates; **EV must be recomputed per cell** |
+| **#11 — a plausible causal story is not evidence** | *"goblins are safer so they must be +EV"* is a story; **measured, they are −EV at every tier** |
+| **#13 — directional but not proportional** | §5.0b — the structural mispricing, **and MLB never harvested it** |
+| **#24 — durable mechanics vs drifting numbers** | §5.0c — flat vs rarity-scaled pricing held for years; **the ratios decayed** |
+| **#26 — confidence-tier every finding** | the ±6 ladder is **certified**; the tails beyond it are **not** |
+
+### ⚠ #19 applied to this document
+**Language strength must not exceed evidence strength.** So, precisely:
+- The **four-way rule** is **verified** — validated on 42,600 ladders, and `board_tiers_ud` implements
+  it.
+- The **invisible anchor** is **verified** — 419,205 legs carry one.
+- The **hit rates** are **measured** on our own graded outcomes.
+- The **payout factors** are **observed, not read from a slip** — and lesson #16 records that
+  *"multiple MLB findings survived every backtest check and were still overturned the moment a real
+  placed slip's actual multiplier was checked against the assumed one."*
+- Therefore the **EV conclusions are directional, not confirmed.**
+- `board_tiers_v2` is **built but unverified**.
+
+---
+
 ## 7. LADDER DEPTH — measured against the real board
 
 From 2026-01-15, **60k+ board legs joined to our anchors**. **Books ladder to ~85–90% of the anchor.**
