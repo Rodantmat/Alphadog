@@ -1298,6 +1298,8 @@ checking per-column null rates over the retention window.**
 
 **The check is one query per table**: `count(*)` vs `count(col)` per column, grouped by date.
 **It would have surfaced all three immediately.**
+
+### ⚠⚠ STALE-CDN RISK ON THE COMMIT → LOAD CHAIN
 T1's blueprint §4m:
 > *"**A CDN or edge cache in front of a raw file-serving endpoint — e.g. a raw-content URL for a
 > hosted git repository — can serve A STALE, PRE-DEPLOY VERSION OF A FILE FOR SEVERAL MINUTES AFTER A
