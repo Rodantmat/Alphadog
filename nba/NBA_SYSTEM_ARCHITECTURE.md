@@ -691,6 +691,18 @@ FROM T1 PASS 46.
 
 ## 4. THE DEPLOY PIPELINE (shared with MLB, extended additively)
 
+> ⚠ **WHERE "ADDITIVELY" CAME FROM** *(recorded 2026-09-20, T1 pass 65 — from T1's `thinking` blocks,
+> which no visible message repeats)*. **The literal instruction was *no MLB edits*, and this pipeline
+> made that impossible** — a worker that is not in `generate_wrangler_configs.py` never deploys.
+> T1 named the conflict outright — *"since I can't touch `generate_wrangler_configs.py` under the
+> 'no edits to MLB system' constraint, I need to think through how to handle that"* — and resolved it
+> as a judgement call: *"given the user's tolerance for minor changes as long as MLB isn't disrupted,
+> I'll modify the script additively … pulling NBA workers from a **separate manifest file** rather
+> than mixing them into the main one."* **That is why `worker_manifest_nba.json` exists as its own
+> file instead of as new rows in `worker_manifest.json`** — the separation *is* the mechanism that
+> keeps the edit additive. Recorded as provenance; **the constraint held** (§1: 116 rows, 0 NBA).
+> See `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 65*.
+
 > ### ⚠ BLAST RADIUS — the three tiers, VERIFIED from the generator's source 2026-09-20 (T1 pass 44)
 > | Edit | Redeploys |
 > |---|---|
