@@ -159,12 +159,33 @@ binding.
 `compatibility_flags`, cron triggers and vars all belong in `generate_wrangler_configs.py`.
 **This is why it is four edits, not three.**
 
-### ⚠ THE NEVER-FIRE CRON IDIOM
+### ⚠ THE NEVER-FIRE CRON IDIOM — and the platform gotcha that defeats it
 ```python
 cfg["triggers"] = {"crons": ["0 0 30 2 *"]}   # February 30th — cannot occur
 ```
 Used on **8 MLB workers** to **disable a schedule while keeping the worker deployed and callable**.
 **Before concluding any worker is scheduled, check its cron for this pattern.**
+
+**⚠⚠ BUT T1 RECORDS THAT THIS DOES NOT RELIABLY WORK:**
+> *"**A specific, real Cloudflare Workers gotcha worth knowing in advance: A SCHEDULED CRON TRIGGER
+> CAN PERSIST AND KEEP FIRING EVEN AFTER A SOURCE-LEVEL ATTEMPT TO RETIRE IT** — e.g. **setting an
+> intentionally-invalid cron expression** — **MLB CONFIRMED THIS HAPPENING TWICE DESPITE A DEPLOYED
+> FIX.**
+> **If NBA hits the same platform behaviour, the RELIABLE FIX is to make THE SCHEDULED HANDLER ITSELF
+> A GUARANTEED NO-OP (log and exit)** rather than continuing to fight the [platform]."*
+
+**So the February-30th idiom is the *attempted* fix, and it was observed to fail twice.** The
+**reliable** fix is a **no-op `scheduled()` handler**.
+
+**Two consequences for auditing NBA:**
+1. **A never-fire cron does not prove a worker is not running.** The only reliable evidence is
+   whether the handler itself is a no-op, or observable writes.
+2. **Conversely, a worker with a valid-looking cron may still be dormant** if its handler exits early.
+
+**Directly relevant to the differential worker**: its schedule status was inferred from P1's workflow
+steps and from empty tables. **Neither method is affected by this gotcha** — the tables are empty, so
+it is genuinely not writing — **but any future "is this scheduled?" audit must check the handler, not
+just the cron.**
 | `nba/backtest/combos_ladder_v1.py` | the certified combos recipe — **its own `LADDER_STEPS`** |
 | *(duplicate block removed 2026-09-20 — see §4 and §4b above)* |
 
