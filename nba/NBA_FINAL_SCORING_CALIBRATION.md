@@ -804,6 +804,10 @@ versioned beside the map.
 **as a known, explicit gap**."* **`double_double` (sentinel −1.0), `stocks`, and the period props do
 not carry such a flag.**
 
+---
+
+## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
 100% coverage).
