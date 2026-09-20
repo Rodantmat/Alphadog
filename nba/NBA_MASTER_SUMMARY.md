@@ -1273,6 +1273,45 @@ read the committed file → final deploy.
 
 **ONE more complete clean sequential pass and T1 is DONE (3/3).**
 
+### T1.58 — PASS 28 COMPLETE — **ALL 87 BLOCKS CLEAN · CLEAN 3/3**
+
+Full sequential read of every content block with 200 characters of context each, both halves
+(blocks 21→352, then 355→552). **Every block maps to an existing documented entry. Nothing new.**
+
+---
+
+# ✅ T1 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (26, 27, 28)
+
+**Final tally: 28 passes. 23 found new material. Passes 26, 27, 28 clean.**
+
+| Pass | Method | New findings |
+|---|---|---|
+| 1–23 | targeted sweeps, one dimension each | 21 |
+| 24 | full sequential, 6 segments | 6 |
+| 25 | full sequential, 6 segments | 2 |
+| 26 | full sequential, 6 segments | **0** |
+| 27 | full sequential, 87 blocks | **0** |
+| 28 | full sequential, 87 blocks + context | **0** |
+
+**T1 documentation lives in T1.1 → T1.58 of this file**, plus entries in GLOSSARY, RECIPE,
+SYSTEM_ARCHITECTURE, DATABASE, WORKERS, SYSTEM_DESIGN and OPEN_ITEMS.
+
+**THE METHOD, now proven and fixed for T2–T16:**
+1. **Targeted sweeps first** — they build the skeleton fast (23 passes produced 21 findings).
+2. **Then full sequential reads** — and these are the only ones that can count as clean. Passes 24–25
+   found 8 more things that 23 sweeps had missed, because a sweep is pattern-bound: **a line matching
+   no pattern survives any number of them, and a grep window can silently truncate a value.**
+3. **The clean count only starts once sweeps are exhausted** and consecutive full reads come back empty.
+
+**What the 8 late findings had in common: provenance.** Sweeps capture *what exists*; sequential
+reading captures *where it came from* — which is the part that matters when changing it.
+
+---
+
+## NEXT: T2 begins its own cycle.
+`2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` · 417 content blocks ·
+currently at **PASS 1 (incomplete)**.
+
 **Everything found in passes 24–25, consolidated** (all provenance-type findings):
 | Finding | Why it matters |
 |---|---|
