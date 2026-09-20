@@ -514,7 +514,7 @@ separate certified files each with its own constant.
 ## 5. SCORING ENGINE
 | Script | Writes |
 |---|---|
-| `nba/build_final_hp.py` | `nba_score.final_hp` — the full chain. `FE_SEASONS`, `FE_PROPS`, `FE_WRITE`, **`FE_DATE`** (scopes to one slate: seconds vs ~90 min) |
+| `nba/build_final_hp.py` | `nba_score.final_hp` — the full chain. `FE_SEASONS`, `FE_PROPS`, `FE_WRITE`, **⚠ `FE_DATE` — see the warning below. It scopes the READ only.** |
 | `nba/build_asof_calibration.py` | `ladder_calibration_asof` — weekly refits, strictly-before, prior-season inheritance |
 | `nba/build_confidence_v3.py` | `confidence_model` — measured deductions |
 | `nba/score_board_legs.py` | `nba_score.board_scored` — **board-scoped**, `MARKET_TO_PROP` mapping, log-odds interpolation for off-ladder rungs |
