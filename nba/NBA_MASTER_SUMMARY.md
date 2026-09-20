@@ -1405,6 +1405,97 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.63 — PASS 33 (angle: **stop reading, start VERIFYING — run T1's own named bug classes against the live code and database**) — **NEW MATERIAL · MAJOR · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: passes 29–32 extracted claims. This pass **tests** them. T1's blueprint §7g names two
+concrete bug classes and §0e (written at pass 31) listed NBA's scope parameters as candidates.
+**Instead of recording another "NOT RECORDED," grep the actual code and query the actual database.**
+The work order's own precedent: *"one query often converts a 'not recorded' into a VERIFIED fact."*
+
+---
+
+#### ⚠⚠⚠ FINDING 1 — **A CONFIRMED, DESTRUCTIVE, LIVE BUG. ~19.5M ROWS OF `final_hp` ARE GONE.**
+
+**Blueprint §7g bug class 1** — *"a filter parameter that only affects what's reported, not what
+actually happens"* — **is live in NBA, in the first candidate audited.**
+
+`nba/build_final_hp.py`: **`FE_DATE` scopes the `SELECT` from `baseline_history` and not the
+`DELETE` from `final_hp`.**
+```sql
+-- read, scoped:
+WHERE season=%s AND prop=%s AND (%s = '' OR game_date = NULLIF(%s,'')::date)
+-- write, NOT scoped:
+DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s
+```
+A slate-scoped run **replaces the entire season × prop partition with that one slate**, atomically,
+under an advisory lock, reporting success.
+
+**Damage, measured by live SQL 2026-09-20:**
+
+| season | distinct dates | props | rows |
+|---|---|---|---|
+| 2024-25 | **162** | 30 | **19,075,070** |
+| **2025-26** | **1** — `2026-01-15` only | 30 | **140,130** |
+| total live | 163 | 30 | **19,215,200** |
+
+**Documented size: 38.7M.** `19.07M + ~19.6M ≈ 38.7M` — **the arithmetic closes, so the 2025-26
+partition was built in full and is now a single day.** **All 30 props show exactly one date** — the
+precise signature of a scoped write, not a partial build.
+
+**✅ Recoverable — VERIFIED.** Every column derives from `nba_score.baseline_history`, and that table
+is **intact: 2025-26 holds 163 distinct dates × 30 props.** A full-history re-run rebuilds it
+(~90 minutes by the code's own estimate). **Nothing must be re-scraped or re-fit. No fix applied,
+per the standing instruction.**
+
+**⚠ How it was triggered is NOT ESTABLISHED, and is not guessed at.** **VERIFIED**: the only repo
+caller that sets `FE_DATE` is `nba-engine-test.yml`, **with `FE_WRITE: '0'`**; and **P3 does not run
+`build_final_hp.py` at all** — it scores via `nba/score_board_legs.py`. **No committed, wired path
+produces this state.** Flagged, unresolved.
+
+**⚠ MLB's mitigating caveat does not transfer.** The blueprint records its own instance as *"not
+unsafe in this specific case — every write, filtered or not, passed the same validation gate."*
+**NBA's deletes data.**
+
+#### FINDING 2 — comment-vs-code drift in the same file, and it propagated
+The comment above `FE_DATE` reads *"**P3 sets it** so the afternoon pipeline rescores only today's
+legs (seconds) instead of all 38.7M (~90 minutes)."* **P3 neither sets it nor runs the script.**
+**`NBA_WORKERS.md` §5 had inherited the claim verbatim from that comment** — corrected.
+**Blueprint §9 failure mode #6 in miniature**: a description of an intended architecture standing in
+for the live one, with nothing erroring. ⚠ **And it makes the bug worse** — it tells a future reader
+that a `FE_DATE`-scoped write is the normal daily path.
+
+#### FINDING 3 — **blueprint §7g bug class 2 VERIFIED ABSENT**
+A grep of **all 190 `.py` and `.js` files** in `nba/` (including `backtest/` and `workflows/`) for
+`NOT IN` in any case finds **no SQL occurrence**; the nine hits are Python tuple-membership tests.
+**No NBA query builds a `NOT IN` from an array parameter.** Stated with its limits per rule 1.6: this
+is evidence about **today's code**, not a guarantee about future code, and would not catch a clause
+assembled from runtime string fragments. **This converts a pass-29 "NOT RECORDED" into a verified
+negative** — `NBA_SYSTEM_ARCHITECTURE.md` §2d.
+
+#### FINDING 4 — a minor defensive dead end, recorded so it is not mistaken for a safety net
+The `INSERT … ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE` follows the
+whole-partition `DELETE`, so **within a run it can never fire**. **Not a bug — but it reads as
+protection and protects nothing**, least of all against the delete above it.
+
+#### What this pass says about the method
+**Four passes of careful extraction produced no finding of this severity. One pass of verification
+did.** That is blueprint §9's central claim — *"every real bug MLB found was caught by independently
+re-deriving a claim against live data, never by trusting a second read of the same status field"* —
+**demonstrated on this system, on this documentation effort's own output.** **Verification passes
+should be interleaved deliberately from here, not left until the end.**
+
+**Routed to**: `OPEN_ITEMS` (top of file — highest severity item) · `DATABASE` (live row counts,
+corrected 38.7M) · `WORKERS` (§5 table + a new warning block) · `SYSTEM_ARCHITECTURE` §2d (bug 1
+confirmed live; bug 2 verified absent) · `SYSTEM_DESIGN` · `FINAL_SCORING_CALIBRATION` ·
+`GLOSSARY` · this entry.
+**Considered, no change warranted**: `RECIPE`, `BASELINE_CALIBRATION` (`baseline_history` is intact
+and unaffected), `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 33 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.62 — PASS 32 (angle: **diff T1's pasted copy of a document against the repo file today**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
