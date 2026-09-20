@@ -11,6 +11,44 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0b. THE FOUNDING SCOPE DECISION — reuse vs rebuild
+*Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §4. Recorded 2026-09-20.*
+
+**REUSE DIRECTLY (sport-agnostic):**
+- The entire **infrastructure stack**
+- The entire **statistical research standard** (all items in the lessons document)
+- **The ParlayAPI integration pattern and account**
+- **The PrizePicks board scraper architecture** — *"adjust sport filter"*
+- **The Gemini adversarial-review usage pattern**
+- **The differential/incremental write pattern, chunking pattern, deploy pipeline**
+
+**MUST BE REBUILT SPORT-SPECIFICALLY:**
+- **All prop taxonomy and canonical prop-key definitions**
+- **All enrichment factors** — *"many removed, several new ones needed"*
+- **The scoring engine's actual formula/model** — *"**probability estimation logic is sport-specific
+  even if the PIPELINE STRUCTURE around it is reusable**"*
+- **The full multiplier/pricing study** — *"MLB's specific numbers do not transfer; only the
+  platform-level **mechanics** transfer as **informed priors, not answers**"*
+
+### How the split held
+| Item | Outcome |
+|---|---|
+| Infrastructure | ✅ reused — Workers, deploy pipeline, Hyperdrive, the bridge, `curl_cffi` (read out of MLB's scraper) |
+| Research standard | ✅ reused — all 26 lessons plus Parts B–F |
+| **ParlayAPI** | ⚠ **reused then SUPERSEDED** — own scrapers beat it (~25% of rungs dropped) |
+| PrizePicks scraper architecture | ✅ reused — but **a separate NBA producer** (`league_id=7`, own env namespace, own output), not a sport-filter swap |
+| Gemini adversarial pattern | ✅ reused, **without the pre-stated falsification bar** (§14 #4) |
+| Differential/chunking/deploy | ✅ reused |
+| Prop taxonomy | ✅ rebuilt — 28 props |
+| Enrichment factors | ✅ rebuilt — 25 baseline / 4 enrichment, **and ten later closed** |
+| Scoring formula | ✅ rebuilt — *"the pipeline structure is reusable, the probability logic is not"* is exactly what happened: **`MAX_TIERS`/`MIN_PER_TIER`/`TIER_BLEND_K` ported verbatim while the recency blend was rejected** |
+| Multiplier study | ⏸ **not started** — correctly gated on live board + graded outcomes |
+
+**The one line that predicted the whole port**: *"probability estimation logic is sport-specific even
+if the **pipeline structure** around it is reusable."*
+
+---
+
 ## 1. THE CHAIN
 
 **⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
