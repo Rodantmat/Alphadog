@@ -999,6 +999,60 @@ source of a wrong final probability."*)
 
 ---
 
+## 7m2. ⚠ AN HONEST OUT-OF-SAMPLE PASS IS **NECESSARY BUT NOT SUFFICIENT** — never auto-apply a correction
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` **§7f** — "a profound calibration lesson."*
+***Recorded 2026-09-20 (T1 pass 29). Previously unswept — earlier T1 passes covered blueprint §1–§7e
+and the lessons document, but not §7f, §7g or §9.***
+
+**The case, verbatim:**
+> *"MLB found a real, concrete case where a statistical calibration fit genuinely **PASSED HONEST,
+> HELD-OUT, OUT-OF-SAMPLE VALIDATION** (it beat both the raw baseline and a standard calibration
+> method on real held-out error metrics) **and was still STRUCTURALLY WRONG** — the fit had been
+> computed **WITHOUT DISTINGUISHING BETWEEN TWO SIDES OF A MARKET (over/under)**, and ended up
+> **DOMINATED BY ONE SIDE'S PATTERN, SILENTLY MISAPPLIED TO THE OTHER SIDE**. The aggregate
+> improvement metric **DID NOT CATCH THIS, because it was AVERAGED ACROSS BOTH SIDES.**"*
+
+**The rule it produces**, stated in the source as *"a directly transferable, important lesson for
+NBA's own calibration loop"*:
+> *"an aggregate validation metric passing is **necessary but not sufficient** — always check whether
+> a proposed correction is genuinely appropriate for **EVERY MEANINGFULLY DISTINCT SUBGROUP IT WILL BE
+> APPLIED TO** (e.g. both sides of a market, every relevant tier), not just the pooled average, and
+> **KEEP A HUMAN REVIEW STEP BEFORE APPLYING ANY CALIBRATION CORRECTION even when it has technically
+> passed validation.**"*
+
+**The operating cadence it recommends** — converged on from external ML model-monitoring research and
+named in the blueprint as *"a concrete operational recommendation worth adopting directly"*:
+> *"**WEEKLY RECALIBRATION CHECKS, with TRIGGER-BASED RE-FITTING and MANDATORY HUMAN REVIEW BEFORE
+> APPLYING — NOT FULL UNATTENDED AUTOMATION.**"*
+
+**The cost of not having it** — MLB's own precedent, stated as real and costly:
+> *"two props running with **ZERO ACTIVE CORRECTION for roughly TWO AND A HALF WEEKS** after a
+> root-cause fix, showing real **30–45 PERCENTAGE POINT OVERCONFIDENCE GAPS**, undetected until
+> someone manually checked"*
+
+— and the blueprint states this is what **directly motivated the coverage-gap diagnostic** recorded
+above at **§7m, Safeguard 1**. The two sections are one design, split across the blueprint.
+
+### What §7f means for NBA specifically
+- **NBA's calibration refit is an unattended nightly step inside P2.** §7f's rule is that a
+  correction must not be auto-applied on an aggregate pass alone. **Whether any per-subgroup check or
+  human-review gate exists in the NBA refit is NOT RECORDED as built** — logged in
+  `NBA_OPEN_ITEMS.md` under *FROM T1 PASS 29*.
+- **NBA's subgroup dimensions are already enumerated by its own schema.**
+  `nba_score.ladder_calibration_asof` is keyed `(season, as_of_date, prop, phase, band, side)`.
+  **`side` is precisely the dimension MLB's failed fit collapsed.** A refit validated only on the
+  pooled average across `side` would reproduce the documented failure exactly — and `phase` and
+  `band` are two further subgroups the same argument covers.
+- **Goblin/demon lines create further distinct subgroups inside a single prop** (a demon `More` and a
+  goblin `Less` on the same player-prop are not one population) — see `NBA_GOBLIN_DEMON.md`.
+- **Evidence tier**: this is a **transferred MLB finding as stated in T1**. It is **NOT RECORDED** as
+  measured on NBA data, and no NBA instance of the failure has been observed or looked for.
+- **Cross-reference**: this is the calibration-side twin of lesson **#2** (*"never apply a
+  tier/pool-level multiplier to a heterogeneous population"*) — §7f is the same error committed by a
+  *fit* rather than by a *multiplier*.
+
+---
+
 ## 7n. THE OUTCOME-GRADING ENGINE — isolation design
 *Source: T1, blueprint §4c. Recorded 2026-09-20.*
 
