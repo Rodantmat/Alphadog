@@ -5939,6 +5939,61 @@ ELITE rebounds band has 699. **The diagnosis was ready before the next run start
 
 **T8 PASS 12: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.21 — PASSES 13, 14, 15 (full sequential, 175 / 230 / 270-char context) — **CLEAN 3/3**
+
+All 53 content blocks re-read three times at increasing context. **Every block maps to a documented
+entry. Nothing new.**
+
+---
+
+# ✅ T8 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (13, 14, 15)
+
+**Final tally: 15 passes. 12 found new material.**
+
+**T8 is where the design became a calibrated engine.** Its contributions:
+
+| Finding | Status |
+|---|---|
+| **The five-dimension tiering architecture** — rate tier × role tier × factor tier × variation band × direction | ✅ built; `role_tiers` in DB matches code |
+| **Why NBA can't use MLB's tiering directly** — *"a 20-point projection could be high-rate/26-min or low-rate/36-min; shrinking them to the same tier mean is statistically invalid"* | ✅ the two-system split |
+| **The config layer materialised** — 28 props, 67 factors, 460 relevance rows, 35 cells | ✅ verified live |
+| **The boundary encoded as a COLUMN** — 25 baseline / 4 enrichment | ✅ queryable, therefore enforceable |
+| **The nine-iteration calibration** → 0.7–1.0 pp, both seasons, `0 misses of 37` | ✅ asserted in the code header |
+| **A real bug in MLB's own guard** — symmetric floor forced 0.002 → 0.25 | ✅ fixed here; ⚠ **may still be live in MLB** |
+| **The FRINGE anomaly = leakage** (season-wide mean using future games) | ✅ resolved |
+| **The permanent rule**: a band cell is kept only if its sign is consistent across seasons | ✅ structure vs regime |
+| **"Rung-aggregates hide errors"** — the leg-level standard | ✅ the gate that ships |
+| **Altitude and timezone columns are EMPTY** | ⚠ **OPEN — 30 static values** |
+| **Uncertified props still produce numbers** (`fgm`, `fta`, + 5 configured-not-run) | ⚠ **OPEN** |
+| **`P(OT)` and foul risk named in the architecture, never built** | ⚠ **OPEN** |
+| **OT differs by app → different products, different models** (~7–8% on a 1-pt spread) | ⚠ **OPEN** |
+| **Team-specific benching: measured at a 30% spread, still unbuilt** | ⚠ **OPEN** |
+
+**The most transferable lesson**: *"rung-aggregates hide errors."* A ladder accurate to 1 pp in
+aggregate can hold a +5.4 and a −3.5 band that cancel. **Only the disaggregated view is the one a slip
+draws from.**
+
+---
+
+## RUNNING TOTAL: 8 of 16 transcripts DONE — **HALFWAY**
+| # | Transcript | Passes | New-material | Status |
+|---|---|---|---|---|
+| T1 | phase1-static | 28 | 23 | ✅ 3/3 |
+| T2 | phase3a-enrichment | 11 | 8 | ✅ 3/3 |
+| T3 | phase3a-final | 10 | 7 | ✅ 3/3 |
+| T4 | phase3b-backfill | 12 | 9 | ✅ 3/3 |
+| T5 | phase3c-starter-status | 8 | 5 | ✅ 3/3 |
+| T6 | phase3d-delta | 8 | 5 | ✅ 3/3 |
+| T7 | classification-design-research | 21 | 18 | ✅ 3/3 |
+| T8 | backtest-calibration | 15 | 12 | ✅ 3/3 |
+
+**113 passes, 87 with new material, across 8 transcripts.**
+
+## NEXT: T9 — `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt`
+Single-stat re-certification with the factor layer · combos and DD joint simulation ·
+period props (1Q/1H/2H/4Q, the 3-part mixture, OT) · **the production builder (patcher pattern)** ·
+the loader.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
