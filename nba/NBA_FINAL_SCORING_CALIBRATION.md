@@ -281,7 +281,14 @@ encodes this signal**. The measured answer, ten times out of ten, was "the basel
 
 ## 7c. THE ENRICHMENT APPLICATION RECORD — how a factor's contribution is audited
 
-Every enriched leg carries a structured record of what was applied to it:
+**⚠ T1 specified this design and named the payoff:**
+> *"**Pass through ENRICHMENT-SIGNAL METADATA alongside EVERY graded outcome** — **which specific
+> enrichment factors were ACTUALLY APPLIED to this leg, and WHICH WERE MISSING** — **this SINGLE
+> DESIGN CHOICE directly ENABLES the kind of ENRICHMENT-FACTOR AUDIT described in §4a to be done LATER
+> FROM STORED DATA, rather than requiring AN EXPENSIVE, ERROR-PRONE REVERSE-ENGINEERING EFFORT FROM
+> PROBABILITY VALUES ALONE AFTER THE FACT.**"*
+
+**✅ NBA built this.** Every enriched leg carries:
 ```json
 {"prop_side": "more",
  "board_line_value": 0.5,
@@ -291,6 +298,21 @@ Every enriched leg carries a structured record of what was applied to it:
  "factors_applied": 1,
  "breakdown": "[{\"factor_key\":\"player_availability\",\"status\":\"applied\",\"cell_id\":null,\"contribution\":…}]"}
 ```
+
+**Note the specification's second half — *"and WHICH WERE MISSING"*** — which is why **`status` matters
+as much as the value**, and why `factors_applied` counts them. **A zero contribution and an absent
+factor are different states**, and the record distinguishes them.
+
+**This is what made the ten-factor audit possible at all.** `factor_gate_results` could compare
+log-loss and Brier **with and without each factor on identical legs**, rather than reverse-engineering
+intent from probabilities.
+
+**⚠ One gap against the specification**: T1 says *"alongside every **GRADED OUTCOME**."* NBA's record
+lives on the **scoring** side (`final_hp` / the enrichment output), and **whether
+`nba_market.board_outcomes` carries the enrichment metadata joined to the graded result is
+unverified.** If it does not, the audit requires a join back to `final_hp` by
+`(game_date, player_id, prop, line, side)` — **workable, but only while both tables retain the same
+dates.**
 
 **Four fields make the layer auditable per leg:**
 | Field | Purpose |
