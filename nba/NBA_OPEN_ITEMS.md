@@ -258,6 +258,26 @@ Zero false positives across two runs only proves it does not fire wrongly. A **s
 required to prove it fires correctly — and that test failed twice (a race, then a cache artifact)
 before passing. **"No events" is not evidence that a detector works.**
 
+### BUG-OPEN · **82 play-type rows are scraped but never loaded**
+| Stage | Count |
+|---|---|
+| Scraped (`player_rows_written`) | **3,364** |
+| Loaded into Postgres | **3,282** |
+| **Lost** | **82** |
+
+**Verified live 2026-09-20 — `nba_stats.player_playtype_profile` holds 3,282 today.** Every other T3
+load is exactly 1:1 (schedule 2,666, tracking detail 4,652, DARKO 530, team play types 630).
+**Play types are the only mismatch.**
+
+It went unnoticed because the scrape figure and the load figure were reported in **different messages**,
+so no one compared them. **Likely cause (unverified): rows for players absent from `nba_ref.players`,
+or duplicate (player, play_type) pairs collapsing on upsert conflict.**
+
+**Not fixed** — per the documentation-pass rule. **The general lesson is the reportable one: a worker
+that reports `rows_written` from the SCRAPE and a loader that reports its own count are two different
+numbers, and nothing in the pipeline compares them.** The same blind spot could exist in any
+scrape→load pair where the two counts are never asserted equal.
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
