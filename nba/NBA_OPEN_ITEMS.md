@@ -428,12 +428,16 @@ and possible*.
 schedule is already loaded (2,666 games). **Not applied — documentation pass only.**
 
 ### DESIGN DRIFT · the pre-flight check became a post-flight audit
-T4 specified: *"**Before ingesting**, compare the number of games SCHEDULED for yesterday against the
-number showing as FINAL in the fresh API pull. If they don't match — **halt and warn, don't silently
-proceed** on an incomplete night."*
-**`nba/check_delta_gaps.py` performs exactly this comparison but runs AFTER mining, as an audit.**
-P2 fails the job either way and the baseline does not build, so the practical effect is similar — but
-the design intent was a gate, not an audit.
+**⚠ CORRECTED 2026-09-20 (T6 pass 5) — this entry was half wrong. There are TWO checks:**
+
+| Check | Where | When |
+|---|---|---|
+| **Delta worker's completeness check** | inside the daily delta ingestion worker (T6) | **PRE-flight** — calendar Final count vs logged count |
+| **`check_delta_gaps.py`** | P2 step 6 (live session) | **POST-mining audit** — dates, games, both teams, roster rate, freshness |
+
+**The T4 design intent WAS honoured** — the pre-flight gate exists in the delta worker.
+`check_delta_gaps.py` is an additional, broader audit layered on top, not a replacement.
+**No drift. Entry retained only to record the correction.**
 
 ### PERMANENT CAVEAT (accepted, not a bug) · late NBA stat corrections
 *"the NBA does issue rare stat corrections hours or days later (a rebound reattributed to a different
