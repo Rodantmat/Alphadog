@@ -486,11 +486,7 @@ distilled from — **eleven read in full**, two in part (**~40% of `ALPHADOG_DOS
 `ALPHADOG_SYSTEM_MAP.md` still unread: PARTS 3-5, Sections 3-9**), the rest never read. **17 of 23
 were catalogued nowhere until 2026-09-20.** → `NBA_SYSTEM_ARCHITECTURE.md` §8c.
 
-**polling sleeps, the thirteen** · T1 · The session's entire local execution beyond two syntax
-checks: `sleep 30/40/45/50/55/60/70/90/150/240/280/290; echo done`. **The behaviour blueprint §4o
-forbids**; the owner interrupted it — *"what is going on? what are these waits for?"* **Cause was
-structural**: no `github_trigger_workflow`, so no completion signal existed to await. →
-`NBA_SYSTEM_DESIGN.md` §0.8.
+**polling sleeps, the twenty-five** *(was "the thirteen" until 2026-09-20)* · T1, MEASURED · **25 of T1's 31 `bash_tool` calls were `sleep N; echo done`, totalling 2,416 s = 40.3 min** — **all but ~7 seconds of the session's entire local shell time.** The remaining six are two syntax checks, two `cat`s and **two `echo`s used as a scratchpad**. The behaviour blueprint §4o forbids, and the owner interrupted it — *"what is going on? what are these waits for?"* **Cause was structural**: no `github_trigger_workflow`, so no completion signal existed to await. → `NBA_SYSTEM_DESIGN.md` §0.8 · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 66*.
 
 **`schema_manifest.json`** · repo root, LIVE · A stale static manifest: `"date": "2026-05-18"`,
 **`"target": "AlphaDog v2 new D1 databases only"`**, naming 11 D1 databases — **D1 was decommissioned
