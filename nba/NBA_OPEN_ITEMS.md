@@ -205,6 +205,57 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 48 — FULL SEQUENTIAL NARRATIVE READ, ALL 85 BLOCKS *(added 2026-09-20)*
+*Angle: extract **every assistant narrative block in T1 in order** — 85 of them, excluding the pasted
+documents and tool payloads swept in passes 29–47 — and check each against the twelve documents.
+**This is the method passes 26–28 used**, re-run now that the embedded documents have actually been
+swept.*
+
+### ⚠ CORRECTION · **`github_str_replace` does not exist, and a mandated document listed it**
+`NBA_SYSTEM_ARCHITECTURE.md` listed `github_str_replace` among the bridge's GitHub tools.
+**T1 attempted the call and the bridge rejected it:**
+> *"**Tool 'Alphadog Bridge:github_str_replace' not found. Did you mean: `str_replace`? Use the exact
+> name shown here.**"*
+
+**`str_replace` is the SANDBOX file tool** — it edits a local file in the container and **cannot
+touch the repo.** A different tool with a confusingly similar name. **Confirmed twice**: by that
+error in T1, and by the live bridge's own tool list, which has no such entry.
+**The repo write tools are `github_put_file` and `github_patch_file` only.** Corrected in place.
+
+### ⚠ NOT RECORDED · a repeatable `github_patch_file` validation error
+T1 hit this **twice**:
+> *"**MCP error -32602: Input validation error: Invalid arguments for tool `github_patch_file`:
+> Invalid input: expected string, received undefined at path**"*
+
+**An omitted required argument fails at the MCP validation layer, not in the patch itself** — so the
+file is untouched and nothing is half-written. **Worth knowing**: the error names the *argument
+type*, not the argument, so the fix is to re-check that `path`, `old_str`, `new_str` and `message`
+are all present. Recorded because **`github_patch_file` is the primary write tool for this entire
+documentation effort.**
+
+### ✅ The remaining 83 blocks map to existing entries
+The narrative arc — recon → separate-universe correction → schema creation → first worker → deploy
+script patches → the Cloudflare block → debug route → canonical headers → 520 → probe mode → every
+nba.com domain blocked → PrizePicks scraper pattern found → GitHub Actions scraper → trigger-tool
+limitation → trigger-file invention → 30s timeout → retries → proxy (rules out IP blocking) → TLS
+fingerprinting → `curl_cffi` → empty `abbreviation` → static map → wire the Worker to the committed
+file — **is fully documented across `NBA_RECIPE.md` STEP 3–6, `NBA_SYSTEM_ARCHITECTURE.md` §6–§7 and
+`NBA_MASTER_SUMMARY.md` §T1.5–T1.9.** Spot-checked details all present: **403/520/526**, the tarpit
+diagnosis, the proxy test, the fixed-tool-list constraint, the `ID→abbreviation` map.
+
+### ⚠ A METHODOLOGICAL NOTE ON WHAT "CLEAN" MEANS — recorded so the count stays honest
+**Passes 44–47 found their material by verifying against the live code and database, not by reading
+T1.** That work is valuable and is required by rule 5.1 — **but it is not what the three-clean-pass
+rule measures.** The rule asks whether **the transcript** still yields new material.
+
+**Kept separate from here on**: a pass counts toward the clean streak **only if its angle is a read
+of the transcript.** A live-verification pass that finds a documentation gap **unrelated to anything
+T1 says** — such as the 17 missing table entries at *PASS 47* — **is recorded, dated, and does not
+reset the streak**, because the gap it found is not T1's content. **Pass 48 is a transcript read and
+it found two items, so the streak stays at 0.**
+
+---
+
 ## FROM T1 PASS 47 — WHOLE-UNIVERSE DIFF OF THE LIVE SCHEMA AGAINST `NBA_DATABASE.md` *(added 2026-09-20)*
 *Angle: blueprint §9 technique 1 — *"diff the live config against the real logic for **every entry**
 at once"* — applied to **the database** rather than to config. T1's DDL block (lines 11000–14000)
