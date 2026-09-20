@@ -266,6 +266,68 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 81 — THE 31 WORKFLOW-RUN LISTINGS, AND THE WORKFLOW NOBODY WROTE *(added 2026-09-20)*
+*Angle: the 31 `github_list_workflow_runs` **results** — not the runs T1 was waiting for (pass 40)
+but **everything else that appeared in the same lists.** **VERIFIED by re-running the call live
+2026-09-20.***
+
+### ⚠⚠ **GITHUB PAGES IS ENABLED ON THIS REPOSITORY, AND NO DOCUMENT MENTIONS IT**
+**In T1's 31 listings, the most frequent workflow by far is one that exists in no file:**
+| Workflow name seen in T1's listings | Appearances |
+|---|---|
+| **`pages build and deployment`** | **44** |
+| `AlphaDog v2 Mobile Auto Deploy` | 35 |
+| `NBA Static Data Scraper` | 9 |
+
+**`pages build and deployment` is GitHub's auto-generated Pages workflow.** It has **no file in
+`.github/workflows/`** — which is why it appears in no inventory, including pass 70's sweep of all
+32 `nba-*.yml` and the MLB workflow count.
+
+**VERIFIED LIVE, 2026-09-20**: a fresh `github_list_workflow_runs(per_page=12)` returns **twelve runs,
+all `pages build and deployment`, all on `main`** — **and every one is on a commit SHA written by
+this documentation pass.** Two completed **`success`**; the rest **`cancelled`**, each superseded by
+the next push.
+
+### ⚠⚠ **`[skip ci]` DOES NOT STOP IT** — and that matters for how this work has been committed
+**Every commit in this documentation effort carries `[skip ci]`.** **VERIFIED**: the MLB deploy
+workflow (`AlphaDog v2 Mobile Auto Deploy`) **did not fire for any of them** — `[skip ci]` works
+there — **but the Pages build fired for every single one.** **GitHub's Pages build does not honour
+`[skip ci]`.**
+**So the commit convention this effort was instructed to use suppresses the deploy pipeline and does
+not suppress Pages.** Recorded plainly: **the instruction was correct and did what it was meant to
+do** (no worker was redeployed by a documentation commit); **the Pages builds are an additional
+effect nobody asked for and nobody recorded.**
+
+### What Pages would be publishing — stated carefully, because the setting cannot be read from here
+**VERIFIED on the clone**: there is **no `gh-pages` branch**, **no `docs/` directory**, **no
+`_config.yml`**, **no `.nojekyll`**, **no `CNAME`** and **no `index.html` anywhere in the repo.**
+**With a Pages source of `main` at the repository root and no Jekyll config, the default build
+processes the repo root** — which means **the markdown files, including these twelve documents, are
+what the site is built from.**
+
+⚠⚠ **AND THIS COMPOUNDS THE CREDENTIAL BLOCKER AT THE TOP OF THIS DOCUMENT.** If the twenty
+transcripts are committed to `nba/transcripts/` while Pages is building from `main`, **the
+credential values inside them would be inside the published site as well as inside `git` history.**
+
+**What this pass does NOT claim, and cannot**: **whether the published site is public.** GitHub Pages
+can be private on some plans, and **the repository's Pages visibility setting is not readable through
+any tool available here.** **No claim is made that anything is currently exposed on the open web.**
+**The finding is that a publishing pipeline is running on every push, was documented nowhere, and
+must be checked before the transcripts are committed.**
+
+**→ Owner action, added to the blocker**: **confirm the repository's GitHub Pages setting — whether
+it is enabled, what source it builds from, and whether the site is public — before committing the
+transcripts.** If it is public, **redaction alone is not enough for anything already committed**, and
+the credential rotation recorded at pass 77 becomes the only reliable remedy.
+
+### The listings also show how T1 polled
+**Every one of the 31 calls used a small `per_page`**: **14 calls at `per_page: 2`**, 9 at `3`,
+3 at `1`, 2 at `6`, 2 at `4`, 1 at `10`. **T1 was checking "did my run appear yet", not surveying
+history** — which is the same behaviour the 25 polling sleeps record (pass 66), seen from the other
+side. **Recorded as corroboration**, not as a new finding.
+
+---
+
 ## FROM T1 PASS 80 — THE FOUR `run_job` RESULTS AND `check_bindings`, RE-RUN LIVE *(added 2026-09-20)*
 *Angle: the live-system **responses** T1 received — one `check_bindings`, three `run_job` calls
 against the NBA worker, one against MLB's control room — **with `check_bindings` re-run today for
