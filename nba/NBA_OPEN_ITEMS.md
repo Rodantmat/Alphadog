@@ -42,6 +42,30 @@ since the differential worker is what would flag them.
 Breaks on early-tip days (noon/1 PM ET starts = 9/10 AM PT). Detail under "FROM T4".
 **The NBA's opening week and every holiday slate include early tips.**
 
+### ⑥ **THE PUBLISHING-LAG GRACE WINDOW WAS PROPOSED AND NEVER BUILT**
+T7 reasoned this through completely, then left it as a judgment call:
+> *"the calendar can mark a game **Final before the bulk stats endpoint has it** (advanced stats lag
+> **~15 minutes**). If the delta runs in that window, the completeness check will **correctly flag a
+> 'missing' game that simply isn't published yet. That's the check working, not failing.**"*
+> *"I **could build the defensive handling now** — the completeness check treating a game as 'expected'
+> **only after a grace window past its scheduled end**, so a run that lands in the publishing gap
+> **doesn't cry wolf**… rather than discover it in October."*
+> *"real data is the only true **confirmation**, but it shouldn't be the only **preparation**."*
+
+**Why it is tighter now than when written:** that reasoning assumed the **6am ET** operating window,
+chosen as a *"4-hour safety buffer"* against the worst-case ~1:45am ET finish (T4.12f).
+**P2's planned cron is 01:00 PT = 04:00 ET — two hours tighter.** A West-Coast double-overtime game
+finishing ~1:45am ET publishes ~2:00am ET, so P2 still clears it — but with **2 hours of margin
+instead of 4**, and any late finish plus a publishing delay lands inside the gap.
+
+**What happens when it fires**: `check_delta_gaps.py` **fails the P2 job loudly** — correct for a real
+hole, a false alarm for a publishing lag. **The two are indistinguishable without a grace window**, and
+the right response to each is opposite (investigate vs. just re-run later). **An unattended pipeline
+that cries wolf in week one is one people stop trusting.**
+
+**The fix is small and already specified**: treat a game as expected only after
+`scheduled_end + grace`, grace ≥ 30 min. The schedule already carries tip times (2,666 games).
+
 ### STILL OPEN from T7's gap table — recurring refresh
 | Gap | Status |
 |---|---|
