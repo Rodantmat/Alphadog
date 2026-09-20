@@ -193,6 +193,44 @@ that makes §0.26's silent-drift scenario a real possibility rather than a theor
 
 ---
 
+## 0.28 ⚠ `POST /run` CARRIES NO AUTHENTICATION — fleet-wide, and NBA inherited it faithfully
+*Recorded 2026-09-20 (T1 judgment pass, pass 88). **VERIFIED** by grep of both live worker files.*
+
+`nba/alphadog-v2-nba-static-teams.js` line 426:
+
+```js
+if (method === "POST" && path === "/run") {
+  const input = await readJsonSafe(request);
+  try { return jsonResponse(await runStaticTeams(input, env)); }
+```
+
+**There is no token check before it.** `ADMIN_TOKEN` and `INTERNAL_TOKEN` appear **zero times** in the
+file; the only `Authorization` header in it is the *outbound* one this worker sends to the GitHub
+contents API (line 122). An unauthenticated `POST` with an empty body runs the full job — 30 rows
+into `nba_ref.teams`, 157 into `nba_ref.team_aliases`.
+
+**This is the house pattern, not an NBA defect.** MLB's `alphadog-v2-static-teams.js` line 412 is
+byte-for-byte the same shape, also with no token check (its only other `POST` route is
+`/diagnostic`, equally open). **Recorded here so nobody reads the NBA worker in isolation and
+concludes NBA skipped a check MLB performs — it does not.** The four-step wiring pattern in §0.2
+does not include an auth step because no worker has one.
+
+**What this documentation can and cannot say.** **VERIFIED**: neither worker authenticates `/run`.
+**NOT VERIFIED**: whether the `*.workers.dev` hostnames are actually reachable from the public
+internet. T1 recorded the live URL
+`https://alphadog-v2-nba-static-teams.rodolfoaamattos.workers.dev` after a successful deploy, but
+whether that route is enabled, and whether any Cloudflare Access / WAF rule sits in front of it, is
+an account-dashboard setting **this session has no read path to** — the MCP bridge exposes SQL,
+GitHub and worker dispatch, not Cloudflare account configuration. **So the exposure is conditional:
+if those routes are public, every writer worker in the fleet is an open write endpoint; if they are
+not, the service bindings are the only path and this is a non-issue.**
+
+**The owner is the only one who can close that question**, in the Cloudflare dashboard, per worker.
+It is worth closing before the season opens on 2026-10-03, because the same shape will be on every
+NBA writer built between now and then. *Not fixed — recorded per the sweep's read-only rule.*
+
+---
+
 ## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
