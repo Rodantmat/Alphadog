@@ -1070,6 +1070,8 @@ dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_la
 
 **And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
 bug class, in the grader.
+
+### ⚠ NO VALIDATION STEP BETWEEN GRADING AND THE CALIBRATION REFIT
 T1's blueprint §4c specifies the grader's isolation as **a load-bearing safety property**:
 > *"The grader **only ever reads** from historical board/game-log tables and **only ever writes to a
 > dedicated outcome-history table** — **it never touches any table the live board-serving path
