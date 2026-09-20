@@ -220,12 +220,28 @@ From the handoff's transfer table *(T1)*:
 > sport-specific**"*
 
 **Correct.** The tiers exist identically for NBA; the live NBA board returns
-`{demon: 104, standard: 36, goblin: 52}`. **And because it is platform-level, the 2026-08 change that
-enabled Less applies to NBA too** — which is precisely why the two-way taxonomy broke.
+`{demon: 104, standard: 36, goblin: 52}`.
 
-**The corollary worth holding**: platform-level mechanics **transfer across sports but change over
-time**. Sport-specific numbers do the reverse. *"MLB's specific numbers do not transfer; only the
-platform-level mechanics transfer as informed priors, not answers."*
+**⚠ AND T4 ADDED THE CAUTION THAT MATTERS:**
+> *"Goblin/Demon/Standard-style tier variants: assumed to exist per-platform for NBA (a platform-level
+> mechanic, not sport-specific) **but TIER COUNT AND TIER SPACING must be verified PER PROP directly
+> against each platform's live board once one exists — NOT assumed identical to MLB's**."*
+
+**So two things were separated correctly:**
+| Property | Transfers from MLB? |
+|---|---|
+| **The mechanism** (goblin = easier, demon = harder, anchored) | ✅ yes — platform-level |
+| **Tier COUNT and tier SPACING, per prop** | ❌ **no — must be measured on the NBA board** |
+
+**And that caution was vindicated twice.**
+1. **Ladder depth measured on a real NBA slate came out per-prop and very uneven** — points p95 = 13
+   rungs, steals and blocks = 1. **Assuming one spacing would have been wrong in both directions**
+   (see §7).
+2. **The mechanism itself then changed** — PrizePicks enabled Less in 2026-08, so even the
+   platform-level half needs re-verification over time, not just across sports.
+
+**The general rule**: *"MLB's specific numbers do not transfer; only the platform-level mechanics
+transfer as informed priors, not answers"* — **and the mechanics have a shelf life.**
 
 ---
 
