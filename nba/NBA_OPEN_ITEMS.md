@@ -779,6 +779,28 @@ the anchor's own as-of construction with the same method used on candidates.
 **Note this is not a claim that the anchor leaks.** It is a recorded gap between the rule and what has
 been verified.
 
+### ⚠ THE FACTOR GATE — neither branch of the multiple-comparisons rule has been applied
+Lesson #7 (T1) requires the significance bar to match how the test was run:
+| Situation | Correct bar |
+|---|---|
+| **Scanning many cells for the best result** | **corrected** (Bonferroni or equivalent), scaled to the number searched |
+| **A single, PRE-REGISTERED confirmatory test** | **UNCORRECTED** — *"using a scan-level bar on a single confirmatory test is ITSELF AN ERROR"* |
+
+The source records both errors happening: under-correction on scans, and one case where *"a
+40-cell-scan-corrected bar was wrongly used on what was actually a single pre-specified test, making a
+real, borderline-positive result look **far more rejected than the evidence warranted**."*
+
+**NBA state**: the factor gate scanned many **prop × band × side** cells across ten candidates.
+**No multiple-comparisons correction is recorded, and no per-cell pre-registration is recorded.**
+Neither branch has been applied.
+
+**This compounds with the #8 gap above** — ten factors closed, without the confirmed-negative /
+underpowered split, and without a correction scaled to the scan. **The rejections may well be right;
+what is missing is the record that makes them defensible.**
+
+**⚠ And the counterweight still applies (#9)**: do not now apply a stricter bar because the results
+were negative. **Fix the method, not the threshold.**
+
 ### ⚠ TEN REJECTED FACTORS — "confirmed negative" vs "underpowered" is not recorded separately
 Lesson #8 (T1): *"**'Insufficient data / underpowered' is a DISTINCT verdict from 'confirmed
 negative' — don't collapse them.** A non-significant result with a wide confidence interval that still
