@@ -664,6 +664,36 @@ exactly the ones the query drops.
 **The NaN guard is the model to copy**: it drops bad rows **and reports the count**, so the exclusion
 is visible rather than silent.
 
+### ⚠ PROP-DEFINITION MISMATCH CREATES A PHANTOM LINE-SHOPPING SIGNAL
+Lesson #14 (T1), stated in full:
+> *"**The same-sounding prop name can mean genuinely different underlying stats on different
+> platforms.** [The recorded case]: **a fantasy-score-style composite prop used DIFFERENT SCORING
+> FORMULAS on different platforms, producing a LARGE PHANTOM 'LINE DIFFERENCE' that LOOKED LIKE A
+> LINE-SHOPPING OPPORTUNITY but was actually just TWO PLATFORMS MEASURING DIFFERENT THINGS WITH THE
+> SAME NAME.**
+> **Before any cross-platform prop comparison for NBA, explicitly verify the prop's exact
+> definition/formula** [on each platform]."*
+
+**The danger is not a wrong number — it is a FALSE OPPORTUNITY.** A definitional gap between two apps
+presents exactly as a mispriced line, and it points the wrong way with high confidence.
+
+**Directly live for NBA**: five apps are scraped and their boards land in one table,
+`nba_market.board_snapshots`, keyed by `market_key`. **Any cross-app comparison on the same
+`market_key` assumes definitional equivalence.**
+
+**Known definitional differences already recorded:**
+| Difference | Source |
+|---|---|
+| **OT included in 2H/4Q on PrizePicks/Underdog, EXCLUDED on Sleeper** | T7 prop map — *"different products, different models"*; ~7–8% OT probability at a 1-point spread |
+| Fantasy scale **verified identical** (`1/1.2/1.5/3/3/−1`) across all three apps | T9 `prop_taxonomy` seeding — this one was checked |
+| Sleeper milestone lines (20+/25+/30+) vs "no alternate lines" | unresolved, `NBA_GOBLIN_DEMON.md` §9 |
+
+**The fantasy scale was the one checked, and it passed.** **The OT rule is the one that differs — and
+it is exactly a same-name-different-stat case.** A 4Q points line on Sleeper and on PrizePicks are
+**different props**, and comparing them would produce precisely the phantom signal #14 describes.
+
+**Not verified for**: period props generally, `stocks` composition, `fantasy_score` on Fliff and Betr.
+
 ### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
 
 **MLB's lessons document devotes an entire section — Part C, *"the pipeline/data-quality bug family to
