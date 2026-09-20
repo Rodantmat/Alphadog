@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 54 passes.** Pass 54 (sample the identifiers) found **minor new material — `nba_game_id` was specified and never created**; only `team_id` follows the stated ID convention exactly (§T1.84). **Clean run broken: pass 53 was clean, pass 54 reset it to 0.** *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 55 passes (54 counted, pass 55 VOID).** Pass 55's sampling instrument failed — 26/26 false misses — so it is **excluded from the count in both directions** (§T1.85). Last counted pass was 54 (minor new: `nba_game_id` never created). **Clean run: pass 53 only, broken at 54.** *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
