@@ -6257,6 +6257,66 @@ the fat right tail. **At +2 the tail is meaningfully thinner.** Recorded in OPEN
 
 **T9 PASS 3: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T9.13 — PASS 4 — **WHAT "PRECISE" MEANS, AND THE CERTIFICATION LADDER MOVING**
+
+#### T9.13a — **THE DEFINITION OF "PRECISE" — the clearest statement in the project**
+> *"It means **the stated probabilities are honest**: **when the recipe says 75%, roughly 75% of those
+> legs hit**, on every band, both seasons, out of sample. That is exactly the property that makes
+> **slip EV computable and Goblin/Demon pricing comparable**.
+> **It does NOT mean any single leg is near-certain — a calibrated 75% still loses one time in four.**
+> **Calibration is the foundation; EDGE comes from the factor layer and from the enrichment deltas on
+> top of it.**"*
+
+**This separates two things that are easy to conflate**: a calibrated model is *honest*, not *good*.
+Honesty is what makes EV computable at all; edge is a separate property built on top. **A perfectly
+calibrated model with no edge is still worth having — you can price with it.**
+
+#### T9.13b — Status BEFORE the factor layer (5 certified)
+| Class | Props |
+|---|---|
+| **Certified both seasons** | points, rebounds, assists, 3PM, **FGA** |
+| **Close, not certified** | blocks, steals, turnovers, fouls, **FTM** — *"2–5 confidence bands per season still off by 2.6–4.4 pp"* |
+| **Regime-driven residual** | **3PA** — *"anchor bands **flip sign with the league's attempts swing**; the in-season Platt carries it"* |
+
+**3PA is a textbook regime case by the T8.15b rule** — the sign flips, so no frozen cell is kept and
+the walk-forward mechanism handles it instead.
+
+#### T9.13c — **The owner's correction: the factor layer is not optional**
+> **OWNER:** *"**The factor layer should be being used since the beginning** — only with that
+> consideration will you be able to properly get the sharp numbers. **No forced!** Unless they are
+> unneeded, which I don't think so."*
+> *"**Goblins and demons should NOT be handled now — it is BOARD DEPENDENT** and will only have this
+> information later."*
+
+**Two instructions, both structural**: factors belong in from the start rather than bolted on, and the
+goblin/demon tails cannot be certified without a board to certify against. **The second one is why the
+tier work waits for T13's board data.**
+
+#### T9.13d — Status AFTER the factor layer (6 certified, combos added)
+| Class | Props |
+|---|---|
+| **Certified (6)** | points, rebounds, assists, 3PM, FGA, **FTM** — *"ladders ≤1.5 pp on all 13 rungs, zero band×direction×rung cells over 2.5 pp, confidence bands hitting their rate on both seasons"* |
+| **Close (4)** | **blocks** (*"borderline — **0 misses on 2025-26**, two ≤3.3 on the one-season holdout"*), steals, turnovers, fouls |
+| **Regime residual (1)** | 3PA |
+| **Combos** | **P+R, P+A, R+A, PRA, fantasy CERTIFIED both seasons (ladders ≤1.1)**; stocks close (*"inherits blocks/steals"*) |
+| **Double-double** | **calibrated on both seasons** |
+| **Period layer** | **1Q points at standard on the first pass** |
+
+**FTM moved from "close" to "certified" once the factor layer was applied** — the factor layer earned
+its place on at least one prop immediately.
+
+**And the honest framing on the four that remain close:**
+> *"**These are the noisiest per-game stats in the sport; the research consensus for them is exactly
+> what's built.**"*
+
+**Not a promise to fix them — a statement that the method is already at the state of the art for those
+props.** *(And T9.5 gives the structural reason: they are opponent-driven.)*
+
+**Note `stocks` "inherits blocks/steals"** — a combo is only as certified as its components, which is
+why the joint simulation approach propagates certification status as well as values.
+
+**T9 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
