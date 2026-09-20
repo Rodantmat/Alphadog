@@ -195,6 +195,30 @@ archives back to **2021-22** — free, official, no third-party paywall."*
 **⚠ The backfill captured is HOURLY (48 snapshots/game-date), while the league publishes every 15
 minutes.** Any cutoff analysis finer than ±1 hour needs the 15-minute archive. The season crosses DST.
 
+### BallDontLie — **PAID GOAT tier, $39.99/month**
+*Source: T1, a pre-existing NBA integration report. Recorded 2026-09-20.*
+
+| Property | Value |
+|---|---|
+| **Status** | *"Fully operational with paid GOAT tier"* |
+| **Cost** | **$39.99/month** |
+| **Rate limit** | **600 requests/min** — *"10× more than FREE tier"* |
+| Endpoints verified | `/teams` 200 OK · `/games` 200 OK · **`/stats` 200 OK — *"CRITICAL, paid tier only"*** |
+| API key | confirmed active (`d2bc0f1b…3ea7`) |
+| **Timeout** | raised **10s → 30s** to handle slow responses |
+| Documentation | `BALLDONTLIE_INTEGRATION_SUCCESS.md` |
+
+> **Key finding, as stated**: *"**API is SLOW (10–30 s per request) but functional. CACHING CRITICAL
+> for production.**"*
+
+**⚠ This is a paid subscription that appears in no later transcript.** The NBA build went to
+**stats.nba.com** as its primary source (T1 onward), and T9's historical-prop research records
+*"balldontlie: **no history**"* as the reason it was not used for board data.
+
+**Open questions**: is the subscription still active and being paid for? Is anything in the current
+pipeline calling it? **Nothing in the P1/P2/P3 workflows references it.**
+Recorded in `NBA_OPEN_ITEMS.md`.
+
 ### The Odds API
 Historical and live sportsbook lines → `nba_market.board_snapshots`. 12 books, $30 plan.
 **Carries PrizePicks as a bookmaker but NOT the DFS-only markets** (fantasy_score, period props).
