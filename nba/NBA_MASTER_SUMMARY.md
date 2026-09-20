@@ -52,8 +52,8 @@ material; it is not a rerun.
 | 6 | `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` | ✅ **DONE — 3/3 clean (passes 6, 7, 8)** |
 | 7 | `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt` | ✅ **DONE — 3/3 clean (passes 19, 20, 21)** |
 | 8 | `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` | ✅ **DONE — 3/3 clean (passes 13, 14, 15)** |
-| 9 | `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt` | **NEXT** |
-| 10 | `2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt` | pending |
+| 9 | `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt` | ✅ **DONE — 3/3 clean (passes 6, 7, 8)** |
+| 10 | `2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt` | **NEXT** |
 | 11 | `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt` | pending |
 | 12 | `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt` | pending |
 | 13 | `2026-09-13-01-03-48-nba-boards-grader-market-2026-09-10.txt` | pending |
