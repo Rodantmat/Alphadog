@@ -306,10 +306,45 @@ Recorded in `NBA_OPEN_ITEMS.md`.
 | *"a short hot/cold streak on a rare event is mostly noise"* | **fg3_pct rationale: *"takes hundreds of attempts to stabilise; a 10-game hot/cold streak is mostly noise"*** — nearly the same words |
 | *"not a single global blend"* | **MLB's fixed 5/10/20/season blend was rejected as *"the single biggest thing that does NOT transfer"*** |
 
-**The one refinement the prediction did not contain**: **splitting a single stat by component** —
-`fg3a_rate` (α=0.12, short) vs `fg3_pct` (α=0.03, long), because *"attempt VOLUME, unlike make %, is
-role/scheme-driven."* **The blueprint predicted per-prop spread; the build found per-component
-spread within a prop.**
+### ⚠⚠ THE MONOTONICITY BUG — two props that are secretly the same event
+> *"**A real, costly monotonicity bug worth actively guarding against**: MLB found **two of its own
+> props measuring the *LITERALLY IDENTICAL UNDERLYING EVENT*** — **a specific stat crossing 0.5 is
+> mathematically the same real-world occurrence as a related, differently-named stat crossing its own
+> 0.5 at the shared threshold** — **were given DIFFERENT SHRINKAGE TREATMENT.** The resulting
+> inconsistency **grew from a 40% VIOLATION RATE to 97% BY PLAYER TIER before being caught.**
+> **For NBA: CHECK EXPLICITLY for any pair of props/combo-stats that SHARE AN UNDERLYING EVENT AT A
+> GIVEN THRESHOLD** — e.g. **a specific single-category prop crossing zero versus a COMBO PROP THAT
+> NECESSARILY CROSSES ZERO AT THE SAME MOMENT** — **and make sure they receive IDENTICAL TREATMENT.
+> Don't let two nominally-different props that are SECRETLY THE SAME EVENT dri[ft apart].**"*
+
+**40% → 97% violation rate.** The inconsistency compounded by player tier before detection.
+
+### ⚠ NBA HAS EXACTLY THIS PROP SHAPE, AND IT IS UNCHECKED
+**Shared-event pairs present in the 28-prop taxonomy:**
+| Pair | Shared event |
+|---|---|
+| **`blocks` 0.5 and `stocks` 0.5** | if a player has 0 steals, `stocks ≥ 1` **is** `blocks ≥ 1` |
+| **`steals` 0.5 and `stocks` 0.5** | the mirror case |
+| **`points` 0.5 and `pts_reb` / `pts_ast` / `pra` 0.5** | at the bottom rung these co-trigger |
+| **`rebounds` 0.5 and `reb_ast` 0.5** | same |
+| **`double_double` and its components** | DD requires two categories ≥ 10 — **necessarily determined by the component props** |
+
+**Why NBA is partly protected and partly not:**
+- ✅ **Combos are SIMULATED from calibrated marginals, not fitted independently** — *"joint structure,
+  never a direct fit"* — so a combo inherits its components' treatment **by construction**.
+- ✅ **`stocks` is recorded as *"inherits the blocks/steals floor"*** — the inheritance is explicit.
+- ⚠ **But the two recipes are SEPARATE FILES with separate constants** (§3.8b duplication risk), and
+  **`SHIFT_LAMBDA` differs by prop** (`blocks: 0.5`, `steals: 0.5`) while combos route through
+  `combos_ladder_v1.py` entirely.
+- ⚠ **`double_double` carries a sentinel −1.0 and has NO LADDER**, so it is handled by a different
+  path again.
+
+**The check T1 asks for — do shared-event pairs receive identical treatment at the shared threshold —
+is not recorded as having been run.** **And the failure mode is monotonicity**, which the calibration
+technique section (§3.9b) independently names as one of the three defects that disqualify
+histogram-binning.
+
+**Recorded in `NBA_OPEN_ITEMS.md`.**
 
 ---
 
