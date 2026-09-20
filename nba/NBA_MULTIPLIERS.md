@@ -149,6 +149,74 @@ Sleeper have been measured, at scale, to leave nothing on the table for a probab
 (dynamic vs step pricing) is the durable part; the efficiency result should be re-measured on NBA
 data** — but it is a strong prior.
 
+## 0.2h ⚠⚠ **LESSON #27 — PARTIAL-CREDIT STRUCTURE IS PLATFORM-SPECIFIC: FLAT *vs* PROPORTIONAL**
+*Source: T1, `NBA_LESSONS_LEARNED_FROM_MLB.md` Part A, lesson **#27**. **Recorded 2026-09-20 (T1 pass
+30) — this lesson had no entry in any of the twelve documents before now.** Its existence is
+**VERIFIED** by direct grep of the source file and of T1; the research standard is **27 lessons, not
+the 26 these documents recorded**.*
+
+> *"MLB found **a real, concrete structural difference between platforms**: **one platform's
+> partial-hit Flex payouts (for missing one or two picks out of a full slip) were FLAT, FIXED VALUES
+> INDEPENDENT OF HOW LARGE THE UNDERLYING FULL-HIT MULTIPLIER WAS**, while **a DIFFERENT platform's
+> partial-hit payouts SCALED PROPORTIONALLY WITH ITS OWN FULL-HIT MULTIPLIER**. **Don't assume every
+> DFS platform's Flex-style partial-credit structure works the same way — VERIFY EACH PLATFORM'S
+> ACTUAL MECHANIC… DIRECTLY FROM REAL OBSERVED DATA before building any EV model that depends on
+> it**, since **the two structures produce meaningfully different expected values for the same
+> underlying leg-hit distribution.**"*
+
+### ⚠ This bears directly on §0.2 — read them together
+**§0.2 is the strongest single result in this document**: *"two independent real observations both
+showed identical partial tiers **4/5 = 0.5 and 3/5 = 0.25**… **suggests these may be flat/constant
+values**"*, and §0.2d builds the whole separable-structure argument on it — *"the partial-tier table
+is the part that looks constant, while the per-leg multiplier varies by every dimension in §0.1."*
+
+**Lesson #27 does not overturn §0.2. It bounds it.**
+
+| | What §0.2 established | What #27 adds |
+|---|---|---|
+| **Platform** | **PrizePicks only** — 5-pick and 6-pick Flex, MLB | flat is **one of two structures observed in the wild** |
+| **Shape** | flat / constant tiers (0.5, 0.25) | the other structure **scales with the full-hit multiplier** |
+| **Transferability** | implicitly treated as a property of Flex | **explicitly a property of a PLATFORM, to be verified per platform** |
+| **Consequence** | a tabulatable slip-shape payout | *"meaningfully different expected values for the same underlying leg-hit distribution"* |
+
+**So the separable decomposition in §0.2/§0.2d is valid for PrizePicks and NOT YET LICENSED
+ELSEWHERE.** **Betr, Fliff, Underdog and Sleeper each require their own observation.**
+
+### ⚠ The prior for who is which — and it points the wrong way for us
+**§0.2e records, separately, that Underdog and Sleeper *"price per-leg DYNAMICALLY (closer to real
+sportsbook-style pricing) rather than off one flat published table."*** **A platform that prices legs
+dynamically is precisely the shape that would scale its partial tiers proportionally.** These two
+findings were recorded independently and **have not been read against each other until now**: together
+they make *"Underdog/Sleeper partial tiers are probably NOT flat"* the **informed prior**, not an open
+question with no lean. **NOT RECORDED as measured. Do not act on the prior — measure it.**
+
+### What this changes in the capture protocol
+**§4b's protocol must answer a fifth question per platform**, and it is cheap because **the payout
+displays before placing** (#16), so **no stake is required**:
+
+| # | Question | Already in §4b? |
+|---|---|---|
+| 1–4 | the four questions §4b already lists | ✅ |
+| **5** | **Does a partial-hit tier change when the full-hit multiplier changes?** Build two slips of the same shape with **materially different headline multipliers** and read the partial tiers off both. **Flat → identical partial values. Proportional → they move with the headline.** | ⚠ **NOT PRESENT — add it** |
+
+**One extra observed slip per platform settles it.** That is the whole cost.
+
+### Why this is first-order, not a refinement
+**Flex EV is a weighted sum over the partial tiers.** If the tiers scale with the headline multiplier,
+then **every tier term moves when the headline moves**, and an EV model built on flat tiers is wrong
+in the same direction for every slip it prices — **a systematic bias, not noise.** It also
+**compounds with §0.2d.2's finding** that Flex *"can theoretically make an EV-negative Power pool
+EV-positive"* — that argument is entirely a function of the tier shape, so **it cannot be evaluated on
+a platform whose tier shape is unverified.**
+
+### Confidence tier on this entry
+**Lesson #27 itself is VERIFIED** — quoted verbatim from the source document, existence confirmed by
+grep on 2026-09-20. **Its application to any specific platform is NOT RECORDED**: no NBA-side
+observation of partial tiers exists on any platform, and the MLB-side observation covers PrizePicks
+alone. **Per #19, nothing here is stated more strongly than "verify each platform."**
+
+---
+
 ## 0.2c ⚠ THE CONFIDENCE TIER ON §0.2's FINDING — do not let it harden
 
 **Lesson #26, stated in full:**
