@@ -1730,9 +1730,15 @@ T1's blueprint §4c specifies the grader's isolation as **a load-bearing safety 
 evidence is invisible to today's cells"*). **What is missing is the validation step between them** —
 the thing that makes the grader's isolation actually load-bearing.
 
-**Compounding factors already recorded**: the refit has **no magnitude sanity check** on the fitted
-shift (T1 §4a: *"be willing to reject a fit even when statistically valid if the shift is implausibly
-large"*), and **no over-flattening check**. **Three absent guards on the same path.**
+**Compounding factors already recorded**: the refit has **no over-flattening check**.
+**⚠ CORRECTED 2026-09-20 on the magnitude guard**: the *recipe* **does** carry one —
+`classification_ladder_v12.py` line 670: **`if shift > 0.15: continue`**, so a Platt fit implying a
+shift above 0.15 is **discarded outright** and the leg keeps `p_raw`. `max_shift` is logged per fit.
+**That is exactly the prescribed "reject a statistically valid fit that implies too large a
+correction" guard.**
+**What is still unverified**: whether **`build_asof_calibration.py`** — the separate weekly
+production refit that writes `ladder_calibration_asof` — carries the same threshold. **Only the
+recipe has been read.** **Two guards absent on this path, not three.**
 
 ### ⚠ PROP FORMULAS NOT FLAGGED AS VALIDATED-OR-NOT
 > *"**Map every canonical prop to an explicit, direct expression against raw game-log columns**…
