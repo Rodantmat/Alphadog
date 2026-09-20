@@ -143,7 +143,24 @@ Returns **three** result sets: `OverallTeamPlayerOnOffDetails`,
 `PlayersOnCourtTeamPlayerOnOffDetails`, `PlayersOffCourtTeamPlayerOnOffDetails`.
 **Each player's ON row is matched to their OFF row by `VS_PLAYER_ID`**, and the stored value is the
 computed **net-rating differential** (team net rating with the player on the floor minus off) — the
-"with/without you" signal. Verified values: **Wembanyama +16.4, LeBron +2.3**.
+"with/without you" signal. Verified values: **Wembanyama 17.0 on / 0.6 off = +16.4**, LeBron +2.3.
+**Dedup rule:** players traded mid-season appear **twice** in the raw source; **the current-team row is
+kept**. That is how 661 becomes 582.
+**Status caveat:** this is explicitly a **SECONDARY, noisy** signal — descriptive of what happened,
+polluted by teammates/opponents/small samples. See `player_impact_rating` for the primary anchor.
+
+### `nba_stats.player_impact_rating` *(T2 decision, T3 build)*
+**DARKO DPM** — Kostya Medvedovsky, `darko.app`, free. Rated by NBA front-office analysts (HoopsHype
+survey) as the **best PREDICTIVE catch-all metric**, beating paid EPM and LEBRON on RMSE, *"because
+it's forward-looking rather than backward-looking, which is exactly what matters for prop prediction."*
+**This is the PRIMARY talent anchor**; on/off is secondary.
+
+**The table is deliberately named `player_impact_rating`, NOT `darko`** — a design decision taken on a
+stated risk (*"single-maintainer bus factor… could stop updating with little warning"*) so the source
+can be swapped without touching consumers. **Keys on `nba_player_id` directly** (DARKO uses the same
+NBA person IDs — `203999` = Jokić), so **no name matching and no diacritic exposure**.
+Known risks accepted: methodology may shift over time, so values are not guaranteed comparable across
+years; the site is a JS-heavy app requiring hydration extraction rather than HTML parsing.
 
 ### `nba_ref.referee_assignments` *(T15)*
 Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
