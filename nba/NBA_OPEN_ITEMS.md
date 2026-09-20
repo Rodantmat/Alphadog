@@ -608,6 +608,36 @@ manual chunks, a re-check found the enum had refreshed and the Worker loaded the
 Large loads must go through a Worker or chunked SQL. **Checked exhaustively, so it need not be
 re-checked.**
 
+### ⚠ DATA QUALITY · `comment` field has TWO formats
+`nba_stats.player_game_starter_status.comment` mostly uses `"DNP - League Suspension"` (hyphen-space)
+but **11 rows use `"DND_LEAGUE_SUSPENSION"`** (underscores). **Any `LIKE '% - %'` filter or naive
+prefix parse silently misses them.** Verified live 2026-09-20.
+
+### UNDERUSED ASSET · 5,500+ historical absence reasons already in Postgres
+The starter-status backfill captured DNP/DND reasons as a byproduct — **no extra scraping needed**:
+| `comment` | n |
+|---|---|
+| **DNP - Coach's Decision** | **4,319** |
+| DND - Injury/Illness | 975 |
+| DNP - Injury/Illness | 99 |
+| NWT - Not With Team | 29 |
+| DND - Rest | 27 |
+| + suspension, personal, NWT-injury | ~70 |
+
+**The dominant category is healthy scratches (4,319 coach's decisions), dwarfing injuries 4:1** — and
+it is **the purest available signal for role volatility**. For a fringe player, a coach's-decision DNP
+is precisely the event `f_role` prices (fringe players miss by 0.0283 vs iron-men at 0.0008).
+**Whether anything consumes this field is unverified.** It covers 2025-26 only, matching the
+starter-status scope.
+
+### OVERRULED LATER (correctly) · "historical injury-PDF backfill is a scope mistake"
+T6's research concluded: *"It doesn't belong in the baseline (which is explicitly designed to be
+injury-agnostic) — it's training data for a future enrichment refinement, not urgent."*
+**T10 built it anyway, and it became load-bearing** — the day-before report feeds P2's baseline build,
+N1 is fitted on it, and the parity rule depends on it.
+**The framing was right about the BASELINE and wrong about the BACKFILL's urgency**: you cannot
+backtest an availability-aware pipeline without historical availability.
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
