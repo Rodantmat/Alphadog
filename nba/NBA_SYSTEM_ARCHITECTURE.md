@@ -21,6 +21,59 @@ Every architectural choice below follows from that.
 
 ---
 
+## 1a0. THE SHARED-QUEUE QUESTION THE BLUEPRINT POSED — **answered 2026-09-20, by live query**
+*Angle: negative space — what a section promises and never delivers. Recorded 2026-09-20 (T1 pass 35).
+**The question was never recorded as open in any of the twelve documents. The word "contention"
+appeared in none of them.***
+
+**The blueprint, §0, posed it as a concrete task — not a musing:**
+> *"**Shared operational infrastructure should generally be REUSED, NOT DUPLICATED** — the job queue,
+> the worker registry, the scheduled-jobs table, the MCP admin bridge, and the deploy pipeline are all
+> genuinely sport-agnostic plumbing… **The real design question for NBA isn't 'should we build our own
+> job queue' (NO) — it's 'DOES ADDING A SECOND SPORT'S WORTH OF JOBS TO THE EXISTING SHARED QUEUE AND
+> SCHEDULING SYSTEM INTRODUCE ANY REAL CONTENTION OR COLLISION RISK'** — **a genuine, concrete thing
+> worth CHECKING DIRECTLY AGAINST THE LIVE SYSTEM before assuming it's fine, rather than either
+> avoiding it or assuming it's automatically safe.**"*
+
+### ✅ THE ANSWER — **the risk is structurally zero, because NBA never joined the queue. VERIFIED.**
+
+| Check | Result |
+|---|---|
+| NBA's own control plane exists | **`nba_control.job_runs`, `nba_control.worker_run_log`, `nba_config.worker_definitions`** — VERIFIED present |
+| NBA rows in MLB's shared registry `config.worker_definitions` | **0** |
+| Total rows in `config.worker_definitions` | **116** |
+
+**NBA runs an entirely separate control plane.** There is **no shared queue to contend for**, so the
+blueprint's risk cannot materialise. **The question is closed — by architecture, not by measurement
+of contention.**
+
+### ⚠ BUT NOTE WHAT CLOSED IT — a direct contradiction of the blueprint, flagged not resolved
+**The blueprint answered its own sub-question in advance: *"should we build our own job queue"* —
+**"(no)"**. **NBA built its own anyway**, because **the owner overruled the shared-control-plane
+proposal** (`NBA_MASTER_SUMMARY.md` §T1.3 — *"owner overruled it — NBA gets its own everything"*).
+
+**So the blueprint's recommendation and the system as built disagree on the record:**
+| | Says |
+|---|---|
+| **Blueprint §0**, citing §7e's *"hard-won lesson"* | reuse shared plumbing; duplicating it *"just for NBA" is almost always the wrong move* |
+| **The owner, T1** | *"NBA gets its own everything"* |
+| **The live system** | **the owner's version** — separate schemas, separate registry, separate run log |
+
+**The owner's decision is the binding one and is not in question here.** What is recorded is that
+**the blueprint's contrary recommendation was never explicitly closed out** — it simply stopped being
+followed. **Flagged per the standing rule on contradictions; not resolved.**
+**The benefit is real and worth stating**: the isolation that made the question moot is the same
+isolation that makes **`startswith("alphadog-v2-nba-")`** provably zero-impact on MLB.
+
+### ✅ AND A SECOND THING THE SAME QUERY VERIFIES — the additive-only constraint HELD
+**`config.worker_definitions` holds 116 rows.** T1's Phase 1 live-verification banner, dated
+**2026-08-31**, recorded **116 live rows** in that same registry.
+**Twenty days and an entire NBA build later, the number is unchanged and NBA's share of it is zero.**
+**That is direct, live evidence that the *"additive only, no MLB-system side effects"* constraint —
+stated in T1 and never independently tested since — was honoured.** **VERIFIED 2026-09-20.**
+
+---
+
 ## 1a. ⚠⚠ THE OPERATING CONSTRAINT THAT EXPLAINS THE WHOLE ARCHITECTURE
 *Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§7**. **Recorded 2026-09-20 (T1 pass 31) —
 §7 was entirely undocumented across all twelve documents.***
