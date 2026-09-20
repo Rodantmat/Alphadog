@@ -113,7 +113,13 @@ the three-clean-pass cycle per transcript against the full set.
 | 14 | `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt` | pending |
 | 15 | `2026-09-18-17-12-53-nba-enrichment-factors-a2-n1-reliability-audit-2026-09-12.txt` | pending |
 | 16 | `2026-09-19-18-20-09-nba-enrichment-blowout-matchup-2026-09-13.txt` | pending |
-| — | live chat 2026-09-19/20 (not yet a transcript file) | pending |
+| 17 | `2026-09-20-04-58-11-nba-confidence-calibration-final-engine-2026-09-19.txt` | pending — **0/3, not started** *(added to the ledger 2026-09-20)* |
+| 18 | `2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19.txt` | pending — **0/3, not started** *(added 2026-09-20)* |
+| 19 | `2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt` | pending — **0/3, not started.** ⚠ *transcript of the documentation effort itself* *(added 2026-09-20)* |
+| 20 | `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` | pending — **0/3, not started.** ⚠ *transcript of the documentation effort itself* *(added 2026-09-20)* |
+
+*The row that stood here — "| — | live chat 2026-09-19/20 (not yet a transcript file) | pending |" —
+is superseded: those sessions are now **T17 and T18**.*
 
 ---
 
