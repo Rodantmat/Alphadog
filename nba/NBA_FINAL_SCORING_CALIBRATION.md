@@ -801,6 +801,27 @@ truth."*
 
 **Consequence recorded in `NBA_GOBLIN_DEMON.md` §9.**
 
+### Rule B0b — multi-prop pools must be priced per-leg by each leg's own real rate
+*Source: T1, Part D. Recorded 2026-09-20.*
+
+> *"never a single blended/averaged rate. A real, quantified example: **a reported pool combining five
+> different props at one assumed blended multiplier showed +216.5% ROI; the real per-leg rates for
+> those same five props actually spanned an 82% RANGE (roughly 1.15× to 2.09×), and re-pricing the
+> identical pool with each leg's own real rate brought the honest result down to +32.9%** — **a ~6.5×
+> OVERSTATEMENT from blended pricing alone, NOT FABRICATION, just a wrong assumption.**
+> **Any pool spanning more than one prop/side/tier bucket must price each leg independently from its
+> own real, current rate.**"*
+
+**Figures as stated:** +216.5% → **+32.9%**; per-leg multiplier spread **1.15× to 2.09×** (82% range);
+overstatement factor **~6.5×**.
+
+**Relation to other recorded rules:** this is the same arithmetic as lesson #2
+(*"never apply a tier/pool-level multiplier to a heterogeneous population"* — `Σ wᵢ(pᵢ·mᵢ)`, not
+`p̄·m̄`). B0b states it for **pools spanning multiple props**; lesson #2 states it for **populations
+within a tier**.
+
+**NBA state:** no pools have been built — slip-strategy phase not begun.
+
 ---
 
 ## 19. WHERE EDGE IS NOW EXPECTED TO COME FROM
