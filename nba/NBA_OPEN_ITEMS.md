@@ -319,6 +319,35 @@ committed JSON sees the raw shape; any worker reading Postgres sees the transfor
 
 ---
 
+## FROM T4 PASS 1 *(added 2026-09-20)*
+
+### TRAP · `leaguedashplayershotlocations` returns `resultSets` as a **dict, not a list**
+*"this endpoint returns `resultSets` as a single **dict**, not a list like **every other endpoint**.
+My code assumed a list and did `dict[0]`, which raised `KeyError`."*
+**It breaks the convention every other stats.nba.com endpoint follows.** Any new parser copied from a
+working scraper will fail on it.
+
+### BUG-FIXED · naive space-replacement mangles `+` in URL params
+*"the `+` in **'6+ Feet'** needs proper URL encoding (`%2B`), but I just did a naive space replacement."*
+**Use real URL encoding on stats.nba.com parameter values**, not string substitution.
+
+### RESOLVED EMPIRICALLY · traded players in career totals — the `TEAM_ID = 0` row
+The question could not be settled by search and was flagged rather than assumed, then **verified by
+calling the endpoint**: *"traded players get **separate per-team rows PLUS a combined total row
+(`TEAM_ID = 0`)**, and the games/points sum correctly across them."*
+**Consequence: any naive `SUM()` over `playercareerstats` DOUBLE-COUNTS traded players.** Filter
+`TEAM_ID = 0` for totals, or exclude it when summing per-team rows.
+
+### CORRECTION TO GEMINI · advanced stats cost 2 calls, not 1,230
+Gemini estimated *"1230 individual calls"* for per-game advanced stats. **Wrong** — the bulk
+`playergamelogs`/`teamgamelogs` endpoints accept **`MeasureType=Advanced`**, so it was **2 bulk calls**
+producing 26,651 + 2,460 rows matching the base logs exactly.
+**The clearest instance in the transcripts of the "Gemini is not absolute truth" standard paying off.**
+Worth remembering: **check whether a bulk endpoint already supports the parameter before accepting a
+per-entity loop estimate.**
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
