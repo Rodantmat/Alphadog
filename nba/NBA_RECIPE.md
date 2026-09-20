@@ -35,6 +35,39 @@ Before any code:
 
 ---
 
+## STEP 0b — The prioritized startup plan, as originally written *(T1)*
+*Source: `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §5. Recorded 2026-09-20.*
+
+> *"**Do these IN ORDER. Do NOT skip ahead to strategy research before the foundational layers exist
+> and are verified with real data.**"*
+
+| # | Step, as stated | What happened |
+|---|---|---|
+| **1** | **Confirm ParlayAPI coverage for NBA** — sport key `basketball_nba`; verify live `/props` for `prizepicks`, `underdog`, `sleeper`, **and separately test historical `/closing-odds` for each**. *"**Don't assume historical coverage exists just because a bookmaker is listed as active — test it directly**, the same way MLB found **Sleeper/Fliff have LIVE-ONLY coverage with ZERO historical depth**."* | ParlayAPI later **superseded** — own scrapers capture ~25% more rungs |
+| **2** | **Set up the database schemas and the MCP admin-worker bridge BEFORE writing any other worker** — *"this is the **tool surface everything else depends on**"* | ✅ done first |
+| **3** | **Build the PrizePicks NBA board scraper FIRST** — *"the **highest-confidence, most directly reusable** component, and gives you **real live board data to build everything else against immediately**"* | ⚠ **NOT done first** — built much later |
+| **4** | **Build the base data layer** (schedule/calendar, player/team reference data…) | ✅ became T1–T6 |
+| **6** | **Only once real board data + real outcome grading exist for a genuine multi-week window, begin the multiplier-observation study and the strategy research program** — *"using the full standard **from the very first candidate**"* | ⏸ correctly not started |
+| **7** | **Build the manual/session-driven trigger pattern** | ✅ the `TRIGGER_*.txt` mechanism |
+
+### ⚠ The one ordering deviation, and what it cost
+**Step 3 said build the board scraper first, for real live data to build against.** The build ran
+**2 → 4 → … → 3**, constructing the whole baseline and calibration layer against **historical game
+logs** instead.
+
+**Three recorded consequences, all of the same shape — decisions made without the board in hand:**
+- The ladder was certified at **±6 rungs**; **`LADDER_DEPTH` later measured books laddering to 13–16**
+  on the deep props (*"a single fixed depth is wrong in BOTH directions"*).
+- **`norm_market()`** was written without the board; **44% of the board (23,286 legs) would have
+  scored nothing, silently.**
+- **Goblin/demon tiers beyond ±6 remain uncertified** — deferred deliberately by the owner as
+  *"board dependent."*
+
+**The deviation was not arbitrary** — the base layer had to exist before any projection — **but the
+plan's stated reason for step 3 is precisely what those three items lacked.**
+
+---
+
 ## STEP 1 — Recon before building *(T1)*
 
 1. Read the three handoff documents **in full** (Blueprint 95,803 B, Lessons 57,066 B, Domain 18,034 B).
