@@ -618,8 +618,7 @@ that intent.
 `w`, `l`, `w_pct` columns exist on both splits tables and `wins_losses` holds 1,135 rows.
 **The T4 caution — "collect it, but don't naively feed it to a model" — is not enforced by anything.**
 
-### SCOPE DECISION (owner-approved, not a gap) · starter status = ONE season only
-Per-game starter/bench status costs **~3,690 calls across 3 seasons**. It was flagged rather than run,
+### SCOPE DECISION (owner-approved, not a gap) · starter status = ONE season onlyPer-game starter/bench status costs **~3,690 calls across 3 seasons**. It was flagged rather than run,
 and the owner approved starting with **the most recent season only (1,230 calls)**.
 **✅ Verified live 2026-09-20: 32,179 rows · 1,230 games · 12,300 starters · 591 players — 2025-26
 only.**
