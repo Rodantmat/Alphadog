@@ -551,7 +551,7 @@ Every guard across both calibration documents, in the order they must be applied
 | 7 | **Sign must be consistent across seasons** to keep a cell | T8 — structure vs regime |
 | 8 | **Disaggregate — rung aggregates hide cancelling errors** | T8 |
 | 9 | **Test new factors against the props that already PASS first** | T9 |
-| 10 | **Day-level block bootstrap** — resample days, never legs | T1 |
+| 10 | **Day-level block bootstrap** — resample days, never legs, **and weight by volume** | T1 #6 |
 | 11 | **All three bootstrap conditions**, incl. leave-one-day-out | T1 |
 | 12 | **`p × m` house-edge sanity test** | T1 |
 | 13 | **Confidence-tier every record** — don't let one-offs harden | T1 |
