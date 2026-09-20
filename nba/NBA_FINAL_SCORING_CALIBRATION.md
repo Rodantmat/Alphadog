@@ -182,6 +182,57 @@ harmful where the two disagree and nothing asserts they should not.**
 
 ---
 
+## 0f. THE "PRESET DICTIONARY" PRINCIPLE — precompute once, runtime is a LOOKUP
+*Source: T1, blueprint §4g — **"MLB's own original, explicit design intent for its enrichment system,
+and it's worth adopting directly for NBA rather than rediscovering."*** Recorded 2026-09-20.
+
+> *"Given the true scale of **factor × variation × player-tier × prop-line × direction combinations is
+> ENORMOUS**, the correct approach is **A LARGE, ONE-TIME RESEARCH AND DESIGN EFFORT THAT PRE-BUILDS
+> AND LOCKS THE FULL FRAMEWORK IN ADVANCE** — **for EVERY raw factor, ENUMERATE EVERY REAL VARIATION
+> IT CAN TAKE, and for EVERY variation, LOCK THE LOGIC SPLIT BY PLAYER TIER, PROP LINE AND
+> DIRECTION** — **rather than COMPUTING NOVEL LOGIC PER LEG AT RUNTIME.**
+> **Once this full framework is locked, the system's actual per-run job is REDUCED TO
+> CLASSIFICATION / LOOKUP: IDENTIFY WHICH PRE-LOCKED CELL APPLIES to a given leg for each relevant
+> factor combination — NOT COMPUTE ANYTHING FRESH.**
+> **The heavy design and calibration work happens ONCE, UP FRONT; live sc[oring is a lookup].**"*
+
+### ✅ This is the system NBA built — and it explains the shape of everything
+**The five dimensions named here are exactly `factor_profile_cells`' key**:
+`factor × prop × tier × role_tier × direction × variation_band`. **The "preset dictionary" IS the cell
+table.**
+
+**And it explains why the artefacts are the size they are:**
+| Artefact | Rows | Role |
+|---|---|---|
+| `nba_score.baseline_history` | **19.3M** | the pre-built matrix — *"all the possibilities for all the players, for all prop lines, all variations, all directions"* (the owner, T7) |
+| `nba_score.final_hp` | **38.7M** | the enriched lookup surface |
+| `factor_relevance` | 460 | which cells are even candidates |
+| `factor_profile_cells` | 35 | the locked logic per cell |
+
+**The owner's own framing in T7 is this principle in his words** — *"it does **all the possibilities**…
+**a FULL MATRIX of anything that later can be available on the app boards to be picked**"* — and
+**`baseline_history` at 19.3M rows is that matrix, precomputed.**
+
+### The consequence for runtime
+**P3's job is classification and lookup, not computation.** That is why it can run in the light
+afternoon window while P2 carries the heavy build overnight — **and it is the same caching argument
+the owner made in T4** (*"the baseline is expensive but only changes after a game — it can be
+cached"*), arrived at from the opposite direction.
+
+### ⚠ Where NBA deviates — and it is deliberate
+**The band cells and Platt shifts are refit weekly**, not locked once. **That is a refinement, not a
+violation**: the blueprint's own two-layer design (§0c) specifies Layer 2 as *"a separate calibration
+loop, running on its own cadence… proposing small, sized adjustments"* — **so the framework is locked
+and the adjustments move.**
+
+**The genuine deviation is `factor_profile_cells` holding only 35 rows against 460 relevance rows.**
+The principle says *"for every raw factor, enumerate every real variation… and lock the logic."*
+**Most cells were never locked** — they were tested and found to add nothing. **That is the ten-factor
+audit outcome, and it means the preset dictionary is mostly empty by evidence rather than by
+omission.**
+
+---
+
 ## 1. THE CHAIN
 
 **⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
