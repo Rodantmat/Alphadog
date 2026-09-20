@@ -326,6 +326,44 @@ verdict is written here so it is queryable rather than trapped in a log. Keys in
 
 ## 4. `nba_score` — the engine's output layer
 
+### `nba_score.baseline_ladder` *(T9 — the production artifact)*
+The daily output of the certified recipe, loaded from committed JSON by
+`alphadog-v2-nba-baseline-ladder`.
+
+**PK: `(asof, player_id, game_id, prop, period, ot_rule, line)`** — index on
+`(asof, prop, period, player_id)`.
+
+| Column | Notes |
+|---|---|
+| `asof` | the slate date |
+| `period` | **DEFAULT `'FULL'`** — FULL / 1Q / 1H / 2H / 4Q |
+| **`ot_rule`** | **DEFAULT `'include'`** — **in the PK**, so `include` and `exclude` variants coexist. This is what lets Sleeper quarter props (OT excluded) and PP/UD props (OT included) be priced separately |
+| `line`, `anchor`, `ladder_offset` | the rung |
+| `p_more`, `p_less` | the calibrated probabilities |
+| **`p_raw`** | **pre-calibration value retained** — the effect of Platt and the cells is auditable per row |
+| `role_tier`, `var_band` | the tier keys |
+| **`used_emp`** | **whether the empirical table or the parametric fallback produced this row** — the flag that verifies the hierarchical fallback's coverage in production |
+| `recipe_version` | rows carry the recipe that made them |
+
+### `nba_score.baseline_ladder_runs` *(T9)*
+One row per build. `asof` PK · `slate_games` · `players` · `rows` · `props[]` ·
+**`history_seasons[]`** · `current_season` · **`factor_fits` JSONB** ·
+**`role_minutes_multiplier` JSONB** · `source_file` · `loaded_at`.
+
+**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN** — the
+"no pasted constants" rule made auditable. **`history_seasons[]` records what the run was allowed to
+see**, which is the parity rule's evidence.
+
+### Production contract *(from `nba_config.classification_config.production_baseline_ladder`)*
+- **Builder**: a **patcher over `classification_ladder_v12.py`** — *"single source of truth; anchors
+  assert"*
+- **Slate**: schedule games on ASOF (`status != final`; replay allows final) × **each team's roster
+  from its last 3 games** — not from `nba_ref.players`, which sidesteps the new-player lag
+- **`asof_lag: 0 days`** — daily-exact walk-forward; **Platt fit on the season's prior months**
+- **Validated**: replay 2026-03-15 — 7 games, 194 roster rows, **173 projected players, 4,498 rows**;
+  **43 roster players were DNP — "enrichment removes"**, i.e. the baseline is availability-agnostic by
+  construction
+
 ### `nba_score.baseline_history` — **19.34M rows, ~12 GB**
 The baseline hit probability for every prop × rung × direction × game-day, both seasons.
 **UNIQUE KEY: `(game_date, player_id, game_id, prop, period, line)`** — note `game_id` and `period` in
