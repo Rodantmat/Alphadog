@@ -156,6 +156,52 @@ bands. **And the measured `LADDER_DEPTH` (p95 = 13 rungs for points) agrees to w
 
 ---
 
+## 5.0b ⚠ **THE STRUCTURAL MISPRICING — real, measured, and never exploited**
+
+**Lesson #13, the one the handoff calls *"a real, load-bearing finding"*:**
+> *"**Platforms price probability DIRECTIONALLY but NOT PROPORTIONALLY** — a real, load-bearing
+> finding, **but exploiting it requires solving player-level selection, which MLB NEVER MANAGED**.
+> Sportsbook-vs-DFS comparison confirmed **the Goblin/tiered-pricing mechanism moves its payout only a
+> SMALL FRACTION of what a linear/proportional pricing model would require for a given probability
+> gap** — in MLB's case, **roughly a 15% multiplier change for a ~2.6× TRUE-PROBABILITY GAP**.
+> **This means there IS a real, structural mispricing — but MLB never found a way to IDENTIFY IN
+> ADVANCE which specific legs sit on the high-probability side of that gap; every walk-forward
+> selection attempt (raw trailing hit rate, model-probability quintiles, appearance frequency)
+> REGRESSED TO THE POOL AVERAGE.** **If NBA replicates this finding, treat [it the same way].**"*
+
+### What this means concretely
+**A 2.6× swing in true probability buys only a ~15% change in payout.** The pricing is
+*ordered* correctly — harder rungs pay more — but the **magnitude is nowhere near proportional.**
+**So the mispricing is structural and large**, and it sits exactly where goblins and demons live.
+
+### Why it was never harvested — and what the real problem is
+**The mispricing is not the hard part. SELECTION is.** Three walk-forward approaches all failed:
+| Attempt | Result |
+|---|---|
+| raw trailing hit rate | **regressed to the pool average** |
+| model-probability quintiles | **regressed to the pool average** |
+| appearance frequency | **regressed to the pool average** |
+
+**Every method that looked like it identified high-probability legs in advance stopped working out of
+sample.**
+
+### ⚠ THIS IS THE CENTRAL QUESTION FOR NBA
+**Everything this system has built is an attempt at exactly the thing MLB could not do: identify, in
+advance, which legs sit on the favourable side of that gap.** The certified ladder, the leg-level
+calibration, the per-band cells, the confidence model — **all of it is selection machinery.**
+
+**And NBA has one asset MLB's failed attempts lacked**: *"when the recipe says 75%, roughly 75% hit,
+on every band, both seasons, out of sample"* — **a calibrated probability**, not a trailing rate or a
+quintile rank. **Model-probability quintiles failed for MLB; whether a CALIBRATED probability succeeds
+where an uncalibrated one regressed is the open empirical question**, and it is testable the moment a
+live board exists.
+
+**The honest framing**: the structural mispricing is confirmed to exist. **Whether it is harvestable
+is unproven, and one strong prior says it is not.** Treat any early positive result here with lesson
+#26's confidence tiering and §13's full bootstrap gate.
+
+---
+
 ## 5. THE ECONOMICS — measured
 
 ### ⚠ 5.0 READ THESE PER CELL, NOT AS AGGREGATES
