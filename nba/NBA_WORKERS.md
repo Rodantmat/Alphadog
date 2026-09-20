@@ -201,6 +201,16 @@ directly rather than reading the whole file top to bottom." Recorded 2026-09-20.
 | **3** | **Only read a FULL physical file when a targeted search shows it's genuinely SMALL, or when a SPECIFIC CLAIM needs full-context confirmation** | *"**reserve full reads for when they're actually necessary**"* |
 | **4** | **CROSS-CHECK every claim about 'what SHOULD happen' against REAL, LIVE EXECUTION HISTORY** — the job queue's run log, actual table row counts | *"**a registry or config table describes INTENT, not necessarily current real behaviour, and THE TWO CAN AND DO DRIFT APART.**"* |
 
+> ⚠ **THE THRESHOLD IS MEASURED, NOT RHETORICAL** *(recorded 2026-09-20, T1 pass 64 — **VERIFIED**
+> by parsing all 20 raw transcript exports)*. Step 3's *"reserve full reads for when they're actually
+> necessary"* has a hard number behind it: **a `github_get_file` result above roughly 65,503
+> characters (64 KiB) is cut in the displayed copy**, and **above a larger threshold the result is not
+> returned at all** — replaced by a 212-character stub reading *"Tool result too large for context,
+> stored at `/mnt/user-data/tool_results/…`"*, a spill path that **does not survive the session**.
+> **Six such results across T2–T4 total 5.5 MB of text that is absent from the exports.** Step 2
+> (targeted search) is therefore not merely cheaper than step 3 — **above ~64 KiB it is the only step
+> that returns anything durable.** See `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 64*.
+
 **✅ This documentation effort has followed exactly this order**, which is why the findings hold:
 - **Step 1** → `worker_definitions`, `factor_registry`, `classification_config`, `role_tiers` queried
   before any code was read
