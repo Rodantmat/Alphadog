@@ -674,7 +674,10 @@ unchanged**; a reader using the planner statistic would have reported drift that
 the pass-70 coverage count **re-run scoped to the twelve rather than to every `.md` in `nba/`.**
 **VERIFIED on the live clone.***
 
-### Only TWO of the 32 NBA workflows carry a `schedule:` block
+### ⚠ CORRECTED 2026-09-20 (pass 83): **THREE**, not two — `nba-scrape.yml` also carries a cron
+*The scan below used `grep -A2 "schedule:"`; in `nba-scrape.yml` three comment lines sit between `schedule:` and `- cron: '0 9 * * 1'`, so the cron fell outside the window. **A third instance of the pass-53 rule.** The corrected table is in FROM T1 PASS 83. **The rest of this section stands:** P2 and P3 genuinely have no cron.*
+
+### Only TWO of the 32 NBA workflows carry a `schedule:` block *(— see the correction above)*
 | Workflow | cron | Comment's own reading |
 |---|---|---|
 | `nba-p1-weekly-static.yml` | `'0 19 * * 1'` | *"Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)"* |
