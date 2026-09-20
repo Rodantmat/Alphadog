@@ -82,7 +82,24 @@ reproduces across seasons and can be frozen into a cell. **Regime** flips sign a
 walk-forward refitting instead. **The holdout was the owner's suggestion as a robustness check and
 produced a permanent selection criterion.**
 
-**baseline** · T4, T7, T8, T9 · *"The heart of the system"* (owner, T1). The historical-only projection
+**calibration vs edge** · T9 · **The distinction that governs how the system is used.**
+*"**Calibrated** means the stated probabilities are **honest**: when the recipe says 75%, roughly 75%
+of those legs hit, on every band, both seasons, out of sample — the property that makes **slip EV
+computable and Goblin/Demon pricing comparable**. It does NOT mean any single leg is near-certain:
+**a calibrated 75% still loses one time in four.** **Calibration is the foundation; EDGE comes from the
+factor layer and the enrichment deltas on top of it.**"*
+
+**certification ladder** · T8, T9 · The per-prop states: **CERTIFIED** (ladder ≤1.5 pp, zero
+band×direction×rung cells over 2.5 pp, confidence bands hitting their rate on BOTH seasons) ·
+**CLOSE** (ladders fine, 2–5 confidence bands off by 2.6–4.4 pp) · **REGIME RESIDUAL** (sign flips
+between seasons; walk-forward Platt carries it) · **CONFIGURED, NOT RUN** · **NOT YET CERTIFIED**.
+As of T9: **6 certified** (points, rebounds, assists, 3PM, FGA, FTM), **4 close** (blocks, steals,
+turnovers, fouls), **1 regime** (3PA), **combos certified** (P+R, P+A, R+A, PRA, fantasy).
+
+**opponent-driven props** · T9 · **The structural reason blocks, steals and FTM resist certification**:
+*"the 'close' props are EXACTLY the ones whose primary drivers are **opponent** stats — steals ←
+opponent turnover rate."* A player-history baseline cannot see them. *"These are the noisiest per-game
+stats in the sport; the research consensus for them is exactly what's built."* The historical-only projection
 producing hit probability and confidence. **Strictly historical — enrichment is separate** (T4).
 **The five-step design (T4, `nba/NBA_BASELINE_METHODOLOGY.md`)**: EWMA per-36 rate with Bayesian
 shrinkage → separate faster-moving minutes projection → pace + opponent-defence multipliers → raw
