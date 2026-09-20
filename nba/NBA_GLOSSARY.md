@@ -168,6 +168,23 @@ binding + enum + dispatch branch. **A new tool is unusable in the session that a
 
 ## C
 
+**composition check** · T1 (blueprint §9) · A verification that **both expected output categories are
+present in plausible proportions**, not just that the row count matches. *"A **100%/0% split is a red
+flag even when the total row count exactly matches expectations**."* Distinguishes a died-mid-write
+batch from a complete one. → `NBA_SYSTEM_DESIGN.md` §6b · **not recorded as built on
+`nba_score.board_scored`.**
+
+**corrupt-and-fix testing** · T1 (blueprint §8) · **"MLB's single most reliable verification
+pattern."** Deliberately change or delete a real row in the database, then confirm the pipeline
+detects and repairs it on the next run — instead of only ever testing the happy path. →
+`NBA_SYSTEM_ARCHITECTURE.md` §8b.
+
+**coverage-gap check** · T1 (blueprint §4b, motivated by §7f) · A **diagnostic-only, never
+automatically acting** check surfacing any **(prop, side, high-confidence bucket)** combination with a
+real resolved-outcome deviation past a threshold **and zero active correction covering it**. Exists to
+catch a silent calibration regression *before* it runs for weeks. → `NBA_FINAL_SCORING_CALIBRATION.md`
+§7m Safeguard 1, §7m2 · **not recorded as built.**
+
 **certification center** · T1 · **The UI — it already exists (MLB's) and will be integrated.** An
 aggregator of legs and a slip builder. *"the main UI will be the same."* **Nothing to build.**
 
