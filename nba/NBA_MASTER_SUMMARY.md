@@ -4977,6 +4977,68 @@ covered it.
 
 **T7 PASS 17: MINOR NEW. Clean count 0/3.**
 
+### T7.24 — PASS 18 (full sequential verification) — **MINOR NEW**
+
+Blocks 2–452 re-read. Everything maps to a documented entry except two implementation details:
+
+#### T7.24a — The season utility was tested against a SIMULATED in-season date
+> *"verify the whole set compiles and **the utility gives the right answers for the current date AND
+> for a simulated in-season date**"*
+
+**Testing only against today would have proven nothing** — today is off-season, so
+`active_stats_season()` returns the prior season by the off-season branch. **The in-season branch is
+the one that matters on Oct 3, and it was exercised by simulating a date rather than waiting.**
+*(This is also the branch where my Oct 1–2 edge case lives — see OPEN_ITEMS ②.)*
+
+#### T7.24b — The delta scraper's private copy was consolidated
+> *"make the daily-delta scraper use **the shared utility instead of its own copy (one source of
+> truth)**"*
+
+**The delta scraper already auto-detected season correctly** — it was the one scraper that never had
+the bug. **Its working private implementation was still replaced** with the shared utility, so the
+logic exists in exactly one place. **A correct duplicate is still a duplicate.**
+
+#### T7.24c — Patching order, stated
+> *"let me **verify each one's exact hardcoded pattern before patching, since they differ slightly**"*
+> *"**All 9 have the identical two-line pattern.** Patching each."*
+
+**Checked first, then batch-patched once the pattern was confirmed uniform** — and the exceptions
+(shot quality's *two* URLs plus a missing import; schedule's 2-season list; DARKO's no-season-param)
+were each handled individually.
+
+**T7 PASS 18: MINOR NEW. Clean count 0/3.**
+
+### T7.25 — CURRENT STATE OF T7
+
+**18 passes. ALL 18 found new material.** T7 is by a wide margin the richest transcript in the set —
+it contains the season-hardcoding fix, the deep documentation checkpoint, the data-universe research,
+the per-stat decay table, the full MLB port, the baseline boundary redefinition, the minutes model,
+the prop-by-prop factor lock, the 3-app prop map, the peer-reviewed factor sweep, and the owner's
+definitive baseline specification.
+
+| Pass | Focus | Yield |
+|---|---|---|
+| 1 | full sequential | the T7 narrative — 7 sections |
+| 2 | live verification | **season fix confirmed; Oct 1–2 edge case found** |
+| 3 | audit + checkpoint | the 10-section doc; "no orphans either direction" |
+| 4 | data-universe research | **`stat_decay_config` — 13 rows, every one with a rationale** |
+| 5 | build mechanics | **season hardcoding AGAIN, in the writers** |
+| 6 | delta path | `known_empty_games`; **P1 dropped 3 things** |
+| 7 | MLB port | **the three-generation trap; baseline boundary; blowout as mixture** |
+| 8 | minutes model | **the origin of A2; tiered 240-min constraint** |
+| 9 | prop factor lock | **direction asymmetry with mechanism; opponent-defence memory gap** |
+| 10 | prop map | **OT differs by app; Sleeper milestone lines; peer-reviewed factors** |
+| 11 | build mechanics | count cross-checks; `slim()`; `file_prefix` |
+| 12 | season readiness | **the grace window never built; the owner's definitive spec** |
+| 13 | research convergence | **recency does NOT transfer; ladder width resolved** |
+| 14 | dud games | **the fat low tail; tier rank vs tier logic** |
+| 15 | live code | **duds EXCLUDED not MIXED; cross-season carryover** |
+| 16 | engine constants | **`ROLE_TIERS` IS `f_role`; the 15–20 dead zone** |
+| 17 | method notes | retroactive lines probed through MLB plumbing |
+| 18 | full sequential | simulated in-season date; utility consolidation |
+
+**Three consecutive clean passes still required.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
