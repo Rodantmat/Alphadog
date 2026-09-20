@@ -894,22 +894,31 @@ A sweep for every hex string, numeric ID and UUID returned only already-document
 
 **CLEAN PASS 1 of 3.**
 
-### T1.32 — CURRENT STATE OF T1
+### T1.33 — PASS 20 (proper nouns) — **CLEAN 2/3**
 
-**19 passes. 15 found new material. Clean count: 1/3** (pass 19).
+A sweep for every capitalised proper noun returned only already-documented entities:
+Cloudflare Worker(s) · Alphadog Bridge · NBA Static Data Scraper · AlphaDog v2 Mobile Auto Deploy ·
+Daily Context / Scoring Engine (the master-run stages) · Architecture Blueprint / Lessons Learned /
+Domain Mapping · "Access Denied" · Seattle / Vegas (the 2028-29 expansion note, correctly not acted on) ·
+the team names from the certified static fallback (Atlanta Hawks, Boston Celtics, Brooklyn Nets,
+Charlotte Hornets, Chicago Bulls …).
 
-**Dimensions swept (19):** narrative text · tool results · SQL bodies · DDL and settings · handoff
+**CLEAN PASS 2 of 3.**
+
+### T1.34 — CURRENT STATE OF T1
+
+**20 passes. 15 found new material. Clean count: 2/3** (passes 19, 20).
+
+**Dimensions swept (20):** narrative text · tool results · SQL bodies · DDL and settings · handoff
 text · owner specification · caveats and limits · artefacts · endpoint/table/file names · owner
 messages · measured numbers · rules and principles · endpoint inventory · external services ·
 verification claims · decisions and alternatives · error vocabulary · time and scheduling ·
-IDs/hashes/SHAs.
+IDs/hashes/SHAs · proper nouns.
 
-**Dimensions NOT yet swept:** person/team/proper nouns · tool-call sequences and ordering ·
-quoted third-party content (search results, external docs) · structure and formatting of written
-artefacts.
+**Dimensions NOT yet swept:** tool-call sequences and ordering · quoted third-party content (search
+results, external docs) · structure and formatting of written artefacts.
 
-**Two more consecutive clean passes required.** The ledger is the resume point — continue at pass 20
-without repeating any dimension already marked.
+**ONE more clean pass and T1 is DONE (3/3).**
 
 ---
 
