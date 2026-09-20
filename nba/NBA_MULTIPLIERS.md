@@ -169,6 +169,47 @@ structural version of the same discipline is the **`BACKTEST-LOCKED`** tag on
 `nba_config.classification_config` — which distinguishes values earned by evidence from seeds.
 **The multiplier work has no equivalent tag, and needs one.**
 
+## 0.2f **PRIZEPICKS DISCOUNTS SAME-GAME CORRELATION — build CROSS-GAME by default**
+
+> *"**PrizePicks discounts same-game correlation MEANINGFULLY** (**confirmed via a real, direct
+> same-game-vs-cross-game live slip comparison**) — **ALWAYS BUILD CROSS-GAME unless a same-game
+> correlation strategy has been specifically, directly tested and found to SURVIVE this discount.**"*
+
+**This is the most directly actionable rule in the multiplier body of work**, and it is confirmed by
+direct experiment rather than inferred.
+
+**It reconciles two things that look contradictory elsewhere:**
+- §5.0c (lesson #24): *"game or team pairing has **no effect on PRICING**"* — true of the **leg's own
+  price**.
+- §0.1: *"same-team/same-game legs get a **small multiplier discount**"* — applied at **slip
+  construction**.
+**Correlation is priced at the SLIP level, not the LEG level — and the discount is meaningful enough
+to default against.**
+
+**And it interacts with lesson #12** (`NBA_FINAL_SCORING_CALIBRATION.md` §7g): same-game correlation is
+**real but smaller than folklore**, *and* **the platform already prices against it**. **So a same-game
+correlation strategy has to clear a real discount to win a smaller-than-advertised effect.** Default
+cross-game; require direct evidence to deviate.
+
+## 0.2g **NO DFS PLATFORM PUBLISHES PER-LEG MULTIPLIERS VIA API — budget for a permanent study**
+
+> *"**DFS platforms generally do NOT publish their own per-leg multiplier via API** — **expect to build
+> a MANUAL, ONGOING multiplier-observation study (real placed slips, recorded and tabulated) as a
+> FIRST-CLASS, PERMANENT RESEARCH ARTIFACT**, the same way MLB built its Excel/spreadsheet-style
+> player/prop hit-rate-and-multiplier matrix. **Budget for this as ONGOING WORK, not a one-time
+> task.**"*
+
+**This reframes §2 and §4.** The exhaustive ruling-out of PrizePicks' public surfaces is not a
+setback — **it is the expected state**, and the handoff anticipated it. **The deliverable is not a
+scrape; it is a maintained observation matrix**, kept current because *"the exact numeric ratios…
+genuinely decayed and changed over time"* (lesson #24).
+
+**⚠ Note the tension with §1**: Underdog, Sleeper, Fliff and Betr **do** expose theirs. So the
+permanent manual study is **PrizePicks-specific**, and the other four should be read from the feed —
+*"there is no reason to assume anything for them: read the value."*
+
+---
+
 ## 0.3a2 ⚠ **LESSON #16 — THE WARNING THAT BEARS HARDEST ON OUR POSITION**
 
 > *"Real backtest results, however rigorous, **still need real-money confirmation before being
