@@ -1534,6 +1534,37 @@ calls.
 
 **T2 PASS 3: NEW MATERIAL. Clean count 0/3.**
 
+### T2.11 — PASS 4 FINDINGS (added 2026-09-20; tool results and measured values) — **NEW MATERIAL**
+
+#### T2.11a — `aliases_written` ≠ total aliases (resolves an apparent discrepancy)
+Tool results report **`aliases_written: 155`** and **`157`** on different runs, while the narrative
+reports **162 active aliases**. These are **different metrics, both correct**:
+- `aliases_written` = rows **upserted in that run**
+- 162 = **total active rows in the table**
+
+The gap is the same upsert property as `source_key`: **unchanged rows are not rewritten.** Anyone
+comparing a worker's `*_written` figure to a `SELECT count(*)` will see a mismatch that is not a bug.
+**T1's 157 and T2's 162 are therefore not a progression from fallback to live data** — as recorded in
+T1.21 — but a written-count vs total-count difference. *Correction to T1.21.*
+
+#### T2.11b — Worker run times, measured
+`elapsed_ms`: **768 · 995 · 3173 · 4185 · 12593 · 14347 · 25829 · 44440 · 62925**
+The sub-second runs are single-call writers; **the ~63 s run is a 30-call loop** (arenas or on/off).
+**A 30-call per-team loop costs about a minute** — which is why one-call-per-league endpoints were
+strongly preferred (T2.5).
+
+#### T2.11c — Confirmed result counts, from the workers' own reports
+`arenas_written: 30` · `distinct_players_written: 582` · `aliases_written: 1822` (players)
+Spot-check values visible in results: `height_inches: 88` (Wembanyama, 7'4") and `81` (LeBron, 6'9");
+`draft_year: 2003` (LeBron) and `2023` (Wembanyama); `age: 22` and `41`.
+**The spot-checks used real, verifiable people** — not row counts alone.
+
+#### T2.11d — `http_status: 500` confirmed in the raw result
+The team-stats failure is visible in the tool result itself, confirming T2.9a's diagnosis was read from
+the response rather than inferred.
+
+**T2 PASS 4: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
