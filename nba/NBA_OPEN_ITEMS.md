@@ -447,7 +447,49 @@ factor audit (T15/T16) tested ten candidates and none were shot-quality-based.
 **If it is computed weekly and never consumed, that is a real gap** — the metric is built, validated
 and sitting unused. **To verify: check whether any factor set or baseline recipe references it.**
 
-### IF A2 IS EVER REVISITED · check the sample-size gating first
+### ⚠ UNCERTIFIED PROPS WILL STILL PRODUCE NUMBERS
+`classification_ladder_v12.py` carries three certification states, and **only one of them has been
+validated**:
+
+| State | Props |
+|---|---|
+| **CERTIFIED** | the main singles set; `fga` — *"CERTIFIED both seasons (0.9 / 1.3, **0 band misses**)"* |
+| **CONFIGURED, NOT YET RUN** | `turnovers` · `fg3a` · `ftm` · `personal_fouls` |
+| **NOT YET CERTIFIED** | **`fgm` · `fta`** — *"ADDED 2026-09-12 (owner: the live PrizePicks menu carries these). **Configs are the closest certified analogue; NOT yet certified** — the first history run prints the band tables."* |
+
+**These props have alphas, `k_stab`, step sizes and distribution families configured, so the ladder
+builds them and `score_board_legs.py` will score them.** What they lack is the band-table validation
+every certified prop passed. **A score with no certification behind it looks identical to one with.**
+
+**Underdog offers FT Made, FG Attempts, 3PT Attempts and Personal Fouls** (T7's verified prop map), so
+these are live board surface, not hypotheticals.
+
+**To close**: run the history build for each and read the band tables — the mechanism already prints
+them. **Or gate them out of the scorer until certified.**
+
+### ⚠ `P(OT)` AND `foul risk` — named in the architecture, never built
+The five-dimension design lists *"Blowout risk, **P(OT)**, **foul risk**"* together as minutes-model
+inputs, *"they act on opportunity, not efficiency."*
+**Only blowout risk exists.** Grep of `classification_ladder_v12.py` for `p_ot|overtime|OT\b` returns
+nothing, and foul trouble appears only as an exclusion filter (`PF < 6`).
+**Two of the three named minutes inputs are absent.**
+
+### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
+From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
+~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
+**Holdout 2024-25 shows the same signs.**"*
+**Structural, not noise** — it persists at any lambda and reproduces out-of-sample. Recorded so it is
+not rediscovered as a new bug.
+
+### PATTERN WORTH KNOWING · three separate attempts at per-player granularity, all defeated by sample
+1. **Player-own L0 calibration cells** — *"REJECTED ON DATA: n=40–80; **regression-noise dominated**;
+   ELITE rebounds ±7.7. Off."*
+2. **A2's with/without-teammate table** — retracted after five failed panels
+3. **Conformal confidence** — dominated by aleatoric noise
+
+**Per-player cells look attractive and fail for the same reason every time: 40–80 games is not enough
+to fit anything.** The system's granularity lives in *tiers*, not players — by evidence, three times
+over.
 A2 (teammate redistribution) was **retracted** after five failed panels — *"the certified anchor wins
 every slice, and worst where the mechanism predicted it should win"* (COMPASS fact 91).
 
