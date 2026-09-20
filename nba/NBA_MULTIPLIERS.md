@@ -92,6 +92,31 @@ structural version of the same discipline is the **`BACKTEST-LOCKED`** tag on
 **The multiplier work has no equivalent tag, and needs one.**
 
 ## 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
+
+### 0.3a **MLB's COSTLIEST SINGLE ERROR — mismatched cells**
+> *"[When combining hit rates and multiplier]s, compute **`Σ wᵢ(pᵢ · mᵢ)` weighted by REAL VOLUME PER
+> CELL** — **NEVER a single blended rate**. **MLB's costliest single error was exactly this: an
+> aggregate hit rate driven by ULTRA-SAFE CELLS was paired with a multiplier from a DIFFERENT,
+> SMALL-VOLUME CELL, producing a PHANTOM POSITIVE EDGE that took a full Gemini adversarial pass to
+> catch.**"*
+
+**The formula is `Σ wᵢ(pᵢ · mᵢ)`, cell by cell, volume-weighted — not `p̄ · m̄`.**
+
+**Why it produces a phantom edge**: the safe cells (goblins, low lines) supply most of the hit rate
+and most of the volume; the high multipliers live in thin demon cells. Blending them attributes the
+safe cells' `p` to the risky cells' `m` — **an edge that exists in no actual leg.**
+
+**⚠ This is a live risk for NBA right now.** The goblin/demon economics in `NBA_GOBLIN_DEMON.md` §5
+pair **measured tier hit rates** (74.1% / 68.7% / 61.9% goblin; 32.9% / 21.3% / 14.8% demon) with
+**observed payout factors** (40–53%; ~1.75–1.9× ceiling). **Those must be matched cell for cell** —
+tier by tier, prop by prop, side by side — **not compared as aggregates.** The conclusions happen to be
+directionally safe (goblins −EV everywhere, demons only T+1 viable), **but the arithmetic behind them
+must be per-cell to be trusted.**
+
+**And it took an adversarial pass to find**, not ordinary review — which is why Gemini's role is
+specified as *"the adversarial-review usage pattern"* rather than a second opinion.
+
+### 0.3b The `p × m` test itself
 > *"Before trusting any high hit-rate finding, **compute the implied house edge: `p × m`** where `p` is
 > the real hit rate and `m` is the real per-leg multiplier. **If this implies the platform is handing
 > out a large, systematic edge on a repeatable, high-volume line, THE MULTIPLIER ATTRIBUTION IS WRONG,
