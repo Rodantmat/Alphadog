@@ -659,6 +659,10 @@ a player's sample grows"*, and the per-prop `k_stab` values are **measured** (ST
 *"top-decile steals players regress 17% over the next 20 games"*). **Direction and magnitude were both
 validated separately, which is exactly what this pattern demands.**
 
+---
+
+## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
 100% coverage).
