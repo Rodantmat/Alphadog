@@ -382,6 +382,10 @@ set is not the value used."**
 - **The classification port** — two of three MLB generations were **dead and said so**; the live one
   was read line by line and **the recency blend was rejected outright** rather than ported.
 
+**And the inverse discipline is also in the record**: `curl_cffi` and the writer-Worker shape **were**
+copied wholesale, because those patterns were proven *good*. **The rule is about porting patterns that
+have already caused problems — not about avoiding reuse.**
+
 ### 6. ✅ Check whether the data is DERIVABLE BY SQL before building an integration
 > *"**Before building a new external data-mining integration, CHECK WHETHER THE NEEDED INFORMATION CAN
 > BE DERIVED PURELY VIA SQL FROM DATA ALREADY BEING COLLECTED FOR A DIFFERENT PURPOSE.**
