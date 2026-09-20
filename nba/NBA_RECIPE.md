@@ -12,7 +12,6 @@ that is the useful part.
 ---
 
 ## STEP 0 — The founding constraints *(T1)*
-
 Before any code:
 1. **This is an EXPANSION**, joining a live, Postgres-native MLB system. Not a migration, not a
    from-scratch build.
