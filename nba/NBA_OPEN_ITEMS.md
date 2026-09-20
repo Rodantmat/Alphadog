@@ -19,6 +19,39 @@ only useful if the sources are reachable.** They are not:
 repo access (drag-and-drop into the GitHub web UI works, or `git add nba/transcripts/ && git push`),
 **or** add this repository to the session's authorized set so `git push` works here.
 
+> ## ⚠⚠ **DO NOT COMMIT THEM UNREDACTED — THEY CONTAIN LIVE CREDENTIALS**
+> *Added 2026-09-20 (T1 pass 67). **This qualifies the instruction directly above it**, which was
+> written at pass 40 before the transcripts had been audited for secrets.*
+>
+> **VERIFIED by scanning all 20 raw exports**: **17 `INSERT INTO nba_config.external_credentials`
+> statements appear across 5 transcripts**, each carrying a credential **value** in plaintext, plus
+> **two JWT-shaped strings** in two further transcripts.
+>
+> | Transcript | `external_credentials` INSERTs | JWT-shaped strings |
+> |---|---|---|
+> | **T1** `…phase1-static` | 1 | 0 |
+> | **T11** `…enrichment-backfill-dfs-boards` | **10** | 0 |
+> | **T12** `…board-scrapers-fliff-docs` | 0 | **1** |
+> | **T13** `…boards-grader-market` | 2 | **1** |
+> | **T19** `…documentation-pass` | 4 | 0 |
+>
+> **And at least one of those values is still live.** **VERIFIED**: `nba_config.external_credentials`
+> holds `balldontlie_api_key` with `updated_at` **2026-08-31T20:26:46.404Z** — inside T1's session
+> window — and **T1's SQL call 24 is the `INSERT` that wrote it.** The value in the live table is a
+> **36-character plaintext UUID**, the same shape T1's statement supplies.
+>
+> **So committing the transcripts as they stand would publish working API keys into the repository**,
+> where `git` history would keep them even after a later deletion.
+>
+> **Two safe options**, either of which clears the blocker:
+> 1. **Redact before committing** — strip every `INSERT INTO nba_config.external_credentials`
+>    value and every JWT-shaped string, then commit. The five affected transcripts are named above.
+> 2. **Rotate the affected credentials first**, then commit — which is worth doing regardless, since
+>    the values have already travelled through chat exports.
+>
+> **Not done here**, per the standing instruction: this session does not write to the database, does
+> not rotate keys, and does not commit the transcripts. **Flagged for the owner.**
+
 **Until then, every pointer in these documents that names a transcript resolves to a file no other
 reader can open.** Mitigations already applied:
 - **Where a handoff document is the real source, the pointer cites THAT document and section** —
