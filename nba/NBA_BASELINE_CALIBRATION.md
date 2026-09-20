@@ -45,6 +45,21 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 `stat_decay_config` by SQL — the workflow the owner's founding rule promises — **changes nothing and
 raises no error.** The edit must be made in the recipe and deployed.
 
+**⚠⚠ AND THE LESSONS DOCUMENT HAS A STANDING CHECK FOR EXACTLY THIS** *(added 2026-09-20, T1 pass 52
+— the lesson was undocumented and had never been connected to the drift above)*:
+> *"**A fourth, now twice-confirmed lesson worth stating as a standing, mandatory check**: **verify
+> that a backtest or analysis is actually evaluating the CURRENT LIVE coefficient or configuration
+> value, not a value that has since been changed or corrected in the live system.** The same MLB
+> investigation found this exact mistake **twice in one session** — once when a historical bug had
+> already been fixed in the live enrichment code before the investigation started, **making a 'large
+> finding' actually a description of already-resolved history**."*
+
+**Applied here**: **any analysis that quotes a `stat_decay_config` value is quoting a number the
+engine does not use.** The live values are the `PROPS` dict in `classification_ladder_v12.py`.
+**Which past NBA analyses quoted config rather than code is NOT ESTABLISHED** — the entries do not
+record their source. **The check is one grep per number**, and it is now a standing requirement for
+any figure cited from this document.
+
 ---
 
 ## 1. THE BOUNDARY — what the baseline may and may not see
