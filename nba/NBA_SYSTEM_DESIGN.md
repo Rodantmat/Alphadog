@@ -215,7 +215,7 @@ pairs), the loader worker"*, *"let me check the run directly rather than keep po
 
 > ### ⚠ CORRECTION 2026-09-20 (T1 pass 38) — **it was NOT followed in T1, and the owner said so**
 > **VERIFIED** by extracting every `bash_tool` call in T1. **The session's entire local execution is
-> two syntax checks, two `cat`s, and THIRTEEN polling sleeps** — `sleep 30, 40, 45, 50, 55, 60, 70,
+> two syntax checks, two `cat`s, and **TWENTY-FIVE polling sleeps totalling 40.3 minutes** *(count and total corrected 2026-09-20, T1 pass 66 — **MEASURED** from the export's timestamps; the earlier "thirteen" counted distinct durations, not calls)*— `sleep 30, 40, 45, 50, 55, 60, 70,
 > 90, 150, 240, 280, 290`, each `; echo done`, each waiting on a GitHub Actions run. **That is
 > exactly what §4o prohibits.**
 >
