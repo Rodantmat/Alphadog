@@ -338,6 +338,9 @@ looks plausible, and it is simply from whenever the row was first written.
 to exist BEFORE the next upsert because the writers OVERWRITE."* **If a snapshot column is missing
 from an update clause, the differential compares against a frozen value and reports no change.**
 
+**The check is mechanical**: for each writer, compare the column list in the `INSERT` against the
+column list in `DO UPDATE SET`. **Not recorded as having been run.**
+
 ### 4. ⚠ A shared helper can carry its OWN hidden internal cap
 > *"**A shared, reused helper function can carry ITS OWN HIDDEN INTERNAL CAP, completely independent
 > of whatever limit the CALLING CODE passes in.**
