@@ -18,7 +18,11 @@ Before any code:
 2. **No MLB edits, ever. Everything additive.**
 3. **Fully separate universe** — own schemas, own control plane, own folder, own workers.
    *(This overruled an initial proposal to share the job queue.)*
-4. **Every tunable lives in the database**, never hardcoded.
+4. **Every tunable lives in the database**, never hardcoded. ⚠ **STATED IN FULL, and NOT HOLDING —
+   see STEP 0d below.** The owner's words were: *"any future variable numbers must reside on the
+   database, not hard coded — any equation variables like, **bonus, penalties, caps**, or **system
+   variables like, timeouts, retries, chunk size** — **so all these are easily changed by SQL command
+   instead of coding and deploys.**"*
 5. **Research is mandatory** — deep online research, plus Gemini for complicated decisions, treated as
    reference and verified independently.
 6. **Every session logs to `nba/NBA_PROJECT_LOG.md`.**
