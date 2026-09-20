@@ -109,9 +109,16 @@ scheduled task, worker by worker. *"no runner, orchestrator or anything like, it
 Cloudflare-fronted, and Worker→Cloudflare-site traffic is flagged at the WAF/edge. **The request never
 reaches the app layer** (error 520). No header tuning fixes it.
 
-**`FALLBACK_AFTER_FETCH_ERROR`** · T1 · The `source_key` written when the live fetch fails and the
-certified static list is used. **Check it before trusting a load.** Its counterpart is
-`NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` (real data).
+**`FALLBACK_AFTER_FETCH_ERROR`** · T1 · *(full value: **`STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR`**)*
+The `source_key` written when the live fetch fails and the certified static list is used.
+**Check it before trusting a load.** Its counterpart is `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE`.
+
+**`BASE_HITTER_GAME_LOGS_WORKER`** · T1 · The MLB precedent NBA workers copy for bridge dispatch —
+**a direct call that bypasses the queue entirely**, matching the owner's no-orchestrator rule.
+
+**"mlb calls referees Umpire"** · T1 · The owner's own search key for finding the referee analogue.
+**He supplied it**; it is why `ref.umpire_tendency` became the model rather than the factor being
+treated as new territory.
 
 **`nba_api` (swar/nba_api)** · T1 · The Python package whose docs supplied **the canonical header set
 and the static TEAM_ID list**. **Issue #155** tracks stats.nba.com's changing header requirements —
