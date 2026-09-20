@@ -185,6 +185,12 @@ real resolved-outcome deviation past a threshold **and zero active correction co
 catch a silent calibration regression *before* it runs for weeks. → `NBA_FINAL_SCORING_CALIBRATION.md`
 §7m Safeguard 1, §7m2 · **not recorded as built.**
 
+**`confidence_verification`** · LIVE · `nba_score.confidence_verification` — the table holding every
+confidence check's stated-vs-actual gap. ⚠ **Four writers; three scope their deletes to their own
+partition (`tier='v3'`, `tier IN ('v2','high_vs_low')`, `check_type='mondrian_quintile'`) and
+`verify_confidence.py` deletes the WHOLE TABLE.** Running it erases P2's nightly v3 rows. **Not yet
+fired** — three generations of rows currently coexist. → `NBA_DATABASE.md` · `NBA_OPEN_ITEMS.md`.
+
 **certification center** · T1 · **The UI — it already exists (MLB's) and will be integrated.** An
 aggregator of legs and a slip builder. *"the main UI will be the same."* **Nothing to build.**
 
