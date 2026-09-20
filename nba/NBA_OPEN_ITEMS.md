@@ -2,7 +2,15 @@
 
 ## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
 
-### EDGE CASE · `active_stats_season()` returns a data-less season on Oct 1–2
+### ① THE DIFFERENTIAL WORKER HAS NOT RUN SINCE 2026-09-03
+**Verified live 2026-09-20**: all three `*_differential_log` tables are **empty**;
+`player_roster_snapshot` holds **582 rows frozen 17 days ago**.
+**Nothing schedules it** — it was flagged unwired when built (T3), the owner said *"leave like this for
+now"*, and `nba-p1-weekly-static.yml` does not call it.
+**September–October is peak roster churn**: camp signings, two-way conversions, waivers, final cuts.
+**Every one is exactly what this worker detects.** Detail below under "FROM T3".
+
+### ② `active_stats_season()` returns a data-less season on Oct 1–2
 `nba/nba_season.py` branches on `month >= 10` → current year. So on **2026-10-01 and 10-02** it returns
 **2026-27**, which has **zero regular-season games** (opening night is **2026-10-03**). Preseason games
 exist but carry `GAME_ID` prefix `001`, not `002`.
