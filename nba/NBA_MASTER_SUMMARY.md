@@ -5246,6 +5246,36 @@ persisted**"* — **persisting work before running out of room**, rather than lo
 
 **T8 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T8.10 — PASS 2 (live verification of the config layer) — **NEW MATERIAL**
+
+**✅ The whole tiering config layer exists and is populated. Verified 2026-09-20:**
+
+| Table | Rows | Note |
+|---|---|---|
+| **`nba_ref.prop_taxonomy`** | **28** | **exactly the T8 seeding** — the table created empty in T1 and flagged in T7's audit |
+| **`nba_config.factor_registry`** | **67** | **seeded at 29 in T8 — it has since more than doubled** |
+| `nba_config.factor_relevance` | **460** | the prop × factor relevance matrix |
+| `nba_config.factor_profile_cells` | **35** | the lifts/penalties cells, *"in exactly MLB's cell form"* |
+| **`nba_config.role_tiers`** | **6** | **exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** (IRON_MAN → FRINGE) |
+| `nba_config.calibration_log` | 8 | |
+| `nba_config.classification_config` | **66** | the machine-readable decision record |
+
+**Three things this settles:**
+
+1. **`role_tiers` = 6 rows in the DB and 6 bands in the code.** The no-hardcoding rule holds for the
+   role tiers — they are config, not constants, and the two agree.
+
+2. **`factor_registry` grew 29 → 67.** T8 seeded 29 layer-tagged factors with macro-clusters; the
+   registry more than doubled across later sessions. **This is the ancestor of
+   `nba/NBA_ENRICHMENT_FACTOR_LOCK.md` and the A/B/D/M/N factor codes** used in T15–T16.
+
+3. **`factor_profile_cells` holds only 35 rows** against a 460-row relevance matrix. So **most
+   prop × factor combinations are marked relevant but carry no fitted cell** — consistent with the
+   T15/T16 outcome where **ten enrichment candidates were tested and none survived at leg level**.
+   **The matrix describes what was considered; the cells record what earned a value.**
+
+**T8 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
