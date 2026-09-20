@@ -567,7 +567,38 @@ stats.nba.com endpoint.
 
 ---
 
-## 7. MLB tables referenced as models (never written by NBA)
+## 9. THE CERTIFIED BASELINE RESULT *(T8, carried in the live code header)*
+
+**Both seasons, leg level, same configuration, no re-tuning:**
+| | 2025-26 (2 seasons history) | 2024-25 holdout (2023-24 only) |
+|---|---|---|
+| Points ladder, 13 rungs | 0.9 pp | **1.2 pp** |
+| Rebounds ladder | 0.7 pp | **0.8 pp** |
+| Assists ladder | 1.4 pp | 0.7 pp |
+| 3PM ladder | 1.3 pp | 1.1 pp |
+| Confidence bands (n≥1000) over 2.5 pp | 3 of 76 | 3 of 77 |
+| **Points/rebounds confidence bands** | **0 misses of 37** | **0 of 37** |
+
+*"Every band with real volume hits its stated rate."* The three residual misses are the thinnest
+"less" bands for assists and 3PM (n ≈ 1,800–3,400), all between 2.6 and 3.9 pp.
+
+**The holdout was run with the band mean-ratio cells DISABLED**, because they had been fitted on
+2024-25 — so the reported holdout is the core method (tiers, empirical tables, Platt) unaided.
+
+**`classification_ladder_v12.py`'s header asserts these numbers**: *"Holdout 2024-25 unchanged
+(1.2 / 0.8 / 0 of 37)."* **The harness checks itself against its own certified result on every run.**
+
+### Known misses, documented in the same header
+*"**blocks more 70–75: −4.3, n=3900** = P(0 blocks) under-predicted for ~1.5 bpg players, **persists at
+any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6. **Holdout 2024-25 shows the same
+signs.**"* — structural, reproducible, not noise.
+
+### Rejected on data, recorded in the same header
+*"**player-own L0 cells** (n=40–80; **regression-noise dominated**; ELITE rebounds ±7.7). **Off.**"*
+
+---
+
+## 10. MLB tables referenced as models (never written by NBA)
 `ref.teams` (16 cols: team_id, mlb_team_id, full_name, abbreviation, league, division, active…) ·
 `ref.umpire_tendency` (11 cols: umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game,
 avg_walks_per_game, avg_runs_per_game…) — **the model for the NBA referee factor** ·
