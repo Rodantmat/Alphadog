@@ -1025,6 +1025,48 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠ NO VALIDATION STEP BETWEEN GRADING AND THE CALIBRATION REFIT
+T1's blueprint §4c specifies the grader's isolation as **a load-bearing safety property**:
+> *"The grader **only ever reads** from historical board/game-log tables and **only ever writes to a
+> dedicated outcome-history table** — **it never touches any table the live board-serving path
+> reads.** **This means a bug in the grader CANNOT CORRUPT TODAY'S LIVE BOARD; its blast radius is
+> limited to producing wrong or missing TRAINING data**, which **A SEPARATE DOWNSTREAM VALIDATION STEP
+> CHECKS BEFORE ANY CALIBRATION CORRECTION IS EVER APPLIED.**"*
+
+**NBA has the read/write isolation** — `grade_board_outcomes.py` reads snapshots and game logs, writes
+`nba_market.board_outcomes`.
+
+**⚠ But the blast radius is not contained, because the second clause is missing.** P2 runs
+**grade (step 3) → … → calibration refit (step 14)** in one workflow, and the refit writes
+`ladder_calibration_asof`, which **`build_final_hp.py` reads on the next run.**
+
+**The path exists**: bad grades → bad `log_odds_shift` → bad `final_hp`.
+
+**The ordering is correct and deliberate** (*"grading must run before the refit, or yesterday's
+evidence is invisible to today's cells"*). **What is missing is the validation step between them** —
+the thing that makes the grader's isolation actually load-bearing.
+
+**Compounding factors already recorded**: the refit has **no magnitude sanity check** on the fitted
+shift (T1 §4a: *"be willing to reject a fit even when statistically valid if the shift is implausibly
+large"*), and **no over-flattening check**. **Three absent guards on the same path.**
+
+### ⚠ PROP FORMULAS NOT FLAGGED AS VALIDATED-OR-NOT
+> *"**Map every canonical prop to an explicit, direct expression against raw game-log columns**…
+> **keep this map IN ONE PLACE, VERSIONED**, and **FLAG any prop whose scoring formula hasn't been
+> independently validated against a confirmed, authoritative spec AS A KNOWN, EXPLICIT GAP** rather
+> than silently trusting an assumed formula — **the exact mechanism that would have caught the
+> fantasy-score formula bug much earlier.**"*
+
+**NBA's map is in three places**: `prop_taxonomy` (the list), `norm_market()` (board key → prop), and
+**`PROPS` in the recipe (prop → raw column, e.g. `"col": "PF"`)**. **The recipe's `PROPS` is the real
+expression map for singles.**
+
+**The validation was done for fantasy** — T9 verified the scale across all three apps — **but is
+recorded in a transcript, not versioned beside the map.**
+
+**Not flagged as validated-or-not**: `double_double` (sentinel −1.0, no ladder), `stocks`, and the
+period props.
+
 ### ⚠ TWO DIAGNOSTIC SAFEGUARDS SPECIFIED FOR DAY ONE — neither built
 T1's blueprint §4b names two **diagnostic-only (never automatically acting)** safeguards, *"since they
 directly target the exact failure classes documented elsewhere in this package."*
