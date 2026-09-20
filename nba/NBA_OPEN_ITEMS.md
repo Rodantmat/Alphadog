@@ -538,7 +538,30 @@ Underdog offers First FG/3PT make-or-miss, First to 10+ Points, Game/Team High S
 Minutes stats. **All require play-by-play we do not have.** Correctly out of scope; recorded so the
 board-coverage number is understood as *"of the props we can model"*, not *"of everything offered."*
 
-### GAP · **opponent defence has no SHORT-memory form** — the factor study asked for oneThe T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
+### 🔧 CHEAP FIX, CONCRETE · **altitude and timezone are EMPTY — two factors have no input**
+**Verified 2026-09-20**: `nba_ref.arenas` has **30 rows, 0 with `altitude_ft`, 0 with `timezone`**
+(19 of 30 have `capacity`).
+
+**Two peer-reviewed factors cannot be computed at all:**
+| Factor | Evidence | Needs | State |
+|---|---|---|---|
+| **Altitude** | *J. Sports Sciences* 2025, **p=0.005** — defensive performance varies with elevation, shot selection shifts toward 3PA, **4Q starter minutes and efficiency reduced** | `arenas.altitude_ft` | **empty** |
+| **Eastward jet lag** | Peer-reviewed, 10 seasons (PMC) — west→east travel impairs performance, **effect ~DOUBLE the reverse direction** | `arenas.timezone` | **empty** |
+
+**T8 flagged both as *"small data adds"* and they were never added.** The columns exist (created in
+T1's first DDL); the values do not. `teamdetails` — the source that fills the rest of the arena row —
+does not carry them, which is presumably why.
+
+**This is 30 static values that never change.** Only **Denver (~1,610 m)** and **Utah (~1,290 m)** are
+near the design's *"gated >1500 m"* threshold, so altitude is effectively a one-team factor plus a
+borderline second. Time zones are public record.
+
+**Note for jet lag**: the effect is **directional** — west→east is roughly twice the reverse — so a
+symmetric travel-distance factor would wash it out. **D2 must carry direction, not just distance.**
+
+**Design caution to preserve**: altitude was specified as *"continuous, gated >1500 m"* with the
+warning *"small, physiological, **sparse data — don't overfit**."* With one clear team above the
+threshold, that caution matters more than the effect size.The T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
 > **Short**: minutes, usage, FGA/3PA volume, **and opponent defence ratings (last 10–15 games, NOT
 > season-long)**
 
