@@ -584,7 +584,80 @@ diagnostic is one query and would answer whether that matters.
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7k. FIVE CONCRETE ENRICHMENT-FACTOR BUG PATTERNS
+*Source: T1, blueprint §4a — **"all real, all worth actively checking for in NBA's own factors."***
+Recorded 2026-09-20.
+
+### 1. A cumulative/season-total stat used as if it were a per-game rate
+> *"**with no division by games played anywhere in the code** — causing **one factor to SWAMP EVERY
+> OTHER FACTOR COMBINED**.
+> **Tell: check whether a factor's source field name says 'TOTAL' while its consuming code treats it
+> as 'PER GAME'.**"*
+
+**Live surface**: `nba_stats.player_career_totals` is cumulative by name and content;
+`player_game_log` is per-game. **Any factor reading career totals must divide.**
+
+### 2. One factor's lookup table left UNCAPPED while siblings have explicit caps
+> *"**the INCONSISTENCY ITSELF is the red flag; audit cap presence across the WHOLE factor registry AT
+> ONCE, not factor-by-factor.**"*
+
+**Live surface**: `nba_config.factor_profile_cells` has dedicated **`cap` / `lift` / `penalty` /
+`coefficient`** columns. **A single query — which cells have a null `cap` while their siblings do
+not — is the audit this asks for. Not recorded as having been run.**
+
+### 3. Macro-environment MULTICOLLINEARITY — and the RSS fix
+> *"several factors **all correlating with the same underlying signal** (e.g. **a market-derived game
+> total already prices in park/weather/pace effects that separate factors also try to capture**), so
+> **naively multiplying or summing them DOUBLE- AND TRIPLE-COUNTS the same real information**.
+> **Fix: RSS (ROOT-SUM-SQUARES) aggregation for a genuinely correlated factor cluster** — this has the
+> desirable property of **ZERO DAMPENING when only one factor in the cluster fires (matches its
+> individual magnitude exactly)**, with **increasing dampening as more correlated factors stack
+> together** — rather than either **naively multiplying (over-counting)** or **arbitrarily zeroing out
+> extra factors (under-using real information)**.
+> **Keep factors that measure genuinely INDEPENDENT information OUT of this treatment — only
+> correlated clusters need it.**"*
+
+**⚠ This is a named, specific solution NBA does not use.** `nba_config.factor_registry` carries
+**macro-clusters** (T8: *"layer-tagged, with macro-clusters"*) — **the cluster grouping RSS requires
+already exists** — but no RSS aggregation is recorded anywhere.
+
+**And the example is directly live**: the matchup factor uses **market-implied totals**
+(`f_impl_own`/`f_impl_opp` = `total/2 ∓ spread/2`), which by this description **already price in
+pace and opponent strength** that the pace and opponent-defence coefficients also capture.
+**That is the exact multicollinearity named.**
+
+**Note also how RSS relates to the architecture's own solution**: placing blowout/OT/foul risk in the
+**minutes model** *"dissolves their correlation"* (T8) — **the same problem solved structurally rather
+than by aggregation.** RSS is for clusters that cannot be re-homed that way.
+
+### 4. A factor showing the IDENTICAL contribution across wildly different cases
+> *"e.g. **an elite player and an average player getting the EXACT SAME adjustment** — **a sign the
+> factor is simply HITTING ITS OWN CAP for nearly everyone, NOT ACTUALLY DISCRIMINATING**, even though
+> **the code 'RUNS' WITHOUT ERROR.**"*
+
+**The sibling of the zero-variance bug**: near-zero *effective* variance caused by a cap, rather than
+by the input. **The `stddev()` check would NOT catch this** — the factor values differ upstream; the
+contributions do not. **The check is on the CONTRIBUTION, not the input.**
+
+**`final_hp`'s enrichment record stores per-factor contributions in `breakdown`**, so this is
+measurable: **distinct contribution values per factor.**
+
+### 5. AMPLIFYING, rather than shrinking, a thin-sample signal
+> *"Standard, correct statistical practice **always shrinks a thin-sample estimate toward a prior**;
+> MLB found a real case **doing the OPPOSITE — multiplying a signal UP for players with LIMITED GAMES
+> PLAYED** — justified by a 'validation' that **only proved the signal CORRELATED with outcomes —
+> which is SCALE-INVARIANT and would show the same correlation whether the true correction should
+> SHRINK or AMPLIFY.**
+> **Correlation with outcomes proves a signal CARRIES INFORMATION; it does NOT by itself prove WHICH
+> DIRECTION OR MAGNITUDE of adjustment is correct — that needs its own, SEPARATE validation.**"*
+
+**The scale-invariance point is the sharp one**: a correlation check cannot distinguish "shrink this"
+from "amplify this", so passing it proves nothing about the adjustment's direction.
+
+**NBA's structural defence is strong here** — empirical-Bayes shrinkage *"genuinely decays to zero as
+a player's sample grows"*, and the per-prop `k_stab` values are **measured** (STL k=125, TOV k=60,
+*"top-decile steals players regress 17% over the next 20 games"*). **Direction and magnitude were both
+validated separately, which is exactly what this pattern demands.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
