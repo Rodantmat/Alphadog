@@ -392,7 +392,25 @@ could not settle it.
 describes **successful** NBA players; those who washed out after 2–3 seasons are invisible. Also era
 effects — a 2004 line is not comparable to 2024 without pace/3PT normalisation.
 
-### Splits *(T4)*
+### Splits *(T4 research, T5 build)*
+**⚠ `PRIMARY KEY (player_id, split_type, group_value)` — `season` is a column but NOT in the key.**
+**Live 2026-09-20: `nba_stats.player_splits` = 9,948 rows, 577 players, 2025-26 ONLY.** A second
+season's load would overwrite the first. `nba_team.team_splits` = 581 rows, 30/30, same PK shape.
+
+**What is actually present — 5 types, not 6:**
+| `split_type` | rows | groups |
+|---|---|---|
+| `days_rest` | 3,311 | 7 |
+| `month` | 3,236 | 7 |
+| `location` | 1,217 | 3 |
+| `wins_losses` | 1,135 | 2 |
+| `pre_post_allstar` | 1,049 | 2 |
+
+**`StartingPosition` is absent** — superseded by `player_game_starter_status` at per-game granularity.
+**5 players missing** (577 of 582) from server-side HTTP 500s, accepted as *"well under the 5%
+tolerance."*
+Columns: `gp`, `w`, `l`, `w_pct`, `min`, full shooting/rebounding/assist line, `plus_minus`.
+
 Source: **`playerdashboardbygeneralsplits`** — **6 groups in one call**: `DaysRestPlayerDashboard`,
 `LocationPlayerDashboard`, `MonthPlayerDashboard`, `PrePostAllStarPlayerDashboard`, `StartingPosition`,
 `WinsLossesPlayerDashboard`. Team equivalent: `teamdashboardbygeneralsplits`
