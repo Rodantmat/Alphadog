@@ -4600,6 +4600,81 @@ via both workers (**this exercises the `file_prefix` composition for real**)."*
 
 **T7 PASS 11: NEW MATERIAL. Clean count 0/3.**
 
+### T7.18 — PASS 12 — **SEASON-READINESS, AND THE OWNER'S DEFINITIVE BASELINE SPEC**
+
+#### T7.18a — What "ready" actually meant, stated with its caveat
+> *"everything has been proven against **historical data replayed through the pipeline**. The genuine
+> first live test is **a real newly-completed game on October 3**. I expect it to work — the same logic
+> has already processed **1,230 real games** — but **I won't call it fully proven until that day**."*
+
+#### T7.18b — **"The endpoints and paths are NOT the risk" — the precise distinction**
+The owner asked whether endpoints would need adjusting. The answer corrected the premise:
+> *"**The endpoints and paths are not the risk.** They're the exact same ones that already processed
+> 1,230 real games. **They won't change on October 3.** What's genuinely untested is the
+> **INCREMENTAL STATE** — things that **only exist mid-season, never in a completed one**."*
+
+**Three named untested states:**
+| State | Why it only appears live |
+|---|---|
+| **Timing lag** | *"the calendar can mark a game **Final before the bulk stats endpoint has it** (advanced stats lag **~15 minutes**). If the delta runs in that window, the completeness check will **correctly flag a 'missing' game that simply isn't published yet**. **That's the check working, not failing**"* |
+| **Partial-season file** | *"season files will be **small in October instead of 26k rows**. I already **relaxed the 'certified' thresholds** for this, but **it's untested**"* |
+| **New players** | *"rookies won't be in the roster table until the weekly scrape catches up"* |
+
+> *"the honest expectation: **small timing and edge-case adjustments, not endpoint or path changes**.
+> If something does break, it'll be a **'ran too early'** or **'new player not mapped yet'** issue, not
+> a 'wrong data source' issue."*
+
+#### T7.18c — **"Only observable live" ≠ "only handleable live" — and the fix was never built**
+> *"**Genuinely only observable live**: the exact publishing lag of stats.nba.com… **But 'only
+> observable live' doesn't mean 'can only be handled live.'** The lag is **already known** from the
+> earlier research (~15 min after the final buzzer; **the 6am ET operating window was chosen as a
+> 4-hour buffer for exactly this reason**). So I **could build the defensive handling now** — for
+> example, **the completeness check treating a game as 'expected' only after a grace window past its
+> scheduled end, so a run that lands in the publishing gap doesn't cry wolf**. That's a design decision
+> I can make today from what's already known, **rather than discover in October**."*
+
+> *"real data is the only true **CONFIRMATION**, but it shouldn't be the only **PREPARATION**."*
+
+**The grace window was proposed, reasoned through, and left as a judgment call — then never built.**
+**And P2's planned 01:00 PT = 04:00 ET is TIGHTER than the 6am ET window this reasoning relied on**
+(T4.12f). **Recorded as SEASON-START CRITICAL in OPEN_ITEMS.**
+
+#### T7.18d — **THE OWNER'S DEFINITIVE BASELINE SPECIFICATION** *(block 761, verbatim)*
+This is the fullest statement of what the classification/baseline layer must be:
+
+> *"all the players need to be **classified to specific tiers and methods, caps, lifts, penalties** that
+> are gonna be used, and then **the baseline is gonna do the final job**…"*
+
+> *"**it does ALL the possibilities for ALL the players, for ALL prop lines, ALL variations, ALL
+> directions — a FULL MATRIX of anything that later can be available on the app boards to be
+> picked**."*
+
+> *"**It needs to be VERY GRANULAR. So we don't flatten the players into a low count of
+> differentiation.**"*
+
+> *"**different prop lines are gonna have different tier levels. Different variations are gonna have
+> different tier levels. Different directions — more or less — are gonna have different tier levels as
+> well.** …For each specific prop line and each specific variation and each specific direction, we're
+> gonna create this very granular, deep count of tiers. **Each tier is gonna have a different set of
+> logic to qualify a player, and then the baseline is gonna make the final calculation.**"*
+
+> *"**it looks to the past, and then it predicts the best baseline based on the past**… these numbers
+> need to be **trained and tested in the past season, even the two past seasons**, so we are sure that
+> we have these numbers very, very sharp for when the season starts."*
+
+> *"when the season starts, it's gonna be very different from the last season — **different players,
+> different teams, different rosters**. So the best that we can get is the data from the past."*
+
+**Every structural property of today's engine is in this paragraph**: the full matrix
+(prop × line × side × player), tiers per prop AND per variation AND per direction, per-tier logic,
+and the two-season train/test requirement. **`baseline_history` at 19.3M rows and `final_hp` at 38.7M
+are this specification executed literally.**
+
+**And "don't flatten the players into a low count of differentiation" is the origin of `max_tiers=24`** —
+the MLB value raised from 12 after backtesting, adopted because the owner's requirement was granularity.
+
+**T7 PASS 12: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
