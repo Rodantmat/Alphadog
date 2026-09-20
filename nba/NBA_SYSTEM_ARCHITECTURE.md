@@ -278,9 +278,44 @@ recorded**: it is not a convenience limit, it is a data-integrity guard.
 and will silently receive 500. **Any count or coverage check must aggregate in SQL (`count(*)`,
 `group by`) rather than returning rows and counting them.**
 
-**⚠ A live example of getting this right**: every live verification in this documentation used
-`count(*)` aggregates — `arenas` (30/0/0/19), the differential logs (0/0/0/582), the config tables —
-**never a `SELECT *` row count.**
+### 8. ⚠ A CDN in front of raw-file URLs serves STALE content after a successful deploy
+> *"**A CDN OR EDGE CACHE in front of a raw file-serving endpoint** — e.g. **a raw-content URL for a
+> hosted git repository** — **can serve a STALE, PRE-DEPLOY VERSION OF A FILE FOR SEVERAL MINUTES
+> AFTER A REAL, SUCCESSFUL DEPLOY.**
+> MLB confirmed this **produced TWO SEPARATE FALSE 'the change didn't actually land' CONCLUSIONS**
+> before the team learned to **VERIFY A DEPLOYED CHANGE THROUGH THE PLATFORM'S OWN API-LEVEL FILE-READ
+> TOOL RATHER THAN FETCHING THE RAW PUBLIC URL DIRECTLY.**"*
+
+**⚠⚠ This is directly live for NBA, because the loaders fetch from exactly that surface.**
+- **Every writer Worker fetches committed JSON from `raw.githubusercontent.com`** — chosen
+  deliberately, because *"the GitHub Contents API silently returns EMPTY above 1 MB."*
+- **`load_baseline_ladder.py` fetches the artefact over HTTP from the repo** — with the workflow
+  comment *"**COMMIT BEFORE LOADING** … load_baseline_ladder.py fetches the artefact over HTTP from
+  the repo (raw.githubusercontent), **NOT from the runner's local disk** — so a ladder built but not
+  committed [is invisible]."*
+
+**So NBA has a commit → CDN → load chain, and a stale read would load the PREVIOUS day's artefact
+while reporting success.**
+
+**The two surfaces have opposite failure modes, which is the trap:**
+| Surface | Failure |
+|---|---|
+| **Contents API** | **silently returns EMPTY above 1 MB** — the reason raw is used |
+| **`raw.githubusercontent.com`** | **silently returns STALE for minutes after a deploy** |
+
+**And the prescribed fix points back at the surface NBA avoided**: *"verify through the platform's own
+**API-level file-read tool** rather than fetching the raw public URL."* **Under 1 MB the Contents API
+is the correct verifier; above it, neither is safe alone.**
+
+**The NBA-specific risk window**: P2 commits the ladder and then loads it **in the same workflow run**
+— the shortest possible gap between write and read. **`baseline_ladder_runs.source_file` records what
+was loaded**, so a stale load is detectable after the fact, **but nothing asserts freshness before
+loading.**
+
+**Note this also explains a T3 observation**: *"a newer commit (`f8b6ad9e`) landed after my last push"*
+and the repeated *"still not committed — let me check the run directly rather than keep polling
+blindly."* **Polling a raw URL for a just-committed file is precisely the pattern that produces false
+negatives.**
 
 ---
 
