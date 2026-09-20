@@ -2612,6 +2612,33 @@ consistent with the later parity doc assigning them to stages, and with the doub
 
 **T4 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T4.11 — PASS 5 (live verification of the T4 double-counting warning) — **RESOLVED**
+
+**The T4 risks section warned: *"the baseline already reflects historical blowout-shortened minutes —
+don't penalize twice."* Checked against `nba_score.blowout_model` today. The design avoids it.**
+
+`minutes_by_margin` stores **`v1` as a RATIO relative to the player's own baseline**, not an absolute
+penalty:
+
+| Margin band | n | **v1** |
+|---|---|---|
+| **competitive** | 12,966 | **1.0333** |
+| won by 12–20 | 3,001 | 0.9760 |
+| won by 25+ | 1,597 | **0.8748** |
+| lost by 25+ | 1,306 | 0.9124 |
+
+**A value ABOVE 1.0 for the most common case is the signature of a deviation model.** The ratios are
+measured against the same blended historical average the baseline uses, so applying a margin-weighted
+ratio **re-centres** the projection rather than subtracting twice.
+
+**This also identifies the source of a T16 figure**: *"competitive games run 3.3% above baseline"* is
+`v1 = 1.0333` read directly.
+
+**The T4 warning was heeded thirteen transcripts later** — and the documentation pass is what
+established that, since neither transcript states the connection.
+
+**T4 PASS 5: NEW MATERIAL (a resolution). Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
