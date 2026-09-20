@@ -279,6 +279,10 @@ scraper.**
 **And the first lesson applies directly**: NBA **already has the correct pattern** in the delta
 worker's calendar-based pre-flight. **Copying it to the board producer beats inventing a new check.**
 
+---
+
+## 1. THE CUTOFF — why 1:15 PM PT
+
 **The binding constraint is the game-day injury report.** It is due **11am–1pm LOCAL to each game's
 market**, so Eastern clubs file by 10 AM PT and **Pacific clubs are last at 1:00 PM PT**.
 
