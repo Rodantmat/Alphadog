@@ -5056,6 +5056,25 @@ a next-quarter item.
 
 **CLEAN PASS 1 of 3.**
 
+### T7.27 — PASS 20 (full sequential, 240-char context, blocks 123–354) — **CLEAN 2/3**
+
+**Every block maps to a documented entry. Nothing new.** Confirmed with wider context: the `002`
+prefix resolution and the `1230 = 1230` check (T6.6), the final 100% audit and its self-caught
+docstring gap (T7.9b), the `matchup`-field column fix, the *"exactly matches known reality"*
+verification (0 starter-status / 3 officials), the 30 KB checkpoint build and the memory-file pointer
+(T7.9c), the owner's simulation question (T7.4), the systemic season-hardcoding finding (T7.1), the
+data-universe research and the corrected Gemini claim (T7.7), and the per-scraper patching sequence
+including shot quality's two URLs, the schedule's 2-season list and DARKO's absent season parameter
+(T7.24c).
+
+**CLEAN PASS 2 of 3.**
+
+### T7.28 — CURRENT STATE OF T7
+
+**20 passes. 18 found new material. Clean count: 2/3** (passes 19, 20).
+
+**ONE more complete clean sequential pass and T7 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
