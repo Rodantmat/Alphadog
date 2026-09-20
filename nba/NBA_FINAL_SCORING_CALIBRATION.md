@@ -1005,6 +1005,10 @@ empty column produces **a silent zero or a NaN** — which is exactly the *"misl
 status** — present in the registry, visibly not contributing, impossible to mistake for a measured
 zero. **`nba_config.factor_registry` has 67 rows and could carry the same field.**
 
+---
+
+## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
 100% coverage).
