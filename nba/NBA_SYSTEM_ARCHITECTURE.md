@@ -1526,6 +1526,28 @@ store** · the chat transcript.
 
 ---
 
+## 8b-ii. THE TRIGGER FILES ARE AUDIT LOGS, NOT MARKERS — and there are two conventions
+*Recorded 2026-09-20 (T1 pass 85). **VERIFIED** on the live clone.*
+
+**T1 defined the shape and it held.** Every `nba/TRIGGER_NBA_*.txt` written since carries a purpose
+line, the mechanism, and **two structured fields**:
+```
+last_triggered_utc: 2026-08-31T22:16:00Z
+trigger_reason: retry through PROXY_URL …
+```
+**13 of the 14 trigger files carry both fields today.** ⚠ **The exception is
+`TRIGGER_NBA_PROBE.txt`** — 39 bytes, holding only `script: scrape_prizepicks_nba_board.py`.
+**That is a second convention: passing an argument rather than logging a reason.** **Neither
+convention is written down**, and **`trigger_reason` / `last_triggered_utc` appear in no document.**
+
+⚠⚠ **And the log is substantive.** The five `TRIGGER_NBA_SCRAPE.txt` bodies T1 wrote record the
+entire tarpit investigation — **five attempts in nineteen minutes**, each naming what the last
+result ruled out, ending at *"ruling out IP-based blocking and **pointing at TLS fingerprinting
+instead**."* **The documents held the conclusion and pass 79 recovered the measurements; the
+reasoning that joins them was in this file all along.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 85*.
+
+---
+
 ## 8b-i. ✅ THE WORKER UNIVERSE, DIFFED THREE WAYS — 21/21/21, NO DRIFT
 *Recorded 2026-09-20 (T1 pass 69). **VERIFIED** by live SQL and by listing the live clone.*
 
