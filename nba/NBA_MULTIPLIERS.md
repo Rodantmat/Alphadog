@@ -71,6 +71,26 @@ Power is a pure product of hit probabilities; Flex is a weighted sum over the pa
 makes it **less sensitive to a single miss and therefore more tolerant of a weak leg**. Any slip-EV
 computation must know which type it is pricing.
 
+## 0.2c ⚠ THE CONFIDENCE TIER ON §0.2's FINDING — do not let it harden
+
+The MLB lessons document flags this exact measurement as a cautionary case:
+> *"…(**Flex-mode partial-credit payouts**) that had been **built once from real data but NEVER
+> RE-CHECKED against further real placed slips**. Both were reported, but **the second was explicitly
+> labelled as a FIRST PASS rather than a settled figure**. **Carry the same explicit
+> confidence-tiering into NBA's own research records.**"*
+
+**So the 4/5 = 0.5 and 3/5 = 0.25 tiers are a TWO-OBSERVATION finding**, and the source's own wording
+is *"**suggests** these **may** be flat/constant values"* — not a confirmed table.
+
+**Treat as: plausible, unverified, and never re-checked.** Any slip-EV computation using them should
+carry that tier explicitly, and the figures should be re-measured against fresh placed slips before
+anything depends on them.
+
+**The general rule this comes from**: **don't let a one-off measurement harden into a fact.** NBA's
+structural version of the same discipline is the **`BACKTEST-LOCKED`** tag on
+`nba_config.classification_config` — which distinguishes values earned by evidence from seeds.
+**The multiplier work has no equivalent tag, and needs one.**
+
 ## 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
 > *"Before trusting any high hit-rate finding, **compute the implied house edge: `p × m`** where `p` is
 > the real hit rate and `m` is the real per-leg multiplier. **If this implies the platform is handing
