@@ -243,6 +243,11 @@ can never be certified within one season**, rather than discovering it prop by p
 **A concrete candidate is already named elsewhere in the record**: the T7 factor research cited
 **peer-reviewed and industry sources** (OpticOdds, Unabated, DataStreak, *J. Sports Sciences*), so the
 sourcing discipline exists — **it simply was not applied to stabilization points.**
+
+---
+
+## 3.7 Shrinkage
+
 **Tier prior** = tier mean blended toward population with **`TIER_BLEND_K = 5`**.
 **Shrunk rate** = `(n·rate + priorStrength·tierPrior) / (n + priorStrength)`.
 **Prior strength** = empirical Bayes, **Efron-Morris method of moments**, branched by distribution
