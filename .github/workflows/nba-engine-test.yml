@@ -58,6 +58,13 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Find a date that exercises the reallocation path
+        if: ${{ github.event.inputs.task == 'finddate' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FD_SEASONS: ${{ github.event.inputs.season }}
+        run: python nba/find_delta_test_date.py
+
       - name: Availability delta (simulate P3 step 4a)
         if: ${{ github.event.inputs.task == 'delta' }}
         env:
