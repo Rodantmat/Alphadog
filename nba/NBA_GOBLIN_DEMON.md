@@ -268,6 +268,19 @@ sport-specific pricing model. The same company applies the same structure across
 **Every method that looked like it identified high-probability legs in advance stopped working out of
 sample.**
 
+### ⚠ THE INSTRUCTION FOR NBA, STATED EXPLICITLY
+> *"**If NBA replicates this finding, treat 'THE MECHANISM IS REAL' and 'WE CAN EXPLOIT IT' as TWO
+> COMPLETELY SEPARATE, BOTH-UNSOLVED QUESTIONS** — [MLB] solved neither the second one."*
+
+**Two questions, tracked separately:**
+| Question | Status |
+|---|---|
+| **Is the mechanism real?** | **Yes** — measured: ~15% multiplier change for a ~2.6× probability gap; step-function pricing keyed on tier index |
+| **Can it be exploited?** | **Unsolved.** Three walk-forward methods regressed to the pool average |
+
+**Confirming the first says nothing about the second.** And the source is explicit that **both were
+unsolved** — the mechanism being *measured* is not partial progress toward exploiting it.
+
 ### ⚠ THIS IS THE CENTRAL QUESTION FOR NBA
 **Everything this system has built is an attempt at exactly the thing MLB could not do: identify, in
 advance, which legs sit on the favourable side of that gap.** The certified ladder, the leg-level
