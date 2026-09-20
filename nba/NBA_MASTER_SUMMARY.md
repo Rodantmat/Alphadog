@@ -835,6 +835,39 @@ A sweep for every decision point, rejected alternative and "rather than" constru
 Dimensions not yet swept: error/exception vocabulary · time and scheduling references ·
 person/team/proper nouns · numeric IDs and hashes.
 
+### T1.28 — PASS 17 FINDINGS (added 2026-09-20; error vocabulary) — **NEW MATERIAL · CLEAN COUNT RESET TO 0**
+
+**THE TOOL-LIST CACHING DIAGNOSIS, precisely** — previously recorded only as "the tool list is fixed at
+session start":
+> *"it looks like **the MCP connector caches its tool list at the connection level, not per new chat**"*
+
+That is why the owner's disconnect-and-reconnect did not surface `github_trigger_workflow`, and why a
+genuinely fresh connection was needed. **A more specific and more useful statement of the constraint.**
+
+**THE 403's ACTUAL MESSAGE**: *"403 **'Access Denied'** or 520/526"* — so the family of responses from
+a Worker origin is: **403 Access Denied · 520 (edge, 'web server is returning an unknown error') ·
+526**. Previously recorded as bare status codes.
+
+**THE PROXY IS MLB's OWN**: *"timeouts, even through **the same proxy MLB's scraper uses** — ruled out
+IP blocking."* The `PROXY_URL` secret is the one MLB's PrizePicks scraper already relied on, which is
+why it needed only referencing. **And its failure here is what made the conclusion decisive** — that
+proxy demonstrably works for MLB scraping, so its failure against stats.nba.com could not be an IP
+reputation problem.
+
+**A NON-BLOCKING FOLLOW-UP FLAGGED AND NEVER CLOSED**: after the header rewrite, one path still
+returned an error *"(still needs real header/cookie debugging, **flagged as a non-blocking
+follow-up**)"* — so it *"correctly fell back"*. **This is an open thread from T1** and is now recorded
+in OPEN_ITEMS.
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| decisions and alternatives | 16 | CLEAN 1/3 |
+| error/exception vocabulary | 17 | **NEW — connection-level tool caching; 403 "Access Denied"; MLB's own proxy; an unclosed follow-up** |
+
+**CLEAN COUNT RESET TO 0/3.** Seventeen passes; fourteen found new material.
+This is the rule working as intended — pass 16 looked clean, and pass 17 proved the count was premature.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
