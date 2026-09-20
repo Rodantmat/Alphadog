@@ -1,5 +1,35 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## ⚠ DEFECT-FOUND-AND-CORRECTED · **the summary ledger drifted four passes behind its own body**
+*Found and corrected 2026-09-20, on the owner's instruction. Recorded rather than silently fixed,
+because the discipline directly below requires it.*
+
+**`NBA_MASTER_SUMMARY.md`'s transcript-inventory row for T1 read *"0/3 — ACTIVE. 29 passes. Pass 29
+found new material in blueprint §7f, §7g, §9"* while the body of the same file carried entries
+through §T1.63 (pass 33), including a confirmed destructive bug.** The header was **four passes
+stale**, and it is the first thing a reader consults.
+
+**This is the third recorded instance of the same defect class in this system:**
+| # | Instance | Where |
+|---|---|---|
+| 1 | **`minutes_mixture`** — config specifies three components the recipe does not implement | this file |
+| 2 | *"two files meant to be exact copies can silently drift out of sync, **with only the self-reported version string revealing the drift**"* | `NBA_SYSTEM_ARCHITECTURE.md` |
+| 3 | **this ledger** — a header that no longer describes the content beneath it | `NBA_MASTER_SUMMARY.md` |
+
+**And it is blueprint §9 failure mode #6** — *"silent config/formula drift… no error thrown; the
+output is just silently wrong-but-plausible."* **A stale ledger is wrong-but-plausible in the most
+expensive way available to this effort**: it is how a future session finishes against a wrong picture
+of what remains. **The 16-vs-20 transcript-inventory error corrected the same morning was the same
+defect with a different number.**
+
+**The standing correction** — now **step 7b of the execution loop** in
+`nba/NBA_DOCUMENTATION_PROMPT.md` and restated at the ledger itself: **a pass is not finished until
+that transcript's row states the current clean count, the total passes run, what the latest pass
+found, and the pass numbers of any consecutive clean run in progress. If row and body disagree, the
+body is authoritative.**
+
+---
+
 ## ⚠ DOCUMENTATION-GAP HONESTY DISCIPLINE
 *Source: T1, blueprint §4l. Recorded 2026-09-20. Applies to THIS documentation effort.*
 
