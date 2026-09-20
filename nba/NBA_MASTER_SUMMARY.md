@@ -5129,6 +5129,123 @@ and calibration of the engine itself.
 The backtest harness and its iterations (v1 → v17), leg-level calibration, and the tiering
 architecture materialised into `nba_config`.
 
+---
+
+## T8 — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt`
+**The tiering architecture materialised, and the backtest harness driven to leg-level calibration**
+*53 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+*T8 opens by repeating T7's last two blocks (the prop-map correction and the peer-reviewed sweep).
+New material starts at T8.1.*
+
+### T8.1 — The second, deeper prop sweep — and the period-props gap closed
+Owner: *"Now do another full deep check on each prop line, **all different types and layers** of
+proplines all apps"*
+
+> *"A full deep check means **every prop type and every layer** — including the **period props,
+> double/triple-doubles, attempt-volume props, and fouls** that the first pass didn't cover. Those have
+> genuinely different drivers."*
+
+**The period-props data question was settled by a probe, not by reading docs:**
+> *"**Confirmed — the period-props data gap is closed.** `Period=1..4` works on the bulk endpoint:
+> LeBron **9.6 min / 10 pts** in a 1Q row, **22,522 Q1 rows** (fewer than full-game because
+> **0-minute players drop out**)."*
+
+**`Period=1..4` on the bulk endpoint is the finding** — period props did not need a per-game endpoint
+after all. **22,522 Q1 rows vs 26,651 full-game rows**, and the difference is explained (players who
+never entered in Q1).
+
+### T8.2 — **THE FIVE-DIMENSION TIERING ARCHITECTURE**
+Owner: *"Now tiering for each **player tier, factor, prop line, variation and direction**."*
+
+> *"Let me study the MLB enrichment layer properly — **the design doc, the actual multiplier tables,
+> and how score-prep applies them** — **before** designing NBA tiers."*
+
+**The MLB mechanics were read from live code and real rows**, then combined with a Gemini design pass,
+producing an architecture across all five dimensions — *"including one place I'm rejecting [Gemini]."*
+
+### T8.3 — The owner restates the boundary, and it is confirmed
+> **OWNER:** *"just remembering that the **daily context factors** — the real lineups, all the real
+> data, the **current injury reports**, and any other factors that need to be mined [daily]…"*
+
+> *"**Understood, and that's exactly the boundary I've been designing to: daily-mined = enrichment;
+> derivable-from-history = baseline** — including **projected minutes derived from history**, and the
+> **with/without table** [as the derived backup]."*
+
+### T8.4 — **THE SCHEMA MATERIALISED** — `nba_ref.prop_taxonomy` finally gets its purpose
+> *"starting with the prop taxonomy (**the empty `nba_ref.prop_taxonomy` table finally gets its real
+> purpose**)"*
+
+**The table created in T1 and correctly flagged as empty in T7's audit is populated here.**
+
+| Artefact | Content |
+|---|---|
+| **Prop taxonomy** | **28 props** seeded |
+| **Factor registry** | **29 factors**, *"layer-tagged, with **macro-clusters**"* |
+| **Role tiers · variation bands · relevance matrix** | seeded |
+| **Profile cells** | *"the researched **starting lifts/penalties** for the highest-evidence factors, **in exactly MLB's cell form**. **These are the values the backtest will move.**"* |
+
+**"These are the values the backtest will move" is the key sentence** — the seeds are explicitly
+provisional, to be replaced by evidence rather than defended.
+
+### T8.5 — The harness, and four bugs caught by dry-running on real data
+> *"First I need to establish **how a compute job can read 79k rows from Postgres** — **the MLB GBDT
+> training pipeline solved this already**, so let me [look at it]."*
+> *"Before pushing, let me **test it locally on real data** — I can pull the files here and run it,
+> which **catches bugs faster than a workflow cycle**."*
+
+| Bug | Cause |
+|---|---|
+| Missing `GAME_DATE` | *"the advanced team file has **no `GAME_DATE`** — it's keyed by `GAME_ID` only (**the date lives in the base log**)"* |
+| Ordering bug | *"**my own ordering bug** — `train_g` was sliced **before** `abs_spread` was computed"* |
+| **Silent NaN ages** | *"the bio file uses **`players` / lowercase `player_id` / `age`**, not `records` / `PLAYER_ID` / `AGE`. **Every age was NaN, so the age-bucketed B2B table was empty.**" |
+| — | *"**Exactly why I dry-run first.** Let me check the real column names in each file **rather than assume**."* |
+
+**The NaN-age bug is the dangerous one**: an empty table, not an error. **Same class as the
+`if rows is not None` bug (T6) and `float(NaN or 0)` (live session).**
+
+### T8.6 — **The owner's standing directive on rigour**
+> **OWNER:** *"Continue, and **any time you see it needs deeper testing and calibration, do not move
+> before fixing it**."*
+
+> *"The **FRINGE anomaly** is exactly the kind of thing your directive covers — **I won't build on top
+> of it until I understand it.**"*
+
+**This directive is invoked by name and changes the work order** — investigation before progress.
+
+### T8.7 — Iteration to leg level, v9 → v17
+> **The standard, as stated**: *"the standard is **leg-level**: every variation band, every direction,
+> and then **'when the model says 90%, does it hit 90%?'** across confidence bands. **That's the metric
+> that actually gates** [shipping]."*
+
+**Named checkpoints**: v9 in repo → v10 (ELITE rebounds cells, worst-cell lists) → v11 (3PM confidence
+bands) → **v12 (37 KB, leg-level)** → … → final.
+**A tooling detail**: *"**Too many hunks for patches** — the whole file needs to go up… pushed in two
+halves."* And *"the patch **aborted on an assertion** — the file wasn't modified (**that output is the
+old run**)"* — **a stale-output trap caught before it misled the analysis.**
+
+**A performance split**: *"**Too slow for one call with all four props** (parametric p for **77k history
+rows × 13 rungs**). **Splitting by prop.**"* — the origin of the per-prop-pair build that P2 still uses.
+
+### T8.8 — **The season holdout — the owner's robustness test**
+> **OWNER:** *"you are right, keep sharpening it, you can also **apply the ones that meet the standard
+> to the previous season** — it should hold very closely. **If it correctly worked for the past season,
+> [it] should also work for the one before.**"*
+
+> *"**Agreed on both**… the season-holdout check is the right robustness test — **if the method is
+> real, 2024-25 (with only 2023-24 as history) should look like 2025-26.** **One honesty note**: the
+> band mean-ratio cell…"*
+
+**Final block: *"## Final result — both seasons, leg level"*** — the holdout was run with *"the same
+final configuration — 2024-25 with only 2023-24 as history."*
+
+### T8.9 — An honest budget stop
+> *"**I hit the tool budget mid-run**, so here's an honest account of where things stand."*
+And later: *"I'll push the file via a single `put_file` **in this turn to make sure the work is
+persisted**"* — **persisting work before running out of room**, rather than losing it.
+
+**T8 PASS 1: complete sequential read. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
