@@ -1456,6 +1456,22 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.88 — PASS 58 (angle: **blueprint §4j–§4n, read by concept**) — ✅ **CLEAN 1 of 3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 58.*
+
+**Every lesson in §4j, §4k, §4m and §4n already has an entry. Nothing new.**
+§4j — the exact-copies-drift pattern and the global-lock/"busy" wait. §4k — all **eight** base-layer
+lessons, in `NBA_SYSTEM_ARCHITECTURE.md` §4c: adopt existing data over re-fetching · never validate
+against a reference DB as ground truth · verify every refreshable column is in the `ON CONFLICT DO
+UPDATE` list · bounded rolling re-verification window · a shared helper's hidden internal cap ·
+rebuild a proven pattern over porting a problematic one · derive via SQL before building a new
+integration · classify per-game vs season-aggregate shape first. §4m is the source of §2c in full;
+**§4n** is cited by section in three places.
+
+**CLEAN PASS 1 OF 3.**
+
+---
+
 ### T1.87 — PASS 57 (angle: **Part D's two remaining subsections, read by concept**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 57. **Neither lesson appears in the twelve
 documents, and each has a live NBA instance.***
