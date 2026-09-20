@@ -937,6 +937,20 @@ outcome conditional on them).
 
 ## 7. COMBOS — joint structure, never a direct fit
 
+> ### ⚠ THIS WAS AN EXPLICIT, COST-JUSTIFIED INSTRUCTION FROM DAY ONE
+> *Recorded 2026-09-20 (T1 pass 49). Source: `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1 — the
+> instruction was recorded nowhere, though the cost behind it is in `NBA_DATABASE.md`.*
+>
+> > *"NBA has real combo props (**PRA** etc.)… **treat these as a FIRST-CLASS PROP FAMILY FROM DAY
+> > ONE, NOT AN AFTERTHOUGHT**, since MLB's own combo prop (`hits_runs_rbis`) caused **real analysis
+> > headaches from being treated as a bolt-on**."*
+>
+> **✅ It appears to have been followed** — the combo layer below is architectural (simulated from
+> calibrated marginals with per-player covariance), not bolted on. **What was missing is that this
+> was instructed, with a named MLB cost behind it**, rather than arrived at independently.
+> **It matters for future changes**: anything that would make combos a special case of the
+> single-stat path is reverting a decision that was made deliberately and paid for once already.
+
 **Simulated from calibrated marginals with PER-PLAYER covariance**, archetype-dependent:
 **P–A strongly positive for ball-handlers; R–A positive for bigs (Jokić), negative for guards.**
 *"For a do-it-all star, **PRA has LOWER relative variance than its parts**; for a 3-and-D wing,
