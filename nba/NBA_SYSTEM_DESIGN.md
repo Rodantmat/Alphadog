@@ -78,8 +78,25 @@ abandoned earlier 'orchestrator + auto-scheduled cron' design."***
 |---|---|---|
 | **1** | **Board** | pull each platform's raw board (own PrizePicks scraper + ParlayAPI for Sleeper/Underdog), **normalise into a common shape**, write to `market.*_board_current` |
 | **2** | **Daily Context** | *"same-day contextual factors — **lineups/rotations, player availability, matchup context, injury status**"* |
-| **3** | **Market** | *"mine sportsbook/DFS pricing data for **cross-referencing and multiplier-study** purposes"* |
-| **4** | **Scoring Engine** | combines baseline + enrichment into final numbers |
+| **3** | **Market** | *"mine sportsbook/DFS pricing data for **cross-referencing and multiplier-study** purposes"* → `market.context_probe_*`, archived to `archive.market_prop_context_history` |
+| **4** | **Scoring** | *"the actual prediction/probability engine — **baseline model → enrichment factors (EACH A 'PHASE' FILE) → matrix builder → scoring engine → hit-probability board → FINAL BOARD (curated, tiered PRIMARY/REVIEW output)**"* |
+
+> *"**This four-stage order is LOAD-BEARING, NOT ARBITRARY** — replicate the same ordering for NBA and
+> **DON'T PARALLELIZE STAGES 1→2 WITHOUT RE-VERIFYING the same dependency doesn't exist.**"*
+
+**Layer 4's internal chain names two stages NBA has not built under those names:**
+| MLB stage | NBA equivalent |
+|---|---|
+| baseline model | ✅ `classification_ladder_v12.py` → `baseline_ladder` / `baseline_history` |
+| enrichment factors, **each a separate "phase" file** | ✅ `build_final_hp.py` + the factor registry — **consolidated, not per-factor files** |
+| **matrix builder** | the full prop × line × side matrix — ✅ **`baseline_history` (19.3M rows) is the matrix** |
+| scoring engine | ✅ `score_board_legs.py` |
+| hit-probability board | ✅ `final_hp` (38.7M rows) |
+| **FINAL BOARD — *"curated, tiered PRIMARY/REVIEW output"*** | ⏸ **NOT BUILT** — this is the slip/selection layer, correctly deferred |
+
+**⚠ The PRIMARY/REVIEW tiering is the stated end product**, and NBA stops one stage short of it. That
+is consistent with the owner's sequencing (*"goblins and demons… board dependent"*, selection deferred),
+**but it means `board_scored` is the last artefact, not a curated board.**
 
 ### ⚠ THE DOCUMENTED ORDERING BUG — Board must run BEFORE Daily Context
 > *"MLB had **a real, documented ordering bug from running these OUT OF ORDER**:
