@@ -3290,6 +3290,38 @@ Both mid-run reports state plainly what is **not** yet known:
 
 **T5 PASS 5: NEW MATERIAL. Clean count 0/3.**
 
+### T5.11 — PASS 6 (full sequential, all 115 blocks) — **CLEAN 1/3**
+
+Complete read from block 2 → 503. **Every block maps to a documented entry**: the gap audit and both
+scripts (T5.1, T5.10b), the 49-minute run and its 5 HTTP 500s (T5.1), the hardcoded-season fix
+(T5.1), Jokić's two-partition consistency check (T5.1), the owner's double-check instruction and the
+two wrong Gemini claims (T5.2), the position bug and its self-corrected fix (T5.3),
+Defence-vs-Position (T5.4), the starter-status scope decision (T5.9c), the lean workflow (T5.10d),
+the **799-row silent failure** and its resolution (T5.5), the 7-call diagnostic, the v2→v3 fix, the
+32,179-row result with the 12,300 identity, and the three-layer invocation block (T5.6).
+
+One detail confirmed here: **`stats.nba.com` is not on the sandbox's allowed network list** —
+*"so I can't debug this directly — I need to add real diagnostics to the script and re-run it through
+the actual workflow."* **That constraint is why the diagnostic had to be a workflow rather than a local
+call**, and it is the same egress restriction recorded in T1.17.
+
+**CLEAN PASS 1 of 3.**
+
+### T5.12 — CURRENT STATE OF T5
+
+**6 passes. 5 found new material. Clean count: 1/3** (pass 6).
+
+| Pass | Method | New findings |
+|---|---|---|
+| 1 | full sequential | the whole T5 narrative — 6 sections |
+| 2 | DDL | **the splits PK omits `season`**; `defense_vs_position` gets it right |
+| 3 | live verification | **splits = 1 season; `StartingPosition` absent** |
+| 4 | milestone summaries | **starter status = 1 season, owner-approved**; 79,358 total rows |
+| 5 | status reports | **why game logs span 3 seasons and splits cannot**; per-item error tracking |
+| 6 | full sequential | **CLEAN** |
+
+**Two more consecutive clean full passes required before T5 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
