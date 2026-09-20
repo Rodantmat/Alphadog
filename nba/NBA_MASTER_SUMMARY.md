@@ -2878,6 +2878,40 @@ started), `min`, and the full shooting/rebounding line.
 
 **T4 PASS 9: NEW MATERIAL. Clean count 0/3.**
 
+### T4.16 — PASS 10 (full sequential, all 119 blocks) — **CLEAN 1/3**
+
+Complete read from block 5 → 514. **Every block maps to a documented entry**: the shot-quality build
+and its two bugs (T4.1), the backfill research (T4.13), the `TEAM_ID = 0` resolution (T4.2), the
+one-time workflow and its ~13-minute run (T4.2), the `MeasureType=Advanced` correction (T4.3), the
+baseline methodology (T4.9), the architecture correction and its risks section (T4.10), the cadence
+lock (T4.12), and the gap audit that found 1-of-3 seasons and zero splits (T4.14e).
+
+One detail confirmed here and worth recording: **the loader used batched inserts** — *"using batched
+inserts given the real scale (**32,755 rows total**)"* — and **all three datasets loaded in under
+10 seconds**. The scale that needed batching was modest by later standards (`baseline_history` is
+19.3M rows), but the pattern was established here.
+
+**CLEAN PASS 1 of 3.**
+
+### T4.17 — CURRENT STATE OF T4
+
+**10 passes. 9 found new material. Clean count: 1/3** (pass 10).
+
+| Pass | Method | New findings |
+|---|---|---|
+| 1 | full sequential | the whole T4 narrative — 7 sections |
+| 2 | DDL | game-log columns; `data_quality` real vs derived on the delta |
+| 3 | methodology detail | **the five-step baseline design** |
+| 4 | architecture correction | **the caching argument; GBDT rejected; the risks section** |
+| 5 | live verification | **blowout double-counting RESOLVED — it's a ratio** |
+| 6 | cadence lock | **P3's fixed time vs the designed dynamic trigger** |
+| 7 | backfill research | **WinsLosses leakage; survivorship bias; 3-season bound** |
+| 8 | research verdict table | **the MIN+margin garbage-time proxy may half-exist** |
+| 9 | plan document tables | depth available vs taken; career DDL |
+| 10 | full sequential | **CLEAN** |
+
+**Two more consecutive clean full passes required before T4 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
