@@ -138,6 +138,50 @@ and the cluster labels, but not the second.
 
 ---
 
+## 0e. THE ONE-TIME ARCHITECTURAL OPPORTUNITY — and how NBA used it
+*Source: T1, blueprint §4e — "a real, avoidable complexity MLB is currently living with."
+Recorded 2026-09-20.*
+
+### The problem MLB lives with
+> *"MLB's config-table-driven, two-layer factor design **was NOT built all at once — it was rolled out
+> FACTOR BY FACTOR on top of an ALREADY-LIVE, HARDCODED JavaScript enrichment system**, and **as of
+> MLB's most recent documentation, SOME factors have MIGRATED to the new config-cell system (getting
+> the calibration loop and empirical validation infrastructure 'FOR FREE') while OTHER factors STILL
+> LIVE ENTIRELY AS HARDCODED LOGIC in the same file, UN-MIGRATED.**
+> **The real, practical cost: for ANY GIVEN FACTOR, a session doing enrichment work FIRST HAS TO CHECK
+> *WHICH PARADIGM THAT SPECIFIC FACTOR CURRENTLY FOLLOWS* before doing anything else, since the two
+> require GENUINELY DIFFERENT investigation and modification approaches.**"*
+
+### The instruction
+> *"**NBA has a real, ONE-TIME OPPORTUNITY MLB NO LONGER HAS: since there's NO EXISTING HARDCODED
+> SYSTEM TO MIGRATE AWAY FROM, BUILD THE CONFIG-TABLE-DRIVEN, TWO-LAYER ARCHITECTURE FROM DAY ONE, FOR
+> EVERY FACTOR FROM THE START** — **avoid EVER being in the position of maintaining TWO DIFFERENT
+> FACTOR PARADIGMS SIDE BY SIDE in the same codebase.**"*
+
+### ✅ NBA took the opportunity — for factors
+**Every enrichment factor lives in the config layer from the start**: `factor_registry` (67),
+`factor_relevance` (460), `factor_profile_cells` (35), with `classification_config` holding the
+decisions. **There is no hardcoded-JS enrichment system, and no two-paradigm split for factors.**
+
+### ⚠ But a two-paradigm split emerged elsewhere — in the RECIPE constants
+**The warning is about maintaining two ways of doing the same thing. NBA avoided it for factors and
+reproduced it for constants:**
+| Paradigm | Holds |
+|---|---|
+| **Config tables** | `stat_decay_config` (13 per-stat), `role_tiers` (6), `factor_profile_cells`, `classification_config` (66), `minutes_mixture` |
+| **Python literals in the recipes** | `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K`, `SHIFT_LAMBDA`, `BLOWOUT_MARGIN`, `COMPETITIVE_MARGIN`, `LADDER_DEPTH`, the Wilson threshold |
+
+**And the practical cost the blueprint describes has already been paid once**: `minutes_mixture` in
+the config specifies `dud_lognormal`, `tiered_inelastic` renormalisation and a **per-team**
+`E[min|blowout]` — **none of which the recipe implements.** **To know what the system actually does, a
+session must check which paradigm holds that specific value** — which is exactly the cost named.
+
+**Note the asymmetry in severity**: `role_tiers` in the DB and `ROLE_TIERS` in the code **were verified
+to agree**; `minutes_mixture` and the code **do not**. **The split is not uniformly harmful — it is
+harmful where the two disagree and nothing asserts they should not.**
+
+---
+
 ## 1. THE CHAIN
 
 **⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
