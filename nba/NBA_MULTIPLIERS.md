@@ -10,7 +10,80 @@ established exhaustively, not assumed. Underdog, Sleeper, Fliff and Betr do expo
 **Update log**
 | Date | What |
 |---|---|
-| 2026-09-20 | Created. Material from T12–T13 (per-app ladder structures), the live session (the exhaustive PrizePicks ruling-out, COMPASS fact 106), and the goblin/demon economics. |
+| 2026-09-20 | Created. Per-app structures (T12–T13), the exhaustive PrizePicks ruling-out (live session, COMPASS 106), goblin/demon economics. |
+| 2026-09-20 (2nd pass) | **T1 re-pass**: the MLB multiplier-calibration programme, the four measured mechanics, the real Flex partial-tier observations, the house-edge sanity test, and the inherited MLB document set. |
+
+---
+
+## 0. THE INHERITED MLB PROGRAMME *(T1 — the handoff memory and lessons document)*
+
+**A live multiplier-calibration programme already existed on the MLB side** when the NBA build began,
+and its method and findings are the informed prior for NBA.
+
+> *"currently calibrating **real per-leg Power/Flex multipliers per prop line / side /
+> variant (goblin/demon/standard) / tier** by **placing real test slips on today's board and reporting
+> back the actual app-displayed numbers**"*
+
+**The governing rule of that work:**
+> *"**all test legs must come from the current/live board**"*
+> *"**no rushing, must be fully understood before locking any numbers**"*
+
+### 0.1 **FOUR MEASURED MECHANICS OF THE PRIZEPICKS MULTIPLIER**
+> *"identified **real nuances in the multiplier system**:"*
+1. **Same-team / same-game legs get a small multiplier DISCOUNT** — correlation is priced.
+2. **The absolute line value affects the rate EVEN WITHIN the same nominal goblin/demon tier** — a
+   demon on a 28.5 line and a demon on a 6.5 line do not pay the same.
+3. **Recent player form (hit the line recently or not) shifts the multiplier.**
+4. **PrizePicks now offers Flex for 2-pick slips** (previously Power-only).
+
+**⚠ These four are the mechanism behind the owner's later correction** — *"the factor is NOT one number
+per tier; it varies by rung, side, prop, player form and team form."* **Points 2 and 3 are that
+statement's evidence**, and point 1 adds a slip-composition term the tier view cannot express at all.
+
+### 0.2 Real Flex partial-tier observations — the one thing that DID look constant
+> *"real, confirmed **5-pick Flex** data for the Mixed Top-55/92% strategy (Total Bases + H+R+RBI +
+> Hits, **Goblin, less side**): **two independent real observations both showed identical partial tiers
+> 4/5 = 0.5 and 3/5 = 0.25**, matching the confirmed **6-pick** tiers for Hits/H+R+RBI — **suggests
+> these may be flat/constant values**."*
+
+**So the STRUCTURE is separable**: the **partial-payout tiers** (4-of-5 → 0.5×, 3-of-5 → 0.25×) look
+**flat and constant**, while the **per-leg multiplier** varies by every dimension in §0.1.
+**That is a genuinely useful decomposition** — the slip-shape payout can be tabulated; only the leg
+factor resists.
+
+### 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
+> *"Before trusting any high hit-rate finding, **compute the implied house edge: `p × m`** where `p` is
+> the real hit rate and `m` is the real per-leg multiplier. **If this implies the platform is handing
+> out a large, systematic edge on a repeatable, high-volume line, THE MULTIPLIER ATTRIBUTION IS WRONG,
+> NOT THE MARKET** — go find the real multiplier before believing the hit rate."*
+
+**This is the single most useful rule in the multiplier work.** `p × m` materially above 1.0 on a
+liquid, repeatable line is a measurement error, not an edge.
+
+### 0.4 MLB's own multiplier documents (inherited, referenced in the handoff)
+`MULTIPLIER_TABLES_MASTER.md` · **`GOBLIN_DEMON_MECHANISM_EXPLAINED.md`** ·
+`HIGH_HIT_RATE_METHODOLOGY.md` · `SIGNALS_TECHNIQUES_TRIED.md` ·
+`COWORKER_DAILY_SLIP_RESEARCH_PROMPT.md` · `MASTER_DELTA_SCRUTINY_GUIDE.md` · `GEMINI_USAGE_GUIDE.md` ·
+`CALIBR…` (+ more) — **eleven documents read and integrated into the NBA transfer package.**
+
+### 0.5 **What transfers and what does not** — stated explicitly in the handoff
+> *"**The full multiplier/pricing study — MLB's specific numbers DO NOT transfer**; **only the
+> platform-level *mechanics* (Part B of the lessons document) transfer as informed priors, not
+> answers.**"*
+
+**And the sequencing rule:**
+> *"**Only once real board data + real outcome grading exist for a genuine multi-week window, begin the
+> multiplier-observation study**… using the full **16-item standard** from the lessons document **from
+> the very first candidate**, not as a later addition once shortcuts have already been taken."*
+
+**→ The NBA multiplier study is correctly NOT started.** It is gated on a multi-week window of live
+board + graded outcomes, which does not exist until the season runs.
+
+### 0.6 Two UI rules carried from MLB
+- *"A **real multiplier value the person has manually entered must never be lost or reset** on a UI
+  re-render."*
+- *"Slip-leg checkboxes default to checked."* Plus a **backup-leg substitution system** for when a
+  recommended leg becomes unavailable.
 
 ---
 
@@ -25,8 +98,8 @@ established exhaustively, not assumed. Underdog, Sleeper, Fliff and Betr do expo
 | **Betr** | ✅ | tiers REGULAR / MINI_BOOSTED / BOOSTED / SUPER_BOOSTED / BOOSTED_4 / EDGE_1..4 |
 
 **Sleeper is the clean case**: it has **no alternate lines**, so the multiplier *is* the pricing
-mechanism — one line per player+stat, with a per-side multiplier. *(⚠ T7's verified inventory found
-milestone lines 20+/25+/30+ on Sleeper — unresolved, see `NBA_GOBLIN_DEMON.md` §9.)*
+mechanism. *(⚠ T7's verified inventory found milestone lines 20+/25+/30+ on Sleeper — unresolved, see
+`NBA_GOBLIN_DEMON.md` §9.)*
 
 ---
 
