@@ -5805,6 +5805,68 @@ at all**. They are not failing a gate — they have no input.
 
 **T8 PASS 10: NEW MATERIAL (a correction and a verified gap). Clean count 0/3.**
 
+### T8.19 — PASS 11 — **THE NINE ITERATIONS, AND A BUG INHERITED FROM MLB**
+
+> *"**It took nine iterations, and per your directive I did not move past any of them until it was
+> fixed.** **The path matters as much as the result**, because **each step is now a locked,
+> evidence-backed config entry**."*
+
+| # | Step | What it fixed |
+|---|---|---|
+| **1** | **Parametric alone** | **points tails 10 pp too thin; fringe players +7.5 pp under-projected** — the starting failure |
+| **2** | **Heteroscedastic dispersion** + role-tier minutes multiplier | *"**points var/mean runs 3.4 → 2.0 by scoring level — a flat default was wrong**"* |
+| **3** | **Empirical per-tier outcome tables** (rate tier × role tier × rung) — *"MLB's sharpest method"* | **collapsed the points ladder from ±4 to ±1.2** |
+| **4** | **Monthly walk-forward rebuild** | *"absorbing the **2025-26 regime shift**"* |
+| **5–6** | Cell shrinkage toward the parametric | **made far tails WORSE** → exposed the MLB guard bug below |
+| **7–8** | Platt calibration | *"**across the whole ladder helped points but HURT rebounds**; **per-rung** Platt fixed both"* |
+| **9** | **Role-aware tier priors** — rate tiers ranked **within** role tier | *"resolved the persistent star/fringe residual. **Your granulation rule, applied exactly where the data asked.**"* |
+
+#### T8.19a — **A REAL BUG IN MLB'S OWN GUARD, INHERITED BY PORTING**
+> *"Cell shrinkage toward the parametric value made far tails *worse*, which exposed a **real bug in
+> MLB's own guard as ported**: **the symmetric sample-size floor forced true 0.002 rungs up to 0.25.**
+> **Upper ceiling only.**"*
+
+**A guard designed to stop overconfident extremes was symmetric**, so it also dragged genuinely tiny
+probabilities *up* — **0.002 forced to 0.25, a 125× error at the far tail.** The fix is to apply the
+ceiling **only on the upper side**.
+
+**This is a bug in the proven MLB system, found by NBA's backtest.** It only surfaced because the far
+tails were being checked at all — and T8.13e records that after the fix, *"far tails are exact
+(3PM +6 rung: predicted 0.002, actual 0.002)."* **The exact rung the bug had been inflating.**
+
+**⚠ Worth flagging upward**: if MLB's live guard is still symmetric, **MLB has this bug today.**
+
+#### T8.19b — **✅ THE FRINGE ANOMALY WAS A LEAKAGE BUG — resolving T8.13d**
+> *"Also caught and fixed along the way: a **LEAKAGE BUG in the minutes harness** (**a season-wide mean
+> was using future games**; **that was the entire 'fringe anomaly'**), which shrank the role minutes
+> multipliers to **honest ~1.0 values**."*
+
+**This closes the open item from T8.13d.** The 0.87 fringe minutes ratio in won blowouts — flagged as
+*"below 1, where garbage-time accumulators should be above"* — **was not the ≥40%-of-median filter**,
+which was the stated suspicion. **It was future data leaking into a season-wide mean.**
+
+**Two things this vindicates:**
+1. **The owner's directive** — *"do not move before fixing it"* — the anomaly was held open rather than
+   explained away, and the real cause was several iterations downstream.
+2. **The design's predictive value** — the anomaly was only visible because the seed cells encoded the
+   expectation *"a LIFT for a fringe garbage-time accumulator"* (T8.17b). **A wrong sign against a
+   written-down expectation is how leakage got caught.**
+
+**And the symptom is characteristic**: leakage inflates apparent skill, so the role minutes multipliers
+were *too confident* until it was removed — *"shrank to honest ~1.0 values."*
+
+#### T8.19c — What is tagged **BACKTEST-LOCKED** in `nba_config.classification_config`
+**role-ranked tiers · empirical tables with k=300 shrinkage · upper-only ceiling · per-rung Platt ·
+band-based dispersion · and the result itself.**
+
+> *"these are **locked by evidence now, not seeds**"*
+
+**The seed-to-locked transition is explicit and tagged**, so a future session can tell which values
+were researched guesses and which were earned. **`classification_config` now holds 66 rows** (verified
+T8.10) against the 9 seeded here.
+
+**T8 PASS 11: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
