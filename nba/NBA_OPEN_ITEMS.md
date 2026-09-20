@@ -1145,6 +1145,41 @@ dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_la
 **And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
 bug class, in the grader.
 
+### ⚠ NO MONOTONIC CONSTRAINTS AT THE FACTOR LEVEL
+T1's blueprint §4d, third academic caution:
+> *"**Monotonic constraints are genuinely valuable SPECIFICALLY IN RARE-EVENT, LIMITED-DATA
+> situations**, where **a model might otherwise OVERFIT A RELATIONSHIP THAT SPURIOUSLY REVERSES
+> DIRECTION** — e.g. **a factor that should ONLY EVER INCREASE a rate getting fit to OCCASIONALLY
+> DECREASE it, purely from NOISE IN A THIN SAMPLE.**"*
+
+**No sign constraint is recorded in NBA's factor fitting.** Coefficients are fit in log-rate space
+freely, so **a factor with a known direction can be fit against that direction in a thin cell.**
+
+**Where it bites**: the rare-event props are **exactly the unresolved ones** — blocks, steals (CLOSE)
+and the **goblin/demon tails** (uncertified).
+
+**And the concept is present in the standard but absent from the build**: lesson #4's pre-stated
+falsification bar names **"required MONOTONICITY"** as one of its three components.
+
+**Already monotonic**: the **ladder** (rungs ordered) and the **upper-only ceiling** fix, which was
+about preserving tail ordering. **The gap is at the factor level.**
+
+### ⚠ SHRINKAGE INTENSITY IS NOT BOOTSTRAP-ESTIMATED PER CELL
+> *"**Shrinkage does not automatically improve results, and the correct shrinkage amount is HARDEST TO
+> ESTIMATE EXACTLY WHERE IT'S NEEDED MOST (low sample size).** The established countermeasure is
+> **BOOTSTRAP-BASED ESTIMATION of shrinkage intensity, RE-ESTIMATED PERIODICALLY FROM EACH CELL'S OWN
+> REAL OUTCOME HISTORY — not one static, hand-picked global constant.**"*
+
+**NBA is partly there**: `k_stab` is **per prop and measured** (STL 125, TOV 60), and
+`stat_decay_config` holds 13 per-stat values — **not a global constant.**
+**Not done**: bootstrap estimation, and **per-cell re-estimation from that cell's own outcome
+history.** Values are fit on TRAIN and carried.
+
+**⚠ T8 measured the underlying difficulty directly**: *"data-fit prior strength is **k≈2 against the
+population** but **k≈100–250 against tier-mates (circular)**"* — **two orders of magnitude apart
+depending on the reference chosen.** That is this caution stated in numbers, and it is currently
+resolved by judgement rather than by bootstrap.
+
 ### ⚠ NO PUBLISHED STABILIZATION-POINT REFERENCE WAS SOURCED
 T1's blueprint §4d: *"**Build (or find) an equivalent 'stabilization point' reference table for EVERY
 NBA prop BEFORE FINALIZING SHRINKAGE DESIGN.**"*
