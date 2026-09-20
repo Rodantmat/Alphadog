@@ -1879,6 +1879,31 @@ recorded in a transcript, not versioned beside the map.**
 **Not flagged as validated-or-not**: `double_double` (sentinel −1.0, no ladder), `stocks`, and the
 period props.
 
+### ⚠⚠ THE COST OF NOT HAVING THE COVERAGE-GAP DIAGNOSTIC — quantified
+T1's blueprint §7f records what the missing diagnostic actually cost:
+> *"MLB's own history includes **a real, COSTLY case of TWO PROPS RUNNING WITH ZERO ACTIVE CORRECTION
+> FOR ROUGHLY TWO AND A HALF WEEKS AFTER A ROOT-CAUSE FIX, SHOWING REAL 30–45 PERCENTAGE POINT
+> OVERCONFIDENCE GAPS, UNDETECTED UNTIL SOMEONE MANUALLY CHECKED** — **directly motivating the
+> coverage-gap diagnostic.**"*
+
+**Two and a half weeks. 30–45 percentage points. Found by a manual check, not by the system.**
+
+**This is the concrete price of the gap already recorded above** — *"a (prop, side, high-confidence
+bucket) combination showing a real, resolved-outcome deviation past a threshold **with zero active
+correction covering it**."* **NBA has both inputs (`board_outcomes` 6.9M graded legs;
+`factor_profile_cells` 35 cells against 460 relevance rows) and has not built the check.**
+
+**⚠ And the trigger condition is one NBA will meet**: the failure appeared **after a root-cause fix** —
+i.e. a correction was removed as no longer needed, and nothing replaced it. **NBA's band cells are
+refit weekly and cells can drop out when a season's evidence changes**, which is the same shape.
+
+**Related, from the same section — the recommended operating cadence:**
+> *"**WEEKLY RECALIBRATION CHECKS, WITH TRIGGER-BASED RE-FITTING AND MANDATORY HUMAN REVIEW BEFORE
+> APPLYING — NOT FULL UNATTENDED AUTOMATION.**"*
+
+**NBA's refit is weekly-ish and fully unattended**: P2 refits at step 14, `build_final_hp.py` consumes
+it next run. **Cadence ✅, trigger-based ❌, human review ❌.**
+
 ### ⚠ TWO DIAGNOSTIC SAFEGUARDS SPECIFIED FOR DAY ONE — neither built
 T1's blueprint §4b names two **diagnostic-only (never automatically acting)** safeguards, *"since they
 directly target the exact failure classes documented elsewhere in this package."*
