@@ -428,8 +428,7 @@ original design said so.** Whether the panels gated on sample size is not establ
 transcripts. **If A2 is reopened, that is the first thing to check** — a mechanism that fails worst
 where it should work best is also the signature of an ungated noisy estimator.
 
-### UNVERIFIED · does the minutes model include the "dud" component?
-The T7 design specified a **three-component mixture**: normal play (truncated Normal), blowout-reduced,
+### UNVERIFIED · does the minutes model include the "dud" component?The T7 design specified a **three-component mixture**: normal play (truncated Normal), blowout-reduced,
 and a **"dud" (foul trouble / early exit) ~ log-Normal**, fit on *"competitive games in the player's
 bottom 15% or 5+ PF"*, with `P(dud)` from the player's own history and PF rate.
 **Blowout is implemented (`blowout_model`). Whether the dud component exists in
