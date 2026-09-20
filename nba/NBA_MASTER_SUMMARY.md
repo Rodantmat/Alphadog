@@ -933,20 +933,48 @@ Issue #155 is where to look first if stats.nba.com ever changes its requirements
 Passes 19 and 20 were clean; pass 21 invalidated them. **This is the second time the rule has caught a
 premature count** — and both times the material found was genuinely useful.
 
-### T1.36 — CURRENT STATE OF T1
+### T1.37 — PASS 22 (tool-call sequencing) — **CLEAN 1/3**
 
-**21 passes. 16 found new material. Clean count: 0/3.**
+Tool-use distribution across T1's 205 calls:
+| Tool | Calls |
+|---|---|
+| Alphadog Bridge (all) | 159 |
+| `bash_tool` | 31 (almost entirely `sleep` for deploy polling) |
+| `web_search` | 6 |
+| `view`, `memory_read`, `create_file` | 2 each |
+| `web_fetch`, `memory_write`, `memory_append` | 1 each |
 
-**Dimensions swept (21):** narrative text · tool results · SQL bodies · DDL and settings · handoff
+**No new system facts.** The working pattern it confirms — write locally → `node --check` /
+`py_compile` → `cat` to inspect → commit — is already documented in T1.4 and T1.7. The heavy
+`bash_tool` count is the deploy-polling already explained in T1.21 (full-fleet redeploys).
+
+**CLEAN PASS 1 of 3.**
+
+### T1.38 — PASS 23 (structure of written artefacts) — **CLEAN 2/3**
+
+Heading and bold-label structure inside the files written during T1:
+- `nba/NBA_PROJECT_LOG.md` — `## <date> — Session: <summary>`, newest first
+- `nba/NBA_SYSTEM_DRAFT.md` — `**Worker files & job_keys**`, `**Repo location**`,
+  `**Postgres schemas**`
+
+Both structures are already described in T1.13 (naming convention) and T1.12 (the log's self-binding
+rule). **No new material.**
+
+**CLEAN PASS 2 of 3.**
+
+### T1.39 — CURRENT STATE OF T1
+
+**23 passes. 16 found new material. Clean count: 2/3** (passes 22, 23).
+
+**All 23 dimensions swept:** narrative text · tool results · SQL bodies · DDL and settings · handoff
 text · owner specification · caveats and limits · artefacts · endpoint/table/file names · owner
 messages · measured numbers · rules and principles · endpoint inventory · external services ·
 verification claims · decisions and alternatives · error vocabulary · time and scheduling ·
-IDs/hashes/SHAs · proper nouns · quoted third-party content.
+IDs/hashes/SHAs · proper nouns · quoted third-party content · tool-call sequencing ·
+artefact structure.
 
-**Dimensions NOT yet swept:** tool-call sequences and ordering · structure and formatting of written
-artefacts.
-
-**Three consecutive clean passes still required.** Resume at pass 22.
+**ONE more clean pass and T1 is DONE.** The final pass must be a full re-read rather than a targeted
+sweep, since every targeted dimension is now exhausted.
 
 ---
 
