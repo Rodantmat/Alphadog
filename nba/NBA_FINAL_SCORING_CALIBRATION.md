@@ -233,6 +233,35 @@ omission.**
 
 ---
 
+## 0z. ⚠⚠ DATA-STATE WARNING — the 2025-26 partition of `final_hp` is one day deep
+*Measured by live SQL 2026-09-20 (T1 pass 33). **Read this before trusting any 2025-26 figure in this
+document that was computed from `nba_score.final_hp`.***
+
+| season | distinct dates | rows |
+|---|---|---|
+| 2024-25 | **162** | **19,075,070** |
+| **2025-26** | **1** — `2026-01-15` only | **140,130** |
+
+**Documented table size: 38.7M. Live: 19,215,200.** The cause is a confirmed bug —
+`nba/build_final_hp.py`'s `FE_DATE` scopes the read but not the `DELETE`, so a slate-scoped write
+replaced the whole 2025-26 partition with one slate. Full entry at the top of `NBA_OPEN_ITEMS.md`;
+row counts and recoverability in `NBA_DATABASE.md`.
+
+**What this does and does not put in doubt:**
+- **✅ The certified baseline result is NOT affected.** `nba_score.baseline_history` is **intact —
+  VERIFIED, 163 dates × 30 props for 2025-26** — and the two-season certification
+  (`NBA_BASELINE_CALIBRATION.md` §8) is computed from the backtest harness, not from `final_hp`.
+- **✅ The 2024-25 season is complete** at 162 dates, so anything validated on the holdout season
+  stands.
+- **⚠ Anything in this document computed over 2025-26 `final_hp` rows since the loss was computed on
+  one day.** That includes any enrichment-layer check, confidence distribution or
+  `final_hp`-vs-`baseline_hp` movement statistic read from the table rather than recomputed.
+  **Which figures those are is NOT ESTABLISHED** — the entries do not record whether they came from
+  the table or from a harness run. **Flagged, not resolved.**
+- **✅ Recoverable** by a full-history re-run; nothing needs re-scraping or re-fitting.
+
+---
+
 ## 1. THE CHAIN
 
 **⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
