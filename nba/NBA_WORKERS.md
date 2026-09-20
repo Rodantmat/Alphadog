@@ -116,6 +116,8 @@ exists to prevent. *(`NBA_RECIPE.md` had recorded only the `node --check` half.)
 | Per-prop model constants | the hardcoded `PROPS` dict in `backtest/classification_ladder_v12.py` |
 
 **And `nba_config.system_settings` seeds `nba_default_chunk_size = 200`** — **read by nothing.**
+
+> ⚠⚠ **AND THE OTHER HALF OF THE MECHANISM** *(recorded 2026-09-20, T1 pass 80, **VERIFIED** from `generate_wrangler_configs.py` and a live `check_bindings`)*. **An NBA worker is given six vars and none of them is an operating constant**: `SYSTEM_ENV`, `SYSTEM_TIMEZONE`, `ACTIVE_SPORT`, `NBA_STATS_API_BASE_URL`, `WORKER_SAFE_MODE`, `DEBUG_MODE`. **MLB's shared `VARS` carries the caps** — `MAX_TICK_MS`, `MAX_API_CALLS_PER_TICK`, `MAX_ROWS_PER_TICK`, `LOCK_STALE_MINUTES` and 16 more — and the generator deliberately gives NBA *"its own vars, never the shared MLB VARS dict"*. **✅ The isolation is real. ⚠ The consequence is that an NBA worker has nowhere to read a timeout, retry count, chunk size or row cap from** — the database table exists and is read by nothing, and the vars block carries no constant. **The rule did not fail through neglect: the plumbing was never built on either side.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 80*.
 **VERIFIED**: the strings `system_settings`, `chunk_size`, `stat_decay_config`, `role_tiers`,
 `factor_registry`, `classification_config` appear **zero times** in the codebase. The only config
 table any worker reads is **`nba_config.external_credentials`**, for API keys.
