@@ -625,7 +625,44 @@ exist wherever a loop asks "what still needs work?"
 **And the diagnostic**: **a percentage that ticks is not progress.** Check the **absolute addressable
 count** is falling.
 
-### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
+### ⚠ BUG PATTERN · naive truncation corrupts structured payloads
+> *"**A generic payload-truncation utility that does a NAIVE BYTE/CHARACTER SLICE on serialized
+> structured data (JSON) can CORRUPT that data by CUTTING IT MID-FIELD**, producing **invalid, garbled
+> output rather than cleanly dropping whole fields**. MLB found and **traced a real, subtly-caused
+> downstream data-quality bug all the way back to exactly this.**"*
+
+> **The rule**: *"**Any NBA utility that truncates a structured payload to fit a size limit must be
+> STRUCTURE-AWARE — truncate whole fields/objects, never a raw string slice.** A naive slice is a real,
+> **hard-to-trace** corruption source."*
+
+**Live surfaces where a payload is size-constrained in this build:**
+- **`raw_json` JSONB** on every reference and stats table — if anything trims it to fit, it must drop
+  whole keys
+- **The bridge's own tool results** — `max_rows`, and the **grep/read utilities that return truncated
+  file content** *(this is the same mechanism that truncated `FALLBACK_AFTER_FETCH_ERROR` to a
+  partial string during this documentation effort — a live instance of the pattern, caught only by
+  reading the full line later)*
+- **`nba_score.baseline_ladder_runs.factor_fits` / `.role_minutes_multiplier`** JSONB
+- **The 1 MB Contents API limit** — which does not truncate but returns **empty**, a different and
+  arguably safer failure
+
+### ⚠ BUG PATTERN · a read-side filter that hides the evidence of its own cause
+> *"**A read-side filter that silently EXCLUDES rows with a missing/null field can HIDE THE VERY
+> EVIDENCE needed to diagnose the upstream bug causing that field to be null in the first place.**
+> MLB found a case where a downstream query **required a specific field to be n[on-null]**…"*
+
+**This is a diagnostic trap, not just a data bug**: the rows that would explain the problem are
+exactly the ones the query drops.
+
+**Live instances in this build:**
+| Filter | What it hides |
+|---|---|
+| `mu_role` / `role_tier IS NOT NULL` gates | players the minutes model could not project — **the population most worth diagnosing** |
+| `comp_min` `np.nan` for non-competitive/high-foul games | the dud population, by construction |
+| The NaN guard in `build_availability_delta.py` | ✅ **correctly counts and REPORTS what it drops** — the right pattern |
+
+**The NaN guard is the model to copy**: it drops bad rows **and reports the count**, so the exclusion
+is visible rather than silent.
 
 **MLB's lessons document devotes an entire section — Part C, *"the pipeline/data-quality bug family to
 actively guard against in NBA FROM DAY ONE"* — to this.**
