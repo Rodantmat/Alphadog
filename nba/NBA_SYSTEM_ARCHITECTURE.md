@@ -82,6 +82,29 @@ connection pooling; **`max: 3–5`** keeps the Worker within Hyperdrive's connec
 **The `control.*` tables being "bookkeeping only" is the no-orchestrator rule in practice**: NBA
 workers are registered there and dispatched **directly**, never pulled from the queue.
 
+### Also reused *(T1, continued)*
+- **The "certification center" UI** — *"once NBA data exists in a shape it can read. **Per the
+  person's explicit instruction, NO SEPARATE NBA UI is planned.**"*
+- **The entire statistical research standard** (Lessons Parts A–F)
+- **The differential-write pattern** and **the chunking pattern**
+- **The tri-state (real / derived / temporary) data-quality tagging**
+- **The two-layer interpretable-rule + calibration-loop scoring architecture**
+- **The "preset dictionary" precompute-once principle**
+- **The config-table-driven tunable-variable discipline** — *"**now DOUBLY REQUIRED, since the person
+  independently RE-STATED it as a hard rule this session**"*
+
+**Four of these are named patterns not otherwise recorded:**
+| Pattern | What it means |
+|---|---|
+| **Tri-state data-quality tagging** | every value marked **real / derived / temporary** — a derived value is never mistaken for an observed one |
+| **Two-layer: interpretable rule + calibration loop** | the architecture the NBA engine implements — an explainable model, then a calibration layer on top. *(It is why `p_raw` is retained alongside the calibrated `final_hp`.)* |
+| **"Preset dictionary" precompute-once** | compute a lookup once, read it many times — the shape of `blowout_model`, `stat_decay_config`, `MIN_RATIO` |
+| **Config-table-driven tunables** | *"every tunable variable lives in the database (`nba_config.system_settings`), **never hardcoded**"* — restated by the owner as a hard rule |
+
+**⚠ ParlayAPI coverage caveat, stated in T1 and never closed there**: *"**Coverage for this sport key
+is still NOT INDEPENDENTLY VERIFIED** — see Section 5, open question 1."* **It was later superseded by
+own scrapers rather than verified.**
+
 ### Cloudflare Workers
 - Where MLB's 116 workers run, and where NBA's writer workers run.
 - Named `alphadog-v2-nba-<domain>-<thing>`, deployed to `<name>.rodolfoaamattos.workers.dev`.
