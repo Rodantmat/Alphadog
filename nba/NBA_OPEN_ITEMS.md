@@ -1319,7 +1319,7 @@ warnings NBA inherited: blueprint §5b (*static manifests describing an earlier 
 > cannot train models at all — confirmed from Cloudflare's own docs**)."*
 
 **The Cloudflare network constraint and GitHub Actions as its answer were already written down.**
-T1 reached them through **four failed runs and thirteen polling sleeps**.
+T1 reached them through **four failed runs and 25 polling sleeps — 40.3 measured minutes**.
 **The first measured cost of two gaps already recorded**: the owner's per-worker *"understand the MLB
 functionality first"* rule (*PASS 36*) was followed for the **worker pattern** but not for the
 **network constraint**; and the MLB source index (*PASS 37*) lists only `.md` files — **`gbdt_training/`
