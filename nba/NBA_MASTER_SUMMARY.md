@@ -1456,6 +1456,31 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.86 — PASS 56 (angle: **Part D's trailing subsections, read by concept**) — **NEW MATERIAL · MAJOR · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 56; full table at `NBA_GOBLIN_DEMON.md` §7.
+Volumes VERIFIED by live SQL.*
+
+- **⚠⚠ The handoff names a "concrete, well-documented real NBA-transferable structural pattern worth
+  testing for directly" — and it appears in none of the twelve documents.** *A prop's hit rate
+  climbs with ladder depth, but **the usable sweet spot is not the deepest tier — it is the deepest
+  tier that still carries real volume** (n ≥ 10–20).*
+- **NBA measured the hit-rate half and never the volume half.** §5's goblin/demon rates carry **no
+  volume dimension at all.**
+- **The volume half, measured from `nba_market.board_tiers_v2` (~2.19M legs)**: goblin side
+  **T−3 = 62,542 legs**, then **T−4 collapses to 1,600 (39×)**. Demon side **T+3 = 244,731**,
+  **T+4 = 117,010 across 2,758 player-props**, then **T+5 collapses to 3,794 (31×)**.
+- **⚠⚠ The actionable result: the demon ladder has a fourth tier nobody priced.** **§5's demon
+  economics stop at T+3. T+4 carries 117,010 legs and is exactly what the lesson points at.**
+  **NOT RECORDED as tested.** *(The goblin side's documented range already matches its
+  volume-supported range — but that was never the stated reason.)*
+- **⚠ And the ladder is asymmetric in a way nothing records**: **T+1 (109,544) carries LESS volume
+  than T+2 (351,329) and T+3 (244,731)**, while the goblin side decays monotonically. **Why is NOT
+  ESTABLISHED** — and it matters, because **§5 calls T+1 "the only demon tier ever worth solving."**
+- **The correct version of the test is per (prop × tier)**, not pooled — per *PASS 49* and §5.0's own
+  rule.
+
+---
+
 ### T1.85 — PASS 55 (angle: third bold-claim sample) — ⚠ **VOID — THE INSTRUMENT FAILED**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 55.*
 
