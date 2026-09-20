@@ -205,6 +205,59 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 57 — TWO BACKTEST TRAPS FROM PART D, BOTH LIVE IN NBA *(added 2026-09-20)*
+*Angle: Part D's two remaining trailing subsections, read by concept. **Neither appears in the twelve
+documents, and each has a live NBA instance.***
+
+### ⚠⚠ NO FIX-DATE LIST EXISTS — and NBA has already changed its tier-derivation logic
+> *"MLB's tier/lane classification logic was **itself wrong for real, identifiable stretches of
+> time**, fixed on specific dates… Any backtest spanning a date range that crosses one of these fix
+> dates needs to **either exclude the pre-fix period** for the analysis the fix affects, **or
+> explicitly flag that the pre-fix data may be systematically wrong.** **For NBA: the moment any
+> classification, tagging, or tier-derivation logic is fixed, WRITE DOWN THE EXACT DATE, AND MAINTAIN
+> THAT LIST AS A FIRST-CLASS ARTIFACT** — any future backtest crossing one of these dates needs to
+> account for it, **not silently pool pre- and post-fix data together.**"*
+
+**NBA has already done exactly the thing that requires the list, and the list does not exist.**
+`NBA_GOBLIN_DEMON.md` §8 records **`nba_market.board_tiers` v1 as SUPERSEDED** — v1 derived `kind`
+from the Odds API **price** (`price=100` → demon, `price=-137` → goblin) and **every v1 row is
+Over-only** — replaced by `board_tiers_v2`'s four-way taxonomy. **That is a tier-derivation logic
+fix**, and **v1 still holds 2.2M legs in the database.**
+
+**Other undated classification changes in the record**: the ladder recipe's **v1 → v12 → v18**
+progression · `apply_ladder_calibration` · the `minutes_mixture` config/code divergence · the
+`board_tiers` → `board_tiers_v2` cutover itself.
+**None has a recorded effective date.** **Any backtest crossing one of them silently pools pre- and
+post-fix data** — the precise failure the lesson names.
+**SEASON-START RELEVANT**: the list is cheapest to build now, while the changes are still in living
+memory, and it is a prerequisite for trusting any cross-season backtest.
+
+### ⚠ QUERY-TIME RECONSTRUCTION — NBA does it, and no analysis accounts for it
+> *"MLB's live deployed system **reconstructs certain classification values (e.g. tier) on the fly at
+> query time via a fallback formula**, specifically because the raw stored column is known to be
+> sparsely populated (**in one real case, only ~10% populated**) — but the live system's real,
+> effective sample is much larger than the raw column suggests. **Before concluding a category is
+> thin or unreliable based on a raw stored column, check whether the live system applies query-time
+> reconstruction logic that the historical/backtest analysis needs to replicate** — measuring against
+> the raw, unreconstructed column can produce **a dramatically smaller and differently-biased
+> sample**."*
+
+**NBA's analogue is `score_board_legs.py`**: off-ladder rungs are **interpolated in log-odds and
+flagged** with a **−4 confidence** penalty, and the result is stored in
+`nba_score.board_scored.interpolated`.
+
+**Measured, VERIFIED 2026-09-20**: **110,955 scored legs, 6,317 interpolated — 5.7%.**
+
+**So the direction is the opposite of MLB's case and the trap is the mirror image.** MLB's raw column
+was sparse and reconstruction *enlarged* the effective sample; **NBA's reconstruction *adds* 5.7% of
+legs that have no exact ladder rung behind them.** **An analysis that filters `interpolated = false`
+measures a different, smaller, and differently-biased population than production scores** — and one
+that ignores the flag treats 6,317 interpolated legs as if they were measured.
+**Which past NBA analyses did either is NOT ESTABLISHED** — the entries do not record whether they
+filtered on it.
+
+---
+
 ## FROM T1 PASS 56 — ⚠⚠ THE VOLUME-VS-DEPTH TEST, NEVER RUN — AND THE DATA IS ALREADY THERE *(added 2026-09-20)*
 *Angle: the sound method from *PASS 55* — read a source subsection, decide what it asserts, search
 for the **concept**. Source: T1, `NBA_LESSONS_LEARNED_FROM_MLB.md` Part D, the subsection
