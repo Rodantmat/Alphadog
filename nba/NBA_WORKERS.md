@@ -22,6 +22,32 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.4 THE TWO REGISTRIES — and the count that proves the isolation held
+*Recorded 2026-09-20 (T1 pass 35). **VERIFIED by live query.***
+
+| Registry | Rows | NBA rows |
+|---|---|---|
+| **`config.worker_definitions`** — MLB's shared registry | **116** | **0** |
+| **`nba_config.worker_definitions`** — NBA's own | — | all of them |
+
+Plus NBA's own run bookkeeping: **`nba_control.job_runs`** and **`nba_control.worker_run_log`**.
+
+**Two things follow, both previously unrecorded:**
+1. **The blueprint's shared-queue contention question is moot** — NBA never joined the queue. It was
+   posed in §0 as *"a genuine, concrete thing worth checking directly against the live system"* and
+   had never been answered. `NBA_SYSTEM_ARCHITECTURE.md` §1a0.
+2. **116 is the same count T1's Phase 1 banner recorded on 2026-08-31.** Twenty days and a full NBA
+   build later it is unchanged, with **zero NBA rows** — **direct live evidence that the *"additive
+   only, no MLB-system side effects"* constraint held.** It is the registry-level counterpart to the
+   `startswith("alphadog-v2-nba-")` guard on the deploy scripts.
+
+**⚠ This is also the four-step wiring pattern's blast radius.** §0 above requires every worker to be
+registered in four places. **All four are NBA-owned** — `nba/worker_manifest_nba.json`, the
+`nba_config` registry, the bridge's dispatch branch, and the generator's NBA list. **No step touches
+an MLB table.**
+
+---
+
 ## 0.5 ⚠ THE WORKER ARCHITECTURE WAS A NON-GOAL BEFORE IT WAS A DESIGN
 *Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§6**, first non-goal. Recorded 2026-09-20
 (T1 pass 31) — the dead-stub fact was already in these documents; **the instruction it produced was
