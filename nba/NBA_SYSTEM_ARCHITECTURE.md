@@ -627,6 +627,61 @@ anything added by hand.
 
 ---
 
+## 3b. ⚠ `run_job` IS A DIAGNOSTIC AND INGESTION ENGINE — 14 job modes, 13 of them undocumented
+*Recorded 2026-09-20 (T1 pass 46). **VERIFIED by grep of the live `alphadog-v2-admin-sql.js`** —
+every mode below is an `if (job === "…")` branch in the deployed bridge.*
+
+**`run_job` takes a `job` mode as well as a `target`.** The twelve documents recorded only the
+`target` enum. **The `job` surface is far larger than the dispatch role suggests**, and several
+modes write directly into NBA tables.
+
+### NBA-specific ingestion modes — these write to `nba_market`
+| `job` | What it does |
+|---|---|
+| **`odds_api_board_backfill`** | *"NBA DFS + sportsbook prop-board backfill from The Odds API historical endpoints into **`nba_market.board_snapshots`**."* Takes `start`/`end` (Pacific game dates), `snapshots: ["window","close"]`, `window_pt: "14:45"`, `close_minus_min: 30`, `markets`, `regions: "us_dfs,us"`, `key_name: "odds_api_key_nba"`. **Reports `credits_per_snapshot: 10 × markets × regions`** |
+| **`parlay_game_lines_backfill`** | Closing game lines from ParlayAPI's archive into **`nba_market.game_lines_closing`** — *"one closing-odds call per date (**10 credits**), all books"*, **chunked by month because of the worker's wall-time budget; the caller loops months** |
+| **`betr_board_pull`** | Betr Picks board via the app's GraphQL. Token is *"the owner's **Keycloak** access token, sent **RAW** in `authorization`, stored in `external_credentials.betr_access_token`"*. `leagues` defaults to **`["MLB","NBA"]`**; `write_repo` defaults true |
+
+### Diagnostic modes — the reverse-engineering toolkit
+| `job` | What it does |
+|---|---|
+| **`worker_invocation_logs`** | ⚠ **Cloudflare's GraphQL Analytics API (`workersInvocationsAdaptive`)** — *"records the actual outcome of **every** Worker invocation, including **`exceededCpu`, `canceled`, `exception`, `scriptNotFound`** — which lets us confirm or rule out **a platform-level kill**."* **This is the only tool in the system that can answer "did Cloudflare kill my worker."** |
+| **`direct_worker_probe`** | direct fetch to a worker's public `workers.dev` URL, *"bypassing the orchestrator's queue/dedup entirely, to isolate whether a stall is inside the worker itself or inside the orchestrator's dispatch"* |
+| **`market_source_probe_raw`** | raw fetch against a market/odds provider using the worker's own bound credentials, **bypassing all pipeline parsing/staging** |
+| **`raw_fetch`** | generic diagnostic fetch **from the worker's egress** — the egress that is *not* subject to the sandbox allowlist |
+| **`board_compare_parlay_vs_ours`** · **`pp_compare_parlay_vs_scraper`** | **same-moment** diffs of our scraper output against ParlayAPI for a given book — the mechanism behind the *"ParlayAPI drops ~25% of ladder rungs"* finding |
+| **`json_facet`** | fetch JSON and count values of a dotted field path across items |
+| **`scan_webpack_chunks`** · **`raw_scan_scripts`** | rebuild webpack chunk URLs from the runtime's id→hash map and regex every chunk; or fetch a page plus its same-origin scripts |
+| **`fliff_probe_codes`** | enumerate Fliff's RPC operation codes **1–120**, reading required fields out of validation errors |
+
+**⚠ Why this matters for season start**: **`worker_invocation_logs` is the missing half of every
+"the job reported green but produced nothing" investigation** recorded in `NBA_OPEN_ITEMS.md`. It
+distinguishes *a worker that failed* from *a worker that was never invoked* from *a worker
+Cloudflare killed* — and **it has never been used on an NBA worker in the record.**
+
+### The NBA dispatch list — 21 bindings, and `NBA_AVAILABLE_TOOLS.md` lists none of them
+The live bridge routes these directly: `NBA_STATIC_TEAMS_WORKER`, `NBA_STATIC_PLAYERS_WORKER`,
+`NBA_STATIC_ARENAS_WORKER`, `NBA_STATIC_OFFICIALS_WORKER`, `NBA_STATIC_PLAYER_BIO_WORKER`,
+`NBA_STATIC_PLAYER_TRACKING_WORKER`, `NBA_STATIC_TEAM_STATS_WORKER`, `NBA_STATIC_ONOFF_WORKER`,
+`NBA_STATIC_DARKO_WORKER`, `NBA_STATIC_WEEKLY_DIFFERENTIAL_WORKER`, `NBA_STATIC_SCHEDULE_WORKER`,
+`NBA_STATIC_PLAYTYPES_WORKER`, `NBA_STATIC_TRACKING_DETAIL_WORKER`, `NBA_STATIC_SHOTQUALITY_WORKER`,
+`NBA_STATIC_BACKFILL_WORKER`, `NBA_STATIC_STARTER_STATUS_WORKER`, `NBA_STATIC_GAME_OFFICIALS_WORKER`,
+`NBA_STATIC_LINEUPS_WORKER`, `NBA_DAILY_DELTA_WORKER`, `NBA_STATIC_MEASURE_TYPES_WORKER`,
+`NBA_BASELINE_LADDER_WORKER` — **21 targets**, with the code's own note:
+> *"NBA expansion (additive only). Same direct-call pattern as `BASE_HITTER_GAME_LOGS_WORKER` —
+> **bypasses `control_job_queue` + orchestrator entirely (NBA has no orchestrator by design)**."*
+
+**Each accepts `job: "probe-sources"`, routed to `https://internal/probe-sources`, or the default
+run path.** **`probe-sources` is a second, per-worker mode that the mode-dispatch table in
+`NBA_WORKERS.md` does not list.**
+
+⚠ **`nba/NBA_AVAILABLE_TOOLS.md` is stale on both counts**: it lists **12 MLB targets and zero NBA**
+— though `NBA_STATIC_TEAMS_WORKER` was wired and invoked successfully later in T1 itself — and it
+documents `run_sql` against **twelve D1 databases decommissioned 2026-08-12**. `NBA_OPEN_ITEMS.md` →
+FROM T1 PASS 46.
+
+---
+
 ## 4. THE DEPLOY PIPELINE (shared with MLB, extended additively)
 
 > ### ⚠ BLAST RADIUS — the three tiers, VERIFIED from the generator's source 2026-09-20 (T1 pass 44)
