@@ -1456,6 +1456,37 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.90 — PASS 60 (angle: **lessons Parts B, E, F by concept**) — **NEW MATERIAL · CLEAN COUNT RESET TO 0**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 60. **Parts B and E fully covered; Part F's
+last two lessons were not.***
+
+- **⚠ "Opponent" can mean different things on different sides of a prop.** *"A shared 'opponent' or
+  'matchup' concept… can mean genuinely different things depending on **which side** of a given prop
+  it's applied to, and **reusing the same lookup blindly can encode a real conceptual error.**"*
+  MLB's case: an *"opposing defense"* factor correctly wired for hitter props and **silently wrong**
+  for the other side.
+  **✅ NBA is structurally protected from the specific bug** — it has **no opposing-role prop
+  family** (Domain Mapping §1: *"all NBA props are offense-side player stats"*), and MLB's failure
+  needed two families with opposite semantics.
+  **⚠ The narrower question is NOT RECORDED as checked**: NBA's four opponent-shaped factors
+  (baseline opponent-defence, **B4**, **M1**, `defense_vs_position`) resolve "opponent" once per game
+  and apply it to **both directions of every prop**. Whether the same stored value is the right
+  *input* for a `Less` as for a `More` — not merely sign-flipped — is unaddressed. **Compounds with
+  §T1.59's §7f finding: `side` is the same dimension MLB's calibration fit collapsed.**
+- **⚠ The parallel-investigation technique, used by NBA but never written down.** *"The discovery of
+  the baseline-leakage bug came from **an independent, parallel investigation thread cross-checking a
+  specific open question** — not from either thread working in isolation… **when a finding is
+  foundational enough that being wrong about it would invalidate a large amount of downstream
+  work**"*, run an independent parallel check rather than a deeper single-threaded one.
+  **This is the owner's "one chat per domain" model arriving from the research side** — organisational
+  there, **an error-detection mechanism here.** **T1 itself contains the parallel-chat episode**
+  (§T1.17) that worked; **it was never recorded as a technique.** The findings it would apply to are
+  named in `NBA_OPEN_ITEMS.md`: the certified baseline, the `p × m` gate, the anchor ten factors were
+  measured against, and the config-vs-code divergence.
+- **Clean run of two (58, 59) broken. Count resets to 0.**
+
+---
+
 ### T1.89 — PASS 59 (angle: **blueprint §4a–§4i, read by concept**) — ✅ **CLEAN 2 of 3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 59.*
 
