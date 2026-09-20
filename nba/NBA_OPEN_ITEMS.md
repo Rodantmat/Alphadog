@@ -530,6 +530,13 @@ only one of the three dud causes. **Foul trouble and early exits truncate minute
 games**, which a margin-keyed model by construction cannot see. And a distribution fitted across all
 games — including the duds — is biased on the `more` side for every prop.
 
+**⚠ STRENGTHENED 2026-09-20 (T8 pass 3): `foul risk` is named in the ARCHITECTURE, not just the
+minutes-model design.** The five-dimension factor table lists **"Blowout risk, P(OT), foul risk"**
+together as ***"minutes-model inputs, not rate factors"***, with the rationale *"they act on
+opportunity, not efficiency — **moving them there also dissolves their correlation**."*
+**So foul risk was a first-class designed input at the architecture level**, and the implementation
+treats `PF ≥ 6` games only as rows to exclude. **`P(OT)` appears to be similarly absent.**
+
 **To verify**: does the ladder builder fit a mixture, or a single distribution over all games?
 
 ### ✅ RESOLVED 2026-09-20 — **duds are EXCLUDED, not MIXED. The design said mix.**
