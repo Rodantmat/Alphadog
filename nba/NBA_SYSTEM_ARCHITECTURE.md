@@ -416,6 +416,8 @@ upserts throughout** — so it inherits both the fix and the pattern.
 whole session"* conclusion was also a wrong attribution — **the enum refreshes between turns**, and
 33 manual chunks were nearly spent working around a problem that had resolved itself. **Same class:
 an infrastructure symptom attributed to the wrong cause, at real cost.**
+
+### ⚠ ANYTHING NOT IN THE GENERATOR IS ERASED
 > *"**The GitHub workflow REGENERATES wrangler files before deploy, so this binding MUST LIVE IN THE
 > GENERATOR or it will be ERASED before Wrangler deploys.**"*
 
