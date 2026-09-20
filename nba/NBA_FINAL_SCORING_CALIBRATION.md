@@ -649,6 +649,29 @@ condition, applied to every number rather than only to strategies.
 > **the multiplier attribution is wrong, not the market.**"*
 Recorded in full at `NBA_MULTIPLIERS.md` §0.3.
 
+#### #8 — "insufficient data / underpowered" is a DISTINCT verdict from "confirmed negative"
+> *"**Don't collapse them.** A **non-significant result with a wide confidence interval that still
+> contains a materially positive value is NOT the same as a confirmed-zero effect**. **State the
+> actual POWER CALCULATION** (how many days would be needed to detect the effect size in question)
+> **and track genuinely underpowered candidates in their own lis[t]**."*
+
+**Direct relevance to the ten rejected enrichment factors.** `nba_score.factor_gate_results` stores
+`n`, `log_loss`, `brier`, `gain_vs_anchor` and `shrink_beta` — **so the sample size is recorded per
+verdict**, but the transcripts record the outcomes as rejections rather than splitting them into
+*confirmed negative* vs *underpowered*.
+
+**Two of the ten have stated sample constraints that suggest the distinction matters:**
+- **A2** — the design specified confidence tiers on shared-absence games (**<5 / 5–14 / 15+**),
+  because a with/without table on fewer than five games is close to noise.
+- **B4** — *"closed in three formulations, 0 of 5 props"*, with no recorded power figure.
+
+**What #8 asks for and is not recorded**: a power calculation per closed factor — *how many days would
+be needed to detect an effect of the size in question* — and **a separate list for underpowered
+candidates** rather than one rejection bucket.
+
+**Note the opposite risk is also recorded** (#9): applying a stricter test only to surprising results
+is its own bias. **#8 and #9 together say: keep the bar fixed, and classify the outcome honestly.**
+
 #### #9 — **MOVING THE GOALPOSTS ONLY WHEN SOMETHING LOOKS PROMISING IS ALSO BIAS**
 > *"MLB found and named a specific, subtle failure mode: **introducing a stricter statistical test
 > SPECIFICALLY BECAUSE a result survived further than expected** (**moving the goalposts only when
