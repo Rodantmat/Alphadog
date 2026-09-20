@@ -501,6 +501,8 @@ above"* — was suspected to be the ≥40%-of-median filter on small baselines. 
    against a stated prediction, not just an odd number.
 2. **Leakage inflates apparent skill** — the multipliers were over-confident until it was removed.
    *"Shrank to honest ~1.0 values"* is the signature.
+
+### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
 From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
 ~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
 **Holdout 2024-25 shows the same signs.**"*
