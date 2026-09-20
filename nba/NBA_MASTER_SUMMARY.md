@@ -1345,6 +1345,13 @@ corresponding entry in any of the 12 documents.
 
 **Findings and where they were routed:**
 
+**⚠ CORRECTION, recorded the same day.** This entry first claimed §7f was unswept. **It was not** —
+`NBA_BASELINE_CALIBRATION.md` §5.6 already carried it in full, including a **VERIFIED code grep**
+showing NBA is structurally protected (`p_less = 1 − p_more` by construction). **The two elements of
+§7f that were genuinely new are the cost precedent (30–45 pp for ~2.5 weeks) and the explicit causal
+link from that precedent to the coverage-gap diagnostic.** The finding below is left in place with
+that correction applied, per the rule that a superseded claim is recorded, not erased.
+
 1. **§7f — an honest out-of-sample pass is necessary but not sufficient.** MLB had a calibration fit
    that beat both the raw baseline and a standard calibration method on real held-out error metrics
    **and was still structurally wrong**: computed without distinguishing **over/under**, dominated by
