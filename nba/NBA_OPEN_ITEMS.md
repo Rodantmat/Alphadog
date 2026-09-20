@@ -837,6 +837,8 @@ T1's naming convention specified **fourteen** `nba_`-prefixed schemas:
 **Worth confirming** that nothing expected `nba_daily`/`nba_context`/`nba_archive` to exist — the MLB
 system has `daily`, `context` and `archive` schemas, and any ported query or worker referencing them
 by analogy would fail.
+
+### 💰 UNVERIFIED SPEND · BallDontLie GOAT tier — $39.99/month, possibly unused
 T1 records a **paid, verified BallDontLie integration**:
 > *"Fully operational with **paid GOAT tier ($39.99/month)**. Rate limit **600 requests/min** (10× the
 > free tier). `/stats` → 200 OK (**CRITICAL — paid tier only**). API key confirmed active.
