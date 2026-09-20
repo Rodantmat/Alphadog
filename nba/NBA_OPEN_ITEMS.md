@@ -389,6 +389,45 @@ Not recommended here."*
 requirement.** *(MLB's control plane has `gbdt_training_requests` and `gbdt_auto_trigger_switch`, so
 MLB went this way; NBA deliberately did not.)*
 
+### BUG-OPEN · **P3 uses a FIXED 1:15 PM PT — the design called for a DYNAMIC trigger**
+The T4 cadence design is explicit:
+> *"unlike the other two runs, **the master run's trigger time isn't a fixed clock time — NBA start
+> times shift day to day** — so it needs to be **computed dynamically from `nba_calendar.games`
+> (today's earliest real tip-off) minus 2 hours**."*
+
+**`nba-p3-afternoon-light.yml` (built 2026-09-20) uses a fixed 1:15 PM PT.**
+
+**Safe on a normal slate** (earliest tip ~4 PM PT) but **wrong on early-tip days**. The NBA regularly
+schedules **noon and 1 PM Eastern** starts — Christmas, MLK Day, and most weekend national-TV windows.
+**A 12:00 PM ET tip is 9:00 AM PT, over four hours BEFORE P3 would run.** On those days P3 would score
+a slate whose games had already tipped.
+
+**Note this interacts with the injury-report cutoff**: on an early-tip day the game-day report is also
+filed earlier (8–10 am local for tips at 5 pm local or earlier), so an earlier run is *both necessary
+and possible*.
+
+**The fix, already specified by the original design**: trigger at
+**min(1:15 PM PT, earliest_tip − 2h)**, computing the earliest tip from `nba_calendar.games` — the
+schedule is already loaded (2,666 games). **Not applied — documentation pass only.**
+
+### DESIGN DRIFT · the pre-flight check became a post-flight audit
+T4 specified: *"**Before ingesting**, compare the number of games SCHEDULED for yesterday against the
+number showing as FINAL in the fresh API pull. If they don't match — **halt and warn, don't silently
+proceed** on an incomplete night."*
+**`nba/check_delta_gaps.py` performs exactly this comparison but runs AFTER mining, as an audit.**
+P2 fails the job either way and the baseline does not build, so the practical effect is similar — but
+the design intent was a gate, not an audit.
+
+### PERMANENT CAVEAT (accepted, not a bug) · late NBA stat corrections
+*"the NBA does issue rare stat corrections hours or days later (a rebound reattributed to a different
+player). **Don't chase these** — treat each day's baseline as a consistent point-in-time snapshot."*
+
+### PRINCIPLE · the baseline must NEVER live-query stats.nba.com
+Three reasons given at design time: **speed**, **stability** (API outage during the run window), and
+**reproducibility** — *"a live query run at 9am vs 10am could return different data if a correction
+posted in between."* **This is the as-of principle applied to API reads, before it was applied to
+dates.**
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
