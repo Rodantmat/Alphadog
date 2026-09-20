@@ -486,7 +486,38 @@ the system as built.
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7i. THE "PHASE FILE" ENRICHMENT ARCHITECTURE *(T1, the blueprint §4)*
+*Recorded 2026-09-20.*
+
+> *"MLB organises enrichment into **named phases, EACH A SEPARATE WORKER FILE even when many are
+> near-identical boilerplate around ONE factor**."*
+
+| Phase | MLB contents | **Stated NBA equivalent** |
+|---|---|---|
+| **2A — game/environment level** | run environment, park impact, weather impact, roof impact | **pace, home/road, back-to-back, altitude if relevant, arena factors** |
+| **2B — player role/matchup** | batting order/lineup role, bullpen matchup, handedness matchup, lineup protection, opposing starter matchup, recent form | **role/minutes projection, opponent defensive matchup, positional matchup, rest/schedule spot, recent form** |
+| **3A / 3B / 3C** | per-prop-family context builders — *"one per prop or prop-cluster"* | — |
+
+**NBA did NOT follow the one-file-per-factor structure.** Enrichment is consolidated into
+`build_final_hp.py` with the factor registry (`nba_config.factor_registry`, 67 rows) supplying the
+per-factor definitions. **The phase taxonomy survives as the A/B/D/M/N factor codes**, not as files.
+
+**Note how well the stated 2A/2B mapping predicted the built system**: *"role/minutes projection"*
+became `mu_role` and `ROLE_TIERS`; *"opponent defensive matchup"* became the measured opponent
+coefficients (blocks ← paint share 0.30/0.37, steals ← opp TO rate 0.27/0.26); *"rest/schedule spot"*
+became A4; *"back-to-back"* and *"home"* were both **measured ≈0** because the minutes model already
+carries them.
+
+### ⚠ THE CRITICAL LESSON ATTACHED TO THIS SECTION
+> *"**Critical lesson BEFORE BUILDING ANY OF THESE**: MLB's own factor layer had **a LIVE, UNDETECTED
+> BUG — one factor (`stolen_base_family`) had ZERO VARIANCE ACROSS EVERY ROW** (a real defe[ct])…"*
+
+**This is lesson #1 of §7d in its original context**: the `stddev(factor_value) > 0` check exists
+because a live factor ran with **no variance at all, undetected**.
+
+**And it is directly live for NBA**: `nba_ref.arenas.altitude_ft` and `.timezone` are **0-of-30
+populated**, so an altitude or jet-lag factor built today would have exactly this defect.
+**The check is one line and was never run.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
