@@ -2209,6 +2209,26 @@ legitimate free version of 'shot quality'."*
 
 **T3 PASS 6 COMPLETE: NEW MATERIAL throughout. Clean count 0/3.**
 
+### T3.13 — PASS 7 (the 12-worker inventory, as categorised at the time) — **NEW MATERIAL**
+
+The T3 closing table, which is the canonical description of the static/weekly layer:
+
+| Category | Workers |
+|---|---|
+| **Core dictionaries** | teams · players · arenas · officials |
+| **Player profile** | bio/season-profile · speed/distance · tracking detail (passing, rebounding, drives, shots, touches) |
+| **Team profile** | pace/ratings · play-type profile |
+| **Impact metrics** | on/off-court splits · DARKO player-impact rating |
+| **Foundational** | season schedule/calendar |
+| **Change detection** | weekly differential layer |
+
+**Note the categorisation itself is informative**: the schedule sits alone under *"Foundational"* —
+consistent with Gemini's *"chassis everything else bolts onto"* — and change detection is its own
+category rather than being folded into the dictionaries. **Shot quality is not in this table** because
+it was found after it (T3.6), making **13** the true final count for the layer.
+
+**T3 PASS 7: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
