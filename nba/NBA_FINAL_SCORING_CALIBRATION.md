@@ -510,14 +510,35 @@ carries them.
 
 ### ⚠ THE CRITICAL LESSON ATTACHED TO THIS SECTION
 > *"**Critical lesson BEFORE BUILDING ANY OF THESE**: MLB's own factor layer had **a LIVE, UNDETECTED
-> BUG — one factor (`stolen_base_family`) had ZERO VARIANCE ACROSS EVERY ROW** (a real defe[ct])…"*
+> BUG — one factor (`stolen_base_family`) had ZERO VARIANCE ACROSS EVERY ROW** — **a real defect:
+> WIRED INTO THE SCORING ENGINE, CONTRIBUTING LITERALLY NOTHING** — and **was ONLY CAUGHT BECAUSE IT
+> ACCIDENTALLY BECAME USEFUL AS A PLACEBO / NOISE-FLOOR CALIBRATOR during later statistical work.**
+> **Before trusting ANY new NBA enrichment factor, verify it actually has variance
+> (`stddev(factor_value) > 0`) as a first sanity check — this is cheap and MLB NEVER DID IT
+> PROACTIVELY.**"*
 
-**This is lesson #1 of §7d in its original context**: the `stddev(factor_value) > 0` check exists
-because a live factor ran with **no variance at all, undetected**.
+**Three things make this the sharpest warning in the blueprint:**
+1. **It was wired into a live scoring engine**, contributing nothing, for an unknown period.
+2. **It was caught BY ACCIDENT** — not by review, not by testing, but because someone later needed a
+   placebo and noticed this factor was one.
+3. **The detection cost is one line of SQL**, and it was never run.
 
-**And it is directly live for NBA**: `nba_ref.arenas.altitude_ft` and `.timezone` are **0-of-30
-populated**, so an altitude or jet-lag factor built today would have exactly this defect.
-**The check is one line and was never run.**
+**A zero-variance factor is worse than a missing one**: it occupies a slot, consumes a cell, reports a
+coefficient, and passes every structural check — while carrying no information.
+
+**Directly live for NBA**: `nba_ref.arenas.altitude_ft` and `.timezone` are **0-of-30 populated**, so
+an altitude or jet-lag factor built today would have exactly this defect. **Worth running
+`stddev()` across every factor column before the season, not just those two.**
+
+**And the companion rule from the same section:**
+> *"Each enrichment factor should have **`relevant_prop_keys` explicitly declared** (which props it
+> applies to) rather than applying blindly — MLB's `defensive_quality_oaa` is correctly scoped this
+> way (`["hits","singles","doubles","hits_allowed"]`) — and **this scoping should be EXPLICIT AND
+> REVIEWABLE, NOT IMPLICIT IN CODE LOGIC SCATTERED ACROSS FILES.**"*
+
+**NBA implements this as `nba_config.factor_relevance`** — 460 rows of `factor × prop →
+full/partial/none`, *"the gate that runs before any tier logic."* **Explicit and reviewable, in a
+table, exactly as specified.**
 
 ---
 
