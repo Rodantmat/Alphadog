@@ -45,8 +45,8 @@ material; it is not a rerun.
 | # | File | Pass status |
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **DONE — 3/3 clean (passes 26, 27, 28)** |
-| 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | **PASS 1 — INCOMPLETE** |
-| 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | pending |
+| 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
+| 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | **NEXT** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | pending |
 | 5 | `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` | pending |
 | 6 | `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` | pending |
