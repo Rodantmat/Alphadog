@@ -204,6 +204,10 @@ schema contains fields that invite exactly such aliases (`period`, `side`, `line
 `band`, `source`, `kind`, `status`, `anchor`. **They are legal as column names but risky as bare
 aliases**, and `end` would be an error class the dialect resolves silently.
 
+---
+
+## 3. THE MCP ADMIN BRIDGE — `alphadog-v2-admin-sql.js`
+
 The single worker that gives the assistant its tools. Every NBA worker must be wired into it in three
 places — `bindingMap`, a dispatch branch, and the tool-schema enum — **plus a fourth edit in
 `generate_wrangler_configs.py`**, because the deploy regenerates wrangler files and would erase
