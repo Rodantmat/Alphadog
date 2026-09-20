@@ -4757,6 +4757,74 @@ live logic was **explicitly rejected for NBA** — replaced by the 13-row per-st
 
 **T7 PASS 13: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.20 — PASS 14 — **"DUD GAMES", AND THE TIER RANK/LOGIC RECONCILIATION**
+
+#### T7.20a — **THE GENUINELY NBA-SPECIFIC FINDING: a fat low tail MLB does not have**
+> *"**'Dud games' — a fat low tail MLB doesn't have.** Blowouts, foul trouble, early exits produce
+> **5-minute, 2-point games**. **A distribution fit to all games is systematically OVER-OPTIMISTIC on
+> 'more'.** This is the NBA analogue of **MLB's home-run bimodality** (which MLB fixed with a
+> two-component mixture), and **we have the exact data to detect duds: minutes per game, score margin,
+> and the DNP/DND comments from starter-status**. **Design: model P(dud) separately, then mix.**"*
+
+**Three things make this the most important single insight in T7:**
+1. **It names a systematic bias with a direction** — over-optimistic on *more*, which is the side most
+   legs are taken on.
+2. **It identifies the MLB analogue and its proven fix** — home-run bimodality, solved with a
+   two-component mixture. The solution shape was already validated in the other sport.
+3. **It names the data source precisely** — and that source includes
+   **the DNP/DND comments from starter-status**.
+
+#### T7.20b — **✅ THIS CLOSES THE LOOP ON THE T6 "UNUSED ASSET"**
+In T6.10a I flagged **4,319 "DNP - Coach's Decision"** rows (plus 975 DND-Injury, 99 DNP-Injury) as a
+labelled historical absence dataset sitting in Postgres with no known consumer.
+
+**T7 names exactly that field as a dud-detection input.** So the asset was not overlooked — it was
+**identified for a specific purpose in the design**. **What remains unverified is whether the built
+`classification_ladder_v12.py` actually implements the dud mixture and reads it.**
+**OPEN_ITEMS updated**: this is no longer "an unused asset looking for a purpose" but "a designed
+input whose consumption should be verified."
+
+#### T7.20c — **THE TIER RANK vs TIER LOGIC RECONCILIATION**
+A genuine conflict between the owner's instruction and Gemini's argument, resolved rather than
+arbitrated:
+
+> *"**You said different variations get different tier levels.** Gemini argues — persuasively — that
+> the tier **rank** should be computed **across all players** (a 30.5 player and a 10.5 player are
+> genuinely different tiers of talent, and **splitting the pool fragments the sample that shrinkage
+> depends on**). **I think both are right, and they're not in conflict:** the **tier RANK is global**,
+> but the **tier LOGIC — distribution family, dud-risk weight, dispersion, lifts/penalties — is
+> specific to the variation band**."*
+
+**This is the resolution the engine implements.** Global ranking preserves the population sample that
+empirical-Bayes shrinkage needs; per-band logic gives a 3.5-points player Negative Binomial machinery
+and a 33.5-points player Normal machinery. **Neither side had to lose.**
+
+**And it was put back to the owner as a question** — *"Is that consistent with what you meant?"* —
+rather than resolved unilaterally.
+
+#### T7.20d — **The factor ranking for lifts/penalties** (historical-only, baseline-appropriate)
+| # | Factor | Note |
+|---|---|---|
+| 1 | **Minutes mean AND STABILITY** | *"**the NBA plate-appearance equivalent**"* |
+| 2 | Usage share | |
+| 3 | **Starter vs bench** | ***"a PRIMARY SPLIT, not just a factor"*** |
+| 4 | **Role consistency / discontinuity guard** | ***"more important than in MLB"*** |
+| 5 | Historical pace | |
+| 6 | Home/away and days-rest splits | ← the `location` and `days_rest` splits |
+| 7 | Historical performance vs **defence TYPES** | *"**not tonight's opponent — that's daily**"* |
+| 8 | Scoring composition | *"**low value for the mean, HIGH value for variance shape**"* |
+
+> **Excluded from baseline by design**: *"tonight's opponent, projected minutes, injuries, market."*
+
+**Two entries are worth dwelling on:**
+- **#1 pairs mean with STABILITY** — a player averaging 28 minutes ±3 and one averaging 28 ±11 are not
+  the same bet, and the dud tail is exactly where that difference lives.
+- **#8 is explicitly a VARIANCE input, not a mean input** — scoring composition shapes the
+  distribution rather than moving it. **A factor can earn its place by improving dispersion alone**,
+  which is a different test from the usual mean-improvement gate.
+
+**T7 PASS 14: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
