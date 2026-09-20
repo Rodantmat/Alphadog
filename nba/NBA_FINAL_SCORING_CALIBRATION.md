@@ -1120,6 +1120,10 @@ props: **the same name can mean a different computation.**
 formulations.** It is one question — *does something already measure this directly?* — and it is
 cheaper than every gate run it replaces.
 
+---
+
+## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
 100% coverage).
