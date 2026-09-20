@@ -1001,8 +1001,27 @@ source of a wrong final probability."*)
 
 ## 7m2. ⚠ AN HONEST OUT-OF-SAMPLE PASS IS **NECESSARY BUT NOT SUFFICIENT** — never auto-apply a correction
 *Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` **§7f** — "a profound calibration lesson."*
-***Recorded 2026-09-20 (T1 pass 29). Previously unswept — earlier T1 passes covered blueprint §1–§7e
-and the lessons document, but not §7f, §7g or §9.***
+***Recorded 2026-09-20 (T1 pass 29).***
+
+**⚠ SELF-CORRECTION, same day, same pass.** This section was first written stating that blueprint §7f
+was *"previously unswept."* **That was wrong, and it is corrected here rather than quietly edited.**
+**§7f is already recorded — thoroughly — at `NBA_BASELINE_CALIBRATION.md` §5.6**, including the
+verbatim case, the prescribed rule, the weekly-recalibration cadence, and a **VERIFIED code check**
+(grep of the ladder calibration code, 2026-09-20) establishing that **NBA is structurally protected**:
+the calibrated quantity is `p_over` and `p_less = 1 − p_more` by construction, so **there is no
+separate Less population to be dominated**, and `offset` (the rung) is already in the fit key.
+**Read §5.6 first — it is the primary record.**
+
+**What is genuinely new in this pass, and why this section stays:**
+1. **The cost precedent** — *"two props running with zero active correction for roughly two and a half
+   weeks… 30–45 percentage point overconfidence gaps, undetected until someone manually checked"* —
+   **not recorded anywhere before this pass.**
+2. **The explicit causal link from §7f to the coverage-gap diagnostic** (§7m Safeguard 1). The
+   blueprint states the precedent *"directly motivated"* it. The two were recorded as separate items.
+3. **The enrichment-side application.** §5.6 answers the question for the **baseline Platt fit**.
+   The **as-of calibration table that the enrichment layer consumes** is keyed
+   `(season, as_of_date, prop, phase, band, side)` — **`side` is a real, populated dimension there**,
+   which is a different exposure from the baseline's.
 
 **The case, verbatim:**
 > *"MLB found a real, concrete case where a statistical calibration fit genuinely **PASSED HONEST,
