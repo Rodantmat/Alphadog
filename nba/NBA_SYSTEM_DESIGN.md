@@ -210,9 +210,23 @@ completes with almost nothing scored**, rather than a loud stop.
 **P1 and P2 are less exposed**: P1's steps are independent scrapers, and P2's heavy stages
 (mine → grade → refit → build) have genuine data dependencies that justify sequencing.
 
-**The operational half IS followed**: the build record shows *"trigger, confirm once, report"* —
-*"while that builds (~50 min for six pairs), the loader worker"*, *"let me check the run directly
-rather than keep polling blindly."*
+**The operational half IS followed — in the LATER transcripts.** *"While that builds (~50 min for six
+pairs), the loader worker"*, *"let me check the run directly rather than keep polling blindly."*
+
+> ### ⚠ CORRECTION 2026-09-20 (T1 pass 38) — **it was NOT followed in T1, and the owner said so**
+> **VERIFIED** by extracting every `bash_tool` call in T1. **The session's entire local execution is
+> two syntax checks, two `cat`s, and THIRTEEN polling sleeps** — `sleep 30, 40, 45, 50, 55, 60, 70,
+> 90, 150, 240, 280, 290`, each `; echo done`, each waiting on a GitHub Actions run. **That is
+> exactly what §4o prohibits.**
+>
+> **The owner interrupted it live** — owner message 6 of 15: *"**what is going on? what are these
+> waits for?**"*
+>
+> **The cause is structural as well as behavioural**: T1 had **no way to await a run** —
+> `github_trigger_workflow` was absent from the session's tool list (`NBA_MASTER_SUMMARY.md` §T1.17),
+> so there was **no completion signal to subscribe to, only a run list to re-read.** The file-based
+> trigger (`NBA_SYSTEM_ARCHITECTURE.md` §7) answers the first half; **the owner's objection answered
+> the second.** **The evidence quoted above is from LATER transcripts — T1 is the counter-example.**
 
 ---
 
