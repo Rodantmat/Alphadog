@@ -492,6 +492,12 @@ forbids**; the owner interrupted it — *"what is going on? what are these waits
 structural**: no `github_trigger_workflow`, so no completion signal existed to await. →
 `NBA_SYSTEM_DESIGN.md` §0.8.
 
+**`schema_manifest.json`** · repo root, LIVE · A stale static manifest: `"date": "2026-05-18"`,
+**`"target": "AlphaDog v2 new D1 databases only"`**, naming 11 D1 databases — **D1 was decommissioned
+system-wide 2026-08-12.** With its eleven `schema_*_db.sql` companions (133 KB) it describes a dead
+architecture in SQLite-flavoured, flat-named DDL. **Blueprint §5b standing in the repository.**
+⚠ §T1.51 recommended `schema_ref_db.sql` to NBA as a template. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 43*.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
