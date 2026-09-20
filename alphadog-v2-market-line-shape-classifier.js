@@ -23,7 +23,24 @@ const PARLAY_PAGE_LIMIT = 10000;
 const PARLAY_MAX_PAGES = 4;
 const PARLAY_MAX_DISCOVERY_PROBES = 14;
 const PARLAY_FETCH_TIMEOUT_MS = 9000;
-const PARLAY_TOTAL_FETCH_BUDGET_MS = 240000;
+// RAISED 2026-09-20 (Cowork-supervised 9am slot): confirmed live via 8 consecutive real, full-length
+// attempts over ~45 minutes that market_pitcher_prop_line_context (step 19) deterministically exhausts
+// this budget with ZERO evidence rows written every single time (status stuck at
+// running_pitcher_parlay_prop_fetch for 245-290s, never advancing to mapping/finalize), while
+// market_hitter_prop_line_context (step 18, identical code path, same probe-plan shape) reliably
+// completes within ~1 minute of parlay-fetch time. No completed pitcher batch exists in 3 days of
+// market.context_probe_batches history. Root cause: when the primary book-group probes find zero
+// matched pitcher books (plausible - fewer books carry pitcher markets under this vendor's schema than
+// hitter markets), fetchParlayProps() falls through to the up-to-8-probe sequential PARLAY_CORE_FALLBACK_BOOKS
+// loop, and 14 total sequential probes (up to PARLAY_FETCH_TIMEOUT_MS=9000 each) can exceed the 240000ms
+// budget before a single probe's rows are ever persisted - this is a wall-clock deadline this function's
+// own loop checks (Date.now() >= deadlineAt), not a Cloudflare CPU kill (this worker's cpu_ms ceiling is
+// already 300000 per generate_wrangler_configs.py, and status never transitions to worker_exception_uncaught,
+// which would fire on any thrown/aborted execution) - so the platform has real headroom this app-level
+// constant was not using. Raising to 420000 (420s) gives the fallback-probe path room to actually complete
+// and persist evidence instead of dying at the self-imposed deadline every time. The outer
+// promiseWithTimeout call already scales off this same constant (+5000ms), so no other line needs to change.
+const PARLAY_TOTAL_FETCH_BUDGET_MS = 420000;
 const MARKET_FULL_WORKER_SOFT_DEADLINE_MS = 260000;
 const MARKET_FULL_BACKEND_FETCH_BUDGET_MS = 20000;
 const MARKET_FULL_BACKEND_FETCH_TIMEOUT_MS = 24000;
