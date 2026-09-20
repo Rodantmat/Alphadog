@@ -154,6 +154,41 @@ Deliberate: the owner specified no orchestrator. Copy that precedent for any new
 
 ---
 
+## FROM T2 PASS 2 *(added 2026-09-20)*
+
+### OPEN GAP · **garbage time is NOT filtered out of our season aggregates**
+*"**garbage-time filtering** is an industry-standard practice (Cleaning the Glass, pioneered by Ben
+Falk) that our existing season-aggregate data does **not** apply — `stats.nba.com`'s raw stats
+**include garbage time**."*
+**Every season-aggregate figure mined from stats.nba.com is contaminated with garbage-time minutes.**
+The blowout factor (T16) attacks the same problem from the minutes side, but the underlying aggregates
+were never re-derived with a garbage-time filter. **Unresolved.**
+
+### CAVEAT · stats.nba.com requires the FULL parameter set
+A partial query string returns a **real HTTP 500**, not a helpful error. *"many as empty strings"* —
+send every documented parameter even when blank. Cost one debugging cycle on team stats; will cost one
+on every new endpoint that forgets it.
+
+### BUG-FIXED · `"Undrafted"` is a string in numeric draft fields
+`DRAFT_NUMBER`, `DRAFT_YEAR`, `DRAFT_ROUND` return the literal string `"Undrafted"`. Fixed with
+defensive coercion **applied to every numeric field**, not just the three that failed.
+
+### CAVEAT · diacritics break naive name matching
+A Jokić spot-check appeared to fail because the query used the ASCII spelling. **Not a data bug.**
+First appearance of the problem that later becomes `nba/nba_names.py` + `nba_ref.player_name_map`.
+
+### DECISION RECORD · DARKO chosen over EPM
+**EPM (Dunks & Threes)** is public and was rated *"one of the highest-value single features."*
+**DARKO (`darko.app`)** was then found to be **free AND rated higher** — *"beating both EPM and LEBRON
+on predictive accuracy (RMSE)"*, and *"the single best predictive metric."* DARKO won on both counts.
+
+### PROCESS NOTE · the owner twice overruled a "we're done" report
+Message 697 (*"**No**, keep looking"*) and message 723 (*"Find alternatives… understand the relevance
+of it"*) each followed an honest stopping point — and **each produced the session's highest-value
+finding** (garbage-time filtering, then DARKO). Worth remembering before reporting exhaustion.
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
