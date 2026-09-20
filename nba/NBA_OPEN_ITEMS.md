@@ -1025,6 +1025,39 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠⚠ SHARED-EVENT PROP PAIRS — an explicit T1 check, never run
+T1's blueprint §4b records a bug where **two props measuring the *literally identical underlying
+event*** received **different shrinkage treatment**, and the inconsistency **grew from a 40%
+violation rate to 97% by player tier before being caught.**
+
+> *"**For NBA: CHECK EXPLICITLY for any pair of props/combo-stats that SHARE AN UNDERLYING EVENT AT A
+> GIVEN THRESHOLD** — e.g. **a single-category prop crossing zero versus a COMBO PROP THAT NECESSARILY
+> CROSSES ZERO AT THE SAME MOMENT** — **and make sure they receive IDENTICAL TREATMENT. Don't let two
+> nominally-different props that are SECRETLY THE SAME EVENT drift apart.**"*
+
+**NBA's 28-prop taxonomy contains this shape repeatedly:**
+| Pair | Shared event at the threshold |
+|---|---|
+| `blocks` 0.5 / `stocks` 0.5 | with 0 steals, `stocks ≥ 1` **is** `blocks ≥ 1` |
+| `steals` 0.5 / `stocks` 0.5 | the mirror |
+| `points` 0.5 / `pts_reb`, `pts_ast`, `pra` 0.5 | co-trigger at the bottom rung |
+| `rebounds` 0.5 / `reb_ast` 0.5 | same |
+| `double_double` / its components | DD is **determined by** the component props |
+
+**Partial protection exists:**
+- ✅ Combos are **simulated from calibrated marginals** — *"joint structure, never a direct fit"* — so
+  a combo inherits its components' treatment by construction
+- ✅ `stocks` is explicitly recorded as *"inherits the blocks/steals floor"*
+
+**Where it could still drift:**
+- ⚠ Singles and combos are **separate certified files with separate constants**
+- ⚠ `SHIFT_LAMBDA` is **per prop** (`blocks: 0.5`, `steals: 0.5`), while combos route through a
+  different recipe entirely
+- ⚠ `double_double` carries a **sentinel −1.0 and no ladder** — a third path
+
+**The check is not recorded as having been run.** And its failure mode is **monotonicity**, which the
+calibration-technique guidance independently names as disqualifying.
+
 ### ⚠ DUPLICATED CONSTANTS ACROSS THE TWO CERTIFIED RECIPES
 T1's blueprint names this as a *"**real, costly duplication risk**"*: MLB **implemented the Wilson
 sample-support clamp in TWO SEPARATE CODE LOCATIONS**, so any future threshold change had to be
