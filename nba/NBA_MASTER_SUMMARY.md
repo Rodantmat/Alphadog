@@ -2276,6 +2276,52 @@ City / Hawaii venue spot-checks, and the play-type defensive fallback.
 
 **ONE more complete clean sequential pass and T3 is DONE.**
 
+### T3.18 — PASS 10 (full sequential, 240-char context, all 117 blocks) — **CLEAN 3/3**
+
+Complete read at maximum context. **Every block maps to a documented entry. Nothing new.**
+
+One detail confirmed in full here, previously quoted in part — the owner's differential instruction
+reads in its entirety: *"you need to create the weekly function that will mine the differential of it,
+players changing teams, new players, **all possible changes that the 'static' data you just backfilled
+can possibly have, you need to cover it**."* **The scope was "all possible changes", which is why the
+worker covers players, teams AND officials rather than just roster moves.**
+
+---
+
+# ✅ T3 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (8, 9, 10)
+
+**Final tally: 10 passes. 7 found new material. Passes 8, 9, 10 clean.**
+
+**T3 produced two findings that bear on live code, both in OPEN_ITEMS:**
+1. **82 play-type rows scraped but never loaded** — 3,364 vs 3,282, **verified still true today.**
+   It escaped notice because the scrape count and the load count were reported in different messages.
+2. **The weekly differential worker was never scheduled, and `nba-p1-weekly-static.yml` does not call
+   it** — so trades, signings, team changes and referee moves are **not being detected at all**, and
+   its snapshot baseline has been stale since 2026-09-03.
+
+**Plus three operational caveats now recorded**: the GitHub Contents API **silently returns empty
+content above 1 MB**; **Hyperdrive caches reads for seconds** (test-only artifact); and **JS bare
+decimals are invalid JSON**.
+
+**And one open question**: `shot_quality_delta` is built and implements its formula verbatim, but
+**whether anything consumes it is unestablished** — the enrichment audit tested ten candidates and none
+were shot-quality-based.
+
+---
+
+## RUNNING TOTAL: 3 of 16 transcripts DONE
+| # | Transcript | Passes | Status |
+|---|---|---|---|
+| T1 | phase1-static | 28 | ✅ 3/3 clean |
+| T2 | phase3a-enrichment | 11 | ✅ 3/3 clean |
+| T3 | phase3a-final | 10 | ✅ 3/3 clean |
+
+## NEXT: T4 — `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt`
+3-season game-log backfill · advanced per-game stats · career totals · splits ·
+**baseline projection methodology design (EWMA / Bayesian shrinkage / variance)** ·
+**the architecture correction: baseline strictly historical, enrichment separate** ·
+operating cadence locked.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
