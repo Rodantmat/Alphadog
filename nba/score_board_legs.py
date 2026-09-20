@@ -42,6 +42,33 @@ PT = timezone(timedelta(hours=-8))
 BREAKEVEN = 0.560
 CONF_NEUTRAL = 0.85
 
+# MARKET KEY -> OUR PROP. Verified against the live board (2026-01-15, 21 distinct keys, 12 books) and
+# against baseline_history's 30 props. This mapping is NOT optional string-stripping: a naive
+# replace(market_key,'player_','') yields "points_rebounds_assists", which matches NOTHING in our
+# baseline (we call it "pra") and would have silently dropped the six largest combo groups - PRA alone
+# is 15,156 legs on that date. Every board key below has a verified home.
+MARKET_TO_PROP = {
+    "player_points": "points",
+    "player_rebounds": "rebounds",
+    "player_assists": "assists",
+    "player_threes": "threes_made",            # board says "threes", we say "threes_made"
+    "player_blocks": "blocks",
+    "player_steals": "steals",
+    "player_turnovers": "turnovers",
+    "player_points_rebounds_assists": "pra",
+    "player_points_rebounds": "pts_reb",
+    "player_points_assists": "pts_ast",
+    "player_rebounds_assists": "reb_ast",
+    "player_blocks_steals": "stocks",          # we DO carry this one
+    "player_double_double": "double_double",   # sentinel line -1.0, no ladder - handled below
+}
+
+
+def norm_market(mk: str) -> str:
+    """board key -> our prop. '_alternate' marks a ladder rung, not a different market."""
+    base = str(mk or "").replace("_alternate", "")
+    return MARKET_TO_PROP.get(base, "")
+
 
 def logit(p):
     p = np.clip(p, 1e-4, 1 - 1e-4)
