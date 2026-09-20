@@ -1432,6 +1432,64 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.65 — PASS 35 (angle: **NEGATIVE SPACE — what a section promises and never delivers**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: an angle the ledger shows was never used in 34 prior passes. Sweep every **forward
+reference, deferred decision and "worth checking directly"** in T1's four handoff documents, then
+test each against the twelve documents — and, where the live system can answer it, against the live
+system.
+
+**FINDING 1 — the blueprint posed a concrete verification task that was never recorded as open, let
+alone done.** §0: *"the real design question for NBA… is **'does adding a second sport's worth of
+jobs to the existing shared queue and scheduling system introduce any real contention or collision
+risk'** — **a genuine, concrete thing worth checking directly against the live system before assuming
+it's fine, rather than either avoiding it or assuming it's automatically safe.**"*
+**The word "contention" appeared in none of the twelve documents.**
+
+**FINDING 2 — answered, by live query. The risk is structurally zero.**
+
+| Check | Result |
+|---|---|
+| NBA's own control plane | **`nba_control.job_runs`, `nba_control.worker_run_log`, `nba_config.worker_definitions`** — present |
+| NBA rows in MLB's `config.worker_definitions` | **0** |
+| Total rows in `config.worker_definitions` | **116** |
+
+**NBA never joined the shared queue, so there is nothing to contend for.** Closed by architecture,
+not by measuring contention — and that distinction is the finding.
+
+**FINDING 3 — ⚠ a contradiction on the record, flagged not resolved.** The blueprint answered its own
+sub-question in advance — *"should we build our own job queue"* — **"(no)"**, citing §7e's *"hard-won
+lesson"* that duplicating shared plumbing *"just for NBA is almost always the wrong move."*
+**The owner overruled it** (§T1.3, *"NBA gets its own everything"*) **and the system follows the
+owner.** The owner's decision is binding and is not in question; **what is recorded is that the
+blueprint's contrary advice was never explicitly closed out — it simply stopped being followed**, and
+a future reader consulting the blueprint finds guidance the system does not take.
+
+**FINDING 4 — the same query independently verifies a constraint stated in T1 and never tested.**
+**`config.worker_definitions` holds 116 rows — the exact figure T1's Phase 1 live-verification banner
+recorded on 2026-08-31 — and NBA's share is 0.** **Twenty days and a complete NBA build later, the
+shared MLB registry is untouched.** That is **direct live evidence that *"additive only, no
+MLB-system side effects"* held** — the registry-level counterpart to the
+`startswith("alphadog-v2-nba-")` guard. ✅ **A rare case in this sweep of a claim being confirmed
+rather than corrected.**
+
+**Also swept and found already documented** (recorded so the angle is not re-run on them): the
+blueprint's per-prop recency-weighting promise (`BASELINE_CALIBRATION.md`), its *"see Section 6"*
+pointer from the operating-model section (`SYSTEM_DESIGN.md` §0.9), and the System Draft's *"yet to
+be locked"* factor list and *"TBD"* upstream-scraper note — the latter two now superseded by the
+broken-§5 finding at pass 32.
+
+**Routed to**: `SYSTEM_ARCHITECTURE` §1a0 · `WORKERS` §0.4 · `OPEN_ITEMS` (*FROM T1 PASS 35*) ·
+`GLOSSARY` · this entry.
+**Considered, no change warranted**: `DATABASE` (`nba_control` tables already catalogued; only their
+*significance* is new, recorded in WORKERS) · `RECIPE` · `SYSTEM_DESIGN` ·
+`BASELINE_CALIBRATION` · `FINAL_SCORING_CALIBRATION` · `MULTIPLIERS` · `GOBLIN_DEMON`.
+
+**PASS 35 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.64 — PASS 34 (angle: **invert pass 33 — audit every DESTRUCTIVE STATEMENT, not every parameter**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
