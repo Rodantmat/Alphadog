@@ -3584,6 +3584,68 @@ transcripts.
 
 **T6 PASS 3: NEW MATERIAL. Clean count 0/3.**
 
+### T6.10 — PASS 4 — **A FREE DATA ASSET, AND A FORMAT INCONSISTENCY IN IT**
+
+#### T6.10a — The starter-status `comment` field is historical absence-reason data
+> *"a real, **free bonus** I found while checking: the starter-status backfill's `comment` field
+> already captures **actual DNP/DND reasons as a byproduct** — 975 'DND - Injury/Illness', 99 'DNP -
+> Injury/Illness', plus rest, suspension, and personal-reason entries, **all real and already sitting
+> in Postgres**. It's not full pregame questionable/probable tracking, but it's **genuine historical
+> absence-reason data that didn't require any extra scraping**."*
+
+**✅ VERIFIED LIVE 2026-09-20 — and it is richer than the transcript records:**
+| `comment` | n |
+|---|---|
+| **DNP - Coach's Decision** | **4,319** |
+| DND - Injury/Illness | 975 |
+| DNP - Injury/Illness | 99 |
+| NWT - Not With Team | 29 |
+| DND - Rest | 27 |
+| NWT - Injury/Illness | 25 |
+| DNP - League Suspension | 12 |
+| NWT - League Suspension | 12 |
+| **DND_LEAGUE_SUSPENSION** | **11** |
+| NWT - Personal | 9 |
+
+**The dominant category was never mentioned: 4,319 "DNP - Coach's Decision"** — healthy scratches.
+**That is the purest available signal for role volatility**, and it dwarfs the injury categories 4:1.
+For a fringe player, a coach's-decision DNP is exactly the event `f_role` is trying to price.
+
+#### T6.10b — **⚠ A FORMAT INCONSISTENCY IN THE SOURCE**
+**`DND_LEAGUE_SUSPENSION`** (underscores, no spaces) appears alongside **`DNP - League Suspension`**
+and **`NWT - League Suspension`** (hyphen-space format). **11 rows use the odd format.**
+**Any `LIKE '% - %'` or naive parse of the prefix will silently miss them.** Recorded in OPEN_ITEMS.
+
+#### T6.10c — The two gaps that prompted the officials and lineup builds
+Both found *"via **direct schema inspection** — not from memory or assumption"*:
+1. *"`nba_ref.officials` is **only a roster**… there's **no table anywhere recording WHICH officials
+   worked WHICH game**. Without it, 'referee tendency' **can't be computed as a live enrichment
+   factor**."*
+2. *"`nba_stats.player_onoff_profile` only covers **single-player** on/off… **I checked its actual
+   columns to be sure**, and there's no 2-man/3-man/5-man combination data anywhere."*
+
+#### T6.10d — **A verification that settles a question T5 raised**
+> *"I verified there's **no missing season dimension on the static tables** (shot quality, playtype,
+> tracking, impact rating, on/off); those are **correctly weekly-refresh snapshots by original
+> design, not gaps**."*
+
+**This is the distinction T5.8a needed**: the weekly-snapshot tables are *meant* to hold one state.
+**The splits tables are different** — they carry a `season` column, so they were intended to be
+multi-season, and the PK omission is a genuine flaw rather than a design choice.
+
+#### T6.10e — The exact Postgres error from the PK bug
+**`ON CONFLICT cannot affect row a second time`** — and *"Fixed by **widening the key rather than
+suppressing the error**."*
+
+#### T6.10f — The audit's closing arc
+✅ Starter/bench status (32,179) · ✅ Defence-vs-Position (630, free) · ✅ Position bug (582/582) ·
+✅ Per-game officials (3,681) · ✅ Lineup synergy (8,000)
+> *"**every real bug encountered along the way** (the v2-unreliable-for-history pattern **twice**, the
+> truthiness bug, the array-literal issue, the primary-key gap) **was caught by checking actual data
+> rather than accepting a 'success' status at face value**."*
+
+**T6 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
