@@ -905,20 +905,48 @@ Charlotte Hornets, Chicago Bulls …).
 
 **CLEAN PASS 2 of 3.**
 
-### T1.34 — CURRENT STATE OF T1
+### T1.35 — PASS 21 (quoted third-party content) — **NEW MATERIAL · CLEAN COUNT RESET TO 0**
 
-**20 passes. 15 found new material. Clean count: 2/3** (passes 19, 20).
+**THREE RESEARCH SOURCES NOT PREVIOUSLY DOCUMENTED**, recovered from the search-result titles inside
+tool results:
 
-**Dimensions swept (20):** narrative text · tool results · SQL bodies · DDL and settings · handoff
+1. **`swar/nba_api` — `docs/nba_api/stats/static/teams.md`**
+   The canonical Python NBA API package. **This is the origin of both the certified static 30-team list
+   (with stats.nba.com's own stable TEAM_IDs) and the canonical header set.** Previously cited only as
+   "researched via nba_api docs" without the specific document.
+
+2. **`swar/nba_api` Issue #155 — "Is the API still working? Are there new headers?"**
+   A live GitHub issue thread on stats.nba.com's changing header requirements. **The evidence that the
+   header problem was a known, community-tracked moving target** — not a local mistake. This is what
+   justified rewriting to the canonical set before concluding the block was infrastructural.
+
+3. **BALLDONTLIE API blog — "Getting Started with the BALLDONTLIE API"**
+   Researched when balldontlie was being evaluated as the fallback source.
+
+**Previously documented from the same sweep:** `publicapi.dev` NBA Data API · `kshvmdn/nba.js`
+(`data.nba.net` paths) · `future.fandom.com` (fan-fiction, correctly not acted upon).
+
+**Why this matters beyond bookkeeping:** the header set in every NBA scraper traces to `nba_api`, and
+Issue #155 is where to look first if stats.nba.com ever changes its requirements again.
+
+**CLEAN COUNT RESET TO 0/3.** Twenty-one passes; sixteen found new material.
+Passes 19 and 20 were clean; pass 21 invalidated them. **This is the second time the rule has caught a
+premature count** — and both times the material found was genuinely useful.
+
+### T1.36 — CURRENT STATE OF T1
+
+**21 passes. 16 found new material. Clean count: 0/3.**
+
+**Dimensions swept (21):** narrative text · tool results · SQL bodies · DDL and settings · handoff
 text · owner specification · caveats and limits · artefacts · endpoint/table/file names · owner
 messages · measured numbers · rules and principles · endpoint inventory · external services ·
 verification claims · decisions and alternatives · error vocabulary · time and scheduling ·
-IDs/hashes/SHAs · proper nouns.
+IDs/hashes/SHAs · proper nouns · quoted third-party content.
 
-**Dimensions NOT yet swept:** tool-call sequences and ordering · quoted third-party content (search
-results, external docs) · structure and formatting of written artefacts.
+**Dimensions NOT yet swept:** tool-call sequences and ordering · structure and formatting of written
+artefacts.
 
-**ONE more clean pass and T1 is DONE (3/3).**
+**Three consecutive clean passes still required.** Resume at pass 22.
 
 ---
 
