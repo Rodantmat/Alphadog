@@ -623,6 +623,8 @@ multi-leg slip.**
 **A 5% haircut per leg is 23% on a 5-pick slip.** Any conservatism must be applied **once, at the slip
 level**, not per leg and then again in aggregate. **Not yet relevant — the slip phase has not begun —
 but it will be immediately.**
+
+### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
 > techniques) that **in their experience OFTEN OVER-FLATTENS / FLATTENS TOO MUCH**."*
