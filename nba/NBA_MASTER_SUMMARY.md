@@ -536,6 +536,45 @@ on a dimension the previous pass had not examined, which is why the count could 
 
 **Next for T1: two more full-dimension passes must both come back clean.**
 
+### T1.19 — PASS 9 FINDINGS (added 2026-09-20; endpoint/table/file name sweep) — **NEW MATERIAL**
+
+**A DECISION POINT NOT PREVIOUSLY DOCUMENTED — the deploy fork, and why the shared script was touched.**
+
+The first worker was built and registered, then hit a blocker that was **flagged rather than worked
+around**:
+
+> *"this file alone won't actually deploy as a live Cloudflare Worker yet. MLB's deploy pipeline
+> generates each worker's wrangler config via `generate_wrangler_configs.py` at the repo root — **an
+> MLB-owned file**. Given your 'don't touch MLB, keep everything separate' rule, NBA needs its own
+> equivalent deploy mechanism before any worker can go live. **I didn't want to unilaterally edit that
+> shared script.**"*
+
+Two options were put to the owner rather than chosen unilaterally:
+1. **`generate_wrangler_configs_nba.py`** — NBA gets its own generator and its own deploy workflow,
+   fully separate. *(Recommended at the time as "safest given your instructions".)*
+2. **One narrow, additive-only touch** to the existing generator — adding NBA workers to its list,
+   changing nothing about MLB's.
+
+**The owner chose option 2**: *"you have access to all of it, we can do 2, if it doesnt change much and
+does not affect the mlb universe, that is fine."*
+
+**So `generate_wrangler_configs_nba.py` WAS NEVER BUILT** — it is a discarded proposal, not an
+artefact. The shared `generate_wrangler_configs.py` and `github_mobile_deploy_workers.py` carry an
+isolated NBA branch instead. **This is the single, owner-approved exception to "never touch MLB
+files"**, and it is why both shared scripts appear in NBA's artefact list.
+
+**Everything else in the sweep was already documented**: the four `nba_*` tables, the three
+`nba_config` tables, `nba_teams_current.json`, `prizepicks_mlb_current.json`, `main.py`, `scrape.yml`,
+and the document set.
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| artefact inventory | 8 | CLEAN |
+| endpoint/table/file name sweep | 9 | **new — the deploy fork decision** |
+
+**Clean-pass count RESET to 0 by pass 9.** Three consecutive clean passes are still required.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
