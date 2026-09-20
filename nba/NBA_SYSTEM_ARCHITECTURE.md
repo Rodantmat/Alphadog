@@ -406,6 +406,10 @@ have already caused problems — not about avoiding reuse.**
 as a gap by Gemini and found *"**already covered** by what we have"* — **an integration avoided by
 checking first.**
 
+**⚠ The counter-case worth noting**: **Defence-vs-Position was derived by a ONE-OFF MANUAL SQL** and
+therefore had **no recurring path** until T7 placed the recompute inside the delta worker. **Derivable
+by SQL is not the same as maintained** — a derived table still needs an owner in a pipeline.
+
 ### 7. ✅ CLASSIFY EACH SOURCE'S SHAPE BEFORE DESIGNING ITS MINING PATTERN
 > *"**Classify each data source's REAL SHAPE before designing its mining architecture — PER-EVENT /
 > PER-GAME data and SEASON-TO-DATE AGGREGATE data need GENUINELY DIFFERENT PATTERNS.**
