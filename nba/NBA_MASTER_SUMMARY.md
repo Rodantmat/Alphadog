@@ -1807,6 +1807,43 @@ instruction (T2.9i).
 
 **ONE more complete clean sequential pass and T2 is DONE.**
 
+### T2.20 — PASS 11 (full sequential, all 136 blocks, 190-char context) — **CLEAN 3/3**
+
+Complete read of every block from 2 → 739. **Every one maps to a documented entry.** The full arc:
+the T1 replay (file trigger, four timeouts, tarpit, proxy, `curl_cffi`, abbreviation gap) → the
+GitHub-API media-type bug → end-to-end success → players → the deploy-ordering fix → arenas (push
+race, missing columns, `teamdetails`) → officials (Wikipedia, `requests`, 80 parsed) → the Gemini
+research pass → bio/tracking/team-stats → the HTTP 500 on the full parameter set → the `"Undrafted"`
+coercion → verification and spot-checks → on/off splits → the two owner pushes → garbage time → EPM's
+paywall → DARKO.
+
+---
+
+# ✅ T2 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (9, 10, 11)
+
+**Final tally: 11 passes. 8 found new material. Passes 9, 10, 11 clean.**
+
+**T2 produced two corrections to entries I had already written**, both caught only by sequential
+reading:
+1. **EPM is behind a paywall** — my pass-2 entry recorded the intermediate "public, real" statement and
+   missed the verification that reversed it.
+2. **`aliases_written` (155/157) vs 162 total** is an upsert property — not the fallback-to-live
+   progression I had recorded in T1.21.
+
+**And one open question was resolved by checking the live system**: the recommendation to avoid
+hard-wiring DARKO **was followed** — the table is `nba_stats.player_impact_rating`.
+
+**The highest-value finding is now in OPEN_ITEMS**: garbage time contaminates season aggregates
+**worst for bench players**, which is **exactly the population where the confidence model measures its
+largest error** (fringe 0.0283 vs iron-man 0.0008, 35×). These may be the same problem from two ends.
+Deferred in T2 to Phase 3b, and **never picked up there.**
+
+---
+
+## NEXT: T3 begins its own cycle.
+`2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` — DARKO build, weekly differential,
+schedule (2,666 games), play types, tracking detail, shot quality. **Not yet started.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
