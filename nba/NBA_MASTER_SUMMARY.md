@@ -3113,6 +3113,38 @@ extension available"*), and finally:
 
 **T5 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T5.7 — PASS 2 FINDINGS (added 2026-09-20; DDL) — **NEW MATERIAL**
+
+#### T5.7a — A PK design flaw worth noting: splits omit `season`
+Both `nba_stats.player_splits` and `nba_team.team_splits` have:
+> **`PRIMARY KEY (player_id, split_type, group_value)`** — **`season` is a column but NOT in the key.**
+
+**Three seasons were backfilled. With `season` outside the PK, a second season's load for the same
+player/split/group would UPDATE the first rather than coexist.** The tables hold **9,948 player rows
+and 581 team rows** — consistent with **one season retained, not three**.
+**Recorded in OPEN_ITEMS as a verifiable question**: does `player_splits` contain one season or three?
+
+#### T5.7b — `nba_team.defense_vs_position` — an exemplary derived table
+`team_id`, `opponent_position`, `season`, **`games_sampled`**, `avg_pts_allowed`, `avg_reb_allowed`,
+`avg_ast_allowed`, `avg_fg_pct_allowed`.
+**PK `(team_id, opponent_position, season)` — season IS in this key**, so all 3 seasons coexist
+(630 rows = 30 × 7 × 3 ✓).
+**`source_key DEFAULT 'DERIVED_FROM_PLAYER_GAME_LOG'`** and **`data_quality DEFAULT 'derived'`** —
+the provenance is declared in the schema itself, and **`games_sampled` lets a consumer weight or gate
+by sample size**, the same foresight as `total_fga` on the shot-quality delta.
+
+#### T5.7c — `nba_stats.player_game_starter_status`
+`player_id`, `game_id`, **`start_position`**, **`is_starter`**, **`comment`** — PK `(player_id,
+game_id)`.
+**`comment` is the DNP/inactive reason field**, which is why the grader can distinguish a real DNP from
+a join failure (COMPASS fact 60). **32,179 rows; exactly 12,300 starter rows = 10 × 1,230 games.**
+
+#### T5.7d — Both splits tables carry the win/loss columns
+`w`, `l`, `w_pct` are stored — **which is the WinsLosses leakage surface from T4.13c sitting in the
+schema.** The data is there; the caution is not enforced by anything.
+
+**T5 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
