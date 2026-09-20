@@ -116,6 +116,83 @@ exists to prevent. *(`NBA_RECIPE.md` had recorded only the `node --check` half.)
 
 ---
 
+## 0.26 ⚠ THE DEPLOY-SCOPE ANCHOR — `deployed_sha.txt`, and how it silently drifts
+*Recorded 2026-09-20 (T1 pass 88). **VERIFIED** by direct read of
+`.github/workflows/alphadog-v2-github-auto-deploy.yml` (lines 7–16, 55, 87–116) and
+`github_mobile_deploy_workers.py`, both live on `main` today.*
+
+**`git_changed_files()` does not diff against `HEAD~1`.** It diffs against the SHA stored in
+`deployed_sha.txt` — **the last commit that actually finished a successful deploy.** Deploy scope
+is therefore **cumulative since the last success**, not per-commit. Three consecutive failed
+deploys followed by a successful one deploy everything touched across all four.
+
+**The writer** is the workflow's last step:
+
+```yaml
+- name: Record last successful deploy marker
+  if: success()
+  run: |
+    git rev-parse HEAD > deployed_sha.txt
+    git add deployed_sha.txt
+    git commit -m "Auto: record last successful deploy marker [skip ci]" || true
+    git push || true
+```
+
+**`if: success()` is correct** — the marker only advances on a real success, which is exactly what
+makes it an honest anchor. **`git push || true` is the problem.** The deploy workflow pushes to
+`main` at the same time as every other bot job in this repo. **If that push is rejected, the marker
+stays at the older SHA, the step still reports success, and the NEXT deploy silently widens its
+scope to everything since that older commit.** No error, no log line, nothing in the run summary.
+The failure mode is a deploy that is quietly *larger* than intended — the same class of surprise as
+the `GLOBAL_REDEPLOY_FILES` full-fleet trigger, but with no marker in the code to warn you.
+
+**The same repo already contains the correct pattern.** `nba-scrape.yml`'s commit step (lines
+151–161) retries the push **five times**, with `git fetch origin main`, `git rebase origin/main`,
+a jittered `sleep $((RANDOM % 5 + 2))` between attempts, and a hard `exit 1` if all five fail —
+which is also why its checkout needs `fetch-depth: 0` and `persist-credentials: true`. **Two
+workflows in one repo with opposite push-failure discipline, and the one that swallows is the one
+whose failure corrupts deploy scope.** *Not fixed — recorded per the sweep's read-only rule.*
+
+### The manual override nobody has written down
+`workflow_dispatch` on the deploy workflow takes a **required** `deploy_scope` input, `type: choice`,
+default `changed`, options **`changed` · `all` · `control-room` · `orchestrator`**, threaded through
+as `DEPLOY_SCOPE: ${{ github.event.inputs.deploy_scope || 'changed' }}` and passed to
+`python github_mobile_deploy_workers.py --scope "$DEPLOY_SCOPE"`.
+
+**A push always gets `changed`.** `all` is reachable *only* by dispatching the workflow by hand.
+**This is the escape hatch for exactly the drift described above** — and it appears in none of the
+twelve documents, so anyone hitting a stale anchor would have had no idea it existed.
+
+---
+
+## 0.27 ⚠ DEAD D1 PROVISIONING STILL RUNS ON EVERY DEPLOY — including every NBA deploy
+*Recorded 2026-09-20 (T1 pass 88). **VERIFIED** against live `main`: workflow lines 87–99 and
+`generate_wrangler_configs.py` lines 13–22, 84.*
+
+Every deploy — NBA ones included — runs two ungated steps before anything is deployed:
+
+1. **`Ensure Scoring DB exists (idempotent, real D1 provisioning)`** → `python ensure_scoring_db.py`
+2. a commit step that `git add`s `cloudflare_d1_bindings.json` and `scoring_db_debug.log`, commits
+   them `[skip ci]`, `git push || true`, then `rm -f scoring_db_binding_changed.flag`
+
+**Nothing reads the output.** `generate_wrangler_configs.py` line 13 is `D1_BINDINGS = []`, carrying
+the 2026-08-12 note that **all twelve D1 databases were confirmed deleted by direct query**
+(`CONTROL_DB … SCORING_DB` all return *"D1 database has been deleted"*). Line 22 — the
+`json.loads(Path("cloudflare_d1_bindings.json")…)` that once populated it — **is commented out.**
+Line 84 gives every generated config `"d1_databases": []` unconditionally.
+
+So the pipeline provisions a D1 database, writes a bindings file, commits it and pushes it to `main`,
+and **the generator ignores all of it.** Cost per deploy: one dead provisioning call and one junk
+commit. **No correctness impact on NBA workers** — they are Hyperdrive/Postgres only and get an
+empty `d1_databases` like everything else — but it is live dead weight in the path every NBA deploy
+goes through, and it is one of the bot commits the scrape workflow's retry ladder is racing against.
+
+**Each successful deploy therefore adds up to TWO bot commits to `main`** (scoring-DB artifacts +
+the deploy marker), both `[skip ci]`, both `git push || true`. That is the background commit traffic
+that makes §0.26's silent-drift scenario a real possibility rather than a theoretical one.
+
+---
+
 ## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
