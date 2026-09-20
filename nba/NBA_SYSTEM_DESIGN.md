@@ -232,9 +232,52 @@ days** before opening night on the 3rd, **and they coincide with the `active_sta
 already recorded.** A pipeline run on those dates should report *"no games scheduled"*, not silence
 that looks like success.
 
----
+### 5a. THE ROOT CAUSE, AND ITS SUBTLE NUANCE
+*Source: T1, blueprint §5a — "the details matter more than the summary." Recorded 2026-09-20.*
 
-## 1. THE CUTOFF — why 1:15 PM PT
+**The bug itself was one line:**
+> *"**A single line in the worker that *PRODUCES* the prepared board rows: AN UNCONDITIONAL THROW
+> WHENEVER PREPARED ROWS WERE ZERO, WITH NO CHECK FOR *WHY* THEY WERE ZERO.**"*
+
+**And the correct pattern already existed in the same codebase:**
+> *"**A downstream daily-context worker had ALREADY SOLVED AN ANALOGOUS PROBLEM CORRECTLY**, reporting
+> **a clean 'VALID ZERO' pass** instead of failing when its own input was legitimately empty.
+> **The first, generalizable lesson: BEFORE BUILDING a new 'how do I distinguish a legitimate zero
+> from a real failure' pattern, CHECK WHETHER AN EQUIVALENT, ALREADY-CORRECT PATTERN EXISTS ELSEWHERE
+> IN THE SAME CODEBASE** — **it often does, and COPYING A PROVEN PATTERN BEATS INVENTING A NEW
+> ONE.**"*
+
+### ⚠⚠ BUT THE PATTERN COULD NOT BE COPIED NAIVELY — the producer/consumer distinction
+> *"**The existing correct pattern worked BECAUSE THAT WORKER WAS A *DOWNSTREAM CONSUMER* of
+> already-prepared rows** — **if its input was empty, that was AUTOMATICALLY a valid state, nothing
+> upstream to double-check.**
+> **The worker with the actual bug was DIFFERENT: it was the *PRODUCER* of the prepared rows in the
+> first place, reading RAW BOARD DATA directly. It COULDN'T use 'my own input was empty' as a signal,
+> BECAUSE THAT'S CIRCULAR** — the real question it needed answered was **'were there GENUINELY NO
+> GAMES SCHEDULED TODAY AT ALL, INDEPENDENT of whether ANY SINGLE UPSTREAM DATA SOURCE happened to
+> return anything.'**
+> **That requires AN INDEPENDENT SOURCE OF TRUTH — A REAL GAME CALENDAR — NOT a SELF-REFERENTIAL CHECK
+> on the worker's own inputs.**"*
+
+**This is the precise reason `nba_calendar.games` must be the arbiter**, and it maps exactly onto
+NBA's pipeline:
+| Role | NBA component | Correct zero-check |
+|---|---|---|
+| **PRODUCER** — reads raw board/source data | the board scraper, the delta scraper | ❌ **cannot** use "my input was empty" — **must consult the calendar** |
+| **CONSUMER** — reads already-prepared rows | `score_board_legs.py`, `build_final_hp.py` | ✅ an empty input **is** a valid zero |
+
+**✅ NBA's delta worker already does this correctly.** Its **pre-flight completeness check compares
+the calendar's Final count against the logged count** — *"halt and warn, don't silently proceed on an
+incomplete night"* — **which is exactly "an independent source of truth, not a self-referential
+check."** `check_delta_gaps.py` audits *"against the SCHEDULE, not itself"*, stated in those words.
+
+**⚠ The producer NOT protected this way is the board scraper.** It reads raw DFS board data, and a
+zero-projection return has no calendar cross-check recorded. **On a genuine no-games day it should
+report a valid zero; on a DataDome block it should fail — and the two look identical from inside the
+scraper.**
+
+**And the first lesson applies directly**: NBA **already has the correct pattern** in the delta
+worker's calendar-based pre-flight. **Copying it to the board producer beats inventing a new check.**
 
 **The binding constraint is the game-day injury report.** It is due **11am–1pm LOCAL to each game's
 market**, so Eastern clubs file by 10 AM PT and **Pacific clubs are last at 1:00 PM PT**.
