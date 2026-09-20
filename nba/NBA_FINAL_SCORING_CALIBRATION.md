@@ -917,7 +917,44 @@ not carry such a flag.**
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7o. BENCHMARK THE FACTOR LIST AGAINST A REAL, VERIFIED SYSTEM
+*Source: T1, blueprint §4d. Recorded 2026-09-20.*
+
+> *"**Benchmark the planned factor list against REAL, PUBLICLY-VERIFIED SYSTEMS BEFORE FINALIZING
+> it.** MLB checked its own factor list against **a real, independently-verified industry-leading
+> system (a widely-used, real-track-record MLB projection product)** and **adopted SEVERAL CONCRETE
+> REFINEMENTS from studying HOW THAT SYSTEM ACTUALLY IMPLEMENTS THINGS**:
+> — **MATCHUP-SPECIFIC rather than TEAM-AGGREGATE defensive metrics**
+> — **treating 'QUALITY OF SURROUNDING LINEUP' as a DISTINCT INPUT from a player's own slot number**
+> — **ROLE-SPECIFIC ADJUSTMENTS for players who DON'T FIT A STANDARD USAGE PATTERN**
+> **For NBA, do the equivalent.**"*
+
+### The three refinements, mapped to NBA
+| MLB refinement | NBA state |
+|---|---|
+| **Matchup-specific, not team-aggregate, defensive metrics** | ✅ **M1** — the two-way ridge defender ratings (111,768) are per-defender, **not** team DvP. ⚠ But wired **only in the INTERACTION form, never as a main effect**, and `defense_vs_position` (team-aggregate) is what most props read |
+| **"Quality of surrounding lineup" as a DISTINCT input** | ⚠ **Partially.** `nba_stats.lineup_synergy` (8,000 rows) and `teamplayeronoffdetails` exist; the factor lock names *"teammate shooting quality"* as the assists penalty. **But A2 (teammate redistribution) was retracted, and no surviving lineup-quality factor is recorded** |
+| **Role-specific adjustments for players who don't fit a standard usage pattern** | ✅ **`ROLE_TIERS`** is exactly this — six bands on projected minutes, with **FRINGE** as the explicit non-standard bucket, plus the **discontinuity override** for role changes |
+
+**Two of three landed. The middle one is the gap** — and it is the one the research independently
+flagged: T7's factor lock lists **"teammate shooting quality"** as a primary assists driver and
+**"teammate competition / lineup geometry"** as a primary rebounds driver. **Neither is recorded as a
+built, surviving factor.**
+
+### ⚠ The benchmarking itself was never done for NBA
+**The instruction is to check the factor list against a real, verified projection system and adopt
+refinements from HOW IT IMPLEMENTS things** — not from its conclusions.
+
+**NBA's research was source-rich but not system-benchmarked**: OpticOdds, Unabated, DataStreak,
+RotoGrinders, Cleaning the Glass, peer-reviewed papers, Gemini. **All of these are sources of
+findings; none is a working projection system whose implementation was studied.**
+
+**The named MLB benefit was implementation detail** — *"studying how that system actually implements
+things"* produced the matchup-specific-vs-aggregate distinction, which is precisely the kind of
+structural choice a paper does not give you. **NBA has public equivalents available** (DARKO is already
+used as a data source, and its methodology is published).
+
+**Recorded in `NBA_OPEN_ITEMS.md`.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
