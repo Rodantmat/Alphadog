@@ -6317,6 +6317,92 @@ why the joint simulation approach propagates certification status as well as val
 
 **T9 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T9.14 — PASS 5 — **THE FACTOR LAYER MEASURED, AND WHERE THE EDGE ACTUALLY IS**
+
+#### T9.14a — **Fit in log-rate space, so unneeded factors zero themselves**
+> *"Every coefficient is fit on train **in log-rate space**, so **unneeded factors go to zero on their
+> own**."*
+
+**The owner's *"no forced!"* instruction implemented as a property of the fit** rather than as a
+judgement call. A factor that carries no signal receives a coefficient near zero without anyone
+deciding to exclude it.
+
+#### T9.14b — **Opponent profiles are real and transferable — the measured coefficients**
+| Factor | Coefficient |
+|---|---|
+| **blocks ← opponent paint share** | **0.30 / 0.37** across the two seasons |
+| **steals ← opponent turnover rate** | **0.27 / 0.26** |
+| **points ← opponent defensive rating** | **0.53** |
+| **rebounds ← opponent miss rate** | **0.33** |
+| pace → points | **1.17** (elastic) — *"but unstable with a single training season for the defensive props"* |
+
+**Stable across seasons** — blocks 0.30/0.37 and steals 0.27/0.26 are consistent, which by the T8.15b
+rule makes them **structural**, not regime.
+
+#### T9.14c — **Home and B2B measure ≈0 EVERYWHERE — and that is the test working**
+> *"**Home and back-to-back are ≈0 everywhere** — **the minutes model already carries them**. **That's
+> the 'nothing forced' test doing its job.**"*
+
+**✅ This independently confirms T8.13c.** B2B was found to be an availability effect (*"stars sit
+entirely"*) rather than a minutes-when-playing effect — and here, with B2B offered to the rate layer as
+a candidate, it measures zero. **The effect is real but already accounted for upstream.**
+
+#### T9.14d — **THE HONEST VERDICT ON FACTOR SIZE — and where edge must come from**
+> *"**Effect on precision is real but small**: **Brier improves 0.1–0.3%** (most for steals, the most
+> opponent-driven prop), **calibration unchanged at standard**. **A ±3% pace edge moves a 20-point
+> player ~0.7 points — about 2 pp of probability.** This is the honest answer to whether the factors
+> were unneeded: **no, but they are NOT where the big gains are. Those must come from THE LIVE
+> ENRICHMENT (injuries and lineups moving minutes and usage) and from COMBO STRUCTURE.**"*
+
+**⚠ This is worth holding against what happened next.** The prediction was that the big gains lie in
+(a) live enrichment and (b) combo structure.
+- **(b) delivered** — combos certified on both seasons here.
+- **(a) did NOT** — T15/T16 tested **ten enrichment candidates and none survived at leg level**.
+
+**So the two named sources of edge split one for one.** Which leaves the system's edge resting on
+**calibration quality plus combo structure plus the board-scoped tails** — and T8.16c already called
+the tails *"the #1 area where a sharp baseline earns the most, because naive book models mis-price
+tails."* **That is now the standing hypothesis by elimination, not just by design.**
+
+#### T9.14e — The noise-floor conclusion
+> *"I'd now call their remaining residual **the noise floor of 0–2 count stats** rather than a missing
+> factor."*
+
+**A principled place to stop** on blocks/steals/turnovers/fouls, reached after the opponent factors
+were measured and found real but insufficient.
+
+#### T9.14f — **Combos certified on the holdout, and the design validated**
+| Combo | Holdout ladder |
+|---|---|
+| P+R | **0.9** |
+| P+A | 1.1 |
+| R+A | **0.9** |
+| PRA | 1.1 |
+| **fantasy** | **0.8 pp** |
+
+**162 confidence bands checked, 5 over 2.5 pp — four of those `stocks`**, which inherits the
+blocks/steals floor. **Double-double**: *"every band with volume within ±5 pp, **no systematic
+sign**."*
+
+> *"The design's **'combos via joint structure, never a direct fit'** is **validated**, and **the
+> covariance it relies on is archetype-dependent exactly as predicted**."*
+
+**T7.15d predicted per-player covariance with a sign that flips by archetype (R–A positive for bigs,
+negative for guards). The build confirmed it.**
+
+#### T9.14g — **How OT is isolated — the method**
+> *"**full-game minus quarters isolates each player's OT contribution**, which is what the
+> app-specific OT rules need."*
+
+**OT = full-game − (Q1+Q2+Q3+Q4).** No separate endpoint needed — and *"halves come from Q1+Q2 /
+Q3+Q4."* **Four bulk calls per season yield quarters, halves and OT.**
+
+**And a sanity gate designed against a specific failure**: *"a **>17-minute sanity gate so a silently
+ignored parameter fails loudly**."* **If `Period=1` were ignored, the rows would carry full-game
+minutes — the gate catches exactly that.**
+
+**T9 PASS 5: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
