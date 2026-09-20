@@ -22,7 +22,36 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
-## 0e. TWO DISPATCH MECHANISMS WORTH REPLICATING, NOT REINVENTING
+## 0a. THE INVESTIGATION METHODOLOGY — for understanding a large existing system
+*Source: T1, blueprint §6b — worked out for "a genuinely huge (1MB+) orchestrator file, worth reusing
+directly rather than reading the whole file top to bottom." Recorded 2026-09-20.*
+
+| # | Step | Why |
+|---|---|---|
+| **1** | **Query the structured job/worker REGISTRY TABLES first** | *"**cheap, structured, and AUTHORITATIVE for 'what jobs and workers currently exist' — BEFORE TOUCHING ANY CODE.**"* |
+| **2** | **Targeted code search for SPECIFIC PATTERNS** — job_key strings, stage-array variable names, function names | *"rather than reading entire large files — **cheap and precise**"* |
+| **3** | **Only read a FULL physical file when a targeted search shows it's genuinely SMALL, or when a SPECIFIC CLAIM needs full-context confirmation** | *"**reserve full reads for when they're actually necessary**"* |
+| **4** | **CROSS-CHECK every claim about 'what SHOULD happen' against REAL, LIVE EXECUTION HISTORY** — the job queue's run log, actual table row counts | *"**a registry or config table describes INTENT, not necessarily current real behaviour, and THE TWO CAN AND DO DRIFT APART.**"* |
+
+**✅ This documentation effort has followed exactly this order**, which is why the findings hold:
+- **Step 1** → `worker_definitions`, `factor_registry`, `classification_config`, `role_tiers` queried
+  before any code was read
+- **Step 2** → `github_grep_file` on `dud|mixture|p_dud`, `p_ot|overtime`, `round\(`, `MIN_RATIO`,
+  `NOT yet|CERTIFIED`
+- **Step 3** → full reads reserved for the workflow files and targeted recipe sections
+- **Step 4** → the live SQL checks: `arenas` 30/0/0/19, the differential logs 0/0/0/582, the config
+  tables, `prop_taxonomy` 28
+
+**Step 4 is what produced every VERIFIED finding**, and step 4's own warning —
+***"a config table describes INTENT, not current real behaviour, and the two DO drift"*** — **is
+`minutes_mixture` exactly**: the config specifies `dud_lognormal`, `tiered_inelastic` and a per-team
+blowout term; **the code implements none of them.**
+
+**⚠ And it names the limit of step 1**: the registry is authoritative for *what exists*, **not for
+what runs.** The differential worker is in the registry and has never executed.
+
+---
+
 *Source: T1, blueprint §6a. Recorded 2026-09-20.*
 
 ### 1. THE EXACT-PAIRING SAFETY CHECK
