@@ -151,14 +151,7 @@ summary to a `*_runs` table.
 **⚠ Use NBA-specific binding names** — `DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB
 binding.
 | `nba/backtest/combos_ladder_v1.py` | the certified combos recipe — **its own `LADDER_STEPS`** |
-| `nba/baseline/build_baseline_ladder.py` | **patcher** over the singles recipe → today's slate |
-| `nba/baseline/build_combos_ladder.py` | daily combos |
-| `nba/baseline/build_periods_ladder.py` | daily periods |
-| `nba/baseline/build_baseline_history.py` | season backfill (singles) |
-| `nba/baseline/build_combos_history.py` / `build_periods_history.py` | season backfill |
-| `nba/load_baseline_ladder.py` | loads the merged artefact. **Fetches over HTTP from the repo**; **refuses a singles-only slate** |
-| `nba/load_baseline_history.py` | bulk history loader |
-| `nba/nba_asof.py` | **the single source of truth for cutoffs** — `BASELINE_CUTOFF_LOCAL`, `PHASE1_CUTOFF_LOCAL` (16:00 ET = 1 PM PT), `PHASE2_CUTOFF_LOCAL` |
+| *(duplicate block removed 2026-09-20 — see §4 and §4b above)* |
 
 **The patcher pattern:** production builders are string-transformers over the certified recipes, so the
 certified file is never forked. A change must be applied to **both** recipes — singles and combos are
