@@ -318,7 +318,21 @@ changes nothing. See the banner at the top of §2.
 
 ### `nba_config.calibration_log` — 8 rows
 
-### `nba_config.stat_decay_config` — 13 rows *(T7)***Per-stat EWMA memory. The single most important config table in the system.**
+### `nba_config.stat_decay_config` — 13 rows *(T7)*
+⚠ **Described here as "the single most important config table in the system" — and NOTHING READS IT.**
+*VERIFIED 2026-09-20 (T1 pass 36): `stat_decay_config` and `ewma_alpha` appear nowhere in the
+codebase. The live decay parameters are the `PROPS` dict hardcoded in
+`nba/backtest/classification_ladder_v12.py`.*
+
+**A whole-universe diff of this table against that dict found SEVEN of ten mappable stats disagreeing
+on at least one parameter, THREE on the decay rate itself** — `blk_rate` 0.08 vs **0.10**,
+`tov_rate` 0.10 vs **0.12**, `ft_pct` 0.04 vs **0.03** — plus four `k_stab` disagreements
+(`stl_rate` 60 vs **125**, `tov_rate` 40 vs **95**, `fta_rate` 30 vs **40**, `fg3a_rate` 25 vs
+**20**). **All 13 rows carry `active = 1`.** Full table and its caveats: `NBA_OPEN_ITEMS.md` →
+*FROM T1 PASS 36*.
+
+**Per-stat EWMA memory. The single most important config table in the system** *(as designed — see
+the warning above for what it actually governs today).*
 `stat_key` · `display_name` · **`ewma_alpha`** · **`min_lookback_games`** ·
 **`shrinkage_stabilization_games`** · **`memory_class`** · **`rationale`** · `active` · `updated_at`
 
