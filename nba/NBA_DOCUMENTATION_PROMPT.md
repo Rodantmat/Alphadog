@@ -301,10 +301,26 @@ a "not recorded" into a VERIFIED fact.** Two real examples from the prior sessio
 6. Write each with: the quote or fact · what it means for NBA specifically ·
    VERIFIED-vs-NOT-RECORDED · the date.
 7. Nothing new found → clean_count += 1.  Anything new → clean_count = 0.
+7b. ⚠ UPDATE THE LEDGER ROW NOW. In NBA_MASTER_SUMMARY.md's transcript
+    inventory table, rewrite THIS transcript's row to state: the current
+    clean count · total passes run · what this pass found (or that it was
+    clean) · the pass numbers of any consecutive clean run in progress.
+    THE PASS IS NOT FINISHED UNTIL THE ROW MATCHES THE ENTRY JUST WRITTEN.
+    If row and body ever disagree, the BODY IS AUTHORITATIVE — correct the
+    row to match it, never the reverse.
 8. clean_count == 3 → mark that transcript DONE in NBA_MASTER_SUMMARY.md
    with its final total pass count. Move to the next transcript.
 9. Return to step 1. DO NOT STOP. DO NOT REPORT.
 ```
+
+**Why 7b exists** *(owner instruction, added 2026-09-20)*: the T1 ledger row drifted **four passes**
+behind the body — it still read *"29 passes"* while §T1.63 was written — and had to be corrected.
+**That is the same defect class this effort already documents twice**: the `minutes_mixture`
+config-vs-code drift, and `NBA_SYSTEM_ARCHITECTURE.md`'s *"two files meant to be exact copies can
+silently drift out of sync, with only the self-reported version string revealing the drift."*
+**It is blueprint §9 failure mode #6** — silent drift, no error thrown, output wrong-but-plausible.
+**The at-a-glance state is what a future reader trusts first**, and a stale ledger is the most likely
+way this effort ends early against a wrong picture of what remains.
 
 ## 6.1 Writing mechanics
 - **`github_patch_file` is the primary write tool.** Find-and-replace, server-side. `old_str` must be
