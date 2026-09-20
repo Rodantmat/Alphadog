@@ -108,6 +108,8 @@ def main():
     conn.execute("SET statement_timeout = 0")
     print(f"building board_tiers_v2 for {apps} (four-way taxonomy, both anchor cases)", flush=True)
     with conn.cursor() as cur:
+        cur.execute(DDL)
+        cur.execute("TRUNCATE nba_market.board_tiers_v2")
         cur.execute(SQL, {"apps": apps})
     conn.commit()
 
