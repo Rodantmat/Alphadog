@@ -666,6 +666,53 @@ trigger.
 
 **Clean count still 0/3.**
 
+### T1.22 — PASS 12 FINDINGS (added 2026-09-20; rules, principles, standards) — **NEW MATERIAL**
+
+**THE ROOT CAUSE OF THE CLOUDFLARE BLOCK, stated precisely** — previously recorded only as "403/520/526":
+> *"**Cloudflare's own edge returning error 520** ('web server is returning an unknown error'), meaning
+> **the request never even reaches stats.nba.com's app layer**. This is a known, real pattern:
+> **stats.nba.com is itself Cloudflare-fronted, and Cloudflare-to-Cloudflare traffic** (i.e. Workers
+> calling another Cloudflare-protected site) **commonly gets flagged and blocked at the WAF/edge
+> level**. No amount of header tuning is going to fix this — it's an infrastructure-level block."*
+
+**So the mechanism is Cloudflare-to-Cloudflare, not an IP reputation or header problem.** That is why
+a proxy could never have helped from a Worker, and why only a non-Cloudflare origin (GitHub Actions)
+works.
+
+**AND THE DECISION IT FORCED** — the scope of the finding was recognised immediately:
+> *"This matters beyond teams — it means **stats.nba.com may not be usable as a live source for any NBA
+> worker running on Cloudflare Workers**, including the players worker I was about to build.
+> **Rather than build on that same broken assumption, I'm stopping here to ask you.**"*
+
+**A NAMED PROJECT STANDARD, cited from the lessons document:**
+> ***"verify before building on top"*** — *"the standard already established for this whole project,
+> per the lessons document."*
+
+Invoked when the parallel chat was told: *"Trigger and confirm the teams worker first. **Do not build
+the players worker yet.**"* **This is the discipline that produced every "verify in Postgres, not from
+the worker's own report" check in this build.**
+
+**The complete rule set from T1, consolidated** (all now cross-referenced in RECIPE step 0):
+| Rule | Source |
+|---|---|
+| Never edit anything in the MLB system | owner, msg 54 |
+| Completely separate data and system universe | owner, msg 64 |
+| Every worker inside `/nba/`, labelled | owner, msg 54 |
+| Every tunable in the database, never hardcoded | owner, msg 54 |
+| Every step/issue/solution logged | owner, msg 54 |
+| Deep research + Gemini mandatory, **not authoritative** | owner, msg 54 |
+| **The baseline must finish before Daily Context or Scoring** | locked in T1 draft |
+| **Verify before building on top** | the lessons document |
+| **`startswith("alphadog-v2-nba-")` guards every shared-file change** | T1 implementation |
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| every measured number | 11 | new |
+| rules, principles, standards | 12 | **new — Cloudflare-to-Cloudflare root cause; "verify before building on top"** |
+
+**Clean count 0/3.** Twelve passes; ten found new material.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
