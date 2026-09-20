@@ -561,7 +561,9 @@ symmetric travel-distance factor would wash it out. **D2 must carry direction, n
 
 **Design caution to preserve**: altitude was specified as *"continuous, gated >1500 m"* with the
 warning *"small, physiological, **sparse data — don't overfit**."* With one clear team above the
-threshold, that caution matters more than the effect size.The T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
+threshold, that caution matters more than the effect size.
+
+### GAP · **opponent defence has no SHORT-memory form** — the factor study asked for oneThe T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
 > **Short**: minutes, usage, FGA/3PA volume, **and opponent defence ratings (last 10–15 games, NOT
 > season-long)**
 
