@@ -358,6 +358,78 @@ code.**
 
 ---
 
+## 0.95 THE CADENCE AS ORIGINALLY LOCKED — three elements never recorded
+*Source: T1, `NBA_SYSTEM_DRAFT.md` **§4b — "Real operating cadence — locked 2026-09-03, mirrors the
+existing MLB system exactly."*** *Recorded 2026-09-20 (T1 pass 32).*
+
+**The cadence itself and its divergence from what was built are already recorded** in the comparison
+table at §0.7. **Three elements of §4b were not**, and each is a design decision rather than a time.
+
+### 1 · The master run's trigger was specified as a COMPUTATION, not a clock time
+> *"**2 hours before the first scheduled game of the day**… **Real design implication, not a fixed
+> clock time**: since **NBA game start times vary day to day**, this trigger time **must be COMPUTED
+> DYNAMICALLY from the real data already in `nba_calendar.games` — today's earliest
+> `game_datetime_utc` MINUS 2 HOURS** — **not a hardcoded time-of-day like the other two runs.**"*
+
+**The mechanism was named, the table it reads was named, and the column was named.** §0.7 already
+records the outcome — **P3 ships as a fixed `15 21 * * *` and *"breaks on early-tip days"*** — but not
+that **the dynamic alternative was fully specified, sourced to an existing populated table, and
+distinguished explicitly from the other two runs.** `nba_calendar.games` holds **2,666 games** and
+carries `game_datetime_utc`, so **the input exists today.**
+**⚠ The two constraints are not the same and both are real**: §1's **1:15 PM PT cutoff** is bounded
+*below* by the injury report (*Pacific clubs file last, by 1:00 PM PT*); §4b's rule is bounded *above*
+by the first tip. **On an early-tip day they conflict, and the conflict is structural, not a bug in
+either.** Recorded in `NBA_OPEN_ITEMS.md`.
+
+### 2 · The optional SECOND master run — and the architecture that exists to enable it
+> *"**Once, sometimes TWICE a day**… with an **optional second run later 'only if needed'** (e.g. **a
+> late injury designation change or significant line movement after the first run**). **The optional
+> second run is exactly the cheap, fast re-run THE TWO-STAGE BASELINE/ENRICHMENT SEPARATION WAS
+> DESIGNED TO MAKE POSSIBLE** — it only needs to **re-run the Scoring Engine against the
+> already-cached baseline plus fresh enrichment/market data, NOT RECOMPUTE ANYTHING EXPENSIVE.**"*
+
+**⚠ This is the stated PURPOSE of the two-layer split, and it had not been recorded anywhere.**
+`NBA_FINAL_SCORING_CALIBRATION.md` §2 documents the two-layer contract as a *correctness* boundary
+(baseline = static, enrichment = delta). **§4b says it was also, from the start, an
+*operational* one: the split is what makes a second same-day run cheap.** The two framings are
+compatible and neither implies the other.
+
+**And §4's own reasoning already proves the second run is affordable**: *"the refit uses only games
+strictly before today, so **it is identical at 1 AM and 1:15 PM**. What genuinely changes is
+availability, and only for the affected teams."* **If it is identical at 1 AM and 1:15 PM, it is
+identical at 4 PM.** **A second run costs the board scrape, the availability delta and the scoring —
+not the refit.**
+
+**Status: NOT RECORDED as built.** P3 (§4) documents one run with a cutoff and no second-run path,
+and **the trigger conditions §4b names — a late designation change, significant line movement — have
+no detector.** Recorded in `NBA_OPEN_ITEMS.md`.
+
+### 3 · The ~11:00 AM delta time was DERIVED, not chosen
+> *"**~11:00am** (person's stated time; matches Pacific…) giving **a large safety buffer well past the
+> **~2:00am ET latest-possible-game-end + 10–15 min data-finalization window** — **confirmed via
+> research and Gemini consultation on 2026-09-03.**"*
+
+**The binding physical constraint on the overnight run is the latest possible game end plus the
+league's own data-finalization lag** — *~2:00 AM ET + 10–15 min* — **and it was researched, not
+assumed.** **P2 ships at 01:00 PT = 04:00 ET**, which is **~2 hours AFTER the constraint**, so the
+shipped time satisfies it with less margin than the specified 11:00 AM but satisfies it. **Recording
+the constraint matters more than the time**: it is the number any future re-timing of P2 must respect,
+and it was previously only implicit.
+
+### 4 · "No cron" meant something specific
+> *"**No cron/orchestrator automation** — these times are **the real, intended Claude
+> Coworker-SCHEDULED-TASK trigger times** (per Section 4's existing 'no orchestrator' confirmation),
+> **NOT in-code scheduling logic to be built into any NBA worker.**"*
+
+**The rule was never "nothing is scheduled."** It is **"no worker schedules itself."** **A scheduled
+Cowork session firing a workflow is compliant; a `setInterval` or a self-triggering Cron Trigger
+inside a Worker is not.** This resolves an ambiguity that reads through §0.75's third non-goal and
+§0.6's *"it only breaks the run"* — **neither forbids the GitHub Actions cron that P1 already
+carries.** **Flagged, not resolved**: whether a `.github/workflows` cron counts as *"in-code
+scheduling logic"* is not stated anywhere, and P1 already has one.
+
+---
+
 ## 1. THE CUTOFF — why 1:15 PM PT
 
 **The binding constraint is the game-day injury report.** It is due **11am–1pm LOCAL to each game's
