@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 87 passes** (86 counted, pass 55 VOID). Last pass: 87 — transcript material (an NBA change on MLB's shared dispatch path, safe by an unstated invariant). Last clean run: 53, 58, 59 (broken). Detail: §T1.59–§T1.117. |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 88 passes** (87 counted, pass 55 VOID). Last pass: 88 — transcript material (whole 0.40 tail read; 5 findings; judgment pass found a committed live credential). Last clean run: 53, 58, 59 (broken). Detail: §T1.59–§T1.118. |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
