@@ -220,9 +220,54 @@ terminal** — the assistant is the only interface to the database, repo and dep
 (`NBA_SYSTEM_ARCHITECTURE.md` §1a). **Changing a cap, a penalty or a scrape timeout today requires a
 code edit, a commit and a deploy** — exactly the loop the rule was written to avoid.
 
-**What is NOT claimed here**: that the numbers are wrong, or that the config tables disagree with the
-code. **Only that nothing reads them.** Whether each config row matches its hardcoded counterpart is
-**NOT ESTABLISHED** — and blueprint §9's whole-universe comparison is the prescribed way to find out.
+### ⚠⚠ AND THE WHOLE-UNIVERSE COMPARISON WAS THEN RUN — **the config and the code DO disagree**
+*Blueprint §9 technique 1, applied: diff the live config against the real formula for **every entry**
+at once. **VERIFIED 2026-09-20** — live `SELECT` from `nba_config.stat_decay_config` (13 rows) against
+the `PROPS` dict and `ROLE_TIERS` in `nba/backtest/classification_ladder_v12.py`.*
+
+| stat | config `ewma_alpha` | code `alpha` | config `shrinkage_stabilization_games` | code `k_stab` |
+|---|---|---|---|---|
+| `pts_rate` → `points` | 0.12 | 0.12 ✅ | 25 | 25 ✅ |
+| `reb_rate` → `rebounds` | 0.08 | 0.08 ✅ | 40 | 40 ✅ |
+| `ast_rate` → `assists` | 0.15 | 0.15 ✅ | 20 | 20 ✅ |
+| `fg3_pct` → `threes_made.pct_alpha` | 0.03 | 0.03 ✅ | 300 | *(no counterpart)* |
+| **`blk_rate` → `blocks`** | **0.08** | **0.10** ❌ | 50 | 50 ✅ |
+| **`stl_rate` → `steals`** | 0.10 | 0.10 ✅ | **60** | **125** ❌ |
+| **`tov_rate` → `turnovers`** | **0.10** | **0.12** ❌ | **40** | **95** ❌ |
+| **`fta_rate` → `fta`** | **0.10** | **0.12** ❌ | **30** | **40** ❌ |
+| **`ft_pct` → `ftm.pct_alpha`** | **0.04** | **0.03** ❌ | 150 | *(no counterpart)* |
+| **`fg3a_rate` → `fg3a`** | 0.12 | 0.12 ✅ | **25** | **20** ❌ |
+| `minutes`, `fg_pct`, `usg_pct` | 0.20 / 0.06 / 0.15 | *not in this dict* | 10 / 120 / 15 | — |
+
+**Seven of the ten mappable stats disagree on at least one parameter.** **Three disagree on the decay
+rate itself** — blocks, turnovers and free-throw percentage.
+
+**⚠ Because nothing reads the table, THE CODE VALUES ARE WHAT RUNS.** The config rows are a **stale
+seed**, not a live setting. **The danger is precisely that they do not look stale**: `active = 1` on
+all 13, and `NBA_DATABASE.md` calls this *"the single most important config table in the system."*
+**A future edit of `blk_rate`'s alpha by SQL — exactly the workflow the owner's rule promises —
+changes nothing and reports no error.**
+
+**⚠ Two caveats on the mapping, stated rather than assumed (rule 1.6):**
+1. **The join is by name and is an inference.** Config keys are **rates** (`pts_rate`); code keys are
+   **props** (`points`). The pairing is the obvious one and no other is plausible, but **it is not
+   declared anywhere in code or schema** — no foreign key, no comment, nothing.
+2. **`shrinkage_stabilization_games` ↔ `k_stab` is likewise inferred from the names.** If they are not
+   the same quantity, the four `k_stab` disagreements are not disagreements — **and the fact that this
+   cannot be determined from either side is itself the finding.**
+
+**Same result for `nba_config.role_tiers`.** `NBA_DATABASE.md` records *"exactly matching `ROLE_TIERS`
+in `classification_ladder_v12.py` — **config and code agree, so the no-hardcoding rule holds here**."*
+**The values do agree — VERIFIED.** **But the conclusion does not follow**: `ROLE_TIERS` is a
+hardcoded Python list (`classification_ladder_v12.py` line 129) and **no code reads
+`nba_config.role_tiers`.** **Agreement maintained by hand is not the no-hardcoding rule holding.**
+*(That line is superseded here, not deleted — it was right about the values.)*
+
+**What is NOT claimed here**: that the code's values are the wrong ones. The code carries dated
+justifications for several of them (*"alpha raised 0.08 → 0.15"* for `oreb`, *"top-decile regression
+13%"* for turnovers), so **the code looks like the evidence-updated side and the config like the
+abandoned seed** — but **which side is intended is NOT ESTABLISHED, and it is exactly the kind of
+question blueprint §9 says to put to a human rather than resolve by guessing.**
 **Stated with the method's limits (rule 1.6)**: this is a text search of the current repo; it would
 not catch a table name assembled at runtime from fragments, and `nba/data/` (mined JSON, no code) was
 not searched.
