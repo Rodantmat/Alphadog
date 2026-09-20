@@ -155,6 +155,14 @@ owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own of
 ## STEP 1 — Recon before building *(T1)*
 
 1. Read the three handoff documents **in full** (Blueprint 95,803 B, Lessons 57,066 B, Domain 18,034 B).
+   ⚠ **The recon is eleven queries in a deliberate order** *(T1 lines 1906–3424; recorded 2026-09-20,
+   pass 41)*: schemas → any `%nba%` table or schema → any `sport`/`league` column anywhere → the
+   distinct values in those columns → `ref.teams` columns → `control` tables → `config` tables →
+   `config.worker_definitions` rows → its real columns → re-query with the corrected column.
+   **The shape is the reusable part**: look for the thing, then anything named like it, then the
+   mechanism that would make sharing possible, then **whether that mechanism is actually used**.
+   ✅ **Re-run live 2026-09-20: 18 non-NBA schemas — unchanged since 2026-08-31 — plus 14 NBA
+   schemas**, and **zero NBA rows in the three shared MLB board tables.**
 2. **Verify the claim, don't inherit it.** Queried `information_schema` directly and confirmed **zero
    NBA anything** existed. Found 18 MLB schemas, 116 workers, and the exact shapes of
    `worker_definitions`, `job_queue`, `worker_run_log`, `ref.teams`, `ref.umpire_tendency`.
