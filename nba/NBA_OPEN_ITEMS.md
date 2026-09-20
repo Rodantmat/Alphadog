@@ -646,6 +646,19 @@ treats `PF ≥ 6` games only as rows to exclude. **`P(OT)` appears to be similar
 
 **To verify**: does the ladder builder fit a mixture, or a single distribution over all games?
 
+**⚠ PARTIALLY RESOLVED (T9): the mixture WAS built — but only in the PERIOD layer.**
+T9 implemented *"the **three-part Q4/2H mixture** with everything fit on train: **state probabilities
+(close / medium / blowout) from the derived spread**, and **per role tier and state a sit-out rate**
+plus a 'plays' distribution."* → *"**the fourth quarter is solved**"*, and 1H certified at
+*"holdout ladder 1.0, 0 of 19 bands."*
+
+**So the mixture machinery exists and is certified — in the period props.** The full-game ladder still
+uses the exclusion approach (`competitive & PF < 6`). **The period layer has an explicit sit-out rate
+per role tier and state; the full-game layer does not.**
+
+**That makes the gap narrower and more concrete**: the technique is proven in this codebase, on this
+data, and the question is only whether to apply it to the full-game props too.
+
 ### ✅ RESOLVED 2026-09-20 — **duds are EXCLUDED, not MIXED. The design said mix.**
 `classification_ladder_v12.py` line 222:
 ```python
