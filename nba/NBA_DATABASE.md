@@ -716,6 +716,10 @@ start a second concurrent run rather than being refused.
 **What NBA has instead**: **GitHub Actions concurrency groups** per pipeline
 (`alphadog-nba-p1-weekly`, and P2/P3 equivalents), which serialise workflow runs. **That protects the
 pipelines, not direct `run_job` calls to individual Workers.**
+
+---
+
+## 11. MLB tables referenced as models (never written by NBA)
 `ref.teams` (16 cols: team_id, mlb_team_id, full_name, abbreviation, league, division, active…) ·
 `ref.umpire_tendency` (11 cols: umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game,
 avg_walks_per_game, avg_runs_per_game…) — **the model for the NBA referee factor** ·
