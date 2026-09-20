@@ -174,6 +174,43 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 35 — NEGATIVE SPACE: WHAT T1 ASKED FOR AND NEVER GOT *(added 2026-09-20)*
+*Angle: **what a section promises and never delivers.** Every forward reference, deferred decision and
+"worth checking directly" in T1's four handoff documents, tested against the twelve documents and,
+where possible, against the live system.*
+
+### ✅ CLOSED · the blueprint's shared-queue contention question — **answered by live query**
+**Blueprint §0 posed a concrete task**: *"does adding a second sport's worth of jobs to the existing
+shared queue and scheduling system introduce any real contention or collision risk — **a genuine,
+concrete thing worth checking directly against the live system before assuming it's fine.**"*
+
+**It was never recorded as open.** The word *"contention"* appeared in **none of the twelve
+documents** before this pass.
+
+**Answered, VERIFIED 2026-09-20:** **the risk is structurally zero — NBA never joined the shared
+queue.** NBA runs `nba_control.job_runs`, `nba_control.worker_run_log` and
+`nba_config.worker_definitions`; **MLB's `config.worker_definitions` holds 116 rows, of which 0 are
+NBA.** Full entry: `NBA_SYSTEM_ARCHITECTURE.md` §1a0.
+
+### ⚠ CONTRADICTION · the blueprint said "don't build your own queue"; NBA built one
+**Flagged, not resolved.** Blueprint §0 answers its own sub-question — *"should we build our own job
+queue"* — **"(no)"**, citing §7e's *"hard-won lesson"* that duplicating shared plumbing *"just for
+NBA is almost always the wrong move."* **The owner overruled it** (*"NBA gets its own everything"*,
+§T1.3) **and the live system follows the owner.**
+
+**The owner's decision is binding and is not in question.** What is recorded is that **the
+blueprint's contrary recommendation was never explicitly closed out — it simply stopped being
+followed**, and a future reader consulting the blueprint would find advice the system does not take.
+**The isolation it bought is real**: it is the same isolation that makes
+`startswith("alphadog-v2-nba-")` provably zero-impact on MLB.
+
+### ✅ VERIFIED HELD · the "additive only, no MLB-system side effects" constraint
+Stated in T1 and **never independently tested since**. **`config.worker_definitions` holds 116 rows
+— the exact count T1's Phase 1 banner recorded on 2026-08-31 — and NBA's share is 0.** Twenty days
+and a complete NBA build later, **the shared registry is untouched.** **VERIFIED 2026-09-20.**
+
+---
+
 ## FROM T1 PASS 34 — EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE, AUDITED *(added 2026-09-20)*
 *Angle: pass 33 found one unscoped `DELETE` by auditing a **parameter**. This pass inverts it and
 audits **every `DELETE` and `TRUNCATE` in all 190 `.py`/`.js` files** — **24 statements** — asking of
