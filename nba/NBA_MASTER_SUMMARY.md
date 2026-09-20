@@ -792,6 +792,49 @@ eleven later passes.
 
 **Clean count 0/3.** Fifteen passes; thirteen found new material.
 
+### T1.26 — PASS 16 (decisions and alternatives) — **CLEAN 1/3**
+
+A sweep for every decision point, rejected alternative and "rather than" construction returned
+**nothing not already documented**. Every item mapped to an existing entry:
+| Found | Already in |
+|---|---|
+| file trigger instead of chasing the tool-list caching issue | T1.8, T1.15 |
+| stopping rather than building on a broken assumption | T1.22 |
+| deploy fork, option 1 vs option 2 | T1.19 |
+| ParlayAPI flagged rather than guessed around | T1.17 |
+| balldontlie as the alternative found | T1.5 |
+| the doubled-prefix path bug | T1.21 |
+| tarpit = silent stall, not an explicit block | T1.7 |
+| the whole verification-discipline vocabulary | T1.25 |
+| no hitter/pitcher split — offence only | T1.13 |
+
+**CLEAN PASS 1 of 3.**
+
+### T1.27 — RUNNING PASS LEDGER
+
+| Pass | Dimension | Result |
+|---|---|---|
+| 1 | narrative text (truncated) | new |
+| 2 | tool RESULTS | new |
+| 3 | full SQL bodies | new |
+| 4 | remaining DDL + seeded settings | new |
+| 5 | founding handoff text | new |
+| 6 | owner specification, full | new |
+| 7 | caveats and limits | new |
+| 8 | artefact inventory | clean |
+| 9 | endpoint/table/file name sweep | new |
+| 10 | every owner message in order | new |
+| 11 | every measured number | new |
+| 12 | rules, principles, standards | new |
+| 13 | endpoint inventory | minor new |
+| 14 | external services and tooling | new |
+| 15 | verification and fallback claims | new |
+| 16 | decisions and alternatives | **CLEAN 1/3** |
+
+**Two more consecutive clean passes required before T1 is DONE.**
+Dimensions not yet swept: error/exception vocabulary · time and scheduling references ·
+person/team/proper nouns · numeric IDs and hashes.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
