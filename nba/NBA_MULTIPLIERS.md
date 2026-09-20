@@ -91,6 +91,32 @@ structural version of the same discipline is the **`BACKTEST-LOCKED`** tag on
 `nba_config.classification_config` — which distinguishes values earned by evidence from seeds.
 **The multiplier work has no equivalent tag, and needs one.**
 
+## 0.3a2 ⚠ **LESSON #16 — THE WARNING THAT BEARS HARDEST ON OUR POSITION**
+
+> *"Real backtest results, however rigorous, **still need real-money confirmation before being
+> trusted**. **MULTIPLE MLB findings survived EVERY backtest check (day-robustness, significance,
+> adversarial review) and were STILL OVERTURNED the moment a real placed slip's ACTUAL MULTIPLIER was
+> checked against the ASSUMED one.**"*
+
+**Read that against where NBA stands: we have NO real PrizePicks per-leg multipliers at all.**
+
+| | MLB when it was burned | NBA today |
+|---|---|---|
+| Statistical rigour | full — day-robustness, significance, adversarial review | the same standard, applied |
+| **Real multiplier** | **assumed — and wrong** | **not available at all** |
+
+**So every EV conclusion in `NBA_GOBLIN_DEMON.md` §5 rests on the exact assumption that overturned
+multiple fully-vetted MLB findings.** The observed 40–53% goblin factors and the ~1.75–1.9× demon
+ceiling are **inferred**, not read from a slip.
+
+**This does not invalidate the work** — the directional conclusions are robust to a wide range of
+factors, and the ladder's *calibration* (the honesty property) does not depend on multipliers at all.
+**But it means no EV or ROI claim can be believed until a real placed slip confirms the factor**, and
+that the capture in §4 is not a nice-to-have.
+
+**The ordering this implies**: calibration first (done), selection second (the open question),
+**real-money confirmation third — and third is not optional.**
+
 ## 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
 
 ### 0.3a **MLB's COSTLIEST SINGLE ERROR — mismatched cells**
