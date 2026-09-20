@@ -1567,6 +1567,44 @@ the response rather than inferred.
 
 **T2 PASS 4: NEW MATERIAL. Clean count 0/3.**
 
+### T2.12 — PASS 5 FINDINGS (added 2026-09-20; DDL and script docstrings) — **NEW MATERIAL**
+
+#### T2.12a — Three new tables, full DDL (now in the DATABASE document)
+- **`nba_stats.player_season_profile`** — `player_id` PK, `nba_player_id`, `season`, `games_played`,
+  `pts_total`, `reb_total`, `ast_total`, `net_rating`, `oreb_pct`, `dreb_pct`, **`usg_pct`**,
+  **`ts_pct`**, `ast_pct`, `source_key`, `data_quality`, `raw_json`, `updated_at`
+- **`nba_stats.player_tracking_profile`** — `avg_speed`, `avg_speed_off`, `avg_speed_def`,
+  `dist_miles`, `dist_miles_off`, `dist_miles_def` (+ standard columns)
+- **`nba_team.season_profile`** — `games_played`, `wins`, `losses`, **`pace`**, `off_rating`,
+  `def_rating`, `net_rating` (+ standard columns)
+
+#### T2.12b — **`data_quality DEFAULT 'real'` here, vs `'derived'` in `nba_ref`**
+A deliberate distinction present from the schema up: reference tables default to **`'derived'`**
+(assembled/inferred), stats tables default to **`'real'`** (straight from the source). **The column is
+not decorative** — it records provenance per row.
+
+#### T2.12c — The justification for weekly cadence on season aggregates
+> *"age/height/weight/draft background (**truly static**) plus season usage/efficiency aggregates
+> (**semi-static, stable enough for weekly refresh — a single game barely moves a season average after
+> 20+ games played**)"*
+
+**This is the reasoning behind P1's weekly layer**, stated at the time: after ~20 games, one more game
+cannot move a season aggregate enough to justify a daily refresh against a rate-limited API.
+**It also implies the cadence is wrong early in the season**, when 20 games have not been played —
+an unexamined edge recorded in OPEN_ITEMS.
+
+#### T2.12d — `teamplayeronoffdetails` returns THREE result sets
+`OverallTeamPlayerOnOffDetails` · `PlayersOnCourtTeamPlayerOnOffDetails` ·
+`PlayersOffCourtTeamPlayerOnOffDetails`
+> *"matches each player's ON row to their OFF row **by `VS_PLAYER_ID`** and computes the real
+> net-rating differential (team net rating with the player on the floor minus with them off) — **the
+> actual 'with/without you' signal**."*
+
+**The join key is `VS_PLAYER_ID`**, and the metric is a computed differential, not a raw field.
+Source-verified *"via nba_api/hoopR docs"* before building — the standard applied throughout.
+
+**T2 PASS 5: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
