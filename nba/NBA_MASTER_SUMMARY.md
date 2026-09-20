@@ -713,6 +713,46 @@ the worker's own report" check in this build.**
 
 **Clean count 0/3.** Twelve passes; ten found new material.
 
+### T1.23 — PASS 13 (endpoint inventory) — **minor new**
+`playerindex` recorded as a **considered alternative** to `commonallplayers` for the players worker
+(*"~450+ active players via stats.nba.com's `commonallplayers` or `playerindex` endpoint"*).
+**`commonallplayers` was the one used.** No other endpoint in T1 beyond `leaguestandingsv3`.
+
+### T1.24 — PASS 14 FINDINGS (added 2026-09-20; external services and tooling) — **NEW MATERIAL**
+
+**CLAUDE COWORKER is the scheduler** — not previously documented as a component:
+> *"the **Coworker-scheduled, worker-by-worker model MLB already uses**"*
+
+Each of the three runs is triggered by a **Claude Coworker scheduled task**, worker by worker. This is
+the operating model in place of an orchestrator — *"so no runner, orchestrator or anything like, it
+only breaks the run."* **Coworker is the thing that replaced the orchestrator.**
+
+**`PROXY_URL` already existed as a repo secret before NBA** — *"`PROXY_URL` secret set up for exactly
+this kind of problem"*, and it needed only *"referencing"* in the NBA workflow's env, not creating.
+Inherited from MLB's own anti-bot work.
+
+**Credential discipline, stated as a pattern**: the balldontlie key was stored *"the same way
+`PARLAY_API_KEY` already is — **in the database, never in chat memory**."*
+
+**The D1 finding was cross-checked three ways** before being accepted as benign: the parallel chat
+reported it, this chat confirmed it independently with `check_bindings`, and it was then matched
+against the documented decommission date (**2026-08-12**). *"expected, benign, already-documented
+behavior — not a bug."* **Recorded with the caveat that `run_sql` (the D1 tool) should not be trusted
+for live data; `run_sql_postgres` is confirmed fine.**
+
+**The manual invocation path, for the record**: `POST` to
+`https://alphadog-v2-nba-static-teams.rodolfoaamattos.workers.dev/run` — possible for the owner, **not
+for the assistant** (`host_not_allowed`).
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| rules and principles | 12 | new |
+| endpoint inventory | 13 | minor new — `playerindex` |
+| external services and tooling | 14 | **new — Claude Coworker as the scheduler; `PROXY_URL` pre-existing** |
+
+**Clean count 0/3.** Fourteen passes; twelve found new material.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
