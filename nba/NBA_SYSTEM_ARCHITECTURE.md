@@ -1374,6 +1374,39 @@ file mechanism remains as the fallback that needs no tool.
 
 **Two independent guarantees against mixing**: the `nba-` filename token AND the `/nba/` folder.
 
+### ⚠ THE SEVEN ROOT DIRECTORIES THIS TABLE OMITTED
+*Recorded 2026-09-20 (T1 pass 40). **VERIFIED against a live clone of `Rodantmat/Alphadog`.***
+
+| Directory | Contents |
+|---|---|
+| **`BACKUPS/`** | 20 files, `IMG_6115.png` … — screenshots |
+| **`backups/`** | 1 file, `overdispersedTailGE_ORIGINAL_2026-07-29.js` — an archived MLB worker |
+| **`Screenshots/`** | 8 files, PNGs + `1.txt` |
+| **`chat_history_backup/`** | `2026-08-14-15-31-35-journal-session-catalog.txt` — **the session-catalog pattern `nba/transcripts/journal.txt` later followed**, never recorded as inherited |
+| **`control/`** | `daily_slip_research_log.md` |
+| **`coworker/`** | 3 entries incl. `prompts` |
+| **`gbdt_training/`** | 28 files — `build_training_data.py`, `d1_client.py`, `train_models.py`, `validate_factor_coefficients.py`, `data/`, `models/` |
+
+**⚠⚠ `BACKUPS/` and `backups/` both exist — a case-only collision.** VERIFIED on the live clone. On
+Linux, two directories. **On macOS or Windows a clone collapses them**, leaving a tree `git` reports
+as modified/deleted that a normal checkout cannot resolve. **Harmless today; breaks the first time
+anyone clones this repo on a Mac.**
+
+**⚠ `gbdt_training/` is dead code against a backend killed 2026-08-12.** `d1_client.py` is *"a **real
+D1 REST API client** … pulls real historical data out of **each D1 database**"*, and **D1 was fully
+decommissioned system-wide on 2026-08-12** (`NBA_MASTER_SUMMARY.md` §T1.17). **Six MLB workers at the
+root still carry D1 bindings** — VERIFIED by grep. NBA must not touch any of it; it is recorded as a
+**live, one-grep instance of §5b and §6** — *static manifests describing an earlier architecture* and
+*registry entry ≠ real functionality*.
+
+**⚠⚠ And it is PRIOR ART for T1's central discovery.** `d1_client.py` states, before NBA existed:
+*"Runs inside GitHub Actions (**which has real network access, unlike Cloudflare Workers, which
+cannot train models at all — confirmed from Cloudflare's own docs**)."* **The Cloudflare network
+constraint and GitHub Actions as its answer were already written down in this repository.** T1
+reached them through **four failed runs and thirteen polling sleeps** (`NBA_RECIPE.md` STEP 4).
+**The search space for *"has MLB already solved this"* was never defined — §8c indexes only `.md`
+files, and `gbdt_training/` appears in no list of MLB material at all.**
+
 ---
 
 ## 8d. ⚠ THE FOURTH STORE — an assistant memory file outside GitHub and Postgres
