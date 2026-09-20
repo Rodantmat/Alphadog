@@ -1498,6 +1498,8 @@ matched exactly"* — verified against the response, not assumed.
 produced the highest-value finding of the session** — garbage-time filtering, then DARKO.
 
 **T2 PASS 2: MAJOR NEW MATERIAL. Clean count 0/3.**
+
+### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
 - **git push must retry with rebase** — concurrent pushes race.
