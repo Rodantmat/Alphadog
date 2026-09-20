@@ -1422,7 +1422,82 @@ repeated here. New material starts at T2.1.*
 `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md` · `nba_ref.players` column extensions ·
 4 more `nba_config.worker_definitions` rows
 
-### T2.8 Findings that still govern the system
+### T2.9 — PASS 2 FINDINGS (added 2026-09-20; full sequential read) — **MAJOR NEW MATERIAL**
+
+*Pass 1 used the truncated-text digest and covered roughly the first third. This pass read all 136
+content blocks sequentially. The findings below were entirely absent from pass 1.*
+
+#### T2.9a — A stats.nba.com API constraint that bites every new endpoint
+The team-stats scraper returned a **real HTTP 500**:
+> *"`stats.nba.com`'s API is known to require the **full parameter set (many as empty strings)** or it
+> rejects the request. My URL omitted several required params."*
+
+**This is a standing rule for every new stats.nba.com endpoint**: send every documented parameter, even
+if blank. A partial query string is rejected with a 500, not a helpful error.
+
+#### T2.9b — BUG: "Undrafted" is a string in numeric fields
+Player bio load failed because **`DRAFT_NUMBER`, `DRAFT_YEAR` and `DRAFT_ROUND` return the literal
+string `"Undrafted"`** for undrafted players, not a number or null.
+Fixed with defensive coercion — **and applied to ALL numeric fields, not just the three that failed**
+(*"gp could theoretically also be non-numeric, but let's be safe across all numeric fields"*).
+
+#### T2.9c — The diacritic problem, first appearance
+A spot-check on Jokić appeared to fail. Diagnosed correctly: *"it's just the diacritic in the name, not
+a data bug (my query used the ASCII spelling)."*
+**This is the first appearance of the name-normalisation problem** that later becomes `nba/nba_names.py`
+and `nba_ref.player_name_map` (5,212 players).
+
+#### T2.9d — On/off-court splits
+- Source: **`teamplayeronoffdetails`** — per-team, **30 calls** (the second 30-call loop after arenas)
+- **661 raw rows → 582 distinct players** after dedup
+- Real values spot-checked: **Wembanyama's team is +16.4 net rating better with him on the floor;
+  LeBron's +2.3** — plausible magnitudes, not placeholder numbers
+- Gemini had flagged on/off as high-impact; this confirmed it
+
+#### T2.9e — **GARBAGE-TIME FILTERING — a major finding, and an open gap**
+> *"**garbage-time filtering** is an industry-standard practice (**Cleaning the Glass**, pioneered by
+> **Ben Falk**) that our existing season-aggregate data does **not** apply — `stats.nba.com`'s raw stats
+> **include garbage time**."*
+
+**Every season-aggregate figure we mine is contaminated with garbage-time minutes.** This is the
+conceptual ancestor of the blowout factor (T16), which handles the same problem from the minutes side.
+Recorded in OPEN_ITEMS.
+
+#### T2.9f — EPM vs DARKO, and why DARKO won
+- **EPM (Dunks & Threes)** — public, real, and *"Gemini rates it as one of the highest-value single
+  features I could add."*
+- Then a better option was found: **DARKO at `darko.app`** — *"publicly accessible, no paywall
+  mentioned anywhere, and independently rated by NBA analytics experts as **beating both EPM and
+  LEBRON on predictive accuracy (RMSE)**"*, and rated *"the single best **predictive** metric."*
+- **DARKO was chosen because it is free AND rated higher** — the decision is recorded here, the build
+  lands in T3.
+
+#### T2.9g — An honest stop
+> *"I hit a real, honest **stopping point rather than manufacturing more work**."*
+
+After the second research pass, the assistant reported that the remaining candidates (garbage-time
+filtering, rolling averages, defence-vs-position) were **derivable from data already held**, not new
+sources — and stopped rather than inventing scrapers. The owner then directed:
+*"Find alternatives, research online, use Gemini, also understand the relevance of it"*, which produced
+the DARKO finding.
+
+#### T2.9h — Player tracking confirmed
+**582 players with real speed/distance tracking data**, and *"the real headers confirm the column names
+matched exactly"* — verified against the response, not assumed.
+
+#### T2.9i — Owner messages in T2, in order
+| # | Message | Effect |
+|---|---|---|
+| 367, 604, 621 | *"Continue"* | |
+| 460 | *"use Gemini as well… what can be weekly (static or semi-static) data, like player age, speed"* | triggered the research pass that found bio/tracking/team-stats |
+| 482 | *"Mine it, backfill it and continue with your passes"* | |
+| 697 | *"**No**, keep looking for possible static / weekly data, use Gemini, online research, strong systems, similar systems"* | rejected the stopping point, forced a second research pass |
+| 723 | *"Find alternatives, research online, use Gemini, also **understand the relevance of it**"* | produced DARKO |
+
+**Note the pattern**: the owner twice pushed past a "we're done here" report, and **both times the push
+produced the highest-value finding of the session** — garbage-time filtering, then DARKO.
+
+**T2 PASS 2: MAJOR NEW MATERIAL. Clean count 0/3.**
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
 - **git push must retry with rebase** — concurrent pushes race.
