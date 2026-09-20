@@ -902,10 +902,22 @@ by construction a property of a combination.
 > *"a real, deployed constant applying **an extra, deliberate conservative discount ON TOP OF an
 > already-real, already-conservative observed ratio** — **reasonable-looking as a single number** —
 > but **once that doubly-discounted ratio was EXPONENTIATED across a full slip's worth of legs, the
-> compounded r[esult was absurd]**."*
+> compounded result IMPLIED A PAYOUT BELOW BREAKEVEN FOR EVEN THE HIGHEST-QUALITY LEGS AVAILABLE — an
+> absurd, unusable outcome that had gone unnoticed BECAUSE NOBODY HAD ACTUALLY RAISED THE SINGLE-LEG
+> CONSTANT TO THE RELEVANT POWER BEFORE SHIPPING IT.**"*
 
-**Conservatism compounds multiplicatively.** A 5% haircut per leg is **23% on a 5-pick slip**. Apply
-any margin **once, at slip level.**
+**The diagnostic named is trivial and was skipped**: **raise the single-leg constant to the power of
+the slip size before shipping it.** A 5% haircut per leg is **23% on a 5-pick slip**; a doubly-applied
+one compounds past usability.
+
+**Apply any conservatism ONCE, at slip level.** And **the ship-gate is one line of arithmetic** —
+`constant ** n_legs` for the real slip sizes in use.
+
+**Note this is the same failure the `p × m` gate catches from the other direction**
+(`NBA_MULTIPLIERS.md` §0.3): a result implying *"a payout below breakeven for even the
+highest-quality legs"* is the mirror of one implying an impossibly large edge. **Both are
+attribution errors, and both are caught by computing the implied outcome before believing the
+number.**
 
 #### ⚠ The two with no visible NBA implementation
 - **#7 multiple-comparisons correction** — the factor gate scanned many prop × band × side cells;
