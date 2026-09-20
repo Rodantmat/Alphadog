@@ -83,6 +83,40 @@ source: they return a hardcoded dummy response and **were never once invoked.**
 **The NBA-side implication**: `nba/worker_manifest_nba.json` lists workers by name and size. **Neither
 signal distinguishes a real worker from a stub** — only invocation history does.
 
+**✅ And the explicit instruction was followed**:
+> *"**If NBA's design also considers 'ONE WORKER PER PROP', LEARN FROM MLB'S ABANDONMENT OF THAT IDEA
+> IN FAVOUR OF A UNIFIED SCORING ENGINE — BUILD THE UNIFIED VERSION FIRST.**"*
+
+**NBA has exactly one scoring path** — `classification_ladder_v12.py` with a `PROPS` config, plus
+`combos_ladder_v1.py` — **not a worker per prop.** The 19 abandoned MLB stubs are what that
+instruction exists to prevent, and NBA never created their equivalent.
+
+*(⚠ The one place NBA did split is singles vs combos — two certified recipes rather than one. That is
+a two-way split, not a per-prop one, but it carries the duplication cost recorded in OPEN_ITEMS.)*
+
+### 5. ⚠ CHECK EXECUTION HISTORY, NOT THE `enabled` FLAG
+> *"**Before assuming ANY schedule/cron is LIVE or DORMANT, CHECK THE ACTUAL JOB-QUEUE EXECUTION
+> HISTORY DIRECTLY** (`control.control_job_queue` or equivalent) — **NOT the `enabled` flag alone, and
+> NOT a note/comment in the config row.**
+> MLB found **a real case of a cron flag and its own explanatory note DIRECTLY CONTRADICTING each
+> other**, and separately found **'LONG DORMANT' job types that STILL HAD LIVE, WIRED UI BUTTONS
+> DESPITE MONTHS OF ZERO REAL INVOCATIONS.**"*
+
+**Three unreliable signals named**: the `enabled` flag, the config note, and a wired UI button.
+**Only execution history is trusted.**
+
+**✅ This is the method that caught NBA's differential worker** — the conclusion came from querying
+the **output tables** (all three logs empty, snapshot frozen 2026-09-03), not from reading configs.
+
+**⚠ And it reinforces the never-fire-cron caveat**: a `crons: ["0 0 30 2 *"]` entry **and** an
+`enabled=1` flag can both be present and neither tells you whether the worker runs. **The MLB
+observation that such crons kept firing twice despite the fix makes execution history the only
+reliable answer in both directions.**
+
+**NBA's equivalent sources**: `control.job_runs` / `control.job_queue` (shared, bookkeeping-only),
+**GitHub Actions run history**, and — most directly — **the output tables' own row counts and
+`updated_at`/`loaded_at` timestamps.**
+
 ---
 
 *Source: T1, blueprint §5b — "a powerful, generalizable warning." Recorded 2026-09-20.*
