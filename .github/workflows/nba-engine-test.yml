@@ -58,6 +58,15 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Score the board (simulate P3 scoring)
+        if: ${{ github.event.inputs.task == 'board' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BS_ASOF: ${{ github.event.inputs.date }}
+          BS_SEASON: ${{ github.event.inputs.season }}
+          BS_SOURCE: "archive"
+        run: python nba/score_board_legs.py
+
       - name: Delta gap audit (simulate P2 step 2)
         if: ${{ github.event.inputs.task == 'gaps' }}
         env:
