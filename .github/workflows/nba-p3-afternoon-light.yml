@@ -117,6 +117,13 @@ jobs:
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # MUST be "window". archive_live_boards.py defaults ARCHIVE_LABEL to "routine", and the
+          # decision snapshot has to be distinguishable from any other cron pull - the grader, the
+          # line-movement measurement and every backtest key off this label. P3's pull IS the decision
+          # moment (1:15 PM PT, COMPASS fact 107), so it is labelled as such.
+          ARCHIVE_LABEL: "window"
+          ARCHIVE_SPORT: "nba"
+          ARCHIVE_APPS: "prizepicks,underdog,sleeper,fliff,betr"
         run: python nba/archive_live_boards.py
 
       # Classify every board leg as standard / goblin / demon with its tier and anchor. The score and
