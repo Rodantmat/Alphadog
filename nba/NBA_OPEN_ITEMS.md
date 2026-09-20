@@ -428,8 +428,7 @@ original design said so.** Whether the panels gated on sample size is not establ
 transcripts. **If A2 is reopened, that is the first thing to check** — a mechanism that fails worst
 where it should work best is also the signature of an ungated noisy estimator.
 
-### GAP · **opponent defence has no SHORT-memory form** — the factor study asked for one
-The T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
+### GAP · **opponent defence has no SHORT-memory form** — the factor study asked for oneThe T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
 > **Short**: minutes, usage, FGA/3PA volume, **and opponent defence ratings (last 10–15 games, NOT
 > season-long)**
 
