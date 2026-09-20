@@ -1456,6 +1456,33 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.72 — PASS 42 (angle: **diff the project-log entries WRITTEN in T1 against the repo file today**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 42. Source: T1 lines
+10511–10545.*
+
+- **⚠⚠ The founding entry of the NBA project log is missing from the repo.** T1 wrote
+  `## 2026-08-31 — Session: Phase 1 (recon) complete, operating model locked`; **`grep -c` on
+  `NBA_PROJECT_LOG.md` returns 0.** The file's first dated entry is **`## 2026-08-31 (cont'd)`**.
+  **A log that begins at "continued" is missing its first page.**
+- **What is lost with it**: the operating model recorded there as *"the canonical, binding spec for
+  all future NBA sessions"*; the Phase-1 verification (**18 schemas named, "zero NBA-anything…
+  confirmed clean slate", 116 registry rows, dead-stub workers still `enabled=1`**); the blueprint
+  correction that became the Phase-1 banner; and the ParlayAPI gap with its stated reason.
+- **The clearest statement of the per-worker rule is in that entry**: *"study the equivalent live MLB
+  worker, **research whether real improvements exist**, then build fresh with NBA sources — **not a
+  blind port**."* Cf. §T1.66, where the same rule is recorded from the owner's own message.
+- **And the tunables rule with its full list** — *"bonuses, penalties, caps, **timeouts, retries,
+  chunk sizes**… **SQL-changeable without a deploy**"* — the rule §T1.66 VERIFIED is not holding.
+- **⚠ The log violates its own ordering rule.** Header: *"Newest entries at the top."* The file is
+  **oldest-first**, and the tail is out of sequence — `2026-09-13 → 09-19` at line **650** precedes
+  `2026-09-12` at **732** and `2026-09-12 (later)` at **789**. **Neither newest-first nor
+  chronological.**
+- **⚠ The missing entry delegates "the full statement" to the assistant memory store** —
+  *"see `/areas/alphadog-nba.md` in assistant memory"* — **the concrete instance of the tension
+  flagged at §T1.69**: the canonical log entry points outside version control, and is itself absent.
+
+---
+
 ### T1.71 — PASS 41 (angle: **re-run T1's Phase-1 recon against the live database**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 41. Recon SQL: T1 lines
 1906–3424.*
