@@ -504,6 +504,17 @@ in `nba/data/` have one.** It is what makes *"read the committed file, not the s
 checkable; **for the other ~180 files there is no committed record of fetch time or success.**
 → `NBA_WORKERS.md` §2 · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 45*.
 
+**`worker_invocation_logs`** · LIVE, bridge `run_job` mode · Reads Cloudflare's
+**`workersInvocationsAdaptive`** GraphQL analytics — *"the actual outcome of every Worker invocation,
+including **`exceededCpu`, `canceled`, `exception`, `scriptNotFound`**"*. **The only tool that
+distinguishes a worker that failed from one never invoked from one the platform killed.**
+**VERIFIED present in the live bridge; never run against an NBA worker in the record.**
+→ `NBA_SYSTEM_ARCHITECTURE.md` §3b.
+
+**`probe-sources`** · LIVE · A second `run_job` mode accepted by **all 21 NBA worker bindings**,
+routed to `https://internal/probe-sources`. **Absent from `NBA_WORKERS.md`'s mode-dispatch table
+until 2026-09-20.** → `NBA_WORKERS.md` §0.15.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
