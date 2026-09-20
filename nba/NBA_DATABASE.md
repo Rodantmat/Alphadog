@@ -179,7 +179,7 @@ Same shape as `team_aliases`, keyed on `player_id`.
 |---|---|---|
 | `arena_id` | TEXT | **PK** |
 | `arena_name` | TEXT | current sponsor names (Rocket Arena, Frost Bank Center, Xfinity Mobile Arena) |
-| `team_id`, `city`, `state` | TEXT | |
+| `team_id`, `city`, `state` | TEXT | ✅ **`team_id` is THE team↔arena link** — **VERIFIED 2026-09-20**: 30 rows, `team_id` non-null on all 30, 30 distinct teams. **Not `nba_ref.teams.arena_id`, which is dead.** |
 | `capacity` | INTEGER | **null where the SOURCE lacks it** — not a scrape failure |
 | `altitude_ft` | INTEGER | present from day one (Denver matters) |
 | `timezone` | TEXT | |
