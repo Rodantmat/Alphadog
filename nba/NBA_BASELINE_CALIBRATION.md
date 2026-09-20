@@ -193,7 +193,56 @@ transfer."*
 **`fg3a_rate` and `fg3_pct` are split deliberately**: *"attempt VOLUME (unlike make %) is
 role/scheme-driven."*
 
-### 3.7 Shrinkage
+### 3.6b STABILIZATION-POINT RESEARCH — the reference table NBA never sourced
+*Source: T1, blueprint §4d. Recorded 2026-09-20.*
+
+> *"**Build (or find) an equivalent 'STABILIZATION POINT' REFERENCE TABLE for EVERY NBA PROP BEFORE
+> FINALIZING SHRINKAGE DESIGN.**
+> MLB **benefited enormously from existing, cross-validated sabermetric research giving THE EXACT REAL
+> SAMPLE SIZE at which each rate stat STOPS BEING MOSTLY NOISE AND STARTS REFLECTING REAL TALENT** —
+> ranging from **as few as 60 PA (strikeout rate)** to **over 1,600 PA (extra-base-hit rate, which
+> ESSENTIALLY NEVER FULLY STABILIZES WITHIN A SINGLE SEASON)**.
+> **This precise, quantified reference DIRECTLY EXPLAINED *WHY* CERTAIN PROPS RESISTED CALIBRATION NO
+> MATTER HOW MUCH SAME-SEASON DATA WAS ADDED — IT WASN'T A PIPELINE BUG, IT WAS A REAL, MEASURED
+> PROPERTY OF THE STAT ITSELF.**
+> **Basketball has its own real, published stabilization/reliability research** (work from public
+> analytics communities on **how many games various box-score stats take to stabilize**) — **source
+> the closest available real research THE SAME WAY MLB DID, and use it to set genuinely PER-PROP,
+> EVIDENCE-BASED shrinkage weights rather than a single global rate.**"*
+
+### ⚠ This is the structural explanation for the four "close" props
+T9 records blocks, steals, turnovers and fouls as **CLOSE, not certified** — *"these are the noisiest
+per-game stats in the sport; **the research consensus for them is exactly what's built**"* — and
+T9.5 gives one reason (they are **opponent-driven**).
+
+**The stabilization framing gives a second, independent reason**: a stat with a very high
+stabilization point **cannot be calibrated tightly within the available sample, and that is a property
+of the stat, not a defect in the pipeline.** *"It wasn't a pipeline bug, it was a real, measured
+property of the stat itself."*
+
+**The harness header's own note is consistent with this**: *"**blocks more 70–75: −4.3, n=3900 =
+P(0 blocks) under-predicted for ~1.5 bpg players, PERSISTS AT ANY LAMBDA**; **holdout shows the same
+signs**."* **"Persists at any lambda" is what an unreachable stabilization point looks like** — no
+amount of shrinkage tuning fixes it.
+
+### ⚠ What NBA did instead, and the gap
+**NBA derived its own per-stat memory empirically** — `stat_decay_config`'s 13 rows carry
+`shrinkage_stabilization_games` **measured from our own data** (minutes 10 → fg3_pct 300), with the
+`k_stab` values in `PROPS` measured per prop (STL 125, TOV 60; *"top-decile steals players regress 17%
+over the next 20 games"*).
+
+**So the per-prop, evidence-based requirement was MET — by internal measurement rather than by
+sourcing published research.**
+
+**The gap is the cross-check.** The instruction is to **source the closest available published
+basketball stabilization research** and use it. **No such source is recorded in any transcript.**
+**Value of doing it**: an external reference would confirm whether `fg3_pct` at **300 games** and
+`blocks` at **50** are right, and — per the MLB experience — **would tell us in advance which props
+can never be certified within one season**, rather than discovering it prop by prop.
+
+**A concrete candidate is already named elsewhere in the record**: the T7 factor research cited
+**peer-reviewed and industry sources** (OpticOdds, Unabated, DataStreak, *J. Sports Sciences*), so the
+sourcing discipline exists — **it simply was not applied to stabilization points.**
 **Tier prior** = tier mean blended toward population with **`TIER_BLEND_K = 5`**.
 **Shrunk rate** = `(n·rate + priorStrength·tierPrior) / (n + priorStrength)`.
 **Prior strength** = empirical Bayes, **Efron-Morris method of moments**, branched by distribution
