@@ -205,6 +205,34 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 51 — BLUEPRINT §1 AND §3, CLAUSE BY CLAUSE — **one minor item** *(added 2026-09-20)*
+*Angle: the clause-level treatment continued onto blueprint §1 (infrastructure stack) and §3
+(the four-layer pipeline). **Near-clean** — every substantive clause already has an entry.*
+
+### ⚠ MINOR · one blueprint rule is obsolete and nothing says so
+§1: *"**Legacy/reference layer**: D1 databases exist as **read-only reference only — never write new
+data to D1.** If porting a table, **migrate it to Postgres first**."*
+
+**D1 was fully decommissioned system-wide on 2026-08-12** (§T1.17). **The rule cannot be followed or
+broken — there is nothing to read.** It is recorded here only so a future reader who finds the rule
+in the blueprint knows it is dead, not merely unenforced. **NBA never touched D1 at any point**, so
+nothing turns on it.
+⚠ **It is the third document found asserting D1 as live**, after `schema_manifest.json` (*PASS 43*)
+and `nba/NBA_AVAILABLE_TOOLS.md` (*PASS 46*) — **and the blueprint is the one the other eleven
+documents quote as authoritative.**
+
+### ✅ Everything else in §1 and §3 is already recorded
+**§1** — the Hyperdrive connection options **`max: 3`, `fetch_types: false`, `prepare: false`** and
+why each matters · the deploy pipeline and *"**never hand-edit a wrangler config expecting it to
+survive, it will be silently overwritten**"* · the MCP bridge's *"build this first"* ranking · the
+Gemini proxy · ParlayAPI's key in `external_credentials`.
+**§3** — the four-layer order, the **Board-before-Daily-Context ordering bug** with its
+`VALID_ZERO`/`NOT_APPLICABLE` symptom, `context_probe_*`, `archive.market_prop_context_history`, the
+matrix builder, and the **PRIMARY/REVIEW** final-board split. All in `NBA_SYSTEM_DESIGN.md` §0.7 and
+`NBA_SYSTEM_ARCHITECTURE.md` §2c.
+
+---
+
 ## FROM T1 PASS 50 — ⚠⚠ TWO ID CONVENTIONS: THE SCORING LAYER DOES NOT JOIN TO THE REFERENCE LAYER *(added 2026-09-20)*
 *Angle: blueprint **§2** (read clause by clause, as pass 49 did for Domain Mapping) contains a
 standing instruction that **is NOT RECORDED as ever having been carried out**. This pass carries it
