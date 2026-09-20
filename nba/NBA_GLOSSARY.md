@@ -463,6 +463,16 @@ count T1's Phase 1 banner recorded on 2026-08-31. Closes the blueprint's shared-
 question (nothing to contend for) and evidences the *"additive only, no MLB-system side effects"*
 constraint. → `NBA_SYSTEM_ARCHITECTURE.md` §1a0 · `NBA_WORKERS.md` §0.4.
 
+**the unread config tables** · LIVE · `nba_config.classification_config`, `factor_registry` (67),
+`factor_relevance` (460), `factor_profile_cells` (35), `stat_decay_config` (13), `system_settings`,
+`role_tiers`. ⚠ **VERIFIED 2026-09-20: no code reads any of them** — the strings appear zero times
+across all 190 `.py`/`.js` files and the MCP admin bridge. The only config table anything reads is
+**`external_credentials`**. The live constants are hardcoded in
+`backtest/classification_ladder_v12.py`, and a diff of `stat_decay_config` against it found **7 of 10
+stats disagreeing, 3 on the decay rate itself**. **Editing these tables by SQL changes nothing.**
+→ `NBA_OPEN_ITEMS.md` *FROM T1 PASS 36* · `NBA_DATABASE.md` §2 banner ·
+`NBA_BASELINE_CALIBRATION.md` §0y.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
