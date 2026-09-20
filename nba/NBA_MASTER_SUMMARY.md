@@ -1456,6 +1456,32 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.87 — PASS 57 (angle: **Part D's two remaining subsections, read by concept**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 57. **Neither lesson appears in the twelve
+documents, and each has a live NBA instance.***
+
+- **⚠⚠ No fix-date list exists, and NBA has already changed its tier-derivation logic.** The lesson:
+  *"the moment any classification, tagging, or tier-derivation logic is fixed, **write down the exact
+  date, and maintain that list as a first-class artifact** — any future backtest crossing one of
+  these dates needs to account for it, **not silently pool pre- and post-fix data together.**"*
+  **`nba_market.board_tiers` v1 is SUPERSEDED** — it derived `kind` from the Odds API price and was
+  Over-only — **and still holds 2.2M legs.** Other undated classification changes: ladder
+  **v1 → v12 → v18**, `apply_ladder_calibration`, the `minutes_mixture` divergence, the
+  `board_tiers` → `v2` cutover. **None has a recorded effective date.**
+  **SEASON-START RELEVANT** — cheapest to build now, and a prerequisite for trusting any cross-season
+  backtest.
+- **⚠ Query-time reconstruction: NBA does it and no analysis accounts for it.** The lesson warns that
+  measuring a raw stored column can give *"a dramatically smaller and differently-biased sample"*
+  than the live system uses (MLB's raw column: **~10% populated**).
+  **NBA's analogue**: `score_board_legs.py` interpolates off-ladder rungs in log-odds, flags them
+  **−4 confidence**, and stores `board_scored.interpolated`. **VERIFIED: 110,955 legs, 6,317
+  interpolated — 5.7%.**
+  **The trap is the mirror image of MLB's**: filtering `interpolated = false` measures a smaller,
+  differently-biased population than production scores; ignoring the flag treats 6,317 reconstructed
+  legs as measured. **Which past analyses did either is NOT ESTABLISHED.**
+
+---
+
 ### T1.86 — PASS 56 (angle: **Part D's trailing subsections, read by concept**) — **NEW MATERIAL · MAJOR · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 56; full table at `NBA_GOBLIN_DEMON.md` §7.
 Volumes VERIFIED by live SQL.*
