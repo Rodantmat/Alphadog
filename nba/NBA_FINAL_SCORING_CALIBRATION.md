@@ -677,13 +677,32 @@ INTERACTION form, never as a main effect** — which is this axis producing the 
 **Three components of a pre-stated bar, named:** minimum sample size · **required monotonicity** ·
 minimum edge over baseline.
 
-**This is pre-registration (§7f) delegated to the adversary** — the bar is set by a party that has not
-seen the result. **And #21 completes the loop**: use it to check your **method**, then **re-derive the
-conclusion yourself**.
+**And the working interaction pattern, as stated:**
+> *"**large single prompts caused DRIFT**; the working pattern is: **present data + sharp questions →
+> get a diagnosis → reference that diagnosis EXPLICITLY in a follow-up pass for the next specific
+> piece, WITHOUT RE-PASTING EVERYTHING.**"*
 
-**Recorded NBA usage matches the adversarial framing**: the transfer list names *"the Gemini
-**adversarial-review** usage pattern"* as something that transfers, and T3 records asking it *"to be
-skeptical rather than just keep validating more searches."*
+> *"**Gemini is valuable but NOT INFALLIBLE IN EITHER DIRECTION** — real cases of **Gemini correctly
+> catching an analyst's own contamination the analyst missed**, and separate real cases of **Gemini
+> being WRONG about a proposed [approach]**."*
+
+**"Not infallible in either direction" is borne out in the NBA record**, which contains both:
+| Gemini correct | Gemini wrong |
+|---|---|
+| surfaced garbage-time filtering (T2) | 1,230-call estimate for advanced stats — actually **2 bulk calls** (T4) |
+| surfaced the schedule as *"the chassis"* (T3) | *"starters are inferable from game logs via `GS`"* — false (T5) |
+| surfaced peer-reviewed altitude / jet-lag factors (T7) | *"Team Pace still needed"* — already covered (T5) |
+| **self-corrected its own earlier on/off ranking** (T3) | *"tier globally"* — contradicted the proven per-combo architecture (T7) |
+| gave the Shot Quality Delta methodology (T3) | *"potential assists aren't in our data"* — they are (T7) |
+| proposed halftime foul count → **correctly rejected as in-game data** (T9) | |
+
+**This is pre-registration (§7f) delegated to the adversary** — the bar is set by a party that has not
+seen the result. **#21 completes the loop**: check the **method**, then **re-derive the conclusion
+yourself**.
+
+**Recorded NBA usage matches the adversarial framing** — the transfer list names *"the Gemini
+adversarial-review usage pattern"*, and T3 records asking it *"to be skeptical rather than just keep
+validating more searches."*
 **What is not recorded**: any instance of Gemini being asked to state a falsification bar **before**
 seeing a result. **The NBA uses were synthesis and critique, not pre-stated bars.**
 
