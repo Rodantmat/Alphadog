@@ -22,6 +22,23 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.14 ⚠ THE SHARED DISPATCH PATH CARRIES AN UNSTATED INVARIANT
+*Recorded 2026-09-20 (T1 pass 87). **VERIFIED** by live grep of the deployed
+`alphadog-v2-admin-sql.js`.*
+
+The bridge's dispatch chooses its HTTP method on one line, **shared by every target, MLB included**:
+```js
+const method = body === null ? "GET" : "POST";
+```
+**That line was added by T1 for one NBA job mode** — `job === "probe-sources"`, the read-only GET
+diagnostic. **✅ It is safe today, and verifiably so**: `body = null` occurs **exactly once in the
+file, at line 683**, inside the NBA branch; **all eleven MLB branches assign an object.**
+⚠ **The safety is an invariant nobody wrote down**: *no MLB branch may ever set `body = null`.*
+**If one does, that target silently becomes a GET with no body.** → `NBA_OPEN_ITEMS.md`
+*FROM T1 PASS 87*.
+
+---
+
 ## 0.15 ⚠ THE DISPATCH ENUM AND THE SECOND PER-WORKER MODE
 *Recorded 2026-09-20 (T1 pass 46). **VERIFIED by grep of the live `alphadog-v2-admin-sql.js`.***
 
