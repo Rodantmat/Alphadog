@@ -22,6 +22,39 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.2 ⚠ THE FOUR WIRING STEPS HAVE DIFFERENT DEPLOY BLAST RADII
+*Recorded 2026-09-20 (T1 pass 44). **VERIFIED by grep of the live `generate_wrangler_configs.py`.***
+
+§0's four-step pattern is performed for **every** new NBA worker. **The four edits are not
+equivalent in cost:**
+
+| Edit | Blast radius |
+|---|---|
+| any file in **`GLOBAL_REDEPLOY_FILES`** | **full-fleet redeploy — 140+ workers** |
+| **`generate_wrangler_configs.py`** | **deliberately excluded** from that set → only the affected worker(s) |
+| **`worker_manifest.json`** (via `TARGETED_EXTRA_FILES`) | targeted: the new worker **+ the orchestrator** |
+
+The generator says so in its own comment:
+> *"`generate_wrangler_configs.py` is **intentionally NOT** in `GLOBAL_REDEPLOY_FILES`. It gets
+> edited routinely just to register a single new worker … and that should only redeploy the
+> worker(s) actually affected — **not force a full-fleet redeploy of 140+ workers every time.**"*
+
+**140+ is the fleet size** — recorded nowhere else in the twelve documents.
+⚠ **Why this matters for NBA specifically**: an edit that lands in `GLOBAL_REDEPLOY_FILES` by
+accident **redeploys the entire MLB fleet** — the loudest possible violation of the owner's *"must
+not edit anything from the mlb system."*
+
+### ⚠ And the generator carries an NBA-only path special-case, with a named failure
+Live, lines 45–51:
+> *"The generated config for an NBA worker is written to `nba/wrangler.<worker>.jsonc` … `"main"`
+> relative to that same `nba/` directory — **it must NOT be re-prefixed with `nba/` here or wrangler
+> looks for `nba/nba/<worker>.js` and fails (`"entry-point file … not found"`).**"*
+
+**The `startswith("alphadog-v2-nba-")` guard does two jobs**: MLB isolation (recorded elsewhere) and
+**path resolution** (recorded here for the first time). **Any future edit to it risks both.**
+
+---
+
 ## 0.25 ⚠ THE PRE-COMMIT SYNTAX GATE — the only local check before an auto-deploying push
 *Recorded 2026-09-20 (T1 pass 38). **VERIFIED** from T1's own `bash_tool` history.*
 
