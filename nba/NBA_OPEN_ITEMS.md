@@ -814,6 +814,30 @@ the anchor's own as-of construction with the same method used on candidates.
 **Note this is not a claim that the anchor leaks.** It is a recorded gap between the rule and what has
 been verified.
 
+### FROM T1 · the open questions raised at the outset, *"explicit, not silently decided"*
+
+**1. ParlayAPI `basketball_nba` real coverage was never independently verified**
+> *"bookmakers, markets, live-vs-historical depth — **carried over from Phase 1's unresolved gap**.
+> Needs a decision on how to test it (**a small isolated NBA probe worker seems the lowest-risk
+> path**, given the 'no MLB-system changes' constraint) **before Section 2's 'reused as-is'
+> assumption is trusted for anything beyond the account/key**."*
+
+**Never verified — superseded instead.** Own scrapers proved to capture ~25% more rungs, so the
+question stopped mattering for boards. **ParlayAPI's retained use is validating the derived spread**,
+which is a narrower claim than the "reused as-is" assumption the question was gating.
+
+**2. The board-table fork — reuse MLB's tables filtered by sport, or create `nba_market`?**
+> *"**Reuse `market.sleeper_board_current` / `underdog_board_current` (which ALREADY CARRY UNUSED
+> `sport`/`league` COLUMNS) filtered by sport, vs new `nba_market.sleeper_board_current`?**
+> …defaults to **fully new `nba_market` tables for a clean, independent data universe** (matching the
+> person's explicit instruction), **but flagging this as A REAL FORK IN THE ROAD since the existing
+> columns exist and are currently unused for MLB filtering**."*
+
+**Decided: fully separate `nba_market`.** The MLB tables' `sport`/`league` columns remain unused.
+**Consistent with the two-mechanism isolation rule** (prefix *and* folder; here, schema *and*
+dataset). **Recorded as a deliberate fork, not an oversight** — the alternative was viable and was
+rejected on the owner's isolation instruction.
+
 ### ⚠ EIGHT PLANNED SCHEMAS WERE NEVER CREATED
 T1's naming convention specified **fourteen** `nba_`-prefixed schemas:
 `nba_ref` · `nba_calendar` · `nba_stats` · `nba_team` · `nba_daily` · `nba_context` · `nba_market` ·
