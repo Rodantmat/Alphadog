@@ -436,6 +436,50 @@ negatives.**
 
 ---
 
+## 2d. TWO NAMED CODE-LEVEL BUGS IN THIS EXACT STACK
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` **§7g** — "two specific, real software bugs worth
+actively guarding against in NBA's own code."*
+***Recorded 2026-09-20 (T1 pass 29) — previously unswept.***
+
+### 1. A filter parameter that constrains the RESPONSE but not the WRITE PATH
+> *"MLB found a function whose **'which props to touch' INPUT PARAMETER correctly filtered its own
+> RESPONSE SUMMARY, but the underlying WRITE LOGIC IGNORED THAT FILTER ENTIRELY** and touched every
+> eligible row regardless — **INVISIBLE EXCEPT BY NOTICING UNRELATED TIMESTAMPS HAD ALSO UPDATED.**"*
+
+Stated as **not unsafe in that instance** — every write, filtered or not, passed the same validation
+gate — *"but the parameter's name implied a selectivity that didn't actually exist."*
+
+**The standing rule for NBA:**
+> *"**When adding any 'limit to these specific items' parameter to an NBA worker, VERIFY IT CONSTRAINS
+> THE ACTUAL WRITE PATH, not just what gets echoed back in the response.**"*
+
+**Where this bites in NBA**: every worker with a mode/scope argument — `--season`, `--prop`,
+`--player`, a date range, the mode-dispatch table in `NBA_WORKERS.md`. **No such audit is recorded as
+having been done.** The detection signal named in the source — *unrelated timestamps also updating* —
+means an `updated_at` spot-check on rows **outside** the requested scope is the cheap test.
+
+### 2. `NOT IN` from an array parameter → real `malformed array literal` error
+> *"A **`NOT IN` clause built from an ARRAY PARAMETER via a query-builder's TAGGED-TEMPLATE ARRAY
+> HANDLING can be UNRELIABLE, ESPECIALLY WHEN THE ARRAY IS EMPTY**, producing a real **'malformed
+> array literal'** error."*
+
+**Prescribed fix pattern**: *"use an **EXPLICIT ARRAY-LITERAL-WITH-CAST pattern** and an **EXPLICIT
+EMPTY-ARRAY BRANCH** instead of relying on implicit array-to-SQL handling for this specific clause
+shape."*
+
+**This is a shared-infrastructure gotcha, not an MLB-only one** — same Postgres, same Hyperdrive
+path, same query-builder idiom. It belongs beside the §4m gotchas in §2c above.
+**Whether any NBA worker builds a `NOT IN` this way is NOT RECORDED** — not searched as of this pass.
+Logged in `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
+
+### ⚠ Related, already-recorded: Hyperdrive read staleness
+Blueprint §9 adds a third stack-level caution that belongs here: *"**connection-pool-fronted reads can
+show STALE RESULTS FOR SECONDS TO TENS OF SECONDS after a write**"* — **Hyperdrive is exactly a
+connection-pool front**, so a verify-immediately-after-write check against NBA Postgres can report a
+false negative. Full context in `NBA_SYSTEM_DESIGN.md` §6b.
+
+---
+
 ## 3. THE MCP ADMIN BRIDGE — `alphadog-v2-admin-sql.js`
 
 The single worker that gives the assistant its tools. Every NBA worker must be wired into it in three
