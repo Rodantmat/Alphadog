@@ -629,6 +629,27 @@ anything added by hand.
 
 ## 4. THE DEPLOY PIPELINE (shared with MLB, extended additively)
 
+> ### ⚠ BLAST RADIUS — the three tiers, VERIFIED from the generator's source 2026-09-20 (T1 pass 44)
+> | Edit | Redeploys |
+> |---|---|
+> | a file in **`GLOBAL_REDEPLOY_FILES`** | **the whole fleet — 140+ workers** |
+> | **`generate_wrangler_configs.py`** | *"intentionally NOT in `GLOBAL_REDEPLOY_FILES`"* → only the affected worker(s) |
+> | **`worker_manifest.json`** (via `TARGETED_EXTRA_FILES`) | the new worker **+ the orchestrator** |
+>
+> **140+ is the fleet size.** An NBA edit that lands in the global set **redeploys all of MLB** —
+> the loudest possible violation of *"must not edit anything from the mlb system."*
+>
+> **And the generator carries an NBA-only path rule with a named failure**: an NBA worker's config is
+> written to `nba/wrangler.<worker>.jsonc`, so `"main"` is relative to `nba/` and **must not be
+> re-prefixed** — *"or wrangler looks for `nba/nba/<worker>.js` and fails (`entry-point file … not
+> found`)."* **The `startswith("alphadog-v2-nba-")` guard therefore does two jobs: MLB isolation and
+> path resolution.**
+>
+> **Also verified there**: `ORCHESTRATOR_CRONS = []` — *"the orchestrator itself is fully retired —
+> **kept deployed only for any manual/direct-call debugging via its own service binding, never
+> self-triggered again**"* — and `MASTER_RUN_BASE_TIMES` schedules **five** MLB master runs, not the
+> four the blueprint states (contradiction flagged at `NBA_SYSTEM_DESIGN.md` §0.9).
+
 | File | Role | NBA change |
 |---|---|---|
 | `generate_wrangler_configs.py` | writes wrangler configs | isolated NBA branch (Hyperdrive, `nodejs_compat`, NBA vars); writes into `nba/` |
