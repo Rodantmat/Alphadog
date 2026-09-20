@@ -101,6 +101,10 @@ workers are registered there and dispatched **directly**, never pulled from the 
 | **"Preset dictionary" precompute-once** | compute a lookup once, read it many times — the shape of `blowout_model`, `stat_decay_config`, `MIN_RATIO` |
 | **Config-table-driven tunables** | *"every tunable variable lives in the database (`nba_config.system_settings`), **never hardcoded**"* — restated by the owner as a hard rule |
 
+**⚠ ParlayAPI coverage caveat, stated in T1 and never closed there**: *"**Coverage for this sport key
+is still NOT INDEPENDENTLY VERIFIED** — see Section 5, open question 1."* **It was later superseded by
+own scrapers rather than verified.**
+
 ### Must be built fresh, NBA-specific *(T1)*
 - **Every schema and table** listed in the naming convention
 - **The full prop taxonomy**
