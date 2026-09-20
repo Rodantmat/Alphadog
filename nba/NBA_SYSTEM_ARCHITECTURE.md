@@ -1527,6 +1527,28 @@ store** · the chat transcript.
 
 ---
 
+## 8b-i. ✅ THE WORKER UNIVERSE, DIFFED THREE WAYS — 21/21/21, NO DRIFT
+*Recorded 2026-09-20 (T1 pass 69). **VERIFIED** by live SQL and by listing the live clone.*
+
+| Universe | Count |
+|---|---|
+| `nba_config.worker_definitions` | **21**, all `enabled = 1` |
+| `nba/worker_manifest_nba.json` | **21**, no duplicates |
+| `nba/alphadog-v2-nba-*.js` | **21** |
+
+**Set difference is empty in every direction.** No registered worker lacks a file; no file lacks a
+registration; the deploy pipeline would skip nothing and fail on nothing.
+**Recorded as a clean result and as a baseline** — nearly every other whole-universe diff in this
+documentation found drift; **21/21/21 is the number a future check should still see.**
+
+⚠ **But the wrangler configs are asymmetric**: **121 `wrangler.*.jsonc` are committed at the repo
+root (MLB) and none in `nba/`**, though the generator writes NBA's to `nba/wrangler.<worker>.jsonc`
+and `.gitignore` excludes only `.wrangler/`. **An NBA worker's effective bindings cannot be read from
+the repository** — you must run the generator. Whether that is deliberate is **NOT RECORDED**.
+→ `NBA_OPEN_ITEMS.md` *FROM T1 PASS 69*.
+
+---
+
 ## 8c. THE MLB SOURCE LIBRARY — where the transferred claims come from
 *Recorded 2026-09-20 (T1 pass 37). **17 of these 23 were catalogued nowhere before this entry.***
 
