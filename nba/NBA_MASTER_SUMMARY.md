@@ -306,6 +306,70 @@ what justified a separate `nba_ref.teams` rather than adding a discriminator.
 **Naming-collision risk confirmed as real, not theoretical**: 116 rows in `config.worker_definitions`,
 **zero sport prefix anywhere**.
 
+### T1.14 — PASS 4 FINDINGS (added 2026-09-20; remaining DDL, seeded settings, original cron)
+
+**FULL DDL of every `nba_ref` table created in T1** (this is the foundation of the DATABASE document):
+- `nba_ref.team_aliases` — `alias_key TEXT PK, team_id, nba_team_id BIGINT, alias_value,
+  alias_normalized, alias_type, source_key, confidence, active INT DEFAULT 1, updated_at`
+- `nba_ref.players` — `player_id TEXT PK, nba_player_id BIGINT, full_name, first_name, last_name,
+  team_id, position, height_inches INT, weight_lbs INT, birth_date DATE, years_pro INT,
+  active INT DEFAULT 1, source_key, raw_json JSONB, created_at, updated_at`
+- `nba_ref.player_aliases` — same shape as team_aliases, keyed on `player_id`
+- `nba_ref.arenas` — `arena_id TEXT PK, arena_name, team_id, city, state, capacity INT,
+  **altitude_ft INT**, timezone, source_key, raw_json JSONB, **data_quality TEXT DEFAULT 'derived'**,
+  created_at, updated_at`
+- `nba_ref.officials` — `official_id TEXT PK, nba_official_id BIGINT, full_name, active,
+  games_officiated INT DEFAULT 0, source_key, data_quality DEFAULT 'derived', raw_json, timestamps`
+- `nba_ref.prop_taxonomy` — `canonical_prop_key TEXT PK, prop_family, display_name, …`
+
+**`data_quality TEXT DEFAULT 'derived'`** appears from the very first schema — the system was built to
+distinguish sourced from derived data from day one.
+
+**Control-plane DDL (the NBA copies):**
+- `nba_config.worker_definitions` — `worker_name TEXT PK, job_key TEXT UNIQUE, worker_group, phase_key,
+  display_name, enabled INT DEFAULT 1, notes, updated_at` *(8 columns — deliberately simpler than
+  MLB's 16)*
+- `nba_config.system_settings` — `setting_key TEXT PK, setting_value TEXT, updated_at`
+- `nba_config.external_credentials` — `credential_key TEXT PK, credential_value_encrypted TEXT,
+  updated_at`
+- `nba_control.worker_run_log` — `log_id BIGSERIAL PK, request_id, run_id, worker_name, job_key, level,
+  event_key, message, data_json, created_at`
+- `nba_control.job_runs` — `run_id TEXT PK, job_key, worker_name, status, input_json, output_json,
+  error_message, started_at, finished_at, created_at`
+
+**SEEDED `nba_config.system_settings` values (the original operating constants):**
+`nba_static_teams_expected_count = 30` · `nba_default_timeout_ms = 20000` ·
+`nba_default_retry_limit = 3` · `nba_default_chunk_size = 200` ·
+**`nba_differential_check_cadence = weekly`**
+
+**THE ORIGINAL WEEKLY CRON — direct ancestor of today's P1.** `.github/workflows/nba-scrape.yml` was
+created with `cron: '0 9 * * 1'` (**Monday 09:00 UTC**), commented: *"per the person's own instruction
+(2026-08-31): teams/static data changes rarely, so a weekly re-check is enough once backfill is done…
+matches the general weekly-differential convention already used for MLB."*
+**P1 Weekly Static (Mondays 12:00 PT) is this same cadence, re-established 2026-09-20.**
+
+**The certified static fallback**: a real 30-team list with **stats.nba.com's own stable `TEAM_ID`
+values** (1610612737 ATL, 1610612738 BOS, 1610612751 BKN, 1610612766 CHA …), used to certify against
+until the live fetch was proven. Comment notes *"a 32-team Seattle/Las Vegas expansion is only in
+early-vote stages for the 2028-29 season per direct research this session — does not affect this
+list."*
+
+**The canonical stats.nba.com header set** (two variants, both recorded):
+worker-side `accept, referer https://www.nba.com/, origin, x-nba-stats-origin: stats,
+x-nba-stats-token: true, user-agent`; scraper-side adds `Host: stats.nba.com`, `Accept-Language`,
+`Accept-Encoding: gzip, deflate, br`, `Connection: keep-alive`, `Referer: https://stats.nba.com/`,
+and a full Chrome 128 UA.
+
+**The first scraper's docstring records the block precisely**: *"every
+stats.nba.com/cdn.nba.com/core-api.nba.com/data.nba.net endpoint returned a **403/520/526** from a
+Cloudflare Worker origin, headers notwithstanding"* — and names the read pattern it mirrors:
+`alphadog-v2-prizepicks-github-board.js` reading `prizepicks_mlb_current.json`.
+
+**First source endpoint, exact**:
+`https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2025-26&SeasonType=Regular%20Season`
+
+**`nba/worker_manifest_nba.json` initial content**: `{"workers": ["alphadog-v2-nba-static-teams"]}`
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
