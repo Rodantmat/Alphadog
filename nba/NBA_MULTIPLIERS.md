@@ -484,6 +484,39 @@ truth.**
 
 ---
 
+## 5b. ⚠ THE CONVERSION IS A CORRECTION — so blueprint §7f applies to it
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` §7f. Recorded 2026-09-20 (T1 pass 29).*
+
+**§7f is about a calibration FIT, but its failure shape is the one this document keeps hitting.**
+MLB's fit *"passed honest, held-out, out-of-sample validation… and was still structurally wrong — the
+fit had been computed **without distinguishing between two sides of a market (over/under)**, and ended
+up **dominated by one side's pattern, silently misapplied to the other**. The aggregate improvement
+metric did not catch this, because **it was averaged across both sides.**"*
+
+**Why it lands here specifically.** The owner's own correction at **§3** already states the multiplier
+*"is **NOT one number per tier** — it varies by **rung, side, prop, player form and team form**."*
+**§7f is the same statement arriving from the calibration side**, with a documented case of what
+happens when the dimension is collapsed anyway. Together they say: **a payout-conversion rule
+validated on a pooled average across `side` or across rungs can beat its baseline on aggregate error
+and still be wrong for one whole population.**
+
+**Where the exposure is concrete in this document:**
+- **`board_payout_conversion_rules`** (§6) converts payouts to probabilities. **Whether its
+  parameters are held per (`prop`, `side`, `rung`) or pooled is NOT RECORDED** here.
+- **`equal_scale_v1`** (§8) decomposes slip payouts **by an explicitly equal split across legs** —
+  **a pooled assumption by construction**, across **139 legs**. §7f's rule does not say the assumption
+  is wrong; it says **an aggregate check cannot clear it**, and 139 legs cannot support a per-subgroup
+  check either.
+- **§0.3a's "costliest single error" — pairing an aggregate hit rate with a multiplier from a
+  different cell — is §7f's failure with the two halves swapped.** One collapses the rate, the other
+  collapses the fit. **Both are cured by the same discipline: check every subgroup the number will be
+  applied to.**
+
+**Nothing here is newly measured.** This is a cross-reference recorded so the multiplier work inherits
+the standard. Primary record: `NBA_BASELINE_CALIBRATION.md` §5.6.
+
+---
+
 ## 6. CONVERSION LOGIC — payouts to probabilities
 
 **`nba_config.classification_config` key: `board_payout_conversion_rules`.**
