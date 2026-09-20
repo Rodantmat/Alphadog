@@ -151,23 +151,29 @@ data** — but it is a strong prior.
 
 ## 0.2c ⚠ THE CONFIDENCE TIER ON §0.2's FINDING — do not let it harden
 
-The MLB lessons document flags this exact measurement as a cautionary case:
-> *"…(**Flex-mode partial-credit payouts**) that had been **built once from real data but NEVER
-> RE-CHECKED against further real placed slips**. Both were reported, but **the second was explicitly
-> labelled as a FIRST PASS rather than a settled figure**. **Carry the same explicit
-> confidence-tiering into NBA's own research records.**"*
+**Lesson #26, stated in full:**
+> *"**'First real pass' and 'independently re-validated' are NOT the same claim.**
+> [The] multiplier research distinguished, **explicitly and honestly**, between **figures that had been
+> INDEPENDENTLY RE-DERIVED AND CONFIRMED TO MATCH ACROSS TWO SEPARATE SESSIONS ON DIFFERENT REAL
+> DATES**, versus a related model (**Flex-mode partial-credit payouts**) that had been **built once
+> from real data but NEVER RE-CHECKED against further real placed slips**. **Both were reported, but
+> the second was EXPLICITLY LABELLED AS A FIRST PASS rather than a settled figure.**
+> **Carry the same explicit confidence-tiering into NBA's own research records — don't let a
+> once-derived, never-revalidated figure** [harden into a fact]."*
 
-**So the 4/5 = 0.5 and 3/5 = 0.25 tiers are a TWO-OBSERVATION finding**, and the source's own wording
-is *"**suggests** these **may** be flat/constant values"* — not a confirmed table.
+**The bar for the top tier is specific: independently re-derived, matching, across TWO SEPARATE
+SESSIONS ON DIFFERENT REAL DATES.** Not two observations in one session, and not the same method run
+twice.
 
-**Treat as: plausible, unverified, and never re-checked.** Any slip-EV computation using them should
-carry that tier explicitly, and the figures should be re-measured against fresh placed slips before
-anything depends on them.
+**Applied to §0.2's finding**: the 4/5 = 0.5 and 3/5 = 0.25 partial tiers came from
+*"**two independent real observations**"* — which is closer to the top tier than the Flex model that
+prompted the warning. **But the source's own wording is *"suggests these MAY be flat/constant"***, and
+the identical figure being the **cautionary example** in #26 means it should be read as
+**first-pass until re-checked on NBA data**.
 
-**The general rule this comes from**: **don't let a one-off measurement harden into a fact.** NBA's
-structural version of the same discipline is the **`BACKTEST-LOCKED`** tag on
-`nba_config.classification_config` — which distinguishes values earned by evidence from seeds.
-**The multiplier work has no equivalent tag, and needs one.**
+**Tier every figure in this document explicitly.** NBA's structural equivalent is the
+**`BACKTEST-LOCKED`** tag on `nba_config.classification_config`, which separates earned values from
+seeds. **The multiplier work has no equivalent tag and needs one.**
 
 ## 0.2f **PRIZEPICKS DISCOUNTS SAME-GAME CORRELATION — build CROSS-GAME by default**
 
