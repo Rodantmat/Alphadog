@@ -428,6 +428,28 @@ original design said so.** Whether the panels gated on sample size is not establ
 transcripts. **If A2 is reopened, that is the first thing to check** — a mechanism that fails worst
 where it should work best is also the signature of an ungated noisy estimator.
 
+### GAP · **opponent defence has no SHORT-memory form** — the factor study asked for one
+The T7 prop-by-prop study's memory map puts opponent defence ratings firmly in the **short** column:
+> **Short**: minutes, usage, FGA/3PA volume, **and opponent defence ratings (last 10–15 games, NOT
+> season-long)**
+
+**What exists:**
+| Table | Window |
+|---|---|
+| `nba_team.defense_vs_position` | **season aggregate** (`games_sampled` per season) |
+| `nba_ref.defender_ratings` | **weekly as-of** two-way ridge, reliability-shrunk |
+| `nba_config.stat_decay_config` | **13 player stats — no opponent-defence entry at all** |
+
+**Neither form is a 10–15 game rolling window**, and the decay table — which exists precisely to stop
+one-size-fits-all memory — does not cover opponent defence.
+
+**Why it matters**: a team's defence changes with injuries, trades and scheme adjustments on exactly
+the timescale the study flagged. A season-long DvP figure in March is averaging over a roster that may
+no longer exist. **This is the same "3PA volume vs 3P%" distinction** the decay table already
+encodes for player stats, unapplied to team stats.
+
+**Untested** — it may not move the number. But the study called for it explicitly and it was not built.
+
 ### UNVERIFIED · does the minutes model include the "dud" component?The T7 design specified a **three-component mixture**: normal play (truncated Normal), blowout-reduced,
 and a **"dud" (foul trouble / early exit) ~ log-Normal**, fit on *"competitive games in the player's
 bottom 15% or 5+ PF"*, with `P(dud)` from the player's own history and PF rate.
