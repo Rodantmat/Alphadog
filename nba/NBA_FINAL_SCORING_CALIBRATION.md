@@ -241,6 +241,46 @@ encodes this signal**. The measured answer, ten times out of ten, was "the basel
 
 ---
 
+## 7c. THE ENRICHMENT APPLICATION RECORD — how a factor's contribution is audited
+
+Every enriched leg carries a structured record of what was applied to it:
+```json
+{"prop_side": "more",
+ "board_line_value": 0.5,
+ "log_rate_adjustment": 0,
+ "rate_multiplier": 1,
+ "confidence_adjustment": 0,
+ "factors_applied": 1,
+ "breakdown": "[{\"factor_key\":\"player_availability\",\"status\":\"applied\",\"cell_id\":null,\"contribution\":…}]"}
+```
+
+**Four fields make the layer auditable per leg:**
+| Field | Purpose |
+|---|---|
+| **`log_rate_adjustment`** | the additive adjustment **in log-rate space** — the space factors are fit in, so unneeded ones sit at 0 |
+| **`rate_multiplier`** | the same adjustment expressed multiplicatively (1 = no change) |
+| **`confidence_adjustment`** | **factors can move CONFIDENCE independently of the rate** — e.g. an interpolated rung costs −4 without touching the probability |
+| **`factors_applied`** | the count, so a leg with 0 factors is distinguishable from one where every factor computed to zero |
+
+**And `breakdown` carries a per-factor entry** with **`factor_key`, `status`, `cell_id`, and the
+contribution** — so for any leg you can answer *"which factors fired, which cell did each read, and
+how much did each move the number?"*
+
+**`status` matters as much as the value**: a factor can be `applied`, or skipped — and the skip reason
+(gated out by `factor_relevance`, no cell, under sample threshold) is recorded rather than silently
+producing zero. **A zero contribution and an absent factor are different states.**
+
+**This is the mechanism that made the ten-factor audit possible.** Because every application is
+recorded with its cell and contribution, `factor_gate_results` could compare log-loss and Brier
+**with and without each factor** on identical legs — which is how *"the certified anchor wins every
+slice"* was established rather than asserted.
+
+**The harness reports carry the fitted values too**: `role_minutes_multiplier_train_fit` and
+`platt_fits` are written into each run's report alongside `ladder_steps`, `props`, `test_season` and
+`generated_at` — **the no-pasted-constants rule made inspectable per run.**
+
+---
+
 ## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
 
 ### 8.1 Blowout — on the REAL market spread
