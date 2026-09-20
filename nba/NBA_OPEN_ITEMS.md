@@ -205,6 +205,55 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 42 — `NBA_PROJECT_LOG.md` IS MISSING ITS FOUNDING ENTRY *(added 2026-09-20)*
+*Angle: diff the project-log entries **written during T1** against the repo's `NBA_PROJECT_LOG.md`
+today. **VERIFIED by grep of both.***
+
+### ⚠⚠ DOCUMENT DEFECT · **the first entry of the entire NBA project log does not exist in the repo**
+T1 wrote **`## 2026-08-31 — Session: Phase 1 (recon) complete, operating model locked`**
+(T1 lines **10511–10545**). **The repo's `NBA_PROJECT_LOG.md` does not contain it** — `grep -c
+"Phase 1 (recon) complete"` returns **0**. The file's first dated entry is
+**`## 2026-08-31 (cont'd)`**, at line 9. **A log that begins at "continued" is missing its first
+page.**
+
+**What is lost with it** — this is not a thin entry:
+- **The canonical operating model**, recorded there as *"the canonical, binding spec for all future
+  NBA sessions"* — the 3-run architecture, the no-orchestrator rule, the chat/worker granularity
+  rule, the hard constraints, the research standard, and the UI decision.
+- **The Phase-1 live verification**: 18 schemas named individually, *"zero NBA-anything exists
+  anywhere yet — confirmed clean slate"*, `ref.teams` confirmed MLB-specific, **116 rows in
+  `config.worker_definitions`**, the dead-stub `score-<prop>` workers still `enabled=1`.
+- **The blueprint correction** that became the Phase-1 banner (the `sport`/`league` discriminator).
+- **The ParlayAPI open gap**, stated with its reason — *"deliberately avoided (out of scope for
+  read-only recon, risk of touching shared production job queue)."*
+- **The per-worker rule in its fullest form**: *"Every new NBA chat should first study the equivalent
+  live MLB worker, **research whether real improvements exist**, then build fresh with NBA sources —
+  **not a blind port**."* **This is the clearest statement of the rule found anywhere** (cf. *PASS
+  36*, where it is recorded from the owner's own message).
+- **The tunables rule with its full list**: *"every tunable numeric variable (**bonuses, penalties,
+  caps, timeouts, retries, chunk sizes**, etc.) lives in the database, never hardcoded, **so it's
+  SQL-changeable without a deploy**"* — the rule *PASS 36* VERIFIED is not holding.
+
+**Not fixed, per the standing instruction.** Recorded so the owner can restore it from T1.
+
+### ⚠ The log violates its own stated ordering rule
+`NBA_PROJECT_LOG.md`'s header states: *"**Newest entries at the top.**"*
+**The file is oldest-first** — line 9 is 2026-08-31, and it runs forward through 09-01, 09-02, 09-03.
+**And the tail is not in order either**: `## 2026-09-13 → 09-19` sits at **line 650**, ahead of
+`## 2026-09-12` at **line 732** and `## 2026-09-12 (later)` at **line 789**.
+**So the file is neither newest-first nor strictly chronological.** A reader following the stated
+rule reads the oldest entry first and the newest in the middle. **Flagged, not fixed.**
+
+### ⚠ The missing entry treats the assistant memory store as a source of record
+It says: *"Operating model locked by the person, this session (**see `/areas/alphadog-nba.md` in
+assistant memory for the full statement**)."*
+**The canonical log entry points at a file outside version control** — the fourth store recorded at
+*PASS 39*. **This is the concrete instance of the tension flagged there**: the owner's rule is
+*"document everything into committed repository files"*, and the project log's founding entry
+delegates *"the full statement"* to a file that is not one. **And that log entry is itself missing.**
+
+---
+
 ## FROM T1 PASS 41 — THE PHASE-1 RECON, RE-RUN AGAINST THE LIVE DATABASE *(added 2026-09-20)*
 *Angle: the **11 `run_sql_postgres` recon queries** T1 ran before writing any code — T1 lines
 **1906–3424** — re-executed today to see whether their answers still hold. **Every figure below is
