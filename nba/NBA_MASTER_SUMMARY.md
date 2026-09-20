@@ -3186,6 +3186,66 @@ covered either way.** Recorded so the absence is not mistaken for a gap in role 
 
 **T5 PASS 3: NEW MATERIAL. Clean count 0/3.**
 
+### T5.9 — PASS 4 FINDINGS (the milestone summaries) — **NEW MATERIAL**
+
+#### T5.9a — The full three-season game-log totals
+| Season | Player-game rows |
+|---|---|
+| 2023-24 | 26,401 |
+| 2024-25 | 26,306 |
+| 2025-26 | 26,651 |
+| **Total** | **79,358** + **7,380 team-log rows** |
+
+#### T5.9b — Position distribution after the fix
+**582/582 populated: 240 G · 180 F · 64 C**, plus real combo positions.
+*(Note 240+180+64 = 484, so ~98 carry combo designations like G-F.)*
+
+#### T5.9c — **Starter status covers ONE season, by explicit decision**
+> *"it costs **~3,690 calls across 3 seasons** (far more than anything built so far), so **I stopped and
+> flagged it rather than just running it**."*
+> **OWNER: *"yes"*** → *"starting with just **the most recent season (1,230 calls)** as Gemini
+> suggested, rather than all 3 at once."*
+
+**✅ VERIFIED LIVE 2026-09-20**: `nba_stats.player_game_starter_status` holds
+**32,179 rows · 1,230 games · 12,300 starters · 591 players** — **exactly one season (2025-26).**
+**The 12,300 = 10 × 1,230 identity still holds.**
+
+**This is a deliberate, owner-approved scope decision, not a gap** — but it means **per-game starter
+status exists for 2025-26 only**, while game logs cover three seasons. Any model training across
+three seasons has this feature for one of them. **Recorded in OPEN_ITEMS.**
+
+#### T5.9d — Why Gemini rated it non-negotiable
+> *"**foundational, non-negotiable** for props — a player's role (starter vs. bench) is **the single
+> biggest driver of their opportunity**, and **it can shift game-to-game in ways season averages miss
+> entirely**."*
+
+**That last clause is the whole argument for per-game over the season-aggregate StartingPosition
+split** — and confirms T5.8b's benign reading.
+
+#### T5.9e — **Two items surfaced and deliberately NOT built**
+1. **Historical injury / active-inactive status** — *"flagged as **very high value**, needs a real
+   source investigated first"* → **built in T10** (the injury-report PDF scraper).
+2. **Lineup synergy data (2–5 man units)** — *"a real **'next level'** addition, not urgent"* →
+   **built in T6** (`leaguedashlineups`, 8,000 rows).
+
+**Both were built within two transcripts**, so neither became a lost thread.
+
+#### T5.9f — The self-caught mistake, stated plainly
+> *"along the way **caught my own mistake**: I first tried pulling it from `leaguedashplayerbiostats`,
+> checked the real schema, found that endpoint **doesn't actually have a position output field**, and
+> **reverted before it shipped**."*
+
+#### T5.9g — The honest process note on the 49-minute run
+> *"I **didn't rush it or assume completion early**; I kept checking until it genuinely finished and
+> then **verified against Postgres before reporting anything**."*
+
+#### T5.9h — The offline-preparation boundary, stated
+> *"This is **the maximum useful offline preparation achievable before the season starts** — the one
+> remaining piece (the ongoing **Daily Delta Ingestion worker**) genuinely can't be tested until there
+> are live games to ingest."*
+
+**T5 PASS 4: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
