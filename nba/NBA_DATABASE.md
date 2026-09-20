@@ -416,6 +416,19 @@ c_market, prop_tier, band, phase, n_uncertain, built_at`.
 
 ### `nba_score.ladder_calibration_asof`
 `season, as_of_date, prop, phase, band, side, log_odds_shift, n, source, built_at`.
+
+**⚠ `side` here is the subgroup axis blueprint §7f names.** *(Recorded 2026-09-20, T1 pass 29.)*
+MLB's documented calibration failure was a fit *"computed without distinguishing between two sides of
+a market (over/under)… dominated by one side's pattern, silently misapplied to the other,"* which an
+aggregate metric could not catch. **This table already carries `side` as a real, populated key
+column**, along with `phase` and `band` — **so a per-subgroup validation of any refit is available
+here at zero data cost**, and a refit validated only on the pooled average would be discarding a
+dimension the schema already stores. **Whether the refit validates per `side` is NOT RECORDED** —
+see `NBA_BASELINE_CALIBRATION.md` §5.6 and `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
+**Contrast with the baseline Platt fit**, keyed `prop × var_band × role_tier × offset × month`, where
+**`side` is deliberately absent and provably harmless** (`p_less = 1 − p_more` by construction,
+VERIFIED by code grep 2026-09-20). **The two calibrations have different exposure to the same
+lesson — this table's `side` is a real population split; the Platt fit's is not.**
 `source` = `own` (current-season evidence) or `prior_season` (inherited same-phase cell).
 **Replaces the pasted `nba_score.ladder_calibration`, which was a parity violation and has been dropped.**
 
