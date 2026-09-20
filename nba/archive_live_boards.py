@@ -10,7 +10,12 @@ in the same shape, or the parity rule breaks the moment the season starts.
 WHAT IT DOES
   Reads whichever board files exist (prizepicks, underdog, sleeper, fliff, betr), normalizes each app's
   shape to the board_snapshots columns, and writes them with a snapshot_label:
-      window  - the 2:45 PM PT pull (or first tip - 2h on early slates), the decision moment
+      window  - the 1:15 PM PT pull (or first tip - 2h on early slates), the decision moment
+                CUTOFF CORRECTED 2026-09-19 (COMPASS fact 107): this used to say 2:45 PM PT, which came
+                from nba_asof.py's PHASE2 and ultimately from the 5:30 PM ET LEAGUE BULLETIN - a
+                republication, not a filing deadline. The real constraint is the game-day injury report,
+                due 11am-1pm LOCAL to each game's market, so Pacific clubs file last at 1:00 PM PT.
+                One window at 1:15 PM PT holds every club's report.
       close   - a late pull for line-movement measurement
       routine - any other cron pull, kept for movement history but not used as a decision snapshot
   Idempotent: the same leg at the same label updates rather than duplicating (unique index already on
