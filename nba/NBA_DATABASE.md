@@ -308,7 +308,13 @@ value.**
 ### `nba_config.role_tiers` — **6 rows**
 **Exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** — IRON_MAN 36+ ·
 HIGH_USAGE_STARTER 32–36 · STARTER 27–32 · ROTATION 21–27 · BENCH 15–21 · FRINGE 0–15.
-**Config and code agree**, so the no-hardcoding rule holds here.
+
+⚠ **CORRECTED 2026-09-20 (T1 pass 36). This entry read: *"Config and code agree, so the no-hardcoding
+rule holds here."*** **The values do agree — VERIFIED.** **The conclusion does not follow.**
+`ROLE_TIERS` is a **hardcoded Python list** at `classification_ladder_v12.py` **line 129**, and
+**no code reads `nba_config.role_tiers`** — VERIFIED, the string appears nowhere in the codebase.
+**Agreement maintained by hand is not the no-hardcoding rule holding**: an SQL edit to this table
+changes nothing. See the banner at the top of §2.
 
 ### `nba_config.calibration_log` — 8 rows
 
