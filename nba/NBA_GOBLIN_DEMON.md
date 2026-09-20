@@ -483,6 +483,49 @@ numbers are our own.
 
 ---
 
+## 13. ⚠ THE GRADER DEDUP KEY — the highest-risk item for this layer
+*Source: T1, blueprint §4c. Recorded 2026-09-20.*
+
+**A documented historical bug whose trigger column is exactly the one this document is about:**
+> *"**A deduplication key that DIDN'T INCLUDE EVERY VARIANT-DISTINGUISHING COLUMN — in MLB's case, THE
+> GOBLIN/DEMON TAGS** — caused **two genuinely different real market variants sharing the same
+> underlying player/prop/line to SILENTLY COLLAPSE into a SINGLE GRADED ROW.** **The other variant's
+> outcome was NEVER CREATED AT ALL, not even as a placeholder, WITH NO ERROR THROWN.**"*
+
+### Why the four-way taxonomy makes this sharper for NBA than it was for MLB
+**Under the two-way (More-only) world this bug required two *rungs* to collide.** Under the four-way
+rule, **a goblin and a demon sit at the SAME rung**:
+
+| Line vs anchor | More | Less |
+|---|---|---|
+| **Below** | **goblin** | **demon** |
+| **Above** | **demon** | **goblin** |
+
+**So at any single `(player, prop, line)` below the anchor there are now two legs with different
+variant labels** — and they differ only by `side` **and** by the variant tag.
+
+**Three conditions that would trigger the collapse:**
+1. The grader's dedup/unique key omits the variant tag, **and**
+2. `side` alone is treated as sufficient to distinguish rows, **and**
+3. The variant label itself is wrong — **which it currently is**, since `board_tiers` v1 derives
+   `kind` from **price** and is **Over-only**.
+
+**Condition 3 is already true.** Conditions 1 and 2 are unverified.
+
+### What is known about `board_outcomes`
+Keyed on **prop, side and line**; `leg_result` ∈ `over_win` / `under_win` / `push` / `dnp` /
+`unmatched_player` / `unmatched_not_in_season`.
+**Whether it carries a variant dimension, and whether `ot_rule` is in its key, is unverified.**
+*(`nba_score.baseline_ladder` does carry `ot_rule` in its PK — but that is a different table, and
+`period`/`ot_rule` are exactly the other variant-distinguishing columns this rule covers.)*
+
+**The source names the family explicitly**: *"this is the same **grouping-key** failure"* — Part C's
+dominant bug class, appearing in the grader.
+
+**Recorded in `NBA_OPEN_ITEMS.md`.**
+
+---
+
 ## 12. OPEN ITEMS SPECIFIC TO THIS LAYER
 
 **⚠ THE OWNER'S STANDING DIRECTIVE ON SEQUENCING (T9, v21):**
