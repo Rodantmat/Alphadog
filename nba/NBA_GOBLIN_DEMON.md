@@ -483,6 +483,40 @@ numbers are our own.
 
 ---
 
+## 12b. ⚠ THIS TAXONOMY CREATES THE SUBGROUPS BLUEPRINT §7f SAYS A CORRECTION MUST BE CHECKED AGAINST
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` §7f. Recorded 2026-09-20 (T1 pass 29).*
+
+§7f's rule: *"always check whether a proposed correction is genuinely appropriate for **every
+meaningfully distinct subgroup it will be applied to** (e.g. **both sides of a market, every relevant
+tier**), not just the pooled average"* — after a real MLB fit passed honest out-of-sample validation
+while being **dominated by one side and silently misapplied to the other**.
+
+**"Both sides of a market, every relevant tier" is a literal description of this layer.** The four-way
+rule (§1) means a single player × prop carries up to four distinct populations —
+**More-above-anchor (demon), More-below (goblin), Less-below (demon), Less-above (goblin)** — and the
+ladder adds rungs on top of that. **Per §5.0, these must be read per cell, never as aggregates**, and
+that is already recorded as **MLB's costliest single error**.
+
+**What §7f adds to what §5.0 already says:** §5.0 warns against pairing an aggregate *hit rate* with a
+cell-specific *multiplier*. **§7f warns that a statistical *fit* commits the same error invisibly** —
+and that **the validation metric will not tell you.** A calibration curve fit across all rungs can
+beat its baseline overall and be wrong at **T−3 and T+3 specifically**, which are exactly the cells
+this document says decide the layer's EV:
+- **goblins hit 74.1 / 68.7 / 61.9% at T−3 / −2 / −1** but observed factors pay 40–53% → **−EV at
+  every tier**
+- **demons hit 32.9 / 21.3 / 14.8% at T+1 / +2 / +3**, needing **1.48 / 2.30 / 3.31×** against a
+  **~1.75–1.9× ceiling** → **only demon T1 is ever worth solving**
+
+**A pooled calibration check cannot distinguish "the ladder is calibrated" from "the ladder is
+calibrated in the middle and wrong in the tails"** — and **T8 nominated the tails as *"the #1 area
+where a sharp baseline earns the most."*** The certification's *"0 misses of 37"* is **an aggregate**.
+
+**Status**: no per-kind × per-side × per-rung calibration check is **recorded as built**. Related and
+already open: §9's tail-certification item (*"the single most important thing to certify once a live
+board exists"*). Primary record of §7f: `NBA_BASELINE_CALIBRATION.md` §5.6.
+
+---
+
 ## 13. ⚠ THE GRADER DEDUP KEY — the highest-risk item for this layer
 *Source: T1, blueprint §4c. Recorded 2026-09-20.*
 
