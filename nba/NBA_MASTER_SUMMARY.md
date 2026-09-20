@@ -6403,6 +6403,60 @@ minutes — the gate catches exactly that.**
 
 **T9 PASS 5: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T9.15 — PASSES 6, 7, 8 (full sequential, 180 / 230 / 260-char context) — **CLEAN 3/3**
+
+All 75 content blocks re-read three times at increasing context. **Every block maps to a documented
+entry. Nothing new.**
+
+---
+
+# ✅ T9 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (6, 7, 8)
+
+**Final tally: 8 passes. 5 found new material.**
+
+**T9 closed the production loop.** Its contributions:
+
+| Finding | Status |
+|---|---|
+| **All 11 single-stat props run under the two-season standard** — 6 certified, 4 close, 1 regime | ✅ |
+| **Combos certified** — P+R 0.9, R+A 0.9, PRA 1.1, fantasy 0.8 pp on the holdout | ✅ *"joint structure, never a direct fit"* validated |
+| **Double-double calibrated** both seasons, no systematic sign | ✅ |
+| **The period layer** — 3-part mixture (close/medium/blowout), sit-out rates per role × state | ✅ points across all four periods |
+| **`P(OT)` measured** — 5.3% at pick'em → 1.9% at 15+, as a **mixture branch** | ✅ in the period layer |
+| **OT isolated as full-game − quarters** | ✅ four bulk calls yield quarters, halves and OT |
+| **The production builder** — *"the backtest harness on a past day IS already the production computation"* | ✅ reproduces the ladder exactly |
+| **The loader** + `baseline_ladder` / `baseline_ladder_runs` | ✅ loop closed end to end |
+| **Factor layer: Brier +0.1–0.3%** — real but small | ⚠ **edge must come from elsewhere** |
+| **Fantasy scale: +2 vs +3 on blocks/steals** | ⚠ **OPEN — unresolved source conflict** |
+| **`foul risk` still unmodelled at every layer** | ⚠ **OPEN** |
+
+**The most consequential line in T9** is the honest verdict on factor size — *"they are NOT where the
+big gains are; those must come from **the live enrichment** and from **combo structure**."*
+**Combo structure delivered. Live enrichment did not** (T15/T16: ten candidates, none survived).
+**So the edge now rests on calibration quality, combo structure, and the board-scoped tails** — and
+the tails were independently nominated as *"the #1 area where a sharp baseline earns the most."*
+
+---
+
+## RUNNING TOTAL: 9 of 16 transcripts DONE
+| # | Transcript | Passes | New-material | Status |
+|---|---|---|---|---|
+| T1 | phase1-static | 28 | 23 | ✅ 3/3 |
+| T2 | phase3a-enrichment | 11 | 8 | ✅ 3/3 |
+| T3 | phase3a-final | 10 | 7 | ✅ 3/3 |
+| T4 | phase3b-backfill | 12 | 9 | ✅ 3/3 |
+| T5 | phase3c-starter-status | 8 | 5 | ✅ 3/3 |
+| T6 | phase3d-delta | 8 | 5 | ✅ 3/3 |
+| T7 | classification-design-research | 21 | 18 | ✅ 3/3 |
+| T8 | backtest-calibration | 15 | 12 | ✅ 3/3 |
+| T9 | baseline-production-pipeline | 8 | 5 | ✅ 3/3 |
+
+**121 passes, 92 with new material, across 9 transcripts.**
+
+## NEXT: T10 — `2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt`
+Factor lock (5 research passes) · return-ramp · the day-before injury report ·
+**the parity rule** · the injury-PDF scraper.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
