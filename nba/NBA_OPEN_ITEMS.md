@@ -629,6 +629,14 @@ Gemini rated it *"foundational, non-negotiable — a player's role is **the sing
 opportunity**, and it can **shift game-to-game in ways season averages miss entirely**."*
 **Extending it to 2023-24 and 2024-25 costs ~2,460 more calls.**
 
+**✅ MITIGATION STATED IN T7 — this is less severe than it looks.** The data-universe research
+explicitly rated backfilling the other two seasons as **"Defer"**, because it is
+***"90% proxied by MIN + Usage once we have it"*** — and `nba_stats.player_game_log_usage` was then
+built for all three seasons. **Usage share is a continuous role measure that subsumes most of what the
+binary starter flag carries.**
+**Caveat: this holds only if the baseline actually uses Usage as the role input.** If role is derived
+from the starter flag alone, the asymmetry is real.
+
 ### COVERAGE ASYMMETRY SUMMARY *(added 2026-09-20)*What actually spans three seasons versus one:
 | Dataset | Seasons |
 |---|---|
