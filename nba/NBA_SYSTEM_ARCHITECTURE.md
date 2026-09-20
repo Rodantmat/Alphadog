@@ -238,8 +238,46 @@ presents as "the query is slow" rather than as a bug.
 **grep for format inconsistency PROACTIVELY, don't wait for it to surface as a downstream
 symptom**."* **The downstream symptom this rule warns about is precisely a timing-out join.**
 
-**Neither check is recorded as having been run.** A single `information_schema.columns` query across
-the NBA schemas would list every `*_id` column with its type.
+### 5. ⚠ A large multi-stage join can DROP THE CONNECTION, not just run slowly
+> *"**A large, multi-stage join query against this kind of POOLED POSTGRES CONNECTION can DROP THE
+> CONNECTION OUTRIGHT, rather than simply running slowly.**
+> **The reliable fix, CONFIRMED WORKING REPEATEDLY: BUILD INTERMEDIATE RESULTS AS THEIR OWN SEPARATE,
+> INDEXED TABLES IN SEQUENCE rather than NESTING MANY JOINS/CTEs INTO ONE LARGE QUERY.**"*
+
+**✅ NBA already works this way**, and the pattern appears throughout: `rung_market` was *"built in
+monthly blocks"*, the ladder is built **per prop pair** (*"too slow for one call with all four props…
+splitting by prop"*), and `baseline_history` is loaded in season chunks. **Each is an intermediate
+indexed table rather than one nested query.**
+
+**⚠ And it compounds with gotcha #4**: a type-mismatched join inside a large multi-stage query does
+not merely run slowly — **at this scale it can drop the connection**, which presents as an
+infrastructure failure rather than a schema problem.
+
+### 6. ⚠⚠ ONE SQL STATEMENT PER BRIDGE CALL — batching can SILENTLY CORRUPT DATA
+> *"**Send EXACTLY ONE SQL statement per tool/API call to this kind of database bridge** — **batching
+> multiple statements into one call has been CONFIRMED to SILENTLY CORRUPT DATA rather than cleanly
+> executing OR cleanly failing.**"*
+
+**This is the most severe gotcha in the list** — not a failure mode but a **corruption** mode, with no
+error either way.
+
+**The bridge's own tool description enforces it**: *"**One statement at a time**"* on both
+`run_sql` and `run_sql_postgres`. **The constraint is honoured by the tooling, and now the reason is
+recorded**: it is not a convenience limit, it is a data-integrity guard.
+
+### 7. Result sets are capped by the bridge, not by the query
+> *"**Query result sets are CAPPED AT A FIXED ROW COUNT BY THE BRIDGE TOOLING ITSELF (confirmed at 500
+> rows)** — **AGGREGATE OR PAGINATE INSIDE THE SQL ITSELF** for anything that could exceed this,
+> **rather than assuming a raw `SELECT *` will return everything.**"*
+
+**Confirmed identical in this stack**: `max_rows` is documented as *"capped at 500."*
+**This is the "hidden internal cap" of §4c.4 in its most common form** — the caller can request more
+and will silently receive 500. **Any count or coverage check must aggregate in SQL (`count(*)`,
+`group by`) rather than returning rows and counting them.**
+
+**⚠ A live example of getting this right**: every live verification in this documentation used
+`count(*)` aggregates — `arenas` (30/0/0/19), the differential logs (0/0/0/582), the config tables —
+**never a `SELECT *` row count.**
 
 ---
 
