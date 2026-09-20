@@ -281,6 +281,44 @@ slice"* was established rather than asserted.
 
 ---
 
+## 7d. TWO CHEAP GUARDS MLB NEVER APPLIED *(T1, lessons document)*
+
+### 7d.1 **Verify a factor actually HAS variance, first**
+> *"for any factor, **verify it actually has variance (`stddev(factor_value) > 0`) as a FIRST sanity
+> check** — **this is cheap and MLB NEVER DID IT PROACTIVELY**."*
+
+**A factor with zero variance cannot explain anything**, yet it will fit, report a coefficient and
+consume a cell. **One `stddev()` before any gate run catches it.**
+
+**This is directly relevant to NBA's empty columns**: `nba_ref.arenas.altitude_ft` and `.timezone` are
+**0 of 30 populated** — an altitude factor built today would have `stddev = 0` and this check would
+have caught it immediately. **Same for any factor reading a column that was created but never filled.**
+
+### 7d.2 **Declare `relevant_prop_keys` explicitly — never apply blindly**
+> *"Each enrichment factor should have **`relevant_prop_keys` explicitly declared** (which props it
+> applies to) **rather than applying blindly** — MLB's `defensive_quality_oaa` factor is correctly
+> scoped this way."*
+
+**NBA implements this as `nba_config.factor_relevance`** — 460 rows of `factor × prop →
+full/partial/none`, described as *"the gate that runs BEFORE any tier logic."* **The lesson was
+carried.**
+
+### 7d.3 **Confidence-tier every research record**
+> *"…(Flex-mode partial-credit payouts) that had been **built once from real data but NEVER RE-CHECKED
+> against further real placed slips**. **Both were reported, but the second was explicitly labelled as
+> a FIRST PASS rather than a settled figure.** **Carry the same explicit confidence-tiering into NBA's
+> own research records — don't let a on[e-off measurement harden into a fact].**"*
+
+**⚠ This applies directly to `NBA_MULTIPLIERS.md` §0.2**: the *"two independent real observations both
+showed identical partial tiers 4/5 = 0.5 and 3/5 = 0.25"* finding is **exactly this shape** — a small
+real-data measurement that looks settled. **It is labelled *"suggests these MAY be flat/constant"* in
+the source, and that hedge must survive into any use of it.**
+
+**The NBA analogue already in place**: the `BACKTEST-LOCKED` tag on `classification_config` entries
+distinguishes earned values from seeds. **The same discipline, applied to config instead of prose.**
+
+---
+
 ## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
 
 ### 8.1 Blowout — on the REAL market spread
