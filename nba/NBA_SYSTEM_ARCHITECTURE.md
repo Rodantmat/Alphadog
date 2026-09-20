@@ -53,22 +53,41 @@ Every architectural choice below follows from that.
 ## 3. THE MCP ADMIN BRIDGE — `alphadog-v2-admin-sql.js`
 
 The single worker that gives the assistant its tools. Every NBA worker must be wired into it in three
-places: `bindingMap`, a dispatch branch, and the tool-schema enum.
+places — `bindingMap`, a dispatch branch, and the tool-schema enum — **plus a fourth edit in
+`generate_wrangler_configs.py`**, because the deploy regenerates wrangler files and would erase
+anything added by hand.
 
-**Tools it exposes:** `run_sql_postgres` · `run_sql` (D1, legacy) · `github_get_file` ·
-`github_put_file` · `github_patch_file` · `github_str_replace` · `github_list_dir` ·
-`github_grep_file` · `github_list_workflow_runs` · `github_get_workflow_run_log` ·
+**Implementation details worth knowing:**
+- **`POST /mcp` is handled by a Durable Object** — binding **`MCP_OBJECT`**, class **`AlphadogMcp`**,
+  via the **McpAgent** — *"not hand-rolled JSON-RPC."*
+- **The OAuth endpoints are a minimal single-user auto-approve flow, NOT a real login system.**
+- A diagnostics route reports **binding and secret PRESENCE** (never values) —
+  `bindingPresence(env, REQUIRED_DB_BINDINGS)`, `varPresence(env, EXPECTED_VARS)`,
+  `secrets_present_only`.
+- Service bindings are declared in the generator, e.g.
+  `{"service": "alphadog-v2-daily-delta-runner"}`.
+
+**Tools it exposes:** `run_sql_postgres` · `run_sql` (D1, legacy — **D1 decommissioned 2026-08-12**) ·
+`github_get_file` · `github_put_file` · `github_patch_file` · `github_str_replace` ·
+`github_list_dir` · `github_grep_file` · `github_list_workflow_runs` · `github_get_workflow_run_log` ·
 `github_trigger_workflow` · `run_job` · `check_bindings` · `call_gemini` · `scan_webpack_chunks`
 
 **Known constraints:**
-- **A newly added tool is NOT usable in the session that adds it** — the conversation's tool list is
-  fixed at session start, and a reconnect does not help.
-- **`GITHUB_TOKEN` is a Worker secret, correctly not exposed** to the assistant, so the GitHub REST API
-  cannot be called directly from bash.
-- **`workflow_dispatch` cannot be fired by a commit/push** — but `on: push: paths:` can.
-  **→ hence the file-trigger mechanism.**
-- The bridge's own SQL tool has a short request timeout: long `CREATE INDEX` and `VACUUM` statements
-  must run inside a GitHub Actions job instead.
+- **A newly added tool is NOT usable in the session that adds it** — the tool list is cached **at the
+  CONNECTION level, not per chat**, so a reconnect does not help. **It refreshes between turns**, and
+  the refresh is **non-deterministic** — sometimes immediate, sometimes not. **Re-check a blocked
+  binding before committing to an expensive workaround** (T6: 2 of 33 manual SQL chunks, then the
+  Worker did the rest in 25 seconds).
+- **`GITHUB_TOKEN` is a Worker secret, correctly not exposed**, so the GitHub REST API cannot be called
+  from bash. The shared set is `GITHUB_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BRANCH`.
+- **`workflow_dispatch` cannot be fired by a commit/push** — but `on: push: paths:` can. **→ hence the
+  file-trigger mechanism.**
+- **`run_job`'s `target` is a FIXED, pre-wired enum** with **hard client-side validation** — which is
+  why no server-side routing can work around a missing binding.
+- The bridge's SQL tool has a short request timeout: long `CREATE INDEX` and `VACUUM` statements must
+  run inside a GitHub Actions job.
+- **The assistant cannot reach `workers.dev` URLs at all** — `x-deny-reason: host_not_allowed` from its
+  own egress proxy. **Everything goes through `run_job`.**
 
 ---
 
