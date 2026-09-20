@@ -376,7 +376,60 @@ anything added by hand.
 **Deploy order matters:** the fleet deploys **alphabetically from the file diff**, so `admin-sql`
 (which holds new workers' bindings) sorted before them and failed. The last-deploy fix is permanent.
 
-### ⚠ CHUNKING / MULTI-TICK CONTINUATION — and the per-tick trap
+### ⚠⚠ "NETWORK CONNECTION LOST" USUALLY MEANS A PLAIN SQL ERROR
+*Source: T1, blueprint §7a — **"the single biggest mistake of MLB's entire infrastructure migration."***
+
+> *"MLB spent **REAL HOURS chasing a generic 'NETWORK CONNECTION LOST' error as an ACTUAL
+> CONNECTION/NETWORK PROBLEM** — trying, in sequence:
+> **(1) reverting bulk inserts to individual-row inserts — WRONG, cost a real ~15× PERFORMANCE
+> REGRESSION that then had to be undone**;
+> **(2) restructuring code to close/reopen connections around external fetches — reasonable in
+> principle, NOT the cause**;
+> **(3) adding multi-tick chunking — a good pattern regardless, ALSO NOT THE CAUSE.**
+> **THE REAL FIX WAS ONE CONNECTION OPTION: `prepare: false`.**
+> **The underlying problem the whole time was `postgres.js`'s PREPARED-STATEMENT MODE MASKING A PLAIN,
+> ORDINARY SQL ERROR — A MISSING COLUMN, A TYPE MISMATCH — BEHIND A GENERIC-SOUNDING CONNECTION
+> ERROR.**
+> **For NBA: if a Postgres/Hyperdrive worker throws a vague 'connection lost'-style error, CHECK
+> `prepare: false` AND LOOK FOR A GENUINE UNDERLYING SQL ERROR BEFORE TRYING ANYTHING ELSE** — **don't
+> let a scary-sounding error name send you down expensive, unrelated rabbit holes.**"*
+
+**This is why `prepare: false` is mandatory in the connection signature** — and now the reason is
+recorded, not just the setting.
+
+**⚠ The masked errors named are exactly NBA's two most common bug classes:**
+| Masked error | NBA instances |
+|---|---|
+| **A missing column** | the team advanced table has no `usg_pct`/`reb_pct`; `player_game_log` has no team tricode columns; `ARENA`/`ARENACAPACITY` gone from the standings endpoint |
+| **A type mismatch** | `team_id` TEXT vs `nba_team_id` BIGINT; `PLAYER_ID` cast to string too late |
+
+**So NBA has repeatedly hit precisely the errors that `prepare: true` would have disguised as network
+failures.** They surfaced as clear errors **because `prepare: false` is set.**
+
+**The cost of the misdiagnosis is the lesson**: three plausible fixes attempted, one of them a **15×
+performance regression** that had to be reverted, before a single config option resolved it.
+
+### Scope the differential/dedup logic BY SOURCE, not just by natural key
+> *"Rows that are identical get **a cheap `active=1, updated_at=now()` TOUCH ONLY**.
+> **Scope this differential/dedup logic BY SOURCE, not just by NATURAL KEY** — MLB had **a real bug
+> where scoping ONLY BY NATURAL KEY caused ONE SOURCE'S FRESHER DATA TO BE SILENTLY BLOCKED because A
+> DIFFERENT SOURCE HAD ALREADY 'SATISFIED' THE SAME KEY.**"*
+
+**⚠ NBA has multi-source keys in several places:**
+| Table | Sources sharing a key |
+|---|---|
+| `nba_ref.officials` | **Wikipedia roster** + **`boxscoresummaryv3` per-game assignments** |
+| `nba_ref.players` | `commonallplayers` + **`playerindex`** (the position fix) |
+| `nba_ref.arenas` | `teamdetails` + *(altitude/timezone, currently unpopulated)* |
+| `nba_market.board_snapshots` | **five apps** + The Odds API |
+| `nba_ref.team_aliases` | `alias_type` distinguishes **`manual_alias`** from derived |
+
+**`team_aliases` carries `source_key` explicitly** — that is the prescribed source-scoping. **Whether
+the others scope by source or only by natural key is unverified**, and the named failure is
+**silent**: fresher data blocked because another source already satisfied the key.
+
+**The `playerindex` position fix is the case to check**: positions arrived from a *second* source for
+players already written from `commonallplayers`. **It worked (582/582), so the scoping held there.**
 > *"**Cloudflare Workers have REAL EXECUTION-TIME CONSTRAINTS.** The proven MLB pattern: **PROCESS A
 > BOUNDED SLICE PER INVOCATION, TRACK CONTINUATION STATE, and ONLY MARK A SOURCE 'FULLY SYNCED' ON THE
 > FINAL TICK once THE COMPLETE FRESH DATASET HAS BEEN SEEN** — **NEVER PER-TICK, or INTERMEDIATE TICKS
