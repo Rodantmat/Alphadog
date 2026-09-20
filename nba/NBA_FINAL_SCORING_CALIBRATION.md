@@ -263,6 +263,32 @@ band, phase, n_uncertain, built_at`.
 
 ## 2. THE TWO-LAYER CONTRACT
 
+### ⚠ The split was ALSO an operational decision, not only a correctness one
+*Source: T1, `NBA_SYSTEM_DRAFT.md` §4b. Recorded 2026-09-20 (T1 pass 32) — **the stated purpose of the
+two-layer split had not been recorded anywhere.***
+
+This section documents the split as a **correctness** boundary: baseline applies static factors,
+enrichment applies delta factors, *"no oscillation."* **§4b gives a second, independent reason it was
+built that way** — and names it as the design intent:
+
+> *"**The optional second run is exactly the cheap, fast re-run THE TWO-STAGE BASELINE/ENRICHMENT
+> SEPARATION WAS DESIGNED TO MAKE POSSIBLE** — it only needs to **re-run the Scoring Engine against
+> the already-cached baseline plus fresh enrichment/market data, NOT RECOMPUTE ANYTHING
+> EXPENSIVE.**"*
+
+**The two framings are compatible and neither implies the other.** A system could separate static
+from delta purely for correctness and still rebuild both every run; **the caching is what makes the
+separation pay operationally.** And `NBA_SYSTEM_DESIGN.md` §4 independently confirms the economics:
+*"the refit uses only games strictly before today, so **it is identical at 1 AM and 1:15 PM**."*
+**If it is identical at 1 AM and 1:15 PM, it is identical at 4 PM** — so a same-day re-score costs
+the board scrape, the availability delta and the scoring, **not the refit.**
+
+**⚠ The capability this was built for does not exist.** The cadence specified *"once, **sometimes
+twice a day**"*, with the second run triggered by **a late injury designation change or significant
+line movement**. **P3 ships one run, and neither trigger has a detector.** So the architecture pays
+the cost of the split and **does not yet collect this part of the benefit.** Recorded in
+`NBA_OPEN_ITEMS.md` → *FROM T1 PASS 32*.
+
 > *"Baseline applies static factors; **enrichment applies DELTA factors**: **`market_spread −
 > derived_spread`**, **`confirmed_out` superseding `questionable`**. **No oscillation, no
 > double-count, and the value of live information becomes measurable on its own.**"* — T8
