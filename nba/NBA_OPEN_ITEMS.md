@@ -662,7 +662,7 @@ file.***
 that was never defined."* **It was defined — right here, in the blueprint T1 had read in full.**
 **So it is not an unthought-of gap; it is a documented instruction that was not followed**, the same
 shape as blueprint §4o (*PASS 38*), the per-worker rule (*PASS 36*) and §2's ID check (*PASS 50*).
-**Cost, measured**: four failed runs and thirteen polling sleeps.
+**Cost, measured**: four failed runs and **25 polling sleeps totalling 40.3 minutes** *(corrected 2026-09-20, pass 66 — see FROM T1 PASS 66)*.
 ⚠ **And the instruction is undocumented in all twelve documents** — so nothing would have prompted
 the check on the next worker either.
 
