@@ -1456,6 +1456,27 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.91 — PASS 61 (angle: **Domain Mapping §2's main table, ROW BY ROW**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 61; the six missing rows are now in
+`NBA_FINAL_SCORING_CALIBRATION.md` §7h with outcomes.*
+
+- **⚠ §7h — the mandated home of the MLB→NBA factor mapping — transcribes 4 of the source's 10 rows.**
+  Missing: bullpen fatigue, handedness matchup, recent form, lineup protection, opposing starter
+  quality, quality of contact. **Each has a live NBA counterpart.**
+- **⚠ The scorecard is the part that matters, and it is consistent with two earlier findings.**
+  The handoff's most confident NBA forecasts are the ones that did not hold: *"teammate/rotation
+  fatigue… **likely a MORE important factor for NBA**"* → **absorbed into the baseline**;
+  *"'usage rate change with a teammate out' — **a real, well-documented NBA effect**"* → became
+  **A2**, and **A2 was FULLY RETRACTED after five failed panels** — **the one prediction actively
+  tested and overturned.** Its plainest call — **recent form, "port directly"** — became **the EWMA
+  core of the baseline**.
+- **Third case of a confident forward-looking handoff claim not surviving contact**, after ParlayAPI
+  (§T1.79) and the four NBA-specific factors (§T1.82). **The filter, stated once: the handoff's
+  accounts of MLB's MEASURED EXPERIENCE held; its FORECASTS about NBA did not.** It applies directly
+  to the ~40% of `ALPHADOG_DOS_AND_DONTS.md` and `ALPHADOG_SYSTEM_MAP.md` still unread (§T1.67).
+
+---
+
 ### T1.90 — PASS 60 (angle: **lessons Parts B, E, F by concept**) — **NEW MATERIAL · CLEAN COUNT RESET TO 0**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 60. **Parts B and E fully covered; Part F's
 last two lessons were not.***
