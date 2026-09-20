@@ -1456,6 +1456,31 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.75 — PASS 45 (angle: **the artefacts T1 WROTE, each verified against the live repo**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 45. Source: T1's write
+calls, lines ~40000–43895.*
+
+- **⚠ An undocumented provenance layer.** **VERIFIED**: `nba/data/` holds **223 files, 41 of them
+  `*_meta.json` sidecars** carrying `fetched_at`, `source_url`, `http_status`, an entity count and
+  `error`. **This is what makes *"read the committed file, not the scraper's own claim"*
+  checkable** — and it appeared in **none** of the twelve documents.
+- **⚠ Coverage is about one in five, and NOT RECORDED as a decision.** For a file without a sidecar
+  there is **no committed record of when it was fetched or whether it succeeded**, and the workflow
+  logs that would answer it **expire** (§T1.70).
+- **Current-state fact from the sample**: the live teams file was fetched **2026-09-14** for
+  **`Season=2026-27`**, `http_status 200`, `team_count 30`.
+- **⚠ T1 does not end with a working loop — it ends mid-verification.** Its final message:
+  *"**In progress right now:** the updated worker just finished deploying. **I still need to actually
+  trigger it via `run_job` and re-verify against Postgres**…"* **The transcript stops there.**
+  **Everything recorded about the loop being closed happened in T2.** `NBA_RECIPE.md` STEP 6 already
+  says *(T1 → T2)*; what was missing is that **T1's own last state is an unverified deploy.**
+- **The distinction T1 drew is the right one**: its `curl_cffi` success claim is about **the GitHub
+  Actions scrape**, not about **the worker writing to Postgres**. **Two steps; only the first was
+  verified inside T1.** Exactly blueprint §8's rule — *"before declaring any bug fixed, verify
+  against real data"* — **and the documents had collapsed the two steps into one.**
+
+---
+
 ### T1.74 — PASS 44 (angle: **read the deploy generator pasted in T1 as SOURCE CODE, verified live**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 44. Source: T1 lines
 ~16400–18400; every constant re-checked against the live `generate_wrangler_configs.py`.*
