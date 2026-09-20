@@ -1,0 +1,130 @@
+
+=== Journal Entry 2026-09-03T03:22:04.406615+00:00 ===
+2026-09-03-03-22-04-nba-expansion-phase1-static.txt
+[NBA expansion build session for AlphaDog v2 - Phase 1 (live system recon), Phase 2 (system draft), Phase 3a static data start. Covers infrastructure setup, deploy pipeline extension, first NBA worker build and deployment, source investigation (stats.nba.com blocking), GitHub Actions scraper solution with curl_cffi, and end-to-end verification of real nba.com data flowing into nba_ref.teams. All NBA work is additive-only; no MLB system edits authorized.]
+
+
+
+
+=== Journal Entry 2026-09-03T04:41:29.230787+00:00 ===
+2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt
+[AlphaDog v2 NBA expansion session - Phase 3a static/enrichment layer complete. Covers: teams/players/arenas/officials from prior session (already summarized), then this session's continuation: verifying teams worker (source_key fix), building player bio/season profile, player tracking, team stats, on/off-court splits, and extensive research pass (Gemini x2, web research) identifying DARKO as the free, highest-predictive-value all-in-one metric. Session ends at research/investigation checkpoint for DARKO scraping approach.]
+
+
+
+
+=== Journal Entry 2026-09-03T22:24:13.956493+00:00 ===
+2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt
+[AlphaDog v2 NBA expansion - Phase 3a static/enrichment layer fully complete. Session covers: DARKO DPM scraper (SvelteKit hydration extraction, 530/530), weekly differential worker (snapshot-based change detection for players/teams/officials with real test proof), season schedule/calendar (scheduleleaguev2, 2666 games across 2025-26 + 2026-27 seasons, raw.githubusercontent.com fix for 1MB Contents API limit), play-type (Synergy) data (synergyplaytypes, 3364 player + 630 team records), Tier-1 tracking detail (Passing/Rebounding/Drives/CatchShoot/PullUpShot/touches, 4652 records), and four research passes culminating in Shot Quality Delta identification as the last remaining static pillar.]
+
+
+
+
+=== Journal Entry 2026-09-03T22:38:55.891118+00:00 ===
+2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt
+[AlphaDog v2 NBA expansion - Phase 3b historical backfill and baseline methodology design session (2026-09-03). Covers: full 3-season game log backfill (2023-24, 2024-25, 2025-26), advanced per-game stats via MeasureType=Advanced bulk endpoints, career season totals, splits (DaysRest/Location/Month/PrePostAllStar/WinsLosses), baseline projection methodology design (EWMA/Bayesian shrinkage/variance), architecture correction (baseline strictly historical, enrichment separate), and operating cadence locked (weekly/daily delta/master run timing).]
+
+
+
+
+=== Journal Entry 2026-09-09T01:49:59.341552+00:00 ===
+2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt
+[AlphaDog v2 NBA expansion session (2026-09-03 cont'd). Covers: MLB-analogy backfill audit, position bug fix, Defense-vs-Position derived table, per-game starter/bench status backfill (boxscoretraditionalv2 failure diagnosed, v3 fix, 32,179 rows verified), Postgres writer worker built, tooling constraint blocking final load.]
+
+
+
+
+=== Journal Entry 2026-09-09T02:15:50.370489+00:00 ===
+2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt
+[AlphaDog v2 NBA expansion session (2026-09-09 cont'd). Covers: manual starter-status SQL load (Worker binding refresh confirmed), per-game officials backfill (boxscoresummaryv3, bug caught+fixed, 3681 rows), lineup synergy build (leaguedashlineups, 8000 rows, two bugs fixed), double-check research pass (sharp-bettor claims, NBA injury PDF discovery), daily delta ingestion worker build (new concrete gap closed, real completeness-check bug caught+fixed using GAME_ID prefix 002). Session ends with all backfill/static/delta gaps closed; baseline projection pipeline and master run/enrichment explicitly out of scope for this session.]
+
+
+
+
+=== Journal Entry 2026-09-09T20:48:34.125176+00:00 ===
+2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt
+[AlphaDog v2 NBA classification, baseline pipeline, and backtest calibration session (2026-09-09). Covers: full prop universe deep-check across all apps and period layers, complete tiering architecture design (5 dimensions: player/rate/role tiers, factor tiers, variation bands, direction, prop line), design document locked, schema materialized in nba_config, backtest harness built and iterated to leg-level calibration standard. Contains: design doc path, schema tables, Python harness files, calibration iteration history (v1-v17), leg-level results per prop/band/direction/confidence-band for 2025-26 and 2024-25 holdout.]
+
+
+
+
+=== Journal Entry 2026-09-09T22:10:01.255480+00:00 ===
+2026-09-09-22-10-00-nba-baseline-production-pipeline.txt
+[AlphaDog v2 NBA baseline classification phase completion and production pipeline build (2026-09-09 continuation). Covers: single-stat prop re-certification with factor layer, combos/DD joint simulation, period props layer (1Q/1H/2H/4Q) with 3-part mixture and OT handling, production builder (patcher pattern), loader worker, Postgres tables. All backtest harness files, workflow files, config entries, and operational findings recorded.]
+
+
+
+
+=== Journal Entry 2026-09-10T01:31:13.468752+00:00 ===
+2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt
+[AlphaDog v2 NBA enrichment layer implementation session (2026-09-09 continuation). Covers: factor lock completion (5 passes), baseline reassignment rule, return-ramp and team-change carryover incorporated into the recipe (v30), day-before injury report wired into the baseline builders, parity rule for backfills, scrapers built (injury report PDF, season tables, per-game matchups), backfill debugging (space-insensitive parser fix), and the absence prior measured on 3 seasons.]
+
+
+
+
+=== Journal Entry 2026-09-10T04:53:47.313679+00:00 ===
+2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt
+[AlphaDog v2 NBA enrichment backfill continuation session (2026-09-10). Covers: every enrichment factor's backfill status for two seasons, injury report shard migration (hourly URL pattern fix), per-game starters/officials season-aware scraper, matchup 2024-25/2023-24 pulls, coaches table, M1 defender quality measurement, ParlayAPI/OddsAPI/OddsPapi market key validation and exhaustive historical board research, game-line backfill to Postgres (nba_market.game_lines_closing), DFS board puller built and tested (nba_market.board_snapshots), Odds API $30 plan verified against 2024-25 data, overnight queue finalized. Owner time zone: Pacific (San Diego). All times the owner gives or asks for are Pacific.]
+
+
+
+
+=== Journal Entry 2026-09-11T21:01:23.614340+00:00 ===
+2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt
+[AlphaDog v2 NBA session (2026-09-10, cont'd): board source decisions (PP/Sleeper/Underdog own scrapers vs ParlayAPI), Underdog full-board scraper v3 built from owner-captured cURLs, Fliff API reverse-engineered from web bundles, same-moment diffs proving our scrapers beat ParlayAPI, documentation pass updating COMPASS/log/lessons/mining doc, overnight backfill verification. Owner is in San Diego (Pacific). All times PT.]
+
+
+
+
+=== Journal Entry 2026-09-13T01:03:48.854326+00:00 ===
+2026-09-13-01-03-48-nba-boards-grader-market-2026-09-10.txt
+[AlphaDog v2 NBA session continuing from prior summary: all five board scrapers built (PP/Sleeper/UD/Fliff own scrapers + Betr via owner session), board backfill two seasons completed, outcome grader built, tier mapping built, per-book calibration in progress. Major architecture decisions, data quality fixes, and research on PrizePicks demon/goblin multipliers. Owner in San Diego/California. All times PT.]
+
+
+
+
+=== Journal Entry 2026-09-13T20:53:24.233304+00:00 ===
+2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt
+[AlphaDog v2 NBA session covering: grader build, PrizePicks tier/demon-goblin answer, market adjuster, baseline coverage fixes (combos gap, ladder depth), per-player coverage checks, day-by-day baseline history (18.78M rows, 29 stat types, both seasons), game-line snapshots, event-game map, stage assignment by publish time, DB upgrade, MLB backtest drop, full audit. All major pre-enrichment data work completed.]
+
+
+
+
+=== Journal Entry 2026-09-18T17:12:54.048166+00:00 ===
+2026-09-18-17-12-53-nba-enrichment-factors-a2-n1-reliability-audit-2026-09-12.txt
+[NBA AlphaDog v2 session covering: enrichment engine design, redistribution factor A2 (five failed panels → allocator counterfactual, conservation gate), N1 status resolution measured at 2:30 PM PT, B4 rejected twice, A5 projected lineups rejected, full prop reliability audit (30 props), oreb fixed and penalized, Fliff scraper fixed, live board archiver built, documentation pass.]
+
+
+
+
+=== Journal Entry 2026-09-19T18:20:09.702708+00:00 ===
+2026-09-19-18-20-09-nba-enrichment-blowout-matchup-2026-09-13.txt
+[NBA AlphaDog v2 session: enrichment factor audit (A2 fully retracted, defender ratings rebuilt, funnel architecture, leg-level gating), blowout factor upgraded to real market spread (non-negotiable), team matchup market total measured, full 60-season-prop baseline rebuild (deadlock debugging), calibration layer for all 30 props with season-phase awareness. Major findings: baseline beats every enrichment factor at leg level; blowout now uses market spread (100% coverage, 2,454 games); matchup signal confirmed.]
+
+
+
+
+=== Journal Entry 2026-09-20T04:58:11.741665+00:00 ===
+2026-09-20-04-58-11-nba-confidence-calibration-final-engine-2026-09-19.txt
+[NBA AlphaDog v2 session: final calculation engine complete (HP, score, confidence), confidence v3 development with measured deduction model, deep group sampling with query performance debugging (EXPLAIN analysis, temp table materialization, per-prop loop), and full system completion status check.]
+
+
+
+
+=== Journal Entry 2026-09-20T06:12:04.536497+00:00 ===
+2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19.txt
+[NBA AlphaDog v2 session: three production pipelines built and debugged (P1 weekly static, P2 overnight heavy, P3 afternoon light), board-scoped scorer with four-way goblin/demon/More/Less taxonomy, PrizePicks NBA scraper created, confidence v3 with enhancing score (0-100), storage diet, PrizePicks multiplier probe, pipeline verification and replay simulation finding 19+ defects only visible by execution.]
+
+
+
+
+=== Journal Entry 2026-09-20T18:46:12 (T19) ===
+2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt
+[NBA AlphaDog v2 DOCUMENTATION session 1: the 12-document mandate established (8 original + 4 new). Covers the pass rule (3 consecutive clean passes per transcript, count resets on any finding), the DRIFT NOTICE discovery (T3-T9 swept against only 4 of 8 documents, counts voided), and the initial sweep of T1's handoff documents.]
+
+
+
+
+=== Journal Entry 2026-09-20T19:56:26 (T20) ===
+2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt
+[NBA AlphaDog v2 DOCUMENTATION session 2: exhaustive multi-pass extraction from T1 against all 12 documents. 20+ passes, clean count still 0. Contains extensive content added to NBA_MULTIPLIERS, NBA_GOBLIN_DEMON, NBA_FINAL_SCORING_CALIBRATION, NBA_BASELINE_CALIBRATION, NBA_OPEN_ITEMS, NBA_WORKERS, NBA_SYSTEM_ARCHITECTURE, NBA_SYSTEM_DESIGN, NBA_RECIPE. All four new files created. Ends with the transcripts folder and this work order being created.]
