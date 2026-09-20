@@ -35,6 +35,39 @@ Before any code:
 
 ---
 
+## STEP 0a — Who the recipe is being cooked for *(T1)*
+*Source: `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §7. Recorded 2026-09-20 (T1 pass 31) — §7 was
+undocumented. Stated as: **"apply this from the very first NBA interaction, not as something to
+discover gradually."***
+
+**This belongs in the recipe before the ingredients, because it changed what could be built at all:**
+> *"**Owns and operates the entire system alone, working from a phone with no terminal access — the AI
+> assistant is THE ONLY INTERFACE to the database, repository, and deploy pipeline.**"*
+
+**That single sentence is why STEP 0b's ordering puts the bridge second and why STEP 4 exists at
+all.** No terminal means no local scraper, no `wrangler deploy` by hand, no `psql`. Every
+capability had to be reachable through a tool the assistant could call. Full architectural
+consequences: `NBA_SYSTEM_ARCHITECTURE.md` §1a. Full operating model:
+`NBA_MASTER_SUMMARY.md` §T1.61.
+
+**Three cooking rules that come with it, and govern every step below:**
+1. **No claims of success without evidence verified directly against live data.** *(The same standard
+   blueprint §8 and §9 state from the engineering side — arrived at independently.)*
+2. **When concluding something is impossible or unavailable, CHECK TWICE before reporting it.** From
+   a real, confirmed case where *"an arbitrary threshold had been mistaken for a hard data limit"* —
+   **the owner was right and the assistant was wrong.**
+3. **"Run every check" means literally every check, including ones expected to pass** — *"not a subset
+   chosen for efficiency."*
+
+### The three non-goals, stated at the same time
+Written before any code: **no per-prop worker architecture** (MLB left *"19 dead stub files behind as
+evidence"*) · **no weather / quality-of-contact / RFI-analogue factors** (*"no basketball analogue…
+wasted effort"*) · **no auto-scheduling orchestrator until the manual pipeline is verified end-to-end
+against real data at least once.** All three honoured — see `NBA_SYSTEM_DESIGN.md` §0.75, where the
+third is flagged as a **sequencing rule whose condition is now testable**.
+
+---
+
 ## STEP 0b — The prioritized startup plan, as originally written *(T1)*
 *Source: `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §5. Recorded 2026-09-20.*
 
