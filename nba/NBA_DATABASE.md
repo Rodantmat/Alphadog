@@ -222,6 +222,55 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 `credential_key` TEXT **PK** · `credential_value_encrypted` TEXT · `updated_at`
 Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never live in chat memory.**
 
+### `nba_config.stat_decay_config` — 13 rows *(T7)*
+**Per-stat EWMA memory. The single most important config table in the system.**
+`stat_key` · `display_name` · **`ewma_alpha`** · **`min_lookback_games`** ·
+**`shrinkage_stabilization_games`** · **`memory_class`** · **`rationale`** · `active` · `updated_at`
+
+| `stat_key` | α | lookback | stabilise | class |
+|---|---|---|---|---|
+| **minutes** | **0.20** | 8 | 10 | short |
+| usg_pct | 0.15 | 10 | 15 | short |
+| ast_rate | 0.15 | 10 | 20 | short |
+| pts_rate | 0.12 | 15 | 25 | medium-short |
+| fg3a_rate | 0.12 | 15 | 25 | medium-short |
+| stl_rate | 0.10 | 15 | 60 | medium-short |
+| fta_rate | 0.10 | 15 | 30 | medium |
+| tov_rate | 0.10 | 15 | 40 | medium |
+| reb_rate | 0.08 | 20 | 40 | medium |
+| blk_rate | 0.08 | 20 | 50 | medium |
+| fg_pct | 0.06 | 25 | 120 | medium-long |
+| ft_pct | 0.04 | 30 | 150 | long |
+| **fg3_pct** | **0.03** | 40 | **300** | long |
+
+**Alpha spread 6.7× · stabilisation spread 30×. A single alpha would be wrong for 11 of 13.**
+Rated *"**Highest** impact, **zero data cost**"* in the T7 research — *"3pt% needs a long memory, assist
+rate needs a short one."*
+
+**Every row carries its `rationale`**, e.g.:
+- **minutes** — *"the single biggest error source in props… set by coaching decisions that change
+  abruptly; shortest memory of all"*
+- **usg_pct** — *"USG% from 30 games ago as a 4th option is irrelevant if now a 2nd option"*
+- **fg3_pct** — *"takes hundreds of attempts to stabilise; a 10-game hot/cold streak is mostly noise"*
+- **fg3a_rate vs fg3_pct** — *"attempt VOLUME (unlike make %) is role/scheme-driven"* — **the same stat
+  split into two memory classes by component.**
+
+**This is the owner's no-hardcoding rule applied to model hyperparameters**, not just timeouts —
+SQL-editable, with the justification stored beside each value.
+
+### Additional measure-type game logs *(T7)*
+Built after the data-universe research — **9 cheap bulk calls, 3 seasons:**
+- **`nba_stats.player_game_log_usage`** — share-of-team-stats per game. *"The direct input for
+  role/opportunity modelling"*, and the stated **90% proxy for the missing 2023-24/2024-25 starter
+  status**.
+- **`nba_stats.player_game_log_scoring`** — shot composition (%paint / mid / 3pt / FT, **%assisted**)
+  → *"scoring stability archetype"*.
+- **`nba_team.team_game_log_four_factors`** — true efficiency (eFG%, FTA rate).
+- **`nba_team.team_game_log_scoring`**.
+
+**Skipped deliberately**: Opponent / Defense / Misc measure types — *"single-game descriptive, not
+baseline talent."*
+
 ### `nba_config.classification_config``config_key` · `config_json` JSONB · `notes` · `updated_at`. The system's decision record — every major
 verdict is written here so it is queryable rather than trapped in a log. Keys include
 `prizepicks_goblin_demon_tier_spec`, `board_payout_conversion_rules`, `rejected_on_data`,
