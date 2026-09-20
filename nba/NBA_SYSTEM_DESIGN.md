@@ -129,6 +129,44 @@ master-run's Daily Context or Scoring stages touch it"* → **P2 must complete b
 
 ---
 
+## 0.75 THE THREE EXPLICIT NON-GOALS — what NBA was told NOT to build
+*Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§6**, written before any NBA code existed.
+Recorded 2026-09-20 (T1 pass 31) — the three facts existed in these documents as **things NBA did**;
+they had never been recorded as **instructions NBA was given**.*
+
+> 1. *"**Don't build a per-prop 'one worker per prop' architecture** — MLB tried this, abandoned it in
+>    favour of a unified scoring engine, and **left 19 dead stub files behind as evidence**. **Build
+>    the unified version from the start.**"*
+> 2. *"**Don't try to port MLB's weather, quality-of-contact, or RFI/NRFI-style factors** — they have
+>    **no basketball analogue** and building them would be **wasted effort**."*
+> 3. *"**Don't invest in an elaborate auto-scheduling orchestrator BEFORE the manual pipeline works
+>    end-to-end and has been verified against real data at least once.**"*
+
+| # | Honoured? | Evidence in this system |
+|---|---|---|
+| 1 | ✅ | one unified engine — `nba/build_final_hp.py`; no per-prop worker was ever created |
+| 2 | ✅ | no weather, quality-of-contact or RFI-analogue factor exists in `nba_config.factor_registry` |
+| 3 | ✅ **then**, ⚠ **now** | **there is no orchestrator** — see §0.6 — but P2 and P3 **still have no cron** |
+
+### ⚠ Non-goal 3 is a SEQUENCING rule, and the sequence has moved on
+It forbids an orchestrator **"before the manual pipeline works end-to-end and has been verified
+against real data at least once."** **It does not forbid scheduling.** It is the correct explanation
+for why **P2 (§3) and P3 (§4) were built with `no cron yet`** — and **it stops applying the moment
+that one verified end-to-end run exists.**
+
+**Season opens 2026-10-03.** **Whether that verified end-to-end run has happened is NOT RECORDED** —
+§7's verification table marks the pipelines' status, but the specific question non-goal 3 poses has
+never been asked in these documents. **Flagged in `NBA_OPEN_ITEMS.md`, not resolved here.**
+
+### ⚠ The owner restated non-goal 1's sibling independently, in his own words
+Non-goal 3 came from the MLB handoff. **The owner arrived at the same conclusion separately** —
+*"no runner, orchestrator or anything like, **it only breaks the run**"* (§0.6). **Two independent
+sources, one rule**, which is why it is the most robust constraint in this document. **Note they are
+not identical**: the handoff says *"not yet"*; the owner says *"not at all."* **The owner's is the
+binding one.**
+
+---
+
 ## 0.8 CHAIN INDEPENDENCE — don't build one monolithic run
 *Source: T1, blueprint §4o. Recorded 2026-09-20.*
 
