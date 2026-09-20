@@ -1240,6 +1240,43 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
+### ⚠⚠ STALE-CDN RISK ON THE COMMIT → LOAD CHAIN
+T1's blueprint §4m:
+> *"**A CDN or edge cache in front of a raw file-serving endpoint — e.g. a raw-content URL for a
+> hosted git repository — can serve A STALE, PRE-DEPLOY VERSION OF A FILE FOR SEVERAL MINUTES AFTER A
+> REAL, SUCCESSFUL DEPLOY.**
+> MLB confirmed this produced **TWO SEPARATE FALSE 'the change didn't actually land' conclusions**
+> before learning to **verify through THE PLATFORM'S OWN API-LEVEL FILE-READ TOOL rather than fetching
+> the raw public URL directly.**"*
+
+**NBA's entire load path runs through that surface:**
+- Every writer Worker fetches committed JSON from **`raw.githubusercontent.com`** — chosen
+  deliberately because *"the GitHub Contents API **silently returns EMPTY above 1 MB**."*
+- **`load_baseline_ladder.py` fetches the artefact over HTTP from the repo**, with the workflow's own
+  note: *"**COMMIT BEFORE LOADING** … fetches over HTTP from raw.githubusercontent, **NOT from the
+  runner's local disk**."*
+
+**The two surfaces fail in opposite directions, which is the trap:**
+| Surface | Failure |
+|---|---|
+| Contents API | **silently EMPTY above 1 MB** |
+| `raw.githubusercontent.com` | **silently STALE for minutes after commit** |
+
+**⚠ P2 commits the ladder and loads it IN THE SAME RUN** — the shortest possible write-to-read gap,
+and therefore the highest stale-read exposure. **A stale load would ingest the PREVIOUS day's artefact
+while reporting success.**
+
+**Detectable after the fact**: `baseline_ladder_runs.source_file` records what was loaded, and
+`baseline_ladder.asof` would reveal a wrong date. **Nothing asserts freshness BEFORE loading.**
+
+**A cheap guard exists**: the loader already knows the expected `asof`; **asserting that the fetched
+artefact's own `asof` matches before writing** turns a silent stale load into a loud failure — the
+same shape as the patcher's anchor assertions.
+
+**And it explains T3's polling behaviour**: *"a newer commit landed after my last push"*, *"still not
+committed — let me check the run directly rather than keep polling blindly."* **Polling a raw URL for
+a just-committed file is exactly the pattern that produces false negatives.**
+
 ### ⚠⚠ A ROLLING RE-VERIFICATION WINDOW WAS SPECIFIED — NBA DECIDED THE OPPOSITE
 T1's blueprint §4k:
 > *"**Any pipeline that FINALIZES DATA for a recently-completed event should use a BOUNDED ROLLING
