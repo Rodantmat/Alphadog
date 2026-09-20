@@ -406,6 +406,61 @@ which forced the real solution: since `workflow_dispatch` cannot be fired by a p
 paths:` can**, the workflow was changed to watch a trigger file. **That constraint is the direct cause
 of the file-trigger mechanism still in use today.**
 
+### T1.16 — PASS 6 FINDINGS (added 2026-09-20; the owner's full specification, verbatim)
+
+**RUN 3 — THE MASTER RUN, IN THE OWNER'S OWN WORDS.** This is the spec the whole scoring engine
+implements:
+> *"master run is composed by 4 stages. **stage 1 is board**, it will mine the board for prizepicks,
+> sleeper and underdog (at least for now). **stage 2 is daily context**, factors individually mined
+> from external sources, daily fresh, **with a fallback for each, so factors are always there** —
+> they are factors like: referee, arena, fatigue, injury and many more, many of them can have multiple
+> sub factors… these factors will provide data to be turned into **multipliers, quotients, bonus,
+> penalties** and will be used in a **enrichment level, that works somewhat like the
+> classification/baseline**. **stage 3 is market/odds data**, mined from books, **game level and player
+> prop level**, to be used on the same way to enrich the final calculations. **stage 4 is the scoring
+> engine** which will have many steps and gets the baseline and the enrichment factors and create final
+> numbers."*
+
+**RUN 2 in the owner's words** — *"this same phase will create a baseline, which is **the heart of the
+system**… a series of functions that prepare the data runs and get all ready for classification, which
+is a **logic dataset classifier, with multiple layers for players, proplines, variations and
+directions, each one with its logic, thresholds, caps, bonuses and penalties**, and the baseline
+execute the logic and calculate the baseline hit probability percentage and the confidence."*
+
+**THE HARD CONSTRAINTS FOR EVERY NBA CHAT** (locked here, still binding):
+1. **Never edit anything in the MLB system.**
+2. **Every NBA worker file lives inside `/nba/`**, clearly labelled, no mixing.
+3. **Every tunable variable — bonuses, penalties, caps, timeouts, retries, chunk sizes — lives in the
+   database (`nba_config.system_settings`), NEVER hardcoded.**
+4. **Fully separate data/system universe** — nothing shares tables, schemas, folders or control-plane
+   with MLB. *"This overruled an earlier proposal of mine to share the job-queue/registry — the person
+   explicitly said no, fully separate, always."*
+5. **Every chat must log important steps/issues/fixes to `nba/NBA_PROJECT_LOG.md`.**
+
+**THE WORK MODEL**: *"we will create a new chat for each big piece of data and a worker will be
+responsible for a small piece of work, so we don't overload any specific work"*, and
+*"each new chat should look into the current MLB worker and understand the functionality, **research if
+any improvement should be done**, then create with new nba sources."*
+
+**THE RESEARCH STANDARD**: *"deep online research mandatory; **Gemini consultation mandatory for
+complicated decisions** (useful reference, **not authoritative — verify independently**)."*
+
+**A DEPENDENCY LOCKED EXPLICITLY**: *"the baseline must fully finish before master-run's Daily Context
+or Scoring stages touch it."* — the ancestor of P2-before-P3.
+
+**SIX OPEN QUESTIONS RAISED AND NOT SILENTLY ANSWERED** (T1), of which three matter:
+1. **ParlayAPI's real `basketball_nba` coverage was unverified** — needed an isolated probe or a manual
+   check. *(Later resolved: our own scrapers beat it; ParlayAPI drops ~25% of rungs.)*
+2. **Reuse the DFS board tables' existing-but-unused `sport` column, or build separate `nba_market`
+   tables?** Defaulted to separate, flagged as *"a real fork worth your sign-off."*
+   *(Resolved in favour of `nba_market.board_snapshots`.)*
+3. **A referee dictionary/factor has NO MLB analogue at all** — *"genuinely new territory, needs its own
+   source check."* *(Resolved: Wikipedia roster + `ref.umpire_tendency` as the conceptual model.)*
+
+**The recommended sequencing, also from T1**: static data first (teams, players, arenas, calendar) plus
+the historical half of game logs — *"both fully backfillable right now"* — while treating
+board/daily-context/market as **design-only** until the season gives something live to mine.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
