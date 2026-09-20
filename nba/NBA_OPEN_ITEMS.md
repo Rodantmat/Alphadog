@@ -575,6 +575,14 @@ PrizePicks 2H line on the same player are different bets, and on a tight spread 
 built** (verified: no `p_ot`/`overtime` in `classification_ladder_v12.py`). **It is the term that would
 make the two products distinguishable.**
 
+**✅ PARTIAL RESOLUTION (T9): the STORAGE supports it.** `nba_score.baseline_ladder` has **`ot_rule`
+as a first-class PRIMARY KEY column** (`DEFAULT 'include'`), alongside `period`. So the same
+player × prop × period can hold an `include` row and an `exclude` row at once.
+**The schema is not the blocker.** What remains:
+1. Are both variants actually **built** for period props, or only the default?
+2. Does `score_board_legs.py` **select the right `ot_rule` by app** (Sleeper → exclude, PP/UD → include)?
+3. `P(OT)` itself still does not exist, so an `exclude` variant would need it to differ correctly.
+
 ### RE-CHECK · **Sleeper DOES have alternate lines** — milestone markets
 The live session recorded *"Sleeper has no alternate lines (one line per player+stat, priced via
 per-side multipliers)."*
