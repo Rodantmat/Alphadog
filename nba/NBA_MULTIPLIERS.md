@@ -217,6 +217,18 @@ permanent manual study is **PrizePicks-specific**, and the other four should be 
 > adversarial review) and were STILL OVERTURNED the moment a real placed slip's ACTUAL MULTIPLIER was
 > checked against the ASSUMED one.**"*
 
+### ⚠ THE CHECK IS FREE — the payout displays before placing
+> *"**Whenever a candidate's viability depends on a specific multiplier number, GET THAT NUMBER FROM A
+> REAL, CURRENT SLIP-BUILDER QUOTE — WHICH COSTS NOTHING, THE PAYOUT DISPLAYS BEFORE PLACING — as the
+> FINAL, DECISIVE STEP.** **Don't deploy real money on an assumed or extrapolated multiplier.**"*
+
+**This removes the main objection to doing it.** Building the slip and reading the displayed payout
+requires **no stake** — the number is shown at construction. **So "real-money confirmation" is a
+misnomer: the confirmation is free; only the deployment costs money.**
+
+**And it is the same surface as the capture in §4** — a logged-in slip builder, legs added one at a
+time. **One session produces both the per-leg factor and the confirmation.**
+
 **Read that against where NBA stands: we have NO real PrizePicks per-leg multipliers at all.**
 
 | | MLB when it was burned | NBA today |
@@ -230,11 +242,11 @@ ceiling are **inferred**, not read from a slip.
 
 **This does not invalidate the work** — the directional conclusions are robust to a wide range of
 factors, and the ladder's *calibration* (the honesty property) does not depend on multipliers at all.
-**But it means no EV or ROI claim can be believed until a real placed slip confirms the factor**, and
-that the capture in §4 is not a nice-to-have.
+**But it means no EV or ROI claim can be believed until a real slip-builder quote confirms the
+factor** — and that quote is free.
 
 **The ordering this implies**: calibration first (done), selection second (the open question),
-**real-money confirmation third — and third is not optional.**
+**quote confirmation third — free, and not optional.**
 
 ## 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
 
