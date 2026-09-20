@@ -24,22 +24,30 @@ Documented in the utility itself: the 3-season training list was *"built back fr
 (2026-27) while the anchor was `active_stats_season` (2025-26)"* — **an off-by-one-season error that
 would have silently trained on the wrong window.** Now anchored on `active_stats_season`.
 
-### ✅ FIXED — but the most dangerous bug in the whole build · season hardcoding
+### ③ Season hardcoding — FIXED, but the pattern recurs silently
 **Every weekly scraper hardcoded `Season=2025-26`.** Confirmed universal across 6 scrapers checked
 directly. *"On Oct 3, the whole weekly cycle would **SILENTLY KEEP PULLING LAST SEASON'S FROZEN DATA
 WHILE REPORTING SUCCESS** — the most dangerous kind of failure."*
-**Fixed with a shared `detect_current_season()` / `active_stats_season()` utility across 9 scrapers**,
-all syntax-checked before shipping. **Verified live 2026-09-20 in `scrape_nba_player_bio.py`.**
-**Kept here because the pattern recurs**: any NEW scraper written without the utility reintroduces it,
-and the failure is invisible.
+**Fixed with a shared `active_stats_season()` utility across 9 scrapers**, all syntax-checked before
+shipping. **Verified live 2026-09-20 in `scrape_nba_player_bio.py`.**
+**Kept here because any NEW scraper written without the utility reintroduces it, invisibly.**
+
+### ④ New players are invisible to derived tables until the weekly roster scrape
+*"Won't exist in `nba_ref.players` until the weekly players scrape; game logs still insert fine (**no
+FK**), but **position-dependent derived tables silently skip them**."*
+**Acute in October**, when rookies and new signings are most numerous — and compounded by ① above,
+since the differential worker is what would flag them.
+
+### ⑤ P3's trigger is fixed at 1:15 PM PT; the design called for dynamic
+Breaks on early-tip days (noon/1 PM ET starts = 9/10 AM PT). Detail under "FROM T4".
+**The NBA's opening week and every holiday slate include early tips.**
 
 ### STILL OPEN from T7's gap table — recurring refresh
 | Gap | Status |
 |---|---|
-| **Splits + career totals** | *"Only exist in the one-time backfill — **no recurring refresh at all**"*; they are cumulative aggregates, so weekly is right. **Is either in P1 today?** |
+| **Splits + career totals** | *"Only exist in the one-time backfill — **no recurring refresh at all**"*; cumulative aggregates, so weekly is right. **Is either in P1 today?** |
 | **Defence-vs-Position** | *"Derived via a **one-off manual SQL** — no worker recomputes it as new game logs arrive."* |
-| **Starter-status + officials for NEW games** | Needed a delta mode; **`scrape_nba_per_game_delta.py` now does this** ✅ |
-| **New players (rookies/signings)** | *"position-dependent derived tables **silently skip them**"* until the weekly roster scrape catches up. **Acute in October**, when rookies and new signings are most numerous. |
+| **Starter-status + officials for NEW games** | ✅ `scrape_nba_per_game_delta.py` now does this |
 
 ---
 
