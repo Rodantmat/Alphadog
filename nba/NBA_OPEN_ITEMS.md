@@ -278,6 +278,21 @@ that reports `rows_written` from the SCRAPE and a loader that reports its own co
 numbers, and nothing in the pipeline compares them.** The same blind spot could exist in any
 scrape→load pair where the two counts are never asserted equal.
 
+### OPEN QUESTION · is `shot_quality_delta` actually CONSUMED?
+`nba_stats.player_shot_quality_delta` exists with the formula implemented exactly as designed
+(`actual_efg_pct`, `expected_efg_pct`, `shot_quality_delta`, `total_fga`). Gemini called the underlying
+metric *"likely the single most valuable public data point you can add to your system at this stage"*,
+and it is the only direct answer the system has to the **hot/cold streak problem** — something season
+averages structurally cannot catch.
+**But whether the baseline or enrichment layer ever READS it is not established.** The enrichment
+factor audit (T15/T16) tested ten candidates and none were shot-quality-based.
+**If it is computed weekly and never consumed, that is a real gap** — the metric is built, validated
+and sitting unused. **To verify: check whether any factor set or baseline recipe references it.**
+
+### REJECTED CANDIDATE (with reason, so it is not re-proposed) · Draft Combine anthropometrics
+*"Real on-court results already encode a player's physical tools better than a years-old combine
+measurement. Only rookies would benefit, and it's not worth the complexity here."*
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
