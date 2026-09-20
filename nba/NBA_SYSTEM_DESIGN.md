@@ -44,6 +44,13 @@ enforceable.**
 - **The baseline must NEVER live-query stats.nba.com** — speed, stability, and **reproducibility**
   (*"a live query at 9am vs 10am could return different data if a correction posted in between"*).
 - **Late NBA stat corrections are NOT chased** — *"a consistent point-in-time snapshot."*
+  **⚠ Note the tension with T1's blueprint §4k**, which prescribes the opposite for outcome data:
+  *"**a BOUNDED ROLLING RE-VERIFICATION WINDOW, not a single permanently-frozen cutoff** — commercial
+  sports-data practice converges on **a 3–4 day, up to roughly a week, rolling correction pass**,
+  since **official stat corrections are routinely issued multiple days after a game concludes.**"*
+  **Both are right for different layers**: the **baseline** must be point-in-time or walk-forward
+  parity breaks; **`board_outcomes`** is the label the calibration learns from, and a frozen wrong
+  label is training on stale truth. **See `NBA_OPEN_ITEMS.md`.**
 - **No pasted constants** — HCA, `P(blowout|spread)` and the blowout ratios are derived from TRAIN
   inside each run; `baseline_ladder_runs` records what each run derived.
 
