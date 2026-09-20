@@ -1240,7 +1240,54 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
-### ⚠ "NO GAMES SCHEDULED" IS NOT A FIRST-CLASS STATE — and Oct 1–2 are zero-game days
+### ⚠ A "FAILED" STATUS CAN MEAN A SAFETY GUARD DID ITS JOB
+*Source: T1, blueprint §5a. Recorded 2026-09-20.*
+> *"MLB traced **a real case where AN ENTIRE TOP-LEVEL RUN SHOWED AS FAILED**, and **the honest root
+> cause was A SAFETY GUARD *CORRECTLY* REFUSING TO OVERWRITE GOOD EXISTING DATA WITH AN EMPTY
+> RESULT — NOT AN ACTUAL BUG.** The failure **CASCADED UPWARD through several stages before reaching a
+> safety check that BEHAVED EXACTLY AS IT SHOULD.**
+> **A 'FAILED' STATUS DOESN'T ALWAYS MEAN SOMETHING IS BROKEN; IT CAN MEAN A SAFETY GUARD DID ITS JOB
+> CORRECTLY** — **before treating any cascading failure as a bug to fix, TRACE IT ALL THE WAY TO ITS
+> ACTUAL ROOT and CONFIRM WHETHER THE TERMINAL CAUSE WAS A GENUINE PROBLEM OR A SAFETY MECHANISM
+> WORKING AS INTENDED.**"*
+
+**NBA is deliberately full of loud guards, so this will happen**, and the pipelines are designed to
+fail hard:
+| Guard | A "FAILED" run it will cause |
+|---|---|
+| **P1's certifier** | already observed — *"correctly FAILED on defender ratings 6 days stale"* ✅ **working as intended** |
+| **P2's delta gap audit** | *"both fail the job loudly. **No `\|\| echo failed` anywhere**"* |
+| **The delta worker's pre-flight** | *"halt and warn, don't silently proceed on an incomplete night"* |
+| **The patcher's anchor assertions** | *"the anchor check did exactly its job — it failed loudly"* ✅ |
+| **`load_baseline_ladder.py`** | *"**refuses a singles-only slate**"* — the exact "refuse to write an incomplete result" shape |
+| **P3's cutoff assertion** | refuses to score a slate clubs have not filed for |
+
+**⚠ The publishing-lag case is the one that will look most like a bug and not be one.** A delta run
+landing inside the ~15-minute stats.nba.com publishing window makes the gap audit **correctly** flag a
+game that simply is not published yet — *"that's the check working, not failing."* **Without the grace
+window (still unbuilt), this produces genuine FAILED runs that need no fix.**
+
+**The operational consequence**: an unattended pipeline that fails loudly is only useful if **failures
+are triaged to root before being "fixed"** — otherwise the natural response is to weaken the guard.
+
+### ⚠ CONFIGURATION CONTRADICTIONS — flag, don't silently "fix"
+> *"MLB found **a live scheduling flag whose `enabled` STATE DIRECTLY CONTRADICTED ITS OWN EXPLANATORY
+> NOTE** — one said **'temporarily disabled'**, the other said it was **active**.
+> **Rather than GUESSING WHICH ONE WAS CORRECT and SILENTLY 'FIXING' IT, this was EXPLICITLY FLAGGED
+> FOR DIRECT HUMAN CONFIRMATION OF INTENT**, since ei[ther could be the truth]."*
+
+**NBA has at least one live contradiction of exactly this shape, already recorded:**
+> **`fga` appears in two states in the harness header** — the header line lists it under *"configured,
+> NOT yet run"*, while the inline comment says *"**CERTIFIED both seasons (0.9 / 1.3, 0 band
+> misses)**."*
+
+**Per this rule, that is flagged rather than resolved by inference.** The inline comment is more
+likely current, **but which is right determines whether `fga` is a certified prop or an untested
+one** — and guessing would silently create a certification claim.
+
+**The `enabled=1` MLB registry rows are a second instance**: **~19 of 116 are dead stubs at ~5.3 KB,
+still flagged enabled.** **The flag and the reality contradict**, and it is recorded rather than
+"corrected."
 T1's blueprint §5, listed as *"a real, confirmed architecture gap in MLB, **worth designing around
 from the start for NBA**"*:
 > *"**The system COULD NOT ORIGINALLY DISTINGUISH 'GENUINELY ZERO GAMES TODAY' (e.g. ALL-STAR BREAK)
