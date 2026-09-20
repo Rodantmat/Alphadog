@@ -1972,6 +1972,47 @@ reason the raw on/off splits are a secondary signal.
 
 **T3 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T3.8 — PASS 3 FINDINGS (added 2026-09-20; tool results) — **NEW MATERIAL, INCLUDING A DISCREPANCY**
+
+#### T3.8a — **82 play-type rows scraped but never loaded**
+| Stage | Count |
+|---|---|
+| Scraped (`player_rows_written`) | **3,364** |
+| Loaded (`nba_stats_player_playtype_profile_rows`) | **3,282** |
+| **Difference** | **82 rows** |
+
+**Verified live 2026-09-20: `nba_stats.player_playtype_profile` holds exactly 3,282.** The gap is real
+and persists today.
+
+**Every other load in T3 is exactly 1:1** — `rows_read` equals `rows_written` for 2,666 (schedule),
+4,652 (tracking detail) and 530 (DARKO), and team play types match at 630. **Play types are the only
+mismatch**, and it was not caught at the time because the session reported the scrape figure (3,364)
+and the load figure separately, in different messages.
+
+**Most likely cause** (not verified): play-type rows key on player *and* play type, so rows for players
+absent from `nba_ref.players` — or duplicate (player, play_type) pairs collapsing on an upsert
+conflict — would be silently dropped. **Recorded in OPEN_ITEMS; not fixed, per the documentation-pass
+rule.**
+
+#### T3.8b — Exact table names confirmed
+`nba_stats.player_playtype_profile` · `nba_team.playtype_profile` ·
+`nba_stats.player_tracking_detail` · `nba_stats.player_impact_rating`
+
+#### T3.8c — The play types and tracking measure types, by name
+**Play types seen in results:** `Transition`, `PRRollMan`, `Postup`, `Spotup` (of 11 total).
+**Tracking measure types:** `Passing`, `PostTouch`, `CatchShoot` (of 8 total —
+the others named in T3.5 are Rebounding, Drives, PullUpShot, touches, and one more).
+
+#### T3.8d — A differential event captured in a real result
+`"event_type": "team_change"` appears in the tool results — **the simulated LeBron move, persisted**.
+Confirms T3.2's account came from the database, not from the worker's response.
+
+#### T3.8e — Schedule split confirmed in results
+`1400` (2025-26, completed) + `1266` (2026-27, published) = **2,666**, and `rows_read` = `rows_written`
+= 2,666. Clean.
+
+**T3 PASS 3: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
