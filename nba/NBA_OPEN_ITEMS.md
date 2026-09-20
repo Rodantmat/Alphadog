@@ -1025,6 +1025,43 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠ UNCERTIFIED PROPS SHARE THE MAIN SYSTEM'S THRESHOLDS
+T1's blueprint §4b prescribes a **separate, clearly-labelled calibration path** for thin-data props —
+MLB has one for its *"expansion scope"* props with **a completely different prior-strength scale and
+hard floor/ceiling caps the main system doesn't use**:
+> *"**Design it as an EXPLICITLY SEPARATE, CLEARLY-LABELLED path FROM DAY ONE — don't let it SILENTLY
+> SHARE THRESHOLDS with the main system, and DON'T ASSUME A FIX TO ONE TOUCHES THE OTHER.**"*
+
+**NBA's uncertified props sit on the main path.** `fgm` and `fta` carry *"configs are the **closest
+certified analogue** — NOT yet certified"* — i.e. **a certified prop's thresholds assigned by
+analogy**, marked only by a code comment.
+
+**Per-prop tuning exists** (`k_stab` measured per prop, `SHIFT_LAMBDA` per prop) — **but that is
+parameter variation inside one system, not a separate path.** There is no distinct prior-strength
+scale and no hard floor/ceiling caps for the thin props.
+
+**The stated risk is the second clause**: *"don't assume a fix to one touches the other."* A fix
+validated on points may or may not be right for `fta`, **and nothing marks the difference at
+runtime.**
+
+### ⚠ TIER MISCLASSIFICATION IS A SILENT WRONG-PROBABILITY SOURCE
+> *"**Player/context classification tiers DETERMINE WHICH PRIOR A PLAYER GETS SHRUNK TOWARD — a
+> misclassification here is a QUIET, INDIRECT SOURCE OF A WRONG FINAL PROBABILITY**, not just a
+> display [issue]."*
+
+**Exposure in NBA:**
+- `role_tier` is derived from **`mu_role` = 20-game rolling mean, `min_periods=5`** — **5–19 games
+  gives a tier from a thin window**
+- **The team-change discount resets the window**: ≥5 competitive games with a new team → use only
+  those. **A traded player is re-tiered on as few as 5 games**, and October is peak roster churn
+- `role_tier is None` drops the leg (**visible**); **a wrong tier is silent**
+- **T8's v9 doubled the stakes** — *"rate tiers ranked WITHIN role tier"* — so a misclassified role
+  tier now selects the wrong prior on **both** dimensions
+
+**No tier-stability or misclassification check is recorded.** A cheap one exists: **how often does a
+player's `role_tier` change between consecutive slates**, and what is the distribution of `n_prior` at
+the moment of tier assignment.
+
 ### ⚠⚠ NO "DON'T OVER-SHRINK A REAL SIGNAL" SAFETY VALVE
 T1's blueprint §4b specifies one, with exact thresholds, and says to build it **from the start**:
 > *"**Hierarchical Bayesian shrinkage needs an EXPLICIT 'don't over-shrink a real signal' safety
