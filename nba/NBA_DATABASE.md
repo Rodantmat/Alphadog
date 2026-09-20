@@ -155,12 +155,44 @@ survey) as the **best PREDICTIVE catch-all metric**, beating paid EPM and LEBRON
 it's forward-looking rather than backward-looking, which is exactly what matters for prop prediction."*
 **This is the PRIMARY talent anchor**; on/off is secondary.
 
-**The table is deliberately named `player_impact_rating`, NOT `darko`** — a design decision taken on a
-stated risk (*"single-maintainer bus factor… could stop updating with little warning"*) so the source
-can be swapped without touching consumers. **Keys on `nba_player_id` directly** (DARKO uses the same
-NBA person IDs — `203999` = Jokić), so **no name matching and no diacritic exposure**.
-Known risks accepted: methodology may shift over time, so values are not guaranteed comparable across
-years; the site is a JS-heavy app requiring hydration extraction rather than HTML parsing.
+| Column | Notes |
+|---|---|
+| `player_id` | **PK** |
+| `nba_player_id` | BIGINT — **DARKO uses the same NBA person IDs** (`203999` = Jokić), so no name matching and no diacritic exposure |
+| **`dpm`** | Daily Plus Minus — the headline metric |
+| `o_dpm`, `d_dpm` | offensive / defensive split |
+| **`box_dpm`, `on_off_dpm`** | the two components DARKO blends |
+| `rank` | league rank |
+| `source_key`, `data_quality` DEFAULT `'real'`, `raw_json`, `updated_at` | |
+
+**530/530 players.** Verified values: **Jokić +6.76, Wembanyama +6.37.**
+**The table is deliberately named `player_impact_rating`, NOT `darko`** — taken on a stated risk
+(*"single-maintainer bus factor"*) so the source can be swapped without touching consumers.
+**Extraction:** the page is SvelteKit; the full dataset is embedded in the hydration script
+(`kit.start(app, element, {...})`). JS bare decimals (`.534094`) must be repaired to valid JSON first.
+
+---
+
+## 1c. The WEEKLY DIFFERENTIAL layer *(T3)*
+
+**Why it exists:** the upsert workers **overwrite** their tables on every run, so change cannot be
+detected after the fact. A snapshot must be taken **before** the next overwrite. Six tables, three
+snapshot/log pairs:
+
+| Table | Columns |
+|---|---|
+| `nba_stats.player_roster_snapshot` | `player_id` PK, `nba_player_id`, `full_name`, `team_id`, `active`, `snapshot_taken_at` |
+| `nba_stats.player_differential_log` | `id` BIGSERIAL PK, `event_type`, `player_id`, `nba_player_id`, `full_name`, **`old_team_id`, `new_team_id`**, `detected_at`, `details` JSONB |
+| `nba_ref.team_roster_snapshot` | `team_id` PK, `nba_team_id`, `abbreviation`, `full_name`, `conference`, `division`, `snapshot_taken_at` |
+| `nba_ref.team_differential_log` | `id` PK, `event_type`, `team_id`, **`field_name`, `old_value`, `new_value`**, `detected_at` |
+| `nba_ref.official_roster_snapshot` | `official_id` PK, `full_name`, `snapshot_taken_at` |
+| `nba_ref.official_differential_log` | `id` PK, `event_type`, `official_id`, `full_name`, `detected_at` |
+
+**Baseline: 582 players / 30 teams / 80 officials.**
+**Event types seen:** `team_change`, `new_player`, departed official.
+**Note the team log is field-level** (`field_name`/`old_value`/`new_value`) while the player log is
+purpose-built for team moves (`old_team_id`/`new_team_id`) — different shapes for different change
+profiles.
 
 ### `nba_ref.referee_assignments` *(T15)*
 Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
