@@ -2833,6 +2833,51 @@ plus the full one-time historical backfill (game logs, team logs, advanced stats
 
 **T4 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T4.15 — PASS 9 — the plan document's own tables, and the season-count reasoning in full
+
+#### T4.15a — The endpoint inventory, as written into `NBA_HISTORICAL_BACKFILL_PLAN.md`
+| Endpoint | Returns | Cost |
+|---|---|---|
+| `playergamelogs` | one row per player per game — MIN, FGM/A, FG_PCT, FG3M/A, FTM/A, OREB, DREB, REB, AST, TOV, STL, BLK, PF, PTS, PLUS_MINUS, **NBA_FANTASY_PTS, DD2, TD3** | **one call = an entire season, whole league**, date-filterable |
+| `teamgamelogs` | same shape, team level (pace, ratings per game) | one call per season, whole league |
+| `playerdashboardbygeneralsplits` | **6 split groups in one call**: `DaysRestPlayerDashboard`, `LocationPlayerDashboard`, `MonthPlayerDashboard`, `PrePostAllStarPlayerDashboard`, `StartingPosition`, `WinsLossesPlayerDashboard` | one call **per player per season** |
+| `teamdashboardbygeneralsplits` | same groups, team level (`TEAM_DAYS_REST_RANGE`, `TEAM_GAME_LOCATION`) | one call **per team per season** |
+
+#### T4.15b — **Data depth is NOT the constraint — scope discipline is**
+> *"detailed box scores exist back to **1996-97** league-wide; advanced stats specifically **from 1997**
+> onward. So **historical depth is not the constraint — scope discipline is**."*
+
+**Thirty years of data were available and deliberately not taken.**
+
+#### T4.15c — The season-count argument, both bounds
+**Why 1–2 is too few**: *"too small a sample for context-specific patterns (e.g. a player's performance
+on **0 days rest against a specific opponent**), no way to build an aging curve or **tell a hot streak
+from a new baseline**, and not enough cross-player sample to model **typical injury-return
+ramp-up**."*
+
+**Note the third item is factor A3 (return ramp)** — it needs cross-player sample, which is why it was
+assigned to the baseline rather than treated as a per-player adjustment.
+
+**Why more than 5–6 is actively harmful**: *"the game itself has **structurally changed** — pre-2018
+data predates the full pace-and-space era."* **Not "extra work" — a different sport.**
+
+#### T4.15d — `nba_stats.player_career_season_totals` DDL
+`player_id`, `nba_player_id`, **`season_id`**, `team_id`, **`player_age`**, `gp`, **`gs`** (games
+started), `min`, and the full shooting/rebounding line.
+**`player_age` is what makes the aging curve computable**; **`gs` vs `gp`** is the starter-rate signal;
+**`team_id` is where `TEAM_ID = 0` appears** for traded players.
+
+#### T4.15e — Indexes created with the tables
+`idx_team_game_log_game ON nba_team.team_game_log (game_id)` — and the equivalent on the player log.
+**Indexed on `game_id` from the start**, which is what makes the later per-game joins viable.
+
+#### T4.15f — The document's own framing
+> *"Written 2026-09-03, **before any Phase 3b code is built**… This is a **design/identification
+> document — no scrapers built yet**, per the person's explicit 'identify… research and understand
+> what we really need' framing."*
+
+**T4 PASS 9: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
