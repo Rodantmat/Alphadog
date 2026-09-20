@@ -574,6 +574,51 @@ NOT AUDITED.**
 
 ---
 
+## 6b. EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE — the complete audit
+*Recorded 2026-09-20 (T1 pass 34). **VERIFIED** by grep of all 190 `.py`/`.js` files in `nba/`
+(including `backtest/` and `workflows/`) for `DELETE FROM` and `TRUNCATE`. **24 statements.**
+This is blueprint §9's **whole-universe comparison** applied to the write path: audit every member of
+a universe at once, not the one currently suspected.*
+
+### ✅ Correctly scoped — the delete matches exactly what the run rewrites
+| Script | Statement | Scope |
+|---|---|---|
+| `score_board_legs.py` | `DELETE FROM nba_score.board_scored WHERE game_date = %s` | one slate — **the P3 scorer** |
+| `build_availability_delta.py` | `DELETE FROM nba_score.availability_delta WHERE game_date = %s` | one slate |
+| `build_rung_market.py` | `DELETE FROM nba_market.rung_market WHERE game_date >= %(d0)s AND game_date < %(d1)s` | a date range |
+| `load_baseline_ladder.py` | `DELETE FROM nba_score.baseline_ladder WHERE asof = %s` · `… baseline_ladder_runs WHERE asof = %s` | one as-of |
+| `load_baseline_history.py` | `DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)` | matches its full-season input |
+| `gate_remaining_factors.py` | `DELETE FROM nba_score.factor_gate_results WHERE slice='remaining_factors'` | own partition |
+| `fit_n1_model.py` | `DELETE FROM nba_score.factor_gate_results WHERE slice = 'n1_ablation'` | own partition |
+| `build_confidence_v3.py` | `DELETE FROM nba_score.confidence_verification WHERE tier='v3'` *(×2)* | own partition |
+| `build_confidence_v2.py` | `DELETE … confidence_verification WHERE tier IN ('v2','high_vs_low')` | own partition |
+| `build_mondrian_confidence.py` | `DELETE … confidence_verification WHERE check_type='mondrian_quintile'` | own partition |
+
+**The convention is unambiguous: scope the delete to exactly what this run rewrites.**
+
+### ✅ Whole-table rebuilds that are correct BY DESIGN — single writer, small table, full recompute
+`build_blowout_model.py` → `blowout_model` (35 rows) · `build_scenario_calibration.py` →
+`scenario_calibration` · `build_mondrian_confidence.py` → `conformal_confidence` ·
+`build_confidence_v3.py` → `confidence_model` · `build_asof_calibration.py` →
+`ladder_calibration_asof` · `build_board_tiers_v2.py` → **`TRUNCATE`** `board_tiers_v2` ·
+`alphadog-v2-nba-weekly-differential.js` → `player_roster_snapshot`, `team_roster_snapshot`,
+`official_roster_snapshot` *(the documented snapshot replace-in-full design)*.
+**Recorded so a future audit does not re-flag them.**
+
+### ❌ The three that are wrong — full entries in `NBA_OPEN_ITEMS.md`
+| Script | Statement | Defect |
+|---|---|---|
+| **`build_final_hp.py`** | `DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s` | **the read is `FE_DATE`-scoped and this is not** — a slate-scoped run replaces the whole season × prop partition. **CONFIRMED FIRED: 2025-26 holds one date, 140,130 rows.** |
+| **`verify_confidence.py`** | `DELETE FROM nba_score.confidence_verification` | **whole table, while three sibling writers scope theirs** — running it erases P2's nightly `v3` rows and the mondrian rows. **Not yet fired**: the live table holds three generations coexisting (2026-09-17 18:16, 2026-09-17 23:31, 2026-09-20 03:30). |
+| **`calibrate_all_props.py`** | `CREATE TABLE IF NOT EXISTS … ladder_calibration; DELETE …; INSERT …` | **recreates a table that was deliberately DROPPED as a parity violation.** VERIFIED absent from `information_schema`. Nothing reads it, so it pollutes the schema without changing a number — **today.** |
+
+**⚠ The pattern worth carrying forward**: in all three cases the statement is **correct in
+isolation** and wrong **relative to its caller** — a scoped read, a shared table, a dropped table.
+**None of them errors.** This is why blueprint §9 prescribes auditing the whole universe rather than
+the suspect.
+
+---
+
 ## 7. WORKFLOWS
 | Workflow | Trigger |
 |---|---|
