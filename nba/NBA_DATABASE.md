@@ -668,7 +668,54 @@ signs.**"* — structural, reproducible, not noise.
 
 ---
 
-## 10. MLB tables referenced as models (never written by NBA)
+## 10b. TWO OPERATIONAL PATTERNS FOR THE LIVE SYSTEM
+*Source: T1, blueprint §4j. Recorded 2026-09-20.*
+
+### 1. ⚠ Deliberately-duplicated files drift silently
+> *"**Two files meant to be EXACT COPIES of each other CAN SILENTLY DRIFT OUT OF SYNC** — MLB found
+> **a real case where a STATIC HTML FALLBACK FILE was A FULL VERSION BEHIND the actual deployed worker
+> serving the same interface**, with **ONLY THE SELF-REPORTED VERSION STRING REVEALING THE DRIFT**;
+> the actual functional content had stayed correctly in sync.
+> **If NBA's own system keeps ANY deliberately-duplicated file (a static fallback, a mirrored config),
+> PERIODICALLY VERIFY IT'S STILL IDENTICAL to its live counterpart rather than ASSUMING A 'KEPT IN
+> SYNC' FILE STAYS THAT WAY ON ITS OWN.**"*
+
+**NBA's duplicated pairs:**
+| Pair | Sync status |
+|---|---|
+| `nba_config.role_tiers` (6 rows) ↔ `ROLE_TIERS` in the recipe | ✅ **verified identical 2026-09-20** |
+| **`classification_config.minutes_mixture` ↔ the recipe's minutes logic** | ❌ **DRIFTED** — config specifies `dud_lognormal`, `tiered_inelastic`, per-team `E[min\|blowout]`; none implemented |
+| `classification_ladder_v12.py` ↔ `combos_ladder_v1.py` constants | ⚠ unverified — each holds its own `LADDER_STEPS`, Wilson threshold |
+| The certified recipe ↔ the production **patcher** | ✅ **anchor assertions fail loudly on drift** — the right pattern |
+
+**The patcher's anchor assertions are the model**: they turn silent drift into a loud failure. **The
+config↔code pairs have no equivalent**, which is why `minutes_mixture` drifted unnoticed.
+
+**And note the MLB case's detail**: *"only the SELF-REPORTED VERSION STRING revealing the drift."*
+**`baseline_ladder.recipe_version` exists per row** — so NBA has the version-string mechanism; **what
+is missing is anything comparing it against the config's expectations.**
+
+### 2. A stuck-looking job usually needs a WAIT, not a retry
+> *"**When a job appears stuck in a running state with no progress, the correct response is usually to
+> WAIT AND RE-CHECK VIA A LIGHTWEIGHT STATUS QUERY, NOT to repeatedly manually retry it.**
+> MLB's system **holds a GLOBAL LOCK for a bounded window per acquisition**, and **a legitimate
+> in-progress background cycle will correctly REJECT repeated manual re-triggers with a 'BUSY'
+> response rather than a real failure — THAT'S THE SYSTEM BEHAVING SAFELY, NOT A BUG TO WORK
+> AROUND.**
+> **Give a stuck-looking job a real, meaningful wait (ON THE ORDER OF ONE TO TWO MINUTES) before
+> concluding it needs manual intervention.**"*
+
+**Directly relevant to NBA's operating model.** The build record is full of long-running jobs —
+*"~1.5 h across all pairs"*, *"~50 min for six pairs"*, *"each call ~8 min"* — and **the documented
+habit was to wait and re-check**, which matches.
+
+**⚠ But NBA's dispatch is DIRECT, bypassing the queue and its lock** (the no-orchestrator rule). **So
+the "busy" rejection MLB relies on may not exist here** — a re-trigger of an NBA worker mid-run may
+start a second concurrent run rather than being refused.
+
+**What NBA has instead**: **GitHub Actions concurrency groups** per pipeline
+(`alphadog-nba-p1-weekly`, and P2/P3 equivalents), which serialise workflow runs. **That protects the
+pipelines, not direct `run_job` calls to individual Workers.**
 `ref.teams` (16 cols: team_id, mlb_team_id, full_name, abbreviation, league, division, active…) ·
 `ref.umpire_tendency` (11 cols: umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game,
 avg_walks_per_game, avg_runs_per_game…) — **the model for the NBA referee factor** ·
