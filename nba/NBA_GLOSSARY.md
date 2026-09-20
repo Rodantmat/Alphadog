@@ -408,6 +408,13 @@ multi-bug night."* Core philosophy: **a pipeline's own "PASS"/"COMPLETE" self-re
 point for scrutiny, never the conclusion.** Three techniques, **six named failure modes**, composition
 checks. → `NBA_SYSTEM_DESIGN.md` §6b · failure-mode build status in `NBA_OPEN_ITEMS.md`.
 
+**second master run, the optional** · T1 (`NBA_SYSTEM_DRAFT.md` §4b) · The cadence locked 2026-09-03
+specified the master run as *"once, **sometimes twice a day**"* — a second pass *"only if needed"* on
+**a late injury designation change or significant line movement**. Named as **the reason the
+two-stage baseline/enrichment separation exists**: re-score against the cached baseline, *"not
+recompute anything expensive."* **NOT BUILT** — P3 runs once and neither trigger has a detector.
+→ `NBA_SYSTEM_DESIGN.md` §0.95 · `NBA_FINAL_SCORING_CALIBRATION.md` §2 · `NBA_OPEN_ITEMS.md`.
+
 **parity** · T10, T14 · `NBA_DAILY_PARITY_AND_BACKFILL.md`. Every daily factor backfilled day by day,
 producing exactly what the live pipeline would have produced. **§5 forbids carrying a constant between
 days** — the rule that caught the pasted calibration table.
