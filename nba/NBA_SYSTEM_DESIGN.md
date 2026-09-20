@@ -101,24 +101,46 @@ with); **freshness gate dropped** (uniform penalty discriminates nothing).
 `.github/workflows/nba-p1-weekly-static.yml` · **cron `0 19 * * 1` = Mondays 12:00 PT** ·
 concurrency `alphadog-nba-p1-weekly` · timeout 180 min
 
-**Why weekly:** these tables are as-of weekly by construction. Refitting daily would not change a value
-but would burn the rate-limited NBA endpoints. The cadence is the original one from T1
-(`nba_differential_check_cadence = weekly`, cron `0 9 * * 1`).
+**Why weekly:** these tables are as-of weekly by construction. The cadence is the original one from T1
+(`nba_differential_check_cadence = weekly`, cron `0 9 * * 1`), and the reasoning from T2 is explicit —
+bio fields are *"truly static"* and season aggregates are *"semi-static, **stable enough for weekly
+refresh: a single game barely moves a season average after 20+ games played**."*
+**⚠ That reasoning does NOT hold in the first 20 games of a season**, and the cadence was never
+revisited for October.
 
-**Why Monday noon:** deliberately far from P2 (daily 01:00 PT) so the two can never contend.
-The cron is UTC, so the local hour drifts one hour across DST — harmless, because **nothing in this
-pipeline is cutoff-sensitive**. That is precisely why this work belongs in the weekly layer.
+**Why Monday noon:** deliberately far from P2 (daily 01:00 PT) so the two cannot contend. The cron is
+UTC so the local hour drifts an hour across DST — harmless, because **nothing here is
+cutoff-sensitive**.
 
-**Steps, in order:**
+**Steps, in order (as actually built):**
 1. Teams and arenas
 2. Players and bio
 3. Weekly as-of season tables (pt_defend, hustle, clutch, coaches, all_players)
-4. Team stats, on/off, playtypes, tracking
+4. Team stats, on/off, play types, tracking
 5. DARKO and shot quality
-6. **Defender ratings** (two-way ridge, weekly as-of)
-7. Static context (coach changes)
+6. **Defender ratings** (two-way ridge, weekly as-of) — writes Postgres
+7. Static context (coach changes) — writes Postgres
 8. Commit data files
-9. **Certify** (`PIPE=p1`) — asserts freshness ≤ 8 days; **fails the job** if stale
+9. **Certify** (`PIPE=p1`) — asserts freshness ≤ 8 days; **fails the job** if stale.
+   *(Run live: correctly FAILED on defender ratings 6 days stale.)*
+
+### ⚠ THREE THINGS P1 DROPPED IN THE REBUILD — verified 2026-09-20
+| Missing | Was |
+|---|---|
+| **The weekly differential worker** | unwired since T3; **verified empty today**, snapshot frozen at 2026-09-03 |
+| **`scrape_nba_splits.py`** | put on the weekly cycle in T7 |
+| **Career totals** | put on the weekly cycle in T7 via the `mode: "weekly"` input |
+
+*(The DvP recompute is fine — T7 placed it inside the **delta** worker, so it lives on P2's path.)*
+**Splits and career totals are cumulative aggregates** — a 2025-26 snapshot gets steadily more wrong as
+2026-27 runs.
+
+### ⚠ AND THE LARGER QUESTION — does P1 load anything to Postgres?
+**Only `build_defender_ratings.py` and `build_static_context.py` touch `DATABASE_URL`.** There is **no
+loader step or `run_job`** for teams, players, bio, season tables, team stats, on/off, play types,
+tracking, DARKO or shot quality — **all of which have writer Workers built in T1–T3.**
+**Either those Workers are triggered separately (the Coworker model), or P1 refreshes committed JSON
+that Postgres never sees.** **This is the top pre-season verification.**
 
 ---
 
