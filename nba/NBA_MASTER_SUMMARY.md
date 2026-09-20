@@ -1405,6 +1405,62 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.60 — PASS 30 (angle: **count the standard against its own source**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: not a text sweep at all — an **arithmetic check of a figure these documents repeat**. The
+research standard is described everywhere as *"the 26 lessons."* Nobody had counted them.
+
+**FINDING 1 — the standard has 27 lessons, not 26. VERIFIED two ways:**
+- `grep -c "^### [0-9]\+\." NBA_LESSONS_LEARNED_FROM_MLB.md` → **27**
+- grep of T1 itself: its pasted copy carries `### 27.` in Part A
+
+**The "26" came from the work order and was copied into
+`NBA_FINAL_SCORING_CALIBRATION.md` (twice) and `NBA_GOBLIN_DEMON.md` §6 without ever being checked
+against the file. All three are corrected and dated.**
+
+**FINDING 2 — lesson #27 had NO entry in any of the twelve documents.** Its content:
+> *"one platform's partial-hit Flex payouts were **flat, fixed values independent of how large the
+> underlying full-hit multiplier was**, while a different platform's **scaled proportionally with its
+> own full-hit multiplier**… **verify each platform's actual mechanic directly from real observed
+> data** before building any EV model that depends on it."*
+
+**FINDING 3 — it collides with the strongest result in `NBA_MULTIPLIERS.md`.** §0.2's flat partial
+tiers (`4/5 = 0.5`, `3/5 = 0.25`, two independent observations) are **PrizePicks**. #27 says flat is
+**one of two structures**, and makes per-platform verification a requirement. **The finding is not
+overturned — it is bounded.**
+
+**FINDING 4 — two previously independent findings, read against each other for the first time.**
+§0.2e records Underdog and Sleeper pricing **per-leg dynamically** rather than off a flat table.
+**A dynamically-pricing platform is the shape that would scale its partial tiers proportionally.**
+Together they make *"Underdog/Sleeper partial tiers are probably not flat"* the **informed prior**.
+**NOT RECORDED as measured — the prior is recorded, not acted on.**
+
+**FINDING 5 — the fix costs nothing and is missing from the capture protocol.** The payout displays
+**before** placing (#16), so two same-shape slips with different headline multipliers settle the
+question per platform. **`NBA_MULTIPLIERS.md` §4b did not include this test** — added as question 5.
+
+**FINDING 6 — the part list is also incomplete.** Every reference says *"Parts A–F."* The current
+`NBA_LESSONS_LEARNED_FROM_MLB.md` carries **Parts A–H**: **Part G, 10 NBA-earned lessons from the
+baseline work (2026-09-09)**, and **Part H, 12 from the enrichment/market/board phase (2026-09-10)**.
+**Both postdate T1, so they are T7–T11 material, not T1's** — recorded in `NBA_OPEN_ITEMS.md` so the
+gap is not lost. **The standard is 49 numbered items; the documents carry 27.**
+⚠ **Part G1** (*"certify at the leg level, never the aggregate"*, with the measured instance
+*"3PM 'more' 60–65 at −4.6pp inside a ladder within ±1pp"*) **is blueprint §7f's argument with an NBA
+number attached** — pass 29 and pass 30 converging from different sources. ⚠ **Part G8** (*"the season
+opening is a regime the mid-season certification never sees"*) is **season-start critical**.
+
+**Routed to**: `FINAL_SCORING_CALIBRATION` (§14 header, the scope table, the new #27 entry) ·
+`MULTIPLIERS` (§0.2h, new) · `GOBLIN_DEMON` (§6 correction) · `OPEN_ITEMS` (*FROM T1 PASS 30*) ·
+`GLOSSARY` (*flat vs proportional partial credit*, *Part G*, *Part H*, *the 27 lessons*, plus a stale
+PENDING block refreshed) · `MASTER_SUMMARY` (this entry, and the ledger correction above).
+**Considered and no change warranted**: `DATABASE`, `WORKERS`, `SYSTEM_DESIGN`, `SYSTEM_ARCHITECTURE`,
+`RECIPE`, `BASELINE_CALIBRATION` — lesson #27 is a platform-payout mechanic and touches none of them.
+
+**PASS 30 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 # ⚠ SUPERSEDED 2026-09-20 — T1 IS **NOT** DONE
 *The entry below is kept verbatim as the honest historical record, per the dating rule. It was
 correct about what it measured and wrong about what that proved.*
