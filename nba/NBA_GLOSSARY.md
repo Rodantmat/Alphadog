@@ -241,6 +241,27 @@ where goblins flip to demons. *"10.5 goblin, 11.5 goblin, 12.5 demon → 12 is t
 
 ## L–N
 
+**leg-level standard** · T8 · The gate a slip actually depends on: **every variation band × direction ×
+rung**, plus *"when the model says 90%, does it hit 90%?"* across confidence bands.
+**Why it exists**: *"**rung-aggregates HIDE ERRORS** — the first leg-level breakdown exposed structured
+misses that had **CANCELLED OUT in the averages**."* A ladder accurate to 1 pp overall can hold a
++5.4 pp band and a −3.5 pp band that sum to nothing.
+
+**hierarchical empirical fallback** · T8 · Three empirical levels before the parametric is ever
+reached: **(tier × role × rung) → (band × role × rung) → (band × rung)**, each shrunk toward the next.
+Took coverage to **100%** and halved the ELITE rebounds miss to +3.6. **The parametric is the last
+resort, not the second option.**
+
+**the symmetric-floor bug** · T8 · **A real bug in MLB's guard, inherited by porting it.** The
+sample-size floor was symmetric, so it forced **true 0.002 rungs up to 0.25** — a 125× error at the far
+tail. Fixed by making the ceiling **upper-only**; far tails then came out exact. **May still be live in
+MLB.**
+
+**the FRINGE anomaly** · T8 · A 0.87 minutes ratio for fringe players in won blowouts, where
+garbage-time accumulators should be **above** 1. Held open under the owner's *"do not move before
+fixing it"* directive. **Cause: a leakage bug — a season-wide mean using future games.** Fixing it
+shrank the role minutes multipliers to *"honest ~1.0 values."* **Leakage inflates apparent skill.**
+
 **role_tier** · T7 code, LIVE · **The six minutes bands that carry most of the engine's role logic**,
 keyed on `mu_role` (projected minutes), NOT on the starter flag:
 `IRON_MAN` 36+ · `HIGH_USAGE_STARTER` 32–36 · `STARTER` 27–32 · `ROTATION` 21–27 · `BENCH` 15–21 ·
