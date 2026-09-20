@@ -2700,6 +2700,82 @@ of the ~2:00 am ET worst case, but with ~2 hours of margin rather than 4.
 
 **T4 PASS 6: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T4.13 — PASS 7 — **THE BACKFILL RESEARCH** (`nba/NBA_HISTORICAL_BACKFILL_PLAN.md`)
+
+#### T4.13a — Splits: six groups in ONE call
+**`playerdashboardbygeneralsplits`** returns **6 split groups in a single call**:
+**DaysRest · Location (home/away) · Month · PrePostAllStar · StartingPosition · WinsLosses**
+— and the same exists at team level.
+
+#### T4.13b — **"3–5 seasons, NOT as much as possible" — and the reasoning is the point**
+> *"a player's own stats from several years ago, **in a different role on a different team, actively
+> HURTS a model** rather than just being less useful — **Kevin Durant's 2016 Thunder numbers being
+> actively misleading** for predicting his performance today."*
+
+**This is an argument for BOUNDING history, not a cost-saving shortcut.** Locked at **3 seasons
+(2023-24, 2024-25, 2025-26)**.
+**This is the ancestor of `BT_TRAIN`** — and of COMPASS fact 66's warning that *"BT_TRAIN must be
+explicit or the test season lands in its own training set (leak + OOM)."*
+
+#### T4.13c — **Splits prioritised, with a DATA-LEAKAGE warning**
+| Priority | Split | Why |
+|---|---|---|
+| **Essential** | **DaysRest** | *"one of the strongest real signals — back-to-back effects"* → **factor A4** |
+| **Essential** | **Location** | home/away |
+| **Essential** | **StartingPosition** | *"a direct proxy for role/usage — **starter vs. bench is night-and-day**"* → **the role_tier concept** |
+| Worthwhile | PrePostAllStar | → the **phase** dimension |
+| **⚠ WARNING** | **WinsLosses** | *"**correlational, not causal** — players play better in wins **partly BECAUSE good play caused the win**. Using it as a raw feature risks **real data leakage**. **Collect it, but don't naively feed it to a model**."* |
+| Low | Month | *"any real signal is better captured elsewhere"* |
+
+**The WinsLosses warning is a genuine leakage trap identified before the data was even mined** — and it
+is the same class of error the A5 lineup factor later fell into (box-score starters are post-tip truth).
+
+#### T4.13d — Three structural rules, all still honoured
+1. **Per-game granularity is the required base unit** — one row per player per game.
+   *"Season aggregates only as **derived features attached to those rows, never a substitute**."*
+2. **Team game logs are equally essential, not an afterthought** — needed for pace and opponent-defence.
+3. **A 3-step pipeline: raw ingestion → transformation → feature engineering**, *"so a later modelling
+   change doesn't force re-mining the expensive historical data."*
+   **→ This is exactly why `baseline_history` (19.3M rows) is stored separately from `final_hp`**, and
+   why re-scoring never requires re-mining.
+
+#### T4.13e — `playercareerstats`, and what it legitimately unlocks
+*"**one call per player** returns their entire career, season-by-season, already aggregated, back to
+their rookie year."*
+
+**The contamination concern was addressed structurally, not waved away**: *"the original concern was
+mixing old **per-game** rows into current training data as if predictive of today. **Season-level
+aggregates used as features describing the player's trajectory — not stand-in training rows — are a
+fundamentally different, safer use**."*
+
+Three things it unlocks:
+1. **Real aging curves** — age vs performance across a career, smoothed of per-game noise
+2. **A "context stability" flag** — *"how many teams a player's been on relative to career length; a
+   genuinely different risk signal that's **invisible in any single season**"*
+3. **A durability proxy** — *"games played vs the team's total games, **without touching anything
+   health-related**"*
+
+#### T4.13f — **SURVIVORSHIP BIAS — the serious risk, surfaced by pushing back on Gemini**
+> *"I pushed back on Gemini rather than just accepting it, per your instruction… **Survivorship bias is
+> the serious one.** This data only exists for players who **stayed in the league long enough to still
+> be queryable**. Any 'typical aging curve' built from it is a curve for **SUCCESSFUL NBA players** —
+> the players who **washed out after 2–3 seasons are invisible**. Any model using this needs to treat
+> it as **conditioned on 'currently-relevant NBA player', not a neutral population**."*
+
+**Plus era effects**: *"a 2004 stat line isn't directly comparable to 2024 without normalising for pace
+and 3-point rate."*
+
+**This is the most statistically sophisticated caution in T1–T4**, and it was produced by explicitly
+asking the tool to argue against its own recommendation.
+
+#### T4.13g — The refusal to guess, stated as a rule
+> *"One thing I couldn't confirm from research and **refused to guess at**: how this endpoint handles
+> players traded mid-season… **This needs to be checked against a real API response before the data is
+> trusted, not assumed from documentation**."*
+**Resolved empirically the same session** — the `TEAM_ID = 0` combined row (T4.2).
+
+**T4 PASS 7: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
