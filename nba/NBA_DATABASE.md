@@ -48,6 +48,17 @@ proposal to share the control plane.
 
 ## 1. `nba_ref` — reference / dictionary layer *(T1)*
 
+> ⚠ **THE `*_meta.json` PROVENANCE LAYER** *(recorded 2026-09-20, T1 pass 45 — **VERIFIED on the live
+> repo**; documented in none of the twelve documents before now)*.
+> **`nba/data/` holds 223 files, of which 41 are `*_meta.json` sidecars.** Each carries
+> `fetched_at`, `source_url`, `http_status`, an entity count, and `error`. Example —
+> `nba_teams_current_meta.json`: `fetched_at 2026-09-14T15:49:33Z`,
+> `Season=2026-27`, `http_status 200`, `team_count 30`, `error null`.
+> **This is what makes *"read the committed file, not the scraper's own claim"* checkable.**
+> ⚠ **Coverage is roughly one in five**, and **NOT RECORDED as a decision** — for a file without a
+> sidecar there is **no committed record of when it was fetched or whether the fetch succeeded**, and
+> the workflow logs that would answer it **expire**. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 45.
+
 ### `nba_ref.teams`
 The team dictionary. 30 active rows.
 | Column | Type | Notes |
