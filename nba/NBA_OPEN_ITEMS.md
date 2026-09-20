@@ -17,7 +17,21 @@ off, opening month produces nothing.** Worth an explicit assertion in the P2 cer
 **Nothing schedules it** — it was flagged unwired when built (T3), the owner said *"leave like this for
 now"*, and `nba-p1-weekly-static.yml` does not call it.
 **September–October is peak roster churn**: camp signings, two-way conversions, waivers, final cuts.
-**Every one is exactly what this worker detects.** Detail below under "FROM T3".
+**Every one is exactly what this worker detects.**
+
+**✅ AND THE FIX PATTERN ALREADY EXISTS ON THE MLB SIDE (T1):**
+> *"`alphadog-v2-weekly-differential-runner` — **Native cron triggers for the Postgres weekly static
+> differential (Monday 3am**, matching the existing `sched_static_weekly` convention)"*
+
+**MLB runs its weekly differential on a native cron set in the generator.** Two routes for NBA:
+**(a)** a native cron in `generate_wrangler_configs.py` (the MLB pattern), or
+**(b)** a step in `nba-p1-weekly-static.yml` **after** the scrape+load steps.
+**⚠ Whichever route, it must go through the generator** — *"the GitHub workflow regenerates wrangler
+files before deploy, so this binding must live in the generator or it will be ERASED."*
+
+**⚠ And check for the never-fire idiom first**: `crons: ["0 0 30 2 *"]` is **February 30th**, used on 8
+MLB workers to disable a schedule while keeping the worker deployed. **A worker with that cron is not
+scheduled, however it looks.**
 
 ### ② `active_stats_season()` returns a data-less season on Oct 1–2
 `nba/nba_season.py` branches on `month >= 10` → current year. So on **2026-10-01 and 10-02** it returns
