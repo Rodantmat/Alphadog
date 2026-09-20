@@ -21,6 +21,39 @@ Every architectural choice below follows from that.
 
 ---
 
+## 1a. ⚠⚠ THE OPERATING CONSTRAINT THAT EXPLAINS THE WHOLE ARCHITECTURE
+*Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§7**. **Recorded 2026-09-20 (T1 pass 31) —
+§7 was entirely undocumented across all twelve documents.***
+
+> *"**This person owns and operates the entire system alone, working from a phone with no terminal
+> access — the AI assistant is THE ONLY INTERFACE to the database, repository, and deploy pipeline.**
+> They expect **a senior technical partner: real root-cause analysis, calibration honesty, and NO
+> CLAIMS OF SUCCESS WITHOUT EVIDENCE VERIFIED DIRECTLY AGAINST LIVE DATA.**"*
+
+**This is not a preference note — it is the load-bearing constraint behind every infrastructure
+decision recorded in this document**, and it was stated in the handoff **before any NBA code existed**.
+Read against the rest of this file it explains:
+
+| Architectural choice | Why it had to be that way |
+|---|---|
+| **The MCP admin bridge** (§3) exists at all, and was built **before any other worker** | there is no terminal. **The bridge IS the terminal.** `NBA_RECIPE.md` STEP 0b records the startup plan's own ranking: *"set up the database schemas and the MCP admin-worker bridge BEFORE writing any other worker — this is the tool surface everything else depends on"* |
+| **Trigger files** (§7) instead of `workflow_dispatch` from a CLI | a `git push` to a watched path is reachable from the bridge; a CLI invocation is not |
+| **GitHub as data transport** — scrape on a runner, commit JSON, worker reads the committed file | there is no local machine to run a scraper on |
+| **Everything documented into committed repo files** | §7's own standing rule, quoted below — chat is not a durable record when chat is the only interface |
+| **`node --check` before commit, dry-runs before writes** | a broken deploy cannot be fixed from a phone at speed |
+| **No orchestrator** (`NBA_SYSTEM_DESIGN.md` §0.6) | *"it only breaks the run"* — an unattended failure is expensive when the operator has no shell to debug from |
+
+**The standing documentation rule, verbatim** — and it is the instruction this entire twelve-document
+effort descends from:
+> *"**Document everything into committed repository files, not only into chat conversation** — this
+> whole NBA transfer package is itself a direct expression of that same standing instruction, and
+> **the practice should continue throughout NBA's own build, not just at the outset.**"*
+
+**Full operating model** — output style, what the owner pushes back on, how decisions get made, the
+required report layout and the standing UI rules — in `NBA_MASTER_SUMMARY.md` §T1.61.
+
+---
+
 ## 1b. THE NAMING AND ISOLATION CONVENTION
 *Source: T1, `NBA_SYSTEM_DRAFT.md` §1. Recorded 2026-09-20.*
 
