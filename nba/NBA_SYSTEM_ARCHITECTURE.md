@@ -278,6 +278,10 @@ recorded**: it is not a convenience limit, it is a data-integrity guard.
 and will silently receive 500. **Any count or coverage check must aggregate in SQL (`count(*)`,
 `group by`) rather than returning rows and counting them.**
 
+**⚠ A live example of getting this right**: every live verification in this documentation used
+`count(*)` aggregates — `arenas` (30/0/0/19), the differential logs (0/0/0/582), the config tables —
+**never a `SELECT *` row count.**
+
 ### 8. ⚠ A CDN in front of raw-file URLs serves STALE content after a successful deploy
 > *"**A CDN OR EDGE CACHE in front of a raw file-serving endpoint** — e.g. **a raw-content URL for a
 > hosted git repository** — **can serve a STALE, PRE-DEPLOY VERSION OF A FILE FOR SEVERAL MINUTES
