@@ -1487,6 +1487,94 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.117 — PASS 87 (angle: **the 18 MLB patches read as DIFFS — `old_str` vs `new_str`, each checked against the live file**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 87.*
+
+**FINDING 1 — ⚠⚠ one NBA change edited the SHARED dispatch path, and its safety rests on an
+unstated invariant.** **Sixteen of eighteen patches are guarded branches or appends**; **two change
+code every target runs through.** The significant one turned an unconditional POST into
+**`const method = body === null ? "GET" : "POST"`**, for **one NBA job mode** (`probe-sources`).
+**✅ VERIFIED live: `body = null` appears exactly once in the deployed bridge, at line 683, inside
+the NBA branch — all eleven MLB branches assign an object, so no MLB target can reach the GET
+path.** ⚠ **But that is an invariant nobody wrote down**: *no MLB branch may ever set
+`body = null`.* **The claim "provably zero-impact on MLB" is true by construction for the other
+sixteen patches and true by a surrounding property for this one.** Recorded in `NBA_WORKERS.md`
+§0.14 as a maintenance constraint on an MLB file.
+*(The second shared-path change — `Path(f"{worker}.js")` → `Path(worker_js_path(worker))` — is
+benign: the helper returns the original for every non-NBA worker. Same shape, safety in the helper.)*
+
+**FINDING 2 — ✅ the branch grew from one binding to twenty-one, exactly as T1 predicted.** T1 wrote
+*"each NBA worker added here needs its own binding + branch, same as this one."* **VERIFIED: line 679
+is a single `else if` testing 21 binding names in one `||` chain.** **The mechanism behind pass 46's
+21 dispatch bindings and pass 69's 21/21/21** — and **the cost of the direct-call design: no registry
+lookup, so every worker is a literal.**
+
+**FINDING 3 — the `main_file` bug's introducing diff, never shown before.** **Patch 2** returned
+`./nba/{worker}.js`; **patch 8** replaced it with `./{worker}.js` plus the explanation now live.
+**Between them sits deploy 33429867514 and its one error line** (pass 79). **The documents record the
+bug and the fix; the diff that introduced it was not recorded** — and it matters because **the wrong
+version looks correct in isolation**: it is the config's own location that makes it wrong.
+
+**FINDING 4 — what the eighteen patches did, grouped.** `generate_wrangler_configs.py` **7**;
+`alphadog-v2-admin-sql.js` **8**; `github_mobile_deploy_workers.py` **3**. ⚠ **The largest single
+MLB-file addition in T1 is the whole `github_trigger_workflow` tool** — registration, description
+and handler — **the capability pass 65 traced: built in-session, uncallable in-session, available
+from the next.**
+
+**Routed to**: `WORKERS` §0.14 (the unstated invariant) · `OPEN_ITEMS` (*FROM T1 PASS 87*) ·
+this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `GLOSSARY`,
+`SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 87 FOUND TRANSCRIPT MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.116 — PASS 86 (angle: **the scraper T1 wrote — the last unread `put_file` body — and its failure path traced through the real step conclusions**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 86.*
+
+**FINDING 1 — ⚠⚠ a correction to pass 79: every failed run had exactly ONE failed step.**
+**VERIFIED from the export's step lists**: deploy 33429867514 was **13 success / 1 failure /
+3 skipped**, and each scrape failure was **6 / 1 / 2**. **The steps pass 79 called failed were
+`skipped`** — my filter treated *"not success"* as failure. **Fourth instance of the pass-53 rule,
+and the first caused by my own comparison rather than a grep.** **Rule extended: when classifying a
+status field, enumerate its values; never define one status as "not the good one."** Corrected in
+place in `NBA_OPEN_ITEMS.md`.
+
+**FINDING 2 — ⚠⚠ and the correction exposes a real defect: T1's stated intent was defeated by the
+step order.** T1's scraper comment says the non-zero exit is deliberate *"**but the meta file (with
+the real error recorded) still gets committed**."* **It did not.** **VERIFIED**: on all three failed
+runs `Commit NBA data JSON to main` is **`skipped`** — **the error record was written inside the
+runner and discarded with it.** **The discipline was stated, implemented in the script, and
+cancelled by the workflow's default behaviour, and nothing recorded either half.**
+**✅ Mostly fixed today by accident**: **15 of 16 scrape steps now carry `continue-on-error: true`**,
+so the commit step runs and their meta files land. ⚠ **The teams scraper is the exception** — first
+step, no `continue-on-error` — **so the one scraper T1 was writing that comment about is the one
+still affected.**
+
+**FINDING 3 — ⚠ the failure path blanks the data file, and the containment is incidental.** On any
+exception the script writes **`{"teams": []}` over `nba_teams_current.json`** before exiting 1.
+**✅ It has never caused data loss** — the commit step is skipped, so the blanked file dies with the
+runner. **But the containment depends on that skip**, and **`continue-on-error: true` is precisely
+what stops steps being skipped.** **Whether the other 15 scrapers blank their own outputs on failure
+is NOT RECORDED**; this pass did not check them.
+
+**FINDING 4 — ✅ the scraper's headers are the canonical set, unlike the worker's.** The Python uses
+**`Referer: https://stats.nba.com/`** and a **real Chrome 128 user agent**; the JavaScript worker used
+`www.nba.com` and a self-identifying UA (pass 84). **T1 got it right in the Python and wrong in the
+JS in the same session** — so **the correct header set was in the repo the whole time.**
+✅ **And `timeout=30` here matches the first CI failure exactly** (`read timeout=30`, run
+33444713366) — **transcript, source and CI log agree.**
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 86*, plus the pass-79 correction in place) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 86 FOUND TRANSCRIPT MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.115 — PASS 85 (angle: **the five `TRIGGER_NBA_SCRAPE.txt` bodies — the file T1 rewrote most**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail with all five lines quoted: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 85.*
 
