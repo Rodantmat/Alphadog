@@ -216,11 +216,55 @@ shooter together**, *"shrinking away the make-rate ordering the parametric alrea
 **FTM was diagnosed as the same compound shape** and fixed the same way (λ=0.5).
 
 ### 3.10 Calibration — per-rung Platt
+
+**⚠ THE OWNER'S STATED PREFERENCE, FROM T1 — read this before trusting automated calibration:**
+> *"there is a **daily automated calibration engine** (runs **Platt scaling, beta, and possibly other
+> techniques**) that **in their experience OFTEN OVER-FLATTENS / FLATTENS TOO MUCH**"*
+> *"**prefers calibration to be done MANUALLY rather than via the automated daily calibration**
+> [engine]"*
+
+**This is an experience-based warning about the exact technique NBA applies automatically.**
+**Over-flattening is the failure mode**: a calibrator that pulls everything toward the base rate
+destroys precisely the tail discrimination the goblin/demon work depends on.
+
+**NBA's mitigations, arrived at independently, happen to answer it:**
+- **Per-rung Platt**, not one curve across the ladder — *"Platt across the whole ladder helped points
+  but **HURT rebounds**."*
+- **Variation band in the Platt key**, with a band-level pool fallback.
+- **The upper-only ceiling** — the symmetric version *"forced true 0.002 rungs up to 0.25"*, which is
+  over-flattening in its most extreme form.
+- **A gate of n≥1,000 per cell** so thin cells are not calibrated at all.
+
+**⚠ Still unverified for NBA**: whether the fitted Platt curves are flattening the tails. **The
+diagnostic is cheap** — `final_hp` retains **`p_raw`** alongside `p_more`/`p_less`, so the
+pre-calibration and post-calibration distributions can be compared per rung directly.
+
+**The mechanics:**
 *"Platt across the whole ladder helped points but **HURT rebounds**; **per-rung** Platt fixed both."*
-**Variation band added to the Platt key** (v10), with a band-level pool fallback → *"Points STARTER
-dropped off the worst-cell list entirely."*
+**Variation band added to the Platt key** (v10) → *"Points STARTER dropped off the worst-cell list
+entirely."*
 **Platt is fit on the season's prior months** (production `asof_lag: 0 days`).
-**⚠ Gate**: Platt needs **n≥1,000 per cell**; the ELITE rebounds band has **699**.
+**⚠ Gate**: needs **n≥1,000 per cell**; the ELITE rebounds band has **699**.
+
+## 3.10b THE AS-OF LEAK — a known failure with MLB precedent
+
+**MLB found this in its own backtest table (T1, relayed 2026-08-29):**
+> *"**CRITICAL PIVOT**: **`backtest.baseline_v6_asof` was found to LEAK each leg's own game-day into
+> its own as-of prediction** (**`as_of_date = D` includes day D's game**; verified via
+> `non_push_sample` matching game-log counts)"*
+
+**The same class of bug then appeared in NBA** — the FRINGE anomaly was *"a season-wide mean using
+future games"* (T8), and the as-of calibration parity violation was a pasted table carried across days
+(live session).
+
+**Three instances of one failure mode**: as-of contamination is the recurring bug of this system, and
+it always presents as **inflated apparent skill**. **The MLB verification method transfers**: check a
+non-push sample against game-log counts.
+
+**And the fix workflow, from the same note:**
+> *"research/debug/simulate fixes **at large sample sizes across all individual niches** of the
+> enrichment pipeline first; **only once solutions are very well developed**, [test] **on the backtest
+> tables**; **only if that testing behaves very well, move to live tables**."*
 
 ### 3.11 Guards and caps
 - **Wilson clamp below n=30**
