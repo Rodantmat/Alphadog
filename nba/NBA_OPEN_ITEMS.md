@@ -523,6 +523,36 @@ games — including the duds — is biased on the `more` side for every prop.
 
 **To verify**: does the ladder builder fit a mixture, or a single distribution over all games?
 
+### ✅ RESOLVED 2026-09-20 — **duds are EXCLUDED, not MIXED. The design said mix.**
+`classification_ladder_v12.py` line 222:
+```python
+pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan)
+```
+**The minutes role (`mu_role`) is computed ONLY from competitive games with fewer than 6 personal
+fouls** — so blowouts *and* foul-trouble games are **removed from the role estimate**. There is **no
+`dud`, `mixture` or `p_dud` anywhere in the file** (grep: 0 matches).
+
+**What this means, precisely:**
+| Dud cause | Handled? |
+|---|---|
+| **Blowout benching** | ✅ — excluded from the role, then re-applied via `MIN_RATIO` per `role_tier` (the `blowout_model` ratios) |
+| **Foul trouble (PF ≥ 6)** | ⚠ **excluded from the role, and never restored** — `P(foul trouble)` is not modelled |
+| **Early exit / other** | ⚠ not modelled |
+
+**The implementation cleans the input; the design asked to clean it AND add the tail back as a mixture
+component.** So the projection effectively assumes the player plays his *clean-game* role every night.
+
+**The direction of the residual bias is worth measuring rather than assuming.** Excluding foul-trouble
+games raises `mu_role` (clean games have more minutes), which argues *toward* over-optimism on `more` —
+the exact bias T7 named. But dispersion is fitted separately, and the empirical per-tier outcome tables
+(where sample supports them) are built from *real* game results including duds, which would carry the
+tail natively. **Whether the net effect is material is an empirical question the factor-gate harness
+could answer in one run.**
+
+**This is a genuine design-vs-implementation divergence**, not an oversight to panic about — the
+exclusion is defensible and the blowout half is properly restored. But it is the one place where the
+most NBA-specific insight in the whole design research was only half implemented.
+
 ### UNVERIFIED · does the minutes model include the "dud" component?The T7 design specified a **three-component mixture**: normal play (truncated Normal), blowout-reduced,
 and a **"dud" (foul trouble / early exit) ~ log-Normal**, fit on *"competitive games in the player's
 bottom 15% or 5+ PF"*, with `P(dud)` from the player's own history and PF rate.
