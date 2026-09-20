@@ -84,9 +84,48 @@ All use **`curl_cffi` with browser impersonation** except where noted.
 ---
 
 ## 4. BASELINE ENGINE
+
+### `nba/backtest/classification_ladder_v12.py` — THE CERTIFIED RECIPE *(now v18)*
+**The single source of truth.** 60,176 bytes, 759 lines. Every production builder is a **patcher** over
+it, with **anchor assertions** so a drifted patch fails loudly instead of writing silently.
+
+**Constants** (full table and the calibration logic: see `NBA_BASELINE_CALIBRATION.md`):
+`MAX_TIERS=24` · `MIN_PER_TIER=15` · `TIER_BLEND_K=5` · `LADDER_STEPS=6` ·
+`BLOWOUT_MARGIN=20` / `COMPETITIVE_MARGIN=15` · `ROLE_TIERS` (6 bands) ·
+`P_BLOWOUT_BINS=[0,2,4,6,8,10,12,15,99]` · `SHIFT_LAMBDA` per prop · `PLAYER_L0` **off (rejected)**.
+
+**Env**: `BT_ASOF` · `BT_PROPS` · `BT_CUTOFF` · `BT_REPLAY` · `BT_INJURY` · `BT_LADDER_STEPS` ·
+`BT_SAVE_COMPONENTS` · `BT_TRAIN`/`BT_TEST` · **`BT_CARRY` (default "1" — without it October produces
+NOTHING)** · `BT_SHIFT_LAMBDA` · `BT_PLAYER_L0`.
+
+### `nba/backtest/combos_ladder_v1.py`
+Certified combos recipe — **its own `LADDER_STEPS`**. Joint simulation over calibrated marginals with
+**per-player covariance**. **Requires `BT_SAVE_COMPONENTS=1` singles pickled first.**
+
+### `nba/backtest/minutes_model_v1.py` *(T8)*
+The first harness. Established the derived spread (r=0.46), `P(blowout|spread)`, the DataStreak
+reproduction (5.4 vs 5.8) and team-specific starter pull (0.81 Orlando → 1.10 Dallas).
+
+### `nba/backtest/bandfit.py` *(T8)* — the band-cell fitter.
+
+### Production builders — the PATCHER PATTERN
+> *"**The backtest harness on a PAST day is already the production computation** — every feature is
+> `shift(1)`-based, so the only difference for today is the slate."*
+
 | Script | Role |
 |---|---|
-| `nba/backtest/classification_ladder_v12.py` | **the certified singles recipe.** Holds `PROPS`, `LADDER_DEPTH`, `SHIFT_LAMBDA`, tier constants |
+| `nba/baseline/build_baseline_ladder.py` | patcher → today's slate. **Reproduces the ladder exactly** (173 players, 4,498 rows) |
+| `nba/baseline/build_combos_ladder.py` | daily combos |
+| `nba/baseline/build_periods_ladder.py` | daily periods |
+| `nba/baseline/build_baseline_history.py` | season backfill (singles) |
+| `nba/baseline/build_combos_history.py` · `build_periods_history.py` | season backfill |
+| `nba/load_baseline_ladder.py` | **fetches over HTTP from the repo**; **refuses a singles-only slate** |
+| `nba/load_baseline_history.py` | bulk history loader |
+| `nba/nba_asof.py` | cutoffs — `PHASE1_CUTOFF_LOCAL = "16:00"` (1 PM PT) |
+| `nba/nba_season.py` | **`current_season()` vs `active_stats_season()`** — the season-hardcoding fix; both honour `NBA_SEASON`. ⚠ Oct 1–2 edge case |
+
+**A change must be applied to BOTH certified recipes** — singles and combos are separate files, each
+with its own constants.
 | `nba/backtest/combos_ladder_v1.py` | the certified combos recipe — **its own `LADDER_STEPS`** |
 | `nba/baseline/build_baseline_ladder.py` | **patcher** over the singles recipe → today's slate |
 | `nba/baseline/build_combos_ladder.py` | daily combos |
