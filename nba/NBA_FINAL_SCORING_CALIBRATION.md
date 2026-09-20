@@ -759,7 +759,49 @@ consistent with the tails never having been separately certified.
 
 ---
 
-## 18. WHERE EDGE IS NOW EXPECTED TO COME FROM
+## 18. PART D — THE FOUNDATIONAL SELECTION METHODOLOGY (Rules B0–B0c)
+
+> *"**This is the original, foundational rule set — EVERYTHING ELSE in this document is DOWNSTREAM of
+> it. Apply these to NBA from the VERY FIRST CANDIDATE, not as a later refinement.**
+> **Read this before any other strategy work.**"*
+
+### Rule B0 — build real graded-outcome buckets; **never rank by the platform's own displayed score**
+> *"The entire selection logic must be: **build a real, historical, per-(PROP, SIDE, LINE-OR-TIER)
+> hit-rate table from ACTUAL GRADED OUTCOMES**, then **select from buckets that clear a real
+> SAMPLE-SIZE and HIT-RATE bar** (MLB's original bar: **n ≥ 30 real observations, ≥ 80% hit rate**) —
+> **independent of whatever the platform's own internal displayed probability/confidence score
+> says.**
+> MLB found a **real, costly instance of its own prior work ranking legs by the platform's internal
+> score instead of real graded buckets**, and **re-doing it properly surfaced real, priced-positive
+> buckets that had been MISSED as a direct result.**
+> **NEVER trust a platform's own confidence/probability display as a substitute for your own real
+> graded-outcome analysis.**"*
+
+**Three things this establishes for NBA:**
+
+**1. The required artefact is a per-(prop, side, line-or-tier) hit-rate table from graded outcomes.**
+**This system has it**: `nba_market.board_outcomes` — **6.9M graded legs across 327 dates**, keyed by
+prop, side and line, with `leg_result` ∈ `over_win` / `under_win` / push / DNP / `unmatched_player` /
+`unmatched_not_in_season`. **The grader was built precisely to satisfy B0.**
+
+**2. The selection bar is on the BUCKET, not the leg.** MLB used **n ≥ 30 and ≥ 80%** as its original
+bar. **NBA has not set an equivalent bar**, because selection is the slip-strategy phase and has not
+begun. **When it does, the bar belongs on the bucket, with a stated minimum n.**
+
+**3. "Never rank by the platform's displayed score" is directly live.** PrizePicks and the other apps
+surface their own implied confidence. **Our ranking must come from `board_outcomes`-derived buckets
+and our own calibrated `final_hp` — not from anything the platform displays.**
+**The market is already correctly framed this way** (COMPASS 62): *"a confidence adjuster and ranking
+signal, **not ground truth**."*
+
+**And note how it interacts with §15.0a**: Underdog and Sleeper price per-leg dynamically at
+`p × m ≈ 1.0`, so **their displayed pricing IS close to fair** — which makes it tempting to trust and
+useless to rank by. **PrizePicks' step pricing is the opposite**: less informative per leg, and
+therefore the place where an independent graded-outcome bucket can disagree profitably.
+
+---
+
+## 19. WHERE EDGE IS NOW EXPECTED TO COME FROM
 
 ### ⚠⚠ 15.0a THE HARD CONSTRAINT — two of the three platforms are measured EFFICIENT
 > *"**Underdog/Sleeper's own EV-parity pricing, measured directly against real placed-slip data at
