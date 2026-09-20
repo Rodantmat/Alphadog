@@ -627,6 +627,22 @@ formulas produces differences that are artefacts, not signal. **Lesson #14 is it
 it actually isolates what it claims to"* — **and look for exact multiples in row counts as the first
 diagnostic.**
 
+#### NBA's own instances — at least four, three of them silent
+| Instance | Effect | Visibility |
+|---|---|---|
+| `norm_market()` naive `replace('player_','')` | **23,286 legs — 44% of the board — scored nothing** | **silent** |
+| Splits PK omitting `season` | only one season can ever exist | **silent overwrite** |
+| Lineup PK omitting `team_id` | traded players collide | **failed loudly** ✅ |
+| Gap sample grouping on `matchup` | **every game listed TWICE** | **exactly the 2× tell from #1** |
+
+**The `matchup` duplicate is member #1, textbook** — a grouping key that did not fully specify the row,
+producing an exact 2× multiple. **It was caught because the multiple was exact.**
+
+**Member #2 is worth watching here specifically**: `gain_vs_anchor` compares a factor against the
+certified anchor. **If a factor's evaluation slice were selected using anything the anchor already
+conditions on, the comparison would erase the effect.** *(T8's note that prior strength measured
+against tier-mates is **circular** — tier-mates were *selected* for similarity — is the same shape.)*
+
 ### 📏 THE SAMPLE-SIZE POSTURE — adopt as a mechanical default from opening night
 > *"**fewer than 15 real days is NOT YET A RESULT AT ALL; 15–30 days is DIRECTIONAL ONLY; 30–70 days is
 > usable WITH REAL CAVEATS STATED; 70+ days is GENUINELY REPORTABLE.**
