@@ -6168,6 +6168,95 @@ player_id, game_id, prop, period, ot_rule, line)**. Run summary → `baseline_la
 
 **T9 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T9.12 — PASS 3 — **THE PERIOD LAYER, AND A FANTASY-SCALE DISCREPANCY**
+
+#### T9.12a — **The three-part mixture, with its fitted values**
+*"State probabilities (close / medium / blowout) come from the derived spread; for each role × state
+the **sit-out rate** and **'plays' minute ratio** are fit on train — **nothing pasted**."*
+
+| Role × state | Sit-out | Minutes ratio |
+|---|---|---|
+| Iron Man, close | **3%** | 1.07× |
+| Iron Man, medium | 8% | 0.89× |
+| **Iron Man, blowout** | **45%** | **0.64×** |
+| **Fringe, blowout** | **18%** | **2.9×** |
+
+**The fringe-in-blowout value is 2.9× — the garbage-time accumulator effect, with the correct
+sign.** *(Contrast the full-game FRINGE anomaly of 0.87 that turned out to be leakage, T8.19b. Here the
+same population shows the expected direction once the state is modelled explicitly.)*
+
+**And an Iron Man sits out 45% of blowout fourth quarters** — which is why 4Q props on stars are a
+different bet entirely.
+
+#### T9.12b — Results
+| Run | Result |
+|---|---|
+| **points_q4, 2025-26** | ladder **0.9**, 17 bands, **1 marginal miss** (80–85, −3.2) |
+| **points_q4, 2024-25 holdout** | ladder **0.8**, **0 of 17 bands** |
+| **1Q rebounds** | near-binomial in shift mode took band misses **5 → 2** and worst rung cells **32 → 0** |
+| **2H points** | meets the standard on 2025-26 (ladder 1.0, 19 bands, 1 marginal miss) |
+| **1H points** | **certified both seasons — holdout ladder 1.0, `0 of 19 bands`** |
+
+#### T9.12c — **WINNER'S CURSE — the same mechanism found twice**
+> *"The star HIGH band residual went from **−6.8 to −4.5** once **the prior strength was scaled to a
+> quarter's information content** (**a 12-minute per-36 rate carries ~⅓ of a game**;
+> **under-shrinking it produced a WINNER'S CURSE in the top band** — **the same mechanism I found in
+> the full-game work**)."*
+
+**Shrinkage strength must scale with how much information the window actually contains.** A quarter's
+rate is a third of a game's, so applying full-game shrinkage under-shrinks it, and the top band fills
+with players who got lucky. **The same error, caught twice, in two layers.**
+
+#### T9.12d — **A hypothesis tested and REJECTED — stars take over in the clutch**
+> *"**a close-game rate penalty for stars is *wrong*** — **Iron Men score 1.09× per minute in close
+> fourth quarters** (**FGA 1.13×, FTA 1.18×; they take over**)."*
+
+**The intuitive adjustment was backwards.** But the same measurement surfaced two real effects:
+- **Assists drop 10–12% in close fourth quarters — "hero ball"**
+- **Bench scoring falls to 0.84×**
+
+**These now live "in the state table alongside the minutes ratios"** as per-stat rate ratios by game
+state. **So the period layer models rate AND minutes by state**, which the full-game layer does not.
+
+#### T9.12e — **OT measured, and modelled as a MIXTURE BRANCH**
+> *"**OT as a mixture branch, not a mean bump** — **a star either gets ~5 crunch minutes or none**.
+> **P(OT | spread) measured at 5.3% at pick'em falling to 1.9% at 15+**, exactly the range the design
+> assumed."*
+
+**⚠ So P(OT) WAS built — in the period layer.** My earlier finding (no `p_ot` in
+`classification_ladder_v12.py`) holds for the **full-game** ladder; **the period layer has it as a
+measured mixture branch.** OPEN_ITEMS corrected.
+
+**Note the measured figure**: **5.3% at pick'em**, against T8's design estimate of *"~7–8% on a 1-point
+spread."* **Measurement came in below the assumption**, and the design range was stated loosely enough
+to cover it.
+
+#### T9.12f — **⚠ A FANTASY-SCORE DISCREPANCY, flagged for season start**
+> *"One discrepancy to re-verify at season start: **a third-party sheet lists PrizePicks blocks/steals
+> at +2 vs the +3 I recorded from the official page**."*
+
+**The fantasy scale was resolved in T7 to `1 / 1.2 / 1.5 / 3 / 3 / −1` from PrizePicks' official
+page.** A third-party source says **+2 for blocks and steals, not +3**.
+**This materially changes `fantasy_score`** — T8.16g notes the 3× multiplier is precisely what creates
+the fat right tail. **At +2 the tail is meaningfully thinner.** Recorded in OPEN_ITEMS.
+
+#### T9.12g — Research used, and one recommendation correctly rejected
+- **Confirmed in the wild**: the Q2 bench-unit effect — **Denver at −16.6 net rating without Jokić vs
+  +12.4 with him**.
+- **Rejected**: *"the **halftime foul count is in-game data**, so it's an **enrichment-time input, not
+  baseline**."* **Gemini proposed a feature that would have violated the boundary**, and the boundary
+  held.
+- **The factor layer on periods**: 2H points — **pace 0.81, opponent defence 0.62**, *"consistent with
+  the full-game fits."*
+
+#### T9.12h — A structural item carried on both seasons
+> *"**bench/fringe 2H scoring is under-predicted (+3.3 / +5.1)**, **the same cold-streak selection I
+> found in full-game FRINGE**; lines that thin are rarely posted, but **it's a legitimate band cell**."*
+
+**Consistent across both seasons → structural by the T8.15b rule → a keepable cell.**
+
+**T9 PASS 3: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
