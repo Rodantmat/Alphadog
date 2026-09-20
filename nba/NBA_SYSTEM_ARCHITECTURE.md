@@ -63,7 +63,20 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
 - **Cloudflare Workers + `wrangler` deploy mechanics**, the GitHub Actions auto-deploy pipeline, and
   **`generate_wrangler_configs.py`** — *"NBA workers get added to its template — **watch for the
   HARDCODED BINDING WHITELIST-TUPLE GOTCHA the blueprint flags**."*
-- **The Hyperdrive/Postgres connection pattern — `prepare: false`, `max: 3–5`.**
+- **The Hyperdrive/Postgres connection pattern**, exactly as specified:
+  ```js
+  postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false, prepare: false })
+  ```
+  > *"**All THREE connection options matter** — **`prepare: false` in particular AVOIDS A SPECIFIC,
+  > PREVIOUSLY-ENCOUNTERED FAILURE MODE**. **`max: 3–5` is the PROVEN small-pool size for Workers'
+  > short-lived invocation model.**"*
+  **`fetch_types: false` is the third**, and is easy to omit when copying the pattern by memory.
+- **Legacy/reference layer**: *"**D1 databases exist as READ-ONLY REFERENCE ONLY — NEVER write new
+  data to D1. If porting a table, MIGRATE IT TO POSTGRES FIRST.**"* *(D1 was subsequently
+  decommissioned system-wide on 2026-08-12; NBA is Postgres-only from day one.)*
+- **Deploy pipeline**: GitHub repo → `alphadog-v2-github-auto-deploy.yml` → auto-deploys on push.
+  **`generate_wrangler_configs.py` regenerates EVERY `wrangler.*.jsonc` from a Python template BEFORE
+  EVERY DEPLOY** — the mechanism behind the "anything not in the generator is erased" rule (§4).
 - **The MCP admin-bridge worker** (`alphadog-v2-admin-sql.js`) and its `run_sql_postgres` / GitHub
   tool surface.
 - **`config.worker_definitions` / `config.worker_schedules` / `control.job_queue` /
