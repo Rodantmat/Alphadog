@@ -3745,6 +3745,59 @@ Two implementation details confirmed in the tail, both consistent with patterns 
 
 **ONE more complete clean sequential pass and T6 is DONE.**
 
+### T6.16 — PASS 8 (full sequential, 255-char context) — **CLEAN 3/3**
+
+**Every block maps to a documented entry. Nothing new.**
+
+One phrase resolved to its full form: the invocation block was *"the MCP tool's **hard client-side
+validation** blocking the new worker binding"* — so the enum is enforced **client-side**, which is why
+no server-side routing (Control Room) could work around it, and why only a refreshed tool list could
+resolve it.
+
+---
+
+# ✅ T6 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (6, 7, 8)
+
+**Final tally: 8 passes. 5 found new material. Passes 6, 7, 8 clean.**
+
+**T6 built five things and hit four bugs. What matters going forward:**
+
+| Finding | Status |
+|---|---|
+| **`if rows is not None` passes `[]`** — 1,230 "successes", 1,227 real | ✅ fixed; **same class as the NaN bug** |
+| **`boxscoresummaryv2` unreliable after 2025-04-10** — found documented BEFORE building | ✅ v3, tested on 5 samples first |
+| **Lineup PK omitted `team_id`** (traded players pair up on two teams) | ✅ fixed — **failed loudly, unlike the splits PK** |
+| **Completeness check: 3 attempts → `GAME_ID` prefix `002`** | ✅ **1230 = 1230**; origin of the convention in `check_delta_gaps.py` |
+| **4,319 coach's-decision DNPs sitting unused** | ⚠ **OPEN** — purest role-volatility signal available |
+| **`comment` has two formats** (`DND_LEAGUE_SUSPENSION` vs `DNP - League Suspension`) | ⚠ any naive parse misses 11 rows |
+| **The MCP enum refreshes between turns** | ✅ **overturns T1's conclusion** — re-check before expensive workarounds |
+| **The injury-PDF source** (`ak-static.cms.nba.com/referee/injury/…`, back to 2021-22) | → built T10, became the availability backbone |
+| Pre-flight completeness check | ✅ **exists** — T4.12c corrected |
+
+**The transcript's own summary of its method is the durable lesson:**
+> *"every real bug encountered along the way (**the v2-unreliable-for-history pattern twice**, the
+> truthiness bug, the array-literal issue, the primary-key gap) was caught by **checking actual data
+> rather than accepting a 'success' status at face value**."*
+
+---
+
+## RUNNING TOTAL: 6 of 16 transcripts DONE
+| # | Transcript | Passes | Status |
+|---|---|---|---|
+| T1 | phase1-static | 28 | ✅ 3/3 |
+| T2 | phase3a-enrichment | 11 | ✅ 3/3 |
+| T3 | phase3a-final | 10 | ✅ 3/3 |
+| T4 | phase3b-backfill | 12 | ✅ 3/3 |
+| T5 | phase3c-starter-status | 8 | ✅ 3/3 |
+| T6 | phase3d-delta | 8 | ✅ 3/3 |
+
+**Phase 3 is fully documented. The data layer is complete.**
+
+## NEXT: T7 — `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt` (3.1 MB)
+The classification/baseline **design** session — the full prop universe across all apps and period
+layers, the **5-dimension tiering architecture** (player / rate / role tiers, factor tiers, variation
+bands, direction, prop line), and the design document that gets materialised into `nba_config`.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
