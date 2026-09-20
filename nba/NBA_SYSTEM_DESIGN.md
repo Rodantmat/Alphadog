@@ -178,6 +178,62 @@ rather than keep polling blindly."*
 
 ---
 
+## 0.9 TRIGGER / SCHEDULING REALITY — "build this correctly from day one"
+*Source: T1, blueprint §5. Recorded 2026-09-20.*
+
+### MLB's real operating model, after abandoning automation
+> *"**MLB's real, current operating model (AFTER ABANDONING AN EARLIER, MORE AUTOMATED DESIGN):
+> MANUAL or COWORK-SESSION-DRIVEN, LAYER-BY-LAYER execution, NOT continuous automated cron
+> dispatch.** The full **orchestrator/auto-scheduler machinery that was built earlier was later
+> RETIRED** in favour of running each layer by hand or via a scheduled Cowork/Claude session
+> — **currently 4× daily: 1am, 9am, 1pm, 5pm Pacific for MLB.**
+> **DO NOT build an elaborate auto-scheduling orchestrator for NBA BEFORE you have A WORKING MANUAL
+> PIPELINE** — **MLB's own history shows THE AUTOMATED VERSION ACCUMULATED REAL, HARD-TO-DETECT
+> PROBLEMS before being scaled back to manual/scheduled-session control.**"*
+
+**This is the origin of the owner's no-orchestrator rule** (*"so no runner, orchestrator or anything
+like, **it only breaks the run**"*) — **it is not a preference, it is a retired architecture.**
+
+**MLB's four daily windows — 1am / 9am / 1pm / 5pm PT — are worth comparing to NBA's three:**
+| | MLB | NBA |
+|---|---|---|
+| Overnight | **1am PT** | **P2 at 01:00 PT** — the same hour |
+| Morning | 9am PT | — *(NBA folds this into P2)* |
+| Midday | **1pm PT** | **P3 at 1:15 PM PT** — near-identical |
+| Late | 5pm PT | — |
+
+**NBA runs three pipelines where MLB runs four sessions**, and the two shared times match almost
+exactly. **The two NBA does not have are the 9am and 5pm windows** — and §4n's warning that *"one of
+the four intended times NEVER FIRED AT ALL"* is a reason to measure rather than assume MLB's four are
+real either.
+
+### ⚠ "NO GAMES SCHEDULED" MUST BE A FIRST-CLASS STATE
+> *"**A real, confirmed architecture gap in MLB, worth designing around from the start for NBA: the
+> system COULD NOT ORIGINALLY DISTINGUISH 'GENUINELY ZERO GAMES TODAY' (e.g. ALL-STAR BREAK) from
+> 'SOMETHING IS BROKEN AND RETURNED ZERO ROWS.'**
+> **Build an EXPLICIT, FIRST-CLASS 'NO GAMES SCHEDULED' STATE into the NBA pipeline FROM DAY ONE —
+> don't let a natural zero-game day SILENTLY LOOK IDENTICAL TO A REAL FAILURE.**"*
+
+**The NBA calendar has real zero-game days**: the **All-Star break** (~5 days), and scattered dates.
+**`nba_calendar.games` holds 2,666 games and knows exactly which dates are empty.**
+
+**⚠ NBA's current signals are ambiguous in exactly the way described:**
+| Signal | Zero games | Broken |
+|---|---|---|
+| P2's delta gap audit | 0 expected, 0 found → **passes** | 0 expected because the calendar read failed → **also passes** |
+| P3's scored-leg count | 0 legs | 0 legs |
+| The certifiers | assert freshness and row counts | — |
+
+**The distinguishing information exists** — the schedule says whether games were expected — **but no
+explicit "no games scheduled" state is recorded as implemented.**
+
+**And it matters twice over for the season opener**: **2026-10-01 and 10-02 are genuinely zero-game
+days** before opening night on the 3rd, **and they coincide with the `active_stats_season` edge case
+already recorded.** A pipeline run on those dates should report *"no games scheduled"*, not silence
+that looks like success.
+
+---
+
 ## 1. THE CUTOFF — why 1:15 PM PT
 
 **The binding constraint is the game-day injury report.** It is due **11am–1pm LOCAL to each game's
