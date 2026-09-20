@@ -45,6 +45,15 @@ USAGE
     tails     write per-transcript reading lists of the uncovered segments
     backtest  re-measure recall against the ground truth in GROUND_TRUTH
 
+REPRODUCIBILITY LIMITATION - READ THIS FIRST
+    This tool is committed; THE CORPUS IT OPERATES ON IS NOT.  The 20 transcript
+    .txt exports are not in the repository (see the BLOCKER at the top of
+    nba/NBA_OPEN_ITEMS.md), so from a clean checkout every subcommand fails until
+    --transcripts is pointed at a local copy that only exists outside git.
+    As of 2026-09-20 that means only the session that wrote this tool can actually
+    run it.  It is NOT reproducible by anyone else yet.  Committing the transcripts
+    - redacted, per the credential findings in the same BLOCKER - is what makes it so.
+
 Additive, NBA-only, read-only: this tool never writes to the database, never deploys,
 and never modifies a transcript or an MLB file.
 """
