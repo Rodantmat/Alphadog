@@ -2933,6 +2933,55 @@ caution that came from pushing back rather than accepting.
 
 **ONE more complete clean sequential pass and T4 is DONE.**
 
+### T4.20 — PASS 12 (full sequential, 260-char context) — **CLEAN 3/3**
+
+Complete read at maximum context. **Every block maps to a documented entry. Nothing new.**
+
+Two details resolved to their full form in this pass, both refinements rather than new findings:
+- The `resultSets`-as-dict bug produced **`KeyError(0)`**, which *"renders as literally `\"0\"` when
+  stringified"* — which is why the error message was uninformative and the cause took a second look.
+- The league eFG% by defender distance: **0–2 ft "Very Tight" = 46.7%, 6+ ft "Wide Open" = 58.9%** —
+  *"a sensible, real spread"*. These are the league baselines the Shot Quality Delta formula weights.
+
+---
+
+# ✅ T4 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (10, 11, 12)
+
+**Final tally: 12 passes. 9 found new material. Passes 10, 11, 12 clean.**
+
+**T4 is the most consequential transcript so far** — it contains the design of the baseline and the
+architecture decision the whole system still runs on.
+
+**What it produced, and what is now actionable:**
+
+| Finding | Status |
+|---|---|
+| **The architecture correction** — baseline cacheable, enrichment volatile | **the reason for today's P2/P3 split** |
+| **The five-step baseline design** — EWMA, shrinkage, minutes, pace/defence, **anchor to team-implied totals** | step 5 shipped in T16 as the matchup factor |
+| **"Don't penalize twice" blowout warning** | ✅ **RESOLVED** — `blowout_model` stores ratios, not penalties |
+| **P3's trigger should be DYNAMIC** (earliest tip − 2h), not a fixed 1:15 PM | ⚠ **OPEN — breaks on early-tip days** |
+| **WinsLosses splits carry leakage risk** | ⚠ collected; consumers unverified |
+| **Survivorship bias in career aggregates** | ⚠ loaded; conditions unapplied |
+| **"MIN + margin" garbage-time proxy** | ⚠ **half-exists** as `blowout_model`; the rate-stat half is still open |
+| **GBDT/NN rejected with conditions** | recorded decision |
+| `TEAM_ID = 0` traded-player row | ⚠ naive `SUM()` double-counts |
+| 3-season bound, deliberately | *"scope discipline is the constraint, not depth"* |
+
+---
+
+## RUNNING TOTAL: 4 of 16 transcripts DONE
+| # | Transcript | Passes | Status |
+|---|---|---|---|
+| T1 | phase1-static | 28 | ✅ 3/3 clean |
+| T2 | phase3a-enrichment | 11 | ✅ 3/3 clean |
+| T3 | phase3a-final | 10 | ✅ 3/3 clean |
+| T4 | phase3b-backfill | 12 | ✅ 3/3 clean |
+
+## NEXT: T5 — `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt`
+MLB-analogy backfill audit · position bug fix · **Defense-vs-Position derived table** ·
+per-game starter/bench backfill (`boxscoretraditionalv2` failure → v3) · Postgres writer worker ·
+a tooling constraint blocking the final load.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
