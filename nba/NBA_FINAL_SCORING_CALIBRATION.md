@@ -514,6 +514,60 @@ begun — and that is correct sequencing, not an omission.
 
 ---
 
+## 14. THE RESEARCH STANDARD — all 26 lessons *(T1, `NBA_LESSONS_LEARNED_FROM_MLB.md`)*
+
+**The handoff calls this document *"the single most important document in this transfer package — a
+research standard built the hard way, across dozens of strategy candidates, almost all of which looked
+real at first and were later found to be artifacts."*** The startup plan requires *"the full 16-item
+standard… **from the very first candidate**, not as a later addition once shortcuts have already been
+taken."*
+
+| # | Lesson |
+|---|---|
+| **1** | **The fair-odds gate — apply FIRST, before any hit-rate analysis** (`p × m`; see `NBA_MULTIPLIERS.md` §0.3) |
+| **2** | **Never apply a tier/pool-level multiplier to a heterogeneous population** — MLB's costliest error; use `Σ wᵢ(pᵢ·mᵢ)` per cell |
+| **3** | **Multiple, genuinely DIFFERENT research passes per candidate** — *"not the same query with a different threshold"* |
+| **4** | **Gemini as a genuine ADVERSARY, not a rubber stamp** — *"asked to SET ITS OWN [test/criteria]"* |
+| **5** | **The three-check discipline on every number before reporting it** — (a) correct lane/join, (b) …, (c) … |
+| **6** | **Statistical significance done properly — DAY-LEVEL clustering, not pooled-leg-level, AND properly volume-weighted** |
+| **7** | **Multiple-comparisons correction, scaled to what was ACTUALLY SEARCHED** |
+| **8** | *(sequence continues)* |
+| **9** | **Check your OWN statistical treatment for bias IN BOTH DIRECTIONS, not just for being "too strict"** |
+| **10** | **Enumerate every possible data source before declaring something "untestable"** |
+| **11** | **A plausible causal story is NOT evidence — test it directly, including your own** |
+| **12** | **Same-game correlation is real but usually SMALLER than DFS-community folklore suggests** |
+| **13** | **Platforms price probability DIRECTIONALLY but NOT PROPORTIONALLY** — *"a real, load-bearing finding"* |
+| **14** | **Prop-definition mismatches across platforms are a real, repeated trap** — verify each platform's own formula |
+| **15** | **Before trusting any grouping key or join in a new table, sanity-check that it actually ISOLATES [what you think]** |
+| **16** | **Real backtest results, however rigorous, still need REAL-MONEY confirmation** |
+| **17** | **Report the RANGE a finding actually spans, not the single best number found while searching** |
+| **18** | **A concrete sample-size posture as a mechanical default for NBA** |
+| **19** | **Language strength must NEVER exceed evidence strength** — *"a standing, mechanical discipline"* |
+| **20** | **Define "success" against the honest baseline of NOT HAVING the component at all** |
+| **21** | **Consult Gemini to check your METHOD, then RE-DERIVE [independently]** |
+| **22** | **Always include a genuine CONTROL/BASELINE case**, and treat it as a required sanity check |
+| **23** | **When an anomaly involves an interaction between two things, isolate it by RE-PAIRING each** |
+| **24** | **Distinguish durable QUALITATIVE platform mechanics from exact NUMERIC values that drift over time** |
+| **25** | **A "safety margin" can compound into an absurd result once exponentiated** |
+| **26** | **Explicitly track a finding's CONFIDENCE TIER** — *"'first real pass' and 'independently re-validated' are NOT the same claim"* |
+
+### The ones this project has already proved the hard way
+- **#2** → the phantom-edge risk in the goblin/demon economics (`NBA_GOBLIN_DEMON.md` §5.0)
+- **#6** → the day-level block bootstrap (§13.1) — *resample days, never legs*
+- **#11** → **A2**: a plausible causal story (Wally Pipp) that failed every test
+- **#13** → **directional but not proportional** is why the market is *"a confidence adjuster and
+  ranking signal, not ground truth"* (COMPASS 62)
+- **#14** → the fantasy-scale check across all three apps
+- **#20** → `gain_vs_anchor` — success measured against **not having the factor at all**
+- **#24** → goblin/demon mechanics transferred to NBA; **tier count and spacing did not**
+- **#26** → the two-observation Flex partial tiers, correctly hedged
+
+**#7 (multiple comparisons) and #17 (report the range) are the two with no visible NBA implementation**
+— worth checking when the factor-gate results are next reviewed, since the gate scanned many
+prop × band × side cells.
+
+---
+
 ## 15. WHERE EDGE IS NOW EXPECTED TO COME FROM
 
 T9 predicted two sources. **One delivered, one did not.**
