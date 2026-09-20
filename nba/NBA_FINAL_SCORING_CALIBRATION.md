@@ -1767,7 +1767,43 @@ per tier"* — so **within a tier the price does NOT adapt to the leg's true pro
 2. **Flex insurance tiers** — mispriced for pools far from their calibration profile; *"found true in
    principle for MLB but the real magnitude, when tested, still fell short"*
 
-### 15.0b THE PRIOR THAT SHOULD FRAME EVERY EDGE CLAIM
+## 15.0c EXTERNAL CONFIRMATION THAT THE OPPORTUNITY EXISTS
+*Source: T1, blueprint §4d. Recorded 2026-09-20.*
+
+> *"**A real, useful piece of EXTERNAL VALIDATION worth carrying into NBA's own thinking:
+> PROFESSIONAL SPORTSBOOKS THEMSELVES ACKNOWLEDGE that PLAYER-PROP MARKETS — ESPECIALLY FOR
+> LOWER-PROFILE PLAYERS — ARE LESS EFFICIENTLY PRICED THAN GAME LINES.**
+> **This is real, EXTERNAL CONFIRMATION that a GENUINE OPPORTUNITY EXISTS IN PROPS BROADLY, not
+> something specific to baseball, and IT LIKELY APPLIES TO NBA PLAYER PROPS TOO.**"*
+
+**Two things this adds to the edge picture:**
+
+**1. It is sportsbook-side acknowledgement, not our own inference.** The claim that props are less
+efficiently priced than game lines comes from the market makers themselves — which is a different
+class of evidence from our measurements.
+
+**2. The qualifier is specific and actionable: *"ESPECIALLY FOR LOWER-PROFILE PLAYERS."***
+That points at the **low-line, low-minutes end of the board** — and it aligns with two independent
+findings already recorded:
+- **T7.15c**: *"for **low-line players (5.5 pts, 0.5 3PM)** the bet is **almost entirely on minutes
+  and dud risk**"* — a different model regime, not merely a smaller number
+- **`f_role`**: **fringe players miss by 0.0283 vs iron-men at 0.0008 — a 35× gap**
+
+**So the place the market is least efficient is also the place our own model is least accurate.**
+**That is not automatically an opportunity** — it may simply be where the irreducible noise is — **but
+it is the intersection worth measuring first**, and it is measurable directly from `board_outcomes`
+by role tier.
+
+**⚠ Note the tension with §15.0a**: Underdog and Sleeper were measured at **`p × m` flat ≈ 1.0 across
+the entire probability range** on 14,000+ real legs — i.e. **efficient**. **The sportsbook
+acknowledgement is about SPORTSBOOK prop markets, not DFS pick'em pricing.** They are different
+products, and the two findings do not contradict: **books may price props loosely while DFS operators
+price their own product tightly.**
+
+**What that implies for `rung_market`** (1.06M de-vigged book rungs): if book prop lines are
+acknowledged as less efficient, then **the market-derived probability is a weaker reference than it
+would be for game lines** — consistent with COMPASS 62's *"a confidence adjuster and ranking signal,
+**not ground truth**."*
 **MLB confirmed the tier mispricing and never harvested it** — *"every walk-forward selection attempt
 (raw trailing hit rate, model-probability quintiles, appearance frequency) REGRESSED TO THE POOL
 AVERAGE."*
