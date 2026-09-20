@@ -174,6 +174,76 @@ patches to `generate_wrangler_configs.py`, `github_mobile_deploy_workers.py`, `a
 - **File-based workflow triggers** are the reliable self-service mechanism.
 - **Verify in the database, never from the worker's own success claim.**
 
+### T1.12 — PASS 2 FINDINGS (added 2026-09-20; tool RESULTS, which pass 1 skipped entirely)
+
+**The MLB universe as it actually stood, measured — this is the baseline NBA was built beside:**
+- **18 MLB Postgres schemas**: `archive`, `backtest`, `calendar`, `certifier`, `classification`,
+  `config`, `context`, `context_cert`, `control`, `daily`, `market`, + 7 more.
+- **`config.worker_definitions` held 116 MLB workers.** Groups seen: `00 System`
+  (`alphadog-v2-admin-sql`, `alphadog-v2-certification-center`, `alphadog-v2-config-manager`).
+- **ALL 12 MLB D1 bindings report FALSE** — `CONTROL_DB`, `CONFIG_DB`, `REF_DB`, `STATS_HITTER_DB`,
+  `STATS_PITCHER_DB`, `TEAM_DB`, `DAILY_DB`, `MARKET_DB`, `CONTEXT_DB`, `SCORE_DB`, `ARCHIVE_DB`,
+  `SCORING_DB`. **The MLB system had already migrated off D1 to Postgres.** (This is why, much later on
+  2026-09-19, an attempt to read the MLB confidence implementation via those bindings returned
+  "binding not present" — it was never a transient failure.)
+- **Worker vars present**: `SYSTEM_ENV`, `SYSTEM_FAMILY`, `SYSTEM_VERSION`, `SYSTEM_TIMEZONE`,
+  `ACTIVE_SPORT`, `ACTIVE_SEASON`, `DEFAULT_DAY_SCOPE`, `DEFAULT_SLATE_MODE`, `ODDS_API_BASE_URL`,
+  `PARLAY_*`.
+- **`control` schema — 21 tables**: `board_runner_log`, `board_runner_results`,
+  `calibration_audit_tracker`, `claude_session_log`, `debug_catcher_errors`, `debug_sleeper_raw`,
+  `gbdt_auto_trigger_switch`, `gbdt_training_requests`, `gemini_calibration_checks`, + 12 more.
+- **`config` schema — 15 tables**: `calibration_config`, `enrichment_factors`,
+  `enrichment_profile_cells`, `external_credentials`, `external_sessions`,
+  `prop_empirical_distribution`, `prop_taxonomy`, `prop_tier_role_assignment`,
+  `residual_correction_bins`, + 6 more.
+- **`config.worker_definitions` columns** (16): `worker_name`, `job_key`, `worker_group`, `phase_key`,
+  `display_name`, `enabled`, `owns_db_binding`, `schedule_profile_key`, `max_tick_ms`,
+  `max_api_calls_per_tick`, + 6 more. **NBA's copy was modelled on this.**
+- **`control.job_queue` columns** (25): `request_id`, `chain_id`, `parent_request_id`, `job_key`,
+  `worker_name`, `worker_group`, `phase_key`, + 18 more.
+- **`control.worker_run_log` columns** (10): `log_id`, `request_id`, `run_id`, `worker_name`,
+  `job_key`, `level`, `event_key`, + 3 more.
+- **MLB `ref.teams` columns** (16): `team_id` TEXT, `mlb_team_id` INT, `full_name`, `abbreviation`,
+  `league`, `division`, `active`, + 9 more. **NBA's `nba_ref.teams` mirrors this shape** with
+  `nba_team_id` in place of `mlb_team_id` and `conference` added.
+- **MLB sport/league discriminators confirmed**: `market.sleeper_board_current` →
+  `sport='baseball_mlb'`, `league='MLB'`; `market.prizepicks_board_current` → `league='mlb'`.
+  Both single-valued — **no NBA rows anywhere**, which is what justified a fully separate namespace.
+- **`ref.umpire_tendency` columns** (11): `umpire_id`, `umpire_name`, `games_umpired`,
+  `avg_strikeouts_per_game`, `avg_walks_per_game`, `avg_runs_per_game`, + 5 more.
+  **This is the MLB analogue the NBA referee factor (D1) was modelled on.**
+
+**Handoff document sizes (exact):** `NBA_ARCHITECTURE_BLUEPRINT.md` 95,803 B ·
+`NBA_LESSONS_LEARNED_FROM_MLB.md` 57,066 B · `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` 18,034 B.
+The LESSONS doc self-describes as *"the single most important document in this transfer package…
+a research standard built the hard way, across dozens of strategy candidates, almost all of which
+looked real at first and were later found to be artifacts."*
+
+**`nba/NBA_PROJECT_LOG.md` created at 5,940 B**, with a self-binding rule in its own header:
+*"Every NBA chat/session must add an entry here … for every important step, decision, issue found, and
+fix applied. Newest entries at the top … don't let this go stale silently; if a gap happens, say so
+explicitly rather than implying continuity."*
+
+**MLB `alphadog-v2-static-teams.js` (24,317 B) was read as the structural template** — version string
+`v0.2.0-postgres-cutover`, `REQUIRED_DB_BINDINGS` listing all 11 D1 names, `EXPECTED_VARS`.
+NBA's first worker copied this shape exactly (`EXPECTED_VARS = [SYSTEM_ENV, SYSTEM_TIMEZONE,
+NBA_STATS_API_BASE_URL, WORKER_SAFE_MODE, DEBUG_MODE]`).
+
+**MLB `alphadog-v2-parlay-sleeper-board.js` (63,216 B, 1,282 lines)** grepped for sport handling —
+`DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1"`, with a comment that endpoint/header names
+are *"intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply
+wrangler var-only edits reliably."* **A known deploy caveat, inherited.**
+
+**BUG (pass 2, not in pass 1): `column "active" does not exist`** — the first query against
+`config.worker_definitions` used a column that isn't there; corrected to `enabled` after inspecting
+the real columns.
+
+**Research results captured in pass 2**: `publicapi.dev` NBA Data API listing, and
+`kshvmdn/nba.js` documenting `data.nba.net` paths (`/data/10s/prod/v1/{year}/teams.json`,
+`players.json`, `coaches.json`) — the endpoints later proven Cloudflare-blocked.
+A `future.fandom.com` result on NBA expansion/realignment was returned but is **fan-fiction, not
+fact** — correctly not acted upon.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
