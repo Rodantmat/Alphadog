@@ -52,7 +52,19 @@ material; it is not a rerun.
 | `NBA_SYSTEM_DESIGN.md` | the three pipelines in detail |
 | `NBA_OPEN_ITEMS.md` | deferred, dropped, partial, bugs, caveats |
 
-**Transcript inventory (16 files, ~44 MB, 2026-09-03 → 2026-09-19):**
+**Transcript inventory (20 files, ~55 MB, 2026-09-03 → 2026-09-20):**
+
+**⚠ LEDGER CORRECTION 2026-09-20 — the inventory said 16 files. There are 20.**
+The four missing entries are **T17–T20**, added below. **T19 and T20 are transcripts of THIS
+documentation effort** — they carry the pass rule as it was defined, the DRIFT NOTICE and its
+reasoning, and every finding extracted from T1 with its VERIFIED-vs-NOT-RECORDED status. **They are
+swept like any other transcript.** Left uncorrected, the sweep would have finished T16 and declared
+the job complete **with four transcripts never touched**. The row previously reading
+*"| — | live chat 2026-09-19/20 (not yet a transcript file) | pending |"* was that gap in its
+original form — those sessions **are** transcript files now (T17 and T18), and it is replaced below.
+
+**⚠ Separately**: `nba/transcripts/` **in the repo holds only `README.md` and `journal.txt`** — the 20
+`.txt` files are **not committed**. **This table, not that folder, is the inventory.**
 
 | # | File | Pass status |
 |---|---|---|
