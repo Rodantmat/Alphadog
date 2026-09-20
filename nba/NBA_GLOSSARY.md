@@ -74,6 +74,27 @@ caching cost**: *"the baseline is expensive to compute but **only changes after 
 game — it can be cached**. Enrichment data (injuries, odds) changes constantly."*
 **This is the founding justification for today's P2 (overnight) / P3 (afternoon) split.**
 
+**THE BASELINE BOUNDARY** · T7 · **Redefined, and this is the line the system still uses**:
+*"The baseline isn't 'player history only.' It's **everything derivable from static and historical
+data** — including the calendar, which tells us the opponent, home/away and rest days. So **opponent
+defence, pace matchup and blowout risk all belong in the baseline**, derived from team strength rather
+than a live spread. **Only truly live inputs (injury reports, confirmed lineups, market lines) are
+enrichment** — and for the important ones, **the baseline carries a derived signal as backup**."*
+**That last clause is why the derived-spread proxy (r=0.46) existed before the real market spread
+replaced it in T16.**
+
+**the three-generation trap** · T7 · Two of MLB's three classification/baseline generations are dead
+and say so in their headers (`-v5`: *"OLD VERSION — DO NOT TOUCH — CONFIRMED DEAD"*; the D1 v6:
+*"CONFIRMED DEAD, do not build on this"*). **The live one is
+`runClassificationBaselineV6ToPostgres`**, writing `classification.classification_v6_current` and
+`baseline_v6_current`. **Porting from either dead version would have locked in wrong logic.**
+
+**blowout as a minutes MIXTURE** · T7 design, T16 build · *"blowouts don't reduce points, they reduce
+**minutes**"* → `P(blowout) × [blowout-minutes dist] + (1−P) × [competitive dist]`, *"causal and
+self-explaining rather than a post-hoc probability drag."* **This is why `blowout_model` stores ratios
+(competitive 1.0333) and not penalties** — and why it does not double-count the shortened minutes the
+baseline's history already contains.
+
 **`NBA_BASELINE_METHODOLOGY.md`** · T4 · The design document for the baseline. Design-only, no code —
 *"matching the research-first pattern this whole project has followed."*
 
