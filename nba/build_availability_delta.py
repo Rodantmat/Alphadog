@@ -151,6 +151,14 @@ def main():
     lad["team"] = lad["player_id"].map(last_team)
     aff = lad[lad["team"].isin(teams)].copy()
     print(f"  legs on affected teams: {len(aff):,} of {len(lad):,}", flush=True)
+    # WHY A ZERO CAN HAPPEN, made visible. If the newly-OUT players have no ladder rows, there are no
+    # minutes to redistribute FROM and every team trips the net<1.0 skip - which looks identical to
+    # "nothing changed". Print the intersection so the two cases are never confused again.
+    in_ladder = set(lad["player_id"])
+    print(f"  newly-OUT players WITH ladder rows: {len(now_out & in_ladder)} of {len(now_out)}", flush=True)
+    if now_out and not (now_out & in_ladder):
+        print("  -> none of the newly-OUT players have ladder rows. They were already excluded from "
+              "the baseline (known out overnight), so there is nothing to reallocate.", flush=True)
 
     out_rows = []
     for team, g in aff.groupby("team"):
