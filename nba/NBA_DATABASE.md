@@ -378,10 +378,38 @@ Same shape minus the player-only fields. **2,460 rows for 2025-26 — exactly 30
 which is a complete-season assertion, not just a count.
 
 ### Career totals *(T4)*
-**3,644 season rows across 582 players.**
+**3,644 season rows across 582 players.** Table: **`nba_stats.player_career_season_totals`**
+`player_id`, `nba_player_id`, **`season_id`**, `team_id`, **`player_age`**, `gp`, **`gs`** (games
+started), `min`, plus the full shooting/rebounding/assist line.
+- **`player_age`** is what makes aging curves computable
+- **`gs` vs `gp`** is a starter-rate signal across a career
+- **`team_id`** is where the `TEAM_ID = 0` combined row appears
+
 **⚠ TRADED PLAYERS**: they get **separate per-team rows PLUS a combined total row at `TEAM_ID = 0`**,
 and the two sum correctly. **A naive `SUM()` double-counts them.** Verified empirically after search
 could not settle it.
+**⚠ SURVIVORSHIP BIAS**: this data exists only for players still in the league. Any aging curve from it
+describes **successful** NBA players; those who washed out after 2–3 seasons are invisible. Also era
+effects — a 2004 line is not comparable to 2024 without pace/3PT normalisation.
+
+### Splits *(T4)*
+Source: **`playerdashboardbygeneralsplits`** — **6 groups in one call**: `DaysRestPlayerDashboard`,
+`LocationPlayerDashboard`, `MonthPlayerDashboard`, `PrePostAllStarPlayerDashboard`, `StartingPosition`,
+`WinsLossesPlayerDashboard`. Team equivalent: `teamdashboardbygeneralsplits`
+(`TEAM_DAYS_REST_RANGE`, `TEAM_GAME_LOCATION`). **One call per player per season — 612 calls.**
+
+**Priority, as researched:**
+- **Essential**: DaysRest (→ factor A4) · Location · **StartingPosition** (→ the role_tier concept)
+- Worthwhile: PrePostAllStar (→ the phase dimension)
+- **⚠ WinsLosses — LEAKAGE RISK**: *"correlational, not causal… players play better in wins partly
+  BECAUSE good play caused the win. Collect it, but don't naively feed it to a model."*
+- Low: Month
+
+### Depth available vs depth taken *(T4)*
+Box scores exist league-wide back to **1996-97**; advanced stats from **1997**.
+**Only 3 seasons were taken (2023-24, 2024-25, 2025-26)** — deliberately.
+*"historical depth is not the constraint — **scope discipline is**."* Beyond 5–6 seasons the data
+*"predates the full pace-and-space era"* — a different sport, not merely older.
 
 ### Shot-quality trio *(T3 design, T4 build)*
 | Table | PK | Notes |
