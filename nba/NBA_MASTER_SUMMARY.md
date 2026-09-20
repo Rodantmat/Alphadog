@@ -1499,6 +1499,41 @@ produced the highest-value finding of the session** — garbage-time filtering, 
 
 **T2 PASS 2: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T2.10 — PASS 3 FINDINGS (added 2026-09-20; sequential, opening and middle regions) — **NEW MATERIAL**
+
+#### T2.10a — `continue-on-error` is set on the scrape steps
+> *"likely a partial failure since **`continue-on-error` is set**"*
+
+The static scraper workflow deliberately lets an individual scraper fail without killing the run — so
+one broken endpoint does not block the other seven. **This is the opposite discipline from the later
+baseline rule** (*"never use `|| echo failed`… that pattern left 44% of a slate missing while the job
+reported green"*, COMPASS fact 63).
+
+**The two are reconcilable and the distinction matters:**
+| Layer | Policy | Why |
+|---|---|---|
+| **Static scrapers** (T2) | `continue-on-error: true` per step | 8 independent entities; one failing endpoint should not block the other seven. **A missing entity is visible** — the table simply doesn't update. |
+| **Baseline build** (T14+) | fail loudly, no swallowing | the outputs are interdependent; a silently missing prop pair is **invisible** and corrupts the slate. |
+
+**The rule is not "never tolerate failure" — it is "never let an invisible failure pass."**
+
+#### T2.10b — Why arenas need periodic refresh
+> *"**arena naming rights change every 1-2 years**"*
+
+This is the justification for arenas sitting in the weekly-differential layer rather than being
+loaded once. (Confirmed in practice: Rocket Arena, Frost Bank Center and Xfinity Mobile Arena are all
+recent renames.)
+
+#### T2.10c — One trigger fires every scrape step
+> *"same trigger file — **one push scrapes both**"*, and later *"this pulls teams+players+arenas in one
+> run"*, growing to *"8 scrapers including two 30-call loops (arenas + on/off)"*.
+
+`nba/TRIGGER_NBA_SCRAPE.txt` fires the **whole** static workflow, not a selected step. **Run time grows
+with every scraper added** — by the end of T2 a single trigger meant 8 scrapers and ~60 sequential API
+calls.
+
+**T2 PASS 3: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
