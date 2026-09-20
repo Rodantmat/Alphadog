@@ -1240,6 +1240,36 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
+### ⚠ "NO GAMES SCHEDULED" IS NOT A FIRST-CLASS STATE — and Oct 1–2 are zero-game days
+T1's blueprint §5, listed as *"a real, confirmed architecture gap in MLB, **worth designing around
+from the start for NBA**"*:
+> *"**The system COULD NOT ORIGINALLY DISTINGUISH 'GENUINELY ZERO GAMES TODAY' (e.g. ALL-STAR BREAK)
+> from 'SOMETHING IS BROKEN AND RETURNED ZERO ROWS.'**
+> **Build an EXPLICIT, FIRST-CLASS 'NO GAMES SCHEDULED' STATE into the NBA pipeline FROM DAY ONE —
+> don't let a natural zero-game day SILENTLY LOOK IDENTICAL TO A REAL FAILURE.**"*
+
+**NBA has real zero-game days**: the **All-Star break** (~5 days), scattered dates, and —
+**immediately relevant — 2026-10-01 and 10-02, before opening night on the 3rd.**
+
+**The current signals are ambiguous in exactly the described way:**
+| Signal | Genuinely zero games | Broken and returned zero |
+|---|---|---|
+| P2's delta gap audit | 0 expected, 0 found → **passes** | calendar read failed → 0 expected → **also passes** |
+| P3's scored-leg count | 0 | 0 |
+| The certifiers | freshness + row counts | — |
+
+**The distinguishing information already exists** — `nba_calendar.games` holds 2,666 games and knows
+which dates are empty. **What is missing is a state that says so.**
+
+**⚠ And it compounds with two other season-start items on the same dates:**
+- **Oct 1–2: `active_stats_season()` returns 2026-27, which has ZERO regular-season games** (edge case
+  ② above)
+- **A weekly scraper running in that window pulls empty aggregates and writes them, reporting
+  success**
+
+**So on 2026-10-01, three separate mechanisms would each produce "zero, and that's fine" — two of them
+wrongly.** A first-class no-games state is what distinguishes the legitimate zero from the other two.
+
 ### ⚠⚠ ROUNDING CONVENTION — a measured 14.5% row disagreement
 T1's blueprint §4n, *"a confirmed, QUANTIFIED numeric-precision bug worth guarding against
 directly"*:
