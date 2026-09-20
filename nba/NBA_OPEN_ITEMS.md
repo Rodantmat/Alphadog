@@ -238,6 +238,76 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 67 — THE 24 SQL STATEMENTS, RE-RUN AS READS AGAINST THE LIVE DATABASE *(added 2026-09-20)*
+*Angle: **every `run_sql_postgres` call in T1 extracted verbatim** — 12 reads, 4 writes, the rest
+verification — and each one's target checked against the database as it stands today. **VERIFIED by
+live SQL and by grep of all 190 code files.***
+
+### ⚠⚠ SECURITY · **the transcripts carry live credentials, and an open item was asking for them to be committed**
+Full entry and the per-transcript table: **the blockquote at the top of this document.** In short:
+**17 `INSERT INTO nba_config.external_credentials` statements across 5 transcripts**, at least one of
+which wrote a value **still live in the table today** (VERIFIED by `updated_at` falling inside T1's
+session window). **The pass-40 blocker item has been qualified accordingly** — redact or rotate
+before committing.
+
+### ⚠⚠ **`credential_value_encrypted` IS A MISNOMER — nothing encrypts, and nothing decrypts**
+**VERIFIED two ways.**
+
+**From the code**: the column is read in exactly two places, and both use the value as-is:
+```python
+cur.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key = %s", (key_name,))
+key = str(row[0]).strip()          # backfill_board_snapshots.py
+key = cur.fetchone()[0].strip()    # backfill_game_line_snapshots.py
+```
+**`.strip()` is the entire transformation.** **Grep of all 190 files finds no encrypt or decrypt step
+anywhere** — the only matches for `encrypt` are the column name itself.
+
+**From the data**: the table holds **6 credentials**, and **two of the six are bare 36-character
+UUIDs** matching the canonical UUID pattern exactly — `balldontlie_api_key` and `oddspapi_api_key`.
+The remaining four are 32-character strings (×3) and one 1,513-character token; **their encoding is
+NOT RECORDED and this pass does not claim they are plaintext** — but nothing in the code would
+decrypt them if they were encrypted, so they cannot be.
+
+| `credential_key` | length | bare UUID? | `updated_at` |
+|---|---|---|---|
+| `balldontlie_api_key` | 36 | **yes** | 2026-08-31 |
+| `betr_access_token` | 1,513 | no | 2026-09-10 |
+| `odds_api_key` | 32 | no | 2026-09-10 |
+| `odds_api_key_nba` | 32 | no | 2026-09-10 |
+| `oddspapi_api_key` | 36 | **yes** | 2026-09-10 |
+| `parlay_api_key` | 32 | no | 2026-09-10 |
+
+**Why this is recorded rather than fixed**: the standing instruction forbids writes. **The name
+promises a protection the system does not implement**, which is exactly the class of drift blueprint
+§6 warns about (*"registry entry ≠ real functionality"*) — here applied to a column name.
+⚠ **The design intent, if any, is NOT RECORDED**: nothing says whether encryption was planned and
+dropped, or whether the suffix was always aspirational.
+
+### The DDL T1 actually ran, and what became of it
+T1's four write statements are the origin of the NBA namespace. **All four survive, and one has since
+been contradicted by the documentation:**
+
+| # | Statement | Status today (VERIFIED) |
+|---|---|---|
+| 13 | `CREATE SCHEMA IF NOT EXISTS nba_ref, nba_calendar, nba_team, nba_stats, nba_daily, nba_context, nba_market, …` | the NBA schema family exists; **6 of 14 schemas hold zero tables** (pass 47) |
+| 14 | `CREATE TABLE nba_ref.teams (… arena_id TEXT …)` | exists, 30 rows — **but `arena_id` is NULL on all 30 and written by no code** (pass 65) |
+| 18 | `CREATE TABLE nba_config.worker_definitions`, `nba_config.system_settings` | both exist; **`system_settings` is read by no code** (pass 33) |
+| 19 | `INSERT INTO nba_config.worker_definitions ('alphadog-v2-nba-static-teams', …)` | the first NBA worker registration |
+| 24 | `CREATE TABLE nba_config.external_credentials` + the first `INSERT` | exists, 6 rows — **see the misnomer above** |
+
+**The read statements are a clean record of the Phase-1 recon** — schema list, NBA-name search,
+sport/league discriminator search, `ref.teams` shape, `control`/`config` inventories, the 116-row
+worker registry, and `ref.umpire_tendency` as the referee analogue. **All of this is already
+documented**; it is listed here so the DDL table above has its context and so no future pass re-reads
+the same 24 statements looking for something new.
+
+### ⚠ A small NOT RECORDED detail: statement 23 is an exact duplicate of statement 22
+Both run `SELECT column_name, data_type … WHERE table_schema='config' AND table_name='external_credentials'`.
+**Harmless**, recorded only because a duplicated read is the kind of thing a future reader would
+otherwise try to explain.
+
+---
+
 ## FROM T1 PASS 66 — THE TIMELINE: WHERE T1'S FIFTEEN HOURS ACTUALLY WENT *(added 2026-09-20)*
 *Angle: **the `start_timestamp` / `stop_timestamp` on all 552 timestamped blocks**, reconstructed
 into a timeline and a per-tool cost table. No prior pass had used the clock. **These are measured
