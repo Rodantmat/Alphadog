@@ -90,6 +90,14 @@ proposal to share the control plane.
 > | **`nba_ref.*`**, **`nba_stats.*`** | **prefixed `nba_<id>`** — e.g. `nba_1610612737` | `players` 582/582 · `player_game_log` 79,358/79,358 |
 > | **`nba_score.*`** | **bare numeric** — e.g. `101108` | `baseline_history` 19,343,348 · `final_hp` 19,215,200 · `baseline_ladder` 206,237 · `board_scored` 110,955 · `availability_delta` 4,274 — **all 0 prefixed** |
 >
+> **⚠ And the pattern has a third hole — `nba_game_id` does not exist** *(T1 pass 54, VERIFIED)*:
+> `nba_player_id` appears in **11** columns, `nba_team_id` in **6**, `game_id` in **20**, and
+> **`nba_game_id` in 0.** `nba_calendar.games.game_id` is **0 of 2,666 prefixed**. **Only `team_id`
+> was implemented exactly as the blueprint specified**; `player_id` carries two conflicting formats
+> across layers, and `game_id` has no canonical prefixed form at all.
+> **✅ Game joins are unaffected** — all 20 `game_id` columns hold the same unprefixed TEXT format,
+> so they work across every boundary, including the one where `player_id` fails.
+>
 > **Measured**: `nba_score.board_scored` → `nba_ref.players` on `player_id` = **0 of 110,955**.
 > With `'nba_'||player_id` = **110,955 of 110,955.**
 >
