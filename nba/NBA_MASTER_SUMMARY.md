@@ -5555,6 +5555,74 @@ asserts against its own certified result on every run.
 
 **T8 PASS 6: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.15 — PASS 7 — **THE 3PM FIX, A PERMANENT RULE, AND TWO BUGS THE DATA FOUND**
+
+#### T8.15a — **3PM fixed, and the diagnosis was structural**
+> *"The empirical cells were keyed on **attempt tier × role**, so **a 33% and a 42% shooter in the same
+> tier got averaged together** — **the make-rate ordering the parametric already knew was being shrunk
+> away**. Switching the cell to a **logit-level SHIFT on the parametric** (**calibrate level, preserve
+> ordering**) took 3PM from **−4.6 pp in the 60–65 band to within ±2.3 everywhere**, worst-rung cells
+> **from a full page to ONE**."*
+
+**"Calibrate level, preserve ordering" is the whole idea.** The empirical table knew the *level* but
+destroyed the *ranking* within a tier; the parametric knew the ranking but had the level wrong.
+**The shift keeps each one's strength.** This is the origin of `SHIFT_LAMBDA` and of
+`threes_made: 1.0` (full parametric ordering).
+
+#### T8.15b — **THE SEASON HOLDOUT SEPARATED STRUCTURE FROM REGIME — and produced a permanent rule**
+> *"**The season holdout did exactly the job you intended** — it **separated structure from regime**:"*
+| Finding | Both seasons | Verdict |
+|---|---|---|
+| **Rebounds ELITE** under-projected | **in BOTH** | **structural → its band cell is real and transfers** |
+| **3PM mid-bands** | **+2.8 in 2024-25, −3.6 in 2025-26** | **regime → frozen cells ACTIVELY HURT**; walk-forward tables + in-season Platt are the right mechanism |
+
+> *"That gives a clean permanent rule: **a band cell is kept ONLY if its sign is consistent across
+> seasons.**"*
+
+**This is one of the most valuable rules in the whole project.** A cell that flips sign between seasons
+is fitting a *regime*, not a *structure* — and freezing it makes the model worse than having no cell at
+all. **The owner's suggestion to run the prior season was framed as a robustness check; it produced a
+permanent selection criterion.**
+
+#### T8.15c — **Two bugs caught by the data, not by inspection**
+> *"the **logit shift was being STACKED THREE TIMES across the hierarchy** (**FRINGE points predicted
+> 58.7% vs a raw 95%**)"*
+
+**A 36-point error, visible only because someone compared the output to the raw number.** Code
+inspection would not have shown it — each application was individually correct.
+
+> *"**shift mode is *wrong* for count props whose parametric shape is off at zero** — so the mode is now
+> **decided PER PROP by evidence**: **replacement for points/rebounds/assists, shift for 3PM**."*
+
+**This is exactly what `SHIFT_LAMBDA` encodes**, and the live file's comment confirms the rest of the
+search: *"turnovers/fouls tested at 0.5 and 0.25 and were **WORSE than replacement** → stay
+replacement."*
+
+#### T8.15d — Remaining, stated honestly
+- **Rebounds ELITE tails** (n=699, **~10 players**): *"mean right, shape ±3–5 at the outer rungs"* — a
+  dispersion-by-band fit is next
+- **Assists HIGH low rungs** (~3.3): *"the **left skew the research predicted**; **NegBin can't produce
+  it**"* — T7.15b's mechanism showing up as a model-family limit
+- **3PM "less" 50–55**: *"the thinnest band on the board"*
+
+#### T8.15e — ✅ **The unpersisted v17 work DID land — and went further, to v18**
+T8 ends with *"the v17 changes… exist only in my working copy — **I hit the tool limit before
+pushing**."*
+
+**Verified live 2026-09-20: `classification_ladder_v12.py` is at `EXTENSION (v18, 2026-09-09)`.**
+Everything landed, and the next pass extended it:
+> *"**blocks/steals/turnovers/fga/fg3a/ftm/personal_fouls added under the same standard.**
+> blocks+steals at **lambda=0.5 shift mode with DATA-FIT prior strength** (**STL k=125, TOV k=60**;
+> k_MoM relative to points **STL 4.9×, TOV 2.5×, BLK 1.7×**; **top-decile steals players regress 17%
+> over the next 20 games**): 2025-26 ladder **blocks 0.8 / steals 1.4; 0 band × direction × rung cells
+> over 2.5 pp**; conf bands 3 of 26."*
+
+**The per-prop prior strengths are measured, not chosen** — steals need **4.9× the shrinkage of
+points** because top-decile steal rates regress 17% within 20 games. **`PLAYER_L0` remains off by
+default** with its rejection reason inline.
+
+**T8 PASS 7: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
