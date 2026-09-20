@@ -205,6 +205,38 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 63 — BLUEPRINT §5–§7e BY CONCEPT — **one clause** *(added 2026-09-20)*
+*Angle: the last unswept clause-level region of the blueprint — §5, §5a, §5b, §6, §6a, §6b, §7,
+§7a–§7e. **Near-clean: one clause of ten checked is undocumented.***
+
+### ⚠ NOT RECORDED · a first deploy failure may be a known transient, not a real break
+> *"**Don't assume a first deploy attempt's failure is permanent** — a **known, recurring transient
+> first-attempt failure pattern** existed in MLB's own pipeline; **retry once via a trivial no-op
+> commit** before concluding something is genuinely broken."*
+
+**Directly relevant to this repo**: the deploy pipeline **auto-deploys on push**, so *"retry once via
+a trivial no-op commit"* is a one-line action available to any session.
+⚠ **T1's own run-ID audit trail shows the shape** — `deploy` **33429867514 → failure**, then
+**33431309511 → success** (*PASS 40*). **Whether that first failure was the known transient or the
+real path bug T1 diagnosed cannot be distinguished from the record**, because **the log for the
+failed run had already expired when it was requested** (404, *"link may have expired, or run is too
+old"*). **Flagged, not resolved** — and it is a small worked example of why that log-expiry
+constraint matters.
+**The rule itself is NOT RECORDED anywhere**, so a future session meeting a first-attempt deploy
+failure has nothing telling it to retry before investigating.
+
+### ✅ The other nine clauses are covered
+**§5 / §5a / §5b** — MLB's manual, Cowork-session-driven operating model and *"the deeper root
+cause, once traced further"* (`NBA_SYSTEM_DESIGN.md` §0.9) · **§6 / §6a / §6b** — *"never assume one
+file = one job"*, the **dead-stub file name**, the **exact-pairing safety check**, and the
+investigation method (*query the structured job/worker registry tables first*, then *targeted code
+search*) (`NBA_WORKERS.md` §0a, §0d) · **§7 / §7a–§7e** — the **hardcoded whitelist tuple**,
+**bulk inserts over individual-row inserts, always**, *"the real fix was one connection option"*, and
+the **DST scheduling gotcha** — *never hardcode a fixed UTC offset; resolve by named timezone* —
+all in `NBA_SYSTEM_ARCHITECTURE.md` §2c and §8a.
+
+---
+
 ## FROM T1 PASS 62 — THE PROP TAXONOMY DOUBLED, AND THE GROWTH WAS UNPLANNED *(added 2026-09-20)*
 *Angle: System Draft **§1–§4** clause by clause (pass 32 covered §4b and §5 only), then **the day-one
 prop taxonomy diffed against the live `nba_ref.prop_taxonomy`.** VERIFIED by live SQL 2026-09-20.*
