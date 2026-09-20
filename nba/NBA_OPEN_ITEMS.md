@@ -703,6 +703,11 @@ actively guard against in NBA FROM DAY ONE"* — to this.**
 > POPULATION.**"*
 
 #### The named members of the family, with their tells
+**The source lists the recurring forms as: *"an opponent's data via an UNFILTERED JOIN, a DIFFERENT
+TIER/VARIANT SHARING A NAME, MULTIPLE SIMULTANEOUS LINE-LADDER RUNGS MISTAKEN FOR TIME-SERIES
+MOVEMENT"*** — i.e. the failure is *"a grouping key or join that failed to isolate the specific unit
+being measured — instead **silently pooling in something else**."*
+
 | # | Bug | **The tell** |
 |---|---|---|
 | **1** | **A join on a shared key without a FULLY-SPECIFYING condition** (e.g. team+game **without player**) **fans out and double- or multi-counts** | **an unexpected EXACT MULTIPLE in row counts — 2×, 3× — versus the expected population size** |
