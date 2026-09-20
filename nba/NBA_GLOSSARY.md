@@ -394,6 +394,17 @@ A product would kill good legs.
 
 ## T–W
 
+**whole-universe comparison** · T1 (blueprint §9) · Scrutiny technique 1: diff the **live config**
+against the **real formula/logic** for **every entry in a universe at once** — every prop, every
+source, every combo — not just the one currently suspected. The technique that catches **silent
+config/formula drift** (failure mode #6). **The live `minutes_mixture` drift is exactly what this
+would surface.** → `NBA_SYSTEM_DESIGN.md` §6b.
+
+**write-path filter bug** · T1 (blueprint §7g) · A *"limit to these specific items"* parameter that
+**filters only the response summary while the write logic ignores it**, touching every eligible row.
+*"Invisible except by noticing unrelated timestamps had also updated."* Standing check on every NBA
+worker mode/scope argument. → `NBA_SYSTEM_ARCHITECTURE.md` §2d.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
