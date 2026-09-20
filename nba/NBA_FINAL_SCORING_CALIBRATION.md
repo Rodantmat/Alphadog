@@ -190,7 +190,54 @@ double-count what the main average already captures**."*
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7b. THE ENRICHMENT MULTIPLIERS AS ORIGINALLY DESIGNED *(T4)*
+
+**The enrichment layer was specified as multipliers/coefficients/bonuses/penalties**, with each factor
+carrying a fallback *"so it's never empty."* Three designs are worth keeping, because two of them were
+later rejected and the third is the reason why.
+
+### 7b.1 "Situational Minutes Adjustment"
+> *"A set of **multipliers or deltas applied to the baseline MINUTES** based on today's specific
+> context… **distinct modules in the `Daily Context` stage**."*
+
+**Note it targets MINUTES, not rates** — consistent with the architecture's rule that blowout, OT and
+foul risk are *"minutes-model inputs, not rate factors."*
+
+### 7b.2 The playmaker-absence rule — **this is A2's ancestor, in pseudocode**
+```python
+# config
+#   minutes_threshold                  e.g. 28.0
+#   target_player_position_filter      e.g. "PG,SG"
+#   assist_rate_bonus_multiplier       e.g. 1.15
+def apply_playmaker_absence_bonus(player, game_context):
+    ...
+    player.projected_assist_rate *= config.assist_rate_bonus_multiplier
+    return player     # Apply only once
+```
+**Three design details survived into the later work and one did not:**
+- **`# Apply only once`** — an explicit guard against stacking. *(The same class of bug that later
+  produced the **triple-stacked logit shift** — FRINGE points predicted 58.7% vs a raw 95%.)*
+- **Every threshold is config, not a literal** — the no-hardcoding rule.
+- **A flat 1.15× bonus** — this is the form A2 generalised, and **A2 was retracted after five failed
+  panels**: *"the certified anchor wins every slice, and worst where the mechanism predicted it should
+  win."*
+
+### 7b.3 The Trend Factor — **and the dampening warning that turned out to be the whole story**
+> *"`Trend_Factor < 0.95` (e.g. 0.90) → **they are in a slump**… This becomes a **final multiplier** in
+> your projection pipeline, **but it should be DAMPENED. YOU DON'T WANT TO DOUBLE-COUNT.**
+> **Dampened Application**: `Trend_Adjusted_Projection = Final_Projection × …`"*
+
+**⚠ This warning, written at design time, is the verdict the entire enrichment audit eventually
+reached.** Ten factors were tested in T15/T16 and **none survived**, with one recurring diagnosis:
+***"the baseline already carries what these factors re-express."***
+
+**The EWMA is the trend.** A separate trend multiplier applied on top of an EWMA-based projection
+double-counts by construction — which is why the T4 methodology also specified the trend be carried by
+**a second, faster EWMA compared against the primary, applied as a dampened adjustment
+"specifically so it doesn't double-count what the main average already captures."**
+
+**The lesson generalises**: before adding any enrichment multiplier, ask **what in the baseline already
+encodes this signal**. The measured answer, ten times out of ten, was "the baseline does."
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
