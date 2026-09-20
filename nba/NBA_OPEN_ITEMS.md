@@ -1,5 +1,40 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
+
+### EDGE CASE · `active_stats_season()` returns a data-less season on Oct 1–2
+`nba/nba_season.py` branches on `month >= 10` → current year. So on **2026-10-01 and 10-02** it returns
+**2026-27**, which has **zero regular-season games** (opening night is **2026-10-03**). Preseason games
+exist but carry `GAME_ID` prefix `001`, not `002`.
+**A weekly scraper running in that window pulls empty aggregates and writes them, reporting success** —
+the exact failure shape the utility was built to prevent (see the season-hardcoding fix below).
+**Low impact** (P1 runs Mondays; 2026-10-01 is a Thursday) **but the fix is trivial**: the real opening
+date is already in `nba_calendar.games`. **Not fixed — documentation pass.**
+
+### BUG-FIXED (2026-09-08) · `stats_seasons` was anchored on the wrong season
+Documented in the utility itself: the 3-season training list was *"built back from `current_season`
+(2026-27) while the anchor was `active_stats_season` (2025-26)"* — **an off-by-one-season error that
+would have silently trained on the wrong window.** Now anchored on `active_stats_season`.
+
+### ✅ FIXED — but the most dangerous bug in the whole build · season hardcoding
+**Every weekly scraper hardcoded `Season=2025-26`.** Confirmed universal across 6 scrapers checked
+directly. *"On Oct 3, the whole weekly cycle would **SILENTLY KEEP PULLING LAST SEASON'S FROZEN DATA
+WHILE REPORTING SUCCESS** — the most dangerous kind of failure."*
+**Fixed with a shared `detect_current_season()` / `active_stats_season()` utility across 9 scrapers**,
+all syntax-checked before shipping. **Verified live 2026-09-20 in `scrape_nba_player_bio.py`.**
+**Kept here because the pattern recurs**: any NEW scraper written without the utility reintroduces it,
+and the failure is invisible.
+
+### STILL OPEN from T7's gap table — recurring refresh
+| Gap | Status |
+|---|---|
+| **Splits + career totals** | *"Only exist in the one-time backfill — **no recurring refresh at all**"*; they are cumulative aggregates, so weekly is right. **Is either in P1 today?** |
+| **Defence-vs-Position** | *"Derived via a **one-off manual SQL** — no worker recomputes it as new game logs arrive."* |
+| **Starter-status + officials for NEW games** | Needed a delta mode; **`scrape_nba_per_game_delta.py` now does this** ✅ |
+| **New players (rookies/signings)** | *"position-dependent derived tables **silently skip them**"* until the weekly roster scrape catches up. **Acute in October**, when rookies and new signings are most numerous. |
+
+---
+
 **Purpose.** Everything that is NOT finished, NOT shipped, or NOT to be trusted at face value, plus
 every bug and error found along the way. Nothing here is fixed by the documentation pass — it is
 recorded so it can be fixed deliberately afterwards.
