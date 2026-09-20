@@ -814,7 +814,29 @@ the anchor's own as-of construction with the same method used on candidates.
 **Note this is not a claim that the anchor leaks.** It is a recorded gap between the rule and what has
 been verified.
 
-### 💰 UNVERIFIED SPEND · BallDontLie GOAT tier — $39.99/month, possibly unused
+### ⚠ EIGHT PLANNED SCHEMAS WERE NEVER CREATED
+T1's naming convention specified **fourteen** `nba_`-prefixed schemas:
+`nba_ref` · `nba_calendar` · `nba_stats` · `nba_team` · `nba_daily` · `nba_context` · `nba_market` ·
+`nba_archive` · `nba_score` · `nba_scoring` · `nba_backtest` · `nba_classification` ·
+`nba_certifier` · `nba_context_cert`
+
+**Carrying data today**: `nba_ref`, `nba_calendar`, `nba_stats`, `nba_team`, `nba_market`,
+`nba_score`, **plus `nba_config`** — which **was not in the original list** and was added in T8.
+
+**Never created, and absent from every later transcript**: `nba_daily`, `nba_context`, `nba_archive`,
+`nba_scoring`, `nba_backtest`, `nba_classification`, `nba_certifier`, `nba_context_cert`.
+
+**This is not necessarily a gap** — their intended contents landed elsewhere:
+| Planned | Where it went |
+|---|---|
+| `nba_backtest`, `nba_classification` | `nba_config` (tiering, decisions) + the repo's `nba/backtest/` scripts |
+| `nba_scoring`, `nba_score` | consolidated into **`nba_score`** |
+| `nba_certifier`, `nba_context_cert` | the per-pipeline certifier steps in the workflows |
+| `nba_daily`, `nba_context`, `nba_archive` | **no recorded equivalent** |
+
+**Worth confirming** that nothing expected `nba_daily`/`nba_context`/`nba_archive` to exist — the MLB
+system has `daily`, `context` and `archive` schemas, and any ported query or worker referencing them
+by analogy would fail.
 T1 records a **paid, verified BallDontLie integration**:
 > *"Fully operational with **paid GOAT tier ($39.99/month)**. Rate limit **600 requests/min** (10× the
 > free tier). `/stats` → 200 OK (**CRITICAL — paid tier only**). API key confirmed active.
