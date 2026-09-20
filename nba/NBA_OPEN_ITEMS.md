@@ -838,6 +838,34 @@ which is a narrower claim than the "reused as-is" assumption the question was ga
 dataset). **Recorded as a deliberate fork, not an oversight** — the alternative was viable and was
 rejected on the owner's isolation instruction.
 
+**3. Which enrichment factors for v1, and in what order?**
+> *"The person named categories (**referee, arena, fatigue, injury, 'and many more'**) but said
+> explicitly these are **'yet to be locked'**. **Phase 3c is where this gets decided WITH REAL SOURCE
+> VERIFICATION PER FACTOR — not assumed here.**"*
+
+**Resolved**: the factor registry holds 67 factors, 25 tagged baseline / 4 enrichment at seeding, each
+with `relevant_prop_keys` gating. **The "real source verification per factor" discipline held** —
+e.g. EPM was rejected on licensing, referees were sourced from Wikipedia after the stats API proved to
+have none.
+
+**4. ⚠ The referee dictionary was an OWNER-ORIGINATED factor with NO MLB precedent**
+> *"**MLB's own factor mapping doesn't carry an MLB referee-tendency analogue into NBA AT ALL; the
+> person is proposing a GENUINELY NEW, NBA-SPECIFIC FACTOR CATEGORY NOT COVERED BY THE TRANSFER
+> PACKAGE.** Needs its own real source-verification pass — **does the NBA's own official API expose
+> referee assignments/tendencies, per the blueprint's discipline of CHECKING THE SPORT'S OWN OFFICIAL
+> API BEFORE ANY THIRD-PARTY SOURCE?**"*
+
+**Verified and partially resolved:**
+| Question | Answer found |
+|---|---|
+| Does the official API expose referee **rosters**? | **No** — *"the stats API has none"*, so Wikipedia's `List of NBA referees` was used |
+| Does it expose per-game **assignments**? | **Yes** — `boxscoresummaryv2`/v3 `Officials` result set → `nba_stats.game_officials`, 3,681 rows |
+| Same-day **assignments** for tonight? | `scrape_referee_assignments.py`, ~6–7 AM PT — **semi-live**, so the baseline holds a historical crew foul-rate table and **the assignment is applied in enrichment** |
+| Referee **tendencies** as a scoring factor? | **D1** — capture built, **0 rows until the season** |
+
+**The discipline named — check the sport's own official API before any third party — was followed and
+produced a split answer**: assignments yes, roster no.
+
 ### ⚠ EIGHT PLANNED SCHEMAS WERE NEVER CREATED
 T1's naming convention specified **fourteen** `nba_`-prefixed schemas:
 `nba_ref` · `nba_calendar` · `nba_stats` · `nba_team` · `nba_daily` · `nba_context` · `nba_market` ·
