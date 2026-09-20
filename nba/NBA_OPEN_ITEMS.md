@@ -496,8 +496,7 @@ encodes for player stats, unapplied to team stats.
 
 **Untested** — it may not move the number. But the study called for it explicitly and it was not built.
 
-### ⚠ DESIGNED-BUT-UNVERIFIED · **the "dud" mixture, and the data built for it**
-**The single most NBA-specific finding in the design research (T7):**
+### ⚠ DESIGNED-BUT-UNVERIFIED · **the "dud" mixture, and the data built for it****The single most NBA-specific finding in the design research (T7):**
 > *"**'Dud games' — a fat low tail MLB doesn't have.** Blowouts, foul trouble, early exits produce
 > **5-minute, 2-point games**. **A distribution fit to all games is systematically OVER-OPTIMISTIC on
 > 'more'.** This is the NBA analogue of MLB's **home-run bimodality** (which MLB fixed with a
