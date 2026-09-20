@@ -1487,6 +1487,51 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.118 — PASS 88 (**the first pass run under the measured-coverage loop**: T1's whole 0.40 tail read by stratum, findings checked against all 30 documents in ONE batched call, then a judgment pass on the high-similarity band) — **NEW MATERIAL · CLEAN COUNT 0/3**
+
+**Method change, and it is the point of this entry.** Passes 64–87 each took one angle and produced
+roughly one finding for ~9 tool calls. This pass read **all five strata of T1's 0.40 tail (219 KB,
+309 segments)** in five reads, collected **69 candidate facts**, and checked every one of them
+against all thirty `nba/*.md` files in **three batched `grep` calls** instead of sixty-nine. Most
+candidates came back already-documented — which is the tool working correctly, and which is why the
+batching matters: the cheap part is reading, the expensive part was verifying one candidate at a time.
+
+**Five findings survived, all VERIFIED against live `main` today:**
+
+1. **`deployed_sha.txt` is the deploy-scope anchor** — `git_changed_files()` diffs against the last
+   *successful* deploy's SHA, not `HEAD~1`, so scope is cumulative across failed deploys. The writer
+   is gated `if: success()` (correct) but ends `git push || true` (not), so a rejected push leaves a
+   stale anchor and silently widens the next deploy's scope. → `NBA_WORKERS.md` §0.26
+2. **`deploy_scope` is a four-valued manual override** (`changed`/`all`/`control-room`/`orchestrator`)
+   reachable only by `workflow_dispatch`; a push always gets `changed`. It is the escape hatch for
+   finding 1 and appeared in none of the twelve. → `NBA_WORKERS.md` §0.26
+3. **Dead D1 provisioning runs on every deploy** — `ensure_scoring_db.py` provisions a D1 database
+   and commits `cloudflare_d1_bindings.json`, which `generate_wrangler_configs.py` stopped reading on
+   2026-08-12 (`D1_BINDINGS = []`, the `json.loads` commented out). Two bot commits per successful
+   deploy, both `[skip ci]`, both `git push || true`. → `NBA_WORKERS.md` §0.27
+4. **`nba-scrape.yml`'s weekly cadence was locked for a workflow that scraped one file** and now
+   carries sixteen scrapers and 40+ outputs, several of which change every game. MLB added a 2-hourly
+   backstop after a real staleness incident on 2026-08-06; NBA inherited neither that nor
+   `repository_dispatch`. **Season opens 2026-10-03.** → `NBA_OPEN_ITEMS.md` FROM T1 PASS 88
+5. **The judgment pass found a real defect** — see below.
+
+**THE JUDGMENT PASS — 29 segments the matcher scored ≥ 0.60, i.e. the band it calls "covered".**
+This is the blind spot a similarity score cannot see: text that *is* reflected in the documents, but
+reflected *wrongly*. Result: **28 of 29 were recorded correctly and at the right strength.** The one
+failure was not an omission — **the documentation reproduced the live credential it was warning
+about.** `NBA_MASTER_SUMMARY.md` line 1034 carries the balldontlie API key verbatim, put there by
+pass 19's hex-string inventory, in a committed and pushed file, while the BLOCKER above it warns the
+owner to redact that same value from transcripts that are not in the repo yet. Rotation, not
+redaction, is the remedy — the value has been in git history since pass 19. → `NBA_OPEN_ITEMS.md`,
+first section.
+
+**One figure the judgment pass deliberately re-checked and found SOUND**: the three worker counts.
+`140+` is quoted as what the `GLOBAL_REDEPLOY_FILES` comment says, `~130` as the deployed fleet,
+`116` as registry rows, and line 778 already reconciles them. Language strength matches evidence
+strength. *Recorded because a judgment pass that only reports failures is not measuring anything.*
+
+**Clean count 0/3** — pass 88 found new material.
+
 ### T1.117 — PASS 87 (angle: **the 18 MLB patches read as DIFFS — `old_str` vs `new_str`, each checked against the live file**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 87.*
 
