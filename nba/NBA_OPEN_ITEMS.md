@@ -506,13 +506,23 @@ transcripts. **If A2 is reopened, that is the first thing to check** — a mecha
 where it should work best is also the signature of an ungated noisy estimator.
 
 ### ⚠ GRADING RULE · **OT handling differs BY APP on period props**
-> *"**PrizePicks/Underdog include OT in 2H/4Q; Sleeper's quarter markets EXCLUDE it.**"*
+> *"**PrizePicks/Underdog include OT in 2H/4Q; Sleeper's quarter markets EXCLUDE it.**"* (T7)
 
-**The same nominal prop grades differently depending on which app offered it.** A 4Q line that pushes
-on PrizePicks can win or lose on Sleeper when a game goes to overtime.
-**Whether `grade_board_outcomes.py` applies a per-app OT rule is unverified.** With `board_outcomes` at
-6.9M legs across five apps and period props in the mix, a single league-wide OT rule would misgrade
-Sleeper quarter legs in every overtime game (~6% of NBA games).
+**⚠ QUANTIFIED IN T8, and the consequence is stronger than a grading rule:**
+> *"PP/UD include OT, Sleeper doesn't — **DIFFERENT PRODUCTS, DIFFERENT MODELS**; **a 1-point spread
+> carries ~7–8% OT probability**."*
+
+**So this is not only a settlement difference — it is a MODELLING difference.** A Sleeper 2H line and a
+PrizePicks 2H line on the same player are different bets, and on a tight spread the gap is worth
+**7–8% of outcomes**. Rating them from one distribution misprices one of them.
+
+**Two things to check:**
+1. Does `grade_board_outcomes.py` apply a per-app OT rule? (6.9M legs, five apps, period props present)
+2. Does `score_board_legs.py` price 2H/4Q identically regardless of app? **T8 says it should not.**
+
+**And `P(OT)` — which the five-dimension architecture names as a minutes-model input — was never
+built** (verified: no `p_ot`/`overtime` in `classification_ladder_v12.py`). **It is the term that would
+make the two products distinguishable.**
 
 ### RE-CHECK · **Sleeper DOES have alternate lines** — milestone markets
 The live session recorded *"Sleeper has no alternate lines (one line per player+stat, priced via
