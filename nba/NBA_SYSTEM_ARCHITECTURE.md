@@ -604,7 +604,14 @@ anything added by hand.
   `{"service": "alphadog-v2-daily-delta-runner"}`.
 
 **Tools it exposes:** `run_sql_postgres` · `run_sql` (D1, legacy — **D1 decommissioned 2026-08-12**) ·
-`github_get_file` · `github_put_file` · `github_patch_file` · `github_str_replace` ·
+`github_get_file` · `github_put_file` · `github_patch_file` ·
+~~`github_str_replace`~~ ⚠ **DOES NOT EXIST — corrected 2026-09-20 (T1 pass 48).** T1 attempted the
+call and the bridge rejected it outright: *"**Tool 'Alphadog Bridge:github_str_replace' not found.
+Did you mean: `str_replace`? Use the exact name shown here.**"* **`str_replace` is the SANDBOX file
+tool**, which edits a local file in the container and **cannot touch the repo** — a different tool
+with a confusingly similar name. **Confirmed twice**: by that error in T1, and by the live bridge's
+own tool list, which has no such entry. **The repo write tools are `github_put_file` and
+`github_patch_file` only.** ·
 `github_list_dir` · `github_grep_file` · `github_list_workflow_runs` · `github_get_workflow_run_log` ·
 `github_trigger_workflow` · `run_job` · `check_bindings` · `call_gemini` · `scan_webpack_chunks`
 
