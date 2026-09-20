@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLEAN 1/3 — ACTIVE. 58 passes (57 counted, pass 55 VOID).** Pass 58 (blueprint §4j–§4n by concept) was **CLEAN — every lesson already has an entry** (§T1.88). **Consecutive clean run in progress: pass 58.** *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLEAN 2/3 — ACTIVE. 59 passes (58 counted, pass 55 VOID).** Pass 59 (blueprint §4a–§4i by concept) was **CLEAN — all nine subsections have entries and are cited by section number** (§T1.89). **Consecutive clean run in progress: passes 58, 59.** *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
