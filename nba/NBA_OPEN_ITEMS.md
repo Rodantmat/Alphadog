@@ -524,6 +524,8 @@ on a **10–15 game rolling window**, and only season aggregates and weekly as-o
 
 **The risk of adding a factor layer is regression on what already works**, not merely failure to
 improve the laggards.
+
+### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
 From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
 ~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
 **Holdout 2024-25 shows the same signs.**"*
