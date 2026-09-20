@@ -86,28 +86,42 @@ def main():
     conn.execute("SET statement_timeout = 0")
 
     # 1) THE BOARD - every leg offered today, every app, every rung, both directions.
+    # SOURCE. Live, the board comes from OUR SCRAPERS (PrizePicks, Underdog, Sleeper, Fliff) - those
+    # are the apps actually played, and they carry the DFS-only markets (fantasy_score, period props,
+    # goblins/demons) that the Odds API feed does not. board_snapshots is the ODDS API archive: it has
+    # 12 books and 21 market keys and is the right SIMULATION source for a past date, but it is NOT the
+    # live board. BS_SOURCE selects; replay defaults to the archive because that is what exists for a
+    # past date.
+    source = os.environ.get("BS_SOURCE", "archive").lower()
     board = pd.read_sql("""
-        SELECT b.app, b.player, b.prop, b.line, b.side, b.game_id,
-               t.kind, t.tier, m.player_id
+        SELECT b.bookmaker AS app, b.player, b.market_key, b.line, b.side, b.multiplier,
+               m.player_id
         FROM nba_market.board_snapshots b
         LEFT JOIN nba_ref.player_name_map m
                ON m.norm_name = lower(regexp_replace(b.player,'[^A-Za-z]','','g'))
-        LEFT JOIN nba_market.board_tiers t
-               ON t.game_date = b.game_date AND t.line = b.line AND t.side = b.side
-              AND lower(regexp_replace(t.player,'[^A-Za-z]','','g')) = m.norm_name
-        WHERE b.game_date = %s AND b.snapshot_label IN ('window','close','morning')
+        WHERE b.game_date = %s
     """, conn, params=(asof,))
     if board.empty:
         print(f"No board legs for {asof}. Nothing to score.")
         return
+    raw = len(board)
+    board["prop"] = board["market_key"].map(norm_market)
+    unmapped_keys = sorted(set(board.loc[board["prop"] == "", "market_key"]))
+    if unmapped_keys:
+        # LOUD, not silent. An unmapped key is a whole prop group scoring nothing.
+        print(f"  UNMAPPED MARKET KEYS (these legs will NOT be scored): {unmapped_keys}", flush=True)
+    board = board[board["prop"] != ""].copy()
+    # double_double carries a sentinel line of -1.0 - it is a Yes/No market with no ladder
+    dd = int((board["prop"] == "double_double").sum())
+    board = board[~((board["prop"] == "double_double") & (board["line"] < 0))].copy()
     before = len(board)
     board = board.drop_duplicates(subset=["app", "player_id", "prop", "line", "side"])
     unmapped = int(board["player_id"].isna().sum())
     board = board[board["player_id"].notna()].copy()
-    print(f"board legs for {asof}: {before:,} raw -> {len(board):,} unique "
-          f"({unmapped:,} dropped: no player_id)", flush=True)
-    print(f"  by app: {board.groupby('app').size().to_dict()}", flush=True)
-    print(f"  variations: {board.groupby('kind').size().to_dict()}", flush=True)
+    print(f"board legs for {asof} [{source}]: {raw:,} raw -> {len(board):,} scoreable "
+          f"({unmapped:,} no player_id, {dd:,} double_double sentinel rows)", flush=True)
+    print(f"  by app: {board.groupby('app').size().sort_values(ascending=False).head(8).to_dict()}", flush=True)
+    print(f"  by prop: {board.groupby('prop').size().sort_values(ascending=False).head(12).to_dict()}", flush=True)
 
     # 2) HP FROM P2's LADDER at the exact rung
     lad = pd.read_sql("""
