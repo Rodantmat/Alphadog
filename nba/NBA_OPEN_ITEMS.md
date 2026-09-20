@@ -226,6 +226,40 @@ tolerate failure."**
 
 ---
 
+## FROM T3 PASS 1 *(added 2026-09-20)*
+
+### BUG-FIXED · **GitHub Contents API silently returns EMPTY content over 1 MB**
+The schedule JSON is **1.2 MB**, above GitHub's Contents API inline-content limit, and *"the Worker's
+fetch via that API **silently got empty content**"* — no error, no warning, just nothing.
+**Fix: read via `raw.githubusercontent.com`, not the Contents API.**
+**This applies to EVERY committed artefact over 1 MB** — and several now are (the injury shards, the
+board files, the baseline ladders). Any worker still reading a large file through the Contents API is
+silently getting nothing.
+
+### CAVEAT · Hyperdrive caches query results for seconds
+A differential test fired a phantom event because *"Cloudflare's Hyperdrive **caches query results
+briefly** for performance; since I triggered runs seconds apart…"* — **not a logic bug.**
+**Any test that writes then immediately reads through Hyperdrive can see stale data.** Verify the write
+landed before triggering the read.
+
+### CAVEAT · JavaScript bare decimals are invalid JSON
+DARKO's hydration payload contains values like `.534094` with no leading zero — **valid JS, invalid
+JSON.** The scraper repairs them before parsing. Any future hydration-extraction scraper will hit this.
+
+### PROCESS NOTE · the snapshot layer had to exist BEFORE the next upsert
+The owner corrected the sequencing: *"**first** you need to create the weekly function that will mine
+the differential."* The reason is structural — *"the regular upsert workers already overwrite
+`nba_ref.players` on every run, so I can't diff against 'current DB state' after they've run."*
+**A differential layer cannot be added retroactively; it must capture a baseline before the next
+overwrite.**
+
+### PROCESS NOTE · the differential was proven, not assumed
+Zero false positives across two runs only proves it does not fire wrongly. A **simulated** change was
+required to prove it fires correctly — and that test failed twice (a race, then a cache artifact)
+before passing. **"No events" is not evidence that a detector works.**
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
