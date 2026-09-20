@@ -399,6 +399,23 @@ R+A 0.9, PRA 1.1, fantasy 0.8 pp). **The `BT_SAVE_COMPONENTS` pickling and the s
 opposing-role prop family, so **every prop is offense-side player stats**. *(The opponent enters as a
 FACTOR — opponent paint share, opponent turnover rate — not as its own prop family.)*
 
+> ⚠ **`nba_ref.prop_taxonomy` — 28 props, 10 families; the day-one plan named 14**
+> *VERIFIED by live SQL 2026-09-20 (T1 pass 62).*
+>
+> | family | n | keys |
+> |---|---|---|
+> | `scoring` | 6 | `points`, `points_1q`, `points_1h`, `points_2h`, `points_4q`, `ftm` |
+> | `combo` | 6 | `pra`, `pts_reb`, `pts_ast`, `reb_ast`, `pra_1q`, `stocks` |
+> | `defense` | 3 | `blocks`, `steals`, `personal_fouls` |
+> | `composite` · `milestone` · `playmaking` · `rebounding` · `shooting` · `volume` | 2 each | `fantasy_score(_1q)` · `double_double`, `triple_double` · `assists(_1q)` · `rebounds(_1q)` · `threes_made(_1q)` · **`fga`, `fg3a`** |
+> | `ball_handling` | 1 | `turnovers` |
+>
+> **Every prop the System Draft planned exists. Fourteen more were added and none is recorded as a
+> decision** — most importantly **nine period variants**, which the day-one taxonomy had no dimension
+> for and which now make up **a third of the board surface**. Period props carry their own
+> **`ot_rule`**, and OT handling **differs by app** — lesson #14's prop-definition-mismatch trap.
+> `NBA_OPEN_ITEMS.md` → FROM T1 PASS 62.
+
 ### `nba_config.factor_registry` — **67 rows** *(seeded at 29 in T8)*
 Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it is a **baseline** or
 **enrichment** factor, and which cluster it belongs to. **It has more than doubled since T8**, and is
