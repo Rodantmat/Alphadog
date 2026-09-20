@@ -239,7 +239,51 @@ shooter together**, *"shrinking away the make-rate ordering the parametric alrea
 **−4.6 pp → within ±2.3 everywhere; worst-rung cells from a full page to ONE.**
 **FTM was diagnosed as the same compound shape** and fixed the same way (λ=0.5).
 
-### 3.9b THE CALIBRATION TECHNIQUE — what to use and what to reject
+### 3.8b THE CORE SCORING MATHEMATICS, AS SPECIFIED
+*Source: T1, blueprint §4b. Recorded 2026-09-20.*
+
+Framed as *"directly relevant to NBA given its props are almost entirely count-type"* — and:
+> *"NBA's props (points, rebounds, assists, threes, steals, blocks) are **essentially ALL count-type
+> stats — arguably an EVEN BETTER FIT for this design than MLB's mixed rate/count prop universe.**"*
+
+### Overdispersion correction — the measured cost of getting it wrong
+> *"**A plain NORMAL APPROXIMATION SYSTEMATICALLY OVERSTATES TAIL PROBABILITIES (P(X≥k)) for
+> small-mean, right-skewed count data** — MLB found **real 20–55 POINT OVERCONFIDENCE GAPS on its own
+> rare-count props** before fixing this.
+> **The correct approach: use a TRUE POISSON TAIL for low-mean, low-overdispersion cases, and a
+> NEGATIVE-BINOMIAL-BASED correction once overdispersion EXCEEDS A THRESHOLD.**
+> **Build this distinction into NBA's scoring engine FROM THE START** rather than defaulting to a
+> Normal approximation for any counting stat — **VERIFY PER-PROP EMPIRICALLY whether real variance
+> exceeds the Poisson-implied variance (the definition of overdispersion) and ROUTE ACCORDINGLY.**"*
+
+**✅ NBA followed this.** The `PROPS` config routes per prop by `family`: **`negbin`** for
+turnovers, fg3a, fta, personal_fouls; **`auto`** for fga, fgm; **Normal** for high-mean points/reb/ast.
+The T7 research states it in the same terms — *"**NBA stats are overdispersed; Poisson underfits**."*
+
+**And the "verify per-prop empirically" instruction was followed literally**: *"**3PM makes given
+attempts are BINOMIAL — var ratio 0.94 in every attempt band** — so **beta-binomial was rejected
+BEFORE being built**; attempts are Poisson."* **That is the overdispersion test, run per prop, with
+the measured ratio.**
+
+**The 20–55 point figure is the scale of what this avoids** — and NBA's far tails came out exact
+(3PM +6 rung: predicted 0.002, actual 0.002) after the upper-only ceiling fix.
+
+### Sample-support clamping (Wilson score interval)
+> *"**Below a real sample-size threshold (MLB used n=30), DON'T TRUST THE RAW MODEL'S OUTPUT
+> DIRECTLY — bound it to a statistically-defensible CONFIDENCE INTERVAL AROUND THE OBSERVED RATE
+> instead; at or above the threshold, trust the model.**"*
+
+**✅ NBA implements this**: *"**Wilson clamp below n=30**"* — the same threshold.
+
+### ⚠ THE DUPLICATION RISK, NAMED
+> *"**Real, costly duplication risk to avoid**: MLB **implemented this clamp in TWO SEPARATE CODE
+> LOCATIONS**, and **any future threshold chan[ge must be applied to both]**."*
+
+**NBA has exactly this shape today**: the **singles recipe** (`classification_ladder_v12.py`) and the
+**combos recipe** (`combos_ladder_v1.py`) are **separate certified files, each with its own
+constants** — already documented as *"a change must be applied to BOTH."*
+**The Wilson threshold, `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K` and the ladder depth all exist in
+more than one place.** Recorded in `NBA_OPEN_ITEMS.md`.
 *Source: T1, blueprint §4a. Recorded 2026-09-20.*
 
 ### ❌ REJECT additive / histogram-binning calibration
