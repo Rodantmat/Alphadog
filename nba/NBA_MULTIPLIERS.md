@@ -141,7 +141,7 @@ legs, not inferred.**
    in one tier with different true probabilities pay the same.
 2. **The Flex insurance tiers** (§0.2d.2) — mispriced for pools far from their calibration profile.
 
-**And it sharpens `NBA_FINAL_SCORING_CALIBRATION.md` §15 considerably.** The remaining edge hypothesis
+**And it sharpens `NBA_FINAL_SCORING_CALIBRATION.md` §15.0c considerably.** *(Pointer corrected 2026-09-20, pass 74: §15 has no parent heading — only §15.0c exists. See the numbering audit in `NBA_OPEN_ITEMS.md` → FROM T1 PASS 74.)* The remaining edge hypothesis
 is not merely *"the tails"* — it is **specifically PrizePicks' tier structure**, because Underdog and
 Sleeper have been measured, at scale, to leave nothing on the table for a probability-based method.
 
