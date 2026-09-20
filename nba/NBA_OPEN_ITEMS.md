@@ -205,6 +205,38 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 53 — NUMERIC-CLAIM SAMPLE — **CLEAN**, plus a method caveat worth keeping *(added 2026-09-20)*
+*Angle: sample the **measurements** rather than the assertions — every sentence in the handoff
+documents carrying a figure with a unit (`%`, `pp`, `×`, rows, legs, KB…), then grep each against the
+twelve documents. **All twelve sampled claims are documented. No new material.***
+
+**Checked and present**: `+39.76 pp` within-cell discrimination → `+5.32 pp` once leakage was
+corrected · the `3PM 'more' 60–65 at −4.6 pp` band error inside a ladder within ±1 pp · pooled-leg
+significance **inflated 3–5×** by same-day correlation · **~100,000 training rows** against a joint
+cross-product of tens of thousands of cells · **one 700 KB+ file serving ~24 logical functions across
+multiple `job_key` aliases** · the `~5.3 KB` dead-stub signature with `enabled=1` · the
+fan-out/exact-multiple tell · the sample-size posture table · MLB's retired orchestrator and its
+4×/day cadence *(⚠ contradicted by the live code — see PASS 44)*.
+
+### ⚠ METHOD CAVEAT — two of my own "not found" results were FALSE NEGATIVES
+Two claims first appeared missing and were **both present under different formatting**:
+- **`3-5x`** → the documents write **`3–5×`** (en-dash, multiplication sign), at
+  `NBA_FINAL_SCORING_CALIBRATION.md` §13.
+- **`700KB`** → the documents write **`700 KB`** (with a space), at `NBA_WORKERS.md`.
+
+**Recorded because it is the blueprint's own warning, committed by this sweep**: *"a confident
+negative is the easiest mistake to make."* **A literal-string grep is a weak instrument for a
+negative claim**, and every *"NOT RECORDED"* in these documents rests on one.
+**Standing correction to method, applied from here**: before recording a negative, **re-check with a
+normalised pattern** — collapse `-`/`–`/`—`, `x`/`×`, and optional spaces inside figures — and
+**prefer grepping a distinctive word from the claim over a formatted number.**
+⚠ **Entries already written as "NOT RECORDED" on a numeric string alone should be re-tested under
+this rule.** The ones resting on multi-word phrases or on live SQL are unaffected.
+
+**PASS 53 IS CLEAN — 1 of 3.**
+
+---
+
 ## FROM T1 PASS 52 — RANDOM-SAMPLE COVERAGE TEST OF THE BOLD CLAIMS *(added 2026-09-20)*
 *Angle: instead of reading sequentially, **sample**. Extract all **175 bold claims** across the four
 handoff documents, draw 28 at random, and grep each against the twelve documents. **Five returned
