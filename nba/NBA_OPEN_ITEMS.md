@@ -2468,7 +2468,7 @@ and a complete NBA build later, **the shared registry is untouched.** **VERIFIED
 ## FROM T1 PASS 34 — EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE, AUDITED *(added 2026-09-20)*
 *Angle: pass 33 found one unscoped `DELETE` by auditing a **parameter**. This pass inverts it and
 audits **every `DELETE` and `TRUNCATE` in all 190 `.py`/`.js` files** — **24 statements** — asking of
-each whether its scope matches its caller's. Full inventory in `NBA_WORKERS.md` §8; delete semantics
+each whether its scope matches its caller's. Full inventory in `NBA_WORKERS.md` §0e — *pointer corrected 2026-09-20, pass 74; it previously read §8, which does not exist* — delete semantics
 per table in `NBA_DATABASE.md`. **VERIFIED by grep of the code and live SQL.***
 
 ### ⚠ HAZARD-LATENT · **`verify_confidence.py` deletes the WHOLE `confidence_verification` table**
