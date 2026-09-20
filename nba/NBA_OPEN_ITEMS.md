@@ -205,6 +205,66 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 52 — RANDOM-SAMPLE COVERAGE TEST OF THE BOLD CLAIMS *(added 2026-09-20)*
+*Angle: instead of reading sequentially, **sample**. Extract all **175 bold claims** across the four
+handoff documents, draw 28 at random, and grep each against the twelve documents. **Five returned
+nothing; three of those are Part G/H material that postdates T1** (already an open gap, *PASS 30*).
+**The other three are genuine T1 misses, and two of them bite directly on findings already in this
+file.***
+
+### ⚠⚠ THE BLUEPRINT TOLD NBA TO CHECK FOR EXISTING PATTERNS — and T1 did not
+> *"**The correct pattern already existed elsewhere in the same codebase** — a downstream
+> daily-context worker had already solved an analogous problem correctly… **The first, generalizable
+> lesson: BEFORE BUILDING A NEW PATTERN, CHECK WHETHER AN EQUIVALENT, ALREADY-CORRECT PATTERN EXISTS
+> ELSEWHERE IN THE SAME CODEBASE for a similar situation — it often does, and COPYING A PROVEN
+> PATTERN BEATS INVENTING A NEW ONE.**"*
+
+**This upgrades *FROM T1 PASS 40*.** That entry recorded the GitHub-Actions-for-network-access fix as
+**prior art already in the repo** (`gbdt_training/d1_client.py`) and called the gap *"a search space
+that was never defined."* **It was defined — right here, in the blueprint T1 had read in full.**
+**So it is not an unthought-of gap; it is a documented instruction that was not followed**, the same
+shape as blueprint §4o (*PASS 38*), the per-worker rule (*PASS 36*) and §2's ID check (*PASS 50*).
+**Cost, measured**: four failed runs and thirteen polling sleeps.
+⚠ **And the instruction is undocumented in all twelve documents** — so nothing would have prompted
+the check on the next worker either.
+
+### ⚠⚠ THE STANDING CHECK THAT LANDS ON THE CONFIG DRIFT
+> *"**A fourth, now twice-confirmed lesson worth stating as a standing, mandatory check**: **verify
+> that a backtest or analysis is actually evaluating the CURRENT LIVE coefficient or configuration
+> value, not a value that has since been changed or corrected in the live system.** The same MLB
+> investigation found this exact mistake **twice in one session** — once when a historical bug had
+> already been fixed in the live enrichment code before the investigation started (**making a 'large
+> finding' actually a description of already-resolved history**), and again when **a backtest's
+> assumed factor coefficient** turned out to be stale."*
+
+**This is the standing check for exactly the condition *FROM T1 PASS 36* measured.** NBA's config
+tables are **read by nothing**, and `stat_decay_config` disagrees with the live recipe on **7 of 10
+stats, 3 on the decay rate itself**. **Therefore any NBA backtest or analysis that quotes a config
+value is quoting a number the engine does not use** — the precise mistake this lesson names, with the
+precise consequence it names (*a finding that describes something other than the live system*).
+**The lesson is undocumented; the condition is live; the two had never been connected.**
+**Which NBA analyses quoted config rather than code is NOT ESTABLISHED** — the entries do not record
+their source.
+
+### ⚠ THE HANDOFF NAMED FOUR NBA-SPECIFIC FACTORS AND RANKED THEM — no document scores the prediction
+Domain Mapping §2, *"where NBA research should go beyond simple porting"*:
+| Predicted factor | The handoff's rationale | What happened |
+|---|---|---|
+| **Injury / questionable-designation status and minutes restrictions** | *"**likely the SINGLE HIGHEST-VALUE NBA-specific signal to build well from the start**"* | built as **N1** — and measured: **79% of Questionables are coin flips at the cutoff** because the Active List locks 60 min before tip |
+| **Blowout risk / garbage time** | *"a real, basketball-specific risk to 'under' and total-based props"* | ✅ **one of the two non-negotiable factors that landed** — upgraded to the real market spread, **307,604 rows** |
+| **Pace** | *"a much bigger, more well-established driver of counting-stat props than any single MLB environmental factor"* | **absorbed into the baseline**, not an enrichment factor — *"opponent defence, pace matchup and blowout risk all belong in the baseline"* |
+| **Back-to-back / rest days** | *"much more visible, heavily-studied rest effect than MLB's… worth real investment"* | **absorbed into the baseline** via the calendar |
+
+**Each factor is documented individually; the prediction-vs-outcome scorecard is not.**
+**Why it is worth having**: the handoff's **#1 ranked pick turned out to be ~79% noise at the
+decision point**, and **two of the four were answered by putting them in the baseline rather than the
+enrichment layer** — which is the *"decide the factor architecture once"* choice recorded at
+`NBA_FINAL_SCORING_CALIBRATION.md` §0e. **Together with *PASS 49*'s ParlayAPI finding, this is the
+second case of a confident forward-looking handoff claim not surviving contact** — and the same
+filter applies to the unread ~40%: **weight measured experience over forward-looking assessment.**
+
+---
+
 ## FROM T1 PASS 51 — BLUEPRINT §1 AND §3, CLAUSE BY CLAUSE — **one minor item** *(added 2026-09-20)*
 *Angle: the clause-level treatment continued onto blueprint §1 (infrastructure stack) and §3
 (the four-layer pipeline). **Near-clean** — every substantive clause already has an entry.*
