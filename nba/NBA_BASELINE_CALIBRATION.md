@@ -284,6 +284,10 @@ the measured ratio.**
 constants** — already documented as *"a change must be applied to BOTH."*
 **The Wilson threshold, `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K` and the ladder depth all exist in
 more than one place.** Recorded in `NBA_OPEN_ITEMS.md`.
+
+---
+
+## 3.9b THE CALIBRATION TECHNIQUE — what to use and what to reject
 *Source: T1, blueprint §4a. Recorded 2026-09-20.*
 
 ### ❌ REJECT additive / histogram-binning calibration
