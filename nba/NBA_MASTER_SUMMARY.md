@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 48 passes.** Pass 48 (full sequential narrative read, all 85 blocks) found new material — **`github_str_replace` does not exist and a mandated document listed it**; a repeatable `-32602` `github_patch_file` validation error (§T1.78). **83 of 85 blocks mapped to existing entries.** No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 49 passes.** Pass 49 (Domain Mapping §1/§3 clause by clause) found new material — the package's **"single biggest head start"** (ParlayAPI) is the one thing NBA replaced; combo props were a **day-one instruction with a named MLB cost**; **per-prop tier spacing instructed and still pooled** (§T1.79). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
