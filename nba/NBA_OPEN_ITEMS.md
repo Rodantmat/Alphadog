@@ -63,6 +63,87 @@ insufficient for a confident negative.
 
 ---
 
+## ⚠⚠⚠ BUG-OPEN · **`FE_DATE` SCOPES THE READ BUT NOT THE DELETE — ~19.5M ROWS OF `final_hp` ARE GONE**
+*Found 2026-09-20 (T1 pass 33) by applying blueprint §7g's first named bug class to NBA's own scope
+parameters. **VERIFIED by direct grep of `nba/build_final_hp.py` AND by live SQL against Postgres.***
+**Not fixed, per the standing instruction. This is the highest-severity item in this file.**
+
+### The code
+`nba/build_final_hp.py` — the read is scoped by `FE_DATE`:
+```sql
+SELECT game_date, game_id, player_id, prop, line, anchor, ladder_offset,
+       p_more, p_less, role_tier, used_emp
+FROM nba_score.baseline_history
+WHERE season=%s AND prop=%s
+  AND (%s = '' OR game_date = NULLIF(%s,'')::date)      -- FE_DATE, FE_DATE
+```
+**and the write is not:**
+```sql
+SELECT pg_advisory_xact_lock(hashtext('nba_score.final_hp'));
+DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s;   -- ⚠ NO game_date PREDICATE
+INSERT INTO nba_score.final_hp (...) VALUES (...) ON CONFLICT ... DO UPDATE ...;
+```
+
+**So a run scoped to one slate deletes the ENTIRE season × prop partition and re-inserts only that
+slate.** The advisory lock makes it atomic, so it completes cleanly and reports success.
+**`FE_DATE` is a read filter whose name implies a write scope it does not have** — **blueprint §7g's
+first bug class, exactly**, and **the blueprint's mitigating caveat does not apply here.** MLB's
+instance was *"not unsafe in this specific case — every write, filtered or not, passed the same
+validation gate."* **This one destroys data.**
+
+### The damage, measured live 2026-09-20
+| season | distinct dates | props | rows |
+|---|---|---|---|
+| 2024-25 | **162** | 30 | **19,075,070** |
+| **2025-26** | **1** *(2026-01-15 only)* | 30 | **140,130** |
+| **TOTAL LIVE** | 163 | 30 | **19,215,200** |
+
+**The documented size of `nba_score.final_hp` is 38.7M rows.** **The live table holds 19,215,200.**
+**19,075,070 of those are 2024-25**, which leaves **~19.6M rows that the 2025-26 season should hold
+and does not.** **The arithmetic closes**: 19.07M + ~19.6M ≈ **38.7M**, the documented figure —
+**so the 2025-26 partition was fully built once and is now a single slate.**
+
+**Every one of the 30 props in 2025-26 holds exactly one date.** That is not a partial failure or a
+half-finished build; **it is the precise signature of a `FE_DATE`-scoped run with `FE_WRITE=1`.**
+
+### ✅ It is RECOVERABLE — verified
+`build_final_hp.py` derives every column from `nba_score.baseline_history`, and **that table is
+intact**: **VERIFIED — 2025-26 holds 163 distinct dates × 30 props.** **Re-running the engine for
+2025-26 with `FE_DATE` blank and `FE_WRITE=1` rebuilds the partition.** The documented cost is
+*"~90 minutes"* for a full-history run. **Nothing needs to be re-derived, re-scraped or re-fit.**
+**No fix is applied here, per the instruction — this is recorded for the owner to act on.**
+
+### ⚠ How it was triggered is NOT ESTABLISHED — flagged, not guessed
+**VERIFIED**: the only caller in the repo that sets `FE_DATE` is
+`.github/workflows/nba-engine-test.yml`, and **it sets `FE_WRITE: '0'`** — a dry run that cannot
+write. **P3 does not call `build_final_hp.py` at all** (it scores through
+`nba/score_board_legs.py`). **So no committed, wired path produces this.** The remaining
+possibilities — a manual invocation from a Cowork session, an earlier version of a workflow, or a
+different caller — **are not distinguishable from the evidence available and are NOT resolved here.**
+
+### ⚠ AND A SECOND, SEPARATE DEFECT IN THE SAME PLACE: comment-vs-code drift
+The comment above `FE_DATE` in `build_final_hp.py` reads:
+> *"`FE_DATE` scopes the run to ONE slate. **P3 sets it** so the afternoon pipeline rescores only
+> today's legs (seconds) instead of all 38.7M (~90 minutes)."*
+
+**P3 does not set it, and P3 does not run this script.** **VERIFIED** — `build_final_hp` appears in
+`nba-absence-panel.yml`, `nba-engine-test.yml` and `build_confidence_v3.py`, and **not** in
+`nba-p3-afternoon-light.yml`, whose scoring step is `python nba/score_board_legs.py`.
+**This is blueprint §9 failure mode #6 in miniature** — a description that documents an intended
+architecture rather than the live one — and **`NBA_WORKERS.md` §5 inherited the same claim from the
+comment.** Corrected there.
+⚠ **The drift makes the bug more dangerous, not less**: the comment tells a future reader that a
+`FE_DATE`-scoped write is the normal, intended daily path.
+
+### ⚠ A third, minor observation in the same block
+The `INSERT … ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE` follows a `DELETE` of
+the whole season × prop partition, **so within a single run it can never fire** — after the delete no
+conflicting row remains for that season, and the unique key's `game_date` determines the season.
+**Defensive dead code, not a bug.** Recorded because it reads as a safety net that is not one — **it
+does not protect against the delete above it.**
+
+---
+
 ## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
 
 ### ⓪ GOOD NEWS FIRST — **the season-opening coverage problem is already SOLVED**
