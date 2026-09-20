@@ -107,7 +107,12 @@ jobs:
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
-          SPORT: "nba"
+          # VERIFIED NAMES. Each scraper has its OWN variable - a generic SPORT does nothing, and the
+          # defaults are multi-sport ("mlb,nba"), so an unset variable silently scrapes MLB too and
+          # doubles the runtime of a pipeline that must finish in minutes.
+          SLEEPER_SPORTS: "nba"
+          UNDERDOG_SPORTS: "nba"
+          FLIFF_SPORTS: "nba"
         run: |
           python nba/scrape_sleeper_board.py
           python nba/scrape_underdog_board.py
