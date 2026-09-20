@@ -51,7 +51,27 @@ statement's evidence**, and point 1 adds a slip-composition term the tier view c
 **That is a genuinely useful decomposition** — the slip-shape payout can be tabulated; only the leg
 factor resists.
 
-### 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
+### 0.2b POWER vs FLEX — the two slip types
+
+**Every multiplier is quoted per slip type.** The calibration work was explicitly
+*"per-leg **Power/Flex** multipliers per prop line / side / variant / tier."*
+
+| Type | Payout shape |
+|---|---|
+| **Power** | **all legs must hit** — one multiplier, no partial credit |
+| **Flex** | **partial payouts allowed** — a lower headline multiplier, plus a partial-tier table |
+
+**The partial-tier table is the part that looks constant** (§0.2): **4/5 = 0.5 · 3/5 = 0.25**, matching
+the confirmed 6-pick tiers.
+**PrizePicks now offers Flex on 2-pick slips** (previously Power-only) — so the available slip shapes
+themselves change over time and must be re-checked, not assumed.
+
+**Why this matters for pricing**: the two types have **different break-evens for the same legs**.
+Power is a pure product of hit probabilities; Flex is a weighted sum over the partial tiers, which
+makes it **less sensitive to a single miss and therefore more tolerant of a weak leg**. Any slip-EV
+computation must know which type it is pricing.
+
+## 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
 > *"Before trusting any high hit-rate finding, **compute the implied house edge: `p × m`** where `p` is
 > the real hit rate and `m` is the real per-leg multiplier. **If this implies the platform is handing
 > out a large, systematic edge on a repeatable, high-volume line, THE MULTIPLIER ATTRIBUTION IS WRONG,
