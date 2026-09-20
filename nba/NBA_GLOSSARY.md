@@ -533,6 +533,14 @@ path, and **5,564,467 characters are absent**. **All six are `github_get_file` c
 `teams.arena_id` returns 30 NULLs and looks like a scrape failure. → `NBA_DATABASE.md`
 `nba_ref.teams` · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 65*.
 
+**`credential_value_encrypted`** · LIVE, VERIFIED · **A MISNOMER.** The column in
+`nba_config.external_credentials` that holds API keys. **Nothing encrypts and nothing decrypts** —
+the two readers use `.strip()` on the raw value, and no encrypt/decrypt step exists in the 190 code
+files. **Two of the six stored values are bare 36-character UUIDs.** ⚠ **The same values sit in
+plaintext in five of the twenty transcripts**, which are not yet committed — see the blocker at the
+top of `NBA_OPEN_ITEMS.md`. → `NBA_DATABASE.md` `nba_config.external_credentials` ·
+`NBA_OPEN_ITEMS.md` *FROM T1 PASS 67*.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
