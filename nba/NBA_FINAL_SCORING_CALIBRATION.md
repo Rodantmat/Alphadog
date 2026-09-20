@@ -13,6 +13,16 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ## 1. THE CHAIN
 
+**⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
+> *"daily-context + market factors (**tiered logic varying by factor type, player, and prop
+> line/variation/direction**) to produce **final hit probability, confidence, and score**; **this
+> pipeline is BOARD-SCOPED ONLY (does not cover the full universe of variations like the baseline
+> pipeline does)**."*
+
+**So the division was specified from day one**: the **baseline** covers the full matrix of every
+player × prop × line × side; the **scoring engine** covers only what the apps actually offer.
+`nba/score_board_legs.py` implements exactly this.
+
 ```
 baseline HP  →  availability delta  →  as-of calibration  →  FINAL HP
                                                                  ↓
