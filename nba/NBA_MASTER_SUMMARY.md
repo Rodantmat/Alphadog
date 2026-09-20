@@ -15,6 +15,18 @@ distinguishable from old.
 find nothing new**. If passes 1 and 2 are clean but pass 3 finds something, the count RESTARTS at zero.
 This applies per transcript and to every document.
 
+**⚠ THE RULE'S ORIGIN — found in T1, Part E of the lessons document.** The owner's rule is MLB's own
+internal verification bar, and the source adds two conditions I had not been applying:
+> *"require a set number (**MLB used TWO**) of genuinely consecutive clean investigation passes —
+> **EACH USING DIFFERENT REAL SAMPLES AND DIFFERENT ANGLES** — with zero new issues found. **If any
+> pass turns up something new, NO MATTER HOW MINOR, the counter resets to zero.**"*
+
+1. **The owner set THREE where MLB used TWO** — a deliberately stricter bar.
+2. ***"Different samples and different angles"*** — **a pass is not a re-run.** Repeating the same
+   query is not a second pass. This is lesson #3 in operational form: *"multiple, genuinely different
+   research passes — not the same query with a different threshold."*
+3. **"No matter how minor"** — severity is explicitly irrelevant to the reset.
+
 **Pass status vocabulary**
 | Marker | Meaning |
 |---|---|
