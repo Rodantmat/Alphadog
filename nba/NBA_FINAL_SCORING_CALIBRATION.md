@@ -486,6 +486,36 @@ the market.**
 baseline or scoring calibration has been through it, because it measures **profitability**, not
 **honesty** — and calibration is the honesty property (§9).
 
+---
+
+## 14. THE STATISTICAL STANDARD, CONSOLIDATED
+
+Every guard across both calibration documents, in the order they must be applied:
+
+| # | Guard | Source |
+|---|---|---|
+| 1 | **Verify the factor has variance** — `stddev(factor_value) > 0` | T1 — *"cheap, and MLB never did it proactively"* |
+| 2 | **Declare `relevant_prop_keys`** — never apply blindly | T1 → `factor_relevance`, 460 rows |
+| 3 | **Fix leakage** — as-of contamination inflates apparent skill | 3 instances in this system |
+| 4 | **Fix circularity** — tier-mate-relative measures are circular | T8: k≈2 vs k≈100–250 |
+| 5 | **PRE-REGISTER the deciding test** | T1 |
+| 6 | **Use MARGINAL contribution, not residual correlation** | T1 — the two-test paradox |
+| 7 | **Sign must be consistent across seasons** to keep a cell | T8 — structure vs regime |
+| 8 | **Disaggregate — rung aggregates hide cancelling errors** | T8 |
+| 9 | **Test new factors against the props that already PASS first** | T9 |
+| 10 | **Day-level block bootstrap** — resample days, never legs | T1 |
+| 11 | **All three bootstrap conditions**, incl. leave-one-day-out | T1 |
+| 12 | **`p × m` house-edge sanity test** | T1 |
+| 13 | **Confidence-tier every record** — don't let one-offs harden | T1 |
+
+**Items 1–9 gate a FACTOR. Items 10–13 gate a STRATEGY.**
+**Nothing in the current system has been through 10–13**, because the slip-strategy phase has not
+begun — and that is correct sequencing, not an omission.
+
+---
+
+## 15. WHERE EDGE IS NOW EXPECTED TO COME FROM
+
 T9 predicted two sources. **One delivered, one did not.**
 | Named source | Outcome |
 |---|---|
