@@ -229,6 +229,20 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 
 ---
 
+> ### ⚠ THIS DOCUMENT IS THE ONLY SCHEMA ARTEFACT NBA HAS — and it is prose
+> *Recorded 2026-09-20 (T1 pass 43). **VERIFIED**: `ls nba/*.sql` returns **nothing**.*
+>
+> **MLB has eleven committed schema files at the repo root** (`schema_ref_db.sql`,
+> `schema_config_db.sql`, … — 133 KB) **plus `schema_manifest.json`. All of them are stale**: the
+> manifest reads `"date": "2026-05-18"`, `"target": "AlphaDog v2 new D1 databases only"`, and **D1
+> was decommissioned system-wide on 2026-08-12**. Their DDL is SQLite-flavoured and flat-named
+> (`ref_teams`, not `ref.teams`).
+>
+> **NBA has zero.** Nothing went stale because nothing was written — **but there is no artefact to
+> diff the live database against**, which is what blueprint §9's whole-universe comparison would
+> need. **The live schema is the only record of itself, and this document is the only description of
+> it.** **NOT RECORDED as a deliberate decision.** `NBA_OPEN_ITEMS.md` → FROM T1 PASS 43.
+
 ## 2. `nba_config` — NBA control configuration *(T1)*
 
 > ### ⚠⚠ READ FIRST — **nothing in the codebase reads any of these tables except `external_credentials`**
