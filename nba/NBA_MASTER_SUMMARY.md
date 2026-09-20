@@ -1456,6 +1456,34 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.80 — PASS 50 (angle: **blueprint §2 clause by clause — and RUN the proactive check it demands**) — **NEW MATERIAL · MAJOR · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 50. All VERIFIED by live
+SQL.*
+
+**Blueprint §2 carries a standing instruction that was never carried out:**
+> *"Use ONE canonical ID format from day one (MLB had a real, multi-table bug from **mixing bare
+> numeric team IDs with a prefixed format like `mlb_133`** — **grep for format inconsistency
+> proactively, don't wait for it to surface as a downstream symptom**)… apply it everywhere."*
+
+- **✅ Types pass perfectly across all 85 tables**: every `player_id` (28), `team_id` (20) and
+  `game_id` (20) is **TEXT**; every `nba_player_id` (10) and `nba_team_id` (6) is **BIGINT**.
+  **`nba_ref.teams.team_id` = `nba_1610612737`** — the blueprint's suggested convention exactly.
+- **⚠⚠ But the VALUES split along a layer boundary.** `nba_ref.*` and `nba_stats.*` are **prefixed**
+  (`players` 582/582, `player_game_log` 79,358/79,358). **`nba_score.*` is bare numeric** —
+  `baseline_history` **19,343,348**, `final_hp` **19,215,200**, `baseline_ladder` **206,237**,
+  `board_scored` **110,955**, `availability_delta` **4,274** — **zero prefixed in any of them.**
+- **Measured**: `board_scored` → `nba_ref.players` on `player_id` = **0 of 110,955**; with
+  `'nba_'||player_id` = **110,955 (100%)**. **A direct join returns nothing, silently.**
+- **Severity: latent, not actively broken.** The scoring path joins score→score and both sides match,
+  so nothing is wrong today. **But the first thing built on `board_scored` — a UI feed, a slip
+  builder, any report attaching player names to scored legs — hits this boundary.**
+  **SEASON-START RELEVANT**: `board_scored` is P3's live daily output.
+- **This is the blueprint's named multi-table ID bug, reproduced** — cleanly divided by layer rather
+  than scattered. **Which convention is correct is NOT ESTABLISHED**; both sides recorded in
+  `NBA_OPEN_ITEMS.md` so the decision can be made from that file alone.
+
+---
+
 ### T1.79 — PASS 49 (angle: **Domain Mapping §1 and §3 read CLAUSE BY CLAUSE, not section by section**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 49. Source:
 `nba/NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1, §3 — in the repo as clean markdown. **Pass 31
