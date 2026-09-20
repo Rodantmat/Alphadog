@@ -578,10 +578,34 @@ make the two products distinguishable.**
 **✅ PARTIAL RESOLUTION (T9): the STORAGE supports it.** `nba_score.baseline_ladder` has **`ot_rule`
 as a first-class PRIMARY KEY column** (`DEFAULT 'include'`), alongside `period`. So the same
 player × prop × period can hold an `include` row and an `exclude` row at once.
-**The schema is not the blocker.** What remains:
-1. Are both variants actually **built** for period props, or only the default?
-2. Does `score_board_legs.py` **select the right `ot_rule` by app** (Sleeper → exclude, PP/UD → include)?
-3. `P(OT)` itself still does not exist, so an `exclude` variant would need it to differ correctly.
+
+**✅ AND `P(OT)` WAS BUILT — in the PERIOD layer.** My earlier finding (no `p_ot` in
+`classification_ladder_v12.py`) is correct for the **full-game** ladder only. T9:
+> *"**OT as a mixture branch, not a mean bump** — a star either gets ~5 crunch minutes or none.
+> **P(OT | spread) measured at 5.3% at pick'em falling to 1.9% at 15+.**"*
+
+**So all three pieces exist**: the storage key, the measured probability, and the mixture treatment.
+**What remains open:**
+1. Is the **`exclude` variant actually built** for Sleeper's quarter markets, or only the default?
+   (T9's own remaining list named *"the OT-exclude variant for Sleeper"* as outstanding.)
+2. Does **`score_board_legs.py` select by app** — Sleeper → `exclude`, PP/UD → `include`?
+3. Does **`grade_board_outcomes.py`** apply the same per-app rule when settling?
+
+### ⚠ FANTASY-SCORE SCALE — an unresolved source conflict, flagged for season start
+T7 resolved the PrizePicks fantasy scale to **`1 / 1.2 / 1.5 / 3 / 3 / −1`** *"from PrizePicks' official
+page after a conflicting third-party source."*
+**T9 found the conflict again and left it open:**
+> *"One discrepancy to re-verify at season start: **a third-party sheet lists PrizePicks blocks/steals
+> at +2 vs the +3 I recorded from the official page**."*
+
+**This is not cosmetic.** T8.16g establishes that *"the **3× multiplier on blocks/steals** reintroduces
+exactly MLB's home-run lumpiness — **a single steal is a 3-point jump** — producing a **fat right
+tail** a direct fit would smooth away."*
+**At +2 instead of +3, that tail is materially thinner**, and `fantasy_score` is simulated from
+components, so the multiplier propagates into every rung.
+
+**Resolve by reading PrizePicks' live scoring page once the season board is up** — and note the scale
+may differ by app (Underdog and Sleeper have their own).
 
 ### RE-CHECK · **Sleeper DOES have alternate lines** — milestone markets
 The live session recorded *"Sleeper has no alternate lines (one line per player+stat, priced via
