@@ -1456,6 +1456,28 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.77 — PASS 47 (angle: **whole-universe diff of the LIVE SCHEMA against `NBA_DATABASE.md`**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 47. T1's DDL block: lines
+11000–14000. All figures VERIFIED by live SQL.*
+
+- **⚠⚠ 17 of the 85 live NBA tables are absent from `NBA_DATABASE.md`** — **20% of the schema**, in a
+  document whose mandate is *"a comprehensive complete list of all tables and columns."*
+  **Including `nba_calendar.games`** — the calendar the whole pipeline schedules against, quoted
+  elsewhere as **2,666 games** — and **`nba_market.board_tiers_v2`**, the corrected goblin/demon
+  taxonomy. **Several are documented in *other* files; the catalogue is what lacks them.**
+- **⚠ 6 of the 14 NBA schemas hold ZERO tables**: `nba_archive`, `nba_backtest`,
+  `nba_classification`, `nba_context`, `nba_daily`, `nba_scoring`. **All fourteen were created in one
+  `CREATE SCHEMA` statement in T1, mirroring MLB's schema list; six were never used.**
+- **This is the "tables planned and never created" the owner's mandate asks for, and it had not been
+  recorded.** The work those names imply exists **elsewhere** — backtest in `nba_score.*` and the
+  repo's `backtest/`, classification output in `nba_score.baseline_*`. **A naming layer that was
+  never adopted, not missing functionality** — but a reader searching `nba_classification` finds
+  nothing.
+- **Live table counts**: `nba_stats` 19 · `nba_score` 18 · `nba_ref` 14 · `nba_config` 11 ·
+  `nba_market` 11 · `nba_team` 9 · `nba_control` 2 · `nba_calendar` 1.
+
+---
+
 ### T1.76 — PASS 46 (angle: **T1's four `run_job` calls read as an API SURFACE, then the live bridge enumerated**) — **NEW MATERIAL · MAJOR · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 46; full mode table at
 `NBA_SYSTEM_ARCHITECTURE.md` §3b. All VERIFIED by grep of the live `alphadog-v2-admin-sql.js`.*
