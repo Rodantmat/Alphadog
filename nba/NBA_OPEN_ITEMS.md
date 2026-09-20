@@ -590,6 +590,8 @@ as-of prediction for day D can only be right because day D is in it, the counts 
 **The fix workflow, also from T1**: *"research/debug/simulate fixes **at large sample sizes across all
 individual niches** first; **only once solutions are very well developed**, test **on the backtest
 tables**; **only if that testing behaves very well, move to live tables**."*
+
+### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
 From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
 ~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
 **Holdout 2024-25 shows the same signs.**"*
