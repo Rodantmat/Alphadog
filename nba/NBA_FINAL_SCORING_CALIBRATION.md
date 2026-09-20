@@ -958,7 +958,52 @@ used as a data source, and its methodology is published).
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7p. TWO BUILD-DISCIPLINE PRINCIPLES
+*Source: T1, blueprint §4d. Recorded 2026-09-20.*
+
+### 1. Every tunable parameter gets its OWN DATABASE COLUMN
+> *"**Every tunable numeric parameter gets its OWN DEDICATED DATABASE COLUMN, NEVER embedded as a
+> LITERAL NUMBER INSIDE AN OPAQUE FORMULA-EXPRESSION STRING** — **this is what actually LETS A
+> CALIBRATION LOOP ADJUST ONE SPECIFIC VALUE DIRECTLY rather than needing to PARSE AND REWRITE A
+> FORMULA STRING.**"*
+
+**This is the mechanical reason behind the owner's no-hardcoding rule**, and it is stronger than
+"config is tidy": **a calibration loop cannot tune what it cannot address.** A value inside a formula
+string is unreachable to an automated adjuster.
+
+**✅ NBA follows it** — `factor_profile_cells` has **dedicated `cap` / `lift` / `penalty` /
+`coefficient` columns**, and `stat_decay_config` gives each of `ewma_alpha`,
+`min_lookback_games` and `shrinkage_stabilization_games` its own column.
+
+**⚠ Where it is violated**: the certified recipes hold `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K`,
+`SHIFT_LAMBDA`, `BLOWOUT_MARGIN`, `COMPETITIVE_MARGIN` and `LADDER_DEPTH` **as Python literals**.
+They are env-overridable, **but not addressable by a calibration loop** — which is precisely the
+capability this principle exists to preserve.
+
+### 2. ⚠ AN UNAVAILABLE FACTOR MUST SAY SO — never a silent zero
+> *"**When a factor CANNOT BE HONESTLY IMPLEMENTED because the real underlying data DOESN'T EXIST
+> YET, SAY SO EXPLICITLY IN THE SYSTEM ITSELF** — **a clearly-labelled 'NOT YET AVAILABLE, NO VERIFIED
+> DATA SOURCE' status** — **rather than APPROXIMATING IT WITH A GUESS or SILENTLY LEAVING IT AS A
+> MISLEADING ZERO.**
+> MLB found and named several such honest gaps: **an umpire-tendency factor HARDCODED TO AN EXPLICIT
+> 'UNAVAILABLE' STATUS**, **a wind-direction factor BLOCKED ON MISSING PARK-ORIENTATION REFERENCE
+> DATA** — **rather than faking plausible-looking values for either.**"*
+
+**⚠⚠ NBA has the exact situation the umpire example describes, and it is NOT labelled.**
+| Factor | State | Labelled? |
+|---|---|---|
+| **Altitude** | `arenas.altitude_ft` — **0 of 30 populated** | ❌ **no status; the column is simply empty** |
+| **Jet lag / travel direction** | `arenas.timezone` — **0 of 30 populated** | ❌ no status |
+| **D1 — referee tendency** | capture built, **0 rows until the season** | ⚠ *known* to be empty, but no explicit status field |
+| Tier C props (first basket, high scorer) | *"need play-by-play we don't have"* | ✅ **correctly excluded from the taxonomy entirely** |
+
+**An empty column and a declared "unavailable" status are different things.** A factor reading an
+empty column produces **a silent zero or a NaN** — which is exactly the *"misleading zero"* named here,
+**and exactly what the `stddev(factor_value) > 0` check exists to catch.**
+
+**The MLB precedent is the model**: the umpire factor was **hardcoded to an explicit `unavailable`
+status** — present in the registry, visibly not contributing, impossible to mistake for a measured
+zero. **`nba_config.factor_registry` has 67 rows and could carry the same field.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
