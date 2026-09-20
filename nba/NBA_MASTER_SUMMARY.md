@@ -5357,6 +5357,53 @@ handles the factors. **Gemini's objection was valid about skew and wrong about f
 
 **T8 PASS 3: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.12 — PASS 4 (live code) — **THE CERTIFICATION LADDER, AND WHAT IS NOT ON IT**
+
+`classification_ladder_v12.py`'s header and `PROPS` block carry a **per-prop certification status** that
+appears in no transcript I have documented.
+
+#### T8.12a — **`P(OT)` was never built**
+The architecture (T8.11c) lists *"Blowout risk, **P(OT)**, foul risk"* together as minutes-model inputs.
+**Grep for `p_ot|P_OT|overtime|OT\b`: no modelling anywhere.** Blowout is built; **P(OT) and foul risk
+are not.** Two of the three named minutes inputs are missing.
+
+#### T8.12b — **Three certification states coexist in the live PROPS config**
+| State | Props | Header note |
+|---|---|---|
+| **CERTIFIED** | `fga` — *"CERTIFIED both seasons (0.9 / 1.3, **0 band misses**)"* | and the main singles set |
+| **CONFIGURED, NOT YET RUN** | **`turnovers`, `fga`, `fg3a`, `ftm`, `personal_fouls`** | *"configured, **NOT yet run**"* |
+| **NOT YET CERTIFIED** | **`fgm`, `fta`** | *"ADDED 2026-09-12 (**owner: the live PrizePicks menu carries these**; box-score columns already in our logs). **Configs are the closest certified analogue; NOT yet certified** — the first history run prints the band tables."* |
+
+**These props will produce numbers.** They have alphas, `k_stab`, step sizes and families configured —
+so the ladder builds them and the scorer will score them. **What they lack is the band-table validation
+that every certified prop passed.** **Recorded in OPEN_ITEMS.**
+
+**Note `fga` appears in two states** — the inline comment says CERTIFIED both seasons with 0 band
+misses, while the header line lists it among "configured, not yet run". **The header is likely stale**
+relative to the inline comment, but worth confirming.
+
+#### T8.12c — **Known misses, documented in the header rather than hidden**
+> *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for ~1.5 bpg players, persists
+> at any lambda**; blocks less 75–80: −2.6 (thin); steals less 60–65: +3.6. **Holdout 2024-25 shows the
+> same signs.**"*
+
+**A named, quantified, reproducible miss carried in the file's own header** — with the diagnosis
+(P(0 blocks) under-predicted for mid-volume shot-blockers), the evidence that it is structural
+(*"persists at any lambda"*), and **confirmation it reproduces out-of-sample** (same signs in the
+holdout). **That last clause is what makes it a known limitation rather than noise.**
+
+#### T8.12d — **A rejection recorded with its numbers**
+> *"**REJECTED ON DATA**: player-own L0 cells (**n=40–80; regression-noise dominated; ELITE rebounds
+> ±7.7**). **Off.**"*
+
+**Per-player calibration cells were tried and rejected** because the per-player sample (40–80 games) is
+too small — the cells fit noise, visible as ±7.7 swings on elite rebounds. **This is the same
+sample-size failure mode as A2's with/without table** (T7.14e), and the same as the conformal
+confidence model's failure (dominated by aleatoric noise). **Three independent attempts at
+per-player granularity, all defeated by sample size.**
+
+**T8 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
