@@ -197,6 +197,15 @@ owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own of
 
 ## STEP 4 — Move scraping to GitHub Actions *(T1)*
 
+> ⚠ **THIS STEP WAS A REDISCOVERY, NOT A DISCOVERY** *(recorded 2026-09-20, T1 pass 40 — **VERIFIED**
+> against a live clone)*. `gbdt_training/d1_client.py`, already in this repo before NBA existed,
+> states the same reasoning outright: *"Runs inside GitHub Actions (**which has real network access,
+> unlike Cloudflare Workers, which cannot train models at all — confirmed from Cloudflare's own
+> docs**)."* **The constraint and the answer were both already written down.** T1 reached them
+> through **four failed runs and thirteen polling sleeps**. The fix below is correct; what was
+> missing was a defined search space for *"has MLB already solved this"* —
+> `NBA_SYSTEM_ARCHITECTURE.md` §8c and §8.
+
 1. Found the pattern in MLB's own `.github/workflows/scrape.yml`: **scrape on a GitHub runner, commit
    the JSON, have the Worker read the committed file.**
 2. Built `nba/scrape_nba_stats_teams.py` + an isolated `.github/workflows/nba-scrape.yml`
