@@ -4086,6 +4086,98 @@ sizes, but **model hyperparameters**, each with its justification stored beside 
 
 **T7 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.11 — PASS 5 — **the measure-type build's bugs, and the classification research begins**
+
+#### T7.11a — **THE SEASON-HARDCODING BUG AGAIN, IN THE WRITERS**
+> *"Now make the two **per-game writers** season-aware — **they hardcode `_2025_26` and would silently
+> keep loading last season's file in October**. Both read the season from the delta meta by default."*
+
+**The same bug class as T7.1, in a different layer.** The scrapers were fixed; **the Workers that read
+their output had the identical flaw.** A fix applied to one layer did not propagate to the other —
+which is exactly why the OPEN_ITEMS entry keeps the pattern listed even though it is "fixed".
+
+**And a follow-on defect in the fix itself**: *"The starter-status writer's `fetchFromGithubRaw`
+returns **`{file, meta}`**, so `.season` needs to be **`.file.season`**."*
+
+#### T7.11b — **A mapper silently writing columns that do not exist**
+> *"Confirmed — **the team table has no `usg_pct` and no `reb_pct`**. Aligning the mapper to the real
+> schema."*
+
+**Then the sharper move — checking the one that WORKED:**
+> *"Let me also verify the **player** advanced mapper matches its real table, **since it 'worked' but
+> might be silently mapping a nonexistent column too**."*
+> *"Player advanced matches exactly (**it has `usg_pct` and `reb_pct`; team doesn't**) — that mapper is
+> correct."*
+
+**Player and team advanced tables have genuinely different columns**, and only the team mapper was
+wrong. **Verifying the passing case is what confirmed the difference was real rather than a lucky
+escape.**
+
+#### T7.11c — Two more fixes in the same pass
+- **`nn()` null-handling wrapped around all four mappers**, applied via `nnRow(...)` at each closing
+  site — with *"the two advanced mappers have **identical closing lines** — I need a unique anchor for
+  each"*, disambiguated by the preceding `player_id`/`team_id` line.
+- **A cosmetic duplicate in the gap sample**: *"each game listed twice because **both teams' `matchup`
+  strings differ**"* → dropped `matchup` from the grouping.
+
+**Result**: *"All **2,460 rows** touched by the delta with real pace values, **no nulls**."*
+
+#### T7.11d — **Documentation kept in sync with config, deliberately**
+> *"the methodology doc still says a **single `alpha=0.2`** — **that's now wrong and must be corrected
+> so the design and the config table agree**."*
+
+**A design document that contradicts the live config is a future trap**, and it was fixed in the same
+step that created the divergence.
+
+#### T7.11e — The remaining recurring-path gaps, closed
+- **DvP recompute placed inside the delta worker** (*"before `sql.end()`"*, after a no-op patch attempt)
+- **Splits + career totals onto a recurring path** via *"a **`mode` input** rather than build a new
+  worker"*, reading season from the scraper meta — *"Both metas carry `season`."*
+- **Both added to the weekly cycle workflow.**
+
+**→ This closes two of the four T7.2 gaps and one from the T7 gap table.** OPEN_ITEMS updated.
+
+#### T7.11f — **THE CLASSIFICATION RESEARCH BEGINS** (the journal's label, arriving late)
+> **OWNER:** *"What is the next phase? The next phase is **the classification and baseline
+> configuration**. So I want you to take a look on the **MLB classification and baseline pipeline**…"*
+
+> *"**this is the real heart of the system**. Before I ask questions, let me **ground them in the actual
+> MLB code rather than guess** at how it works."*
+
+**MLB source files read**: `alphadog-v2-base-classification-v5.js`, `alphadog-v2-base-baseline.js`,
+plus the design/calibration docs. *"**The live function starts at line 8688.** Let me read it in full —
+**this is the logic I need to port exactly**."*
+Then: *"let me pull the **real calibration config values from Postgres** so I understand the **actual
+parameters, not just the code shape**."*
+
+#### T7.11g — The owner's design instructions, by voice
+*(These messages are voice-transcribed — the phrasing shows it.)*
+- *"the **caps, lifts and penalties**… each one of the pipelines are gonna have its proper caps and
+  lifts and penalties according to [its tier]"*
+- *"**Lifts and penalties are factor driven** with deeper research to understand which factors are
+  important to be considered on the baseline, **remembering that the baseline is looking to the best
+  [and] poor diagnos[tic]**"*
+- *"the different variations get different **tiers**. That is working very well for MLB. And **every
+  once in a while, we have to granulate even more**. **Again, Gemini is not the absolute truth.**"*
+- *"There are a few very important factors like **injury report, projected minutes, and lineups** —
+  **minutes is very, very important on NBA**."*
+
+#### T7.11h — The research standard applied to sources, not just claims
+- **OpticOdds** consulted on empirical-vs-parametric — *"an **industry pricing source rather than a
+  hobbyist one**."*
+- *"every conclusion below has **at least two independent sources** behind it"*
+- *"I've **flagged the one place I'm proposing an adaptation to the MLB logic**"*
+- **Peer-reviewed factors found**: *"The sweep found real, **peer-reviewed** factors I hadn't
+  included."*
+
+#### T7.11i — The owner's correction on prop coverage
+> **OWNER:** *"you should have a **map/list of all possible available prop lines already for the 3 apps
+> we use**, otherwise you **cannot properly do a factors research**"*
+> *"**You're right** — I only have PrizePicks' catalog, and **only roughly**. **A factor study can't be
+> complete against an incomplete prop map.**"*
+
+**T7 PASS 5: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
