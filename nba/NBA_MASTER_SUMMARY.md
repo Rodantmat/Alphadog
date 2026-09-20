@@ -1456,6 +1456,25 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.81 — PASS 51 (angle: **blueprint §1 and §3, clause by clause**) — **MINOR NEW · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 51.*
+
+- **⚠ One minor item**: §1's rule *"D1 databases exist as **read-only reference only — never write new
+  data to D1**"* **is obsolete** — D1 was decommissioned system-wide **2026-08-12**, so the rule can
+  be neither followed nor broken. **NBA never touched D1**, so nothing turns on it. Recorded so a
+  future reader who meets the rule knows it is dead. ⚠ **Third document found asserting D1 as live**
+  (after `schema_manifest.json` §T1.73 and `NBA_AVAILABLE_TOOLS.md` §T1.76) — **and the blueprint is
+  the one the other eleven documents quote as authoritative.**
+- **✅ Everything else in §1 and §3 already has an entry**: the Hyperdrive options
+  (`max: 3`, `fetch_types: false`, `prepare: false`), *"never hand-edit a wrangler config… it will be
+  silently overwritten"*, the bridge-first ranking, the Gemini proxy; and §3's four-layer order, the
+  **Board-before-Daily-Context ordering bug** with its `VALID_ZERO`/`NOT_APPLICABLE` symptom, the
+  matrix builder, and the **PRIMARY/REVIEW** split.
+- **This is the first near-clean pass of the block** — 14 consecutive passes found material; this one
+  found a single obsolete cross-reference. **Convergence, on the transcript dimension.**
+
+---
+
 ### T1.80 — PASS 50 (angle: **blueprint §2 clause by clause — and RUN the proactive check it demands**) — **NEW MATERIAL · MAJOR · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 50. All VERIFIED by live
 SQL.*
