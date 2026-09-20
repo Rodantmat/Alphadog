@@ -1903,6 +1903,45 @@ highest-quality legs"* is the mirror of one implying an impossibly large edge. *
 attribution errors, and both are caught by computing the implied outcome before believing the
 number.**
 
+#### #27 — **FLEX-STYLE PARTIAL-CREDIT MECHANICS DIFFER PLATFORM TO PLATFORM — VERIFY, DON'T ASSUME**
+*Added 2026-09-20 (T1 pass 30). **This lesson had no entry in any of the twelve documents.***
+
+> *"MLB found **a real, concrete structural difference between platforms**: **one platform's
+> partial-hit Flex payouts (for missing one or two picks out of a full slip) were FLAT, FIXED VALUES
+> INDEPENDENT OF HOW LARGE THE UNDERLYING FULL-HIT MULTIPLIER WAS**, while **a DIFFERENT platform's
+> partial-hit payouts SCALED PROPORTIONALLY WITH ITS OWN FULL-HIT MULTIPLIER**. **Don't assume every
+> DFS platform's Flex-style partial-credit structure works the same way — VERIFY EACH PLATFORM'S
+> ACTUAL MECHANIC (flat partial payouts vs. proportional-to-full-hit payouts) DIRECTLY FROM REAL
+> OBSERVED DATA before building any EV model that depends on it**, since **the two structures produce
+> meaningfully different expected values for the same underlying leg-hit distribution.**"*
+
+**Why this one matters more than its position in the list suggests.** It is the only lesson that
+names a **structural**, not numeric, difference between the platforms this system prices on — and
+`NBA_MULTIPLIERS.md` currently holds **one observation, from one platform, treated as possibly
+universal**.
+
+**⚠ THE DIRECT COLLISION.** `NBA_MULTIPLIERS.md` §0.2 records *"two independent real observations both
+showed identical partial tiers **4/5 = 0.5 and 3/5 = 0.25**… **suggests these may be flat/constant
+values**"* and §0.2d builds on it: *"**the partial-tier table is the part that looks constant.**"*
+**Those observations are PrizePicks.** **Lesson #27 says the flat shape is one of two structures that
+exist in the wild, and that the other one scales with the full-hit multiplier.** So:
+- **The "flat" finding is not contradicted** — flat is exactly what #27 says one platform does, and
+  two independent observations is strong for that platform.
+- **What is not licensed is the generalisation.** **Underdog, Sleeper, Betr and Fliff each need their
+  own verification**, and #27 makes that an explicit requirement rather than a nice-to-have. This
+  compounds with §0.2e's separate finding that **Underdog and Sleeper price per-leg dynamically**
+  rather than off a flat table — a platform that prices legs dynamically is exactly the kind that
+  would scale its partial tiers proportionally.
+- **The consequence is EV, not cosmetics.** #27 states the two structures *"produce meaningfully
+  different expected values for the same underlying leg-hit distribution."* A Flex EV model is a
+  **weighted sum over the partial tiers**, so the tier shape is a first-order term, not a correction.
+
+**Status**: **NOT RECORDED as verified for any platform other than PrizePicks.** Routed to
+`NBA_MULTIPLIERS.md` §0.2h and `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 30*.
+**Cross-references**: #24 (durable mechanics vs drifting numbers — **#27 is a durable mechanic, so it
+is the kind that transfers**), #26 (confidence tier — the flat observation is labelled *first pass*),
+#14 (prop-definition mismatches across platforms — the same trap one layer down).
+
 #### ⚠ The two with no visible NBA implementation
 - **#7 multiple-comparisons correction** — the factor gate scanned many prop × band × side cells;
   the exemption is *"a single, PRE-REGISTERED confirmatory test on one specific cell"*, and gate runs
