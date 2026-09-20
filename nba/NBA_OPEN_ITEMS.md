@@ -45,9 +45,14 @@ Breaks on early-tip days (noon/1 PM ET starts = 9/10 AM PT). Detail under "FROM 
 ### STILL OPEN from T7's gap table — recurring refresh
 | Gap | Status |
 |---|---|
-| **Splits + career totals** | *"Only exist in the one-time backfill — **no recurring refresh at all**"*; cumulative aggregates, so weekly is right. **Is either in P1 today?** |
-| **Defence-vs-Position** | *"Derived via a **one-off manual SQL** — no worker recomputes it as new game logs arrive."* |
-| **Starter-status + officials for NEW games** | ✅ `scrape_nba_per_game_delta.py` now does this |
+| **Splits + career totals** | ✅ **CLOSED in T7** — put on a recurring path via a `mode` input on the existing backfill worker (not a new worker), season read from the scraper meta, both added to the weekly cycle workflow |
+| **Defence-vs-Position** | ✅ **CLOSED in T7** — the recompute SQL was placed inside the delta worker, before `sql.end()` |
+| **Starter-status + officials for NEW games** | ✅ `scrape_nba_per_game_delta.py` does this |
+
+**All three T7 recurring-path gaps are closed.** ⚠ **But verify they are in `nba-p1-weekly-static.yml`
+as built 2026-09-20** — the weekly workflow was rebuilt as P1 after these were added, and the
+differential worker was dropped in that rebuild (see ① above). **Splits, career totals and the DvP
+recompute may have been dropped the same way.**
 
 ---
 
