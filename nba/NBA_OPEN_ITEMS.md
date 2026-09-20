@@ -779,6 +779,28 @@ the anchor's own as-of construction with the same method used on candidates.
 **Note this is not a claim that the anchor leaks.** It is a recorded gap between the rule and what has
 been verified.
 
+### ⚠ TEN REJECTED FACTORS — "confirmed negative" vs "underpowered" is not recorded separately
+Lesson #8 (T1): *"**'Insufficient data / underpowered' is a DISTINCT verdict from 'confirmed
+negative' — don't collapse them.** A non-significant result with a wide confidence interval that still
+contains a materially positive value is **NOT** the same as a confirmed-zero effect. **State the
+actual POWER CALCULATION** — how many days would be needed to detect the effect size in question —
+**and track genuinely underpowered candidates in their own list.**"*
+
+**NBA state:** `nba_score.factor_gate_results` stores `n`, `log_loss`, `brier`, `gain_vs_anchor`,
+`shrink_beta` per verdict — **the sample size is there**, but the ten closures are recorded as
+rejections without the two-way split.
+
+**Two of the ten have stated sample constraints:**
+| Factor | Constraint recorded |
+|---|---|
+| **A2** | design specified confidence tiers on shared-absence games — **<5 / 5–14 / 15+**; a table built on <5 games is near-noise |
+| **B4** | *"closed in three formulations, **0 of 5 props**"* — no power figure recorded |
+
+**What is missing per #8**: a power calculation per closed factor, and a separate list for
+underpowered candidates.
+**Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
+fixed and classify the outcome honestly.**
+
 ### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
