@@ -498,6 +498,12 @@ system-wide 2026-08-12.** With its eleven `schema_*_db.sql` companions (133 KB) 
 architecture in SQLite-flavoured, flat-named DDL. **Blueprint §5b standing in the repository.**
 ⚠ §T1.51 recommended `schema_ref_db.sql` to NBA as a template. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 43*.
 
+**`*_meta.json` sidecar** · T1, LIVE · The provenance file written beside a scraper output:
+`fetched_at`, `source_url`, `http_status`, an entity count, `error`. **VERIFIED: 41 of the 223 files
+in `nba/data/` have one.** It is what makes *"read the committed file, not the scraper's own claim"*
+checkable; **for the other ~180 files there is no committed record of fetch time or success.**
+→ `NBA_WORKERS.md` §2 · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 45*.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
