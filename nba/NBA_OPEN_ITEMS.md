@@ -205,6 +205,75 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 44 — THE DEPLOY GENERATOR'S OWN SOURCE, READ AND VERIFIED LIVE *(added 2026-09-20)*
+*Angle: `generate_wrangler_configs.py` is pasted into T1 (lines ~16400–18400). **Read it as source
+code and check every constant against the live file.** All figures below are **VERIFIED by grep of
+the live `generate_wrangler_configs.py` 2026-09-20**, so they are stated in full.*
+
+### ⚠⚠ CONTRADICTION · the MLB run cadence in the documents disagrees with the live code
+| Source | MLB master-run schedule |
+|---|---|
+| **The blueprint**, quoted at `NBA_SYSTEM_DESIGN.md` §0.9 | *"currently **4× daily: 1am, 9am, 1pm, 5pm Pacific** for MLB"* |
+| **`generate_wrangler_configs.py` line 30, live** | `MASTER_RUN_BASE_TIMES = ["16","20","0","5","9"]` — **`# 9am/1pm/5pm/10pm/2am PT`** — **FIVE windows** |
+
+**Not a rounding difference**: the code has **five** runs, the blueprint **four**, and the overnight
+slot differs (**2am** in code, **1am** in the blueprint). The code carries its own reason:
+> `# closes the ~11-hour overnight gap the previous 3-time schedule left even when Cowork ran normally.`
+
+**So the blueprint's figure appears to predate a documented schedule change.** **Flagged, not
+resolved** — but note the standing precedence rule: **execution history and live code outrank config;
+config outranks static manifests and documents.** **By that rule the live generator is right and the
+blueprint is stale.**
+⚠ **This propagates into an NBA-facing comparison.** `NBA_SYSTEM_DESIGN.md` §0.9 builds a table —
+*"MLB's four daily windows … worth comparing to NBA's three"* — **on the blueprint's number.** With
+five MLB windows the comparison changes: **MLB's 10pm PT slot has no NBA counterpart at all**, and
+NBA's P2 at 01:00 PT sits between MLB's 10pm and 2am rather than matching a 1am run.
+
+### ✅ VERIFIED · the orchestrator is retired, from the code rather than from the handoff
+`generate_wrangler_configs.py` line 25:
+> `ORCHESTRATOR_CRONS = []  # Retired: board/daily-context/market/scoring (via master-runner),`
+> `# weekly-differential-runner, and daily-delta-runner now own all real scheduling. The`
+> `# orchestrator itself is fully retired - kept deployed only for any manual/direct-call debugging`
+> `# via its own service binding, never self-triggered again.`
+
+**The documents record this from the blueprint; this is the primary source.** Two details the
+blueprint's version does not carry: **the orchestrator is still deployed** (for manual/direct-call
+debugging via its service binding), and **three named runners own all real scheduling.**
+
+### ⚠ NOT RECORDED · the four wiring steps have DIFFERENT deploy blast radii
+`NBA_WORKERS.md` §0 requires every worker to be registered in four places. **The generator's own
+comments show those edits are not equivalent:**
+> `# generate_wrangler_configs.py is intentionally NOT in GLOBAL_REDEPLOY_FILES. It gets edited`
+> `# routinely just to register a single new worker … and that should only redeploy the worker(s)`
+> `# actually affected - not force a full-fleet redeploy of 140+ workers every time.`
+> `# worker_manifest.json changes … already correctly trigger a targeted deploy of that new worker`
+> `# plus the orchestrator via TARGETED_EXTRA_FILES below.`
+
+| Edit | Blast radius |
+|---|---|
+| a file in **`GLOBAL_REDEPLOY_FILES`** | **full-fleet redeploy — 140+ workers** |
+| **`generate_wrangler_configs.py`** | deliberately excluded → only the affected worker(s) |
+| **`worker_manifest.json`** (via `TARGETED_EXTRA_FILES`) | targeted: the new worker **+ the orchestrator** |
+
+**140+ workers is the fleet size** — a figure recorded nowhere in the twelve documents.
+**Why it matters for NBA**: the four-step pattern is performed for **every** new NBA worker, and
+**the cost of each step is different.** An edit that lands in `GLOBAL_REDEPLOY_FILES` by accident
+redeploys the entire MLB fleet — **the loudest possible violation of *"must not edit anything from
+the mlb system."***
+
+### ⚠ NOT RECORDED · an NBA-specific path special-case in the generator, with a named failure
+Live, lines 45–51:
+> `if worker_name.startswith("alphadog-v2-nba-"):`
+> `    # The generated config for an NBA worker is written to nba/wrangler.<worker>.jsonc`
+> `    # "main" relative to that same nba/ directory - it must NOT be re-prefixed with "nba/"`
+> `    # here or wrangler looks for nba/nba/<worker>.js and fails ("entry-point file ... not found")`
+
+**A real, named deploy failure mode with its exact error string**, and the `startswith` guard that
+prevents it — **the same guard recorded elsewhere as the MLB-isolation mechanism, here doing a second
+job.** Not previously documented as a path-resolution rule.
+
+---
+
 ## FROM T1 PASS 43 — A STALE SCHEMA MANIFEST, AND NBA HAS NO SCHEMA FILES AT ALL *(added 2026-09-20)*
 *Angle: the **repo-root file listing** returned by T1's `github_list_dir` (T1 lines ~5114–8800),
 read as an inventory rather than as scenery, then **verified against the live clone**.*
