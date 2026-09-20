@@ -584,10 +584,9 @@ prop × var_band × role_tier × offset × month
 ```
 **Five dimensions** — and `offset` is the **rung**, `month` is what makes it **walk-forward**.
 
-**So the calibration is fit per prop, per variation band, per role tier, per rung, per month.** That
-is finer than "per-rung Platt with the band in the key" suggests: **`role_tier` is in the key too**,
-which means a fringe player and an iron-man at the same rung in the same band get **different**
-calibration curves.
+**`side` (More/Less) is NOT in the key — but verified 2026-09-20 to be structurally unnecessary**, as
+`p_less = 1 − p_more` and only `p_over` is calibrated. **`offset` (the rung) carries the
+above/below-anchor axis that actually varies.** *(§5.6.)*
 
 **Each fit stores `A`, `B`, `n_fit` and `max_shift`** — so the applied transformation is
 `sigmoid(A · logit(p_raw) + B)`, **with the raw value retained**.
