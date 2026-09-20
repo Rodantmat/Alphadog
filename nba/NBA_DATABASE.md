@@ -136,6 +136,9 @@ The team dictionary. 30 active rows.
 | `created_at`, `updated_at` | TIMESTAMPTZ | DEFAULT now() |
 
 ### `nba_ref.team_aliases` — 162 active rows
+
+> **THE VALUE VOCABULARY** *(recorded 2026-09-20, T1 pass 84 — defined in `alphadog-v2-nba-static-teams.js`, **VERIFIED** against the live table)*. `alias_type` ∈ **`city` (35), `nickname` (30), `full_name` (30), `abbreviation` (30), `nba_team_id` (30), `manual_alias` (7)**. `confidence` is **`CANONICAL`** for every derived-from-source alias and **`CONTROLLED_ALIAS`** for hand-curated ones — the worker's rule is `type === "manual_alias" ? "CONTROLLED_ALIAS" : "CANONICAL"`.
+> ⚠⚠ **THREE NORMALIZED COLLISIONS EXIST** *(VERIFIED live)*: **`'los angeles'` maps to TWO TEAMS** (Clippers and Lakers — both carry `city: "Los Angeles"`), and `'golden state'` and `'utah'` each appear twice on one team (`city` + `manual_alias`). ✅ **Latent, not live**: **this table is written by one worker and read by no code**, so nothing resolves through it today. ⚠ **Also**: `alias_normalized` for the historical SuperSonics entry is **`'seattle supersonics historical pre 2008'`** — the parenthetical survives normalization, so **a lookup for "Seattle SuperSonics" cannot match it.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 84*.
 `alias_key` TEXT **PK** · `team_id` · `nba_team_id` BIGINT · `alias_value` · `alias_normalized` ·
 `alias_type` · `source_key` · **`confidence`** · `active` INT DEFAULT 1 · `updated_at`
 
