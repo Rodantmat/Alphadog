@@ -604,7 +604,8 @@ against**, and nothing in the NBA documents names it.
 worker registry's enabled flags, the run-history tables, and the code that should write them.
 **VERIFIED by live SQL and by repo-wide grep.***
 
-### ⚠⚠ NBA HAS NO RUN HISTORY AT ALL — and two documents said it did
+### ⚠⚠ NBA HAS NO CENTRAL RUN HISTORY — and two documents said it did
+*⚠ **Heading corrected 2026-09-20 (T1 pass 76)**: this read *"NO RUN HISTORY AT ALL"*, which is too broad. **`nba_score.baseline_ladder_runs` holds 3 real rows with rich per-run provenance** (VERIFIED). **Accurate: per-component run logs exist in `nba_score.*_runs`; the central control plane is empty.** Everything below about `nba_control` stands unchanged. See `NBA_OPEN_ITEMS.md` → FROM T1 PASS 76.*
 **VERIFIED three ways, and the three agree:**
 
 | Check | Result |
