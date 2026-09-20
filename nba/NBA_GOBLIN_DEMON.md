@@ -158,6 +158,17 @@ bands. **And the measured `LADDER_DEPTH` (p95 = 13 rungs for points) agrees to w
 
 ## 5. THE ECONOMICS — measured
 
+### ⚠ 5.0 READ THESE PER CELL, NOT AS AGGREGATES
+**MLB's costliest single error was pairing an aggregate hit rate with a multiplier from a different,
+thinner cell** — *"producing a **phantom positive edge** that took a full Gemini adversarial pass to
+catch."*
+**The correct form is `Σ wᵢ(pᵢ · mᵢ)`, volume-weighted per cell — never `p̄ · m̄`.**
+
+**The tables below are tier aggregates.** The hit rates come from one population (mostly safe,
+high-volume goblin cells) and the payout factors from another (thin demon cells). **Matching them
+across tiers is exactly the error above.** The directional conclusions survive, but **any EV figure
+built from these must be recomputed cell by cell — tier × prop × side.**
+
 ### 5.1 Goblins are −EV at every tier
 | Tier | Hit rate |
 |---|---|
