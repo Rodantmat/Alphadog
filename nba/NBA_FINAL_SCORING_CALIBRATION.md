@@ -570,6 +570,29 @@ prop × band × side cells.
 
 ## 15. WHERE EDGE IS NOW EXPECTED TO COME FROM
 
+### ⚠ 15.0 THE PRIOR THAT SHOULD FRAME EVERY EDGE CLAIM
+**MLB confirmed a large structural mispricing and never harvested it** (lesson #13):
+> *"the Goblin/tiered-pricing mechanism moves its payout only a **small fraction** of what
+> proportional pricing would require — **roughly a 15% multiplier change for a ~2.6× true-probability
+> gap**… **but MLB never found a way to IDENTIFY IN ADVANCE which legs sit on the high-probability
+> side; every walk-forward selection attempt (raw trailing hit rate, model-probability quintiles,
+> appearance frequency) REGRESSED TO THE POOL AVERAGE.**"*
+
+**The mispricing is not the hard part — SELECTION is.** And **everything in this document is selection
+machinery**: the calibrated ladder, the per-band cells, the confidence model, the factor gates.
+
+**The one asset MLB's failures lacked**: a **calibrated** probability — *"when the recipe says 75%,
+roughly 75% hit, on every band, both seasons, out of sample."* **MLB's failed attempt used
+model-probability QUINTILES; whether a calibrated probability succeeds where an uncalibrated ranking
+regressed is the open empirical question.**
+
+**This reframes §12 entirely.** T9's prediction split one-for-one (combos delivered, enrichment did
+not), leaving calibration + combo structure + the tails. **Lesson #13 says the tails hold a confirmed
+structural mispricing — and that MLB could not convert it.** So the standing hypothesis is precise:
+**a calibrated ladder is the selection tool MLB never had.** Unproven, with one strong prior against.
+
+---
+
 T9 predicted two sources. **One delivered, one did not.**
 | Named source | Outcome |
 |---|---|
