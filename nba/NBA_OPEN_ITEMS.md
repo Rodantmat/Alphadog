@@ -91,6 +91,45 @@ property — do not read a stale `source_key` as a failed refresh.
 
 ---
 
+## FROM T1 PASSES 3–7 — additional items *(added 2026-09-20)*
+
+### BUG-FIXED · `column "active" does not exist`
+The first query against `config.worker_definitions` used `active`; the real column is `enabled`.
+Found by inspecting the real columns rather than guessing again.
+
+### BLOCKED-PERMANENT · the assistant cannot reach `workers.dev` URLs
+`x-deny-reason: host_not_allowed` from its own egress proxy, confirmed from raw response headers.
+**Not fixable by switching tools.** Consequence: a worker can only be invoked through `run_job`.
+
+### CAVEAT · `run_job`'s `target` is a fixed pre-wired enum
+A new worker cannot be triggered until the bridge gets a service binding, an enum value and a dispatch
+branch, followed by a redeploy. **This is why the four-step wiring pattern exists.**
+
+### CAVEAT · D1 decommissioned system-wide 2026-08-12
+All twelve bindings report `false` by design. Any attempt to read MLB logic through D1 will fail — this
+is not transient.
+
+### CAVEAT · the first teams load came from the FALLBACK, not the live API
+Honestly logged at the time: *"genuinely seeded and correct today, but via the fallback, not the live
+API."* The certified static 30-team list carried it until the GitHub-Actions path was proven.
+
+### PARTIAL (resolved later) · ParlayAPI coverage was never verified in T1
+`parlay-api.com` was unreachable from the sandbox, and probing it via the shared MLB queue was
+deliberately refused as out of scope. Left explicitly open.
+**Resolved in T12: our own scrapers beat it — ParlayAPI drops ~25% of rungs, proven by same-moment diffs.**
+
+### OPEN DESIGN FORK (resolved) · shared board tables vs separate `nba_market`
+The `sport`/`league` column exists on MLB's Sleeper/Underdog board tables but is **not wired for
+dispatch** (the live code hardcodes `baseball_mlb` in the probe URL, the row filter and the league
+literal). Flagged as *"a real fork worth your sign-off."* **Resolved in favour of separate
+`nba_market` tables.**
+
+### CAVEAT · inherited from MLB's own code
+*"Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably"* — which is why endpoint
+and header defaults are hard-coded as fallbacks rather than relying on vars.
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
