@@ -1466,13 +1466,21 @@ conceptual ancestor of the blowout factor (T16), which handles the same problem 
 Recorded in OPEN_ITEMS.
 
 #### T2.9f — EPM vs DARKO, and why DARKO won
-- **EPM (Dunks & Threes)** — public, real, and *"Gemini rates it as one of the highest-value single
-  features I could add."*
-- Then a better option was found: **DARKO at `darko.app`** — *"publicly accessible, no paywall
-  mentioned anywhere, and independently rated by NBA analytics experts as **beating both EPM and
-  LEBRON on predictive accuracy (RMSE)**"*, and rated *"the single best **predictive** metric."*
-- **DARKO was chosen because it is free AND rated higher** — the decision is recorded here, the build
-  lands in T3.
+*(CORRECTED by pass 6 — my pass-2 entry recorded the intermediate statement, not the final finding.)*
+- **EPM (Dunks & Threes)** was initially reported as *"public, real, and Gemini rates it as one of the
+  highest-value single features."* **That was wrong.** On verification:
+  > *"**EPM's full data is behind a paid subscription**, not freely scrapable like everything else I've
+  > built this session."*
+  And the line that was drawn: *"**Scraping paywalled content isn't something I'll do without your
+  explicit sign-off** — it's a real legitimacy/ToS question, not just a technical one."*
+  **Nothing was built against it.**
+- **LEBRON** — the other third-party impact metric considered.
+- **DARKO at `darko.app`** was then found: *"publicly accessible, no paywall mentioned anywhere, and
+  independently rated by NBA analytics experts as **beating both EPM and LEBRON on predictive accuracy
+  (RMSE)**"*, and *"the single best **predictive** metric."*
+- **DARKO won on both counts — free AND rated higher.** The build lands in T3.
+- **The verification order matters**: EPM was checked for scrapability BEFORE anything was built on it.
+  *"I checked before building anything."*
 
 #### T2.9g — An honest stop
 > *"I hit a real, honest **stopping point rather than manufacturing more work**."*
