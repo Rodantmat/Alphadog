@@ -622,6 +622,50 @@ mechanism that is still the fallback today.
 
 **Clean-pass count still 0.** T1 remains open.
 
+### T1.21 — PASS 11 FINDINGS (added 2026-09-20; every measured number) — **NEW MATERIAL**
+
+**THE GUARD THAT PROTECTS MLB — the exact mechanism, not previously documented:**
+> *"Patched `generate_wrangler_configs.py` and `github_mobile_deploy_workers.py`, **every change guarded
+> behind `worker_name.startswith("alphadog-v2-nba-")`** so it's **provably zero-impact** on MLB
+> workers."*
+
+This is how the one approved touch to shared files stays safe: a prefix test on every NBA branch.
+**Any future edit to those scripts must keep that guard.**
+
+**TWO WORKER COUNTS, and they are different things:**
+- **116** — rows in `config.worker_definitions` (the registry)
+- **~130** — workers actually deployed in the fleet (*"MLB's ~130 workers plus the new NBA one"*)
+
+Previously documented as 116 only. The gap matters when reading deploy logs.
+
+**`nba_ref.team_aliases` — 157 rows in T1, 162 in T2.** The T1 count came from the **certified static
+fallback**; the T2 count from **live nba.com data**. The five-row difference is the progression from
+fallback to live source, not a discrepancy.
+
+**TOUCHING A "GLOBAL TOOLING" FILE TRIGGERS A FULL-FLEET REDEPLOY** — *"it triggered a full redeploy of
+every worker — MLB's ~130 workers plus the new NBA one."* **This is why deploys took 15+ minutes and
+why so much of T1 is waiting.** Editing `generate_wrangler_configs.py`,
+`github_mobile_deploy_workers.py` or `alphadog-v2-admin-sql.js` redeploys everything.
+
+**THE PATH BUG, exactly:** wrangler looked for **`nba/nba/alphadog-v2-nba-static-teams.js`** instead of
+`nba/alphadog-v2-nba-static-teams.js` — a **doubled folder prefix** in the new NBA branch.
+*"All the MLB workers redeployed successfully before that — nothing of yours broke."*
+
+**The manual-trigger ask that was refused** — *"You click 'Run workflow' on 'NBA Static Data Scraper'
+in the repo's Actions tab (**takes 10 seconds**)"* — and the alternative offered was *"wait for its
+first scheduled run this coming Monday 9am UTC."* The owner rejected both, which produced the file
+trigger.
+
+**HTTP codes seen from Cloudflare against nba.com: 200 (only via GitHub Actions), 403, 520, 526.**
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| every owner message | 10 | new — certification center |
+| every measured number | 11 | **new — the `startswith` guard, 130 vs 116, 157→162 aliases, full-fleet redeploy** |
+
+**Clean count still 0/3.**
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
