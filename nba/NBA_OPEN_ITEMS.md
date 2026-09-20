@@ -1145,7 +1145,44 @@ dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_la
 **And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
 bug class, in the grader.
 
-### ⚠ NO MONOTONIC CONSTRAINTS AT THE FACTOR LEVEL
+### ⚠⚠ MORE DATA DOES NOT FIX RARE-EVENT CALIBRATION — three independent lines of evidence
+T1's blueprint §4d, flagged as *"worth taking seriously for NBA's own rare-event props — **whatever
+those turn out to be, likely triple-doubles, specific low-frequency defensive stats**"*:
+
+> *"MLB found, **via THREE SEPARATE INDEPENDENT LINES OF EVIDENCE** — **a machine-learning model's own
+> calibration testing**, **player-level statistical research**, and **park-level factor research** —
+> that **simply ADDING MORE HISTORICAL DATA VOLUME DOES *NOT* FIX CALIBRATION for genuinely rare,
+> high-variance events.** They need **REAL FEATURE RICHNESS AND/OR DEDICATED MODELLING TREATMENT, NOT
+> JUST A BIGGER DATASET.**
+> **DON'T ASSUME an NBA rare-event prop's calibration problem WILL RESOLVE ITSELF once more games are
+> collected.**"*
+
+**This is the most directly applicable warning to NBA's current open state**, and it names NBA's own
+rare-event props correctly in advance — **triple-doubles and low-frequency defensive stats.**
+
+**Four NBA items sit exactly here:**
+| Item | Status |
+|---|---|
+| **blocks, steals** | **CLOSE, not certified** — *"the noisiest per-game stats in the sport"* |
+| **P(0 blocks) for ~1.5 bpg players** | **−4.3 pp, n=3900, *"persists at ANY lambda"*, same signs in holdout** |
+| **triple-double** | in the taxonomy; **no certification recorded** |
+| **goblin/demon tails beyond ±6** | **uncertified** — and tails are rare events by definition |
+
+**The instruction forecloses the tempting response.** The season will add ~1,230 games and millions of
+legs, and **the natural assumption is that blocks and steals will certify once the sample grows.**
+**Three independent lines of evidence say they will not.**
+
+**What the source says is needed instead**: *"**real feature richness and/or dedicated modelling
+treatment**."*
+- **Feature richness** → the opponent factors already identified (opponent paint share 0.30/0.37 for
+  blocks, opponent TO rate 0.27/0.26 for steals) — **real and measured, but Brier +0.1–0.3% overall**
+- **Dedicated modelling treatment** → the §4b prescription of **a separate, clearly-labelled
+  calibration path with its own prior-strength scale and hard floor/ceiling caps** for thin-data props
+  — **which NBA does not have** (see the uncertified-props entry)
+
+**Two of the three MLB evidence lines have NBA analogues already**: the harness's own calibration
+testing (*"persists at any lambda"*) and player-level research. **The conclusion they support is the
+same one.**
 T1's blueprint §4d, third academic caution:
 > *"**Monotonic constraints are genuinely valuable SPECIFICALLY IN RARE-EVENT, LIMITED-DATA
 > situations**, where **a model might otherwise OVERFIT A RELATIONSHIP THAT SPURIOUSLY REVERSES
