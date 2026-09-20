@@ -1145,6 +1145,52 @@ dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_la
 **And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
 bug class, in the grader.
 
+### ⚠ NO PUBLISHED STABILIZATION-POINT REFERENCE WAS SOURCED
+T1's blueprint §4d: *"**Build (or find) an equivalent 'stabilization point' reference table for EVERY
+NBA prop BEFORE FINALIZING SHRINKAGE DESIGN.**"*
+
+**Why MLB's version mattered**, in the source's own words:
+> *"This precise, quantified reference **directly explained *WHY* certain props RESISTED CALIBRATION
+> NO MATTER HOW MUCH SAME-SEASON DATA WAS ADDED** — **it wasn't a pipeline bug, it was a REAL,
+> MEASURED PROPERTY OF THE STAT ITSELF.**"* MLB's range ran from **60 PA (strikeout rate)** to
+> **over 1,600 PA (extra-base-hit rate, which essentially never fully stabilizes within a season)**.
+
+**NBA met the per-prop requirement by internal measurement** — `stat_decay_config`'s
+`shrinkage_stabilization_games` (minutes 10 → fg3_pct 300) and the per-prop `k_stab` (STL 125, TOV 60).
+**What was not done is the external cross-check the instruction asks for**: *"source the closest
+available real research **the same way MLB did**."*
+
+**What it would settle:**
+- Whether `fg3_pct` at **300 games** and `blocks` at **50** are right
+- **Which props can NEVER be certified within one season** — known in advance rather than discovered
+  prop by prop
+
+**And it likely explains the four CLOSE props.** The harness header records *"blocks more 70–75:
+−4.3 … **persists at any lambda**; holdout shows the same signs."* **"Persists at any lambda" is what
+an unreachable stabilization point looks like** — no shrinkage tuning fixes it. That is a second,
+independent reason alongside T9's *"they are opponent-driven"*.
+
+### ⚠ THE FACTOR LIST WAS NEVER BENCHMARKED AGAINST A WORKING SYSTEM
+> *"**Benchmark the planned factor list against REAL, PUBLICLY-VERIFIED SYSTEMS BEFORE FINALIZING
+> it.** MLB checked its list against **a real, independently-verified industry-leading projection
+> product** and **adopted several concrete refinements from studying HOW THAT SYSTEM ACTUALLY
+> IMPLEMENTS THINGS**: **matchup-specific rather than team-aggregate defensive metrics**; **treating
+> 'quality of surrounding lineup' as a DISTINCT input**; **role-specific adjustments for players who
+> don't fit a standard usage pattern.**"*
+
+**Two of the three refinements landed in NBA anyway:**
+| Refinement | NBA |
+|---|---|
+| Matchup-specific defence | ✅ M1 two-way ridge (111,768 ratings) — ⚠ but **interaction-only**, and team-aggregate `defense_vs_position` is what most props read |
+| **"Quality of surrounding lineup" as a distinct input** | ⚠ **GAP** — `lineup_synergy` (8,000 rows) and on/off data exist; the factor lock names *"teammate shooting quality"* (assists) and *"teammate competition / lineup geometry"* (rebounds) as **primary drivers** — **neither is a built, surviving factor**, and A2 was retracted |
+| Role-specific adjustments | ✅ `ROLE_TIERS` + the discontinuity override |
+
+**NBA's research was source-rich but not system-benchmarked.** OpticOdds, Unabated, DataStreak,
+RotoGrinders, peer-reviewed papers and Gemini are **sources of findings**; **none is a working
+projection system whose implementation was studied.** The stated MLB benefit came specifically from
+*"studying how that system actually implements things"* — structural choices a paper does not give
+you. **DARKO is already a data source here and publishes its methodology.**
+
 ### ⚠ NO VALIDATION STEP BETWEEN GRADING AND THE CALIBRATION REFIT
 T1's blueprint §4c specifies the grader's isolation as **a load-bearing safety property**:
 > *"The grader **only ever reads** from historical board/game-log tables and **only ever writes to a
