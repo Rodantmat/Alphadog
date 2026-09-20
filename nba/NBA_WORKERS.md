@@ -22,6 +22,39 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
+*VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
+
+**The owner's founding rule named the exact quantities this document is a catalogue of:**
+> *"any future variable numbers must reside on the database, not hard coded — … or **system variables
+> like, TIMEOUTS, RETRIES, CHUNK SIZE**, for example, **so all these are easily changed by SQL command
+> instead of coding and deploys.**"*
+
+**What the workers actually do:**
+| Quantity | Where it lives today |
+|---|---|
+| HTTP timeouts | Python literals — `timeout=30` (`scrape_nba_onoff`, `scrape_nba_darko`, `scrape_nba_career_totals`, `scrape_nba_officials`), `timeout=60` (`scrape_nba_lineups`, `scrape_nba_backfill_2025_26`), `timeout=90` (`scrape_fliff_board`, `scrape_nba_pairs`), `timeout=300` (the `fetch()` helpers) |
+| Retry counts | literal loop bounds — `range(1, 3)`, `range(3)`, `range(1, 4)`, `range(4)` |
+| Chunk / batch sizes | Python constants |
+| Per-prop model constants | the hardcoded `PROPS` dict in `backtest/classification_ladder_v12.py` |
+
+**And `nba_config.system_settings` seeds `nba_default_chunk_size = 200`** — **read by nothing.**
+**VERIFIED**: the strings `system_settings`, `chunk_size`, `stat_decay_config`, `role_tiers`,
+`factor_registry`, `classification_config` appear **zero times** in the codebase. The only config
+table any worker reads is **`nba_config.external_credentials`**, for API keys.
+
+**⚠ One documented exception is real and worth noting**: `scrape_prizepicks_nba_board.py` reads
+**`PP_NBA_RETRY_SLEEP_SECONDS`** from the environment with a default of `8` (proxy) or `60` (direct).
+**That is env-configurable, not deploy-bound — but it is still not the database**, and it is the only
+retry parameter in the fleet that can be changed without editing code.
+
+**Consequence for this document**: **the operating constants listed per worker below are code facts,
+not config facts.** Changing one requires a code edit, a commit and a deploy — the loop the rule was
+written to avoid, and the loop that is most expensive for an owner with **no terminal**
+(`NBA_SYSTEM_ARCHITECTURE.md` §1a). Full entry: `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 36*.
+
+---
+
 ## 0.4 THE TWO REGISTRIES — and the count that proves the isolation held
 *Recorded 2026-09-20 (T1 pass 35). **VERIFIED by live query.***
 
