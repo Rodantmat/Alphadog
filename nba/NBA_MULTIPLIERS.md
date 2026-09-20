@@ -408,7 +408,16 @@ recomputed factor.
 
 ## 4b. THE CAPTURE PROTOCOL — what a valid multiplier study requires
 
-**Beyond the mechanics in §4, three lessons constrain how any capture must be run:**
+**One logged-in session answers four separate questions.** Since **the payout displays before
+placing** (#16), none of it requires a stake:
+| # | Question | Method |
+|---|---|---|
+| 1 | **Is the measurement method sound?** | **a control slip of standard-priced legs only** (§4b.1) |
+| 2 | **What is the per-leg factor?** | add legs one at a time, clearing the network log between (§4) |
+| 3 | **What is the tier step ratio?** | compare factors across tier distance — needs only tier index + factor, not a full capture |
+| 4 | **How large is the same-game discount?** | **same-game vs cross-game slips with identical legs** (§0.2f) |
+
+**Beyond the mechanics in §4, four lessons constrain how any capture must be run:**
 
 ### 4b.1 **A CONTROL SLIP WITH A KNOWN ANSWER — required, not optional** *(#22)*
 > *"MLB's original multiplier-observation study **deliberately included a real slip built ENTIRELY from
