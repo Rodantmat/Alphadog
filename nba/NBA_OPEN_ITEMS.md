@@ -740,7 +740,40 @@ encodes for player stats, unapplied to team stats.
 
 **Untested** — it may not move the number. But the study called for it explicitly and it was not built.
 
-### ⚠ DESIGNED-BUT-UNVERIFIED · **the "dud" mixture, and the data built for it****The single most NBA-specific finding in the design research (T7):**
+### ⚠ DESIGNED-BUT-UNVERIFIED · **the "dud" mixture, and the data built for it**
+
+**⚠⚠ MAJOR CORRECTION 2026-09-20 (T8 re-pass): the mixture IS CONFIGURED. The CODE is what diverges.**
+
+`nba_config.classification_config.minutes_mixture` holds the complete design:
+```json
+{"components": ["normal_truncated", "blowout_truncated", "dud_lognormal"],
+ "normal_filter": {"max_margin": 15, "max_pf": 5, "min_pct_own_avg": 0.4},
+ "dud_filter":    {"bottom_pct": 15, "or_pf_ge": 5},
+ "blowout_threshold_margin": 20,
+ "team_constraint": 240,
+ "renormalization": "tiered_inelastic"}
+```
+*"Three-component minutes model; **f(spread) and E[min|blowout] fit on own data PER TEAM**"*
+
+**`classification_ladder_v12.py` implements the `normal_filter` and nothing else:**
+```python
+pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan)
+```
+
+| Configured | In the recipe? |
+|---|---|
+| `normal_truncated` + `normal_filter` | ✅ (as an exclusion) |
+| `blowout_truncated` | ✅ via `MIN_RATIO` |
+| **`dud_lognormal`** + `dud_filter` (bottom 15% **or PF ≥ 5**) | ❌ **absent** |
+| **`renormalization: "tiered_inelastic"`** (240-minute constraint) | ❌ **absent** |
+| **`E[min|blowout]` fit PER TEAM** | ❌ **absent** — `blowout_model` is league-wide |
+
+**So three configured components are unimplemented in the full-game recipe**, and the config is the
+authority on intent. **The period layer implements the mixture properly** (sit-out rate and "plays"
+ratio per role × state), which proves the technique works on this data.
+
+**Note `min_pct_own_avg: 0.4`** — the ≥40%-of-median floor that was the *suspected* cause of the FRINGE
+anomaly before leakage turned out to be the real one. **It is a configured filter, not an accident.****The single most NBA-specific finding in the design research (T7):**
 > *"**'Dud games' — a fat low tail MLB doesn't have.** Blowouts, foul trouble, early exits produce
 > **5-minute, 2-point games**. **A distribution fit to all games is systematically OVER-OPTIMISTIC on
 > 'more'.** This is the NBA analogue of MLB's **home-run bimodality** (which MLB fixed with a
