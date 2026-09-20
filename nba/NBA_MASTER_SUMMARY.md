@@ -5867,6 +5867,78 @@ T8.10) against the 9 seeded here.
 
 **T8 PASS 11: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.20 — PASS 12 — **WHY RUNG-AGGREGATES HID THE ERRORS**
+
+#### T8.20a — **The owner's point, and what it exposed**
+> *"**You were right that rung-aggregates HIDE ERRORS.** The first leg-level breakdown (**every
+> variation band × direction × rung**, plus confidence bands on the chosen side) exposed **structured
+> misses that had CANCELLED OUT in the averages**."*
+
+**This is the methodological heart of the whole calibration effort.** A ladder that looks accurate
+to 1 pp in aggregate can contain a +5.4 pp band and a −3.5 pp band that sum to nothing.
+**Only disaggregating to band × direction × rung reveals them** — and those are the cells a slip
+actually draws from.
+
+#### T8.20b — The first leg-level results
+| Check | Result |
+|---|---|
+| **Points confidence bands** | **holds — every band 50–55 through 90–95, both sides, within ±1.1 pp** |
+| Rebounds / assists | within ±2.5 |
+| **3PM** | **FAILED — 60–65 band −5.7 pp on ~9,000 legs; 95+ band −4.2** |
+| **Rebounds ELITE band** (the 12-rpg bigs) | **under-predicted +5.4 to +7.9 pp on FIVE rungs** |
+| **Points STARTER band** | over-predicted ~3.5 pp across **seven** rungs |
+
+**Note the shape of the misses: they are *structured*, not scattered** — five consecutive rungs in one
+band, seven in another. **Structure is what makes them fixable.**
+
+#### T8.20c — **The hierarchical empirical fallback (v10)**
+> *"sparse cells (**tier × role × rung**) now fall back to (**band × role × rung**), then (**band ×
+> rung**), **each shrunk toward the next level, BEFORE ever reaching parametric**. **Coverage went to
+> 100%** and **ELITE rebounds halved to +3.6** (within ~2σ on n=699)."*
+
+**Three empirical levels before the parametric fallback**, each shrunk toward the next. **The
+parametric is the last resort, not the second option** — consistent with T7.19e's *"empirical primary
+where the tier sample supports it."*
+
+#### T8.20d — Variation band added to the Platt key (v10)
+> *"**Variation band added to the Platt key**, with a band-level pool fallback. **Points STARTER
+> dropped off the worst-cell list entirely.**"*
+
+**The band dimension earned its place in the calibration key, not just the tier key.**
+
+#### T8.20e — **The 3PM diagnosis: population right, ordering wrong**
+> *"the model got each rung's ***population* right but ordered *players within the rung* wrong** —
+> **because it used makes only, and the research said attempt volume is the driver**."*
+
+**Implemented as the design prescribed**: tier and rate on **3PA per 36**, long-memory **3P% shrunk
+toward the population**, **makes | attempts ~ Binomial**.
+
+**This is T7.15a's *"3PA volume ≫ 3P%"* appearing as a concrete calibration failure** — and the same
+insight `stat_decay_config` encodes as two memory classes. **Three independent expressions of one
+fact.** *(The compound model was later found *"correct in structure"* but insufficient alone —
+the logit shift finished the job, T8.15a.)*
+
+#### T8.20f — **A refusal to claim unverified results**
+> *"The run was through the empirical-table stage for all four props (100% coverage) and into the
+> Platt/report stage when the budget ended. **Its results are unverified — I won't claim them.**"*
+
+**And an honest repo-state report in the same message:**
+> *"`classification_ladder_v1.py` in the repo is the **v9 version** (ladder within 1 pp, but
+> **pre-leg-level fixes**). The v10/v11 changes exist **only in my working copy** and are **NOT
+> pushed**. **The config entries and calibration log reflect v9's locked decisions.**"*
+
+**Three separate states distinguished**: what is in the repo, what is in the working copy, and what the
+config believes. **A future session reading the config would have gotten v9's decisions, and the
+message says so.**
+
+#### T8.20g — The named next suspect
+> *"the remaining known suspect is **the ELITE-band Platt gate (n=699/rung never reaches 1,000)**"*
+
+**A pre-identified culprit with its number** — the Platt calibration requires n≥1,000 per cell, and the
+ELITE rebounds band has 699. **The diagnosis was ready before the next run started.**
+
+**T8 PASS 12: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
