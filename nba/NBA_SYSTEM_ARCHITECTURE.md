@@ -238,6 +238,9 @@ presents as "the query is slow" rather than as a bug.
 **grep for format inconsistency PROACTIVELY, don't wait for it to surface as a downstream
 symptom**."* **The downstream symptom this rule warns about is precisely a timing-out join.**
 
+**Neither check is recorded as having been run.** A single `information_schema.columns` query across
+the NBA schemas would list every `*_id` column with its type.
+
 ### 5. ⚠ A large multi-stage join can DROP THE CONNECTION, not just run slowly
 > *"**A large, multi-stage join query against this kind of POOLED POSTGRES CONNECTION can DROP THE
 > CONNECTION OUTRIGHT, rather than simply running slowly.**
