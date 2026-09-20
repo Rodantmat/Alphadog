@@ -1060,11 +1060,37 @@ The owner chose the new chat, which produced the handoff, which produced the par
 
 **Segments 3–4: NEW MATERIAL. Clean count remains 0/3.**
 
-### T1.45 — CURRENT STATE OF T1
+### T1.46 — PASS 24, SEGMENT 5 (blocks 340–420) — **NEW MATERIAL**
 
-**24 passes (segments 1–4 of the full re-read done). 19 found new material. Clean count: 0/3.**
+**A LESSONS-DOC WARNING, CORROBORATED LIVE — not previously documented:**
+> *"one live corroboration of the **'registry entry ≠ real functionality'** warning
+> (**dead `score-<prop>` stub workers still `enabled=1`**)"*
 
-**Segments 5–6 of pass 24 still to read** (blocks ~340–292 end), then two further complete clean passes.
+So MLB's own registry contains **enabled rows for workers that do nothing**. This is why
+`config.worker_definitions`'s 116 rows are not a reliable inventory of working capability, and it is a
+standing caution for any audit that counts registry rows. **A registry entry proves registration, not
+function.**
+
+**A SECOND DIAGNOSTIC ROUTE, named**: **`/probe-sources`** — the multi-endpoint diagnostic that tested
+`cdn.nba.com`, `core-api.nba.com` and `data.nba.net` together. Previously only `/debug-fetch` was
+recorded. **Both routes exist on `alphadog-v2-nba-static-teams.js`.**
+
+**THE HANDOFF'S SIX NEXT STEPS**, which are a good template for any source cutover:
+1. confirm the tool is actually available · 2. call it · 3. **poll and confirm the still-unverified
+assumption — "confirm it, don't assume it"** · 4. if it works, read the committed file and rewire the
+Worker · 5. **if it fails, fall back to balldontlie "and tell the person plainly before proceeding"** ·
+6. only then move to the next worker, following the established pattern.
+
+**And the instruction to read the log, not the summary**: *"read this in full — it has **more granular
+detail than this summary**, including exact error messages and file diffs referenced by name."*
+
+**Segment 5: NEW MATERIAL. Clean count remains 0/3.**
+
+### T1.47 — CURRENT STATE OF T1
+
+**24 passes (segments 1–5 of the full re-read done). 20 found new material. Clean count: 0/3.**
+
+**Segment 6 of pass 24 still to read** (blocks ~420–end), then two further complete clean passes.
 
 **Two corrections this pass produced**, both from reading rather than grepping:
 1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
