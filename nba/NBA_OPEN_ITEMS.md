@@ -1,6 +1,43 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
-## ⚠ HOW TO READ THE "NOT RECORDED AS BUILT" ENTRIES IN THIS FILE
+## ⚠ DOCUMENTATION-GAP HONESTY DISCIPLINE
+*Source: T1, blueprint §4l. Recorded 2026-09-20. Applies to THIS documentation effort.*
+
+> *"MLB's own real-time working log had **a genuine, MULTI-WEEK GAP where it simply wasn't updated
+> during a period of SUBSTANTIAL REAL WORK** — and **rather than LET THAT GAP SILENTLY IMPLY NOTHING
+> HAPPENED, or RETROACTIVELY FABRICATE A CLEAN SUMMARY**, the team:
+> **(a) EXPLICITLY, HONESTLY FLAGGED THE GAP IN THE LOG ITSELF**,
+> **(b) POINTED TO THE RAW SESSION RECORDS that did exist for that period — with A SHORT INDEX /
+> CATALOG DOCUMENT summarizing what each one covered, so A FUTURE READER COULD NAVIGATE THEM WITHOUT
+> READING ALL OF THEM**, and
+> **(c) STATED PLAINLY THAT THE POLISHED LOG ALONE SHOULD NOT BE ASSUMED TO REPRESENT CURRENT STATE
+> for that window.**
+> **Adopt the same honesty discipline for NBA's own project documentation: IF A PERIOD OF REAL WORK
+> HAPPENS WITHOUT THE POLISHED REFERENCE DOCUMENTS BEING UPDATED, SAY SO EXPLICITLY IN THOSE DOCUMENTS
+> rather than LETTING SILENCE IMPLY CONTINUITY THAT ISN'T THERE, and MAINTAIN AT LEAST A LIGHTWEIGHT
+> INDEX of whatever raw records do exist.**"*
+
+### This discipline governs the present effort, and one gap is already recorded
+**The DRIFT NOTICE at the top of this file is exactly (a)** — T3–T9 were passed against four of eight
+documents, and the counts were voided rather than left to imply completeness.
+
+**(b) is satisfied structurally**: the sixteen transcripts are the raw records, and
+`NBA_MASTER_SUMMARY.md` is the per-transcript index — *"separated by transcripts, so if you need more
+detail, you know where to look"* (the owner's own instruction, which is this rule independently
+arrived at).
+
+**(c) is the one to state plainly, and it is stated here:**
+> **These twelve documents do NOT yet represent complete coverage.** T1 alone has produced new
+> material on every pass since the reset, and **no transcript currently holds three consecutive clean
+> passes against all twelve documents.** **The raw transcripts remain authoritative** until each file
+> is marked DONE with its clean-pass count.
+
+### The pre-existing NBA equivalent
+`nba/NBA_PROJECT_LOG.md` already carries a self-binding version of this rule: *"every session must add
+an entry; **don't let this go stale silently**."* **T1's §4l is where that instruction comes from.**
+
+---
+
 *Added 2026-09-20, per T1 blueprint §4f.*
 
 > *"**'I searched every worker file I could think of' is NOT the same as 'I searched everywhere real
