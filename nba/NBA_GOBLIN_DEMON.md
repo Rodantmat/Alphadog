@@ -470,6 +470,28 @@ certification standard — band × direction × rung, confidence bands hitting t
 within ±6.** **This is the single most important thing to certify once a live board exists**, because
 T8 nominated the tails as *"the #1 area where a sharp baseline earns the most."*
 
+## 9. OPEN ITEMS SPECIFIC TO THIS LAYER — and why v2 is a CORRECTNESS issue
+
+### ⚠⚠ LANE IS THE DOMINANT DRIVER OF EV — so a wrong lane label is not cosmetic
+**Rule B0a of the foundational selection methodology** (`NBA_FINAL_SCORING_CALIBRATION.md` §18):
+> *"**Class and lane are independent, and LANE IS USUALLY THE DOMINANT DRIVER OF REAL EV, MORE THAN
+> CLASS.**"*
+> *"a single real, exact example — **the IDENTICAL leg, IDENTICAL ~85% hit rate** — pricing at
+> **roughly +1300% in one lane and roughly −13% in another** — **a swing of over 1,300 percentage
+> points from LANE ALONE.**"*
+
+**`nba_market.board_tiers` v1 derives `kind` from PRICE and is Over-only.** Since PrizePicks enabled
+Less in 2026-08, **a demon-Less sits below the anchor and v1 labels it a goblin** (§4).
+
+**So the 2.2M-leg table carries a wrong label on the axis that drives EV most**, for an entire side of
+the board. **`board_tiers_v2` is therefore a selection-correctness fix, not a taxonomy tidy-up** — and
+it remains **built but unverified**.
+
+**The order this implies:**
+1. **Verify `board_tiers_v2`** — it corrects the dominant EV axis
+2. **Certify the tails beyond ±6** — where the lane effect is largest
+3. **Then** build pools, each stating **both class and lane** per B0a
+
 ### The rest
 
 1. **`board_tiers_v2` is unverified** — the build was running at session end.
