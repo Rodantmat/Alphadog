@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 50 passes.** Pass 50 (blueprint §2 clause by clause, running the ID check it demands) found new material — **two `player_id` conventions: `nba_score.*` is bare numeric, `nba_ref`/`nba_stats` are prefixed; `board_scored` → `nba_ref.players` joins 0 of 110,955** (§T1.80). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 51 passes.** Pass 51 (blueprint §1/§3 clause by clause) was **near-clean — one minor item**: §1's "D1 is read-only reference" rule is obsolete (D1 decommissioned 2026-08-12), the third document found asserting D1 as live (§T1.81). **First near-clean pass of the block after 14 consecutive with material.** No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
