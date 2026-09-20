@@ -714,7 +714,48 @@ any margin **once, at slip level.**
 
 ---
 
-## 15. WHERE EDGE IS NOW EXPECTED TO COME FROM
+## 16. PART E — THE CONSECUTIVE-CLEAN-PASS STANDARD *(MLB's internal work log)*
+
+**The owner's rule for this documentation effort is MLB's own verification bar, and it is documented
+in the lessons package:**
+
+> *"MLB's own internal, continuously-updated work log documents an explicit, formal rule that is
+> **STRICTER than anything captured elsewhere in this package**, and worth adopting directly as NBA's
+> own standing verification bar: **before considering any system deeply verified, require a set number
+> (MLB used TWO) of genuinely CONSECUTIVE CLEAN investigation passes — EACH USING DIFFERENT REAL
+> SAMPLES AND DIFFERENT ANGLES — with ZERO new issues found. If any pass turns up something new, NO
+> MATTER HOW MINOR, THE COUNTER RESETS TO ZERO, regardless of how many clean passes preceded it.**
+> This is a materially stricter standard than 'run one thorough check and move on', and it **directly
+> produced real value in MLB**."*
+
+**Three things this pins down:**
+1. **MLB used TWO consecutive clean passes. The owner set THREE for this work** — a deliberately
+   stricter bar than the source standard.
+2. ***"Each using DIFFERENT real samples and DIFFERENT ANGLES"*** — a pass is not a re-run. **Repeating
+   the same query is not a second pass.** *(This is why the targeted-sweep approach on T1 needed 23
+   passes before a full sequential read could even begin to count.)*
+3. **"No matter how minor" resets the counter** — the rule is explicit that severity does not matter.
+
+**This is also lesson #3 in operational form** — *"multiple, genuinely different research passes per
+candidate — not the same query with a different threshold."*
+
+## 17. THE SINGLE MOST VALUABLE STANDING HABIT
+
+> *"**Whenever an early result looks unexpectedly strong, or an aggregate number looks structurally
+> odd, DECOMPOSE IT BY EVERY PLAUSIBLE CONFOUNDING DIMENSION — day, prop, tier, variant, player —
+> BEFORE BELIEVING IT.** **This exact discipline caught the MAJORITY of MLB's false positives** before
+> they were reported or acted on."*
+
+**Five named dimensions: day · prop · tier · variant · player.**
+
+**This is the same instinct as *"rung-aggregates hide errors"*** (T8), generalised: an aggregate that
+looks good can be the average of a large positive and a large negative, or can be carried by one
+sub-group. **Decomposition is the default response to a strong result, not a follow-up.**
+
+**Applied in this system already**: the leg-level standard disaggregates by **band × direction ×
+rung**; the factor gate reports per **slice**; the bootstrap's leave-one-day-out condition covers
+**day**. **The dimension with the least coverage is `variant`** — i.e. goblin/standard/demon — which is
+consistent with the tails never having been separately certified.
 
 ### ⚠⚠ 15.0a THE HARD CONSTRAINT — two of the three platforms are measured EFFICIENT
 > *"**Underdog/Sleeper's own EV-parity pricing, measured directly against real placed-slip data at
