@@ -264,7 +264,30 @@ goblins/standards/demons — **not** the full internal ±10 ladder for rungs nob
 
 ---
 
-## 12. WHERE EDGE IS NOW EXPECTED TO COME FROM
+## 13. THE VALIDATION GATE FOR ANY STRATEGY *(T1, inherited from MLB's lessons document)*
+
+**Before any finding is believed, it must survive a bootstrap:**
+> *"…and **repeat this thousands of times to build a real distribution of outcomes**. **The decisive
+> gate: at least 95% of resamples positive, a 95% confidence interval whose lower bound sits ABOVE the
+> breakeven point, and a leave-one-day-out check that never goes negative excluding any single day.
+> ALL THREE CONDITIONS TOGETHER, not any one alone.**"*
+
+| Condition | Guards against |
+|---|---|
+| **≥95% of resamples positive** | a result driven by ordering or a lucky run |
+| **95% CI lower bound ABOVE breakeven** | a positive mean that is not distinguishable from break-even |
+| **Leave-one-day-out never negative** | **a single day carrying the whole edge** |
+
+**The third is the one most often skipped and most often fatal** — one outlier slate can make a
+season look profitable.
+
+**And the companion sanity test from the multiplier work** (see `NBA_MULTIPLIERS.md` §0.3): compute
+`p × m`. If it implies the platform is handing out a systematic edge on a liquid, repeatable line,
+**the multiplier attribution is wrong, not the market.**
+
+**Status**: this gate applies to the **slip-strategy phase**, which has not begun. Nothing in the
+baseline or scoring calibration has been through it, because it measures *profitability*, not
+*honesty* — and calibration is the honesty property (§9).
 
 T9 predicted two sources. **One delivered, one did not.**
 | Named source | Outcome |
