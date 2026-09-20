@@ -346,23 +346,34 @@ producing 26,651 + 2,460 rows matching the base logs exactly.
 Worth remembering: **check whether a bulk endpoint already supports the parameter before accepting a
 per-entity loop estimate.**
 
-### VERIFY · **does the blowout factor DOUBLE-COUNT?**
-The T4 methodology's risks section warned explicitly:
-> *"**the baseline already reflects historical blowout-shortened minutes — don't penalize twice**."*
+### VERIFY · **does the blowout factor DOUBLE-COUNT?** — ✅ **RESOLVED 2026-09-20: NO**
+The T4 methodology's risks section warned: *"the baseline already reflects historical
+blowout-shortened minutes — **don't penalize twice**."*
 
-**The blowout factor was built in T16**, on the real market spread — a 13+ favourite blows the game
-open 39.7% of the time, starters lose ~3.99 min in a winning blowout, competitive games run starters
-+3.3% ABOVE baseline.
+**Checked directly against `nba_score.blowout_model`. The design avoids it.** The `minutes_by_margin`
+rows store **`v1` as a RATIO relative to the player's own baseline**, not an absolute penalty:
 
-**The question the T4 warning raises**: the baseline's historical minutes already CONTAIN those
-shortened games, because they are drawn from real game logs that include blowouts. **If the blowout
-factor re-applies a penalty on top, it double-counts.**
+| Margin band | n | **v1 (ratio)** | v2 (min lost) |
+|---|---|---|---|
+| **competitive (−12 to +12)** | 12,966 | **1.0333** | −1.0140 |
+| won by 12–20 | 3,001 | 0.9760 | 0.790 |
+| won by 20–25 | 1,120 | 0.9194 | 2.586 |
+| **won by 25+** | 1,597 | **0.8748** | 3.992 |
+| lost by 12–20 | 2,672 | 0.9721 | 0.903 |
+| lost by 25+ | 1,306 | 0.9124 | 2.856 |
 
-**Possible resolution (unverified)**: the T16 measurement of *"competitive games run +3.3% above
-baseline"* suggests the factor was framed as a **deviation from the historical average** rather than an
-absolute penalty — which would be correct. **But this is inferred, not confirmed.**
-**To verify:** check whether `nba_score.blowout_model` stores an absolute minutes adjustment or a
-deviation from the player's own historical mean.
+**Why this is correct**: the ratios are measured against the **same blended historical average the
+baseline uses** — competitive sits **above** 1.0 (1.0333) and every blowout band **below** it. So
+applying a margin-weighted ratio **re-centres** the baseline onto the expected game script rather than
+subtracting a penalty a second time. **A value above 1.0 for the most common case is the signature of a
+deviation model, not a penalty model.**
+
+**This also explains the T16 finding** that *"competitive games run 3.3% ABOVE baseline"* — it is
+`v1 = 1.0333` read directly. **The warning written in T4 was heeded, thirteen transcripts later,
+whether consciously or by good instinct.**
+
+**`p_blowout` rows** store three values per spread band (`v1`, `v2`, `v3`) — the blow-open, blown-out
+and presumably competitive probabilities, e.g. spread 0–2: 0.1634 / 0.0842 / 0.0792.
 
 ### VERIFY · baseline staleness on trades and season-ending injuries
 Named as risk 3 in T4's methodology. A cached baseline is wrong the moment a player changes team.
