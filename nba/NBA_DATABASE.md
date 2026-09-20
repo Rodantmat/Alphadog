@@ -433,8 +433,7 @@ declared in the schema itself**. `games_sampled` lets consumers gate by sample s
 **Computed entirely from data already in Postgres — zero new API calls**, unblocked by the position fix.
 Spot-check: the best center-defence teams allow ~8–9 pts/game to opposing centers.
 
-### `nba_stats.player_game_starter_status` — 32,179 rows *(T5)*
-`player_id`, `game_id`, **`start_position`**, **`is_starter`**, **`comment`** —
+### `nba_stats.player_game_starter_status` — 32,179 rows *(T5)*`player_id`, `game_id`, **`start_position`**, **`is_starter`**, **`comment`** —
 PK `(player_id, game_id)`.
 **`comment` is the DNP/inactive reason field**, which is what lets the grader distinguish a real DNP
 from a join failure (COMPASS fact 60).
