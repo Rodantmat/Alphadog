@@ -236,8 +236,31 @@ Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never 
 All row counts **verified live 2026-09-20.**
 
 ### `nba_ref.prop_taxonomy` — **28 rows**
-Created empty in T1, correctly flagged as empty in T7's audit, **seeded here**. The canonical prop
+Created empty in T1, correctly flagged as empty in T7's audit, **seeded in T8**. The canonical prop
 list the whole matrix is built over.
+
+#### The original MLB→NBA taxonomy mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1)*
+| MLB concept | NBA equivalent, as stated |
+|---|---|
+| **Hitter props** (hits, total_bases, rbis, runs, singles, doubles, home_runs, stolen_bases, walks, hits_runs_rbis) | **Points, rebounds, assists, 3PM, steals, blocks, turnovers, PRA, P+R, P+A, R+A, double-double, triple-double** |
+| **Pitcher props** (strikeouts, outs, hits_allowed, walks_allowed, earned_runs, runs_allowed, pitcher_fantasy_score) | *"**No direct 1:1 equivalent** — NBA has **no 'opposing role' prop family analogous to pitching**. Closest conceptual parallel: **none needed; ALL NBA props are 'batter-style' (offense-side player stats). SIMPLIFIES THE TAXONOMY relative to MLB.**"* |
+| Fantasy-score composite | *"various **platform-specific formulas** — **verify each platform's own formula explicitly**, per lesson #14, before any cross-platform comparison"* |
+| Goblin/Demon/Standard variant tiers | *"platform-level mechanic, not sport-specific… **but verify TIER-COUNT and TIER-SPACING conventions PER PROP before assuming**"* |
+
+**⚠ The combo instruction, stated at the outset:**
+> *"NBA has **real combo props (PRA etc.)** already confirmed to exist on ParlayAPI's market-key
+> list — **treat these as a FIRST-CLASS PROP FAMILY FROM DAY ONE, NOT AN AFTERTHOUGHT**, since
+> **MLB's own combo prop (`hits_runs_rbis`) caused REAL ANALYSIS HEADACHES from being treated as a
+> BOLT-ON.**"*
+
+**This instruction was followed.** Combos were built as **joint simulation over calibrated marginals
+with per-player covariance** — *"never a direct fit"* — and certified on both seasons (P+R 0.9,
+R+A 0.9, PRA 1.1, fantasy 0.8 pp). **The `BT_SAVE_COMPONENTS` pickling and the separate
+`combos_ladder_v1.py` recipe are what "first-class, not bolt-on" looks like in code.**
+
+**And the "no pitcher equivalent" note explains a structural simplification**: NBA has no
+opposing-role prop family, so **every prop is offense-side player stats**. *(The opponent enters as a
+FACTOR — opponent paint share, opponent turnover rate — not as its own prop family.)*
 
 ### `nba_config.factor_registry` — **67 rows** *(seeded at 29 in T8)*
 Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it is a **baseline** or
