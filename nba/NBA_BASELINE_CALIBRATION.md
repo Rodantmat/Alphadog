@@ -715,6 +715,10 @@ concept is present in the standard but absent from the implementation.
 ordered), and the **upper-only ceiling** fix was about preserving tail ordering. **The gap is at the
 FACTOR level, not the ladder level.**
 
+---
+
+### 5.1 The permanent rules
+
 **① A band cell is kept ONLY if its sign is consistent across seasons.**
 Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands **+2.8 / −3.6** →
 **regime**, dropped (*"frozen cells actively hurt"*); walk-forward tables + in-season Platt carry it.
