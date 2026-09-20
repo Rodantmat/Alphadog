@@ -1456,6 +1456,33 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.82 — PASS 52 (angle: **RANDOM SAMPLE — draw 28 of the 175 bold claims and grep each**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 52. Five of 28 returned nothing; three of
+those are Part G/H material postdating T1 (already open, §T1.60). **Three are genuine T1 misses.***
+
+- **⚠⚠ The blueprint told NBA to check for existing patterns, and T1 did not.** *"**Before building a
+  new pattern, check whether an equivalent, already-correct pattern exists elsewhere in the same
+  codebase** — it often does, and **copying a proven pattern beats inventing a new one**."*
+  **This upgrades §T1.70**: that entry called the GitHub-Actions prior art *"a search space never
+  defined."* **It was defined — in the blueprint T1 had read in full.** So it is **a documented
+  instruction not followed**, like §4o (§T1.68), the per-worker rule (§T1.66) and §2's ID check
+  (§T1.80). **Cost: four failed runs and thirteen polling sleeps.**
+- **⚠⚠ A standing check that lands on the config drift.** *"**Verify that a backtest or analysis is
+  actually evaluating the CURRENT LIVE coefficient or configuration value**, not a value since
+  changed"* — found **twice in one MLB session**, once making *"a 'large finding' actually a
+  description of already-resolved history."* **NBA's config tables are read by nothing and
+  `stat_decay_config` disagrees with the live recipe on 7 of 10 stats (§T1.66). So any NBA analysis
+  quoting a config value is quoting a number the engine does not use.** The lesson was undocumented;
+  the condition is live; **the two had never been connected.**
+- **⚠ The handoff named and RANKED four NBA-specific factors; no document scores the prediction.**
+  Its **#1 pick** — injury/questionable status, *"likely the single highest-value NBA-specific signal"*
+  — became **N1, measured at 79% coin flips at the cutoff**. **Blowout landed** (307,604 rows).
+  **Pace and rest were absorbed into the baseline**, not built as enrichment factors. Scorecard now
+  in `NBA_OPEN_ITEMS.md`. **Second case, with §T1.79's ParlayAPI finding, of a confident
+  forward-looking handoff claim not surviving contact.**
+
+---
+
 ### T1.81 — PASS 51 (angle: **blueprint §1 and §3, clause by clause**) — **MINOR NEW · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 51.*
 
