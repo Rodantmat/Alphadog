@@ -266,6 +266,164 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 83 — THE FILES T1 WROTE IN FULL, READ AS SOURCE *(added 2026-09-20)*
+*Angle: T1 issued **7 `github_put_file` calls** that carry a complete file body. Pass 45 verified
+those artefacts still **exist**; **this pass reads what T1 actually wrote** and compares it to the
+file today. **First pass under the owner's scope rule of 2026-09-20** — transcript material and
+verification reset the clean count; live-system state is tagged `[LIVE-AUDIT]` and does not.*
+
+### ⚠⚠ A CORRECTION TO PASS 75: **there are THREE scheduled NBA workflows, not two**
+**Pass 75 reported that only `nba-p1-weekly-static.yml` and `nba-referees.yml` carry a `schedule:`
+block. That is wrong.** **`nba-scrape.yml` carries `cron: '0 9 * * 1'`** — **written by T1, in the
+file T1 created, and unchanged today.**
+
+**How the error happened, recorded against myself**: the pass-75 scan used
+`grep -A2 "schedule:"`, and in `nba-scrape.yml` **three comment lines sit between `schedule:` and
+`- cron:`**, pushing the cron out of the two-line window. **A grep window is a formatted-string
+assumption, and this is the third instance of the pass-53 rule in this effort** — after the
+em-dash/`—` escape (pass 64) and the `3-5x`/`3–5×` variant. **The rule is extended again:
+when scanning YAML for a key's value, match the key and the value independently, never by proximity.**
+
+**Corrected count**:
+| Workflow | cron | Meaning |
+|---|---|---|
+| `nba-p1-weekly-static.yml` | `'0 19 * * 1'` | Mondays 19:00 UTC — 12:00 PST / 11:00 PDT |
+| **`nba-scrape.yml`** | **`'0 9 * * 1'`** | **Mondays 09:00 UTC — 01:00 PST / 02:00 PDT** |
+| `nba-referees.yml` | `'30 15 * * *'` | daily 15:30 UTC — 07:30 PST / 08:30 PDT |
+
+**Everything else, including P2 and P3, remains dispatch-or-trigger-file only** — that part of
+pass 75 stands.
+
+### T1 wrote the cron, and wrote the owner's reason into the comment beside it
+**The transcript's own file body carries the instruction that set the cadence:**
+> *"Weekly differential check, **per the person's own instruction (2026-08-31): teams/static data
+> changes rarely, so a weekly re-check is enough once backfill is done.** Runs Monday 09:00 UTC
+> (**matches the general weekly-differential convention already used for MLB**)."*
+
+**The cadence rule is documented** (`NBA_MASTER_SUMMARY.md`, `NBA_SYSTEM_DESIGN.md` both carry
+`0 9 * * 1`). **What was not recorded is that the weekly cadence is an owner instruction dated
+2026-08-31, and that the hour was chosen to match an existing MLB convention** — both stated in the
+comment T1 wrote.
+
+⚠ **And a scheduling observation worth flagging**: **P2's planned cron is also `09:00 UTC`**
+(pass 75, from P2's own header). **If P2 is given `0 9 * * *`, it will collide with `nba-scrape.yml`
+every Monday at the same minute.** **Whether that matters is NOT RECORDED** — they are different
+workflows with different concurrency groups, so GitHub will run both — **but they would both be
+hitting stats.nba.com at once**, and the tarpit evidence (pass 79) says that source punishes
+concurrency-blind clients. **Flagged for the owner to consider when the cron goes in.**
+
+### ⚠ T1 ORIGINATED THE `[skip ci]` CONVENTION — and pass 81 shows what it does not cover
+**T1's commit step, verbatim:**
+```bash
+git config user.name "github-actions[bot]"
+git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+git add nba/data/nba_teams_current.json nba/data/nba_teams_current_meta.json
+if git diff --cached --quiet; then echo "No NBA teams JSON changes to commit."; exit 0; fi
+git commit -m "Update NBA teams JSON **[skip ci]**"
+git push origin HEAD:main
+```
+**`[skip ci]` in this repository starts here** — in the workflow T1 wrote, so that a data commit
+would not retrigger the deploy pipeline. **The convention is documented; its origin is not**, and
+**neither is the committer identity, the `HEAD:main` push, the empty-diff early exit, nor the
+concurrency group `alphadog-nba-scraper` with `cancel-in-progress: false`.**
+
+⚠⚠ **And pass 81 completes the picture**: **`[skip ci]` does not suppress GitHub Pages.** So
+**every automated data commit this scraper makes also fires a Pages build** — not just the
+documentation commits. **The scraper runs weekly and commits whenever the data changed**, so this is
+a recurring, permanent effect, not an artefact of this documentation effort.
+
+✅ **The empty-diff guard is worth naming as good practice**: `if git diff --cached --quiet; then
+exit 0` — **the scraper commits only when the data actually changed**, which is why
+`nba_teams_current.json` has not churned. It is the file-level twin of the
+*"only update rows that actually changed"* behaviour pass 80 measured in the worker.
+
+### `[LIVE-AUDIT]` — what those files look like today *(recorded; does NOT affect the clean count)*
+| File | As T1 wrote it | Today | Commits |
+|---|---|---|---|
+| `nba/NBA_PROJECT_LOG.md` | 5,885 B | **130,406 B** — **×22** | **47** |
+| `.github/workflows/nba-scrape.yml` | 1,542 B | **7,307 B** — **×4.7** | **31** |
+| `nba/worker_manifest_nba.json` | 58 B (1 worker) | 868 B (**21 workers**) | 19 |
+| `nba/alphadog-v2-nba-static-teams.js` | 18,025 B | 23,843 B | 9 |
+| `nba/scrape_nba_stats_teams.py` | 3,953 B | 6,826 B | 10 |
+| **`nba/NBA_SYSTEM_DRAFT.md`** | 12,175 B | 15,692 B | **4 — last touched 2026-09-02** |
+
+**`[LIVE-AUDIT]` — `nba-scrape.yml` now runs SIXTEEN scrapers in a job still named
+`scrape-nba-teams`.** Teams, players, arenas, officials, player bio, player tracking, team stats,
+on/off splits, DARKO, schedule, play types, tracking detail, shot quality and lineup synergy all run
+in that one job. **The job name no longer describes the job** — the same class of drift as
+`nba-diagnostic.yml` being named *"NBA Starter Status Diagnostic"* (pass 70).
+**15 of its steps carry `continue-on-error: true`; the first (teams) does not** — **already
+documented and already reasoned about** at `NBA_MASTER_SUMMARY.md` §T2.10a and the OPEN_ITEMS caveat
+(*"the rule is never let an INVISIBLE failure pass, not never tolerate failure"*). **Not new.**
+
+**`[LIVE-AUDIT]` — `NBA_SYSTEM_DRAFT.md` has been frozen since 2026-09-02**, four commits, three of
+them on its creation day. **In the eighteen days since, 21 workers, 32 workflows and the entire
+scoring engine were built.** ⚠ **Six of the twelve mandated documents cite it** (pass 74), so **the
+twelve point at a design document that stopped tracking the system on day three.** This is blueprint
+§5b's own warning — *"static manifest/mapping files can silently describe an earlier
+architecture"* — **turned on an NBA document.** Recorded; **not fixed, and not counted against the
+clean run.**
+
+---
+
+## FROM T1 PASS 82 — THE WEB-RESEARCH RESULTS, NOT THE QUERIES *(added 2026-09-20)*
+*Angle: pass 38 inventoried **what T1 searched for**. This reads **what came back** — all seven
+`web_search` / `web_fetch` results with content. **Quoted from the export.***
+
+### ⚠⚠ THE 30-TEAM CHECK RESTED ON A SEARCH THAT RETURNED **WNBA** RESULTS — and the three teams are now named
+T1's query was *"NBA team relocation rename expansion team 2026 2027 season"*. **What came back:**
+> *"The **Toronto Tempo** were added to the Eastern Conference in 2026. The **Connecticut Sun**
+> relocated to Houston and moved to the Western Conference in 2027. The **Cleveland Rockers** were
+> added to the Eastern Conference in 2028."*
+
+**All three are WNBA franchises.** Toronto Tempo is a WNBA expansion team; the Connecticut Sun is a
+WNBA team; the Cleveland Rockers was a WNBA franchise. **The result reads exactly like NBA
+conference realignment and is not.**
+
+**✅ T1 caught it.** Thinking block 16: *"That mix of **fan-wiki speculation and unrelated WNBA
+news** confirms nothing's actually changed — the NBA remains at 30 teams with no relocations for
+2026-27, **though I still shouldn't fully trust unofficial sources for expansion details**."*
+**Pass 38 already recorded that caveat.** **What is new is naming the contamination**, because:
+- **"Toronto Tempo" appears in no document**, so nobody re-running this check knows what to expect;
+- **the hardcoded 30-team fallback list — which served the first successful run — rests on this
+  search**, dated **2026-08-31**, and is **NOT RECORDED as re-checked since**;
+- **an NBA/WNBA collision is the specific, repeatable failure mode for league-structure queries**,
+  and it will recur for anyone searching roster, conference or expansion questions.
+
+**The reusable rule**: **for league-structure questions, an NBA query returns WNBA answers that are
+structurally identical in shape.** Verify against an official NBA source, or discard.
+
+### ⚠ A CLOSED LOOP IN THE TOOLING: **you cannot fetch a worker you just deployed**
+T1 tried to verify its new worker directly:
+`web_fetch("https://alphadog-v2-nba-static-teams.rodolfoaamattos.workers.dev/health")` →
+> `{"error_type": "**PERMISSIONS_ERROR**", "error_message": "This URL was **not in any prior search or
+> fetch result**. **web_search for it first, then fetch the result link.**"}`
+
+**So `web_fetch` will only follow a URL that a prior search surfaced.** T1 then searched for the
+worker's hostname — and the search returned **`nba_api` documentation**, because **a freshly
+deployed private Workers subdomain is not indexed by anyone.**
+
+**That is a closed loop**: *fetch requires a search result → search cannot find a brand-new private
+endpoint → the endpoint cannot be fetched.* **Neither `PERMISSIONS_ERROR` nor the rule appears in
+any document.**
+**This is why verification went through Postgres instead** — T1 checked `nba_ref.teams` row counts
+rather than the worker's own `/health` (thinking block 23). **The documents record that fallback as a
+good practice** (*"query the database directly, not just the worker's own report"*), **and it is a
+good practice** — **but it was also the only option available.** Recorded so the discipline is not
+mistaken for a free choice, the same way pass 39 corrected the provenance of the §0a method.
+
+### Already recorded, confirmed not new *(checked)*
+- **The canonical `nba_api` header set** — `Host: stats.nba.com`, `Referer: https://stats.nba.com/`,
+  `Accept-Encoding: gzip, deflate, br`, `Connection: keep-alive`, `x-nba-stats-origin: stats` —
+  **already in `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md`**.
+- **The `data.nba.net` endpoint catalogue** — `/data/10s/prod/v1/{date}/scoreboard.json`,
+  `{year}/teams.json`, `{year}/players.json`, coaches — **`data/10s/prod` is already in
+  `NBA_MASTER_SUMMARY.md`.**
+- **BallDontLie's free tier and paid tier** — already recorded, including the
+  **⚠ UNVERIFIED SPEND item for the GOAT tier at $39.99/month.**
+
+---
+
 ## FROM T1 PASS 81 — THE 31 WORKFLOW-RUN LISTINGS, AND THE WORKFLOW NOBODY WROTE *(added 2026-09-20)*
 *Angle: the 31 `github_list_workflow_runs` **results** — not the runs T1 was waiting for (pass 40)
 but **everything else that appeared in the same lists.** **VERIFIED by re-running the call live
