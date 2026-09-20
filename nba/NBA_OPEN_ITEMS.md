@@ -760,6 +760,25 @@ suspect the measurement before the mechanism.**
 
 **Open**: no equivalent of the non-push-count check has been run against NBA's own as-of surfaces.
 
+### ⚠ APPLY THE SAME SUSPICION TO THE CONTROL AS TO THE TREATMENT
+Stated in T1, Part F:
+> *"**Before investigating why a component seems to underperform a supposedly-strong reference point,
+> VERIFY THE REFERENCE POINT ITSELF as rigorously as the thing being blamed** — a 'before' or
+> 'control' measurement is **just as capable of containing a lookahead-bias or leakage bug** as the
+> 'after' measurement everyone's default instinct is to scrutinize."*
+
+**Direct application in this system**: `gain_vs_anchor` measures every enrichment factor **against the
+certified anchor**. **Ten factors were rejected on that comparison.** The anchor is the reference
+point, and Part F's rule says it warrants the same scrutiny as the candidates.
+
+**What supports the anchor**: it is `shift(1)`-based by construction, certified on both seasons
+(0.7–1.2 pp ladders, `0 misses of 37`), and its holdout ran with the fitted cells disabled.
+**What has not been done**: a leakage check on the anchor of the kind Part F describes — i.e. verifying
+the anchor's own as-of construction with the same method used on candidates.
+
+**Note this is not a claim that the anchor leaks.** It is a recorded gap between the rule and what has
+been verified.
+
 ### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
