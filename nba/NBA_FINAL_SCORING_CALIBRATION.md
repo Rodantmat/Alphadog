@@ -614,26 +614,84 @@ one or two outlier days**; always break down by day and check the sign holds bro
 **Check (a) is the guard against #15.** Check (c) is the same instinct as the bootstrap's third
 condition, applied to every number rather than only to strategies.
 
-#### The rest, mapped
-- **#2** → the phantom-edge risk in the goblin/demon economics
-- **#6** → the day-level block bootstrap — *resample days, never legs*
-- **#11** → **A2**: a plausible causal story (Wally Pipp) that failed every test
-- **#13** → **the structural mispricing MLB never harvested** — see §15.0
-- **#14** → the fantasy-scale check across all three apps
-- **#20** → `gain_vs_anchor`, and *"**be willing to recommend REMOVAL**"* — the bar is whether a
-  component **beats not having it at all**
-- **#24** → goblin/demon mechanics transferred; **tier count and spacing did not**
-- **#26** → the two-observation Flex partial tiers, correctly hedged
+#### #11 — **"MECHANISTICALLY COHERENT" IS A TRAP, NOT A CREDENTIAL**
+> *"MLB's **'mechanistically coherent' trap**: a prop's apparent correlation strength tracked a real,
+> **physical-sounding narrative** (a composite stat *should* correlate more with game environment)
+> that turned out to be **a pure artifact of a different confound (LINE-THRESHOLD VARIANCE)** once
+> tested properly. **The physics-plausible story should have raised SUSPICION, not c[onfidence].**"*
 
-#### ⚠ The three with no visible NBA implementation
+**A good story is a reason to test harder, not to believe.** And the confound named —
+**line-threshold variance** — is structural: props with different line levels have different variance
+by construction, so any cross-prop comparison that does not control for it will manufacture an effect.
+
+**A2 is the NBA instance**: a physically obvious mechanism (a teammate sits, his minutes go somewhere)
+that failed five panels and *"worst where the mechanism predicted it should win."*
+
+#### #19 — **LANGUAGE STRENGTH MUST NEVER EXCEED EVIDENCE STRENGTH**
+> *"…easy to **drift on gradually rather than violate all at once**: a finding that clears a **lenient
+> bar should be DESCRIBED as clearing a lenient bar**, not described in the same confident language as
+> one that cleared every available check. **If a claim needs a word like 'confirmed', 'proven'**…"*
+
+**A mechanical discipline, not a stylistic one.** This project already distinguishes **CERTIFIED /
+CLOSE / REGIME RESIDUAL / CONFIGURED-NOT-RUN / NOT-YET-CERTIFIED** per prop, and tags
+`classification_config` entries **`BACKTEST-LOCKED`** when earned. **Those vocabularies exist to stop
+exactly this drift.**
+
+#### #20 — **THE BAR IS "BEATS NOT HAVING IT AT ALL" — and be willing to recommend REMOVAL**
+> *"the correct bar is whether it beats **the simplest available alternative — including the
+> alternative of NOT HAVING IT AT ALL** — not whether it improves on some other,
+> already-known-to-be-[flawed baseline]."*
+
+**`gain_vs_anchor` is this rule in a column.** And it is why ten enrichment factors could be rejected
+without embarrassment — *"the certified anchor wins every slice"* **is the correct outcome of asking
+the right question.**
+
+#### #21 — **THE STRUCTURED ORDER FOR AN ADVERSARIAL CONSULTATION**
+> *"A specific, structured order… worked well throughout MLB's own history: **present the mechanics
+> you've derived (INCLUDING ANY VERIFICATION ERRORS ALREADY FOUND), the signal itself and why it's
+> believed clean, the full results INCLUDING EVERY CONTROL TESTED (not just the favourable ones), the
+> specific te[st]**…"*
+> *"…**use it to check your METHOD, then RE-DERIVE THE CONCLUSION YOURSELF.**"*
+
+**Four elements, and the two in caps are the ones usually omitted**: your own known errors, and the
+unfavourable controls. **Withholding either turns an adversarial review into a rubber stamp** —
+which #4 names as the failure mode.
+
+#### #22 — **A CONTROL CASE WITH A KNOWN ANSWER, as a required sanity check**
+> *"MLB's original multiplier-observation study **deliberately included a real slip built ENTIRELY
+> from unmodified, standard-priced legs** — with the explicit purpose of **confirming the study's own
+> MEASUREMENT METHOD against a case with a known, predictable answer** (no special pricing applied at
+> all). **It came back matching the** [expectation]."*
+
+**The control validates the instrument, not the hypothesis.** A standard-priced slip has a
+predictable payout; if the measurement method cannot reproduce it, nothing measured on goblin or demon
+slips can be trusted. **Any NBA multiplier capture must include one standard-only slip for exactly
+this reason.**
+
+#### #23 — **RE-PAIR EACH SIDE INDIVIDUALLY BEFORE CONCLUDING**
+> *"MLB found **one genuine, real anomaly** in an otherwise clean, large study — **a single specific
+> PAIRING of two particular legs** that produced a result running opposite to every other similar
+> pairing tested. **Rather than either dismissing it as noise or assuming either individual leg was
+> 'the problem'**, [it was isolated by re-pairing each one separately]."*
+
+**An interaction anomaly is a property of the PAIR, not of either member.** The diagnostic is to
+re-pair each leg with other partners: if both behave normally elsewhere, the interaction is real.
+
+#### #25 — compounding safety margins
+> *"a real, deployed constant applying **an extra, deliberate conservative discount ON TOP OF an
+> already-real, already-conservative observed ratio** — **reasonable-looking as a single number** —
+> but **once that doubly-discounted ratio was EXPONENTIATED across a full slip's worth of legs, the
+> compounded r[esult was absurd]**."*
+
+**Conservatism compounds multiplicatively.** A 5% haircut per leg is **23% on a 5-pick slip**. Apply
+any margin **once, at slip level.**
+
+#### ⚠ The two with no visible NBA implementation
 - **#7 multiple-comparisons correction** — the factor gate scanned many prop × band × side cells;
-  *"a single, PRE-REGISTERED confirmatory test on one specific cell"* is the exemption, and the gate
-  runs were not pre-registered per cell
+  the exemption is *"a single, PRE-REGISTERED confirmatory test on one specific cell"*, and gate runs
+  were not pre-registered per cell
 - **#17 report the RANGE, not the best number** — *"reporting only the maximum found is itself a form
   of selection bias, distinct from but related to #7"*
-- **#25 compounding safety margins** — MLB deployed *"an extra, deliberate conservative discount ON TOP
-  OF an already-real, already-conservative observed ratio"*, which **compounds absurdly once
-  exponentiated across a multi-leg slip.** Relevant the moment slip-level EV is computed.
 
 ---
 
