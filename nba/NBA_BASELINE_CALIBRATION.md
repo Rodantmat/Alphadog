@@ -275,15 +275,41 @@ the measured ratio.**
 
 **✅ NBA implements this**: *"**Wilson clamp below n=30**"* — the same threshold.
 
-### ⚠ THE DUPLICATION RISK, NAMED
+### ⚠ THE DUPLICATION RISK, NAMED — with its prescribed fix
 > *"**Real, costly duplication risk to avoid**: MLB **implemented this clamp in TWO SEPARATE CODE
-> LOCATIONS**, and **any future threshold chan[ge must be applied to both]**."*
+> LOCATIONS**, and **any future threshold change requires updating BOTH or THE SYSTEM PRODUCES
+> INCONSISTENT BEHAVIOR DEPENDING ON WHICH CODE PATH A GIVEN PROP HAPPENS TO ROUTE THROUGH.**
+> **When porting this logic to NBA, IMPLEMENT IT EXACTLY ONCE, IN A SINGLE SHARED FUNCTION EVERY PROP
+> ROUTES THROUGH — DON'T LET CONVENIENCE DUPLICATION HAPPEN EVEN INITIALLY.**"*
 
-**NBA has exactly this shape today**: the **singles recipe** (`classification_ladder_v12.py`) and the
-**combos recipe** (`combos_ladder_v1.py`) are **separate certified files, each with its own
-constants** — already documented as *"a change must be applied to BOTH."*
-**The Wilson threshold, `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K` and the ladder depth all exist in
-more than one place.** Recorded in `NBA_OPEN_ITEMS.md`.
+**The prescribed fix is a single shared function, and NBA did not do that** — singles and combos are
+separate certified files, each with its own constants. **The failure mode named is exactly the risk:
+inconsistent behaviour depending on which path a prop routes through.**
+*(Combos route through `combos_ladder_v1.py`; singles through `classification_ladder_v12.py`.)*
+Recorded in `NBA_OPEN_ITEMS.md`.
+
+### Recency-weighting profiles tuned PER PROP by real volatility
+> *"**not a single global blend**: props that **STABILIZE QUICKLY** should **weight recent games
+> heavily and shrink LIGHTLY toward a prior**; **rare, volatile, high-variance events** should
+> **weight recent games LESS and shrink HARD toward a prior**, since **a short hot/cold streak on a
+> rare event is MOSTLY NOISE**.
+> **For NBA, expect a similar real spread**: **minutes-driven, high-frequency stats (points, rebounds
+> on a per-minute basis) likely stabilize FASTER than low-frequency events (blocks, steals,
+> thre[es])**."*
+
+**✅ This is `nba_config.stat_decay_config`, predicted before any NBA data existed.**
+
+| Prediction | Measured outcome |
+|---|---|
+| high-frequency stabilises faster | **pts_rate α=0.12 / 25 games; reb_rate α=0.08 / 40** |
+| low-frequency shrinks harder | **blk_rate α=0.08 / 50; stl_rate α=0.10 / 60; fg3_pct α=0.03 / 300** |
+| *"a short hot/cold streak on a rare event is mostly noise"* | **fg3_pct rationale: *"takes hundreds of attempts to stabilise; a 10-game hot/cold streak is mostly noise"*** — nearly the same words |
+| *"not a single global blend"* | **MLB's fixed 5/10/20/season blend was rejected as *"the single biggest thing that does NOT transfer"*** |
+
+**The one refinement the prediction did not contain**: **splitting a single stat by component** —
+`fg3a_rate` (α=0.12, short) vs `fg3_pct` (α=0.03, long), because *"attempt VOLUME, unlike make %, is
+role/scheme-driven."* **The blueprint predicted per-prop spread; the build found per-component
+spread within a prop.**
 
 ---
 
