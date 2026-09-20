@@ -4825,6 +4825,65 @@ rather than resolved unilaterally.
 
 **T7 PASS 14: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.21 — PASS 15 (live code verification) — **THE DUD DIVERGENCE, AND THE SEASON-OPENING FIX**
+
+Reading `classification_ladder_v12.py` to settle the dud question surfaced four measured constants
+that are not in any transcript I have documented.
+
+#### T7.21a — **Duds are EXCLUDED, not MIXED**
+```python
+pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan)
+```
+`mu_role` is built **only from competitive games with PF < 6**. **No `dud`/`mixture`/`p_dud` anywhere
+in the file.** Blowout truncation is restored via `MIN_RATIO` per `role_tier`; **foul trouble is
+removed and never restored.** Full analysis in OPEN_ITEMS.
+
+#### T7.21b — **⚠ CROSS-SEASON CARRYOVER — the fix that makes October work at all**
+From the file's own comment (*"season-opening study 2026-09-09"*):
+> *"**without it the opening month has ZERO projections and November only 62% coverage**"* — because
+> *"within-season rates need 3 games, the minutes role 5."*
+> *"Minutes role and rate EWMA are **carried across seasons at the player level**; at a season boundary
+> **the carried evidence counts as `CARRY_N` games** so the prior season anchors the opening weeks
+> while new-season games adapt fast."*
+> **Coverage with carryover: October 85%, November 90%.**
+
+**This is the single most season-start-relevant thing in the engine**, and it was already solved on
+2026-09-09. **Controlled by `BT_CARRY` (default "1").** If it were ever set to "0" for a replay and
+left off, **opening month would produce nothing.**
+
+#### T7.21c — **TEAM-CHANGE DISCOUNT — measured, not assumed**
+> *"**measured: carried minutes-role MAE 5.97 vs 4.75 after a move**"* — so once a player has **≥5
+> competitive games with a new team**, the role uses **only those games** (a shorter window), not the
+> mixed history.
+
+**A 25% MAE improvement**, and it is the implementation of T7.14f's role-change detector — arrived at
+by measurement rather than by the 3σ rule originally specified.
+
+#### T7.21d — **RETURN RAMP (factor A3) — the measured multipliers**
+*"season-opening / availability study 2026-09-09, measured on 3 seasons"* — games missed counted as
+**the team's games between the player's previous appearance and this one**:
+| Games missed | Minutes ratio, games 1 / 2 / 3 / 4 back |
+|---|---|
+| 3–7 | **0.87 / 0.97 / 1.01** |
+| 8–15 | **0.79 / 0.92 / 0.96** |
+| 16+ | **0.72 / 0.84 / 0.92 / 1.00** |
+
+> *"**Per-minute rate unchanged (~1.0) → a MINUTES multiplier only**, fit on TRAIN."*
+
+**That last clause is the finding**: a returning player is not worse per minute, he simply plays
+fewer. **A3 is a minutes factor, not a rate factor** — which is why it was assigned to the baseline and
+why a rate-side version would have measured nothing.
+
+#### T7.21e — **"ONE RECIPE, NO PASTED CONSTANTS"**
+> *"**HCA, the P(blowout | spread) lookup and the blowout minutes ratios are derived from the TRAIN
+> (as-of history) seasons INSIDE THE RUN.** Holdout 2024-25 unchanged (1.2 / 0.8 / 0 of 37)."*
+
+**This is the parity rule enforced in code**: the constants are refit from training data on every run
+rather than pasted, which is exactly the violation caught and fixed in the live session with
+`ladder_calibration`. **The pattern was already correct here.**
+
+**T7 PASS 15: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
