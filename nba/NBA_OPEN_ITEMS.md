@@ -205,6 +205,36 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 61 — THE FACTOR MAPPING WAS TRANSCRIBED 4 ROWS OF 10 *(added 2026-09-20)*
+*Angle: Domain Mapping **§2's main table**, row by row — pass 52 covered only its
+"NBA-specific factors" subsection. **`NBA_FINAL_SCORING_CALIBRATION.md` §7h carries 4 of the
+source's 10 rows.** All six missing rows are now added there, with outcomes.*
+
+### The completeness gap
+§7h is the mandated home of the MLB→NBA factor mapping. **It transcribes weather, park factors,
+roof/dome and batting order — and stops.** Missing: **bullpen fatigue, handedness matchup, recent
+form, lineup protection, opposing starter quality, quality of contact.**
+**Each has a live NBA counterpart** — the six rows and their outcomes are now in §7h.
+
+### ⚠ The scorecard, which is the part that matters
+**The handoff's most confident NBA forecasts are the ones that did not hold:**
+- *"Teammate/rotation fatigue… **likely a MORE important factor for NBA** than bullpen factors are
+  for MLB"* → **absorbed into the baseline** via the calendar, never built as an enrichment factor.
+- *"'Usage rate change with a teammate out' — **a real, well-documented NBA effect**"* → became
+  **A2 teammate redistribution**, and **A2 was FULLY RETRACTED after five failed panels.**
+  **It is the one prediction that was actively tested and overturned.**
+- By contrast its plainest call — **recent form, *"directly applicable, port directly"*** — became
+  **the EWMA core of the baseline**, the most load-bearing decision in the recipe.
+
+**This is the third recorded case of a confident forward-looking handoff claim not surviving
+contact**, after **ParlayAPI** (*PASS 49*, *"the single biggest head start"*, superseded) and **the
+four NBA-specific factors** (*PASS 52*, the #1 pick measured at 79% coin flips).
+**The filter that emerges, stated once and applying to the ~40% of `ALPHADOG_DOS_AND_DONTS.md` and
+`ALPHADOG_SYSTEM_MAP.md` still unread (*PASS 37*): the handoff's accounts of MLB's MEASURED
+EXPERIENCE held; its FORECASTS about NBA did not.** Weight them differently.
+
+---
+
 ## FROM T1 PASS 60 — LESSONS PARTS B, E, F BY CONCEPT — **two items from Part F** *(added 2026-09-20)*
 *Angle: the lessons document's remaining Parts, read by concept. **Part B and Part E are fully
 covered. Part F's last two lessons are not.***
