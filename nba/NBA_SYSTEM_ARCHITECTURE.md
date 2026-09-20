@@ -84,8 +84,41 @@ places: `bindingMap`, a dispatch branch, and the tool-schema enum.
 **Deploy order matters:** the fleet deploys **alphabetically from the file diff**, so `admin-sql`
 (which holds new workers' bindings) sorted before them and failed. The last-deploy fix is permanent.
 
+### ⚠ ANYTHING NOT IN THE GENERATOR IS ERASED
+> *"**The GitHub workflow REGENERATES wrangler files before deploy, so this binding MUST LIVE IN THE
+> GENERATOR or it will be ERASED before Wrangler deploys.**"*
+
+**Hand-editing a `wrangler.json` is futile** — the deploy rewrites it first. **Service bindings,
+`compatibility_flags`, cron triggers and vars all have to be added to
+`generate_wrangler_configs.py`.** This is why registering a new worker is **four** edits (bridge
+binding map + direct-call list + tool enum, **plus the generator**), not three.
+
 **Inherited caveat, from MLB's own code comments:** *"Cloudflare/GitHub deploys may not apply wrangler
-var-only edits reliably"* — which is why endpoint/header defaults are hard-coded as fallbacks.
+var-only edits reliably"* — which is why endpoint and header defaults are hard-coded as fallbacks.
+
+### The never-fire cron idiom
+```python
+cfg["triggers"] = {"crons": ["0 0 30 2 *"]}   # February 30th — a date that cannot occur
+```
+**Applied to 8 similarly-affected workers.** A structurally impossible cron is used to **disable a
+worker's schedule without removing the worker** — it stays deployed, callable on demand, and never
+self-triggers. **Recognise this pattern before concluding a worker is "scheduled."**
+
+### MLB's `alphadog-v2-weekly-differential-runner` — the precedent NBA lacks
+> *"**Native cron triggers for the Postgres weekly static differential (Monday 3am**, matching the
+> existing `sched_static_weekly` convention)"*
+
+**MLB runs its weekly differential on a native cron.** **NBA's equivalent worker has never been
+scheduled** (verified empty 2026-09-20) — see `NBA_OPEN_ITEMS.md` ①. **The pattern to copy already
+exists on the MLB side.**
+
+### Chunk-kill signature
+> *"the signature of **a chunk being killed by the platform MID-LOOP before it can checkpoint**, not of
+> application logic"*
+
+**A run that dies at the same step repeatedly, without an application error, is a platform kill** —
+the fix is smaller chunks and checkpointing, not debugging the logic. *(Same family as the three
+GitHub-runner OOM kills on million-row pulls.)*
 
 ---
 
