@@ -251,6 +251,19 @@ the table in a different point of view."*
 
 **Not recorded in any NBA session**: asking it to state a falsification bar **before** seeing a result.
 **Usage has been synthesis and critique.**
+
+**The two failure modes named in the source:**
+- *"confidently **predicting a MECHANISM that a direct test then refuted**"*
+- *"incorrectly asserting **historical data could resolve something that turned out to NOT EXIST AT
+  ALL** when checked directly"*
+
+> *"**Test Gemini's claims and mechanisms the same way you test your own — don't accept or reject on
+> AUTHORITY.**"*
+
+**Both failure modes have NBA instances**: the *"tier globally"* recommendation was a mechanism
+refuted by reading the live MLB code (T7); the *"potential assists aren't in our data"* and
+*"Team Pace still needed"* claims were assertions about what data existed, refuted by checking
+(T5, T7).
 **OpticOdds** (industry pricing vendor) · **Unabated** · **DataStreak** (40,856 graded props) ·
 **RotoGrinders** · **Cleaning the Glass / Ben Falk** (garbage-time filtering) ·
 ***J. Sports Sciences* 2025** (altitude, p=0.005) · **PMC 10-season study** (eastward jet lag) ·
