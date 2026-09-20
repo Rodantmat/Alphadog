@@ -17,6 +17,25 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 
 ## 1. THE RULE
 
+### 1.0 PrizePicks' OWN DESCRIPTION *(captured verbatim in T8)*
+> **Demons** — *"max payout **up to 2000× your Lineup fee** if you pick correctly. **You must pick More
+> on a Demon projection.**"*
+> **Goblins** — *"identified by a **GREEN ICON** on the board and they're **designed to keep you in the
+> green**. These are **safer picks** that make it easier to land consistent victories."*
+
+**Three things this pins down:**
+1. **The visual key**: goblins carry a **green icon**. Any parser working from rendered UI rather than
+   the feed should key on `odds_type`, not colour — but the colour confirms the label.
+2. **"You must pick More on a Demon projection"** — **the More-only rule, in PrizePicks' own words**,
+   which is why the v1 two-way taxonomy was correct when built.
+3. **2000× is the platform's stated maximum slip payout**, not a per-leg factor. The per-leg factor
+   remains unavailable (see `NBA_MULTIPLIERS.md`).
+
+**⚠ Statement 2 is now OUT OF DATE** — PrizePicks enabled Less in 2026-08. **The official
+documentation is itself a dated source**, which is exactly why §4 exists.
+
+### 1.1 The rule as it stands today
+
 > **Below the anchor: More = GOBLIN, Less = DEMON.**
 > **Above the anchor: More = DEMON, Less = GOBLIN.**
 
