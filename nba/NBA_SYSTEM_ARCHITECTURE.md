@@ -200,9 +200,46 @@ meaning rather than refuse to run.
 schema contains fields that invite exactly such aliases (`period`, `side`, `line`, `anchor`, `phase`,
 `band`, `status`, `source`, `kind`).
 
-**⚠ Several of those are real column names in this system**: `line`, `side`, `period`, `phase`,
-`band`, `source`, `kind`, `status`, `anchor`. **They are legal as column names but risky as bare
-aliases**, and `end` would be an error class the dialect resolves silently.
+### 3. ⚠ Double-JSON-encoded columns need an explicit unwrap
+> *"**A DOUBLE-JSON-ENCODED COLUMN** — a JSON-typed column whose **actual stored value is ITSELF A
+> JSON-ENCODED STRING, not a native object** — **needs an EXPLICIT UNWRAP STEP before further JSON
+> operations work correctly.** **This is A RECURRING SHAPE IN THIS SYSTEM, NOT A ONE-OFF.**"*
+
+**NBA's JSONB columns**: `raw_json` on every reference and stats table, `factor_fits` and
+`role_minutes_multiplier` on `baseline_ladder_runs`, `config_json` on `classification_config`, and
+**the enrichment `breakdown`** — which is **stored as a STRING containing JSON**
+(`"breakdown": "[{\"factor_key\":…}]"`), i.e. **exactly this shape.**
+
+**Any query doing JSON operations on `breakdown` must unwrap first.** The per-factor audit described
+in §7c depends on reading it.
+
+### 4. ⚠⚠ A SILENT TYPE MISMATCH ON A JOIN KEY — fails slowly, not loudly
+> *"**A SILENT TYPE MISMATCH between two columns that are logically 'THE SAME FIELD' can FORCE A JOIN
+> INTO A SLOW, UN-INDEXED NESTED-LOOP PLAN THAT TIMES OUT, rather than THROWING A CLEAR ERROR** — a
+> real, confirmed case of **the same logical identifier stored as ONE NUMERIC TYPE IN ONE TABLE AND A
+> DIFFERENT NUMERIC TYPE IN ANOTHER**, and separately as **A TEXT TYPE IN ONE TABLE AND A
+> LARGE-INTEGER TYPE IN ANOTHER, for what's conceptually THE IDENTICAL FIELD.**
+> **Before joining on ANY identifier across two tables in NBA's own schema, CONFIRM BOTH COLUMNS SHARE
+> THE EXACT SAME REAL DATA TYPE** — **a mismatch here FAILS SILENTLY AND EXPENSIVELY, NOT LOU[DLY].**"*
+
+**⚠⚠ NBA stores identifiers in exactly the two mismatched forms named.** `nba_ref.teams` carries
+**`team_id` TEXT** *and* **`nba_team_id` BIGINT** — *"a text type in one table and a large-integer
+type in another, for what's conceptually the identical field"* is a precise description of that pair.
+
+**And the same split exists on players**: `player_id` appears as TEXT in some tables and as a numeric
+elsewhere — **the T9 bug *"the virtual rows are built before `PLAYER_ID` is cast to string, so the
+roster ids come out as ints"* is this exact hazard caught at the write side.**
+
+**Why it matters at NBA's scale**: `final_hp` is **38.7M rows** and `baseline_history` **19.3M**. **A
+join key type mismatch there does not error — it degrades to a nested loop and times out**, which
+presents as "the query is slow" rather than as a bug.
+
+**This also connects to T1's own canonical-ID rule** — *"use ONE canonical ID format from day one…
+**grep for format inconsistency PROACTIVELY, don't wait for it to surface as a downstream
+symptom**."* **The downstream symptom this rule warns about is precisely a timing-out join.**
+
+**Neither check is recorded as having been run.** A single `information_schema.columns` query across
+the NBA schemas would list every `*_id` column with its type.
 
 ---
 
