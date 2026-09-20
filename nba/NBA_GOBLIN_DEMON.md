@@ -156,6 +156,39 @@ bands. **And the measured `LADDER_DEPTH` (p95 = 13 rungs for points) agrees to w
 
 ---
 
+## 5.0d **THE PRICING FUNCTION'S SHAPE** *(Part B of the lessons document — platform mechanics)*
+
+> *"**PrizePicks Goblin/Demon-style tiered pricing: pricing is DISCRETE / STEP-FUNCTION (a fixed
+> multiplier PER TIER), not continuous per-leg pricing.** As tier distance from the **anchor** line
+> increases, **the easier direction (Goblin-style) pays progressively LESS, while the harder direction
+> (Demon-style) pays progressively MORE, roughly GEOMETRICALLY — ~1.4× growth factor per tier step in
+> MLB's case, likely different but DIRECTIONALLY SIMILAR for NBA.**"*
+
+**This is the single most useful structural statement about the pricing.** Four things follow:
+
+1. **Pricing is a STEP FUNCTION over tiers, not a continuous function of the line.** The multiplier is
+   attached to the **tier index**, not to the rung's actual probability. **Which is exactly why the
+   mispricing exists**: two legs in the same tier with materially different true probabilities carry
+   the same factor.
+2. **It is keyed on DISTANCE FROM THE ANCHOR** — so **the anchor must be right or the tier index is
+   wrong**, and with it the price. **That is what makes the invisible-anchor derivation (§2.2)
+   load-bearing rather than cosmetic.**
+3. **Demons grow ~geometrically, ~1.4× per step in MLB.** Against our measured NBA break-evens —
+   T+1 needs **1.48×**, T+2 **2.30×**, T+3 **3.31×** — a 1.4× geometric ladder gives roughly
+   1.4 / 1.96 / 2.74. **T+1 is the only tier where the offered growth plausibly clears the
+   requirement**, which is an independent route to the same conclusion as §5.2.
+4. **Goblins pay progressively LESS as they get safer** — and §5.0c says the safe variant prices
+   *flat regardless of rarity*. **Reconciled: flat WITHIN a tier, stepping DOWN between tiers.**
+
+**⚠ The ~1.4× is an MLB number and lesson #24 says the numerics decay.** Treat as a prior for the
+*shape*, not the value. **Measuring NBA's actual step ratio is one of the first things a live board
+makes possible** — and it needs only the tier index and the factor, not a full per-leg capture.
+
+> *"**PrizePicks Flex payout tables can have a genuinely diff[erent structure]**"* — see
+> `NBA_MULTIPLIERS.md` §0.2b.
+
+---
+
 ## 5.0c **THE DURABLE PRICING MECHANICS** *(lesson #24 — held across MLB's entire history)*
 
 **These three qualitative behaviours survived MLB's whole run; the exact numeric ratios attached to
