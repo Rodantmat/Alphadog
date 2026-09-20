@@ -1,1 +1,1 @@
-script: measure_report_cutoff.py
+script: ../nba/scrape_prizepicks_nba_board.py
