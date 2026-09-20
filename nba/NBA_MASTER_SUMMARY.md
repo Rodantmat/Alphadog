@@ -3145,6 +3145,47 @@ schema.** The data is there; the caution is not enforced by anything.
 
 **T5 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T5.8 — PASS 3 (live verification of the splits tables) — **TWO CONFIRMED FINDINGS**
+
+#### T5.8a — **`player_splits` holds ONE season, not three**
+```
+season    rows   players  split_types
+2025-26   9,948  577      5
+```
+**Only 2025-26 is present.** The game logs cover three seasons (26,651 + 26,401 + 26,306); **the splits
+do not.**
+
+**And the PK guarantees they never can**: `PRIMARY KEY (player_id, split_type, group_value)` **omits
+`season`**, so a second season's load would UPDATE the first rather than coexist. **Whether only one
+season was ever scraped, or three were scraped and two overwritten, the end state is the same and the
+schema cannot hold more.** `defense_vs_position` got this right — its PK **does** include `season`,
+and it holds all three (630 = 30 × 7 × 3).
+
+#### T5.8b — **`StartingPosition` — rated ESSENTIAL — is ABSENT**
+```
+days_rest          3,311 rows   7 groups
+month              3,236        7
+location           1,217        3
+wins_losses        1,135        2
+pre_post_allstar   1,049        2
+```
+**Five split types. `StartingPosition` is not among them** — yet T4.13c rated it **Essential**:
+*"a direct proxy for role/usage — **starter vs. bench is night-and-day**."*
+
+**Note the priority inversion**: `month` — rated **Low**, *"any real signal is better captured
+elsewhere"* — is the second-largest table at 3,236 rows, while the essential one is missing entirely.
+
+**Two readings, and the benign one is probably right:**
+1. **Benign**: T5 built `nba_stats.player_game_starter_status` in the same session — **32,179 rows at
+   PER-GAME granularity**, which is strictly better than a season-aggregate StartingPosition split.
+   The split would be redundant, and the better source superseded it.
+2. **Not benign**: it was simply dropped, and nobody noticed because the counts looked healthy.
+
+**The per-game table exists and is verified (12,300 starter rows = 10 × 1,230), so the capability is
+covered either way.** Recorded so the absence is not mistaken for a gap in role data.
+
+**T5 PASS 3: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
