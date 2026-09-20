@@ -277,6 +277,17 @@ where goblins flip to demons. *"10.5 goblin, 11.5 goblin, 12.5 demon → 12 is t
 
 ## L–N
 
+**leg-by-leg manual tracing** · T1 (blueprint §9) · Scrutiny technique 2: take real **high-confidence**
+outputs, pull raw source data **by hand**, compute the expected value independently, and explain any
+gap through a **documented mechanism** (shrinkage, calibration) rather than accepting *"looks close
+enough."* → `NBA_SYSTEM_DESIGN.md` §6b.
+
+**`malformed array literal`** · T1 (blueprint §7g) · A real Postgres error produced by a **`NOT IN`
+clause built from an array parameter through a query-builder's tagged-template array handling**,
+**especially when the array is empty**. Fix: explicit array-literal-with-cast plus an **explicit
+empty-array branch**. Shared-stack gotcha. → `NBA_SYSTEM_ARCHITECTURE.md` §2d ·
+`NBA_OPEN_ITEMS.md` *FROM T1 PASS 29*.
+
 **leg-level standard** · T8 · The gate a slip actually depends on: **every variation band × direction ×
 rung**, plus *"when the model says 90%, does it hit 90%?"* across confidence bands.
 **Why it exists**: *"**rung-aggregates HIDE ERRORS** — the first leg-level breakdown exposed structured
