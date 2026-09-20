@@ -1789,6 +1789,24 @@ and LeBron values (T2.15b), the owner's two pushes (T2.9i), garbage time (T2.9e,
 
 **Two more consecutive clean full passes required before T2 is DONE.**
 
+### T2.18 — PASS 10 (full sequential, blocks 143–460) — **CLEAN 2/3**
+
+Every block maps to a documented entry: the `source_key` upsert nuance (T2.11a), the players build and
+four-step wiring (T2.2), the deploy-ordering bug (T2.2), 582/525/1822 (T2.11c), arena naming-rights
+cadence (T2.10b), `continue-on-error` (T2.10a), the git-push race and retry-with-rebase (T2.3), the
+`ARENA`/`ARENACAPACITY` chase ending at `teamdetails`/`TeamBackground` (T2.3), 30/30 arenas with real
+sponsor names (T2.3), the officials build — Wikipedia, deliberately robust wikitext parser, plain
+`requests` not `curl_cffi`, 80 parsed against an expected ~81 (T2.4) — and the owner's Gemini research
+instruction (T2.9i).
+
+**CLEAN PASS 2 of 3.**
+
+### T2.19 — CURRENT STATE OF T2
+
+**10 passes. 8 found new material. Clean count: 2/3** (passes 9, 10).
+
+**ONE more complete clean sequential pass and T2 is DONE.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
