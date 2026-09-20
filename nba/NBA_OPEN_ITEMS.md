@@ -627,14 +627,21 @@ page after a conflicting third-party source."*
 > *"One discrepancy to re-verify at season start: **a third-party sheet lists PrizePicks blocks/steals
 > at +2 vs the +3 I recorded from the official page**."*
 
+**⚠ AND THE INHERITED LESSONS DOCUMENT HAS A NUMBERED RULE FOR EXACTLY THIS (T1, lesson #14):**
+> *"Fantasy points (various **platform-specific formulas** — **verify each platform's own formula
+> EXPLICITLY, per lesson #14 in the lessons document, BEFORE any cross-platform comparison**)"*
+
+**So this is a known, named failure mode with a standing rule against it** — and the rule says verify
+**each platform's own** formula, which also means Underdog's and Sleeper's fantasy scales must be read
+separately rather than assumed to match PrizePicks'.
+
 **This is not cosmetic.** T8.16g establishes that *"the **3× multiplier on blocks/steals** reintroduces
 exactly MLB's home-run lumpiness — **a single steal is a 3-point jump** — producing a **fat right
 tail** a direct fit would smooth away."*
-**At +2 instead of +3, that tail is materially thinner**, and `fantasy_score` is simulated from
+**At +2 instead of +3 that tail is materially thinner**, and `fantasy_score` is simulated from
 components, so the multiplier propagates into every rung.
 
-**Resolve by reading PrizePicks' live scoring page once the season board is up** — and note the scale
-may differ by app (Underdog and Sleeper have their own).
+**Resolve by reading each app's live scoring page once the season board is up.**
 
 ### RE-CHECK · **Sleeper DOES have alternate lines** — milestone markets
 The live session recorded *"Sleeper has no alternate lines (one line per player+stat, priced via
