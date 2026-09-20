@@ -786,6 +786,29 @@ since a per-player covariance averaged across games without volume weighting has
 port** — and the one kept (altitude) plus the one reframed (lineup → minutes/role) are both central to
 the system as built.
 
+### ⚠ COMPLETENESS — the table above transcribes 4 of the source's 10 rows
+*Added 2026-09-20 (T1 pass 61). The six missing rows, and how each turned out:*
+
+| MLB factor | NBA equivalent, as stated | Outcome |
+|---|---|---|
+| **Bullpen fatigue / matchup** | *"Not applicable in the same form — NBA's closer conceptual equivalent is **teammate/rotation fatigue (back-to-backs, minutes load, load management/rest patterns)** — this is **likely a MORE important factor for NBA** than bullpen factors are for MLB"* | **absorbed into the baseline** via the calendar (rest days, B2B), not built as an enrichment factor |
+| **Handedness matchup** | *"Not applicable in the same form — closer NBA equivalent: **positional/defensive matchup quality** (opponent's defensive rating at that position, **individual defender matchup if data supports it**)"* | became **`nba_team.defense_vs_position`** and **M1 defender level** — M1 works **only in interaction form**; **B4 closed in three formulations, 0 of 5 props** |
+| **Recent form** | *"**Directly applicable, same concept — port directly.**"* | ✅ **the EWMA core of the baseline** — per-prop `alpha`, the most load-bearing single decision in the recipe |
+| **Lineup protection** | *"Weaker/different analogue… closest concept might be **'usage rate change with a teammate out'** (**real, well-documented NBA effect**: injuries/absences to high-usage teammates measurably shift a player's own usage and production)"* | became **A2 teammate redistribution** — ⚠ **five panels failed and A2 was FULLY RETRACTED**; the certified anchor wins every comparison |
+| **Opposing starter quality** | *"**Opposing team's defensive rating / opponent points-allowed-by-position — directly analogous concept.**"* | **in the baseline**, not the enrichment layer — *"opponent defence, pace matchup and blowout risk all belong in the baseline"* |
+| **Quality of contact** (exit velocity, launch angle) | *"**Not applicable — remove entirely**, this is MLB-specific batted-ball physics with no basketball equivalent"* | ✅ never built — and `QUALITY_OF_CONTACT_METRICS_EXPANSION.md` was correspondingly left unread |
+
+**⚠ The scorecard across all ten rows is worth stating plainly.** The handoff called the
+teammate-usage effect **"real, well-documented"** — **it is the one prediction that was actively
+tested and RETRACTED.** Its two most confident calls — *"likely a MORE important factor for NBA"*
+(rotation fatigue) and the well-documented usage effect — **both ended up either folded into the
+baseline or retracted**, while its *"port directly"* call (**recent form**) became the single most
+load-bearing mechanism in the system.
+**This is the third recorded case of a confident forward-looking handoff claim not surviving
+contact**, after ParlayAPI (*PASS 49*) and the four NBA-specific factors (*PASS 52*) — and it
+sharpens the same filter: **the handoff's descriptions of MLB's measured experience held; its
+forecasts about NBA did not.**
+
 ---
 
 ## 7i. THE "PHASE FILE" ENRICHMENT ARCHITECTURE *(T1, the blueprint §4)*
