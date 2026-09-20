@@ -753,6 +753,45 @@ for the assistant** (`host_not_allowed`).
 
 **Clean count 0/3.** Fourteen passes; twelve found new material.
 
+### T1.25 — PASS 15 FINDINGS (added 2026-09-20; verification and fallback claims) — **NEW MATERIAL**
+
+**THE SHARED GITHUB SECRET SET** — not previously documented:
+**`GITHUB_TOKEN` · `GITHUB_OWNER` · `GITHUB_REPO` · `GITHUB_BRANCH`** — *"Confirmed the existing shared
+… secrets already flow"* to the NBA workers. They were inherited, not created. This is what lets a
+Worker read a committed file through the Contents API, and what the bridge uses for every GitHub tool.
+
+**A `source_key` VALUE NOT PREVIOUSLY RECORDED: `FALLBACK_AFTER_FETCH_ERROR`** — written when the live
+`stats.nba.com` fetch fails and the certified static list is used instead. **This is the marker that
+distinguishes a fallback load from a real one**, and it is why the honest caveat (*"seeded via the
+fallback, not the live API"*) could be made at all.
+
+The full set of `source_key` values seen in T1:
+| Value | Meaning |
+|---|---|
+| `FALLBACK_AFTER_FETCH_ERROR` | live fetch failed; certified static list used |
+| `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` | real nba.com data via GitHub Actions |
+
+**THE VERIFICATION DISCIPLINE, in the session's own words** — every claim in T1 is paired with an
+independent check, and the phrasing is consistent enough to be a pattern:
+- *"Confirmed **directly, not assumed**"*
+- *"Confirmed with **real data, not just a guess**"*
+- *"triggered it for real, then **independently queried Postgres directly (not just trusting its own
+  report)**"*
+- *"**confirmed against live data — not just its own claim**"*
+- *"confirmed **fixed via CI log**"*
+- *"confirmed correctly registered and deployed (**verified directly from another session**)"*
+
+**This is "verify before building on top" in practice**, and it is why T1's findings held up under
+eleven later passes.
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| external services | 14 | new |
+| verification and fallback claims | 15 | **new — the GitHub secret set; `FALLBACK_AFTER_FETCH_ERROR`** |
+
+**Clean count 0/3.** Fifteen passes; thirteen found new material.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
