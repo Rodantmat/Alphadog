@@ -406,9 +406,37 @@ have already caused problems — not about avoiding reuse.**
 as a gap by Gemini and found *"**already covered** by what we have"* — **an integration avoided by
 checking first.**
 
-**⚠ The counter-case worth noting**: **Defence-vs-Position was derived by a ONE-OFF MANUAL SQL** and
-therefore had **no recurring path** until T7 placed the recompute inside the delta worker. **Derivable
-by SQL is not the same as maintained** — a derived table still needs an owner in a pipeline.
+### 7. ✅ CLASSIFY EACH SOURCE'S SHAPE BEFORE DESIGNING ITS MINING PATTERN
+> *"**Classify each data source's REAL SHAPE before designing its mining architecture — PER-EVENT /
+> PER-GAME data and SEASON-TO-DATE AGGREGATE data need GENUINELY DIFFERENT PATTERNS.**
+> **Game-log-style data (ONE ROW PER GAME) supports CLEAN INCREMENTAL DATE-RANGE DIFFING**;
+> **season-aggregate data (A CUMULATIVE STAT AS OF RIGHT NOW) has NO STABLE DATE RANGE TO DIFF
+> AGAINST, since THE UNDERLYING REAL VALUE CHANGES WITH EVERY NEW GAME PLAYED, and needs a
+> REFETCH-AND-REPLACE approach instead.**
+> **Decide this EXPLICITLY for every NBA data source rather than applying ONE MINING PATTERN
+> UNIVERSALLY.**"*
+
+**✅ This distinction IS the P1/P2 split, and NBA got it right.**
+| Shape | Pattern | NBA |
+|---|---|---|
+| **Per-game** (one row per game) | **incremental date-range diff** | **P2's daily delta** — new games only, pre-flight completeness check against the calendar, `GAME_ID` prefix `002` |
+| **Season-to-date aggregate** | **refetch-and-replace** | **P1's weekly scrapers** — team stats, on/off, play types, tracking, DARKO, shot quality, splits, career totals |
+
+**And it retroactively justifies the one place the "don't re-fetch" rule (§4c.1) does not apply**: the
+weekly scrapers re-pull whole aggregates **because refetch-and-replace is the correct pattern for that
+shape** — not because the incremental optimisation was overlooked.
+
+**⚠ It also explains a recorded gap precisely.** T7 found **splits and career totals had *"no
+recurring refresh at all"*** — *"they are **cumulative aggregates**, so **weekly is the right
+cadence**."* **That is this rule diagnosing a missing refetch-and-replace path**, and the fix was to
+add exactly that (`mode: "weekly"`).
+**⚠ And they were then DROPPED from P1 in the rebuild** — so a source with the cumulative shape is
+currently on no refresh path at all.
+
+**The `player_game_starter_status` / `game_officials` case is a third shape**: per-game, but from a
+**per-game endpoint**, which is why it needed its own delta scraper (`scrape_nba_per_game_delta.py`)
+plus a `known_empty_games` exclusion — **incremental diffing where the diff is derived from committed
+files rather than a date range.**
 
 ### The original MLB→NBA source mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §3)*
 | MLB source | NBA equivalent, as stated | How it turned out |
