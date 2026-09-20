@@ -1086,11 +1086,48 @@ detail than this summary**, including exact error messages and file diffs refere
 
 **Segment 5: NEW MATERIAL. Clean count remains 0/3.**
 
-### T1.47 — CURRENT STATE OF T1
+### T1.48 — PASS 24, SEGMENT 6 (blocks 420–end) — **NEW MATERIAL · PASS 24 COMPLETE**
 
-**24 passes (segments 1–5 of the full re-read done). 20 found new material. Clean count: 0/3.**
+**AN ATTRIBUTION CORRECTION — `curl_cffi` was not discovered, it was COPIED from MLB:**
+> *"This is exactly why **MLB's own scraper installs `curl_cffi`** (a library that impersonates real
+> Chrome's TLS fingerprint) instead of plain `requests`. **Let's use the same fix.**"*
 
-**Segment 6 of pass 24 still to read** (blocks ~420–end), then two further complete clean passes.
+Earlier entries present the four-failure chain as ending in an independent diagnosis. The diagnosis
+(TLS fingerprinting) was independent; **the remedy was already in MLB's codebase and was recognised
+there.** The same is true of `PROXY_URL`: *"MLB's own scraper already has a working `PROXY_URL` secret
+set up for exactly this kind of problem."*
+
+**The pattern worth keeping**: at each wall, the working answer was found by **reading MLB's existing
+solution** — the GitHub-Actions architecture, the proxy secret, and `curl_cffi` all came from there.
+That is the handoff's instruction (*"look into the current MLB worker and understand the
+functionality"*) doing its job.
+
+**THE ABBREVIATION FIX, exactly what it was**: not a re-parse — *"a **static ID→abbreviation map**
+(team IDs are stable, already verified)."* An honest patch over a source gap, not a workaround hiding
+one.
+
+**The GitHub UI detail that cost a cycle**: *"there are **two clicks total** — opening the dropdown
+isn't enough on its own"*, and the branch dropdown *"defaults to whatever branch you're viewing."*
+This is why the first manual-trigger attempt produced no run.
+
+**And the connector-reconnect nuance**: *"the connector reconnect you did may only give
+`github_trigger_workflow` to a **new chat opened AFTER** the reconnect — the chat that's already open
+(and this one too) likely still has the tool list from before."*
+
+---
+
+## T1 — PASS 24 COMPLETE. **ALL SIX SEGMENTS FOUND NEW MATERIAL.**
+
+**25 dimensions/segments examined. 21 found new material. Clean count: 0/3.**
+
+**What pass 24 proves:** the 23 targeted sweeps, despite covering every dimension I could name, missed
+**six distinct findings** — an owner instruction, a truncated value, a source's rate limit, the
+original phase plan, a live-corroborated warning about dead registry entries, and an attribution error
+about where `curl_cffi` came from. **A full sequential read is not an optional final check; it is the
+only pass that counts.**
+
+**Next: pass 25 — a complete sequential re-read, all six segments, start to finish.** Three of those
+must come back clean in a row.
 
 **Two corrections this pass produced**, both from reading rather than grepping:
 1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
