@@ -1025,7 +1025,30 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
-### ⚠ THREE FACTOR AUDITS NAMED IN T1, NONE RUN
+### ⚠ DUPLICATED CONSTANTS ACROSS THE TWO CERTIFIED RECIPES
+T1's blueprint names this as a *"**real, costly duplication risk**"*: MLB **implemented the Wilson
+sample-support clamp in TWO SEPARATE CODE LOCATIONS**, so any future threshold change had to be
+applied to both.
+
+**NBA has the same shape by design**: the **singles recipe** (`classification_ladder_v12.py`) and the
+**combos recipe** (`combos_ladder_v1.py`) are separate certified files, **each carrying its own
+constants** — already noted as *"a change must be applied to BOTH."*
+
+**Constants that exist in more than one place:**
+| Constant | Locations |
+|---|---|
+| Wilson clamp threshold (n=30) | singles recipe; combos recipe |
+| `MAX_TIERS` = 24, `MIN_PER_TIER` = 15, `TIER_BLEND_K` = 5 | singles recipe; **`nba_config.role_tiers` / `classification_config`** |
+| `LADDER_STEPS` / `LADDER_DEPTH` | singles recipe; **combos recipe has its OWN `LADDER_STEPS`** |
+| `ROLE_TIERS` (6 bands) | singles recipe **and** `nba_config.role_tiers` — **verified to agree 2026-09-20** |
+| Blowout margins (15 / 20) | singles recipe; `nba_config.classification_config.minutes_mixture` (`blowout_threshold_margin: 20`) |
+
+**The config/code pairs are the safer half** — `role_tiers` was checked and agrees. **The
+singles/combos pair is the riskier one**, since both are Python and neither reads the other.
+
+**Already-recorded divergence of exactly this kind**: `minutes_mixture` in `classification_config`
+specifies `dud_lognormal`, `tiered_inelastic` renormalisation and a **per-team** `E[min|blowout]` —
+**none of which the recipe implements.** **The config and the code have already drifted apart once.**
 The blueprint lists five enrichment-factor bug patterns *"all real, all worth actively checking for in
 NBA's own factors."* **Three are single queries against tables that already exist.**
 
