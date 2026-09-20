@@ -230,6 +230,33 @@ file mechanism remains as the fallback that needs no tool.
 
 ## 9. DOCUMENTATION SYSTEM
 
+### The twelve mandated documents *(2026-09-20)*
+| Document | Role |
+|---|---|
+| `NBA_MASTER_SUMMARY.md` | everything done, per transcript, message by message |
+| `NBA_GLOSSARY.md` | every term → transcript and context |
+| `NBA_RECIPE.md` | how the system was built, step by step |
+| `NBA_SYSTEM_ARCHITECTURE.md` | this file |
+| `NBA_DATABASE.md` | every schema, table, column |
+| `NBA_WORKERS.md` | every worker, scraper, script, workflow |
+| `NBA_SYSTEM_DESIGN.md` | the three pipelines |
+| `NBA_OPEN_ITEMS.md` | deferred, dropped, partial, caveats, bugs |
+| **`NBA_BASELINE_CALIBRATION.md`** | the baseline hit-probability calibration |
+| **`NBA_FINAL_SCORING_CALIBRATION.md`** | final HP, confidence, score, edge |
+| **`NBA_MULTIPLIERS.md`** | multipliers across every app |
+| **`NBA_GOBLIN_DEMON.md`** | goblin/demon ingestion, anchors, ladders |
+
+### Pre-existing repo documents
+| Document | Role |
+|---|---|
+| `nba/NBA_CLASSIFICATION_BASELINE_DESIGN.md` *(T8)* | the five tiering dimensions, per-prop lock table, combination math, backtest plan. *"Every number in it is a seed; the backtest owns the sharpening"* |
+| `nba/NBA_BASELINE_METHODOLOGY.md` *(T4)* | the five-step baseline design |
+| `nba/NBA_HISTORICAL_BACKFILL_PLAN.md` *(T4)* | endpoint inventory, season-count reasoning, splits priority |
+| `nba/NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` *(T7)* | **30,601 B, 359 lines**, 10 sections; **§8 "what's explicitly NOT built yet, and why" is the continuity section**; every number re-pulled from live Postgres at write time |
+| `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md` *(T2)* | the first factor research |
+| `nba/NBA_SYSTEM_DRAFT.md` | naming convention, repo location, **the original cadence (§4b)** |
+| `nba/NBA_AVAILABLE_TOOLS.md` | tool inventory |
+
 | Document | Role |
 |---|---|
 | `nba/NBA_COMPASS.md` | the fact base — numbered, durable findings |
