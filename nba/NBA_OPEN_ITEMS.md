@@ -205,6 +205,54 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 41 — THE PHASE-1 RECON, RE-RUN AGAINST THE LIVE DATABASE *(added 2026-09-20)*
+*Angle: the **11 `run_sql_postgres` recon queries** T1 ran before writing any code — T1 lines
+**1906–3424** — re-executed today to see whether their answers still hold. **Every figure below is
+VERIFIED by live SQL 2026-09-20**, so it is stated in full rather than pointed at.*
+
+### ✅ VERIFIED · **the MLB schema count is unchanged: 18, exactly what T1's recon returned**
+T1's first recon query returned **18 non-system schemas** on **2026-08-31**. Live today: **18
+non-NBA schemas, plus 14 NBA schemas, 32 total.** The NBA list matches `NBA_DATABASE.md` exactly:
+`nba_archive, nba_backtest, nba_calendar, nba_classification, nba_config, nba_context, nba_control,
+nba_daily, nba_market, nba_ref, nba_score, nba_scoring, nba_stats, nba_team`.
+
+**This is the THIRD independent confirmation that the *"additive only, no MLB-system side effects"*
+constraint held**, alongside the 116-row `config.worker_definitions` with 0 NBA rows (*PASS 35*).
+**Twenty days and a complete NBA build added 14 schemas and changed none of MLB's 18.**
+
+### ✅ VERIFIED · **the shared MLB board tables still contain ZERO NBA rows** — and this closes a recorded open question
+| Shared table | `sport` | `league` | rows |
+|---|---|---|---|
+| `market.prizepicks_board_current` | *(no column)* | `mlb` | **8,720** |
+| `market.sleeper_board_current` | `baseball_mlb` | `MLB` | **811** |
+| `market.underdog_board_current` | `baseball_mlb` | `MLB` | **2,449** |
+
+**One distinct sport/league value per table. No NBA row anywhere.**
+
+**This resolves System Draft §5, open question 2** — recorded at *PASS 32* as part of the broken
+Section 5 — which asked whether to *"reuse `market.sleeper_board_current` / `underdog_board_current`
+(which already carry unused `sport`/`league` columns) filtered by sport, vs. new
+`nba_market.sleeper_board_current`."* **Answered by observation: NBA built its own and never wrote a
+row to the shared tables.** The question was never formally closed; **it is closed now, by
+measurement rather than by decision record.**
+⚠ **Note what this does NOT say**: the `sport`/`league` columns on the shared tables are **still
+unused as discriminators** — they carry one value each. **The blueprint's Phase-1 banner correction
+(*"a sport/league discriminator column DOES already exist"*) remains true and remains irrelevant**,
+exactly as T1 predicted: *"the column existing doesn't mean the pipeline is sport-generic."*
+
+### The recon procedure itself — reusable, and worth naming
+Eleven queries in order: schemas → any `%nba%` table or schema → any `sport`/`league` column anywhere
+→ the distinct values in those columns → `ref.teams` columns → `control` tables → `config` tables →
+`config.worker_definitions` rows → its real columns → re-query with the corrected column.
+**Full bodies: T1, lines 1906–3424.**
+**The shape is the lesson**: *look for the thing, look for anything named like it, look for the
+mechanism that would make sharing possible, then check whether that mechanism is actually used.*
+⚠ **Query 8 used a column that does not exist** (`active`; the real column is `enabled`) — already
+recorded in this file — and **queries 9–10 are the correction loop**: list the real columns, then
+re-run. **The recon contains its own worked example of "verify the schema before trusting a query."**
+
+---
+
 ## FROM T1 PASS 40 — THE REPO ITSELF, CHECKED AGAINST A LIVE CLONE *(added 2026-09-20)*
 
 ### ⚠⚠ REPO HAZARD · **`BACKUPS/` and `backups/` both exist at the repo root**
