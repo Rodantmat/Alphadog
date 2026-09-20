@@ -205,6 +205,52 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 54 — IDENTIFIER SAMPLE — **one item: `nba_game_id` was specified and never created** *(added 2026-09-20)*
+*Angle: sample the **identifiers** — every backticked name in the handoff documents (148 distinct),
+30 drawn at random, each checked with the normalised matching that pass 53's method caveat requires.
+**28 of 30 are documented. One miss is Part H material that postdates T1 (`product_experience_id`,
+already an open gap at PASS 30). One is a genuine T1 finding.***
+
+### ⚠ `nba_game_id` DOES NOT EXIST — the two-column ID pattern has a hole
+**VERIFIED by live SQL 2026-09-20:**
+| Column | Columns in the live schema |
+|---|---|
+| `nba_player_id` | **11** |
+| `nba_team_id` | **6** |
+| `game_id` | **20** |
+| **`nba_game_id`** | **0** |
+
+**The handoff names `nba_game_id` as the canonical game identifier.** Every other entity follows a
+**two-column pattern** — a canonical prefixed TEXT id plus the raw stats.nba.com BIGINT
+(`team_id` + `nba_team_id`, `player_id` + `nba_player_id`). **Games have only one column, and it is
+not prefixed**: `nba_calendar.games.game_id` is **0 of 2,666 prefixed** (*PASS 50*).
+
+**So the pattern the blueprint asked to be applied *everywhere* has exactly one hole, and it is the
+join key that ties every per-game table together** — `player_game_log`, `team_game_log`,
+`board_scored`, `final_hp`, `baseline_history`, `game_officials` and fourteen more all key on
+`game_id`.
+
+**⚠ What follows, and what does not:**
+- **✅ Nothing is broken.** All 20 `game_id` columns are TEXT and hold the same unprefixed format, so
+  **game joins work everywhere** — including across the `nba_score` ↔ `nba_stats` boundary where
+  `player_id` fails (*PASS 50*).
+- **⚠ But it means the `player_id` split is not a one-off slip.** Two of the three entity ids depart
+  from the stated convention in some way: **`player_id` has two conflicting value formats across
+  layers, and `game_id` has no prefixed form at all.** **Only `team_id` was implemented exactly as
+  specified.**
+- **NOT RECORDED as a decision** — no entry says `nba_game_id` was considered and dropped. It reads
+  as an omission rather than a choice, but **that is inference, not evidence, and is flagged as
+  such.**
+
+### ✅ Present and correct — the rest of the sample
+`nba_certifier` · `control.control_job_queue` · `config.worker_schedules` ·
+`config.external_credentials` · `DUMMY_ONLY_NOT_REAL_DATA` · `stolen_base_family` ·
+`ref.umpire_tendency` · `postgres.js` · `is_live` / `is_final` · `mlb_team_id` ·
+`market.*_board_current/stage` · `alphadog-v2-admin-sql.js` ·
+`alphadog-v2-nba-prizepicks-github-board.js` · `player_points` · `github_grep_file` · `wrangler`.
+
+---
+
 ## FROM T1 PASS 53 — NUMERIC-CLAIM SAMPLE — **CLEAN**, plus a method caveat worth keeping *(added 2026-09-20)*
 *Angle: sample the **measurements** rather than the assertions — every sentence in the handoff
 documents carrying a figure with a unit (`%`, `pp`, `×`, rows, legs, KB…), then grep each against the
