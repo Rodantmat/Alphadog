@@ -1161,6 +1161,41 @@ morning**"* — the baseline against which the later full-fleet redeploys were j
 
 **Segment 1 of pass 25: NEW MATERIAL. Clean count remains 0/3.**
 
+### T1.50 — PASS 25, SEGMENT 2 (blocks 55–75) — **CLEAN**
+Naming convention · no hitter/pitcher split · the 3-run mapping · the six open questions ·
+the static-data-first recommendation. All already documented (T1.13, T1.17, T1.6).
+Only new reference: the recommendation lives in *"Section 6 of the draft"* — a pointer, not material.
+
+### T1.51 — PASS 25, SEGMENT 3 (blocks 76–131) — **MINOR NEW**
+
+**An MLB reference file not previously catalogued: `schema_ref_db.sql`** —
+> *"look at the MLB static-teams worker as a structural template, and **check `schema_ref_db.sql` for
+> the full static-layer pattern**."*
+
+So the NBA reference-layer DDL was modelled on **two** MLB artefacts, not one: the worker file for
+structure, and `schema_ref_db.sql` for the schema pattern. **This is where `source_key`, `raw_json`,
+`data_quality DEFAULT 'derived'` and the aliases-table pattern come from** — they were not invented for
+NBA.
+
+Everything else in the segment is documented.
+
+### T1.52 — CURRENT STATE OF T1
+
+**Pass 25 in progress: segments 1 (new), 2 (clean), 3 (minor new). Clean count: 0/3.**
+
+**Running total: 25 passes, 23 found new material.**
+
+**Segments 4–6 of pass 25 still to read.** A pass counts as clean only if ALL SIX segments are clean.
+
+**The three findings pass 25 has produced so far** are all of the same type — **provenance**:
+- ~19 of 116 registry rows are dead stubs (~5.3 KB signature) → the real worker count is ~97
+- the blueprint was corrected in **three** places, not two
+- the reference-layer DDL came from `schema_ref_db.sql`, not from scratch
+
+**Pattern worth noting**: passes 24 and 25 keep finding the same class of thing — **where something
+came from**. The targeted sweeps captured *what* exists; sequential reading captures *why it looks
+that way*, which is the part that is useful when changing it.
+
 **Two corrections this pass produced**, both from reading rather than grepping:
 1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
 2. The `source_key` value was recorded truncated.
