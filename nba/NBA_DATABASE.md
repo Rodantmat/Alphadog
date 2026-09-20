@@ -423,6 +423,29 @@ Source: **`playerdashboardbygeneralsplits`** — **6 groups in one call**: `Days
   BECAUSE good play caused the win. Collect it, but don't naively feed it to a model."*
 - Low: Month
 
+### `nba_team.defense_vs_position` — 630 rows *(T5)*
+`team_id`, `opponent_position`, `season`, **`games_sampled`**, `avg_pts_allowed`, `avg_reb_allowed`,
+`avg_ast_allowed`, `avg_fg_pct_allowed`.
+**PK `(team_id, opponent_position, season)` — season IS in the key**, so all three seasons coexist
+(30 × 7 × 3 = 630 ✓). **Contrast with the splits tables, which omit it and therefore hold one.**
+`source_key DEFAULT 'DERIVED_FROM_PLAYER_GAME_LOG'` · `data_quality DEFAULT 'derived'` — **provenance
+declared in the schema itself**. `games_sampled` lets consumers gate by sample size.
+**Computed entirely from data already in Postgres — zero new API calls**, unblocked by the position fix.
+Spot-check: the best center-defence teams allow ~8–9 pts/game to opposing centers.
+
+### `nba_stats.player_game_starter_status` — 32,179 rows *(T5)*
+`player_id`, `game_id`, **`start_position`**, **`is_starter`**, **`comment`** —
+PK `(player_id, game_id)`.
+**`comment` is the DNP/inactive reason field**, which is what lets the grader distinguish a real DNP
+from a join failure (COMPASS fact 60).
+**Live 2026-09-20: 1,230 games · 12,300 starters · 591 players — 2025-26 ONLY.** Owner-approved scope;
+all three seasons would have cost ~3,690 calls.
+**12,300 = 10 starters × 1,230 games** — an identity that only holds if every game parsed correctly.
+**⚠ SOURCE MUST BE `boxscoretraditionalv3`.** v2 returns **HTTP 200 with zero player rows** on
+historical games — 1,228 games once "succeeded" and yielded 799 rows where ~30,000 were expected.
+v3 schema: flat per-player fields (`personId`, `position`, `comment`) nested under
+`boxScoreTraditional.homeTeam.players` / `awayTeam.players`.
+
 ### Depth available vs depth taken *(T4)*
 Box scores exist league-wide back to **1996-97**; advanced stats from **1997**.
 **Only 3 seasons were taken (2023-24, 2024-25, 2025-26)** — deliberately.
