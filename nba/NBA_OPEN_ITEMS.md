@@ -350,10 +350,25 @@ Flagged honestly when built (T3): *"this worker **isn't wired to any automatic s
 needs a manual `run_job` trigger after each weekly scrape."* Owner: *"No, leave like this for now."*
 **It was never wired since — and `nba-p1-weekly-static.yml` (built 2026-09-20) does not call it.**
 
-**⚠ CORROBORATED by T7's audit**: the `*_differential_log` tables were recorded as *"correctly empty —
-only one weekly baseline run has happened; **detection starts on the second run**."* **That
-explanation was true in T7 and is no longer true now** — the second run never came, because nothing
-schedules it. **If those tables are still empty today, it is for a different reason than T7 recorded.**
+**⚠ CORROBORATED by T7's audit, then CONFIRMED LIVE 2026-09-20**: T7 recorded the
+`*_differential_log` tables as *"correctly empty — only one weekly baseline run has happened;
+**detection starts on the second run**."*
+
+**Checked today:**
+```
+player_differential_log    0 rows
+team_differential_log      0 rows
+official_differential_log  0 rows
+player_roster_snapshot   582 rows   ← frozen since 2026-09-03
+```
+
+**The second run never came.** The snapshot is 17 days stale and the logs have never recorded an event.
+**T7's "expected on first run" explanation was true then and is not true now.**
+
+**Why this is worse than it looks with the season two weeks out**: September and early October are when
+roster churn peaks — training-camp signings, two-way conversions, waivers, camp invites and final
+cuts. **Every one of those is exactly what this worker detects, and none are being detected.**
+When it is eventually run, it will emit one enormous catch-up batch rather than a usable history.
 
 P1 runs: teams · arenas · players · bio · weekly season tables · team stats · on/off · play types ·
 DARKO · shot quality · defender ratings · static context. **No differential worker.**
