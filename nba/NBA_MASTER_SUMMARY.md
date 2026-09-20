@@ -3646,6 +3646,57 @@ suppressing the error**."*
 
 **T6 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T6.11 — PASS 5 — the delta worker's properties, and a CORRECTION to T4.12c
+
+#### T6.11a — **The pre-flight completeness check WAS built as designed — correcting T4.12c**
+> *"**I built the pre-flight completeness check** (Final games in the calendar vs. games actually
+> logged) and **it immediately flagged a discrepancy**."*
+
+**T4.12c recorded that the pre-flight gate "became a post-flight audit."** That is only half right, and
+the correction matters: **there are TWO checks, at different points in the pipeline.**
+
+| Check | Where | When |
+|---|---|---|
+| **The delta worker's completeness check** | inside the delta ingestion worker (T6) | **PRE-flight** — calendar Final count vs logged count, before proceeding |
+| **`check_delta_gaps.py`** | P2 step 6 (live session) | **POST-mining audit** — dates, games, both teams, roster rate |
+
+**The T4 design intent was honoured in T6.** The later `check_delta_gaps.py` is an additional,
+broader audit, not a replacement. **T4.12c amended.**
+
+#### T6.11b — The check caught a real discrepancy on its first run
+**1,400 calendar games vs 1,230 logged** for the known-complete 2025-26 season — *"Investigated rather
+than assumed."* The 170 were preseason, playoffs, All-Star weekend and Cup-final games *"that were
+never meant to be in `player_game_log`."*
+
+**The check found a flaw in itself, not in the data** — which is the best possible outcome for a new
+validator run against known-good data. **This is why it was tested against a complete season rather
+than only against the empty 2026-27.**
+
+#### T6.11c — **Idempotency, stated as a design property**
+> *"**Idempotent**, so it's **safe to run daily** once the season starts — **new games just appear via
+> upsert**."*
+
+**This is what makes the daily delta safe to re-run after a partial failure** — and it is why the
+gap audit can fail a job without risking duplicate data on the retry.
+
+#### T6.11d — Season auto-detection
+*"for **whatever season today's date falls in** (auto-detected — currently correctly resolves to
+**2026-27**)"* — verified in T6 against the real date. **No hardcoded season**, unlike the loader bug
+fixed in T5.1.
+
+#### T6.11e — The honest limitation, and what was done instead
+> *"**this can't be tested against real new games yet** since the 2026-27 season hasn't started
+> (**0/1,266 Final**). I verified the pipeline runs cleanly against the current empty season instead —
+> 0 rows, 0 errors, completeness check correctly reports 'complete' **trivially**."*
+
+**Note the word "trivially"** — the report distinguishes a mechanically-correct zero from a meaningful
+pass, which is exactly why the logic was then tested against the full 2025-26 season separately.
+
+#### T6.11f — Scope discipline, confirmed at the close
+> *"**Nothing in the master-run/baseline-logic layer has been touched, per your direction.**"*
+
+**T6 PASS 5: NEW MATERIAL (including a correction). Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
