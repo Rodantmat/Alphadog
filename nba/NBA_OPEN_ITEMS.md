@@ -1025,7 +1025,51 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
-### ⚠ NO VALIDATION STEP BETWEEN GRADING AND THE CALIBRATION REFIT
+### ⚠⚠ TWO HISTORICAL GRADER BUGS — both live risks for NBA's grader
+T1's blueprint §4c: *"**two real, historical bugs, both worth ACTIVELY DESIGNING AGAINST in NBA's own
+grader.**"*
+
+**BUG 1 — an INNER JOIN silently dropping non-participants**
+> *"**An INNER JOIN between the board and game-log tables SILENTLY DROPPED ANY PLAYER WITH ZERO
+> MATCHING GAME-LOG ROWS** — **a rest day, an unused bench player, a scratched starter** — **from the
+> graded set ENTIRELY: never graded, never stored, PERMANENTLY INVISIBLE rather than correctly
+> captured as a genuine push/void.**
+> **Fix: use a LEFT JOIN plus an explicit 'IS THIS GAME CONFIRMED FINAL' check, so genuine
+> non-participation becomes a CAPTURED PUSH/VOID, not a silent disappearance.**"*
+
+**✅ NBA appears to handle this** — `board_outcomes.leg_result` includes **`dnp`** alongside
+`over_win` / `under_win` / `push` / `unmatched_player` / `unmatched_not_in_season`. **A DNP is a
+captured category, not a dropped row.**
+**⚠ What is unverified**: whether the join is actually a LEFT JOIN, and whether the **"is this game
+confirmed final"** check exists. **A DNP category can be populated and still lose rows if the join
+drops them before the category is assigned.**
+**The distinction matters for the season**: rest days and scratches are the most common
+non-participation in the NBA, and they are exactly what a scratched-after-P2 slate produces.
+
+**BUG 2 — a dedup key missing variant-distinguishing columns**
+> *"**A deduplication key that DIDN'T INCLUDE EVERY VARIANT-DISTINGUISHING COLUMN** (in MLB's case,
+> **the GOBLIN/DEMON TAGS**) caused **two genuinely different real market variants sharing the same
+> underlying player/prop/line to SILENTLY COLLAPSE into a SINGLE graded row** — **the other variant's
+> outcome was NEVER CREATED AT ALL, not even as a placeholder, WITH NO ERROR THROWN.**"*
+
+**⚠⚠ This is the highest-risk item for NBA's grader, and the variant column is exactly the one whose
+labelling is currently wrong.**
+
+**The shape of the risk:**
+- **`board_tiers` v1 derives `kind` from PRICE and is Over-only** — so the goblin/demon tag is
+  unreliable on Less rows since 2026-08
+- **A goblin and a demon can now sit at the same `(player, prop, line)`** — below the anchor, More is
+  a goblin and Less is a demon **on the same rung**
+- **If the grader's dedup or unique key does not carry BOTH `side` AND the variant tag**, those two
+  collapse — and per the source, **the other outcome is never created, not even as a placeholder, with
+  no error.**
+
+**What is known**: `board_outcomes` is keyed on prop, side and line. **Whether it carries a variant
+dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_ladder` does carry
+`ot_rule` in its PK, but that is a different table.
+
+**And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
+bug class, in the grader.
 T1's blueprint §4c specifies the grader's isolation as **a load-bearing safety property**:
 > *"The grader **only ever reads** from historical board/game-log tables and **only ever writes to a
 > dedicated outcome-history table** — **it never touches any table the live board-serving path
