@@ -736,6 +736,30 @@ multi-leg slip.**
 level**, not per leg and then again in aggregate. **Not yet relevant — the slip phase has not begun —
 but it will be immediately.**
 
+### ⚠ AS-OF CONTAMINATION — the recurring bug of this system, FOUR instances
+| Instance | Where | Recorded |
+|---|---|---|
+| **A baseline measurement included day D's own results** → apparent discrimination **+39.76 pp**; corrected to **+5.32 pp**, vs the enriched model's **+5.31 pp** | T1, Part F | *"an entire multi-day investigation's founding premise rested on a lookahead-bias bug in the baseline measurement itself"* |
+| **`backtest.baseline_v6_asof` leaked each leg's own game-day** (`as_of_date = D` included day D) | T1, relayed 2026-08-29 | verified via `non_push_sample` matching game-log counts |
+| **A season-wide mean using future games** — *"that was the entire FRINGE anomaly"* | T8 | multipliers *"shrank to honest ~1.0 values"* after the fix |
+| **A pasted calibration table carried across days** — the parity violation | live session | `ladder_calibration` dropped, replaced by `ladder_calibration_asof` |
+
+**Common signature: INFLATED APPARENT SKILL.**
+
+**Part F adds a second signature worth knowing**: *"a huge apparent gap"* between two components that
+should be comparable. The +39.76 vs +5.31 gap looked like a finding about enrichment; it was a defect
+in how the baseline was measured. **When two layers of the same pipeline disagree dramatically,
+suspect the measurement before the mechanism.**
+
+**Verification methods recorded:**
+- **Non-push sample vs game-log counts** (the MLB method) — if the as-of prediction can only be right
+  because day D is in it, the counts reveal it
+- **NBA's structural guard**: `classification_ladder_v12.py` is `shift(1)`-based by construction, and
+  T9 records *"the backtest harness on a past day IS already the production computation — every
+  feature is shift(1)-based"*
+
+**Open**: no equivalent of the non-push-count check has been run against NBA's own as-of surfaces.
+
 ### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
