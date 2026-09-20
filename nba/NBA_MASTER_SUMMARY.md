@@ -2639,6 +2639,67 @@ established that, since neither transcript states the connection.
 
 **T4 PASS 5: NEW MATERIAL (a resolution). Clean count 0/3.**
 
+### T4.12 — PASS 6 — **THE ORIGINAL OPERATING CADENCE, AND A GAP IN TODAY'S P3**
+
+#### T4.12a — The cadence as locked in `NBA_SYSTEM_DRAFT.md` Section 4b
+| Run | Original schedule |
+|---|---|
+| **Static differential** | **Mondays 2:00 am Pacific** |
+| **Delta daily** | **~11:00 am every day** |
+| **Master run** | **2 hours before the first game**, optional second pass later |
+
+#### T4.12b — **THE MASTER RUN WAS DESIGNED TO BE DYNAMIC, NOT A FIXED CLOCK TIME**
+> *"unlike the other two runs, **the master run's trigger time isn't a fixed clock time — NBA start
+> times shift day to day**, so it needs to be **computed dynamically from `nba_calendar.games`
+> (today's earliest real tip-off time) minus 2 hours**."*
+
+**`nba-p3-afternoon-light.yml`, built 2026-09-20, uses a FIXED 1:15 PM PT.**
+
+**This is safe on a normal slate** (earliest tip ~4 PM PT) but **wrong on early-tip days**. The NBA
+regularly schedules noon and 1 PM **Eastern** starts — Christmas, MLK Day, and most Saturday/Sunday
+national-TV windows. **A 12:00 PM ET tip is 9:00 AM PT — more than four hours BEFORE P3 would run.**
+
+**On those days P3 would score a slate whose games had already started.** Recorded in OPEN_ITEMS.
+**The fix the original design already specifies**: compute the trigger from the earliest tip in
+`nba_calendar.games`, and take **min(1:15 PM PT, earliest_tip − 2h)**. The schedule data needed for it
+is already in Postgres (T3.3, 2,666 games).
+
+#### T4.12c — **THE PRE-FLIGHT COMPLETENESS CHECK — designed here**
+> *"Before ingesting, **compare the number of games SCHEDULED for yesterday** (already sitting in
+> `nba_calendar.games`) **against the number showing as FINAL in the fresh API pull**. If they don't
+> match — **halt and warn, don't silently proceed on an incomplete night** (postponements, suspended
+> games, or just running too early would all get caught this way)."*
+
+**`nba/check_delta_gaps.py` (built 2026-09-20) implements this check — but runs it AFTER mining, as an
+audit, not BEFORE as a gate.** The design intent was *"halt and warn, don't silently proceed."*
+**In practice the ordering matters less than it seems** (P2 fails the job either way, before the
+baseline builds) **but the design called for a pre-flight gate and the implementation is a
+post-flight audit.** Noted rather than treated as a defect.
+
+#### T4.12d — **The baseline must NEVER live-query stats.nba.com — three reasons**
+1. **Speed** — querying Postgres beats re-fetching thousands of game logs
+2. **Stability** — *"if the NBA's API has an outage during your run window, you're not blocked"*
+3. **REPRODUCIBILITY** — *"a live query run at 9am vs 10am could return different data if a correction
+   posted in between — **your baseline needs a fixed, consistent snapshot**"*
+
+**Reason 3 is the as-of principle arriving early**, applied to API reads rather than to dates. The same
+logic later becomes the whole day-by-day parity directive.
+
+#### T4.12e — **A permanent caveat, deliberately not solved**
+> *"the NBA does issue **rare stat corrections hours or days later** (a rebound reattributed to a
+> different player). **Don't chase these** — treat each day's baseline as **a consistent point-in-time
+> snapshot**, and accept that occasional tiny corrections won't be reflected until the next natural
+> recalculation."*
+
+#### T4.12f — The timing research behind the cadence
+*"even the latest West Coast game (tip ~10:30 pm ET, **going to double overtime**) finishes by
+~1:45 am ET, and stats.nba.com finalizes within **10–15 minutes**. **6 am ET gives a 4-hour safety
+buffer**."*
+**P2's planned 01:00 PT = 04:00 ET is tighter than the 6 am ET this research endorsed** — still clear
+of the ~2:00 am ET worst case, but with ~2 hours of margin rather than 4.
+
+**T4 PASS 6: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
