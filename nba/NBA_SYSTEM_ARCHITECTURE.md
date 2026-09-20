@@ -490,8 +490,7 @@ and will silently receive 500. **Any count or coverage check must aggregate in S
 > TOOL RATHER THAN FETCHING THE RAW PUBLIC URL DIRECTLY.**"*
 
 **⚠⚠ This is directly live for NBA, because the loaders fetch from exactly that surface.**
-- **Every writer Worker fetches committed JSON from `raw.githubusercontent.com`** — chosen
-  deliberately, because *"the GitHub Contents API silently returns EMPTY above 1 MB."*
+- **⚠⚠ CORRECTED 2026-09-20 (T1 pass 71): NOT every writer Worker.** This line previously read *"**Every** writer Worker fetches committed JSON from `raw.githubusercontent.com`"*. **VERIFIED by reading the fetch call in all 21 workers: 11 use `raw.githubusercontent.com` and 10 still use `api.github.com/…/contents/`.** The split is chronological — **all ten Contents-API workers were registered 2026-08-31 → 2026-09-02, before the 1 MB bug was found in T3**; every worker built after it uses raw. **The fix was applied going forward and never retrofitted.** The ten are safe today — their largest file is **0.27 MB, 27% of the limit** — but the failure mode is silent: **the Contents API returns success with the content omitted**, so a worker crossing 1 MB would report a clean run and write nothing, and `nba_control` records nothing either (pass 68). → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 71*.
 - **`load_baseline_ladder.py` fetches the artefact over HTTP from the repo** — with the workflow
   comment *"**COMMIT BEFORE LOADING** … load_baseline_ladder.py fetches the artefact over HTTP from
   the repo (raw.githubusercontent), **NOT from the runner's local disk** — so a ladder built but not
