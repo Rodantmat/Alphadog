@@ -71,6 +71,57 @@ Power is a pure product of hit probabilities; Flex is a weighted sum over the pa
 makes it **less sensitive to a single miss and therefore more tolerant of a weak leg**. Any slip-EV
 computation must know which type it is pricing.
 
+## 0.2d **FLEX vs POWER — a genuinely different probability structure**
+
+> *"**PrizePicks Flex payout tables can have a genuinely DIFFERENT EFFECTIVE PROBABILITY STRUCTURE than
+> Power for the same legs.**"*
+
+### 0.2d.1 ⚠ **THE SINGLE-TIER NON-ARBITRAGE PRINCIPLE — a validity check for any Flex table**
+> *"a mechanism exists — the **'Single-Tier Non-Arbitrage Principle'** — **check that NO SINGLE
+> partial-hit payout tier ALONE implies positive EV even DISCARDING every other outcome, since that is
+> a MATHEMATICAL IMPOSSIBILITY for a properly-priced table** — for **detecting corrupted / misremembered
+> Flex tables**."*
+
+**A free correctness test that needs no market data.** Take one partial tier in isolation — say
+4-of-5 pays 0.5× — and compute its EV **assuming every other outcome pays zero**. If that alone is
+positive, **the table is wrong**, because no operator prices a slip where one partial outcome is
+independently profitable.
+
+**This applies directly to the figures in §0.2**: the 4/5 = 0.5 and 3/5 = 0.25 tiers are a
+**two-observation, never-re-checked** finding (§0.2c). **Run the non-arbitrage check on them before
+anything depends on them** — it is arithmetic, not a study.
+
+### 0.2d.2 **Flex can flip an EV-negative Power pool positive — in principle**
+> *"**Flex partial-credit structure can THEORETICALLY make an EV-negative Power pool EV-POSITIVE if the
+> underlying leg probabilities are FAR FROM WHAT THE FLEX TABLE'S INSURANCE TIERS WERE CALIBRATED
+> FOR** — **this was found true IN PRINCIPLE for MLB but the real magnitude, when tested, STILL FELL
+> SHORT.**"*
+
+**The mechanism is real and the size was insufficient.** The insurance tiers are priced for a typical
+leg-probability profile; a pool whose legs sit far from that profile is mispriced **by the table
+itself**, independently of any per-leg factor.
+
+**This is a second, structurally distinct mispricing** from lesson #13's tier-step gap — **and it is
+the one a well-calibrated model is best placed to find**, since it needs exactly what this system
+produces: **honest per-leg probabilities**, to compare against what the table assumes.
+**Tested once on MLB, real but too small. Untested on NBA.**
+
+## 0.2e **UNDERDOG AND SLEEPER PRICE PER-LEG DYNAMICALLY**
+> *"**Underdog and Sleeper price per-leg DYNAMICALLY (closer to real sportsbook-style pricing) rather
+> than off one flat published table** — **a flat assumed multiplier (e.g. '2-pick always pays 3.5×')**
+> [is wrong for them]."*
+
+**So the three platforms need three different treatments:**
+| Platform | Pricing model |
+|---|---|
+| **PrizePicks** | **discrete step function over tiers**, fixed multiplier per tier |
+| **Underdog** | **per-leg dynamic**, sportsbook-style |
+| **Sleeper** | **per-leg dynamic**, sportsbook-style |
+
+**A flat published-table assumption is valid for PrizePicks' tier structure and INVALID for Underdog
+and Sleeper.** And since Underdog and Sleeper **do expose their multipliers** (§1), there is no reason
+to assume anything for them — **read the value.**
+
 ## 0.2c ⚠ THE CONFIDENCE TIER ON §0.2's FINDING — do not let it harden
 
 The MLB lessons document flags this exact measurement as a cautionary case:
