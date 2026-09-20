@@ -2912,6 +2912,27 @@ inserts given the real scale (**32,755 rows total**)"* — and **all three datas
 
 **Two more consecutive clean full passes required before T4 is DONE.**
 
+### T4.18 — PASS 11 (full sequential, 230-char context) — **CLEAN 2/3**
+
+Complete re-read at wider context. **Every block maps to a documented entry. Nothing new.**
+
+One phrase confirmed in full, previously quoted in part — the owner's standing instruction on Gemini,
+stated here in his own words:
+> *"ground on online research and gemini insight, **remember that gemini is not the absolute truth, it
+> is great insight helper**"*
+
+**That instruction is what produced three of T4's most valuable outputs**: the `MeasureType=Advanced`
+correction (2 calls, not 1,230), the empirical `TEAM_ID = 0` resolution, and the survivorship-bias
+caution that came from pushing back rather than accepting.
+
+**CLEAN PASS 2 of 3.**
+
+### T4.19 — CURRENT STATE OF T4
+
+**11 passes. 9 found new material. Clean count: 2/3** (passes 10, 11).
+
+**ONE more complete clean sequential pass and T4 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
