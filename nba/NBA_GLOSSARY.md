@@ -376,6 +376,13 @@ deliberately; this one part was rejected on evidence.**
 (`nba_ref.defender_ratings`, 111,768 ratings) and wired on 4 props — **all gains from the INTERACTION
 form, not the main effect.**
 
+**non-goals, the three** · T1 (`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §6) · What NBA was explicitly
+told **not** to build, before any code: **no per-prop worker architecture** (MLB left *"19 dead stub
+files behind as evidence"*) · **no weather / quality-of-contact / RFI-analogue factors** (*"no
+basketball analogue"*) · **no auto-scheduling orchestrator before the manual pipeline is verified
+end-to-end against real data once**. All three honoured; **the third is a sequencing rule whose
+condition is now testable**. → `NBA_SYSTEM_DESIGN.md` §0.75.
+
 **N1 — availability model** · T15, T16 · Status resolution. **79% of Questionables are coin flips at
 the cutoff** because the Active List locks 60 minutes before tip.
 
