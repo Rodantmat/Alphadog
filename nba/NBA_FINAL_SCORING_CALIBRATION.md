@@ -390,20 +390,32 @@ lands in the table. *"A verdict that only exists in stdout is not a verdict."*
 **Note the third source is named precisely: same-player multi-line stacking** — i.e. taking
 `points 20+` and `points 25+` on one player, or `points` and `PRA`. **That is Part C member #4.**
 
-**The two findings compound against a same-game strategy:**
-1. **The clean effect is much smaller** than the headline suggests, and
-2. **the platform applies a real, large payout discount** for same-game stacking — measured by direct
-   live-board comparison, not inferred.
+**The two findings compound against a same-game strategy, and both are quantified:**
+> *"…the platform showed a **real, large payout discount for same-game stacking — A ~35–40% LOWER
+> MULTIPLIER FOR THE IDENTICAL LEGS — which MORE THAN OFFSET the real (much smaller, **~8%**, ITSELF
+> NOT STATISTICALLY CONFIRMED) correlation benefit.**
+> **Do not assume same-game stacking is a working strategy for NBA without DIRECTLY TESTING the
+> platform's own same-game discount, the same way — IT MAY BE ACTIVELY PRICED AGAINST, NOT FREE
+> MONEY.**"*
 
-**So a same-game correlation strategy must beat a large, confirmed discount to win a
-smaller-than-advertised effect.** *(The operational rule — **default to cross-game** — is recorded at
-`NBA_MULTIPLIERS.md` §0.2f.)*
+| Side | Magnitude |
+|---|---|
+| **Correlation benefit** | **~8%** — *"much smaller… **itself NOT statistically confirmed**"* |
+| **Platform's same-game discount** | **~35–40% lower multiplier on identical legs** |
+
+**The discount is roughly 4–5× the benefit, and the benefit is not even statistically confirmed.**
+That is the arithmetic behind *"default to cross-game"* (`NBA_MULTIPLIERS.md` §0.2f).
+
+**And the instruction for NBA is to re-measure, not to inherit**: *"directly testing the platform's
+own same-game discount, **the same way**"* — a live-board same-game vs cross-game slip comparison.
+**That is the same free slip-builder quote as lesson #16** (the payout displays before placing), so
+**one session answers both questions.**
 
 **NBA relevance**: the combo work estimates **per-player covariance from that player's own per-game
 P/R/A**, which avoids source 1 (no pooling across players or props) and source 3 (components modelled
 jointly rather than stacked as independent lines). **Source 2 — weighting — is the one to check**,
 since a per-player covariance averaged across games without volume weighting has the same exposure.
-*(And lesson #6 independently requires volume weighting at the day level.)*
+*(Lesson #6 independently requires volume weighting at the day level.)*
 
 ---
 
