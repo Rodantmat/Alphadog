@@ -3536,6 +3536,54 @@ Consistent with every table since T1. **`data_quality 'real'`** on both — scra
 
 **T6 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T6.9 — PASS 3 — **THE RESEARCH CONCLUSION, AND A PRIORITY RANKING THAT HELD**
+
+#### T6.9a — **The sharp-bettor "XYZ tracking" claim, and the tell that debunked it**
+> *"Sharp-bettor commentary claims the 'real' edge lives in **raw XYZ player-tracking data (25fps
+> positional data)** — enterprise-grade, Second Spectrum-level stuff. **The same sources, when they
+> actually explain their winning bets, talk about role changes, usage shifts, pace, and rest — not raw
+> positional data. That's a tell.**"*
+
+**The reasoning is the valuable part: compare what a source CLAIMS its edge is against what it
+DEMONSTRATES when explaining a specific win.** The gap between the two is diagnostic.
+
+**And the structural argument**: *"What you already have (shot-quality/defender-distance, tracking
+speed/distance summaries) **are the refined signal extracted from that raw data** — the sharp bettors'
+own examples ('**PG is out, usage jumps 8%**') are exactly the kind of thing your existing data
+supports."*
+
+#### T6.9b — The injury-PDF URL, exactly
+**`ak-static.cms.nba.com/referee/injury/...`** — *"several times a day, with real historical archives
+back to **2021-22** — free, official, **no third-party paywall**."*
+
+#### T6.9c — **A recommendation that was later OVERRULED, correctly**
+> *"**Historical injury-PDF backfill would be a real scope mistake right now.** It doesn't belong in
+> the baseline (which is **explicitly designed to be injury-agnostic**, per the architecture already
+> locked in) — it's **training data for a future enrichment refinement**, not urgent."*
+
+**T10 built the historical injury backfill anyway** — and it became load-bearing: the day-before report
+feeds P2's baseline build, N1's availability model is fitted on it, and the parity rule depends on it.
+**The "injury-agnostic baseline" framing was right about the BASELINE and wrong about the
+BACKFILL's urgency** — you cannot backtest an availability-aware pipeline without historical
+availability.
+
+#### T6.9d — **The priority ranking, and how each item actually landed**
+| # | Priority as stated | Outcome |
+|---|---|---|
+| **1** | **The baseline projection pipeline itself** — *"Every real thing built in this whole multi-session audit — starter status, DvP, officials, lineups — is **enrichment or context sitting on top of a baseline that doesn't exist yet**. This is the actual gap that matters most."* | **Built T7–T9.** Correct call. |
+| **2** | **Daily injury report ingestion** (the PDF source), *"wired into enrichment once the baseline exists"* | **Built T10–T11.** Correct order. |
+| **3** | **Distribution/variance modelling** — *"**mean isn't enough — two players can share a projection with very different bet value**"* | **Became the entire ladder/dispersion layer.** |
+
+**All three shipped, in that order.** Item 3's phrasing is the clearest one-line statement of why the
+system prices a distribution rather than a point estimate — and it predates the ladder by five
+transcripts.
+
+#### T6.9e — The honest self-assessment
+> *"the data-gap audit is **genuinely done**. The honest next move, per this research, **isn't more
+> data — it's building the baseline pipeline that's been designed but not built**."*
+
+**T6 PASS 3: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
