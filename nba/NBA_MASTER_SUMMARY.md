@@ -1525,6 +1525,16 @@ owner to redact that same value from transcripts that are not in the repo yet. R
 redaction, is the remedy — the value has been in git history since pass 19. → `NBA_OPEN_ITEMS.md`,
 first section.
 
+**Second judgment band, 0.45–0.60, 68 segments** — read in the same pass so T1's whole covered
+region was sampled, not just its top. **67 of 68 correct.** The one gap: the live `workers.dev` URL
+is recorded in four documents, but **not that the `POST /run` endpoint behind it has no
+authentication** — which is a fleet-wide property, MLB included. → `NBA_WORKERS.md` §0.28.
+
+**Judgment-pass total for T1: 97 segments across both bands, 2 defects.** Both were things the
+documents *mentioned* and got *incomplete* — a credential quoted rather than referenced, an endpoint
+recorded without its access property. **Neither was findable by the coverage score**, which is the
+whole reason the judgment pass exists as a separate step.
+
 **One figure the judgment pass deliberately re-checked and found SOUND**: the three worker counts.
 `140+` is quoted as what the `GLOBAL_REDEPLOY_FILES` comment says, `~130` as the deployed fleet,
 `116` as registry rows, and line 778 already reconciles them. Language strength matches evidence
