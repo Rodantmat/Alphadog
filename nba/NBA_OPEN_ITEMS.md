@@ -271,6 +271,72 @@ is that data come from nba.com itself, as MLB's does. Treat balldontlie as conti
 
 ---
 
+## FROM T1 PASS 31 — THE OPERATING MODEL AND THE NON-GOALS *(added 2026-09-20)*
+*`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§7 was entirely undocumented** across all twelve
+documents; **§6** existed only as scattered facts, never as the instruction list it is. Full text at
+`NBA_MASTER_SUMMARY.md` §T1.61.*
+
+### ⚠ NEVER PRODUCED · **the day-by-day report layout the owner explicitly specified**
+§7 gives the exact table *"they expect for **any** backtest or real-slip report — **reuse directly for
+NBA**"*: `Date · Slips · Full hits · 5/6 · ≤4/6 · Staked · Return · Profit · ROI`, **$1/slip**, **total
+row bolded**, **partial-hit columns explicit** *"so the actual failure mode stays visible rather than
+being collapsed into a single win/loss count."*
+
+**It has never been produced for NBA**, and the reason is a data gap, not an oversight: there is **no
+NBA slip history**. `nba_score.real_slip_leg_observations` holds **139 legs**, not dated slips with
+outcomes. **NOT RECORDED as built.**
+⚠ **The `5/6` and `≤4/6` columns are the empirical Flex partial-tier distribution** — the thing lesson
+#27 (pass 30) says must be verified per platform. **So the missing report and the unverified partial
+tiers are the same gap**: the report is the instrument that would measure them.
+**And §7 states the layout is owed *"before being asked, every time a finding is reported."***
+
+### ⚠ UNVERIFIED · **the three standing UI rules, against an inherited UI**
+§7's standing product rules, *"apply the same defaults for any NBA-side interface"*:
+1. **every deployed strategy needs a real backup-leg substitution system**
+2. **slip-leg checkboxes default to CHECKED**
+3. **a manually-entered multiplier value must NEVER be lost or reset on a UI re-render**
+
+The certification center is **inherited from MLB** and recorded as *"already exists… **nothing to
+build**."* **Whether it satisfies these three for NBA legs is NOT RECORDED — never checked.**
+⚠ **Rule 3 is the highest-stakes of the three here.** PrizePicks multipliers are **ruled out
+programmatically, exhaustively** (`NBA_MULTIPLIERS.md` §2), so **every one in the system is
+hand-typed** and **no API can re-fetch it.** A re-render bug destroys data that cost a logged-in
+browser session to obtain.
+
+### ⚠ NON-GOAL 3 HAS EXPIRED — and the pipelines are still unscheduled
+§6's third non-goal: *"**don't invest in an elaborate auto-scheduling orchestrator BEFORE the manual
+pipeline works end-to-end and has been verified against real data at least once.**"*
+
+**This is a sequencing rule, not a permanent ban**, and it is **the reason P2 and P3 were never given
+a cron** — correctly, at the time. **P2 and P3 still have no cron** (`NBA_SYSTEM_DESIGN.md` §3, §4)
+with the season opening **2026-10-03**. **SEASON-START CRITICAL.** The question the non-goal poses is
+now answerable and **has not been asked**: *has the manual pipeline run end-to-end and been verified
+against real data at least once?* **Until that is answered, whether the non-goal still binds is
+undetermined — flagged, not resolved.**
+
+### ⚠ CONTRADICTION-ADJACENT · two rules that must not be collapsed
+§7 states **both**:
+- the report layout uses **one dollar per slip** as its reporting convention, **and**
+- *"**always normalize by CAPITAL DEPLOYED, not by slip or leg count**"* — from a **real, confirmed**
+  push-back where *"comparing profit at a fixed dollar-per-slip rate when capital deployed… was the
+  actual real-world constraint"* was the error.
+
+**These are not in conflict, but they read as if they were**, and the push-back shows the confusion is
+one that actually happened. **Recorded so the next reader does not resolve it by picking one**: the
+$1 convention makes the table readable; the capital-deployed rule governs what any **comparison
+between strategies** is divided by. **Identify what is genuinely fixed in the real scenario first.**
+
+### ⚠ A STANDING RULE THE DOCUMENTATION EFFORT ITSELF INHERITS
+> *"**Document everything into committed repository files, not only into chat conversation** — this
+> whole NBA transfer package is itself a direct expression of that same standing instruction, and
+> **the practice should continue throughout NBA's own build, NOT JUST AT THE OUTSET.**"*
+
+**This is the origin of the twelve-document mandate**, stated in T1 before any NBA code existed.
+Recorded here because it makes the **"not just at the outset"** clause an open, standing obligation
+rather than a completed task.
+
+---
+
 ## FROM T1 PASS 30 — THE RESEARCH STANDARD WAS MISCOUNTED *(added 2026-09-20)*
 
 ### ⚠ CORRECTION · **The research standard has 27 lessons, not 26** — and #27 was undocumented
