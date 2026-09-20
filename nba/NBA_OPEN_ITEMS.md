@@ -554,7 +554,26 @@ on a **10–15 game rolling window**, and only season aggregates and weekly as-o
 **The risk of adding a factor layer is regression on what already works**, not merely failure to
 improve the laggards.
 
-### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
+### ⚠ TRAP (inherited from MLB, applies to any NBA worker) · a filter parameter that doesn't filter
+> *"When adding any **'limit to these specific items' parameter** to an NBA worker, **verify it
+> constrains the ACTUAL WRITE PATH, not just what gets echoed back in the response.**"*
+
+**A scope parameter that only shapes the response looks correct in every test that reads the
+response.** The write proceeds unfiltered.
+
+**This is live for NBA**: `FE_DATE` on `build_final_hp.py`, `BT_PROPS`, `GAP_SEASON`, `INJURY_MODE`,
+`SLEEPER_SPORTS`, the backfill worker's `mode`, the measure-types writer's `file_prefix` — **every one
+is a "limit to these specific items" parameter.** *(The `SLEEPER_SPORTS`/`SLEEPER_OUT_DIR` case is the
+same family: the default scraped MLB and wrote to a path nothing committed.)*
+
+### ⚠ TRAP · `NOT IN` from an array parameter, especially when EMPTY
+> *"A **`NOT IN` clause built from an array parameter via a query-builder's tagged-template array
+> handling can be unreliable, especially when the array is empty**, producing a real *malformed array
+> literal* [error]."*
+
+**The empty case is the dangerous one** — an exclusion list that is empty should exclude nothing, and
+instead errors or silently changes the predicate. **`known_empty_games` is exactly this shape**: a
+skip list that is empty on day one.
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
 > techniques) that **in their experience OFTEN OVER-FLATTENS / FLATTENS TOO MUCH**."*
