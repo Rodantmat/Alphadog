@@ -454,6 +454,8 @@ writers do exactly this** (`baseline_ladder` + its index + `baseline_ladder_runs
 
 **None is a network problem.** *"Don't let a scary-sounding error name send you down expensive,
 unrelated rabbit holes."*
+
+### Scope the differential/dedup logic BY SOURCE, not just by natural key
 > *"Rows that are identical get **a cheap `active=1, updated_at=now()` TOUCH ONLY**.
 > **Scope this differential/dedup logic BY SOURCE, not just by NATURAL KEY** — MLB had **a real bug
 > where scoping ONLY BY NATURAL KEY caused ONE SOURCE'S FRESHER DATA TO BE SILENTLY BLOCKED because A
