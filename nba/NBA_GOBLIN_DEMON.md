@@ -212,7 +212,32 @@ confirmed.**
 
 ---
 
-## 9. OPEN ITEMS SPECIFIC TO THIS LAYER
+## 10. WHAT T1 PREDICTED ABOUT GOBLIN/DEMON — and it was right
+
+From the handoff's transfer table *(T1)*:
+> *"**Goblin/Demon/Standard variant tiers** | **Confirm these exist identically for NBA on each
+> platform (PrizePicks in particular) — very likely yes, since it's a PLATFORM-LEVEL MECHANIC, not
+> sport-specific**"*
+
+**Correct.** The tiers exist identically for NBA; the live NBA board returns
+`{demon: 104, standard: 36, goblin: 52}`. **And because it is platform-level, the 2026-08 change that
+enabled Less applies to NBA too** — which is precisely why the two-way taxonomy broke.
+
+**The corollary worth holding**: platform-level mechanics **transfer across sports but change over
+time**. Sport-specific numbers do the reverse. *"MLB's specific numbers do not transfer; only the
+platform-level mechanics transfer as informed priors, not answers."*
+
+---
+
+## 11. THE MLB REFERENCE DOCUMENT
+
+`GOBLIN_DEMON_MECHANISM_EXPLAINED.md` exists on the MLB side and was one of the **eleven documents read
+and integrated** into the NBA transfer package (T1). **It is the prior for the mechanism**; the NBA
+numbers are our own.
+
+---
+
+## 12. OPEN ITEMS SPECIFIC TO THIS LAYER
 
 1. **`board_tiers_v2` is unverified** — the build was running at session end.
 2. **`board_tiers` v1 is still the 2.2M-leg table** anything downstream would read.
