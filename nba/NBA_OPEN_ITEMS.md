@@ -1183,6 +1183,8 @@ treatment**."*
 **Two of the three MLB evidence lines have NBA analogues already**: the harness's own calibration
 testing (*"persists at any lambda"*) and player-level research. **The conclusion they support is the
 same one.**
+
+### ⚠ NO MONOTONIC CONSTRAINTS AT THE FACTOR LEVEL
 T1's blueprint §4d, third academic caution:
 > *"**Monotonic constraints are genuinely valuable SPECIFICALLY IN RARE-EVENT, LIMITED-DATA
 > situations**, where **a model might otherwise OVERFIT A RELATIONSHIP THAT SPURIOUSLY REVERSES
