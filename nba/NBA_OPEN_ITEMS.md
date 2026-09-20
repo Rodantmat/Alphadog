@@ -143,10 +143,14 @@ genuinely fresh connection is required.
 Root cause: **stats.nba.com is itself Cloudflare-fronted, and Cloudflare-to-Cloudflare traffic gets
 flagged at the WAF/edge.** The request never reaches the app layer. No header tuning can fix it.
 
-### CAVEAT · `FALLBACK_AFTER_FETCH_ERROR` is the marker to watch
-A `source_key` of `FALLBACK_AFTER_FETCH_ERROR` means the certified static list was used, not live data.
-`NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` means real nba.com data. **Check the key before trusting a
-load.**
+### CAVEAT · `STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR` is the marker to watch
+A `source_key` of **`STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR`** means the certified static list was
+used, not live data. `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` means real nba.com data. **Check the key
+before trusting a load.** *(Corrected 2026-09-20 — an earlier entry recorded the truncated form.)*
+
+### CAVEAT · NBA workers use DIRECT dispatch, bypassing the queue
+Wired in the `BASE_HITTER_GAME_LOGS_WORKER` style — a direct call that *"bypasses queue entirely"*.
+Deliberate: the owner specified no orchestrator. Copy that precedent for any new NBA worker.
 
 ---
 
