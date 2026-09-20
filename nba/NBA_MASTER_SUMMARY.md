@@ -2087,6 +2087,30 @@ another "what else is there?" question that would always produce an answer.
 
 **T3 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T3.10 — PASS 5 (live verification of what T3 designed) — **NEW MATERIAL**
+
+**SHOT QUALITY DELTA WAS BUILT, AND THE FORMULA LANDED EXACTLY AS SPECIFIED.**
+Three tables exist in Postgres:
+- **`nba_stats.player_shot_quality`** — the raw defender-distance buckets
+- **`nba_stats.player_shot_quality_delta`** — `player_id`, **`actual_efg_pct`**,
+  **`expected_efg_pct`**, **`shot_quality_delta`**, `total_fga`, `source_key`, `data_quality`,
+  `updated_at`
+- **`nba_stats.player_shot_zone_profile`** — the court-zone dimension (the "WHERE")
+
+**The three columns `actual_efg_pct` / `expected_efg_pct` / `shot_quality_delta` are the formula from
+T3.9f, implemented verbatim.** `total_fga` is a sensible addition not in the original spec — it lets a
+consumer weight or gate the delta by sample size, which the formula alone does not.
+
+**All three complementary dimensions from T3.9f are present in the schema**: play type (HOW) in
+`player_playtype_profile`, zone (WHERE) in `player_shot_zone_profile`, defender distance (WHAT
+CONTEST) in `player_shot_quality`. **The design was followed, not abandoned.**
+
+**Open question for T4+**: whether `shot_quality_delta` is actually CONSUMED by the baseline or
+enrichment layer, or whether it is computed and never read. **Not established in T3** — the build ends
+here. Flagged in OPEN_ITEMS.
+
+**T3 PASS 5: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
