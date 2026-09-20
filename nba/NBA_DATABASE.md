@@ -37,6 +37,35 @@ proposal to share the control plane.
 `context_cert` · `control` · `daily` · `market` · `public` · `ref` · `score` · `scoring` ·
 `stats_hitter` · `stats_pitcher` · `team`
 
+> ### ⚠⚠ COMPLETENESS AUDIT — **17 of the 85 live NBA tables are missing from this document**
+> *VERIFIED by live SQL 2026-09-20 (T1 pass 47). This document's mandate is "a comprehensive complete
+> list of all tables and columns"; **it is at 80%.***
+>
+> **Absent here** (several are documented in *other* files, which is the failure the twelve-document
+> split exists to prevent):
+> `nba_calendar.games` ⚠ *(the calendar the pipeline schedules against — quoted elsewhere as **2,666
+> games**)* · `nba_config.variation_bands` *(25 rows)* · `nba_market.board_backfill_log` ·
+> `nba_market.board_tiers_v2` *(in `NBA_GOBLIN_DEMON.md`)* · `nba_market.game_lines_snapshot_log` ·
+> `nba_market.schedule_norm` · `nba_score.absence_panel_teams` · `nba_score.redistribution_factors` ·
+> `nba_score.scenario_calibration` · `nba_score.tier_band_calibration` ·
+> `nba_score.tier_selection_value` · `nba_stats.player_game_log_advanced` ·
+> `nba_stats.player_onoff_profile` · `nba_stats.player_playtype_profile` ·
+> `nba_stats.player_tracking_detail` · `nba_team.playtype_profile` ·
+> `nba_team.team_game_log_advanced`
+>
+> ### ⚠ AND SIX OF THE FOURTEEN SCHEMAS HOLD ZERO TABLES
+> **VERIFIED**: `nba_archive`, `nba_backtest`, `nba_classification`, `nba_context`, `nba_daily`,
+> `nba_scoring` — **all empty.** Live table counts: `nba_stats` **19** · `nba_score` **18** ·
+> `nba_ref` **14** · `nba_config` **11** · `nba_market` **11** · `nba_team` **9** ·
+> `nba_control` **2** · `nba_calendar` **1**.
+>
+> **All fourteen were created in one `CREATE SCHEMA IF NOT EXISTS` statement in T1, mirroring MLB's
+> schema list. Six were never used.** The work they were named for exists **under other names** —
+> backtest in `nba_score.*` and the repo's `backtest/`, classification output in
+> `nba_score.baseline_*`. **They are a naming layer that was never adopted, not missing
+> functionality** — but a reader searching `nba_classification` for the classifier's output will find
+> nothing. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 47.
+
 ### NBA schemas (14, created T1 in one statement)
 `nba_ref` · `nba_calendar` · `nba_team` · `nba_stats` · `nba_daily` · `nba_context` · `nba_market` ·
 `nba_archive` · `nba_score` · `nba_scoring` · `nba_backtest` · `nba_classification` · `nba_config` ·
