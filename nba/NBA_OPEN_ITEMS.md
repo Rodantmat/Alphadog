@@ -1025,6 +1025,37 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠ PUSH / TIE / DNP IS A THIRD STATE — and it needs fixing in TWO places
+T1's blueprint §4c:
+> *"**Distinguish push/tie/DNP from genuine hit/miss AS A REAL THIRD STATE**, and **exclude it from
+> hit-rate denominators at the STATISTICAL level** — **but recognise this is a *DIFFERENT* FIX from
+> correctly handling it at the *SLIP-CONSTRUCTION* level.**
+> MLB found that **its per-leg hit-rate statistics ALREADY CORRECTLY EXCLUDED VOIDS**, while **its
+> SLIP-LEVEL BACKTEST SIMULATIONS DID NOT correctly model that A REAL SLIP CONTAINING A VOIDED LEG
+> GETS RE-PRICED BY THE PLATFORM TO ONE FEWER PICK** — **two different places needing the same
+> real-world event handled correctly, where fixing [one does not fix the other].**"*
+
+**✅ NBA has the third state at the data level**: `board_outcomes.leg_result` carries **`push`** and
+**`dnp`** as distinct categories alongside `over_win`/`under_win`.
+
+**⚠ The slip-level half cannot be checked yet — and that is exactly when it bites.** The slip-strategy
+phase has not begun, so there is no backtest simulation to inspect. **But the lesson is that the
+statistical fix is the easy one and gets done first**, while the slip-level one is missed *because*
+the statistics already look correct.
+
+**The specific mechanic to model when the slip phase starts:**
+> **a real slip containing a voided leg is RE-PRICED BY THE PLATFORM TO ONE FEWER PICK.**
+
+**A 5-pick slip with one DNP becomes a 4-pick slip at 4-pick pricing** — not a 5-pick slip with a free
+leg, and not a loss. **Any EV or ROI simulation that treats a void as either must be wrong.**
+
+**And the frequency is not negligible for NBA**: the baseline deliberately projects players who will
+not play (*"43 roster players were DNP — enrichment removes"* on one replay slate), and the
+availability delta exists precisely because players flip to OUT after P2.
+
+**Recorded now, before the slip phase, because the lesson is that it gets missed at exactly that
+point.**
+
 ### ⚠⚠ TWO HISTORICAL GRADER BUGS — both live risks for NBA's grader
 T1's blueprint §4c: *"**two real, historical bugs, both worth ACTIVELY DESIGNING AGAINST in NBA's own
 grader.**"*
