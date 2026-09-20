@@ -238,6 +238,238 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 73 — T1'S WRITE SET, COUNTED *(added 2026-09-20)*
+*Angle: pass 45 checked that T1's artefacts exist and pass 66 counted its tool calls by wall time.
+**This pass reads every `github_patch_file` / `github_put_file` / `github_str_replace` call in T1 as
+a changeset** — which paths, how many times, and which calls failed. **MEASURED from the export.***
+
+### The write set: 61 calls across 11 paths
+| Path | Writes |
+|---|---|
+| `nba/NBA_PROJECT_LOG.md` | **12** |
+| `nba/alphadog-v2-nba-static-teams.js` | 8 |
+| **`alphadog-v2-admin-sql.js`** *(MLB)* | **8** |
+| `nba/scrape_nba_stats_teams.py` | 8 |
+| **`generate_wrangler_configs.py`** *(MLB)* | **7** |
+| `nba/TRIGGER_NBA_SCRAPE.txt` | 5 |
+| `.github/workflows/nba-scrape.yml` | 4 |
+| `nba/NBA_SYSTEM_DRAFT.md` | 3 |
+| **`github_mobile_deploy_workers.py`** *(MLB)* | **3** |
+| `nba/NBA_ARCHITECTURE_BLUEPRINT.md` | 1 |
+| `nba/worker_manifest_nba.json` | 1 |
+| *(one call issued with no `path` — see below)* | 1 |
+
+### ⚠ THE ISOLATION BOUNDARY, MEASURED: **18 of 61 writes — 30% — went to MLB root files**
+**Three MLB-owned files were edited**: `alphadog-v2-admin-sql.js` (**8**),
+`generate_wrangler_configs.py` (**7**), `github_mobile_deploy_workers.py` (**3**).
+**All three are already named in the documents**, and pass 65 recorded **why** the rule was relaxed
+(the additive judgement call, from T1's thinking blocks). **What was never recorded is the scale:
+nearly a third of T1's repo activity was inside MLB's files**, under a rule stated as
+*"No MLB edits, ever."*
+
+**Stated at its real strength**: **the edits were additive and the isolation held** —
+`config.worker_definitions` still shows **116 rows, 0 NBA** (`NBA_SYSTEM_ARCHITECTURE.md` §1), and
+every later verification agrees. **This is not a finding that the rule was broken in effect.** It is
+a finding that **the gap between the rule as written and the work as done was large and unquantified**,
+which matters for anyone reading *"everything is additive"* as *"nothing outside `nba/` was touched."*
+**Those are different claims, and only the first is true.**
+
+### ⚠ `nba/TRIGGER_NBA_SCRAPE.txt` was written FIVE times — each write is a workflow firing
+The trigger file is a marker whose only purpose is to be committed so the push event fires
+`nba-scrape.yml` (pass 65 records the full causal chain). **Five writes = five manual scrape runs in
+one session**, which is the human-visible cost of having no dispatch tool, alongside the 25 polling
+sleeps (pass 66).
+
+### The failure taxonomy: **6 of 61 writes failed — a ~10% failure rate**
+| Failures | Error |
+|---|---|
+| **2** | `old_str matches 2 times, must be unique` |
+| **2** | `old_str not found in file. No changes made` |
+| **1** | **HTTP 409 conflict** |
+| **1** | `MCP error -32602: Input validation error … expected string, received undefined at path` |
+
+**The last one is worth naming precisely**: a `github_patch_file` call was issued **with `old_str` and
+`new_str` but no `path`** — its content targets `alphadog-v2-admin-sql.js`
+(`toolGithubTriggerWorkflow_PLACEHOLDER`). **It was rejected by input validation and changed
+nothing**, so the MLB write count stands at 18, not 19. Recorded because a reader counting edits from
+the tool calls alone would get 19.
+
+### ⚠ Why this taxonomy is worth keeping: the same four failures recur across sessions
+**This documentation effort hit all four of them again**, weeks later, on different files: an
+anchor matching zero times, an anchor matching more than once, a **409 conflict on
+`NBA_OPEN_ITEMS.md`** that succeeded on an identical retry, and a malformed call.
+**Four failure modes, two sessions, no overlap in the files involved — they are systemic to the
+patch-by-anchor workflow, not incidental to either session.** The practical consequences, both
+learned twice:
+1. **Re-read the file immediately before patching** — an anchor that matched an hour ago may now
+   match zero or two times.
+2. **A 409 is not a rejection of the content** — it is a concurrent-write conflict, and the identical
+   call usually succeeds on retry.
+
+---
+
+## FROM T1 PASS 72 — THE PYTHON LAYER, DIFFED AGAINST WHAT INVOKES IT *(added 2026-09-20)*
+*Angle: pass 69 diffed the worker universe and pass 70 the operator surface. **This one diffs the
+116 Python files in `nba/` against the 32 workflows that could run them and against every other
+script that could import them.** **VERIFIED by grep of the live clone.***
+
+### The counts
+| | |
+|---|---|
+| Python files in `nba/` | **116** |
+| Invoked by at least one workflow | **101** |
+| Not invoked by any workflow | **15** |
+| — of those, shared libraries (correctly not invoked directly) | **2** |
+| — of those, referenced by nothing at all | **13** |
+
+**The two libraries are fine and should not be read as orphans**: `nba_names.py` is imported by
+**27** scripts and `nba_season.py` by **19**; both are named in **7 documents each.**
+
+### ⚠ The thirteen unreferenced scripts — never invoked, never imported, and 11 named in no document
+| Script | Lines | Documents naming it |
+|---|---|---|
+| `build_absence_panel.py` | 259 | **0** |
+| `build_absence_panel_v2.py` | 232 | **0** |
+| `build_absence_panel_v3.py` | 212 | **0** |
+| `patch_missing_officials.py` | — | **0** |
+| `probe_board_archives.py` | — | 1 |
+| `probe_dfs_apis.py` | — | 1 |
+| `probe_board_archives2.py`, `probe_pp_client_bundles.py`, `probe_pp_entry_surface.py`, `probe_pp_multipliers.py`, `probe_underdog2.py`, `probe_underdog3.py`, `probe_underdog4.py` | — | **0** |
+
+**The ten `probe_*.py` are one-off investigation scripts** — PrizePicks bundles and entry surface,
+Underdog, DFS APIs, board archives. **Being throwaway is expected; being committed and unlabelled is
+the gap**, because nothing distinguishes them from live code to anyone reading the directory.
+**Recorded, not removed** — the standing instruction forbids changes.
+
+### ⚠⚠ THE THREE `build_absence_panel*.py` ARE SUPERSEDED DEAD CODE — and their successor carries the root cause the twelve documents state only as an outcome
+**VERIFIED**: `.github/workflows/nba-absence-panel.yml` runs **`build_redistribution_panel.py`**, not
+any of the three. That file's own docstring names itself **"REDISTRIBUTION PANEL v4"**, so the
+lineage is **v1 → v2 → v3 → v4**, with the last one renamed. **Commit dates**: v1 and v2
+2026-09-11, v3 and v4 2026-09-12 — **four generations in two days.**
+
+`NBA_FINAL_SCORING_CALIBRATION.md` records the **outcome** accurately: *"A2 — teammate
+redistribution: **five panels failed, then RETRACTED** — the certified anchor wins every slice, and
+worst where the mechanism predicted it should win."* **What it does not record is WHY**, and the v4
+docstring states it plainly:
+
+> *"Every earlier version tried to attribute vacated minutes to a **SPECIFIC absent player**, and
+> every version then had to isolate a 'clean' sub-case to make that attribution meaningful:
+> **v1** minutes floor on receivers → **dropped the absorbers**;
+> **v2** `pair_games >= 5` → **dropped the absorbers**;
+> **v2b** `leaguedashlineups` → **API capped at 2,000 rows**, dropped the absorbers;
+> **v3** `single_absence` only → **kept 218 of ~1,150 team-games**, biased remainder.
+> **The isolation WAS the bug, five times.** Most NBA games have several players out; their vacated
+> minutes pool together and **cannot be attributed to one absence from box scores**."*
+
+**Conservation-gate values across the failures: `0.10 / -0.05 / -0.37 / 0.25-0.49`.**
+
+**v4's structural answer** — also recorded nowhere in the twelve:
+> *"one row per (team-game, remaining player), **absences as FEATURES**; pool =
+> `team_vacated_min` / `team_vacated_poss` summed over **ALL** players ruled out pre-game.
+> **Conservation holds BY CONSTRUCTION at fit time**: the allocation is fitted as **shares of the
+> team pool (sum of predicted shares = 1)**, rather than as independent per-player multipliers.
+> Uses **EVERY game with at least one pre-game absence — thousands of team-games, not 218.**"*
+
+**Why this is worth carrying even though A2 was retracted**: *"the isolation WAS the bug"* is a
+**method lesson, not an A2 lesson.** Its shape — *filtering to the clean sub-case removes exactly
+the rows carrying the effect* — applies to any factor fitted on a filtered panel, and **the twelve
+documents currently record only that A2 failed, not the trap that made it fail five times.**
+**Recorded here and summarised in `NBA_FINAL_SCORING_CALIBRATION.md`.**
+
+### Stated at the right strength: this is not waste in production
+`nba-absence-panel.yml` is **`workflow_dispatch` only — not scheduled** (VERIFIED), so **nothing is
+burning runner time building a panel for a retracted factor.** It is a manual research tool whose
+subject was subsequently closed, and it is named in four documents. **The gap is the lineage and the
+reason, not the workflow.**
+⚠ One term still appears in **none of the twelve**: **`A2b`, the "dependent branch"**, named in the
+workflow header and in `NBA_ENRICHMENT_ENGINE_DESIGN.md`/`NBA_ENRICHMENT_FACTOR_LOCK.md` — both
+**outside the mandated set.** What A2b is, and whether it was retracted with A2, is **NOT RECORDED**
+in the twelve.
+
+---
+
+## FROM T1 PASS 71 — THE FETCH SURFACE, WORKER BY WORKER *(added 2026-09-20)*
+*Angle: the 1 MB Contents-API bug is thoroughly documented. **This pass asks whether the fix was
+actually applied to every worker**, by reading the fetch call in all 21 worker files and measuring
+the file each one names. **VERIFIED by grep of all 21 workers and by `stat` on the live clone.***
+
+### ⚠⚠ THE FIX WAS NEVER RETROFITTED — **10 of the 21 workers still use the Contents API**
+`NBA_SYSTEM_ARCHITECTURE.md` stated: *"**Every writer Worker** fetches committed JSON from
+`raw.githubusercontent.com` — chosen deliberately, because the GitHub Contents API silently returns
+EMPTY above 1 MB."* **That is not what the code does.**
+
+| Fetch surface | Workers | Which |
+|---|---|---|
+| **`api.github.com/…/contents/`** | **10** | `static-teams`, `static-players`, `static-arenas`, `static-officials`, `static-player-bio`, `static-player-tracking`, `static-team-stats`, `static-onoff`, `static-darko`, `weekly-differential` |
+| **`raw.githubusercontent.com`** | **11** | `baseline-ladder`, `daily-delta`, `static-backfill`, `static-game-officials`, `static-lineups`, `static-measure-types`, `static-playtypes`, `static-schedule`, `static-shotquality`, `static-starter-status`, `static-tracking-detail` |
+
+**The split is chronological, and that is the explanation.** All ten Contents-API workers were
+registered **2026-08-31 → 2026-09-02** — before the 1 MB bug was found. **The bug was discovered in
+T3, on the schedule file** (`NBA_RECIPE.md` step 8: *"the **1 MB Contents API silent-empty bug**
+→ `raw.githubusercontent.com`"*). **Every worker built after that uses raw. Not one built before it
+was changed.**
+
+**So `NBA_WORKERS.md` §4b is accurate** — it scopes its claim to *"workers built T3–T9"*, and every
+one of those does use raw. **`NBA_SYSTEM_ARCHITECTURE.md`'s "every writer Worker" was the overreach**,
+and is corrected in place.
+
+### How much headroom the ten actually have — measured, and the honest answer is "comfortable"
+**VERIFIED by `stat` on every file the ten name:**
+
+| File | Size | % of the 1 MB limit |
+|---|---|---|
+| `nba_player_bio_current.json` | **0.27 MB** | **27%** |
+| `nba_players_current.json` | 0.20 MB | 20% |
+| `nba_onoff_current.json` | 0.18 MB | 18% |
+| `nba_darko_current.json` | 0.12 MB | 12% |
+| `nba_player_tracking_current.json` | 0.11 MB | 11% |
+| `nba_arenas_current.json`, `nba_officials_current.json`, `nba_teams_current.json`, `nba_team_stats_current.json` | 0.01 MB each | 1% |
+| all nine `*_meta.json` | <0.01 MB | — |
+
+**Stated at its real strength: this is latent, not imminent.** The largest file is at **27% of the
+limit** and these are roster-scale files that grow slowly — `nba_onoff_current.json` was **208,560
+characters when T2 fetched it** and is **0.18 MB today**, i.e. roughly flat over three weeks.
+**No claim is made that any of the ten is close to breaking.**
+
+**What is worth recording is the failure mode, not the margin.** The Contents API **does not error
+above 1 MB — it returns success with the content omitted.** A worker crossing that line would
+**report a clean run and write nothing**, and — per pass 68 — **`nba_control` records nothing at
+all**, so the only trace would be a table that stopped changing. **Two silent failures composing is
+the reason this is written down** even though the margin is wide.
+
+**The three files to watch**, because they scale with roster size and the season opens 2026-10-03:
+`nba_player_bio_current.json`, `nba_players_current.json`, `nba_player_tracking_current.json`.
+
+### The other end of the same scale: `nba/data/` is 1.2 GB across 223 files
+**VERIFIED**: **223 files** (221 `.json`, 2 `.txt`), **1.2 GB**; the working tree is **1.3 GB** and
+`.git` is **269 MB**. **Six files exceed GitHub's 50 MB warning threshold**, the largest being
+**`nba_injury_report_2025_26_2026-03.json` at 78.7 MB — 79% of GitHub's 100 MB hard limit.**
+
+| File | Size |
+|---|---|
+| `nba_injury_report_2025_26_2026-03.json` | **78.7 MB** |
+| `nba_injury_report_2025_26_2026-01.json` | 76.0 MB |
+| `nba_delta_player_game_log_advanced.json` | 57.6 MB |
+| `nba_matchups_2025_26.json` | 57.0 MB |
+| `nba_matchups_2024_25.json` | 54.6 MB |
+| `nba_matchups_2023_24.json` | 53.1 MB |
+
+**The 100 MB limit is already a recorded design input** — `NBA_LESSONS_LEARNED_FROM_MLB.md` §4:
+*"Two backfills (injury season file, per-game matchups) **silently failed at the commit step after
+the scrapes succeeded**. Shard by month with an index from the start."* **The sharding worked** —
+these are per-month, per-season files, which is why none exceeds 100 MB.
+⚠ **What is NOT RECORDED is that the largest shard is already at 79% of the limit**, and that
+**injury-report shards are per-month within a live season**, so the 2026-27 equivalents grow from
+October. **No size guard on the commit step was found in this pass** — whether one exists is
+**NOT RECORDED**; the lesson prescribes one (*"size-guard every commit"*) and this pass did not
+verify that the prescription was implemented.
+
+**Both files read by the two largest raw-fetching workers are fine on that surface**:
+`raw.githubusercontent.com` has no 1 MB limit, and `daily-delta` reads the 57.6 MB and 45 MB delta
+logs through it — **the correct choice, made for the correct reason.**
+
+---
+
 ## FROM T1 PASS 70 — THE OPERATOR SURFACE: EVERY WORKFLOW AND EVERY TRIGGER FILE, INVENTORIED *(added 2026-09-20)*
 *Angle: **whole-universe diff applied to the things a human fires by hand** — all 32 `nba-*.yml`
 workflows and all 14 `nba/TRIGGER_NBA_*.txt` files, each checked against all twelve documents.
