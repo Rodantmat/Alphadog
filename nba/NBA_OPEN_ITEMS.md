@@ -474,7 +474,33 @@ inputs, *"they act on opportunity, not efficiency."*
 nothing, and foul trouble appears only as an exclusion filter (`PF < 6`).
 **Two of the three named minutes inputs are absent.**
 
-### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
+### ⚠ POSSIBLY AFFECTS MLB TOO · the symmetric sample-size floor
+NBA's backtest found **a real bug in MLB's own guard, inherited by porting it**:
+> *"Cell shrinkage toward the parametric value made far tails **worse**, which exposed a **real bug in
+> MLB's own guard as ported**: **the symmetric sample-size floor forced true 0.002 rungs up to 0.25.**
+> **Upper ceiling only.**"*
+
+A guard meant to stop overconfident extremes was **symmetric**, so it also dragged genuinely tiny
+probabilities **up** — **a 125× error at the far tail** (0.002 → 0.25). NBA fixed it by applying the
+ceiling on the upper side only, after which *"far tails are exact (3PM +6 rung: predicted 0.002, actual
+0.002)"* — the exact rung the bug had inflated.
+
+**If MLB's live guard is still symmetric, MLB has this bug today**, and it would bite hardest on
+demon-tier legs and long-shot alternates — precisely where the tails matter. **Worth checking
+`alphadog-v2-base-baseline.js` / the live v6 function.** *(Not actioned — this pass documents only.)*
+
+### ✅ RESOLVED · the FRINGE anomaly was LEAKAGE, not a filter artifact
+The 0.87 fringe minutes ratio in won blowouts — *"below 1, where garbage-time accumulators should be
+above"* — was suspected to be the ≥40%-of-median filter on small baselines. **It was not.**
+> *"a **leakage bug** in the minutes harness (**a season-wide mean was using future games**; **that was
+> the entire 'fringe anomaly'**), which shrank the role minutes multipliers to **honest ~1.0 values**."*
+
+**Two lessons kept:**
+1. **The anomaly was only detectable because the expectation was written down first** — the seed cells
+   encoded *"a LIFT for a fringe garbage-time accumulator"*, so a ratio below 1 was a wrong *sign*
+   against a stated prediction, not just an odd number.
+2. **Leakage inflates apparent skill** — the multipliers were over-confident until it was removed.
+   *"Shrank to honest ~1.0 values"* is the signature.
 From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
 ~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
 **Holdout 2024-25 shows the same signs.**"*
