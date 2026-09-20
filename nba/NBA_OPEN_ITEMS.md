@@ -1203,6 +1203,43 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
+### ⚠ NBA'S DIRECT DISPATCH HAS NO "BUSY" REJECTION
+T1's blueprint §4j:
+> *"**When a job appears stuck in a running state with no progress, the correct response is usually to
+> WAIT AND RE-CHECK via a lightweight status query, NOT to repeatedly manually retry it.**
+> MLB's system **holds a GLOBAL LOCK for a bounded window per acquisition**, and **a legitimate
+> in-progress background cycle will correctly REJECT repeated manual re-triggers with a 'BUSY'
+> response rather than a real failure — that's THE SYSTEM BEHAVING SAFELY, NOT A BUG TO WORK
+> AROUND.** Give a stuck-looking job **one to two minutes** before concluding it needs intervention."*
+
+**⚠ NBA workers are dispatched DIRECTLY, bypassing the queue and its lock** — the deliberate
+no-orchestrator design. **So the "busy" rejection MLB relies on may not exist for NBA.** A re-trigger
+of an NBA worker mid-run **may start a second concurrent run rather than being refused.**
+
+**What protects NBA instead**: **GitHub Actions concurrency groups** per pipeline
+(`alphadog-nba-p1-weekly` etc.), which serialise **workflow** runs. **They do not protect a direct
+`run_job` call to an individual Worker.**
+
+**Where this could bite**: the writer Workers are idempotent on their PKs (`baseline_ladder`,
+`board_outcomes`), **so a double run should be safe for those.** **The delta worker is the one to
+check** — it appends to season files and maintains `known_empty_games`.
+
+### ⚠ DELIBERATELY-DUPLICATED FILES DRIFT SILENTLY — one pair already has
+> *"**Two files meant to be exact copies CAN SILENTLY DRIFT OUT OF SYNC** — a static fallback file was
+> **a full version behind the deployed worker**, with **only the SELF-REPORTED VERSION STRING
+> revealing the drift.** **Periodically VERIFY rather than ASSUMING a 'kept in sync' file stays that
+> way.**"*
+
+| NBA pair | Status |
+|---|---|
+| `nba_config.role_tiers` ↔ `ROLE_TIERS` | ✅ verified identical 2026-09-20 |
+| **`classification_config.minutes_mixture` ↔ the recipe** | ❌ **DRIFTED** — three configured components unimplemented |
+| Singles recipe ↔ combos recipe constants | ⚠ unverified |
+| Certified recipe ↔ production patcher | ✅ **anchor assertions fail loudly** — the model to copy |
+
+**`baseline_ladder.recipe_version` exists per row**, so the version-string mechanism the MLB case
+relied on is present — **what is missing is anything comparing it against the config's expectations.**
+
 ### ⚠ SYSTEMIC RISK · "a function is called but was never actually defined"
 T1's blueprint §4h, flagged as *"a SYSTEMIC RISK CATEGORY, NOT A ONE-OFF"*:
 > *"MLB found **at least TWO MORE separate, real cases of DISPATCH CODE CALLING A FUNCTION THAT SIMPLY
