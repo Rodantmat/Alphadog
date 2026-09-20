@@ -467,12 +467,17 @@ these are live board surface, not hypotheticals.
 **To close**: run the history build for each and read the band tables — the mechanism already prints
 them. **Or gate them out of the scorer until certified.**
 
-### ⚠ `P(OT)` AND `foul risk` — named in the architecture, never built
+### ⚠ `P(OT)` AND `foul risk` — named in the architecture
 The five-dimension design lists *"Blowout risk, **P(OT)**, **foul risk**"* together as minutes-model
 inputs, *"they act on opportunity, not efficiency."*
-**Only blowout risk exists.** Grep of `classification_ladder_v12.py` for `p_ot|overtime|OT\b` returns
-nothing, and foul trouble appears only as an exclusion filter (`PF < 6`).
-**Two of the three named minutes inputs are absent.**
+
+**✅ `P(OT)` EXISTS in the period layer** — measured at **5.3% at pick'em falling to 1.9% at 15+**, and
+treated as a **mixture branch** (*"a star either gets ~5 crunch minutes or none"*). **It is absent from
+the full-game ladder**, where it matters less.
+
+**⚠ `foul risk` remains unbuilt anywhere.** In the full-game ladder, foul trouble appears only as an
+exclusion filter (`PF < 6`). **The period layer models sit-out rates by game STATE, not by foul
+trouble** — so a player fouling out of a competitive game is still unmodelled at every layer.
 
 ### ⚠ POSSIBLY AFFECTS MLB TOO · the symmetric sample-size floor
 NBA's backtest found **a real bug in MLB's own guard, inherited by porting it**:
