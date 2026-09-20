@@ -1049,6 +1049,8 @@ singles/combos pair is the riskier one**, since both are Python and neither read
 **Already-recorded divergence of exactly this kind**: `minutes_mixture` in `classification_config`
 specifies `dud_lognormal`, `tiered_inelastic` renormalisation and a **per-team** `E[min|blowout]` —
 **none of which the recipe implements.** **The config and the code have already drifted apart once.**
+
+### ⚠ THREE FACTOR AUDITS NAMED IN T1, NONE RUN
 The blueprint lists five enrichment-factor bug patterns *"all real, all worth actively checking for in
 NBA's own factors."* **Three are single queries against tables that already exist.**
 
