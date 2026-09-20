@@ -66,7 +66,7 @@ material; it is not a rerun.
 
 ## T1 — `2026-09-03-03-22-04-nba-expansion-phase1-static.txt`
 **PHASE 1 (recon) · PHASE 2 (system draft) · PHASE 3a start (static data)**
-*292 content blocks · added 2026-09-20 · PASSES: 1*
+*292 content blocks · **PASS 1 2026-09-20 (incomplete) · PASS 2 2026-09-20 (incomplete — found new)***
 
 ### T1.1 Orientation and recon
 - Session opened from a **handoff package** of three prior documents, all read in full:
