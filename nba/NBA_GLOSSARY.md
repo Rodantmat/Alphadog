@@ -519,6 +519,20 @@ the scoring path joins score→score — but **any cross-layer join returns noth
 **Blueprint §2's named multi-table ID bug, reproduced.** → `NBA_DATABASE.md` ·
 `NBA_OPEN_ITEMS.md` *FROM T1 PASS 50*.
 
+**the 64 KiB display cap** · T1–T6, VERIFIED · A `display_content.json_block` field in a chat export
+is cut at **exactly 65,503–65,504 characters**, marked `…[truncated — N chars total]`. **14 markers
+exist across T1–T6; none in T7–T20.** In 8 the full text survives in the sibling `content` field; in
+**6 it does not** — `content` is a 212-char stub naming an expired `/mnt/user-data/tool_results/`
+path, and **5,564,467 characters are absent**. **All six are `github_get_file` calls on committed
+`nba/data/*.json` paths and are recoverable via `git show <commit>:<path>`.** →
+`NBA_OPEN_ITEMS.md` *FROM T1 PASS 64* · `NBA_WORKERS.md` §0a.
+
+**`teams.arena_id`** · LIVE, VERIFIED · **A DEAD COLUMN.** `nba_ref.teams.arena_id` is **NULL on all
+30 rows and written by no code** (verified 2026-09-20 against the live DB and all 190 code files).
+**The team↔arena link is `nba_ref.arenas.team_id`**, populated on all 30. A join through
+`teams.arena_id` returns 30 NULLs and looks like a scrape failure. → `NBA_DATABASE.md`
+`nba_ref.teams` · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 65*.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
