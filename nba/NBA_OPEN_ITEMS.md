@@ -428,6 +428,30 @@ Three reasons given at design time: **speed**, **stability** (API outage during 
 posted in between."* **This is the as-of principle applied to API reads, before it was applied to
 dates.**
 
+### ⚠ LEAKAGE TRAP (identified before mining, still live) · **WinsLosses splits**
+> *"**correlational, not causal** — players play better in wins **partly BECAUSE good play caused the
+> win**. Using it as a raw feature risks **real data leakage**. **Collect it, but don't naively feed it
+> to a model.**"*
+
+**The data was collected.** Anyone building a factor from the WinsLosses split must treat it as
+outcome-conditioned. **Same class of error as A5** (box-score starters are post-tip truth) — which was
+caught and closed. **Whether anything currently reads the WinsLosses split is unverified.**
+
+### ⚠ SURVIVORSHIP BIAS in career aggregates · accepted, must be handled by consumers
+`playercareerstats` *"only exists for players who **stayed in the league long enough to still be
+queryable**. Any 'typical aging curve' built from it is a curve for **SUCCESSFUL NBA players** — the
+players who **washed out after 2–3 seasons are invisible**."*
+**Any consumer must treat it as conditioned on "currently-relevant NBA player", not a neutral
+population.** Plus **era effects**: *"a 2004 stat line isn't directly comparable to 2024 without
+normalising for pace and 3-point rate."*
+**3,644 career-season rows are loaded. Whether any consumer applies these conditions is unverified.**
+
+### BOUNDED HISTORY, on purpose · 3 seasons, not "as much as possible"
+*"a player's own stats from several years ago, in a different role on a different team, **actively
+HURTS a model**… Kevin Durant's 2016 Thunder numbers being actively misleading for predicting his
+performance today."* **Locked at 2023-24 / 2024-25 / 2025-26.** This is why `BT_TRAIN` must be set
+explicitly (COMPASS fact 66) — the bound is a modelling decision, not a storage one.
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
