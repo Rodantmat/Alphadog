@@ -799,9 +799,45 @@ signal, **not ground truth**."*
 useless to rank by. **PrizePicks' step pricing is the opposite**: less informative per leg, and
 therefore the place where an independent graded-outcome bucket can disagree profitably.
 
----
+### Rule B0a — **every proposed pool must state both its prop CLASS and its pricing LANE**
+> *"**Two genuinely separate axes** matter for any prop:
+> **(1) its CLASS** — does it have a **real ladder of multiple simultaneous lines** (**"tiered"
+> props**) or **only one sensible threshold** (**"fixed" props**)?
+> **(2) its LANE** — **which specific pricing tier/variant is it actually being offered in**
+> (Standard vs Goblin vs Demon)?
+> **Class and lane are INDEPENDENT, and LANE IS USUALLY THE DOMINANT DRIVER OF REAL EV, MORE THAN
+> CLASS.**"*
 
-## 19. WHERE EDGE IS NOW EXPECTED TO COME FROM
+#### ⚠ THE MEASURED EXAMPLE — a 1,300-point swing from lane alone
+> *"MLB found **a single real, exact example — THE IDENTICAL LEG, IDENTICAL ~85% HIT RATE** — pricing
+> at **roughly +1300% in one lane and roughly −13% in another**, **a swing of OVER 1,300 PERCENTAGE
+> POINTS FROM LANE ALONE**, with the underlying prop's class (fixed v[s tiered]) [held constant]."*
+
+**The same leg. The same hit rate. EV from +1300% to −13%, purely by which lane it was offered in.**
+
+**This is the most important quantitative statement in the entire handoff**, and it reframes the whole
+selection problem:
+- **Being right about `p` is worth little if the lane is wrong.**
+- **Lane dominates class.** Whether a prop even has a ladder matters less than which rung you are
+  standing on.
+- **It is the same phenomenon as the step-function pricing** (`NBA_GOBLIN_DEMON.md` §5.0d) seen at
+  full magnitude: the multiplier attaches to the **tier**, so an 85% leg priced as a goblin and the
+  same 85% leg priced as a standard are different bets entirely.
+
+#### What this requires of NBA, concretely
+**Every pool, bucket or candidate must carry BOTH labels.**
+| Axis | NBA's representation |
+|---|---|
+| **CLASS** — tiered vs fixed | measurable from `LADDER_DEPTH` / the board: points (p95 = 13 rungs) is **tiered**; `double_double` (sentinel −1.0, **no ladder**) is **fixed** |
+| **LANE** — standard / goblin / demon | **`nba_market.board_tiers` `kind` + `tier`** — ⚠ **and v1's `kind` is derived from PRICE and Over-only, so it is WRONG for Less rows since 2026-08** |
+
+**⚠ This makes `board_tiers_v2` a selection-correctness issue, not a labelling tidy-up.** If **lane is
+the dominant driver of EV** and the lane label is wrong on a whole side of the board, **every pool
+built on it is mislabelled on the axis that matters most.**
+
+**And it sharpens §15.0a's conclusion**: the reason PrizePicks is the platform where edge can exist is
+precisely that **lane and probability are decoupled there** — the step function prices the lane, not
+the leg.
 
 ### ⚠⚠ 15.0a THE HARD CONSTRAINT — two of the three platforms are measured EFFICIENT
 > *"**Underdog/Sleeper's own EV-parity pricing, measured directly against real placed-slip data at
