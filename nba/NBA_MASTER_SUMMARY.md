@@ -3340,6 +3340,49 @@ checks and empirical calls.**
 
 **ONE more complete clean sequential pass and T5 is DONE.**
 
+### T5.15 — PASS 8 (full sequential, 250-char context) — **CLEAN 3/3**
+
+Complete read at maximum context. **Every block maps to a documented entry. Nothing new.**
+
+---
+
+# ✅ T5 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (6, 7, 8)
+
+**Final tally: 8 passes. 5 found new material. Passes 6, 7, 8 clean.**
+
+**T5's findings, and what each means now:**
+
+| Finding | Status |
+|---|---|
+| **`boxscoretraditionalv2` returns HTTP 200 with ZERO rows** on historical games — 1,228 "successes" → 799 rows | ✅ fixed with v3; **live delta scraper verified clean** |
+| **`position` column existed unfilled for 3 sessions** — scraper never extracted it, worker never wrote it | ✅ fixed via `playerindex`, 582/582 |
+| **Splits PK omits `season`** — cannot hold more than one | ⚠ **OPEN** — verified 2025-26 only |
+| **`StartingPosition` split absent** | probably benign — superseded by per-game table |
+| **Starter status = 1 season** (owner-approved scope) | ⚠ coverage asymmetry vs 3-season game logs |
+| **Two wrong Gemini claims caught** (GS inferable; Team Pace missing) | both rejected by direct check |
+| `defense_vs_position` built free from existing data | ✅ 630 rows, 3 seasons |
+
+**The methodological lesson T5 teaches best**: *"1,228 games reported success, but only 799 total
+rows."* **Nothing errored.** The failure was caught only by comparing the output against an expected
+magnitude — ~26 players × 1,230 games. **A success count is not a result.**
+
+---
+
+## RUNNING TOTAL: 5 of 16 transcripts DONE
+| # | Transcript | Passes | Status |
+|---|---|---|---|
+| T1 | phase1-static | 28 | ✅ 3/3 |
+| T2 | phase3a-enrichment | 11 | ✅ 3/3 |
+| T3 | phase3a-final | 10 | ✅ 3/3 |
+| T4 | phase3b-backfill | 12 | ✅ 3/3 |
+| T5 | phase3c-starter-status | 8 | ✅ 3/3 |
+
+## NEXT: T6 — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt`
+Manual starter-status SQL load · per-game officials backfill (`boxscoresummaryv3`) ·
+**lineup synergy (`leaguedashlineups`, 8,000 rows, two bugs)** · a double-check research pass
+(sharp-bettor claims, **the NBA injury-PDF discovery**) · **the daily delta ingestion worker**
+with a completeness-check bug caught via the `002` GAME_ID prefix.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
