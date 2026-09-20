@@ -175,6 +175,23 @@ is built on unrepresentative data — and the confidence model is measuring that
 Correctly deferred at the time: *"it can't be fixed at this layer — it needs play-by-play data, which
 belongs to Phase 3b."* **It was never picked up in Phase 3b either.**
 
+**⚠ UPDATE 2026-09-20 (T4 pass 8) — the specified proxy MAY ALREADY EXIST, half of it anyway.**
+T4's research verdict deferred play-by-play but named the substitute: **"MIN + margin proxy noted for
+later."** `nba_score.blowout_model` **is** a `minutes_by_margin` table — minutes ratios keyed to final
+margin bands, 24,025 player-games. **That is the MIN + margin proxy, built in T16 under a different
+name for a different stated purpose.**
+
+**But it only covers one end of the contamination:**
+| | Covered? |
+|---|---|
+| Correcting **projected minutes** for expected game script (forward-looking) | ✅ the blowout model |
+| Cleaning **historical rate stats** (usage, per-36, efficiency) of garbage-time minutes (backward-looking) | ❌ **still open** |
+
+**For a bench player whose season stats are "almost entirely garbage-time minutes", correcting his
+projected MINUTES does not fix a per-36 RATE computed from garbage time.** The rate is the input the
+baseline multiplies by. **That is the half that remains unfixed, and it is the half that hits exactly
+the population where `f_role` measures a 35× error.**
+
 ### DECISION RECORD · EPM rejected on licensing, not capability
 **EPM (Dunks & Threes)** was rated by Gemini as *"one of the highest predictive-lift single features"* —
 then found to be **behind a paid subscription**. The line drawn:
