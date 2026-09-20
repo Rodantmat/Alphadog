@@ -205,6 +205,65 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 49 — DOMAIN MAPPING §1 AND §3, CLAUSE BY CLAUSE *(added 2026-09-20)*
+*Angle: pass 31 swept the Domain Mapping document **by section**, and marked §1 and §3 "documented"
+without reading their clauses. **This pass reads both tables row by row.** Source:
+`nba/NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1 and §3 — **in the repo as clean markdown**, cheaper
+than the escaped copy in T1.*
+
+### ⚠ THE PACKAGE'S SINGLE STRONGEST STATED ADVANTAGE IS THE ONE THING NBA REPLACED
+§3 describes ParlayAPI as:
+> *"Same service, same account, `basketball_nba` sport key. **No new vendor onboarding needed — this
+> is the SINGLE BIGGEST HEAD START NBA HAS over where MLB started.**"*
+
+**It was superseded by NBA's own scrapers**, which capture **~25% more ladder rungs**
+(`NBA_SYSTEM_ARCHITECTURE.md`). **And it was never independently verified** — the ParlayAPI coverage
+gap was flagged in T1, carried forward, and **closed by replacement rather than by test** (recorded
+at *PASS 32*).
+
+**Recorded because of what it implies about the rest of the package, not as a criticism of it**: the
+handoff's most emphatic claim was **an inherited assumption about a vendor**, and it did not hold.
+**Its claims that did hold — the deploy gotchas, the statistical standard, the bug families — are the
+ones grounded in MLB's own measured experience.** ⚠ **A useful filter for the ~40% of
+`ALPHADOG_DOS_AND_DONTS.md` and `ALPHADOG_SYSTEM_MAP.md` still unread** (*PASS 37*): **weight
+measured experience over forward-looking assessments.**
+
+### ⚠ NOT RECORDED · combo props were to be first-class **from day one**, and why
+§1, on the MLB→NBA prop mapping:
+> *"NBA has real combo props (**PRA** etc.) already confirmed to exist on ParlayAPI's market-key list
+> — **treat these as a FIRST-CLASS PROP FAMILY FROM DAY ONE, NOT AN AFTERTHOUGHT**, since MLB's own
+> combo prop (`hits_runs_rbis`) caused **real analysis headaches from being treated as a bolt-on**."*
+
+**`NBA_DATABASE.md` records the `hits_runs_rbis` bolt-on cost. The design instruction it produced is
+recorded nowhere** — and it belongs with the combo design in `NBA_BASELINE_CALIBRATION.md` §7, which
+documents *how* combos are built (simulated from calibrated marginals with per-player covariance) but
+not *that building them properly from the start was an explicit, cost-justified instruction.*
+**✅ It appears to have been followed** — the combo layer is architectural, not bolted on — **but no
+entry connects the instruction to the outcome.**
+
+### ⚠ OPEN VERIFICATION · per-prop tier spacing was to be checked and is NOT RECORDED as checked
+§1, on goblin/demon:
+> *"Confirm these exist identically for NBA on each platform… very likely yes, since it's a
+> platform-level mechanic, not sport-specific, **but verify TIER-COUNT and TIER-SPACING CONVENTIONS
+> PER PROP before assuming they match MLB's exactly.**"*
+
+**`NBA_GOBLIN_DEMON.md` §10 records that the prediction was right** — the taxonomy does exist for
+NBA. **It does not record the per-prop verification the same sentence asks for.** §7's measured
+result — *"books ladder to **~85–90% of the anchor**"*, from **60k+ board legs** — **is an aggregate
+across props**, and §5.0's own standing rule is *"read these per cell, not as aggregates."*
+**So the instruction and the layer's own rule agree, and the measurement is still pooled.**
+**NOT RECORDED as done per prop.** ⚠ Compounds with lesson **#27** (*PASS 30*): **tier spacing per
+prop and partial-credit structure per platform are both unverified**, and both are first-order
+inputs to Flex EV.
+
+### ✅ Verified present, no change needed
+§3's *"verify rate limits and terms of service before building a scraper-dependent pipeline"*
+(BallDontLie's terms are recorded) · the **no pitcher-analogue** simplification (*"all NBA props are
+offense-side player stats"*) · the Baseball-Savant-to-tracking deprioritisation · the
+*"verify each platform's own fantasy-score formula explicitly, per lesson #14"* instruction.
+
+---
+
 ## FROM T1 PASS 48 — FULL SEQUENTIAL NARRATIVE READ, ALL 85 BLOCKS *(added 2026-09-20)*
 *Angle: extract **every assistant narrative block in T1 in order** — 85 of them, excluding the pasted
 documents and tool payloads swept in passes 29–47 — and check each against the twelve documents.
