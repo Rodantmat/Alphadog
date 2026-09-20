@@ -22,6 +22,33 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.5 ⚠ THE WORKER ARCHITECTURE WAS A NON-GOAL BEFORE IT WAS A DESIGN
+*Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` **§6**, first non-goal. Recorded 2026-09-20
+(T1 pass 31) — the dead-stub fact was already in these documents; **the instruction it produced was
+not.***
+
+> *"**Don't build a per-prop 'one worker per prop' architecture** — MLB tried this, abandoned it in
+> favour of a unified scoring engine, and **left 19 DEAD STUB FILES behind as evidence**. **Build the
+> unified version from the start.**"*
+
+**This is why there is no `nba-score-points.js`, no `nba-score-rebounds.js`, and why the entire
+scoring layer is one script** — `nba/build_final_hp.py` (§5) — **with props as a parameter
+(`FE_PROPS`), not as files.** The 28 props in `nba_ref.prop_taxonomy` produce **one engine**, not 28
+workers.
+
+**The split that does exist is by DOMAIN, not by prop** — `static-teams`, `static-players`,
+`static-officials`, `daily-delta`, `weekly-differential`. **That is the blueprint's "phase file"
+pattern** (`NBA_FINAL_SCORING_CALIBRATION.md` §7i), and it is orthogonal to the non-goal: a phase is
+a **stage of the pipeline**, a prop is a **row in a taxonomy**. **One worker per stage: yes. One
+worker per prop: never.**
+
+**The evidence that made it a rule is quantified**: MLB's abandoned attempt left **19 dead stub
+files**, which remained in the repo long enough to be counted during T1's recon and are recorded in
+`NBA_OPEN_ITEMS.md`. **NBA paid none of that cost** — **VERIFIED**: no per-prop worker appears in
+`nba/worker_manifest_nba.json` or anywhere in `nba/`.
+
+---
+
 ## 0a. THE INVESTIGATION METHODOLOGY — for understanding a large existing system
 *Source: T1, blueprint §6b — worked out for "a genuinely huge (1MB+) orchestrator file, worth reusing
 directly rather than reading the whole file top to bottom." Recorded 2026-09-20.*
