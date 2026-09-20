@@ -150,6 +150,21 @@ summary to a `*_runs` table.
 `BASE_HITTER_GAME_LOGS_WORKER` pattern), bypassing the queue — deliberate, per the no-orchestrator rule.
 **⚠ Use NBA-specific binding names** — `DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB
 binding.
+
+### ⚠ THE GENERATOR IS THE ONLY PLACE THAT PERSISTS
+> *"**The GitHub workflow REGENERATES wrangler files before deploy, so this binding must live in the
+> GENERATOR or it will be ERASED before Wrangler deploys.**"*
+
+**Hand-edited `wrangler.json` changes do not survive a deploy.** Service bindings,
+`compatibility_flags`, cron triggers and vars all belong in `generate_wrangler_configs.py`.
+**This is why it is four edits, not three.**
+
+### ⚠ THE NEVER-FIRE CRON IDIOM
+```python
+cfg["triggers"] = {"crons": ["0 0 30 2 *"]}   # February 30th — cannot occur
+```
+Used on **8 MLB workers** to **disable a schedule while keeping the worker deployed and callable**.
+**Before concluding any worker is scheduled, check its cron for this pattern.**
 | `nba/backtest/combos_ladder_v1.py` | the certified combos recipe — **its own `LADDER_STEPS`** |
 | *(duplicate block removed 2026-09-20 — see §4 and §4b above)* |
 
