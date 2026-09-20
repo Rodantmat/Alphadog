@@ -4884,6 +4884,75 @@ rather than pasted, which is exactly the violation caught and fixed in the live 
 
 **T7 PASS 15: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.22 — PASS 16 (the engine's constants) — **THE DESIGN, MADE CONCRETE**
+
+#### T7.22a — **The MLB port was LITERAL on the tiering constants**
+```python
+MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6
+```
+**Compare T7.13b's reading of MLB's live logic**: `max_tiers=24` *(raised from 12 after a backtest)*,
+`min_population_per_tier=15`, tier prior blended with `k=5`.
+**All three transferred unchanged.** And `LADDER_STEPS = 6` is the *"anchor ±5–6 steps"* design figure
+(T7.13g), later refined per-prop by `LADDER_DEPTH`.
+
+**So the port was selective and deliberate**: the tiering machinery came over verbatim, while the
+recency blend — *"the single biggest thing that does NOT transfer"* — was replaced by
+`stat_decay_config`. **Knowing which half to copy is the whole skill.**
+
+#### T7.22b — **`ROLE_TIERS` — and this IS `f_role`**
+```python
+ROLE_TIERS = [("IRON_MAN", 36, 99), ("HIGH_USAGE_STARTER", 32, 36), ("STARTER", 27, 32),
+              ("ROTATION", 21, 27), ("BENCH", 15, 21), ("FRINGE", 0, 15)]
+```
+**Six bands, keyed on `mu_role` (projected minutes), not on the starter flag.**
+
+**This closes a loop across the whole project.** The confidence model's `f_role` — which carries
+**55.6% of the entire deduction budget** — measures that **fringe players miss by 0.0283 vs iron-men at
+0.0008**. Those are literally the bottom and top bands of this list.
+
+**And it resolves T7.20d's *"starter vs bench — a primary split, not just a factor."*** It was
+implemented not as a binary but as a **six-band continuous minutes tier** — which is strictly better,
+and consistent with T7.10a's *"90% proxied by MIN + Usage"* mitigation for the one-season starter-flag
+gap. **The starter flag is not load-bearing; projected minutes are.**
+
+#### T7.22c — **A deliberate dead zone between 15 and 20**
+```python
+BLOWOUT_MARGIN = 20; COMPETITIVE_MARGIN = 15
+```
+- Margin **< 15** → `competitive`, feeds `comp_min` and the role estimate
+- Margin **≥ 20** → blowout, gets a `MIN_RATIO`
+- **Margin 15–20 → neither.** Excluded from the clean role baseline, and no blowout ratio applied.
+
+**This is a defensible choice** — the boundary of a blowout is genuinely fuzzy, and excluding the
+ambiguous band keeps both estimates clean. **Worth knowing it exists**, since ~10% of games land there.
+
+#### T7.22d — `MIN_RATIO` is derived per role tier, inside the run
+```python
+_tm["ratio"] = _tm["MINF"] / _tm["mu_role"]
+for rt, _lo, _hi in ROLE_TIERS:
+    w = ...[won_bl].mean(); l = ...[lost_bl].mean()
+    MIN_RATIO[rt] = (w if not nan else 0.9, l if not nan else 0.95)
+```
+**`ratio = actual minutes / role minutes` — confirming from a third angle that this is a deviation
+model, not a penalty** (cf. T4.11 from the data, T7.13e from the design).
+**Per role tier AND per side (won/lost blowout)**, with sensible fallbacks (0.9 / 0.95) when a cell has
+no sample. **Fit on TRAIN inside the run — no pasted constants.**
+
+#### T7.22e — `SHIFT_LAMBDA`, and a negative result recorded in code
+```python
+# tested at 0.5 and 0.25 and were WORSE than replacement -> stay replacement.
+SHIFT_LAMBDA = threes_made:1.0, blocks:0.5, steals:0.5, ftm:0.5, oreb:0.5
+```
+**A failed experiment is recorded beside the value it justifies.** `threes_made` gets full shift (1.0)
+while the low-count props get half — and the comment preserves *what was tried and rejected*, so nobody
+re-tests 0.25 in six months.
+
+#### T7.22f — `P_BLOWOUT_BINS = [0, 2, 4, 6, 8, 10, 12, 15, 99]`
+Eight spread bins, **finer at the low end** (2-point steps to 12, then 12–15, then 15+). Matches the
+`blowout_model` rows observed in T4.11.
+
+**T7 PASS 16: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
