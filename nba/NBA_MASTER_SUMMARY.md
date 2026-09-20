@@ -2488,6 +2488,74 @@ Same shape minus the player-specific fields (`blka`, `pfd`, `nba_fantasy_pts`, `
 
 **T4 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T4.9 — PASS 3 FINDINGS — **THE BASELINE METHODOLOGY IN FULL** (`nba/NBA_BASELINE_METHODOLOGY.md`)
+
+This is the design of *"the heart of the system"*, and much of it is still recognisable in the engine
+today.
+
+#### T4.9a — The five-step pipeline
+1. **EWMA-based per-36 rate**, with **Bayesian shrinkage** for rookies and injury-returners toward
+   their **career/positional prior**
+2. **Projected minutes** — a **separate, faster-moving average**, *"since rotations shift quickly"*
+3. **Pace + opponent-defence multipliers** from the team game logs already backfilled
+4. **Raw projection** = the combination
+5. **ANCHOR TO TEAM-IMPLIED TOTALS** — *"sum every teammate's projection, scale to match the market's
+   implied team total. This is **a real fix a practitioner reported needing after getting 'wild
+   numbers' from unanchored projections**."*
+
+**Step 5 is the direct ancestor of the market-implied matchup factor built in T16**
+(`f_impl_own` / `f_impl_opp` = total/2 ∓ spread/2, r=0.4637 vs 0.2364 derived). **The idea was in the
+design from the start and took thirteen transcripts to ship.**
+
+#### T4.9b — Variation and direction, handled deliberately
+- **Volatility via rolling standard deviation** — *"turns a point guess into **a real distribution you
+  can price an over/under against**."* **→ the dispersion layer and the whole ladder.**
+- **Trend via a SECOND, faster EWMA** compared against the primary — *"applied as a **dampened**
+  adjustment **specifically so it doesn't double-count what the main average already captures**."*
+
+**That dampening caution is the same failure mode the enrichment audit later hit repeatedly**: ten
+factors rejected because *"the baseline already carries what these factors re-express."* **The warning
+was written down in T4 and the lesson still had to be relearned by measurement in T15–T16.**
+
+#### T4.9c — **The honest part, stated at design time**
+> *"minutes projection is flagged as **'the single biggest source of error in any player-prop model'**
+> — not a solved problem. **Cascading injury effects are a real network problem, not a single rule.**"*
+
+**Both proved true.** Minutes projection is what the allocator, the blowout factor and the availability
+model all attack; cascading absence effects became **A2 — five failed panels, then fully retracted.**
+
+#### T4.9d — **Explicitly declared NOT worth solving directly**
+> *"**Player-vs-player defensive matchups** and things like **revenge games or contract-year
+> motivation** are explicitly named as **not** worth trying to solve directly — **anchoring to the
+> market price is the honest answer there, since the market already prices most of that in**."*
+
+**Two of these held; one was overturned by measurement.**
+| Called off-limits in T4 | What happened |
+|---|---|
+| Revenge games, contract-year motivation | **never built** — correctly |
+| **Player-vs-player defensive matchups** | **REVISITED and partially overturned**: M1 was rejected on a crude metric, then **rebuilt as a two-way ridge** (`nba_ref.defender_ratings`, 111,768 ratings) and **wired on 4 props — but only in the INTERACTION form, never as a main effect** |
+
+**So the T4 caution was right in substance**: a defender main-effect adds nothing, and the value only
+appears in interaction. **The design note was directionally correct and the measurement refined it.**
+
+#### T4.9e — A concrete tunable example, and the no-hardcoding rule applied
+> *"when a team's primary ball-handler is confirmed out, **boost the secondary playmaker's assist
+> projection**, with **every threshold living in the database, not hardcoded**."*
+
+**This exact scenario is what A2 tried to generalise — and failed.** The specific rule was never built;
+the general version was retracted.
+
+#### T4.9f — Two gaps flagged at design time
+*"this design depends on **the daily injury/lineup layer** and **the live-odds/market layer**, neither
+of which is built yet — both were part of the original plan but come later."*
+**Both were built** — injury in T10/T11, market in T11/T13.
+
+#### T4.9g — Design-only discipline held
+> *"This is **a design document only — no scoring code yet**, matching the research-first pattern this
+> whole project has followed."*
+
+**T4 PASS 3: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
