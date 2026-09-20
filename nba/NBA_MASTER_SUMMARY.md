@@ -1405,6 +1405,150 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.61 — PASS 31 (angle: **the Domain Mapping document's own section list, §1–§8**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: pass 29 swept the **blueprint** by its section headers. This pass does the same to the
+second handoff document, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md`, and asks of each of its eight
+sections: **is there an entry for it anywhere in the twelve documents?**
+
+| § | Subject | Status before this pass |
+|---|---|---|
+| §1 | prop taxonomy mapping | documented |
+| §2 | enrichment factor mapping | documented — `FINAL_SCORING_CALIBRATION.md` §7h |
+| §3 | data source mapping | documented |
+| §4 | reuse vs rebuild | documented — `FINAL_SCORING_CALIBRATION.md` §0b |
+| §5 | prioritized startup plan | documented — `RECIPE.md` STEP 0b |
+| **§6** | **explicit non-goals** | **scattered, never as a list** — recorded below |
+| **§7** | **how to work with the person building this** | **⚠ ENTIRELY UNDOCUMENTED** — recorded below |
+| §8 | remaining step-zero reading list | documented — `MASTER_SUMMARY.md` §T1.17 |
+
+**Coverage test used**: grep of all twelve documents for each section's distinctive phrases.
+**§7 returned zero hits on every one** — *"lead with the answer," "tables over prose," "one-word
+reply," "senior technical partner," "wrong normalization," "capital deployed," "believe the
+report."* Only two fragments of it existed anywhere, both in `NBA_MULTIPLIERS.md`: the backup-leg
+rule and the checkbox default.
+
+---
+
+#### §6 — THE THREE EXPLICIT NON-GOALS *(stated before any NBA code existed)*
+> 1. *"**Don't build a per-prop 'one worker per prop' architecture** — MLB tried this, abandoned it in
+>    favour of a unified scoring engine, and **left 19 dead stub files behind as evidence**. **Build
+>    the unified version from the start.**"*
+> 2. *"**Don't try to port MLB's weather, quality-of-contact, or RFI/NRFI-style factors** — they have
+>    **no basketball analogue** and building them would be **wasted effort**."*
+> 3. *"**Don't invest in an elaborate auto-scheduling orchestrator BEFORE the manual pipeline works
+>    end-to-end and has been verified against real data at least once.**"*
+
+**All three were honoured** — and that is worth recording, because each fragment was already in the
+documents **as a fact about what NBA did**, never **as an instruction NBA was given**:
+- the scoring engine is unified (`build_final_hp.py`), and the 19 dead stubs are recorded in
+  `NBA_WORKERS.md` and `NBA_OPEN_ITEMS.md`
+- no weather / quality-of-contact / RFI factor was ever built
+- **there is no orchestrator**, and the owner independently restated that constraint in his own words
+  in T1 — *"no runner, orchestrator or anything like, **it only breaks the run**"*
+  (`NBA_SYSTEM_DESIGN.md` §0.6). **Two independent sources, one rule.**
+
+⚠ **Non-goal 3 has a live edge.** It forbids an orchestrator **before** the manual pipeline is
+verified end-to-end — it does not forbid scheduling forever. **P2 and P3 still have no cron**
+(`NBA_SYSTEM_DESIGN.md` §3, §4) with the season opening **2026-10-03**. The non-goal is the reason
+they were not scheduled early; **it is not a reason to leave them unscheduled now.** Recorded in
+`NBA_OPEN_ITEMS.md`.
+
+---
+
+#### §7 — THE OPERATING MODEL, IN FULL *(the owner's own stated preferences, transferred from MLB)*
+Framed in the source as *"not about the MLB system at all — working style and expectations that apply
+regardless of which sport is being built, **confirmed directly from the person's own explicit, stated
+preferences**… **Apply this from the very first NBA interaction, not as something to discover
+gradually.**"*
+
+**The context sentence is the architectural constraint** — recorded separately at
+`NBA_SYSTEM_ARCHITECTURE.md` §1a, because it explains the bridge, the trigger files and the
+GitHub-as-transport pattern:
+> *"**Owns and operates the entire system alone, working from a phone with no terminal access — the AI
+> assistant is THE ONLY INTERFACE** to the database, repository, and deploy pipeline. Expects **a
+> senior technical partner: real root-cause analysis, calibration honesty, and NO CLAIMS OF SUCCESS
+> WITHOUT EVIDENCE VERIFIED DIRECTLY AGAINST LIVE DATA.**"*
+
+**Output style — "confirmed and explicit":**
+- **Direct. Lead with the answer.** No preamble, no restating the question, no filler.
+- **Tables over prose** for anything involving **more than two numbers**.
+- **Bold the single number that matters most** in any response — *"they're scanning on a phone
+  screen."*
+- **A one-word reply — "continue," "yes," "keep going" — means: execute the next concrete step
+  autonomously, no preamble first.**
+- No over-explanation, no hedging, **no unsolicited scope-broadening beyond what was actually asked.**
+
+**What the owner pushes back on — *"and are usually right to"*:**
+
+| Push-back | The real case behind it |
+|---|---|
+| **Language stronger than the evidence supports** | *"if a claim is written as 'this proves X,' expect to be asked what it actually shows"* — **this is lesson #19 arriving from the operator's side rather than the statistician's** |
+| **Wrong normalization** | a **real, confirmed case**: *"comparing profit at a fixed dollar-per-slip rate when **capital deployed, not slip count**, was the actual real-world constraint."* Rule: **identify what is genuinely fixed in the real scenario before choosing what to normalize by** |
+| **Accepting a stated limitation too quickly** | a **real, confirmed case**: *"why can't the backtest window be extended, given more days of real data actually exist"* — **and being right, because an arbitrary threshold had been mistaken for a hard data limit.** Rule: *"**when concluding something is impossible or unavailable, CHECK TWICE before reporting that conclusion**"* |
+| **Not proactively showing the day-by-day breakdown** | *"provide it **before being asked, every time** a finding is reported"* |
+
+⚠ **The third of those is blueprint rule 1.6's confident-negative trap, independently discovered by
+the owner.** The documentation standard already carries *"a confident negative is the easiest mistake
+to make"*; §7 records that **the owner caught the assistant doing exactly that, on real data, and was
+right.** Two independent derivations of the same rule.
+
+**How the owner makes decisions:**
+- **ROI is the real target, not total profit** — *"profit can be increased simply by wagering more,
+  **ROI cannot**. Always normalize by **capital deployed**, not by slip or leg count."*
+- **Will accept a smaller real sample in exchange for materially higher ROI**, provided the mechanism
+  is sound. *"The job is to **present the real number and its real risk honestly, then let them
+  choose** — **not to pre-filter options** based on an assumption about what they'd want."*
+- *"When told to run **every check** before considering something for deployment, that means
+  **literally every check, including ones expected to pass** — not a subset chosen for efficiency."*
+- **The owner observes operational reality the assistant cannot.** *"When they report something that
+  looks statistically or logically odd, **BELIEVE THE REPORT AND INVESTIGATE IT** — don't first assume
+  the report itself must be mistaken."*
+  ⚠ **This is blueprint §9's scrutiny technique 3 stated from the other side of the conversation**
+  (*"trace a real user-reported symptom back to raw source data… trust the report"*). **Recorded in
+  two independent handoff documents.**
+
+**The required report layout** — *"the exact day-by-day table layout they expect for any backtest or
+real-slip report (reuse directly for NBA)"*:
+```
+|Date     |Slips |Full hits|5/6  |≤4/6 |Staked |Return     |Profit      |ROI        |
+|---------|------|---------|-----|-----|-------|-----------|------------|-----------|
+|08-12    |5     |3        |2    |0    |$5     |$7.27      |+$2.27      |+45.4%     |
+|**TOTAL**|**83**|**75**   |**8**|**0**|**$83**|**$183.20**|**+$100.20**|**+120.8%**|
+```
+**Three specified properties, each with a reason**: **one dollar per slip** as the reporting
+convention; **the total row bolded**; and **partial-hit columns included explicitly**, *"so the actual
+failure mode — how close a miss came to hitting — stays visible rather than being collapsed into a
+single win/loss count."*
+⚠ **This layout has never been produced for NBA.** Recorded in `NBA_MULTIPLIERS.md` and
+`NBA_OPEN_ITEMS.md`.
+
+**Standing product/UI rules — *"apply the same defaults for any NBA-side interface"*:**
+1. **Every deployed strategy needs a real backup-leg substitution system** for when a recommended leg
+   becomes unavailable.
+2. **Slip-leg checkboxes default to CHECKED.**
+3. **A real multiplier value the person has manually entered must NEVER be lost or reset on a UI
+   re-render.**
+4. **Document everything into committed repository files, not only into chat.**
+
+⚠ **Rule 4 is the origin of this entire documentation effort**, and the source says so explicitly:
+*"this whole NBA transfer package is itself a direct expression of that same standing instruction,
+and the practice should continue throughout NBA's own build, **not just at the outset**."*
+⚠ **Rules 1–3 bind the certification-center UI**, which `NBA_GLOSSARY.md` records as *"already exists
+(MLB's) and will be integrated — nothing to build."* **Whether the inherited UI satisfies them for
+NBA legs is NOT RECORDED.**
+
+**Routed to**: `SYSTEM_ARCHITECTURE` §1a · `MULTIPLIERS` · `OPEN_ITEMS` · `RECIPE` · `SYSTEM_DESIGN` ·
+`WORKERS` · `GLOSSARY` · this entry.
+**Considered, no change warranted**: `DATABASE`, `BASELINE_CALIBRATION`,
+`FINAL_SCORING_CALIBRATION`, `GOBLIN_DEMON` — §6 and §7 are operating-model and non-goal material and
+touch no formula, table or taxonomy.
+
+**PASS 31 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.60 — PASS 30 (angle: **count the standard against its own source**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
