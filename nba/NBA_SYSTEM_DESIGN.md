@@ -246,6 +246,21 @@ pairs), the loader worker"*, *"let me check the run directly rather than keep po
 **This is the origin of the owner's no-orchestrator rule** (*"so no runner, orchestrator or anything
 like, **it only breaks the run**"*) — **it is not a preference, it is a retired architecture.**
 
+> ### ⚠⚠ CONTRADICTION 2026-09-20 (T1 pass 44) — **the live code says FIVE windows, not four**
+> **VERIFIED by grep of the live `generate_wrangler_configs.py`:**
+> `MASTER_RUN_BASE_TIMES = ["16","20","0","5","9"]` with the inline comment
+> **`# 9am/1pm/5pm/10pm/2am PT`** — and its reason: *"closes the **~11-hour overnight gap** the
+> previous 3-time schedule left even when Cowork ran normally."*
+>
+> **The blueprint says four (1am, 9am, 1pm, 5pm). The code says five (9am, 1pm, 5pm, 10pm, 2am).**
+> The overnight slot differs too — **2am in code, 1am in the blueprint.** **Flagged, not resolved**,
+> but the standing precedence rule — *live code outranks documents* — points to the code, and the
+> code's comment reads like the record of a later change.
+>
+> **The comparison below is built on the blueprint's four and should be read with that caveat.**
+> On the code's five: **MLB's 10pm PT window has no NBA counterpart**, and **NBA's P2 at 01:00 PT
+> falls between MLB's 10pm and 2am rather than matching a 1am run.**
+
 **MLB's four daily windows — 1am / 9am / 1pm / 5pm PT — are worth comparing to NBA's three:**
 | | MLB | NBA |
 |---|---|---|
