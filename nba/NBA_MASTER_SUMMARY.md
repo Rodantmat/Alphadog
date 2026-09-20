@@ -1456,6 +1456,22 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.89 — PASS 59 (angle: **blueprint §4a–§4i, read by concept**) — ✅ **CLEAN 2 of 3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 59.*
+
+**Every subsection of §4's enrichment/calibration half has an entry, and each of the nine is cited by
+section number in at least one document. Nothing new.** Checked: overdispersion correction and
+Wilson-interval sample-support clamping (§4b) · push/tie/DNP as a third state and isolation-by-design
+(§4c) · macro-environment multicollinearity and the cumulative-vs-per-game trap (§4a) · the two-layer
+architecture and additive combination in log-rate space (§4d) · decide the factor architecture once
+(§4e) · the two standing search disciplines (§4f) · the preset-dictionary principle and tri-state
+data-quality tagging (§4g) · "called but never defined" as a systemic risk category (§4h) ·
+exhaustively check the sport's own API first (§4i, in four documents).
+
+**CLEAN PASS 2 OF 3.**
+
+---
+
 ### T1.88 — PASS 58 (angle: **blueprint §4j–§4n, read by concept**) — ✅ **CLEAN 1 of 3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 58.*
 
