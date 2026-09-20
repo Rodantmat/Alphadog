@@ -574,6 +574,8 @@ same family: the default scraped MLB and wrote to a path nothing committed.)*
 **The empty case is the dangerous one** — an exclusion list that is empty should exclude nothing, and
 instead errors or silently changes the predicate. **`known_empty_games` is exactly this shape**: a
 skip list that is empty on day one.
+
+### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
 > techniques) that **in their experience OFTEN OVER-FLATTENS / FLATTENS TOO MUCH**."*
