@@ -63,8 +63,27 @@ report and P3's 1:15 PM view. Only material availability moves matter.
 **B4 — opponent availability / rim protection** · T15, T16 · Closed in three formulations, 0 of 5 props.
 
 **baseline** · T4, T7, T8, T9 · *"The heart of the system"* (owner, T1). The historical-only projection
-producing hit probability and confidence. **Strictly historical — enrichment is separate** (the
-architecture correction in T4).
+producing hit probability and confidence. **Strictly historical — enrichment is separate** (T4).
+**The five-step design (T4, `nba/NBA_BASELINE_METHODOLOGY.md`)**: EWMA per-36 rate with Bayesian
+shrinkage → separate faster-moving minutes projection → pace + opponent-defence multipliers → raw
+projection → **anchor to team-implied totals**. Volatility via rolling SD; trend via a second faster
+EWMA, **dampened so it does not double-count the primary**.
+
+**baseline vs enrichment — WHY they are separate** · T4 · **The owner's correction, and the reason is
+caching cost**: *"the baseline is expensive to compute but **only changes after a player plays a
+game — it can be cached**. Enrichment data (injuries, odds) changes constantly."*
+**This is the founding justification for today's P2 (overnight) / P3 (afternoon) split.**
+
+**`NBA_BASELINE_METHODOLOGY.md`** · T4 · The design document for the baseline. Design-only, no code —
+*"matching the research-first pattern this whole project has followed."*
+
+**minutes projection** · T4 · Flagged at design time as ***"the single biggest source of error in any
+player-prop model"*** — not a solved problem. Everything the allocator, the blowout factor and the
+availability model do is an attack on this.
+
+**TEAM_ID = 0** · T4 · In `playercareerstats`, traded players get per-team rows **plus** a combined
+total row at `TEAM_ID = 0`. **A naive `SUM()` double-counts them.** Resolved empirically after search
+could not settle it.
 
 **baseline_history** · T14 · `nba_score.baseline_history`, 19.34M rows. *"Certified never meant
 stored"* — the harness discarded per-leg probabilities; this table is what the engine READS.
