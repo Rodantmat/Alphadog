@@ -187,6 +187,24 @@ Message 697 (*"**No**, keep looking"*) and message 723 (*"Find alternatives… u
 of it"*) each followed an honest stopping point — and **each produced the session's highest-value
 finding** (garbage-time filtering, then DARKO). Worth remembering before reporting exhaustion.
 
+### UNEXAMINED EDGE · the weekly cadence reasoning fails early in a season
+The justification for refreshing season aggregates weekly is explicit: *"a single game barely moves a
+season average **after 20+ games played**."* **That is false in October and November**, when a single
+game can move a season average substantially. The weekly cadence was never revisited for the
+early-season case. **P1 runs weekly year-round.**
+
+### CAVEAT · `*_written` counts are upserts, not totals
+`aliases_written: 155/157` vs 162 total active rows. Unchanged rows are not rewritten — the same
+property as `source_key`. **Comparing a worker's `*_written` figure to a `SELECT count(*)` will always
+show a gap that is not a bug.**
+
+### CAVEAT · `continue-on-error` on static scrapers vs fail-loudly on the baseline
+The static scraper workflow sets `continue-on-error: true` per step so one broken endpoint does not
+block the other seven — **and that is correct there**, because a missing entity is visible (its table
+simply doesn't update). The baseline build forbids swallowing failures, because a missing prop pair is
+**invisible** and corrupts the slate. **The rule is "never let an INVISIBLE failure pass," not "never
+tolerate failure."**
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
