@@ -6107,6 +6107,67 @@ still holding.
 
 **T9 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T9.11 — PASS 2 (DDL and the production config entry) — **NEW MATERIAL**
+
+#### T9.11a — **`nba_score.baseline_ladder` — and `ot_rule` IS IN THE PRIMARY KEY**
+```sql
+PRIMARY KEY (asof, player_id, game_id, prop, period, ot_rule, line)
+```
+Columns: `asof`, `player_id`, `team_id`, `game_id`, `game_date`, `prop`,
+**`period` DEFAULT 'FULL'**, **`ot_rule` DEFAULT 'include'**, `line`, `anchor`, `ladder_offset`,
+`p_more`, `p_less`, **`p_raw`**, `role_tier`, `var_band`, **`used_emp`**, **`recipe_version`**,
+`loaded_at`.
+Index: `(asof, prop, period, player_id)`.
+
+**⚠ THIS PARTLY RESOLVES THE OT OPEN ITEM.** I flagged that PrizePicks/Underdog include OT in 2H/4Q
+while Sleeper excludes it, and that T8 called them *"different products, different models."*
+**The storage layer already supports both** — `ot_rule` is a first-class key column, so the same
+player/prop/period can hold an `include` row and an `exclude` row simultaneously.
+**What remains open is whether both variants are actually BUILT and whether the scorer selects by
+app.** The schema is not the blocker.
+
+**Three other columns worth noting:**
+- **`p_raw`** alongside `p_more`/`p_less` — the pre-calibration value is retained, so the effect of
+  Platt and the cells is auditable per row.
+- **`used_emp`** — whether the empirical table or the parametric fallback produced this row. **Exactly
+  the flag needed to check the hierarchical fallback's 100% coverage claim in production.**
+- **`recipe_version`** — rows carry the recipe that made them.
+
+#### T9.11b — `nba_score.baseline_ladder_runs` — the per-run audit trail
+`asof` PK · `slate_games` · `players` · `rows` · `props[]` · **`history_seasons[]`** ·
+`current_season` · **`factor_fits` JSONB** · **`role_minutes_multiplier` JSONB** · `source_file` ·
+`loaded_at`.
+
+**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN.** This is the
+"no pasted constants" rule made auditable — you can see what each day's run derived, and compare runs.
+**`history_seasons[]` records what the run was allowed to see**, which is the parity rule's evidence.
+
+#### T9.11c — The `production_baseline_ladder` config entry, in full
+| Key | Value |
+|---|---|
+| **builder** | *"`nba/baseline/build_baseline_ladder.py` (**patcher over `classification_ladder_v12.py` — single source of truth; anchors assert**)"* |
+| **workflow** | *"`nba-baseline.yml` (**daily 12:30 UTC cron** + `TRIGGER_NBA_BASELINE.txt` with `asof:`/`replay:`)"* |
+| **slate** | *"`nba_schedule_current.json` games on ASOF (**status != final; replay allows final**) × each team roster **from its last 3 games**"* |
+| **asof_lag** | ***"0 days (daily-exact walk-forward); Platt on the season prior months"*** |
+| **validated** | *"replay **2026-03-15: 7 games, 194 roster rows, 173 projected players, 4,498 rows for 2 props**; **43 roster players were DNP (enrichment removes)**"* |
+| **not_yet** | *"combos + DD in production · period props in production · loader worker to Postgres · **enrichment deltas on top**"* |
+
+**Three things this pins down:**
+1. **The roster is derived from the last 3 games**, not from `nba_ref.players` — which sidesteps the
+   "new players invisible until the weekly scrape" gap (OPEN_ITEMS ④) for anyone who has played.
+2. **`asof_lag: 0 days`** — daily-exact walk-forward, no safety lag. **Platt is fit on prior months
+   only.**
+3. **"43 roster players were DNP (enrichment removes)"** — the baseline deliberately projects players
+   who will not play, and the enrichment layer removes them. **The baseline is availability-agnostic by
+   construction**, exactly as the boundary requires.
+
+#### T9.11d — The loader worker
+**`alphadog-v2-nba-baseline-ladder` v0.1.0** — *"POST /run {"asof":"YYYY-MM-DD"} → loads
+`nba/data/nba_baseline_ladder_<asof>.json` (default `_latest.json`). **Idempotent: PK (asof,
+player_id, game_id, prop, period, ot_rule, line)**. Run summary → `baseline_ladder_runs`."*
+
+**T9 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
