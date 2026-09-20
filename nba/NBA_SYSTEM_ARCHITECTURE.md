@@ -92,55 +92,100 @@ var-only edits reliably"* — which is why endpoint/header defaults are hard-cod
 ## 5. DATA SOURCES
 
 ### `stats.nba.com` — the primary source
-Endpoints in use: `leaguestandingsv3` · `commonallplayers` · `teamdetails` (→ `TeamBackground`) ·
-`leaguedashplayerbiostats` · `leaguedashptstats` · `leaguedashlineups` · `synergyplaytypes` ·
-`scheduleleaguev2` · `boxscoretraditionalv3` · `boxscoresummaryv3` · `leaguedashteamstats`
+Endpoints in use: `leaguestandingsv3` · `commonallplayers` · **`playerindex`** (the only one with a real
+`POSITION` field) · `teamdetails` (→ `TeamBackground`) · `leaguedashplayerbiostats` ·
+`leaguedashptstats` · **`teamplayeronoffdetails`** (30 calls, 3 result sets, join on `VS_PLAYER_ID`) ·
+`leaguedashlineups` · `synergyplaytypes` · `scheduleleaguev2` · **`playergamelogs`/`teamgamelogs`**
+(and **`MeasureType=Advanced`** — 2 calls, not 1,230) · `playerdashboardbygeneralsplits` (6 groups in
+one call) · `playercareerstats` · **`boxscoretraditionalv3`** · **`boxscoresummaryv3`** ·
+`leaguedashplayerptshot` · `leaguedashplayershotlocations` · `leaguedashteamstats`
 
 **Access requirements, learned the hard way:**
-1. Must run from **GitHub Actions**, not Cloudflare.
-2. Must use **`curl_cffi` with browser impersonation** — plain `requests` is TLS-fingerprinted and
-   **tarpitted** (silent hangs, not rejections). A proxy alone does NOT help; that was proven.
-3. Canonical headers: `Host`, `Referer: https://stats.nba.com/`, `x-nba-stats-origin: stats`,
-   `x-nba-stats-token: true`, full Chrome UA, `Accept-Encoding: gzip, deflate, br`.
+1. Must run from **GitHub Actions**, not Cloudflare. **Root cause: stats.nba.com is itself
+   Cloudflare-fronted, and Cloudflare→Cloudflare traffic is flagged at the WAF/edge** — error 520 means
+   *"the request never reaches the app layer."*
+2. **`curl_cffi` with browser impersonation is mandatory** — plain `requests` is TLS-fingerprinted and
+   **tarpitted** (silent hangs). A proxy alone does NOT help. *(And `curl_cffi` was not discovered —
+   it was read out of MLB's existing scraper.)*
+3. **SEND THE FULL PARAMETER SET, many as empty strings.** A partial query string returns a **real
+   HTTP 500**, not a helpful error.
 4. **Documented columns may simply not exist any more** — dump the real response before patching a
-   parser.
+   parser (`ARENA`/`ARENACAPACITY` are gone from the standings endpoint).
+5. **⚠ v2 endpoints are unreliable for historical games.** `boxscoretraditionalv2` returns **HTTP 200
+   with ZERO player rows**; `boxscoresummaryv2` is **documented unreliable after 2025-04-10**.
+   **Use v3.**
+6. **⚠ `leaguedashplayershotlocations` returns `resultSets` as a DICT, not a list** — it breaks the
+   convention every other endpoint follows.
+7. **Use real URL encoding** on parameter values — `'6+ Feet'` needs `%2B`, not a space replacement.
+8. **`Period=1..4` works on the BULK endpoint** — 4 calls per season, not ~5,000 per-game calls.
+   **OT is isolated as `full-game − (Q1+Q2+Q3+Q4)`; halves as Q1+Q2 / Q3+Q4.**
+9. **`GAME_ID` prefix `002` = regular season** — the precise convention; free-text labels are fragile
+   (NBA Cup group stage, Rivals Week and international games carry special branding).
+10. **`playercareerstats` gives traded players per-team rows PLUS a combined `TEAM_ID = 0` row** — a
+    naive `SUM()` double-counts.
 
 ### Wikipedia
-`List of NBA referees` — the officials roster (the stats API has none) and coach-change pages.
+`List of NBA referees` (the stats API has none) and coach-change pages.
 **Uses plain `requests`, NOT `curl_cffi`** — its API is built for programmatic access.
 
+### DARKO — `darko.app`
+DPM ratings by Kostya Medvedovsky. **Free**, and rated by NBA front-office analysts (HoopsHype survey)
+above the **paid** EPM and LEBRON on RMSE — *"forward-looking rather than backward-looking, which is
+exactly what matters for prop prediction."*
+**Extraction: the page is SvelteKit; the full dataset is embedded in the `kit.start()` hydration
+script.** **⚠ JS bare decimals (`.534094`) are invalid JSON and must be repaired before parsing.**
+**Keys on `nba_player_id` directly** — no name matching. Stored as **`player_impact_rating`, not
+`darko`**, against the single-maintainer risk.
+
+### **The NBA injury-report CDN** — `ak-static.cms.nba.com/referee/injury/`
+Official pregame injury reports as **public PDFs**, *"several times daily, with real historical
+archives back to **2021-22** — free, official, no third-party paywall."*
+**⚠ The backfill captured is HOURLY (48 snapshots/game-date), while the league publishes every 15
+minutes.** Any cutoff analysis finer than ±1 hour needs the 15-minute archive. The season crosses DST.
+
 ### The Odds API
-Historical and live sportsbook lines → `nba_market.board_snapshots`. 12 books. $30 plan verified
-against 2024-25 data. **Carries PrizePicks as a bookmaker but NOT the DFS-only markets**
-(fantasy_score, period props).
+Historical and live sportsbook lines → `nba_market.board_snapshots`. 12 books, $30 plan.
+**Carries PrizePicks as a bookmaker but NOT the DFS-only markets** (fantasy_score, period props).
+**This superseded the T9 verdict that no retroactive prop archive existed** — BigDataBall was never
+needed.
 
 ### ParlayAPI
-Expected to hold past-season data and live boards. **Superseded for boards** — our own scrapers beat it
-(ParlayAPI drops ~25% of rungs; proven with same-moment diffs).
+`https://parlay-api.com/v1`. **NBA game lines back to 2007; NO historical props; no DFS books.**
+Useful only to **validate** the derived spread. **Superseded for boards** — our own scrapers beat it
+(ParlayAPI drops ~25% of rungs, proven with same-moment diffs).
+
+### EPM (Dunks & Threes) — **REJECTED on licensing, not capability**
+Rated *"one of the highest-value single features"*, then found **behind a paid subscription**.
+*"Scraping paywalled content isn't something I'll do without your explicit sign-off — it's a real
+legitimacy/ToS question."* **Nothing was built against it.**
 
 ### DFS apps — own scrapers
-| App | Ladder structure | Transport |
+| App | Ladder structure | Multipliers |
 |---|---|---|
-| **PrizePicks** | rungs in the raw feed (standard/goblin/demon) | `curl_cffi`, multiple candidate URLs (api + partner-api) |
-| **Underdog** | `alternate_projections` per line, **with both sides' multipliers** | own scraper from owner-captured cURLs |
-| **Sleeper** | **no alternate lines** — one line per player+stat, per-side multipliers | own scraper |
-| **Fliff** | alternate lines are separate proposals per market group | reverse-engineered from web bundles |
-| **Betr** | tiers REGULAR/MINI_BOOSTED/BOOSTED/SUPER_BOOSTED/BOOSTED_4/EDGE_1..4 | GraphQL, owner's Keycloak token in `nba_config.external_credentials` |
+| **PrizePicks** | rungs in the raw feed (standard/goblin/demon) | ❌ **not on any public surface** |
+| **Underdog** | `alternate_projections` per line | ✅ both sides |
+| **Sleeper** | *"no alternate lines"* ⚠ (T7 found milestone 20+/25+/30+) | ✅ per-side |
+| **Fliff** | separate proposals per market group | ✅ |
+| **Betr** | REGULAR → EDGE_4 tiers, GraphQL, Keycloak token | ✅ |
 
-**PrizePicks NBA producer**: `nba/scrape_prizepicks_nba_board.py` (`league_id=7`), **separate from
-MLB's `main.py`** (`league_id=2`, hardcoded). Live-tested 2026-09-20: 192 projections,
-104 demons / 52 goblins / 36 standard. **The `partner-api` host answered while `api` was blocked** —
-which is why multiple candidate URLs are mandatory.
+**PrizePicks NBA producer**: `nba/scrape_prizepicks_nba_board.py`, **`league_id=7`**, separate from
+MLB's `main.py` (`league_id=2`). **The `partner-api` host answered while `api` was blocked** — which is
+why multiple candidate URLs are mandatory. **Candidate selection by future-pickable rows, not size.**
 
-### DARKO
-DPM ratings, extracted from SvelteKit hydration. 530/530.
+### Research sources used
+**Gemini** (`call_gemini` on the bridge) — *"not absolute truth, a tool to bring more information to
+the table in a different point of view."* **Corrected on checkable facts at least five times**: the
+1,230-call estimate, "starters are inferable from game logs", "Team Pace is missing", "potential
+assists aren't in our data", and "tier globally".
+**OpticOdds** (industry pricing vendor) · **Unabated** · **DataStreak** (40,856 graded props) ·
+**RotoGrinders** · **Cleaning the Glass / Ben Falk** (garbage-time filtering) ·
+***J. Sports Sciences* 2025** (altitude, p=0.005) · **PMC 10-season study** (eastward jet lag) ·
+**`swar/nba_api`** — the source of the canonical headers and the static TEAM_ID list; **Issue #155**
+tracks header changes and is the first place to look if scraping breaks.
 
-### Gemini — `call_gemini` on the bridge
-Used for independent research synthesis, cross-checked against web research rather than trusted alone.
-
-### The proxy — `PROXY_URL` secret
-Residential proxy, egress verified US/California. Required for DataDome-protected hosts.
-**Does NOT defeat TLS fingerprinting** — `curl_cffi` is the answer to that, not the proxy.
+### The proxy — `PROXY_URL`
+Residential, egress verified **US/California**. **Inherited from MLB's own scraper**, not created here.
+Required for DataDome-protected hosts. **Does NOT defeat TLS fingerprinting.**
 
 ---
 
