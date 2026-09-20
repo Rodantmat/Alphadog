@@ -589,7 +589,40 @@ same family: the default scraped MLB and wrote to a path nothing committed.)*
 instead errors or silently changes the predicate. **`known_empty_games` is exactly this shape**: a
 skip list that is empty on day one.
 
-### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
+### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
+**MLB's lessons document names this as the #1 failure mode across its entire research program —
+*"at least SIX distinct, separately-discovered instances."***
+
+**NBA has already produced at least four:**
+| Instance | Effect | Visibility |
+|---|---|---|
+| `norm_market()` naive `replace('player_','')` | **23,286 legs — 44% of the board — scored nothing** | **silent** |
+| Splits PK omitting `season` | only one season can ever exist | **silent overwrite** |
+| Lineup PK omitting `team_id` | traded players collide | **failed loudly** ✅ |
+| Gap sample grouping on `matchup` | every game listed twice | cosmetic |
+
+**Three of four were silent.** *"Before trusting any grouping key or join in a new table,
+sanity-check that it actually isolates what it claims to."*
+**Worth a deliberate audit of every join in the scoring path before the season**, since that is where a
+silent one costs the most.
+
+### 📏 THE SAMPLE-SIZE POSTURE — adopt as a mechanical default from opening night
+> *"**fewer than 15 real days is NOT YET A RESULT AT ALL; 15–30 days is DIRECTIONAL ONLY; 30–70 days is
+> usable WITH REAL CAVEATS STATED; 70+ days is GENUINELY REPORTABLE.**
+> **Days of real, distinct data matter FAR MORE than total leg count — a large leg count concentrated
+> in a handful of days is A SMALL-SAMPLE FINDING WEARING A LARGE-N DISGUISE.**"*
+
+**The NBA season opens 2026-10-03.** By this standard: **directional around 24 October, caveated
+results in early November, genuinely reportable around mid-December.** ~58k legs/day will look like an
+enormous sample long before it is one.
+
+### ⚠ #25 · COMPOUNDING SAFETY MARGINS — relevant the moment slip EV is computed
+MLB deployed *"an extra, deliberate conservative discount **ON TOP OF** an already-real,
+already-conservative observed ratio"* — which **compounds absurdly once exponentiated across a
+multi-leg slip.**
+**A 5% haircut per leg is 23% on a 5-pick slip.** Any conservatism must be applied **once, at the slip
+level**, not per leg and then again in aggregate. **Not yet relevant — the slip phase has not begun —
+but it will be immediately.**
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
 > techniques) that **in their experience OFTEN OVER-FLATTENS / FLATTENS TOO MUCH**."*
