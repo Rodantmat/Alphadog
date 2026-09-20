@@ -1456,6 +1456,28 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.92 — PASS 62 (angle: **System Draft §1–§4 clause by clause, then the taxonomy diffed against live**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 62; composition table in `NBA_DATABASE.md`.
+VERIFIED by live SQL.*
+
+- **The day-one prop taxonomy named 14 props. The live `nba_ref.prop_taxonomy` holds 28 across 10
+  families.** ✅ **Every planned prop exists**; **fourteen more were added and none is recorded as a
+  decision.**
+- **⚠ Nine of the additions are PERIOD props** — `points_1q/1h/2h/4q`, `assists_1q`, `rebounds_1q`,
+  `threes_made_1q`, `pra_1q`, `fantasy_score_1q`. **The day-one taxonomy had no period dimension at
+  all, and period props are now a third of the board surface.**
+- **Why it matters**: period props carry their own **`ot_rule`**, and **OT handling differs by app** —
+  exactly lesson #14's prop-definition-mismatch trap. And they arrived **without** the *"first-class
+  from day one, not an afterthought"* framing the plan applied to combos (§T1.79) — **the one place
+  the plan explicitly warned against bolt-on treatment.**
+- **Also unplanned**: the **`volume` family** (`fga`, `fg3a` — attempts, not makes), `ftm`,
+  `personal_fouls`, `stocks`.
+- **✅ System Draft §1, §2, §4 fully covered** — the naming convention and its 2026-08-31 full-separation
+  correction, reused-vs-fresh, *"no orchestrator, confirmed as the explicit design"*, the
+  no-pitcher-side simplification and the absent `stats_hitter`/`stats_pitcher` split.
+
+---
+
 ### T1.91 — PASS 61 (angle: **Domain Mapping §2's main table, ROW BY ROW**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 61; the six missing rows are now in
 `NBA_FINAL_SCORING_CALIBRATION.md` §7h with outcomes.*
