@@ -242,6 +242,14 @@ Hit 32.9/21.3/14.8% at T+1/+2/+3, needing 1.48/2.30/3.31× against a ~1.75–1.9
 
 ## E–F
 
+**flat vs proportional partial credit** · T1, **lesson #27** · The structural difference between DFS
+platforms' Flex partial-hit payouts: **flat fixed values independent of the full-hit multiplier** on
+one platform, **scaling proportionally with it** on another. *"The two structures produce meaningfully
+different expected values for the same underlying leg-hit distribution."* **Verified for PrizePicks
+only (flat); NOT RECORDED for Underdog, Sleeper, Betr, Fliff** — and §0.2e's dynamic-pricing finding
+makes flat the *unlikely* prior for Underdog and Sleeper. → `NBA_MULTIPLIERS.md` §0.2h ·
+`NBA_FINAL_SCORING_CALIBRATION.md` §14 #27 · `NBA_GOBLIN_DEMON.md` §6.
+
 **edge** · LIVE · Distance above break-even, its own column. Answers *"is this an opportunity"* —
 distinct from score, which answers *"how good is this leg"*.
 
