@@ -244,6 +244,68 @@ the real columns.
 A `future.fandom.com` result on NBA expansion/realignment was returned but is **fan-fiction, not
 fact** — correctly not acted upon.
 
+### T1.13 — PASS 3 FINDINGS (added 2026-09-20; full SQL bodies and written file contents)
+
+**THE THREE-RUN OPERATING MODEL — the origin of the whole pipeline design.** Written to memory
+`/areas/alphadog-nba.md` verbatim from the owner:
+- **Run 1 — "static differential"**: rarely/sporadically-changing data — calendar, team dictionary,
+  player dictionary, roster, arenas, possibly referee dictionary.
+- **Run 2 — "delta daily"**: data that changes every game/day (game logs), a backfilled base plus daily
+  incremental mining; **this run also builds the baseline, described as "the heart of the system"**.
+  After mining, prep functions ready the data for a **classification layer** (logic dataset classifier,
+  multiple layers for players / prop-lines / variations / directions, each with its own
+  thresholds / caps / bonuses / penalties) which computes **the baseline hit-probability % and
+  confidence**.
+- **Run 3 — "master run", 4 stages**, beginning with Board (mine PrizePicks).
+- **"explicitly NO runner/orchestrator/master-automation script"** — three runs, each triggered
+  manually by a Claude Coworker scheduled task, worker by worker, path by path, verifying each does its
+  job correctly. *Matches how the MLB system runs, which the owner says works fine.*
+- **This is the direct ancestor of today's P1/P2/P3**, and it is why no orchestrator was ever built.
+
+**The 14 NBA schemas, exact list** (one `CREATE SCHEMA IF NOT EXISTS` each, in one statement):
+`nba_ref`, `nba_calendar`, `nba_team`, `nba_stats`, `nba_daily`, `nba_context`, `nba_market`,
+`nba_archive`, `nba_score`, `nba_scoring`, `nba_backtest`, `nba_classification`, `nba_config`,
+`nba_control`.
+
+**The 18 MLB schemas, exact list**: `archive`, `backtest`, `calendar`, `certifier`, `classification`,
+`config`, `context`, `context_cert`, `control`, `daily`, `market`, `public`, `ref`, `score`, `scoring`,
+`stats_hitter`, `stats_pitcher`, `team`. **NBA has no hitter/pitcher split** — one `nba_stats`.
+
+**`nba_ref.teams` full DDL as created:**
+`team_id TEXT PRIMARY KEY, nba_team_id BIGINT, abbreviation TEXT, full_name TEXT, nickname TEXT,
+location_name TEXT, conference TEXT, division TEXT, arena_id TEXT, active INTEGER DEFAULT 1,
+source_key TEXT, raw_json JSONB, created_at TIMESTAMPTZ DEFAULT now(),
+updated_at TIMESTAMPTZ DEFAULT now()`
+
+**NAMING CONVENTION LOCKED** (in `nba/NBA_SYSTEM_DRAFT.md`):
+- Workers: `alphadog-v2-nba-<domain>-<thing>.js`, job_key `nba-<domain>-<thing>` — mirrors MLB's
+  `alphadog-v2-<domain>-<thing>` with an unambiguous `nba-` token inserted.
+- **Repo location: every NBA worker, wrangler config and schema file lives inside `/nba/`**, not the
+  repo root where every MLB worker lives — *"a second, independent way (folder, not just filename
+  prefix) to guarantee zero accidental mixing"*.
+- Postgres: new `nba_`-prefixed schemas, none reusing or extending an MLB schema.
+
+**A CORRECTION TO THE HANDOFF BLUEPRINT, made here and banner-committed**: a `sport`/`league`
+discriminator column **DOES already exist** on `market.sleeper_board_current/stage` and
+`market.underdog_board_current/stage` — contrary to the blueprint's Section 0 claim. It holds only
+`baseball_mlb`/`MLB`. **It does not change the conclusion** that NBA needs its own board workers,
+because *"the live sleeper/underdog board-mining code hardcodes `baseball_mlb` in the probe URL, the
+row filter, and the league literal — the column isn't actually wired for multi-sport dispatch"*.
+Left as an open Phase 2 design question: reuse the shared board tables filtered by sport, vs. build
+parallel `nba_`-prefixed tables. **Resolved later in favour of `nba_market.board_snapshots`.**
+
+**THE ONE DELIBERATE EXCEPTION, as originally drafted**: per blueprint Section 7e, NBA workers were to
+register into the **EXISTING, SHARED** `config.worker_definitions` / `config.worker_schedules` and
+`control.job_queue`. **This was subsequently overruled** — the owner required a completely independent
+universe, so `nba_config.worker_definitions` and `nba_control` were created instead. The draft text
+records the earlier intent; the schemas record the final decision.
+
+**MLB `ref.teams` is genuinely MLB-specific** — `mlb_team_id`, AL/NL `division`, `file_code` — which is
+what justified a separate `nba_ref.teams` rather than adding a discriminator.
+
+**Naming-collision risk confirmed as real, not theoretical**: 116 rows in `config.worker_definitions`,
+**zero sport prefix anywhere**.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
