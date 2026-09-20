@@ -34,7 +34,7 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 | Item | Outcome |
 |---|---|
 | Infrastructure | ✅ reused — Workers, deploy pipeline, Hyperdrive, the bridge, `curl_cffi` (read out of MLB's scraper) |
-| Research standard | ✅ reused — all 26 lessons plus Parts B–F |
+| Research standard | ✅ reused — **all 27 lessons** plus Parts B–F. ⚠ *Corrected 2026-09-20 (pass 30): this row said **26**. **VERIFIED 27** by direct grep of `NBA_LESSONS_LEARNED_FROM_MLB.md` (`grep -c "^### [0-9]\+\."` → 27) and by grep of T1. **Lesson #27 was undocumented** — now at §14.* |
 | **ParlayAPI** | ⚠ **reused then SUPERSEDED** — own scrapers beat it (~25% of rungs dropped) |
 | PrizePicks scraper architecture | ✅ reused — but **a separate NBA producer** (`league_id=7`, own env namespace, own output), not a sport-filter swap |
 | Gemini adversarial pattern | ✅ reused, **without the pre-stated falsification bar** (§14 #4) |
