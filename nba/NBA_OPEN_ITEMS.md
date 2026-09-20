@@ -722,6 +722,16 @@ board-coverage number is understood as *"of the props we can model"*, not *"of e
 **Verified 2026-09-20**: `nba_ref.arenas` has **30 rows, 0 with `altitude_ft`, 0 with `timezone`**
 (19 of 30 have `capacity`).
 
+**⚠ AND THE LESSONS DOCUMENT NAMES THE CHECK THAT WOULD HAVE CAUGHT THIS (T1):**
+> *"for any factor, **verify it actually has variance (`stddev(factor_value) > 0`) as a FIRST sanity
+> check** — **this is cheap and MLB never did it proactively**."*
+
+**An altitude factor built today would have `stddev = 0`.** The one-line check catches it before any
+gate run, any cell fit, or any conclusion about whether altitude matters.
+
+**Worth running across every factor column before the season**, not just these two — any column
+created but never filled has the same signature.
+
 **Two peer-reviewed factors cannot be computed at all:**
 | Factor | Evidence | Needs | State |
 |---|---|---|---|
