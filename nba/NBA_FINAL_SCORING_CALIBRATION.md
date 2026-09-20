@@ -1100,25 +1100,35 @@ That is the **prop-definition mismatch** problem (lesson #14) applied to source 
 props: **the same name can mean a different computation.**
 
 ### 3. Check a candidate factor for REDUNDANCY before building it
-> *"**A related, valuable discipline for evaluating any new candidate enrichment factor BEFORE
-> BUILDING IT: explicitly CHECK FOR REDUNDANCY with what already exists — IS THE PROPOSED NEW SIGNAL
-> ACTUALLY JUST A NOISIER PROXY FOR AN OUTCOME THE SYSTEM ALREADY MEASURES DIRECTLY** (in which case
-> adding it co[ntributes nothing])?"*
+> *"**Explicitly CHECK FOR REDUNDANCY with what already exists**:
+> **(a) is the proposed new signal ACTUALLY JUST A NOISIER PROXY for an outcome the system ALREADY
+> MEASURES DIRECTLY** (in which case adding it **contributes little**)?
+> **(b) does REAL PUBLISHED RESEARCH show combining it with an existing signal ACTUALLY ADDS
+> PREDICTIVE VALUE — OR NOT?**
+> **(c) is its INTENDED EFFECT ALREADY IMPLICITLY CAPTURED BY A DIFFERENT, ALREADY-EXISTING
+> MECHANISM?** — MLB found **a real case where a proposed new signal's ENTIRE BENEFIT was already
+> captured by an existing mechanism APPLIED EARLIER IN THE PIPELINE, making the new signal GENUINELY
+> redundant, not just partially so.**
+> **Run this evaluation EXPLICITLY for EVERY NBA factor candidate BEFORE building it** — **several
+> real, well-reasoned rejections came DIRECTLY out of this discipline, NOT from skipping factors
+> arbitrarily.**"*
 
-**This is the ten-factor audit's verdict, stated as a pre-build check.** The recurring diagnosis was
-***"the baseline already carries what these factors re-express."***
-
-**Every rejected factor fits the description:**
-| Factor | What already measured it directly |
+**Three distinct questions, and (c) is the one that caught NBA's factors.** *"Already captured by a
+different mechanism **applied earlier in the pipeline**"* describes every rejection:
+| Factor | Earlier mechanism that already captured it |
 |---|---|
-| **A5 — lineup change** | *"the allocator's recent-5 minutes **already encode starting**"* |
-| **A3 — return ramp** | assigned to the **baseline**; gated at leg level → zero gain |
+| **A5 — lineup change** | *"the allocator's **recent-5 minutes already encode starting**"* |
+| **A3 — return ramp** | applied in the **baseline** as a minutes multiplier |
 | **home / back-to-back** | *"**the minutes model already carries them**"* — measured ≈0 |
 | **A2 — teammate redistribution** | the baseline's own minutes history |
+| **B4 — opponent availability** | closed in three formulations, 0 of 5 props |
 
-**Applying this check BEFORE building would have saved the five A2 panels and the three B4
-formulations.** It is one question — *does something already measure this directly?* — and it is
-cheaper than every gate run it replaces.
+**Note (b) specifically asks whether published research supports the COMBINATION, not the factor
+alone** — a factor with real standalone support can still add nothing on top of what exists. **That is
+the two-test paradox (§7e) as a pre-build question rather than a post-hoc measurement.**
+
+**Applying (a)–(c) BEFORE building would have saved the five A2 panels and the three B4
+formulations.** Three questions, cheaper than every gate run they replace.
 
 ---
 
