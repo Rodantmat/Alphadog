@@ -407,12 +407,41 @@ Columns include `season`, `anchor`, `ladder_offset`, `p_more`, `p_less`, `proj_m
 (game_date, player_id, prop, line) INCLUDE (proj_min, rate36, used_emp, role_tier) — 1,334 MB,
 **22.3M scans**, built 2026-09-19.
 
-### `nba_score.final_hp` — **38.7M rows, ~9.4 GB after VACUUM**
+### `nba_score.final_hp` — ⚠ **19,215,200 rows LIVE (2026-09-20). Previously documented: 38.7M.**
 The final number per leg. `season, game_date, game_id, player_id, prop, line, side, ladder_offset,
 anchor, baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier, c_exist, c_quality,
 c_market, prop_tier, band, phase, n_uncertain, built_at`.
 **UNIQUE: `(game_date, player_id, prop, line, side)`** — `final_hp_uidx`, 5,024 MB, **259.9M scans**.
 **Deliberately denormalised** — see OPEN_ITEMS; the duplicate columns buy backtest speed on 2 GB RAM.
+
+#### ⚠⚠ LIVE ROW COUNT, MEASURED 2026-09-20 (T1 pass 33) — **the 2025-26 season is gone but one day**
+**VERIFIED by live SQL:**
+
+| season | distinct `game_date` | props | rows |
+|---|---|---|---|
+| 2024-25 | **162** | 30 | **19,075,070** |
+| **2025-26** | **1** — `2026-01-15` only | 30 | **140,130** |
+| **total** | 163 | 30 | **19,215,200** |
+
+**All 30 props in 2025-26 hold exactly one date.** The previously documented **38.7M** figure is
+consistent with a complete table: `19.07M (2024-25) + ~19.6M (2025-26) ≈ 38.7M`. **~19.5M rows of the
+2025-26 partition are missing.**
+
+**Cause — VERIFIED by grep of `nba/build_final_hp.py`**: the engine's `FE_DATE` parameter **scopes the
+`SELECT` from `baseline_history` but not the `DELETE` from `final_hp`**, which is
+`DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s` with **no `game_date` predicate**. A
+slate-scoped write therefore replaces the whole season × prop partition with one slate.
+**Blueprint §7g bug class 1.** Full entry, including what is and is not established about how it was
+triggered: `NBA_OPEN_ITEMS.md`, top of file.
+
+**✅ Recoverable.** Every column is derived from `nba_score.baseline_history`, which is **intact —
+VERIFIED: 2025-26 holds 163 distinct dates × 30 props.** A full-history re-run rebuilds it.
+**The ~9.4 GB / 5,024 MB index figures above predate the loss and are left as the last known
+full-table measurements** — they are what the table should return to.
+
+**⚠ Anything computed against `final_hp` for 2025-26 since the loss is computed on one day of data.**
+Consumers to re-check before trusting: the backtests, `nba_score.board_scored` joins, and any
+confidence or calibration work reading the 2025-26 partition.
 
 ### `nba_score.ladder_calibration_asof`
 `season, as_of_date, prop, phase, band, side, log_odds_shift, n, source, built_at`.
