@@ -1129,6 +1129,38 @@ only pass that counts.**
 **Next: pass 25 — a complete sequential re-read, all six segments, start to finish.** Three of those
 must come back clean in a row.
 
+### T1.49 — PASS 25, SEGMENT 1 (blocks 1–54) — **NEW MATERIAL**
+
+**THE DEAD-STUB FINDING, with its count and its detection method** — pass 24 recorded the warning;
+this gives the specifics:
+> *"The **19ish `score-<prop>` files** (score-doubles, score-hits, etc.) are still `enabled=1` in the
+> registry **despite matching the ~5.3 KB stub signature** — live proof of the doc's 'registry ≠
+> reality' warning."*
+
+So roughly **19 of MLB's 116 registry rows are dead stubs**, and they were identified by **file size**
+(~5.3 KB, the stub signature). **The real working-worker count is nearer 97.** Any audit that counts
+registry rows overstates capability by about 16%.
+
+**A THIRD CORRECTION TO THE HANDOFF DOC**, not previously recorded: the live schema count is
+*"a few more than the doc's table listed"* — 18 actual vs fewer documented. So the Phase 1 recon
+corrected the blueprint in **three** places, not two: the sport/league column, the schema count, and
+the registry-vs-reality confirmation.
+
+**Deploy pipeline state at session start**: *"Live, healthy, **successful auto-deploy this
+morning**"* — the baseline against which the later full-fleet redeploys were judged safe.
+
+**Phase 1's verification table, in full** — the six checks run before any building:
+| Check | Result |
+|---|---|
+| NBA namespace | zero exists, clean slate |
+| Postgres schemas | 18 confirmed |
+| `ref.teams` | MLB-specific (`mlb_team_id`, AL/NL, `file_code`) |
+| Worker registry | 116 rows, no sport prefix — collision risk real |
+| Dead-stub workers | ~19 `score-<prop>` stubs still enabled |
+| Deploy pipeline | live and healthy |
+
+**Segment 1 of pass 25: NEW MATERIAL. Clean count remains 0/3.**
+
 **Two corrections this pass produced**, both from reading rather than grepping:
 1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
 2. The `source_key` value was recorded truncated.
