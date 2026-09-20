@@ -716,26 +716,44 @@ any margin **once, at slip level.**
 
 ## 15. WHERE EDGE IS NOW EXPECTED TO COME FROM
 
-### ⚠ 15.0 THE PRIOR THAT SHOULD FRAME EVERY EDGE CLAIM
-**MLB confirmed a large structural mispricing and never harvested it** (lesson #13):
-> *"the Goblin/tiered-pricing mechanism moves its payout only a **small fraction** of what
-> proportional pricing would require — **roughly a 15% multiplier change for a ~2.6× true-probability
-> gap**… **but MLB never found a way to IDENTIFY IN ADVANCE which legs sit on the high-probability
-> side; every walk-forward selection attempt (raw trailing hit rate, model-probability quintiles,
-> appearance frequency) REGRESSED TO THE POOL AVERAGE.**"*
+### ⚠⚠ 15.0a THE HARD CONSTRAINT — two of the three platforms are measured EFFICIENT
+> *"**Underdog/Sleeper's own EV-parity pricing, measured directly against real placed-slip data at
+> scale (14,000+ REAL LEGS), showed `p × m` FLAT AND SLIGHTLY BELOW 1.0 ACROSS THE ENTIRE PROBABILITY
+> RANGE** — these platforms price efficiently enough that **no simple probability-based selection
+> works**."*
 
-**The mispricing is not the hard part — SELECTION is.** And **everything in this document is selection
-machinery**: the calibrated ladder, the per-band cells, the confidence model, the factor gates.
+**They price per-leg DYNAMICALLY.** A better `p` earns nothing when `m` moves to match it.
 
-**The one asset MLB's failures lacked**: a **calibrated** probability — *"when the recipe says 75%,
-roughly 75% hit, on every band, both seasons, out of sample."* **MLB's failed attempt used
-model-probability QUINTILES; whether a calibrated probability succeeds where an uncalibrated ranking
-regressed is the open empirical question.**
+**PrizePicks does not.** Its pricing is a **discrete step function over tiers** — *"a fixed multiplier
+per tier"* — so **within a tier the price does NOT adapt to the leg's true probability.**
 
-**This reframes §12 entirely.** T9's prediction split one-for-one (combos delivered, enrichment did
-not), leaving calibration + combo structure + the tails. **Lesson #13 says the tails hold a confirmed
-structural mispricing — and that MLB could not convert it.** So the standing hypothesis is precise:
-**a calibrated ladder is the selection tool MLB never had.** Unproven, with one strong prior against.
+**That is the whole edge hypothesis, stated precisely:**
+| Platform | Pricing | Can a better `p` pay? |
+|---|---|---|
+| Underdog, Sleeper | per-leg dynamic, `p × m` ≈ 1.0 flat | **No** — measured on 14,000+ legs |
+| **PrizePicks** | **step function per tier** | **Yes, in principle** — the price is fixed within the tier |
+
+**Two PrizePicks-specific mispricings follow:**
+1. **The tier step** — two legs in one tier with materially different true probabilities carry the
+   same factor (lesson #13: **~15% multiplier change for a ~2.6× probability gap**)
+2. **Flex insurance tiers** — mispriced for pools far from their calibration profile; *"found true in
+   principle for MLB but the real magnitude, when tested, still fell short"*
+
+### 15.0b THE PRIOR THAT SHOULD FRAME EVERY EDGE CLAIM
+**MLB confirmed the tier mispricing and never harvested it** — *"every walk-forward selection attempt
+(raw trailing hit rate, model-probability quintiles, appearance frequency) REGRESSED TO THE POOL
+AVERAGE."*
+
+**The mispricing is not the hard part — SELECTION is.** Everything in this document is selection
+machinery, and the one asset MLB's failures lacked is a **calibrated** probability rather than a
+trailing rate or a quintile rank.
+
+**So the hypothesis is now narrow and testable:**
+> **A calibrated per-leg probability, applied within PrizePicks' fixed-multiplier tiers, identifies
+> which legs sit on the favourable side of a step the platform does not adjust for.**
+
+**Unproven. One strong prior against (MLB's three failed selection methods). Two platforms already
+excluded by measurement. And it is exactly what a live board tests.**
 
 ---
 
