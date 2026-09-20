@@ -414,8 +414,7 @@ factor audit (T15/T16) tested ten candidates and none were shot-quality-based.
 **If it is computed weekly and never consumed, that is a real gap** — the metric is built, validated
 and sitting unused. **To verify: check whether any factor set or baseline recipe references it.**
 
-### REJECTED CANDIDATE (with reason, so it is not re-proposed) · Draft Combine anthropometrics
-*"Real on-court results already encode a player's physical tools better than a years-old combine
+### REJECTED CANDIDATE (with reason, so it is not re-proposed) · Draft Combine anthropometrics*"Real on-court results already encode a player's physical tools better than a years-old combine
 measurement. Only rookies would benefit, and it's not worth the complexity here."*
 
 ### BUG-OPEN · **the weekly differential worker is NOT scheduled, and P1 does not call it**
