@@ -5276,6 +5276,87 @@ persisted**"* — **persisting work before running out of room**, rather than lo
 
 **T8 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T8.11 — PASS 3 — **THE FIVE-DIMENSION TIERING ARCHITECTURE, IN FULL**
+
+#### T8.11a — **THE CORE STRUCTURAL FINDING — why NBA cannot use MLB's tiering directly**
+> *"**MLB tiers on a per-game rate because plate appearances are stable. NBA can't** — a 20-point
+> projection could be a **high-rate/26-minute player or a low-rate/36-minute player**, and **shrinking
+> them to the same tier mean is STATISTICALLY INVALID**. So the NBA design **splits into two tier
+> systems that cross**."*
+
+**This is the deepest structural difference between the two sports' models**, and it is stated as a
+validity problem rather than a preference. **Plate appearances are the MLB constant; minutes are the
+NBA variable.**
+
+#### T8.11b — **Player tiers → two ORTHOGONAL dimensions**
+| Dimension | Form | Rationale |
+|---|---|---|
+| **Rate tier** | **direct MLB port** — quantile rank on recency-blended **per-36 rate**, per prop+line+side, **~24 max / 15 min per tier**, tier mean = shrinkage prior | *"**Exactly the proven mechanism, applied to the stable quantity.**"* |
+| **Role tier** | **NEW — FIXED thresholds** on projected minutes: Iron Man >36 / High-usage starter 32–36 / Starter 27–32 / Rotation 21–27 / Bench 15–21 / Fringe <15 | *"**Not quantile — role is categorical and interpretable, and it's what factors like blowout risk actually act on.**"* |
+
+**Per-36 rate is the stable quantity; minutes are modelled separately.** That is how the two systems
+cross without either being invalid. **And it explains why `ROLE_TIERS` uses hard cutoffs while the rate
+tiers use quantiles** — a distinction that would look inconsistent without this reasoning.
+
+#### T8.11c — **Factor tiers: each factor's FORM is earned, not assumed**
+| Factor | Form | Basis |
+|---|---|---|
+| Rest / B2B / travel | **Tiered bands** (B2B-road, B2B-home, 1, 2, 3+ days) | *"**Non-linear: 1→0 days matters far more than 3→2**"* |
+| **Altitude** | **Continuous, gated >1500 m** | *"Small, physiological, **sparse data — don't overfit**"* |
+| Opponent DvP | **Quantile bands** (top 5% / 6–25 / 26–75 / 76–95 / bottom 5%) | *"**Rank gaps aren't linear**"* |
+| Game pace | **Continuous** `log(proj_pace / league_avg)` | *"**Log-linear by construction**"* |
+| Opponent scheme | **Binary gates × player archetype** | Categorical |
+| **Blowout risk, P(OT), foul risk** | ***"MINUTES-MODEL INPUTS, not rate factors"*** | *"**They act on OPPORTUNITY, not efficiency — moving them there also DISSOLVES THEIR CORRELATION**"* |
+| With/without teammate, P(start) | Binary gates / minutes inputs | Precomputed lift from history |
+
+> **Band cutpoints: *"data-driven (CART on our 3 seasons), validated out-of-sample, fixed for a
+> season — NEVER arbitrary."***
+
+**Two things here are unusually good:**
+- **"Moving them there also dissolves their correlation"** — blowout risk, OT and foul risk are all
+  correlated *as rate factors* (they co-occur), but as **minutes inputs they compose naturally**. The
+  placement solves a multicollinearity problem as a side effect of being causally correct.
+- **`foul risk` is explicitly named as a minutes-model input.** So the "dud" mechanism was in the
+  architecture, not only the minutes-model design. **This strengthens the OPEN_ITEMS entry**: the
+  implementation excludes `PF ≥ 6` games from the role estimate but never models `P(foul trouble)`.
+
+#### T8.11d — **Variation bands: league percentiles, and per-player bands REJECTED**
+**4–5 bands per prop** — points: `<9.5 / 9.5–17.5 / 18.5–25.5 / 26.5–31.5 / 31.5+`.
+> *"**Per-player-relative bands were rejected as unstable.**"*
+
+**And the justification for the dimension existing at all is concrete:**
+> *"factor effects **genuinely change with expectation level** — **blowout risk is a large penalty for
+> a 12.5-line role player and a small one for a 28.5-line star who clears his number in three
+> quarters**; **an elite defence penalises the star heavily and the fringe player not at all**."*
+
+**Two examples that point in opposite directions** — blowout hurts the low line more, elite defence
+hurts the high line more. **That is why the band cannot be collapsed into the rate tier.**
+
+#### T8.11e — **Direction: Gemini overruled, with a clean separation of duties**
+> *"Gemini argues direction **shouldn't** be a cell dimension — handle skew in the distribution shape
+> only. **I'm keeping direction as a dimension, per your locked decision and the live MLB cells.**
+> They're **complementary, not redundant**: the **distribution shape** (NegBin, zero-inflated) handles
+> the ***base* skew** of assists/TO/stocks/3PM; the **direction dimension** handles ***asymmetric
+> factor effects*** — **a blowout penalises 'more' far more than it helps 'less' for a star**, which is
+> exactly what MLB's `over/under/both` cells encode. **Both stay.**"*
+
+**The resolution is a division of labour, not a compromise**: shape handles the distribution, direction
+handles the factors. **Gemini's objection was valid about skew and wrong about factors.**
+
+#### T8.11f — **Two-stage engine: live factors are CORRECTIONS, never re-evaluations**
+> *"Baseline applies static factors; **enrichment applies DELTA factors**: **`market_spread −
+> derived_spread`**, **`confirmed_out` superseding `questionable`**. **No oscillation, no double-count,
+> and the value of live information becomes measurable on its own.**"*
+
+**This is the cleanest statement of the two-layer contract in the whole project.**
+- Enrichment never recomputes — it applies a **difference**.
+- `market_spread − derived_spread` is exactly what T16 built when it replaced the r=0.46 proxy.
+- **"The value of live information becomes measurable on its own"** — expressing the live layer as a
+  delta makes its contribution directly attributable, which is precisely what let the factor-gate
+  harness later reject ten candidates on evidence.
+
+**T8 PASS 3: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
