@@ -1456,6 +1456,137 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.106 — PASS 76 (angle: **the `nba_score` OUTPUT LAYER — all 18 tables counted exactly and checked against the documents**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 76.*
+
+**FINDING 1 — ⚠⚠ `nba_score.ladder_calibration_asof` is EMPTY, and `NBA_COMPASS.md` fact 100
+records it as populated with figures** (*"2025-26 carries **2,762**… shift magnitudes stable across
+seasons (0.139 vs 0.144)"*). **VERIFIED exact count: 0 rows.** **Both sides recorded; contradiction
+left unresolved.**
+**What the code does with empty** — **`build_final_hp.py`'s `shift_for()` returns `0.0`**, so
+**every leg gets a zero shift and the as-of calibration is silently a no-op** (it does log
+`0 keys, 0 dated rows`; nothing fails). `score_board_legs.py` reads the same table.
+
+**FINDING 2 — ✅ the detector exists and is correct ⚠ but lives in the pipeline with no cron.**
+`certify_pipeline.py` has `check("as-of calibration available", … count > 0)` — **it would fail on
+today's state** — but it is in the **`p2`** branch, and **P2 has no `schedule:`** (pass 75). The
+writer, `build_asof_calibration.py`, **deletes unconditionally** before refitting and is invoked by
+**only two manual-only workflows**. **Timeline**: the last ladder load was **2026-09-20T03:23:26**
+(a replay of `asof 2025-11-29`) and the table was autoanalyzed **41 seconds later** — **that run
+touched it and left it empty**; whether the delete ran without a successful insert **cannot be
+distinguished, because `nba_control` holds no run history** (pass 68).
+**Stated at strength**: **no claim that production scoring is wrong today** — the season has not
+started. **The finding is a pre-season state with a dated consequence on 2026-10-03**, and **two
+recorded items now converge on that date.**
+
+**FINDING 3 — ✅ a qualification of pass 68.** Its summary *"NBA has no run history at all"* is too
+broad. **VERIFIED**: `nba_score.baseline_ladder_runs` holds **3 real rows** (as-of 2025-11-29,
+2026-01-15, 2026-03-15) with `slate_games`, `players`, `rows`, prop list, `factor_fits`,
+`role_minutes_multiplier`, `source_file`. **Accurate statement: per-component run logs exist in
+`nba_score.*_runs`; the central control plane is empty.** Pass 68's `nba_control` evidence stands;
+**its heading is corrected in §T1.98.**
+
+**FINDING 4 — ⚠ an open question, not a claim.** The three ladder runs do not cover the same props:
+**22, 22, and 18** — `asof 2026-03-15` is missing `dreb`, `fgm`, `fta`, `oreb`. **Whether that is a
+different slate or a coverage loss is NOT RECORDED.**
+
+**FINDING 5 — a method note.** `pg_stat_user_tables.n_live_tup` reported **19,320,938** rows for
+`final_hp`; the exact count is **19,215,200** — **105,738 apart (0.55%)**. **Pass 33's measurement
+is re-confirmed unchanged.** **Use exact counts for any verified claim.**
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 76*) · `MASTER_SUMMARY` §T1.98 (heading corrected) ·
+this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 76 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.105 — PASS 75 (angle: **the SCHEDULE surface — which workflows actually carry a cron, and pass 70's count re-run against the right scope**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 75.*
+
+**FINDING 1 — only TWO of the 32 NBA workflows carry a `schedule:` block**: `nba-p1-weekly-static`
+(`'0 19 * * 1'`) and **`nba-referees`** (`'30 15 * * *'`). **P2 and P3 have no cron** — **which is
+deliberate and already documented**, with both target strings written in the workflow headers
+(**P2 `09:00 UTC = 01:00 PT`**, **P3 `'15 21 * * *'`**). ✅ **Not a gap — a dated action item**:
+**the season opens 2026-10-03 and adding the two crons is the owner's step.** The stated reason is
+worth keeping: *"a scheduled job failing nightly against an empty schedule trains everyone to ignore
+red builds."*
+
+**FINDING 2 — ⚠ `nba-referees.yml`'s cron comment assumes UTC-7 all year.** `'30 15 * * *'` is
+**15:30 UTC**; the comment reads it as *"08:30 UTC-7 = ~08:30 PT"*, true only during PDT. **The NBA
+season is mostly PST, when it fires at 07:30 PT.** **No claim is made that this is too early** —
+when referee assignments post is **NOT RECORDED**. **The finding is that the only statement of intent
+is arithmetically wrong for most of the season**, and it is **exactly the mistake the documents
+already warn about** (*"never hardcode a fixed UTC offset; resolve by named timezone"*). **P1's and
+P3's comments handle DST correctly; this one does not.**
+
+**FINDING 3 — ⚠⚠ a correction to pass 70's own method.** Pass 70 reported *"7 of 32 workflows
+named in no document"*, measured against **every `.md` in `nba/`**. **Scoped to the twelve mandated
+documents the answer is 9, and they are a different nine** — `nba-backfill`, `nba-backtest`,
+`nba-board-archive`, `nba-grader`, `nba-injury-report`, `nba-market-spreads`, `nba-measure-types`,
+`nba-pergame-backfill`, **`nba-referees`** — each named only in `NBA_COMPASS.md`,
+`NBA_PROJECT_LOG.md` or a checkpoint document, **all outside the mandated set.**
+
+**FINDING 4 — ⚠ and the trap, which matters more than the count.** **Pass 70's seven now appear
+in the twelve, because pass 70 wrote their names into `NBA_OPEN_ITEMS.md`.** Re-running that check
+today returns a clean result **for the wrong reason.** **Any future coverage check must exclude this
+document's own inventory sections.** **A documentation-layer instance of the pass-53 shape: an
+instrument that matches its own output measures nothing.**
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 75*) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE` (its DST table is correct and
+already covers P1), `DATABASE`, `WORKERS`, `GLOSSARY`, `SYSTEM_DESIGN` (already records "NO CRON
+YET"), `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 75 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.104 — PASS 74 (angle: **the DELIVERABLE audited against itself — every pointer and every section number in the twelve**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 74.*
+
+**Angle**: since pass 37 these documents are **pointers**, so **a pointer that does not resolve is a
+defect in the deliverable.** Every `NBA_*.md` reference and every `§` pointer in all twelve was
+extracted and resolved against the actual headings. **VERIFIED mechanically.**
+
+**FINDING 1 — ✅ file-level pointers are clean: 27 of 27 resolve.** Zero broken file references.
+⚠ **But the twelve are not self-contained**: they cite **27 documents, 15 of them outside the
+mandated set** — `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` from **all 12**,
+`NBA_ARCHITECTURE_BLUEPRINT.md` from **9**, `NBA_LESSONS_LEARNED_FROM_MLB.md` from 7,
+`NBA_SYSTEM_DRAFT.md` from 6. **Four are the handoff documents the owner's format instruction
+blesses; eleven are other NBA-generated documents.** Nothing is broken — but **anyone treating the
+twelve as the complete record is reading a set that depends on fifteen others.**
+
+**FINDING 2 — section pointers: 204 checked, 201 resolve, 3 do not (1.5%).** All three corrected in
+place: `NBA_RECIPE.md §1.2` → **STEP 0, rule 2** (RECIPE uses `STEP n`, not `§n`);
+`NBA_WORKERS.md §8` → **§0e**; `NBA_FINAL_SCORING_CALIBRATION.md §15` → **§15.0c**.
+⚠ **The first was written by this documentation effort at pass 65** — a pointer format assumed for
+a document that does not use it. **Standing consequence: cite `NBA_RECIPE.md` by `STEP n`.**
+
+**FINDING 3 — ⚠ four of the twelve have broken top-level numbering.** **VERIFIED at all heading
+levels before calling anything missing**: `SYSTEM_ARCHITECTURE` **§5 absent**; `DATABASE` **§7 and
+§8 absent**; `FINAL_SCORING_CALIBRATION` **§14 twice, §12 and §15 absent as parents**;
+`GOBLIN_DEMON` **§4 twice and §6 twice**.
+**This is not cosmetics**: **a duplicated number makes a pointer ambiguous** — *"`NBA_GOBLIN_DEMON.md`
+§4"* names two different sections, and **four such pointers already exist in the twelve** — while a
+missing number reads as a lost section. **Both undermine the pointer format itself.**
+**Not renumbered**: renumbering would break every inbound pointer and is exactly what the standing
+instruction excludes. **Recorded for the owner** — renumber once with all pointers updated together,
+or leave the sequences and disambiguate the four duplicate citations by section title.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 74*, plus two corrected pointers) ·
+`MULTIPLIERS` (corrected pointer) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `GOBLIN_DEMON`
+— **the numbering defects are recorded, deliberately not repaired.**
+
+**PASS 74 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.103 — PASS 73 (angle: **T1's WRITE SET — every repo write read as a changeset, counted by path and by failure**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 73.*
 
