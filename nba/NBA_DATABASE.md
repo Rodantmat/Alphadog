@@ -101,8 +101,6 @@ timestamps. **Source: Wikipedia "List of NBA referees"** (the stats API has no r
 join. Paired with `nba/nba_names.py`.
 
 ### `nba_ref.defender_ratings` — 111,768 rows *(T16)*
-Two-way ridge `Y = mu + alpha(off) + beta(def)`, 5 channels, reliability-shrunk, weekly as-of, both
-seasons. Has `as_of_date`.
 
 ### `nba_ref.referee_assignments` *(T15)*
 Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
