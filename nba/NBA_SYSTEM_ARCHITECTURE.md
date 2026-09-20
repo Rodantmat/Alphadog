@@ -168,7 +168,41 @@ directly, **swap the sport filter**"*); **Phase 1 checked and found otherwise.**
 
 ---
 
-## 3. THE MCP ADMIN BRIDGE — `alphadog-v2-admin-sql.js`
+## 2c. POSTGRES / HYPERDRIVE AND DEPLOY GOTCHAS — confirmed real in THIS stack
+*Source: T1, blueprint §4m — "a real, hard-won list… worth carrying into NBA's own workers directly
+since the infrastructure is shared." Recorded 2026-09-20.*
+
+### 1. ⚠ `round()` on a double-precision value fails without an explicit cast
+> *"**A numeric rounding function call can FAIL TO RESOLVE TO ANY REAL OVERLOAD without an explicit
+> cast** — a real, confirmed case where **rounding a DOUBLE-PRECISION value to a given number of
+> decimal places FAILED OUTRIGHT because NO MATCHING FUNCTION SIGNATURE EXISTED for that exact type
+> combination**; **casting to NUMERIC first resolved it.**
+> **ALWAYS CAST EXPLICITLY when rounding a computed floating-point value in SQL against this
+> stack.**"*
+
+**Directly live for NBA**: `p_more`, `p_less`, `p_raw`, `baseline_hp`, `final_hp`, `cal_shift`,
+`confidence`, `score` and `edge` are all **`DOUBLE PRECISION`**. **Any reporting query that rounds
+them needs `::numeric` first** — `round(x::numeric, 4)`, not `round(x, 4)`.
+
+**Note this fails LOUDLY** (no matching function), so it is a nuisance rather than a silent-data
+risk — the opposite of most items in this record.
+
+### 2. ⚠ Reserved words silently break as aliases
+> *"**Certain plain, unquoted words are RESERVED and will SILENTLY BREAK as column/table aliases** —
+> e.g. **a word that also functions as SQL syntax elsewhere, like a BLOCK-BOUNDARY KEYWORD.**
+> **Avoid short, generic aliases that might collide with the dialect's own reserved vocabulary.**"*
+
+**"Silently" is the important word here** — unlike the cast issue, this one can change a query's
+meaning rather than refuse to run.
+
+**NBA's exposure**: the documentation and queries throughout this project use short aliases
+(`t`, `p`, `a`, `g`). **`end` is the named example class** — a block-boundary keyword — and NBA's
+schema contains fields that invite exactly such aliases (`period`, `side`, `line`, `anchor`, `phase`,
+`band`, `status`, `source`, `kind`).
+
+**⚠ Several of those are real column names in this system**: `line`, `side`, `period`, `phase`,
+`band`, `source`, `kind`, `status`, `anchor`. **They are legal as column names but risky as bare
+aliases**, and `end` would be an error class the dialect resolves silently.
 
 The single worker that gives the assistant its tools. Every NBA worker must be wired into it in three
 places — `bindingMap`, a dispatch branch, and the tool-schema enum — **plus a fourth edit in
