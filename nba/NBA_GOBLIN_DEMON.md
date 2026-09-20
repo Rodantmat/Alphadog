@@ -305,6 +305,23 @@ numbers are our own.
 
 ## 12. OPEN ITEMS SPECIFIC TO THIS LAYER
 
+**⚠ THE OWNER'S STANDING DIRECTIVE ON SEQUENCING (T9, v21):**
+> *"**Goblins and demons should NOT be handled now — it is BOARD DEPENDENT** and will only have this
+> information later."*
+> *"Not part of this phase (by your decision): **Goblins/Demons (board-dependent)**, Tier C props
+> (first basket, high scorer), and the live enrichment layer."*
+
+**And the explicit consequence, stated in T9's own gap list:**
+> *"**Goblin/Demon/milestone tails BEYOND the ±6 ladder rungs — NOT separately certified.**"*
+
+**So the certified ±6 ladder does NOT extend to the tails the goblin/demon economics depend on.**
+The rungs are built (`LADDER_DEPTH` now reaches 13–16 for the deep props) but **the leg-level
+certification standard — band × direction × rung, confidence bands hitting their rate — was only met
+within ±6.** **This is the single most important thing to certify once a live board exists**, because
+T8 nominated the tails as *"the #1 area where a sharp baseline earns the most."*
+
+### The rest
+
 1. **`board_tiers_v2` is unverified** — the build was running at session end.
 2. **`board_tiers` v1 is still the 2.2M-leg table** anything downstream would read.
 3. **Sleeper milestone lines** — T7 says they exist, the live session says they don't. **Unpriced board
