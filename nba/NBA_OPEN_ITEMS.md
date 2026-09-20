@@ -414,8 +414,7 @@ factor audit (T15/T16) tested ten candidates and none were shot-quality-based.
 **If it is computed weekly and never consumed, that is a real gap** — the metric is built, validated
 and sitting unused. **To verify: check whether any factor set or baseline recipe references it.**
 
-### NOT IMPLEMENTED (design specified it) · **team-specific blowout benching**
-The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
+### NOT IMPLEMENTED (design specified it) · **team-specific blowout benching**The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
 that *"coaches differ in how they empty benches"* and the scale should be *"asymmetric and
 **team-specific**."*
 
