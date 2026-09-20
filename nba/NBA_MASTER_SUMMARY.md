@@ -1456,6 +1456,30 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.83 — PASS 53 (angle: **sample the MEASUREMENTS, not the assertions**) — ✅ **CLEAN 1 of 3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 53.*
+
+**Every sentence in the handoff documents carrying a figure with a unit, sampled and grepped against
+the twelve documents. All twelve sampled claims are documented. Nothing new.**
+Checked and present: `+39.76 pp` → `+5.32 pp` after the leakage correction · `3PM 'more' 60–65 at
+−4.6 pp` inside a ±1 pp ladder · pooled-leg significance **inflated 3–5×** · ~100,000 training rows
+vs tens of thousands of cells · **one 700 KB+ file serving ~24 logical functions** · the ~5.3 KB
+dead-stub signature at `enabled=1` · the fan-out tell · the sample-size posture table.
+
+**⚠ METHOD CAVEAT, recorded because it is this sweep committing the blueprint's own warning.** Two
+claims first read as missing and were **both present under different formatting** — `3-5x` is
+written `3–5×`, and `700KB` is written `700 KB`. *"A confident negative is the easiest mistake to
+make."* **A literal-string grep is a weak instrument for a negative claim, and every "NOT RECORDED"
+in these documents rests on one.**
+**Standing correction, applied from here**: before recording a negative, re-check with a normalised
+pattern (collapse `-`/`–`/`—`, `x`/`×`, optional spaces in figures) and **prefer a distinctive word
+over a formatted number.** Entries resting on a numeric string alone should be re-tested; those
+resting on multi-word phrases or live SQL are unaffected.
+
+**CLEAN PASS 1 OF 3.**
+
+---
+
 ### T1.82 — PASS 52 (angle: **RANDOM SAMPLE — draw 28 of the 175 bold claims and grep each**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 52. Five of 28 returned nothing; three of
 those are Part G/H material postdating T1 (already open, §T1.60). **Three are genuine T1 misses.***
