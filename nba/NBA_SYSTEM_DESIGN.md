@@ -10,7 +10,46 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
-## 0. LINEAGE — the owner's three-run model *(T1)*
+## 0. LINEAGE — the owner's three-run model *(T1)*, refined through T4–T9
+
+### 0.1 THE ARCHITECTURE CORRECTION *(T4)* — why the split exists at all
+The owner's correction, and the verified reason:
+> *"the baseline is **expensive to compute but only changes after a player plays a game — it can be
+> CACHED**. Enrichment data (injury news, line movement) **changes all day**… the fast-changing
+> scoring engine can **re-run in milliseconds** without ever recomputing the expensive baseline.
+> **Merge them, and every minor daily update forces a full slow recompute.**"*
+
+**A caching argument, not a convenience.** This is the founding justification for P2/P3.
+
+### 0.2 The boundary, and how it is enforced *(T7, T8)*
+> *"**daily-mined = enrichment; derivable-from-history = baseline**"* — the baseline is
+> *"**AGNOSTIC** of daily context and market."*
+**Encoded as a column**: `nba_config.factor_registry` tags **25 baseline / 4 enrichment** (injury
+report, confirmed lineups, market-spread delta, referee assignment). **Queryable, therefore
+enforceable.**
+
+### 0.3 The two-layer contract *(T8)*
+> *"Baseline applies static factors; **enrichment applies DELTA factors**: `market_spread −
+> derived_spread`, `confirmed_out` superseding `questionable`. **No oscillation, no double-count, and
+> the value of live information becomes measurable on its own.**"*
+
+### 0.4 The original cadence vs today *(T4, `NBA_SYSTEM_DRAFT.md` §4b)*
+| Run | Original | Today | Note |
+|---|---|---|---|
+| Static differential | Mondays **2:00 am PT** | Mondays **12:00 PT** | nothing here is cutoff-sensitive |
+| Delta daily | **~11:00 am** | **01:00 PT** planned | ⚠ **tighter than the 6am ET the lag research endorsed** |
+| Master run | **2h before the first game — DYNAMIC** | **fixed 1:15 PM PT** | ⚠ **breaks on early-tip days** |
+
+### 0.5 Three governing principles
+- **The baseline must NEVER live-query stats.nba.com** — speed, stability, and **reproducibility**
+  (*"a live query at 9am vs 10am could return different data if a correction posted in between"*).
+- **Late NBA stat corrections are NOT chased** — *"a consistent point-in-time snapshot."*
+- **No pasted constants** — HCA, `P(blowout|spread)` and the blowout ratios are derived from TRAIN
+  inside each run; `baseline_ladder_runs` records what each run derived.
+
+---
+
+## 0.6 The original wording
 
 > *"the system is composed by 3 runs, each run will be ran by claude coworker, **so no runner,
 > orchestrator or anything like, it only breaks the run** … individual worker by individual worker,
