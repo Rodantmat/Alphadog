@@ -101,9 +101,24 @@ workers are registered there and dispatched **directly**, never pulled from the 
 | **"Preset dictionary" precompute-once** | compute a lookup once, read it many times — the shape of `blowout_model`, `stat_decay_config`, `MIN_RATIO` |
 | **Config-table-driven tunables** | *"every tunable variable lives in the database (`nba_config.system_settings`), **never hardcoded**"* — restated by the owner as a hard rule |
 
-**⚠ ParlayAPI coverage caveat, stated in T1 and never closed there**: *"**Coverage for this sport key
-is still NOT INDEPENDENTLY VERIFIED** — see Section 5, open question 1."* **It was later superseded by
-own scrapers rather than verified.**
+### Must be built fresh, NBA-specific *(T1)*
+- **Every schema and table** listed in the naming convention
+- **The full prop taxonomy**
+- **Every enrichment factor** — arena, fatigue/rest, injury, referee, pace, matchup — *"still to be
+  locked **per-factor**, per the person's own framing"*
+- **The board-mining workers for PrizePicks / Sleeper / Underdog** — *"**the live MLB versions are
+  HARDCODED to `baseball_mlb` AT MULTIPLE LAYERS, CONFIRMED DIRECTLY IN PHASE 1 — NOT SAFELY REUSABLE
+  VIA A PARAMETER**, need real NBA-specific worker files"*
+- **The scoring engine's actual formula/model**
+- **The full multiplier/pricing study** — *"a first, direct NBA observation study — **no live season
+  yet to observe against**"*
+
+**⚠ The board-scraper finding was VERIFIED, not assumed.** *"Hardcoded to `baseball_mlb` at **multiple
+layers**, confirmed directly in Phase 1"* — which is why `nba/scrape_prizepicks_nba_board.py` exists
+as a **separate producer** (`league_id=7`, own env namespace `PP_NBA_*`, own output
+`boards/prizepicks_nba_current.json`) rather than `main.py` with a sport filter.
+**The startup plan had assumed a filter swap would do** (*"reuse the MLB scraper's architecture
+directly, **swap the sport filter**"*); **Phase 1 checked and found otherwise.**
 
 ### Cloudflare Workers
 - Where MLB's 116 workers run, and where NBA's writer workers run.
