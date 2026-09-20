@@ -1456,6 +1456,27 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.93 — PASS 63 (angle: **blueprint §5–§7e — the last unswept clause-level region**) — **MINOR NEW · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 63.*
+
+- **⚠ One clause of ten is undocumented**: *"**Don't assume a first deploy attempt's failure is
+  permanent** — a known, recurring **transient first-attempt failure pattern** existed in MLB's own
+  pipeline; **retry once via a trivial no-op commit** before concluding something is genuinely
+  broken."* **The deploy pipeline auto-deploys on push, so the retry is a one-line action.**
+  ⚠ T1's own audit trail shows the shape — `deploy` **33429867514 → failure**, then **33431309511 →
+  success** (§T1.70) — **but whether that first failure was the transient or the real path bug cannot
+  be distinguished, because the failed run's log had already expired when requested.** A small worked
+  example of why that log-expiry constraint matters.
+- **✅ The other nine clauses are covered**: §5/§5a/§5b's operating model and deeper root cause ·
+  §6/§6a/§6b's *"never assume one file = one job"*, the dead-stub file name, the exact-pairing safety
+  check and the registry-then-code investigation method · §7/§7a–§7e's hardcoded whitelist tuple,
+  *"bulk inserts over individual-row inserts, always"*, *"the real fix was one connection option"*,
+  and the **DST/named-timezone scheduling gotcha**.
+- **With this pass the blueprint, the lessons document, the Domain Mapping and the System Draft have
+  all been read at clause level.**
+
+---
+
 ### T1.92 — PASS 62 (angle: **System Draft §1–§4 clause by clause, then the taxonomy diffed against live**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 62; composition table in `NBA_DATABASE.md`.
 VERIFIED by live SQL.*
