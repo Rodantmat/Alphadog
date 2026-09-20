@@ -497,6 +497,90 @@ Three safeguards, each answering a failure this project actually had:
 
 ---
 
+## 6b. PIPELINE SCRUTINY DISCIPLINE — the whole methodology
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` **§9** — built by MLB after **"a single night of
+independent verification turned up multiple serious, silent bugs that every automated check had
+missed,"** and offered as **"worth adopting wholesale."***
+***Recorded 2026-09-20 (T1 pass 29) — previously unswept.***
+
+### The core philosophy
+> *"**A pipeline's own 'PASS'/'COMPLETE' SELF-REPORT is the STARTING POINT FOR SCRUTINY, NEVER THE
+> CONCLUSION.** Every real bug MLB found was caught by **independently RE-DERIVING a claim against
+> LIVE DATA** — SQL queries against real tables, real deployed code read directly — **never by
+> trusting a second read of the same status field the run already reported.**"*
+
+**This is the design rationale behind `nba/certify_pipeline.py` and `nba/verify_confidence.py`, and
+behind the existing failure policy in §6** (*no `|| echo failed` anywhere*): a green job is evidence
+that nothing raised, not evidence that the data is right.
+
+### The three techniques that found real bugs no automated check would have
+| # | Technique | What it is |
+|---|---|---|
+| 1 | **Systematic whole-universe comparison** | diff the live config against the real formula/logic for **every entry in a universe at once** (every prop, every source, every combo) — **not just the one currently suspected** |
+| 2 | **Leg-by-leg manual tracing** | pick real **high-confidence** outputs, pull raw source data **by hand**, compute the expected value independently, and **explain any gap through a documented mechanism** (shrinkage, calibration) rather than accepting *"looks close enough"* |
+| 3 | **Tracing a real user-reported symptom back to raw source data** | when someone reports a concrete discrepancy, **trust the report** and trace it to the **actual raw payload** rather than defending the system's own output first |
+
+**Technique 1 applied to NBA would immediately surface the already-recorded `minutes_mixture` drift**
+— config describing three components the recipe does not implement. That is failure mode #6 below,
+live, today.
+
+### The six named failure modes — §9 says build a check for each, from the start
+Full table, with NBA build status, in `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*. In summary:
+
+1. **Reconciliation trusting a still-actively-writing batch** — a background writer can still be
+   writing after the calling request timed out. **Fix: require the row count stable across two reads
+   separated by a real wait (several seconds).**
+2. **Reconciliation trusting a permanently-dead writer** — *"indistinguishable from #1 by stability
+   alone (both show a stable count), but the actual DATA COMPOSITION tells them apart."* A
+   died-mid-write batch *"characteristically recovers as **100% one category and 0% of whatever would
+   have been written later in the write order**."* **Fix: check what real upstream data supports per
+   category; if a category with clear real supply is wholly absent, refuse to reconcile and force a
+   fresh rebuild.**
+3. **A completion check satisfied by stale evidence from a PREVIOUS run.** A staleness-window or
+   reference-count check can pass *"purely from leftover evidence a prior, unrelated successful run
+   produced."* **Fix: use a check only this run's own fresh output can satisfy — `MAX(updated_at)`
+   per entity falling INSIDE this run's own execution window, not "recent enough in general."**
+4. **A "deactivated" correction/config still silently applying live**, because the deactivation label
+   *"doesn't actually defeat the exact filter condition the live code uses (e.g. a substring-match
+   filter that a mere prefix doesn't actually break)."* **Fix: read the exact filter condition in the
+   live code and confirm the deactivation genuinely fails it** — *"don't just check that a
+   human-readable 'deactivated' label exists somewhere."*
+5. **Raw source-API field ambiguity silently corrupting a value**, when the heuristic is built on *"a
+   DIFFERENT field that merely CORRELATES with the ambiguity rather than genuinely disambiguating
+   it."* **Fix: find the source's own genuine disambiguating field — often a human-readable label
+   string.**
+6. **Silent config/formula drift across a whole universe**, *"with NO ERROR THROWN — the output is
+   just silently WRONG-BUT-PLAUSIBLE, invisible to spot-checking whichever entry currently seems
+   suspicious."* **Fix: periodically diff live config against the actual formula for the entire
+   universe in one pass.**
+
+### Composition checks, not just row counts
+> *"Verify that **BOTH expected output categories** (e.g. a PRIMARY/high-confidence tier and a
+> REVIEW/lower-confidence tier) are present **in plausible proportions** — **a 100%/0% split is a red
+> flag EVEN WHEN THE TOTAL ROW COUNT EXACTLY MATCHES EXPECTATIONS.** A corrupted batch can produce a
+> row count that perfectly matches the log while being **wrong in composition.**"*
+
+**Directly applicable to `nba_score.board_scored` and to the tier split.** **Not recorded as built.**
+
+### General verification discipline — applies to every pipeline step
+- **Never accept a claimed table/column/fix location without checking it exists exactly where
+  claimed** — *"a claim can be true about a DIFFERENT TABLE than your first assumption — verify the
+  actual target, don't dismiss from checking the wrong place first."*
+- **Wait for real propagation delays.** *"Connection-pool-fronted reads can show STALE RESULTS FOR
+  SECONDS TO TENS OF SECONDS after a write"* — directly relevant, since NBA reads Postgres through
+  **Hyperdrive**, which is exactly a connection-pool front.
+- **Confirm an actual deploy succeeded** (check the real workflow run status) **before testing against
+  a fix** — *"a correct-looking diff that NEVER ACTUALLY DEPLOYED produces a false 'still broken'
+  result unrelated to the fix's real correctness."*
+- **Distinguish a genuine bug from a legitimate real-world anomaly.** *"Cross-source duplicate offers,
+  doubleheaders, genuine no-shows/scratches can all look like bugs at a glance and are not —
+  **chasing an anomaly to a verified, correct explanation is as much a part of rigorous scrutiny as
+  finding an actual bug.**"*
+  **NBA analogues**: the same player appearing on PrizePicks, Underdog, Sleeper, Betr and Fliff at
+  different lines; **back-to-backs**; a late scratch after the 1:15 PM PT cutoff.
+
+---
+
 ## 7. VERIFICATION STATUS *(2026-09-20)*
 
 | Pipeline | Verified |
