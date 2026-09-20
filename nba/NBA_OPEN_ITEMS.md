@@ -205,6 +205,56 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 56 — ⚠⚠ THE VOLUME-VS-DEPTH TEST, NEVER RUN — AND THE DATA IS ALREADY THERE *(added 2026-09-20)*
+*Angle: the sound method from *PASS 55* — read a source subsection, decide what it asserts, search
+for the **concept**. Source: T1, `NBA_LESSONS_LEARNED_FROM_MLB.md` Part D, the subsection
+**"a concrete, well-documented real NBA-transferable structural pattern worth testing for
+directly."* **The pattern appears in none of the twelve documents. Volumes below are VERIFIED by
+live SQL 2026-09-20.***
+
+### The pattern
+> *"A prop's real hit rate **climbs meaningfully and repeatably as tier/ladder-depth increases**…
+> and **the genuinely usable sweet spot was NOT the theoretical deepest tier** (almost always a thin,
+> one-off, unreliable sample) **but THE DEEPEST TIER THAT STILL CARRIES REAL VOLUME** (MLB's rule of
+> thumb: **n ≥ 10–20 real observations**)… **test for this same volume-vs-depth tradeoff directly
+> rather than assuming either extreme.**"*
+
+**NBA has measured the hit-rate half and never the volume half.** `NBA_GOBLIN_DEMON.md` §5 records
+goblins at **74.1 / 68.7 / 61.9%** (T−3/−2/−1) and demons at **32.9 / 21.3 / 14.8%** (T+1/+2/+3) —
+**with no volume dimension anywhere.**
+
+### The volume half, measured — `nba_market.board_tiers_v2`, ~2.19M legs
+| tier | legs | distinct player-props | | tier | legs | distinct player-props |
+|---|---|---|---|---|---|---|
+| −7 | 1 | 1 | | **0** | **788,680** | 5,447 |
+| −6 | 21 | 14 | | +1 | **109,544** | 3,544 |
+| −5 | 207 | 87 | | +2 | **351,329** | 3,811 |
+| −4 | 1,600 | 547 | | +3 | **244,731** | 3,501 |
+| **−3** | **62,542** | 2,052 | | **+4** | **117,010** | **2,758** |
+| −2 | **165,711** | 3,103 | | +5 | 3,794 | 902 |
+| −1 | **353,579** | 3,819 | | +6 / +7 / +8 | 515 / 85 / 5 | 236 / 56 / 5 |
+
+### ⚠⚠ The actionable result: the demon ladder has a fourth tier nobody priced
+- **Goblin side — deepest tier with real volume is T−3** (62,542 legs). **T−4 collapses to 1,600, a
+  39× fall.** **§5's goblin economics already stop at T−3**, so the documented range matches the
+  volume-supported range — **but that was never the stated reason, and now it is.**
+- **⚠ Demon side — deepest tier with real volume is T+4, and §5's economics stop at T+3.**
+  **T+4 carries 117,010 legs across 2,758 distinct player-props.** **T+5 is where the collapse
+  happens** (3,794 — a 31× fall). **T+4 is exactly what the lesson points at — not the theoretical
+  deepest tier, but the deepest one with real volume — and it is priced nowhere in this system.**
+  **NOT RECORDED as tested.**
+- **⚠ The ladder is asymmetric in a way nothing records.** The goblin side decays monotonically;
+  **the demon side does not — T+1 (109,544) carries LESS volume than T+2 (351,329) and T+3
+  (244,731).** **Why T+1 is under-offered relative to its neighbours is NOT ESTABLISHED**, and it
+  matters because **§5 records T+1 as "the only demon tier ever worth solving."**
+
+**What this does not claim**: nothing here measures a hit rate. Volumes come from `board_tiers_v2`,
+rates from `board_outcomes`. **Pairing them is the test the lesson asks for, and it has not been
+run.** ⚠ **It also has to be run per prop**, per the instruction recorded at *PASS 49* and §5.0's own
+rule — **so the correct version of this test is per (prop × tier), not the pooled table above.**
+
+---
+
 ## FROM T1 PASS 55 — ⚠ **VOID: the sampling instrument failed** *(added 2026-09-20)*
 *Angle attempted: a third random sample of bold claims, matched by contiguous phrase with normalised
 punctuation. **It returned 26 misses out of 26 — including claims this sweep had already quoted from
