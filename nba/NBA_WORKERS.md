@@ -213,6 +213,8 @@ directly rather than reading the whole file top to bottom." Recorded 2026-09-20.
 > (targeted search) is therefore not merely cheaper than step 3 — **above ~64 KiB it is the only step
 > that returns anything durable.** See `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 64*.
 
+> ⚠ **AND THE METHOD'S ONE BLIND SPOT, MEASURED** *(recorded 2026-09-20, T1 pass 78)*. The four steps optimise for **answering a question**; **there is no step for *"has this already been solved in this repo?"*** **MEASURED**: T1 opened **nine MLB files** out of **372 at the repo root alone** (140 `.js` workers, 11 `.py`, 41 `.md`), plus 6 MLB workflows and `gbdt_training/`'s 28 files — **and `gbdt_training/d1_client.py`, which already contained T1's central discovery, was never opened** (pass 40). **The nine were the right nine for the task and the method is why the work was fast**; the cost is that **prior art is only found by looking for it.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 78*.
+
 **✅ This documentation effort has followed exactly this order**, which is why the findings hold:
 - **Step 1** → `worker_definitions`, `factor_registry`, `classification_config`, `role_tiers` queried
   before any code was read
