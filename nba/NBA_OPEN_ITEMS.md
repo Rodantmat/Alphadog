@@ -1,5 +1,31 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## ⚠ HOW TO READ THE "NOT RECORDED AS BUILT" ENTRIES IN THIS FILE
+*Added 2026-09-20, per T1 blueprint §4f.*
+
+> *"**'I searched every worker file I could think of' is NOT the same as 'I searched everywhere real
+> functionality could live.'** MLB found a real case where **a confident claim that 'no automated
+> mining worker exists' WAS WRONG — the actual logic existed as AN INTERNAL STEP INSIDE A LARGER,
+> DIFFERENTLY-NAMED RUNNER FILE, INVISIBLE TO A FILE-NAME-PATTERN SEARCH.**
+> **Before concluding a piece of functionality doesn't exist, CHECK THE INTERNAL STEP LISTS OF LARGER
+> RUNNER/ORCHESTRATOR-STYLE FILES TOO.**"*
+
+**Many entries below say "not recorded as built" or "no X is recorded."** Those conclusions come from
+**transcript reading plus targeted greps** — which is exactly the search the warning describes as
+insufficient for a confident negative.
+
+**Two tiers of confidence apply in this file:**
+| Tier | Basis | Examples |
+|---|---|---|
+| **VERIFIED** | a direct grep of the actual file, or a live SQL query | *duds excluded not mixed* (0 grep matches in the recipe); *altitude 0/30*; *differential logs empty*; *P1's step list* |
+| **NOT RECORDED** | absence from transcripts and targeted search | *no validation between grading and refit*; *no RSS*; *no magnitude check*; *no monotonic constraints* |
+
+**Before acting on any NOT RECORDED entry, read the internal step list of the relevant runner** —
+`build_asof_calibration.py`, `build_final_hp.py`, `grade_board_outcomes.py`, and the writer Workers'
+`scheduled()` handlers. **The functionality may exist inside a differently-named file.**
+
+---
+
 ## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
 
 ### ⓪ GOOD NEWS FIRST — **the season-opening coverage problem is already SOLVED**
