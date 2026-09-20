@@ -50,9 +50,45 @@ Breaks on early-tip days (noon/1 PM ET starts = 9/10 AM PT). Detail under "FROM 
 | **Starter-status + officials for NEW games** | ✅ `scrape_nba_per_game_delta.py` does this |
 
 **All three T7 recurring-path gaps are closed.** ⚠ **But verify they are in `nba-p1-weekly-static.yml`
-as built 2026-09-20** — the weekly workflow was rebuilt as P1 after these were added, and the
-differential worker was dropped in that rebuild (see ① above). **Splits, career totals and the DvP
-recompute may have been dropped the same way.**
+as built 2026-09-20.**
+
+### ⚠⚠ VERIFIED 2026-09-20 — **P1 DROPPED THREE THINGS IN THE REBUILD**
+
+`nba-p1-weekly-static.yml` runs exactly: teams · arenas · players · bio · weekly as-of season tables ·
+team stats · on/off · playtypes · player tracking · DARKO · shot quality · defender ratings ·
+static context (coach changes) · commit · certify.
+
+**Not present, and each was on a recurring path before the rebuild:**
+| Dropped | Was |
+|---|---|
+| **The weekly differential worker** | unwired since T3 — see ① above |
+| **`scrape_nba_splits.py`** | added to the weekly cycle in T7 |
+| **Career totals** | added to the weekly cycle in T7 (`mode` input on the backfill worker) |
+
+*(The DvP recompute is fine — T7 placed it inside the **delta** worker, so it lives on P2's path, not
+P1's.)*
+
+**Consequence**: splits and career totals go stale from opening night — they are **cumulative
+aggregates**, so a 2025-26 snapshot becomes steadily more wrong as 2026-27 progresses. `days_rest`
+(→ factor A4) and `location` are among them.
+
+### ⚠⚠ AND A LARGER QUESTION THE SAME CHECK RAISED — **does P1 load anything into Postgres?**
+P1's steps **scrape to JSON and commit**. The only steps that touch `DATABASE_URL` are
+**defender ratings** and **static context**. There is **no loader step, no `run_job`, no worker
+invocation** for teams, players, bio, season tables, team stats, on/off, playtypes, tracking, DARKO or
+shot quality.
+
+**Those all have Postgres writer Workers** (built T1–T3, wired through admin-sql). **Nothing in P1
+calls them.**
+
+**Two readings, and I could not settle it from the workflow file alone:**
+1. **Benign** — the writer Workers are triggered on a separate schedule, or by a cron inside the
+   Workers themselves.
+2. **Not benign** — P1 refreshes the committed JSON weekly and **Postgres never sees it**, so every
+   `nba_ref`/`nba_stats` table stays frozen at whatever the last manual `run_job` wrote.
+
+**This is the single most important thing to verify before opening night.** Check whether any
+scheduled trigger invokes the static writer Workers; if not, P1 needs load steps.
 
 ---
 
