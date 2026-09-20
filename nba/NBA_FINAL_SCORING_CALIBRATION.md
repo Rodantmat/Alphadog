@@ -704,6 +704,10 @@ still worth READING for design lineage — it is only worth not PORTING.**
 **Both halves matter**: T7 read the live function line by line *and* correctly identified the dead
 ones — *"porting from either dead version would have locked in wrong logic."*
 
+---
+
+## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
 100% coverage).
