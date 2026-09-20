@@ -2025,7 +2025,7 @@ calls, lines ~40000–43895.*
   workers still carry D1 bindings. **VERIFIED by grep.** A live instance of blueprint §5b and §6.
 - **⚠⚠ T1's central discovery was PRIOR ART already in this repo.** `gbdt_training/d1_client.py`:
   *"Runs inside GitHub Actions (which has real network access, unlike Cloudflare Workers…)."*
-  **T1 spent four failed runs and thirteen polling sleeps rediscovering it** — the first *measured*
+  **T1 spent four failed runs and 25 polling sleeps — 40.3 measured minutes — rediscovering it** — the first *measured*
   cost of the missing MLB source index (§T1.67) and of skipping step 2 of the owner's per-worker rule
   (§T1.66).
 
