@@ -22,6 +22,50 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0b. CODE-LEVEL GOTCHAS FOR NBA WORKERS
+*Source: T1, blueprint §4m. Recorded 2026-09-20.*
+
+### ⚠ A syntax validator will NOT catch JS embedded in a server-side template literal
+> *"**A basic script-syntax validator WILL NOT CATCH AN ERROR IN CLIENT-SIDE JAVASCRIPT EMBEDDED
+> INSIDE A SERVER-SIDE TEMPLATE LITERAL** — **that code needs to be EXTRACTED AND VALIDATED
+> SEPARATELY**, since **a generic top-level syntax check treats THE WHOLE TEMPLATE LITERAL AS AN
+> OPAQUE STRING.**"*
+
+**Relevant wherever a Worker returns HTML or embeds a script** — the health-check and diagnostics
+responses on `admin-sql` are that pattern. **A worker can deploy cleanly with broken embedded JS.**
+
+### ⚠⚠ AFTER ANY RENAME, GREP THE WHOLE CODEBASE FOR THE OLD NAME
+> *"**After renaming ANY shared constant or function, EXPLICITLY SEARCH THE WHOLE CODEBASE FOR THE OLD
+> NAME BEFORE CONSIDERING THE RENAME COMPLETE** — **a reference to a renamed identifier LIVING INSIDE
+> A STRING TEMPLATE WILL NOT FAIL UNTIL THAT SPECIFIC CODE PATH ACTUALLY EXECUTES AT RUNTIME**, not at
+> deploy or parse time, **so a STALE REFERENCE CAN SIT INVISIBLE FOR A LONG TIME.**
+> **MLB found SIX SUCH STALE REFERENCES IN A SINGLE SESSION, all traceable to THE SAME ROOT CAUSE.**"*
+
+**Six from one rename**, each failing only on the path that uses it — **so the common path working
+proves nothing**, the same property as the called-but-undefined-function risk (§4h).
+
+**⚠ NBA is exposed through the PATCHER PATTERN specifically.** The production builders are **string
+transformers** over the certified recipes — **any rename inside `classification_ladder_v12.py` is a
+rename inside the patcher's search strings.**
+
+**The record shows this failing and being caught by design:**
+- *"The anchor check did exactly its job — **it failed loudly**"*
+- *"**Verify all five anchors against the repo harness BEFORE re-triggering**"*
+- *"The patch didn't apply (**third anchor mismatch**) — **that run was unchanged v17**"*
+
+**The anchor assertions convert a silent stale reference into a loud failure. That is the mitigation
+the rest of the codebase lacks.**
+
+| Surface where an identifier lives in a string | Protected? |
+|---|---|
+| The patcher's anchor strings | ✅ **asserted** |
+| `run_job`'s `target` enum ↔ bridge binding map ↔ generator | ⚠ **three places must agree** |
+| `MARKET_TO_PROP` / `norm_market()` board keys | ⚠ string literals |
+| `INJURY_MODE`, `BT_PROPS`, `GAP_SEASON` env names | ⚠ matched at runtime |
+| Workflow `run:` lines naming scripts | ⚠ fails only when that step runs |
+
+---
+
 ## 1. CLOUDFLARE WORKERS — Postgres writers
 Pattern: read the GitHub-committed JSON → upsert into Postgres → log to `nba_control`.
 They do **not** fetch from nba.com; they cannot (Cloudflare is blocked).
