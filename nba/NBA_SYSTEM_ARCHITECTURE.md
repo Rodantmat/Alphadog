@@ -1376,6 +1376,69 @@ file mechanism remains as the fallback that needs no tool.
 
 ---
 
+## 8d. ⚠ THE FOURTH STORE — an assistant memory file outside GitHub and Postgres
+*Recorded 2026-09-20 (T1 pass 39). **VERIFIED** from T1's own memory tool results.*
+
+**State lives in four places, not three:** GitHub · Postgres (via Hyperdrive) · **an assistant memory
+store** · the chat transcript.
+
+| Memory file | Size | Version | Note |
+|---|---|---|---|
+| `/areas/alphadog.md` (MLB) | **6,140 B**, updated **2026-08-30T04:48:04Z** | `2c573cdc3a8d` | predates NBA |
+| `/areas/alphadog-nba.md` (NBA) | created in T1, 4,000 → **4,471 B** | `f53885f3abbf` → `57ba0456b10c` | *"NBA expansion of AlphaDog (separate from MLB)…"* |
+
+- **Capped at 49,152 bytes per file** — every write result says so (*"Wrote 4000 of **49152**
+  bytes"*). **Recorded in no document before now, and nothing measures usage.**
+- **Writes are version-guarded** (`if_version`), so a concurrent edit is detected, not silently lost.
+- **⚠ It is outside version control and invisible to anyone reading the twelve documents** — yet a
+  future session inherits NBA context from it.
+- **⚠ It sits in tension with the founding rule** *"document everything into committed repository
+  files, not only into chat conversation"* — **it is neither.** Flagged, not resolved.
+- **It already held one owner rule that reached no document** — the nba.com-primary /
+  BallDontLie-backup source ordering. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 39.
+
+---
+
+## 8c. THE MLB SOURCE LIBRARY — where the transferred claims come from
+*Recorded 2026-09-20 (T1 pass 37). **17 of these 23 were catalogued nowhere before this entry.***
+
+**The four handoff documents are a distillation, not an origin.** Everything the twelve documents
+quote as *"MLB found"* traces back to files named in T1. This is the index for checking a claim
+against its source.
+
+**Read in full and integrated — T1's own list of eleven:**
+`MULTIPLIER_TABLES_MASTER.md` · `SIGNALS_TECHNIQUES_TRIED.md` · `COWORKER_DAILY_SLIP_RESEARCH_PROMPT.md` ·
+`GOBLIN_DEMON_MECHANISM_EXPLAINED.md` · `HIGH_HIT_RATE_METHODOLOGY.md` · `MASTER_DELTA_SCRUTINY_GUIDE.md` ·
+`GEMINI_USAGE_GUIDE.md` · `CALIBRATION_ENRICHMENT_AUDIT.md` · `CORE_LOGIC_CALIBRATION_DOSSIER.md` ·
+`OUTCOME_ENGINE_AND_DOC_INDEX.md` · `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md`
+
+**Read in substantial part — and the named sources of §7's deploy gotchas and §6's
+self-knowledge warnings:**
+
+| File | Read | ⚠ NOT read |
+|---|---|---|
+| `ALPHADOG_DOS_AND_DONTS.md` | full DON'Ts catalog, operating-model section, infrastructure-mistake narratives | **PARTS 3-5 — *"the remaining ~40%"*** |
+| `ALPHADOG_SYSTEM_MAP.md` | architecture-gap root cause, stale-manifest warning, stage-by-stage chain mapping | **Sections 3-9 — *"the remaining ~40%"*** |
+
+**Named but never read**: `QUALITY_OF_CONTACT_METRICS_EXPANSION.md` *(deliberately out of scope)* ·
+`FACTOR_REDESIGN_AND_QOC_FINDINGS.md` · `SESSION_2026-08-22_FULL_LOG.md` ·
+**`HANDOFF_MASTER_SUMMARY.md` 208 KB** · **`LIVING_LOG.md` 153 KB** · **`claude-work-log.md` 188 KB**
+*(the last three deprioritised on an **inherited assumption**, not a check)*
+
+**Also named in T1, uncatalogued until now**: `ENRICHMENT_CALIBRATION_DOSSIER.md` ·
+`ENRICHMENT_CALIBRATION_HANDOFF.md` · `SESSION_2026-08-29_ENRICHMENT_CALIBRATION_LOG.md` ·
+`THIS_CHAT_MULTIPLIER_STUDY_DOSSIER.md` · `GOBLIN_DEMON_MULTIPLIER_STUDY_DOSSIER.md` ·
+`BACKTEST_LAYOUTS_AND_9AM_METHODOLOGY.md` · `ALPHADOG_REALIGNMENT.md` · `ALPHADOG_QUESTIONNAIRE.md` ·
+`ALPHADOG_HANDOFF.md` · `ALPHADOG_HANDOFF_2026-08-26.md` · `ALPHADOG_SESSION_LOG.md`
+
+**⚠ The standing instruction attached to this list was not carried out**: *"before writing any
+NBA-specific code, skim what remains of [both] — every section actually read from both surfaced
+genuinely new, high-value material."* **NBA code was written later in the same transcript.**
+**⚠ And the index is `.md`-only** — `gbdt_training/` is MLB material that appears in no list at all,
+which is how T1's GitHub-Actions discovery came to be a rediscovery (§8, below).
+
+---
+
 ## 9. DOCUMENTATION SYSTEM
 
 ### The twelve mandated documents *(2026-09-20)*
