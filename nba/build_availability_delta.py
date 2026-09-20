@@ -209,6 +209,17 @@ def main():
 
     if not out_rows:
         print("  no legs moved materially - nothing written"); return
+    # NEVER WRITE A NaN. The first reallocation run produced 6,748 NaN probabilities and they would have
+    # gone straight into the scorer - a NaN hit probability is worse than a missing one, because it
+    # looks like data. Drop them and say how many, loudly.
+    clean = [r for r in out_rows if r[6] == r[6] and r[5] == r[5]]
+    dropped = len(out_rows) - len(clean)
+    if dropped:
+        print(f"  DROPPED {dropped:,} rows with NaN probabilities - investigate, this should be 0",
+              flush=True)
+    out_rows = clean
+    if not out_rows:
+        print("  every row was NaN - nothing written"); return
     with conn.cursor() as cur:
         cur.executemany("""INSERT INTO nba_score.availability_delta
             (game_date, player_id, prop, line, side, old_hp, new_hp, reason)
