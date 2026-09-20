@@ -1,0 +1,151 @@
+name: NBA Boards and Market
+
+# A SEPARATE WORKER FOR NBA BOARDS AND MARKET. Nothing shared with MLB.
+#
+# WHY SEPARATE. The root producer (main.py) is MLB's: league_id=2 is a literal in its URLs and its
+# output path is fixed to prizepicks_mlb_current.json. Pointing it at NBA would write the NBA board
+# into the MLB file and the next MLB run would overwrite it - two sports racing for one path while MLB
+# is live. So NBA gets its own producer (nba/scrape_prizepicks_nba_board.py), its own output
+# (boards/prizepicks_nba_current.json), its own env namespace (PP_NBA_*), and this worker.
+#
+# WHAT IT COVERS - every board the slip engine can use, plus the market:
+#   PrizePicks   the app actually played - goblins, demons, and the full offered ladder
+#   Underdog     alternate_projections gives every rung with both sides' multipliers
+#   Sleeper      native over/under multipliers
+#   Fliff        additional coverage
+#   Market       de-vigged book probability per rung (rung_market) + spreads/totals
+#
+# CALLABLE THREE WAYS: on a schedule once the season opens, by P3 at the 1:15 PM PT decision window,
+# and manually for a catch-up pull. The snapshot label is what distinguishes them - "window" is the
+# decision moment and everything keys off it, so it is never the default.
+#
+# NO CRON YET - the season opens in October and a job failing nightly against an empty slate teaches
+# everyone to ignore red builds. Cron goes in at season start.
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "snapshot label: window (the 1:15 PM PT decision pull) | close | routine"
+        default: "routine"
+        required: true
+      apps:
+        description: "which boards to pull"
+        default: "prizepicks,underdog,sleeper,fliff"
+        required: false
+      with_market:
+        description: "also refresh spreads/totals and the de-vigged rung market"
+        default: "true"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-boards-market        # its own group - never queues behind the MLB producer
+  cancel-in-progress: false
+
+jobs:
+  boards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests curl_cffi pandas numpy
+
+      # Each scraper runs in its own step so ONE app failing does not hide the others - and each is
+      # allowed to fail individually, because a missing Fliff board should not stop PrizePicks from
+      # being scored. The archive step below reports exactly which files it found.
+      - name: PrizePicks (NBA producer)
+        if: ${{ contains(github.event.inputs.apps, 'prizepicks') }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PP_NBA_OUT_DIR: "boards"
+        run: python nba/scrape_prizepicks_nba_board.py
+        continue-on-error: true
+
+      - name: Underdog
+        if: ${{ contains(github.event.inputs.apps, 'underdog') }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          UNDERDOG_OUT_DIR: "boards"
+        run: python nba/scrape_underdog_board.py
+        continue-on-error: true
+
+      - name: Sleeper
+        if: ${{ contains(github.event.inputs.apps, 'sleeper') }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          SLEEPER_SPORTS: "nba"          # default is "mlb,nba" - unset would scrape MLB too
+          SLEEPER_OUT_DIR: "boards"      # default is "." (repo root), where it never gets committed
+        run: python nba/scrape_sleeper_board.py
+        continue-on-error: true
+
+      - name: Fliff
+        if: ${{ contains(github.event.inputs.apps, 'fliff') }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          FLIFF_OUT_DIR: "boards"
+        run: python nba/scrape_fliff_board.py
+        continue-on-error: true
+
+      - name: Commit board files
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add boards/*.json || true
+          if git diff --cached --quiet; then echo "No board changes."; else
+            git commit -m "NBA boards ${{ github.event.inputs.label }} [skip ci]"
+            for i in 1 2 3 4 5; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            done
+          fi
+
+      - name: Archive boards into Postgres
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ARCHIVE_LABEL: ${{ github.event.inputs.label }}
+          ARCHIVE_SPORT: "nba"
+          ARCHIVE_APPS: ${{ github.event.inputs.apps }}
+        run: python nba/archive_live_boards.py
+
+      - name: Market - spreads, totals and the de-vigged rung market
+        if: ${{ github.event.inputs.with_market == 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python nba/export_market_spreads.py
+          python nba/build_rung_market.py
+
+      # A board pull that captured nothing must be VISIBLE. This is the failure that hides best:
+      # every step green, no legs in the table, and the scorer quietly prices an empty slate.
+      - name: Assert the pull captured something
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          from datetime import datetime, timedelta, timezone
+          PT = timezone(timedelta(hours=-8))
+          gd = datetime.now(PT).date()
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c, c.cursor() as cur:
+              cur.execute("""SELECT bookmaker, count(*) FROM nba_market.board_snapshots
+                             WHERE game_date=%s GROUP BY 1 ORDER BY 2 DESC""", (gd,))
+              rows = cur.fetchall()
+          print(f"board legs captured for {gd}:")
+          for b, n in rows:
+              print(f"  {b:<16}{n:>8,}")
+          total = sum(n for _, n in rows)
+          if total == 0:
+              raise SystemExit(f"NO BOARD LEGS captured for {gd} - the scrapers ran but nothing landed.")
+          print(f"total {total:,}")
+          EOF
