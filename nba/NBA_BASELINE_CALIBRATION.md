@@ -522,16 +522,33 @@ on the parametric"* (the 3PM fix) did.
 > ITSELF A SIGN SOMETHING ABOUT THE FIT OR THE UNDERLYING FACTOR IS WRONG, NOT PROOF THE CORRECTION IS
 > NE[EDED]**."*
 
-**This is a named guard NBA does not have.** The as-of calibration refits weekly and applies
-`log_odds_shift` automatically; **no magnitude sanity check on the fitted shift is recorded.**
+### ✅ NBA HAS THIS GUARD — verified in the code 2026-09-20
+`classification_ladder_v12.py` line 670:
+```python
+if shift > 0.15: continue          # reject the fit outright
+rel.loc[cur_idx, "p_over"] = sigmoid(A * logit(rel.loc[cur_idx, "p_raw"].values) + B)
+platt_log.append({… "A": …, "B": …, "n_fit": int(len(hist)), "max_shift": round(float(shift), 4)})
+```
 
-**It pairs directly with the over-flattening concern** (OPEN_ITEMS): a calibrator that is
-*"flattening too much"* and one producing an *"implausibly large correction"* are **two failure modes
-of the same automated fit**, and both are caught by inspecting the magnitude of the shift rather than
-only its statistical validity.
+**A fitted Platt curve whose maximum shift exceeds 0.15 is DISCARDED**, not applied — the leg keeps
+its `p_raw`. **That is precisely the prescribed guard: a fit can be statistically valid and still be
+rejected for implying too large a correction.**
 
-**`final_hp` retains `p_raw` alongside the calibrated value**, so the magnitude of every applied shift
-is inspectable per row.
+**And `max_shift` is LOGGED per fit** in `platt_log` → `platt_fits` → `baseline_ladder_runs`, so
+**every applied shift's magnitude is inspectable after the fact.**
+
+**Three properties this gives the calibration layer:**
+| Property | Mechanism |
+|---|---|
+| Magnitude bound | **`shift > 0.15` → skip** |
+| Sample bound | **`n_fit` recorded**; the n≥1,000 gate |
+| Auditability | `A`, `B`, `n_fit`, `max_shift` stored per `prop × var_band × role_tier × offset × month` |
+
+**⚠ This corrects an earlier note in this file.** I recorded that *"no magnitude sanity check on the
+fitted shift is recorded."* **There is one, in the recipe, at 0.15.**
+**What remains genuinely unverified is whether `build_asof_calibration.py` — the SEPARATE weekly
+production refit that writes `ladder_calibration_asof` — carries the same guard.** The recipe and the
+production refit are different code paths, and only the recipe has been read.
 
 **⚠ THE OWNER'S STATED PREFERENCE, FROM T1 — read this before trusting automated calibration:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta, and possibly other
