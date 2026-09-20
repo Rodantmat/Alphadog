@@ -81,6 +81,15 @@ upserted in that run** (155/157), **not the table total** (162).
 ### `nba_ref.player_aliases` — 1,822 rows
 Same shape as `team_aliases`, keyed on `player_id`.
 
+> ⚠ **PROVENANCE OF THE 30-ROW STATIC FALLBACK** *(recorded 2026-09-20, T1 pass 38)*: verified by a
+> `web_search` in T1 for league changes — *"the league still has exactly **30 teams with no expansion
+> or relocations for 2026-27**, so it's safe to hardcode that as the static fallback list, **though I
+> still shouldn't fully trust unofficial sources for expansion details**."* **The caveat is the part
+> that matters**: the check rests on **unofficial sources**, was made **2026-08-31**, and is **NOT
+> RECORDED as re-checked**. The fallback is what served the first successful run (*"genuinely seeded
+> and correct today, but via the fallback, not the live API"*), so a franchise change before
+> **2026-10-03** would propagate silently.
+
 ### `nba_ref.arenas` — 30 rows
 | Column | Type | Notes |
 |---|---|---|
