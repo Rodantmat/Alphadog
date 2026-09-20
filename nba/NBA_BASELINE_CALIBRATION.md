@@ -346,6 +346,11 @@ histogram-binning.
 
 **Recorded in `NBA_OPEN_ITEMS.md`.**
 
+**The one refinement the recency prediction did not contain**: **splitting a single stat by
+component** — `fg3a_rate` (α=0.12, short) vs `fg3_pct` (α=0.03, long), because *"attempt VOLUME,
+unlike make %, is role/scheme-driven."* **The blueprint predicted per-prop spread; the build found
+per-COMPONENT spread within a prop.**
+
 ---
 
 ## 3.9b THE CALIBRATION TECHNIQUE — what to use and what to reject
