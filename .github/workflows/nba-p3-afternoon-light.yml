@@ -80,7 +80,7 @@ jobs:
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
-          IR_MODE: "today"
+          INJURY_MODE: "daily"        # verified name; IR_MODE does not exist
         run: python nba/scrape_nba_injury_report.py
 
       # A5 LINEUP CHANGE IS CLOSED — REJECTED (parity doc §factor table, tested 2026-09-13): a derived
