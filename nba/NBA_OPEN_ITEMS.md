@@ -1025,6 +1025,29 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### 🔍 CHEAP DIAGNOSTIC NEVER RUN · the enrichment-displacement calibration split
+T1's blueprint §4a records an audit technique and its MLB result:
+> *"**Split graded legs by HOW FAR THE ENRICHMENT LAYER MOVED THE FINAL PROBABILITY AWAY FROM THE
+> BASELINE MODEL'S OWN NUMBER, then compare predicted-vs-actual SEPARATELY FOR EACH BUCKET.**"*
+> MLB found **baseline-dominated legs nearly perfectly calibrated (~1 pt gap)** while
+> **heavy-enrichment legs showed a 5+ POINT OVERCONFIDENCE GAP**.
+> *"**This single check immediately LOCALIZES whether a calibration problem lives in the baseline model
+> or the enrichment layer, WITHOUT DEBUGGING EVERY FACTOR INDIVIDUALLY FIRST.**"*
+
+**NBA has every input and has never run it.** `nba_score.final_hp` stores **`baseline_hp` and
+`final_hp` on the same row**, plus `cal_shift` — so the displacement is `final_hp − baseline_hp`,
+already present. **One bucketed group-by against `board_outcomes`.**
+
+**Why it is worth running here specifically:**
+- The measured factor effect is **Brier +0.1–0.3%**, so **most legs sit in the baseline-dominated
+  bucket** — but the diagnostic is about the **tail** of displacement, not the average.
+- **The largest displacements the system produces are availability overrides**: `now_out` moves a leg
+  by **0.2640 on average, max 0.9924**; `reallocated` by ~0.0131.
+- **The reallocation sensitivity parameter (0.15 per tier) is ESTIMATED, not measured.**
+
+**So the highest-displacement bucket is also the one with the least-validated parameter.** The
+diagnostic would show whether that matters, without touching any individual factor.
+
 ### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
 **The owner's experience with MLB's automated calibrator, from T1:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
