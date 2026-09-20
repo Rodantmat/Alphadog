@@ -49,6 +49,49 @@ if the **pipeline structure** around it is reusable."*
 
 ---
 
+## 0c. THE TWO-LAYER ARCHITECTURE — never collapsed into one
+*Source: T1, blueprint §4d. Recorded 2026-09-20.*
+
+Framed as *"a genuinely rigorous, externally-benchmarked research effort worth adopting **wholesale,
+not just its conclusions**"* — cross-validated against multiple independent published sources,
+benchmarked against real industry-leading systems, and empirically validated against historical data
+**before locking the enrichment design.**
+> *"**The METHODOLOGY here is at least as valuable as any specific finding.**"*
+
+### The architecture
+| Layer | What it is |
+|---|---|
+| **Layer 1 — the actual scoring mechanism** | *"**rule-based, deterministic, FULLY INTERPRETABLE and DIRECTLY STEERABLE — NOT a black-box model**"* |
+| **Layer 2 — a separate calibration loop** | *"running on **its own cadence**, that **compares what each real PROFILE CELL predicted against real observed outcomes** and proposes **SMALL, *SIZED* ADJUSTMENTS to that cell's parameters** — **NEVER a wholesale replacement prediction**"* |
+
+**Three properties are load-bearing**: separate cadences, adjustments **sized** rather than
+open-ended, and **never a replacement** — the calibration loop tunes the rule, it does not override it.
+
+**✅ NBA implements exactly this.** Layer 1 is `classification_ladder_v12.py` (interpretable tiers,
+explicit constants, every cell traceable). Layer 2 is `ladder_calibration_asof` — a **separate weekly
+refit** proposing a **`log_odds_shift` per cell**, applied as `cal_shift`, **with `p_raw` retained** so
+the rule's own output is never lost.
+
+### ⚠ GBDT/ML — a calibration CROSS-CHECK, never the output
+> *"**Gradient-boosted/ML models are a real, valuable input TO THE CALIBRATION LOOP SPECIFICALLY, NOT
+> a replacement for the interpretable scoring layer** — MLB **EXPLICITLY TESTED AND REJECTED using
+> GBDT AS THE FINAL OUTPUT**, because **it produces a BLACK-BOX RATE rather than an interpretable,
+> directly-tunable rule**, and because **GBDT has DOCUMENTED, REAL, PEER-REVIEWED RARE-EVENT BIAS.**
+> **Build NBA's scoring system the same way: an INTERPRETABLE RULE/PROFILE LAYER as the actual
+> mechanism, with ANY ML MODEL RELEGATED TO A CALIBRATION CROSS-CHECK SIGNAL UNDERNEATH IT.**"*
+
+**This settles the T4 GBDT decision with a second, independent reason.** T4 rejected GBDT/neural nets
+on **resource and explainability** grounds (*"needs far more data and compute… sacrifices
+explainability"*). **T1's blueprint adds a technical one: peer-reviewed RARE-EVENT BIAS** — which
+matters acutely here, because **the goblin/demon tails ARE the rare events**, and they were
+independently nominated as where the edge lives.
+
+**And it defines the door that remains open**: GBDT is not banned — it is **relegated to a calibration
+cross-check**. *(MLB has `gbdt_training_requests`; NBA has no equivalent, and the calibration loop
+uses Platt rather than any ML signal.)*
+
+---
+
 ## 1. THE CHAIN
 
 **⚠ BOARD-SCOPED WAS IN THE ORIGINAL SPEC, not a later decision.** From the handoff memory (T1):
