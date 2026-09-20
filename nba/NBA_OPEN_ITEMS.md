@@ -694,6 +694,8 @@ the third attempt **abandoned the approach entirely** rather than refining the s
 specific workaround for a theory (*"the enum is unusable this session"*) that was **simply wrong** —
 the enum had already refreshed. **Two chunks in, a re-check would have ended it.** That is the
 failure mode this rule names.
+
+### ⚠ THE PASS-COUNT PRECEDENT — MLB needed 13 passes to reach two consecutive clean
 Part E records what the standard actually cost in practice:
 > *"a real scrutiny effort that **would have stopped after an early clean-seeming pass** instead
 > **kept finding genuinely new, real issues across 13 TOTAL PASSES before finally reaching TWO
