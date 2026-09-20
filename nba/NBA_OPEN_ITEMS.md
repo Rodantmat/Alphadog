@@ -43,9 +43,24 @@ repo access (drag-and-drop into the GitHub web UI works, or `git add nba/transcr
 > **So committing the transcripts as they stand would publish working API keys into the repository**,
 > where `git` history would keep them even after a later deletion.
 >
+> ## ⚠⚠ **REDACTION GUIDANCE CORRECTED 2026-09-20 (T1 pass 77) — the advice below was too narrow**
+> **The first version of this item said to strip every `INSERT INTO nba_config.external_credentials`
+> value. That would have missed most of the exposure.** **VERIFIED by searching the raw exports for
+> the stored credential value itself**: the `balldontlie_api_key` value appears **3 times in T1 and
+> 18 times in T19** — **21 occurrences across two transcripts** — and **most are not inside an
+> `INSERT` statement at all.**
+> **In T1 it appears in the assistant's own handoff message to the owner, in ordinary prose**, in the
+> same paragraph that asserts the key is *"already stored"* in `nba_config.external_credentials` —
+> and the same session's memory write records the owner's rule that the key lives in the database
+> *"not in chat memory."* **The value was pasted into the chat body regardless.**
+> **So redaction must be driven by the VALUES, not by statement shape**: read each value from
+> `nba_config.external_credentials`, then search every transcript for that exact string and replace
+> it. **Statement-shaped redaction is not sufficient and would leave working keys in the repo.**
+
 > **Two safe options**, either of which clears the blocker:
-> 1. **Redact before committing** — strip every `INSERT INTO nba_config.external_credentials`
->    value and every JWT-shaped string, then commit. The five affected transcripts are named above.
+> 1. **Redact before committing** — **search every transcript for each credential VALUE** taken from
+>    `nba_config.external_credentials` (not for `INSERT` statements), replace each occurrence, and
+>    also strip any JWT-shaped string. **At minimum T1, T11, T12, T13 and T19 are affected.**
 > 2. **Rotate the affected credentials first**, then commit — which is worth doing regardless, since
 >    the values have already travelled through chat exports.
 >
