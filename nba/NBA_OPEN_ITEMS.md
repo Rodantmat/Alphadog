@@ -1240,7 +1240,66 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
-### ⚠ LEGACY PLATFORM GUARDS THAT OUTLIVE THEIR PLATFORM — silent data loss
+### ⚠⚠ ROUNDING CONVENTION — a measured 14.5% row disagreement
+T1's blueprint §4n, *"a confirmed, QUANTIFIED numeric-precision bug worth guarding against
+directly"*:
+> *"**Multiple analysis tables were found to have been computed using THE WRONG ROUNDING CONVENTION —
+> a 'ROUND HALF TO EVEN' convention rather than the standard 'ROUND HALF AWAY FROM ZERO' convention
+> THE LIVE SYSTEM ACTUALLY USES — causing A REAL, MEASURED 14.5% OF ROWS TO DISAGREE with what the
+> live system would actually compute FOR THE SAME INPUT.**
+> **Before trusting ANY NBA backtest or analysis table's EXACT BOUNDARY VALUES — A TIER CUTOFF, A
+> THRESHOLD CLASSIFICATION — CONFIRM ITS ROUNDING CONVENTION EXPLICITLY MATCHES THE LIVE SYSTEM'S OWN
+> CONVENTION** — **a mismatch here is a real, SILENT, and NON-TRIVIAL source of d[isagreement].**"*
+
+**14.5% of rows, from a rounding convention alone.** And the named cases are **tier cutoffs and
+threshold classifications** — which is what NBA's entire tiering layer consists of.
+
+**⚠ NBA's exposure is broad and sits exactly on boundaries:**
+| Boundary | Convention matters at |
+|---|---|
+| **`ROLE_TIERS`** — 36 / 32 / 27 / 21 / 15 | a `mu_role` of exactly 27.0 or 32.0 |
+| **Rate-tier quantile assignment** (`MAX_TIERS=24`) | every tier edge |
+| **`variation_band`** — `<9.5 / 9.5–17.5 / 18.5–25.5 / 26.5–31.5 / 31.5+` | every band edge |
+| **`BLOWOUT_MARGIN=20` / `COMPETITIVE_MARGIN=15`** | a margin of exactly 15 or 20 |
+| **`P_BLOWOUT_BINS`** `[0,2,4,6,8,10,12,15,99]` | every bin edge |
+| **Prop lines at `.5`** | ✅ **half-lines avoid ties by design** — the one place NBA is structurally safe |
+
+**Python and Postgres disagree by default, which is the concrete hazard here:**
+- **Python's `round()` is round-half-to-EVEN** (banker's rounding) — `round(2.5)` → `2`
+- **Postgres `round(numeric)` is round-half-AWAY-FROM-ZERO** — `round(2.5)` → `3`
+
+**NBA computes the ladder in PYTHON (`classification_ladder_v12.py`, pandas/numpy) and stores,
+queries and re-derives in POSTGRES.** **That is precisely the two-convention split the bug describes**,
+and **numpy's `round` is also half-to-even.**
+
+**Where it would surface**: a player whose `mu_role` sits at a tier edge could be classified
+differently by the Python builder and by any SQL that re-derives the tier — **and tier
+misclassification is already recorded as *"a quiet, indirect source of a wrong final probability."***
+
+**Not recorded as checked.** The test is small: pick the boundary values and compare Python's
+classification against a SQL re-derivation on the same inputs.
+
+### ⚠ MEASURE THE ACTUAL FIRING HISTORY, NOT THE DESIGNED SCHEDULE
+> *"MLB's real, intended **'runs four times daily' schedule was found, ON DIRECT MEASUREMENT, to
+> actually fire CLOSER TO THREE TIMES DAILY in practice — ONE OF THE FOUR INTENDED TIMES NEVER FIRED
+> AT ALL across the entire window checked** — and **a different scheduled run was found to FREQUENTLY
+> FAIL AND SILENTLY RETRY MANY TIMES IN A ROW before finally succeeding, pushing its REAL, USABLE
+> OUTPUT WELL PAST ITS INTENDED TIME WINDOW ON A RECURRING BASIS.**
+> **For NBA: once any scheduled or recurring process exists, MEASURE ITS ACTUAL REAL FIRING HISTORY
+> DIRECTLY rather than trusting the documented or designed schedule — a schedule that LOOKS CORRECT ON
+> PAPER CAN DIVERGE SUBSTANTIALLY from what's actually happening in production.**"*
+
+**This is measurable for NBA the moment the season starts**, and it bears on three time-sensitive
+assumptions:
+- **P2 at 01:00 PT** — already **two hours tighter** than the 6am ET window the publishing-lag research
+  endorsed. **A silent-retry delay would erode what margin remains.**
+- **P3 at 1:15 PM PT** — the cutoff assertion protects correctness, **but a late fire means a late
+  slate.**
+- **P1 Mondays 12:00 PT** — the least sensitive.
+
+**`control.job_runs` and GitHub Actions run history both record actual fire times.** **Comparing
+intended vs actual over the first two weeks is the check** — and the MLB case shows **one of four
+intended times never firing at all**, which no amount of config inspection would reveal.
 T1's blueprint §4n, flagged as *"directly relevant given **NBA is joining an ALREADY-MIGRATED
 system**"*:
 > *"MLB found **a real, confirmed case of A SIZE-LIMITING GUARD added specifically to work around a
