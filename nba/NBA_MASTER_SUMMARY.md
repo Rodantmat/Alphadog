@@ -5702,6 +5702,71 @@ combination math, and the backtest plan."*
 
 **T8 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.17 — PASS 9 — **WHAT EACH CONFIG TABLE IS FOR, AND THE BOUNDARY AS DATA**
+
+#### T8.17a — The config tables' stated purposes
+| Table | Seeded | Purpose |
+|---|---|---|
+| `factor_registry` | 29 | *"Every factor: **form, model side, macro-cluster, baseline vs enrichment layer**, research notes"* |
+| `factor_relevance` | 460 | *"Factor × prop → **full/partial/none** — **the gate that runs BEFORE any tier logic**"* |
+| `factor_profile_cells` | 32 | *"MLB's exact form: **`factor × prop × tier × role_tier × direction × variation_band`** with dedicated **`cap / lift / penalty / coefficient`** columns"* |
+| `classification_config` | 9 | *"Tier bands, blend constant, prior-strength method, empirical-distribution rules, guards, ladder, minutes mixture, Platt calibration, backtest plan"* |
+| `calibration_log` | — | *"The audit trail for the **semi-automatic → automatic loop**"* |
+
+**`factor_relevance` is a GATE, not a weight** — it runs before tier logic and answers *"is this factor
+even a candidate for this prop?"* **That is why 460 relevance rows can coexist with 35 fitted cells**
+without the gap being a defect: relevance is permission, cells are evidence.
+
+**And `factor_profile_cells` has a six-part key** — `factor × prop × tier × role_tier × direction ×
+variation_band`. **Every dimension of the five-dimension architecture appears in the cell key**, which
+is how the design becomes addressable data.
+
+#### T8.17b — **What the seed cells encode — and one of them explains the FRINGE anomaly**
+> *"**blowout risk conditioned on role tier × variation × direction** (a **penalty** for a role
+> player's 'more', **a LIFT for a fringe garbage-time accumulator**, small help on a star's 'less');
+> **assists hit hardest by blowouts**; **B2B penalising 3PM more than points**; pace as one
+> **geometric-mean** feature; DvP quantile bands; **teammate-shooting as the assists penalty**;
+> **'second big out' as the rebounds lift**."*
+
+**The seed expected a LIFT for fringe garbage-time accumulators** — and T8.13d then measured
+**0.87, below 1**, and flagged it as an anomaly precisely because the design predicted the opposite
+sign. **The anomaly was detectable only because the expectation was written down first.**
+
+**And "B2B penalising 3PM more than points" is a directional prediction** that the later B2B finding
+(T8.13c — B2B is an availability effect, not a minutes effect) reframes entirely.
+
+#### T8.17c — **Sample-size gating was designed in from the start**
+> *"Every cell carries its own **`min_real_sample_threshold`** and per-stat
+> **`stabilization_reference_games`**, so **cells under sample are FULLY SHRUNK TO PRIOR from day
+> one**."*
+
+**⚠ This bears on the A2 question I raised at T7.14e.** I suggested checking whether A2's panels gated
+on sample size, since its design specified confidence tiers. **The cell framework has gating built in
+at the schema level** — so any factor implemented as profile cells inherits it. **If A2 was implemented
+as cells it was gated; if it bypassed the cell framework it was not.** That is the specific thing to
+check.
+
+#### T8.17d — **THE BOUNDARY ENCODED AS DATA: 25 baseline, 4 enrichment**
+> *"The boundary you restated is **encoded in the registry itself**: **25 factors tagged `baseline`**
+> (all derivable now **except scheme and jet-lag, which need small data adds**), **4 tagged
+> `enrichment`** (**injury report, confirmed lineups, market-spread delta, referee assignment**) —
+> **applied later as deltas, never re-evaluations**."*
+
+**The baseline/enrichment boundary is not a convention or a comment — it is a column.** A factor's layer
+is queryable, which is what makes *"daily-mined = enrichment; derivable-from-history = baseline"*
+enforceable rather than aspirational.
+
+**Only four enrichment factors**, and each maps to something built later: injury report (T10–T11),
+confirmed lineups (**A5 — later closed as redundant**), market-spread delta (**T16 — the derived-proxy
+replacement**), referee assignment (**D1 — capture built, 0 rows until the season**).
+
+**Two baseline factors were flagged as needing data adds**: **scheme** and **jet-lag**. Jet-lag needs
+arena time zones (T7.16e: *"needs arena time zone (static, small add)"*) — and **`nba_ref.arenas` has a
+`timezone` column from T1's first DDL.** Whether it is populated and whether the directional
+west→east asymmetry was ever built is worth checking.
+
+**T8 PASS 9: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
