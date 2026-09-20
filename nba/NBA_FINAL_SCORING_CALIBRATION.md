@@ -849,6 +849,43 @@ run** — that belongs to the slip-strategy phase.
 
 ---
 
+## 20. PART F — LOOKAHEAD BIAS IN A BASELINE MEASUREMENT
+*Source: T1, `NBA_LESSONS_LEARNED_FROM_MLB.md`, Part F. Recorded 2026-09-20.*
+
+Framed in the source as *"the exact same rigor discipline, independently required and applied on the
+**scoring/calibration side**, not just the strategy-research side"*, and:
+> *"**an entire multi-day investigation's founding premise turned out to rest on a LOOKAHEAD-BIAS BUG
+> IN THE BASELINE MEASUREMENT ITSELF, not in the thing actually being evaluated.**"*
+
+### The sequence, as recorded
+| Step | Figure |
+|---|---|
+| Baseline's own discrimination appeared strong | **+39.76 pp within-cell** |
+| Live, fully-enriched model appeared much weaker | **+5.31 pp** |
+| Apparent conclusion | *"the enrichment layer was actively destroying a good baseline"* |
+| **Days of factor-by-factor diagnostic work followed** | — |
+| **Cause found by a parallel thread** | *"the **'baseline as of date D' calculation genuinely included day D's own game results** — **a real lookahead bug, not a subtle statistical artifact**"* |
+| Corrected baseline, using only data available **before** the prediction date | **+5.32 pp** |
+| Live enriched model | **+5.31 pp** |
+
+> *"**The entire premise was wrong: it was never 'enrichment destroys a strong baseline.' Both the
+> baseline and the enrichment layer perform almost identically, and both are genuinely modest.**"*
+
+### NBA state
+- **Same bug class, same system family**: `backtest.baseline_v6_asof` leaking day D into `as_of_date =
+  D` is recorded in T1 as relayed 2026-08-29 (see §3.10b of `NBA_BASELINE_CALIBRATION.md`).
+- **NBA instances of as-of contamination**: the FRINGE anomaly (*"a season-wide mean using future
+  games"*, T8) and the pasted calibration table (parity violation, live session).
+- **NBA's verification surface**: `classification_ladder_v12.py` is `shift(1)`-based by construction,
+  and the T9 production note states *"the backtest harness on a past day IS already the production
+  computation — every feature is `shift(1)`-based."*
+- **Corroborating figure**: NBA's own measured factor-layer effect is **Brier +0.1–0.3%** (T9), with
+  the recorded note *"real but small… not where the big gains are."*
+
+**Recorded as an open verification in `NBA_OPEN_ITEMS.md`.**
+
+---
+
 ## 19. WHERE EDGE IS NOW EXPECTED TO COME FROM
 
 ### ⚠⚠ 15.0a THE HARD CONSTRAINT — two of the three platforms are measured EFFICIENT
