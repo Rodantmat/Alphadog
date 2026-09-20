@@ -902,28 +902,33 @@ that**."*
 step 3) — see `NBA_RECIPE.md` STEP 0b.
 
 ### ⚠ EIGHT PLANNED SCHEMAS WERE NEVER CREATED
-T1's naming convention specified **fourteen** `nba_`-prefixed schemas:
-`nba_ref` · `nba_calendar` · `nba_stats` · `nba_team` · `nba_daily` · `nba_context` · `nba_market` ·
-`nba_archive` · `nba_score` · `nba_scoring` · `nba_backtest` · `nba_classification` ·
-`nba_certifier` · `nba_context_cert`
 
-**Carrying data today**: `nba_ref`, `nba_calendar`, `nba_stats`, `nba_team`, `nba_market`,
-`nba_score`, **plus `nba_config`** — which **was not in the original list** and was added in T8.
+**T1 specified fourteen `nba_`-prefixed schemas, ported from MLB's per-domain convention.** The
+blueprint gives each one's purpose:
+| Schema | Stated purpose | NBA state |
+|---|---|---|
+| `ref` | *"Static reference: teams, players, **aliases**, stadiums/**arenas**, **prop taxonomy**"* | ✅ `nba_ref` |
+| `calendar` | *"Game calendar/schedule, **live game status (`is_live`, `is_final`, `game_time_utc`)**"* | ✅ `nba_calendar` |
+| `stats_hitter` / `stats_pitcher` | *"Player game logs, splits, rolling metrics"* — **renamed for NBA** | ✅ **one** `nba_stats` (no hitter/pitcher split) |
+| `team` | *"Team-level game logs, **starter/rotation history**"* | ✅ `nba_team` |
+| **`daily`** | *"**Same-day context: lineups, confirmed starters/rotations, availability, matchup context**"* | ❌ **never created** — contents landed in `nba_score` (`availability_delta`) and committed JSON |
+| **`context`** | *"**Historical snapshots of daily-context**"* | ❌ **never created** |
+| `market` | board/odds data | ✅ `nba_market` |
+| **`archive`** | — | ❌ never created |
+| `score` | scoring output | ✅ `nba_score` |
+| **`scoring`**, **`backtest`**, **`classification`**, **`certifier`**, **`context_cert`** | — | ❌ never created — contents in `nba_config`, `nba_score`, and the repo's `nba/backtest/` scripts |
 
-**Never created, and absent from every later transcript**: `nba_daily`, `nba_context`, `nba_archive`,
-`nba_scoring`, `nba_backtest`, `nba_classification`, `nba_certifier`, `nba_context_cert`.
+**Plus `nba_config`, which was NOT in the original list** — added in T8 for the tiering layer.
 
-**This is not necessarily a gap** — their intended contents landed elsewhere:
-| Planned | Where it went |
-|---|---|
-| `nba_backtest`, `nba_classification` | `nba_config` (tiering, decisions) + the repo's `nba/backtest/` scripts |
-| `nba_scoring`, `nba_score` | consolidated into **`nba_score`** |
-| `nba_certifier`, `nba_context_cert` | the per-pipeline certifier steps in the workflows |
-| `nba_daily`, `nba_context`, `nba_archive` | **no recorded equivalent** |
+**The two most notable absences are `daily` and `context`**, because their stated purpose —
+*"same-day context: lineups, confirmed starters/rotations, availability"* and *"historical snapshots
+of daily-context"* — **is exactly the enrichment layer's data.** That data exists today
+(`availability_delta`, the injury-report captures, `board_snapshots`) but is **distributed across
+`nba_score` and `nba_market` rather than in its own domain schema.**
 
-**Worth confirming** that nothing expected `nba_daily`/`nba_context`/`nba_archive` to exist — the MLB
-system has `daily`, `context` and `archive` schemas, and any ported query or worker referencing them
-by analogy would fail.
+**Worth confirming** that nothing ported from MLB expects `nba_daily`, `nba_context` or `nba_archive`
+to exist — the MLB system has `daily`, `context` and `archive`, so any query written by analogy would
+fail.
 
 ### 💰 UNVERIFIED SPEND · BallDontLie GOAT tier — $39.99/month, possibly unused
 T1 records a **paid, verified BallDontLie integration**:
