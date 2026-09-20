@@ -461,6 +461,52 @@ or Scoring stages touch it."* — the ancestor of P2-before-P3.
 the historical half of game logs — *"both fully backfillable right now"* — while treating
 board/daily-context/market as **design-only** until the season gives something live to mine.
 
+### T1.17 — PASS 7 FINDINGS (added 2026-09-20; caveats, limits and a missing document)
+
+**A DOCUMENT NOT PREVIOUSLY CATALOGUED: `nba/NBA_AVAILABLE_TOOLS.md`** — a repo reference file holding
+the full tool inventory, written in T1 after the parallel-chat episode.
+
+**`x-deny-reason: host_not_allowed`** — the assistant's own egress proxy rejects `workers.dev` URLs.
+Confirmed **from the raw response headers**, not assumed. *"Same limitation would apply to any chat with
+`bash_tool` network access — it's not fixable by switching tools, only by changing network settings."*
+**This is why a worker cannot be invoked directly and must go through `run_job`.**
+
+**`run_job`'s `target` is a FIXED, pre-wired enum.** A brand-new worker cannot be triggered until the
+bridge gets a **service binding + an enum value + a dispatch branch**, then a redeploy.
+*"That's worth doing now, since every NBA worker after this one will hit the identical wall otherwise."*
+**This is the origin of the four-step wiring pattern.**
+
+**D1 WAS FULLY DECOMMISSIONED SYSTEM-WIDE ON 2026-08-12.** The twelve `false` bindings are *"expected,
+benign, already-documented behavior — not a bug, and doesn't affect NBA since it's Postgres-only from
+day one."* **This dates the migration precisely** and confirms that later attempts to read MLB logic
+through D1 were never going to work.
+
+**AN HONEST CAVEAT LOGGED AT THE TIME**: after the first successful worker run, *"the team dictionary is
+genuinely seeded and correct today, **but via the fallback, not the live API**."* The certified static
+30-team list was doing the work until the GitHub-Actions path was proven. **Logged in
+`NBA_PROJECT_LOG.md` rather than reported as a live-source success.**
+
+**ParlayAPI could not be tested**: *"`parlay-api.com` isn't reachable from my sandboxed network, and I
+deliberately didn't trigger a live MLB job through the shared queue to probe it indirectly, since
+that's outside this phase's read-only-recon scope."* — **flagged as an unresolved gap rather than
+guessed around**, and left for *"a small isolated test worker or a manual check before Phase 2 locks
+anything ParlayAPI-dependent."*
+
+**THE THREE OPEN QUESTIONS, ANSWERED BY THE OWNER IN T1** (recorded as locked):
+1. **ParlayAPI** — *"should have backdata from past seasons for nba, but it will definitely have the
+   boards and live market data when the time comes."*
+2. **PrizePicks board** — *"will be got by a scraper, just like the MLB one but scoped to NBA, it
+   resides on github."*
+3. **Referee = MLB's umpire** — the analogue is accepted, so `ref.umpire_tendency` is the model.
+
+Plus the decisive instruction that overruled the shared control plane:
+> *"you must build a **completely separate data and system universe from mlb**, nothing will share same
+> space, tables, folders, all separated for each sport."*
+
+**`nba_config.system_settings` is described at the time as doing exactly its intended job** — *"already
+holds your first tunable variables (timeout, retry limit, chunk size, differential cadence) —
+SQL-editable, no hardcoding, as you required."*
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
