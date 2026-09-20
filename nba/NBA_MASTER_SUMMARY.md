@@ -2229,6 +2229,40 @@ it was found after it (T3.6), making **13** the true final count for the layer.
 
 **T3 PASS 7: NEW MATERIAL. Clean count 0/3.**
 
+### T3.14 — PASS 8 (full sequential verification, all 117 blocks) — **CLEAN 1/3**
+
+Complete read from block 5 → 589. **Every block maps to a documented entry**: the DARKO evaluation and
+four-failure build (T3.1), the owner's differential sequencing correction (T3.2, T3.11a–c), the
+`t.name` field-mismatch bug (T3.11d), the baseline/simulate/race/cache test sequence (T3.2, T3.11e),
+the third research pass and the schedule-as-chassis finding (T3.9a), `synergyplaytypes` schema
+verification (T3.4), the 1,400 + 1,266 = 2,666 schedule build and the **1 MB Contents API** bug
+(T3.3), the play-type cheap-path fallback (T3.12b), tracking detail and the Jokić `POTENTIAL_AST`
+check (T3.5), the 12-worker inventory (T3.13), and the shot-quality finding with its formula (T3.9f).
+
+**CLEAN PASS 1 of 3.**
+
+### T3.15 — CURRENT STATE OF T3
+
+**8 passes. 7 found new material. Clean count: 1/3** (pass 8).
+
+| Pass | Method | New findings |
+|---|---|---|
+| 1 | full sequential | the whole T3 narrative — 6 sections |
+| 2 | DDL | `player_impact_rating` components; 6 differential tables |
+| 3 | tool results | **82 play-type rows lost**, verified live |
+| 4 | research conclusions | schedule-as-chassis; **the Shot Quality Delta formula** |
+| 5 | live verification | shot-quality tables exist; formula implemented verbatim |
+| 6 | full sequential, 4 segments | **the differential worker is unscheduled and P1 omits it** |
+| 7 | the worker inventory | the categorisation, and that shot quality makes it 13 |
+| 8 | full sequential, all blocks | **CLEAN** |
+
+**Two more consecutive clean full passes required before T3 is DONE.**
+
+**T3's two findings that bear on live code**, both now in OPEN_ITEMS:
+1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
+2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
+   it** — so trades, signings and referee changes are not being detected at all.
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
