@@ -373,8 +373,25 @@ A demon row carries **`odds_type`**, **`adjusted_odds` as a BOOLEAN**, and **`li
 
 ## 6. THE RESEARCH STANDARD APPLIED TO THIS LAYER
 
-**Five of the 26 lessons bear directly on goblin/demon work.** Full list in
+**Six of the 27 lessons bear directly on goblin/demon work.** Full list in
 `NBA_FINAL_SCORING_CALIBRATION.md` §14.
+
+**⚠ CORRECTED 2026-09-20 (T1 pass 30). This line read "Five of the 26 lessons."** Two things were
+wrong: **the standard has 27 lessons, not 26** (**VERIFIED** — `grep -c "^### [0-9]\+\."` on
+`NBA_LESSONS_LEARNED_FROM_MLB.md` → 27, and T1's own pasted copy carries `### 27.`), and **the
+twenty-seventh is a sixth lesson bearing directly on this layer**:
+
+**#27 — Flex-style partial-credit mechanics differ structurally between platforms: flat fixed partial
+payouts on one, proportional-to-the-full-hit-multiplier on another. Verify per platform.**
+
+**Why it lands on goblin/demon specifically.** Goblin and demon legs are the ones whose headline
+multipliers move *most* — the whole layer is a ladder of multipliers rising away from the anchor
+(*"~1.4× growth factor per tier step"*, §5.0d). **On a platform whose partial tiers are proportional
+to the full-hit multiplier, a demon-heavy Flex slip's partial payouts move with the ladder; on a
+flat-tier platform they do not.** So **the same demon ladder produces different Flex EV on the two
+platform types**, and **the goblin/demon economics in §5 — computed against observed payout factors —
+are Power-shaped reasoning that does not carry to Flex unless the tier shape is known.**
+**NOT RECORDED as verified for any platform except PrizePicks.** See `NBA_MULTIPLIERS.md` §0.2h.
 
 | Lesson | Applied here |
 |---|---|
