@@ -99,7 +99,9 @@ turnovers, fouls), **1 regime** (3PA), **combos certified** (P+R, P+A, R+A, PRA,
 **opponent-driven props** · T9 · **The structural reason blocks, steals and FTM resist certification**:
 *"the 'close' props are EXACTLY the ones whose primary drivers are **opponent** stats — steals ←
 opponent turnover rate."* A player-history baseline cannot see them. *"These are the noisiest per-game
-stats in the sport; the research consensus for them is exactly what's built."* The historical-only projection
+stats in the sport; the research consensus for them is exactly what's built."*
+
+**baseline** · T4, T7, T8, T9 · *"The heart of the system"* (owner, T1). The historical-only projection
 producing hit probability and confidence. **Strictly historical — enrichment is separate** (T4).
 **The five-step design (T4, `nba/NBA_BASELINE_METHODOLOGY.md`)**: EWMA per-36 rate with Bayesian
 shrinkage → separate faster-moving minutes projection → pace + opponent-defence multipliers → raw
