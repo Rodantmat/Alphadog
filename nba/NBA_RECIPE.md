@@ -105,6 +105,53 @@ plan's stated reason for step 3 is precisely what those three items lacked.**
 
 ---
 
+## STEP 0d — Three founding rules that were never written down, and one that is not holding *(T1)*
+*Source: the owner's founding specification message, extracted in full 2026-09-20 (T1 pass 36).
+Earlier passes swept the owner's messages in excerpt; these four clauses had no entry anywhere.*
+
+### 1 · ⚠ THE TUNABLES RULE IS NOT HOLDING — **VERIFIED**
+> *"**any future variable numbers must reside on the database, NOT HARD CODED** — any equation
+> variables like **bonus, penalties, caps**, or **system variables like timeouts, retries, chunk
+> size** — **so all these are EASILY CHANGED BY SQL COMMAND INSTEAD OF CODING AND DEPLOYS.**"*
+
+**Grep of all 190 `.py`/`.js` files plus the MCP admin bridge**: `classification_config`,
+`factor_registry`, `factor_relevance`, `factor_profile_cells`, `stat_decay_config`, `ewma_alpha`,
+`system_settings`, `role_tiers` — **zero occurrences.** The only config table anything reads is
+`external_credentials`. Timeouts (`30/60/90/120/300`), retry counts and chunk sizes are **Python
+literals**, and the certified recipe carries its per-prop `alpha`, `k_stab`, `step` and `family` as a
+hardcoded dict.
+**The purpose was operational, not stylistic** — *"by SQL instead of coding and deploys"* matters
+**because the owner has no terminal** (STEP 0a). Full entry and the measured config-vs-code diff:
+`NBA_OPEN_ITEMS.md` → *FROM T1 PASS 36* · `NBA_BASELINE_CALIBRATION.md` §0y.
+
+### 2 · The per-worker improvement mandate — a three-step build rule
+> *"**each new chat should look into the current MLB worker and understand the functionality,
+> RESEARCH IF ANY IMPROVEMENT SHOULD BE DONE, then create with new nba sources.**"*
+
+**Read the MLB counterpart → research an improvement → then build NBA's.** This is **more specific
+than STEP 0's generic *"research is mandatory"***, and it is the rule STEP 3 and STEP 7 were actually
+following when they read MLB's `static-teams` worker and `.github/workflows/scrape.yml` as templates.
+**Whether the middle step — research an improvement — happened for each of the ~25 NBA workers is
+NOT RECORDED**: no worker entry in `NBA_WORKERS.md` cites an MLB-counterpart review.
+
+### 3 · The MLB no-touch rule, in the owner's own words
+> *"**this chat and any chat coming from here must not edit anything from the mlb system.**"*
+
+**Binding on every descendant chat, not just T1.** ✅ **VERIFIED HELD**: MLB's
+`config.worker_definitions` holds **116 rows, 0 NBA** — the same count recorded on 2026-08-31
+(`NBA_WORKERS.md` §0.4).
+
+### 4 · The source mandate — why the Cloudflare block was fatal rather than inconvenient
+> *"**ideally all these data should be coming from nba.com just like the mlb api.**"*
+
+**This is the missing "why" under STEP 3 and STEP 4.** When Cloudflare turned out to be unable to
+reach `stats.nba.com`, **substituting another data source was not on the table** — so the only path
+left was to change *where the scraper runs*, which is what STEP 4 does. **It is also the
+owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own official API first"*):
+**two independent sources, one rule.**
+
+---
+
 ## STEP 1 — Recon before building *(T1)*
 
 1. Read the three handoff documents **in full** (Blueprint 95,803 B, Lessons 57,066 B, Domain 18,034 B).
