@@ -144,6 +144,118 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 34 — EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE, AUDITED *(added 2026-09-20)*
+*Angle: pass 33 found one unscoped `DELETE` by auditing a **parameter**. This pass inverts it and
+audits **every `DELETE` and `TRUNCATE` in all 190 `.py`/`.js` files** — **24 statements** — asking of
+each whether its scope matches its caller's. Full inventory in `NBA_WORKERS.md` §8; delete semantics
+per table in `NBA_DATABASE.md`. **VERIFIED by grep of the code and live SQL.***
+
+### ⚠ HAZARD-LATENT · **`verify_confidence.py` deletes the WHOLE `confidence_verification` table**
+**Four scripts write to `nba_score.confidence_verification`. Three scope their deletes to their own
+partition. One does not.**
+
+| Script | Its delete | Scoped? |
+|---|---|---|
+| `build_confidence_v3.py` | `DELETE … WHERE tier='v3'` *(twice)* | ✅ |
+| `build_confidence_v2.py` | `DELETE … WHERE tier IN ('v2','high_vs_low')` | ✅ |
+| `build_mondrian_confidence.py` | `DELETE … WHERE check_type='mondrian_quintile'` | ✅ |
+| **`verify_confidence.py`** | **`DELETE FROM nba_score.confidence_verification`** | ❌ **whole table** |
+
+**So running `verify_confidence.py` erases every other script's verification rows**, including the
+ones **P2 writes nightly** via `build_confidence_v3.py`.
+
+**VERIFIED it has not yet fired — and that the collision is real.** The live table holds **three
+generations of rows coexisting**: `verify_confidence`'s own at **2026-09-17 18:16**, mondrian's at
+**2026-09-17 23:31**, and v3's at **2026-09-20 03:30**. **The only reason the v3 and mondrian rows
+survive is that the unscoped writer happens to have run first.** **The next `verify_confidence.py`
+run deletes both sets.**
+
+**It is wired**: `.github/workflows/nba-absence-panel.yml` runs it. **P2 does not** — P2 runs
+`build_confidence_v3.py`, which is correctly scoped. **So this is a manual-run hazard, not a nightly
+one**, which is why it has survived undetected.
+⚠ **Note what the damage looks like**: not an error, just **a verification table that silently
+contains only one script's view.** **Blueprint §9 failure mode #2** — *"a stable count that is wrong
+in composition."*
+
+### ⚠ LIVE CODE STILL RECREATES A TABLE THAT WAS DELIBERATELY DROPPED
+**`nba_score.ladder_calibration` was dropped** as *"a parity violation"* and superseded by
+`ladder_calibration_asof` — recorded in `NBA_DATABASE.md`. **VERIFIED it is gone**: it does not appear
+in `information_schema.tables` for `nba_score` (2026-09-20).
+
+**But `nba/calibrate_all_props.py` still does:**
+```sql
+CREATE TABLE IF NOT EXISTS nba_score.ladder_calibration (...);
+DELETE FROM nba_score.ladder_calibration;
+INSERT INTO nba_score.ladder_calibration ...;
+```
+**and it is still wired** — `nba-absence-panel.yml`, behind `allocator == '22'`, a manual input.
+**Running it resurrects the dropped, parity-violating table**, repopulated by a fit that is
+*"fitted on TRAIN season, applied to TEST season"* — **exactly the parity violation that caused the
+drop** (`NBA_DAILY_PARITY §5`, *"no constant is carried between days"*).
+
+**✅ Mitigating, VERIFIED**: **nothing reads it.** A grep of all 190 files finds **no `SELECT` from
+`nba_score.ladder_calibration`** — the only other mentions are comments. So a resurrection today
+**pollutes the schema without changing any number.** **The risk is that a future reader finds a
+populated table with a plausible name and uses it.**
+**Blueprint §9 failure mode #4** — *"a 'deactivated' correction still silently present, because the
+deactivation didn't defeat the thing that brings it back."* **Here the deactivation was a `DROP`, and
+a `CREATE TABLE IF NOT EXISTS` defeats it.**
+
+### ⚠ A SECOND COMMENT-VS-CODE DRIFT IN `build_final_hp.py` — the same file as the pass-33 bug
+Its docstring says the calibration correction comes from **`nba_score.ladder_calibration`**:
+> *"3. **CALIBRATION CORRECTION `nba_score.ladder_calibration`** — a log-odds shift per (prop, phase,
+> band, …)"*
+
+**The code reads `nba_score.ladder_calibration_asof`** — VERIFIED by grep. **The docstring names a
+table that no longer exists**, and names it as the source of the correction the engine applies.
+**Two independent documentation drifts in one file**, the other being *"P3 sets it"* for `FE_DATE`.
+⚠ **This is the file the whole final-scoring layer runs through.** Its header is the first thing a
+future reader reads and **two of its structural claims are false.**
+
+### ⚠ NOTHING REBUILDS `final_hp` — so the pass-33 loss is PERSISTENT
+**VERIFIED by reading the workflow files**: `build_final_hp.py` is invoked by
+**`nba-absence-panel.yml`** (`FE_WRITE` defaults `'0'`) and **`nba-engine-test.yml`**
+(`FE_WRITE: '0'`) **and by no P-pipeline at all.** **P2 does not rebuild it. P3 does not rebuild
+it.**
+
+**Consequence**: the 2025-26 partition reduced to a single date **will stay that way until someone
+runs the engine manually with `FE_WRITE=1` and `FE_DATE` blank.** No scheduled job will notice or
+repair it, and **no certifier checks `final_hp`'s date coverage** — `certify_pipeline.py`'s P2 check
+counts `confidence_model` rows, not `final_hp` dates.
+⚠ **And `nba-absence-panel.yml` defaults `FE_SEASONS: '2025-26'`** — the damaged season — so the one
+wired path that *could* rebuild it defaults to the right season and the wrong write flag.
+**SEASON-START RELEVANT.**
+
+### ✅ VERIFIED CORRECT — the counter-examples that prove the house convention
+**`build_final_hp.py`'s unscoped delete is an anomaly, not a style.** Every other date-scoped writer
+scopes its delete properly:
+
+| Script | Delete | |
+|---|---|---|
+| `score_board_legs.py` | `DELETE … WHERE game_date = %s` | ✅ **the P3 scorer, correct** |
+| `build_availability_delta.py` | `DELETE … WHERE game_date = %s` | ✅ |
+| `build_rung_market.py` | `DELETE … WHERE game_date >= %(d0)s AND game_date < %(d1)s` | ✅ |
+| `load_baseline_ladder.py` | `DELETE … WHERE asof = %s` *(both tables)* | ✅ |
+| `load_baseline_history.py` | `DELETE … WHERE season = %s AND prop = ANY(%s)` | ✅ matches its full-season input |
+| `gate_remaining_factors.py`, `fit_n1_model.py` | `DELETE … WHERE slice = '…'` | ✅ own partition only |
+
+**This strengthens the pass-33 finding**: the codebase's convention is to scope a delete to exactly
+what the run rewrites. **`build_final_hp.py` is the one place that does not.**
+
+### ✅ INTENTIONAL WHOLE-TABLE REBUILDS — recorded so they are not re-flagged later
+These delete everything **by design**, because each run recomputes the whole small table, and each has
+a **single writer**: `blowout_model` (35 rows) · `scenario_calibration` · `conformal_confidence` ·
+`confidence_model` · `ladder_calibration_asof` · `board_tiers_v2` (`TRUNCATE`) · and the three
+`weekly_differential` snapshot tables (`player_roster_snapshot`, `team_roster_snapshot`,
+`official_roster_snapshot`), whose replace-in-full semantics are the documented snapshot design.
+**No action needed on any of these.**
+⚠ **One caveat on `ladder_calibration_asof`**: a full-table rebuild every P2 run means **there is no
+incremental history and no diff between last night's cells and tonight's.** That is the mechanism
+blueprint §7f's *"mandatory human review before applying"* would need in order to review anything —
+**you cannot review a change you cannot see.** Recorded against the §7f gap above.
+
+---
+
 ## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
 
 ### ⓪ GOOD NEWS FIRST — **the season-opening coverage problem is already SOLVED**
