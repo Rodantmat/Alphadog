@@ -4215,6 +4215,116 @@ seasons do not change.
 
 **T7 PASS 6: NEW MATERIAL. Clean count 0/3.**
 
+### T7.13 — PASS 7 — **THE MLB PIPELINE PORTED, AND THE BASELINE BOUNDARY REDEFINED**
+
+#### T7.13a — **THE THREE-GENERATION TRAP, avoided by reading headers**
+> *"There are **three generations** of classification/baseline in the repo, and **only one is live**:"*
+| Generation | Status |
+|---|---|
+| `alphadog-v2-base-classification-v5.js` | header literally says ***"OLD VERSION — DO NOT TOUCH — CONFIRMED DEAD"*** |
+| v6 in D1 (inside the 1 MB phase3a file) | ***"D1 pipeline — CONFIRMED DEAD, do not build on this"*** |
+| **`runClassificationBaselineV6ToPostgres`** | **the real one** — daily cron, writes `classification.classification_v6_current` + `classification.baseline_v6_current` |
+
+> *"**Porting from either dead version would have locked in wrong logic.** I read the live one line by
+> line."*
+
+**This is the single highest-value "verify before building on top" moment in the transcripts** — the
+file named `-v5` with the most obvious name was dead, and so was the v6 that sounded current.
+
+#### T7.13b — **The live MLB logic, in full** (per prop × line × side)
+**Classification:**
+1. **Recency-blended rate** from `metric_snapshots`: **last_5 (0.4) / last_10 (0.3) / last_20 (0.2) /
+   season (0.1)**, renormalised if a window is missing
+2. **Population stats across all eligible players for that exact combo** — *"computed **once, never
+   per-chunk, so tier boundaries don't drift**"*
+3. **Tier by QUANTILE RANK, not fixed z-bands** — **`max_tiers=24`** *(raised from 12 after a real
+   backtest: **MAE improved, then plateaued at 24**)*, **`min_population_per_tier=15`**
+
+**Baseline:**
+4. **Tier prior** = tier's mean rate, blended toward population mean with **`k=5`**
+5. **Empirical-Bayes prior strength** — *"a single population-level constant per combo (**Efron-Morris
+   method of moments**), branched by distribution type, so **shrinkage genuinely decays to zero as a
+   player's sample grows**"*
+6. **Shrunk rate** = `(n·rate + priorStrength·tierPrior) / (n + priorStrength)`
+7. **Distribution → hit probability, chosen per prop**, in a cascade:
+   **empirical per-tier outcome table** (*"the sharpest — sums real observed P(0..threshold), **no
+   assumed family**, requires **≥300 games/tier**"*) → else **Negative-Binomial/Poisson** for counts
+   (with per-mean-tier dispersion) → else **Normal** with a real prediction interval and within-player
+   variance
+8. **Guards**: **Wilson clamp below n=30** · a sample-size ceiling on confidence · **a discontinuity
+   override** (role change / long gap → use only role-consistent recent games) · role-aware and
+   opponent-aware tier lookups for specific props
+
+**Every one of these survives into the NBA engine** — the quantile tiers, the empirical-first cascade,
+the shrinkage-decays-to-zero property and the discontinuity override are all recognisable in
+`classification_ladder_v12.py`.
+
+#### T7.13c — **The owner corrects a Gemini recommendation, and the correction is accepted with cause**
+> **OWNER:** *"the different variations get different tiers. That is working very well for MLB…
+> **Gemini is not the absolute truth**."*
+
+> *"**you're right, and I should have checked the MLB code before relaying Gemini's argument.** The
+> live MLB function runs **per `prop + line + side`**: population stats and tiers are computed **per
+> combo**, which *is* per variation. **Gemini's 'tier globally' advice contradicts the proven
+> architecture.**"*
+
+**The owner's domain knowledge beat the research tool on a structural question** — and the resolution
+was to check the code, not to arbitrate between opinions.
+
+#### T7.13d — **THE BASELINE BOUNDARY, REDEFINED — the most consequential design decision here**
+> *"this is the important refinement. **The baseline isn't 'player history only.' It's everything
+> derivable from static and historical data** — including **the calendar**, which tells us the
+> opponent, home/away, and rest days for the actual game. So **opponent defence, pace matchup, and
+> blowout risk all belong in the baseline**, derived from **team strength rather than a live spread**.
+> **Only truly live inputs (injury reports, confirmed lineups, market lines) are enrichment** — and for
+> the important ones, **the baseline carries a derived signal as backup**."*
+
+**This redraws the line set in T4.** It is why the parity document later assigns D1 (referee),
+M1 (matchup) and blowout to the **baseline stage** rather than enrichment, and why T16's factors are
+baseline-stage refits rather than enrichment multipliers.
+
+**And "the baseline carries a derived signal as backup" is the origin of the derived-spread proxy**
+(r=0.46) that T16 eventually **replaced with the real market spread** — the backup was built first,
+by design, and upgraded when the live input proved reliably available.
+
+#### T7.13e — **BLOWOUT AS A MINUTES MIXTURE, NOT A PENALTY — specified here**
+> *"All sources converge: **blowouts don't reduce points, they reduce MINUTES**, which reduces
+> everything. So the mechanism is
+> **`P(blowout) × [blowout-minutes distribution] + (1−P) × [competitive-minutes distribution]`** —
+> **causal and self-explaining** — rather than a post-hoc probability drag. **A direct penalty is what
+> you called capping; this is the 'proper logic that drives the number there on its own.'**"*
+
+**✅ This confirms T4.11's finding from the design side.** `nba_score.blowout_model` stores **ratios**
+(competitive 1.0333, won-by-25+ 0.8748) precisely because it was specified as a **mixture over minutes
+distributions**, not a penalty. **The T4 "don't penalize twice" warning and this mixture design are
+the same idea reached from two directions**, and the implementation honours both.
+
+#### T7.13f — The blowout evidence base
+**DataStreak (40,856 graded props)**: over-rate decays **monotonically 46.7% → 44.9% → 43.8% → 40.9%**
+from close games to 20+ blowouts, *"hitting the **favourite's starters** hardest."*
+**RotoGrinders**: *"use a sliding scale by spread, **asymmetric**, and **team-specific** (coaches differ
+in how they empty benches)."*
+**Design**: `derived_spread = net-rating differential + home court + rest differential` (all
+static/historical) → `P(blowout)` from a lookup built on our own 3 seasons → then a **team-specific
+`E[minutes | blowout]`** from each team's real history.
+> *"I can **reproduce the DataStreak curve on our 79k logs** as a validation — **no market data
+> needed**."*
+
+**Note what T16 kept and dropped**: the asymmetry survived (won-by-25+ 0.8748 vs lost-by-25+ 0.9124 —
+the favourite's starters lose more), but **`blowout_model` has no team-specific dimension** — it is
+keyed on margin band and side only. **The RotoGrinders team-specific recommendation was not
+implemented.** Recorded in OPEN_ITEMS.
+
+#### T7.13g — Ladder width as specified here, vs as later measured
+> *"**anchor ±5–6 steps each direction**, clipped at natural floors (0.5). **That's where the
+> Goblin/Demon ROI lives**; the matrix has to cover it."*
+
+**The live session measured the books laddering to ±13 for points and ±16 for pra** — far wider than
+±5–6. **The design estimate was roughly half the real depth**, which is exactly the gap the
+`LADDER_DEPTH` table was built to close.
+
+**T7 PASS 7: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
