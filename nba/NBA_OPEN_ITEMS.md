@@ -205,6 +205,67 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 50 — ⚠⚠ TWO ID CONVENTIONS: THE SCORING LAYER DOES NOT JOIN TO THE REFERENCE LAYER *(added 2026-09-20)*
+*Angle: blueprint **§2** (read clause by clause, as pass 49 did for Domain Mapping) contains a
+standing instruction that **is NOT RECORDED as ever having been carried out**. This pass carries it
+out. All figures **VERIFIED by live SQL 2026-09-20**.*
+
+### The instruction, verbatim
+> *"**Use ONE canonical ID format from day one** (MLB had a real, multi-table bug from **mixing bare
+> numeric team IDs with a prefixed format like `mlb_133`** — **GREP FOR FORMAT INCONSISTENCY
+> PROACTIVELY, don't wait for it to surface as a downstream symptom**). For NBA, decide the ID
+> convention (e.g. **`nba_<team_id>`**) before writing the first table and **apply it everywhere**."*
+
+### ✅ What passes — the type discipline is perfect across all 85 tables
+**VERIFIED**: every `team_id` (20 columns) and `player_id` (28 columns) and `game_id` (20 columns) is
+**TEXT**; every `nba_team_id` (6) and `nba_player_id` (10) is **BIGINT**. **Zero type inconsistency.**
+The two-column pattern — a canonical TEXT id plus the raw stats.nba.com BIGINT — is deliberate and
+applied without exception. **`nba_ref.teams.team_id` is `nba_1610612737`** — **the blueprint's
+suggested `nba_<team_id>` convention, exactly.**
+
+### ⚠⚠ What fails — the VALUES split into two conventions along a layer boundary
+| Layer | `player_id` value format | Rows | Prefixed |
+|---|---|---|---|
+| **`nba_ref.*`** — reference | **`nba_<id>`** | `players` **582** | **582** |
+| **`nba_stats.*`** — stats | **`nba_<id>`** | `player_game_log` **79,358** | **79,358** |
+| **`nba_score.*`** — scoring | **bare numeric** | `baseline_history` **19,343,348** · `final_hp` **19,215,200** · `baseline_ladder` **206,237** · `board_scored` **110,955** · `availability_delta` **4,274** | **0 · 0 · 0 · 0 · 0** |
+
+**Measured directly on the live database:**
+```
+nba_score.board_scored rows                                  110,955
+  joining nba_ref.players ON player_id = player_id                 0
+  joining nba_ref.players ON 'nba_'||player_id = player_id   110,955   (100%)
+```
+
+**A direct `JOIN nba_ref.players USING (player_id)` from any `nba_score` table returns ZERO rows** —
+silently. An inner join drops every row; a left join NULL-fills every row. **The data is complete and
+correct on both sides; only the key format differs.**
+
+### Severity: latent, not actively broken — but it is exactly MLB's documented bug
+**✅ Nothing is currently wrong.** The scoring path joins **score → score** (`score_board_legs.py`
+merges `board` against `nba_score.baseline_ladder` on `player_id`), and **both sides are bare
+numeric**, so it works. **Each layer is internally consistent.**
+
+**⚠ What it costs, and why it belongs on this list:**
+1. **Any join from the scoring layer to the reference layer fails silently** — a player's name, team,
+   position, or alias cannot be attached to a scored leg by `player_id` without a string transform
+   that **exists nowhere in the schema and is documented nowhere.**
+2. **It is the blueprint's named bug class, reproduced.** MLB's version — *"mixing bare numeric team
+   IDs with a prefixed format like `mlb_133`"* — is described as *"a real, multi-table bug."*
+   **NBA has the same split, just cleanly divided by layer rather than scattered.**
+3. **The proactive check the blueprint demanded was never run.** It is **one query**, and the
+   instruction was *"don't wait for it to surface as a downstream symptom."*
+4. **SEASON-START RELEVANT**: `board_scored` is **P3's live daily output**. The first thing anyone
+   builds on top of it — a UI feed, a slip builder, a report joining legs to player names — **hits
+   this boundary.**
+
+**⚠ Which convention is correct is NOT ESTABLISHED and is flagged for human decision, not resolved
+here.** The reference/stats layers follow the blueprint's stated convention; **the scoring layer
+holds 38.7M+ rows in the other one.** Recorded with both sides so the decision can be made from this
+file alone.
+
+---
+
 ## FROM T1 PASS 49 — DOMAIN MAPPING §1 AND §3, CLAUSE BY CLAUSE *(added 2026-09-20)*
 *Angle: pass 31 swept the Domain Mapping document **by section**, and marked §1 and §3 "documented"
 without reading their clauses. **This pass reads both tables row by row.** Source:
