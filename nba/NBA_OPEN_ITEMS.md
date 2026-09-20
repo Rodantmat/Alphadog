@@ -515,6 +515,28 @@ dispatch is static**, and **no Postgres HTTP extension** exists to pull the data
 The fallback — pasting ~3 MB of SQL in 17 chunks — was abandoned as *"burning turns on a mechanical
 process."* **The data was verified and committed; only the load was blocked.**
 
+### SCHEMA FLAW · **`player_splits` / `team_splits` PK omits `season` — only one season can exist**
+`PRIMARY KEY (player_id, split_type, group_value)` — **`season` is a column but not part of the key.**
+**Verified live 2026-09-20: `nba_stats.player_splits` holds only 2025-26** (9,948 rows, 577 players),
+while the game logs cover **three** seasons.
+**Whether two seasons were overwritten or never scraped, the schema cannot hold more than one.**
+`nba_team.defense_vs_position` got this right — its PK includes `season` and it holds all three
+(630 rows = 30 teams × 7 positions × 3 seasons). **Fix would require a PK change plus a re-scrape.**
+
+### VERIFY · **`StartingPosition` split is absent** — the one rated ESSENTIAL
+Present: `days_rest` (3,311) · `month` (3,236) · `location` (1,217) · `wins_losses` (1,135) ·
+`pre_post_allstar` (1,049). **`StartingPosition` is not there.**
+T4.13c rated it **Essential** — *"a direct proxy for role/usage — starter vs. bench is
+night-and-day"* — while `month` was rated **Low** and is the second-largest table.
+
+**Probably benign**: `nba_stats.player_game_starter_status` was built in the same session with
+**32,179 rows at PER-GAME granularity**, which supersedes a season aggregate. **The capability is
+covered.** Recorded so the absence is not later mistaken for missing role data.
+
+### STILL LIVE · the WinsLosses leakage surface is in the schema
+`w`, `l`, `w_pct` columns exist on both splits tables and `wins_losses` holds 1,135 rows.
+**The T4 caution — "collect it, but don't naively feed it to a model" — is not enforced by anything.**
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
