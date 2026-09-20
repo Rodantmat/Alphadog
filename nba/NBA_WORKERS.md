@@ -22,6 +22,35 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0.15 ⚠ THE DISPATCH ENUM AND THE SECOND PER-WORKER MODE
+*Recorded 2026-09-20 (T1 pass 46). **VERIFIED by grep of the live `alphadog-v2-admin-sql.js`.***
+
+**The bridge routes 21 NBA bindings directly** — `NBA_STATIC_TEAMS_WORKER`,
+`NBA_STATIC_PLAYERS_WORKER`, `NBA_STATIC_ARENAS_WORKER`, `NBA_STATIC_OFFICIALS_WORKER`,
+`NBA_STATIC_PLAYER_BIO_WORKER`, `NBA_STATIC_PLAYER_TRACKING_WORKER`, `NBA_STATIC_TEAM_STATS_WORKER`,
+`NBA_STATIC_ONOFF_WORKER`, `NBA_STATIC_DARKO_WORKER`, `NBA_STATIC_WEEKLY_DIFFERENTIAL_WORKER`,
+`NBA_STATIC_SCHEDULE_WORKER`, `NBA_STATIC_PLAYTYPES_WORKER`, `NBA_STATIC_TRACKING_DETAIL_WORKER`,
+`NBA_STATIC_SHOTQUALITY_WORKER`, `NBA_STATIC_BACKFILL_WORKER`, `NBA_STATIC_STARTER_STATUS_WORKER`,
+`NBA_STATIC_GAME_OFFICIALS_WORKER`, `NBA_STATIC_LINEUPS_WORKER`, `NBA_DAILY_DELTA_WORKER`,
+`NBA_STATIC_MEASURE_TYPES_WORKER`, `NBA_BASELINE_LADDER_WORKER`.
+
+**The code's own note on that branch** — the no-orchestrator rule, implemented:
+> *"NBA expansion (additive only). Same direct-call pattern as `BASE_HITTER_GAME_LOGS_WORKER` —
+> **bypasses `control_job_queue` + orchestrator entirely (NBA has no orchestrator by design)**."*
+
+**⚠ Every one of the 21 accepts a second mode this document's mode-dispatch table does not list:**
+| `job` | Route |
+|---|---|
+| **`probe-sources`** | **`https://internal/probe-sources`** |
+| anything else (e.g. `run`) | the worker's default run path |
+
+**`run_job` also carries 14 non-dispatch job modes** — a diagnostic and ingestion surface including
+**`worker_invocation_logs`**, the only tool that can tell a worker that *failed* from one *never
+invoked* from one **Cloudflare killed**. Full table: `NBA_SYSTEM_ARCHITECTURE.md` §3b.
+⚠ **`nba/NBA_AVAILABLE_TOOLS.md` still lists the pre-wiring enum — 12 MLB targets, zero NBA.**
+
+---
+
 ## 0.2 ⚠ THE FOUR WIRING STEPS HAVE DIFFERENT DEPLOY BLAST RADII
 *Recorded 2026-09-20 (T1 pass 44). **VERIFIED by grep of the live `generate_wrangler_configs.py`.***
 
