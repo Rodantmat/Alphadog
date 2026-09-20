@@ -1338,7 +1338,7 @@ corresponding entry in any of the 12 documents.
 | Blueprint § | Subject | Status before this pass |
 |---|---|---|
 | §0 – §7e | framing, infra, schema, pipelines, factors, triggers, deploy gotchas | **already documented** |
-| **§7f** | honest out-of-sample validation is **necessary but not sufficient** | **UNSWEPT → recorded** |
+| §7f | honest out-of-sample validation is **necessary but not sufficient** | ⚠ **already documented** — `NBA_BASELINE_CALIBRATION.md` §5.6, with a VERIFIED code grep. **Two elements inside it were new** (below) |
 | **§7g** | two named software bugs (write-path filter; `NOT IN` array literal) | **UNSWEPT → recorded** |
 | §8 | corrupt-and-fix testing | already documented — `NBA_SYSTEM_ARCHITECTURE.md` §8b |
 | **§9** | pipeline scrutiny discipline — 3 techniques, **6 named failure modes** | **UNSWEPT → recorded** |
