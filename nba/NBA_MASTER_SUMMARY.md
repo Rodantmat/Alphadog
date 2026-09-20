@@ -1432,6 +1432,76 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.64 — PASS 34 (angle: **invert pass 33 — audit every DESTRUCTIVE STATEMENT, not every parameter**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: pass 33 found one unscoped `DELETE` by auditing a **parameter**. This pass audits the
+**write path itself** — every `DELETE FROM` and `TRUNCATE` in all 190 `.py`/`.js` files, **24
+statements** — asking of each whether its scope matches its caller's. **This is blueprint §9's
+whole-universe comparison**, applied to deletes. Full inventory: `NBA_WORKERS.md` §6b.
+
+**FINDING 1 — `verify_confidence.py` deletes the WHOLE `confidence_verification` table.** Four
+scripts write to it; **three scope their deletes to their own partition and one does not.** Running
+it erases the `v3` rows **P2 writes nightly** and the mondrian rows.
+**VERIFIED not yet fired, and VERIFIED that the collision is real**: the live table holds **three
+generations coexisting** — `verify_confidence`'s own at **2026-09-17 18:16**, mondrian's at
+**2026-09-17 23:31**, v3's at **2026-09-20 03:30**. **They survive only because the unscoped writer
+ran first.** It is wired in `nba-absence-panel.yml`, **not** in P2 — a manual-run hazard, which is
+why it has gone unnoticed. **The damage would not error; it would leave a verification table
+containing one script's view — §9 failure mode #2, a stable count wrong in composition.**
+
+**FINDING 2 — live code recreates a table that was deliberately dropped.**
+`nba_score.ladder_calibration` was **dropped as a parity violation** and superseded by
+`ladder_calibration_asof`. **VERIFIED absent** from `information_schema`. **But
+`calibrate_all_props.py` runs `CREATE TABLE IF NOT EXISTS … ; DELETE … ; INSERT …`** and is still
+wired behind a manual input in `nba-absence-panel.yml`, repopulating it from a fit *"fitted on TRAIN
+season, applied to TEST season"* — **the exact parity violation that caused the drop.**
+**✅ VERIFIED nothing reads it**, so a resurrection today pollutes the schema without changing a
+number. **§9 failure mode #4**: the deactivation was a `DROP`, and `CREATE TABLE IF NOT EXISTS`
+defeats it.
+
+**FINDING 3 — a SECOND comment-vs-code drift in `build_final_hp.py`.** Its docstring names
+**`nba_score.ladder_calibration`** as the source of the calibration correction. **The code reads
+`ladder_calibration_asof`, and the named table does not exist.** **Two false structural claims in the
+header of the file the entire final-scoring layer runs through** — the other being *"P3 sets it"* for
+`FE_DATE`.
+
+**FINDING 4 — nothing rebuilds `final_hp`, so pass 33's loss is PERSISTENT.** **VERIFIED**:
+`build_final_hp.py` is invoked only by `nba-absence-panel.yml` (`FE_WRITE` defaults `'0'`) and
+`nba-engine-test.yml` (`FE_WRITE: '0'`) — **by no P-pipeline at all.** **No scheduled job will notice
+or repair the missing 2025-26 partition**, and **no certifier checks `final_hp`'s date coverage**:
+`certify_pipeline.py`'s P2 check counts `confidence_model` rows. ⚠ And `nba-absence-panel.yml`
+defaults `FE_SEASONS: '2025-26'` — **the one wired path that could rebuild it defaults to the right
+season and the wrong write flag.**
+
+**FINDING 5 — the counter-examples, which strengthen pass 33.** **Every other date-scoped writer
+scopes its delete correctly** — `score_board_legs.py` (`WHERE game_date = %s`, the P3 scorer),
+`build_availability_delta.py`, `build_rung_market.py`, `load_baseline_ladder.py`,
+`load_baseline_history.py`, and the two `factor_gate_results` writers. **`build_final_hp.py` is the
+single exception, not a house style.**
+
+**FINDING 6 — the nine intentional whole-table rebuilds, recorded so they are not re-flagged.**
+`blowout_model`, `scenario_calibration`, `conformal_confidence`, `confidence_model`,
+`ladder_calibration_asof`, `board_tiers_v2` (`TRUNCATE`), and the three weekly-differential snapshot
+tables. ⚠ **One caveat**: `ladder_calibration_asof` being rebuilt in full every P2 run means **there
+is no diff between last night's cells and tonight's** — and **that diff is what blueprint §7f's
+"mandatory human review before applying" would have to review.** You cannot review a change you
+cannot see. Recorded against the §7f gap.
+
+**The pattern across all three defects**: each statement is **correct in isolation and wrong relative
+to its caller** — a scoped read, a shared table, a dropped table. **None of them errors.**
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 34*) · `WORKERS` §6b (the full inventory) ·
+`DATABASE` (`confidence_verification`, `ladder_calibration`) · `SYSTEM_DESIGN` · `GLOSSARY` ·
+this entry.
+**Considered, no change warranted**: `RECIPE`, `BASELINE_CALIBRATION`,
+`FINAL_SCORING_CALIBRATION` (already carries the §0z data-state warning), `MULTIPLIERS`,
+`SYSTEM_ARCHITECTURE`, `GOBLIN_DEMON`.
+
+**PASS 34 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.63 — PASS 33 (angle: **stop reading, start VERIFYING — run T1's own named bug classes against the live code and database**) — **NEW MATERIAL · MAJOR · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
