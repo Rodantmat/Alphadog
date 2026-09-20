@@ -355,9 +355,23 @@ Historical and live sportsbook lines → `nba_market.board_snapshots`. 12 books,
 needed.
 
 ### ParlayAPI
-`https://parlay-api.com/v1`. **NBA game lines back to 2007; NO historical props; no DFS books.**
-Useful only to **validate** the derived spread. **Superseded for boards** — our own scrapers beat it
-(ParlayAPI drops ~25% of rungs, proven with same-moment diffs).
+`https://parlay-api.com/v1`. **The same paid service already integrated for MLB**, covering NBA via:
+- **sport key** `basketball_nba`
+- **market keys** `player_points` / `player_rebounds` / `player_assists` / etc.
+- **DFS pick'em bookmaker keys** — **`prizepicks`, `underdog`, `sleeper`, `betr`, `pick6`**
+- **Key storage**: `config.external_credentials`, `credential_key = 'parlay_api_key'`, with an
+  **env-var fallback `PARLA[Y_API_KEY]`**
+
+**NBA game lines back to 2007; NO historical props; no DFS books.**
+**Superseded for boards** — own scrapers capture ~25% more rungs, proven with same-moment diffs.
+**Retained use**: validating the derived spread.
+
+**⚠ Coverage for `basketball_nba` was flagged in T1 as *"still NOT INDEPENDENTLY VERIFIED"*** and was
+never verified — it was superseded instead.
+
+**Note the bookmaker list includes `betr` and `pick6`**, which the NBA build later scraped directly
+(Betr via GraphQL with a Keycloak token). **ParlayAPI listing a bookmaker does not mean it carries
+that bookmaker's full rung depth** — that is the ~25% finding.
 
 ### EPM (Dunks & Threes) — **REJECTED on licensing, not capability**
 Rated *"one of the highest-value single features"*, then found **behind a paid subscription**.
