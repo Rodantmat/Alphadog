@@ -409,7 +409,49 @@ failures.** They surfaced as clear errors **because `prepare: false` is set.**
 **The cost of the misdiagnosis is the lesson**: three plausible fixes attempted, one of them a **15×
 performance regression** that had to be reverted, before a single config option resolved it.
 
-### ⚠ INTERMITTENT "CONNECTION CLOSED" — two distinct causes, identical symptom
+### ⚠⚠ A CATALOG OF RECURRING FALSE ASSUMPTIONS — each a standing check
+*Source: T1, blueprint §7c. Recorded 2026-09-20.*
+
+**1. Never assume `CREATE TABLE IF NOT EXISTS` produced the schema your code expects**
+> *"**A table can genuinely PRE-EXIST from earlier, unrelated work WITH A DIFFERENT REAL SCHEMA.**
+> **Always VERIFY ACTUAL LIVE COLUMNS when there's any chance of this.**
+> **This exact mistake RECURRED FOUR SEPARATE TIMES IN MLB before becoming a standing rule.**"*
+
+**Four recurrences.** `IF NOT EXISTS` is silent by design — it neither creates nor complains.
+
+**⚠ NBA's writers open with DDL blocks** (`baseline_ladder` + index + `baseline_ladder_runs`), and
+**`nba_ref.prop_taxonomy` is the live case**: created in T1, **empty and unused until T8 seeded it
+seven transcripts later.** A table existing with the wrong shape from earlier work is exactly that
+timeline.
+
+**2. Never assume a differential/dedup scoping check is correct because it runs without error**
+> *"**A check MISSING ONE SCOPING CONDITION can SILENTLY BLOCK THE OVERWHELMING MAJORITY OF REAL ROWS
+> from ever writing — a real MLB case: 1,344 OF 1,349 ROWS SILENTLY BLOCKED — WITH ZERO ERRORS THROWN
+> ANYWHERE.**"*
+
+**99.6% of rows blocked, no error.** This is the source-scoping bug (§7) quantified.
+
+**⚠ NBA's differential layer is exactly this shape** — `teamHasRealChange()` gates every write. **And
+the observable signature would be the one already seen**: `*_written` counters far below the expected
+row count. **T2's 155/157-vs-162 discrepancy was investigated and correctly explained**; the same
+signal at 5/1,349 would be this bug.
+
+**3. Never trust a worker's own `ok: true` without an independent database check**
+> *"**Multiple real MLB bugs — A MISSING FILTER, A SILENT FETCH FAILURE, DOUBLE-ENCODED JSON, AN ID
+> FORMAT MISMATCH — ALL PRODUCED A WORKER RESPONSE REPORTING SUCCESS while QUIETLY UNDER-DELIVERING OR
+> CORRUPTING REAL DATA.**"*
+
+**All four named causes have NBA instances:**
+| Cause | NBA instance |
+|---|---|
+| A missing filter | `SLEEPER_SPORTS` defaulting to MLB |
+| **A silent fetch failure** | **`boxscoretraditionalv2` returning HTTP 200 with ZERO rows — 1,228 "successes" → 799 rows** |
+| Double-encoded JSON | the enrichment `breakdown` is a JSON string, not an object |
+| An ID format mismatch | `PLAYER_ID` cast to string too late → int roster ids |
+
+**✅ And this is the discipline NBA follows consistently** — *"verify independently"*, *"check actual
+row counts"*, *"exactly matches known reality."* **The v2-endpoint case is the canonical proof: 1,228
+reported successes, 799 actual rows, caught only by comparing against expected magnitude.**
 *Source: T1, blueprint §7b. Recorded 2026-09-20.*
 
 > *"MLB later hit **a real, INTERMITTENT Hyperdrive connection-closed failure, RULED OUT ACROSS THREE
