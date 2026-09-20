@@ -2776,6 +2776,63 @@ asking the tool to argue against its own recommendation.
 
 **T4 PASS 7: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T4.14 — PASS 8 — the research verdict table, and a connection to the garbage-time gap
+
+#### T4.14a — The four-way research verdict, with what was actually found
+| Data source | Gemini's call | What was found |
+|---|---|---|
+| Advanced per-game stats | *do now — highest leverage* | ✅ Built via the **same bulk endpoint**, not 1,230 calls |
+| **Play-by-play / garbage-time** | *defer — **use a proxy first*** | **"MIN + margin proxy noted for later"** |
+| Officials / lineups history | ***skip entirely** for historical* | *"genuinely redundant — **starters/inactives are already in the game logs**"* |
+| Betting market / closing lines | *new finding — high value for **evaluation*** | *"connects to your already-planned market/odds layer, not a new build"* |
+
+#### T4.14b — **THE GARBAGE-TIME PROXY WAS SPECIFIED HERE — and it may already exist**
+The deferral was not open-ended: **"MIN + margin proxy noted for later."**
+
+**`nba_score.blowout_model` is literally a `minutes_by_margin` table** (T4.11) — minutes ratios keyed
+to final margin bands, measured on 24,025 player-games. **That is the MIN + margin proxy, built in
+T16 under a different name and for a different stated purpose.**
+
+**So the T2 garbage-time gap may be partially closed without anyone noticing.** The distinction that
+remains:
+- The blowout model corrects **projected minutes** for expected game script — forward-looking.
+- Garbage-time filtering would clean the **historical rate stats themselves** (usage, efficiency)
+  of unrepresentative minutes — backward-looking.
+
+**They attack the same contamination from opposite ends, and only one end is covered.** For a bench
+player whose season stats are *"almost entirely garbage-time minutes"* (T2.13a), correcting his
+projected minutes does not fix a per-36 rate computed from garbage time. **OPEN_ITEMS updated.**
+
+#### T4.14c — "Skip officials history entirely" was later OVERRULED
+Gemini called historical officials/lineups *"genuinely redundant"*. **T5 and T6 built per-game
+officials and lineup backfills anyway** — and D1 (referee) became a named baseline-stage factor.
+**A case where the research recommendation was correctly ignored**: the redundancy argument holds for
+*starters/inactives* (already in game logs) but not for *which crew officiated which game*, which
+appears nowhere else.
+
+#### T4.14d — Market data framed as EVALUATION, not input
+*"high value for **evaluation**"* — i.e. for grading and calibration, not as a projection input.
+**This framing held**: COMPASS fact 62 says the market is *"a confidence adjuster and ranking signal,
+not ground truth."*
+
+#### T4.14e — The gap audit, done against the database
+**Two concrete gaps found against the plan's own recommendations:**
+1. *"Only **1 of the recommended 3 seasons** of full game logs existed (2025-26 only — 2023-24 and
+   2024-25 were missing)"*
+2. *"**Zero splits data existed** (DaysRest, Location, Month, PrePostAllStar, WinsLosses) despite being
+   identified in earlier research and **never actually built**"*
+
+**Both closed in the same session.** The pattern is worth noting: **research identified the splits,
+the plan recommended them, and they were still not built until an explicit audit against Postgres
+caught it.** *"Identified in research"* and *"built"* are different states, and only a database check
+distinguishes them.
+
+#### T4.14f — 15 datasets at this milestone
+*"15 total datasets are now real, live, and independently verified — the complete static/weekly layer
+plus the full one-time historical backfill (game logs, team logs, advanced stats, career totals)."*
+
+**T4 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
