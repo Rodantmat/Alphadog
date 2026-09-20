@@ -664,6 +664,8 @@ exactly the ones the query drops.
 **The NaN guard is the model to copy**: it drops bad rows **and reports the count**, so the exclusion
 is visible rather than silent.
 
+### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
+
 **MLB's lessons document devotes an entire section — Part C, *"the pipeline/data-quality bug family to
 actively guard against in NBA FROM DAY ONE"* — to this.**
 > *"All of the following were **real, separately-discovered bugs** in MLB, and **every one of them is
