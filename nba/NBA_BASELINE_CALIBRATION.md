@@ -657,7 +657,63 @@ for every band but one.
 **Plus the leakage fix**: a season-wide mean using future games — *"that was the entire FRINGE
 anomaly"* — after which the role minutes multipliers *"shrank to **honest ~1.0 values**."*
 
-### 5.1 The permanent rules
+## 5.2 THREE ACADEMIC-LITERATURE CAUTIONS FOR THE CALIBRATION LOOP
+*Source: T1, blueprint §4d — "all worth building into NBA's calibration loop from day one."
+Recorded 2026-09-20.*
+
+### 1. ⚠ Shrinkage does not automatically improve results
+> *"**Shrinkage DOES NOT AUTOMATICALLY IMPROVE RESULTS, and THE CORRECT SHRINKAGE AMOUNT IS HARDEST TO
+> ESTIMATE EXACTLY WHERE IT'S NEEDED MOST (low sample size).**
+> **The established, real countermeasure is BOOTSTRAP-BASED ESTIMATION OF SHRINKAGE INTENSITY,
+> RE-ESTIMATED PERIODICALLY FROM EACH CELL'S OWN REAL OUTCOME HISTORY — NOT ONE STATIC, HAND-PICKED
+> GLOBAL CONSTANT.**"*
+
+**The paradox is the point**: shrinkage is most needed at low `n`, and low `n` is exactly where its
+correct magnitude is least estimable.
+
+**NBA's position is mixed:**
+- ✅ **Not a global constant** — `k_stab` is **per prop and measured** (STL 125, TOV 60; BLK 1.7×
+  points), and `stat_decay_config` carries 13 per-stat values
+- ✅ **Method-of-moments (Efron-Morris) rather than hand-picked**
+- ⚠ **Not bootstrap-estimated**, and **not re-estimated per cell from that cell's own outcome
+  history** — the values are fit on TRAIN and carried
+- ⚠ **T8 measured the estimation problem directly**: *"data-fit prior strength is **k≈2 against the
+  population** but **k≈100–250 against tier-mates (circular)**"* — **two orders of magnitude apart
+  depending on the reference**, which is this caution in numbers
+
+### 2. ⚠ Time-series feature leakage — the two rules
+> *"**Any trailing/rolling statistic MUST be computed STRICTLY BACKWARD-LOOKING (only real games
+> BEFORE the prediction date)**, and **validation MUST use TIME-BASED SPLITTING (train on earlier
+> data, test on later data) — NEVER A RANDOM SHUFFLE, which SILENTLY LEAKS FUTURE INFORMATION INTO
+> TRAINING.**"*
+
+**✅ NBA satisfies both, structurally.** Every feature is **`shift(1)`-based** (*"the backtest harness
+on a past day IS already the production computation"*), and the validation is **season-holdout plus
+monthly walk-forward** — train 2023-24, test 2024-25; never a shuffle.
+
+**⚠ And the record shows why the rule is stated twice**: NBA still produced **three as-of
+contamination instances** (the FRINGE season-wide mean, the pasted calibration table, plus MLB's own
+`baseline_v6_asof`) **despite the architecture being right**. **Structural correctness did not prevent
+a leak from being introduced in an analysis step.**
+
+### 3. Monotonic constraints — valuable specifically for rare events
+> *"**Monotonic constraints are genuinely valuable SPECIFICALLY IN RARE-EVENT, LIMITED-DATA
+> situations**, where **a model might otherwise OVERFIT A RELATIONSHIP THAT SPURIOUSLY REVERSES
+> DIRECTION** — e.g. **a factor that should ONLY EVER INCREASE a rate getting fit to OCCASIONALLY
+> DECREASE it, purely from NOISE IN A THIN SAMPLE.**"*
+
+**⚠ No monotonic constraint is recorded anywhere in NBA's factor fitting.** Factors are fit in
+log-rate space with no sign constraint, so **a factor with a known direction can be fit against it in
+a thin cell.**
+
+**Where this bites here**: **the rare-event props are the CLOSE ones** (blocks, steals) and
+**the goblin/demon tails** — exactly the two areas named as unresolved. **And lesson #4's
+pre-stated falsification bar names "required MONOTONICITY" as one of its three components**, so the
+concept is present in the standard but absent from the implementation.
+
+**Related and already implemented**: the **ladder itself** is monotonic by construction (rungs
+ordered), and the **upper-only ceiling** fix was about preserving tail ordering. **The gap is at the
+FACTOR level, not the ladder level.**
 
 **① A band cell is kept ONLY if its sign is consistent across seasons.**
 Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands **+2.8 / −3.6** →
