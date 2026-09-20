@@ -174,6 +174,209 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 40 — THE REPO ITSELF, CHECKED AGAINST A LIVE CLONE *(added 2026-09-20)*
+
+### ⚠⚠ REPO HAZARD · **`BACKUPS/` and `backups/` both exist at the repo root**
+**VERIFIED on a live clone 2026-09-20.** `BACKUPS/` = 20 screenshot PNGs; `backups/` = one archived
+MLB worker (`overdispersedTailGE_ORIGINAL_2026-07-29.js`). Two directories differing only in case.
+**On Linux, two directories. On macOS or Windows — case-insensitive by default — a clone collapses
+them**, producing a tree `git` reports as modified/deleted that a normal checkout cannot resolve.
+**Costs nothing today; breaks the first time anyone clones this repo on a Mac.** Not fixed.
+
+### ⚠ `gbdt_training/` is 28 files of dead code against a backend decommissioned 2026-08-12
+**VERIFIED by grep of a live clone.** `gbdt_training/d1_client.py` is *"a **real D1 REST API
+client** … pulls real historical data out of **each D1 database**."* **D1 was fully decommissioned
+system-wide on 2026-08-12** (§T1.17). **Six MLB workers at the repo root still carry D1 bindings** —
+`alphadog-v2-certification-center.js`, `alphadog-v2-static-prop-taxonomy.js`,
+`alphadog-v2-phase3a-rbi-context.js`, `alphadog-v2-phase3a-first-inning-pitcher-context.js`,
+`alphadog-v2-score-hits-allowed.js`, `alphadog-v2-phase3b-stolen-bases-context.js`.
+**NBA must not touch any of it** — recorded because it is a **live, one-grep instance** of the two
+warnings NBA inherited: blueprint §5b (*static manifests describing an earlier architecture*) and §6
+(*registry entry ≠ real functionality*).
+
+### ⚠⚠ T1's central discovery was PRIOR ART, already sitting in this repo
+`gbdt_training/d1_client.py` states, before NBA existed:
+> *"Runs inside GitHub Actions (**which has real network access, unlike Cloudflare Workers, which
+> cannot train models at all — confirmed from Cloudflare's own docs**)."*
+
+**The Cloudflare network constraint and GitHub Actions as its answer were already written down.**
+T1 reached them through **four failed runs and thirteen polling sleeps**.
+**The first measured cost of two gaps already recorded**: the owner's per-worker *"understand the MLB
+functionality first"* rule (*PASS 36*) was followed for the **worker pattern** but not for the
+**network constraint**; and the MLB source index (*PASS 37*) lists only `.md` files — **`gbdt_training/`
+appears in no list of MLB material at all.** **The search space for "has MLB already solved this" was
+never defined, and still is not.**
+
+### ⚠ NOT RECORDED · workflow logs are unavailable in flight and expire afterwards
+`github_get_workflow_run_log` returned **HTTP 404 — *"Could not fetch log text (link may have expired,
+or run is too old)"*** for `run_id` **33429867514** while that run still reported `"conclusion":
+null`. **Diagnose a failure while it is fresh, or from the job's step list rather than its log.**
+A standing constraint on every future NBA debugging session.
+
+### The run-ID audit trail — §T1.7's claim was previously unauditable
+| Job | `run_id` | job id | conclusion |
+|---|---|---|---|
+| `deploy` | **33429867514** | 99612350869 | **failure** |
+| `deploy` | **33431309511** | 99617046472 | ✅ **success** |
+| `scrape-nba-teams` | **33444713366** | 99661055215 | **failure** |
+| `scrape-nba-teams` | **33444861845** | 99661541226 | **failure** |
+| `scrape-nba-teams` | **33445264412** | 99662814403 | **failure** |
+
+### ⚠ REPO LAYOUT omitted seven root directories
+`BACKUPS/` · `backups/` · `Screenshots/` (8 files) · `chat_history_backup/` · `control/` ·
+`coworker/` · `gbdt_training/`. Added to `NBA_SYSTEM_ARCHITECTURE.md` §8.
+⚠ **`chat_history_backup/` holds `2026-08-14-15-31-35-journal-session-catalog.txt`** — **the
+session-catalog pattern `nba/transcripts/journal.txt` later followed**, never recorded as inherited.
+
+---
+
+## FROM T1 PASS 39 — WHAT THE SESSION PERSISTED OUTSIDE THE REPO *(added 2026-09-20)*
+
+### ⚠ UNDOCUMENTED DEPENDENCY · an assistant memory store, outside version control, capped at 49,152 bytes
+**VERIFIED from T1's own `memory_read`/`memory_write`/`memory_append` results.**
+`/areas/alphadog.md` (MLB, **6,140 bytes**, updated **2026-08-30T04:48:04Z**, version `2c573cdc3a8d`)
+and `/areas/alphadog-nba.md` (**created in T1**, 4,000 → **4,471 bytes**, versions `f53885f3abbf` →
+`57ba0456b10c`). **Every write result states the cap: `of 49152 bytes`.** Writes are version-guarded
+via `if_version`, so concurrent edits are detected rather than silently lost.
+**A future session inherits NBA context from a file that is not in the repo, not covered by `git`, and
+invisible to anyone reading the twelve documents.** Full entry: `NBA_SYSTEM_ARCHITECTURE.md` §8d.
+**Flagged, not resolved**: whether the owner intends this store to be authoritative for anything;
+what happens at the cap; and whether it is covered by the founding rule *"document everything into
+committed repository files, not only into chat conversation"* — **it is neither a committed file nor
+chat.**
+
+### ⚠ NOT RECORDED · **the source hierarchy: nba.com is PRIMARY, BallDontLie is BACKUP**
+The memory append written during T1 records the owner's position:
+> *"[stated] provided a real **balldontlie.io API key** (stored securely in
+> `nba_config.external_credentials`, **not in chat memory**) **as a BACKUP SOURCE**, but said **the
+> data ideally should come from nba.com itself, just like the MLB system uses the official MLB Stats
+> API**"*
+
+The documents record that the key exists and that BallDontLie was used; **they never recorded that it
+is explicitly subordinate to stats.nba.com by owner instruction.** That ordering is why the Cloudflare
+block was a blocking problem rather than a reason to switch sources. **Second independent record of
+the source mandate found at *PASS 36*.**
+
+### ⚠ NOT RECORDED · the session had NO file-view tool for the remote repo
+Both `view` calls in T1 target `/dev/null`; the second says why: *"peek needed lines via grep since
+**no direct file view tool for remote repo**; use `github_get_file` range instead."*
+**This is the provenance of the investigation methodology at `NBA_WORKERS.md` §0a** — it was **the
+only option available**, not a chosen technique.
+
+### The draft-then-commit workflow, rationale stated at the moment of decision
+Both `create_file` calls wrote to `/home/claude/`, not the repo:
+*"adapted from MLB `alphadog-v2-static-teams.js` pattern — **before committing to repo**"* and
+*"NBA teams scraper script for GitHub Actions runner (**real network origin, not Cloudflare
+Workers**)."* **The second is the whole Phase-1 architecture in nine words.**
+⚠ Corroborates the per-worker mandate from *PASS 36*: the first worker was explicitly *"adapted from
+MLB … pattern"* — **steps 1 and 3** of the owner's three-step rule. **Step 2, "research if any
+improvement should be done," is not visible in the record.**
+
+---
+
+## FROM T1 PASS 38 — THE SESSION'S OWN EXECUTION SURFACE *(added 2026-09-20)*
+
+### ⚠⚠ CORRECTION · `NBA_SYSTEM_DESIGN.md` §0.8 claimed blueprint §4o was followed. In T1 it was not.
+**VERIFIED by extracting every `bash_tool` call in T1.** The session's entire local execution is
+**two syntax checks, two `cat`s, and THIRTEEN polling sleeps** — `sleep 30, 40, 45, 50, 55, 60, 70,
+90, 150, 240, 280, 290`, each `; echo done`, each waiting on a GitHub Actions run.
+**§4o forbids exactly this**: *"do not sit there repeatedly polling or re-checking its status turn by
+turn — that burns real attention and session budget for no benefit."*
+**The owner interrupted it live** — owner message 6 of 15: *"**what is going on? what are these waits
+for?**"*
+**The cause is structural as well as behavioural**: T1 had **no way to await a run** —
+`github_trigger_workflow` was absent from the session's tool list (§T1.17), so there was **no
+completion signal, only a run list to re-read.** §0.8's contrary evidence comes from **later**
+transcripts; **T1 is the counter-example.** Corrected in place.
+
+### ⚠ NOT RECORDED · the pre-commit syntax gate is two-language
+**VERIFIED** from T1's bash history: **`node --check <file>.js && echo SYNTAX_OK`** *and*
+**`python3 -m py_compile <file>.py && echo SYNTAX_OK`**, both run immediately before the commit that
+auto-deploys. `NBA_RECIPE.md` recorded only the `node --check` half.
+**This is the only local verification before a push that deploys on push** — no staging environment
+exists. It catches syntax only: **not a missing binding, not a wrong column name, not an unwired
+dispatch branch.**
+
+### ⚠ NOT RECORDED · the 30-team fallback's provenance carries a caveat
+T1 searched *"NBA team relocation rename expansion team 2026 2027 season"* and concluded:
+> *"the league still has exactly **30 teams with no expansion or relocations for 2026-27**, so it's
+> **safe to hardcode that as the static fallback list**, though **I still shouldn't fully trust
+> unofficial sources for expansion details**."*
+
+**The caveat is the part that matters**: the check rests on **unofficial sources**, was made
+**2026-08-31**, and is **NOT RECORDED as re-checked**. The fallback is what served the first
+successful run (§T1.17: *"genuinely seeded and correct today, but via the fallback, not the live
+API"*), so a franchise change before **2026-10-03** would propagate silently.
+
+### The complete web-research inventory — seven queries, all of T1
+`stats.nba.com API teams endpoint free public 2026` · `data.nba.net prod v1 teams.json public feed` ·
+`NBA team relocation rename expansion team 2026 2027 season` · `nba_api python stats.nba.com required
+headers Host Referer x-nba-stats-origin 2026` · `balldontlie.io API v1 players endpoint documentation
+free tier rate limit pagination` · a search for the `workers.dev` hostname · a **fetch** of
+`…/health` — **the call that hit `x-deny-reason: host_not_allowed`.**
+Recorded in full because the owner's founding rule is *"deep online research is a must"*: **this is
+what that produced in T1, and it is a short list.** Six of seven topics were already documented.
+
+---
+
+## FROM T1 PASS 37 — THE MLB SOURCE LIBRARY: 17 OF 23 DOCUMENTS CATALOGUED NOWHERE *(added 2026-09-20)*
+
+### The provenance problem
+**The twelve documents inherit hundreds of claims from an MLB document library they do not index.**
+T1 names **23 distinct MLB-side `.md` files. Six appear anywhere in the twelve documents — all six
+only in `NBA_MULTIPLIERS.md`. Seventeen appear nowhere.** Full index now at
+`NBA_SYSTEM_ARCHITECTURE.md` §8c.
+
+**Catalogued (6)**: `GOBLIN_DEMON_MECHANISM_EXPLAINED.md` · `MULTIPLIER_TABLES_MASTER.md` ·
+`SIGNALS_TECHNIQUES_TRIED.md` · `HIGH_HIT_RATE_METHODOLOGY.md` · `MASTER_DELTA_SCRUTINY_GUIDE.md` ·
+`GEMINI_USAGE_GUIDE.md` · `COWORKER_DAILY_SLIP_RESEARCH_PROMPT.md`
+
+**Not catalogued (17)**: `ALPHADOG_DOS_AND_DONTS.md` · `ALPHADOG_SYSTEM_MAP.md` ·
+`CALIBRATION_ENRICHMENT_AUDIT.md` · `CORE_LOGIC_CALIBRATION_DOSSIER.md` ·
+`OUTCOME_ENGINE_AND_DOC_INDEX.md` · `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md` ·
+`FACTOR_REDESIGN_AND_QOC_FINDINGS.md` · `QUALITY_OF_CONTACT_METRICS_EXPANSION.md` ·
+`HANDOFF_MASTER_SUMMARY.md` · `LIVING_LOG.md` · `claude-work-log.md` ·
+`SESSION_2026-08-22_FULL_LOG.md` · `SESSION_2026-08-29_ENRICHMENT_CALIBRATION_LOG.md` ·
+`ENRICHMENT_CALIBRATION_DOSSIER.md` · `ENRICHMENT_CALIBRATION_HANDOFF.md` ·
+`THIS_CHAT_MULTIPLIER_STUDY_DOSSIER.md` · `GOBLIN_DEMON_MULTIPLIER_STUDY_DOSSIER.md` ·
+`BACKTEST_LAYOUTS_AND_9AM_METHODOLOGY.md` · `ALPHADOG_REALIGNMENT.md` · `ALPHADOG_QUESTIONNAIRE.md` ·
+`ALPHADOG_HANDOFF.md` · `ALPHADOG_HANDOFF_2026-08-26.md` · `ALPHADOG_SESSION_LOG.md`
+
+**`ALPHADOG_DOS_AND_DONTS.md` and `ALPHADOG_SYSTEM_MAP.md` are the named sources of blueprint §7's
+deploy gotchas and §6's system-self-knowledge warnings** — material these documents quote as
+authoritative. **A reader who wants to check a transferred claim against its source has no index.**
+This is the **document-index half of blueprint §4l's own honesty discipline**, built for the NBA side
+and never for the MLB side.
+
+### ⚠⚠ T1 names exactly what was never read, and gives an instruction that was not followed
+> *"**~40%** of `ALPHADOG_DOS_AND_DONTS.md` and `ALPHADOG_SYSTEM_MAP.md` [remain unread] — **PARTS
+> 3-5** of the former and **Sections 3-9** of the latter … **BEFORE WRITING ANY NBA-SPECIFIC CODE,
+> skim what remains of** [both] **— every section actually read from both surfaced genuinely new,
+> high-value material, so the unread middle sections likely do too.**"*
+
+**NBA-specific code was written later in T1 itself.** **No document records a later read**, and the
+repo blueprint carries no addendum from them. **This is the largest single named, sized, unread body
+in the corpus**, and the estimate of its value is T1's own.
+Also never read: `QUALITY_OF_CONTACT_METRICS_EXPANSION.md` (deliberately out of scope),
+`FACTOR_REDESIGN_AND_QOC_FINDINGS.md`, and the mega-logs — **`HANDOFF_MASTER_SUMMARY.md` 208 KB,
+`LIVING_LOG.md` 153 KB, `claude-work-log.md` 188 KB** — deprioritised on an **inherited assumption**
+(*"the repo's own internal documentation index describes [them] as likely overlapping"*), **not a
+check.**
+⚠ **A counting error in the source, flagged not corrected**: the passage says *"**three** large
+session-log-style files"* and lists **four**.
+
+### ⚠ CORRECTION · a claim recorded at §T1.17 is falsified
+§T1.17 records the in-session statement that `nba_config.system_settings` *"already holds your first
+tunable variables (timeout, retry limit, chunk size, differential cadence) — **SQL-editable, no
+hardcoding, as you required.**"*
+**The table exists and holds those rows — true. "No hardcoding, as you required" — false.**
+Pass 36 VERIFIED that **nothing reads `system_settings`** and that timeouts, retries and chunk sizes
+are Python literals. **The requirement was reported satisfied on the strength of the table
+EXISTING.** Same *declared done, never wired* shape as the weekly differential worker that is *"built
+but never scheduled."* §T1.17 is annotated, not rewritten.
+
+---
+
 ## FROM T1 PASS 36 — THE FOUNDING SPECIFICATION, RE-READ IN FULL, AND TESTED *(added 2026-09-20)*
 *Angle: **the owner's own messages**, extracted from T1's 15 `Human:` blocks in full rather than in
 excerpt — then each standing rule tested against the live code. Full entry:
