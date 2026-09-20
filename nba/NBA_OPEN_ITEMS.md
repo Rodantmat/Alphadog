@@ -912,11 +912,19 @@ blueprint gives each one's purpose:
 | `stats_hitter` / `stats_pitcher` | *"Player game logs, splits, rolling metrics"* — **renamed for NBA** | ✅ **one** `nba_stats` (no hitter/pitcher split) |
 | `team` | *"Team-level game logs, **starter/rotation history**"* | ✅ `nba_team` |
 | **`daily`** | *"**Same-day context: lineups, confirmed starters/rotations, availability, matchup context**"* | ❌ **never created** — contents landed in `nba_score` (`availability_delta`) and committed JSON |
-| **`context`** | *"**Historical snapshots of daily-context**"* | ❌ **never created** |
-| `market` | board/odds data | ✅ `nba_market` |
-| **`archive`** | — | ❌ never created |
-| `score` | scoring output | ✅ `nba_score` |
-| **`scoring`**, **`backtest`**, **`classification`**, **`certifier`**, **`context_cert`** | — | ❌ never created — contents in `nba_config`, `nba_score`, and the repo's `nba/backtest/` scripts |
+| **`context`** | *"**Historical snapshots of daily-context factors** — **SHORT RETENTION BY DESIGN in MLB — SEE LESSONS DOC FOR WHY THIS BIT THEM**"* | ❌ **never created** |
+| `market` | *"**Live board/odds state per platform — CURRENT-ONLY tables**"* | ✅ `nba_market` — **but NBA's is NOT current-only**: `board_snapshots` holds 6.6 GB of history |
+| **`archive`** | *"**Permanent historical archives of anything `market`/`context` only holds CURRENT-STATE for**"* | ❌ never created — **and NBA does not need it the same way**, since `nba_market` keeps history directly |
+| `score` | *"Scoring engine output: prepared board, final board, **outcome grading**, **pricing/multiplier study tables**"* | ✅ `nba_score` |
+| **`backtest`** | *"**Point-in-time reconstruction tables** and ad-hoc research tables (**walk-forward datasets, real-multiplier studies**)"* | ❌ never created — walk-forward lives in `nba/backtest/` scripts and `nba_score.baseline_history` |
+| `control` | *"Job queue, worker registry, scheduled jobs, session logs"* | shared with MLB, **bookkeeping only** |
+| `config` | *"Worker definitions, external credentials, system settings"* | ✅ `nba_config` |
+
+**⚠ `context`'s short retention is flagged in T1 as a KNOWN MLB REGRET** — *"see lessons doc for **why
+this bit them**."* **NBA avoided it by accident rather than design**: `nba_market.board_snapshots`
+retains full history (6.6 GB, 327 dates) rather than current-only, and the archive schema was never
+needed. **But the daily-context equivalent — injury-report snapshots, availability state — should be
+checked for the same retention trap**, since that is precisely what `context` was for.
 
 **Plus `nba_config`, which was NOT in the original list** — added in T8 for the tiering layer.
 
