@@ -506,6 +506,23 @@ same asymmetry from the other side. **Neither direction is the safe default.**
 legs, which would reintroduce the same-day correlation problem"* — **and weight each day by its
 volume.**
 
+**The method, exactly as stated:**
+> *"**The correct method WEIGHTS EACH DAY'S CONTRIBUTION BY ITS REAL LEG VOLUME when computing the
+> day-level mean AND variance**, not by treating every day as an equal-weight data point.
+> **Use day-level clustering to avoid PSEUDO-REPLICATION, but WEIGHT DAYS BY VOLUME WITHIN that
+> clustering — doing only ONE HALF of this correctly can produce a wrong answer IN EITHER
+> DIRECTION.**"*
+
+**Both halves are required, and they guard different errors:**
+| Half | Guards against |
+|---|---|
+| **Day-level clustering** | **pseudo-replication** — inflated significance (3–5×) |
+| **Volume weighting within the clustering** | **false rejection** — t = 1.573 vs 2.755 |
+
+**And the bootstrap is the stated successor**: *"the current, more rigorous standard **beyond a simple
+weighted t-test**: a day-level block bootstrap."* **So the weighted clustered t-test is the floor, not
+the target.**
+
 ### 13.2 The three conditions — all of them, not any one
 > *"**The decisive gate: at least 95% of resamples positive, a 95% confidence interval whose lower
 > bound sits ABOVE the breakeven point, and a leave-one-day-out check that never goes negative
