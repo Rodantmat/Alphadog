@@ -62,7 +62,25 @@ report and P3's 1:15 PM view. Only material availability moves matter.
 
 **B4 — opponent availability / rim protection** · T15, T16 · Closed in three formulations, 0 of 5 props.
 
-**baseline** · T4, T7, T8, T9 · *"The heart of the system"* (owner, T1). The historical-only projection
+**band cell** · T8 · A calibration correction fitted per variation band. **THE PERMANENT RULE:
+*"a band cell is kept ONLY if its sign is consistent across seasons."*** A cell that flips sign between
+seasons is fitting a **regime**, not a **structure**, and freezing it makes the model **worse than no
+cell at all**. Established when rebounds ELITE was under-projected in both seasons (structural, kept)
+while 3PM mid-bands ran **+2.8 in 2024-25 and −3.6 in 2025-26** (regime, dropped in favour of
+walk-forward tables + in-season Platt).
+
+**shift vs replacement mode** · T8 · Two ways to apply an empirical cell. **Shift** = a logit-level
+adjustment on the parametric — *"calibrate level, preserve ordering"*. **Replacement** = use the
+empirical table directly. **Decided PER PROP by evidence**: replacement for points/rebounds/assists,
+shift for 3PM (λ=1.0), λ=0.5 for blocks/steals/ftm/oreb. *"turnovers/fouls tested at 0.5 and 0.25 and
+were WORSE than replacement → stay replacement."*
+**Why shift fixed 3PM**: the empirical cells keyed on attempt tier × role averaged a 33% and a 42%
+shooter together, **shrinking away the make-rate ordering the parametric already knew**.
+
+**structure vs regime** · T8 · The distinction the season holdout exists to draw. **Structure**
+reproduces across seasons and can be frozen into a cell. **Regime** flips sign and must be handled by
+walk-forward refitting instead. **The holdout was the owner's suggestion as a robustness check and
+produced a permanent selection criterion.** The historical-only projection
 producing hit probability and confidence. **Strictly historical — enrichment is separate** (T4).
 **The five-step design (T4, `nba/NBA_BASELINE_METHODOLOGY.md`)**: EWMA per-36 rate with Bayesian
 shrinkage → separate faster-moving minutes projection → pace + opponent-defence multipliers → raw
