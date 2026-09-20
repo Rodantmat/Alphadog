@@ -293,6 +293,30 @@ and sitting unused. **To verify: check whether any factor set or baseline recipe
 *"Real on-court results already encode a player's physical tools better than a years-old combine
 measurement. Only rookies would benefit, and it's not worth the complexity here."*
 
+### BUG-OPEN · **the weekly differential worker is NOT scheduled, and P1 does not call it**
+Flagged honestly when built (T3): *"this worker **isn't wired to any automatic schedule yet** — it
+needs a manual `run_job` trigger after each weekly scrape."* Owner: *"No, leave like this for now."*
+**It was never wired since — and `nba-p1-weekly-static.yml` (built 2026-09-20) does not call it.**
+
+P1 runs: teams · arenas · players · bio · weekly season tables · team stats · on/off · play types ·
+DARKO · shot quality · defender ratings · static context. **No differential worker.**
+
+**Consequences, and they compound:**
+1. **Trades, signings, departures, team renames and referee changes are not being detected at all.**
+2. Because the worker diffs against **its own** snapshot tables, whenever it is next run it will report
+   the **accumulated** difference since its last run — not a weekly delta. The event log will show one
+   enormous batch rather than a history.
+3. Its snapshot baseline is from **2026-09-03** and is now stale by the whole off-season.
+
+**The fix is small**: add a step to `nba-p1-weekly-static.yml` calling the differential worker
+**AFTER** the scrape+load steps (it must see the fresh data), and accept that the first run will emit a
+large catch-up batch. **Not applied — documentation pass only.**
+
+### TRAP · raw committed JSON ≠ Worker-transformed shape
+The differential worker broke on `t.name` because the raw scrape file has **`city` + `nickname`
+separately**; `name` is only assembled **inside the Worker's transform**. Any worker reading the
+committed JSON sees the raw shape; any worker reading Postgres sees the transformed one.
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
