@@ -1613,6 +1613,42 @@ Source-verified *"via nba_api/hoopR docs"* before building — the standard appl
 
 **T2 PASS 5: NEW MATERIAL. Clean count 0/3.**
 
+### T2.13 — PASS 6 FINDINGS (added 2026-09-20; the research passes in full) — **NEW MATERIAL**
+
+#### T2.13a — **Garbage time hits BENCH PLAYERS hardest** — the refinement that matters
+> *"Gemini rated it **medium-high priority, especially for bench-player props whose season stats are
+> almost entirely garbage-time minutes**."*
+
+This sharpens T2.9e considerably. It is not a uniform contamination — **a bench player's season
+aggregates may be composed largely of garbage-time minutes**, while a starter's are barely affected.
+**That is precisely the population where our confidence model later finds the largest error** (fringe
+players miss by 0.0283 vs iron-men at 0.0008, a 35× gap — T16/live session). **The two findings may be
+the same underlying problem, seen from opposite ends, and were never connected.** Recorded in
+OPEN_ITEMS.
+
+#### T2.13b — Why it was deferred, correctly
+> *"it **can't be fixed at this layer** — it needs play-by-play data, which belongs to Phase 3b.
+> **Correctly deferred, not forced in.**"*
+
+#### T2.13c — Everything else Gemini surfaced also needs game logs
+*"rolling/recent-form averages, defence-vs-position splits, 'impact of absences' tables — all genuinely
+require game-log data, not static snapshots."* **All three were built later**: recent-form averaging is
+in the baseline allocator, defence-vs-position in T5, and "impact of absences" became A2 (retracted,
+T15/T16).
+
+#### T2.13d — `PBP Stats` noted as a possession-level tool
+Surfaced in research alongside EPM and LEBRON; not pursued.
+
+#### T2.13e — The honest bottom line, and the boundary it drew
+> *"the freely and legitimately sourceable static/weekly layer is **now complete**. There's no more
+> static data sitting out there waiting to be found — what remains splits into exactly two buckets:
+> **Phase 3b's game-log layer, or a paid subscription decision on your end**."*
+
+**This is the statement that closed Phase 3a** — and the owner's response (*"No, keep looking"*) is
+what produced DARKO, proving the boundary was drawn one source too early.
+
+**T2 PASS 6: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
