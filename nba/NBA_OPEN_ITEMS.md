@@ -590,21 +590,42 @@ instead errors or silently changes the predicate. **`known_empty_games` is exact
 skip list that is empty on day one.
 
 ### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
-**MLB's lessons document names this as the #1 failure mode across its entire research program —
-*"at least SIX distinct, separately-discovered instances."***
 
-**NBA has already produced at least four:**
+**MLB's lessons document devotes an entire section — Part C, *"the pipeline/data-quality bug family to
+actively guard against in NBA FROM DAY ONE"* — to this.**
+> *"All of the following were **real, separately-discovered bugs** in MLB, and **every one of them is
+> the SAME UNDERLYING SHAPE: a query, join, or grouping key that SILENTLY INCLUDED THE WRONG
+> POPULATION.**"*
+
+#### The named members of the family, with their tells
+| # | Bug | **The tell** |
+|---|---|---|
+| **1** | **A join on a shared key without a FULLY-SPECIFYING condition** (e.g. team+game **without player**) **fans out and double- or multi-counts** | **an unexpected EXACT MULTIPLE in row counts — 2×, 3× — versus the expected population size** |
+| **2** | **A "baseline" or "control" that already CONDITIONS ON THE VERY THING BEING MEASURED** — *"erases the effect it's supposed to measure"* | **always check the control is defined INDEPENDENTLY of the effect under test** |
+| **3** | **Pooling across sub-groups with different true base rates before computing a ratio** — **Jensen-style aggregation bias** | inflates or deflates the pooled figure vs every sub-group |
+
+#### NBA's own instances — at least four, three of them silent
 | Instance | Effect | Visibility |
 |---|---|---|
 | `norm_market()` naive `replace('player_','')` | **23,286 legs — 44% of the board — scored nothing** | **silent** |
 | Splits PK omitting `season` | only one season can ever exist | **silent overwrite** |
 | Lineup PK omitting `team_id` | traded players collide | **failed loudly** ✅ |
-| Gap sample grouping on `matchup` | every game listed twice | cosmetic |
+| Gap sample grouping on `matchup` | **every game listed TWICE** | **exactly the 2× tell from #1** |
 
-**Three of four were silent.** *"Before trusting any grouping key or join in a new table,
-sanity-check that it actually isolates what it claims to."*
-**Worth a deliberate audit of every join in the scoring path before the season**, since that is where a
-silent one costs the most.
+**The `matchup` duplicate is member #1 of the family, textbook** — a grouping key that did not fully
+specify the row, producing an exact 2× multiple. **It was caught because the multiple was exact.**
+
+**Member #2 is worth watching in this system specifically**: `gain_vs_anchor` compares a factor against
+the certified anchor. **If a factor's evaluation slice were selected using anything the anchor already
+conditions on, the comparison would erase the effect.** *(The T8 note that prior strength measured
+against tier-mates is **circular** — tier-mates were *selected* for similarity — is the same shape.)*
+
+**Member #3 is named in lesson #12 too** — pooling across props with different base rates was one of
+three contamination sources inflating same-game correlation.
+
+**The standing action**: *"before trusting any grouping key or join in a new table, sanity-check that
+it actually isolates what it claims to"* — **and look for exact multiples in row counts as the first
+diagnostic.**
 
 ### 📏 THE SAMPLE-SIZE POSTURE — adopt as a mechanical default from opening night
 > *"**fewer than 15 real days is NOT YET A RESULT AT ALL; 15–30 days is DIRECTIONAL ONLY; 30–70 days is
