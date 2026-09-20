@@ -414,6 +414,28 @@ factor audit (T15/T16) tested ten candidates and none were shot-quality-based.
 **If it is computed weekly and never consumed, that is a real gap** — the metric is built, validated
 and sitting unused. **To verify: check whether any factor set or baseline recipe references it.**
 
+### IF A2 IS EVER REVISITED · check the sample-size gating first
+A2 (teammate redistribution) was **retracted** after five failed panels — *"the certified anchor wins
+every slice, and worst where the mechanism predicted it should win"* (COMPASS fact 91).
+
+**But the T7 design specified confidence tiers the failed panels may not have honoured:**
+> *"a precomputed with/without-teammate minutes table from DNP games, with **confidence tiers
+> (<5 games → generic role-based redistribution; 5–14 → shrunk blend; 15+ → trust)** — the **'Wally
+> Pipp' effect**."*
+
+**A with/without table built on fewer than five shared-absence games is close to pure noise, and the
+original design said so.** Whether the panels gated on sample size is not established in the
+transcripts. **If A2 is reopened, that is the first thing to check** — a mechanism that fails worst
+where it should work best is also the signature of an ungated noisy estimator.
+
+### UNVERIFIED · does the minutes model include the "dud" component?
+The T7 design specified a **three-component mixture**: normal play (truncated Normal), blowout-reduced,
+and a **"dud" (foul trouble / early exit) ~ log-Normal**, fit on *"competitive games in the player's
+bottom 15% or 5+ PF"*, with `P(dud)` from the player's own history and PF rate.
+**Blowout is implemented (`blowout_model`). Whether the dud component exists in
+`classification_ladder_v12.py` is not established.** It is a distinct mechanism — early exit for fouls
+truncates minutes in *competitive* games, which the blowout model by construction does not cover.
+
 ### NOT IMPLEMENTED (design specified it) · **team-specific blowout benching**The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
 that *"coaches differ in how they empty benches"* and the scale should be *"asymmetric and
 **team-specific**."*
