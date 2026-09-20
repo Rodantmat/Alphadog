@@ -502,7 +502,28 @@ above"* — was suspected to be the ≥40%-of-median filter on small baselines. 
 2. **Leakage inflates apparent skill** — the multipliers were over-confident until it was removed.
    *"Shrank to honest ~1.0 values"* is the signature.
 
-### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
+### STRUCTURAL FINDING · **the props that won't certify are the OPPONENT-driven ones**
+> *"the **'close' props are EXACTLY the ones whose primary drivers are *opponent* stats** — **steals ←
+> opponent turnover rate**…"* (T9)
+
+**Blocks, steals and FTM all failed or nearly failed the two-season standard, and all three depend on
+what the OPPONENT does** — opponent rim-attempt rate, opponent turnover rate, opponent foul rate.
+**A player-history baseline structurally cannot see these.**
+
+**This is a diagnosis, not an excuse**, and it matches T7.15a's factor lock exactly (blocks/steals
+driven by *"opp rim-attempt rate / opp TO rate"*). **It also explains why the factor layer was the
+proposed remedy** — the missing information is not in the player's history at any depth.
+
+**It connects to the opponent-defence memory gap above**: the factor study asked for opponent ratings
+on a **10–15 game rolling window**, and only season aggregates and weekly as-of fits exist.
+**The props that need opponent signal most are the ones whose opponent signal is coarsest.**
+
+### PRINCIPLE · test new factors against the props that ALREADY PASS, first
+> *"the certified props with factors in — **points and rebounds first, since if factors *hurt* the
+> certified ones that's the most important thing to know**"* (T9)
+
+**The risk of adding a factor layer is regression on what already works**, not merely failure to
+improve the laggards.
 From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
 ~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
 **Holdout 2024-25 shows the same signs.**"*
