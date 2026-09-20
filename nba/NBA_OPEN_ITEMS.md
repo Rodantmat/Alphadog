@@ -377,8 +377,30 @@ Deliberate: the owner specified no orchestrator. Copy that precedent for any new
 §1–§7e plus the lessons document; **§8 was already captured** at `NBA_SYSTEM_ARCHITECTURE.md` §8b
 (corrupt-and-fix testing). §7f, §7g and §9 were not.*
 
-### ⚠ GAP · No per-subgroup check and no human-review gate recorded on the calibration refit
-**Blueprint §7f** (recorded in full at `NBA_FINAL_SCORING_CALIBRATION.md` §7m2) states the rule:
+### ⚠ CORRECTION TO THIS SECTION'S OWN HEADER *(same day, same pass)*
+The header above first read *"§7f, §7g, §9 — these three blueprint sections were unswept."*
+**Only §7g and §9 were unswept.** **§7f was already recorded**, thoroughly, at
+`NBA_BASELINE_CALIBRATION.md` §5.6 — with a **VERIFIED code grep** showing NBA is **structurally
+protected** against the exact MLB failure (`p_less = 1 − p_more` by construction, so no second
+population exists to be dominated). The gap entry immediately below is therefore **a restatement with
+one new element — the cost precedent — not a newly discovered gap.** Corrected 2026-09-20.
+
+### ⚠ GAP · No human-review gate on the calibration refit — **already recorded, now with its price tag**
+**Already open at `NBA_BASELINE_CALIBRATION.md` §5.6**, which states it precisely: *"NBA's as-of
+calibration refits and applies WITHOUT a review step. P2 runs the refit at step 14 and
+`build_final_hp.py` consumes it on the next run. **The cadence matches (weekly-ish), the trigger-based
+part is absent, and the human review is absent.**"* — and notes the `shift > 0.15` guard is only a
+**partial** substitute, since *"it cannot catch a plausible-magnitude correction that is wrong for one
+subgroup."*
+
+**What this pass adds: what it cost MLB.** *"Two props running with **zero active correction for
+roughly two and a half weeks** after a root-cause fix, showing real **30–45 percentage point
+overconfidence gaps**, undetected until someone manually checked."* **NOT RECORDED anywhere before
+2026-09-20 pass 29.** The blueprint names this precedent as the **direct motivation for the
+coverage-gap diagnostic** — so the open gap and the unbuilt safeguard are **one item, not two**.
+
+**Blueprint §7f** (primary record `NBA_BASELINE_CALIBRATION.md` §5.6; enrichment-side application
+`NBA_FINAL_SCORING_CALIBRATION.md` §7m2) states the rule:
 *"an aggregate validation metric passing is **necessary but not sufficient**… keep a **human review
 step before applying any calibration correction** even when it has technically passed validation,"*
 with a recommended cadence of *"**weekly recalibration checks, trigger-based re-fitting and mandatory
