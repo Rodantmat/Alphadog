@@ -554,7 +554,42 @@ on a **10–15 game rolling window**, and only season aggregates and weekly as-o
 **The risk of adding a factor layer is regression on what already works**, not merely failure to
 improve the laggards.
 
-### KNOWN MISS (documented, reproducible) · P(0 blocks) under-predicted
+### ⚠ VERIFY · is the NBA Platt calibration OVER-FLATTENING?
+**The owner's experience with MLB's automated calibrator, from T1:**
+> *"there is a **daily automated calibration engine** (runs **Platt scaling, beta**, and possibly other
+> techniques) that **in their experience OFTEN OVER-FLATTENS / FLATTENS TOO MUCH**."*
+> *"**prefers calibration to be done MANUALLY** rather than via the automated daily calibration."*
+
+**NBA applies per-rung Platt automatically**, on a weekly refit, with no manual review step.
+
+**Over-flattening destroys exactly what this system is built to price**: pulling everything toward the
+base rate removes the tail discrimination that goblin/demon legs depend on — and the tails were
+independently nominated as *"the #1 area where a sharp baseline earns the most."*
+
+**NBA's design happens to carry four mitigations** (per-rung rather than one curve; variation band in
+the key; upper-only ceiling; n≥1,000 gate) — **but none of them were chosen to answer this warning, and
+none has been checked against it.**
+
+**The diagnostic is cheap and the data already exists**: `nba_score.final_hp` retains **`p_raw`**
+alongside `p_more`/`p_less`. **Compare the pre- and post-calibration distributions per rung** — if the
+calibrated spread is systematically narrower at the outer rungs, it is over-flattening.
+
+### ⚠ AS-OF CONTAMINATION — the recurring bug of this system, three instances
+| Instance | Where |
+|---|---|
+| **`backtest.baseline_v6_asof` leaked each leg's own game-day** (`as_of_date = D` included day D) | **MLB**, relayed 2026-08-29 (T1) |
+| **A season-wide mean using future games** — *"that was the entire FRINGE anomaly"* | NBA, T8 |
+| **A pasted calibration table carried across days** — the parity violation | NBA, live session |
+
+**It always presents the same way: INFLATED APPARENT SKILL.** The FRINGE multipliers *"shrank to honest
+~1.0 values"* once removed.
+
+**MLB's verification method transfers**: check a **non-push sample against game-log counts** — if the
+as-of prediction for day D can only be right because day D is in it, the counts give it away.
+
+**The fix workflow, also from T1**: *"research/debug/simulate fixes **at large sample sizes across all
+individual niches** first; **only once solutions are very well developed**, test **on the backtest
+tables**; **only if that testing behaves very well, move to live tables**."*
 From the harness header: *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for
 ~1.5 bpg players, persists at any lambda**; blocks less 75–80: −2.6 thin; steals less 60–65: +3.6.
 **Holdout 2024-25 shows the same signs.**"*
