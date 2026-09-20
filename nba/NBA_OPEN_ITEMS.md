@@ -346,6 +346,38 @@ producing 26,651 + 2,460 rows matching the base logs exactly.
 Worth remembering: **check whether a bulk endpoint already supports the parameter before accepting a
 per-entity loop estimate.**
 
+### VERIFY · **does the blowout factor DOUBLE-COUNT?**
+The T4 methodology's risks section warned explicitly:
+> *"**the baseline already reflects historical blowout-shortened minutes — don't penalize twice**."*
+
+**The blowout factor was built in T16**, on the real market spread — a 13+ favourite blows the game
+open 39.7% of the time, starters lose ~3.99 min in a winning blowout, competitive games run starters
++3.3% ABOVE baseline.
+
+**The question the T4 warning raises**: the baseline's historical minutes already CONTAIN those
+shortened games, because they are drawn from real game logs that include blowouts. **If the blowout
+factor re-applies a penalty on top, it double-counts.**
+
+**Possible resolution (unverified)**: the T16 measurement of *"competitive games run +3.3% above
+baseline"* suggests the factor was framed as a **deviation from the historical average** rather than an
+absolute penalty — which would be correct. **But this is inferred, not confirmed.**
+**To verify:** check whether `nba_score.blowout_model` stores an absolute minutes adjustment or a
+deviation from the player's own historical mean.
+
+### VERIFY · baseline staleness on trades and season-ending injuries
+Named as risk 3 in T4's methodology. A cached baseline is wrong the moment a player changes team.
+**The weekly differential worker exists precisely to detect this — and it is not scheduled** (see the
+open item above). **The two gaps compound**: trades are not detected, so stale baselines are not
+flagged.
+
+### RECORDED DECISION · GBDT / neural nets rejected, with conditions
+A unified single-model approach was considered and rejected: *"needs **far more data and compute than
+currently available**, and **sacrifices the explainability** the two-stage system gives you for free.
+Not recommended here."*
+**Not wrong in principle — wrong given current data volume, compute, and the explainability
+requirement.** *(MLB's control plane has `gbdt_training_requests` and `gbdt_auto_trigger_switch`, so
+MLB went this way; NBA deliberately did not.)*
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
