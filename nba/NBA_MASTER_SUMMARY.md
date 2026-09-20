@@ -28,7 +28,7 @@ distinguishable from old. Multiple passes are run per transcript; a transcript i
 | # | File | Status |
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | **pass 1 done 2026-09-20** |
-| 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | pending |
+| 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | **pass 1 done 2026-09-20** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | pending |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | pending |
 | 5 | `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` | pending |
