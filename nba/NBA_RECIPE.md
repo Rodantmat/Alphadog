@@ -205,8 +205,13 @@ owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own of
 
 ## STEP 4 — Move scraping to GitHub Actions *(T1)*
 
-> ⚠ **THIS STEP WAS A REDISCOVERY, NOT A DISCOVERY** *(recorded 2026-09-20, T1 pass 40 — **VERIFIED**
-> against a live clone)*. `gbdt_training/d1_client.py`, already in this repo before NBA existed,
+> ⚠ **THIS STEP WAS A REDISCOVERY, NOT A DISCOVERY — AND THE BLUEPRINT HAD SAID SO IN ADVANCE**
+> *(recorded 2026-09-20, T1 pass 40; upgraded at pass 52 — **VERIFIED** against a live clone)*.
+> **The blueprint states the rule outright**: *"**before building a new pattern, check whether an
+> equivalent, already-correct pattern exists elsewhere in the same codebase** for a similar
+> situation — it often does, and **copying a proven pattern beats inventing a new one**."*
+> **So this was not an unthought-of gap — it was a documented instruction, in a document T1 had read
+> in full, that was not followed.** `gbdt_training/d1_client.py`, already in this repo before NBA existed,
 > states the same reasoning outright: *"Runs inside GitHub Actions (**which has real network access,
 > unlike Cloudflare Workers, which cannot train models at all — confirmed from Cloudflare's own
 > docs**)."* **The constraint and the answer were both already written down.** T1 reached them
