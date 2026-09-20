@@ -1025,11 +1025,46 @@ is what made the honest "seeded via fallback, not live API" statement possible.
 
 **Segment 2 of pass 24: NEW MATERIAL. Clean count remains 0/3.**
 
-### T1.43 — CURRENT STATE OF T1
+### T1.44 — PASS 24, SEGMENTS 3–4 (blocks 200–340) — **NEW MATERIAL**
 
-**24 passes (segments 1–2 of the full re-read done). 18 found new material. Clean count: 0/3.**
+**balldontlie.io, the full evaluation** — previously recorded only as "a fallback":
+- *"a real, documented REST API with Teams/Players/Games on its **free tier**"*
+- *"it **recently started requiring an API key** (unauthenticated calls now **401**)"*
+- *"the free tier is **5 requests/minute**"*
+- *"**I can't sign up for accounts myself**"* — which is why the owner had to supply the key
 
-**Segments 3–6 of pass 24 still to read** (blocks ~200–292), then two further complete clean passes.
+**The 5 req/min ceiling is why it was only ever a backup**: the static layer needs per-team loops
+(arenas alone is 30 calls), and the delta layer needs far more. It could not have carried the system.
+
+**THE ORIGINAL PHASE STRUCTURE — which is what the transcript filenames encode:**
+| Phase | Scope |
+|---|---|
+| **Phase 1** | internal research + live verification of the current MLB system |
+| **Phase 2** | draft design doc |
+| **Phase 3a** | static data |
+| **Phase 3b** | incremental / delta data |
+| **Phase 3c** | board / daily-context / market |
+| **Phase 3d** | scoring engine |
+
+*"each a real design phase with **sourced, verified data**."* This is the plan T1–T6's filenames follow
+(`phase1-static`, `phase3a-enrichment`, `phase3b-backfill`, `phase3c-starter-status`,
+`phase3d-delta`). **Note the transcripts deviate from the plan** — 3b became backfill and 3d became
+the delta worker, so the filename phase labels are approximate, not authoritative.
+
+**THE READING INSTRUCTION, binding**: *"**Read all three in full before doing anything else** —
+they're **authoritative, don't re-derive what they establish**."*
+
+**The tool-list limitation, stated most precisely here**: *"it doesn't show up until **a fresh session
+connects**"* — and three options were offered (new chat / manual click / wait for Monday's cron).
+The owner chose the new chat, which produced the handoff, which produced the parallel-chat episode.
+
+**Segments 3–4: NEW MATERIAL. Clean count remains 0/3.**
+
+### T1.45 — CURRENT STATE OF T1
+
+**24 passes (segments 1–4 of the full re-read done). 19 found new material. Clean count: 0/3.**
+
+**Segments 5–6 of pass 24 still to read** (blocks ~340–292 end), then two further complete clean passes.
 
 **Two corrections this pass produced**, both from reading rather than grepping:
 1. The owner supplied the referee search key himself (*"mlb calls referees 'Umpire'"*).
