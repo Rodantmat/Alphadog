@@ -205,6 +205,60 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 45 — THE ARTEFACTS T1 WROTE, AND WHERE T1 ACTUALLY STOPS *(added 2026-09-20)*
+*Angle: the **write** calls in T1's tail (lines ~40000–43895) — `github_put_file`,
+`github_patch_file` — read as a list of artefacts, then **each verified against the live repo**.*
+
+### ⚠ THE PROVENANCE LAYER NOBODY DOCUMENTED — `*_meta.json` sidecars
+**VERIFIED on the live repo**: `nba/data/` holds **223 files**, of which **41 are `*_meta.json`
+sidecars**. Their shape, from `nba/data/nba_teams_current_meta.json`:
+```json
+{ "fetched_at": "2026-09-14T15:49:33Z",
+  "source_url": "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2026-27&SeasonType=Regular%20Season",
+  "http_status": 200, "team_count": 30, "error": null }
+```
+**This is the provenance layer of the entire data pipeline and it appears in none of the twelve
+documents.** It carries exactly what a verifier needs — **when, from where, what status, how many
+rows, and whether it errored** — and it is what makes the standing discipline *"read the committed
+file, not the scraper's own claim"* (`NBA_RECIPE.md` STEP 6) actually checkable.
+
+**⚠ And its coverage is partial: 41 sidecars for 223 files — roughly one in five.** **NOT RECORDED
+as a decision.** Whether the other ~180 files are outputs that need no provenance (derived artefacts,
+shards of a sharded backfill) or scrape outputs that simply never got one is **not established.**
+**The season-start consequence**: for a file without a sidecar there is **no committed record of when
+it was fetched or whether the fetch succeeded** — the freshness question has to be answered from
+workflow logs, which **expire** (*FROM T1 PASS 40*).
+
+**Also recorded from that sample, as a current-state fact**: the live teams file was fetched
+**2026-09-14** for **`Season=2026-27`**, `http_status: 200`, `team_count: 30`.
+
+### ⚠ T1 DOES NOT END WITH A WORKING LOOP — it ends mid-verification
+**T1's final assistant message, verbatim, is the last thing in the transcript:**
+> *"**In progress right now:** the updated worker just finished deploying. **I still need to actually
+> trigger it via `run_job` and re-verify against Postgres** that it…"*
+
+**The transcript stops there.** **Everything the documents record about T1's end-to-end loop being
+closed and verified happened in T2** — `NBA_RECIPE.md` STEP 6 is already titled *"Close the loop, and
+verify it properly **(T1 → T2)**"*, which is correct; **what was not recorded is that T1's own last
+state is an unverified deploy.**
+
+**Why this matters beyond bookkeeping**: T1's closing summary asserts the hard problem is solved —
+*"Switched to `curl_cffi` (Chrome TLS impersonation) — **worked immediately**. Real `stats.nba.com`
+data, HTTP 200, all 30 teams, verified against the committed file"* — **and that claim is about the
+GitHub Actions scrape, not about the worker writing to Postgres.** The two are separate steps and
+**only the first is verified inside T1.** **This is precisely the distinction blueprint §8 insists
+on**: *"before declaring any bug fixed, verify against real data."* **T1 draws the line correctly and
+in the right place; the documents had collapsed the two steps into one.**
+
+### The artefacts T1 created, each verified present in the live repo
+`nba/scrape_nba_stats_teams.py` · `.github/workflows/nba-scrape.yml` ·
+**`nba/TRIGGER_NBA_SCRAPE.txt`** (the first trigger file — the pattern later replicated as
+`TRIGGER_NBA_BACKFILL.txt`, `TRIGGER_NBA_BASELINE.txt` and eleven more) ·
+`nba/data/nba_teams_current.json` · **`nba/data/nba_teams_current_meta.json`** ·
+`nba/alphadog-v2-nba-static-teams.js` · `nba/worker_manifest_nba.json`.
+
+---
+
 ## FROM T1 PASS 44 — THE DEPLOY GENERATOR'S OWN SOURCE, READ AND VERIFIED LIVE *(added 2026-09-20)*
 *Angle: `generate_wrangler_configs.py` is pasted into T1 (lines ~16400–18400). **Read it as source
 code and check every constant against the live file.** All figures below are **VERIFIED by grep of
