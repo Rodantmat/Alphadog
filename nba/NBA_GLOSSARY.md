@@ -101,6 +101,25 @@ deficiencies. Measures EPISTEMIC uncertainty only. Mean 0.92–0.95.
 **curl_cffi** · T1 · Browser TLS impersonation. **Mandatory** for stats.nba.com — plain `requests` is
 fingerprinted and tarpitted, and a proxy does NOT help.
 
+**Claude Coworker** · T1 · **The scheduler.** Each of the three runs is triggered by a Coworker
+scheduled task, worker by worker. *"no runner, orchestrator or anything like, it only breaks the run."*
+**Coworker is what replaced the orchestrator.**
+
+**Cloudflare-to-Cloudflare** · T1 · The root cause of the nba.com block. stats.nba.com is itself
+Cloudflare-fronted, and Worker→Cloudflare-site traffic is flagged at the WAF/edge. **The request never
+reaches the app layer** (error 520). No header tuning fixes it.
+
+**`FALLBACK_AFTER_FETCH_ERROR`** · T1 · The `source_key` written when the live fetch fails and the
+certified static list is used. **Check it before trusting a load.** Its counterpart is
+`NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` (real data).
+
+**`nba_api` (swar/nba_api)** · T1 · The Python package whose docs supplied **the canonical header set
+and the static TEAM_ID list**. **Issue #155** tracks stats.nba.com's changing header requirements —
+**look there first if it breaks again.**
+
+**`startswith("alphadog-v2-nba-")`** · T1 · The guard on every NBA branch in the two shared deploy
+scripts. **Provably zero-impact on MLB.** Any future edit must keep it.
+
 ## D
 
 **DARKO** · T2, T3 · DPM ratings, SvelteKit hydration extraction, 530/530.
