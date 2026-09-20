@@ -507,7 +507,29 @@ above"* — was suspected to be the ≥40%-of-median filter on small baselines. 
 2. **Leakage inflates apparent skill** — the multipliers were over-confident until it was removed.
    *"Shrank to honest ~1.0 values"* is the signature.
 
-### STRUCTURAL FINDING · **the props that won't certify are the OPPONENT-driven ones**
+### 🎯 WHERE THE EDGE ACTUALLY LIVES — a prediction that half came true
+T9 measured the factor layer and stated plainly where the gains would have to come from:
+> *"**Effect on precision is real but small**: **Brier improves 0.1–0.3%**, calibration unchanged.
+> **A ±3% pace edge moves a 20-point player ~0.7 points — about 2 pp of probability.** …the factors
+> were not unneeded: **no, but they are NOT where the big gains are. Those must come from THE LIVE
+> ENRICHMENT (injuries and lineups moving minutes and usage) and from COMBO STRUCTURE.**"*
+
+**Scoreboard on that prediction:**
+| Named source of edge | Outcome |
+|---|---|
+| **Combo structure** | ✅ **delivered** — P+R 0.9, R+A 0.9, fantasy 0.8 pp on the holdout; *"combos via joint structure, never a direct fit"* validated |
+| **Live enrichment** | ❌ **did not** — T15/T16 tested **ten candidates; none survived at leg level** |
+
+**One for one.** Which leaves the system's edge resting on **calibration quality + combo structure +
+the board-scoped tails**.
+
+**And the tails were already nominated as the biggest prize** (T8.16c): *"we're not modelling the
+mean, we're modelling the **right tail** (80th–99th percentile)… likely the **#1 area where a sharp
+baseline earns the most**, because **naive book models mis-price tails**."*
+
+**That is now the standing hypothesis by ELIMINATION, not merely by design** — and it is testable the
+moment real board data with goblin/demon rungs is in hand. **Worth making explicit before the season,
+because it determines what the slip-building phase should optimise for.**
 > *"the **'close' props are EXACTLY the ones whose primary drivers are *opponent* stats** — **steals ←
 > opponent turnover rate**…"* (T9)
 
