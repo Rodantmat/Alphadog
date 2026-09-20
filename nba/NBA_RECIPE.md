@@ -142,7 +142,7 @@ Before any code:
 | Step | What | Transcript |
 |---|---|---|
 | 8 | DARKO DPM, weekly differential, schedule (2,666 games), play types, tracking detail, shot quality | T3 |
-| 9 | 3-season game-log backfill, advanced stats, splits, **baseline methodology design** (EWMA / Bayesian shrinkage / variance), **architecture correction: baseline strictly historical, enrichment separate** | T4 |
+| 9 | 3-season game-log backfill (26,651 player-game + 2,460 team-game rows for 2025-26), advanced stats via a **2-call `MeasureType=Advanced` correction** (Gemini had estimated 1,230), career totals with the empirically-resolved `TEAM_ID=0` traded-player row, splits, **baseline methodology** (EWMA / rolling variance **for over-under pricing specifically** / Bayesian shrinkage), **THE ARCHITECTURE CORRECTION — the owner's: baseline strictly historical and CACHEABLE, enrichment volatile and cheap. This is the founding justification for today's P2/P3 split.** Operating cadence locked to mirror MLB | T4 |
 | 10 | Defense-vs-position, starter/bench backfill (`boxscoretraditionalv2` fails → v3), Postgres writer | T5 |
 | 11 | Officials per game, lineup synergy, **daily delta ingestion worker** | T6 |
 | 12 | Prop universe deep-check, **5-dimension tiering architecture**, schema in `nba_config`, backtest harness to leg-level calibration (v1–v17) | T7, T8 |
