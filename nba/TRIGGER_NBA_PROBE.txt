@@ -1,1 +1,1 @@
-script: ../nba/scrape_prizepicks_nba_board.py
+script: scrape_prizepicks_nba_board.py
