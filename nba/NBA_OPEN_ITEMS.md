@@ -205,6 +205,59 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 62 — THE PROP TAXONOMY DOUBLED, AND THE GROWTH WAS UNPLANNED *(added 2026-09-20)*
+*Angle: System Draft **§1–§4** clause by clause (pass 32 covered §4b and §5 only), then **the day-one
+prop taxonomy diffed against the live `nba_ref.prop_taxonomy`.** VERIFIED by live SQL 2026-09-20.*
+
+### The plan vs what exists
+**The System Draft's day-one taxonomy names 14 props** — *"first-class NBA prop families from day
+one (no bolt-on treatment)"*: single-stat (points, rebounds, assists, threes made, steals, blocks,
+turnovers), combo (PRA, pts+reb, pts+ast, reb+ast), binary (double-double, triple-double), and
+fantasy points.
+
+**The live taxonomy is 28 props across 10 families.** ✅ **Every planned prop exists.** The other
+fourteen were never named in the plan:
+
+| Family | Live keys | Planned? |
+|---|---|---|
+| `scoring` (6) | `points`, **`points_1q`, `points_1h`, `points_2h`, `points_4q`**, **`ftm`** | points only |
+| `combo` (6) | `pra`, `pts_reb`, `pts_ast`, `reb_ast`, **`pra_1q`**, **`stocks`** | four of six |
+| `shooting` (2) | `threes_made`, **`threes_made_1q`** | one of two |
+| `rebounding` (2) · `playmaking` (2) | `rebounds`/`assists` + **`_1q`** variants | one of two each |
+| `composite` (2) | `fantasy_score`, **`fantasy_score_1q`** | one of two |
+| **`volume` (2)** | **`fga`, `fg3a`** — attempts, not makes | **not planned at all** |
+| `defense` (3) | `blocks`, `steals`, **`personal_fouls`** | two of three |
+| `milestone` (2) | `double_double`, `triple_double` | ✅ both |
+| `ball_handling` (1) | `turnovers` | ✅ |
+
+### ⚠ Period props are now a third of the taxonomy and were never in the plan
+**Nine of the 28 are period variants** — `points_1q/1h/2h/4q`, `assists_1q`, `rebounds_1q`,
+`threes_made_1q`, `pra_1q`, `fantasy_score_1q`. **The day-one taxonomy has no period dimension at
+all.**
+
+**Why it matters rather than being trivia:**
+- **Period props carry their own OT rule** — `nba_ref.prop_taxonomy.ot_rule` exists as a column, and
+  the record already notes **OT handling differs by app**. **A full-game prop and a 1Q prop are
+  different populations with different settlement rules**, which is exactly the *"prop-definition
+  mismatches across platforms"* trap of **lesson #14**.
+- **They are a third of the board surface** and were added without the *"first-class from day one,
+  not an afterthought"* framing the plan applied to combos (*PASS 49*) — **the one place the plan
+  explicitly warned against bolt-on treatment.**
+- **`volume` props (`fga`, `fg3a`) are attempts rather than makes** — a different distributional
+  shape, and the recipe treats them as `family: "auto"`/`"negbin"` accordingly.
+
+**NOT RECORDED as a decision anywhere**: no entry says period props were considered and added, or
+why the day-one list omitted them. **The taxonomy doubled and the record does not say when or why.**
+
+### ✅ System Draft §1, §2 and §4 are fully covered
+**§1** the naming convention and its *"CORRECTED 2026-08-31 — no exception, full separation"* ·
+**§2** reused-as-is vs must-be-built-fresh · **§4** *"no orchestrator, confirmed as the explicit
+design"* · **§3's** no-pitcher-side simplification and the resulting **absence of a
+`stats_hitter`/`stats_pitcher` split** · and §3's **per-prop tier-count/tier-spacing verification
+requirement**, already recorded as open at *PASS 49*.
+
+---
+
 ## FROM T1 PASS 61 — THE FACTOR MAPPING WAS TRANSCRIBED 4 ROWS OF 10 *(added 2026-09-20)*
 *Angle: Domain Mapping **§2's main table**, row by row — pass 52 covered only its
 "NBA-specific factors" subsection. **`NBA_FINAL_SCORING_CALIBRATION.md` §7h carries 4 of the
