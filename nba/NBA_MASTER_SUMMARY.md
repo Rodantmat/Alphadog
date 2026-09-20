@@ -4546,6 +4546,60 @@ re-checking.
 
 **T7 PASS 10: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.17 — PASS 11 (full sequential) — **NEW MATERIAL in the build mechanics**
+
+#### T7.17a — **The count cross-check that proves a load, not just reports it**
+> *"**All 12 succeeded, zero errors**, and the per-season counts (**26,651 / 26,306 / 26,401**) match
+> the base game logs **EXACTLY** — **that's a real cross-check, not a coincidence**."*
+> *"The counts match the base tables **to the row (79,358 / 7,380)**."*
+
+**The new measure-type tables had to match the already-verified base tables exactly**, per season and
+in total. **Three independent numbers agreeing is not something a partial load can fake** — this is the
+same class of proof as `12,300 = 10 × 1,230` in T5.
+
+#### T7.17b — **A bug prevented by testing the fix against the failure class that had just bitten**
+> *"Let me verify the fix produces the right list **across dates** before running, **since this is the
+> exact class of bug that just bit me**."*
+> *"Correct across every date — **no duplicates**, and today gives exactly
+> `['2025-26', '2024-25', '2023-24']`."*
+
+**Having just fixed the season-anchoring off-by-one, the next season-derived list was validated across
+multiple dates before use** rather than on today's date alone.
+
+#### T7.17c — The `slim()` filter — dropping columns the API pads out
+> *"Let me verify the `slim()` filter keeps exactly the right columns **against the real probed
+> headers** before running."* → *"**Every metric column preserved, all `_RANK`/name padding dropped**."*
+
+**stats.nba.com returns a `_RANK` companion for most metrics plus repeated name fields.** Dropping
+them before commit is what keeps the per-season JSON manageable — and the filter was validated against
+probed headers, not assumed.
+
+#### T7.17d — A race condition with large commits
+*"The JSON files are large — **~80k rows each across 4 files**, so **the commit takes a moment**"* —
+the first status check found *"a newer commit (`f8b6ad9e`) landed after my last push"* and the run
+initially **failed**. Resolved by moving to **per-season files with a glob in the commit step**.
+
+#### T7.17e — Safer-by-construction choices, made before testing
+- *"Let me **avoid the uncertain dynamic-identifier pattern** and use **two explicit functions**
+  instead — **safer than testing unclear driver behaviour**."*
+- *"Every mapped column verified **against the real probed headers** — **zero mismatches**."*
+
+**Choosing the boring construction over investigating whether the clever one works** is a recurring
+pattern, and it is what the `sql.array()`-vs-manual-literal decision in T6.3 did too.
+
+#### T7.17f — The enum refresh confirmed non-deterministic, again
+> *"Loaded — and **the binding was recognised immediately this time**."*
+Contrast T6.1, where it took a turn boundary and 2 of 33 manual chunks. **Sometimes instant, sometimes
+not — which is precisely why re-checking costs one call and can save thirty.**
+
+#### T7.17g — `file_prefix` composition, tested end-to-end
+The measure-types writer takes a **`file_prefix`** so the same worker loads both the backfill files and
+the delta files. *"a real end-to-end test of the full delta path — trigger the delta scrape, then load
+via both workers (**this exercises the `file_prefix` composition for real**)."*
+**The same reuse-with-a-parameter pattern as the backfill worker's `mode` input** (T7.12c).
+
+**T7 PASS 11: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
