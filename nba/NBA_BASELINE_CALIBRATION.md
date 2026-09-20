@@ -794,6 +794,32 @@ would pass an aggregate check.
 whether one calibration curve is applied to both. **The certification's "0 misses of 37" is an
 aggregate across sides** — exactly the metric this lesson says cannot catch the error.
 
+### ✅ NBA IS STRUCTURALLY PROTECTED — verified in code 2026-09-20
+**The MLB failure required a fit to mix two sides into one curve. NBA's cannot, because it models ONE
+side only:**
+```python
+rel["p_raw"] = rel["p_over"].copy()
+for (prop, vb, role, off), grp in rel.groupby(["prop","var_band","role_tier","offset"]):
+    ...
+    rel.loc[cur_idx, "p_over"] = sigmoid(A * logit(rel.loc[cur_idx,"p_raw"].values) + B)
+```
+**The calibrated quantity is `p_over`, and `p_less = 1 − p_more` by construction.** There is **no
+separate Less population to be dominated** — the two sides are a single probability and its
+complement.
+
+**And the `offset` (rung) IS in the key**, so a line below the anchor and one above get different
+fits. **That is the axis that actually varies here; `side` is not an independent dimension.**
+
+**⚠ The residual concern is narrower but real.** A Platt curve fit on `p_over` is **monotone in
+`p_over`**, so it necessarily transforms `p_less` too — and **a curve tuned where `p_over` is
+concentrated may be less well tuned at the opposite end of the range.** The harness's own per-side
+misses (*"blocks MORE 70–75: −4.3"*, *"fg3m LESS 30–35"*) are consistent with that: **the errors live
+at different points on the same curve.**
+
+**So the structural bug is absent; the subgroup-check discipline still applies** — per-rung, per-band,
+per-role-tier, **which is exactly what the five-dimensional key delivers.** **NBA's key is finer than
+the one that failed for MLB.**
+
 ### ⚠ MANDATORY HUMAN REVIEW — not unattended auto-application
 > *"**External research on ML model monitoring converges on a related, concrete operational
 > recommendation worth adopting directly: WEEKLY RECALIBRATION CHECKS, WITH TRIGGER-BASED RE-FITTING
