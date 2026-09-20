@@ -409,7 +409,51 @@ failures.** They surfaced as clear errors **because `prepare: false` is set.**
 **The cost of the misdiagnosis is the lesson**: three plausible fixes attempted, one of them a **15×
 performance regression** that had to be reverted, before a single config option resolved it.
 
-### Scope the differential/dedup logic BY SOURCE, not just by natural key
+### ⚠ INTERMITTENT "CONNECTION CLOSED" — two distinct causes, identical symptom
+*Source: T1, blueprint §7b. Recorded 2026-09-20.*
+
+> *"MLB later hit **a real, INTERMITTENT Hyperdrive connection-closed failure, RULED OUT ACROSS THREE
+> DIFFERENT DRIVER/CONFIGURATION COMBINATIONS THAT ALL FAILED IDENTICALLY — strong evidence AGAINST
+> driver choice being the cause.** The actual root causes turned out to be **TWO DISTINCT BUGS
+> PRODUCING THE SAME SYMPTOM.**"*
+
+**Cause 1 — a stale per-tick row-count constant**
+> *"**A STALE, HARDCODED PER-TICK ROW-COUNT CONSTANT CARRIED OVER FROM AN EARLIER, SLOWER DATABASE'S
+> ERA**, **never re-tuned for the new database's much higher real bulk-insert throughput.**
+> **Standing check for ANY per-tick row-count constant in NBA's own workers: IF IT PREDATES THE
+> WORKER'S CURRENT BULK-INSERT IMPLEMENTATION, DON'T ASSUME IT'S STILL CORRECTLY TUNED — RE-DERIVE IT
+> FROM REAL, OBSERVED PER-TICK THROUGHPUT.**"*
+
+**⚠ This is the legacy-guard problem (§4n) applied to a tuning constant**, and **NBA inherited a
+D1-era codebase.** The prescribed chunk size here is **150–200 rows per statement** — **worth checking
+that NBA's writers use that and not a smaller D1-era figure.**
+
+**A datapoint from NBA's own record**: T6's manual load ran **33 chunks of 44 KB** before the Worker
+did the remaining **30,000 rows in 25 seconds** — **an ~1,000× throughput difference between the
+manual path and the bulk path**, which is the scale of mis-tuning this warns about.
+
+**Cause 2 — an N+1 query pattern**
+> *"**An N+1 QUERY PATTERN — a loop issuing ONE WRITE PER ROW/ITEM instead of A SINGLE BULK
+> STATEMENT — combined with SEQUENTIAL, UNBATCHED SCHEMA-SETUP STATEMENTS** — **an ORDINARY tick with
+> FAR MORE ROUND TRIPS THAN NECESSARY, NOT a genuinely heavy one, producing the IDENTICAL 'looks like
+> the connection is unhealthy' symptom.**"*
+
+**The diagnostic insight**: the tick was **not heavy** — it was **chatty**. Round-trip count, not data
+volume, produced the failure.
+
+**And "sequential, unbatched schema-setup statements" is a named contributor** — `CREATE TABLE IF NOT
+EXISTS` / `CREATE INDEX IF NOT EXISTS` blocks at the top of a worker, issued one at a time. **NBA's
+writers do exactly this** (`baseline_ladder` + its index + `baseline_ladder_runs`).
+
+**Together, §7a and §7b give three different root causes behind one error string:**
+| Symptom | Actual cause |
+|---|---|
+| "Network connection lost" | **a plain SQL error masked by `prepare: true`** |
+| "Connection closed", intermittent | **a stale per-tick constant** |
+| "Connection closed", intermittent | **an N+1 pattern — too many round trips** |
+
+**None is a network problem.** *"Don't let a scary-sounding error name send you down expensive,
+unrelated rabbit holes."*
 > *"Rows that are identical get **a cheap `active=1, updated_at=now()` TOUCH ONLY**.
 > **Scope this differential/dedup logic BY SOURCE, not just by NATURAL KEY** — MLB had **a real bug
 > where scoping ONLY BY NATURAL KEY caused ONE SOURCE'S FRESHER DATA TO BE SILENTLY BLOCKED because A
