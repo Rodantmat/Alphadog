@@ -3898,6 +3898,54 @@ than based on memory** of earlier counts."*
 
 **T7 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T7.8 — PASS 2 (live verification of the season fix) — **CONFIRMED, WITH ONE EDGE CASE**
+
+#### T7.8a — ✅ The fix holds
+`nba/scrape_nba_player_bio.py` now reads:
+```python
+from nba_season import active_stats_season
+SEASON = active_stats_season()
+URL = f"…leaguedashplayerbiostats?LeagueID=00&Season={SEASON}&…"
+POSITION_URL = f"…playerindex?LeagueID=00&Season={SEASON}&Historical=0"
+```
+**No hardcoded `2025-26`.** Both URLs in the file use the utility.
+
+#### T7.8b — `nba/nba_season.py` — and the distinction that matters
+| Function | Logic | Today (2026-09-20) |
+|---|---|---|
+| **`current_season()`** | `month >= 7` → current year | **2026-27** — the calendar season |
+| **`active_stats_season()`** | *"**Jul, Aug, Sep = off-season: the season with real game data is still the prior one**"* | **2025-26** — the season that HAS data |
+| `prior_seasons(n)` | the n seasons before a base | |
+| `stats_seasons(n)` | **anchored on `active_stats_season`, NOT `current_season`** | |
+
+**Both honour an `NBA_SEASON` environment override** — so any run can be pinned for replay.
+
+**`stats_seasons` documents a real bug it fixes (2026-09-08)**: *"building the [3-season list] back
+from `current_season` (2026-27) while the anchor was `active_stats_season` (2025-26)"* — **an
+off-by-one-season error in the training window**, which would have silently trained on the wrong three
+seasons.
+
+#### T7.8c — **⚠ AN EDGE CASE, and the season opens in two weeks**
+`active_stats_season` branches on `month >= 10` → current year. So:
+| Date | `active_stats_season()` | Regular-season games in it |
+|---|---|---|
+| 2026-09-30 | 2025-26 | 1,230 ✓ |
+| **2026-10-01** | **2026-27** | **0** |
+| **2026-10-02** | **2026-27** | **0** |
+| 2026-10-03 (opening night) | 2026-27 | games begin |
+
+**There is a ~2-day window (Oct 1–2) where `active_stats_season` points at a season with zero
+regular-season data.** Preseason games also run in early October, but they carry `GAME_ID` prefix
+`001`, not `002`, so they do not count.
+
+**Likely impact is small** — a weekly scraper running Oct 1–2 would pull empty aggregates and write
+them, and P1 next runs Monday. **But it is exactly the "silently succeeds with wrong data" shape the
+utility was built to prevent.** The month-boundary heuristic is one day-granularity assumption away
+from being exact; the schedule table already holds the real opening date (2026-10-03).
+**Recorded in OPEN_ITEMS. Not fixed — documentation pass.**
+
+**T7 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
