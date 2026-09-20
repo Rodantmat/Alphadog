@@ -174,6 +174,96 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 36 — THE FOUNDING SPECIFICATION, RE-READ IN FULL, AND TESTED *(added 2026-09-20)*
+*Angle: **the owner's own messages**, extracted from T1's 15 `Human:` blocks in full rather than in
+excerpt — then each standing rule tested against the live code. Full entry:
+`NBA_MASTER_SUMMARY.md` §T1.66.*
+
+### ⚠⚠⚠ VERIFIED VIOLATION · **NO CODE READS ANY `nba_config` TUNABLE TABLE**
+
+**The owner's founding rule, verbatim, from the first specification message:**
+> *"**any future variable numbers must reside on the database, NOT HARD CODED** — any equation
+> variables like, **bonus, penalties, caps**, for example, or **system variables like, TIMEOUTS,
+> RETRIES, CHUNK SIZE**, for example, **so all these are EASILY CHANGED BY SQL COMMAND INSTEAD OF
+> CODING AND DEPLOYS.**"*
+
+**VERIFIED 2026-09-20 by grep of all 190 `.py`/`.js` files in `nba/` PLUS the MCP admin bridge
+`alphadog-v2-admin-sql.js`:**
+
+| Config table | Documented contents | Readers found in code |
+|---|---|---|
+| `nba_config.classification_config` | the ladder config, `BACKTEST-LOCKED` tag, `minutes_mixture` | **0** |
+| `nba_config.factor_registry` | **67 rows** | **0** |
+| `nba_config.factor_relevance` | **460 rows** | **0** |
+| `nba_config.factor_profile_cells` | **35 rows** | **0** |
+| `nba_config.external_credentials` | API keys | **12** — the only config table anything reads |
+
+**The strings `classification_config`, `factor_registry`, `factor_relevance`, `factor_profile_cells`
+and `minutes_mixture` appear ZERO times in the entire codebase.**
+
+**And the system variables are hardcoded throughout**: `timeout=30` · `timeout=60` · `timeout=90` ·
+`timeout=120` · `timeout=300` across the scrapers; retry counts as literal `range(3)`, `range(4)`,
+`range(1, 3)`; batch and chunk sizes as Python constants. The certified recipe
+`backtest/classification_ladder_v12.py` carries **its ladder steps, caps and thresholds as Python
+constants**, not config rows.
+
+**⚠ This REFRAMES the already-recorded `minutes_mixture` drift.** That item says *"config specifies
+three components the recipe does not implement — config and code have drifted."* **The truth is
+larger and simpler: there is no coupling to drift from.** The config table is not consulted by
+anything. **`minutes_mixture` is not an inconsistency between two live things; it is one of four
+tables that nothing reads.** *(The earlier entry is not deleted — it was correct about what it
+observed and is superseded in its explanation, per the dating rule.)*
+
+**⚠ And it defeats the rule's stated PURPOSE, which is operational, not stylistic.**
+*"Easily changed by SQL command instead of coding and deploys"* matters **because the owner has no
+terminal** — the assistant is the only interface to the database, repo and deploy pipeline
+(`NBA_SYSTEM_ARCHITECTURE.md` §1a). **Changing a cap, a penalty or a scrape timeout today requires a
+code edit, a commit and a deploy** — exactly the loop the rule was written to avoid.
+
+**What is NOT claimed here**: that the numbers are wrong, or that the config tables disagree with the
+code. **Only that nothing reads them.** Whether each config row matches its hardcoded counterpart is
+**NOT ESTABLISHED** — and blueprint §9's whole-universe comparison is the prescribed way to find out.
+**Stated with the method's limits (rule 1.6)**: this is a text search of the current repo; it would
+not catch a table name assembled at runtime from fragments, and `nba/data/` (mined JSON, no code) was
+not searched.
+
+### ⚠ NOT RECORDED · **the per-worker improvement-research mandate**
+From the same founding message:
+> *"**each new chat should look into the current MLB worker and understand the functionality,
+> RESEARCH IF ANY IMPROVEMENT SHOULD BE DONE, then create with new nba sources.**"*
+
+**A standing three-step build rule — read the MLB worker, research an improvement, then build NBA's
+— and it appears in none of the twelve documents.** `NBA_RECIPE.md` records *"research is
+mandatory"* generically; **this is specific, per worker, and bounded to the MLB counterpart.**
+**Whether it was followed for each of the ~25 NBA workers is NOT RECORDED** — no worker entry cites
+an MLB-counterpart review.
+
+### ⚠ NOT RECORDED · the owner's own words on the MLB no-touch constraint
+> *"**this chat and any chat coming from here must not edit anything from the mlb system.**"*
+
+The documents carry the blueprint's *"additive only"* framing; **the owner's own, stronger phrasing —
+binding on every descendant chat, not just T1 — was not recorded.** ✅ **VERIFIED HELD at pass 35**:
+`config.worker_definitions` holds 116 rows, 0 NBA, unchanged since 2026-08-31.
+
+### ⚠ NOT RECORDED · the source mandate that explains why the Cloudflare block was fatal
+> *"**ideally all these data should be coming from nba.com just like the mlb api.**"* *(T1, owner)*
+
+**This is why `stats.nba.com` being unreachable from Cloudflare was treated as a blocking problem
+requiring a whole new scraping architecture, rather than a reason to pick another source.** The
+documents record the block and the GitHub-Actions fix; **they do not record the constraint that made
+substitution unacceptable.** It is also the owner-stated origin of blueprint §4i (*"check the sport's
+own official API first"*) — **two independent sources, one rule.**
+
+### ⚠ AMBIGUITY UNRESOLVED · *"we can do 2"*
+Owner message 5, in full: *"you have access to all of it, **we can do 2**, if it doesnt change much
+and does not affect the mlb universe, that is fine."* **What "2" refers to is not recoverable from
+the owner's message alone** — it answers an enumerated question posed in the preceding assistant
+turn. `NBA_MASTER_SUMMARY.md` already quotes the phrase; **what it selected is not established
+anywhere.** **Flagged, not guessed.** The conditional attached to it — *"if it doesn't change much
+and does not affect the MLB universe"* — is itself a standing constraint and is recorded as such.
+
+---
+
 ## FROM T1 PASS 35 — NEGATIVE SPACE: WHAT T1 ASKED FOR AND NEVER GOT *(added 2026-09-20)*
 *Angle: **what a section promises and never delivers.** Every forward reference, deferred decision and
 "worth checking directly" in T1's four handoff documents, tested against the twelve documents and,
