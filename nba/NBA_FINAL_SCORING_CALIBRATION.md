@@ -357,28 +357,46 @@ goblins/standards/demons — **not** the full internal ±10 ladder for rungs nob
 
 ## 13. THE VALIDATION GATE FOR ANY STRATEGY *(T1, inherited from MLB's lessons document)*
 
-**Before any finding is believed, it must survive a bootstrap:**
-> *"…and **repeat this thousands of times to build a real distribution of outcomes**. **The decisive
-> gate: at least 95% of resamples positive, a 95% confidence interval whose lower bound sits ABOVE the
-> breakeven point, and a leave-one-day-out check that never goes negative excluding any single day.
-> ALL THREE CONDITIONS TOGETHER, not any one alone.**"*
+### 13.1 It must be a **DAY-LEVEL BLOCK BOOTSTRAP**
+> *"The current, more rigorous standard **beyond a simple weighted t-test**: a **DAY-LEVEL BLOCK
+> BOOTSTRAP**. **Resample entire DAYS with replacement — NEVER individual legs, which would
+> reintroduce the same-day correlation problem** — rebuild the aggregate… and **repeat this thousands
+> of times** to build a real distribution of outcomes."*
+
+**⚠ The resampling unit is the DAY, not the leg.** Legs on the same slate share game scripts,
+blowouts, pace and officiating — resampling legs treats correlated observations as independent and
+**inflates the apparent sample**, which is the exact error the gate exists to prevent.
+
+**And the weighted t-test is explicitly named as insufficient**: *"doing this [correlation handling]
+incorrectly can produce a wrong answer in either direction."*
+
+### 13.2 The three conditions — all of them, not any one
+> *"**The decisive gate: at least 95% of resamples positive, a 95% confidence interval whose lower
+> bound sits ABOVE the breakeven point, and a leave-one-day-out check that never goes negative
+> excluding any single day. ALL THREE CONDITIONS TOGETHER, not any one alone.**"*
 
 | Condition | Guards against |
 |---|---|
 | **≥95% of resamples positive** | a result driven by ordering or a lucky run |
-| **95% CI lower bound ABOVE breakeven** | a positive mean that is not distinguishable from break-even |
+| **95% CI lower bound ABOVE breakeven** | a positive mean not distinguishable from break-even |
 | **Leave-one-day-out never negative** | **a single day carrying the whole edge** |
 
-**The third is the one most often skipped and most often fatal** — one outlier slate can make a
-season look profitable.
+**The third is the one most often skipped and most often fatal** — one outlier slate can make a season
+look profitable.
 
-**And the companion sanity test from the multiplier work** (see `NBA_MULTIPLIERS.md` §0.3): compute
-`p × m`. If it implies the platform is handing out a systematic edge on a liquid, repeatable line,
-**the multiplier attribution is wrong, not the market.**
+### 13.3 The companion sanity test
+From the multiplier work (`NBA_MULTIPLIERS.md` §0.3): compute `p × m`. If it implies the platform is
+handing out a systematic edge on a liquid, repeatable line, **the multiplier attribution is wrong, not
+the market.**
+
+**Two real failure examples from MLB, both caught this way:**
+- a result that *"**implied a payout below breakeven for even the highest-quality legs available — an
+  absurd, unusable outcome**"*
+- a result that *"**implied a selectivity that didn't actually exist**"*
 
 **Status**: this gate applies to the **slip-strategy phase**, which has not begun. Nothing in the
-baseline or scoring calibration has been through it, because it measures *profitability*, not
-*honesty* — and calibration is the honesty property (§9).
+baseline or scoring calibration has been through it, because it measures **profitability**, not
+**honesty** — and calibration is the honesty property (§9).
 
 T9 predicted two sources. **One delivered, one did not.**
 | Named source | Outcome |
