@@ -1145,6 +1145,48 @@ dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_la
 **And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
 bug class, in the grader.
 
+### ⚠ EMPTY FACTOR INPUTS ARE NOT LABELLED "UNAVAILABLE"
+T1's blueprint §4d:
+> *"**When a factor CANNOT BE HONESTLY IMPLEMENTED because the real underlying data DOESN'T EXIST
+> YET, SAY SO EXPLICITLY IN THE SYSTEM ITSELF** — **a clearly-labelled 'NOT YET AVAILABLE, NO VERIFIED
+> DATA SOURCE' status** — **rather than approximating it with a guess OR SILENTLY LEAVING IT AS A
+> MISLEADING ZERO.**
+> MLB **hardcoded an umpire-tendency factor to an EXPLICIT 'UNAVAILABLE' STATUS** and **blocked a
+> wind-direction factor on missing reference data** — **rather than faking plausible values.**"*
+
+**NBA has the same situation, unlabelled:**
+| Factor | State | Labelled? |
+|---|---|---|
+| **Altitude** | `arenas.altitude_ft` — **0 of 30** | ❌ column simply empty |
+| **Jet lag / travel direction** | `arenas.timezone` — **0 of 30** | ❌ |
+| **D1 referee tendency** | capture built, **0 rows until the season** | ⚠ known, but no status field |
+| Tier C props | *"need play-by-play we don't have"* | ✅ excluded from the taxonomy entirely |
+
+**An empty column and a declared "unavailable" status are different things.** A factor reading an
+empty column yields **a silent zero or NaN** — the *"misleading zero"* named here, and exactly what
+`stddev(factor_value) > 0` exists to catch.
+
+**`nba_config.factor_registry` has 67 rows and could carry the status field**, following the umpire
+precedent: present in the registry, visibly not contributing, impossible to mistake for a measured
+zero.
+
+### ⚠ TUNABLES AS PYTHON LITERALS ARE NOT CALIBRATION-ADDRESSABLE
+> *"**Every tunable numeric parameter gets its OWN DEDICATED DATABASE COLUMN, never embedded as a
+> literal inside an opaque formula-expression string** — **this is what actually lets A CALIBRATION
+> LOOP ADJUST ONE SPECIFIC VALUE DIRECTLY** rather than needing to parse and rewrite a formula
+> string."*
+
+**The rule's purpose is mechanical, not stylistic**: a calibration loop **cannot tune what it cannot
+address.**
+
+**✅ Honoured** in `factor_profile_cells` (dedicated `cap`/`lift`/`penalty`/`coefficient` columns) and
+`stat_decay_config` (a column per parameter).
+
+**⚠ Not honoured** in the certified recipes: `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K`,
+`SHIFT_LAMBDA`, `BLOWOUT_MARGIN`, `COMPETITIVE_MARGIN`, `LADDER_DEPTH` are **Python literals**.
+Env-overridable, **but not addressable by an automated loop** — which is the capability the rule
+preserves.
+
 ### ⚠⚠ MORE DATA DOES NOT FIX RARE-EVENT CALIBRATION — three independent lines of evidence
 T1's blueprint §4d, flagged as *"worth taking seriously for NBA's own rare-event props — **whatever
 those turn out to be, likely triple-doubles, specific low-frequency defensive stats**"*:
