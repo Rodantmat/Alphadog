@@ -126,6 +126,30 @@ reproduction (5.4 vs 5.8) and team-specific starter pull (0.81 Orlando → 1.10 
 
 **A change must be applied to BOTH certified recipes** — singles and combos are separate files, each
 with its own constants.
+
+---
+
+## 4b. CLOUDFLARE WRITER WORKERS BUILT T3–T9
+All follow the same shape: **fetch the committed JSON from `raw.githubusercontent.com`** (never the
+Contents API — it **silently returns empty above 1 MB**), **batched upsert through Hyperdrive**, run
+summary to a `*_runs` table.
+
+| Worker | Writes | Notes |
+|---|---|---|
+| `alphadog-v2-nba-static-players` / `-teams` / `-arenas` / `-officials` | `nba_ref.*` | the four-step wiring pattern |
+| **the weekly differential worker** | `nba_stats.player_differential_log`, `nba_ref.team_differential_log`, `official_differential_log` + their 3 snapshot tables | **⚠ NEVER SCHEDULED.** Flagged unwired when built (T3); owner said *"leave like this for now"*; **P1 does not call it.** Verified empty 2026-09-20 |
+| the measure-types writer | `player_game_log_usage` / `_scoring`, `team_game_log_four_factors` / `_scoring` | **`file_prefix`** input so one worker loads both backfill and delta files. Bug: the **team advanced table has no `usg_pct`/`reb_pct`** — the mapper wrote nonexistent columns |
+| the starter-status writer | `player_game_starter_status` | **hardcoded `_2025_26`** until T7 — *"would silently keep loading last season's file in October."* `fetchFromGithubRaw` returns `{file, meta}`, so season is `.file.season` |
+| the officials writer | `nba_stats.game_officials` | same season fix |
+| the backfill worker | splits + career totals | gained a **`mode: "weekly"`** input — *"loads only those two in ~6 s instead of re-touching 79k rows"* |
+| the daily-delta worker | game logs + **the DvP recompute** (210 rows = 30 × 7, current season) | **PRE-FLIGHT completeness check**: calendar Final count vs logged count, **`GAME_ID` prefix `002`**. Persists a **`known_empty_games` skip list** — without it the 3 permanently-empty games would be re-fetched *"every single day forever"* |
+| **`alphadog-v2-nba-baseline-ladder` v0.1.0** | `nba_score.baseline_ladder` + `baseline_ladder_runs` | `POST /run {"asof":"YYYY-MM-DD"}`; idempotent on PK `(asof, player_id, game_id, prop, period, ot_rule, line)` |
+
+**Registration is four edits**: bridge **binding map + direct-call list + tool enum**, plus the
+**config generator** for the service binding. **NBA workers use DIRECT dispatch** (the
+`BASE_HITTER_GAME_LOGS_WORKER` pattern), bypassing the queue — deliberate, per the no-orchestrator rule.
+**⚠ Use NBA-specific binding names** — `DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB
+binding.
 | `nba/backtest/combos_ladder_v1.py` | the certified combos recipe — **its own `LADDER_STEPS`** |
 | `nba/baseline/build_baseline_ladder.py` | **patcher** over the singles recipe → today's slate |
 | `nba/baseline/build_combos_ladder.py` | daily combos |
