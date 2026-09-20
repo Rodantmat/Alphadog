@@ -429,6 +429,21 @@ are Power-shaped reasoning that does not carry to Flex unless the tier shape is 
 
 ## 7. LADDER DEPTH — measured against the real board
 
+> ### ⚠ THE HANDOFF ASKED FOR THIS **PER PROP**, AND IT IS STILL POOLED
+> *Recorded 2026-09-20 (T1 pass 49). Source: `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1.*
+>
+> > *"Confirm these exist identically for NBA on each platform… **but verify TIER-COUNT and
+> > TIER-SPACING CONVENTIONS PER PROP before assuming they match MLB's exactly.**"*
+>
+> **§10 records that the prediction was right** — the taxonomy exists for NBA. **The per-prop
+> verification the same sentence asks for is NOT RECORDED as done.** The measurement below —
+> *"books ladder to **~85–90% of the anchor**"*, from **60k+ board legs** — **is an aggregate across
+> props**, and **§5.0's own standing rule is "read these per cell, not as aggregates."**
+> **The instruction and this layer's own rule agree with each other; the measurement is still
+> pooled.**
+> ⚠ **Compounds with lesson #27** (§6): **tier spacing per prop and partial-credit structure per
+> platform are both unverified, and both are first-order inputs to Flex EV.**
+
 From 2026-01-15, **60k+ board legs joined to our anchors**. **Books ladder to ~85–90% of the anchor.**
 
 | Prop | Anchor | p95 distance | Our ±10 | Fixed to |
