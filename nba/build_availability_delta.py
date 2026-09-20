@@ -190,10 +190,10 @@ def main():
                 out_rows.append((asof, r.player_id, r.prop, float(r.line), "Under",
                                  float(r.p_less), 0.999, "now_out"))
                 continue
-            share = float(mpg.get(r.player_id, 0) or 0) / wsum
+            share = mins(r.player_id) / wsum
             gain = net * share
             base_min = float(r.proj_min or 0)
-            if base_min <= 0 or abs(gain) < 0.5:
+            if base_min <= 0 or abs(gain) < 0.5 or gain != gain:
                 continue
             # scale the projection by the minutes ratio, then shift the rung in log-odds by the
             # implied change in the mean. A minutes-proportional scale is the allocator's own shape.
