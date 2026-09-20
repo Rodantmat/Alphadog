@@ -2982,6 +2982,137 @@ MLB-analogy backfill audit · position bug fix · **Defense-vs-Position derived 
 per-game starter/bench backfill (`boxscoretraditionalv2` failure → v3) · Postgres writer worker ·
 a tooling constraint blocking the final load.
 
+---
+
+## T5 — `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt`
+**PHASE 3c — splits completion, the position bug, Defence-vs-Position, and the starter-status backfill**
+*115 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+### T5.1 — The 49-minute run, and its real error rate
+The splits + 2-seasons job *"took about **49 minutes** — real, expected given the ~1,200+ sequential
+API calls."*
+
+| Dataset | Result |
+|---|---|
+| Player splits | **9,948 rows across 577/582 players** — **5 real HTTP 500s** |
+| Team splits | 30/30 teams, **581 rows**, zero errors |
+| 2023-24 game logs | **26,401 rows**, zero errors |
+| 2024-25 game logs | **26,306 rows**, zero errors |
+
+**The 5 failures were diagnosed, not ignored**: *"server-side, **likely players with zero games this
+season** causing a real data edge case on the source's end"*, and judged *"well under the 5% tolerance"*
+— **a stated tolerance, not an implicit one.**
+
+**A fix applied while loading**: the worker had a hardcoded `season: "2025-26"` — rewritten *"to loop
+over all 3 seasons generically."*
+
+**Verification used arithmetic that had to balance**: *"Jokić's **12+35+11+5+2 = 65 games** across rest
+buckets, and **33+32 = 65** home/road games, **exactly matching his real season game count**."*
+**Two independent partitions summing to the same total is a much stronger check than a row count.**
+
+### T5.2 — **Owner's instinct catches a wrong claim** (message 141)
+> **OWNER:** *"double check if no other information is needed on the backfill, any kind of history,
+> like mlb has, bullpen, lineups, starters or some kind of aggregates that will do the same job"*
+
+> *"Good instinct to double-check rather than assume completeness — let me verify one specific thing
+> first. **Gemini earlier claimed starters are 'already inferable from the game logs' via a `GS`
+> column**…"*
+
+**CONFIRMED WRONG**: *"`GS` only exists as a **season aggregate** in career totals; there's **no
+per-game starter/bench flag in `playergamelogs` at all**. **Gemini's earlier claim was wrong.**"*
+
+**This is the T4 verdict-table entry "Officials/lineups history: skip entirely — starters/inactives are
+already in the game logs" being overturned by direct check.** *(T4.14c predicted this from the other
+direction.)*
+
+Further confirmed: *"`START_POSITION` genuinely only exists on the **expensive per-game endpoint**
+(`boxscoretraditionalv2`) — there's **no bulk equivalent**, confirmed by **someone in the wild asking
+the exact same question**."*
+
+**And a second Gemini claim checked and rejected**: *"**Team Pace is already fully covered** (Gemini was
+wrong on this one; the advanced stats backfill already got it)."*
+**Two wrong Gemini claims caught in one message.**
+
+### T5.3 — **THE POSITION BUG — a column that existed and was never filled**
+> *"Real, **previously undiscovered gap** — the `position` column **exists in the schema but is
+> completely empty**."*
+
+**And it was a bug, not a gap**: *"the position field exists in the schema, but **the scraper never
+actually extracted `PLAYER_POSITION`** from the API response."*
+
+**Then a correction to the fix itself, before wasting a cycle**: *"let me verify the exact field name
+before triggering… that source's real schema confirms **no position column exists in the output** —
+`PlayerPosition` was my assumption."*
+**The first fix was wrong and was caught by checking the schema rather than running it.**
+
+**The real source**: **`playerindex`** — *"the real, bulk, one-call endpoint with a genuine `POSITION`
+field… **verified against confirmed documentation rather than assumption**."*
+*(This is the endpoint considered and passed over in T2 — see T2's pass 13 note on `playerindex`.)*
+
+**The Postgres worker had the same omission**: *"this worker **never writes `position` either**."*
+**Two components, same silent gap.**
+
+**Result: 582/582 positions matched — a perfect fix.**
+
+### T5.4 — Defence-vs-Position: a derived table, free from data already held
+*"genuinely free from data already in Postgres"* — **630 rows (30 teams × 7 position groups ×
+3 seasons)**.
+Spot-check: *"the strongest center-defence teams (best rim protectors/interior defence) allow around
+**8-9 points per game to opposing centers**."*
+**This is factor M-something's ancestor, and it required no new mining at all** — the position fix
+unlocked it.
+
+### T5.5 — **THE STARTER-STATUS BACKFILL — a silent failure worth studying**
+
+**First run: 1,230 per-game calls, ~40 minutes.** Reported success.
+> *"Real problem — **1,228 games reported success, but only 799 total rows** were produced. With ~26
+> players per game, that should be closer to **25,000-30,000 rows**. **Something's silently failing
+> without raising an error.**"*
+
+**Then a second inconsistency — between the meta and the data file itself**: *"there's a real
+inconsistency between the meta and the actual data file that needs resolving."*
+**Resolved by counting programmatically**: *"the actual answer is **799 rows across only 31 games**,
+not 1,228 as the meta implied. This means **most 'successful' calls silently returned empty data
+without technically erroring**."*
+
+**The diagnosis was made cheaply, not by re-running**: *"Before committing to another expensive
+~40-minute full re-run, let me **test a small sample of games spread across the season**"* — a
+**7-call diagnostic workflow**.
+
+**The finding**: *"**HTTP 200 and structurally correct responses, but ZERO player rows for every game
+except the very last one.**"*
+
+**The fix, proven by comparison before committing**: *"**Confirmed — v3 works reliably for every single
+sample, including all the games v2 silently failed on.** `boxscoretraditionalv2` is **unreliable for
+historical games**; `v3` is not."*
+**v3's schema differs**: *"flat per-player fields — `personId`, `position`, `comment`, nested under
+`boxScoreTraditional.homeTeam.players` / `awayTeam.players`."*
+
+**Final result, with a sanity check that could not be faked**:
+> *"All **1,230 games** succeeded, zero errors, **32,179 rows** — exactly the expected magnitude…
+> and **starter rows are exactly 12,300 (10 starters × 1,230 games)** — a perfect, decisive sanity
+> check."*
+
+**12,300 = 10 × 1,230 is an arithmetic identity that only holds if every game parsed correctly.**
+
+### T5.6 — The tooling wall that ended the session
+The worker was built and wired, but could not be invoked:
+1. *"The tool's **target enum hasn't picked up the new binding** yet"*
+2. *"The MCP tool's enum is **fixed for this session** and can't pick up new bindings dynamically"*
+   *(the same constraint as T1.8)*
+3. *"Both the tool's fixed enum **and Control Room's static job dispatch** are blocking direct worker
+   invocation"*
+
+**Fallback attempted**: load the verified data directly via SQL — *"17 chunks of ~175 KB each"*, then
+*"regenerate with fewer, larger chunks"*, then a check for a Postgres HTTP extension (*"No HTTP
+extension available"*), and finally:
+> *"Let me be **honest about where things actually stand** rather than continue burning turns on this
+> mechanical process."*
+
+**The data was verified and committed; only the load was blocked.** T6 opens with the manual SQL load.
+
+**T5 PASS 1: complete sequential read. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
