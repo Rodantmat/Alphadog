@@ -22,6 +22,46 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
+## 0e. TWO DISPATCH MECHANISMS WORTH REPLICATING, NOT REINVENTING
+*Source: T1, blueprint §6a. Recorded 2026-09-20.*
+
+### 1. THE EXACT-PAIRING SAFETY CHECK
+> *"**Where MLB reuses ONE PHYSICAL WORKER FILE for MULTIPLE LOGICAL ROLES, the dispatch code NEVER
+> TRUSTS `job_key` ALONE — it requires A GUARD FUNCTION CHECKING THAT `job_key` AND `worker_name`
+> MATCH TOGETHER AS A SPECIFIC, KNOWN PAIR before routing a job to that worker.**
+> **This is precisely what PREVENTS A JOB FOR ONE LOGICAL ROLE FROM EVER BEING SILENTLY ROUTED TO THE
+> WRONG PHYSICAL FILE.**
+> **If any NBA worker ends up serving MORE THAN ONE LOGICAL ROLE — plausible for shared,
+> sport-agnostic-shaped workers — APPLY THE SAME EXACT-PAIRING CHECK.**"*
+
+**⚠ NBA has multi-role workers already** (§0d.1): the backfill worker (`mode`), the measure-types
+writer (`file_prefix`), the injury scraper (`INJURY_MODE`), the season-tables scraper (`MODE`).
+
+**And the precondition for mis-routing already occurred**: T6 records that
+**`DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB binding**, so an NBA-specific name was
+chosen *"to avoid any conflict"* — **the hazard caught by naming discipline, not by a pairing guard.**
+
+**The bridge's `run_job` takes a `target` ENUM with hard client-side validation — one field, not a
+pair.** Whether a `job_key` + `worker_name` guard exists is not recorded.
+
+### 2. LOGICAL NAME vs DEPLOYED SLOT
+> *"**MLB's dispatch config EXPLICITLY DISTINGUISHES a job's *LOGICAL* (conceptual) worker name from
+> its *DEPLOYED* (actual physical file) SLOT, specifically to MAKE WORKER-REUSE LEGI[BLE].**"*
+
+**Two names per job, deliberately** — "which concept is this?" and "which file runs it?" as separate
+questions, **instead of one name silently meaning both.**
+
+**NBA's surfaces**: `nba_config.worker_definitions` carries `worker_name`, `job_key`, `worker_group`,
+`phase_key`; the bridge carries a **binding name** and a **service name**. **No explicit
+logical-vs-deployed distinction is recorded.**
+
+**Most relevant to the patcher pattern**, which is worker reuse in its purest form:
+`build_baseline_ladder.py` **is** `classification_ladder_v12.py`, transformed. **The logical job and
+the deployed artefact are genuinely different things**, and the anchor assertions keep that
+relationship honest.
+
+---
+
 ## 0d. ⚠⚠ SYSTEM SELF-KNOWLEDGE — read before assuming anything is "live"
 *Source: T1, blueprint §6 — **"file names, job_key names, and 'is this worker active' assumptions are
 FREQUENTLY WRONG, and this cost real debugging time more than once."*** Recorded 2026-09-20.
