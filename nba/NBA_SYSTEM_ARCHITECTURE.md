@@ -376,7 +376,46 @@ anything added by hand.
 **Deploy order matters:** the fleet deploys **alphabetically from the file diff**, so `admin-sql`
 (which holds new workers' bindings) sorted before them and failed. The last-deploy fix is permanent.
 
-### ⚠ ANYTHING NOT IN THE GENERATOR IS ERASED
+### ⚠ THE HARDCODED WHITELIST-TUPLE TRAP — named specifically
+> *"**The wrangler-config generator had a HARDCODED WHITELIST TUPLE of WHICH WORKERS GET CERTAIN
+> BINDINGS (e.g. HYPERDRIVE)** — **a new worker NOT IN THAT TUPLE SILENTLY DEPLOYS WITHOUT THE BINDING
+> IT NEEDS, producing A CONFUSING DOWNSTREAM ERROR WITH NO OBVIOUS CONNECTION TO THE ACTUAL CAUSE.**
+> **If NBA's deploy pipeline has an equivalent generator, CHECK FOR AND AVOID THE SAME
+> WHITELIST-OMISSION TRAP.**"*
+
+**⚠ Hyperdrive is named, and every NBA writer Worker needs it.** A new NBA worker omitted from the
+tuple **deploys successfully** and then fails at runtime with a database error that looks like a
+connection problem, not a config one.
+
+**This is the fourth of the four wiring edits** — and the reason it is four, not three:
+| Edit | Omission symptom |
+|---|---|
+| Bridge binding map | the target is unreachable |
+| Bridge dispatch branch | routing fails |
+| Bridge tool enum | **hard client-side validation rejects the call** |
+| **The generator** | **deploys cleanly, fails at runtime with a misleading error** |
+
+**The generator omission is the only one of the four that fails SILENTLY at deploy time.**
+
+### ⚠ BULK INSERTS, ALWAYS — and the misdiagnosis that cost real time
+> *"**BULK INSERTS OVER INDIVIDUAL-ROW INSERTS, ALWAYS**, for anything with more than a handful of
+> rows per invocation — **`postgres.js`'s `sql(arrayOfObjects, ...columnNames)` helper, CHUNKED
+> ~150–200 ROWS PER STATEMENT.**
+> MLB **initially SUSPECTED BULK INSERTS of being unsafe after a scary 'NETWORK CONNECTION LOST'
+> error, WASTED REAL TIME REVERTING TO SLOW INDIVIDUAL INSERTS, and LATER FOUND THE ACTUAL CAUSE WAS A
+> CONNECTION CONFIG ISSUE — `prepare: false` WAS THE FIX — NOT BULK INSERTS THEMSELVES.**"*
+
+**Two things recorded here**: the exact pattern (`sql(arrayOfObjects, ...columnNames)`, **150–200 rows
+per chunk**) and **a misdiagnosis to avoid repeating** — a connection error blamed on the wrong
+mechanism.
+
+**✅ NBA uses `prepare: false`** (part of the mandated three-option connection signature) **and batched
+upserts throughout** — so it inherits both the fix and the pattern.
+
+**And the misdiagnosis shape recurs in NBA's own record**: the T6 *"the MCP enum is unusable for the
+whole session"* conclusion was also a wrong attribution — **the enum refreshes between turns**, and
+33 manual chunks were nearly spent working around a problem that had resolved itself. **Same class:
+an infrastructure symptom attributed to the wrong cause, at real cost.**
 > *"**The GitHub workflow REGENERATES wrangler files before deploy, so this binding MUST LIVE IN THE
 > GENERATOR or it will be ERASED before Wrangler deploys.**"*
 
