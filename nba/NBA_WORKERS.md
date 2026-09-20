@@ -276,6 +276,41 @@ the rest of the codebase lacks.**
 
 ---
 
+## 0e. ⚠ THE SCOPE-PARAMETER AUDIT — every mode/scope argument must constrain the WRITE, not the response
+*Source: T1, `NBA_ARCHITECTURE_BLUEPRINT.md` **§7g**. Recorded 2026-09-20 (T1 pass 29) —
+previously unswept.*
+
+> *"MLB found a function whose **'which props to touch' input parameter correctly filtered its own
+> RESPONSE SUMMARY, but the underlying WRITE LOGIC IGNORED THAT FILTER ENTIRELY** and touched every
+> eligible row regardless — **invisible except by noticing unrelated timestamps had also updated.**"*
+
+**The standing rule, stated for NBA directly:**
+> *"**When adding any 'limit to these specific items' parameter to an NBA worker, VERIFY IT CONSTRAINS
+> THE ACTUAL WRITE PATH, not just what gets echoed back in the response.**"*
+
+**This document is the inventory of exactly the parameters at risk.** Every scoping env var recorded
+in the tables below is a candidate:
+
+| Worker / script | Scope parameters recorded here |
+|---|---|
+| `nba/build_final_hp.py` | `FE_SEASONS`, `FE_PROPS`, **`FE_DATE`** (*"scopes to one slate: seconds vs ~90 min"* — a large claimed selectivity) |
+| `nba/backtest/classification_ladder_v12.py` and its patchers | `BT_REPLAY`, `BT_INJURY`, `BT_LADDER_STEPS`, `BT_SAVE_COMPONENTS`, `BT_TRAIN` / `BT_TEST` |
+| `nba/certify_pipeline.py` | `PIPE=p1\|p2\|p3` |
+| every static scraper | season / date-range arguments |
+| every Cloudflare writer worker | the mode-dispatch branch it is invoked through |
+
+**NOT RECORDED as audited — none of these has been checked against the §7g rule.**
+**The cheap test is named in the source**: the detection signal was *unrelated timestamps also
+updating*, so **a `SELECT max(updated_at)` on rows OUTSIDE the requested scope, before and after a
+scoped run, settles it per worker.** Logged in `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
+
+**⚠ Why this matters more here than it did for MLB.** In MLB's instance the bug was *"not unsafe —
+every write, filtered or not, passed the same validation gate."* **NBA's `FE_DATE` claim is a
+performance claim (`seconds vs ~90 min`) as well as a scope claim**, so a write path ignoring it would
+show up as a timing anomaly too — **but only if someone is watching the runtime.**
+
+---
+
 ## 1. CLOUDFLARE WORKERS — Postgres writers
 Pattern: read the GitHub-committed JSON → upsert into Postgres → log to `nba_control`.
 They do **not** fetch from nba.com; they cannot (Cloudflare is blocked).
