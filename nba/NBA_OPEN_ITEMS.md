@@ -496,6 +496,34 @@ encodes for player stats, unapplied to team stats.
 
 **Untested** — it may not move the number. But the study called for it explicitly and it was not built.
 
+### ⚠ DESIGNED-BUT-UNVERIFIED · **the "dud" mixture, and the data built for it**
+**The single most NBA-specific finding in the design research (T7):**
+> *"**'Dud games' — a fat low tail MLB doesn't have.** Blowouts, foul trouble, early exits produce
+> **5-minute, 2-point games**. **A distribution fit to all games is systematically OVER-OPTIMISTIC on
+> 'more'.** This is the NBA analogue of MLB's **home-run bimodality** (which MLB fixed with a
+> two-component mixture), and we have the exact data to detect duds: **minutes per game, score margin,
+> and the DNP/DND comments from starter-status**. **Design: model P(dud) separately, then mix.**"*
+
+**The bias has a DIRECTION — over-optimistic on `more`**, which is the side most legs are taken on.
+
+**The three named inputs all exist:**
+| Input | Status |
+|---|---|
+| Minutes per game | ✅ `player_game_log.min`, 79,358 rows |
+| Score margin | ✅ and `blowout_model` is built on it |
+| **DNP/DND comments** | ✅ **`player_game_starter_status.comment` — 4,319 coach's-decision + 1,074 injury rows** |
+
+**This supersedes the T6 "underused asset" framing**: the DNP comments were not overlooked, they were
+**designated for this purpose in the design**. **What is unverified is whether
+`classification_ladder_v12.py` implements the dud mixture and reads them.**
+
+**Why it matters if it was not built**: blowout benching is modelled (`blowout_model`), but that covers
+only one of the three dud causes. **Foul trouble and early exits truncate minutes in COMPETITIVE
+games**, which a margin-keyed model by construction cannot see. And a distribution fitted across all
+games — including the duds — is biased on the `more` side for every prop.
+
+**To verify**: does the ladder builder fit a mixture, or a single distribution over all games?
+
 ### UNVERIFIED · does the minutes model include the "dud" component?The T7 design specified a **three-component mixture**: normal play (truncated Normal), blowout-reduced,
 and a **"dud" (foul trouble / early exit) ~ log-Normal**, fit on *"competitive games in the player's
 bottom 15% or 5+ PF"*, with `P(dud)` from the player's own history and PF rate.
