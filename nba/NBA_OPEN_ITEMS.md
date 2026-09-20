@@ -1240,7 +1240,64 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
-### ⚠⚠ STALE-CDN RISK ON THE COMMIT → LOAD CHAIN
+### ⚠ LEGACY PLATFORM GUARDS THAT OUTLIVE THEIR PLATFORM — silent data loss
+T1's blueprint §4n, flagged as *"directly relevant given **NBA is joining an ALREADY-MIGRATED
+system**"*:
+> *"MLB found **a real, confirmed case of A SIZE-LIMITING GUARD added specifically to work around a
+> size constraint on its *ORIGINAL* DATABASE PLATFORM** — and **after migrating to a new platform with
+> NO SUCH CONSTRAINT, THE GUARD WAS NEVER REMOVED**, so it **KEPT TRUNCATING EVERY NEW RECORD DOWN TO
+> A TINY PLACEHOLDER STUB, DISCARDING WHAT WOULD OTHERWISE HAVE BEEN A FULL, SEVERAL-MEGABYTE REAL
+> PAYLOAD, FOR AN EXTENDED PERIOD** after the migration was otherwise complete.
+> **After any platform or database migration, EXPLICITLY AUDIT FOR SIZE LIMITS, FORMAT CONSTRAINTS OR
+> DEFENSIVE GUARDS that made sense on the OLD platform but serve NO PURPOSE on the new one — a guard
+> like this FAILS SILENTLY (it doesn't error, it just QUIETLY DISCARDS DATA) and can GO UNNOTICED FOR
+> A LONG TIME.**
+> **If NBA's own build ever needs to work around a TEMPORARY platform limitation, DOCUMENT THAT GUARD
+> CLEARLY ENOUGH THAT REMOVING IT IS AN EXPLICIT, TRACKED FOLLOW-UP once the limitation is gone, NOT
+> something left to be REDISCOVERED BY ACCIDENT LATER.**"*
+
+**⚠ NBA inherited a codebase that was built for D1 and migrated to Postgres (D1 decommissioned
+2026-08-12).** **Any D1-era size or format guard in shared code is exactly this hazard**, and NBA
+workers reuse MLB-derived patterns throughout.
+
+**Known size-related guards in NBA's own code, each worth checking against its stated reason:**
+| Guard | Original reason | Still valid? |
+|---|---|---|
+| **`slim()` column filter** — drops `_RANK` and name padding | keep per-season JSON manageable | ✅ real, and the columns are genuinely unused |
+| **Chunked / batched upserts** | Worker CPU and request limits | ✅ Cloudflare limits persist |
+| **`raw.githubusercontent.com` over the Contents API** | **the 1 MB silent-empty bug** | ✅ the limit is real and current |
+| **`max_rows` 500 on the bridge** | tooling cap | ✅ external, not ours |
+| **The `>17-minute` period sanity gate** | catch a silently-ignored `Period` parameter | ✅ |
+
+**None of these is a stale D1-era guard on current evidence** — but **the audit the rule prescribes
+has not been run against shared/inherited code**, which is where the MLB instance lived.
+
+**And NBA has one guard that fits the "document it for removal" instruction and does not carry that
+note**: the **`BT_LADDER_STEPS` override** silently flattens the per-prop `LADDER_DEPTH` table. It is
+a legitimate escape hatch, **but nothing marks it as one that should not be left set.**
+
+### ⚠ A FIELD CAN SURVIVE IN AN ARCHIVE FOR FAR FEWER DAYS THAN THE TABLE APPEARS TO COVER
+> *"**A related, confirmed real archival gap worth checking for directly**: **a specific field needed
+> for later reconstruction was found to survive in an archive table for ONLY 2 OF 34 REAL RETENTION
+> DAYS, DESPITE THE TABLE APPEARING TO HOLD FULL HISTORICAL DATA FOR THE WHOLE WINDOW** — **a genuine,
+> UNFIXED FIELD-LEVEL ARCHIVAL BUG, not a retentio[n policy]**."*
+
+**Row-level completeness does not imply field-level completeness.** A table can pass every row count
+and date-coverage check while a specific column is null for all but a handful of days.
+
+**⚠ NBA's completeness checks are ROW-LEVEL.** `check_delta_gaps.py` audits *"no missing dates,
+games, teams or rosters"*; the certifiers assert freshness and row counts. **None is recorded as
+checking per-column null rates over the retention window.**
+
+**NBA already has three confirmed instances of exactly this shape:**
+| Case | Row-level | Field-level |
+|---|---|---|
+| `nba_ref.arenas` | ✅ 30 rows | ❌ **`altitude_ft` 0/30, `timezone` 0/30, `capacity` 19/30** |
+| The position column | ✅ rows present | ❌ **empty for three sessions** |
+| `player_splits` | ✅ rows present | ❌ **only ONE season can exist — the PK omits `season`** |
+
+**The check is one query per table**: `count(*)` vs `count(col)` per column, grouped by date.
+**It would have surfaced all three immediately.**
 T1's blueprint §4m:
 > *"**A CDN or edge cache in front of a raw file-serving endpoint — e.g. a raw-content URL for a
 > hosted git repository — can serve A STALE, PRE-DEPLOY VERSION OF A FILE FOR SEVERAL MINUTES AFTER A
