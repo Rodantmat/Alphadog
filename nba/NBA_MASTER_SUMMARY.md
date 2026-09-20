@@ -4408,6 +4408,78 @@ changes**; usable only as a **day-one cold-start prior**."*
 
 **T7 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.15 — PASS 9 — **THE PER-PROP FACTOR LOCK, AND THREE STRUCTURAL FINDINGS**
+
+#### T7.15a — The per-prop factor lock table (baseline, static/derived only)
+| Prop | Primary drivers (ranked) | Main LIFT | Main PENALTY | Shape |
+|---|---|---|---|---|
+| **Points** | Minutes · Usage · Pace×DvP · derived teammate-out redistribution | Usage share (esp. **inherited role**) | Opponent efficiency allowed | High-mean **Normal**; low-line **NegBin** |
+| **Rebounds** | Minutes (**most linear stat**) · **teammate competition / lineup geometry** · Pace×opp miss rate · opp shot diet | Second big absent / small-ball | **3PA-heavy opponent** (long boards to wings) | **Tight for bigs — most stable prop** |
+| **Assists** | Creator role (potential-AST/min) · Minutes · **teammate shooting quality** · opp scheme | Role change (backup PG → starter) | Poor-shooting lineup | **Left-skewed** |
+| **3PM** | **3PA volume (≫ 3P%)** · Minutes · opp 3PA allowed · C&S vs pull-up mix | Attempt volume | Run-shooters-off-line schemes | Right-skewed, **zero-inflated, bursty** |
+| **Blocks / Steals** | Opp rim-attempt rate / opp TO rate · player rate/min · role · Minutes | Attacking / sloppy opponent | Perimeter-oriented / secure-ball opponent | **Zero-inflated NegBin** |
+| **Turnovers** | Usage/ball-handling volume · opp forced-TO rate · Pace | High-usage night | — | **Right-skewed**, spikes regress |
+| **Combos / Fantasy** | Union of components · **component covariance** | — | — | **Joint simulation, not direct fit** |
+
+**"3PA volume ≫ 3P%" is the same insight `stat_decay_config` encodes** as two different memory classes
+(`fg3a_rate` α=0.12 short vs `fg3_pct` α=0.03 long). **The factor study and the decay table agree.**
+
+#### T7.15b — **STRUCTURAL FINDING 1: direction asymmetry is real and MECHANISTIC**
+> *"**assists skew *down*** — an assist requires **pass AND effective pass AND teammate makes it**; any
+> failure = zero; **blowouts rest playmakers first**. **Turnovers, stocks and 3PM skew *up*** —
+> zero-inflation plus burst games; **mode sits below mean**. So **`more` and `less` genuinely need
+> different tier logic** for these — **your instinct confirmed with a mechanism**."*
+
+**This is the justification for `side` being a first-class dimension** in `baseline_history`,
+`final_hp` and the calibration cells — not a symmetry to exploit but a genuine asymmetry to model.
+**And it was the owner's instinct first, confirmed by mechanism second.**
+
+#### T7.15c — **STRUCTURAL FINDING 2: variation asymmetry — why tiers differ by line band**
+> *"for **low-line players (5.5 pts, 0.5 3PM)** the bet is **almost entirely on minutes and dud risk**;
+> for **high-line stars** it's **usage and efficiency** — **their minutes are stable**. This is the
+> concrete justification for different tier logic per variation band."*
+
+**This is the cleanest statement of why `band` exists** in the calibration cells — and it connects
+directly to the confidence model's `f_role` finding (fringe players miss by 0.0283, iron-men by
+0.0008). **The same underlying fact, measured three transcripts apart: low-line props are minutes
+bets, and minutes are where the error lives.**
+
+#### T7.15d — **STRUCTURAL FINDING 3: combos need joint simulation, and the covariance has a SIGN**
+> *"**P–A covariance is strongly positive for ball-handlers**, **R–A positive for bigs like Jokić**,
+> **negative for guards**. For a **do-it-all star, PRA has LOWER relative variance than its parts**; for
+> a **3-and-D wing, higher**. We have per-game P/R/A to **estimate each player's own covariance
+> directly**."*
+
+**Per-player covariance, not a league constant** — and the direction flips by archetype. This is why
+combos are built from pickled singles components (`BT_SAVE_COMPONENTS`) rather than fitted directly,
+and why a missing combos build costs 44% of the board.
+
+#### T7.15e — **The memory map — and one entry that is NOT in `stat_decay_config`**
+> **Long**: 3P%, FT%, contested-rebound rate, assist-to-potential ratio
+> **Short**: minutes, usage, FGA/3PA volume, **and opponent defence ratings (last 10–15 games, not
+> season-long)**
+
+**`stat_decay_config` covers the player stats** (13 rows: minutes, usg_pct, ast_rate, pts_rate,
+fg3a_rate, stl_rate, fta_rate, tov_rate, reb_rate, blk_rate, fg_pct, ft_pct, fg3_pct).
+**It has NO entry for opponent defence ratings** — yet the study explicitly calls for them to be
+**short memory, 10–15 games, not season-long**.
+**`nba_team.defense_vs_position` is a SEASON aggregate**, and `nba_ref.defender_ratings` is a weekly
+as-of fit. **Neither is a 10–15 game rolling window.** Recorded in OPEN_ITEMS.
+
+#### T7.15f — Where Gemini was overridden or deferred
+| Item | Decision |
+|---|---|
+| *"Injured teammate is the top lift for points/assists"* | **It is a LIVE factor.** In the baseline it enters as the **derived with/without table and `P(start)`** — the backup principle |
+| **DvP for rebounds** | Gemini calls it overrated; **DataStreak says it's worth multiple boards**. *"Both derivable — I'll rank the drivers (miss rate, shot diet) above it and **let the backtest decide**"* |
+| **Referees** | *"tonight's crew is announced **the morning of** — **semi-live**. Baseline artefact = **historical crew foul-rate table**; **assignment applied in enrichment**"* |
+| **Archetype × scheme interaction** (drop coverage vs pull-up shooters) | *"a real next-level factor, and **we HAVE Synergy play-type data for it** — **deferred to phase 2**, not day one"* |
+| **Rest/fatigue affects RATE stats, not just minutes** | **Accepted from Gemini** — *"efficiency, TO rate… **fully static from the schedule**"* |
+
+**"Let the backtest decide" is the right resolution for a genuine source conflict** — and it is what
+the factor-gate harness in T15/T16 exists to do.
+
+**T7 PASS 9: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
