@@ -2,6 +2,15 @@
 
 ## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
 
+### ⓪ GOOD NEWS FIRST — **the season-opening coverage problem is already SOLVED**
+`classification_ladder_v12.py` carries **cross-season carryover** (*"season-opening study
+2026-09-09"*). Without it, *"**the opening month has ZERO projections and November only 62%
+coverage**"* — because within-season rates need 3 games and the minutes role needs 5.
+**With it: October 85%, November 90%.** Minutes role and rate EWMA are carried at the player level, and
+carried evidence counts as `CARRY_N` games at the boundary.
+**Controlled by `BT_CARRY`, default `"1"`.** ⚠ **If a replay ever sets `BT_CARRY=0` and it is left
+off, opening month produces nothing.** Worth an explicit assertion in the P2 certifier.
+
 ### ① THE DIFFERENTIAL WORKER HAS NOT RUN SINCE 2026-09-03
 **Verified live 2026-09-20**: all three `*_differential_log` tables are **empty**;
 `player_roster_snapshot` holds **582 rows frozen 17 days ago**.
