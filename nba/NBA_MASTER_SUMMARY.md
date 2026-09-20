@@ -1456,6 +1456,37 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.76 — PASS 46 (angle: **T1's four `run_job` calls read as an API SURFACE, then the live bridge enumerated**) — **NEW MATERIAL · MAJOR · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 46; full mode table at
+`NBA_SYSTEM_ARCHITECTURE.md` §3b. All VERIFIED by grep of the live `alphadog-v2-admin-sql.js`.*
+
+- **`run_job` takes a `job` MODE as well as a `target`.** T1's four calls show three of them:
+  `run`, `probe-sources`, `trigger` (with `CONTROL_ROOM`). **The twelve documents recorded only
+  `target`.**
+- **⚠ The live surface is 14 job modes — 13 undocumented.** **Three write into NBA tables**:
+  `odds_api_board_backfill` → `nba_market.board_snapshots`; `parlay_game_lines_backfill` →
+  `nba_market.game_lines_closing` (**10 credits per date**, chunked by month for the worker's
+  wall-time budget); `betr_board_pull` (`leagues` defaults `["MLB","NBA"]`, **Keycloak token sent
+  raw**).
+- **⚠⚠ `worker_invocation_logs` reads Cloudflare's `workersInvocationsAdaptive` analytics** —
+  *"records the actual outcome of every Worker invocation, including **`exceededCpu`, `canceled`,
+  `exception`, `scriptNotFound`**… confirm or rule out **a platform-level kill**."*
+  **It is the only tool that can answer "did Cloudflare kill it," and the record shows it has never
+  been run against an NBA worker.** Directly applicable to the **weekly differential worker built but
+  never scheduled** and to the **`FE_DATE` destructive run** (§T1.63). **SEASON-START RELEVANT.**
+- **⚠ `nba/NBA_AVAILABLE_TOOLS.md` is stale on two counts**: its `run_job` enum lists **12 MLB
+  targets and zero NBA** while the live bridge routes **21 NBA bindings**; and it documents `run_sql`
+  against **twelve D1 databases decommissioned 2026-08-12**. **Third stale-manifest instance of this
+  sweep** (after `schema_manifest.json` §T1.73 and the missing log entry §T1.72) — **and the second
+  describing dead D1 as live.**
+- **⚠ `probe-sources` is a per-worker mode absent from `NBA_WORKERS.md`'s mode-dispatch table** —
+  routed to `https://internal/probe-sources` for all 21 NBA bindings.
+- **The dispatch code states the no-orchestrator rule itself**: *"bypasses `control_job_queue` +
+  orchestrator entirely (**NBA has no orchestrator by design**)"* — **a fourth independent record**,
+  after the owner's message, the blueprint, and `ORCHESTRATOR_CRONS = []`.
+
+---
+
 ### T1.75 — PASS 45 (angle: **the artefacts T1 WROTE, each verified against the live repo**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 45. Source: T1's write
 calls, lines ~40000–43895.*
