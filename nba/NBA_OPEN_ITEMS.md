@@ -652,7 +652,48 @@ same family: the default scraped MLB and wrote to a path nothing committed.)*
 instead errors or silently changes the predicate. **`known_empty_games` is exactly this shape**: a
 skip list that is empty on day one.
 
-### ⚠ THE PASS-COUNT PRECEDENT — MLB needed 13 passes to reach two consecutive clean
+### ⚠ PROCESS DISCIPLINE — from real user feedback during the MLB migration
+*Source: T1, blueprint §7d — "apply the same standard to NBA work." Recorded 2026-09-20.*
+
+### 1. Don't present a guessed root cause as a confirmed fix
+> *"**Don't GUESS at a root cause and PRESENT IT AS A CONFIRMED FIX — VERIFY AGAINST REAL DATA
+> FIRST.** MLB had **MULTIPLE REAL CASES of a PLAUSIBLE-SOUNDING THEORY being presented as a fix, only
+> for THE IDENTICAL FAILURE TO RECUR IMMEDIATELY AFTER**, which **COST REAL TRUST AND TIME.**
+> **STATE PLAINLY WHAT'S CONFIRMED VERSUS STILL HYPOTHESIZED AT EVERY STEP.**"*
+
+**This is lesson #19 (language strength ≤ evidence strength) applied to debugging**, and it is the
+standard this documentation uses: every entry is marked **VERIFIED** (live SQL or direct grep) or
+**NOT RECORDED** (absence from transcripts and targeted search).
+
+**And the NBA record shows it being followed at cost**: the FRINGE anomaly was held open across
+several iterations with a *stated suspicion* (the ≥40%-of-median filter) that **turned out to be
+wrong** — the real cause was leakage. **The suspicion was recorded as a suspicion, so the correction
+cost nothing.**
+
+### 2. After 2–3 failed hypotheses, STOP GUESSING and get structured diagnostics
+> *"**When 2–3 TARGETED HYPOTHESES HAVE FAILED IN A ROW, STOP GUESSING at INCREASINGLY SPECIFIC
+> VARIATIONS OF THE SAME WRONG THEORY — GET REAL, STRUCTURED DIAGNOSTIC DATA INSTEAD:
+> STEP-BY-STEP ERROR LABELLING, PER-ROW TRY/CATCH to isolate EXACTLY WHERE AND ON WHAT DATA a failure
+> occurs.**"*
+
+**A concrete stopping rule — two or three — and a concrete alternative.**
+
+**✅ NBA's record contains the pattern applied correctly, repeatedly:**
+| Situation | Structured diagnostic used |
+|---|---|
+| The completeness check | **three attempts**, then the `GAME_ID` prefix — *"a well-known, precise convention rather than relying on free-text labels"* |
+| DARKO extraction | **four failed approaches**, then reading the page structure directly — *"it's SvelteKit, not Next.js"* |
+| The starter-status v2 failure | a **5-sample v3 test** before committing to 1,230 calls |
+| The delta derivation | **dry-run against committed files** before any network call |
+| `leaguedashplayershotlocations` | dumping the real response — *"`resultSets` is a DICT, not a list"* |
+
+**The `GAME_ID` case is the clearest instance of the rule**: two label-based hypotheses failed, and
+the third attempt **abandoned the approach entirely** rather than refining the same wrong theory.
+
+**⚠ And the counter-example is in the record too**: T6's **33 manual SQL chunks** were an increasingly
+specific workaround for a theory (*"the enum is unusable this session"*) that was **simply wrong** —
+the enum had already refreshed. **Two chunks in, a re-check would have ended it.** That is the
+failure mode this rule names.
 Part E records what the standard actually cost in practice:
 > *"a real scrutiny effort that **would have stopped after an early clean-seeming pass** instead
 > **kept finding genuinely new, real issues across 13 TOTAL PASSES before finally reaching TWO
