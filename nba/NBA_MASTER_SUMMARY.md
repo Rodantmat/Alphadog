@@ -1689,6 +1689,66 @@ in message 460; this closes that request explicitly.
 
 **T2 PASS 7: NEW MATERIAL. Clean count 0/3.**
 
+### T2.15 — PASS 8 FINDINGS (added 2026-09-20; on/off conclusion and the full DARKO evaluation) — **MAJOR NEW MATERIAL**
+
+#### T2.15a — The traded-player edge case, and how 661 became 582
+> *"players traded mid-season **appear twice in the raw source** — resolved by **keeping their
+> current-team row**"*
+
+**This is the dedup rule behind 661 raw rows → 582 distinct players.** Not a generic
+`DISTINCT` — a deliberate choice of which duplicate to keep.
+
+#### T2.15b — The actual on/off numbers
+**Wembanyama: 17.0 with him on the floor vs 0.6 with him off** (the +16.4 differential).
+LeBron: +2.3. Previously only the differentials were recorded.
+
+#### T2.15c — Referee tendencies deferred, with the reason
+> *"it genuinely **can't be built from a static roster call** — it requires knowing **which crew
+> officiated which specific games**, which only exists in game-level data. Rather than force a bad fit
+> into the static layer, I've deferred it to Phase 3b."*
+
+**This is the origin of the D1 referee factor's placement** in the baseline/game-log layer.
+
+#### T2.15d — **DARKO, in full — and the comparison that made it a PRIMARY input**
+- Created by **Kostya Medvedovsky**. Metric: **DPM ("Daily Plus Minus")**.
+- Rated by **NBA front-office analysts via a HoopsHype expert survey** as the **single best predictive
+  catch-all metric**, beating paid EPM and LEBRON — *"specifically because it's **forward-looking**
+  (projects future performance) rather than backward-looking, **which is exactly what matters for prop
+  prediction**."*
+
+**The question asked of Gemini was the right one — "is this redundant with the on/off data we already
+built?" — and the answer reframed both:**
+
+| | Our on/off net rating | DARKO DPM |
+|---|---|---|
+| Measures | what **happened** this season (descriptive) | how good a player **actually is** (predictive) |
+| Noise | **High** — polluted by teammates, opponents, small samples | **Low** — Bayesian priors, multiple seasons, designed to strip noise |
+| Value for props | **Secondary** signal (current-season role/chemistry) | **PRIMARY ANCHOR** — the stable measure of underlying talent |
+
+> *"this isn't a 'nice to have' — it's a **load-bearing input worth prioritizing**, not a marginal
+> addition on top of what's built."*
+
+**Note what this says about the on/off splits built hours earlier**: they are explicitly **secondary and
+noisy**, not a primary signal — a self-correction made immediately after building them.
+
+#### T2.15e — DARKO's risks, listed before building
+1. **Single-maintainer "bus factor"** — *"one person's project, not a company. Could stop updating with
+   little warning."*
+2. **Methodology can shift** — *"today's DPM value isn't guaranteed comparable to one from years back."*
+3. **JS-heavy web app** — *"scraping it will likely need finding an underlying data API the page calls,
+   not just parsing rendered text (a different, less-proven technique)."* **This is what the SvelteKit
+   hydration extraction in T3 solves.**
+
+#### T2.15f — **AN ARCHITECTURAL RECOMMENDATION — was it followed?**
+> *"**don't hard-wire 'DARKO' everywhere — build a generic `player_impact_rating` concept** so it can
+> be swapped out later if DARKO disappears."*
+
+Given the single-maintainer risk, this was the recommended design. **Whether it was implemented that
+way, or DARKO was hard-wired, is not established in T2** — the build lands in T3. **Flagged in
+OPEN_ITEMS as a question to resolve when T3 is documented.**
+
+**T2 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
