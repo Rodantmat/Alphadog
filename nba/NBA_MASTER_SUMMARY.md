@@ -5039,6 +5039,23 @@ definitive baseline specification.
 
 **Three consecutive clean passes still required.**
 
+### T7.26 — PASS 19 (full sequential, blocks 649–780) — **CLEAN 1/3**
+
+Every block maps to a documented entry: the methodology-doc sync (T7.11d), the DvP recompute placement
+and its no-op first attempt (T7.12c), the splits/career-totals `mode` input and the season-from-meta
+fix (T7.12c), the per-game writers' `_2025_26` hardcoding and the `.file.season` follow-on (T7.11a),
+the end-to-end delta test (T7.12), the season-readiness exchange (T7.18a–c), and the start of the MLB
+classification read (T7.13a).
+
+**One thing confirmed by its absence**: block 654 announces *"Steps 1–3 complete; **step 4 (replay
+probe) is next**"* — and **step 4 never happens in T7**. The session goes to the recurring-path gaps,
+then to the classification research, and the replay probe is not built. **It was eventually realised in
+the live session** as P2's `asof` + `skip_mining=true` replay and the 2025-11-29 P3 verification
+(already recorded at T7.3) — **thirteen transcripts later.** A stated "next step" that quietly became
+a next-quarter item.
+
+**CLEAN PASS 1 of 3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
