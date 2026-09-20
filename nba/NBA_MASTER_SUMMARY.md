@@ -3512,6 +3512,30 @@ Documentation damage caught and reverted in the same session.
 
 **T6 PASS 1: complete sequential read. Clean count 0/3.**
 
+### T6.8 — PASS 2 FINDINGS (DDL) — **NEW MATERIAL**
+
+#### T6.8a — `nba_stats.game_officials`
+`game_id`, `official_id`, `nba_official_id`, `full_name`, **`jersey_num`**, **`assignment`** —
+PK `(game_id, official_id)`.
+`source_key DEFAULT 'NBA_GITHUB_COMMITTED_ONETIME_BACKFILL_V3'` — **the `_V3` suffix is in the source
+key itself**, so any row loaded by the broken v2 path would be distinguishable. **Provenance encoding
+that survives the bug.**
+**`assignment`** distinguishes crew chief / referee / umpire — the role hierarchy, not just presence.
+
+#### T6.8b — `nba_team.lineup_profile` — and `player_ids TEXT[]`
+`group_quantity` (2/3/4/5), `group_id`, **`player_ids TEXT[]`** — a genuine Postgres array, which is
+what caused the array-literal bug — `group_name`, `team_id`, `season`, then the full statistical line
+including **`blka`** and **`pfd`**.
+**PK had to become `(group_id, team_id, …)`** after the traded-player collision.
+
+**The `TEXT[]` choice is notable**: it makes *"which lineups contain player X"* a single
+`player_ids @> ARRAY[...]` query rather than a join table. **8,000 rows, 2,000 per group size.**
+
+#### T6.8c — Both tables carry `source_key` and `data_quality` defaults in the DDL
+Consistent with every table since T1. **`data_quality 'real'`** on both — scraped, not derived.
+
+**T6 PASS 2: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
