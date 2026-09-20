@@ -706,7 +706,49 @@ ones — *"porting from either dead version would have locked in wrong logic."*
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7m. TWO DIAGNOSTIC-ONLY SAFEGUARDS, SPECIFIED FOR DAY ONE
+*Source: T1, blueprint §4b. Recorded 2026-09-20.*
+
+> *"**Two DIAGNOSTIC-ONLY (NEVER AUTOMATICALLY ACTING) safeguards worth building into NBA's scoring
+> engine FROM DAY ONE, since they DIRECTLY TARGET THE EXACT FAILURE CLASSES documented elsewhere in
+> this package.**"*
+
+**"Never automatically acting" is part of the specification** — these surface problems; they do not
+correct them.
+
+### Safeguard 1 — the coverage-gap check
+> *"**a coverage-gap check that surfaces any (PROP, SIDE, HIGH-CONFIDENCE BUCKET) combination showing
+> a real, RESOLVED-OUTCOME DEVIATION past a threshold WITH ZERO ACTIVE CORRECTION COVERING IT** —
+> **this is precisely the mechanism that would catch A SILENT FORMULA/CALIBRATION REGRESSION BEFORE IT
+> RUNS FOR WEEKS UNDETECTED** (see the fantasy-score-formula saga)."*
+
+**The key is the conjunction**: a real deviation **AND** no cell covering it. A deviation with a cell
+is handled; a deviation with **no** cell is a blind spot.
+
+**NBA has both halves of the input**: `board_outcomes` (6.9M graded legs, keyed prop/side/line) and
+`factor_profile_cells` (35 fitted cells against a 460-row relevance matrix). **The 35-vs-460 gap is
+exactly the surface this check would scan.**
+**Not recorded as built.** And the stated purpose — catching a **silent calibration regression before
+it runs for weeks** — is the failure mode an unattended season-long pipeline is most exposed to.
+
+### Safeguard 2 — the role/context-discontinuity check
+> *"**a role/context-discontinuity check that FLAGS when a player's MOST RECENT REAL PERFORMANCE
+> CONTEXT DIFFERS SHARPLY FROM THEIR TRAILING SAMPLE** — e.g. **a bench player suddenly starting, a
+> return from a long injury layoff** — **surfacing the real risk that A BASELINE SAMPLE MIXES AN OLD,
+> NO-LONGER-RELEVANT CONTEXT WITH THE CURRENT ONE.**"*
+
+**⚠ NBA built the CORRECTION but not the FLAG.** The engine already *acts* on both named cases:
+| Named case | NBA's handling |
+|---|---|
+| *"a bench player suddenly starting"* | the **team-change discount** and the T7 **role-change detector** (starter flag flips 2+ games, or 3-game mean >3σ, or a trade → reset the window) |
+| *"a return from a long injury layoff"* | the **return ramp** (A3) — measured multipliers by games missed |
+
+**But the specification is for a DIAGNOSTIC that flags**, precisely because the correction may be
+wrong. **A silently-applied window reset on a misread context produces a confident wrong number**, and
+nothing surfaces it. *(This is the same concern as tier misclassification being "a quiet, indirect
+source of a wrong final probability."*)
+
+**Both safeguards are diagnostic-only by design, and neither is recorded as built.**
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
