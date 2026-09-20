@@ -221,7 +221,33 @@ where goblins flip to demons. *"10.5 goblin, 11.5 goblin, 12.5 demon → 12 is t
 
 ## L–N
 
-**ladder** · T13, LIVE · The rungs around an anchor. Per app: PrizePicks in the raw feed; Underdog
+**role_tier** · T7 code, LIVE · **The six minutes bands that carry most of the engine's role logic**,
+keyed on `mu_role` (projected minutes), NOT on the starter flag:
+`IRON_MAN` 36+ · `HIGH_USAGE_STARTER` 32–36 · `STARTER` 27–32 · `ROTATION` 21–27 · `BENCH` 15–21 ·
+`FRINGE` 0–15.
+**This IS `f_role`** — the confidence factor carrying **55.6% of the deduction budget**, where fringe
+players miss by **0.0283** and iron-men by **0.0008**. Those are the bottom and top bands of this list.
+**It also implements *"starter vs bench — a primary split"* as a six-band continuous tier rather than a
+binary**, which is why the one-season starter-flag gap is not load-bearing.
+
+**the tiering constants** · T7 · `MAX_TIERS = 24` · `MIN_PER_TIER = 15` · `TIER_BLEND_K = 5` ·
+`LADDER_STEPS = 6`. **All ported UNCHANGED from MLB's live v6** (where 24 was itself raised from 12
+after a backtest). **The recency blend was NOT ported** — see "what does NOT transfer from MLB".
+
+**`BLOWOUT_MARGIN` / `COMPETITIVE_MARGIN`** · T7 code · **20 and 15** — so margin <15 is competitive
+(feeds the clean role estimate), ≥20 is a blowout (gets a `MIN_RATIO`), and **15–20 is a deliberate
+dead zone**: neither clean nor penalised. ~10% of games land there.
+
+**dud games** · T7 · ***"a fat low tail MLB doesn't have"*** — blowouts, foul trouble and early exits
+producing 5-minute, 2-point games. *"A distribution fit to all games is **systematically
+over-optimistic on 'more'**."* The NBA analogue of MLB's home-run bimodality.
+**Designed as a mixture; implemented as an EXCLUSION** (`competitive & PF < 6`) — blowout truncation is
+restored via `MIN_RATIO`, foul trouble is not. See OPEN_ITEMS.
+
+**cross-season carryover** · T7 code · The season-opening fix. Without it *"the opening month has ZERO
+projections and November only 62% coverage"*; with it **October 85%, November 90%**. Minutes role and
+rate EWMA carried at player level; carried evidence counts as `CARRY_N` games at the boundary.
+**Controlled by `BT_CARRY`, default "1".** Per app: PrizePicks in the raw feed; Underdog
 `alternate_projections`; Fliff separate proposals; Betr tiers; **Sleeper has none** *(⚠ but T7's
 verified inventory found Sleeper milestone lines 20+/25+/30+ — see OPEN_ITEMS)*.
 **Width, from three converging sources (T7)**: books ladder a 24.5 player **~19.5 to ~31.5 ≈ ±1 SD**;
