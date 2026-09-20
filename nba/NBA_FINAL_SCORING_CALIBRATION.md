@@ -856,13 +856,29 @@ CLOSE / REGIME RESIDUAL / CONFIGURED-NOT-RUN / NOT-YET-CERTIFIED** per prop, and
 exactly this drift.**
 
 #### #20 — **THE BAR IS "BEATS NOT HAVING IT AT ALL" — and be willing to recommend REMOVAL**
-> *"the correct bar is whether it beats **the simplest available alternative — including the
-> alternative of NOT HAVING IT AT ALL** — not whether it improves on some other,
-> already-known-to-be-[flawed baseline]."*
+> *"When evaluating whether **a complex component (an enrichment layer, a scoring adjustment, an
+> entire strategy track)** is worth keeping, **the correct bar is whether it beats THE SIMPLEST
+> AVAILABLE ALTERNATIVE — INCLUDING THE ALTERNATIVE OF NOT HAVING IT AT ALL** — **not whether it
+> improves on some other, ALREADY-KNOWN-TO-BE-DEGRADED VERSION OF ITSELF.**
+> [The] explicit standard for scoring-engine calibration work stated this directly: **success meant
+> BEATING THE CLEAN BASELINE SIGNAL ON REAL, HELD-OUT DATA, not merely improving on the current,
+> already-damaged enriched version — BECAUSE THAT SECOND, WEAKER BAR IS CLEARED AUTOMATICALLY BY
+> DELETING THE COM[PONENT].**"*
 
-**`gain_vs_anchor` is this rule in a column.** And it is why ten enrichment factors could be rejected
-without embarrassment — *"the certified anchor wins every slice"* **is the correct outcome of asking
-the right question.**
+**The closing clause is the whole argument**: a bar that a *deletion* clears is not a bar. If the
+comparison is against a degraded version of the thing itself, removing it entirely wins — which proves
+the comparison was meaningless.
+
+**NBA implements exactly this.** `gain_vs_anchor` measures against **the certified anchor on held-out
+data** — i.e. against *not having the factor* — **not against a weaker version of the factor.** That
+is why ten closures are a legitimate outcome rather than an embarrassment: **the right question was
+asked, and the honest answer was no.**
+
+**And "be willing to recommend removal" has a live instance**: **A2 was RETRACTED**, not softened —
+the panels were withdrawn rather than re-tuned.
+
+**⚠ The corresponding open question** is Part F's: the bar is the anchor, and **the anchor itself has
+not been leak-checked** to the standard Part F describes. *(Recorded in `NBA_OPEN_ITEMS.md`.)*
 
 #### #21 — **THE STRUCTURED ORDER FOR AN ADVERSARIAL CONSULTATION**
 > *"A specific, structured order… worked well throughout: **present the mechanics you've derived
