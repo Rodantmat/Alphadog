@@ -399,11 +399,21 @@ recomputed factor.
 ### 4b.1 **A CONTROL SLIP WITH A KNOWN ANSWER — required, not optional** *(#22)*
 > *"MLB's original multiplier-observation study **deliberately included a real slip built ENTIRELY from
 > unmodified, standard-priced legs** — with the explicit purpose of **confirming the study's own
-> MEASUREMENT METHOD against a case with a known, predictable answer**. **It came back matching.**"*
+> MEASUREMENT METHOD against a case with a known, predictable answer** (no special pricing applied at
+> all). **It came back MATCHING THE PREDICTED BASELINE EXACTLY, WHICH IS WHAT GAVE THE REST OF THE
+> STUDY'S MORE INTERESTING FINDINGS REAL CREDIBILITY.**
+> **For any NBA real-world observational study — a multiplier study, a pricing study, an A/B-style
+> comparison — deliberately include at [least one control case].**"*
 
 **The control validates the instrument, not the hypothesis.** A standard-only slip has a predictable
-payout; **if the method cannot reproduce it, nothing measured on goblin or demon slips means
-anything.** **Any NBA capture must open with one standard-only slip.**
+payout; **if the method cannot reproduce it, nothing measured on goblin or demon slips can be
+trusted.**
+
+**And the stated benefit runs the other way too**: the control matching exactly is **what made the
+interesting findings credible**. Without it, a surprising demon result has no way to distinguish a
+real effect from a broken measurement.
+
+**Any NBA capture must open with one standard-only slip.**
 
 ### 4b.2 **ALL TEST LEGS FROM THE CURRENT/LIVE BOARD** *(the owner's rule, §0)*
 > *"**all test legs must come from the current/live board**"* · *"**no rushing, must be fully
