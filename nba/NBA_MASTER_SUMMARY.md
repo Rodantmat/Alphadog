@@ -1323,7 +1323,88 @@ Full sequential read of every content block with 200 characters of context each,
 
 ---
 
-# ✅ T1 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (26, 27, 28)
+### T1.59 — PASS 29 (angle: **the four handoff documents embedded inside T1**, not its message blocks) — **NEW MATERIAL · CLEAN COUNT RESET TO 0**
+*Recorded 2026-09-20.*
+
+**Angle**: passes 24–28 all read **message blocks** sequentially. T1's densest content is not in the
+message blocks themselves — it is in the **four complete handoff documents pasted inside them**
+(Architecture Blueprint ~95 KB, Lessons-Learned-From-MLB, Domain Mapping & Startup Plan, System
+Draft). Reading a 95 KB blueprint's containing block with 200 characters of context **does not read
+the blueprint**. This pass read the blueprint's own section headers and swept the ones with no
+corresponding entry in any of the 12 documents.
+
+**Coverage audit of the blueprint, by section:**
+
+| Blueprint § | Subject | Status before this pass |
+|---|---|---|
+| §0 – §7e | framing, infra, schema, pipelines, factors, triggers, deploy gotchas | **already documented** |
+| **§7f** | honest out-of-sample validation is **necessary but not sufficient** | **UNSWEPT → recorded** |
+| **§7g** | two named software bugs (write-path filter; `NOT IN` array literal) | **UNSWEPT → recorded** |
+| §8 | corrupt-and-fix testing | already documented — `NBA_SYSTEM_ARCHITECTURE.md` §8b |
+| **§9** | pipeline scrutiny discipline — 3 techniques, **6 named failure modes** | **UNSWEPT → recorded** |
+
+**Findings and where they were routed:**
+
+1. **§7f — an honest out-of-sample pass is necessary but not sufficient.** MLB had a calibration fit
+   that beat both the raw baseline and a standard calibration method on real held-out error metrics
+   **and was still structurally wrong**: computed without distinguishing **over/under**, dominated by
+   one side, silently misapplied to the other. The aggregate metric missed it because it averaged
+   across both sides. Rule: check **every meaningfully distinct subgroup**, and **keep a human review
+   step before applying any calibration correction**. Recommended cadence: *"weekly recalibration
+   checks, trigger-based re-fitting, mandatory human review — not full unattended automation."*
+   Precedent cost: **two props, zero active correction for ~2.5 weeks, 30–45 pp overconfidence gaps,
+   undetected until a manual check** — the stated motivation for the coverage-gap diagnostic.
+   → `NBA_FINAL_SCORING_CALIBRATION.md` §7m2 · `NBA_BASELINE_CALIBRATION.md` · `NBA_OPEN_ITEMS.md` ·
+   `NBA_GLOSSARY.md` (*per-subgroup validation*, *coverage-gap check*) · `NBA_MULTIPLIERS.md` ·
+   `NBA_GOBLIN_DEMON.md` · `NBA_DATABASE.md`.
+2. **§7g bug 1 — a filter parameter that constrains the response, not the write path.** Detection
+   signal: *unrelated timestamps also updating.* → `NBA_SYSTEM_ARCHITECTURE.md` §2d ·
+   `NBA_WORKERS.md` · `NBA_OPEN_ITEMS.md` · `NBA_GLOSSARY.md` (*write-path filter bug*).
+3. **§7g bug 2 — `NOT IN` from an array parameter producing a real `malformed array literal`**,
+   especially on an empty array. Fix: explicit array-literal-with-cast + explicit empty-array branch.
+   → `NBA_SYSTEM_ARCHITECTURE.md` §2d · `NBA_OPEN_ITEMS.md` · `NBA_GLOSSARY.md`.
+4. **§9 — the pipeline scrutiny methodology in full.** Core philosophy (*a self-reported PASS is the
+   start of scrutiny, never the conclusion*), **three techniques**, **six named failure modes with
+   fix patterns**, **composition checks over row counts**, and four general verification rules
+   including **connection-pool read staleness** — which lands directly on NBA because **Hyperdrive is
+   a connection-pool front**. → `NBA_SYSTEM_DESIGN.md` §6b · `NBA_OPEN_ITEMS.md` (six-mode table with
+   NBA build status) · `NBA_RECIPE.md` · `NBA_SYSTEM_ARCHITECTURE.md` · `NBA_GLOSSARY.md`.
+5. **⚠ Failure mode #6 is already live in NBA.** *"Silent config/formula drift across a whole
+   universe, no error thrown"* **is exactly the recorded `minutes_mixture` drift** — config specifying
+   three components the recipe does not implement. §9 names the fix (whole-universe config-vs-formula
+   diff) and it has not been run. **This is the first time the live drift has been matched to a named
+   failure mode with a prescribed fix.**
+6. **⚠ A contradiction, flagged not resolved** — see below, and `NBA_OPEN_ITEMS.md`.
+
+**PASS 29 FOUND NEW MATERIAL ACROSS 9 OF THE 12 DOCUMENTS. CLEAN COUNT RESET TO 0/3.**
+
+---
+
+# ⚠ SUPERSEDED 2026-09-20 — T1 IS **NOT** DONE
+*The entry below is kept verbatim as the honest historical record, per the dating rule. It was
+correct about what it measured and wrong about what that proved.*
+
+**What it said:** *"✅ T1 IS DONE — 3 CONSECUTIVE CLEAN PASSES (26, 27, 28). Final tally: 28 passes,
+23 found new material."*
+
+**What superseded it:** **pass 29 (T1.59 above) found new material in blueprint §7f, §7g and §9** —
+three sections that had never been swept. Per rule 1.2, any new finding of any size resets the count.
+**T1 is 0/3 as of pass 29**, which matches the owner's work order of the same date (*"T1 — 0/3 —
+ACTIVE, ~30 passes done, still producing new material… next unread: blueprint §7f onward"*).
+
+**Why the 3/3 was wrong.** Passes 26–28 read T1's **87 message-level content blocks** sequentially,
+with 200 characters of context each. **That method cannot read a 95 KB document pasted inside one
+block.** The clean passes were real *for the conversational body*; they were never passes over the
+four embedded handoff documents. **The failure is Part 9 failure mode 1 in a new shape — sweeping
+against a subset, here a subset of the transcript rather than a subset of the documents.**
+
+**Standing correction to method**: a transcript containing pasted documents must be swept **by
+document structure as well as by message block**. Applies to T1 and to any other transcript carrying a
+pasted artefact.
+
+---
+
+# ✅ T1 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (26, 27, 28) · ⚠ **HISTORICAL — SUPERSEDED, see above**
 
 **Final tally: 28 passes. 23 found new material. Passes 26, 27, 28 clean.**
 
