@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 40 passes.** Pass 40 found new material — run-ID audit trail for §T1.7; **`BACKUPS/` vs `backups/` case collision VERIFIED on a live clone**; `gbdt_training/` dead against D1 (decommissioned 2026-08-12); **T1's GitHub-Actions discovery shown to be prior art already in the repo** (§T1.70). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 41 passes.** Pass 41 found new material — Phase-1 recon re-run live: **18 MLB schemas unchanged since 2026-08-31**, **zero NBA rows in the three shared MLB board tables**, closing System Draft §5 Q2 by observation (§T1.71). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
