@@ -486,9 +486,19 @@ gate — *"but the parameter's name implied a selectivity that didn't actually e
 > *"**When adding any 'limit to these specific items' parameter to an NBA worker, VERIFY IT CONSTRAINS
 > THE ACTUAL WRITE PATH, not just what gets echoed back in the response.**"*
 
+**⚠⚠ CONFIRMED LIVE IN NBA — 2026-09-20 (T1 pass 33). This is no longer a class to guard against; it
+is a bug that has already fired.**
+`nba/build_final_hp.py`'s **`FE_DATE`** scopes the `SELECT` from `baseline_history` and **not** the
+`DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s`, which carries **no `game_date`
+predicate**. A slate-scoped write replaces the whole season × prop partition. **Measured: the 2025-26
+partition of `final_hp` holds ONE date and 140,130 rows against a documented 38.7M-row table.**
+**And MLB's mitigating caveat does not transfer** — MLB's instance was *"not unsafe… every write
+passed the same validation gate."* **NBA's deletes data.** Full entry at the top of
+`NBA_OPEN_ITEMS.md`; row counts in `NBA_DATABASE.md`; parameter detail in `NBA_WORKERS.md` §5.
+
 **Where this bites in NBA**: every worker with a mode/scope argument — `--season`, `--prop`,
-`--player`, a date range, the mode-dispatch table in `NBA_WORKERS.md`. **No such audit is recorded as
-having been done.** The detection signal named in the source — *unrelated timestamps also updating* —
+`--player`, a date range, the mode-dispatch table in `NBA_WORKERS.md`. **One candidate has now been
+audited and failed. The rest are still NOT AUDITED.** The detection signal named in the source — *unrelated timestamps also updating* —
 means an `updated_at` spot-check on rows **outside** the requested scope is the cheap test.
 
 ### 2. `NOT IN` from an array parameter → real `malformed array literal` error
