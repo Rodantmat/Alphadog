@@ -1456,6 +1456,35 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.78 — PASS 48 (angle: **full sequential narrative read — all 85 assistant blocks in order**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 48. This is the method
+passes 26–28 used, re-run now that the embedded documents have actually been swept (§T1.59).*
+
+- **⚠ CORRECTION — `github_str_replace` does not exist, and `NBA_SYSTEM_ARCHITECTURE.md` listed it.**
+  T1 attempted it: *"**Tool 'Alphadog Bridge:github_str_replace' not found. Did you mean:
+  `str_replace`?**"* **`str_replace` is the SANDBOX file tool and cannot touch the repo.**
+  Confirmed twice — by that error and by the live bridge's tool list. **The repo write tools are
+  `github_put_file` and `github_patch_file` only.** Corrected in place.
+- **⚠ A repeatable `github_patch_file` failure, hit twice**: *"MCP error **-32602**: Input validation
+  error… **expected string, received undefined at path**."* **It fails at the MCP validation layer,
+  so the file is untouched** — and the message names the argument *type*, not the argument. Worth
+  knowing: this is the primary write tool for the whole documentation effort.
+- **✅ The other 83 blocks map to existing entries.** The full arc — recon → separate-universe
+  correction → schemas → first worker → deploy-script patches → Cloudflare block → debug route →
+  canonical headers → 520 → probe mode → every nba.com domain blocked → the PrizePicks pattern →
+  GitHub Actions scraper → trigger-tool limitation → trigger-file invention → 30s timeout → retries
+  → proxy (rules out IP blocking) → TLS fingerprinting → `curl_cffi` → empty `abbreviation` → static
+  map → wire the Worker to the committed file — **is documented across `RECIPE` STEP 3–6,
+  `SYSTEM_ARCHITECTURE` §6–§7 and §T1.5–T1.9.**
+- **⚠ METHODOLOGICAL NOTE, recorded to keep the count honest.** Passes 44–47 found their material by
+  **verifying against live code and the database, not by reading T1.** That is required work — but it
+  is not what the three-clean-pass rule measures. **From here: a pass counts toward the streak only
+  if its angle is a read of the transcript.** A live-verification pass that finds a documentation gap
+  **unrelated to T1's content** is recorded and dated but **does not reset the streak**. **Pass 48 is
+  a transcript read and found two items, so the streak stays at 0.**
+
+---
+
 ### T1.77 — PASS 47 (angle: **whole-universe diff of the LIVE SCHEMA against `NBA_DATABASE.md`**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 47. T1's DDL block: lines
 11000–14000. All figures VERIFIED by live SQL.*
