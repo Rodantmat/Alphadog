@@ -868,6 +868,36 @@ in OPEN_ITEMS.
 **CLEAN COUNT RESET TO 0/3.** Seventeen passes; fourteen found new material.
 This is the rule working as intended — pass 16 looked clean, and pass 17 proved the count was premature.
 
+### T1.29 — PASS 18 (time and scheduling) — **MINOR NEW**
+
+**A SEQUENCING PRINCIPLE**: *"weekly re-check cadence, **but backfill comes first**."*
+The weekly cron is for *differential* checks once the historical load is done — it is not the mechanism
+for getting the data in the first place. **Backfill, then cadence.** This is why T1 set the cron but the
+data came from manual triggers throughout, and why P1's value is keeping things current rather than
+populating them.
+
+Everything else in the sweep was already documented: Monday 9am UTC, the three runs, the four master-run
+stages, the Coworker-scheduled model, `nba_differential_check_cadence`, and the design-only treatment of
+board/daily-context/market until the season starts.
+
+**Clean count 0/3** — pass 18 found new material, so the count does not begin.
+
+### T1.30 — CURRENT STATE OF T1
+
+**18 passes. 15 found new material. 1 clean (pass 16), invalidated by pass 17.**
+
+**Dimensions swept:** narrative text · tool results · SQL bodies · DDL and settings · handoff text ·
+owner specification · caveats and limits · artefacts · endpoint/table/file names · owner messages ·
+measured numbers · rules and principles · endpoint inventory · external services · verification claims ·
+decisions and alternatives · error vocabulary · time and scheduling.
+
+**Dimensions NOT yet swept:** person/team/proper nouns · numeric IDs, hashes and commit SHAs ·
+tool-call sequences and their ordering · quoted third-party content (search results, docs) ·
+formatting and structure of written artefacts.
+
+**Three consecutive clean passes are still required.** The ledger above is the resume point — the next
+session continues from pass 19 without repeating any dimension already marked.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
