@@ -810,10 +810,27 @@ anchor won every slice. **That is a legitimate outcome — but the guard against
 artifact is that `gain_vs_anchor`, `log_loss` and `brier` were fixed as the metrics before any factor
 ran**, and every verdict lands in `factor_gate_results`. **The pre-registration is what makes the
 rejections trustworthy**, not the rejections themselves.
-> *"MLB's **'mechanistically coherent' trap**: a prop's apparent correlation strength tracked a real,
-> **physical-sounding narrative** (a composite stat *should* correlate more with game environment)
-> that turned out to be **a pure artifact of a different confound (LINE-THRESHOLD VARIANCE)** once
-> tested properly. **The physics-plausible story should have raised SUSPICION, not c[onfidence].**"*
+
+#### #11 — **"MECHANISTICALLY COHERENT" IS A TRAP, NOT A CREDENTIAL**
+> *"The **'mechanistically coherent' trap**: a prop's apparent correlation strength tracked a real,
+> **physical-sounding narrative** (**a composite stat *should* correlate more with game environment**)
+> that turned out to be **a pure artifact of a different confound — LINE-THRESHOLD VARIANCE — once
+> tested properly**. **The physics-plausible story should have raised SUSPICION, NOT CONFIDENCE**,
+> once **an independent check — DOES THIS ORDERING MAKE PHYSICAL SENSE GIVEN WHAT COMPONENTS ARE
+> SHARED ACROSS PROPS — was available.**
+> **Test your own favoured explanation with the same rigor you'd apply to someone else's.**"*
+
+**The confound is structural**: props sit at different line levels, and **variance differs by line
+level by construction** — so any cross-prop comparison that does not control for it manufactures an
+ordering.
+
+**The independent check is also named**: *does the ordering make physical sense given **what
+components are shared across props**?* **Directly applicable to NBA's combos** — PRA shares components
+with points, rebounds and assists, so an apparent PRA-vs-points difference may be a shared-component
+artifact.
+
+**A2 is the NBA instance of the trap**: a physically obvious mechanism (a teammate sits, his minutes
+go somewhere) that failed five panels and *"worst where the mechanism predicted it should win."*
 
 **A good story is a reason to test harder, not to believe.** And the confound named —
 **line-threshold variance** — is structural: props with different line levels have different variance
