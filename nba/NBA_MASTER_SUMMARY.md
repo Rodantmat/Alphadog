@@ -2013,6 +2013,80 @@ Confirms T3.2's account came from the database, not from the worker's response.
 
 **T3 PASS 3: NEW MATERIAL. Clean count 0/3.**
 
+### T3.9 — PASS 4 FINDINGS (added 2026-09-20; the research conclusions in full) — **MAJOR NEW MATERIAL**
+
+#### T3.9a — **The schedule is "the chassis" — and it had been underrated**
+Gemini *"didn't just confirm it — it **pushed back hard that I'd been underrating it**"*:
+> *"the **central organizing entity for your entire system… the chassis everything else bolts onto**."*
+
+**Without the schedule there is no way to compute**: rest days · back-to-backs · travel · strength of
+schedule · *"or even cleanly join a player's stats to their specific opponent for a game."*
+**→ "This should be built BEFORE anything else, not queued alongside it."**
+
+**This is the origin of factors A4 (rest/B2B) and D2 (travel)** — they are not independent ideas, they
+are things the schedule makes computable. It had been *"named in your very first architecture list but
+got missed along the way."*
+
+#### T3.9b — Play types are an **offensive-role** signal
+> *"Knowing a player is **the pick-and-roll ball-handler 45% of the time** is a sharp, direct
+> **'offensive role' signal**."*
+
+#### T3.9c — **Gemini SELF-CORRECTED its own earlier ranking**
+> *"it previously ranked on/off-court data as top-tier; **now says role/opportunity data (play-type,
+> passing, drives) should rank above it**."*
+
+**This is the third independent reason the raw on/off splits are secondary** — alongside DARKO's
+noise-stripping (T2.15d) and DARKO's own `on_off_dpm` column (T3.7).
+
+#### T3.9d — Tracking families, ranked
+**High value** — `Passing`, `Rebounding`, `Drives`, `CatchShoot`/`PullUpShot`, because they
+*"**separate opportunity from results** — e.g. a player with **high 'potential assists' but low actual
+assists** is a real regression signal."* *(Exactly the Jokić check run later: POTENTIAL_AST 17.6 vs
+10.7 actual.)*
+**Lower priority or redundant** — `Defense`, `Possessions`, `Efficiency`.
+
+#### T3.9e — Draft Combine anthropometrics: **a red herring, explicitly**
+> *"**Real on-court results already encode a player's physical tools better than a years-old combine
+> measurement.** Only rookies would benefit, and it's not worth the complexity here."*
+
+**A rejected candidate with a stated reason** — worth keeping so it is not re-proposed.
+
+#### T3.9f — **SHOT QUALITY DELTA — the complete methodology**
+The full technique needs proprietary **Second Spectrum** data. The free public equivalent is
+**`leaguedashplayerptshot`** — shooting broken down by defender distance:
+**0–2 ft "Very Tight" · 2–4 ft "Tight" · 4–6 ft "Open" · 6+ ft "Wide Open"**.
+
+Gemini called it *"**likely the single most valuable public data point you can add to your system at
+this stage**"* and gave a concrete formula:
+
+1. **Weekly**, pull the **league-wide average eFG%** at each of the 4 defender-distance buckets.
+2. For each player, **weight those league averages by HIS OWN shot-frequency mix** across the buckets
+   → his **expected eFG%** — *"what a league-average shooter would hit, taking the exact same shot
+   diet."*
+3. **Shot Quality Delta = actual eFG% − expected eFG%**
+4. **Large positive → shooting unsustainably hot (regression-DOWN candidate).**
+   **Large negative → shooting cold relative to difficulty (regression-UP candidate).**
+
+> *"a real, direct answer to the **'hot/cold streak' problem** — something season-long averages alone
+> can't catch."*
+
+**The three shot dimensions are complementary, not redundant:**
+| Dimension | Answers |
+|---|---|
+| Play type | **HOW** the shot happened |
+| Shot location (court zone) | **WHERE** it was taken |
+| Defender distance | **WHAT CONTEST** it faced |
+
+#### T3.9g — The honest close of static research
+> *"I asked Gemini to **be skeptical rather than just keep validating more searches**, and it said
+> plainly — '**the well for truly novel, high-impact, weekly-static data is running low… Phase 3b is
+> the right next move**.' This is confirmed as the **last major static pillar**."*
+
+**Note the method**: the tool was explicitly asked to argue against continuing, rather than being asked
+another "what else is there?" question that would always produce an answer.
+
+**T3 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
