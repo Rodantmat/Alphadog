@@ -1708,7 +1708,7 @@ those are Part G/H material postdating T1 (already open, §T1.60). **Three are g
   **This upgrades §T1.70**: that entry called the GitHub-Actions prior art *"a search space never
   defined."* **It was defined — in the blueprint T1 had read in full.** So it is **a documented
   instruction not followed**, like §4o (§T1.68), the per-worker rule (§T1.66) and §2's ID check
-  (§T1.80). **Cost: four failed runs and thirteen polling sleeps.**
+  (§T1.80). **Cost: four failed runs and **the count is TWENTY-FIVE, not thirteen** — *corrected 2026-09-20, T1 pass 66, **MEASURED** from the export's timestamps; the earlier figure counted distinct sleep **durations**, not calls* — **25 polling sleeps totalling 40.3 minutes.**
 - **⚠⚠ A standing check that lands on the config drift.** *"**Verify that a backtest or analysis is
   actually evaluating the CURRENT LIVE coefficient or configuration value**, not a value since
   changed"* — found **twice in one MLB session**, once making *"a 'large finding' actually a
