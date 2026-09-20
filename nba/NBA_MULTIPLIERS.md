@@ -106,21 +106,48 @@ the one a well-calibrated model is best placed to find**, since it needs exactly
 produces: **honest per-leg probabilities**, to compare against what the table assumes.
 **Tested once on MLB, real but too small. Untested on NBA.**
 
-## 0.2e **UNDERDOG AND SLEEPER PRICE PER-LEG DYNAMICALLY**
-> *"**Underdog and Sleeper price per-leg DYNAMICALLY (closer to real sportsbook-style pricing) rather
-> than off one flat published table** — **a flat assumed multiplier (e.g. '2-pick always pays 3.5×')**
-> [is wrong for them]."*
+## 0.2e **UNDERDOG AND SLEEPER PRICE PER-LEG DYNAMICALLY — and they price EFFICIENTLY**
 
-**So the three platforms need three different treatments:**
-| Platform | Pricing model |
-|---|---|
-| **PrizePicks** | **discrete step function over tiers**, fixed multiplier per tier |
-| **Underdog** | **per-leg dynamic**, sportsbook-style |
-| **Sleeper** | **per-leg dynamic**, sportsbook-style |
+> *"**Underdog and Sleeper price per-leg DYNAMICALLY** (closer to real sportsbook-style pricing)
+> rather than off one flat published table — **a flat assumed multiplier (e.g. '2-pick always pays
+> 3.5×') is RELIABLY WRONG once legs are meaningfully far from 50/50**; **real per-leg pricing
+> COMPRESSES TOWARD FAIR ODDS much more than a flat-table assumption predicts, ESPECIALLY FOR HEAVY
+> FAVOURITES.**"*
 
-**A flat published-table assumption is valid for PrizePicks' tier structure and INVALID for Underdog
-and Sleeper.** And since Underdog and Sleeper **do expose their multipliers** (§1), there is no reason
-to assume anything for them — **read the value.**
+### ⚠⚠ 0.2e.1 **THE MEASURED RESULT AT SCALE — and it is a hard constraint**
+> *"**Underdog/Sleeper's own EV-parity pricing, when measured directly against real placed-slip data at
+> scale (14,000+ REAL LEGS), showed `p × m` FLAT AND SLIGHTLY BELOW 1.0 ACROSS THE ENTIRE PROBABILITY
+> RANGE** — i.e. **these platforms price efficiently enough that no simple probabi[lity-based
+> selection works]**."*
+
+**This is the most consequential platform finding in the handoff, and it is measured on 14,000+ real
+legs, not inferred.**
+
+**What it means:**
+- **`p × m` flat across the whole probability range** → there is **no probability band where these
+  platforms systematically overpay**.
+- **Slightly below 1.0** → a consistent, modest house edge, as expected.
+- **Therefore: no simple probability-based selection beats Underdog or Sleeper.** Being right about
+  `p` is not enough when `m` moves to match.
+
+### The strategic consequence — where edge can and cannot live
+| Platform | Pricing | Implication |
+|---|---|---|
+| **Underdog, Sleeper** | **per-leg dynamic, EV-parity, `p × m` flat ≈ 1.0** | **a better `p` alone earns nothing** — the price adapts |
+| **PrizePicks** | **discrete step function per tier** | **the price does NOT adapt within a tier** — this is where a better `p` can pay |
+
+**So the two mispricings this project can plausibly harvest are both PrizePicks-specific:**
+1. **The tier step function** (`NBA_GOBLIN_DEMON.md` §5.0d) — a fixed multiplier per tier, so two legs
+   in one tier with different true probabilities pay the same.
+2. **The Flex insurance tiers** (§0.2d.2) — mispriced for pools far from their calibration profile.
+
+**And it sharpens `NBA_FINAL_SCORING_CALIBRATION.md` §15 considerably.** The remaining edge hypothesis
+is not merely *"the tails"* — it is **specifically PrizePicks' tier structure**, because Underdog and
+Sleeper have been measured, at scale, to leave nothing on the table for a probability-based method.
+
+**⚠ Caveat per lesson #24**: this is an MLB-era measurement of platform behaviour. **The mechanic
+(dynamic vs step pricing) is the durable part; the efficiency result should be re-measured on NBA
+data** — but it is a strong prior.
 
 ## 0.2c ⚠ THE CONFIDENCE TIER ON §0.2's FINDING — do not let it harden
 
