@@ -239,7 +239,45 @@ shooter together**, *"shrinking away the make-rate ordering the parametric alrea
 **−4.6 pp → within ±2.3 everywhere; worst-rung cells from a full page to ONE.**
 **FTM was diagnosed as the same compound shape** and fixed the same way (λ=0.5).
 
-### 3.10 Calibration — per-rung Platt
+### 3.9b THE CALIBRATION TECHNIQUE — what to use and what to reject
+*Source: T1, blueprint §4a. Recorded 2026-09-20.*
+
+### ❌ REJECT additive / histogram-binning calibration
+> *"**Reject additive/histogram-binning calibration** (a lookup table adding flat corrections per
+> probability bin) — **it produces real, serious problems**:
+> **DISCONTINUITIES** — a tiny input change causing a huge output jump at a bin boundary;
+> **NON-MONOTONICITY** — a genuinely higher raw probability mapping to a LOWER calibrated one;
+> **BOUNDARY VIOLATIONS** — results pushed outside 0–100%."*
+
+### ✅ USE a continuous, monotonic-by-construction transformation
+> *"**Platt scaling — fit `A·logit(raw_p) + B` IN LOGIT SPACE** — or **isotonic / beta
+> calibration**."*
+
+**NBA uses per-rung Platt in logit space**, which is this specification. **And the `ladder_calibration_asof`
+table stores exactly `log_odds_shift`** — the `B` term, per season × prop × phase × band × side.
+
+**⚠ Note what the rejection rules out**: a per-band *additive* correction table is precisely the
+"histogram binning" form named here. **NBA's band cells must therefore be applied as logit-space
+shifts, not as flat probability offsets** — which is what *"switching the cell to a LOGIT-LEVEL SHIFT
+on the parametric"* (the 3PM fix) did.
+
+### ⚠ BE WILLING TO REJECT A STATISTICALLY VALID FIT
+> *"**Critically, BE WILLING TO REJECT A FIT EVEN WHEN IT'S STATISTICALLY VALID** if the resulting
+> **real-world shift is IMPLAUSIBLY LARGE** — MLB **correctly rejected TWO Platt fits that PASSED
+> MONOTONICITY but implied UNREASONABLY LARGE CORRECTIONS**, on the reasoning that **A HUGE 'FIX' IS
+> ITSELF A SIGN SOMETHING ABOUT THE FIT OR THE UNDERLYING FACTOR IS WRONG, NOT PROOF THE CORRECTION IS
+> NE[EDED]**."*
+
+**This is a named guard NBA does not have.** The as-of calibration refits weekly and applies
+`log_odds_shift` automatically; **no magnitude sanity check on the fitted shift is recorded.**
+
+**It pairs directly with the over-flattening concern** (OPEN_ITEMS): a calibrator that is
+*"flattening too much"* and one producing an *"implausibly large correction"* are **two failure modes
+of the same automated fit**, and both are caught by inspecting the magnitude of the shift rather than
+only its statistical validity.
+
+**`final_hp` retains `p_raw` alongside the calibrated value**, so the magnitude of every applied shift
+is inspectable per row.
 
 **⚠ THE OWNER'S STATED PREFERENCE, FROM T1 — read this before trusting automated calibration:**
 > *"there is a **daily automated calibration engine** (runs **Platt scaling, beta, and possibly other
