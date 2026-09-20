@@ -602,13 +602,22 @@ begun — and that is correct sequencing, not an omission.
 
 ---
 
-## 14. THE RESEARCH STANDARD — all 26 lessons *(T1, `NBA_LESSONS_LEARNED_FROM_MLB.md`)*
+## 14. THE RESEARCH STANDARD — all 26 lessons *(T1, `NBA_LESSONS_LEARNED_FROM_MLB.md`, Part A)*
 
-**The handoff calls this document *"the single most important document in this transfer package — a
-research standard built the hard way, across dozens of strategy candidates, almost all of which looked
-real at first and were later found to be artifacts."*** The startup plan requires *"the full 16-item
-standard… **from the very first candidate**, not as a later addition once shortcuts have already been
-taken."*
+**Part A's own preamble, which sets how the standard must be used:**
+> *"**The complete research standard (apply to EVERY NBA strategy candidate).**
+> **This standard was built incrementally, EACH ITEM ADDED AFTER A REAL MISTAKE EXPOSED THE GAP IT NOW
+> CLOSES. APPLY ALL OF THEM TOGETHER, EVERY TIME, NOT SELECTIVELY.**"*
+
+**Two things follow.** Each lesson is a scar, not a preference — so **none is optional on the grounds
+that it seems unlikely to apply here**. And the standard is **cumulative**: applying a subset is the
+failure mode it was built to prevent, since every item exists because a prior effort skipped it.
+
+**The document is described in the startup plan as *"the single most important document in this
+transfer package — a research standard built the hard way, across dozens of strategy candidates,
+almost all of which looked real at first and were later found to be artifacts."*** The plan requires
+*"the full standard… **from the very first candidate**, not as a later addition once shortcuts have
+already been taken."*
 
 | # | Lesson |
 |---|---|
