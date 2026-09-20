@@ -638,9 +638,11 @@ This is how the one approved touch to shared files stays safe: a prefix test on 
 
 Previously documented as 116 only. The gap matters when reading deploy logs.
 
-**`nba_ref.team_aliases` — 157 rows in T1, 162 in T2.** The T1 count came from the **certified static
-fallback**; the T2 count from **live nba.com data**. The five-row difference is the progression from
-fallback to live source, not a discrepancy.
+**`nba_ref.team_aliases` — 157 rows in T1, 162 in T2.** *(CORRECTED 2026-09-20 by T2 pass 4: these are
+not a fallback-to-live progression. `aliases_written` counts rows UPSERTED in a run (155, 157); 162 is
+the TOTAL active rows in the table. Unchanged rows are not rewritten, exactly as with `source_key`.
+Comparing a worker's `*_written` figure to a `SELECT count(*)` will always show a gap that is not a
+bug.)*
 
 **TOUCHING A "GLOBAL TOOLING" FILE TRIGGERS A FULL-FLEET REDEPLOY** — *"it triggered a full redeploy of
 every worker — MLB's ~130 workers plus the new NBA one."* **This is why deploys took 15+ minutes and
