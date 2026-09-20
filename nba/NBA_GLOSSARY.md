@@ -456,6 +456,13 @@ would surface.** → `NBA_SYSTEM_DESIGN.md` §6b.
 *"Invisible except by noticing unrelated timestamps had also updated."* Standing check on every NBA
 worker mode/scope argument. → `NBA_SYSTEM_ARCHITECTURE.md` §2d.
 
+**the two registries** · T1, LIVE · NBA keeps its own control plane: **`nba_config.worker_definitions`**,
+**`nba_control.job_runs`**, **`nba_control.worker_run_log`**. MLB's shared
+**`config.worker_definitions`** holds **116 rows, 0 of them NBA** — **VERIFIED 2026-09-20**, the same
+count T1's Phase 1 banner recorded on 2026-08-31. Closes the blueprint's shared-queue contention
+question (nothing to contend for) and evidences the *"additive only, no MLB-system side effects"*
+constraint. → `NBA_SYSTEM_ARCHITECTURE.md` §1a0 · `NBA_WORKERS.md` §0.4.
+
 **tarpit** · T1 · Silent connection stalling instead of an explicit block. Three timeouts diagnosed it.
 
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
