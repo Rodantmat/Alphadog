@@ -1025,6 +1025,46 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠⚠ NO "DON'T OVER-SHRINK A REAL SIGNAL" SAFETY VALVE
+T1's blueprint §4b specifies one, with exact thresholds, and says to build it **from the start**:
+> *"**Hierarchical Bayesian shrinkage needs an EXPLICIT 'don't over-shrink a real signal' safety
+> valve**: once a player has **n ≥ 20 real observations** **AND** their raw rate **differs from the
+> population prior by > 15 points**, **the prior is CAPPED at contributing NO MORE THAN 25% of the
+> final estimate** — **preventing well-supported individual signal from being WASHED OUT just because
+> it disagrees with the average.** **Build an equivalent into NBA's shrinkage design FROM THE START,
+> NOT AS A LATER PATCH.**"*
+
+**NBA has no such valve.** Its shrinkage machinery is **entirely protective in the other direction**:
+| Mechanism | Direction |
+|---|---|
+| Empirical-Bayes prior strength (Efron-Morris) | decays with sample size — **shrinks less as n grows, but never caps the prior** |
+| Per-prop `k_stab` (STL 125, TOV 60) | **shrinks MORE** for noisier props |
+| `min_real_sample_threshold` on cells | *"cells under sample are **fully shrunk to prior**"* — **shrinks MORE when thin** |
+
+**Every mechanism guards against trusting thin samples. None guards against distrusting thick ones.**
+
+**⚠ And the symptom this valve prevents is already measured in NBA.** T8: *"the bias is **monotone in
+the variation band**… **the quantile tier prior COMPRESSES THE EXTREMES**"*, with **rebounds ELITE
+under-predicted in BOTH seasons** — a structural miss kept as a band cell.
+
+**"The tier prior compresses the extremes" is precisely what the valve exists to stop.** NBA
+corrected it **after the fact with per-band cells**; the blueprint prescribed preventing it
+**structurally, from the start**.
+
+**Worth evaluating**: whether adding the valve would remove the need for some band cells — and per the
+T8 rule, a cell whose sign is consistent across seasons is *structural*, which is what an
+over-compressed prior would produce.
+
+### ⚠ RELIABILITY TIERS SHOULD BE A PURE FUNCTION OF SAMPLE COUNT
+> *"**Keep sample-size reliability tiers PURELY a function of sample count, NOT a blend of other
+> signals** — **MLB explicitly TRIED AND REVERTED** an attempt to make this 'smarter'; **the locked,
+> simpler version was correct.**"*
+
+**A tried-and-reverted experiment, recorded so it is not repeated.**
+**To check in NBA's confidence model**: `c_exist`, `c_quality` and `f_prov` are reliability-adjacent.
+Whether any blends a non-count signal is unverified. *(`f_role` is an empirical error measurement by
+role band, not a reliability tier, so it is likely out of scope — but worth confirming.)*
+
 ### ⚠⚠ SHARED-EVENT PROP PAIRS — an explicit T1 check, never run
 T1's blueprint §4b records a bug where **two props measuring the *literally identical underlying
 event*** received **different shrinkage treatment**, and the inconsistency **grew from a 40%
