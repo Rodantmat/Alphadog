@@ -160,9 +160,28 @@ Deliberate: the owner specified no orchestrator. Copy that precedent for any new
 *"**garbage-time filtering** is an industry-standard practice (Cleaning the Glass, pioneered by Ben
 Falk) that our existing season-aggregate data does **not** apply — `stats.nba.com`'s raw stats
 **include garbage time**."*
-**Every season-aggregate figure mined from stats.nba.com is contaminated with garbage-time minutes.**
-The blowout factor (T16) attacks the same problem from the minutes side, but the underlying aggregates
-were never re-derived with a garbage-time filter. **Unresolved.**
+
+**And it is NOT uniform** — Gemini rated it *"medium-high priority, **especially for bench-player props
+whose season stats are almost entirely garbage-time minutes**."*
+
+**A CONNECTION NEVER MADE, worth investigating:** the population most contaminated by garbage time
+(bench and fringe players) is **exactly the population where the confidence model later measures the
+largest error** — fringe players miss by **0.0283** vs iron-men at **0.0008**, a **35× gap**, which is
+why `f_role` carries 55.6% of the deduction budget. **These may be the same problem seen from two
+ends.** If a bench player's season aggregates are mostly garbage-time minutes, his baseline projection
+is built on unrepresentative data — and the confidence model is measuring that, not just sample size.
+**Never tested.**
+
+Correctly deferred at the time: *"it can't be fixed at this layer — it needs play-by-play data, which
+belongs to Phase 3b."* **It was never picked up in Phase 3b either.**
+
+### DECISION RECORD · EPM rejected on licensing, not capability
+**EPM (Dunks & Threes)** was rated by Gemini as *"one of the highest predictive-lift single features"* —
+then found to be **behind a paid subscription**. The line drawn:
+*"Scraping paywalled content isn't something I'll do without your explicit sign-off — it's a real
+legitimacy/ToS question, not just a technical one."* **Nothing was built against it.**
+**This remains an open decision for the owner**, and DARKO (free, rated higher on RMSE) made it
+non-urgent rather than resolved.
 
 ### CAVEAT · stats.nba.com requires the FULL parameter set
 A partial query string returns a **real HTTP 500**, not a helpful error. *"many as empty strings"* —
