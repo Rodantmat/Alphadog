@@ -222,6 +222,39 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 `credential_key` TEXT **PK** · `credential_value_encrypted` TEXT · `updated_at`
 Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never live in chat memory.**
 
+## 2b. THE TIERING CONFIG LAYER *(T8 — materialised from the five-dimension design)*
+
+All row counts **verified live 2026-09-20.**
+
+### `nba_ref.prop_taxonomy` — **28 rows**
+Created empty in T1, correctly flagged as empty in T7's audit, **seeded here**. The canonical prop
+list the whole matrix is built over.
+
+### `nba_config.factor_registry` — **67 rows** *(seeded at 29 in T8)*
+Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it is a **baseline** or
+**enrichment** factor, and which cluster it belongs to. **It has more than doubled since T8**, and is
+the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
+`nba/NBA_ENRICHMENT_FACTOR_LOCK.md`.
+
+### `nba_config.factor_relevance` — **460 rows**
+The **prop × factor relevance matrix** — which factors are even candidates for which props.
+
+### `nba_config.factor_profile_cells` — **35 rows**
+The fitted **lifts/penalties**, *"in exactly MLB's cell form."* Seeded from research as provisional
+values — *"**these are the values the backtest will move**."*
+
+**⚠ Read the 35-vs-460 gap correctly**: most prop × factor pairs are marked **relevant** but carry
+**no fitted cell**. That is consistent with the T15/T16 result — **ten enrichment candidates tested,
+none survived at leg level**. **The matrix records what was considered; the cells record what earned a
+value.**
+
+### `nba_config.role_tiers` — **6 rows**
+**Exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** — IRON_MAN 36+ ·
+HIGH_USAGE_STARTER 32–36 · STARTER 27–32 · ROTATION 21–27 · BENCH 15–21 · FRINGE 0–15.
+**Config and code agree**, so the no-hardcoding rule holds here.
+
+### `nba_config.calibration_log` — 8 rows
+
 ### `nba_config.stat_decay_config` — 13 rows *(T7)***Per-stat EWMA memory. The single most important config table in the system.**
 `stat_key` · `display_name` · **`ewma_alpha`** · **`min_lookback_games`** ·
 **`shrinkage_stabilization_games`** · **`memory_class`** · **`rationale`** · `active` · `updated_at`
