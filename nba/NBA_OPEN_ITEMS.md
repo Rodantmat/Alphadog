@@ -533,6 +533,12 @@ night-and-day"* — while `month` was rated **Low** and is the second-largest ta
 **32,179 rows at PER-GAME granularity**, which supersedes a season aggregate. **The capability is
 covered.** Recorded so the absence is not later mistaken for missing role data.
 
+**⚠ AND THE PK FLAW IS CONFIRMED AS A FLAW, not a design choice.** T6 explicitly verified that the
+weekly-snapshot tables (shot quality, playtype, tracking, impact rating, on/off) are *"correctly
+weekly-refresh snapshots **by original design**, not gaps."* **The splits tables are different — they
+carry a `season` column**, so they were intended to hold multiple seasons and the PK omission defeats
+that intent.
+
 ### STILL LIVE · the WinsLosses leakage surface is in the schema
 `w`, `l`, `w_pct` columns exist on both splits tables and `wins_losses` holds 1,135 rows.
 **The T4 caution — "collect it, but don't naively feed it to a model" — is not enforced by anything.**
