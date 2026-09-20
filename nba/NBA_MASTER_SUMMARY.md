@@ -3946,6 +3946,77 @@ from being exact; the schedule table already holds the real opening date (2026-1
 
 **T7 PASS 2: NEW MATERIAL. Clean count 0/3.**
 
+### T7.9 — PASS 3 — the 100% audit, and the checkpoint document's structure
+
+#### T7.9a — The audit table, in full
+| Category | Status |
+|---|---|
+| **All 30 data tables** (`nba_ref`/`nba_calendar`/`nba_team`/`nba_stats`) | ✅ real, correct counts |
+| `nba_ref.prop_taxonomy` (0 rows) | correctly empty — *"a Board/Scoring concept, out of scope for this layer"* |
+| `*_differential_log` (0 rows) | correctly empty — *"only one weekly baseline run has happened; **detection starts on the second run**"* |
+| **18 registered workers** | *"All have real corresponding scrapers on disk, **no orphans either direction**"* |
+| Weekly scrape workflow | *"All **14 static/weekly-phase scrapers** cross-checked **step-by-step against the actual workflow file**"* |
+
+**"No orphans either direction"** is the strong form of the check: no registry row without a script,
+**and** no script without a registry row.
+
+**The differential note is worth keeping**: an empty `*_differential_log` after one run is *correct*.
+**But T3.11a establishes the worker was never scheduled** — so those tables are still empty for a
+different reason now, and the "expected on first run" explanation no longer applies.
+
+#### T7.9b — The gap found by re-reading the assistant's own code against its own claims
+> *"my own daily-delta worker's **design comment promised** it would surface which new games are
+> missing starter-status/officials coverage — but I'd **only built the game-log completeness check,
+> never the part I'd actually described**. **Found it by re-reading my own code against my own claims,
+> not by assumption.**"*
+
+**Verified against known reality after fixing**: *"exactly **0 missing starter-status games and 3
+missing officials games** for 2025-26 — matching the earlier, independently-confirmed findings
+exactly."*
+
+**A docstring that overstates what the code does is a real defect class** — and the only way it was
+caught was comparing the two directly.
+
+#### T7.9c — The checkpoint document's 10 sections
+**✅ VERIFIED PRESENT 2026-09-20: `nba/NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` — 30,601
+bytes, 359 lines.** Confirmed headings include *"What this system is"*, *"Infrastructure — how
+everything actually runs"*, *"Complete table inventory — every table, real row count, real purpose
+(verified 2026-09-04)"*, and *"Complete worker inventory (**19 registered, all `enabled=1`**)"*.
+
+**Note 19 vs 18**: the audit table says 18 registered workers; the checkpoint written in the same
+session says 19. **The delta worker registered between the two** — the count moved during the session.
+
+The 10 sections, as described:
+1. What this system is — scope, boundaries, isolation from MLB
+2. Infrastructure — schemas, Workers, the bridge, **the Cloudflare→GitHub Actions workaround**, triggers
+3. Every table — 30, real verified counts, **including the two correctly-empty ones explained**
+4. Every worker — 19, job keys, phases, **exact source endpoints, binding names**
+5. Every real data source — *"with honest reliability notes (**v2-vs-v3 lesson front and centre**)"*
+6. **Every real bug found and fixed — 9 of them, each with root cause, not just 'fixed it'**
+7. Key research/Gemini findings, condensed
+8. **What's explicitly NOT built yet, and why** — *"**the most important section for continuity**:
+   baseline pipeline, master run, enrichment, board scraper, outcome grading — **all deliberate scope
+   boundaries, not oversights**"*
+9. **Non-obvious lessons** — *"v3-before-v2, **don't trust '0 errors'**, cheap diagnostics first,
+   `GAME_ID` prefixes, the tool-enum lag"*
+10. Suggested next steps, in priority order
+
+**Section 8's framing is the one worth copying**: distinguishing *deliberate scope boundary* from
+*oversight* is what stops a future session from "fixing" something that was never meant to exist yet.
+
+#### T7.9d — The write-time discipline
+> *"**Every number in it was re-pulled from live Postgres at write-time, not carried from memory.**"*
+
+#### T7.9e — The owner's brainstorm framing
+> *"This is just a **test and brainstorm, do not start building yet**, you can build **probe workers**
+> for now if needed."*
+
+**And the question it asked was the productive one**: *"is the path already known for when the real
+data comes up?"* — which is what surfaced the season-hardcoding bug (T7.1) and the four delta gaps
+(T7.2). **Asking "will this work later?" found five problems that "does this work now?" could not.**
+
+**T7 PASS 3: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
