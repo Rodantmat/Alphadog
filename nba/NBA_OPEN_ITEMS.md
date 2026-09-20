@@ -490,6 +490,8 @@ not rediscovered as a new bug.
 **Per-player cells look attractive and fail for the same reason every time: 40–80 games is not enough
 to fit anything.** The system's granularity lives in *tiers*, not players — by evidence, three times
 over.
+
+### IF A2 IS EVER REVISITED · check the sample-size gating first
 A2 (teammate redistribution) was **retracted** after five failed panels — *"the certified anchor wins
 every slice, and worst where the mechanism predicted it should win"* (COMPASS fact 91).
 
