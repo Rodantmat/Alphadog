@@ -72,23 +72,39 @@ P1's.)*
 aggregates**, so a 2025-26 snapshot becomes steadily more wrong as 2026-27 progresses. `days_rest`
 (→ factor A4) and `location` are among them.
 
-### ⚠⚠ AND A LARGER QUESTION THE SAME CHECK RAISED — **does P1 load anything into Postgres?**
-P1's steps **scrape to JSON and commit**. The only steps that touch `DATABASE_URL` are
-**defender ratings** and **static context**. There is **no loader step, no `run_job`, no worker
-invocation** for teams, players, bio, season tables, team stats, on/off, playtypes, tracking, DARKO or
-shot quality.
+### ⚠⚠ AND A LARGER QUESTION THE SAME CHECK RAISED — **do the pipelines load anything into Postgres?**
 
-**Those all have Postgres writer Workers** (built T1–T3, wired through admin-sql). **Nothing in P1
-calls them.**
+**VERIFIED 2026-09-20 across both workflow files:**
 
-**Two readings, and I could not settle it from the workflow file alone:**
-1. **Benign** — the writer Workers are triggered on a separate schedule, or by a cron inside the
-   Workers themselves.
-2. **Not benign** — P1 refreshes the committed JSON weekly and **Postgres never sees it**, so every
-   `nba_ref`/`nba_stats` table stays frozen at whatever the last manual `run_job` wrote.
+| Pipeline | Steps touching Postgres |
+|---|---|
+| **P1 weekly static** | `build_defender_ratings.py` · `build_static_context.py` · the certifier. **Nothing else.** |
+| **P2 overnight heavy** | `check_delta_gaps.py` (reads) · `grade_board_outcomes.py` · `export_market_spreads.py` · **`load_baseline_ladder.py`** · calibration/confidence refits · the certifier |
 
-**This is the single most important thing to verify before opening night.** Check whether any
-scheduled trigger invokes the static writer Workers; if not, P1 needs load steps.
+**`load_baseline_ladder.py` is the ONLY loader in either pipeline, and it loads only the baseline
+ladder artefact.**
+
+**There is no load step for:** teams · players · bio · arenas · season tables · team stats · on/off ·
+playtypes · tracking · DARKO · shot quality · **player game logs** · **starter status** ·
+**officials** · splits · career totals.
+
+**All of these have Postgres writer Workers** — built T1–T6, registered in
+`nba_config.worker_definitions`, wired through admin-sql. **Nothing in P1 or P2 invokes any of them.**
+
+**Two readings:**
+1. **Benign** — the writer Workers carry their own cron triggers, or a Coworker scheduled task calls
+   them (which is the T1 operating model: *"each run triggered by a Claude Coworker scheduled task"*).
+2. **Not benign** — the pipelines refresh committed JSON and **Postgres never sees it**, leaving every
+   `nba_ref`/`nba_stats` table frozen at whatever the last manual `run_job` wrote.
+
+**Reading 1 is plausible and consistent with the original no-orchestrator design** — the pipelines
+mine and commit; Coworker triggers the writers. **But nothing in the workflows documents that
+handoff**, and an unattended P2 at 01:00 PT would then depend on a separate trigger firing between
+P2's commit and P3's 1:15 PM scoring.
+
+**→ THE SINGLE MOST IMPORTANT PRE-SEASON VERIFICATION.** Either confirm the writer Workers are
+scheduled, or add explicit load steps to P1 and P2. **One counter-check settles it**: if
+`nba_stats.player_game_log` gains rows after opening night without a manual trigger, reading 1 holds.
 
 ---
 
