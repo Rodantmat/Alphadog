@@ -205,6 +205,65 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 46 — `run_job` HAS 14 MODES AND THE TOOL DOC IS STALE *(added 2026-09-20)*
+*Angle: T1's four `run_job` calls, read as an API surface rather than as events, then **the live
+bridge `alphadog-v2-admin-sql.js` grepped to enumerate the whole surface**. All VERIFIED 2026-09-20.*
+
+### T1's four dispatch calls — the observed grammar
+| Call | Meaning |
+|---|---|
+| `{"job":"run","target":"NBA_STATIC_TEAMS_WORKER"}` ×2 | direct worker call |
+| `{"job":"probe-sources","target":"NBA_STATIC_TEAMS_WORKER"}` | **a second per-worker mode** |
+| `{"job":"trigger","target":"CONTROL_ROOM"}` | the queue path |
+
+**`run_job` takes a `job` mode as well as a `target`. The twelve documents recorded only `target`.**
+
+### ⚠ THE SURFACE IS 14 MODES — 13 of them appear in none of the twelve documents
+Full table in `NBA_SYSTEM_ARCHITECTURE.md` §3b. **Three write into NBA tables**:
+**`odds_api_board_backfill`** → `nba_market.board_snapshots` (*"credits_per_snapshot: 10 × markets ×
+regions"*) · **`parlay_game_lines_backfill`** → `nba_market.game_lines_closing` (*"one closing-odds
+call per date (10 credits)… chunk by month per call (the worker's wall-time budget); the caller loops
+months"*) · **`betr_board_pull`** (`leagues` defaults to `["MLB","NBA"]`; token is the owner's
+**Keycloak** access token sent **raw**, from `external_credentials.betr_access_token`).
+
+### ⚠⚠ `worker_invocation_logs` — the diagnostic nothing in the record has ever used
+> *"Cloudflare's GraphQL Analytics API (**`workersInvocationsAdaptive`** dataset) records the actual
+> outcome of **every** Worker invocation — including **`exceededCpu`, `canceled`, `exception`,
+> `scriptNotFound`** — which lets us confirm or rule out **a platform-level kill**."*
+
+**This is the missing half of every "reported green, produced nothing" investigation in this file.**
+It separates **a worker that failed** from **a worker never invoked** from **a worker Cloudflare
+killed** — and **it has never been run against an NBA worker in the record.**
+**Directly applicable to two open items**: the **weekly differential worker, built but never
+scheduled** (its three log tables empty — *was it never invoked, or invoked and killed?*), and the
+**`FE_DATE` destructive run** (*what actually invoked `build_final_hp.py` with `FE_WRITE=1`?*).
+**SEASON-START RELEVANT** — it is the only tool that can answer "did the platform kill it."
+
+### ⚠ `nba/NBA_AVAILABLE_TOOLS.md` IS STALE ON TWO COUNTS
+1. **Its `run_job` target enum lists 12 MLB targets and ZERO NBA** — yet **the live bridge routes 21
+   NBA bindings** (`NBA_STATIC_TEAMS_WORKER` … `NBA_BASELINE_LADDER_WORKER`), and
+   `NBA_STATIC_TEAMS_WORKER` was wired and successfully invoked **later in T1 itself**. The document
+   records the *pre-wiring* state as if current.
+2. **It documents `run_sql` against twelve D1 databases** — `CONTROL_DB`, `CONFIG_DB`, `REF_DB`, … —
+   **decommissioned system-wide 2026-08-12.** The file even notes all twelve bindings report
+   `false`, then describes the tool as usable *"if you confirm it reaches real data."*
+
+**This is the THIRD stale-manifest instance found in this sweep**, after `schema_manifest.json`
+(*PASS 43*) and `NBA_PROJECT_LOG.md`'s missing founding entry (*PASS 42*) — **and the second that
+describes the dead D1 backend as live.** Blueprint §5b, again, in the NBA folder this time.
+
+### ⚠ `probe-sources` is a per-worker mode the mode-dispatch table does not list
+The live bridge routes `job: "probe-sources"` to **`https://internal/probe-sources`** for **all 21
+NBA bindings**, with the default path otherwise. **`NBA_WORKERS.md`'s mode-dispatch table does not
+carry it.** The code's own note on the NBA branch:
+> *"NBA expansion (additive only). Same direct-call pattern as `BASE_HITTER_GAME_LOGS_WORKER` —
+> **bypasses `control_job_queue` + orchestrator entirely (NBA has no orchestrator by design)**."*
+
+**That sentence is the owner's no-orchestrator rule implemented in the dispatch layer** — a fourth
+independent record of it, after the owner's message, the blueprint, and `ORCHESTRATOR_CRONS = []`.
+
+---
+
 ## FROM T1 PASS 45 — THE ARTEFACTS T1 WROTE, AND WHERE T1 ACTUALLY STOPS *(added 2026-09-20)*
 *Angle: the **write** calls in T1's tail (lines ~40000–43895) — `github_put_file`,
 `github_patch_file` — read as a list of artefacts, then **each verified against the live repo**.*
