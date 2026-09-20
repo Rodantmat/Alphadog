@@ -1025,6 +1025,53 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠ THREE FACTOR AUDITS NAMED IN T1, NONE RUN
+The blueprint lists five enrichment-factor bug patterns *"all real, all worth actively checking for in
+NBA's own factors."* **Three are single queries against tables that already exist.**
+
+**1. Cap-presence audit** *(pattern 2)*
+> *"**one factor's lookup table left UNCAPPED while every sibling factor in the same system has
+> explicit caps** — **the INCONSISTENCY ITSELF is the red flag; audit cap presence across the WHOLE
+> factor registry AT ONCE, not factor-by-factor.**"*
+**`nba_config.factor_profile_cells` has dedicated `cap` / `lift` / `penalty` / `coefficient`
+columns.** One query: which cells carry a null `cap` where siblings do not.
+
+**2. Contribution-discrimination audit** *(pattern 4)*
+> *"**a factor showing the IDENTICAL contribution value across wildly different real cases** — an
+> elite player and an average player getting **the exact same adjustment** — **a sign the factor is
+> simply HITTING ITS OWN CAP for nearly everyone, not actually discriminating, even though the code
+> 'runs' without error.**"*
+**This is NOT caught by the `stddev(factor_value)` check** — the inputs differ, the contributions do
+not. **`final_hp`'s `breakdown` stores per-factor contributions**, so the test is: distinct
+contribution values per factor.
+
+**3. Per-game vs cumulative audit** *(pattern 1)*
+> *"**a cumulative/season-total stat used as if it were a per-game rate**, with no division by games
+> played — **causing one factor to SWAMP EVERY OTHER FACTOR COMBINED.** **Tell: the source field name
+> says 'TOTAL' while the consuming code treats it as 'PER GAME'.**"*
+**`nba_stats.player_career_totals` is cumulative; `player_game_log` is per-game.**
+
+### ⚠ RSS AGGREGATION — a named fix for a live multicollinearity, not implemented
+*Pattern 3*:
+> *"several factors all correlating with the same underlying signal — e.g. **a market-derived game
+> total ALREADY PRICES IN park/weather/pace effects that separate factors also try to capture** — so
+> **naively multiplying or summing them DOUBLE- AND TRIPLE-COUNTS the same real information.**
+> **Fix: RSS (root-sum-squares) aggregation for a genuinely correlated factor cluster** — **zero
+> dampening when only ONE factor in the cluster fires**, **increasing dampening as more correlated
+> factors stack**. **Keep genuinely independent factors OUT of this treatment.**"*
+
+**The example is live in NBA.** The matchup factor uses **market-implied totals** (`f_impl_own` /
+`f_impl_opp` = `total/2 ∓ spread/2`), which on this description **already price in pace and opponent
+strength** — the same information the pace coefficient (1.17) and opponent-defence coefficient (0.53)
+also carry.
+
+**`factor_registry` already stores MACRO-CLUSTERS** (T8), so the grouping RSS needs exists.
+**No RSS aggregation is recorded anywhere.**
+
+**Note the architecture solved the same problem differently elsewhere**: putting blowout, OT and foul
+risk in the **minutes model** *"dissolves their correlation"*. **RSS is for clusters that cannot be
+re-homed that way.**
+
 ### 🔍 CHEAP DIAGNOSTIC NEVER RUN · the enrichment-displacement calibration split
 T1's blueprint §4a records an audit technique and its MLB result:
 > *"**Split graded legs by HOW FAR THE ENRICHMENT LAYER MOVED THE FINAL PROBABILITY AWAY FROM THE
