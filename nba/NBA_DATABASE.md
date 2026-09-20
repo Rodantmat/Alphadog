@@ -472,6 +472,35 @@ lesson — this table's `side` is a real population split; the Platt fit's is no
 `season, game_date, game_id, branch_key, branch_prob, n_uncertain, n_branches, realised,
 was_most_likely, rank_by_prob, phase`. **Only the realised branch is stored.**
 
+### `nba_score.confidence_verification` — ⚠ **four writers, one of which deletes the whole table**
+`check_type, slice, tier, n, stated, actual, gap, run_at`.
+*Recorded 2026-09-20 (T1 pass 34). **VERIFIED by live query.***
+
+**Live contents — three generations coexisting, which is itself the evidence:**
+
+| `check_type` group | written by | `run_at` |
+|---|---|---|
+| `overall`, `by_band_tier`, `component`, `phase`, `season` | `verify_confidence.py` | **2026-09-17 18:16** |
+| `mondrian_quintile` | `build_mondrian_confidence.py` | **2026-09-17 23:31** |
+| `conf_band_v3`, `group_prop`, `group_side`, `group_phase`, `group_season`, `group_kind`, `group_role_tier`, `group_rung_dist` | `build_confidence_v3.py` *(P2, nightly)* | **2026-09-20 03:30** |
+
+**`build_confidence_v3.py`, `build_confidence_v2.py` and `build_mondrian_confidence.py` each delete
+only their own partition** (`WHERE tier='v3'`, `WHERE tier IN ('v2','high_vs_low')`,
+`WHERE check_type='mondrian_quintile'`). **`verify_confidence.py` runs
+`DELETE FROM nba_score.confidence_verification` with no predicate.**
+
+**So the v3 and mondrian rows survive only because the unscoped writer happens to have run first.**
+The next `verify_confidence.py` run — wired in `nba-absence-panel.yml`, **not** in P2 — deletes both.
+**No `v2` / `high_vs_low` rows are present at all.** Full entry in `NBA_OPEN_ITEMS.md`.
+
+### `nba_score.ladder_calibration` — **DROPPED, and VERIFIED absent** *(but live code recreates it)*
+**VERIFIED 2026-09-20**: absent from `information_schema.tables` for `nba_score`. It was the pasted
+correction table, **dropped as a parity violation** and replaced by `ladder_calibration_asof`.
+⚠ **`nba/calibrate_all_props.py` still runs `CREATE TABLE IF NOT EXISTS nba_score.ladder_calibration`
+and repopulates it**, wired behind a manual input in `nba-absence-panel.yml`. **A `DROP` does not
+survive a `CREATE … IF NOT EXISTS`.** **VERIFIED nothing reads it** — no `SELECT` against it exists in
+any of the 190 files. Full entry in `NBA_OPEN_ITEMS.md`.
+
 ### `nba_score.factor_gate_results`
 `season, slice, model, n, log_loss, brier, gain_vs_anchor, shrink_beta, run_at`. Every factor verdict —
 **results go in the database, not the CI log.**
