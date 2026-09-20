@@ -222,8 +222,7 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 `credential_key` TEXT **PK** · `credential_value_encrypted` TEXT · `updated_at`
 Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never live in chat memory.**
 
-### `nba_config.classification_config`
-`config_key` · `config_json` JSONB · `notes` · `updated_at`. The system's decision record — every major
+### `nba_config.classification_config``config_key` · `config_json` JSONB · `notes` · `updated_at`. The system's decision record — every major
 verdict is written here so it is queryable rather than trapped in a log. Keys include
 `prizepicks_goblin_demon_tier_spec`, `board_payout_conversion_rules`, `rejected_on_data`,
 `blowout_model_market_spread_2026_09_13`, `availability_model_n1v3_2026_09_15`,
