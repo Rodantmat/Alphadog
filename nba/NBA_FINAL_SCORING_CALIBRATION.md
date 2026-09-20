@@ -825,7 +825,30 @@ that failed five panels and *"worst where the mechanism predicted it should win.
 #### #19 — **LANGUAGE STRENGTH MUST NEVER EXCEED EVIDENCE STRENGTH**
 > *"…easy to **drift on gradually rather than violate all at once**: a finding that clears a **lenient
 > bar should be DESCRIBED as clearing a lenient bar**, not described in the same confident language as
-> one that cleared every available check. **If a claim needs a word like 'confirmed', 'proven'**…"*
+> one that cleared every available check.
+> **If a claim needs a word like 'CONFIRMED', 'PROVEN', or 'VALIDATED', IT SHOULD HAVE ACTUALLY
+> CLEARED THE FULL STANDARD IN THIS DOCUMENT** — **a strategy that merely 'AVOIDS BEING WORSE' than
+> some baseline should NEVER be described using the same language reserved for one that's been shown
+> to GENUINELY OUTPERFORM it.**
+> **Calibrate every claim's wording to match exactly HOW MUCH SCRUTINY IT SURVIVED, not how appealing
+> the underlying number looks.**"*
+
+**Three words are gated** — *confirmed*, *proven*, *validated* — each requiring the **full standard**,
+not merely a good number.
+
+**The named trap is precise and directly live here**: *"avoids being worse"* ≠ *"outperforms"*. The
+ten enrichment factors produced *"the certified anchor wins every slice"*, which establishes that
+**the factors did not beat the anchor** — not that the anchor is proven superior in a stronger sense.
+
+**Applied to this system's own vocabulary:**
+| Claim | Correct word |
+|---|---|
+| Ladder calibration, both seasons, `0 misses of 37`, holdout with cells disabled | **certified** — cleared the stated leg-level standard |
+| The four-way goblin/demon rule, 42,600 ladders | **verified** |
+| Ten enrichment factors closed on `gain_vs_anchor` | **did not beat the anchor** — *not* "disproven" (#8) |
+| Goblin/demon EV conclusions | **directional** — payout factors observed, not quoted from a slip (#16) |
+| Flex partial tiers 4/5 = 0.5, 3/5 = 0.25 | **first pass** (#26) |
+| `board_tiers_v2` | **built, unverified** |
 
 **A mechanical discipline, not a stylistic one.** This project already distinguishes **CERTIFIED /
 CLOSE / REGIME RESIDUAL / CONFIGURED-NOT-RUN / NOT-YET-CERTIFIED** per prop, and tags
