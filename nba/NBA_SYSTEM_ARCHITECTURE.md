@@ -430,6 +430,8 @@ the others scope by source or only by natural key is unverified**, and the named
 
 **The `playerindex` position fix is the case to check**: positions arrived from a *second* source for
 players already written from `commonallplayers`. **It worked (582/582), so the scoping held there.**
+
+### ⚠ CHUNKING / MULTI-TICK CONTINUATION — and the per-tick trap
 > *"**Cloudflare Workers have REAL EXECUTION-TIME CONSTRAINTS.** The proven MLB pattern: **PROCESS A
 > BOUNDED SLICE PER INVOCATION, TRACK CONTINUATION STATE, and ONLY MARK A SOURCE 'FULLY SYNCED' ON THE
 > FINAL TICK once THE COMPLETE FRESH DATASET HAS BEEN SEEN** — **NEVER PER-TICK, or INTERMEDIATE TICKS
