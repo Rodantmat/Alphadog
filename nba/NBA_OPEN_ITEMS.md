@@ -549,8 +549,7 @@ Gemini rated it *"foundational, non-negotiable — a player's role is **the sing
 opportunity**, and it can **shift game-to-game in ways season averages miss entirely**."*
 **Extending it to 2023-24 and 2024-25 costs ~2,460 more calls.**
 
-### COVERAGE ASYMMETRY SUMMARY *(added 2026-09-20)*
-What actually spans three seasons versus one:
+### COVERAGE ASYMMETRY SUMMARY *(added 2026-09-20)*What actually spans three seasons versus one:
 | Dataset | Seasons |
 |---|---|
 | Player game logs (base + advanced) | **3** — 79,358 rows |
