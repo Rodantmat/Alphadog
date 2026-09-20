@@ -53,6 +53,44 @@ is that data come from nba.com itself, as MLB's does. Treat balldontlie as conti
 
 ---
 
+## FROM T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
+*added 2026-09-20*
+
+### BUG-FIXED · GitHub API content-type mismatch
+The worker requested the GitHub API's **raw** content-type then parsed it as the **base64-JSON
+envelope**, producing `"Unexpected end of JSON input"`. Looked like a permissions error; was not.
+
+### BUG-FIXED · fleet deploy order breaks new bindings
+Workers deploy **alphabetically from the file diff**, so `alphadog-v2-admin-sql.js` (which holds the
+bindings for new workers) sorted BEFORE `nba/alphadog-v2-nba-static-players.js` and failed.
+**Permanent fix in `github_mobile_deploy_workers.py`: admin-sql always deploys LAST.**
+
+### BUG-FIXED · git push race, non-fast-forward
+Three scrapes succeeded but the final push was rejected by a concurrent push.
+**Permanent fix: retry-with-rebase loop** — now standard in every NBA workflow.
+
+### BUG-FIXED · arenas: the endpoint no longer carries the columns
+`ARENA` / `ARENACAPACITY` came back null for all 30 teams. A diagnostic dump proved the columns are
+genuinely **absent from that endpoint's real schema**, not mis-parsed. Switched to
+`teamdetails` → `TeamBackground`. **Pattern: dump the real response before patching the parser.**
+
+### BUG-FIXED · officials script needs plain `requests`, not `curl_cffi`
+Wikipedia's API is designed for programmatic access and needs no bot bypass; the package was never
+installed in the workflow. **Not every source takes the same transport.**
+
+### BUG-FIXED · commit step hard-failed when one scraper produced nothing
+Fixed so a single empty scraper cannot fail the whole run.
+
+### CAVEAT · arena capacities are null where the SOURCE lacks them
+Some of the 30 arenas have no capacity because `teamdetails` itself does not carry it. Recorded
+honestly rather than filled from another source.
+
+### CAVEAT · `source_key` only updates on rows that actually changed
+25 of 30 teams kept their previous `source_key` because their data was identical. This is an upsert
+property — do not read a stale `source_key` as a failed refresh.
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
