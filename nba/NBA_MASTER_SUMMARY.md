@@ -1456,6 +1456,31 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.73 — PASS 43 (angle: **read T1's repo-root file listing as an INVENTORY, then verify each item live**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 43. Listing: T1 lines
+~5114–8800.*
+
+- **⚠⚠ `schema_manifest.json` describes a backend dead since 2026-08-12.** **VERIFIED by reading the
+  live file**: `"date": "2026-05-18"`, **`"target": "AlphaDog v2 new D1 databases only"`**, naming
+  **11 D1 databases**. **D1 was fully decommissioned system-wide on 2026-08-12** (§T1.17).
+- **Its eleven companion `schema_*_db.sql` files — 133 KB — are equally stale**, and their DDL is
+  **SQLite/D1-flavoured and flat-named**: `schema_ref_db.sql` defines **`ref_teams`**, not the
+  Postgres `ref.teams` that exists. **Wrong in naming, type system and target backend.**
+- **⚠⚠ This is blueprint §5b standing in the repository, verbatim** — *"static manifest/mapping files
+  can silently describe an earlier architecture, not the current one."* **The warning NBA inherited
+  has an instance one directory above `nba/`.**
+- **⚠ And NBA was pointed at one of these files as a template.** §T1.51 records the recommendation to
+  *"check `schema_ref_db.sql` for the full static-layer pattern."* **That file is D1-era.** Whether
+  it was acted on is **NOT RECORDED**; the outcome suggests not literally, **but nothing in the
+  record flags the pointer as stale.**
+- **⚠ NBA has NO committed schema files** — **VERIFIED**: `ls nba/*.sql` returns nothing. MLB has 11
+  (stale); NBA has 0. **Nothing went stale because nothing was written** — but blueprint §9's
+  whole-universe comparison **has no NBA schema artefact to diff the live database against.**
+  `NBA_DATABASE.md` is the closest thing NBA has to a schema file, **and it is prose.**
+  **NOT RECORDED as a decision.**
+
+---
+
 ### T1.72 — PASS 42 (angle: **diff the project-log entries WRITTEN in T1 against the repo file today**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 42. Source: T1 lines
 10511–10545.*
