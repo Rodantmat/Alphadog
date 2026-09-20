@@ -58,6 +58,13 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Board tiers v2 (four-way taxonomy)
+        if: ${{ github.event.inputs.task == 'tiers' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BT2_APPS: ${{ github.event.inputs.props }}
+        run: python nba/build_board_tiers_v2.py
+
       - name: Find a date that exercises the reallocation path
         if: ${{ github.event.inputs.task == 'finddate' }}
         env:
