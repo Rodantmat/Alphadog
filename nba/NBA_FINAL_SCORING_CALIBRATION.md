@@ -757,6 +757,10 @@ rung**; the factor gate reports per **slice**; the bootstrap's leave-one-day-out
 **day**. **The dimension with the least coverage is `variant`** — i.e. goblin/standard/demon — which is
 consistent with the tails never having been separately certified.
 
+---
+
+## 18. WHERE EDGE IS NOW EXPECTED TO COME FROM
+
 ### ⚠⚠ 15.0a THE HARD CONSTRAINT — two of the three platforms are measured EFFICIENT
 > *"**Underdog/Sleeper's own EV-parity pricing, measured directly against real placed-slip data at
 > scale (14,000+ REAL LEGS), showed `p × m` FLAT AND SLIGHTLY BELOW 1.0 ACROSS THE ENTIRE PROBABILITY
