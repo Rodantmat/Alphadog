@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 35 passes.** Pass 35 found new material — negative space: the blueprint's shared-queue contention question answered by live query (0 NBA rows in MLB's 116-row registry), blueprint-vs-owner contradiction flagged (§T1.65). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 36 passes.** Pass 36 found new material — **VERIFIED: no code reads any `nba_config` tunable table**; whole-universe diff shows 7 of 10 stats' decay params disagree between config and the live recipe; three founding owner directives never recorded (§T1.66). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
