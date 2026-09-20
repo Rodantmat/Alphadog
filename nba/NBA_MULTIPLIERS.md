@@ -258,6 +258,37 @@ recomputed factor.
 
 ---
 
+## 4b. THE CAPTURE PROTOCOL — what a valid multiplier study requires
+
+**Beyond the mechanics in §4, three lessons constrain how any capture must be run:**
+
+### 4b.1 **A CONTROL SLIP WITH A KNOWN ANSWER — required, not optional** *(#22)*
+> *"MLB's original multiplier-observation study **deliberately included a real slip built ENTIRELY from
+> unmodified, standard-priced legs** — with the explicit purpose of **confirming the study's own
+> MEASUREMENT METHOD against a case with a known, predictable answer**. **It came back matching.**"*
+
+**The control validates the instrument, not the hypothesis.** A standard-only slip has a predictable
+payout; **if the method cannot reproduce it, nothing measured on goblin or demon slips means
+anything.** **Any NBA capture must open with one standard-only slip.**
+
+### 4b.2 **ALL TEST LEGS FROM THE CURRENT/LIVE BOARD** *(the owner's rule, §0)*
+> *"**all test legs must come from the current/live board**"* · *"**no rushing, must be fully
+> understood before locking any numbers**"*
+
+### 4b.3 **RE-PAIR BEFORE CONCLUDING ON ANY INTERACTION** *(#23)*
+An anomaly in a **pairing** is a property of the pair, not of either leg. **Re-pair each leg with other
+partners before attributing the effect to either one.** Directly relevant to §0.1's finding that
+*"same-team/same-game legs get a small multiplier discount"* — that is an interaction claim, and
+isolating it needs the same-team leg re-paired with non-same-team partners.
+
+### 4b.4 **The sample-size posture applies** *(#18)*
+**Fewer than 15 real days is not a result at all; 15–30 directional; 30–70 with caveats; 70+
+reportable.** **Days, not leg count** — *"a large leg count concentrated in a handful of days is a
+small-sample finding wearing a large-N disguise."* **A multiplier study run over a week is not a
+study.**
+
+---
+
 ## 5. WHY IT MATTERS — the EV arithmetic
 
 **Everything in the goblin/demon economics currently rests on OBSERVED payout factors, not per-leg
