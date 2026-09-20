@@ -239,6 +239,10 @@ double-counts by construction — which is why the T4 methodology also specified
 **The lesson generalises**: before adding any enrichment multiplier, ask **what in the baseline already
 encodes this signal**. The measured answer, ten times out of ten, was "the baseline does."
 
+---
+
+## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
 100% coverage).
