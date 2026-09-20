@@ -1456,6 +1456,46 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.111 — PASS 81 (angle: **the 31 workflow-run LISTINGS — everything that appeared alongside the runs T1 was waiting for**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 81.*
+
+**FINDING 1 — ⚠⚠ GitHub Pages is enabled on this repository and no document mentions it.**
+In T1's 31 listings the most frequent workflow is **`pages build and deployment` — 44 appearances**,
+ahead of the deploy workflow's 35. **It has no file in `.github/workflows/`**, which is why it
+escaped every inventory including pass 70's.
+**VERIFIED LIVE**: a fresh listing returns **twelve runs, all Pages builds on `main`, every one on a
+commit SHA written by this documentation pass** — two `success`, the rest `cancelled` by the next
+push.
+
+**FINDING 2 — ⚠⚠ `[skip ci]` does not stop it.** **VERIFIED**: every commit in this effort carries
+`[skip ci]`; **the MLB deploy workflow did not fire for any of them, and the Pages build fired for
+all of them.** **The instruction did exactly what it was meant to do** — no worker was redeployed by
+a documentation commit — **but Pages is an additional effect nobody asked for and nobody recorded.**
+
+**FINDING 3 — ⚠⚠ it compounds the credential blocker, and the blocker is updated.**
+**VERIFIED on the clone**: no `gh-pages` branch, no `docs/`, no `_config.yml`, no `.nojekyll`, no
+`index.html` — **so the Pages source is `main` at the repository root, where the markdown lives.**
+**If the transcripts are committed while Pages builds from `main`, the credential values would be
+inside the published site as well as inside `git` history.**
+**What this pass does NOT claim**: **whether the site is public.** That setting is not readable
+through any tool here, and **no claim is made that anything is currently exposed.**
+**→ Owner action, now in the blocker: confirm the Pages setting — enabled, source, public — before
+committing the transcripts.** If public, **rotation is the only reliable remedy for anything already
+committed.**
+
+**FINDING 4 — corroboration, not new.** All 31 calls used a small `per_page` (**14 at 2**, 9 at 3,
+3 at 1, 2 at 6, 2 at 4, 1 at 10) — **T1 was checking "has my run appeared yet", not surveying
+history.** The same behaviour the 25 polling sleeps record (pass 66), seen from the other side.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 81*, **and the blocker updated**) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 81 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.110 — PASS 80 (angle: **the live-system RESPONSES — `check_bindings` and the four `run_job` results, with `check_bindings` re-run today**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 80.*
 
