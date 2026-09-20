@@ -46,13 +46,42 @@ material; it is not a rerun.
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **DONE — 3/3 clean (passes 26, 27, 28)** |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
-| 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ✅ **DONE — 3/3 clean (passes 8, 9, 10)** |
-| 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ✅ **DONE — 3/3 clean (passes 10, 11, 12)** |
-| 5 | `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` | ✅ **DONE — 3/3 clean (passes 6, 7, 8)** |
-| 6 | `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` | ✅ **DONE — 3/3 clean (passes 6, 7, 8)** |
-| 7 | `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt` | ✅ **DONE — 3/3 clean (passes 19, 20, 21)** |
-| 8 | `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` | ✅ **DONE — 3/3 clean (passes 13, 14, 15)** |
-| 9 | `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt` | ✅ **DONE — 3/3 clean (passes 6, 7, 8)** |
+| 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
+| 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
+| 5 | `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` | ⚠ **RESET** |
+| 6 | `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` | ⚠ **RESET** |
+| 7 | `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt` | ⚠ **RESET** |
+| 8 | `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` | ⚠ **RESET** |
+| 9 | `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt` | ⚠ **RESET** |
+
+---
+
+# ⚠ DRIFT NOTICE — 2026-09-20
+
+**A pass is only clean if it leaves ALL documents current. From T3 onward it did not.**
+
+Across T3–T9 I updated `NBA_MASTER_SUMMARY.md`, `NBA_GLOSSARY.md`, `NBA_DATABASE.md` and
+`NBA_OPEN_ITEMS.md` — but **NOT** `NBA_RECIPE.md`, `NBA_WORKERS.md`, `NBA_SYSTEM_ARCHITECTURE.md` or
+`NBA_SYSTEM_DESIGN.md`. Those four were written from T1–T3 material and left behind.
+
+**So every "clean pass" recorded for T3–T9 was clean against half the document set.** Their counts are
+void. **T1 and T2 stand** — they predate the drift.
+
+**Four further documents are now mandated** (2026-09-20), which T1–T9 have never been passed against:
+| New document | Scope |
+|---|---|
+| `NBA_BASELINE_CALIBRATION.md` | the baseline hit-probability calibration — formulas, tiers, granulation, bonuses, penalties, caps, logic |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | final HP, confidence, score — the enrichment/final pipeline's calibration |
+| `NBA_MULTIPLIERS.md` | multipliers for every app — formulas, logic, references, tests, slips, examples |
+| `NBA_GOBLIN_DEMON.md` | PrizePicks goblin/demon ingestion — parsing, anchors, invisible anchors, switch line, more/less above and below the anchor, ladders |
+
+**Corrected procedure, binding from now:**
+1. Re-read both mandate messages **before every pass**.
+2. A pass updates **all 12 documents** or it is not a pass.
+3. Three consecutive passes with nothing new **across all 12** before a transcript is DONE.
+
+**Recovery order**: backfill the eight neglected/new documents with T3–T9 material first, then re-run
+the three-clean-pass cycle per transcript against the full set.
 | 10 | `2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt` | **NEXT** |
 | 11 | `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt` | pending |
 | 12 | `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt` | pending |
