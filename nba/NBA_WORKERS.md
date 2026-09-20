@@ -471,6 +471,23 @@ fallback** with real stats.nba.com TEAM_IDs.
 ---
 
 ## 2. STATIC SCRAPERS — GitHub Actions, `nba/data/`
+
+> ### ⚠ EVERY SCRAPER'S OUTPUT SHOULD HAVE A `*_meta.json` SIDECAR — about one in five does
+> *Recorded 2026-09-20 (T1 pass 45). **VERIFIED on the live repo**: `nba/data/` holds **223 files,
+> 41 of them `*_meta.json`.***
+>
+> ```json
+> { "fetched_at": "2026-09-14T15:49:33Z",
+>   "source_url": "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2026-27…",
+>   "http_status": 200, "team_count": 30, "error": null }
+> ```
+>
+> **This is the provenance layer that makes the standing discipline checkable** — *read the committed
+> file, not the scraper's own meta claim* — because it records **when, from where, what status, how
+> many rows, and whether it errored.**
+> **⚠ For the ~180 files without one there is no committed record of fetch time or success**, and the
+> workflow logs that would answer it **expire** (§0.25's sibling finding, `NBA_OPEN_ITEMS.md` FROM
+> T1 PASS 40). **Whether the gap is deliberate is NOT RECORDED.**
 All use **`curl_cffi` with browser impersonation** except where noted.
 
 | Script | Endpoint | Output |
