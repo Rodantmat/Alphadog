@@ -15,6 +15,38 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0y. ⚠ WHERE THE BASELINE'S CONSTANTS ACTUALLY LIVE — in Python, not in config
+*VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
+
+**Every tunable this document describes — per-prop EWMA `alpha`, `k_stab`, `step`, distribution
+`family`, `zero_adjust`, and the six `ROLE_TIERS` bands — is a hardcoded constant in
+`nba/backtest/classification_ladder_v12.py`.** The config tables that appear to hold them
+(`nba_config.stat_decay_config`, `nba_config.role_tiers`, `nba_config.classification_config`) are
+**read by nothing**: those table names appear **zero times** in the codebase.
+
+**Why this belongs in the calibration document and not only in the schema one:**
+1. **The live numbers are the code's.** Any parameter quoted in this document should be traced to
+   `classification_ladder_v12.py`, **not** to a config row, and **not** to a figure in
+   `NBA_DATABASE.md`.
+2. **The two sides have measurably drifted.** A whole-universe diff found **7 of 10 mappable stats
+   disagreeing**, **3 on the decay rate itself** — blocks **0.08 (config) vs 0.10 (code)**,
+   turnovers **0.10 vs 0.12**, ft% **0.04 vs 0.03**. Full table: `NBA_OPEN_ITEMS.md` →
+   *FROM T1 PASS 36*.
+3. **The code looks like the evidence-updated side.** It carries dated justifications inline —
+   *"alpha raised 0.08 → 0.15 (EWMA beat the expanding mean on every band)"* for `oreb`,
+   *"top-decile regression 13%"* for turnovers — matching §5.0's nine measured iterations.
+   **The config looks like the T7 seed that was never updated.** **Which side is intended is NOT
+   ESTABLISHED** and is flagged for human confirmation, not resolved here.
+4. **It changes what "every tunable lives in the database" means for this layer.** The principle is
+   recorded at `NBA_FINAL_SCORING_CALIBRATION.md` §7p and in `NBA_RECIPE.md` STEP 0. **For the
+   baseline it is aspirational, not descriptive.**
+
+**⚠ Practical consequence for anyone re-tuning the baseline**: changing `blk_rate`'s alpha in
+`stat_decay_config` by SQL — the workflow the owner's founding rule promises — **changes nothing and
+raises no error.** The edit must be made in the recipe and deployed.
+
+---
+
 ## 1. THE BOUNDARY — what the baseline may and may not see
 
 > *"The baseline isn't 'player history only.' It's **everything derivable from static and historical
