@@ -1432,6 +1432,84 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.66 — PASS 36 (angle: **the owner's 15 messages in full, then every standing rule TESTED against the code**) — **NEW MATERIAL · MAJOR · CLEAN COUNT STAYS 0/3**
+*Recorded 2026-09-20.*
+
+**Angle**: pass 10 swept *"every owner message in order"* — **in excerpt**. This pass extracts all
+**15 `Human:` blocks** from T1 in full, then does what no prior pass did: **takes each standing rule
+the owner stated and checks whether the live code obeys it.**
+
+---
+
+#### ⚠⚠⚠ FINDING 1 — **NOTHING READS ANY `nba_config` TUNABLE TABLE**
+
+**The founding rule, verbatim:**
+> *"**any future variable numbers must reside on the database, NOT HARD CODED** — any equation
+> variables like, **bonus, penalties, caps**, or **system variables like, TIMEOUTS, RETRIES, CHUNK
+> SIZE** — **so all these are EASILY CHANGED BY SQL COMMAND INSTEAD OF CODING AND DEPLOYS.**"*
+
+**VERIFIED** by grep of all 190 `.py`/`.js` files in `nba/` **and** the MCP admin bridge:
+**`classification_config`, `factor_registry`, `factor_relevance`, `factor_profile_cells`,
+`stat_decay_config`, `ewma_alpha`, `system_settings`, `role_tiers` appear ZERO times.** The only
+config table anything reads is **`external_credentials`** (12 call sites, API keys).
+**System variables are hardcoded throughout** — `timeout=30/60/90/120/300`, retry counts as literal
+`range(3)`/`range(4)`, chunk sizes as Python constants — **even though
+`nba_config.system_settings` seeds `nba_default_chunk_size = 200`.**
+
+**⚠ This reframes the recorded `minutes_mixture` drift.** That item reads *"config and code have
+drifted."* **There is no coupling to drift from** — `minutes_mixture` is one of several keys in a
+table nothing consults. *(The earlier entry stands as observation and is superseded in explanation.)*
+**⚠ And it defeats the rule's purpose, which is operational**: *"changed by SQL instead of coding and
+deploys"* matters **because the owner has no terminal** (§1a). Changing a cap today needs a code
+edit, a commit and a deploy.
+
+#### ⚠⚠ FINDING 2 — the whole-universe comparison, run, with numbers
+Blueprint §9 technique 1 applied: live `SELECT` from `stat_decay_config` (13 rows) diffed against the
+`PROPS` dict in `classification_ladder_v12.py`. **Seven of ten mappable stats disagree on at least
+one parameter; three disagree on the decay rate itself** — `blk_rate` **0.08 vs 0.10**, `tov_rate`
+**0.10 vs 0.12**, `ft_pct` **0.04 vs 0.03** — plus four `k_stab` gaps (`stl_rate` **60 vs 125**,
+`tov_rate` **40 vs 95**, `fta_rate` **30 vs 40**, `fg3a_rate` **25 vs 20**). **All 13 rows carry
+`active = 1`.** Full table, with the two mapping caveats stated rather than assumed, in
+`NBA_OPEN_ITEMS.md`.
+**The code appears to be the evidence-updated side** — it carries dated inline justifications
+(*"alpha raised 0.08 → 0.15"*, *"top-decile regression 13%"*) — **but which side is intended is NOT
+ESTABLISHED and is flagged for human confirmation, per §9's rule on contradictions.**
+
+#### FINDING 3 — a documented conclusion corrected
+`NBA_DATABASE.md` said of `role_tiers`: *"config and code agree, **so the no-hardcoding rule holds
+here**."* **The values do agree — VERIFIED.** **The conclusion does not follow**: `ROLE_TIERS` is a
+hardcoded list at line 129 and nothing reads the table. **Agreement maintained by hand is not the
+rule holding.** Corrected in place.
+
+#### FINDING 4 — three founding directives never recorded at all
+1. **The per-worker improvement mandate**: *"each new chat should look into the current MLB worker and
+   understand the functionality, **research if any improvement should be done**, then create with new
+   nba sources."* A specific three-step build rule, **in none of the twelve documents**; `RECIPE`
+   records only a generic *"research is mandatory."* **Whether it was followed for the ~25 NBA
+   workers is NOT RECORDED.**
+2. **The MLB no-touch rule in the owner's own words**: *"this chat and any chat coming from here
+   **must not edit anything from the mlb system**"* — binding on every descendant chat, not just T1.
+   ✅ **VERIFIED HELD at pass 35.**
+3. **The source mandate**: *"**ideally all these data should be coming from nba.com just like the mlb
+   api**."* **This is why the Cloudflare block was treated as blocking** — requiring a whole new
+   scraping architecture rather than a different source. The documents record the block and the fix;
+   **not the constraint that made substitution unacceptable.** It is also the owner-stated origin of
+   blueprint §4i — **two independent sources, one rule.**
+
+#### FINDING 5 — an ambiguity flagged rather than guessed
+Owner message 5: *"you have access to all of it, **we can do 2**, if it doesnt change much and does
+not affect the mlb universe, that is fine."* **What "2" selected is not recoverable from the owner's
+message alone**, and is recorded nowhere. **The attached condition is itself a standing constraint**
+and is recorded as one.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 36*) · `DATABASE` (§2 banner, `stat_decay_config`,
+`role_tiers` correction) · `BASELINE_CALIBRATION` §0y · `RECIPE` · `WORKERS` ·
+`SYSTEM_ARCHITECTURE` · `FINAL_SCORING_CALIBRATION` · `GOBLIN_DEMON` · `GLOSSARY` · this entry.
+
+**PASS 36 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.65 — PASS 35 (angle: **NEGATIVE SPACE — what a section promises and never delivers**) — **NEW MATERIAL · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
