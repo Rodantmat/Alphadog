@@ -1,5 +1,20 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## ⚠ `nba/tools/sweep_coverage.py` IS COMMITTED BUT NOT REPRODUCIBLE — read before trusting any coverage number in these documents
+*Recorded 2026-09-20.*
+
+The coverage matcher that produces the "% uncovered" figures quoted throughout these documents
+**is in the repo; the corpus it measures is not.** From a clean checkout every subcommand
+(`index`, `score`, `tails`, `backtest`) **fails**, because `nba/transcripts/` holds no `.txt`
+files — see the BLOCKER immediately below. `--transcripts` must be pointed at a local copy that
+exists only outside git.
+
+**As of 2026-09-20 only the session that wrote the tool can run it.** Every measured number it
+produced — the 0.40 threshold, the 100%-recall backtest, each transcript's uncovered percentage —
+is therefore **reported, not independently checkable.** Committing the 20 transcripts (redacted,
+per the credential findings in the BLOCKER) is the single change that makes all of it reproducible.
+Nobody picking this up later should read those figures as verified-by-rerun until that happens.
+
 ## ⚠⚠ BLOCKER FOR THE OWNER · **the 20 transcripts are not in the repo, and this session cannot put them there**
 *Recorded 2026-09-20 (T1 pass 40). **VERIFIED**: `nba/transcripts/` holds only `README.md` and
 `journal.txt`.*
