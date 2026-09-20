@@ -1203,6 +1203,38 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
+### ⚠ SYSTEMIC RISK · "a function is called but was never actually defined"
+T1's blueprint §4h, flagged as *"a SYSTEMIC RISK CATEGORY, NOT A ONE-OFF"*:
+> *"MLB found **at least TWO MORE separate, real cases of DISPATCH CODE CALLING A FUNCTION THAT SIMPLY
+> DIDN'T EXIST anywhere in the file being called from** — **confirmed via DIRECT GREP SHOWING EXACTLY
+> ONE MATCH (the call site) and ZERO MATCHES FOR A DEFINITION.**
+> **Both went UNDETECTED UNTIL THE EXACT RARE CODE PATH that triggered them was finally exercised, at
+> which point they caused an IMMEDIATE, REPRODUCIBLE CRASH.**
+> **Given this has now happened AT LEAST THREE SEPARATE TIMES in the same codebase, treat it as a
+> systemic, recurring risk for NBA specifically: WHENEVER WIRING A NEW NBA WORKER OR CODE PATH INTO
+> ANY SHARED DISPATCH LOGIC, DIRECTLY GREP-VERIFY THAT EVERY FUNCTION IT CALLS ACTUALLY HAS A REAL
+> DEFINITION SOMEWHERE REACHABLE.**
+> **DON'T RELY ON THE CODE COMPILING OR THE COMMON PATH WORKING as proof that AN ERROR-RECOVERY OR
+> EDGE-CASE BRANCH IS ALSO SOUND.**"*
+
+**The detection method is exact and cheap**: grep the function name — **one match means call site
+only, zero definition.**
+
+**Why NBA is exposed**: every new worker is wired into `admin-sql`'s **dispatch branch**, and the
+shared dispatch is precisely the *"shared dispatch logic"* named. **The rare paths are the risk** —
+error-recovery branches, the `mode` variants (`weekly`, `probe`, `backfill`), replay paths, and
+`ot_rule = exclude` handling. **These run rarely or never, so the common path working proves nothing
+about them.**
+
+**Three NBA instances of the adjacent family are already recorded** — not missing definitions, but
+**code paths that never ran and were wrong**:
+- the delta worker's **docstring promised** starter-status/officials gap detection that *"I never
+  actually implemented"*
+- the measure-types mapper writing **`usg_pct`/`reb_pct` columns that do not exist on the team table**
+- **`SLEEPER_SPORTS` defaulting to MLB**, writing to a path nothing committed
+
+**The prescribed check has not been run against the NBA dispatch surface.**
+
 ### ⚠ EMPTY FACTOR INPUTS ARE NOT LABELLED "UNAVAILABLE"
 T1's blueprint §4d:
 > *"**When a factor CANNOT BE HONESTLY IMPLEMENTED because the real underlying data DOESN'T EXIST
