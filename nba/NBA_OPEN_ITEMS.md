@@ -253,6 +253,62 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 77 — THE FOURTEEN ASSISTANT MESSAGES, READ AS THE OWNER-FACING RECORD *(added 2026-09-20)*
+*Angle: **only the text the owner actually saw** — T1's 14 assistant message turns (43,216 characters),
+stripped of thinking, tool calls and tool results, with each factual claim tested against the live
+system and the documents. **VERIFIED by live SQL and by searching the raw exports.***
+
+### ⚠⚠ THE CREDENTIAL EXPOSURE IS WIDER THAN PASS 67 FOUND, AND MY REDACTION ADVICE WAS WRONG
+**Pass 67 found 17 `INSERT INTO nba_config.external_credentials` statements across five transcripts
+and advised stripping those statement values. That advice was too narrow.**
+
+**VERIFIED by searching the raw exports for the stored value itself**: the `balldontlie_api_key`
+value occurs **3 times in T1** and **18 times in T19** (`…documentation-pass`) — **21 occurrences,
+and most are not in an `INSERT` statement.**
+
+**The T1 occurrence that matters most is in the assistant's own handoff message**, in plain prose,
+written for the owner to paste into a new chat. **The same paragraph asserts the key is "already
+stored" in `nba_config.external_credentials`**, and the same session's memory write records the
+owner's rule that the key belongs in the database *"not in chat memory."* **The value was written
+into the chat body anyway.** **The stated rule and the actual handling diverge inside one session.**
+
+⚠ **T19 is this documentation effort's own earlier session**, and it reproduces the value
+**eighteen times** — which is how a credential spreads: **each session that documents the previous
+one copies the value forward.**
+
+**The corrected procedure, now recorded in the blocker at the top of this document**: **redact by
+VALUE, not by statement shape.** Read each value from `nba_config.external_credentials`, search every
+transcript for that exact string, replace it. **Rotation remains the stronger option**, and is now
+more clearly warranted: **a value that has been copied forward through at least two sessions should
+be assumed compromised regardless of what happens to the files.**
+
+### The provenance of the claim pass 68 had to correct
+T1's handoff message states, in the list of what was built:
+> *"**`nba_control`: `worker_run_log`, `job_runs` — own run history.**"*
+
+**That is where the claim entered the record** — written the day the tables were created, **before
+anything had written a row to them**, and it propagated into `NBA_SYSTEM_ARCHITECTURE.md` §1 and
+`NBA_WORKERS.md` §1, where pass 68 corrected it. **The sentence was never false about the schema;
+it was a statement of intent that later reads as a statement of function.** Recorded because it is a
+clean, traceable example of how the *"table exists, writer never born"* pattern (pass 68) also
+becomes a documentation error: **the handoff describes the structure, and every later reader infers
+the behaviour.**
+
+### Claims in the handoff that hold up, checked
+| Claim in T1's handoff | Status today |
+|---|---|
+| *"14 new schemas, zero overlap with MLB"* | ✅ consistent — the 14 are listed by name; **6 of them hold zero tables** (pass 47) |
+| *"`nba_ref.teams` has exactly 30 active rows"* | ✅ **VERIFIED: 30** |
+| *"`nba_ref.team_aliases` has 157 rows"* | ✅ **162 today** — both figures already documented; growth, not drift |
+| *"`github_trigger_workflow` … deployed successfully, but this chat's tool list was fixed at conversation start"* | ✅ already recorded, and **`NBA_SYSTEM_ARCHITECTURE.md` already notes it became available in later sessions** — **it is in this session's tool list** |
+| *"patched `generate_wrangler_configs.py` and `github_mobile_deploy_workers.py`… provably zero-impact on MLB"* | ✅ consistent with pass 73's count (18 MLB writes) and with the isolation checks |
+
+⚠ **One small confirmation of pass 46**: `NBA_AVAILABLE_TOOLS.md` **still does not list
+`github_trigger_workflow`**, though the tool has existed and been callable since shortly after T1.
+**Consistent with that document's already-recorded staleness**; noted, not a new finding.
+
+---
+
 ## FROM T1 PASS 76 — THE `nba_score` OUTPUT LAYER, MEASURED *(added 2026-09-20)*
 *Angle: all 18 `nba_score` tables counted exactly and checked against what the documents claim.
 **VERIFIED by live SQL (exact `count(*)`, not estimates) and by code grep.***
