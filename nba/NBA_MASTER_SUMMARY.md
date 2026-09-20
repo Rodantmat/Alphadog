@@ -370,6 +370,42 @@ Cloudflare Worker origin, headers notwithstanding"* — and names the read patte
 
 **`nba/worker_manifest_nba.json` initial content**: `{"workers": ["alphadog-v2-nba-static-teams"]}`
 
+### T1.15 — PASS 5 FINDINGS (added 2026-09-20; the founding handoff text, verbatim)
+
+**THE ORIGINAL HANDOFF — the instruction that started the entire NBA build**, reproduced by the
+assistant when the owner asked for a portable version:
+
+> *"You are starting the NBA expansion of AlphaDog — an existing, live, working MLB player-prop scoring
+> and slip-strategy system. This is an **EXPANSION joining an already-built, already-Postgres-native
+> system, not a migration and not a from-scratch build**. NBA shares the same GitHub repo, deploy
+> pipeline, and MCP admin-bridge worker that MLB runs on. **No changes to the existing MLB system are
+> authorized at any point — everything is additive.**"*
+
+Three reference documents under `/nba/`, *"built from an exhaustive read of MLB's own documentation"*:
+`NBA_ARCHITECTURE_BLUEPRINT.md`, `NBA_LESSONS_LEARNED_FROM_MLB.md`,
+`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md`.
+
+**THE PARALLEL-CHAT EPISODE (why the file trigger exists).** The owner opened a second chat with this
+handoff. That chat reported back, and its message is preserved in T1:
+- It confirmed `nba/scrape_nba_stats_teams.py` and `.github/workflows/nba-scrape.yml` live in the repo,
+  *"weekly Monday 9am UTC cron + manual `workflow_dispatch`"*.
+- It confirmed **all D1 bindings correctly `false` — "the system is fully Postgres-native via
+  Hyperdrive"**.
+- **`github_trigger_workflow` was not in ITS tool list either.** Its available GitHub tools were exactly:
+  `github_get_file`, `github_put_file`, `github_patch_file`, `github_list_dir`, `github_grep_file`,
+  `github_list_workflow_runs`, `github_get_workflow_run_log` — **no dispatch capability**.
+- **And it could not work around it**: *"I don't have the `GITHUB_TOKEN` value (it's a Worker secret,
+  correctly not exposed to me) to hit the GitHub REST API directly from bash, and **`workflow_dispatch`
+  can't be triggered via a commit/push**."*
+- It offered two ways forward: the owner triggers manually via the Actions tab, or the tool gets
+  properly registered in the live bridge schema — noting *"if it was built but never registered as an
+  exposed tool, that's a real gap worth fixing so future chats don't hit this same wall."*
+
+**The owner rejected manual triggering** (*"no, the whole point is for me to do not run it manually"*),
+which forced the real solution: since `workflow_dispatch` cannot be fired by a push but **`on: push:
+paths:` can**, the workflow was changed to watch a trigger file. **That constraint is the direct cause
+of the file-trigger mechanism still in use today.**
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
