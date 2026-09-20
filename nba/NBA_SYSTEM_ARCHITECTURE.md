@@ -90,7 +90,42 @@ option — so **a PT-anchored schedule necessarily drifts one hour twice a year.
 **The generalisable check**: any comparison of "now" against a fixed hour must resolve the timezone by
 name (`America/Los_Angeles`), **never by a stored `-08:00` / `-07:00`.**
 
-## 1c. THE DATABASE-DISCIPLINE RULE, STATED PRECISELY
+## 8b. ⚠ CORRUPT-AND-FIX TESTING — "the single most reliable verification pattern"
+*Source: T1, blueprint §8. Recorded 2026-09-20.*
+
+> *"**MLB's SINGLE MOST RELIABLE VERIFICATION PATTERN, worth adopting IMMEDIATELY: CORRUPT-AND-FIX
+> TESTING** — **DELIBERATELY CHANGE OR DELETE A REAL ROW DIRECTLY IN THE DATABASE** — **FLIP A VALUE,
+> SIMULATE A TRADE/ROSTER CHANGE, DELETE A ROW** — **and CONFIRM THE PIPELINE CORRECTLY DETECTS AND
+> REPAIRS IT ON THE NEXT RUN, rather than ONLY EVER TESTING THE HAPPY PATH.**"*
+
+**The three named corruptions map directly onto NBA's differential layer's job:**
+| Corruption | What it tests |
+|---|---|
+| **Flip a value** | does the field-by-field comparison detect it? |
+| **Simulate a trade / roster change** | does the differential log it? |
+| **Delete a row** | does the next run restore it? |
+
+**⚠ This is the test that would settle several open items at once**, and it is the one form of
+verification the NBA build has not used. The record shows extensive **happy-path** and **replay**
+verification — *"the delta dry-run produced the correct delta"*, *"the ladder reproduces exactly"*,
+*"0 NaN"* — **but no deliberate corruption.**
+
+**What corrupt-and-fix would answer immediately:**
+| Open item | The corruption that tests it |
+|---|---|
+| **The upsert update-clause audit** | flip one field per writer, re-run, see which fields refresh |
+| **The differential worker being empty** | simulate a trade — **nothing would log, proving it** |
+| **Source-scoping by natural key** | write a row from source A, then a fresher one from source B |
+| **The `active=1` deactivate-by-absence logic** | delete a roster row, confirm it returns rather than deactivating peers |
+| **Field-level archive gaps** | null a populated column, see whether the next run repairs it |
+
+**And the timing is right**: the differential snapshot is **frozen at 2026-09-03** and the season has
+not started, so **a deliberate corruption now costs nothing** — there is no live output to protect.
+
+**⚠ One caution from the same blueprint**: `nba_ref.teams` and `players` are **write-through from
+committed JSON**, so a corrupted row is repaired from the file on the next run. **That makes the test
+safe, and it also means the test is meaningful only where a real comparison happens** — the
+differential layer, the alias tables, the `active` flags.
 *Source: T1, blueprint §7e — **"the single most important database-discipline rule from the whole MLB
 migration."*** Recorded 2026-09-20.
 
