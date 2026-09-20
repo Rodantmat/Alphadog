@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 52 passes.** Pass 52 (random sample of 28 of the 175 bold claims) found new material — **the blueprint's "check for an existing pattern first" rule, which T1 itself broke**; the **"verify the backtest uses the CURRENT live coefficient"** standing check, which lands on the config drift; the unscored four-factor prediction (§T1.82). No consecutive clean run in progress. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLEAN 1/3 — ACTIVE. 53 passes.** Pass 53 (sample the measurements, not the assertions) was **CLEAN — all 12 sampled numeric claims documented** (§T1.83). **Consecutive clean run in progress: pass 53.** *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
