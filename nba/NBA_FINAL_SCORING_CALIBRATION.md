@@ -319,6 +319,56 @@ distinguishes earned values from seeds. **The same discipline, applied to config
 
 ---
 
+## 7e. THE TWO-TEST PARADOX — why a factor can be real and still worthless *(T1, lessons document)*
+
+**The single most important methodological point in the factor work**, and it explains every one of
+the ten rejections:
+
+> *"[A factor showed real signal on residuals] **left over after the baseline's prediction** (a real,
+> legitimate test — it answers ***'does this carry information the baseline doesn't already have?'***)
+> — **but when the stricter, more directly relevant test was run** (***does ADDING this factor to the
+> baseline actually improve the combined model's own correlation with real outcomes?***), **the same
+> factor showed NO improvement, and even trended slightly NEGATIVE.**
+> **Both tests were run correctly and neither is wrong on its own terms — they simply answer DIFFERENT
+> QUESTIONS, and only the se[cond one matters].**"*
+
+| Test | Question | Verdict it gives |
+|---|---|---|
+| **Residual correlation** | *"Does this carry information the baseline lacks?"* | can be **yes** for a useless factor |
+| **Marginal contribution** | *"Does ADDING it improve the combined model?"* | **the only one that decides** |
+
+**Why both can be true at once**: a factor can correlate with the residual while being collinear with
+what the model already uses, or while adding variance faster than signal. **Residual correlation is
+necessary, not sufficient.**
+
+**This is exactly the shape of the NBA enrichment audit's outcome** — ten factors, each with genuine
+domain rationale and often real residual correlation, and the measured verdict
+*"the certified anchor wins every slice."* **`factor_gate_results` stores `gain_vs_anchor`, not
+correlation** — the right metric, by construction.
+
+**And A2's damning detail follows directly**: *"worst where the mechanism predicted it should win."*
+A factor whose marginal contribution is **negative exactly where its story is strongest** is
+describing something the baseline already models better.
+
+## 7f. PRE-REGISTER THE DECIDING TEST *(T1)*
+
+> *"**A signal's last, deciding check: PRE-REGISTER THE EXACT TEST BEFORE RUNNING IT.** Once the
+> **leakage and circularity** issues above were both fixed, the investigation's final test of a
+> remaining candidate factor was **explicitly pre-registered**."*
+
+**Three guards, in order, and all three are needed:**
+1. **Fix leakage** — as-of contamination (three instances in this system; see OPEN_ITEMS)
+2. **Fix circularity** — e.g. prior strength measured against tier-mates is circular, since tier-mates
+   were *selected* for similarity (T8: *"k≈2 against the population but k≈100–250 against tier-mates
+   (circular)"*)
+3. **Pre-register the deciding test** — so the result cannot be re-specified after it is seen
+
+**NBA's structural equivalent**: `nba_score.factor_gate_results` fixes the metrics
+(`log_loss`, `brier`, `gain_vs_anchor`, `shrink_beta`) **before any factor is run**, and every verdict
+lands in the table. *"A verdict that only exists in stdout is not a verdict."*
+
+---
+
 ## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
 
 ### 8.1 Blowout — on the REAL market spread
