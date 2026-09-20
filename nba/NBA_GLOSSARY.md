@@ -366,6 +366,17 @@ the cutoff** because the Active List locks 60 minutes before tip.
 
 ## P–S
 
+**per-subgroup validation** · T1 (blueprint §7f) · The rule that **an aggregate out-of-sample pass is
+necessary but not sufficient**: a proposed calibration correction must be checked against **every
+meaningfully distinct subgroup it will be applied to** — both sides of a market, every tier — not the
+pooled average. MLB's counter-example beat the baseline on held-out error and was still **dominated by
+one side and silently misapplied to the other**. → `NBA_FINAL_SCORING_CALIBRATION.md` §7m2.
+
+**pipeline scrutiny discipline** · T1 (blueprint §9) · The whole methodology built from *"a real
+multi-bug night."* Core philosophy: **a pipeline's own "PASS"/"COMPLETE" self-report is the starting
+point for scrutiny, never the conclusion.** Three techniques, **six named failure modes**, composition
+checks. → `NBA_SYSTEM_DESIGN.md` §6b · failure-mode build status in `NBA_OPEN_ITEMS.md`.
+
 **parity** · T10, T14 · `NBA_DAILY_PARITY_AND_BACKFILL.md`. Every daily factor backfilled day by day,
 producing exactly what the live pipeline would have produced. **§5 forbids carrying a constant between
 days** — the rule that caught the pasted calibration table.
