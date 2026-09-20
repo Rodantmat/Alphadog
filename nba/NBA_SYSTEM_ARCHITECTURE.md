@@ -21,6 +21,40 @@ Every architectural choice below follows from that.
 
 ---
 
+## 1b. THE NAMING AND ISOLATION CONVENTION
+*Source: T1, `NBA_SYSTEM_DRAFT.md` §1. Recorded 2026-09-20.*
+
+Stated as *"locks the collision-avoidance decision the blueprint flagged as required **before the
+first NBA table/worker**."*
+
+| Axis | Convention |
+|---|---|
+| **Worker files & job_keys** | `alphadog-v2-nba-<domain>-<thing>.js` / `nba-<domain>-<thing>` — *"mirrors MLB's existing pattern exactly, with an **unambiguous `nba-` token inserted**."* Example: MLB `alphadog-v2-static-teams.js` / `static-teams` → NBA `alphadog-v2-nba-static-teams.js` / `nba-static-teams` |
+| **Repo location** | **everything inside `/nba/`** — worker files, wrangler configs, schema files — *"**not the repo root, where every MLB worker currently lives**"* |
+| **Why both** | *"This gives **a SECOND, INDEPENDENT way (FOLDER, not just filename prefix)** to guarantee **zero accidental mixing** with MLB files, **per the person's explicit instruction**."* |
+
+**Two independent isolation mechanisms by design** — prefix *and* folder.
+
+### The planned Postgres schema list, in full
+> *"new, separate schemas, **`nba_`-prefixed, parallel to MLB's existing ones**… **Every one of these
+> is a BRAND-NEW schema — none reuse or extend an MLB sche[ma]**."*
+
+`nba_ref` · `nba_calendar` · `nba_stats` *(**"NBA has no hitter/pitcher split"**)* · `nba_team` ·
+`nba_daily` · `nba_context` · `nba_market` · `nba_archive` · `nba_score` · `nba_scoring` ·
+`nba_backtest` · `nba_classification` · `nba_certifier` · `nba_context_cert`
+
+**⚠ Fourteen were planned. The ones carrying data today**: `nba_ref`, `nba_calendar`, `nba_stats`,
+`nba_team`, `nba_config`, `nba_market`, `nba_score`.
+**`nba_config` was NOT in the original list** — added in T8 for the tiering layer.
+**`nba_daily`, `nba_context`, `nba_archive`, `nba_scoring`, `nba_backtest`, `nba_classification`,
+`nba_certifier`, `nba_context_cert` do not appear in any later transcript** — their intended contents
+landed in `nba_score` and `nba_config` instead.
+
+**The "no hitter/pitcher split" note is the structural simplification** also recorded in the prop
+taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB's two.
+
+---
+
 ## 2. COMPUTE
 
 ### Cloudflare Workers
