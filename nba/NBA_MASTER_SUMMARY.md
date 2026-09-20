@@ -962,19 +962,44 @@ rule). **No new material.**
 
 **CLEAN PASS 2 of 3.**
 
-### T1.39 — CURRENT STATE OF T1
+### T1.40 — PASS 24 (full re-read, segment 1) — **NEW MATERIAL · CLEAN COUNT RESET TO 0**
 
-**23 passes. 16 found new material. Clean count: 2/3** (passes 22, 23).
+**AN OWNER INSTRUCTION MISSED IN ALL 23 PRIOR PASSES** — message 65 carried a third line that the
+targeted sweeps never surfaced because it matched no pattern:
 
-**All 23 dimensions swept:** narrative text · tool results · SQL bodies · DDL and settings · handoff
-text · owner specification · caveats and limits · artefacts · endpoint/table/file names · owner
-messages · measured numbers · rules and principles · endpoint inventory · external services ·
-verification claims · decisions and alternatives · error vocabulary · time and scheduling ·
-IDs/hashes/SHAs · proper nouns · quoted third-party content · tool-call sequencing ·
-artefact structure.
+> *"**mlb calls referees 'Umpire' — that is how you will find what exists for referee.**"*
 
-**ONE more clean pass and T1 is DONE.** The final pass must be a full re-read rather than a targeted
-sweep, since every targeted dimension is now exhausted.
+This is not the assistant inferring the analogue; **the owner supplied the search key directly.**
+It is why `ref.umpire_tendency` was found and used as the model, and it is the answer to the open
+question *"a referee dictionary/factor has no MLB analogue at all — genuinely new territory."*
+**It did have one; the owner knew where it was.**
+
+**AN ATTRIBUTION CORRECTION — "backfill first" is the OWNER's rule, not the assistant's.**
+Pass 18 recorded *"weekly re-check cadence, but backfill comes first"* as an assistant observation.
+The source is message 65:
+> *"the static data needs a differential path that **once a week** will run and check for any changes.
+> **but first focus on the backfill**."*
+
+So the weekly cadence AND its subordination to backfill are both owner directives. **This also dates
+the weekly cron to the owner's instruction**, not to a convention inherited from MLB.
+
+**The go-ahead, verbatim**: *"definetely start with the static data, historical data. **you can
+start**."*
+
+**CLEAN COUNT RESET TO 0/3.** Twenty-four passes; seventeen found new material.
+**Third reset.** Passes 22 and 23 were clean; pass 24 invalidated them.
+
+**The lesson this reset teaches, and it is the important one:** every targeted sweep is pattern-bound,
+and an instruction that matches no pattern survives any number of them. **Only a full sequential
+re-read can close a transcript.** Passes 24+ are therefore full re-reads in segments, not sweeps.
+
+### T1.41 — CURRENT STATE OF T1
+
+**24 passes. 17 found new material. Clean count: 0/3.**
+
+**Method for the remaining passes:** full sequential re-read in segments of ~55 message-blocks.
+T1 has ~292 blocks → roughly 6 segments per pass. Segment 1 (blocks 75–130) is done and found new
+material. **Segments 2–6 of pass 24 must still be read**, then two further complete clean passes.
 
 ---
 
