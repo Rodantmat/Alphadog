@@ -216,9 +216,26 @@ of the pricing function:
 > *"the ***exact* numeric ratios quoted in that same original research were later confirmed to have
 > GENUINELY DECAYED AND CHANGED OVER TIME as the platform's own real pricing evolved.**"*
 
-**So `NBA_MULTIPLIERS.md` must treat every number as perishable and every mechanic as durable** — and
-even the mechanics have limits, since the More-only rule was itself a durable mechanic **until
-2026-08**.
+**And the instruction for NBA, stated explicitly:**
+> *"**For NBA, EXPECT THE ANALOGOUS QUALITATIVE PLATFORM MECHANICS TO TRANSFER** — **if a DFS platform
+> prices a 'safer' variant FLAT and a 'riskier' variant with RARITY-SCALING for one sport, the same
+> underlying BUSINESS LOGIC likely governs the equivalent NBA-side variants** — **but ALWAYS treat the
+> exact quoted numbers from any historical MLB study as A STARTING HYPOTHESIS TO RE-VERIFY FRESHLY ON
+> REAL NBA DATA, NEVER as a current, reliable value in its own right.**"*
+
+**The reason the mechanics transfer is named: it is the platform's BUSINESS LOGIC**, not a
+sport-specific pricing model. The same company applies the same structure across sports.
+
+**So the split is clean:**
+| Transfers as a working hypothesis | Must be re-measured on NBA data |
+|---|---|
+| safe variant prices **flat** | the actual flat value |
+| risky variant **scales with rarity** | the **~1.4× per-step** growth factor |
+| **pairing does not affect leg pricing** | the size of the slip-level same-game discount |
+| step-function over tiers, keyed on anchor distance | tier count, tier spacing (T4: *"must be verified per prop"*) |
+
+**⚠ And even the mechanics have a shelf life** — the More-only rule was a durable mechanic **until
+2026-08**. *(§4)*
 
 ---
 
