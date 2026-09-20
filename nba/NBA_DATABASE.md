@@ -75,6 +75,30 @@ proposal to share the control plane.
 
 ---
 
+> ## ⚠⚠ ID CONVENTIONS — **two of them, and they do not join**
+> *VERIFIED by live SQL 2026-09-20 (T1 pass 50), running the proactive format check blueprint §2
+> demanded and that had never been run.*
+>
+> **✅ Types are perfect**: all 28 `player_id`, 20 `team_id` and 20 `game_id` columns are **TEXT**;
+> all 10 `nba_player_id` and 6 `nba_team_id` are **BIGINT**. The two-column pattern — canonical TEXT
+> id + raw stats.nba.com BIGINT — is applied without exception.
+>
+> **⚠ Values split along a layer boundary:**
+>
+> | Layer | `player_id` | Evidence |
+> |---|---|---|
+> | **`nba_ref.*`**, **`nba_stats.*`** | **prefixed `nba_<id>`** — e.g. `nba_1610612737` | `players` 582/582 · `player_game_log` 79,358/79,358 |
+> | **`nba_score.*`** | **bare numeric** — e.g. `101108` | `baseline_history` 19,343,348 · `final_hp` 19,215,200 · `baseline_ladder` 206,237 · `board_scored` 110,955 · `availability_delta` 4,274 — **all 0 prefixed** |
+>
+> **Measured**: `nba_score.board_scored` → `nba_ref.players` on `player_id` = **0 of 110,955**.
+> With `'nba_'||player_id` = **110,955 of 110,955.**
+>
+> **Nothing is currently broken** — the scoring path joins score→score and both sides are bare
+> numeric. **But any join from the scoring layer to the reference layer returns zero rows, silently**,
+> and the transform that bridges them exists nowhere in the schema.
+> **This is the blueprint's named multi-table ID bug, reproduced.** **Which convention is correct is
+> NOT ESTABLISHED** — flagged for human decision. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 50.
+
 ## 1. `nba_ref` — reference / dictionary layer *(T1)*
 
 > ⚠ **THE `*_meta.json` PROVENANCE LAYER** *(recorded 2026-09-20, T1 pass 45 — **VERIFIED on the live
