@@ -255,6 +255,11 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 ### `nba_config.external_credentials`
 `credential_key` TEXT **PK** · `credential_value_encrypted` TEXT · `updated_at`
 Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never live in chat memory.**
+⚠ **The BallDontLie key is explicitly a BACKUP credential** *(recorded 2026-09-20, T1 pass 39, from
+T1's memory write)*: *"provided a real balldontlie.io API key … **as a backup source**, but said **the
+data ideally should come from nba.com itself**, just like the MLB system uses the official MLB Stats
+API."* **The source ordering — nba.com primary, BallDontLie subordinate — is an owner instruction**
+and had not been recorded. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 39.
 
 ## 2b. THE TIERING CONFIG LAYER *(T8 — materialised from the five-dimension design)*
 
