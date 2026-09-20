@@ -205,6 +205,28 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 59 — BLUEPRINT §4a–§4i BY CONCEPT — ✅ **CLEAN** *(added 2026-09-20)*
+*Angle: the enrichment and calibration half of §4, the sample pass 58 did not cover. **Every
+subsection has an entry, and each of the nine is cited by section number in at least one document.
+Nothing new.***
+
+**Concepts checked and present**: **overdispersion correction** for count props and **sample-support
+clamping (Wilson score interval)** (§4b → `NBA_BASELINE_CALIBRATION.md`) · **push/tie/DNP as a real
+third state** and **isolation-by-design as a safety property** (§4c → `NBA_OPEN_ITEMS.md`,
+`NBA_FINAL_SCORING_CALIBRATION.md` §7n) · **macro-environment multicollinearity** and **a
+cumulative/season-total stat used as if it were a per-game rate** (§4a → §7k) · **the two-layer
+architecture never collapsed into one** and **combining factors additively in log-rate space**
+(§4d → §0c, §0d) · **decide the factor architecture once** (§4e → §0e) · **two standing search
+disciplines** (§4f → §7q) · **the preset-dictionary principle** and **tri-state data-quality
+tagging** (§4g → §0f, §4b) · **"a function is called but was never actually defined" as a systemic
+risk category** (§4h → `NBA_OPEN_ITEMS.md`, `NBA_WORKERS.md`) · **exhaustively check the sport's own
+official API first** (§4i → four documents, and corroborated from the owner's own words at
+*PASS 36*).
+
+**PASS 59 IS CLEAN — 2 of 3.**
+
+---
+
 ## FROM T1 PASS 58 — BLUEPRINT §4j–§4n BY CONCEPT — ✅ **CLEAN** *(added 2026-09-20)*
 *Angle: the sound method applied to the blueprint's operational and data-mining subsections. **Every
 lesson in §4j, §4k, §4m and §4n has an entry. Nothing new.***
