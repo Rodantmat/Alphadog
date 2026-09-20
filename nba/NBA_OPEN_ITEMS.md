@@ -471,6 +471,49 @@ explicitly (COMPASS fact 66) — the bound is a modelling decision, not a storag
 
 ---
 
+## FROM T5 PASS 1 *(added 2026-09-20)*
+
+### ⚠ TRAP · **`boxscoretraditionalv2` returns HTTP 200 with ZERO rows on historical games**
+The worst failure mode in the transcripts: **1,228 games "succeeded" and produced 799 rows** where
+~30,000 were expected. *"HTTP 200 and **structurally correct responses, but zero player rows** for every
+game except the very last one."*
+**No error was raised. The meta file reported success.** The discrepancy was only caught by comparing
+the row count against an expected magnitude (26 players/game).
+
+**Fix: use `boxscoretraditionalv3`** — *"v3 works reliably for every single sample, including all the
+games v2 silently failed on."* **v3 schema differs**: flat per-player fields (`personId`, `position`,
+`comment`) nested under `boxScoreTraditional.homeTeam.players` / `awayTeam.players`.
+**Any remaining v2 usage anywhere in the codebase is suspect.**
+
+### BUG-FIXED · `nba_ref.players.position` existed in the schema and was never written
+Two components had the same silent omission: **the scraper never extracted the field**, and **the
+Postgres worker never wrote it**. The column sat empty for three sessions.
+**And the first fix was also wrong** — `PlayerPosition` was assumed; the real source is the
+**`playerindex`** bulk endpoint with a genuine `POSITION` field. Caught by checking the schema before
+re-running, not after. **582/582 after the fix.**
+
+### GEMINI WRONG (twice, in one exchange) · caught by the owner's instinct to double-check
+1. *"starters are already inferable from the game logs via a `GS` column"* — **false**. `GS` exists only
+   as a **season aggregate** in career totals; there is **no per-game starter flag** in
+   `playergamelogs`. `START_POSITION` exists only on the expensive per-game endpoint.
+2. *"Team Pace still needed"* — **false**. Already covered by the advanced-stats backfill.
+
+**Both surfaced because the owner asked to "double check if no other information is needed" rather than
+accepting a completeness claim.**
+
+### ACCEPTED ERROR RATE (stated, not implicit) · splits backfill
+**5 HTTP 500s out of 582 players** — diagnosed as *"likely players with zero games this season causing
+a real data edge case on the source's end"*, and accepted as *"well under the 5% tolerance."*
+**9,948 player-split rows across 577/582 players.** The 5 gaps persist.
+
+### BLOCKED (resolved in T6) · a new worker could not be invoked
+Three layers blocked it: the MCP tool's **target enum is fixed for the session**, **Control Room's job
+dispatch is static**, and **no Postgres HTTP extension** exists to pull the data server-side.
+The fallback — pasting ~3 MB of SQL in 17 chunks — was abandoned as *"burning turns on a mechanical
+process."* **The data was verified and committed; only the load was blocked.**
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
