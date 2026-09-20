@@ -744,6 +744,29 @@ validating more searches."*
 **What is not recorded**: any instance of Gemini being asked to state a falsification bar **before**
 seeing a result. **The NBA uses were synthesis and critique, not pre-stated bars.**
 
+#### #7 — multiple-comparisons correction, scaled to what was ACTUALLY searched
+> *"When scanning many cells/props/thresholds for the best-looking result, **the significance bar must
+> scale with how many things were searched** (Bonferroni or equivalent). **A single, PRE-REGISTERED
+> confirmatory test on ONE specific cell should use an UNCORRECTED bar** — **using a scan-level bar on
+> a single confirmatory test is ITSELF AN ERROR** (a real case: **a 40-cell-scan-corrected bar was
+> wrongly used on what was actually a single pre-specified test, making a real, borderline-positive
+> result look FAR MORE REJECTED than the evidence warranted**)."*
+
+**So the correction is symmetric in its own way — both under- and over-correcting are errors:**
+| Situation | Correct bar |
+|---|---|
+| **Scanning many cells for the best-looking result** | **corrected** (Bonferroni or equivalent), scaled to how many were searched |
+| **A single, pre-registered confirmatory test** | **UNCORRECTED** — applying a scan-level bar here is an error |
+
+**This is the third recorded instance of over-strictness being a real error** (#6's unweighted
+day-test, #9's moving goalposts, and this). **And it makes pre-registration do double duty**: it is
+both the guard against re-specifying after seeing the result (§7f) *and* the thing that earns an
+uncorrected bar.
+
+**NBA state**: the factor gate scanned many **prop × band × side** cells. **No correction is recorded**,
+and **no per-cell pre-registration is recorded either** — so neither branch of #7 has been applied.
+Recorded in `NBA_OPEN_ITEMS.md`.
+
 #### #8 — "insufficient data / underpowered" is a DISTINCT verdict from "confirmed negative"
 > *"**Don't collapse them.** A **non-significant result with a wide confidence interval that still
 > contains a materially positive value is NOT the same as a confirmed-zero effect**. **State the
