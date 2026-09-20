@@ -561,6 +561,55 @@ opportunity**, and it can **shift game-to-game in ways season averages miss enti
 
 ---
 
+## FROM T6 PASS 1 *(added 2026-09-20)*
+
+### BUG-FIXED · **`if rows is not None` passes an EMPTY list**
+The officials backfill reported *"1,230/1,230 succeeded, zero errors"* but produced data for only
+**1,227 games**. The cause:
+> *"When a game returns zero officials, the code returns `([], "error_string")`, but my main loop checks
+> **`if rows is not None`** (true for an empty list) instead of checking the error."*
+
+**`[] is not None` is `True`.** Same class as `float(NaN or 0) = NaN` in the live session:
+**Python truthiness makes "empty but valid" and "present" indistinguishable.**
+**Check the error, not the container.**
+
+### CAVEAT · `boxscoresummaryv2` is documented as unreliable after 2025-04-10
+The same failure pattern as `boxscoretraditionalv2`. **`boxscoresummaryv3` verified on 5 samples, old
+and new games alike, before committing.** The live delta scraper uses v3 — verified.
+
+### ACCEPTED GAP · 3 games have no officials on NBA.com's side
+**All three are 2025-11-19.** The API returns an empty officials array; re-running does not help.
+**3 of 1,230 = 0.24%**, accepted. Recorded so the gap is not re-investigated as a bug.
+
+### BUG-FIXED · lineup PK omitted `team_id`
+*"the same `group_id` can **legitimately appear for two different teams within a season** (e.g. traded
+players who happened to pair up elsewhere too)."*
+**Caught because the load failed loudly.** Contrast the splits PK, which omitted `season` and
+**silently overwrote** instead — the same class of flaw with opposite visibility.
+**This is the argument for tight constraints: a PK that fails is better than one that overwrites.**
+
+### BUG-FIXED (three attempts) · the delta completeness check
+1. **Naive count** → 170-game gap (preseason, playoffs, All-Star, Cup knockout — correctly out of scope)
+2. **Blank-label filter** → *"too aggressive — excludes legitimate regular-season games with special
+   branding (NBA Cup group stage, Rivals Week, international games)"*
+3. **✅ `GAME_ID` prefix `002`** — *"a well-known, precise convention for game type"*, verified before
+   use: **`002` = 1,230 games, exactly the known regular-season count.**
+
+**This is the origin of the `002` convention in `check_delta_gaps.py`.** Any future game-type filter
+should use the prefix, never the free-text label.
+
+### CAVEAT (resolved) · the MCP enum refreshes BETWEEN turns
+T1 concluded a new binding is unusable for the whole session. **T6 disproves that**: after 2 of 33
+manual chunks, a re-check found the enum had refreshed and the Worker loaded the rest in **25 seconds**.
+**Re-check a blocked binding before committing to an expensive workaround.**
+
+### CLOSED · no Postgres-side HTTP path exists
+`dblink` connects only to other Postgres databases; **`http` and `plpython3u` are not available.**
+Large loads must go through a Worker or chunked SQL. **Checked exhaustively, so it need not be
+re-checked.**
+
+---
+
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
