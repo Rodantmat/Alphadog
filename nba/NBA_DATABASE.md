@@ -129,7 +129,7 @@ The team dictionary. 30 active rows.
 | `abbreviation` | TEXT | **was empty on first scrape** — `TeamAbbreviation` is not in `leaguestandingsv3`; fixed T1 |
 | `full_name`, `nickname`, `location_name` | TEXT | |
 | `conference`, `division` | TEXT | NBA-specific; MLB's `ref.teams` has AL/NL instead |
-| `arena_id` | TEXT | → `nba_ref.arenas` |
+| `arena_id` | TEXT | ⚠⚠ **DEAD COLUMN — NULL on all 30 rows, written by no code.** *Corrected 2026-09-20 (T1 pass 65); this table previously described it as a link to `nba_ref.arenas`.* **VERIFIED live**: 30/30 NULL, and zero writes across all 190 code files. **The real link runs the other way** — `nba_ref.arenas.team_id`, populated on all 30 rows. **Join on `arenas.team_id`; a join through `teams.arena_id` returns 30 NULLs and looks like a scrape failure.** Origin: T1 deferred the assignment *"to a dedicated verification pass later"* that never ran and became unnecessary. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 65*. |
 | `active` | INTEGER | DEFAULT 1 |
 | `source_key` | TEXT | e.g. `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE`. **Only updates on rows that actually changed** — 25 of 30 kept old keys when data was identical |
 | `raw_json` | JSONB | full source payload |
