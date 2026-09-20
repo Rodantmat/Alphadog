@@ -259,7 +259,36 @@ GitHub-runner OOM kills on million-row pulls.)*
 
 ---
 
-## 5. DATA SOURCES
+## 4c. BASE-LAYER DATA-MINING LESSONS
+*Source: T1, blueprint §4k — "real, hands-on lessons from building MLB's actual base-data workers,
+worth applying directly to NBA's own base layer." Recorded 2026-09-20.*
+
+### 1. ✅ Adopt existing correct data rather than blindly re-fetching
+> *"MLB found **a real, COSTLY MISTAKE where a new worker CALLED THE EXTERNAL API FRESH FOR EVERY
+> SINGLE PLAYER, even though THE LARGE MAJORITY ALREADY HAD COMPLETE, CORRECT HISTORICAL DATA SITTING
+> IN THE DATABASE from an earlier build.**
+> The fix: **BEFORE MINING, CHECK WHETHER THE NEEDED DATA ALREADY EXISTS AND IS TRUSTWORTHY, and ONLY
+> FETCH WHAT'S GENUINELY MISSING.**
+> **Build EVERY NBA base-data worker to CHECK FOR AND ADOPT EXISTING CORRECT DATA FIRST — DON'T
+> DEFAULT TO A FULL RE-MINE OUT OF CAUTION.**"*
+
+**✅ NBA implements this in several places, and the savings are documented:**
+| Mechanism | Saving |
+|---|---|
+| **The per-game delta** — *"derives the delta **purely from committed files**, fetches **only new games**"* | dry-run against real files produced the correct delta (starter 0, officials 3) **before any network call** |
+| **`known_empty_games`** | *"without it the 3 games the source returns empty would be re-fetched **every single day forever**"* |
+| **The backfill worker's `mode: "weekly"`** | *"loads only those two in **~6 s instead of re-touching 79k rows**"* |
+| **The delta worker's pre-flight completeness check** | calendar Final count vs logged count — fetch only the gap |
+| **The schedule scraper** | **1,400 + 1,266 already published** — recognised rather than re-fetched |
+
+**And the T3 "check for embedded data first" instinct is the same principle applied to scraping**: the
+DARKO extraction began by checking whether the page already carried the dataset — **it did, in the
+`kit.start()` hydration script** — rather than defaulting to pagination.
+
+**⚠ Where a full re-mine still happens**: the **weekly scrapers re-pull whole season aggregates every
+Monday**. That is correct by design (season aggregates change with every game), **but it is the one
+place the principle does not apply, and it is worth knowing it is deliberate rather than
+overlooked.**
 
 ### The original MLB→NBA source mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §3)*
 | MLB source | NBA equivalent, as stated | How it turned out |
