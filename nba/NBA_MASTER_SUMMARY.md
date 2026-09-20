@@ -1456,6 +1456,32 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.74 — PASS 44 (angle: **read the deploy generator pasted in T1 as SOURCE CODE, verified live**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 44. Source: T1 lines
+~16400–18400; every constant re-checked against the live `generate_wrangler_configs.py`.*
+
+- **⚠⚠ CONTRADICTION — the MLB run cadence.** The blueprint says *"4× daily: 1am, 9am, 1pm, 5pm PT."*
+  **The live code says five**: `MASTER_RUN_BASE_TIMES = ["16","20","0","5","9"]` —
+  **`# 9am/1pm/5pm/10pm/2am PT`** — *"closes the **~11-hour overnight gap** the previous 3-time
+  schedule left."* **The overnight slot differs too (2am vs 1am).** Flagged, not resolved; the
+  precedence rule (**live code outranks documents**) points to the code.
+  ⚠ **It propagates**: `NBA_SYSTEM_DESIGN.md` §0.9's MLB-vs-NBA window comparison is built on four.
+  On five, **MLB's 10pm PT window has no NBA counterpart** and NBA's 01:00 PT P2 matches nothing.
+- **✅ VERIFIED from code — the orchestrator is retired**: `ORCHESTRATOR_CRONS = []`, with two details
+  the blueprint's version lacks: **it is still deployed** for manual/direct-call debugging via its
+  service binding, and **three named runners own all real scheduling.**
+- **⚠ The four wiring steps have DIFFERENT blast radii** — `GLOBAL_REDEPLOY_FILES` → **full-fleet,
+  140+ workers**; `generate_wrangler_configs.py` **deliberately excluded**; `worker_manifest.json` →
+  targeted (new worker + orchestrator). **140+ is the fleet size, recorded nowhere else.** An edit
+  landing in the global set **redeploys all of MLB** — the loudest possible violation of *"must not
+  edit anything from the mlb system."*
+- **⚠ An NBA-only path special-case with a named failure**: `"main"` must not be re-prefixed with
+  `nba/` *"or wrangler looks for `nba/nba/<worker>.js` and fails (`entry-point file … not found`)."*
+  **The `startswith("alphadog-v2-nba-")` guard does two jobs** — MLB isolation **and** path
+  resolution. Only the first was documented.
+
+---
+
 ### T1.73 — PASS 43 (angle: **read T1's repo-root file listing as an INVENTORY, then verify each item live**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 43. Listing: T1 lines
 ~5114–8800.*
