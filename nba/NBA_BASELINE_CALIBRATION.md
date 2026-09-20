@@ -209,7 +209,61 @@ TOV 2.5×, BLK 1.7×**; **top-decile steals players regress 17% over the next 20
 a game. **Under-shrinking produced a WINNER'S CURSE in the top band** — found twice, in the full-game
 and period layers.
 
-### 3.8 Distribution — empirical first, with a hierarchical fallback
+### 3.7b TWO SHRINKAGE RULES, WITH EXACT THRESHOLDS
+*Source: T1, blueprint §4b. Recorded 2026-09-20.*
+
+### 1. ⚠ THE "DON'T OVER-SHRINK A REAL SIGNAL" SAFETY VALVE
+> *"**Hierarchical Bayesian shrinkage needs an EXPLICIT 'don't over-shrink a real signal' SAFETY
+> VALVE**: MLB's shrinkage formula has **a hard-coded rule that ONCE A PLAYER HAS ENOUGH REAL
+> OBSERVATIONS (n ≥ 20) **AND** THEIR RAW RATE GENUINELY, MEANINGFULLY DIFFERS FROM THE POPULATION
+> PRIOR (> 15 POINTS), THE PRIOR IS CAPPED AT CONTRIBUTING NO MORE THAN 25% OF THE FINAL ESTIMATE** —
+> **preventing well-supported individual signal from being WASHED OUT just because it DISAGREES WITH
+> THE AVERAGE.**
+> **Build an equivalent safety valve into NBA's shrinkage design FROM THE START, NOT AS A LATER
+> PATCH.**"*
+
+**Three conditions, all required:**
+| Condition | Threshold |
+|---|---|
+| Real observations | **n ≥ 20** |
+| Divergence from the population prior | **> 15 points** |
+| Resulting cap on the prior's contribution | **≤ 25% of the final estimate** |
+
+**⚠ NO SUCH VALVE IS RECORDED IN NBA'S SHRINKAGE.** What NBA has instead:
+- **Empirical-Bayes prior strength** (Efron-Morris), *"so shrinkage genuinely decays to zero as a
+  player's sample grows"* — **decay by sample size only**
+- **Measured per-prop `k_stab`** (STL 125, TOV 60, BLK ~1.7× points) — **stronger shrinkage for
+  noisier props**
+- **The `min_real_sample_threshold` on profile cells** — *"cells under sample are fully shrunk to
+  prior"* — **which is the opposite direction: it shrinks MORE when thin, and has no rule for shrinking
+  LESS when a player is both well-sampled and genuinely different.**
+
+**The asymmetry is the point.** NBA's machinery protects against trusting thin samples. **The valve
+protects against distrusting thick ones** — an outlier with 40 games and a genuinely extreme rate is
+exactly the player a tier-mean prior will drag toward average.
+
+**Directly relevant to the recorded `FRINGE` and `ELITE` residuals**: T8 found *"the bias is MONOTONE
+in the variation band… **the quantile tier prior COMPRESSES THE EXTREMES**"* and **rebounds ELITE
+under-predicted in both seasons** — a structural cell kept because its sign was consistent.
+**"The tier prior compresses the extremes" IS the failure this valve prevents**, and NBA solved it
+with per-band cells after the fact rather than with a valve from the start.
+
+### 2. Keep reliability tiers a PURE function of sample count
+> *"**Keep sample-size reliability tiers PURELY a function of SAMPLE COUNT, NOT a blend of other
+> signals** — **MLB explicitly TRIED AND REVERTED an attempt to make this 'smarter' by incorporating
+> other information; the LOCKED, SIMPLER VERSION WAS CORRECT.** If tempted to enrich a
+> reliability-tier classifier with additiona[l signals]…"*
+
+**A tried-and-reverted experiment, recorded so it is not repeated.**
+
+**NBA's `f_role` is the case to watch**: the confidence model's dominant factor (**55.6% of the
+deduction budget**) is keyed on **`role_tier`, which is derived from `mu_role` — projected minutes,
+not sample count.** **That is a reliability-adjacent classifier built on a non-sample-count signal.**
+
+**Whether it violates this rule depends on framing**: `f_role` measures *realised gap by role band*
+(fringe 0.0283 vs iron-man 0.0008), which is **an empirical error measurement**, not a reliability
+tier in the sense meant here. **But `c_exist` / `c_quality` / `f_prov` in the confidence model are
+closer to reliability tiers**, and whether any of them blend non-count signals is unverified.
 **Cascade**: **empirical per-tier outcome table** (requires **≥300 games/tier**; *"sums real observed
 P(0..threshold), **no assumed family**"*) → **NegBin/Poisson** for counts → **Normal** with a real
 prediction interval.
