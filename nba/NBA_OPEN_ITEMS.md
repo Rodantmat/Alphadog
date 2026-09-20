@@ -1145,6 +1145,38 @@ dimension, and whether `ot_rule` is in its key, is unverified** — `baseline_la
 **And the source names the family**: *"this is the same 'grou[ping key]' failure"* — Part C's dominant
 bug class, in the grader.
 
+### ⚠ A TWO-PARADIGM SPLIT EMERGED IN THE CONSTANTS — the exact cost T1 warned against
+T1's blueprint §4e records **"a real, avoidable complexity MLB is currently living with"**: its factor
+system was migrated piecemeal, so **some factors live in config cells and others remain hardcoded**.
+> *"**The real, practical cost: for ANY GIVEN FACTOR, a session doing enrichment work FIRST HAS TO
+> CHECK *WHICH PARADIGM THAT SPECIFIC FACTOR CURRENTLY FOLLOWS* before doing anything else**, since
+> the two require **genuinely different investigation and modification approaches.**"*
+> *"**NBA has a real, ONE-TIME OPPORTUNITY MLB no longer has… build the config-table-driven, two-layer
+> architecture FROM DAY ONE, FOR EVERY FACTOR FROM THE START — avoid EVER maintaining TWO DIFFERENT
+> PARADIGMS SIDE BY SIDE.**"*
+
+**✅ NBA took the opportunity for FACTORS.** Every enrichment factor is in the config layer —
+`factor_registry` (67), `factor_relevance` (460), `factor_profile_cells` (35). No hardcoded-JS
+enrichment system exists.
+
+**⚠ The split reappeared in the CONSTANTS:**
+| Paradigm | Holds |
+|---|---|
+| Config tables | `stat_decay_config` (13), `role_tiers` (6), `factor_profile_cells`, `classification_config` (66), `minutes_mixture` |
+| **Python literals in the recipes** | `MAX_TIERS`, `MIN_PER_TIER`, `TIER_BLEND_K`, `SHIFT_LAMBDA`, `BLOWOUT_MARGIN`, `COMPETITIVE_MARGIN`, `LADDER_DEPTH`, Wilson n=30 |
+
+**And the named cost has already been paid once**: `minutes_mixture` specifies `dud_lognormal`,
+`tiered_inelastic` renormalisation and a **per-team** `E[min|blowout]` — **none implemented in the
+recipe.** **To know what the system does, you must check which paradigm holds that value.**
+
+**Severity is not uniform**: `role_tiers` (DB) and `ROLE_TIERS` (code) **were verified to agree**;
+`minutes_mixture` and the code **do not**. **The split is harmful specifically where the two disagree
+and nothing asserts they should not.**
+
+**A cheap mitigation exists**: an assertion at recipe start that each literal matches its config
+counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
+on drift.
+
 ### ⚠ EMPTY FACTOR INPUTS ARE NOT LABELLED "UNAVAILABLE"
 T1's blueprint §4d:
 > *"**When a factor CANNOT BE HONESTLY IMPLEMENTED because the real underlying data DOESN'T EXIST
