@@ -755,7 +755,57 @@ FACTOR level, not the ladder level.**
 
 ---
 
-### 5.1 The permanent rules
+## 5.6 ⚠⚠ OUT-OF-SAMPLE VALIDATION IS NECESSARY BUT NOT SUFFICIENT
+*Source: T1, blueprint §7f — "a profound calibration lesson." Recorded 2026-09-20.*
+
+> *"MLB found **a real, concrete case where a statistical calibration fit GENUINELY PASSED HONEST,
+> HELD-OUT, OUT-OF-SAMPLE VALIDATION — it BEAT BOTH THE RAW BASELINE AND A STANDARD CALIBRATION METHOD
+> on real held-out error metrics — AND WAS STILL STRUCTURALLY WRONG.**
+> **The fit had been computed WITHOUT DISTINGUISHING BETWEEN TWO SIDES OF A MARKET (OVER/UNDER), and
+> ended up DOMINATED BY ONE SIDE'S PATTERN, SILENTLY MISAPPLIED TO THE OTHER SIDE.**
+> **THE AGGREGATE IMPROVEMENT METRIC DID NOT CATCH THIS, BECAUSE IT WAS AVERAGED ACROSS BOTH
+> SIDES.**"*
+
+**A fit can beat the baseline, beat a standard method, and still be wrong for half the rows it
+touches.**
+
+### The prescribed rule
+> *"**An AGGREGATE VALIDATION METRIC PASSING IS NECESSARY BUT NOT SUFFICIENT — ALWAYS CHECK WHETHER A
+> PROPOSED CORRECTION IS GENUINELY APPROPRIATE FOR EVERY MEANINGFULLY DISTINCT SUBGROUP IT WILL BE
+> APPLIED TO — both sides of a market, every relevant tier — NOT JUST THE POOLED AVERAGE.**
+> **And KEEP A HUMAN REVIEW STEP BEFORE APPLYING ANY CALIBRATION CORRECTION EVEN WHEN IT HAS
+> TECHNICALLY PASSED VALIDATION.**"*
+
+### ✅ NBA's Platt key already carries `side`-adjacent structure — but check the gap
+**NBA's fits are keyed `prop × var_band × role_tier × offset × month`.** **`offset` is the rung**, and
+rung sign encodes direction relative to the anchor — **but `side` (More/Less) is NOT in the key.**
+
+**⚠ That is precisely the MLB failure's shape.** A fit dominated by More rows and applied to Less rows
+would pass an aggregate check.
+
+**Two NBA findings suggest the exposure is real:**
+- The harness header records misses stated **per side** — *"**blocks MORE 70–75: −4.3**"*, *"**fg3m
+  LESS 30–35**"* — **so the residuals differ by side**, which is the condition under which a
+  side-blind fit misapplies.
+- The ladder's own calibration is checked *"both sides"* at certification, **but the Platt refit key
+  does not separate them.**
+
+**Worth verifying**: whether `p_more` and `p_less` are fit independently (the ladder produces both) or
+whether one calibration curve is applied to both. **The certification's "0 misses of 37" is an
+aggregate across sides** — exactly the metric this lesson says cannot catch the error.
+
+### ⚠ MANDATORY HUMAN REVIEW — not unattended auto-application
+> *"**External research on ML model monitoring converges on a related, concrete operational
+> recommendation worth adopting directly: WEEKLY RECALIBRATION CHECKS, WITH TRIGGER-BASED RE-FITTING
+> AND MANDATORY HUMAN REVIEW BEFORE APPLYING — NOT FULL UNATTENDED AUTO[-APPLICATION].**"*
+
+**⚠ NBA's as-of calibration refits and applies WITHOUT a review step.** P2 runs the refit at step 14
+and `build_final_hp.py` consumes it on the next run. **The cadence matches (weekly-ish), the
+trigger-based part is absent, and the human review is absent.**
+
+**The `shift > 0.15` guard is a partial substitute** — it blocks implausible magnitudes
+automatically — **but it cannot catch a plausible-magnitude correction that is wrong for one
+subgroup.** That is exactly the case this lesson describes.
 
 **① A band cell is kept ONLY if its sign is consistent across seasons.**
 Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands **+2.8 / −3.6** →
