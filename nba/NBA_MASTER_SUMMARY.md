@@ -5075,6 +5075,60 @@ including shot quality's two URLs, the schedule's 2-season list and DARKO's abse
 
 **ONE more complete clean sequential pass and T7 is DONE.**
 
+### T7.29 — PASS 21 (full sequential, 260-char context, blocks 593–755) — **CLEAN 3/3**
+
+**Every block maps to a documented entry. Nothing new.**
+
+---
+
+# ✅ T7 IS **DONE** — 3 CONSECUTIVE CLEAN PASSES (19, 20, 21)
+
+**Final tally: 21 passes. 18 found new material.** T7 required more passes than any transcript except
+T1, and yielded more findings than any transcript at all.
+
+**What T7 contributed, ranked by operational weight:**
+
+| Finding | Where it stands |
+|---|---|
+| **Season hardcoding across every weekly scraper** — *"would silently keep pulling last season's frozen data while reporting success"* | ✅ fixed, **twice** (scrapers T7.1, writers T7.11a) |
+| **`nba_config.stat_decay_config`** — 13 per-stat alphas, each with a stored rationale | ✅ built; **α spread 6.7×, stabilisation spread 30×** |
+| **Cross-season carryover** — without it *"the opening month has ZERO projections"* | ✅ built; **Oct 85%, Nov 90%** |
+| **The three-generation trap** — two dead MLB versions, one live | ✅ avoided by reading headers |
+| **The baseline boundary redefined** — everything derivable from static/historical data, market and injuries excluded by definition | ✅ the line the system still uses |
+| **Blowout as a minutes MIXTURE, not a penalty** | ✅ confirmed in `blowout_model`'s ratios |
+| **Duds: designed as a mixture, built as an exclusion** | ⚠ **OPEN** — foul trouble removed, never restored |
+| **The grace window for publishing lag** | ⚠ **OPEN** — proposed, reasoned, never built |
+| **P1 dropped splits, career totals and the differential worker** | ⚠ **OPEN** |
+| **OT handling differs by app on period props** | ⚠ **OPEN** |
+| **Opponent defence has no short-memory form** | ⚠ **OPEN** |
+| **Team-specific blowout benching** | ⚠ specified, not built |
+| **The owner's definitive baseline spec** — the full matrix, granularity, per-tier logic | ✅ executed literally |
+
+**The single most transferable lesson in T7** is the porting discipline: `MAX_TIERS=24`,
+`MIN_PER_TIER=15`, `TIER_BLEND_K=5` came over from MLB **verbatim**, while the recency blend was
+rejected as *"the single biggest thing that does NOT transfer."* **A port is a set of decisions about
+what not to copy.**
+
+---
+
+## RUNNING TOTAL: 7 of 16 transcripts DONE
+| # | Transcript | Passes | New-material | Status |
+|---|---|---|---|---|
+| T1 | phase1-static | 28 | 23 | ✅ 3/3 |
+| T2 | phase3a-enrichment | 11 | 8 | ✅ 3/3 |
+| T3 | phase3a-final | 10 | 7 | ✅ 3/3 |
+| T4 | phase3b-backfill | 12 | 9 | ✅ 3/3 |
+| T5 | phase3c-starter-status | 8 | 5 | ✅ 3/3 |
+| T6 | phase3d-delta | 8 | 5 | ✅ 3/3 |
+| T7 | classification-design-research | 21 | 18 | ✅ 3/3 |
+
+**Phase 3 and the design phase are fully documented.** The remaining nine transcripts cover the build
+and calibration of the engine itself.
+
+## NEXT: T8 — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt`
+The backtest harness and its iterations (v1 → v17), leg-level calibration, and the tiering
+architecture materialised into `nba_config`.
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
