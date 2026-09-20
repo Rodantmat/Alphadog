@@ -641,7 +641,9 @@ binding.
 > *"**The GitHub workflow REGENERATES wrangler files before deploy, so this binding must live in the
 > GENERATOR or it will be ERASED before Wrangler deploys.**"*
 
-**Hand-edited `wrangler.json` changes do not survive a deploy.** Service bindings,
+**Hand-edited `wrangler.json` changes do not survive a deploy.**
+
+> ⚠⚠ **AND THE REAL FAILURE MODE IS WORSE THAN "YOUR EDIT VANISHES"** *(recorded 2026-09-20, T1 pass 69, from the generator's own source)*: *"earlier manual edits to the `wrangler.*.jsonc` files directly were **silently erased by this exact script on the very next deploy, which is why production kept serving the old D1 code despite the repo's `.js` files already being correctly rewritten**."* **Production serves stale code while the repository looks correct** — a divergence code review cannot catch, because the reviewed artefact and the deployed artefact are different things. ⚠ **It lands harder on NBA**: **121 MLB wrangler configs are committed at the repo root and 0 NBA ones are**, so for an NBA worker there is no committed config to compare against. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 69*. Service bindings,
 `compatibility_flags`, cron triggers and vars all belong in `generate_wrangler_configs.py`.
 **This is why it is four edits, not three.**
 
