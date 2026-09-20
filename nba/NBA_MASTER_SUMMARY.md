@@ -882,21 +882,34 @@ board/daily-context/market until the season starts.
 
 **Clean count 0/3** — pass 18 found new material, so the count does not begin.
 
-### T1.30 — CURRENT STATE OF T1
+### T1.31 — PASS 19 (IDs, hashes, commit SHAs) — **CLEAN 1/3**
 
-**18 passes. 15 found new material. 1 clean (pass 16), invalidated by pass 17.**
+A sweep for every hex string, numeric ID and UUID returned only already-documented values:
+| Found | Already in |
+|---|---|
+| `00b8dbe` (the redeploy run SHA) | T1.21 |
+| `dcb12926-916e-4b28-a64e-d7bdd3f13d6d` (balldontlie key) | T1.5 |
+| `1610612xxx` team IDs | T1.14 |
+| `cceeded` | false positive — substring of "succeeded" |
 
-**Dimensions swept:** narrative text · tool results · SQL bodies · DDL and settings · handoff text ·
-owner specification · caveats and limits · artefacts · endpoint/table/file names · owner messages ·
-measured numbers · rules and principles · endpoint inventory · external services · verification claims ·
-decisions and alternatives · error vocabulary · time and scheduling.
+**CLEAN PASS 1 of 3.**
 
-**Dimensions NOT yet swept:** person/team/proper nouns · numeric IDs, hashes and commit SHAs ·
-tool-call sequences and their ordering · quoted third-party content (search results, docs) ·
-formatting and structure of written artefacts.
+### T1.32 — CURRENT STATE OF T1
 
-**Three consecutive clean passes are still required.** The ledger above is the resume point — the next
-session continues from pass 19 without repeating any dimension already marked.
+**19 passes. 15 found new material. Clean count: 1/3** (pass 19).
+
+**Dimensions swept (19):** narrative text · tool results · SQL bodies · DDL and settings · handoff
+text · owner specification · caveats and limits · artefacts · endpoint/table/file names · owner
+messages · measured numbers · rules and principles · endpoint inventory · external services ·
+verification claims · decisions and alternatives · error vocabulary · time and scheduling ·
+IDs/hashes/SHAs.
+
+**Dimensions NOT yet swept:** person/team/proper nouns · tool-call sequences and ordering ·
+quoted third-party content (search results, external docs) · structure and formatting of written
+artefacts.
+
+**Two more consecutive clean passes required.** The ledger is the resume point — continue at pass 20
+without repeating any dimension already marked.
 
 ---
 
