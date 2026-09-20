@@ -419,7 +419,32 @@ since a per-player covariance averaged across games without volume weighting has
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7h. THE MLB→NBA ENRICHMENT FACTOR MAPPING *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §2)*
+*Written before any NBA code existed. Recorded 2026-09-20.*
+
+| MLB factor | NBA equivalent, as stated |
+|---|---|
+| **Weather** (temp, wind, precip) | *"**Not applicable (indoor sport) — REMOVE THIS FACTOR FAMILY ENTIRELY, don't port it.** Confirmed a real time-saver: **MLB spent real effort on weather factors that MOSTLY FAILED ANYWAY**; NBA doesn't need to build this category at all."* |
+| **Park factors** (dimensions, altitude) | *"**Arena factors — much smaller effect expected** (basketball courts are **standardized dimensions** unlike ballparks) — **but ALTITUDE (Denver) is a real, known effect in NBA and worth keeping as its own factor.**"* |
+| **Roof / dome status** | *"Not applicable — remove."* |
+| **Batting order / lineup position** | *"**Not directly applicable** — the NBA equivalent concept is more about **MINUTES / ROLE PROJECTION and STARTER-vs-BENCH statu[s]**"* |
+
+### What this predicted, and how it turned out
+- **Altitude** was singled out at the very start as *"a real, known effect… worth keeping as its own
+  factor"* — and **six transcripts later peer-reviewed support arrived** (*J. Sports Sciences* 2025,
+  p=0.005). **The column `nba_ref.arenas.altitude_ft` was created in T1's first DDL.** ⚠ **It is still
+  0-of-30 populated.**
+- **Court standardisation** is why arena factors were correctly expected to be small — unlike
+  ballparks, the playing surface does not vary.
+- **"Minutes / role projection and starter-vs-bench"** is exactly what the engine built: **`mu_role`
+  and the six-band `ROLE_TIERS`**, with `f_role` later measured as carrying **55.6% of the confidence
+  deduction budget**.
+- **The weather instruction is a "don't build" decision recorded as a saving**, with the reason given:
+  MLB's own weather factors *"mostly failed anyway."*
+
+**The pattern worth noting**: three of four mapped MLB factor families were resolved as **remove, not
+port** — and the one kept (altitude) plus the one reframed (lineup → minutes/role) are both central to
+the system as built.
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
