@@ -373,26 +373,37 @@ lands in the table. *"A verdict that only exists in stdout is not a verdict."*
 
 > *"External research (published DFS/sharp-bettor material) **correctly predicted that pick'em
 > platforms price legs as INDEPENDENT even though same-game props are genuinely correlated** — but
-> **MLB's own measurement found the raw effect was INFLATED BY MULTIPLE CONTAMINATION SOURCES**:
+> **[our] own measurement found the raw effect was INFLATED BY MULTIPLE CONTAMINATION SOURCES**:
 > **pooling across props with different base rates**, **unweighted game-size averaging**, and
-> **nested / nearly-deterministic** [pairs]."*
+> **nested / nearly-deterministic SAME-PLAYER MULTI-LINE STACKING** — **and the clean, corrected
+> effect was MUCH SMALLER than the initial headline number.**
+> **Separately and decisively: when tested with a real LIVE-BOARD same-game vs cross-game slip
+> comparison, the platform showed a REAL, LARGE PAYOUT DISCOUNT for same-game stac[king].**"*
 
 **Three contamination sources, each of which inflates a measured correlation:**
 | Source | Why it inflates |
 |---|---|
 | **Pooling across props with different base rates** | a mixture of populations shows association that exists in neither |
 | **Unweighted game-size averaging** | high-scoring games dominate the raw average |
-| **Nested / nearly-deterministic pairs** | e.g. points and PRA for the same player are not two observations |
+| **Nested / nearly-deterministic SAME-PLAYER MULTI-LINE STACKING** | two lines on the same player's same stat are not two observations |
 
-**This matters directly for combos and slips.** NBA's combo work uses **per-player covariance estimated
-from that player's own per-game P/R/A** — which avoids source 1 (no pooling across players or props)
-and source 3 (components are modelled jointly, not paired as if independent). **Source 2 — weighting —
-is worth checking**, since a per-player covariance averaged across games without volume weighting has
-the same exposure.
+**Note the third source is named precisely: same-player multi-line stacking** — i.e. taking
+`points 20+` and `points 25+` on one player, or `points` and `PRA`. **That is Part C member #4.**
 
-**And platforms "actively price against it"** — consistent with §0.1's measured discount on
-same-team/same-game legs. **So correlation is real, smaller than commonly claimed, and already partly
-priced out by the platform.** Any slip-construction edge from correlation has to clear all three.
+**The two findings compound against a same-game strategy:**
+1. **The clean effect is much smaller** than the headline suggests, and
+2. **the platform applies a real, large payout discount** for same-game stacking — measured by direct
+   live-board comparison, not inferred.
+
+**So a same-game correlation strategy must beat a large, confirmed discount to win a
+smaller-than-advertised effect.** *(The operational rule — **default to cross-game** — is recorded at
+`NBA_MULTIPLIERS.md` §0.2f.)*
+
+**NBA relevance**: the combo work estimates **per-player covariance from that player's own per-game
+P/R/A**, which avoids source 1 (no pooling across players or props) and source 3 (components modelled
+jointly rather than stacked as independent lines). **Source 2 — weighting — is the one to check**,
+since a per-player covariance averaged across games without volume weighting has the same exposure.
+*(And lesson #6 independently requires volume weighting at the day level.)*
 
 ---
 
