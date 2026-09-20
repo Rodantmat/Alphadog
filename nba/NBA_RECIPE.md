@@ -181,6 +181,10 @@ owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own of
 ## STEP 3 — Build the first worker, and discover the blocking constraint *(T1)*
 
 1. Wrote `nba/alphadog-v2-nba-static-teams.js`, syntax-checked before commit.
+   ⚠ **The gate is two-language** *(recorded 2026-09-20, T1 pass 38 — **VERIFIED** from T1's bash
+   history)*: **`node --check <file>.js`** for workers **and `python3 -m py_compile <file>.py`** for
+   scrapers, both `&& echo SYNTAX_OK`. **It is the only local verification before a push that
+   auto-deploys** — there is no staging environment. `NBA_WORKERS.md` §0.25.
 2. **Extended the two shared deploy scripts additively**, created `worker_manifest_nba.json`.
 3. Deployed — failed on a path bug — fixed — deployed clean.
 4. **And then it could not fetch anything.** Added a `/debug-fetch` route to see the raw body.
