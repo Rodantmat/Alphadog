@@ -205,6 +205,39 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 55 — ⚠ **VOID: the sampling instrument failed** *(added 2026-09-20)*
+*Angle attempted: a third random sample of bold claims, matched by contiguous phrase with normalised
+punctuation. **It returned 26 misses out of 26 — including claims this sweep had already quoted from
+the twelve documents by hand.** The instrument, not the corpus, is what produced that result.*
+
+### Why phrase-matching cannot establish coverage for this corpus
+**The twelve documents quote the handoff with heavy inline bolding**, e.g. the blueprint's
+*"file names, job_key names, and 'is this worker active' assumptions are frequently wrong"* appears in
+`NBA_WORKERS.md` §0d as *"**file names, job_key names, and 'is this worker active' assumptions are
+FREQUENTLY WRONG**"* — **re-cased, with `**` markers inserted mid-phrase.** Any contiguous-substring
+match breaks on the first inserted marker or case change. **Known-present claims returned MISS**:
+*"two files meant to be exact copies… drift out of sync"* (quoted at `NBA_SYSTEM_ARCHITECTURE.md`),
+*"this four-stage order is load-bearing"* (verified at *PASS 51*), *"never write new data to D1"*
+(recorded at *PASS 51*).
+
+### The pass is VOID, not clean and not new
+**A clean pass means the transcript yielded nothing new. This pass yielded nothing measurable** — it
+did not read the transcript so much as fail to search it. **Counting it as clean would inflate the
+streak on a broken instrument**, which is precisely the failure the DRIFT NOTICE and the superseded
+3/3 at §T1.58 both record. **It is recorded, dated, and excluded from the count in both directions.**
+
+### Standing method rule, from passes 53 and 55 together
+1. **Never establish a negative from a formatted-string grep.** *PASS 53* found two false negatives
+   from punctuation alone (`3-5x` vs `3–5×`, `700KB` vs `700 KB`).
+2. **Never establish coverage from phrase matching at all.** The corpus re-cases and re-bolds
+   everything it quotes.
+3. **What does work, and is what every finding in passes 29–54 actually rests on**: read a section of
+   the source, decide what it *asserts*, then search the documents for **the concept** — a table
+   name, a column, a job mode, a rule's subject — and **read the hit to confirm it is the same
+   claim.** Slower, and it does not produce false negatives at scale.
+
+---
+
 ## FROM T1 PASS 54 — IDENTIFIER SAMPLE — **one item: `nba_game_id` was specified and never created** *(added 2026-09-20)*
 *Angle: sample the **identifiers** — every backticked name in the handoff documents (148 distinct),
 30 drawn at random, each checked with the normalised matching that pass 53's method caveat requires.
