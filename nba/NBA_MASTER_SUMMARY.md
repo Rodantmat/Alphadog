@@ -2322,6 +2322,134 @@ were shot-quality-based.
 **the architecture correction: baseline strictly historical, enrichment separate** ·
 operating cadence locked.
 
+---
+
+## T4 — `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt`
+**PHASE 3b — historical backfill and the baseline methodology design**
+*119 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+### T4.1 — Shot Quality Delta: built, with two real bugs
+
+Owner: *"yes"* → build it.
+The run had grown large: *"arenas 30 calls + on/off 30 calls + playtypes 44+ calls + tracking-detail 8
+calls + shotquality 5 calls."*
+
+**BUG 1 — URL encoding.** *"the `+` in '6+ Feet' needs proper URL encoding (`%2B`), but I just did a
+**naive space replacement**, which mangled it."*
+
+**BUG 2 — and it is a genuinely subtle one.** *"this endpoint returns **`resultSets` as a single dict,
+not a list** like every other endpoint. My code assumed a list and did `dict[0]`, which raised
+`KeyError`."*
+**→ `leaguedashplayershotlocations` breaks the convention every other stats.nba.com endpoint follows.**
+
+**The fix was verified against already-captured raw data before re-running**: *"zone names, skip=6,
+span=3, 30-column rows all check out — e.g. `row[6:9] = [14,27,0.519]` matches A.J. Lawson's real
+restricted-area line."* **Structural verification against a real row, not a re-scrape.**
+
+**Result: 582/582 deltas computed.** Spot-check: **Jokić 61.9% actual eFG vs 53.8% expected =
++8.06% delta**, *"matching his known elite scoring efficiency"*, and the league averages by bucket
+*"look exactly right."*
+
+### T4.2 — The historical backfill, and an empirically-resolved unknown
+
+Owner: *"identify the past seasons data we need, all games logs, histories… the same that we will mine
+for the current season"*, then *"can we get aggregates for older seasons? anything we can smartly do
+**without compromising reliability**?"*
+
+**A claim was NOT accepted on trust**: Gemini's answer contained two checkable facts, and
+*"let me independently verify the two concrete, checkable claims before trusting them — the **'TOT'
+line handling for traded players**, and whether **retired players are even queryable**."*
+Search could not settle the first: *"that's a **real gap I'll flag rather than assume**, to be
+**verified empirically once we actually call the endpoint**."*
+
+**RESOLVED EMPIRICALLY LATER IN THE SESSION**: *"traded players get **separate per-team rows PLUS a
+combined total row (`TEAM_ID = 0`)**, and the games/points **sum correctly** across them."*
+**This matters for every career-aggregate query** — summing naively double-counts traded players.
+
+**Owner locked the scope**: *"that will be a **single time backfill**, we don't need a weekly delta
+because it supposedly won't change."* → a **dedicated one-time workflow with its own trigger file**,
+separate from the weekly cycle.
+
+**Results:**
+| Dataset | Rows |
+|---|---|
+| Player game logs 2025-26 | **26,651** |
+| Team game logs 2025-26 | **2,460** — *"exactly 30 teams × 82 games, a perfect confirmation of full-season completeness"* |
+| Career totals | **3,644** across all 582 players |
+
+**582 sequential career-total calls at 0.4 s ≈ 4 minutes**; the run took ~13 minutes.
+
+### T4.3 — **A cost correction that saved 1,230 API calls**
+
+Gemini estimated advanced stats would need *"1230 individual calls."* That was checked rather than
+accepted:
+> *"**Real, important correction to Gemini's own cost estimate**: the **bulk**
+> `playergamelogs`/`teamgamelogs` endpoints (the exact same ones I already used) accept a
+> **`MeasureType=Advanced`** parameter."*
+
+**→ 2 cheap bulk calls instead of 1,230.** Confirmed: **26,651 advanced rows matching the base log
+exactly**, and 2,460 team rows. *"This really was just 2 cheap bulk calls."*
+
+**This is the clearest example in the transcripts of Gemini being wrong on a checkable fact** — and the
+research standard (*"not absolute truth"*) catching it.
+
+Spot-check after loading: *"game-to-game **usage rate swings (16.2% to 38.2%)** and per-game pace
+variation both check out, joined correctly across the base and advanced tables."*
+
+### T4.4 — The baseline methodology: EWMA, variance, shrinkage
+
+> *"Real, concrete techniques found: **EWMA** (recency-weighted averaging that catches role changes),
+> **rolling variance** (**for over/under pricing specifically, not just point estimates**), **Bayesian
+> shrinkage** for small samples, and blending…"*
+
+**Note the second one**: rolling variance is called out as being *for over/under pricing*, not for the
+point estimate — which is the distinction that later becomes the whole dispersion/ladder layer.
+
+### T4.5 — **THE ARCHITECTURE CORRECTION — the owner's, and it was verified not just accepted**
+
+> **OWNER:** *"these 2, daily injury/lineup layer, would very be on the **enrichment pipeline, not the
+> baseline pipeline**, unless there is a better logic that unifies everything and work fast to run it
+> daily."*
+
+> **RESPONSE:** *"You're right, and this is an important correction to how I framed it — **let me think
+> this through properly rather than just agree reflexively**."*
+
+**And the reason it is right, from Gemini:**
+> *"**caching and re-computation cost**. The baseline is **expensive to compute but only changes after
+> a player plays a game — it can be cached**. Enrichment data (injuries, odds) **changes constantly**…"*
+
+**This is the founding justification for the entire two-layer split** — baseline strictly historical
+and cacheable, enrichment volatile and cheap — which is still the architecture today (P2 overnight vs
+P3 afternoon).
+
+### T4.6 — The operating cadence, locked
+
+> **OWNER:** *"keep in mind that the baseline will run **early in the day** to not crash with the
+> enrichment pipeline, will the data be available?"*
+
+Verified rather than assumed: *"Real, confirmed timing data — this changes the answer from 'probably
+fine' to a **concrete yes, with one actual gap to flag**."*
+> **OWNER:** *"that is the design, just like the current MLB system."*
+
+**→ The overnight-baseline / afternoon-enrichment cadence is locked here, mirroring MLB.**
+
+### T4.7 — The gap inventory, done against the database not from memory
+
+Owner: *"I need you to focus in any still needed backfills, seasons, splits, histories, static data,
+everything that still needing backfill."*
+> *"let me first do **a real inventory check against Postgres rather than rely on memory**, then
+> identify concrete gaps **against what the backfill plan actually recommended**."*
+
+**Two concrete gaps found**, and both built:
+1. **Additional historical seasons** — via a *parameterised* new script, deliberately *"rather than
+   risk modifying the already-verified 2025-26 script."*
+2. **Splits** — a second scraper.
+
+**The final run was ~1,200 sequential calls** (582 career totals + 612 splits + 2 seasons × 4 bulk
+calls) and was still in progress when the transcript ends.
+
+**T4 PASS 1: complete sequential read. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
