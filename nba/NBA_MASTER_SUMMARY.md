@@ -3246,6 +3246,50 @@ split** — and confirms T5.8b's benign reading.
 
 **T5 PASS 4: NEW MATERIAL. Clean count 0/3.**
 
+### T5.10 — PASS 5 FINDINGS (status reports) — **NEW MATERIAL**
+
+#### T5.10a — **Why game logs hold 3 seasons but splits hold 1 — the reason is stated here**
+> *"writing to the same Postgres tables (**safe, since `game_id` is unique across seasons**)"*
+
+**The game-log tables work across seasons because `game_id` is globally unique**, so rows from
+different seasons cannot collide. **The splits tables have no such natural key** — a player's
+`days_rest` / `0 Days Rest` row is identical across seasons, which is exactly why `season` needed to be
+in the PK and was not. **The design reasoning was sound for one table type and not carried to the
+other.**
+
+#### T5.10b — Script names
+`nba/scrape_nba_backfill_historical_seasons.py` (parameterised, *"rather than risk modifying the
+already-verified 2025-26 script"*) and `nba/scrape_nba_splits.py`.
+
+#### T5.10c — **Per-item error tracking, by design**
+> *"the **per-item error tracking built into both scripts** will show **exactly which
+> players/teams/seasons need a retry** rather than an opaque failure."*
+
+**This is why the 5 HTTP 500s were identifiable as specific players** rather than a vague partial
+failure — and why the starter backfill could report *"1,228 games reported success"* precisely enough
+for the discrepancy to be caught. **Per-item tracking is what made the silent v2 failure visible at
+all.**
+
+#### T5.10d — The lean-workflow decision, with its cost
+> *"I **deliberately built it as its own lean, dedicated workflow** rather than re-triggering the full
+> backfill pipeline (**which would have wasted ~50 minutes** re-running already-completed career totals
+> and splits work just to add this one piece)."*
+
+**And the same judgement appears for the diagnostic**: a **7-call sample workflow** instead of another
+40-minute full run. **Two separate instances of building a narrow tool rather than paying a broad cost.**
+
+#### T5.10e — Status reporting discipline under uncertainty
+Both mid-run reports state plainly what is **not** yet known:
+- *"**Currently in progress, not yet complete**… I have **not yet been able to confirm** success or
+  verify real row counts against Postgres — the workflow log isn't retrievable until the job finishes."*
+- *"**Not yet verified**: I haven't confirmed completion or checked real row counts against Postgres
+  yet — that's the next step once the job finishes."*
+
+**And the close**: *"The data itself is completely solid — 32,179 rows confirmed independently correct…
+**already verified twice**."*
+
+**T5 PASS 5: NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
