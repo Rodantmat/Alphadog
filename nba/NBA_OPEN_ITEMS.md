@@ -1,5 +1,36 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## ⚠⚠ BLOCKER FOR THE OWNER · **the 20 transcripts are not in the repo, and this session cannot put them there**
+*Recorded 2026-09-20 (T1 pass 40). **VERIFIED**: `nba/transcripts/` holds only `README.md` and
+`journal.txt`.*
+
+**From pass 37 onward these documents are written as POINTERS into the transcripts** — an assertion
+of what is true plus a precise path to the source — rather than as copies of them. **That format is
+only useful if the sources are reachable.** They are not:
+
+- **`nba/transcripts/` contains no `.txt` files.** The 20 transcripts (55 MB) exist only in this
+  session's sandbox, from the uploaded package.
+- **This session cannot commit them.** `git push` to `Rodantmat/Alphadog` is refused by the
+  environment's proxy — *"not in this session's authorized repository set"* — and the bridge's
+  `github_put_file` must pass content through the model's context, which 2–3 MB per file makes
+  impossible. **Cloning and reading work; writing binary-scale files does not.**
+
+**What the owner needs to do**: commit the 20 `.txt` files to `nba/transcripts/` from a machine with
+repo access (drag-and-drop into the GitHub web UI works, or `git add nba/transcripts/ && git push`),
+**or** add this repository to the session's authorized set so `git push` works here.
+
+**Until then, every pointer in these documents that names a transcript resolves to a file no other
+reader can open.** Mitigations already applied:
+- **Where a handoff document is the real source, the pointer cites THAT document and section** —
+  `NBA_ARCHITECTURE_BLUEPRINT.md`, `NBA_LESSONS_LEARNED_FROM_MLB.md`,
+  `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md`, `NBA_SYSTEM_DRAFT.md` — **all four are in the repo as
+  clean markdown** and are far cheaper to read than the escaped copies inside T1.
+- **Anything VERIFIED by live SQL or a code grep is stated in full**, because no transcript contains
+  it and a pointer would point at nothing.
+- **This file stays complete in itself** and is never reduced to pointers.
+
+---
+
 ## ⚠ DEFECT-FOUND-AND-CORRECTED · **the summary ledger drifted four passes behind its own body**
 *Found and corrected 2026-09-20, on the owner's instruction. Recorded rather than silently fixed,
 because the discipline directly below requires it.*
