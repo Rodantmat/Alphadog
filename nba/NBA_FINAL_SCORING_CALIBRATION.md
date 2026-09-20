@@ -882,13 +882,21 @@ slips can be trusted. **Any NBA multiplier capture must include one standard-onl
 this reason.**
 
 #### #23 — **RE-PAIR EACH SIDE INDIVIDUALLY BEFORE CONCLUDING**
-> *"MLB found **one genuine, real anomaly** in an otherwise clean, large study — **a single specific
-> PAIRING of two particular legs** that produced a result running opposite to every other similar
-> pairing tested. **Rather than either dismissing it as noise or assuming either individual leg was
-> 'the problem'**, [it was isolated by re-pairing each one separately]."*
+> *"A **single specific pairing of two particular legs** produced **a result running opposite to every
+> other similar pairing tested**. **Rather than either dismissing it as noise or assuming either
+> individual leg was 'the problem'**, the correct diagnostic was to **RE-TEST EACH OF THE TWO LEGS
+> PAIRED WITH A *DIFFERENT* PARTNER: both came back with ENTIRELY NORMAL RESULTS when paired
+> differently, PROVING the anomaly was specific to THAT ONE EXACT COMBINATION**, not attributable to
+> e[ither leg alone]."*
 
-**An interaction anomaly is a property of the PAIR, not of either member.** The diagnostic is to
-re-pair each leg with other partners: if both behave normally elsewhere, the interaction is real.
+**The diagnostic is constructive, not dismissive.** Two failure responses are both named as wrong:
+calling it noise, and blaming one member. **The test separates them**: if each leg behaves normally
+with other partners, the interaction is real and belongs to the pair.
+
+**NBA surfaces where this applies**: any same-game or same-team pairing finding; the M1 defender
+factor (which works **only in interaction form**); and anything emerging from the
+`factor × prop × tier × role_tier × direction × variation_band` cell space, where an anomaly is
+by construction a property of a combination.
 
 #### #25 — compounding safety margins
 > *"a real, deployed constant applying **an extra, deliberate conservative discount ON TOP OF an
