@@ -871,6 +871,21 @@ Framed in the source as *"the exact same rigor discipline, independently require
 > *"**The entire premise was wrong: it was never 'enrichment destroys a strong baseline.' Both the
 > baseline and the enrichment layer perform almost identically, and both are genuinely modest.**"*
 
+### The generalisable rule, as stated
+> *"**Before investigating why a component seems to underperform a supposedly-strong reference point,
+> VERIFY THE REFERENCE POINT ITSELF as rigorously as the thing being blamed** — **a 'before' or
+> 'control' measurement is JUST AS CAPABLE of containing a lookahead-bias or leakage bug as the
+> 'after' measurement everyone's default instinct is to scrutinize.** …**check the control group with
+> the same suspicion as the treat[ment].**"*
+
+The source places it in the same family as lesson #11 (*a plausible causal story is not evidence*) and
+Part C (*grouping-key contamination*), *"but applied to a baseline/reference measurement rather than a
+candidate finding."*
+
+It also records that the diagnostic work was not wasted: *"real bugs and data gaps were found and
+remain valid — but the **framing** the whole investigation was measured against never actually
+existed."*
+
 ### NBA state
 - **Same bug class, same system family**: `backtest.baseline_v6_asof` leaking day D into `as_of_date =
   D` is recorded in T1 as relayed 2026-08-29 (see §3.10b of `NBA_BASELINE_CALIBRATION.md`).
