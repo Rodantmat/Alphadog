@@ -266,6 +266,173 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 85 — THE TRIGGER FILE IS AN AUDIT LOG, AND IT RECORDS THE HYPOTHESIS LADDER *(added 2026-09-20)*
+*Angle: the **five `TRIGGER_NBA_SCRAPE.txt` bodies** T1 wrote — the only file it rewrote more than
+twice. Treated everywhere as a bare marker; **it is not.** **VERIFIED against the live repo.***
+
+### ⚠⚠ THE TRIGGER FILE HAS A DEFINED SHAPE, AND IT IS DOCUMENTED NOWHERE
+Every version T1 wrote carries **four parts**: a purpose line, an explanation of the mechanism, and
+**two structured fields** —
+```
+last_triggered_utc: 2026-08-31T22:16:00Z
+trigger_reason: retry through PROXY_URL …
+```
+**`trigger_reason` and `last_triggered_utc` appear in no document.** **VERIFIED live: the convention
+held — 13 of the 14 `nba/TRIGGER_NBA_*.txt` files carry both fields today**, months of work later.
+**The exception is `TRIGGER_NBA_PROBE.txt`**, which is 39 bytes and holds only
+`script: scrape_prizepicks_nba_board.py` — **a different convention entirely: it passes an
+argument rather than logging a reason.** That makes **two trigger-file conventions in one folder**,
+and neither is written down.
+
+### ⚠⚠ THE FIVE `trigger_reason` LINES ARE THE TARPIT INVESTIGATION, WRITTEN AS IT HAPPENED
+Pass 79 reconstructed the escalation ladder from CI logs and noted the measurements were recorded in
+no document. **They were recorded — in this file, one line per attempt, with timestamps, and they
+are still in the repo's `git` history.** In order:
+
+| UTC | `trigger_reason`, verbatim |
+|---|---|
+| **22:05** | *"first real trigger — verifying stats.nba.com is reachable from a GitHub Actions runner"* |
+| **22:10** | *"retry with 60s timeout + 3 attempts, after first run got a **real read-timeout (not a hard block)** from stats.nba.com on a GitHub Actions runner"* |
+| **22:16** | *"retry through PROXY_URL (**same secret MLB's PrizePicks scraper uses**), after two direct attempts both got a consistent 3/3 read-timeout from stats.nba.com on a plain GitHub Actions runner IP (**tarpit-style soft block, not a transient blip**)"* |
+| **22:20** | *"retry with **curl_cffi (Chrome TLS impersonation)** after plain requests hung/timed out consistently even through a proxy, **ruling out IP-based blocking and pointing at TLS fingerprinting instead**"* |
+| **22:24** | *"re-run after fixing empty abbreviation field (**leaguestandingsv3 has no TeamAbbreviation column** — now derived from a verified team-ID map)"* |
+
+**Read together these are a complete diagnostic record**: hypothesis, evidence, next hypothesis —
+**five attempts in nineteen minutes**, each naming what the previous result ruled out.
+**The 22:20 line is the moment the diagnosis lands**, and it states the inference explicitly:
+*"ruling out IP-based blocking and pointing at TLS fingerprinting instead."*
+
+**Why this matters beyond the history**: **the documents record the conclusion, pass 79 recovered the
+measurements, and this file holds the reasoning that connects them** — all three existed
+independently and none pointed at the others. **The trigger file is a first-class audit artefact and
+was being read as a no-op marker.**
+
+### ⚠ `PROXY_URL` IS AN MLB-PROVISIONED SECRET THAT NBA WORKFLOWS USE
+T1's own words: *"PROXY_URL (**same secret MLB's PrizePicks scraper uses**)"*.
+**VERIFIED live**: `PROXY_URL` is referenced by **MLB's `.github/workflows/scrape.yml` (line 67)**,
+by MLB's `underdog-board.yml`, **and by seven NBA workflows** — `nba-pergame-backfill`,
+`nba-injury-report`, `nba-season-tables`, `nba-daily-delta`, **`nba-p2-overnight-heavy`**,
+**`nba-p3-afternoon-light`** and `nba-probe`.
+
+**So a shared repository secret crosses the MLB/NBA boundary, and both of the daily pipelines depend
+on it.** **`PROXY_URL` itself is documented** (three documents name it); **what is not recorded is
+that it is shared with MLB, that NBA inherited it rather than provisioning its own, and that seven
+NBA workflows now depend on a secret MLB owns.**
+**Stated at its real strength**: **this is not an isolation breach** — the isolation rule is about
+data, schemas, workers and control plane, and repository secrets are repository-wide by nature.
+**It is a dependency nobody recorded**: if that secret is rotated or removed for MLB reasons, **seven
+NBA workflows including P2 and P3 change behaviour**, and nothing in the twelve would explain why.
+
+### Confirmed against the transcript, already recorded
+- **`leaguestandingsv3` has no `TeamAbbreviation` column** — the 22:24 line is the contemporaneous
+  record of that discovery; **already documented** at `NBA_DATABASE.md` line 129 and in
+  `scrape_nba_stats_teams.py`'s own comment (pass 65).
+- **The trigger-file mechanism** (a push path filter, usable with plain commit tools, no dispatch
+  capability needed) — **already documented**; the file's own text states it, and pass 65 recorded
+  the causal chain that produced it.
+
+---
+
+## FROM T1 PASS 84 — THE FIRST NBA WORKER, READ AS SOURCE *(added 2026-09-20)*
+*Angle: T1's largest `put_file` body — **`alphadog-v2-nba-static-teams.js`, 18,025 bytes as written**
+— read line by line, with every claim it makes checked against the live database.
+**VERIFIED by live SQL.***
+
+### ⚠⚠ A VERIFIED DEFECT THAT ORIGINATES IN T1'S SOURCE: **`"los angeles"` resolves to TWO teams**
+T1's `STATIC_FALLBACK_TEAMS` gives **LAC `city: "Los Angeles"`** and **LAL `city: "Los Angeles"`**.
+`buildAliases` writes a `city` alias per team and normalizes it.
+**VERIFIED live**: `nba_ref.team_aliases` holds **`alias_normalized = 'los angeles'` on two rows, for
+two different `team_id` values** — `nba_1610612746` (Clippers) and `nba_1610612747` (Lakers).
+**Any lookup that resolves a team by normalized city returns both.**
+
+**Two further duplicates, same team rather than different teams**: `'golden state'` and `'utah'` each
+appear twice — once as `city` (`CANONICAL`) and once as `manual_alias` (`CONTROLLED_ALIAS`).
+**The de-duplication in `buildAliases` is per-call**, so it cannot see a row a later worker added.
+
+**✅ Stated at its real strength — this is latent, not live.** **VERIFIED**: `nba_ref.team_aliases`
+is **written by exactly one worker and read by no code at all**; `alias_normalized` appears only in
+the writer's own INSERT. **Nothing resolves a team through this table today.** **The finding is that
+the matching table was built for matching, nothing matches through it yet, and three collisions are
+already waiting for whatever does.**
+
+### ⚠⚠ AND ONE ALIAS CANNOT EVER MATCH: the historical SuperSonics entry
+T1 deliberately seeded **historical franchise names** so old data would resolve:
+```js
+BKN: ["Nets", "Brooklyn Nets", "New Jersey Nets"],
+OKC: ["Thunder", "Oklahoma City", "Seattle SuperSonics (historical, pre-2008)"],
+```
+**VERIFIED live**: that row exists, with
+**`alias_normalized = 'seattle supersonics historical pre 2008'`.**
+**The parenthetical survived normalization** — punctuation is stripped, the words are kept — **so a
+lookup for "Seattle SuperSonics" will never match it.** **The alias exists and cannot do its job.**
+**The intent is right and the execution is not**: a provenance note was written into the value
+instead of alongside it. **Recorded, not fixed.**
+
+### ⚠ **19 of T1's 26 manual aliases were silently dropped** — and that is correct behaviour
+`EXTRA_ALIASES` defines aliases for **11 teams, 26 values in total.** **VERIFIED live: only
+7 `manual_alias` rows exist.**
+**Why**: `buildAliases` keeps a `seen` set of normalized values and skips any repeat, so
+`"Lakers"` (already the `nickname`), `"Los Angeles Lakers"` (already the `full_name`), `"Nets"`,
+`"Knicks"`, `"Suns"`, `"Spurs"`, `"Jazz"`, `"Clippers"`, `"Pelicans"`, `"76ers"` and the rest are
+dropped as duplicates of canonical aliases.
+**The seven that survive are the ones that add something**: `Golden State`, `GS Warriors`,
+`Los Angeles Clippers`, `New Jersey Nets`, `Sixers`, `Seattle SuperSonics (historical, pre-2008)`,
+`Utah`.
+**✅ The de-duplication is right.** **What was never recorded is that the `EXTRA_ALIASES` list is
+~73% redundant**, so anyone reading it over-estimates the alias coverage it provides.
+
+### The alias taxonomy and its confidence vocabulary — defined in T1, documented nowhere
+`NBA_DATABASE.md` lists `team_aliases`' columns. **It does not list the values those columns take.**
+**From T1's source, and VERIFIED against the live table:**
+
+| `alias_type` | `confidence` | Live rows |
+|---|---|---|
+| `city` | `CANONICAL` | **35** |
+| `nickname` | `CANONICAL` | 30 |
+| `full_name` | `CANONICAL` | 30 |
+| `abbreviation` | `CANONICAL` | 30 |
+| `nba_team_id` | `CANONICAL` | 30 |
+| `manual_alias` | **`CONTROLLED_ALIAS`** | **7** |
+
+**The rule T1 wrote**: `confidence: type === "manual_alias" ? "CONTROLLED_ALIAS" : "CANONICAL"` —
+**derived-from-source aliases are CANONICAL; hand-curated ones are CONTROLLED_ALIAS.** That is a
+real semantic distinction a consumer would need, and **it is in no document.**
+⚠ **`[LIVE-AUDIT]` — `city` has 35 rows, not 30**: five teams carry a second city alias added
+later — **Golden State (San Francisco + Golden State), LAC (Los Angeles + LA), Minnesota
+(Minnesota + Minneapolis), Indiana (Indiana + Indianapolis), Utah (Utah + Salt Lake City).**
+
+### `teamHasRealChange` — the eight fields that count as a change, and the one that does not
+T1's change detector compares exactly: `nba_team_id`, `abbreviation`, `full_name`, `nickname`,
+`location_name`, `conference`, `division`, and `active != 1`.
+**This is the mechanism behind the *"0 written, 30 unchanged"* result pass 80 measured.**
+⚠ **`arena_id` is not in the list** — consistent with pass 65's finding that the column is NULL on
+all 30 rows and written by no code. **The change detector was written not to look at it**, which is
+one more reason it was never noticed.
+
+### Two source details recorded nowhere
+- **The worker's user agent is self-identifying, not a browser string**:
+  `"user-agent": "Mozilla/5.0 (compatible; AlphaDog-NBA-StaticTeams/0.1)"`. **It announces the
+  scraper.** Given pass 79's evidence that the block is TLS-level rather than header-level, **this
+  probably was not the cause** — but it is the kind of detail a future debugging session would want,
+  and **`AlphaDog-NBA-StaticTeams` appears in no document.**
+- **T1's original headers pointed at the wrong host**: `referer` and `origin` were
+  **`https://www.nba.com`**, not `https://stats.nba.com/`. **T1 itself identified this later**
+  (thinking block 28: *"my worker used the wrong Referer (www.nba.com instead of stats.nba.com)"*),
+  and the canonical `nba_api` set recovered at pass 82 confirms `stats.nba.com`. **The correction is
+  recorded; the original error is not**, and it is what a reader diffing the two versions would trip
+  over.
+
+### Already recorded, confirmed not new *(checked)*
+- **The Seattle/Las Vegas 32-team expansion at early-vote stage for 2028-29** — written into T1's
+  source comment and **already in `NBA_MASTER_SUMMARY.md`**. ✅ **This is the real NBA signal T1
+  extracted from the same search that returned the WNBA noise recorded at pass 82** — the search was
+  contaminated, and the useful fact was still pulled out of it correctly.
+- **`team_id` formatted as `nba_${team.id}`** — the prefixed convention, already documented as one
+  half of the two-convention split (pass 33).
+- **`x-nba-stats-origin` / `x-nba-stats-token`** — already in two documents.
+
+---
+
 ## FROM T1 PASS 83 — THE FILES T1 WROTE IN FULL, READ AS SOURCE *(added 2026-09-20)*
 *Angle: T1 issued **7 `github_put_file` calls** that carry a complete file body. Pass 45 verified
 those artefacts still **exist**; **this pass reads what T1 actually wrote** and compares it to the
