@@ -1456,6 +1456,25 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.84 — PASS 54 (angle: **sample the IDENTIFIERS** — 30 of 148 backticked names, normalised matching) — **MINOR NEW · CLEAN COUNT RESET TO 0**
+*Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 54. 28 of 30 documented; one miss is Part H
+material postdating T1 (`product_experience_id`, already open at §T1.60); one is a genuine T1 find.*
+
+- **⚠ `nba_game_id` was specified and never created.** **VERIFIED**: `nba_player_id` appears in **11**
+  columns, `nba_team_id` in **6**, `game_id` in **20**, **`nba_game_id` in 0**.
+- **The two-column ID pattern has exactly one hole, and it is the join key every per-game table
+  shares** — `player_game_log`, `team_game_log`, `board_scored`, `final_hp`, `baseline_history`,
+  `game_officials` and fourteen more all key on `game_id`.
+- **✅ Nothing is broken**: all 20 `game_id` columns are TEXT in the same unprefixed format, so game
+  joins work everywhere — **including across the `nba_score` ↔ `nba_stats` boundary where `player_id`
+  fails (§T1.80).**
+- **⚠ But it shows the `player_id` split is not a one-off.** **Only `team_id` was implemented exactly
+  as specified**; `player_id` has two conflicting formats, `game_id` has no prefixed form.
+  **NOT RECORDED as a decision** — it reads as an omission, but that is inference, flagged as such.
+- **A minor finding, and it still resets the streak** — the rule is size-independent.
+
+---
+
 ### T1.83 — PASS 53 (angle: **sample the MEASUREMENTS, not the assertions**) — ✅ **CLEAN 1 of 3**
 *Recorded 2026-09-20. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 53.*
 
