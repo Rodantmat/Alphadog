@@ -649,6 +649,44 @@ condition, applied to every number rather than only to strategies.
 > **the multiplier attribution is wrong, not the market.**"*
 Recorded in full at `NBA_MULTIPLIERS.md` §0.3.
 
+#### #3 — multiple, genuinely DIFFERENT research passes per candidate
+> *"**not the same query with a different threshold.** For each candidate signal, test:
+> **raw historical hit rate vs the model's own probability estimate**; **player-level vs
+> prop-line-level pooling**; **single-factor vs multi-layered combinations**; and **any
+> domain-specific interaction** (MLB tested lineup-slot interaction because a real, documented gradient
+> exist[ed])."*
+
+**Four named axes for a genuinely different pass:**
+| Axis | The two sides |
+|---|---|
+| Measurement | raw historical hit rate **vs** the model's own probability estimate |
+| Pooling level | player-level **vs** prop-line-level |
+| Structure | single-factor **vs** multi-layered combinations |
+| Interaction | any domain-specific gradient known to exist |
+
+**The NBA analogue of the fourth axis**: the M1 defender factor was found to work **only in the
+INTERACTION form, never as a main effect** — which is this axis producing the result.
+**And the second axis is the one Part C member #3 warns about** — pooling level changes the answer.
+
+#### #4 — Gemini as a genuine adversary, used correctly
+> *"Gemini should be asked to **SET ITS OWN FALSIFICATION BAR BEFORE SEEING THE RESULT** — **minimum
+> sample size, required monotonicity, minimum edge over baseline** — **then the actual number is
+> checked against that pre-stated bar.** Work in **MULTIPLE SMALL PASSES, not one large dump** — the
+> explicit, repeated lesson was that **large single prompts ca[n]**…"*
+
+**Three components of a pre-stated bar, named:** minimum sample size · **required monotonicity** ·
+minimum edge over baseline.
+
+**This is pre-registration (§7f) delegated to the adversary** — the bar is set by a party that has not
+seen the result. **And #21 completes the loop**: use it to check your **method**, then **re-derive the
+conclusion yourself**.
+
+**Recorded NBA usage matches the adversarial framing**: the transfer list names *"the Gemini
+**adversarial-review** usage pattern"* as something that transfers, and T3 records asking it *"to be
+skeptical rather than just keep validating more searches."*
+**What is not recorded**: any instance of Gemini being asked to state a falsification bar **before**
+seeing a result. **The NBA uses were synthesis and critique, not pre-stated bars.**
+
 #### #8 — "insufficient data / underpowered" is a DISTINCT verdict from "confirmed negative"
 > *"**Don't collapse them.** A **non-significant result with a wide confidence interval that still
 > contains a materially positive value is NOT the same as a confirmed-zero effect**. **State the
