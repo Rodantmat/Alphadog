@@ -215,6 +215,22 @@ is superseded: those sessions are now **T17 and T18**.*
   (does not touch `scrape.yml`).
 
 ### T1.7 Four consecutive failures, each diagnosed, before it worked
+
+> ⚠ **RUN-ID AUDIT TRAIL** *(added 2026-09-20, pass 40 — **VERIFIED** from T1's workflow tool
+> results. No run ID had ever been recorded, so this claim was previously unauditable.)*
+>
+> | Job | `run_id` | job id | conclusion |
+> |---|---|---|---|
+> | `deploy` | **33429867514** | 99612350869 | **failure** |
+> | `deploy` | **33431309511** | 99617046472 | ✅ **success** |
+> | `scrape-nba-teams` | **33444713366** | 99661055215 | **failure** |
+> | `scrape-nba-teams` | **33444861845** | 99661541226 | **failure** |
+> | `scrape-nba-teams` | **33445264412** | 99662814403 | **failure** |
+>
+> ⚠ **And a standing tool limitation found while chasing them**: `github_get_workflow_run_log`
+> returned **404 — *"Could not fetch log text (link may have expired, or run is too old)"*** for
+> `run_id` 33429867514 **while that run still reported `"conclusion": null`.** **Logs are
+> unavailable in flight and expire afterwards** — diagnose while fresh, or from the job's step list.
 1. **30 s timeout** — not a rejection, a slow/soft response → raised timeout, added retries.
 2. **Timeout again, 3 attempts** — a consistent hang. Diagnosed as an anti-bot **tarpit** (silently
    stalling rather than returning a block).
