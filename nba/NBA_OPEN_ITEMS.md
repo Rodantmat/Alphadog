@@ -1025,6 +1025,49 @@ underpowered candidates.
 **Counterweight (#9)**: do not raise the bar for candidates that looked promising — **keep the bar
 fixed and classify the outcome honestly.**
 
+### ⚠ "CAN THIS PROP BE GRADED?" IS A SHIPPING PREREQUISITE, NOT A FOLLOW-UP
+> *"**Before deploying ANY new prop to a live board, CONFIRM ITS OUTCOME-GRADING PATH IS ACTUALLY
+> BUILT AND TESTED END TO END.** MLB had a real case of **a prop (situational, requiring
+> play-by-play-level data no standard game log carries) being SERVED ON THE LIVE BOARD WITH
+> PREDICTIONS FOR WEEKS BEFORE ITS OUTCOME-GRADING PATH EXISTED AT ALL** — meaning **those predictions
+> COULD NEVER BE VALIDATED AGAINST REALITY during that entire window.**
+> **Treat 'CAN THIS PROP'S REAL OUTCOME BE GRADED' as a HARD PREREQUISITE for shipping a new prop, NOT
+> a follow-up task.**"*
+
+**⚠ The MLB case is a play-by-play prop — and NBA has an entire deferred tier of exactly those.**
+Tier C props (**first basket, first to 10+, game/team high scorer, First 5 Minutes**) *"need
+play-by-play we don't have"* and are correctly out of scope. **The rule says they must stay out until
+the grading path exists, not merely until the projection does.**
+
+**The props to check this against are the ones already configured but unvalidated:**
+| Prop | State | Gradeable from `player_game_log`? |
+|---|---|---|
+| `fgm`, `fta` | NOT YET CERTIFIED | ✅ `FGM`, `FTA` are box-score columns |
+| `turnovers`, `fg3a`, `ftm`, `personal_fouls` | CONFIGURED, NOT RUN | ✅ box-score columns |
+| **`double_double`** | sentinel −1.0, **no ladder** | ⚠ derivable, but **the grading expression is not recorded** |
+| **period props** (1Q/1H/2H/4Q) | built, certified for points | ✅ `Period=1..4` bulk data exists |
+| **`ot_rule = exclude` variants** | unverified whether built | ⚠ **requires OT isolation = full-game − quarters** |
+
+**The last row is the live risk**: if an `exclude` variant is ever served, **its grading path needs the
+OT subtraction to exist too** — and T9 lists *"the OT-exclude variant for Sleeper"* as outstanding.
+
+### ⚠ THE GRADER NEEDS AN IDEMPOTENT, DETERMINISTIC OUTCOME ID
+> *"**Build an IDEMPOTENT, DETERMINISTIC OUTCOME ID** — built from **EVERY field that distinguishes
+> one real graded leg from another: ENTITY, PLAYER, PROP, LINE, SIDE, VARIANT, DATE** — **so the
+> grader can be SAFELY RE-RUN for the same date WITHOUT DUPLICATING OR CORRUPTING existing rows** —
+> **this also makes the grader resilient to the platform-level schedu[le changes]**."*
+
+**Seven fields named: entity · player · prop · line · side · VARIANT · date.**
+
+**⚠ `variant` appears again** — the same column whose omission caused the dedup collapse (above), and
+the same column whose labelling is currently wrong in `board_tiers` v1. **It is named in both the
+dedup key and the outcome ID.**
+
+**Why idempotency matters operationally for NBA**: P2 re-runs are expected (replay mode, `asof`
+override, a failed night re-run). **A grader that is not idempotent duplicates or corrupts on every
+re-run** — and `board_outcomes` has **6.9M rows across 327 dates**, all produced by repeated runs.
+**Whether its key includes `variant` is unverified.**
+
 ### ⚠ PUSH / TIE / DNP IS A THIRD STATE — and it needs fixing in TWO places
 T1's blueprint §4c:
 > *"**Distinguish push/tie/DNP from genuine hit/miss AS A REAL THIRD STATE**, and **exclude it from
