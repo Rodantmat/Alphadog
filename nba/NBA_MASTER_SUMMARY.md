@@ -1756,6 +1756,39 @@ not apply to it.
 
 **T2 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T2.16 — PASS 9 (final blocks, 610–739, sequential) — **CLEAN 1/3**
+
+Every block maps to a documented entry: independent verification and spot-checks (T2.14),
+the Jokić diacritic (T2.9c), the seven-worker milestone (T2.14d), `teamplayeronoffdetails` and its
+30-call loop (T2.9d, T2.12d), the 8-scraper run time (T2.10c), 661→582 dedup (T2.15a), the Wembanyama
+and LeBron values (T2.15b), the owner's two pushes (T2.9i), garbage time (T2.9e, T2.13a), EPM's paywall
+(T2.9f corrected), and the DARKO evaluation (T2.15d–f).
+
+**T2 ends at block 739 with the DARKO decision — the build lands in T3.**
+
+**CLEAN PASS 1 of 3.**
+
+### T2.17 — CURRENT STATE OF T2
+
+**9 passes. 8 found new material. Clean count: 1/3** (pass 9).
+
+| Pass | Method | New findings |
+|---|---|---|
+| 1 | truncated digest, ~first third | partial skeleton |
+| 2 | full sequential | **major** — 9 findings incl. garbage time, DARKO, the 500 |
+| 3 | sequential, opening/middle | `continue-on-error`, arena rename cadence |
+| 4 | tool results | `*_written` ≠ total (corrected T1.21), run times |
+| 5 | DDL + docstrings | 3 tables, `data_quality 'real'` vs `'derived'`, `VS_PLAYER_ID` |
+| 6 | research passes in full | **EPM is PAID** (corrected T2.9f), bench-player garbage time |
+| 7 | status summaries | 19/11 capacity split, the exact Postgres error, 7 workers |
+| 8 | on/off + DARKO conclusions | **major** — traded-player dedup, the DARKO comparison table |
+| 9 | final blocks | **CLEAN** |
+
+**Two corrections to my own entries came out of this cycle** — the EPM paywall and the
+`aliases_written` figure — both caught by sequential reading, both of the same type as T1's.
+
+**Two more consecutive clean full passes required before T2 is DONE.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
