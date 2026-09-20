@@ -281,6 +281,51 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 88 — THE WEEKLY CADENCE WAS LOCKED FOR A WORKFLOW THAT NO LONGER EXISTS *(added 2026-09-20)*
+*VERIFIED by direct read of `.github/workflows/nba-scrape.yml` on live `main`, 2026-09-20.*
+
+`nba-scrape.yml` still opens with the justification T1 wrote on 2026-08-31:
+
+> *Weekly differential check, per the person's own instruction (2026-08-31): teams/static
+> data changes rarely, so a weekly re-check is enough once backfill is done. Runs Monday
+> 09:00 UTC …*
+> `- cron: '0 9 * * 1'`
+
+**That was true of the workflow it was written for.** On 2026-08-31 this file scraped **one thing** —
+`nba_teams_current.json`, a 30-row list that changes at most once a decade. Weekly was generous.
+
+**The workflow today runs SIXTEEN scrapers across twenty steps** and commits **40+ files**:
+teams, players, arenas, officials, player bio, player tracking, team stats, on/off splits, DARKO,
+schedule, play types, tracking detail, shot quality, shot zones, lineup synergy, career totals,
+player+team splits. **`nba_team_stats_current.json` (pace/ratings), `nba_onoff_current.json`,
+`nba_player_tracking_current.json`, `nba_darko_current.json` and `nba_schedule_current.json` all
+change with every game played.**
+
+**Nobody revisited the cadence when the scope grew.** The comment still says "changes rarely"; the
+cron still fires once a week. **The season opens 2026-10-03.** From that date a Monday-only refresh
+means in-season pace, ratings, on/off and player-impact inputs are **up to six days stale** whenever
+the baseline engine reads them — and the stale window is invisible, because each file's `_meta.json`
+records a real `fetched_at` that simply sits a week behind.
+
+**MLB already learned this lesson and NBA did not inherit it.** `scrape.yml` carries a
+`- cron: '0 */2 * * *'` backstop with this comment: *"prevention fix 2026-08-06: added after a real
+incident where the board went stale for an extended period because this workflow only ran via
+dispatch from the orchestration layer, with no independent backstop."* **MLB's scraper also has a
+`repository_dispatch: types: [alphadog_prizepicks_board]` entry point. `nba-scrape.yml` has
+neither** — its only triggers are the weekly cron, a bare `workflow_dispatch: {}`, and a push to
+`nba/TRIGGER_NBA_SCRAPE.txt`.
+
+**Not fixed** — recorded per the sweep's read-only rule. **The decision the owner needs to make
+before 2026-10-03**: which of the sixteen families are genuinely weekly (teams, arenas, officials,
+career totals) and which need a daily or in-season cadence of their own. **Splitting the workflow
+is the obvious shape** — the current single job also means one slow scraper delays all sixteen.
+
+*Related: the first scrape step (`Scrape NBA teams`) is the only one of the sixteen without
+`continue-on-error: true` — already recorded at `NBA_MASTER_SUMMARY.md` line 1550. The officials
+scraper is the only step that passes no `PROXY_URL`, because its source is Wikipedia, not nba.com.*
+
+---
+
 ## FROM T1 PASS 87 — THE 18 MLB PATCHES, READ AS DIFFS *(added 2026-09-20)*
 *Angle: pass 73 counted T1's writes by path. **This reads the `old_str`/`new_str` of every patch that
 touched an MLB file** — 18 calls across `generate_wrangler_configs.py`,
