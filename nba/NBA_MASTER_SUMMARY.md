@@ -1456,6 +1456,116 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.100 — PASS 70 (angle: **the OPERATOR SURFACE — all 32 workflows and all 14 trigger files, diffed against all twelve documents**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full inventory: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 70.*
+
+**FINDING 1 — ⚠⚠ 7 of 32 NBA workflows and 7 of 14 trigger files are named in NO document.**
+**VERIFIED** by listing the live clone and grepping every document for each name **by stem as well as
+by filename**, per the pass-53 rule. **All seven undocumented workflows are `workflow_dispatch` /
+trigger-file only — none is scheduled**, which is why they escaped the pipeline documentation: they
+are **operator tools, not pipeline steps**: `nba-board-backfill`, `nba-board-maintenance`,
+`nba-diagnostic`, `nba-game-lines`, `nba-game-officials`, `nba-pairs`, `nba-starter-status`.
+⚠ **The trigger-file half is worse**: the trigger file is **the only mechanism the assistant has to
+fire a workflow** (pass 65), so **an undocumented trigger file is a capability nobody can use.**
+**The season opens 2026-10-03.**
+
+**FINDING 2 — ⚠ `nba-board-maintenance.yml` hides six task modes behind one input**:
+`shrink | derived | map | curves | rungs | coverage`. **Three of the six — `coverage`, `curves`,
+`rungs` — name machinery this documentation covers in detail elsewhere, and none of the six is
+described anywhere.** What each does is **NOT RECORDED**; this pass records only that they exist.
+
+**FINDING 3 — ⚠⚠ a destructive path outside the "complete" audit.** `NBA_WORKERS.md` §6b is
+*"every destructive statement in the codebase"* — **it audits SQL.** `nba-pairs.yml` deletes
+committed files with `rm -f nba/data/nba_pairs_<season>_*.json`, gated on an input defaulting to `0`
+on a manual-only workflow, **so it cannot fire by accident.** New §6c records it. ⚠ **Only that one
+workflow was examined; whether the other 31 carry destructive shell steps is NOT RECORDED.**
+
+**FINDING 4 — a naming mismatch**: `nba-diagnostic.yml` is named **"NBA Starter Status Diagnostic"**.
+Recorded so nobody looks for a general diagnostic there.
+
+**Routed to**: `WORKERS` (new §6c) · `OPEN_ITEMS` (*FROM T1 PASS 70*, full inventory) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `GLOSSARY`,
+`SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 70 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.99 — PASS 69 (angle: **whole-universe diff of the WORKER FLEET — registry vs manifest vs files on disk**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 69.*
+
+**FINDING 1 — ✅ the one NBA universe that has NOT drifted: 21/21/21.** **VERIFIED**:
+`nba_config.worker_definitions` **21** (all `enabled = 1`) ≡ `nba/worker_manifest_nba.json` **21**
+(no duplicates) ≡ `nba/alphadog-v2-nba-*.js` **21**. **Set difference empty in every direction.**
+Recorded deliberately — nearly every other whole-universe diff here found drift (17 undocumented
+tables, 7 of 10 decay rows, 14 props planned vs 28 live). **This one does not, and 21/21/21 is now
+the baseline a future check diffs against.**
+
+**FINDING 2 — ⚠ an asymmetry: 121 MLB wrangler configs are committed, 0 NBA ones are.** The
+generator writes NBA's to `nba/wrangler.<worker>.jsonc` and `.gitignore` excludes only `.wrangler/`,
+so nothing prevents it. **Consequence: an NBA worker's effective bindings cannot be read from the
+repository** — for any MLB worker they can. Deliberate or not is **NOT RECORDED**.
+
+**FINDING 3 — ⚠⚠ the hand-edit rule has a sharper consequence than four documents state.** The
+rule is recorded; **the root-caused incident behind it is not.** From the generator's own source:
+manual edits were *"silently erased … **which is why production kept serving the old D1 code despite
+the repo's `.js` files already being correctly rewritten**."* **The failure mode is not "your edit
+vanishes" — it is "production serves stale code while the repository looks correct"**, which code
+review cannot catch. ⚠ **And it lands harder on NBA**, because finding 2 means there is no committed
+NBA config to compare against.
+
+**FINDING 4 — context, not an action item.** A second generator special case gives
+`alphadog-v2-certification-center` `cpu_ms: 300000`, because a large string-concatenated HTML
+response can be **"silently killed mid-response with no error surfaced to the client."** MLB-only
+today; recorded because **that Worker failure mode is named nowhere in the NBA documents.**
+
+**Routed to**: `SYSTEM_ARCHITECTURE` §8b-i (the clean diff and the asymmetry) · `WORKERS` (the
+sharper failure mode) · `OPEN_ITEMS` (*FROM T1 PASS 69*) · this entry.
+**Considered, no change warranted**: `RECIPE`, `DATABASE`, `GLOSSARY`, `SYSTEM_DESIGN`,
+`BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 69 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.98 — PASS 68 (angle: **LIVENESS — pass 45 proved T1's artefacts exist; this asks whether they run**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 68.*
+
+**FINDING 1 — ⚠⚠ NBA HAS NO RUN HISTORY AT ALL, and two documents said it did.**
+**VERIFIED three ways**: `nba_control.job_runs` **0 rows**; `nba_control.worker_run_log` **0 rows**;
+and the string `nba_control` appears in **no non-markdown file anywhere in the repo**. Every file
+that does use `worker_run_log`/`job_runs` is an **MLB** file at the repo root. Meanwhile **21 NBA
+workers are registered, all `enabled = 1`, and their output tables are populated** — so **the
+workers run and nothing records that they ran.** **NBA inherited MLB's tables and never inherited the
+wiring.**
+
+**Corrections made in place**: `NBA_WORKERS.md` §1 said the workers *"log to `nba_control`"* —
+**false**; `NBA_SYSTEM_ARCHITECTURE.md` §1 said *"NBA's own control plane exists — VERIFIED
+present"* — **true of the tables, misleading about the plane**, now qualified as **present, not
+functioning.**
+
+**FINDING 2 — why it matters now.** **The season opens 2026-10-03** with three unattended
+pipelines. **With both run tables empty and unwired, a pipeline that silently stops produces no row
+anywhere that says so.** ⚠ **Blueprint §5's gap, one turn worse**: MLB could not distinguish
+*"genuinely zero"* from *"broken"*; **NBA cannot distinguish "ran" from "never ran."**
+**Stated at strength**: this is **not** a claim that anything is failing — only that no run record
+exists, which is what makes the first claim hard to make.
+
+**FINDING 3 — ⚠ a named pattern, third instance.** Three structures created to match MLB's design
+and used by nothing: the **eight `nba_config` tunable tables** (pass 33), **`nba_ref.teams.arena_id`**
+(pass 65), and **the two `nba_control` tables** (this pass). **Blueprint §6 warns about "registry
+entry, dead worker"; this is the mirror — "table exists, writer never born."** Named so later
+transcripts can be swept for more.
+
+**Routed to**: `WORKERS` §1 (correction) · `SYSTEM_ARCHITECTURE` §1 (qualification) ·
+`DATABASE` §3 · `OPEN_ITEMS` (*FROM T1 PASS 68*, full content) · `GLOSSARY` · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`,
+`FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 68 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.97 — PASS 67 (angle: **T1's 24 SQL statements extracted verbatim, each target re-checked against the live database**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 67, and the qualified blocker
 at the top of that document.*
