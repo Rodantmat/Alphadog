@@ -625,6 +625,8 @@ exist wherever a loop asks "what still needs work?"
 **And the diagnostic**: **a percentage that ticks is not progress.** Check the **absolute addressable
 count** is falling.
 
+### ⚠ THE DOMINANT BUG CLASS · a grouping key or join that doesn't isolate what it claims to
+
 **MLB's lessons document devotes an entire section — Part C, *"the pipeline/data-quality bug family to
 actively guard against in NBA FROM DAY ONE"* — to this.**
 > *"All of the following were **real, separately-discovered bugs** in MLB, and **every one of them is
