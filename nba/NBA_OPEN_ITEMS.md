@@ -128,6 +128,26 @@ literal). Flagged as *"a real fork worth your sign-off."* **Resolved in favour o
 *"Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably"* — which is why endpoint
 and header defaults are hard-coded as fallbacks rather than relying on vars.
 
+### OPEN-SINCE-T1 · an unclosed header/cookie follow-up
+After the canonical-header rewrite, one path still returned an error and was *"flagged as a
+non-blocking follow-up"* needing *"real header/cookie debugging"*. It correctly fell back, so nothing
+broke — **but the follow-up was never closed.** Low priority (the GitHub-Actions path superseded it),
+recorded so it is not lost.
+
+### CAVEAT · the MCP connector caches its tool list at the CONNECTION level
+Not per chat. This is why a disconnect-and-reconnect did not surface a newly deployed tool — a
+genuinely fresh connection is required.
+
+### CAVEAT · the full Cloudflare-origin response family
+**403 "Access Denied" · 520 ("web server is returning an unknown error", edge-level) · 526.**
+Root cause: **stats.nba.com is itself Cloudflare-fronted, and Cloudflare-to-Cloudflare traffic gets
+flagged at the WAF/edge.** The request never reaches the app layer. No header tuning can fix it.
+
+### CAVEAT · `FALLBACK_AFTER_FETCH_ERROR` is the marker to watch
+A `source_key` of `FALLBACK_AFTER_FETCH_ERROR` means the certified static list was used, not live data.
+`NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` means real nba.com data. **Check the key before trusting a
+load.**
+
 ---
 
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
