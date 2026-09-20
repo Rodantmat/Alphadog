@@ -347,6 +347,26 @@ sample are **fully shrunk to prior from day one**."*
 
 ## 5. THE PERMANENT RULES
 
+### 5.0 The nine iterations, with their exact figures *(the owner's "do not move before fixing it")*
+| # | Step | Measured |
+|---|---|---|
+| **v1** | parametric alone | **points tails −9.8 pp**; **role bias fringe +7.5 pp** |
+| **v2** | role minutes multiplier + **heteroscedastic dispersion prior** | *"points var/mean **3.4 → 2.0 by mean band**; **a flat 1.5 default was wrong**"* |
+| **v3** | **EMPIRICAL `rate_tier × role_tier × rung` tables (min 300) as PRIMARY** | **points ladder ±4 → ±1.2** |
+| **v4** | monthly walk-forward rebuild | absorbs the 2025-26 regime shift |
+| **v5–6** | cell shrinkage toward parametric | made far tails **worse** → exposed the **symmetric-floor bug** (0.002 forced to 0.25) → **upper ceiling only** |
+| **v7–8** | Platt | whole-ladder helped points, **hurt rebounds** → **per-rung** fixed both |
+| **v9** | **role-aware tier priors** (rate tiers ranked *within* role tier) | resolved the persistent star/fringe residual |
+
+**`heteroscedastic dispersion` is the one most easily missed**: variance/mean is **not constant** —
+it runs **3.4 at low scoring levels down to 2.0 at high ones**. A single dispersion default is wrong
+for every band but one.
+
+**Plus the leakage fix**: a season-wide mean using future games — *"that was the entire FRINGE
+anomaly"* — after which the role minutes multipliers *"shrank to **honest ~1.0 values**."*
+
+### 5.1 The permanent rules
+
 **① A band cell is kept ONLY if its sign is consistent across seasons.**
 Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands **+2.8 / −3.6** →
 **regime**, dropped (*"frozen cells actively hurt"*); walk-forward tables + in-season Platt carry it.
