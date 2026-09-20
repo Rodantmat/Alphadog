@@ -5994,6 +5994,119 @@ Single-stat re-certification with the factor layer · combos and DD joint simula
 period props (1Q/1H/2H/4Q, the 3-part mixture, OT) · **the production builder (patcher pattern)** ·
 the loader.
 
+---
+
+## T9 — `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt`
+**All 11 single-stat props certified · the factor layer · combos and DD · the period layer ·
+the production builder and loader — the production loop closed end to end**
+*75 content blocks · **PASS 1 (full sequential) 2026-09-20***
+
+### T9.1 — Persistence first, then sharpening
+T9 opens with the v17 body that T8 could not push. *"**The working copy survived. Persisting first**"*
+— whole-file replacement in two parts, then *"the workflow needs to run it **per prop pair (each call
+~8 min)** on both seasons."*
+
+**A recurring failure mode, handled the same way each time**: *"The patch didn't apply (**third anchor
+mismatch**) — **that run was unchanged v17**"*, *"The second anchor didn't match, so **nothing was
+written and that run is just the old file**"*, *"The patch aborted on the last anchor (**no write**)"*.
+**Every time, the stale-output trap was identified before the numbers were read.** Later:
+> *"**Let me verify all five anchors against the repo harness BEFORE re-triggering**, so it doesn't
+> fail on the next one."*
+
+### T9.2 — **ONE RECIPE — the owner's objective, made precise**
+> *"Yes — that is exactly the objective I'm building to, and **it's worth being precise about what 'one
+> single set of logic' means in practice**, because there's one distinction that matters."*
+
+Result: *"**The repo is now a clean recipe.**"* — the `_VB0`/`_VB` inline dicts plus the leg-level
+`VAR_BANDS` were **all replaced with one shared table via regex**, so the variation bands exist once.
+
+### T9.3 — **The single-stat pass: all 11 props, two-season standard**
+| Prop | Outcome |
+|---|---|
+| **FTM** | ladder 1.3, two "more" bands over-confident → *"It's **a compound prop like 3PM**, and 3PM needed **shift mode** to keep the make-rate ordering — **same test**"* → **shift λ=0.5: ladder 1.1, `0 of 19 bands`, 0 rung cells** on 2025-26 |
+| **FTM holdout** | *"3 of 19 bands at −2.9 to −3.2 — **close, not certified, like blocks**"* |
+| Turnovers, fouls | *"both NegBin, **replacement mode by default**"* |
+
+**The FTM diagnosis is a transferred pattern**: recognising FTM as *compound* (attempts × rate) like
+3PM, and applying the same shift-mode fix. **The 3PM lesson generalised.**
+
+### T9.4 — **The owner's question, answered without overclaiming**
+> **OWNER:** *"So all props are covered now? All the logic holds for 2 seasons, at any given day, it is
+> very very precise"*
+> *"**Not all — and I want to be exact about what 'precise' means here**, because it's the thing that
+> determines how you use it."*
+
+### T9.5 — **THE SHARPEST DIAGNOSIS IN THE TRANSCRIPT**
+> **OWNER:** *"certify the close ones, give another try to the problematic one, research online,
+> multiple sources… find out if we need more factors"*
+
+> *"the **factor-layer point is the sharpest one**: the **'close' props are EXACTLY the ones whose
+> primary drivers are *opponent* stats** — **steals ← opponent turnover rate**…"*
+
+**The props that failed to certify are the ones whose drivers live outside the player.** Blocks, steals
+and FTM depend on what the *opponent* does — and a player-history baseline cannot see that.
+**That is a structural explanation for a pattern of failures, not a list of excuses.**
+*(It also matches T7.15a's factor lock: blocks/steals are driven by "opp rim-attempt rate / opp TO
+rate".)*
+
+### T9.6 — Factors tested against the certified props FIRST
+> *"the certified props with factors in — **points and rebounds first, since if factors *hurt* the
+> certified ones that's the most important thing to know**"*
+
+**The risk of adding factors is regression, not just failure to improve** — so the already-passing
+props were the first test, not the last.
+
+### T9.7 — Combos, the DD copula, and a dependency stated
+> *"the **DD copula uses the calibrated marginals where available** (points, rebounds now; **assists
+> falls back to Normal until its component is re-saved**)"*
+
+**A copula over calibrated marginals** — and the one marginal not yet re-saved falls back explicitly
+rather than silently.
+
+### T9.8 — **THE PERIOD LAYER — the three-part mixture**
+> *"Implementing the **three-part Q4/2H mixture** with **everything fit on train**: **state
+> probabilities (close / medium / blowout) from the derived spread**, and **per role tier and state a
+> sit-out rate plus a 'plays' [distribution]**"*
+
+**→ *"The fourth quarter is solved."***
+
+**Then outside validation before continuing:**
+> *"a quick **outside check — what the market and modellers know about half props and the OT rule**, so
+> I **test against something rather than just my own reasoning**."*
+
+**1H certified**: *"holdout ladder 1.0, **0 of 19 bands**."*
+→ ***"Period layer — complete for points across all four periods."***
+
+**Note the mixture's structure**: this is the **dud/blowout mixture from T7.14b**, finally
+implemented — but **only in the period layer**, where the sit-out rate is explicit. *(The full-game
+ladder still excludes duds rather than mixing them — see OPEN_ITEMS.)*
+
+### T9.9 — **THE PRODUCTION BUILDER — the key design insight**
+> *"**The key design insight: the backtest harness on a *past* day IS already the production
+> computation** — **every feature is `shift(1)`-based**, so the only difference for *today* is
+> [the slate]."*
+
+**This is why the patcher pattern works.** The harness was written as-of by construction, so producing
+today's numbers needs no new logic — only a different date and a virtual slate.
+
+**Verified by exact reproduction**: *"**The patcher form reproduces the ladder EXACTLY (173 players,
+4,498 rows)**."*
+
+**One bug on the way**: *"**The virtual rows are built before `PLAYER_ID` is cast to string**, so the
+roster ids come out as ints. **One-line fix: cast before building the slate.**"*
+
+### T9.10 — The loader, and the full wiring
+> *"**copy the proven pattern from an existing NBA static worker** — GitHub raw fetch, Hyperdrive
+> Postgres, batched upsert"* → writes `nba_score.baseline_ladder` + `baseline_ladder_runs`.
+
+**Wiring: *"Three edits register the new target on the bridge (binding map, direct-call list, tool
+enum) plus one in the config generator for the service binding."*** — the four-step pattern from T2,
+still holding.
+
+→ ***"The production loop is closed end to end."***
+
+**T9 PASS 1: complete sequential read. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
