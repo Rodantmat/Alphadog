@@ -2556,6 +2556,62 @@ of which is built yet — both were part of the original plan but come later."*
 
 **T4 PASS 3: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T4.10 — PASS 4 FINDINGS — the architecture correction, verified, and its risks section
+
+#### T4.10a — **The correction was VERIFIED, not just accepted**
+> *"I ran **a second Gemini consultation specifically to check whether the two-stage separation is
+> actually correct**, rather than taking **either your note or the first answer** on faith."*
+
+**Note what that checks**: not just the first answer, but the owner's correction too. The full reason:
+> *"the baseline… is expensive to compute but **only changes after a player's next game — it's
+> cacheable**. Enrichment data (injury news, line movement) **changes all day**. Keep them separate,
+> and the fast-changing Scoring Engine can **re-run in milliseconds** on new injury/odds data without
+> ever recomputing the expensive baseline. **Merge them, and every minor daily update forces a full
+> slow recompute.**"*
+
+#### T4.10b — **GBDT / neural nets considered and REJECTED, with reasons**
+The owner's question — *"unless there is a better logic that unifies everything and works fast"* —
+was answered directly:
+> *"only if you're using **a single large ML model (gradient boosting/neural net)** that can learn
+> complex non-linear interactions a multiplier system can't — but that needs **far more data and
+> compute than currently available**, and **sacrifices the explainability** the two-stage system gives
+> you for free. **Not recommended here.**"*
+
+**A recorded architectural decision with its conditions**: the unified-model path is not wrong in
+principle, it is wrong *given current data volume, compute and the explainability requirement.*
+*(Note MLB's control plane has `gbdt_training_requests` and `gbdt_auto_trigger_switch` tables — so MLB
+went down this road; NBA deliberately did not.)*
+
+#### T4.10c — **THE RISKS SECTION — and the first of them is a live concern today**
+The rewritten methodology added a risks section naming three:
+
+**1. DOUBLE-COUNTING** — *"**the baseline already reflects historical blowout-shortened minutes — don't
+penalize twice**."*
+
+**This warning was written in T4. The blowout factor was built in T16** on the real market spread,
+measuring that a 13+ favourite blows the game open 39.7% of the time and that starters lose ~4 minutes
+in a winning blowout. **The T4 warning says the baseline's historical minutes ALREADY contain those
+shortened games.** Whether the T16 build avoided double-counting — by modelling the *deviation* from
+the historical average rather than re-applying the penalty — **is not established in these
+transcripts.** **Flagged in OPEN_ITEMS as a specific thing to verify.**
+
+**2. ORDER-OF-OPERATIONS** — the sequence in which adjustments are applied changes the result.
+
+**3. BASELINE STALENESS ON TRADES AND SEASON-ENDING INJURIES** — a cached baseline is wrong the moment
+a player changes team. **This is exactly what the weekly differential worker was built to detect —
+and it is currently not scheduled** (T3.11a). **The two open items connect.**
+
+#### T4.10d — The doc's final shape, and the dependency claim
+- **Sections 1–3 (baseline)**: rate, minutes role, pace/defence, variance, trend — *"**all strictly
+  historical now, zero dependency on anything not yet built**. This can be implemented and run today."*
+- **Section 4 (enrichment)**: injury adjustments, blowout/fatigue factors, market-anchoring — *"a
+  separate layer applied **on top of** the cached baseline, not fused into it."*
+
+**Note that "blowout/fatigue factors" are placed in ENRICHMENT here**, not the baseline — which is
+consistent with the later parity doc assigning them to stages, and with the double-counting warning.
+
+**T4 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
