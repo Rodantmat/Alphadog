@@ -161,15 +161,27 @@ def main():
               "the baseline (known out overnight), so there is nothing to reallocate.", flush=True)
 
     out_rows = []
+
+    def mins(pid):
+        """recent minutes, NaN-safe. `float(x or 0)` is a TRAP here: NaN is TRUTHY, so `NaN or 0`
+        returns NaN, not 0 - one player with NaN minutes poisoned wsum, then share, gain, ratio and
+        every resulting probability. The first reallocation run wrote 6,748 NaN overrides this way."""
+        v = mpg.get(pid)
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            return 0.0
+        return 0.0 if v != v else v          # v != v is True only for NaN
+
     for team, g in aff.groupby("team"):
         pids = set(g["player_id"])
-        freed = sum(float(mpg.get(p, 0) or 0) for p in (now_out & pids))
-        added = sum(float(mpg.get(p, 0) or 0) for p in (now_in & pids))
+        freed = sum(mins(p) for p in (now_out & pids))
+        added = sum(mins(p) for p in (now_in & pids))
         net = freed - added
         if abs(net) < 1.0:
             continue
         stay = [p for p in pids if p not in now_out]
-        wsum = sum(float(mpg.get(p, 0) or 0) for p in stay) or 1.0
+        wsum = sum(mins(p) for p in stay) or 1.0
         for r in g.itertuples(index=False):
             if r.player_id in now_out:
                 # he is OUT: every one of his legs goes to ~0
