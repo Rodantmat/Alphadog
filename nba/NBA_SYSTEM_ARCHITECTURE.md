@@ -57,6 +57,31 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
 
 ## 2. COMPUTE
 
+### Reused as-is (shared, sport-agnostic infrastructure) *(T1)*
+*Confirmed and refined against what Phase 1 actually found live.*
+
+- **Cloudflare Workers + `wrangler` deploy mechanics**, the GitHub Actions auto-deploy pipeline, and
+  **`generate_wrangler_configs.py`** — *"NBA workers get added to its template — **watch for the
+  HARDCODED BINDING WHITELIST-TUPLE GOTCHA the blueprint flags**."*
+- **The Hyperdrive/Postgres connection pattern — `prepare: false`, `max: 3–5`.**
+- **The MCP admin-bridge worker** (`alphadog-v2-admin-sql.js`) and its `run_sql_postgres` / GitHub
+  tool surface.
+- **`config.worker_definitions` / `config.worker_schedules` / `control.job_queue` /
+  `control.job_runs`** — ***"bookkeeping ONLY"***, per the no-orchestrator exception.
+- **The ParlayAPI account/key** — `config.external_credentials`, `credential_key='parlay_api_key'` —
+  *"same paid account, `basketball_nba` sport key."*
+
+**⚠ THE HARDCODED BINDING WHITELIST-TUPLE GOTCHA** is named in T1 as a known trap in
+`generate_wrangler_configs.py`. **It is the same family as the later-confirmed rule that anything not
+in the generator is erased on deploy** (§4): the generator is authoritative, *and* it carries a
+hardcoded allowlist that a new binding must be added to.
+
+**`prepare: false` matters for Hyperdrive specifically** — prepared statements do not survive
+connection pooling; **`max: 3–5`** keeps the Worker within Hyperdrive's connection budget.
+
+**The `control.*` tables being "bookkeeping only" is the no-orchestrator rule in practice**: NBA
+workers are registered there and dispatched **directly**, never pulled from the queue.
+
 ### Cloudflare Workers
 - Where MLB's 116 workers run, and where NBA's writer workers run.
 - Named `alphadog-v2-nba-<domain>-<thing>`, deployed to `<name>.rodolfoaamattos.workers.dev`.
