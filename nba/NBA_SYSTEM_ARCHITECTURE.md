@@ -39,7 +39,7 @@ appeared in none of them.***
 
 | Check | Result |
 |---|---|
-| NBA's own control plane exists | **`nba_control.job_runs`, `nba_control.worker_run_log`, `nba_config.worker_definitions`** — VERIFIED present |
+| NBA's own control plane exists | **`nba_control.job_runs`, `nba_control.worker_run_log`, `nba_config.worker_definitions`** — VERIFIED present. ⚠⚠ **Present, not functioning** *(qualified 2026-09-20, T1 pass 68)*: **the two `nba_control` tables hold 0 rows each and are referenced by no code in the repo.** Only `nba_config.worker_definitions` is real — 21 rows, all enabled. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 68*. |
 | NBA rows in MLB's shared registry `config.worker_definitions` | **0** |
 | Total rows in `config.worker_definitions` | **116** |
 
