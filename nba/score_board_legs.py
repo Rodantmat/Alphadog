@@ -61,6 +61,19 @@ MARKET_TO_PROP = {
     "player_rebounds_assists": "reb_ast",
     "player_blocks_steals": "stocks",          # we DO carry this one
     "player_double_double": "double_double",   # sentinel line -1.0, no ladder - handled below
+    # DFS-NATIVE PROPS. These do NOT appear in the NBA board archive (board_snapshots is the Odds API
+    # feed): a scan of both seasons found player_fantasy_points on exactly one date, 2026-09-12, and
+    # that same snapshot carries player_first_inning_runs - it is MLB data, not NBA. fantasy_score and
+    # the period props reach us only through the PrizePicks/Underdog/Sleeper scrapers, which is what
+    # the LIVE pipeline reads. Mapped here so they score correctly the moment they arrive.
+    "player_fantasy_points": "fantasy_score",
+    "player_points_q1": "points_q1",
+    "player_rebounds_q1": "rebounds_q1",
+    "player_assists_q1": "assists_q1",
+    "player_threes_q1": "threes_made_q1",
+    "player_points_h1": "points_h1",
+    "player_points_h2": "points_h2",
+    "player_points_q4": "points_q4",
 }
 
 
