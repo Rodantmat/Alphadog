@@ -1456,6 +1456,49 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.107 — PASS 77 (angle: **the 14 ASSISTANT MESSAGES — only the text the owner actually saw**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 77.*
+
+**Angle**: T1's 14 assistant message turns (**43,216 characters**), stripped of thinking, tool calls
+and tool results — the owner-facing record — with each factual claim tested.
+
+**FINDING 1 — ⚠⚠ the credential exposure is wider than pass 67 found, and MY REDACTION ADVICE WAS
+WRONG.** Pass 67 advised stripping `INSERT INTO nba_config.external_credentials` values.
+**VERIFIED by searching the raw exports for the stored value itself: it occurs 3 times in T1 and 18
+times in T19 — 21 occurrences, most NOT inside an `INSERT`.** **The T1 occurrence that matters is in
+the assistant's own handoff message, in plain prose** — in the same paragraph that asserts the key is
+*"already stored"* in the database, in a session whose memory write records the owner's rule that it
+belongs there *"not in chat memory."* ⚠ **T19 is this documentation effort's own earlier session,
+reproducing the value eighteen times** — **which is how a credential spreads: each session
+documenting the last copies it forward.**
+**The blocker's guidance is corrected in place: redact by VALUE, not by statement shape**, and
+**rotation is now the clearly stronger option.**
+
+**FINDING 2 — the provenance of the claim pass 68 corrected.** T1's handoff states
+*"`nba_control`: `worker_run_log`, `job_runs` — **own run history**."* **That is where the claim
+entered the record** — written the day the tables were created, before a single row existed — and it
+propagated into two documents. **A statement of intent that later reads as a statement of function**,
+and a clean example of how the *"table exists, writer never born"* pattern becomes a documentation
+error.
+
+**FINDING 3 — the rest of the handoff holds up, checked.** `nba_ref.teams` **30 active** ✅;
+`team_aliases` **157 then, 162 now** (both already documented) ✅; the 14 schemas ✅ (6 empty, pass
+47); the deploy-script patches ✅ (consistent with pass 73's 18 MLB writes);
+`github_trigger_workflow` ✅ already recorded as becoming available later — **it is in this
+session's tool list.**
+⚠ Small confirmation of pass 46: `NBA_AVAILABLE_TOOLS.md` **still does not list
+`github_trigger_workflow`**. Consistent with that document's recorded staleness; not new.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 77*, and **the blocker's redaction guidance corrected**) ·
+this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 77 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.106 — PASS 76 (angle: **the `nba_score` OUTPUT LAYER — all 18 tables counted exactly and checked against the documents**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 76.*
 
