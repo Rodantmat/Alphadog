@@ -101,6 +101,49 @@ timestamps. **Source: Wikipedia "List of NBA referees"** (the stats API has no r
 join. Paired with `nba/nba_names.py`.
 
 ### `nba_ref.defender_ratings` — 111,768 rows *(T16)*
+Two-way ridge `Y = mu + alpha(off) + beta(def)`, 5 channels, reliability-shrunk, weekly as-of, both
+seasons. Has `as_of_date`.
+
+---
+
+## 1b. `nba_stats` / `nba_team` — the weekly profile layer *(T2)*
+
+**`data_quality` defaults differ by layer, deliberately**: `nba_ref` tables default to **`'derived'`**,
+these default to **`'real'`** (straight from the source). The column records provenance per row.
+
+### `nba_stats.player_season_profile` — 582 rows
+Source: **`leaguedashplayerbiostats`** — one call, whole league.
+| Column | Notes |
+|---|---|
+| `player_id` | **PK** |
+| `nba_player_id`, `season`, `games_played` | |
+| `pts_total`, `reb_total`, `ast_total` | season totals |
+| `net_rating`, `oreb_pct`, `dreb_pct` | |
+| **`usg_pct`** | usage rate — a core prop-model input |
+| **`ts_pct`** | true shooting |
+| `ast_pct` | |
+| `source_key`, `data_quality` DEFAULT `'real'`, `raw_json`, `updated_at` | |
+
+**Cadence rationale (stated at build time):** bio fields are *"truly static"*; the season aggregates are
+*"semi-static, stable enough for weekly refresh — **a single game barely moves a season average after
+20+ games played**."* **Note this reasoning does not hold in the first 20 games of a season.**
+
+### `nba_stats.player_tracking_profile` — 582 rows
+Source: **`leaguedashptstats`** (SpeedDistance) — one call.
+`avg_speed`, `avg_speed_off`, `avg_speed_def`, `dist_miles`, `dist_miles_off`, `dist_miles_def`,
+plus the standard `source_key` / `data_quality` / `raw_json` / `updated_at`.
+
+### `nba_team.season_profile` — 30 rows
+`games_played`, `wins`, `losses`, **`pace`**, `off_rating`, `def_rating`, `net_rating` + standard.
+**Built after an HTTP 500** — stats.nba.com requires the FULL parameter set (many as empty strings).
+
+### On/off-court splits — 661 raw rows → 582 distinct players
+Source: **`teamplayeronoffdetails`** — per-team, **30 calls**, ~63 s.
+Returns **three** result sets: `OverallTeamPlayerOnOffDetails`,
+`PlayersOnCourtTeamPlayerOnOffDetails`, `PlayersOffCourtTeamPlayerOnOffDetails`.
+**Each player's ON row is matched to their OFF row by `VS_PLAYER_ID`**, and the stored value is the
+computed **net-rating differential** (team net rating with the player on the floor minus off) — the
+"with/without you" signal. Verified values: **Wembanyama +16.4, LeBron +2.3**.
 
 ### `nba_ref.referee_assignments` *(T15)*
 Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
