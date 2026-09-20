@@ -614,7 +614,26 @@ one or two outlier days**; always break down by day and check the sign holds bro
 **Check (a) is the guard against #15.** Check (c) is the same instinct as the bootstrap's third
 condition, applied to every number rather than only to strategies.
 
-#### #11 — **"MECHANISTICALLY COHERENT" IS A TRAP, NOT A CREDENTIAL**
+#### #9 — **MOVING THE GOALPOSTS ONLY WHEN SOMETHING LOOKS PROMISING IS ALSO BIAS**
+> *"MLB found and named a specific, subtle failure mode: **introducing a stricter statistical test
+> SPECIFICALLY BECAUSE a result survived further than expected** (**moving the goalposts only when
+> something looks promising**) **is a real form of bias, distinct from and just as important to avoid
+> as being too lenient** on a promising-looking result. **When you find yourself reaching for a new,
+> more ri[gorous test]…**"*
+
+**Over-strictness is not the safe direction.** The asymmetry is what makes it bias: applying the harder
+test **only** to results you did not expect systematically rejects real findings while letting
+expected ones through unchallenged.
+
+**The discipline this implies**: decide the test **before** seeing the result (#5's pre-registration),
+and if a new check is genuinely warranted, **apply it to everything already accepted**, not only to the
+surprising case.
+
+**⚠ Directly relevant to this project's rejections.** Ten enrichment factors were rejected and the
+anchor won every slice. **That is a legitimate outcome — but the guard against it being partly an
+artifact is that `gain_vs_anchor`, `log_loss` and `brier` were fixed as the metrics before any factor
+ran**, and every verdict lands in `factor_gate_results`. **The pre-registration is what makes the
+rejections trustworthy**, not the rejections themselves.
 > *"MLB's **'mechanistically coherent' trap**: a prop's apparent correlation strength tracked a real,
 > **physical-sounding narrative** (a composite stat *should* correlate more with game environment)
 > that turned out to be **a pure artifact of a different confound (LINE-THRESHOLD VARIANCE)** once
