@@ -53,7 +53,16 @@ The team dictionary. 30 active rows.
 
 ### `nba_ref.team_aliases` — 162 active rows
 `alias_key` TEXT **PK** · `team_id` · `nba_team_id` BIGINT · `alias_value` · `alias_normalized` ·
-`alias_type` · `source_key` · `confidence` · `active` INT DEFAULT 1 · `updated_at`
+`alias_type` · `source_key` · **`confidence`** · `active` INT DEFAULT 1 · `updated_at`
+
+**⚠ `confidence` here is NOT the scoring confidence.** It is an alias-provenance label with two
+values: **`CONTROLLED_ALIAS`** (`alias_type = 'manual_alias'`) and **`CANONICAL`** (everything else).
+`nba_ref.player_aliases` uses the same convention.
+**A manually-curated alias is marked as such**, so a name-resolution failure can be traced to whether
+the mapping was derived or hand-entered.
+
+**Upsert behaviour**: `teamHasRealChange()` gates the write, and `*_written` counters report **rows
+upserted in that run** (155/157), **not the table total** (162).
 
 ### `nba_ref.players` — 582 rows, 525 active
 | Column | Type | Notes |
