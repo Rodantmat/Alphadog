@@ -1456,6 +1456,125 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.103 — PASS 73 (angle: **T1's WRITE SET — every repo write read as a changeset, counted by path and by failure**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 73.*
+
+**FINDING 1 — ⚠ the isolation boundary, measured: 18 of 61 writes (30%) went to MLB root files.**
+**MEASURED from the export**: `alphadog-v2-admin-sql.js` **8**, `generate_wrangler_configs.py` **7**,
+`github_mobile_deploy_workers.py` **3**. All three files are already named in the documents and
+pass 65 recorded **why** the rule was relaxed; **the scale was never recorded.**
+**Stated at strength**: **the edits were additive and the isolation held** — 116 rows, 0 NBA, every
+later check agrees. **The finding is the gap between *"everything is additive"* and *"nothing outside
+`nba/` was touched"*** — different claims, and only the first is true.
+
+**FINDING 2 — `nba/TRIGGER_NBA_SCRAPE.txt` was written five times.** Each write exists only to fire
+`nba-scrape.yml` by push. **Five manual scrape firings in one session** — the human-visible cost of
+having no dispatch tool, alongside the 25 polling sleeps (pass 66).
+
+**FINDING 3 — the failure taxonomy: 6 of 61 writes failed, ~10%.** **2×** `old_str matches 2 times`,
+**2×** `old_str not found`, **1× HTTP 409 conflict**, **1×** an MCP validation error on a call issued
+**with no `path`** — that one **changed nothing**, so the MLB count is 18, not 19 (a reader counting
+tool calls alone would get 19).
+
+**FINDING 4 — ⚠ the same four failures recur across sessions.** **This documentation effort hit all
+four again**, weeks later, on different files — including a **409 on `NBA_OPEN_ITEMS.md` that
+succeeded on an identical retry**. **Systemic to patch-by-anchor, not incidental**: re-read before
+patching, and treat a 409 as a conflict rather than a rejection.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 73*, measured numbers as full content) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE` (§1's isolation claim is
+correct as written and is what the measurement confirms), `DATABASE`, `WORKERS`, `GLOSSARY`,
+`SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 73 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.102 — PASS 72 (angle: **the PYTHON LAYER — 116 scripts diffed against the workflows that run them and the scripts that import them**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail with the docstring quoted: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 72.*
+
+**FINDING 1 — the counts.** **116 Python files in `nba/`; 101 invoked by a workflow; 15 not.**
+Of the 15, **2 are shared libraries** (`nba_names.py` imported by **27** scripts, `nba_season.py` by
+**19**, both documented — correctly not invoked directly) and **13 are referenced by nothing at all**.
+**11 of the 13 are named in zero documents**, including **ten one-off `probe_*.py`** — throwaway by
+design, **but committed with nothing distinguishing them from live code.**
+
+**FINDING 2 — ⚠⚠ the three `build_absence_panel*.py` are superseded dead code, and their successor
+carries a root cause the twelve documents state only as an outcome.** **VERIFIED**:
+`nba-absence-panel.yml` runs **`build_redistribution_panel.py`**, whose docstring names it
+**"REDISTRIBUTION PANEL v4"** — lineage **v1 → v2 → v3 → v4, four generations in two days**
+(2026-09-11/12). `NBA_FINAL_SCORING_CALIBRATION.md` records *"five panels failed, then RETRACTED"*;
+**the code records why**: each version attributed vacated minutes to a **specific** absent player and
+then isolated a "clean" sub-case — **v1** minutes floor, **v2** `pair_games>=5`, **v2b**
+`leaguedashlineups` (**capped at 2,000 rows**), **v3** `single_absence` only (**218 of ~1,150
+team-games**) — and **every isolation dropped the absorbers.** *"**The isolation WAS the bug, five
+times.**"* Conservation-gate values **0.10 / -0.05 / -0.37 / 0.25-0.49**. **v4 answered it
+structurally**: absences as features, **conservation by construction** (shares summing to 1),
+*"thousands of team-games, not 218."*
+**The reason to carry it despite the retraction**: *"the isolation was the bug"* is a **method
+lesson** — filtering to the clean sub-case can remove exactly the rows carrying the effect — and it
+applies to any factor fitted on a filtered panel.
+
+**FINDING 3 — stated at strength: not production waste.** `nba-absence-panel.yml` is
+**`workflow_dispatch` only, not scheduled** (VERIFIED), and is named in four documents. **Nothing is
+burning runner time.** The gap is the lineage and the reason.
+⚠ **`A2b`, the "dependent branch", appears in NONE of the twelve** — only in the workflow header
+and in two non-mandated documents. What it is, and whether it was retracted with A2, is
+**NOT RECORDED**.
+
+**Routed to**: `FINAL_SCORING_CALIBRATION` (the A2 row, with the root cause) ·
+`OPEN_ITEMS` (*FROM T1 PASS 72*) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 72 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.101 — PASS 71 (angle: **the FETCH SURFACE — was the documented 1 MB fix actually applied to every worker?**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail with both size tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 71.*
+
+**Angle**: the 1 MB Contents-API silent-empty bug is documented in four places. **This pass checked
+whether the fix reached the code**, by reading the fetch call in all 21 workers and measuring every
+file they name.
+
+**FINDING 1 — ⚠⚠ it did not. 10 of the 21 workers still use the Contents API.**
+`NBA_SYSTEM_ARCHITECTURE.md` said *"**Every** writer Worker fetches committed JSON from
+`raw.githubusercontent.com`."* **VERIFIED: 11 do; 10 use `api.github.com/…/contents/`.**
+**The split is chronological and explains itself** — all ten Contents-API workers were registered
+**2026-08-31 → 2026-09-02**, before the bug was found in T3 on the schedule file. **Every worker
+built after uses raw; not one built before was changed.** `NBA_WORKERS.md` §4b is accurate because
+it scopes its claim to *"workers built T3–T9"*; **the architecture document's "every" was the
+overreach**, corrected in place.
+
+**FINDING 2 — measured headroom, and the honest answer is comfortable.** The largest file any of
+the ten reads is **`nba_player_bio_current.json` at 0.27 MB — 27% of the limit**; the rest are
+0.20, 0.18, 0.12, 0.11 and four at 0.01 MB. **`nba_onoff_current.json` was 208,560 chars in T2 and is
+0.18 MB today** — roughly flat. **This is latent, not imminent, and no claim is made otherwise.**
+**What makes it worth recording is the failure mode**: the Contents API **does not error above 1 MB,
+it returns success with the content omitted** — so a worker crossing the line **reports a clean run
+and writes nothing**, and **`nba_control` records nothing either** (pass 68). **Two silent failures
+composing.** Watch `player_bio`, `players`, `player_tracking` — they scale with roster size and the
+season opens 2026-10-03.
+
+**FINDING 3 — the other end of the scale, measured.** `nba/data/` is **223 files, 1.2 GB**; the
+working tree **1.3 GB**, `.git` **269 MB**. **Six files exceed GitHub's 50 MB warning threshold**,
+largest **`nba_injury_report_2025_26_2026-03.json` at 78.7 MB — 79% of the 100 MB hard limit.**
+**The 100 MB limit is already a recorded design input** and **the month-sharding fix worked**;
+⚠ **what is NOT RECORDED is that the largest shard is at 79%**, that injury shards are per-month
+within a live season, and **whether the prescribed *"size-guard every commit"* was ever implemented**
+— this pass did not verify it.
+
+**Routed to**: `SYSTEM_ARCHITECTURE` (correction) · `OPEN_ITEMS` (*FROM T1 PASS 71*, measured
+numbers as full content) · this entry.
+**Considered, no change warranted**: `WORKERS` (§4b's scoped claim is correct as written),
+`RECIPE`, `DATABASE`, `GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`,
+`FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 71 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.100 — PASS 70 (angle: **the OPERATOR SURFACE — all 32 workflows and all 14 trigger files, diffed against all twelve documents**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full inventory: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 70.*
 
