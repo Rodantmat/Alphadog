@@ -361,6 +361,8 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 
 ### `nba_config.external_credentials`
 `credential_key` TEXT **PK** · `credential_value_encrypted` TEXT · `updated_at`
+
+⚠⚠ **THE COLUMN NAME IS A MISNOMER — nothing encrypts and nothing decrypts** *(recorded 2026-09-20, T1 pass 67, **VERIFIED** two ways)*. **Code**: the column is read in exactly two places (`backfill_board_snapshots.py`, `backfill_game_line_snapshots.py`) and both use the value as-is — **`.strip()` is the entire transformation** — with **no encrypt or decrypt step anywhere in the 190 files**. **Data**: 6 credentials are stored, and **two are bare 36-character UUIDs** (`balldontlie_api_key`, `oddspapi_api_key`); the other four are 32-char ×3 and one 1,513-char token whose encoding is **NOT RECORDED**. ⚠ **The same values appear in plaintext in five of the twenty transcripts** — see the blocker at the top of `NBA_OPEN_ITEMS.md` before committing those files anywhere. **Not fixed, per the standing instruction.**
 Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never live in chat memory.**
 ⚠ **The BallDontLie key is explicitly a BACKUP credential** *(recorded 2026-09-20, T1 pass 39, from
 T1's memory write)*: *"provided a real balldontlie.io API key … **as a backup source**, but said **the
