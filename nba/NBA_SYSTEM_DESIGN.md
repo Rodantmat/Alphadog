@@ -70,6 +70,41 @@ group.
 
 ---
 
+## 0.7 THE FOUR-LAYER ORDERED FULL-RUN PATTERN *(T1, the blueprint)*
+*Recorded 2026-09-20. Described as MLB's **real, current** architecture — explicitly **"not the
+abandoned earlier 'orchestrator + auto-scheduled cron' design."***
+
+| # | Layer | Contents |
+|---|---|---|
+| **1** | **Board** | pull each platform's raw board (own PrizePicks scraper + ParlayAPI for Sleeper/Underdog), **normalise into a common shape**, write to `market.*_board_current` |
+| **2** | **Daily Context** | *"same-day contextual factors — **lineups/rotations, player availability, matchup context, injury status**"* |
+| **3** | **Market** | *"mine sportsbook/DFS pricing data for **cross-referencing and multiplier-study** purposes"* |
+| **4** | **Scoring Engine** | combines baseline + enrichment into final numbers |
+
+### ⚠ THE DOCUMENTED ORDERING BUG — Board must run BEFORE Daily Context
+> *"MLB had **a real, documented ordering bug from running these OUT OF ORDER**:
+> ***'Board/Score Prep MUST run before Daily Context. Daily-context sidecars FILTER BY PREPARED-BOARD
+> pickable/current rows; running them BEFORE board refresh produced FALSE `VALID_ZERO` /
+> `NOT_APPLICABLE`… despite calendar/source availability.'***"*
+
+**The failure mode is specific**: daily-context steps filter against the prepared board, so if the
+board has not been refreshed they find nothing and record **`VALID_ZERO` / `NOT_APPLICABLE`** —
+*"despite calendar/source availability"*, i.e. **the data existed and was reachable; the filter had
+nothing to match.**
+
+**How NBA relates:**
+- **P3** runs **board → context → market → score** inside one workflow, so ordering is enforced by
+  step order rather than by a queue.
+- **The same dependency exists inside P3**: `score_board_legs.py` is **board-scoped**, so **if the
+  board scrape has not landed it has nothing to score** — a small or empty run, not an error.
+- **The NBA analogue of the false-`VALID_ZERO` symptom is a low leg count.** P3's certifier asserts
+  the cutoff; **whether it asserts a minimum board size is worth confirming.**
+
+**This is also the origin of the owner's locked dependency** — *"the baseline must fully finish before
+master-run's Daily Context or Scoring stages touch it"* → **P2 must complete before P3.**
+
+---
+
 ## 1. THE CUTOFF — why 1:15 PM PT
 
 **The binding constraint is the game-day injury report.** It is due **11am–1pm LOCAL to each game's
