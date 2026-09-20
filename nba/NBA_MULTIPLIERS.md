@@ -181,21 +181,29 @@ seeds. **The multiplier work has no equivalent tag and needs one.**
 > same-game-vs-cross-game live slip comparison**) — **ALWAYS BUILD CROSS-GAME unless a same-game
 > correlation strategy has been specifically, directly tested and found to SURVIVE this discount.**"*
 
-**This is the most directly actionable rule in the multiplier body of work**, and it is confirmed by
-direct experiment rather than inferred.
+### The arithmetic, quantified in lesson #12
+| Side | Magnitude |
+|---|---|
+| **Correlation benefit** | **~8%** — *"much smaller [than folklore]… **itself NOT statistically confirmed**"* |
+| **The platform's same-game discount** | **~35–40% LOWER MULTIPLIER for the IDENTICAL legs** |
+
+> *"…which **MORE THAN OFFSET** the real correlation benefit. **Do not assume same-game stacking is a
+> working strategy for NBA without DIRECTLY TESTING the platform's own same-game discount, the same
+> way — IT MAY BE ACTIVELY PRICED AGAINST, NOT FREE MONEY.**"*
+
+**The discount is roughly 4–5× the benefit, and the benefit is not statistically confirmed.**
+
+### How to test it for NBA — free, and the same session as everything else
+**A live-board same-game vs cross-game slip comparison.** Since **the payout displays before placing**
+(lesson #16), this costs nothing. **One logged-in session produces**: the control slip (§4b.1), the
+per-leg factors (§4), the tier step ratio (`NBA_GOBLIN_DEMON.md` §5.0d), **and this discount**.
 
 **It reconciles two things that look contradictory elsewhere:**
 - §5.0c (lesson #24): *"game or team pairing has **no effect on PRICING**"* — true of the **leg's own
   price**.
 - §0.1: *"same-team/same-game legs get a **small multiplier discount**"* — applied at **slip
   construction**.
-**Correlation is priced at the SLIP level, not the LEG level — and the discount is meaningful enough
-to default against.**
-
-**And it interacts with lesson #12** (`NBA_FINAL_SCORING_CALIBRATION.md` §7g): same-game correlation is
-**real but smaller than folklore**, *and* **the platform already prices against it**. **So a same-game
-correlation strategy has to clear a real discount to win a smaller-than-advertised effect.** Default
-cross-game; require direct evidence to deviate.
+**Correlation is priced at the SLIP level, not the LEG level.**
 
 ## 0.2g **NO DFS PLATFORM PUBLISHES PER-LEG MULTIPLIERS VIA API — budget for a permanent study**
 
