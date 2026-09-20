@@ -106,6 +106,37 @@ WNBA).
 
 ---
 
+## 4. THE LADDER CONFIG — `nba_config.classification_config.ladder`
+
+**The actual stored JSON:**
+```json
+{"anchor": "recency_blended_projection",
+ "clip_floor": 0.5,
+ "ceiling_pct_more": 85,
+ "floor_pct_less": 15,
+ "goblin_pct": [25, 35],
+ "demon_pct":  [70, 80]}
+```
+*Note: "Player-anchored ladder, **owner: 5–6 steps minimum each side**"*
+
+**So the percentile placement is configured, not folklore:**
+| Rung class | Percentile of the player's own outcome distribution |
+|---|---|
+| **Goblin** | **25th–35th** |
+| Standard | median |
+| **Demon** | **70th–80th** |
+| Useful range | **15th (floor, less) – 85th (ceiling, more)** |
+| `clip_floor` | **0.5** — the natural line floor |
+
+**The anchor is `recency_blended_projection`** — the ladder is **player-anchored, never global**, and
+**everything is a percentile of that player's own distribution.**
+
+**This matches the three independent sources**: books ladder a 24.5 player **~19.5 to ~31.5 ≈ ±1 SD**;
+Unabated prices off the full outcome distribution; Gemini independently proposed the same percentile
+bands. **And the measured `LADDER_DEPTH` (p95 = 13 rungs for points) agrees to within one rung.**
+
+---
+
 ## 5. THE ECONOMICS — measured
 
 ### 5.1 Goblins are −EV at every tier
