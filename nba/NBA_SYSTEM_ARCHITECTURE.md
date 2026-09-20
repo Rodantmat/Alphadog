@@ -285,6 +285,10 @@ worth applying directly to NBA's own base layer." Recorded 2026-09-20.*
 DARKO extraction began by checking whether the page already carried the dataset — **it did, in the
 `kit.start()` hydration script** — rather than defaulting to pagination.
 
+**⚠ Where a full re-mine still happens**: the **weekly scrapers re-pull whole season aggregates every
+Monday**. Correct by design (season aggregates change with every game), **but it is the one place the
+principle does not apply — deliberate, not overlooked.**
+
 ### 2. ⚠ Never validate a new pipeline against an internal prior system
 > *"**Never validate a new pipeline's correctness against an OLD OR REFERENCE DATABASE AS IF IT WERE
 > GROUND TRUTH — validate against the REAL, EXTERNAL, AUTHORITATIVE SOURCE directly.**
