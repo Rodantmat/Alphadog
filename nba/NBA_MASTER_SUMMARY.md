@@ -4325,6 +4325,89 @@ implemented.** Recorded in OPEN_ITEMS.
 
 **T7 PASS 7: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.14 — PASS 8 — **THE MINUTES MODEL, AND THE ORIGIN OF A2**
+
+#### T7.14a — Historical prop lines: the verdict, and how it was later overtaken
+| Source | Verdict at the time |
+|---|---|
+| **ParlayAPI** | NBA **game lines back to 2007**, **no historical props**, no DFS books. *"Still useful: real historical spreads to **validate** our derived static spread against (**validation only — never a baseline input**)"* |
+| balldontlie | no history |
+| **BigDataBall** | sells per-season archives **including sportsbook prop lines** — *"the only retroactive option; **a purchase decision for you**"* |
+| Own capture | *"We start our own capture on **Oct 3**, as MLB does"* |
+
+> *"**This does not block the baseline backtest.** Calibration on our own ladder against real outcomes
+> (**79k rows**) needs **no market data** — exactly how MLB's baseline was validated. **Market lines
+> only matter for ROI later.**"*
+
+**This verdict was overtaken in T13**, which obtained **two full seasons of historical board data from
+The Odds API** (→ `nba_market.board_snapshots`, 6.6 GB) — a source not considered here. **BigDataBall
+was never purchased and never needed.**
+
+#### T7.14b — **THE MINUTES MODEL — a three-component mixture**
+*"all parameters estimable from our 3 seasons"*:
+| Component | Distribution | Fit on |
+|---|---|---|
+| **Normal play** | truncated **Normal(μ_role, σ_player, 0–48)** | **competitive games only** |
+| **Blowout-reduced** | same σ, **μ shifted by a regression fit on our own 15+/20+ margin games** | *"**not the published `1.5% × (spread−7)` heuristic**, which Gemini and I both flag as **too linear and player-agnostic**"* |
+| **Dud** (foul trouble / early exit) | **log-Normal** | *"competitive games in the player's **bottom 15% or 5+ PF**"* |
+
+**Mixing weights**: `P(blowout)` from the **derived static spread**; `P(dud)` from *"the player's own
+history and PF rate."*
+
+**The "dud" component is a distinct idea worth noting** — it separates *early exit for foul trouble* from
+*blowout benching*, two different mechanisms that both truncate minutes. **Whether it survives into
+`classification_ladder_v12.py` is not established here.**
+
+#### T7.14c — A Gemini correction that follows directly from the boundary rule
+> *"**The correction**: Gemini's answer reaches for **'the Vegas spread'** for `P(blowout)`. **In the
+> baseline that's the derived spread; the market spread is the enrichment-layer override later.**
+> That's exactly your derived-backup principle."*
+
+**And T16 eventually promoted the override to the primary** once the market spread proved reliably
+available at 08:00 — the layering worked as designed.
+
+#### T7.14d — **The 240-minute constraint is TIERED, not pro-rata**
+> *"**240-minute team constraint** enforced by **tiered renormalisation** — **stars' minutes are
+> inelastic, fringe minutes absorb the adjustment. Not pro-rata.**"*
+
+**This is a real modelling insight**: when a team's projected minutes overflow 240, taking the excess
+proportionally from everyone would shave a star's minutes as readily as a 12th man's. **Reality
+concentrates the adjustment at the bottom of the rotation.**
+
+#### T7.14e — **THE ORIGIN OF A2 — with its confidence tiers specified**
+> *"**Derived injury backup**: a **precomputed with/without-teammate minutes table from DNP games**,
+> with **confidence tiers** (**<5 games → generic role-based redistribution; 5–14 → shrunk blend;
+> 15+ → trust**) — **the 'Wally Pipp' effect**, derived from history."*
+
+**This is A2, designed here in T7 and RETRACTED in T15/T16 after five failed panels** — *"the certified
+anchor wins every slice, and worst where the mechanism predicted it should win"* (COMPASS fact 91).
+
+**Worth noting what the design already contained that the failed versions may not have honoured**: the
+**confidence tiers keyed on sample size** (<5 / 5–14 / 15+). A with/without table built on fewer than
+five shared-absence games is almost pure noise, and the design said so. **Whether the five panels
+implemented that gating is not established in these transcripts** — but it is the first thing to check
+if A2 is ever revisited.
+
+#### T7.14f — The role-change detector, fully specified
+> *"**starter flag flips for 2+ games**, or a **3-game minutes mean >3σ from prior**, or **a trade** →
+> **reset the window, use post-change games only**. Minutes EWMA **α≈0.2 (matches our decay config)**."*
+
+**The α≈0.2 cross-check is the design and the config table agreeing** — `stat_decay_config.minutes`
+holds exactly 0.20 (T7.10d). **Two independently-derived numbers landing on the same value.**
+
+#### T7.14g — B2B validation targets, used as a sign check
+> *"veterans **−1.5 to −3.0 min**, young stars **−0.5 to −1.5**, bench **≈0**, amplified after **OT and
+> 3-in-4**. **We derive our own; these catch a sign error.**"*
+
+**Published figures used as a sanity check on our own derivation, not as inputs** — the same discipline
+as *"reproduce the DataStreak curve on our 79k logs as a validation."*
+
+#### T7.14h — Rejected on evidence
+**Basketball-Reference's 6/3/1 season weighting** — *"archival, **far too slow for in-season role
+changes**; usable only as a **day-one cold-start prior**."*
+
+**T7 PASS 8: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
