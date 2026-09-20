@@ -423,9 +423,31 @@ OPEN_ITEMS). Set by `ARCHIVE_LABEL`, which **defaults to `routine`**.
 
 ---
 
+## P–S *(continued — research-standard structure)*
+
+**Part G** · `NBA_LESSONS_LEARNED_FROM_MLB.md` · *"Lessons earned by the NBA baseline work itself
+(2026-09-09), now part of the standard."* **10 numbered lessons** — the first NBA-earned content in
+the research standard, as opposed to MLB-inherited. **Postdates T1; swept with T7–T11.**
+**Not yet in the twelve documents** — `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 30*.
+
+**Part H** · `NBA_LESSONS_LEARNED_FROM_MLB.md` · *"Lessons from the enrichment backfill, market and
+board-sourcing phase (2026-09-10)."* **12 numbered lessons.** **Postdates T1; swept with T7–T11.**
+**Not yet in the twelve documents.**
+
+**the 27 lessons** · T1, `NBA_LESSONS_LEARNED_FROM_MLB.md` Part A · The research standard applied to
+every strategy candidate. **27, not 26** — **VERIFIED by grep 2026-09-20**; the documents said 26
+until then and **#27 was missing entirely**. Full list: `NBA_FINAL_SCORING_CALIBRATION.md` §14.
+**With Parts G and H the standard is 49 numbered items.**
+
+---
+
 ## PENDING
-Terms from T3–T16 are added as each transcript completes its passes. T1 is at pass 10 (clean count 0);
-T2 at pass 1.
+Terms are added as each transcript completes its passes.
+**Status 2026-09-20**: **T1 at pass 30, clean count 0/3** (pass 29 — blueprint §7f/§7g/§9;
+pass 30 — lesson #27 and the lesson-count correction). **T2 at 0/3 pending re-sweep. T3–T9 void
+per the DRIFT NOTICE. T10–T20 not started.**
+*This block previously read "T1 is at pass 10 (clean count 0); T2 at pass 1" — stale, superseded
+2026-09-20.*
 </content>
 </parameter>
 <parameter name="message">docs: NBA glossary - terms mapped to transcripts
