@@ -1432,6 +1432,87 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.70 — PASS 40 (angle: **deploy/dispatch tool RESULTS, checked against a live clone**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 40.*
+
+- **§T1.7's "four consecutive failures" now has primary keys.** `deploy` **33429867514 failure** →
+  **33431309511 success**; `scrape-nba-teams` **33444713366 / 33444861845 / 33445264412 — all
+  failure.** Recorded at §T1.7. **VERIFIED** from T1's workflow tool results.
+- **Workflow logs are unavailable in flight and expire afterwards** — `github_get_workflow_run_log`
+  returned 404 on a run still reporting `"conclusion": null`. Diagnose fresh, or from the step list.
+- **⚠ `BACKUPS/` and `backups/` both exist at the repo root** — **VERIFIED on a live clone.** Any
+  macOS or Windows clone collapses them. Harmless today, breaks on the first Mac clone.
+- **REPO LAYOUT omitted seven root directories** — added to `NBA_SYSTEM_ARCHITECTURE.md` §8.
+  `chat_history_backup/` holds the **session-catalog file `nba/transcripts/journal.txt` later
+  imitated**, never recorded as inherited.
+- **⚠ `gbdt_training/` is 28 files of dead code against D1, decommissioned 2026-08-12**; six MLB root
+  workers still carry D1 bindings. **VERIFIED by grep.** A live instance of blueprint §5b and §6.
+- **⚠⚠ T1's central discovery was PRIOR ART already in this repo.** `gbdt_training/d1_client.py`:
+  *"Runs inside GitHub Actions (which has real network access, unlike Cloudflare Workers…)."*
+  **T1 spent four failed runs and thirteen polling sleeps rediscovering it** — the first *measured*
+  cost of the missing MLB source index (§T1.67) and of skipping step 2 of the owner's per-worker rule
+  (§T1.66).
+
+---
+
+### T1.69 — PASS 39 (angle: **what the session PERSISTED outside the repo**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 39.*
+
+- **⚠ There is a FOURTH store and no document listed it.** `/areas/alphadog.md` (MLB, **6,140 B**,
+  updated **2026-08-30T04:48:04Z**) and `/areas/alphadog-nba.md` (created in T1, 4,000 → **4,471 B**)
+  — **outside version control, invisible to the twelve documents, inherited by future sessions.**
+  **Capped at 49,152 bytes per file**, version-guarded on write. `NBA_SYSTEM_ARCHITECTURE.md` §8d.
+- **⚠ It sits in tension with the founding rule** *"document everything into committed repository
+  files, not only into chat"* — **it is neither.** Flagged, not resolved.
+- **⚠ The source ORDERING was recorded only there**: BallDontLie is *"a **backup source**"*; *"the
+  data ideally should come from **nba.com itself**."* Second independent record of the pass-36 source
+  mandate.
+- **The session had no file-view tool for the remote repo** — both `view` calls target `/dev/null`.
+  **That is the provenance of `NBA_WORKERS.md` §0a's method: the only option, not a preference.**
+- **Draft-then-commit, rationale stated inline**: *"real network origin, not Cloudflare Workers"* —
+  the whole Phase-1 architecture in nine words.
+
+---
+
+### T1.68 — PASS 38 (angle: **the session's EXECUTION surface — what T1 RAN**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 38.*
+
+- **⚠⚠ A documented claim corrected.** `NBA_SYSTEM_DESIGN.md` §0.8 said blueprint §4o (*"don't
+  babysit a long-running job"*) **was followed**. **In T1 it was not.** T1's whole local execution is
+  two syntax checks, two `cat`s and **thirteen polling sleeps** — `30, 40, 45, 50, 55, 60, 70, 90,
+  150, 240, 280, 290` seconds. **VERIFIED** by extracting every `bash_tool` call.
+- **The owner caught it live** — message 6 of 15: *"**what is going on? what are these waits for?**"*
+- **The cause is structural too**: no `github_trigger_workflow` in the session's tool list, so **no
+  completion signal existed to await** — only a run list to re-read.
+- **The pre-commit syntax gate is two-language**: `node --check` **and** `python3 -m py_compile`.
+  Only the first was recorded. **It is the only local check before a push that auto-deploys.**
+- **⚠ The 30-team fallback rests on unofficial sources, checked 2026-08-31, never re-checked** —
+  T1's own caveat: *"I still shouldn't fully trust unofficial sources for expansion details."*
+- **Seven web queries in all of T1** — the complete inventory is in OPEN_ITEMS; six of seven topics
+  were already documented.
+
+---
+
+### T1.67 — PASS 37 (angle: **CROSS-REFERENCES — every MLB document T1 names as a source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Findings in full: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 37; index at
+`NBA_SYSTEM_ARCHITECTURE.md` §8c.*
+
+- **17 of 23 MLB source documents are catalogued nowhere.** The six that are appear **only in
+  `NBA_MULTIPLIERS.md`.** The uncatalogued include **`ALPHADOG_DOS_AND_DONTS.md` and
+  `ALPHADOG_SYSTEM_MAP.md`** — the named sources of blueprint §7 and §6.
+- **T1's provenance statement existed only inside T1**: *"eleven full documents were read and
+  integrated"*, plus body sections of those two.
+- **⚠⚠ T1 names what was never read and gives an instruction that was not followed**: *"**~40%** …
+  **PARTS 3-5** and **Sections 3-9** … **before writing any NBA-specific code, skim what
+  remains**."* **NBA code was written later in the same transcript; no document records a later
+  read.** Largest named, sized, unread body in the corpus.
+- **⚠ A §T1.17 claim is falsified** — `system_settings` was reported as satisfying *"no hardcoding,
+  as you required"* on the strength of the table existing. **Nothing reads it.** §T1.17 annotated.
+- **A counting error in the source, flagged not corrected**: *"three large session-log files"*,
+  four listed.
+
+---
+
 ### T1.66 — PASS 36 (angle: **the owner's 15 messages in full, then every standing rule TESTED against the code**) — **NEW MATERIAL · MAJOR · CLEAN COUNT STAYS 0/3**
 *Recorded 2026-09-20.*
 
