@@ -2111,6 +2111,59 @@ here. Flagged in OPEN_ITEMS.
 
 **T3 PASS 5: NEW MATERIAL. Clean count 0/3.**
 
+### T3.11 — PASS 6 FINDINGS (full sequential, segments 1–2) — **NEW MATERIAL, INCLUDING A GAP IN P1**
+
+#### T3.11a — **THE DIFFERENTIAL WORKER WAS NEVER SCHEDULED — and P1 does not call it**
+> *"**One honest gap left**: this worker **isn't wired to any automatic schedule yet** — it needs a
+> manual `run_job` trigger after each weekly scrape, or wiring into the existing cron. I flagged this
+> rather than assuming it's automatic."*
+> **OWNER: *"No, leave like this for now."***
+
+**It was left unwired — and `nba-p1-weekly-static.yml`, built 2026-09-20, does NOT call it either.**
+P1 runs teams, arenas, players, bio, season tables, team stats, on/off, play types, DARKO, shot
+quality, defender ratings and static context — **but not the differential worker**.
+
+**Consequence:** every P1 run **overwrites** the reference tables, and because the differential worker
+holds its own snapshot tables that only it touches, **it will report the accumulated difference since
+whenever it last ran** — not week over week. Trades, signings and referee changes are **not being
+detected at all** right now. **Recorded in OPEN_ITEMS as a concrete fix for after the documentation
+pass.**
+
+#### T3.11b — What the differential actually detects (the full list)
+*"new players, departed players, **mid-season team trades**, new/removed teams, **team
+renames/relocations**, and **referee roster changes**"* — running *"as its own dedicated layer separate
+from the regular full-refresh workers."*
+
+#### T3.11c — The architectural reason for separate snapshot tables, stated plainly
+> *"the regular upsert workers **already overwrite the live tables** on every run, so I couldn't diff
+> against those directly — **there'd be no 'before' left to compare against**. Fixed by giving this
+> worker **its own independent snapshot tables that only it touches**, so the comparison is always
+> against **its own** last run, not whatever the regular workers just did."*
+
+#### T3.11d — BUG: raw scrape schema ≠ Worker-transformed schema
+> *"I read `t.name` from the raw committed JSON, but that file's actual schema is **`city` + `nickname`
+> separately** — the `name` field **only gets built inside the Worker's transform, not in the raw
+> scrape**."*
+
+**A general trap**: a worker reading the *committed JSON* sees the **raw** shape; a worker reading
+*Postgres* sees the **transformed** shape. They are not the same, and the differential worker reads
+the raw file.
+
+#### T3.11e — The Hyperdrive cache caveat is testing-only
+> *"In **real weekly-cadence usage (7 days apart) this is a complete non-issue**."*
+The stale-read artifact only appears when runs are triggered seconds apart, as during testing.
+
+#### T3.11f — The eight play types, named
+`Isolation` · `PRBallHandler` · `PRRollman` · `Postup` · `Spotup` · `Handoff` · `Cut` · `Transition`
+*(T3.4 reported "all 11 play types present" from the result check; these eight are the ones verified by
+name in the schema confirmation.)*
+
+#### T3.11g — DARKO's join advantage, verified before building
+> *"the player URLs use **the exact same NBA person IDs already in our system** (`/player/203999` =
+> Jokić, `/player/1641705` = Wembanyama). That means **a clean join with zero name-matching needed**."*
+
+**T3 PASS 6: NEW MATERIAL. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
