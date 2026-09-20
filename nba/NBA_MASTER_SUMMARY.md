@@ -575,6 +575,53 @@ and the document set.
 
 **Clean-pass count RESET to 0 by pass 9.** Three consecutive clean passes are still required.
 
+### T1.20 — PASS 10 FINDINGS (added 2026-09-20; every owner message in order) — **NEW MATERIAL**
+
+**THE UI — not previously documented anywhere in this document set:**
+> *"the main UI will be the same, **the certification center**, which is just an **aggregator of legs
+> and slip builder**, it already exist and when the time comes **it will be integrated**."*
+
+So the NBA system has **no UI to build**. The existing MLB certification center is the front end, and
+NBA integration is a later step, after the engine and pipelines. This is the destination for
+`nba_score.board_scored` and the slip engine.
+
+**The 14 owner messages in T1, in order** (the complete decision trail):
+| # | Message | Effect |
+|---|---|---|
+| 54 | the full founding directive (3 runs, constraints, research standard, **certification center**) | locked the operating model |
+| 64/65 | ParlayAPI has back data + live boards; PrizePicks via a GitHub scraper; **"completely separate data and system universe"** | overruled the shared control plane |
+| 117 | *"we can do 2, if it doesnt change much and does not affect the mlb universe"* | **approved the one narrow touch to the shared deploy scripts** |
+| 186 | *"what is going on? what are these waits for?"* | prompted an explanation of deploy polling |
+| 188, 248 | *"continue"* | |
+| 206 | pasted the parallel chat's report | surfaced the `github_trigger_workflow` gap |
+| 291 | the balldontlie API key | stored in `nba_config.external_credentials` |
+| 363 | ***"so setup whatever you need to do the work yourself, we will need that multiple times"*** | **authorised building new tooling — the mandate behind the bridge tool and the file trigger** |
+| 406 | *"ill open a new chat, give me all the needed information…"* | produced the portable handoff |
+| 409, 416 | relayed the other chat's replies | confirmed the tool-list limitation was universal |
+| 422 | ***"no, the whole point is for me to do not run it manually"*** | **forced the file-trigger solution** |
+
+**Two owner messages are the load-bearing ones for how the system still works**: message 363
+(build your own tooling) and message 422 (never manual). Together they produced the trigger-file
+mechanism that is still the fallback today.
+
+**Also captured verbatim from message 54, previously paraphrased:**
+- *"start probing and testing sources, and **locking source for each piece of data**"*
+- *"more than anything **design the system**, find out all possible individual factors that will help
+  give an edge, rank legs, give signals, enrich the baseline"*
+- *"no runner, orchestrator or anything like, **it only breaks the run**… individual worker by
+  individual worker, path by path and making sure they are properly doing their jobs, **that is the way
+  MLB system runs now and is running just fine**"*
+- *"all chats, this included must work with a log system, and create documents for important
+  reference, **each important step, issue, solution, must have a log in the system log**"*
+
+**Dimension table updated:**
+| Dimension | Pass | Result |
+|---|---|---|
+| endpoint/table/file sweep | 9 | new — the deploy fork |
+| every owner message in order | 10 | **new — the certification center UI; the full message trail** |
+
+**Clean-pass count still 0.** T1 remains open.
+
 ---
 
 ## T2 — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt`
