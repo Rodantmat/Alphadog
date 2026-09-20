@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-09-20T00:11:42Z",
-  "fetched_at": "2026-09-20T00:31:06Z",
+  "started_at": "2026-09-20T22:34:10Z",
+  "fetched_at": "2026-09-20T22:45:34Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -39,215 +39,47 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      95
-    ],
-    [
-      "lines[match=143070]",
-      20
-    ],
-    [
-      "pills[match=143070]",
-      97
-    ],
-    [
-      "lines[match=144003]",
-      20
-    ],
-    [
-      "pills[match=144003]",
-      117
-    ],
-    [
-      "lines[match=144334]",
-      20
-    ],
-    [
-      "pills[match=144334]",
-      114
-    ],
-    [
-      "lines[match=142860]",
-      20
-    ],
-    [
-      "pills[match=142860]",
-      117
-    ],
-    [
-      "lines[match=143748]",
-      20
-    ],
-    [
-      "pills[match=143748]",
-      133
-    ],
-    [
-      "lines[match=142740]",
-      20
-    ],
-    [
-      "pills[match=142740]",
-      124
-    ],
-    [
-      "lines[match=142262]",
-      20
-    ],
-    [
-      "pills[match=142262]",
-      140
-    ],
-    [
-      "lines[match=142562]",
-      20
-    ],
-    [
-      "pills[match=142562]",
-      164
-    ],
-    [
-      "lines[match=143602]",
-      20
-    ],
-    [
-      "pills[match=143602]",
-      172
-    ],
-    [
-      "lines[match=143626]",
-      20
-    ],
-    [
-      "pills[match=143626]",
-      156
-    ],
-    [
-      "lines[match=144608]",
-      20
-    ],
-    [
-      "pills[match=144608]",
-      149
-    ],
-    [
-      "lines[match=143550]",
-      0
-    ],
-    [
-      "pills[match=143550]",
-      6
-    ],
-    [
-      "lines[match=144278]",
-      0
-    ],
-    [
-      "pills[match=144278]",
-      1
-    ],
-    [
-      "lines[match=142334]",
-      20
-    ],
-    [
-      "pills[match=142334]",
-      120
-    ],
-    [
-      "lines[match=143220]",
-      20
-    ],
-    [
-      "pills[match=143220]",
-      129
-    ],
-    [
-      "lines[match=143500]",
-      0
-    ],
-    [
-      "pills[match=143500]",
-      1
+      62
     ],
     [
       "lines[match=144392]",
-      0
+      20
     ],
     [
       "pills[match=144392]",
-      6
-    ],
-    [
-      "lines[match=143695]",
-      0
-    ],
-    [
-      "pills[match=143695]",
-      6
-    ],
-    [
-      "lines[match=142483]",
-      0
-    ],
-    [
-      "pills[match=142483]",
-      6
-    ],
-    [
-      "lines[match=144097]",
-      0
-    ],
-    [
-      "pills[match=144097]",
-      1
-    ],
-    [
-      "lines[match=142720]",
-      0
-    ],
-    [
-      "pills[match=142720]",
-      1
-    ],
-    [
-      "lines[match=143208]",
-      0
-    ],
-    [
-      "pills[match=143208]",
-      6
-    ],
-    [
-      "lines[match=143585]",
-      0
-    ],
-    [
-      "pills[match=143585]",
-      6
+      115
     ],
     [
       "lines[match=143802]",
-      0
+      14
     ],
     [
       "pills[match=143802]",
-      1
+      3
     ],
     [
-      "lines[match=143227]",
-      0
+      "lines[match=143208]",
+      20
     ],
     [
-      "pills[match=143227]",
-      6
+      "pills[match=143208]",
+      32
+    ],
+    [
+      "lines[match=143585]",
+      20
+    ],
+    [
+      "pills[match=143585]",
+      29
     ],
     [
       "lines[match=143053]",
-      0
+      20
     ],
     [
       "pills[match=143053]",
-      6
+      161
     ],
     [
       "lines[match=143282]",
@@ -255,7 +87,7 @@
     ],
     [
       "pills[match=143282]",
-      1
+      6
     ],
     [
       "lines[match=142532]",
@@ -271,7 +103,7 @@
     ],
     [
       "pills[match=142407]",
-      1
+      6
     ],
     [
       "lines[match=143462]",
@@ -287,15 +119,7 @@
     ],
     [
       "pills[match=143566]",
-      2
-    ],
-    [
-      "lines[match=142640]",
-      0
-    ],
-    [
-      "pills[match=142640]",
-      2
+      1
     ],
     [
       "lines[match=142910]",
@@ -303,7 +127,7 @@
     ],
     [
       "pills[match=142910]",
-      2
+      1
     ],
     [
       "lines[match=142668]",
@@ -311,7 +135,15 @@
     ],
     [
       "pills[match=142668]",
-      2
+      1
+    ],
+    [
+      "lines[match=142640]",
+      0
+    ],
+    [
+      "pills[match=142640]",
+      1
     ],
     [
       "lines[match=142714]",
@@ -319,7 +151,7 @@
     ],
     [
       "pills[match=142714]",
-      2
+      1
     ],
     [
       "lines[match=144174]",
@@ -327,7 +159,7 @@
     ],
     [
       "pills[match=144174]",
-      2
+      1
     ],
     [
       "lines[match=144533]",
@@ -335,7 +167,7 @@
     ],
     [
       "pills[match=144533]",
-      2
+      1
     ],
     [
       "lines[match=142331]",
@@ -359,7 +191,7 @@
     ],
     [
       "pills[match=143204]",
-      0
+      1
     ],
     [
       "lines[match=142541]",
@@ -367,15 +199,7 @@
     ],
     [
       "pills[match=142541]",
-      0
-    ],
-    [
-      "lines[match=143008]",
-      0
-    ],
-    [
-      "pills[match=143008]",
-      0
+      1
     ],
     [
       "lines[match=143342]",
@@ -383,7 +207,15 @@
     ],
     [
       "pills[match=143342]",
+      1
+    ],
+    [
+      "lines[match=143008]",
       0
+    ],
+    [
+      "pills[match=143008]",
+      1
     ],
     [
       "lines[match=144156]",
@@ -391,7 +223,7 @@
     ],
     [
       "pills[match=144156]",
-      0
+      1
     ],
     [
       "lines[match=142777]",
@@ -399,7 +231,7 @@
     ],
     [
       "pills[match=142777]",
-      0
+      1
     ],
     [
       "lines[match=143114]",
@@ -407,7 +239,7 @@
     ],
     [
       "pills[match=143114]",
-      0
+      1
     ],
     [
       "lines[match=144571]",
@@ -415,7 +247,7 @@
     ],
     [
       "pills[match=144571]",
-      0
+      1
     ],
     [
       "lines[match=142443]",
@@ -466,14 +298,6 @@
       0
     ],
     [
-      "lines[match=143859]",
-      0
-    ],
-    [
-      "pills[match=143859]",
-      0
-    ],
-    [
       "lines[match=143022]",
       0
     ],
@@ -482,85 +306,205 @@
       0
     ],
     [
+      "lines[match=143859]",
+      0
+    ],
+    [
+      "pills[match=143859]",
+      0
+    ],
+    [
+      "lines[match=143036]",
+      0
+    ],
+    [
+      "pills[match=143036]",
+      0
+    ],
+    [
+      "lines[match=144147]",
+      0
+    ],
+    [
+      "pills[match=144147]",
+      0
+    ],
+    [
+      "lines[match=142521]",
+      0
+    ],
+    [
+      "pills[match=142521]",
+      0
+    ],
+    [
+      "lines[match=143677]",
+      0
+    ],
+    [
+      "pills[match=143677]",
+      0
+    ],
+    [
+      "lines[match=144353]",
+      0
+    ],
+    [
+      "pills[match=144353]",
+      0
+    ],
+    [
+      "lines[match=143762]",
+      0
+    ],
+    [
+      "pills[match=143762]",
+      0
+    ],
+    [
+      "lines[match=143510]",
+      0
+    ],
+    [
+      "pills[match=143510]",
+      0
+    ],
+    [
+      "lines[match=142537]",
+      0
+    ],
+    [
+      "pills[match=142537]",
+      0
+    ],
+    [
+      "lines[match=144330]",
+      0
+    ],
+    [
+      "pills[match=144330]",
+      0
+    ],
+    [
+      "lines[match=143044]",
+      0
+    ],
+    [
+      "pills[match=143044]",
+      0
+    ],
+    [
+      "lines[match=144421]",
+      0
+    ],
+    [
+      "pills[match=144421]",
+      0
+    ],
+    [
+      "lines[match=144462]",
+      0
+    ],
+    [
+      "pills[match=144462]",
+      0
+    ],
+    [
+      "lines[match=144129]",
+      0
+    ],
+    [
+      "pills[match=144129]",
+      0
+    ],
+    [
+      "lines[match=144461]",
+      0
+    ],
+    [
+      "pills[match=144461]",
+      0
+    ],
+    [
       "lines_with_stats[players]",
-      78,
-      251
+      34,
+      65
     ],
     [
       "alternate_projections",
-      1169,
-      3558,
+      278,
+      858,
       0,
-      "deduped 309"
+      "deduped 89"
     ],
     [
       "lines[mass=true]",
-      2
+      0
     ],
     [
       "lines[mass=false]",
       0
     ]
   ],
-  "lines": 2240,
-  "legs": 2240,
-  "ladder_legs": 3558,
-  "ladder_lines_with_alternates": 1169,
-  "players": 238,
-  "pregame_legs": 1163,
-  "live_legs": 1077,
+  "lines": 561,
+  "legs": 561,
+  "ladder_legs": 858,
+  "ladder_lines_with_alternates": 278,
+  "players": 65,
+  "pregame_legs": 278,
+  "live_legs": 283,
   "by_stat": {
-    "Hits + Runs + RBIs": 243,
-    "Total Bases": 236,
-    "Hits": 233,
-    "RBIs": 227,
-    "Home Runs": 222,
-    "Runs": 214,
-    "Batter Walks": 210,
-    "Stolen Bases": 89,
-    "Moneyline": 65,
-    "Batter Strikeouts": 57,
-    "Singles": 56,
-    "Doubles": 49,
-    "Fantasy Points": 44,
-    "Team Total Runs": 40,
-    "Run 1st Inning": 31,
-    "Strikeouts": 27,
-    "Pitching Outs": 24,
-    "Total Runs": 23,
-    "Hits Allowed": 23,
-    "Spread": 22,
-    "Walks Allowed": 22,
-    "1st 5 Innings Total Runs": 21,
-    "1st 5 Innings Moneyline": 18,
-    "1st 5 Innings Spread": 18,
-    "Earned Runs Allowed": 12,
-    "1st Inn. Strikeouts": 3,
-    "1st Inn. Pitch Count": 3,
-    "1st Inn. Batters Faced": 3,
-    "1st Inn. Hits Allowed": 3,
-    "1st Inn. Runs Allowed": 2
+    "Hits + Runs + RBIs": 65,
+    "Hits": 53,
+    "Batter Walks": 53,
+    "Total Bases": 52,
+    "RBIs": 49,
+    "Moneyline": 48,
+    "Runs": 47,
+    "Home Runs": 46,
+    "Run 1st Inning": 22,
+    "Stolen Bases": 15,
+    "Team Total Runs": 14,
+    "Batter Strikeouts": 11,
+    "Fantasy Points": 10,
+    "Spread": 9,
+    "Total Runs": 8,
+    "Singles": 8,
+    "Hits Allowed": 6,
+    "Doubles": 6,
+    "Strikeouts": 5,
+    "Pitching Outs": 5,
+    "1st 5 Innings Moneyline": 4,
+    "1st 5 Innings Total Runs": 4,
+    "1st 5 Innings Spread": 4,
+    "Walks Allowed": 4,
+    "Earned Runs Allowed": 3,
+    "1st Inn. Strikeouts": 2,
+    "1st Inn. Runs Allowed": 2,
+    "1st Inn. Pitch Count": 2,
+    "1st Inn. Batters Faced": 2,
+    "1st Inn. Hits Allowed": 2
   },
   "by_line_type": {
-    "balanced": 2240
+    "balanced": 561
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 221,
-    "None": 154,
-    "0.81": 37,
-    "1.11": 33,
-    "1.05": 31,
-    "1.1": 29,
-    "1.14": 28,
-    "1.08": 28,
-    "0.86": 25,
-    "1.12": 25,
-    "1.09": 24,
-    "1.15": 24,
-    "0.84": 24,
-    "1.17": 23,
-    "0.77": 22
+    "None": 87,
+    "1.0": 47,
+    "1.05": 9,
+    "0.87": 8,
+    "1.16": 7,
+    "1.1": 7,
+    "1.14": 7,
+    "0.81": 7,
+    "1.13": 6,
+    "0.9": 6,
+    "0.89": 6,
+    "1.3": 6,
+    "0.83": 6,
+    "0.85": 5,
+    "1.12": 5
   },
-  "github_run_id": "35478100016"
+  "github_run_id": "35542062117"
 }
