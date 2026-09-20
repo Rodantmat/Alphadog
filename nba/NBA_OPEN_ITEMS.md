@@ -1203,6 +1203,49 @@ and nothing asserts they should not.**
 counterpart — the same pattern as the patcher's **anchor assertions**, which already *"fail loudly"*
 on drift.
 
+### ⚠⚠ A ROLLING RE-VERIFICATION WINDOW WAS SPECIFIED — NBA DECIDED THE OPPOSITE
+T1's blueprint §4k:
+> *"**Any pipeline that FINALIZES DATA for a recently-completed event should use a BOUNDED ROLLING
+> RE-VERIFICATION WINDOW, NOT a single, PERMANENTLY-FROZEN CUTOFF.**
+> **Real, external COMMERCIAL SPORTS-DATA PRACTICE (and general idempotent-pipeline literature)
+> converges on REDOING A 3–4 DAY, UP TO ROUGHLY A WEEK, ROLLING CORRECTION PASS on recently-completed
+> games, since OFFICIAL STAT CORRECTIONS ARE ROUTINELY ISSUED MULTIPLE DAYS AFTER A GAME CONCLUDES.**
+> **Build the same rolling re-verification window into NBA's own outcome/game-log pipeline FROM DAY
+> ONE — a HARD-FROZEN 'FINAL' CUTOFF the moment a game ends WILL MISS REAL, LEGITIMATE CORRECTIONS
+> that arrive later.**"*
+
+**⚠ NBA explicitly decided the opposite, and recorded the reasoning:**
+> *"**Late NBA stat corrections are NOT chased** — treat each day's baseline as **a consistent
+> point-in-time snapshot**."*
+
+**Both positions are defensible, and they optimise for different things:**
+| Position | Optimises for |
+|---|---|
+| **Rolling 3–7 day re-verification** (blueprint) | **accuracy of the historical record** — corrections land |
+| **Point-in-time snapshot, no chasing** (NBA) | **reproducibility** — *"a live query at 9am vs 10am could return different data if a correction posted in between"* |
+
+**The NBA choice is coherent with its as-of discipline**: a baseline that changes retroactively breaks
+walk-forward parity, and **as-of contamination is already this system's recurring bug** (four
+instances). **Chasing corrections means yesterday's baseline can change after today's was built from
+it.**
+
+**⚠ But the blueprint's warning still applies to ONE place the NBA reasoning does not cover: OUTCOME
+GRADING.**
+- **The baseline** must be point-in-time — correct as decided.
+- **`board_outcomes`** is the *truth* the calibration learns from. **A stat correction that lands three
+  days after a game changes whether a leg actually hit.** Freezing that is not reproducibility — it is
+  **training on a known-stale label.**
+
+**The blueprint names exactly this pipeline**: *"NBA's own **outcome/game-log** pipeline."*
+
+**Whether the grader re-verifies recent dates is unverified.** It is idempotent on its key, so a
+re-run would update — **but nothing is recorded as scheduling one.** `check_delta_gaps.py` audits
+**completeness** (are games present), not **correctness** (did values change).
+
+**A concrete NBA-specific reason this matters**: minutes and rebounds are among the most commonly
+corrected NBA box-score fields, and **`mu_role` is a rolling mean of minutes** — so a correction
+affects both the graded outcome *and* every subsequent projection built on that game.
+
 ### ⚠⚠ UPSERT UPDATE-CLAUSE AUDIT — a silent-staleness bug class, never checked
 T1's blueprint §4k:
 > *"**When using an `ON CONFLICT DO UPDATE`-style upsert, VERIFY EVERY COLUMN THAT SHOULD EVER BE
