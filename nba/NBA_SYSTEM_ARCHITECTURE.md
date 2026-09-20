@@ -1474,6 +1474,20 @@ which is how T1's GitHub-Actions discovery came to be a rediscovery (§8, below)
 
 ## 9. DOCUMENTATION SYSTEM
 
+### ⚠ `NBA_PROJECT_LOG.md` — two defects, recorded 2026-09-20 (T1 pass 42)
+1. **Its founding entry is missing.** T1 wrote `## 2026-08-31 — Session: Phase 1 (recon) complete,
+   operating model locked` (**T1 lines 10511–10545**); **the repo file does not contain it** —
+   `grep -c "Phase 1 (recon) complete"` → **0**. The first dated entry is `## 2026-08-31 (cont'd)`.
+   **It held the operating model recorded as *"the canonical, binding spec for all future NBA
+   sessions."*** Full loss list: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 42.
+2. **It violates its own stated ordering.** Header: *"Newest entries at the top."* The file is
+   **oldest-first**, and the tail is out of sequence — `2026-09-13 → 09-19` at line **650** precedes
+   `2026-09-12` at **732**. **Neither newest-first nor chronological.**
+
+**Both are instances of the discipline the file's own header invokes** — blueprint §4l,
+*"don't let this go stale silently; if a gap happens, say so explicitly rather than implying
+continuity that isn't there."* **Saying so explicitly is what these two entries do.**
+
 ### The twelve mandated documents *(2026-09-20)*
 | Document | Role |
 |---|---|
