@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 56 passes (55 counted, pass 55 VOID).** Pass 56 found major new material — **the volume-vs-depth tradeoff was never tested**; measured per-tier volumes show **demon T+4 carries 117,010 legs and is priced nowhere**, and **T+1 has less volume than T+2/T+3** though §5 calls it the only demon tier worth solving (§T1.86). **No consecutive clean run** (pass 53 clean; 54 and 56 reset it). *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 57 passes (56 counted, pass 55 VOID).** Pass 57 found new material — **no fix-date list exists** though `board_tiers` v1 (2.2M legs) was already superseded by a tier-logic fix; **query-time reconstruction is 5.7% of scored legs** (6,317 of 110,955) and no analysis accounts for it (§T1.87). **No consecutive clean run** (pass 53 clean; 54, 56, 57 reset it). *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
