@@ -1456,6 +1456,46 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.97 — PASS 67 (angle: **T1's 24 SQL statements extracted verbatim, each target re-checked against the live database**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 67, and the qualified blocker
+at the top of that document.*
+
+**FINDING 1 — ⚠⚠ SECURITY: the transcripts carry live credentials, and this documentation was
+asking for them to be committed.** **VERIFIED by scanning all 20 raw exports**: **17
+`INSERT INTO nba_config.external_credentials` statements across 5 transcripts** (T1 ×1, T11 ×10,
+T13 ×2, T19 ×4), each carrying a value in plaintext, plus **two JWT-shaped strings** (T12, T13).
+**At least one value is still live**: `balldontlie_api_key` has `updated_at`
+**2026-08-31T20:26:46Z**, inside T1's window, and **T1's SQL call 24 is the `INSERT` that wrote it**.
+**The pass-40 blocker item — "commit the 20 transcripts to `nba/transcripts/`" — has been qualified
+in place**: redact the credential values, or rotate the keys first. **Neither done here; the standing
+instruction forbids writes.**
+
+**FINDING 2 — ⚠⚠ `credential_value_encrypted` is a misnomer.** **VERIFIED two ways.** The column is
+read in exactly two files and **both use the value as-is — `.strip()` is the entire transformation**;
+**grep of all 190 files finds no encrypt or decrypt step.** And **two of the six stored values are
+bare 36-character UUIDs.** The other four are 32-char ×3 and one 1,513-char token whose encoding is
+**NOT RECORDED** — this pass does not claim they are plaintext, only that nothing would decrypt them.
+**A column name promising a protection the system does not implement** — blueprint §6's
+*"registry entry ≠ real functionality"*, applied to a name.
+
+**FINDING 3 — T1's four DDL statements traced to today.** All survive; three now carry a recorded
+caveat found by later passes — `nba_ref.teams.arena_id` NULL 30/30 (pass 65), `nba_config.system_settings`
+read by no code (pass 33), **6 of 14 NBA schemas holding zero tables** (pass 47). **Table in
+`NBA_OPEN_ITEMS.md`.** The twelve read statements are the Phase-1 recon and are already documented;
+listed so no future pass re-reads them expecting something new.
+
+**FINDING 4 — a small NOT RECORDED detail**: statement 23 is an exact duplicate of statement 22.
+Harmless; recorded so it needs no future explanation.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 67*, plus the **qualified blocker** at the top) ·
+`DATABASE` (`external_credentials`) · `GLOSSARY` · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `WORKERS`, `SYSTEM_DESIGN`,
+`BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 67 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.96 — PASS 66 (angle: **the CLOCK — all 552 timestamped blocks reconstructed into a timeline and a per-tool cost table**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full measurement, with both tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 66.*
 
