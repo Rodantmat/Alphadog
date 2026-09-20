@@ -576,8 +576,29 @@ pre-calibration and post-calibration distributions can be compared per rung dire
 *"Platt across the whole ladder helped points but **HURT rebounds**; **per-rung** Platt fixed both."*
 **Variation band added to the Platt key** (v10) → *"Points STARTER dropped off the worst-cell list
 entirely."*
+
+### The Platt key, as actually implemented *(verified in code 2026-09-20)*
+`platt_log` records one fit per:
+```
+prop × var_band × role_tier × offset × month
+```
+**Five dimensions** — and `offset` is the **rung**, `month` is what makes it **walk-forward**.
+
+**So the calibration is fit per prop, per variation band, per role tier, per rung, per month.** That
+is finer than "per-rung Platt with the band in the key" suggests: **`role_tier` is in the key too**,
+which means a fringe player and an iron-man at the same rung in the same band get **different**
+calibration curves.
+
+**Each fit stores `A`, `B`, `n_fit` and `max_shift`** — so the applied transformation is
+`sigmoid(A · logit(p_raw) + B)`, **with the raw value retained**.
+
 **Platt is fit on the season's prior months** (production `asof_lag: 0 days`).
 **⚠ Gate**: needs **n≥1,000 per cell**; the ELITE rebounds band has **699**.
+**⚠ Magnitude gate**: **`shift > 0.15` → the fit is discarded** (§3.9b).
+
+**The two gates together are why the calibration layer is conservative**: a cell must have both
+**enough sample** and **a plausible correction** before anything is applied. **A cell failing either
+keeps its parametric/empirical value untouched.**
 
 ## 3.10b THE AS-OF LEAK — a known failure with MLB precedent
 
