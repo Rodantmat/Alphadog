@@ -22,7 +22,52 @@ Every Cloudflare worker must be registered in four places or it will not deploy 
 
 ---
 
-## 0b. CODE-LEVEL GOTCHAS FOR NBA WORKERS
+## 0c. ⚠⚠ STATIC MANIFESTS DESCRIBE THE ARCHITECTURE THAT WAS SCAFFOLDED, NOT THE ONE RUNNING
+*Source: T1, blueprint §5b — "a powerful, generalizable warning." Recorded 2026-09-20.*
+
+> *"MLB found **MULTIPLE STATIC JSON MANIFEST FILES in its own repo that LOOKED AUTHORITATIVE** —
+> structured, comprehensive, **one-worker-to-one-job mappings** — but **turned out to describe the
+> system exactly as it was *ORIGINALLY SCAFFOLDED*, before extensive JOB-MULTIPLEXING was layered on
+> top over time.** These files **were NEVER UPDATED as the real architecture evolved**, and **by the
+> time they were checked, THEY DIRECTLY CONTRADICTED WHAT THE LIVE DISPATCH CODE ACTUALLY DID FOR A
+> MAJORITY OF THE WORKERS INVOLVED.**
+> **Any static 'WORKER → JOB' or 'FILE → FUNCTION' mapping document, HOWEVER OFFICIAL-LOOKING OR
+> COMPREHENSIVE, SHOULD NEVER BE TRUSTED AS GROUND TRUTH for what a system CURRENTLY does — ONLY THE
+> LIVE DISPATCH CODE (and, EVEN THEN, CROSS-CHECKED AGAINST LIVE EXECUTION HISTORY, since EVEN
+> DATABASE CONFIG TABLES CAN DRIFT from what the code actually enforces) reflects current reality.**"*
+
+### ⚠ NBA has exactly such a manifest
+**`nba/worker_manifest_nba.json`** — created in T1, a **worker list** consumed by the deploy pipeline.
+**By this warning it is a snapshot, not truth**, and it should be re-verified against the live
+dispatch branch in `admin-sql` before being relied on.
+
+**And the three-place wiring makes drift structurally possible**: a worker exists in the **manifest**,
+the **bridge binding map + dispatch branch + tool enum**, and the **generator**. **Four surfaces that
+must agree, with nothing asserting they do.**
+
+### ⚠⚠ THIS WARNING APPLIES TO THIS DOCUMENTATION ITSELF
+**`NBA_WORKERS.md`, `NBA_SYSTEM_DESIGN.md` and `NBA_DATABASE.md` are exactly the kind of
+"official-looking, comprehensive mapping document"** this describes. **They are snapshots dated
+2026-09-20.**
+
+**The rule's own hierarchy of trust, applied here:**
+| Source | Trust |
+|---|---|
+| **Live execution history** | highest — e.g. the differential logs being empty |
+| **Live dispatch code / workflow files** | e.g. P1's actual step list, the recipe's `ROLE_TIERS` |
+| **Database config tables** | ⚠ *"even database config tables can DRIFT from what the code actually enforces"* — **and `minutes_mixture` HAS** |
+| **Static manifests and these documents** | lowest — snapshots |
+
+**The `minutes_mixture` drift is this warning confirmed inside NBA**: the config table specifies three
+components the code does not implement. **The config was trusted as describing the system; it
+described the design.**
+
+**Consequence for readers of these files**: entries marked **VERIFIED** (live SQL or a direct grep)
+sit in the top two tiers. Everything else is a snapshot. *(See the confidence-tier header in
+`NBA_OPEN_ITEMS.md`.)*
+
+---
+
 *Source: T1, blueprint §4m. Recorded 2026-09-20.*
 
 ### ⚠ A syntax validator will NOT catch JS embedded in a server-side template literal
