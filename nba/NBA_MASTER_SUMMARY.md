@@ -3726,6 +3726,25 @@ picked this one up right away"* — in contrast to the starter-status writer tha
 
 **Two more consecutive clean full passes required before T6 is DONE.**
 
+### T6.14 — PASS 7 (full sequential, 215-char context, head and tail) — **CLEAN 2/3**
+
+**Every block maps to a documented entry. Nothing new.**
+
+Two implementation details confirmed in the tail, both consistent with patterns already recorded:
+- **`DAILY_DELTA_RUNNER_WORKER` already existed as a shared/MLB binding**, so *"I'll use a **new
+  NBA-specific binding name to avoid any conflict**"* — the namespace-collision discipline from T1.13
+  applied to bindings, not just tables.
+- **An empty-result guard was added pre-emptively**: *"since this season likely has zero games so far
+  and **an empty bulk insert could error**"* — anticipating the zero case rather than discovering it.
+
+**CLEAN PASS 2 of 3.**
+
+### T6.15 — CURRENT STATE OF T6
+
+**7 passes. 5 found new material. Clean count: 2/3** (passes 6, 7).
+
+**ONE more complete clean sequential pass and T6 is DONE.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
