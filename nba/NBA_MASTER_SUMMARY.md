@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 62 passes (61 counted, pass 55 VOID).** Pass 62 (System Draft §1–§4, taxonomy diffed against live) found new material — **the prop taxonomy doubled from 14 planned to 28 live**, with **nine unplanned period props now a third of the board surface** and no decision recorded (§T1.92). No consecutive clean run. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 63 passes (62 counted, pass 55 VOID).** Pass 63 (blueprint §5–§7e, the last unswept clause-level region) was **near-clean — one clause undocumented**: *don't assume a first deploy attempt's failure is permanent; retry once via a trivial no-op commit* (§T1.93). **With this pass the blueprint, the lessons document, the Domain Mapping and the System Draft have all been read at clause level.** No consecutive clean run in progress (last clean: 53, 58, 59; broken by 54, 60). *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
