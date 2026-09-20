@@ -4675,6 +4675,88 @@ the MLB value raised from 12 after backtesting, adopted because the owner's requ
 
 **T7 PASS 12: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T7.19 — PASS 13 — **THE LOCKED DEFINITIONS AND THE RESEARCH CONVERGENCE**
+
+#### T7.19a — The four terms, locked
+| Term | Definition as locked |
+|---|---|
+| **Lifts / penalties** | *"**factor-driven adjustments inside each tier's pipeline** — a factor that helps the leg lifts it; one that hurts it drags it"* |
+| **Caps** | ***"a LAST RESORT**, tier-specific if ever used — **the preference is logic that lands on the right number on its own**"* |
+| **Variations** | the **line bands within a prop**. Owner: *"**PRA 20.5, 21.5, 23.5 — each one is one variation. And each variation is gonna have more or less as well.** So that's prop line, variation, and direction"* |
+| **Line ladders** | ***player-anchored, never global***. Each player gets a ceiling for "more" and a floor for "less" |
+
+**"Caps are a last resort" is a design philosophy, not a parameter choice** — and it is the same
+instinct behind the blowout mixture (T7.13e): *"a direct penalty is what you called capping; this is
+the proper logic that drives the number there on its own."*
+
+#### T7.19b — **The baseline's agnosticism, stated by the owner in the strongest form**
+> *"the baseline is looking to the **past**… **It does NOT use any daily context data** — even because
+> we're not even there yet — **and NO market**. So that's looking to the past and **AGNOSTIC of those
+> datas**."*
+
+**This is the constraint that makes the two-layer split enforceable**: the baseline cannot read
+injuries, lineups or market lines *by definition*, not merely by convention. **It is also why the
+derived-spread proxy had to exist** — blowout risk belongs in the baseline, so it had to be computed
+without the market line.
+
+#### T7.19c — **Empirical vs parametric, explained plainly and then resolved**
+The explanation given to the owner:
+> *"**The formula way**: assume his results follow a mathematical curve, plug in his average, read the
+> probability off the curve. **Clean, but it assumes the curve is right.**
+> **The empirical way**: look at what *actually happened*. Take every game by players in his tier — say
+> 3,000 games — and **just count**: how many ended at 21+? **If it's 1,380 of 3,000, the answer is
+> 46%.** No curve, no assumption, real frequencies."*
+> *"**MLB started with the formula way and later added the empirical way — it turned out to be its
+> sharpest method.** The only requirement is a big enough sample per tier (**MLB requires 300+
+> games**), which we have in abundance: **79,000 backfilled game rows**."*
+
+**Owner's answer**: *"maybe a little bit of both, **maybe both together layered** — but **that's also
+research**. We need to understand what the strong systems use, and **simulate and test to see which
+one is better**."*
+
+#### T7.19d — **The research standard, in the owner's own words**
+> *"when I say research, is look at **strong articles, strong studies, strong systems**, how they
+> handle it. And, of course, **multiple passes and multiple sources. We do not stop at a single
+> source.** You also have Gemini for insight. **Gemini is not absolute truth. Gemini is to be used as a
+> tool to bring more information to the table in a different point of view.**"*
+
+#### T7.19e — **The four convergent findings**
+**1. Empirical vs formula → LAYERED, and the tails are where formulas fail**
+> *"**OpticOdds (industry pricing vendor), MLB's own evolution, and Gemini all land on the same
+> answer**: **parametric for coverage, empirical for precision — especially at the tails and alternate
+> lines, which is exactly Goblin/Demon and ceiling/floor territory.** NBA starts layered from day one,
+> **empirical primary where the tier sample supports it**."*
+
+**2. Line ranges → PERCENTILE of the player's own distribution — three sources, one method**
+> *"Books ladder a **24.5 player from ~19.5 to ~31.5 (roughly ±1 standard deviation)**; **Unabated's
+> pro tool prices off each player's full outcome distribution**; Gemini independently suggests
+> **Goblin ≈ 25th–35th percentile, Standard ≈ median, Demon ≈ 70th–80th, with the useful range ≈
+> 15th–85th**. **Three sources, one method.**"*
+
+**✅ THIS RESOLVES T7.13g.** I noted that *"anchor ±5–6 steps"* looked like half the ±13 the live
+session measured. **It is not a contradiction**: 19.5→31.5 around 24.5 is **±6 line-units = 12 rungs**,
+and the live measurement found **p95 distance 13 rungs** for points. **The design and the measurement
+agree to within one rung.** The `LADDER_DEPTH` work refined a correct estimate rather than correcting
+a wrong one.
+
+**3. Distribution family varies by prop AND BY VARIATION**
+> *"Low counts (3PM, Blk, Stl, TO, low-volume Reb/Ast) → **Negative Binomial** (**NBA stats are
+> overdispersed; Poisson underfits**). High-mean Points/Reb/Ast (mean >10) → **Normal**. Combos and
+> Fantasy Score → **Normal** (sums of variables). This directly means **the calculation method changes
+> with the variation band even when the prop is the same** — a 3.5-points player and a 33.5-points
+> player get **different distribution machinery**."*
+
+**4. ⚠ Recency must be per-prop — and this is what does NOT transfer from MLB**
+> *"**MLB's fixed 5/10/20/season weights are flagged as the single biggest thing that does NOT
+> transfer.** Minutes: very short memory. Usage/assist/rebound rate: medium. Shooting %: long. **The
+> `stat_decay_config` table we already built is the right home for this.**"*
+
+**The MLB port was NOT wholesale.** The recency blend (0.4/0.3/0.2/0.1) documented in T7.13b as MLB's
+live logic was **explicitly rejected for NBA** — replaced by the 13-row per-stat decay table.
+**Knowing which part of a proven system does not transfer is the hardest part of porting one.**
+
+**T7 PASS 13: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
