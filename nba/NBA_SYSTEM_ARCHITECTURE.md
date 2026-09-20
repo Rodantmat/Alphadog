@@ -285,10 +285,57 @@ worth applying directly to NBA's own base layer." Recorded 2026-09-20.*
 DARKO extraction began by checking whether the page already carried the dataset — **it did, in the
 `kit.start()` hydration script** — rather than defaulting to pagination.
 
-**⚠ Where a full re-mine still happens**: the **weekly scrapers re-pull whole season aggregates every
-Monday**. That is correct by design (season aggregates change with every game), **but it is the one
-place the principle does not apply, and it is worth knowing it is deliberate rather than
-overlooked.**
+### 2. ⚠ Never validate a new pipeline against an internal prior system
+> *"**Never validate a new pipeline's correctness against an OLD OR REFERENCE DATABASE AS IF IT WERE
+> GROUND TRUTH — validate against the REAL, EXTERNAL, AUTHORITATIVE SOURCE directly.**
+> MLB made and caught a real mistake **computing a 'coverage percentage' by comparing NEW POSTGRES ROW
+> COUNTS AGAINST OLD D1 ROW COUNTS, when the OLD DATABASE WAS ITSELF KNOWN TO HAVE REAL DUPLICATION
+> AND QUALITY ISSUES.**
+> **The correct method: PULL A REAL ANSWER DIRECTLY FROM THE ACTUAL EXTERNAL DATA PROVIDER (the
+> league's own official API) FOR A SPECIFIC CASE and compare against that** — **not against any
+> internal prior system's own counts.**"*
+
+**✅ NBA's verification habit matches this consistently.** Every certification in the record compares
+against an **externally-anchored** number, not an internal one:
+| Check | External anchor |
+|---|---|
+| `GAME_ID` prefix `002` → **1230 = 1230** | the known regular-season game count |
+| Starter status **12,300 = 10 × 1,230** | 10 starters per game × the real schedule |
+| 3 missing officials games | **verified absent on NBA.com itself** |
+| Measure-type counts **26,651 / 26,306 / 26,401** | matched the **base game logs**, per season |
+| DARKO **530/530**, positions **582/582** | the source's own totals |
+| The 170-game gap | explained by **preseason + playoffs + All-Star + Cup knockout** |
+
+**And the one place an internal comparison was used, it was flagged**: the T3 `aliases_written`
+discrepancy was resolved by recognising *"the counter reports rows UPSERTED in that run, not the table
+total"* — **an internal-count confusion caught before it became a conclusion.**
+
+### 3. ⚠⚠ VERIFY EVERY COLUMN IS IN THE `ON CONFLICT DO UPDATE` CLAUSE
+> *"**When using an `ON CONFLICT DO UPDATE`-style upsert, VERIFY EVERY COLUMN THAT SHOULD EVER BE
+> REFRESHED ON A REPEAT WRITE IS ACTUALLY LISTED IN THE UPDATE CLAUSE.**
+> MLB found **a real, specific bug where SEVERAL COLUMNS WERE MISSING FROM AN UPSERT'S UPDATE LIST** —
+> meaning **those columns were SET CORRECTLY ON FIRST INSERT but SILENTLY FROZEN AT THAT ORIGINAL
+> VALUE FOREVER AFTERWARD, NEVER UPDATED AGAIN.**"*
+
+**This is a silent-staleness bug with no error and no visible symptom** — the row exists, the value
+looks plausible, and it is simply from whenever the row was first written.
+
+**⚠ NBA is broadly exposed: every writer Worker upserts.** `nba_ref.teams`, `players`, `arenas`,
+`officials`, `team_aliases`, `player_aliases`, the stats tables, `baseline_ladder`
+(*"idempotent: PK (asof, player_id, game_id, prop, period, ot_rule, line)"*), `board_outcomes`.
+
+**Two NBA findings are already consistent with this bug class:**
+- **`nba_ref.arenas`: 19 of 30 have `capacity`; 0 of 30 have `altitude_ft`/`timezone`** — a partially
+  populated table where some columns never refresh is exactly the shape
+- **The position column was empty for three sessions** — *"the scraper never extracted it AND the
+  worker never wrote it"* — the same silent-frozen outcome, from the write side
+
+**And the T3 differential layer depends on upserts refreshing correctly**: the snapshot tables *"had
+to exist BEFORE the next upsert because the writers OVERWRITE."* **If a snapshot column is missing
+from an update clause, the differential compares against a frozen value and reports no change.**
+
+**The check is mechanical**: for each writer, compare the column list in the `INSERT` against the
+column list in `DO UPDATE SET`. **Not recorded as having been run.**
 
 ### The original MLB→NBA source mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §3)*
 | MLB source | NBA equivalent, as stated | How it turned out |
