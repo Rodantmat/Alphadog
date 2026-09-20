@@ -2164,6 +2164,51 @@ name in the schema confirmation.)*
 
 **T3 PASS 6: NEW MATERIAL. Clean count 0/3.**
 
+### T3.12 — PASS 6, SEGMENTS 3–4 — **FURTHER NEW MATERIAL**
+
+#### T3.12a — **A lesson applied PROACTIVELY, not after a second failure**
+> *"I applied a lesson from the schedule worker's bug **proactively** this time — used
+> **`raw.githubusercontent.com` from the start** instead of waiting to hit the same 1 MB file-size
+> limit again."*
+
+**This confirms the 1 MB Contents API fix was propagated forward**, at least to the play-type worker.
+*(Whether every large-file reader uses raw is still worth an audit — see OPEN_ITEMS.)*
+
+#### T3.12b — The play-type fallback's real dimensions
+The "cheap path" (one call for all play types) **did not work**, and the scraper *"correctly detected
+that and fell back to looping through **all 11 play types × 2 groupings × 2 levels**."*
+**That is 44 calls** — and the 630 team records cover *"both offensive and defensive groupings."*
+The defensive design (try cheap, fall back to loop) is what made the failure a non-event.
+
+#### T3.12c — Worker count progression, and the final inventory
+**7 → 8 → 11 → 12 workers** across T2–T3. The T3 closing inventory covers the full
+static/weekly/foundational layer **plus the differential change-detection layer on top**.
+
+#### T3.12d — The close of all three research passes, and what it explicitly defers
+> *"**This genuinely closes out all three research passes.** Nothing further has been identified across
+> web research, Gemini consultations, and independent verification — **every remaining real gap
+> (garbage-time adjustment, rolling/recent-form averages, defence-vs-position/role, referee-crew
+> tendencies, absence-impact tables) requires game-level data that doesn't exist yet**."*
+
+**That is a five-item deferred list handed to Phase 3b.** Their later fates:
+| Deferred item | What happened |
+|---|---|
+| Garbage-time adjustment | **never built** — see OPEN_ITEMS |
+| Rolling/recent-form averages | built into the baseline allocator |
+| Defence-vs-position/role | built T5; M1 defender quality rebuilt T16 |
+| Referee-crew tendencies | D1, capture built T15, **0 rows until the season** |
+| Absence-impact tables | became **A2 — retracted** T15/T16 |
+
+**So of the five, one was never built, one was built and retracted, and three shipped.**
+
+#### T3.12e — `leaguedashplayershotlocations` — the second shot source
+Alongside `leaguedashplayerptshot` (defender distance), *"`leaguedashplayershotlocations` for shot
+profile **by court zone**"* — *"Neither requires the proprietary Second Spectrum feed — this is the
+legitimate free version of 'shot quality'."*
+**Both were built** — `player_shot_quality` and `player_shot_zone_profile` (T3.10).
+
+**T3 PASS 6 COMPLETE: NEW MATERIAL throughout. Clean count 0/3.**
+
 ### T2.8 Findings that still govern the system
 - **The four-step worker wiring pattern** (manifest → generator → admin-sql ×3 → registry).
 - **admin-sql must deploy LAST** — alphabetical fleet deploy order otherwise breaks new bindings.
