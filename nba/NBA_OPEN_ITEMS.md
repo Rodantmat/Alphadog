@@ -205,6 +205,67 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T1 PASS 60 — LESSONS PARTS B, E, F BY CONCEPT — **two items from Part F** *(added 2026-09-20)*
+*Angle: the lessons document's remaining Parts, read by concept. **Part B and Part E are fully
+covered. Part F's last two lessons are not.***
+
+### ⚠ "OPPONENT" CAN MEAN DIFFERENT THINGS ON DIFFERENT SIDES OF A PROP — and NBA reuses one lookup
+> *"**A fifth, concrete design lesson**: a shared **'opponent' or 'matchup' concept in a factor's
+> logic can mean genuinely different things depending on WHICH SIDE of a given prop it's being
+> applied to**, and **reusing the same lookup blindly can encode a real conceptual error.** MLB found
+> a real case where an **'opposing defense' factor was correctly wired for hitter props** (the
+> batter's opponent is the fielding team behind the pitcher he's facing) **but silently wrong** [for
+> the other side]."*
+
+**NBA's opponent-shaped factors**: the baseline's **opponent-defence** term, **B4 opponent
+availability / rim protection**, **M1 defender level**, and `nba_team.defense_vs_position`.
+**All four resolve "opponent" from the calendar, once per game, and are then applied to both
+directions of every prop.**
+
+**✅ The mitigating fact, stated honestly**: **NBA has no opposing-role prop family.** Domain Mapping
+§1 is explicit — *"no direct 1:1 equivalent… all NBA props are 'batter-style' (offense-side player
+stats)"*. **MLB's bug required two prop families with opposite opponent semantics; NBA has one.**
+So the *specific* failure cannot reproduce.
+
+**⚠ What is NOT established** is the narrower version of the same question, which nothing in the
+record addresses: **does the opponent lookup carry the same meaning for a `Less` as for a `More`?**
+A `More` on points wants a weak defence; a `Less` wants a strong one — **that much is just sign.**
+The lesson's point is subtler: **whether the same stored value is the right INPUT for both sides**,
+or whether one side needs a different quantity entirely. **NOT RECORDED as checked.** ⚠ It compounds
+with *PASS 29*'s §7f finding — **`side` is the dimension MLB's calibration fit collapsed**, and it is
+the same dimension here.
+
+### ⚠ THE PARALLEL-INVESTIGATION TECHNIQUE — used by NBA, never written down as a standard
+> *"**Finally, a real, practical technique worth adopting directly**: the discovery of the
+> baseline-leakage bug came from **an independent, parallel investigation thread cross-checking a
+> specific open question against this one's own findings — NOT from either thread working in
+> isolation.** **When a finding is foundational enough that being wrong about it would invalidate a
+> large amount of downstream work** (a baseline reference value, a core formula, a key statistical
+> [result])…"* — **run an independent parallel check rather than a deeper single-threaded one.**
+
+**⚠ This is the owner's operating model arriving from the research side.** The founding
+specification's *"one new chat per big data domain… so we don't overload any specific work"*
+(*PASS 36*) is organisational; **this lesson says the same structure is an error-detection
+mechanism**, and names the class of finding that warrants it.
+
+**And NBA has already benefited from it without recording why**: T1 itself contains the
+**parallel-chat episode** — a second session independently checking the `github_trigger_workflow`
+problem and reaching a different, correct conclusion (§T1.17). **The technique worked; it was never
+recorded as a technique.**
+**NOT RECORDED as a standing practice.** The findings it would apply to are named in this file:
+the **certified baseline** result, the **`p × m` gate**, the **anchor** that ten factors were
+measured against, and the **config-vs-code divergence** — **each is foundational enough that being
+wrong invalidates large amounts of downstream work.**
+
+### ✅ Parts B and E are fully covered
+**Part B** — PrizePicks step-function tiered pricing and the ~1.4× per-tier growth · Underdog and
+Sleeper pricing per-leg dynamically · PrizePicks discounting same-game correlation · no DFS platform
+publishing per-leg multipliers via API — **all in `NBA_MULTIPLIERS.md` §0.2d–§0.2g.**
+**Part E** — the consecutive-clean-pass standard — **`NBA_FINAL_SCORING_CALIBRATION.md` §16**, and it
+is the standard this entire documentation effort runs on.
+
+---
+
 ## FROM T1 PASS 59 — BLUEPRINT §4a–§4i BY CONCEPT — ✅ **CLEAN** *(added 2026-09-20)*
 *Angle: the enrichment and calibration half of §4, the sample pass 58 did not cover. **Every
 subsection has an entry, and each of the nine is cited by section number in at least one document.
