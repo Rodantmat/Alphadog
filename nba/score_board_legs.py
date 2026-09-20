@@ -254,7 +254,7 @@ def main():
               final_hp=EXCLUDED.final_hp, confidence=EXCLUDED.confidence,
               score=EXCLUDED.score, edge=EXCLUDED.edge""",
             [(asof, season, r.app, r.player_id, r.player, r.prop, float(r.line), r.side_n,
-              r.kind, int(r.tier) if r.tier == r.tier else None, r.game_id,
+              None, None, None,
               round(float(r.baseline_hp), 5), round(float(r.cal_shift), 5), round(float(r.final_hp), 5),
               round(float(r.confidence), 4), float(r.score), float(r.edge), bool(r.interpolated))
              for r in d.itertuples(index=False)])
