@@ -9,8 +9,25 @@ entries run oldest → newest. When you need more detail than is here, open that
 term — the GLOSSARY maps terms to their transcript.
 
 **Update protocol.** Every entry carries the date it was ADDED to this document, so new material is
-distinguishable from old. Multiple passes are run per transcript; a transcript is only marked
-`PASSES: N clean` when N consecutive passes found nothing new.
+distinguishable from old.
+
+**PASS RULE (owner directive, binding).** A transcript is DONE only after **3 CONSECUTIVE passes that
+find nothing new**. If passes 1 and 2 are clean but pass 3 finds something, the count RESTARTS at zero.
+This applies per transcript and to every document.
+
+**Pass status vocabulary**
+| Marker | Meaning |
+|---|---|
+| `PASS n — INCOMPLETE` | pass run, found new material; not clean |
+| `CLEAN 1/3`, `CLEAN 2/3` | consecutive clean passes so far |
+| `DONE (3/3 clean)` | satisfied the rule |
+
+**Known limitation of pass 1 (recorded 2026-09-20).** Pass 1 used a digest that TRUNCATED text blocks
+to ~220-260 chars, showed only tool NAMES and first arguments, and **skipped `tool_result` entirely** —
+which is where row counts, errors and verification output live. So pass 1 captured narrative and
+decisions but NOT full SQL bodies, full reasoning, or measured results. Pass 2 uses a different
+extraction (full text, full SQL, tool results included). Pass 2 is therefore expected to find new
+material; it is not a rerun.
 
 | Document | What it holds |
 |---|---|
