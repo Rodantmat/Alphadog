@@ -602,26 +602,26 @@ actively guard against in NBA FROM DAY ONE"* — to this.**
 |---|---|---|
 | **1** | **A join on a shared key without a FULLY-SPECIFYING condition** (e.g. team+game **without player**) **fans out and double- or multi-counts** | **an unexpected EXACT MULTIPLE in row counts — 2×, 3× — versus the expected population size** |
 | **2** | **A "baseline" or "control" that already CONDITIONS ON THE VERY THING BEING MEASURED** — *"erases the effect it's supposed to measure"* | **always check the control is defined INDEPENDENTLY of the effect under test** |
-| **3** | **Pooling across sub-groups with different true base rates before computing a ratio** — **Jensen-style aggregation bias** | inflates or deflates the pooled figure vs every sub-group |
+| **3** | **Pooling across sub-groups with different true base rates before computing a ratio** — **Jensen-style aggregation bias** | *"can INFLATE OR INVENT an effect that isn't really there at the pooled level"* |
+| **4** | **Nested / hierarchical outcomes** — *"a lower threshold AUTOMATICALLY IMPLIED by a higher one on the same underlying stat… look like independent correlated events but are actually NEAR-DETERMINISTIC"* | **EXCLUDE same-entity nested lines from any independence/correlation study** |
+| **5** | **A composite/derived stat computed with TWO DIFFERENT UNDERLYING FORMULAS across data sources** | *"produces PHANTOM 'differences' that look like real signal"* |
+| **6** | **Multiple simultaneous price/line variants** (a full ladder of tiers offered at once) **mistaken for a TIME-SERIES of one thing moving**, *"if the grouping key doesn't ALSO key on the specific VARIANT/TIER"* | — |
 
-#### NBA's own instances — at least four, three of them silent
-| Instance | Effect | Visibility |
-|---|---|---|
-| `norm_market()` naive `replace('player_','')` | **23,286 legs — 44% of the board — scored nothing** | **silent** |
-| Splits PK omitting `season` | only one season can ever exist | **silent overwrite** |
-| Lineup PK omitting `team_id` | traded players collide | **failed loudly** ✅ |
-| Gap sample grouping on `matchup` | **every game listed TWICE** | **exactly the 2× tell from #1** |
+#### ⚠ Members 4 and 6 are live risks for this system right now
+**#6 is the ladder, exactly.** A PrizePicks board offers **standard, goblin and demon rungs for the
+same player-prop simultaneously**. Any grouping that keys on `(player, prop, snapshot)` **without
+`line` and `odds_type`** will read a static ladder as a line that moved. **`board_snapshots` keys
+include `line` and the tier tables key on `kind`/`tier` — but any ad-hoc query over that table must
+do the same.**
 
-**The `matchup` duplicate is member #1 of the family, textbook** — a grouping key that did not fully
-specify the row, producing an exact 2× multiple. **It was caught because the multiple was exact.**
+**#4 is combos and milestones.** `points ≥ 20` and `points ≥ 25` for the same player are
+**near-deterministic, not two correlated observations** — and neither are `points` and `PRA`.
+**Lesson #12 names this as one of three contamination sources** inflating same-game correlation.
+**NBA's per-player covariance work avoids it by modelling components jointly**, but any future
+correlation study must exclude same-entity nested lines explicitly.
 
-**Member #2 is worth watching in this system specifically**: `gain_vs_anchor` compares a factor against
-the certified anchor. **If a factor's evaluation slice were selected using anything the anchor already
-conditions on, the comparison would erase the effect.** *(The T8 note that prior strength measured
-against tier-mates is **circular** — tier-mates were *selected* for similarity — is the same shape.)*
-
-**Member #3 is named in lesson #12 too** — pooling across props with different base rates was one of
-three contamination sources inflating same-game correlation.
+**#5 is the fantasy-scale issue in general form** — the same nominal stat computed under two
+formulas produces differences that are artefacts, not signal. **Lesson #14 is its specific case.**
 
 **The standing action**: *"before trusting any grouping key or join in a new table, sanity-check that
 it actually isolates what it claims to"* — **and look for exact multiples in row counts as the first
