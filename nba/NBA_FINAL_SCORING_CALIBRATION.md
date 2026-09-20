@@ -1051,7 +1051,74 @@ zero. **`nba_config.factor_registry` has 67 rows and could carry the same field.
 
 ---
 
-## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
+## 7q. THREE STANDING SEARCH / EVALUATION DISCIPLINES
+*Source: T1, blueprint §4f — "two real, honest self-corrections worth adopting as standing search
+disciplines." Recorded 2026-09-20.*
+
+### 1. ⚠ "I searched every worker file I could think of" ≠ "I searched everywhere functionality could live"
+> *"MLB found a real case where **an initial, CONFIDENT claim that 'NO AUTOMATED MINING WORKER EXISTS'
+> for a specific data source WAS WRONG** — **the actual mining logic existed as AN INTERNAL STEP
+> INSIDE A LARGER, DIFFERENTLY-NAMED RUNNER FILE, INVISIBLE TO A FILE-NAME-PATTERN SEARCH.**
+> **Before concluding a piece of functionality DOESN'T EXIST anywhere in the NBA codebase, CHECK THE
+> INTERNAL STEP LISTS OF LARGER RUNNER/ORCHESTRATOR-STYLE FILES TOO, not just file names that sound
+> like they'd contain it.**"*
+
+**⚠ This bears directly on several open items in this documentation.** Conclusions of the form *"X is
+not recorded as built"* rest on transcript reading and targeted greps. **The named failure is
+precisely a confident negative about a worker's existence.**
+
+**Specific NBA cases where the functionality could be hiding inside a larger file:**
+| Open conclusion | Where it could still live |
+|---|---|
+| *"no validation step between grading and the refit"* | inside `build_asof_calibration.py` itself |
+| *"no magnitude sanity check on the fitted shift"* | inside the same refit script |
+| *"no RSS aggregation"* | inside `build_final_hp.py`'s combination step |
+| *"the P1 loader question"* | inside a writer Worker's own cron/`scheduled()` handler |
+| *"dud mixture not implemented"* | ✅ **this one WAS checked by grep of the actual recipe** — 0 matches for `dud|mixture|p_dud` |
+
+**The discipline to apply before treating any of these as settled**: read the internal step list of
+the relevant runner, not just search for a file named after the function.
+
+### 2. ⚠ Never assume a field name transfers across data providers
+> *"MLB found a real case where **a mining plan was built around A SPECIFIC EXPECTED COLUMN NAME from
+> ONE PLATFORM'S PUBLIC TERMINOLOGY**, and **had to be corrected once the ACTUAL TARGET PLATFORM'S
+> REAL, LIVE COLUMN LIST WAS CHECKED DIRECTLY** and found to use **DIFFERENT TERMINOLOGY WITH A
+> GENUINELY DIFFERENT DEFINITION — NOT JUST A RENAME, A DIFFERENT UNDERLYING CALCULATION.**
+> **Before building ANY NBA data-mining pipeline around an assumed field from a new data source,
+> VERIFY THE ACTUAL, CURRENT COLUMN/FIELD LIST DIRECTLY AGAINST THAT REAL SOURCE**, not against
+> terminology borrowed from a different platform or from memory."*
+
+**✅ NBA learned this the hard way, repeatedly, and the record is consistent with the warning:**
+- *"**Documented columns may simply not exist any more** — dump the real response before patching a
+  parser"* (`ARENA`/`ARENACAPACITY` gone from the standings endpoint)
+- **The team advanced table has no `usg_pct`/`reb_pct`** — the mapper wrote nonexistent columns
+- **The bio file uses `players`/`player_id`/`age`, not `records`/`PLAYER_ID`/`AGE`** — every age NaN
+- **`leaguedashplayershotlocations` returns `resultSets` as a DICT, not a list**
+
+**The stronger half of the warning is "not just a rename — a different underlying calculation."**
+That is the **prop-definition mismatch** problem (lesson #14) applied to source fields rather than to
+props: **the same name can mean a different computation.**
+
+### 3. Check a candidate factor for REDUNDANCY before building it
+> *"**A related, valuable discipline for evaluating any new candidate enrichment factor BEFORE
+> BUILDING IT: explicitly CHECK FOR REDUNDANCY with what already exists — IS THE PROPOSED NEW SIGNAL
+> ACTUALLY JUST A NOISIER PROXY FOR AN OUTCOME THE SYSTEM ALREADY MEASURES DIRECTLY** (in which case
+> adding it co[ntributes nothing])?"*
+
+**This is the ten-factor audit's verdict, stated as a pre-build check.** The recurring diagnosis was
+***"the baseline already carries what these factors re-express."***
+
+**Every rejected factor fits the description:**
+| Factor | What already measured it directly |
+|---|---|
+| **A5 — lineup change** | *"the allocator's recent-5 minutes **already encode starting**"* |
+| **A3 — return ramp** | assigned to the **baseline**; gated at leg level → zero gain |
+| **home / back-to-back** | *"**the minutes model already carries them**"* — measured ≈0 |
+| **A2 — teammate redistribution** | the baseline's own minutes history |
+
+**Applying this check BEFORE building would have saved the five A2 panels and the three B4
+formulations.** It is one question — *does something already measure this directly?* — and it is
+cheaper than every gate run it replaces.
 
 ### 8.1 Blowout — on the REAL market spread
 Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
